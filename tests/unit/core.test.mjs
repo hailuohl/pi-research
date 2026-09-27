@@ -41,7 +41,7 @@ test('unknown model usage retains reservation',()=>withStore(db=>{
 }));
 test('path traversal, absolute paths and symlinks are refused',()=>{const dir=temp();try{
  assert.throws(()=>safePath(dir,'../secret'),{code:'PATH_DENIED'});assert.throws(()=>safePath(dir,'/etc/passwd'),{code:'PATH_DENIED'});
- symlinkSync('/tmp',join(dir,'outside'));assert.throws(()=>safePath(dir,'outside/a'),{code:'PATH_DENIED'});
+ symlinkSync(dir,join(dir,'outside'),process.platform==='win32'?'junction':'dir');assert.throws(()=>safePath(dir,'outside/a'),{code:'PATH_DENIED'});
 }finally{rmSync(dir,{recursive:true,force:true});}});
 test('file editing checks hash and preserves newer content',()=>{const dir=temp();try{
  const a=writeText(dir,'src/a.txt','first',null);writeText(dir,'src/a.txt','second',a.digest);

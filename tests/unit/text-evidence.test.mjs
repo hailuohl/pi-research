@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync,writeFileSync} from 'node:fs';
+import {existsSync,writeFileSync,chmodSync} from 'node:fs';
 import {setup,USER} from '../support/research.mjs';
 import {startTeam,spec,actor} from '../support/collaboration.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
@@ -44,7 +44,7 @@ test('disabling or removing a corpus source blocks even repeated queries',()=>{c
  const state=service(s).status(USER,s.project.id);service(s).configure(USER,s.project.id,{enabled:false,expectedVersion:state.version});assert.throws(()=>run(s,b),{code:'TEXT_EVIDENCE_DISABLED'});
 }finally{s.close();}});
 test('tampered source content fails before returning any cached quote',()=>{const s=setup();try{
- const a=source(s);enable(s,[a]);run(s,a);writeFileSync(a.path,'changed');assert.throws(()=>run(s,a),{code:'ARTIFACT_CORRUPTED'});
+ const a=source(s);enable(s,[a]);run(s,a);chmodSync(a.path,0o600);writeFileSync(a.path,'changed');assert.throws(()=>run(s,a),{code:'ARTIFACT_CORRUPTED'});
 }finally{s.close();}});
 test('concurrent edits to corpus settings are rejected with expectedVersion',()=>{const s=setup();try{
  const a=source(s);enable(s,[a]);assert.throws(()=>service(s).configure(USER,s.project.id,{enabled:false,expectedVersion:0}),{code:'VERSION_CONFLICT'});

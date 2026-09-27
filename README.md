@@ -2,11 +2,13 @@
 
 **增强试验派生版 · OpenResearch 技能与文献连接器适配**
 
+本开发副本正在按 [优化实施计划](docs/IMPLEMENTATION-PLAN.zh-CN.md) 推进 PR01。原 ZIP 保持冻结；版本号沿用源包身份，不代表新发布。当前进度和可复跑证据见 [PR01 验证记录](docs/acceptance/pr01/RESULTS.zh-CN.md) 与 [能力矩阵](docs/reference-baseline/PR01.md)。
+
 由 0.3.0-experimental 独立派生。保留既有实验、审批、快照、协作、Campaign 与有效性修复；新增受管技能目录和五源文献接口。不是完整 OpenResearch 替代品，也不是所有后端已连接的生产系统。
 
 ## 启动
 
-核心 Node.js ≥22.16.0。包内有 dist，运行核心无需先安装 npm 依赖。
+核心 Node.js ≥22.19.0；可重复开发构建固定 Node.js **24.19.0**、npm **11.17.0**。包内有 dist，运行核心无需先安装 npm 依赖。
 
 ```bash
 node dist/apps/cli/index.js doctor
@@ -35,7 +37,20 @@ Pi适配代码把受管目录/总览和按需读取工具接入Worker。实际�
 npm run setup:pi
 ```
 
-固定Pi SDK需要Node≥22.19.0；没有SDK时不会返回模拟模型回答。本轮未完成真实模型验收。
+`setup:pi` 现在从根目录已提交的 `package-lock.json` 执行 `npm ci`，同时安装固定 SDK 与构建工具；不再临时生成未受版本管理的锁文件。优先使用根目录 SDK；仅根目录未安装时兼容查找 `.pi-runtime`，旧目录内容不会被自动覆盖。固定 Pi SDK 为 0.87.1；没有 SDK 时不会返回模拟模型回答。
+
+## 开发验证
+
+```bash
+npm ci
+npm run typecheck
+npm test
+npm run test:parity
+npm run verify:build
+npm run test:live
+```
+
+`test:live` 默认明确跳过。需要在进程环境配置 `PI_LIVE_TEST=1`、`PI_PROVIDER`、`PI_MODEL`、`PI_API_KEY` 后才能调用真实模型（会使用供应商额度）；测试不会读取个人全局 Pi 凭据。真实 SDK 离线契约检查包含在 `npm test` 中，但不算 live 通过。两版冻结业务源码回归可用 `npm run test:baseline -- <0.2.3源码目录> <0.3.1源码目录>`，副本、测试补丁摘要和原始日志保存在 `.validation/`。
 
 ## 文献配置
 
@@ -50,4 +65,4 @@ npm run setup:pi
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-本次本地完整测试 271/271 通过。真实文献联网、浏览器、Pi模型、Docker/远程、Windows/WSL未完成验收；DNS与受管浏览器阻塞已留存记录。远程计算、Git发布、Overleaf、LaTeX编译/实例申请显示未实现，不因有参考技能就模拟成功。
+原发布包的历史测试记录不作为本开发副本的验收结果；本次结果单独记录在上方 PR01 验证记录中。真实文献联网、浏览器研究旅程、Pi 模型、Docker/远程仍需各自验收。远程计算、Git发布、Overleaf、LaTeX编译/实例申请保留在后续计划中。

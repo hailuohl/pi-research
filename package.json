@@ -5,8 +5,9 @@
   "type": "module",
   "description": "Local-first Pi research workbench with auditable multi-agent orchestration",
   "engines": {
-    "node": ">=22.16.0"
+    "node": ">=22.19.0"
   },
+  "packageManager": "npm@11.17.0",
   "scripts": {
     "build": "node scripts/build.mjs",
     "start": "node dist/apps/server/index.js",
@@ -16,12 +17,24 @@
     "demo": "node dist/apps/cli/index.js demo",
     "doctor": "node dist/apps/cli/index.js doctor",
     "setup:pi": "node scripts/setup-pi.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit",
+    "typecheck": "node scripts/build.mjs --typecheck",
+    "test:parity": "node --test --test-concurrency=1 tests/parity/*.test.mjs",
+    "test:live": "node --test --test-concurrency=1 tests/live/*.test.mjs",
+    "test:baseline": "node scripts/verify-baselines.mjs",
+    "verify:build": "node scripts/verify-build.mjs",
     "demo:campaign": "node dist/apps/cli/index.js demo-campaign",
     "test:upgrade": "node scripts/verify-legacy-upgrade.mjs"
   },
   "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.87.1",
+    "@earendil-works/pi-ai": "0.87.1",
     "@types/node": "24.0.4",
     "typescript": "5.8.3"
+  },
+  "overrides": {
+    "@earendil-works/pi-agent-core": "0.87.1",
+    "@earendil-works/pi-tui": "0.87.1",
+    "@earendil-works/pi-telemetry": "0.87.1",
+    "@earendil-works/chord": "0.87.1"
   }
 }

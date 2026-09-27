@@ -1,0 +1,14 @@
+[
+  {
+    "sha256": "cf648fa86d39024d55914af421d9899c7f1f968bf549ca67d1bdae29374dd4fa",
+    "sourceMatchesArchive": true,
+    "appsAndPackagesFilesMatched": 76,
+    "archive": "pi-research-v0.2.3-fixed-skills.zip"
+  },
+  {
+    "sha256": "5dee66f094f42353c5ac1d47387ae30fa4e65bafde11b3ff10f39542ff591f1c",
+    "sourceMatchesArchive": true,
+    "appsAndPackagesFilesMatched": 80,
+    "archive": "pi-research-v0.3.1-experimental-skills.zip"
+  }
+]

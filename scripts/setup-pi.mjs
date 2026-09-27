@@ -1,4 +1,20 @@
-import {mkdirSync,writeFileSync} from 'node:fs';import {resolve,join} from 'node:path';import {spawnSync} from 'node:child_process';
-const [major,minor]=process.versions.node.split('.').map(Number);if(major<22||(major===22&&minor<19)){console.error('Pi 0.87.1 需要 Node.js >=22.19.0。请升级后再安装。');process.exit(1);}
-const root=resolve(import.meta.dirname,'..','.pi-runtime');mkdirSync(root,{recursive:true});writeFileSync(join(root,'package.json'),JSON.stringify({private:true,type:'module',dependencies:{'@earendil-works/pi-coding-agent':'0.87.1','@earendil-works/pi-ai':'0.87.1'}},null,2));
-console.log('安装独立的 Pi Runtime；将生成 .pi-runtime/package-lock.json，后续使用 npm ci --prefix .pi-runtime。');const r=spawnSync(process.platform==='win32'?'npm.cmd':'npm',['install','--prefix',root,'--no-fund','--no-audit'],{stdio:'inherit',shell:process.platform==='win32'});process.exit(r.status??1);
+import {spawnSync} from 'node:child_process';
+import {readFileSync, existsSync} from 'node:fs';
+import {resolve} from 'node:path';
+
+const root = resolve(import.meta.dirname, '..');
+const pinned = readFileSync(resolve(root, '.node-version'), 'utf8').trim();
+if (process.versions.node !== pinned) {
+  console.error(`SETUP_NODE_MISMATCH: use Node ${pinned}; found ${process.versions.node}`);
+  process.exit(1);
+}
+// npm run supplies the JS entrypoint, so Windows needs neither cmd.exe nor shell quoting.
+const npm = process.env.npm_execpath;
+if (!npm || !existsSync(npm)) {
+  console.error('SETUP_NPM_REQUIRED: run npm run setup:pi (or npm ci directly).');
+  process.exit(1);
+}
+console.log('Install the pinned Pi SDK and build tools from the committed package-lock.json. Existing .pi-runtime installations remain separately checked.');
+const result = spawnSync(process.execPath, [npm, 'ci', '--no-audit', '--no-fund'], {cwd: root, stdio: 'inherit', shell: false});
+if (result.error) console.error(result.error.message);
+process.exit(result.status ?? 1);

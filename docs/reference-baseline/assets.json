@@ -1,0 +1,14 @@
+{
+  "note": "Bundled release browser assets are byte-pinned; React dependency modernization remains PR09.",
+  "schemaVersion": 1,
+  "files": [
+    {
+      "sha256": "c7a65157caebd9af7e108f1f1eb8b6e2c8fafb141d0f4c2a4d4dfd851c52ec9e",
+      "path": "apps/web/public/vendor/react-dom.production.min.js"
+    },
+    {
+      "sha256": "de59b0d4504aa0350c13775fec9b78859f3eda83dea21d60dded98bb7866d54a",
+      "path": "apps/web/public/vendor/react.production.min.js"
+    }
+  ]
+}

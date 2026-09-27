@@ -1,3 +1,4 @@
+import type { CreateAgentSessionOptions, ToolDefinition, Skill } from '@earendil-works/pi-coding-agent';
 import type { Role, ModelConfig } from '../domain/types.js';
 export interface SessionSetup {
     cwd: string;
@@ -6,42 +7,28 @@ export interface SessionSetup {
     sessionFile: string | null;
     systemPrompt: string;
     thinking: ModelConfig['thinking'];
-    skills?: {
-        name: string;
-        description: string;
-        filePath: string;
-        baseDir: string;
-        source: string;
-        disableModelInvocation: boolean;
-    }[];
+    skills?: Skill[];
 }
-/** Narrow runtime boundary. Real SDK validation remains a required live acceptance test. */
-export declare function buildSessionOptions(sdk: any, setup: SessionSetup, customTools: any[], modelRuntime: unknown, model: unknown): {
+/** Compile against the pinned SDK; imports stay type-only for dependency-free core startup. */
+export declare function buildSessionOptions(sdk: Pick<typeof import('@earendil-works/pi-coding-agent'), 'SessionManager' | 'SettingsManager' | 'createExtensionRuntime' | 'CURRENT_SESSION_VERSION'>, setup: SessionSetup, customTools: ToolDefinition[], modelRuntime: CreateAgentSessionOptions['modelRuntime'], model: CreateAgentSessionOptions['model']): {
     cwd: string;
     agentDir: string;
-    modelRuntime: unknown;
-    model: unknown;
+    modelRuntime: import("@earendil-works/pi-coding-agent").ModelRuntime | undefined;
+    model: import("@earendil-works/pi-ai").Model<any> | undefined;
     thinkingLevel: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
-    tools: any[];
-    noTools: string;
-    customTools: any[];
-    sessionManager: any;
-    settingsManager: any;
+    tools: string[];
+    noTools: "builtin";
+    customTools: ToolDefinition<import("@earendil-works/pi-ai").TSchema, unknown, any>[];
+    sessionManager: import("@earendil-works/pi-coding-agent").SessionManager;
+    settingsManager: import("@earendil-works/pi-coding-agent").SettingsManager;
     resourceLoader: {
         getExtensions: () => {
             extensions: never[];
             errors: never[];
-            runtime: any;
+            runtime: import("@earendil-works/pi-coding-agent").ExtensionRuntime;
         };
         getSkills: () => {
-            skills: {
-                name: string;
-                description: string;
-                filePath: string;
-                baseDir: string;
-                source: string;
-                disableModelInvocation: boolean;
-            }[];
+            skills: Skill[];
             diagnostics: never[];
         };
         getPrompts: () => {

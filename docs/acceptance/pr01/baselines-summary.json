@@ -1,0 +1,308 @@
+{
+  "description": "Frozen business source with portable test harness overlays; not an unmodified ZIP test result.",
+  "generatedAt": "2026-09-27T17:02:03.165Z",
+  "node": "v24.19.0",
+  "npmEntrypoint": "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+  "outputDirectory": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp",
+  "variants": [
+    {
+      "label": "stable-0.2.3",
+      "version": "0.2.3",
+      "originalSource": "D:\\项目\\pi research\\review\\pi-research-v0.2.3-fixed-skills\\pi-research",
+      "copiedSource": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\stable-0.2.3\\source",
+      "testHarnessOverlays": [
+        {
+          "path": "tests/unit/audit-integrity.test.mjs",
+          "beforeSha256": "ef7f5d933ba56ebc6ce765bc7aec5ea1fcd3404b7c186f03d47dc8d9a16e0e07",
+          "afterSha256": "5b6ec331bc450f5c5804595487a729f2e1be053140a10638568f97b0c4e15a93"
+        },
+        {
+          "path": "tests/unit/core.test.mjs",
+          "beforeSha256": "d22ef94498c9730b7bab553e4b7ef0ab48b059a5605d70081b3b1de6f1df5caf",
+          "afterSha256": "cb57109ccd25d440e9509c18e7624fc4b5fcedc2960bc04594b321817fbd6e70"
+        },
+        {
+          "path": "tests/unit/hardening.test.mjs",
+          "beforeSha256": "598719d16fbd8c3eb0f2516954eefbae878fe8f4e5a44af814b511cb349176c0",
+          "afterSha256": "4fb14db70aa56ad6fee35975258a1873daadc0211b8e36aa662fb262fa8763cc"
+        },
+        {
+          "path": "tests/unit/openresearch-skills.test.mjs",
+          "beforeSha256": "c51a7f90ee5478045b70ec4ad9e1f56cf58701d84645b7d851af0309cac5d46a",
+          "afterSha256": "70c1c6d0b41d3c0f3e5756fc6caaa4917bb7524230c210d2290cf104d9476922"
+        },
+        {
+          "path": "tests/unit/handoff-hardening.test.mjs",
+          "beforeSha256": "22ad40ad7381f0644dc2063e1935ef47da17297ab6384b18cb55785f9840504c",
+          "afterSha256": "5656506eab8d50ab182adb7cfd0962c94a6cd580ca84649272528913fbde7770"
+        }
+      ],
+      "businessSource": {
+        "originalBefore": {
+          "files": 76,
+          "sha256": "a527a7d28619eb18d11be496d61c1784776dd4f7dd09e4d730590118e92fdcdf"
+        },
+        "copyAfterOverlay": {
+          "files": 76,
+          "sha256": "a527a7d28619eb18d11be496d61c1784776dd4f7dd09e4d730590118e92fdcdf"
+        },
+        "originalAfter": {
+          "files": 76,
+          "sha256": "a527a7d28619eb18d11be496d61c1784776dd4f7dd09e4d730590118e92fdcdf"
+        },
+        "copyAfterValidation": {
+          "files": 76,
+          "sha256": "a527a7d28619eb18d11be496d61c1784776dd4f7dd09e4d730590118e92fdcdf"
+        },
+        "unchanged": true
+      },
+      "steps": {
+        "npmCi": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+            "ci",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\stable-0.2.3\\npm-ci.log"
+        },
+        "build": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+            "run",
+            "build"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\stable-0.2.3\\build.log"
+        },
+        "typecheck": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+            "run",
+            "typecheck"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\stable-0.2.3\\typecheck.log"
+        },
+        "tests": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "--test",
+            "--test-concurrency=1",
+            "tests\\unit\\answered-boundary.test.mjs",
+            "tests\\unit\\audit-collaboration.test.mjs",
+            "tests\\unit\\audit-handoff.test.mjs",
+            "tests\\unit\\audit-integrity.test.mjs",
+            "tests\\unit\\audit-recovery.test.mjs",
+            "tests\\unit\\automation-policy.test.mjs",
+            "tests\\unit\\campaign-ui.test.mjs",
+            "tests\\unit\\campaign.test.mjs",
+            "tests\\unit\\collaboration.test.mjs",
+            "tests\\unit\\core.test.mjs",
+            "tests\\unit\\decisions.test.mjs",
+            "tests\\unit\\finishing.test.mjs",
+            "tests\\unit\\handoff-hardening.test.mjs",
+            "tests\\unit\\hardening.test.mjs",
+            "tests\\unit\\heartbeat-regression.test.mjs",
+            "tests\\unit\\lifecycle-regressions.test.mjs",
+            "tests\\unit\\openresearch-connectors.test.mjs",
+            "tests\\unit\\openresearch-hardening.test.mjs",
+            "tests\\unit\\openresearch-integration.test.mjs",
+            "tests\\unit\\openresearch-skills.test.mjs",
+            "tests\\unit\\openresearch-ui.test.mjs",
+            "tests\\unit\\pi.test.mjs",
+            "tests\\unit\\retry-regression.test.mjs",
+            "tests\\unit\\skills-connectors-presence.test.mjs",
+            "tests\\unit\\tools.test.mjs",
+            "tests\\unit\\wakeups.test.mjs",
+            "tests\\unit\\workflow-progress.test.mjs",
+            "tests\\unit\\workflow-ui.test.mjs",
+            "tests\\integration\\audit-context.test.mjs",
+            "tests\\integration\\campaign-demo.test.mjs",
+            "tests\\integration\\campaign-http.test.mjs",
+            "tests\\integration\\cli.test.mjs",
+            "tests\\integration\\handoff-http.test.mjs",
+            "tests\\integration\\http.test.mjs",
+            "tests\\integration\\lifecycle-http.test.mjs",
+            "tests\\integration\\openresearch-cli.test.mjs",
+            "tests\\integration\\openresearch-http.test.mjs",
+            "tests\\integration\\openresearch-worker.test.mjs",
+            "tests\\integration\\runner.test.mjs",
+            "tests\\integration\\wakeup-host.test.mjs"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\stable-0.2.3\\tests.log",
+          "totals": {
+            "tests": 245,
+            "pass": 245,
+            "fail": 0,
+            "skipped": 0
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "label": "experimental-0.3.1",
+      "version": "0.3.1-experimental",
+      "originalSource": "D:\\项目\\pi research\\review\\pi-research-v0.3.1-experimental-skills\\pi-research",
+      "copiedSource": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\experimental-0.3.1\\source",
+      "testHarnessOverlays": [
+        {
+          "path": "tests/unit/audit-integrity.test.mjs",
+          "beforeSha256": "ef7f5d933ba56ebc6ce765bc7aec5ea1fcd3404b7c186f03d47dc8d9a16e0e07",
+          "afterSha256": "5b6ec331bc450f5c5804595487a729f2e1be053140a10638568f97b0c4e15a93"
+        },
+        {
+          "path": "tests/unit/core.test.mjs",
+          "beforeSha256": "d22ef94498c9730b7bab553e4b7ef0ab48b059a5605d70081b3b1de6f1df5caf",
+          "afterSha256": "cb57109ccd25d440e9509c18e7624fc4b5fcedc2960bc04594b321817fbd6e70"
+        },
+        {
+          "path": "tests/unit/hardening.test.mjs",
+          "beforeSha256": "598719d16fbd8c3eb0f2516954eefbae878fe8f4e5a44af814b511cb349176c0",
+          "afterSha256": "4fb14db70aa56ad6fee35975258a1873daadc0211b8e36aa662fb262fa8763cc"
+        },
+        {
+          "path": "tests/unit/openresearch-skills.test.mjs",
+          "beforeSha256": "c51a7f90ee5478045b70ec4ad9e1f56cf58701d84645b7d851af0309cac5d46a",
+          "afterSha256": "70c1c6d0b41d3c0f3e5756fc6caaa4917bb7524230c210d2290cf104d9476922"
+        },
+        {
+          "path": "tests/unit/handoff-hardening.test.mjs",
+          "beforeSha256": "22ad40ad7381f0644dc2063e1935ef47da17297ab6384b18cb55785f9840504c",
+          "afterSha256": "5656506eab8d50ab182adb7cfd0962c94a6cd580ca84649272528913fbde7770"
+        },
+        {
+          "path": "tests/unit/text-evidence.test.mjs",
+          "beforeSha256": "3b548a5c3c403444c0e5f43d729a194fc80275b2ed65bb9f73adbfe8f3dee99c",
+          "afterSha256": "df40ffeb4865b29b05a54bbd64b1074126095101934ca5037d049b06448e18f3"
+        }
+      ],
+      "businessSource": {
+        "originalBefore": {
+          "files": 80,
+          "sha256": "89b402c9464038bed66f9b8d0ae3ebf3368b17967e959a32d2c0ec50641b37c9"
+        },
+        "copyAfterOverlay": {
+          "files": 80,
+          "sha256": "89b402c9464038bed66f9b8d0ae3ebf3368b17967e959a32d2c0ec50641b37c9"
+        },
+        "originalAfter": {
+          "files": 80,
+          "sha256": "89b402c9464038bed66f9b8d0ae3ebf3368b17967e959a32d2c0ec50641b37c9"
+        },
+        "copyAfterValidation": {
+          "files": 80,
+          "sha256": "89b402c9464038bed66f9b8d0ae3ebf3368b17967e959a32d2c0ec50641b37c9"
+        },
+        "unchanged": true
+      },
+      "steps": {
+        "npmCi": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+            "ci",
+            "--no-audit",
+            "--no-fund"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\experimental-0.3.1\\npm-ci.log"
+        },
+        "build": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+            "run",
+            "build"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\experimental-0.3.1\\build.log"
+        },
+        "typecheck": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js",
+            "run",
+            "typecheck"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\experimental-0.3.1\\typecheck.log"
+        },
+        "tests": {
+          "command": [
+            "C:\\Program Files\\nodejs\\node.exe",
+            "--test",
+            "--test-concurrency=1",
+            "tests\\unit\\answered-boundary.test.mjs",
+            "tests\\unit\\audit-collaboration.test.mjs",
+            "tests\\unit\\audit-handoff.test.mjs",
+            "tests\\unit\\audit-integrity.test.mjs",
+            "tests\\unit\\audit-recovery.test.mjs",
+            "tests\\unit\\automation-policy.test.mjs",
+            "tests\\unit\\campaign-ui.test.mjs",
+            "tests\\unit\\campaign.test.mjs",
+            "tests\\unit\\collaboration.test.mjs",
+            "tests\\unit\\core.test.mjs",
+            "tests\\unit\\decisions.test.mjs",
+            "tests\\unit\\finishing.test.mjs",
+            "tests\\unit\\handoff-hardening.test.mjs",
+            "tests\\unit\\hardening.test.mjs",
+            "tests\\unit\\heartbeat-regression.test.mjs",
+            "tests\\unit\\lifecycle-regressions.test.mjs",
+            "tests\\unit\\openresearch-connectors.test.mjs",
+            "tests\\unit\\openresearch-hardening.test.mjs",
+            "tests\\unit\\openresearch-integration.test.mjs",
+            "tests\\unit\\openresearch-skills.test.mjs",
+            "tests\\unit\\openresearch-ui.test.mjs",
+            "tests\\unit\\pi.test.mjs",
+            "tests\\unit\\retry-regression.test.mjs",
+            "tests\\unit\\skills-connectors-presence.test.mjs",
+            "tests\\unit\\text-evidence-ui.test.mjs",
+            "tests\\unit\\text-evidence.test.mjs",
+            "tests\\unit\\tools.test.mjs",
+            "tests\\unit\\wakeups.test.mjs",
+            "tests\\unit\\workflow-progress.test.mjs",
+            "tests\\unit\\workflow-ui.test.mjs",
+            "tests\\integration\\audit-context.test.mjs",
+            "tests\\integration\\campaign-demo.test.mjs",
+            "tests\\integration\\campaign-http.test.mjs",
+            "tests\\integration\\cli.test.mjs",
+            "tests\\integration\\handoff-http.test.mjs",
+            "tests\\integration\\http.test.mjs",
+            "tests\\integration\\lifecycle-http.test.mjs",
+            "tests\\integration\\openresearch-cli.test.mjs",
+            "tests\\integration\\openresearch-http.test.mjs",
+            "tests\\integration\\openresearch-worker.test.mjs",
+            "tests\\integration\\runner.test.mjs",
+            "tests\\integration\\text-evidence-demo.test.mjs",
+            "tests\\integration\\text-evidence-http.test.mjs",
+            "tests\\integration\\wakeup-host.test.mjs"
+          ],
+          "exitCode": 0,
+          "signal": null,
+          "log": "D:\\项目\\pi research\\pi-research\\.validation\\baselines-80Bryp\\experimental-0.3.1\\tests.log",
+          "totals": {
+            "tests": 271,
+            "pass": 271,
+            "fail": 0,
+            "skipped": 0
+          }
+        }
+      },
+      "passed": true
+    }
+  ]
+}

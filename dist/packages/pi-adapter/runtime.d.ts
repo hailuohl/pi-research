@@ -3,9 +3,11 @@ export declare const PI_VERSION = "0.87.1";
 export declare function locatePi(repoRoot: string): {
     base: string;
     version: string;
+    aiVersion: string;
     sdkPath: string;
     aiPath: string;
 } | null;
+export declare function piFailure(error: unknown): string;
 export declare function inspectPi(repoRoot: string, model: ModelConfig): {
     ready: boolean;
     code: string;
