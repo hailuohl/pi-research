@@ -1,0 +1,46 @@
+import { TextEvidenceService } from './text-evidence/service.js';
+import { SkillService } from './skills/service.js';
+import { ConnectorService } from './connectors/service.js';
+import { ChangeProposalService } from './workspace/change-proposals.js';
+import { WakeupService } from './scheduler/wakeups.js';
+import { DecisionService } from './research-workflows/decision-service.js';
+import { CampaignService } from './research-workflows/campaign-service.js';
+import { ReportService } from './publications/reports.js';
+import { LiteratureService } from './literature/service.js';
+import { SessionService } from './pi-adapter/sessions.js';
+import { TeamService } from './collaboration/team-service.js';
+import { Store } from './storage/store.js';
+import { ProjectService } from './workspace/projects.js';
+import { ExperimentService } from './workspace/experiments.js';
+import { ApprovalService } from './policy/approvals.js';
+import { BudgetService } from './policy/budget.js';
+import { EvidenceService } from './evidence/service.js';
+import { RunService } from './runners/service.js';
+export declare class ResearchApp {
+    readonly textEvidence: TextEvidenceService;
+    readonly skills: SkillService;
+    readonly connectors: ConnectorService;
+    readonly changes: ChangeProposalService;
+    readonly wakeups: WakeupService;
+    readonly decisions: DecisionService;
+    readonly campaigns: CampaignService;
+    readonly literature: LiteratureService;
+    readonly reports: ReportService;
+    readonly sessions: SessionService;
+    readonly teams: TeamService;
+    readonly store: Store;
+    readonly projects: ProjectService;
+    readonly experiments: ExperimentService;
+    readonly approvals: ApprovalService;
+    readonly evidence: EvidenceService;
+    readonly runs: RunService;
+    readonly budget: BudgetService;
+    readonly context: {
+        store: Store;
+        dataDir: string;
+        repoRoot: string;
+    };
+    private closed;
+    constructor(dataDir: string, repoRoot: string);
+    close(): void;
+}

@@ -1,0 +1,21 @@
+{
+  "version": "0.2.2",
+  "suite": {
+    "passed": 195,
+    "failed": 0,
+    "skipped": 0
+  },
+  "originalSuite": 171,
+  "addedTests": 24,
+  "node": "22.16.0",
+  "typescript": "5.8.3",
+  "nodeTypesUsed": "25.1.0",
+  "nodeTypesLocked": "24.0.4",
+  "cleanInstall": "blocked: EAI_AGAIN",
+  "browser": "not revalidated in this baseline pass",
+  "livePi": false,
+  "docker": false,
+  "review": "author self-review; no independent reviewer",
+  "changes": "F21-F25 plus source acceptance and UI boundaries",
+  "demo": "4 real trusted-example numerical runs; no LLM"
+}

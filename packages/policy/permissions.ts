@@ -1,0 +1,15 @@
+import { ensure } from '../domain/errors.js';
+import type { Actor, Role } from '../domain/types.js';
+export function userOnly(actor: Actor) { ensure(actor.type === 'user', 'PERMISSION_DENIED', '此操作需要用户明确授权', 403); }
+export function scope(actor: Actor, projectId: string) { ensure(actor.type !== 'agent' || actor.projectId === projectId, 'SCOPE_DENIED', 'Agent 不能访问其他项目', 403); }
+const READ = ['text_evidence_search', 'research_skill_list', 'research_skill_read', 'connector_status', 'project_inspect', 'workspace_list', 'workspace_read', 'evidence_read', 'artifact_read', 'run_inspect', 'run_logs', 'task_inspect', 'task_result_read', 'task_context_read', 'task_progress_report', 'task_result_submit'];
+export const ROLE_TOOLS: Record<Role, string[]> = {
+    coordinator: [...READ, 'workspace_write', 'change_proposal_prepare', 'session_notice_read', 'literature_search', 'literature_discover', 'paper_read', 'artifact_create', 'evidence_register', 'experiment_plan_submit', 'run_prepare', 'run_submit', 'collaboration_plan_submit', 'agent_delegate', 'approval_request', 'campaign_inspect', 'campaign_enroll', 'campaign_decision_submit'],
+    literature: [...READ, 'literature_search', 'literature_discover', 'paper_read', 'artifact_create', 'evidence_register'], designer: [...READ, 'artifact_create', 'experiment_plan_submit'],
+    implementer: [...READ, 'workspace_write', 'artifact_create'], analyst: [...READ, 'artifact_create', 'evidence_register'],
+    reviewer: [...READ], writer: [...READ, 'workspace_write', 'artifact_create']
+};
+export function toolAllowed(actor: Actor, name: string) { ensure(actor.type === 'agent' && !!actor.role && (ROLE_TOOLS[actor.role] ?? []).includes(name), 'TOOL_DENIED', `当前角色无权调用 ${name}`, 403); }
+
+/** An automatic root pass is narrower than the interactive coordinator. */
+export const AUTOMATION_TOOLS = ['research_skill_list', 'research_skill_read', 'connector_status', 'project_inspect', 'evidence_read', 'run_inspect', 'run_logs', 'task_result_read', 'artifact_create', 'evidence_register', 'campaign_inspect', 'campaign_decision_submit'];

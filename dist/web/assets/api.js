@@ -1,0 +1,44 @@
+let token = '';
+try {
+    const fromHash = new URLSearchParams(location.hash.slice(1)).get('token');
+    token = fromHash ?? sessionStorage.getItem('pi-research-token') ?? '';
+    if (fromHash) {
+        sessionStorage.setItem('pi-research-token', fromHash);
+        history.replaceState(null, '', location.pathname + location.search);
+    }
+}
+catch { }
+export function setToken(value) { token = value.trim(); sessionStorage.setItem('pi-research-token', token); }
+export function hasToken() { return !!token; }
+export class ApiError extends Error {
+    constructor(code, message, status) {
+        super(message);
+        this.code = code;
+        this.status = status;
+    }
+}
+export async function api(path, body, method = 'POST') {
+    const response = await fetch('/api' + path, { method: body === undefined ? 'GET' : method, headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(22000) });
+    const data = await response.json();
+    if (!response.ok)
+        throw new ApiError(data.error?.code ?? 'HTTP_ERROR', data.error?.message ?? `HTTP ${response.status}`, response.status);
+    return data;
+}
+export async function artifactText(id) {
+    const r = await fetch(`/api/artifacts/${encodeURIComponent(id)}/content`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok)
+        throw new Error('无法读取产物');
+    return r.text();
+}
+export async function downloadArtifact(id, name) {
+    const r = await fetch(`/api/artifacts/${encodeURIComponent(id)}/content`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok)
+        throw new Error('下载失败');
+    const url = URL.createObjectURL(await r.blob()), a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

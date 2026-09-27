@@ -1,0 +1,28 @@
+{
+  "actualProcesses": true,
+  "iterations": 20,
+  "cancelRequestsPerRun": 150,
+  "states": [
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled",
+    "cancelled"
+  ],
+  "passed": true
+}

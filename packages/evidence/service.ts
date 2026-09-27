@@ -1,0 +1,81 @@
+import {captureAcceptance,assertAcceptanceCurrent} from './acceptance.js';
+import {assertProjectWritable} from '../policy/lifecycle.js';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { AppContext } from '../domain/context.js';
+import type { Actor, Artifact, Evidence, Claim, Task, Row } from '../domain/types.js';
+import { scope, userOnly } from '../policy/permissions.js';
+import { digest } from '../storage/store.js';
+import { ensure } from '../domain/errors.js';
+import { text, integer, strings } from '../contracts/validation.js';
+export class EvidenceService {
+    constructor(private c: AppContext) { }
+    put(projectId: string, title: string, bytes: Buffer, mediaType = 'text/plain', origin = 'user', extra: Partial<Artifact> = {}) {
+        this.c.store.get('project', projectId);
+        text(title, 'title', 200);
+        ensure(bytes.length <= 32 * 1024 * 1024, 'ARTIFACT_TOO_LARGE', '产物超过 32 MiB', 413);
+        const hash = digest(bytes), dir = join(this.c.dataDir, 'artifacts');
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
+        const path = join(dir, hash);
+        if (!existsSync(path))
+            writeFileSync(path, bytes, { mode: 0o444, flag: 'wx' });
+        else
+            ensure(digest(readFileSync(path)) === hash, 'ARTIFACT_CORRUPTED', '产物库校验失败', 500);
+        return this.c.store.create<Artifact>('artifact', projectId, { ...extra, title, digest: hash, size: bytes.length, path, mediaType, origin });
+    }
+    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); const bytes = readFileSync(a.path); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type: Evidence['type'] = 'artifact', runId?: string) {
+        scope(actor, projectId);
+        const a = this.c.store.get<Artifact>('artifact', artifactId, projectId);
+        const { bytes } = this.read(actor, a.id);
+        ensure(bytes.length <= 2 * 1024 * 1024 && !bytes.includes(0), 'EVIDENCE_TEXT_REQUIRED', '需要可定位的文本产物', 400);
+        const content = bytes.toString('utf8');
+        integer(start, 'start', 0, content.length);
+        integer(end, 'end', start + 1, content.length);
+        if (runId)
+            this.c.store.get('run', runId, projectId);
+        return this.c.store.create<Evidence>('evidence', projectId, { type, artifactId: a.id, digest: a.digest, locator: { start, end }, quote: content.slice(start, end), description: text(description, 'description', 2000), ...(runId ? { runId } : {}) });
+    }
+    verify(projectId: string, evidenceId: string) { const e = this.c.store.get<Evidence>('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); return e; }
+    proposeClaim(actor: Actor, projectId: string, statement: string, evidenceIds: string[], limitations: string[] = [], taskId?: string) {
+        scope(actor,projectId);ensure(evidenceIds.length>0,'EVIDENCE_REQUIRED','结论候选必须引用证据',400);
+        evidenceIds.forEach(id=>this.verify(projectId,id));
+        const task=taskId ? this.c.store.get<Task>('task',taskId,projectId) : undefined;
+        return this.c.store.create<Claim>('claim',projectId,{statement:text(statement,'statement',10000),evidenceIds:strings(evidenceIds,'evidenceIds'),
+            limitations:strings(limitations,'limitations'),status:'proposal',validity:'current',
+            ...(task?{taskId:task.id,sourceAttemptId:task.attemptId,sourceResultDigest:task.result ? digest(task.result):undefined}:{})});
+    }
+    /** File hashes establish integrity; acceptance bindings establish applicability. */
+    assertClaimCurrent(claim: Row<Claim>) {
+        ensure(claim.validity!=='stale','CLAIM_STALE','结论依赖的前提或审查已撤销，不能作为当前结论使用');
+        const sourceTasks=new Set(claim.taskId?[claim.taskId]:[]);
+        claim.evidenceIds.forEach(id=>{const e=this.verify(claim.projectId!,id);const a=this.c.store.get<Artifact>('artifact',e.artifactId,claim.projectId!);if(a.taskId)sourceTasks.add(a.taskId);});
+        const refs=claim.sourceAcceptanceIds ?? (claim.sourceAcceptanceId?[claim.sourceAcceptanceId]:[]);
+        const bound=new Set(refs.map(id=>assertAcceptanceCurrent(this.c.store,claim.projectId!,id).taskId));
+        ensure([...sourceTasks].every(id=>bound.has(id)),'CLAIM_REAPPROVAL_REQUIRED','历史任务结论缺少当前版本采纳依据，请重新核验后采纳');
+        return claim;
+    }
+    decideClaim(actor: Actor, id: string, version: number, status: Claim['status']) {
+        userOnly(actor);
+        return this.c.store.transaction(()=>{
+            const c=this.c.store.get<Claim>('claim',id);scope(actor,c.projectId!);assertProjectWritable(this.c.store,c.projectId!);
+            ensure(['accepted','rejected','disputed'].includes(status),'INVALID_INPUT','结论状态无效',400);
+            const taskIds=new Set(c.taskId?[c.taskId]:[]);
+            c.evidenceIds.forEach(id=>{const e=this.verify(c.projectId!,id);const a=this.c.store.get<Artifact>('artifact',e.artifactId,c.projectId!);if(a.taskId)taskIds.add(a.taskId);});
+            const refs:string[]=[];
+            if(status==='accepted') {
+                ensure(c.validity!=='stale','CLAIM_STALE','旧前提已撤销，需要新任务结果或显式重新研究，不能直接重置历史结论');
+                if(c.taskId) {
+                    const t=this.c.store.get<Task>('task',c.taskId,c.projectId!);
+                    ensure((!c.sourceAttemptId || c.sourceAttemptId===t.attemptId) && (!c.sourceResultDigest || c.sourceResultDigest===digest(t.result)) &&
+                        t.result?.claims.some(p=>p.statement===c.statement && digest(p.evidenceIds)===digest(c.evidenceIds)),
+                        'CLAIM_STALE','结论不属于当前任务提交版本');
+                }
+                for(const tid of taskIds) refs.push(captureAcceptance(this.c.store,c.projectId!,tid).id);
+            }
+            const sourceAcceptanceId=c.taskId && status==='accepted' ? refs.find(ref=>this.c.store.get('acceptance-record',ref).taskId===c.taskId):c.sourceAcceptanceId;
+            const next=this.c.store.update<Claim>('claim',id,version,{status,...(status==='accepted'?{sourceAcceptanceId,sourceAcceptanceIds:refs,validity:'current'}:{})});
+            this.c.store.event(c.projectId,'claim.decided',{claimId:id,status,sourceAcceptanceIds:refs});return next;
+        });
+    }
+}

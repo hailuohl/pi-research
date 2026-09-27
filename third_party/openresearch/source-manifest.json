@@ -1,0 +1,121 @@
+{
+  "repository": "alphaXiv/OpenResearch",
+  "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+  "method": "GitHub connector source reads; text adapted, protocol logic ported; not a full repository fork",
+  "skillSources": [
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "SKILL.md",
+      "blob": "904b26802cf62d7ba84fa99f3c2c804026cd9e46"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-create/SKILL.md",
+      "blob": "6d502f794f82a124cdd93723e2676d8cf0f8861b"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-experiment-tree/SKILL.md",
+      "blob": "e888fc9d179ddfae87c4a0732224cf354a9c5430"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-git/SKILL.md",
+      "blob": "13af3bae031a9434c111c9c5ef77bbb8c80cc3bf"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-agent-delegation/SKILL.md",
+      "blob": "2cb9938569dca476c99c108df491835eadc19b65"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-compute/SKILL.md",
+      "blob": "60566d92cd5e86f1d6684d731444af512531ea0c"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-instances/SKILL.md",
+      "blob": "80bf26dc1634a4809fae9ee3d0c5598951258026"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-evidence/SKILL.md",
+      "blob": "2b15de716916abceb5cbf6a40e2cff75abc37cb1"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-reports/SKILL.md",
+      "blob": "313d3ca61372e5f2e101cac6e78828393d03ad87"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-figures/SKILL.md",
+      "blob": "611c11b12c395789d3aa0d2c015cf4ce0594a345"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-paper/SKILL.md",
+      "blob": "46fdc3e4207e1ca9c3c8ec51649bc1b242c6ecaa"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-customize/SKILL.md",
+      "blob": "51d608098dc24df19518bea4f6fc71963a26c2b4"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-feedback/SKILL.md",
+      "blob": "82a729e681bb9fe361589aa953d92769b698196f"
+    },
+    {
+      "repository": "alphaXiv/OpenResearch",
+      "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+      "path": "agent-skills/orx-lit-review/SKILL.md",
+      "blob": "a64ea8d7f3ec04b4f325979951ba072bd74db3f8"
+    }
+  ],
+  "connectorSource": {
+    "path": "src/client.rs",
+    "blob": "f2c3e9dba3009c762c6d80c30df915308e8014d7",
+    "readRanges": [
+      [
+        1,
+        230
+      ],
+      [
+        320,
+        900
+      ],
+      [
+        900,
+        1440
+      ]
+    ],
+    "port": "Literature HTTP routes, normalized result types, dates, abstract reconstruction, source ID routing. Custom bounded transport and restricted XML parser, no hosted-account APIs."
+  },
+  "registrySource": {
+    "path": "src/local/agent_skills.rs",
+    "blob": "b0ae24430c32aed413537a7890b24cd957162948",
+    "readRanges": [
+      [
+        1,
+        250
+      ]
+    ]
+  },
+  "notFetched": "The complete original backend implementations and figure assets/subreferences were not acquired or ported. Local compatibility references explicitly say so."
+}

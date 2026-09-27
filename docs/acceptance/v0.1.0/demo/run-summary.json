@@ -1,0 +1,49 @@
+{
+  "version": "0.1.0",
+  "aiUsed": false,
+  "projectId": "5be359a2-bec7-43d5-9886-cef2ab759bc3",
+  "sessionId": "3146bc17-3bce-4cc3-98c3-70182f3c3ce6",
+  "runIds": [
+    "58ad3156-fbda-48f2-b5e1-6f82481aa5db",
+    "4402348e-79d6-4935-a220-d83f1f38c6f8",
+    "d3c6317a-525e-4403-bab4-f267d15950be",
+    "bade3d7a-68f1-4700-b2f9-956330ab7f19"
+  ],
+  "retainedParentId": "cef21354-7f67-4007-82cd-ed75f68c2c61",
+  "retainedChildId": "925ea474-127a-4143-8db6-97b550c76f3d",
+  "reportId": "6a69ccee-69b2-4f63-b43f-947e72774f09",
+  "metrics": [
+    {
+      "title": "基线 · 一阶模型",
+      "runId": "58ad3156-fbda-48f2-b5e1-6f82481aa5db",
+      "mse": 0.04350140148425378,
+      "r2": 0.9622735588409816,
+      "train_mse": 0.044989798949094585
+    },
+    {
+      "title": "候选 A · 二阶模型",
+      "runId": "4402348e-79d6-4935-a220-d83f1f38c6f8",
+      "mse": 0.000446210591122142,
+      "r2": 0.9996130253960532,
+      "train_mse": 0.00045146486373746783
+    },
+    {
+      "title": "候选 B · 三阶模型",
+      "runId": "d3c6317a-525e-4403-bab4-f267d15950be",
+      "mse": 0.00044694689491089033,
+      "r2": 0.9996123868391191,
+      "train_mse": 0.0004513395510615139
+    },
+    {
+      "title": "保留候选的下一轮 · 岭参数变体",
+      "runId": "bade3d7a-68f1-4700-b2f9-956330ab7f19",
+      "mse": 0.00044494215648380506,
+      "r2": 0.9996141254416405,
+      "train_mse": 0.00045152446792745733
+    }
+  ],
+  "limitations": "只验证应用工作流和真实本地运算；未调用 Pi、未执行 DFT、未验证论文结论。",
+  "environmentDataDir": "/mnt/data/pi-research-delivery-demo",
+  "importableDatabaseIncluded": false,
+  "note": "这是本次真实运行的审计记录；使用CLI demo在自己的数据目录重建可交互项目。"
+}

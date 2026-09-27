@@ -1,0 +1,36 @@
+{
+  "version": "0.3.0-experimental",
+  "projectId": "f10a96ed-fc0e-403d-9fa9-70984c8913d7",
+  "aiUsed": false,
+  "documents": 8,
+  "runsCreated": 0,
+  "results": [
+    {
+      "query": "adsorption protocol",
+      "searchId": "5c7091bab33f3fb6ccf1c34baf83ebfcb21aa35a1c96f5094826b901e80351ea",
+      "groups": [
+        "positive-duplicate",
+        "method",
+        "negative-control"
+      ],
+      "quotesVerified": true
+    },
+    {
+      "query": "吸附构型",
+      "searchId": "b980baa3478f268a020e3a4c804ff74ceceb2bdf5ee7624737e75ecdc5573704",
+      "groups": [
+        "chinese"
+      ],
+      "quotesVerified": true
+    },
+    {
+      "query": "calibration constant",
+      "searchId": "92e125ef09bcdf1be689dbfb0f579670e0ef6c1465f79b14fdd640efd6d2e437",
+      "groups": [
+        "calibration"
+      ],
+      "quotesVerified": true
+    }
+  ],
+  "disclosure": "Authored deterministic fixture, not real papers, not material-performance claims, and not an external benchmark."
+}

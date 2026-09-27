@@ -1,0 +1,30 @@
+/** Trusted numerical fixture. Synthetic data; NOT a materials/DFT simulation. */
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const base=dirname(fileURLToPath(import.meta.url));
+const config=JSON.parse(readFileSync(join(base,'config.json'),'utf8'));
+const out=process.env.PI_OUTPUT_DIR;
+if(!out) throw new Error('PI_OUTPUT_DIR is required');
+mkdirSync(out,{recursive:true});
+if(config.sleepMs) await new Promise(r=>setTimeout(r,config.sleepMs));
+const degree=config.polynomialDegree;
+const truth=x=>0.6+1.8*x-0.7*x*x;
+const samples=Array.from({length:240},(_,i)=>{const x=-1+2*i/239;return {x,y:truth(x)+0.03*Math.sin(i*1.7183)};});
+const train=samples.filter((_,i)=>i%4!==0),test=samples.filter((_,i)=>i%4===0);
+const p=degree+1;
+const a=Array.from({length:p},(_,r)=>Array.from({length:p+1},(_,c)=>c===p?train.reduce((s,d)=>s+d.y*d.x**r,0):train.reduce((s,d)=>s+d.x**(r+c),0)+(r===c?config.ridge:0)));
+for(let j=0;j<p;j++){let pivot=j;for(let k=j+1;k<p;k++)if(Math.abs(a[k][j])>Math.abs(a[pivot][j]))pivot=k;[a[j],a[pivot]]=[a[pivot],a[j]];const d=a[j][j];if(Math.abs(d)<1e-14)throw new Error('Singular design');for(let c=j;c<=p;c++)a[j][c]/=d;for(let r=0;r<p;r++)if(r!==j){const factor=a[r][j];for(let c=j;c<=p;c++)a[r][c]-=factor*a[j][c];}}
+const weights=a.map(r=>r[p]);const predict=x=>weights.reduce((s,w,i)=>s+w*x**i,0);
+const mse=test.reduce((s,d)=>s+(predict(d.x)-d.y)**2,0)/test.length;
+const mean=test.reduce((s,d)=>s+d.y,0)/test.length;
+const variance=test.reduce((s,d)=>s+(d.y-mean)**2,0)/test.length;
+const metrics={mse,r2:1-mse/variance,train_mse:train.reduce((s,d)=>s+(predict(d.x)-d.y)**2,0)/train.length};
+console.log('Pi Research | actual local numerical experiment');
+console.log('Synthetic quadratic dataset v1; deterministic 180/60 split');
+console.log('Frozen configuration:',JSON.stringify(config));
+console.log('Fitted coefficients:',JSON.stringify(weights));
+console.log('Measured metrics:',JSON.stringify(metrics));
+if(!config.omitMetrics)writeFileSync(join(out,'metrics.json'),JSON.stringify(metrics,null,2));
+writeFileSync(join(out,'predictions.csv'),'x,observed,predicted\n'+test.map(d=>`${d.x},${d.y},${predict(d.x)}`).join('\n'));
+writeFileSync(join(out,'model.json'),JSON.stringify({weights,config,trainCount:train.length,testCount:test.length},null,2));

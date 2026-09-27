@@ -1,0 +1,27 @@
+{
+  "name": "pi-research",
+  "version": "0.3.1-experimental",
+  "private": true,
+  "type": "module",
+  "description": "Local-first Pi research workbench with auditable multi-agent orchestration",
+  "engines": {
+    "node": ">=22.16.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node dist/apps/server/index.js",
+    "dev": "npm run build && npm start",
+    "test": "npm run build && node --test --test-concurrency=1 tests/unit/*.test.mjs tests/integration/*.test.mjs",
+    "test:core": "node --test --test-concurrency=1 tests/unit/*.test.mjs tests/integration/*.test.mjs",
+    "demo": "node dist/apps/cli/index.js demo",
+    "doctor": "node dist/apps/cli/index.js doctor",
+    "setup:pi": "node scripts/setup-pi.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit",
+    "demo:campaign": "node dist/apps/cli/index.js demo-campaign",
+    "test:upgrade": "node scripts/verify-legacy-upgrade.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "24.0.4",
+    "typescript": "5.8.3"
+  }
+}

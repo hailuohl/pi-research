@@ -1,0 +1,275 @@
+import { api } from './api.js';
+import { short, label, number } from './models.js';
+import { Badge, Empty, Modal, SectionTitle } from './ui.js';
+const candidateExample = JSON.stringify([{ title: '新的受控候选', hypothesis: '在固定协议下比较，不预设结论', config: { polynomialDegree: 2, ridge: 0.000001 } }], null, 2);
+export function WakeupPanel({ data, perform, busy, onSession, sessionId }) {
+    const items = data.wakeups.filter(w => !sessionId || w.rootSessionId === sessionId);
+    if (!items.length)
+        return null;
+    return React.createElement("section", { className: "wakeup-panel", "aria-label": "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5" },
+        React.createElement("h2", null, "\u7ED3\u679C\u901A\u77E5\u4E0E\u4E3B\u4F1A\u8BDD\u5206\u6790"),
+        React.createElement("p", { className: "muted small" }, "\u901A\u77E5\u5DF2\u4FDD\u5B58\u5230\u6570\u636E\u5E93\u3002\u4EC5\u5728\u6388\u6743\u3001\u989D\u5EA6\u548C Pi \u914D\u7F6E\u5747\u6709\u6548\u65F6\u8C03\u7528\u6A21\u578B\uFF1B\u6682\u505C\u6216\u53D6\u6D88\u8FD9\u91CC\u7684\u5206\u6790\u4E0D\u4F1A\u53D6\u6D88 Run\u3002"),
+        items.map(w => {
+            const budget = data.budgets.find(b => b.campaignId === w.ownerId || b.teamId === w.ownerId);
+            return React.createElement("article", { className: "wakeup-row", key: w.id },
+                React.createElement("div", null,
+                    React.createElement("strong", null, w.sourceKind === 'team' ? '协作成果综合' : '实验结果分析'),
+                    " ",
+                    React.createElement(Badge, { value: w.state }),
+                    React.createElement("p", { className: "small muted" },
+                        w.automatic ? '已授权自动分析' : '仅手动请求',
+                        " \u00B7 \u5DF2\u5C1D\u8BD5 ",
+                        w.attempts,
+                        "/",
+                        w.maxAttempts,
+                        " \u00B7 ",
+                        short(w.sourceId)),
+                    w.blockReason || w.error ? React.createElement("p", { className: "notice-inline", role: "status" }, w.blockReason || w.error) : null,
+                    budget ? React.createElement("p", { className: "small muted" },
+                        "\u5C1D\u8BD5\u989D\u5EA6\uFF1A\u5DF2\u7528 ",
+                        budget.used,
+                        " / \u9884\u7559 ",
+                        budget.reserved,
+                        " / \u672A\u77E5 ",
+                        budget.unknown,
+                        " / \u53EF\u7528 ",
+                        budget.available,
+                        "\uFF1B\u4E0D\u662F\u8D27\u5E01\u8D26\u5355") : null),
+                React.createElement("div", { className: "actions" },
+                    sessionId === w.rootSessionId ? null : React.createElement("button", { className: "secondary compact", onClick: () => onSession(w.rootSessionId) }, "\u67E5\u770B\u4E3B\u4F1A\u8BDD"),
+                    w.state === 'pending' ? React.createElement("button", { className: "secondary compact", disabled: busy || w.requested, onClick: () => perform(() => api(`/wakeups/${w.id}/request`, {}), '请求已保存；就绪后执行') }, w.requested ? '已请求分析' : '请求分析') : null,
+                    ['pending', 'queued', 'running'].includes(w.state) ? React.createElement("button", { className: "text-button", disabled: busy, onClick: () => perform(() => api(`/wakeups/${w.id}/cancel`, {}), '已取消此分析，不影响实验') }, "\u53D6\u6D88\u5206\u6790") : null,
+                    ['failed', 'cancelled'].includes(w.state) && w.attempts < w.maxAttempts ? React.createElement("button", { className: "secondary compact", disabled: busy, onClick: () => { if (confirm('将增加一次模型尝试；之前未知的用量不会自动释放。继续？'))
+                            perform(() => api(`/wakeups/${w.id}/retry`, {})); } }, "\u663E\u5F0F\u91CD\u8BD5") : null));
+        }));
+}
+export class CampaignView extends React.Component {
+    constructor() {
+        super(...arguments);
+        this.state = { selected: '', create: false, decision: false, action: 'refill' };
+    }
+    choose() { return this.props.data.campaigns.find(c => c.id === this.state.selected) ?? this.props.data.campaigns[0]; }
+    approve(id) { const a = this.props.data.approvals.find(a => a.id === id); if (!a)
+        throw new Error('批准记录不存在，请刷新'); return api(`/approvals/${id}/decide`, { expectedVersion: a.version, approved: true }); }
+    createModal() {
+        const { data, busy, perform } = this.props;
+        return React.createElement(Modal, { title: "\u5EFA\u7ACB\u6301\u7EED\u7814\u7A76\u6D3B\u52A8", wide: true, busy: busy, onClose: () => this.setState({ create: false }), submitLabel: "\u4FDD\u5B58\u6D3B\u52A8\u8349\u6848", onSubmit: fd => perform(async () => {
+                const c = await api('/campaigns', { projectId: data.project.id, goal: fd.get('goal'), rootSessionId: fd.get('session'), baselineExperimentId: fd.get('baseline'), primaryMetric: fd.get('metric') || undefined, autoAnalyze: fd.get('automatic') === 'on', limits: { maxRounds: Number(fd.get('rounds')), maxAnalysisAttempts: Number(fd.get('attempts')) } });
+                this.setState({ create: false, selected: c.id });
+            }) },
+            React.createElement("label", null,
+                "\u7814\u7A76\u76EE\u6807",
+                React.createElement("textarea", { name: "goal", required: true, rows: 3, maxLength: 8000 })),
+            React.createElement("label", null,
+                "\u4E3B\u534F\u8C03\u4F1A\u8BDD",
+                React.createElement("select", { name: "session", required: true }, data.sessions.filter(s => s.role === 'coordinator' && s.state !== 'archived').map(s => React.createElement("option", { key: s.id, value: s.id }, s.title)))),
+            React.createElement("label", null,
+                "\u57FA\u7EBF\u5B9E\u9A8C",
+                React.createElement("select", { name: "baseline", required: true }, data.experiments.filter(e => e.lifecycle !== 'archived').map(e => React.createElement("option", { key: e.id, value: e.id }, e.title)))),
+            React.createElement("label", null,
+                "\u4E3B\u6307\u6807\u540D\u79F0",
+                React.createElement("input", { name: "metric", placeholder: "\u7559\u7A7A\u4F7F\u7528\u5951\u7EA6\u7B2C\u4E00\u9879\u6307\u6807", maxLength: 80 })),
+            React.createElement("div", { className: "form-columns" },
+                React.createElement("label", null,
+                    "\u6700\u591A\u8F6E\u6B21",
+                    React.createElement("input", { name: "rounds", type: "number", min: 1, max: 20, defaultValue: 4, required: true })),
+                React.createElement("label", null,
+                    "\u6A21\u578B\u5206\u6790\u5C1D\u8BD5\u989D\u5EA6",
+                    React.createElement("input", { name: "attempts", type: "number", min: 0, max: 100, defaultValue: 12, required: true }))),
+            React.createElement("label", { className: "check-label" },
+                React.createElement("input", { type: "checkbox", name: "automatic" }),
+                "\u7ED3\u679C\u5230\u8FBE\u540E\u81EA\u52A8\u5524\u9192\u4E3B Pi\uFF08\u53EF\u80FD\u4EA7\u751F\u6A21\u578B\u8D39\u7528\uFF09"),
+            React.createElement("p", { className: "small muted" }, "\u6D3B\u52A8\u8349\u6848\u9700\u8981\u6279\u51C6\u540E\u542F\u52A8\u3002\u5BA1\u6279\u7ED1\u5B9A\u5F53\u524D\u4E3B\u4F1A\u8BDD\u6A21\u578B\uFF1B\u6B63\u5F0F\u8BA1\u7B97\u548C\u6BCF\u4E2A\u7814\u7A76\u51B3\u5B9A\u4ECD\u9700\u5355\u72EC\u6279\u51C6\u3002\u5173\u95ED\u81EA\u52A8\u5206\u6790\u65F6\uFF0C\u4E5F\u53EF\u624B\u52A8\u4F7F\u7528\u6240\u6709\u72B6\u6001\u4E0E\u51B3\u7B56\u529F\u80FD\u3002"));
+    }
+    decisionModal(c) {
+        const { data, busy, perform } = this.props;
+        const observations = data.observations.filter(o => o.campaignId === c.id && o.roundId === c.currentRoundId);
+        return React.createElement(Modal, { title: "\u63D0\u4EA4\u6709\u8BC1\u636E\u7684\u7814\u7A76\u51B3\u5B9A", wide: true, busy: busy, onClose: () => this.setState({ decision: false }), submitLabel: "\u4FDD\u5B58\u51B3\u5B9A\u63D0\u6848", onSubmit: fd => perform(async () => {
+                const action = String(fd.get('action'));
+                await api(`/campaigns/${c.id}/decisions`, { expectedVersion: c.version, action, reason: fd.get('reason'), observationIds: fd.getAll('observations'), ...(action === 'promote' ? { selectedRunId: fd.get('selectedRun') } : {}), candidates: ['refill', 'promote'].includes(action) ? JSON.parse(String(fd.get('candidates'))) : [] });
+                this.setState({ decision: false });
+            }, '决定已保存，尚未应用') },
+            React.createElement("label", null,
+                "\u51B3\u5B9A\u7C7B\u578B",
+                React.createElement("select", { name: "action", value: this.state.action, onChange: (e) => this.setState({ action: e.target.value }) },
+                    React.createElement("option", { value: "repair" }, "Repair \u00B7 \u539F\u8282\u70B9\u65E0\u7ED3\u679C\u4FEE\u590D"),
+                    React.createElement("option", { value: "refill" }, "Refill \u00B7 \u540C\u4E00\u7236\u8282\u70B9\u8865\u5145\u5019\u9009"),
+                    React.createElement("option", { value: "promote" }, "Promote \u00B7 \u4FDD\u7559\u7ED3\u679C\u5E76\u521B\u5EFA\u4E0B\u4E00\u8F6E"),
+                    React.createElement("option", { value: "stop" }, "Stop \u00B7 \u7ED3\u675F\u5F53\u524D\u7814\u7A76"))),
+            React.createElement("fieldset", { className: "observation-choices" },
+                React.createElement("legend", null, "\u5F15\u7528\u5B9E\u9645\u89C2\u6D4B\uFF08\u81F3\u5C11\u4E00\u9879\uFF09"),
+                observations.map(o => React.createElement("label", { className: "check-label", key: o.id },
+                    React.createElement("input", { type: "checkbox", name: "observations", value: o.id, defaultChecked: o.status === 'pending' }),
+                    data.experiments.find(e => e.id === o.experimentId)?.title ?? short(o.runId),
+                    " \u00B7 ",
+                    label(o.validation),
+                    " \u00B7 ",
+                    label(o.status)))),
+            React.createElement("label", null,
+                "\u7406\u7531\u3001\u8BC1\u636E\u53CA\u9650\u5236",
+                React.createElement("textarea", { name: "reason", required: true, maxLength: 8000, rows: 3 })),
+            this.state.action === 'promote' ? React.createElement("label", null,
+                "\u4F5C\u4E3A\u4E0B\u4E00\u8F6E\u7236\u8282\u70B9\u7684\u5DF2\u6D4B\u91CF Run",
+                React.createElement("select", { name: "selectedRun", required: true }, observations.filter(o => o.validation === 'verified').map(o => React.createElement("option", { key: o.id, value: o.runId },
+                    data.experiments.find(e => e.id === o.experimentId)?.title,
+                    " \u00B7 ",
+                    c.primaryMetric,
+                    "=",
+                    number(o.metrics[c.primaryMetric]))))) : null,
+            ['refill', 'promote'].includes(this.state.action) ? React.createElement("label", null,
+                "\u5019\u9009\u914D\u7F6E JSON\uFF08Promote \u53EF\u586B []\uFF0C\u968F\u540E\u624B\u52A8\u767B\u8BB0\u5019\u9009\uFF09",
+                React.createElement("textarea", { name: "candidates", className: "code-input", rows: 8, defaultValue: candidateExample, required: true })) : null,
+            React.createElement("p", { className: "small muted" }, "\u5FC5\u9700\u5019\u9009\u5C1A\u672A\u5B8C\u6210\u65F6\uFF0C\u670D\u52A1\u7AEF\u62D2\u7EDD Promote\u3002Repair \u53EA\u6388\u6743\u4E00\u6B21\u65E0\u7ED3\u679C\u8282\u70B9\u4FEE\u590D\uFF1B\u5B83\u4E0D\u4F1A\u81EA\u52A8\u4FEE\u6539\u4EE3\u7801\u6216\u91CD\u8DD1\u3002\u6279\u51C6\u7ED1\u5B9A\u5F53\u524D\u8F93\u5165\u7248\u672C\u3002"));
+    }
+    decisionCard(d) {
+        const { data, perform, busy } = this.props;
+        const a = data.approvals.find(a => a.id === d.approvalId);
+        return React.createElement("article", { className: "decision-row", key: d.id },
+            React.createElement("div", { className: "actions" },
+                React.createElement("strong", null,
+                    d.action.toUpperCase(),
+                    " \u00B7 ",
+                    label(d.action)),
+                React.createElement(Badge, { value: d.status }),
+                a ? React.createElement(Badge, { value: a.status }) : null),
+            React.createElement("p", { className: "prose-text" }, d.reason),
+            React.createElement("p", { className: "small muted" },
+                "\u5F15\u7528 ",
+                d.observationIds.length,
+                " \u9879\u89C2\u6D4B \u00B7 \u65B0\u5019\u9009 ",
+                d.candidates.length,
+                " \u4E2A \u00B7 ",
+                short(d.decisionDigest)),
+            d.candidates.length ? React.createElement("details", null,
+                React.createElement("summary", null, "\u67E5\u770B\u5019\u9009\u914D\u7F6E\u548C\u4FEE\u6539\u8303\u56F4"),
+                React.createElement("pre", null, JSON.stringify(d.candidates, null, 2))) : null,
+            d.status === 'proposed' ? React.createElement("div", { className: "actions" },
+                a?.status === 'pending' ? React.createElement("button", { className: "secondary compact", disabled: busy, onClick: () => perform(() => this.approve(a.id), '已批准此版本，尚未应用') }, "\u6279\u51C6\u6B64\u51B3\u5B9A") : null,
+                React.createElement("button", { className: "primary compact", disabled: busy || a?.status !== 'approved', onClick: () => perform(() => api(`/campaign-decisions/${d.id}/apply`, { expectedVersion: d.version }), '决定已应用；新的正式 Run 仍须单独批准') }, "\u5E94\u7528\u5DF2\u6279\u51C6\u51B3\u5B9A")) : null);
+    }
+    render() {
+        const { data, perform, busy, onExperiment, onSession } = this.props, c = this.choose();
+        const members = data.members.filter(m => m.campaignId === c?.id), obs = data.observations.filter(o => o.campaignId === c?.id);
+        const approval = data.approvals.find(a => a.id === c?.approvalId);
+        const budget = data.budgets.find(b => b.campaignId === c?.id);
+        const available = c ? data.intents.filter(i => !members.some(m => m.intentId === i.id) && data.experiments.some(e => e.id === i.experimentId && e.contractDigest === c.contractDigest && (e.id === c.focusExperimentId || e.parentId === c.focusExperimentId))) : [];
+        return React.createElement("div", { className: "campaign-page" },
+            React.createElement(SectionTitle, { title: "\u7814\u7A76\u6D3B\u52A8", sub: "\u6301\u4E45\u5316\u8F6E\u6B21\u3001\u771F\u5B9E\u89C2\u6D4B\u548C\u6709\u754C\u51B3\u7B56\uFF1B\u4E0D\u662F\u65E0\u9650\u8FD0\u884C\u7684\u804A\u5929\u3002" },
+                React.createElement("button", { className: "primary", disabled: busy || !data.experiments.length || !data.sessions.some(s => s.role === 'coordinator' && s.state !== 'archived'), onClick: () => this.setState({ create: true }) }, "\u65B0\u5EFA\u7814\u7A76\u6D3B\u52A8")),
+            !c ? React.createElement(Empty, { title: "\u5C1A\u672A\u5EFA\u7ACB\u7814\u7A76\u6D3B\u52A8" }, "\u5148\u521B\u5EFA\u4E3B\u4F1A\u8BDD\u4E0E\u57FA\u7EBF\u5B9E\u9A8C\uFF0C\u518D\u5EFA\u7ACB\u6D3B\u52A8\u3002\u6B63\u5F0F\u8BA1\u7B97\u59CB\u7EC8\u5355\u72EC\u6279\u51C6\u3002") : React.createElement(React.Fragment, null,
+                React.createElement("label", { className: "campaign-picker" },
+                    "\u5F53\u524D\u6D3B\u52A8",
+                    React.createElement("select", { value: c.id, onChange: (e) => this.setState({ selected: e.target.value }) }, data.campaigns.map(item => React.createElement("option", { key: item.id, value: item.id }, item.goal.slice(0, 80))))),
+                React.createElement("section", { className: "campaign-overview" },
+                    React.createElement("div", { className: "actions" },
+                        React.createElement(Badge, { value: c.state }),
+                        React.createElement("span", null,
+                            "\u7B2C ",
+                            c.roundNumber,
+                            "/",
+                            c.limits.maxRounds,
+                            " \u8F6E"),
+                        React.createElement("span", null,
+                            "\u6307\u6807\uFF1A",
+                            c.primaryMetric,
+                            " \u00B7 ",
+                            c.direction === 'min' ? '越小越好' : '越大越好')),
+                    React.createElement("h2", null, c.goal),
+                    React.createElement("p", { className: "small muted" },
+                        c.autoAnalyze ? '结果到达后可自动分析' : '分析仅在手动请求后执行',
+                        " \u00B7 \u51B3\u5B9A\u4E0E\u5019\u9009\u8FD0\u884C\u5747\u9700\u5355\u72EC\u6279\u51C6 \u00B7 \u6D3B\u52A8\u7248\u672C ",
+                        c.version,
+                        " \u00B7 \u5DF2\u6279\u51C6\u6A21\u578B ",
+                        c.rootModel?.provider || '未配置',
+                        "/",
+                        c.rootModel?.model || '未配置'),
+                    budget ? React.createElement("p", { className: "small muted" },
+                        "\u6A21\u578B\u5C1D\u8BD5\u989D\u5EA6 ",
+                        budget.used,
+                        " \u5DF2\u7528 / ",
+                        budget.reserved,
+                        " \u9884\u7559 / ",
+                        budget.unknown,
+                        " \u672A\u77E5 / ",
+                        budget.available,
+                        " \u53EF\u7528\uFF08\u975E\u8D39\u7528\u4E0A\u9650\uFF09") : null,
+                    React.createElement("div", { className: "actions" },
+                        React.createElement("button", { className: "secondary compact", onClick: () => onSession(c.rootSessionId) }, "\u6253\u5F00\u4E3B\u534F\u8C03\u4F1A\u8BDD"),
+                        React.createElement("button", { className: "secondary compact", onClick: () => onExperiment(c.focusExperimentId) }, "\u5F53\u524D\u7236\u5B9E\u9A8C"),
+                        c.state === 'draft' ? React.createElement("button", { className: "primary compact", disabled: busy || !approval || ['rejected', 'stale'].includes(approval.status), onClick: () => perform(async () => { if (approval?.status === 'pending')
+                                await this.approve(approval.id); return api(`/campaigns/${c.id}/activate`, { expectedVersion: c.version }); }, '活动已启动，尚未授权任何正式计算') }, "\u6279\u51C6\u5E76\u542F\u52A8\u6D3B\u52A8") : null,
+                        c.state === 'active' ? React.createElement(React.Fragment, null,
+                            React.createElement("button", { className: "secondary compact", disabled: busy, onClick: () => perform(() => api(`/campaigns/${c.id}/pause`, { expectedVersion: c.version })) }, "\u6682\u505C\u6D3B\u52A8"),
+                            React.createElement("button", { className: "primary compact", disabled: busy || !obs.some(o => o.roundId === c.currentRoundId && o.status === 'pending'), onClick: () => this.setState({ decision: true }) }, "\u63D0\u4EA4\u51B3\u5B9A")) : null,
+                        c.state === 'paused' ? React.createElement("button", { className: "primary compact", disabled: busy, onClick: () => perform(() => api(`/campaigns/${c.id}/resume`, { expectedVersion: c.version })) }, "\u6062\u590D\u6D3B\u52A8") : null,
+                        c.state !== 'stopped' ? React.createElement("button", { className: "text-button", disabled: busy, onClick: () => { if (confirm('停止新增研究决策和自动分析？已有正式 Run 继续运行，结果仍会保留。'))
+                                perform(() => api(`/campaigns/${c.id}/stop`, { expectedVersion: c.version, reason: '用户在工作台停止活动' })); } }, "\u505C\u6B62\u6D3B\u52A8") : null),
+                    c.stopReason ? React.createElement("p", { className: "notice-inline" },
+                        "\u505C\u6B62\u539F\u56E0\uFF1A",
+                        c.stopReason) : null),
+                React.createElement("section", { className: "campaign-section" },
+                    React.createElement("h2", null, "\u8F6E\u6B21\u4E0E\u5019\u9009"),
+                    React.createElement("p", { className: "small muted" }, "\u7814\u7A76\u8F6E\u6B21\u4E0D\u662F\u534F\u4F5C\u4EFB\u52A1\u56FE\u3002\u6BCF\u4E2A\u5019\u9009\u4FDD\u7559\u81EA\u5DF1\u7684\u5B9E\u9A8C\u8840\u7F18\u548C\u4E0D\u53EF\u53D8\u8FD0\u884C\u5FEB\u7167\u3002"),
+                    data.rounds.filter(r => r.campaignId === c.id).map(round => React.createElement("div", { key: round.id, className: "round-group" },
+                        React.createElement("h3", null,
+                            "\u7B2C ",
+                            round.number,
+                            " \u8F6E ",
+                            React.createElement(Badge, { value: round.state }),
+                            React.createElement("button", { className: "text-button", onClick: () => onExperiment(round.parentExperimentId) },
+                                "\u7236\u5B9E\u9A8C ",
+                                short(round.parentExperimentId))),
+                        members.filter(m => m.roundId === round.id).length ? React.createElement("div", { className: "table-scroll" },
+                            React.createElement("table", null,
+                                React.createElement("thead", null,
+                                    React.createElement("tr", null,
+                                        React.createElement("th", null, "\u5019\u9009\u5B9E\u9A8C"),
+                                        React.createElement("th", null, "\u5B9E\u9645 Run"),
+                                        React.createElement("th", null, "\u89C2\u6D4B\u4E0E\u6307\u6807"),
+                                        React.createElement("th", null, "\u64CD\u4F5C"))),
+                                React.createElement("tbody", null, members.filter(m => m.roundId === round.id).map(m => { const i = data.intents.find(i => i.id === m.intentId), r = data.runs.find(r => r.id === i?.runId), o = obs.find(o => o.runId === r?.id), a = data.approvals.find(a => a.id === i?.approvalId); return React.createElement("tr", { key: m.id },
+                                    React.createElement("td", null,
+                                        React.createElement("button", { className: "text-button", onClick: () => onExperiment(m.experimentId) }, data.experiments.find(e => e.id === m.experimentId)?.title ?? short(m.experimentId)),
+                                        React.createElement("div", { className: "small muted" }, m.required ? '必需候选' : '可选候选')),
+                                    React.createElement("td", null, r ? React.createElement(React.Fragment, null,
+                                        React.createElement(Badge, { value: r.state }),
+                                        React.createElement("div", { className: "small muted" }, short(r.id))) : React.createElement("span", null, "\u5C1A\u672A\u63D0\u4EA4")),
+                                    React.createElement("td", null, o ? React.createElement(React.Fragment, null,
+                                        React.createElement(Badge, { value: o.validation }),
+                                        React.createElement("div", null,
+                                            c.primaryMetric,
+                                            " = ",
+                                            number(o.metrics[c.primaryMetric])),
+                                        React.createElement("details", null,
+                                            React.createElement("summary", null, "\u67E5\u770B\u8BC1\u636E\u4E0E\u9650\u5236"),
+                                            React.createElement("p", null, o.explanation),
+                                            React.createElement("pre", null, JSON.stringify({ observationId: o.id, evidenceIds: o.evidenceIds, metrics: o.metrics }, null, 2)))) : React.createElement("span", { className: "muted" }, "\u7B49\u5F85\u771F\u5B9E\u7ED3\u679C")),
+                                    React.createElement("td", null, !r && i ? React.createElement(React.Fragment, null,
+                                        a?.status === 'pending' ? React.createElement("button", { className: "secondary compact", disabled: busy, onClick: () => perform(() => this.approve(a.id)) }, "\u5355\u72EC\u6279\u51C6\u6B64\u8FD0\u884C") : null,
+                                        React.createElement("button", { className: "secondary compact", disabled: busy || a?.status !== 'approved', onClick: () => perform(() => api(`/run-intents/${i.id}/submit`, {}), '正式 Run 已提交') }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C")) : React.createElement("button", { className: "text-button", onClick: () => onExperiment(m.experimentId) }, "\u65E5\u5FD7\u4E0E\u5FEB\u7167"))); })))) : React.createElement("p", { className: "muted" }, "\u8FD9\u4E00\u8F6E\u5C1A\u672A\u767B\u8BB0\u5019\u9009\u3002"))),
+                    c.state === 'active' ? React.createElement("form", { className: "enroll-form", onSubmit: (e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); perform(() => api(`/campaigns/${c.id}/members`, { expectedVersion: c.version, intentId: fd.get('intent'), ...(fd.get('repair') ? { repairDecisionId: fd.get('repair') } : {}) }), '已登记候选，未启动运行'); } },
+                        React.createElement("label", null,
+                            "\u767B\u8BB0\u5DF2\u51C6\u5907\u7684\u56FA\u5B9A RunIntent",
+                            React.createElement("select", { name: "intent", required: true, disabled: !available.length }, available.map(i => React.createElement("option", { key: i.id, value: i.id },
+                                data.experiments.find(e => e.id === i.experimentId)?.title,
+                                " \u00B7 ",
+                                short(i.id))))),
+                        React.createElement("label", null,
+                            "\u4FEE\u590D\u6279\u51C6\uFF08\u9996\u6B21\u767B\u8BB0\u7559\u7A7A\uFF09",
+                            React.createElement("select", { name: "repair" },
+                                React.createElement("option", { value: "" }, "\u4E0D\u4F7F\u7528\u4FEE\u590D\u6279\u51C6"),
+                                data.decisions.filter(d => d.campaignId === c.id && d.roundId === c.currentRoundId && d.action === 'repair' && d.status === 'applied' && !members.some(m => m.repairDecisionId === d.id)).map(d => React.createElement("option", { key: d.id, value: d.id },
+                                    short(d.id),
+                                    " \u00B7 ",
+                                    d.reason.slice(0, 55))))),
+                        React.createElement("button", { className: "secondary", disabled: busy || !available.length }, "\u767B\u8BB0\u672C\u8F6E\u5019\u9009")) : null,
+                    c.state === 'active' && !available.length ? React.createElement("p", { className: "small muted" }, "\u6CA1\u6709\u53EF\u767B\u8BB0\u7684\u8FD0\u884C\u6E05\u5355\u3002\u8BF7\u5230\u300C\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u300D\u9009\u62E9\u5F53\u524D\u7236\u5B9E\u9A8C\u6216\u5176\u5B50\u5B9E\u9A8C\uFF0C\u5148\u51C6\u5907\u4E0D\u53EF\u53D8\u5FEB\u7167\u3002\u65E0\u7ED3\u679C\u8282\u70B9\u91CD\u65B0\u767B\u8BB0\u65F6\uFF0C\u9700\u9009\u62E9\u672C\u8F6E\u5DF2\u5E94\u7528\u7684 Repair \u51B3\u5B9A\u3002") : null),
+                React.createElement("section", { className: "campaign-section" },
+                    React.createElement("h2", null, "\u51B3\u7B56\u5386\u53F2"),
+                    data.decisions.filter(d => d.campaignId === c.id).map(d => this.decisionCard(d)),
+                    !data.decisions.some(d => d.campaignId === c.id) ? React.createElement("p", { className: "muted" }, "\u6682\u65E0\u51B3\u5B9A\u3002\u6536\u5230\u771F\u5B9E\u89C2\u6D4B\u540E\uFF0C\u53EF\u7531 Pi \u63D0\u6848\u6216\u4EBA\u5DE5\u63D0\u4EA4\uFF1B\u51B3\u5B9A\u4E0D\u4F1A\u81EA\u52A8\u6267\u884C\u3002") : null)),
+            React.createElement(WakeupPanel, { data: data, busy: busy, perform: perform, onSession: onSession }),
+            this.state.create ? this.createModal() : null,
+            this.state.decision && c ? this.decisionModal(c) : null);
+    }
+}
