@@ -36,6 +36,9 @@ export interface PaperContent {
     requestedId: string;
     versionAssurance: 'requested-address-unverified' | 'provider-record';
     pageMapping: 'unavailable';
+    reportedVersion?: string;
+    resolvedId?: string;
+    license?: string;
 }
 export declare function date(value: unknown): string;
 export declare function normalizeDate(value: unknown): string | null;

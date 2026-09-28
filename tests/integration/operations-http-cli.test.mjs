@@ -40,7 +40,7 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
             assert.equal(command.status, 1);
             assert.deepEqual(JSON.parse(command.stderr).error, http.value.error, spec.id);
             // Report publication operations remain owner-only; no Agent role gains this capability.
-            if(/^(report_|compute_|agent_capacity_)/.test(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
+            if(/^(report_|compute_|agent_capacity_|document_|literature_task_)/.test(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
             else assert.deepEqual(toolError, http.value.error, spec.id);
         }
         const key = randomUUID(), input = { source: 'project', path: 'operation.txt', content: 'shared', expectedDigest: null };

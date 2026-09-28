@@ -1,4 +1,4 @@
-export type ComputeKind = 'run' | 'development';
+export type ComputeKind = 'run' | 'development' | 'document';
 export interface ComputeLimits {
     maxRuns: number;
     maxDevelopment: number;
@@ -11,6 +11,7 @@ export interface ComputeUsage {
     jobs: number;
     runs: number;
     development: number;
+    documents: number;
     cpus: number;
     memoryMb: number;
     unknown: number;
@@ -19,6 +20,7 @@ export interface ComputeAvailable {
     jobs: number;
     runs: number;
     development: number;
+    documents: number;
     cpus: number | null;
     memoryMb: number | null;
 }

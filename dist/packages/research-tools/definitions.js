@@ -1,6 +1,22 @@
 import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
 import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
 const TOOL_METADATA = {
+    literature_task_create: { description: '用户入口：排队一次持久文献检索或原文获取；沿用已启用来源和请求预算，未知请求不自动重试。', example: { kind: 'search', search: { query: 'machine learning', sources: ['crossref'], limit: 2 } } },
+    literature_task_inspect: { description: '用户入口：按持久任务 ID 回查当前状态及完整已保存检索结果，不触发新网络请求。', example: { taskId: 'literature-task-id' } },
+    literature_task_cancel: { description: '用户入口：取消尚未完成的文献任务；已经保存的原件和结果保持历史记录。', example: { taskId: 'literature-task-id' } },
+    literature_task_retry: { description: '用户入口：显式创建失败或中断文献任务的新尝试，保留旧请求的未知记录。', example: { taskId: 'literature-task-id', expectedVersion: 1 } },
+    document_import: { description: '用户入口：导入明确选择的原始 PDF 或 UTF-8 文本，记录精确字节摘要；不会解析或自动加入语料。', example: { title: 'notes.txt', mediaType: 'text/plain', contentBase64: 'SGVsbG8=' } },
+    document_list: { description: '用户入口：按游标列出固定文档版本，来源与许可证未知时不补造。', example: { cursor: 0, limit: 20 } },
+    document_inspect: { description: '用户入口：核对固定文档版本和原始产物摘要，不下载供应商最新版本。', example: { documentVersionId: 'document-version-id' } },
+    document_parser_status: { description: '用户入口：读取固定 PDF 解析器配置；未配置不自动安装或拉取镜像。', example: {} },
+    document_parser_configure: { description: '用户入口：显式配置并核对本机固定 PDF 解析镜像，既有解析清单保持不变。', example: { expectedVersion: 0, dockerContext: 'desktop-linux', imageDigest: 'sha256:' + '0'.repeat(64) } },
+    document_parse_prepare: { description: '用户入口：绑定原 PDF、固定解析器及资源，创建待批准解析清单；不执行文档脚本或启动容器。', example: { documentVersionId: 'document-version-id' } },
+    document_parse_submit: { description: '用户入口：提交单独批准的固定文档解析作业，返回持久 ID；不创建科研 Run。', example: { jobId: 'document-job-id' } },
+    document_parse_inspect: { description: '用户入口：读取隔离文档解析的执行状态、完整性和结果引用。', example: { jobId: 'document-job-id' } },
+    document_parse_cancel: { description: '用户入口：取消固定文档解析作业，只作用于核对归属的容器。', example: { jobId: 'document-job-id' } },
+    document_pages: { description: '用户入口：分页读取固定解析结果的物理页、页图及段落定位；印刷页标签与物理页号分开。', example: { parseResultId: 'parse-result-id', cursor: 0, limit: 20 } },
+    document_page_read: { description: '用户入口：读取指定解析版本的页文本和固定页图引用，游标单位为 UTF-16 code unit。', example: { parseResultId: 'parse-result-id', pageNumber: 1, cursor: 0, limit: 16000 } },
+    document_evidence_register: { description: '用户入口：从固定 PDF 解析页建立绑定原件与解析清单的精确文本证据，不自动采纳科学结论。', example: { documentVersionId: 'document-version-id', parseResultId: 'parse-result-id', pageNumber: 1, start: 0, end: 5, description: '该页的原文片段' } },
     compute_target_probe: { description: '用户入口：显式核对本机 Docker context 的真实引擎身份，允许在没有排队作业时识别目标；不启动容器、不改绑已有作业。', example: { context: 'desktop-linux' } },
     compute_queue_inspect: { description: '用户入口：读取同数据目录的计算容量、保守占用和本项目有界队列；不是实时硬件空闲。', example: { cursor: 0, limit: 50 } },
     compute_capacity_configure: { description: '用户入口：显式修改共享或目标计算预算，保留已批准资源契约及未知占位。', example: { expectedVersion: 1, limits: { maxJobs: 2, maxRuns: 1, maxDevelopment: 1, cpus: null, memoryMb: null, maxQueued: null } } },

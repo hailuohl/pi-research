@@ -1,6 +1,6 @@
 import { DomainError, ensure } from '../domain/errors.js';
 import { setTimeout as delay } from 'node:timers/promises';
-const HOSTS = new Set(['api.alphaxiv.org', 'www.alphaxiv.org', 'api.openalex.org', 'api.biorxiv.org', 'eutils.ncbi.nlm.nih.gov', 'api.crossref.org']);
+const HOSTS = new Set(['api.alphaxiv.org', 'www.alphaxiv.org', 'api.openalex.org', 'api.biorxiv.org', 'eutils.ncbi.nlm.nih.gov', 'api.crossref.org', 'arxiv.org', 'www.biorxiv.org', 'content.openalex.org']);
 /** Fixed HTTPS hosts, no redirects/proxies supplied by agents, bounded bodies and no implicit retries. */
 export class ConnectorTransport {
     fetcher;
@@ -8,7 +8,7 @@ export class ConnectorTransport {
     ncbiNext = 0;
     interval;
     constructor(options = {}) { this.fetcher = options.fetcher ?? ((...args) => fetch(...args)); this.interval = options.minIntervalMs ?? 350; }
-    async text(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal) {
+    async bytes(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe) {
         ensure(url.protocol === 'https:' && HOSTS.has(url.hostname) && !url.port && !url.username && !url.password && !url.hash, 'CONNECTOR_HOST_DENIED', '只允许固定文献来源 HTTPS 地址', 403);
         const controller = new AbortController();
         const deadline = setTimeout(() => controller.abort(), 12000);
@@ -40,6 +40,9 @@ export class ConnectorTransport {
             }
             validate();
             const response = await this.fetcher(url, { headers: { 'User-Agent': 'PiResearch-Connectors/1.0', 'Accept': 'application/json, application/xml, text/markdown, text/plain', ...headers }, redirect: 'error', signal: controller.signal });
+            const retry = response.headers.get('retry-after');
+            const retryAfter = retry && /^\d{1,10}$/.test(retry) ? retry : retry && /^[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(retry) && !Number.isNaN(Date.parse(retry)) ? new Date(retry).toUTCString() : null;
+            observe?.({ httpStatus: response.status, retryAfter });
             if (response.status < 200 || response.status >= 300)
                 await response.body?.cancel().catch(() => { });
             ensure(response.status >= 200 && response.status < 300, response.status === 429 ? 'CONNECTOR_RATE_LIMITED' : response.status === 404 ? 'PAPER_NOT_FOUND' : 'CONNECTOR_HTTP_ERROR', `文献来源返回 HTTP ${response.status}`, response.status === 404 ? 404 : 502);
@@ -71,7 +74,7 @@ export class ConnectorTransport {
                 reader.releaseLock();
             }
             validate();
-            return { text: new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)), bytes, contentType: response.headers.get('content-type') ?? '', status: response.status, rateLimitRemaining: response.headers.get('x-ratelimit-remaining') };
+            return { body: Buffer.concat(chunks), bytes, contentType: response.headers.get('content-type') ?? '', status: response.status, rateLimitRemaining: response.headers.get('x-ratelimit-remaining') };
         }
         catch (e) {
             if (checkError)
@@ -86,6 +89,15 @@ export class ConnectorTransport {
             signal?.removeEventListener('abort', abort);
             if (acquired)
                 this.active--;
+        }
+    }
+    async text(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe) {
+        const r = await this.bytes(url, headers, validate, maxBytes, signal, observe);
+        try {
+            return { ...r, text: new TextDecoder('utf-8', { fatal: true }).decode(r.body) };
+        }
+        catch {
+            throw new DomainError('PROVIDER_SCHEMA_INVALID', '来源没有返回有效 UTF-8 文本', 502);
         }
     }
 }

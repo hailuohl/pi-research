@@ -24,7 +24,7 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 63 个操作（包含固定源码、开发测试、Git、独立审查、受审整合、报告交付及容量配置）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；报告生成/导出与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
+- 79 个操作（包含固定源码、开发测试、Git、独立审查、受审整合、报告交付、容量及文献/文档流程）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、报告生成/导出与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 
@@ -35,6 +35,8 @@ node dist/apps/server/index.js
 **资源与调度** 页可配置共享作业数、CPU/内存预算和排队上限，查看服务端计算的占用、可用额度与等待原因。正式 Run 和开发测试共享持久预留；共享同一 SQLite 的控制服务不能各自重复分配额度。Docker context 按真实引擎归并，首次使用或切换引擎可显式“核对 Docker 目标”；不重绑旧作业。未知作业继续占位，终态释放。Pi Worker 另设全局上限，同时服从项目/团队上限，任务提交后等待进程实际退出才释放；Worker 数量不等于模型 HTTP 并发。默认正式/开发各 1 槽、计算总槽 2、Worker 2；CPU/内存/排队预算默认未设置，不代表硬件空闲。详见[调度验收](docs/acceptance/flow-scheduler/RESULTS.zh-CN.md)。
 
 长任务日志按 **64 KiB 有界窗口**回查，字节游标支持大日志和跨页中文/emoji；文件身份变化时显式重新读取。开发日志仅在展开时读取。工作台用带鉴权的 SSE 唤醒、按项目事件补拉和 20 秒权威状态兜底恢复连接；刷新及切会话从一致快照恢复当前输出，不重放旧回答或自动重试作业。截断/省略明确标示，完整历史分页仍在后续范围。详见[日志与断线恢复验收](docs/acceptance/flow-events/RESULTS.zh-CN.md)。
+
+**文献任务与原文** 页支持持久检索/获取、32 MiB 内原始 PDF/文本导入、不可变 DocumentVersion、原始响应与派生摘要分离，以及固定解析器的单独批准。PDF 在隔离 Docker 中生成页图/文本，文档作业共享计算预算；证据按固定版本、物理页和 UTF-16 区间回查，刷新后保留位置。解析镜像需显式运行[setup 指引](scripts/pdf-parser/README.md)后配置，不自动安装或开启来源。PubMed 本机网络、完整表图/OCR、语料与报告包的 PDF 来源链尚未全部完成；含新 PDF 页证据的报告暂明确拒绝，旧报告不受影响。见[文献与文档验收](docs/acceptance/flow-documents/RESULTS.zh-CN.md)。
 
 ## 读取技能
 
@@ -77,4 +79,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker 和首条浏览器科研闭环已实测；真实文献联网、其他供应商/GPU/远程环境仍需各自验收。远程计算、Git发布、Overleaf、LaTeX编译/实例申请保留在后续计划中。
+各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker、首条浏览器科研闭环、四源文献检索/读取及 arXiv 指定版本 PDF 已实测；PubMed 本机网络、其他原文来源、模型供应商/GPU/远程环境仍需各自验收。远程计算、Git发布、Overleaf、LaTeX编译/实例申请保留在后续计划中。

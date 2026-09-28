@@ -46,3 +46,9 @@ that is not a claim of endorsement, behavioral parity or completed cloning.
 
 ## OpenResearch skills and literature protocol adaptation
 Copyright (c) 2026 alphaXiv. MIT; full text in `third_party/openresearch/LICENSE`. Based on commit 3037f727e80e0ab20c61a87c613a50dde009a835. `skills/openresearch` rewrites all 13 canonical modules plus the overview for Pi Research tools and safety boundaries. `packages/connectors` ports selected literature protocol behavior from Rust `src/client.rs` to TypeScript and adds independent validation, cancellation, settings and bounded requests. No ORX runtime, hosted account, telemetry, or remote compute implementation is included. Source inventory and intentional differences are in `third_party/openresearch/source-manifest.json`.
+
+## Optional isolated PDF parser
+
+`scripts/pdf-parser` uses pypdfium2 5.13.0 (BSD-3-Clause / Apache-2.0 and bundled PDFium dependency licenses) and Pillow 11.3.0 (MIT-CMU). Wheel hashes are fixed in `requirements.lock`; wheels and built images are not committed. The setup script retains the wheels' license directories, including pypdfium2's `LICENSES` and `BUILD_LICENSES`, inside the image. The fixed Python base image retains its upstream notices. See [parser setup](scripts/pdf-parser/README.md) and the upstream [pypdfium2](https://pypi.org/project/pypdfium2/5.13.0/) and [Pillow](https://pypi.org/project/Pillow/11.3.0/) distributions.
+
+Downloaded research documents retain their own licenses; an acquisition record does not grant additional rights. Original test PDFs in `tests/support/pdf-fixture.mjs` use self-contained drawn glyphs and bitmap fixtures, not third-party paper pages.

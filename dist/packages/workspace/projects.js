@@ -112,6 +112,8 @@ export class ProjectService {
         return this.c.store.transaction(() => {
             this.get(actor, id);
             ensure(this.c.store.list('run', id).every(r => ['succeeded', 'failed', 'cancelled'].includes(r.state)), 'PROJECT_BUSY', '项目仍有未结束运行，不能归档');
+            ensure(!this.c.store.db.prepare("SELECT 1 FROM compute_queue WHERE project_id=? AND kind='document' AND (held=1 OR phase='queued') LIMIT 1").get(id), 'PROJECT_BUSY', '项目仍有未结束文档解析，请取消或核对后归档');
+            ensure(!this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.state') IN ('queued','running') LIMIT 1").get(id), 'PROJECT_BUSY', '项目仍有文献任务，请取消后归档');
             ensure(this.c.store.list('session', id).every(s => s.state !== 'running'), 'PROJECT_BUSY', '项目仍有活跃 Agent');
             ensure(this.c.store.list('task', id).every(t => t.execution !== 'running'), 'PROJECT_BUSY', '项目仍有活跃助手');
             const next = this.c.store.update('project', id, version, { archived: true });

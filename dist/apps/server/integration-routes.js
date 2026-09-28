@@ -14,7 +14,7 @@ export function readIntegrationRoute(app, path, url) {
         app.store.get('project', p[1]);
         if (p[2] === 'connectors')
             return app.operations.execute(USER, 'connector_status', {}, { projectId: p[1] });
-        return { searches: app.store.list('connector-search', p[1]).slice(-30), papers: app.store.list('paper-read', p[1]).slice(-30), scope: 'last-30-per-kind' };
+        return { observations: app.connectors.observations(USER, p[1]), searches: app.store.list('connector-search', p[1]).slice(-30), papers: app.store.list('paper-read', p[1]).slice(-30), scope: 'last-30-per-kind' };
     }
     return undefined;
 }

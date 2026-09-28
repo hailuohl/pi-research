@@ -2,7 +2,7 @@
 /** Local CLI uses the same ResearchApp services as HTTP and Pi tools. No Agent fallback. */
 import { integrationCli } from './integration.js';
 import { campaignDemo } from './campaign-demo.js';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
@@ -80,9 +80,13 @@ async function main() {
         return;
     switch (command) {
         case 'operation': {
-            const id = args[1], projectId = option('--project'), input = option('--input');
-            ensure(id && !id.startsWith('--') && projectId && input !== undefined, 'INVALID_INPUT', '用法：operation <id> --project <id> [--session <id>] --input <JSON> [--key <id>]', 400);
-            const value = parseJson(input), app = new ResearchApp(dataDir, root);
+            const id = args[1], projectId = option('--project'), input = option('--input'), inputFile = option('--input-file');
+            ensure(id && !id.startsWith('--') && projectId && (input !== undefined) !== (inputFile !== undefined), 'INVALID_INPUT', '用法：operation <id> --project <id> [--session <id>] (--input <JSON> | --input-file <JSON文件>) [--key <id>]', 400);
+            if (inputFile) {
+                const info = statSync(inputFile);
+                ensure(info.isFile() && info.size <= 48 * 1024 * 1024, 'BODY_TOO_LARGE', '操作 JSON 文件最多 48 MiB', 413);
+            }
+            const value = parseJson(input ?? readFileSync(inputFile, 'utf8')), app = new ResearchApp(dataDir, root);
             try {
                 print(await app.operations.execute(USER, id, value, { projectId, sessionId: option('--session'), idempotencyKey: option('--key') ?? randomUUID() }));
             }

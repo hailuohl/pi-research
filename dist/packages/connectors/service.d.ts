@@ -73,6 +73,16 @@ export declare class ConnectorService {
         requestLimit: number;
         version: number;
     };
+    observations(actor: Actor, pid: string): {
+        id: any;
+        source: any;
+        host: any;
+        status: any;
+        startedAt: any;
+        httpStatus: any;
+        retryAfter: any;
+        error: any;
+    }[];
     configure(actor: Actor, pid: string, value: unknown): {
         requestsUsed: number;
         credentials: {
@@ -114,19 +124,12 @@ export declare class ConnectorService {
         requestLimit: number;
         version: number;
     };
-    private authorize;
+    assertAuthorized(actor: Actor, pid: string): void;
     private bound;
     private request;
     private once;
     discover(actor: Actor, pid: string, value: unknown, key: string, callback?: () => void, signal?: AbortSignal): Promise<import("../domain/types.js").Row<SearchRecord>>;
     paper(actor: Actor, pid: string, value: unknown, key: string, callback?: () => void, signal?: AbortSignal): Promise<import("../domain/types.js").Row<{
-        source: "alphaxiv" | "openalex" | "biorxiv" | "pubmed" | "crossref";
-        idInSource: string;
-        requestedId: string;
-        title: string;
-        sourceUrl: string;
-        contentKind: "metadata" | "abstract" | "full_text";
-        versionAssurance: "requested-address-unverified" | "provider-record";
         pageMapping: "unavailable";
         artifactId: string;
         artifactDigest: string;
@@ -134,11 +137,47 @@ export declare class ConnectorService {
         fullTextRead: boolean;
         retrievedAt: string;
         scopeSessionId: string | null;
+        scopeTaskId: string | null;
         scopeAttemptId: string | null;
         sourceResponses: {
             url: string;
             contentType: string;
         }[];
+        limitations: string[];
+        license?: string | undefined;
+        resolvedId?: string | undefined;
+        reportedVersion?: string | undefined;
+        source: "alphaxiv" | "openalex" | "biorxiv" | "pubmed" | "crossref";
+        idInSource: string;
+        requestedId: string;
+        title: string;
+        sourceUrl: string;
+        contentKind: "metadata" | "abstract" | "full_text";
+        versionAssurance: "requested-address-unverified" | "provider-record";
+    }>>;
+    /** Host-facing acquisition used by durable tasks; callback retains their original authorization fence. */
+    pdf(actor: Actor, pid: string, value: {
+        source: SourceId;
+        id: string;
+        requestedVersion?: string;
+    }, key: string, callback?: () => void, signal?: AbortSignal): Promise<import("../domain/types.js").Row<{
+        source: "alphaxiv" | "openalex" | "biorxiv" | "pubmed" | "crossref";
+        idInSource: string;
+        requestedId: string;
+        resolvedId: string;
+        requestedVersion: string | null;
+        title: string;
+        sourceUrl: string;
+        contentKind: string;
+        versionAssurance: string;
+        pageMapping: string;
+        artifactId: string;
+        artifactDigest: string;
+        rawArtifactIds: string[];
+        fullTextRead: boolean;
+        retrievedAt: string;
+        scopeSessionId: string | null;
+        scopeTaskId: string | null;
         limitations: string[];
     }>>;
 }

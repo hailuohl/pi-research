@@ -1,7 +1,7 @@
 export const CONNECTOR_CAPABILITIES = [
-    { id: 'alphaxiv', category: 'literature', operations: ['keyword', 'embedding', 'paper-text'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'none', content: 'retrieved-text; no PDF page mapping' },
-    { id: 'openalex', category: 'literature', operations: ['search', 'paper-metadata', 'paper-abstract'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'optional OPENALEX_API_KEY' },
-    { id: 'biorxiv', category: 'literature', operations: ['search-via-openalex', 'paper-abstract'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'optional OPENALEX_API_KEY for search' },
+    { id: 'alphaxiv', category: 'literature', operations: ['keyword', 'embedding', 'paper-text', 'versioned-original-pdf'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'none', content: 'provider text or explicitly versioned original PDF; page mapping requires separate parse' },
+    { id: 'openalex', category: 'literature', operations: ['search', 'paper-metadata', 'paper-abstract', 'original-pdf-with-key'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'optional OPENALEX_API_KEY' },
+    { id: 'biorxiv', category: 'literature', operations: ['search-via-openalex', 'paper-abstract', 'versioned-original-pdf'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'optional OPENALEX_API_KEY for search' },
     { id: 'pubmed', category: 'literature', operations: ['esearch', 'efetch-abstract'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'NCBI_EMAIL recommended; NCBI_API_KEY optional' },
     { id: 'crossref', category: 'literature', operations: ['search', 'paper-metadata'], implementation: 'http-adapter', verification: 'fixture-only', credential: 'none' },
     { id: 'trusted-example', category: 'compute', operations: ['submit', 'inspect', 'cancel', 'logs', 'collect'], implementation: 'existing-runner', verification: 'local-example-tested', limitation: 'Only the pinned bundled numeric code; not arbitrary scripts' },

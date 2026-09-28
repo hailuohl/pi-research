@@ -39,6 +39,12 @@ export async function artifactText(id) {
         throw new Error('无法读取产物');
     return r.text();
 }
+export async function artifactBlob(id, signal) {
+    const response = await fetch(`/api/artifacts/${encodeURIComponent(id)}/content`, { headers: { Authorization: `Bearer ${token}` }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(22000)]) : AbortSignal.timeout(22000) });
+    if (!response.ok)
+        throw new ApiError('ARTIFACT_READ_FAILED', '无法读取固定产物', response.status);
+    return response.blob();
+}
 export async function downloadArtifact(id, name) {
     const r = await fetch(`/api/artifacts/${encodeURIComponent(id)}/content`, { headers: { Authorization: `Bearer ${token}` } });
     if (!r.ok)

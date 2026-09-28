@@ -57,7 +57,7 @@ function authorizeRegistered(c, name, x) {
 }
 function externalReplay(c, name, x) {
     // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
-    if (name === 'report_export' || name === 'compute_target_probe')
+    if (['report_export', 'compute_target_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare'].includes(name))
         return { key: c.idempotencyKey, completed: true };
     if (name === 'paper_read')
         return paperReplay(c, x);
@@ -92,7 +92,7 @@ function executeRegistered(c, name, x) {
         case 'text_evidence_search': return app.textEvidence.search(actor, pid, x);
         case 'research_skill_list': return { bundleId: app.skills.bundleId, skills: app.skills.list((session?.role ?? 'coordinator')) };
         case 'research_skill_read': return app.skills.read((session?.role ?? 'coordinator'), text(x.skillId, 'skillId', 100), x.resource === undefined ? undefined : text(x.resource, 'resource', 200));
-        case 'connector_status': return app.connectors.settings(actor, pid);
+        case 'connector_status': return { ...app.connectors.settings(actor, pid), observations: app.connectors.observations(actor, pid) };
         case 'session_notice_read': {
             const m = app.sessions.messages(actor, session.id).find(m => m.id === text(x.messageId, 'messageId', 100));
             ensure(m && m.role === 'system' && m.origin !== 'automation', 'SCOPE_DENIED', '只能读取自己的宿主通知', 403);
@@ -140,6 +140,22 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('literature_task_create', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.literatureTasks.create(c.actor, c.projectId, x) }),
+    make('literature_task_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.literatureTasks.inspect(c.actor, c.projectId, x.taskId) }),
+    make('literature_task_cancel', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.literatureTasks.cancel(c.actor, c.projectId, x.taskId) }),
+    make('literature_task_retry', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.literatureTasks.retry(c.actor, c.projectId, x.taskId, x.expectedVersion) }),
+    make('document_import', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documents.import(c.actor, c.projectId, x, c.idempotencyKey) }),
+    make('document_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documents.list(c.actor, c.projectId, x) }),
+    make('document_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documents.inspect(c.actor, c.projectId, x.documentVersionId) }),
+    make('document_parser_status', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: c => c.app.documentParsing.status(c.actor, c.projectId) }),
+    make('document_parser_configure', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.configure(c.actor, x, c.validate, c.idempotencyKey) }),
+    make('document_parse_prepare', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.prepare(c.actor, c.projectId, x, c.idempotencyKey) }),
+    make('document_parse_submit', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.submit(c.actor, c.projectId, x.jobId) }),
+    make('document_parse_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.inspect(c.actor, c.projectId, x.jobId) }),
+    make('document_parse_cancel', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.cancel(c.actor, c.projectId, x.jobId) }),
+    make('document_pages', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.pages(c.actor, c.projectId, x.parseResultId, x.cursor, x.limit) }),
+    make('document_page_read', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.readPage(c.actor, c.projectId, x.parseResultId, x.pageNumber, x.cursor, x.limit) }),
+    make('document_evidence_register', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.evidence.registerDocument(c.actor, c.projectId, x) }),
     make('compute_target_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.compute.probeContext(c.actor, x.context, c.validate) }),
     make('compute_queue_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.compute.inspect(c.actor, c.projectId, x) }),
     make('compute_capacity_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.compute.configure(c.actor, x) }),
@@ -298,13 +314,18 @@ export class OperationRegistry {
         for (const [field, kind] of [['evidenceId', 'evidence'], ['artifactId', 'artifact'], ['runId', 'run'], ['taskId', 'task']]) {
             if (typeof input[field] !== 'string')
                 continue;
+            if (field === 'taskId' && id.startsWith('literature_task_')) {
+                this.app.store.get('literature-task', input[field], pid);
+                continue;
+            }
             this.app.store.get(kind, input[field], pid);
             if (actor.taskId || actor.wakeupId)
                 (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field]);
         }
         spec.authorize(context, input);
         const workspaceId = spec.requiresSession || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
-        const request = { name: id, input }, operationScope = actor.type === 'agent' ? `agent:${session.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
+        // Large local document bodies are hashed before any writer transaction; metadata remains part of identity.
+        const request = { name: id, input: id === 'document_import' ? { ...input, contentBase64: undefined, contentDigest: digest(input.contentBase64) } : input }, operationScope = actor.type === 'agent' ? `agent:${session.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
             const result = JSON.parse(JSON.stringify(value));
@@ -375,7 +396,7 @@ export class OperationRegistry {
             return spec.execute(context, input);
         };
         if (spec.asynchronous) {
-            if (id === 'report_export' || id === 'compute_target_probe') {
+            if (['report_export', 'compute_target_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare'].includes(id)) {
                 const previous = lookup();
                 if (previous)
                     return output(previous.value);

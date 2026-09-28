@@ -71,6 +71,8 @@ export class AgentHost {
             this.app.runs.reconcile();
             this.app.runs.launchPending();
             this.app.execution.launchPending();
+            this.app.documentParsing.tick();
+            this.app.literatureTasks.tick();
             this.admission.recover();
             this.app.teams.recover();
             this.app.campaigns.observe();
@@ -340,6 +342,7 @@ export class AgentHost {
         }
         await Promise.all(exits);
         await this.app.git.stop();
+        await this.app.documentParsing.stop();
         await this.app.compute.stop();
     }
 }

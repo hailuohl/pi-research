@@ -206,7 +206,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("value" | "referenceId" | "name" | "unit")[];
+                                readonly required: ("value" | "name" | "referenceId" | "unit")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -216,7 +216,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "validity" | "title" | "integrity" | "runs" | "formatVersion" | "reasons" | "references" | "artifactId")[];
+        readonly required: ("id" | "validity" | "title" | "artifactId" | "formatVersion" | "integrity" | "runs" | "reasons" | "references")[];
         readonly additionalProperties: false;
     };
     readonly report_reference_read: {
@@ -269,7 +269,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "cursor" | "mediaType" | "end" | "reference" | "content")[];
+        readonly required: ("complete" | "cursor" | "mediaType" | "end" | "content" | "reference")[];
         readonly additionalProperties: false;
     };
 };

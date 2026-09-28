@@ -1,4 +1,7 @@
 import { DevelopmentReviewService } from './development/reviews.js';
+import { DocumentService } from './documents/service.js';
+import { DocumentParsingService } from './documents/parse-service.js';
+import { LiteratureTaskService } from './literature/tasks.js';
 import { ExportService } from './publications/export.js';
 import { ComputeQueue } from './scheduler/compute-queue.js';
 import { AgentAdmissionService } from './scheduler/agent-admission.js';
@@ -26,6 +29,9 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly documents: DocumentService;
+    readonly documentParsing: DocumentParsingService;
+    readonly literatureTasks: LiteratureTaskService;
     readonly compute: ComputeQueue;
     readonly agentAdmission: AgentAdmissionService;
     readonly exports: ExportService;

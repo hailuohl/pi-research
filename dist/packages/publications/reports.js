@@ -83,7 +83,10 @@ export class ReportService {
             const claims = claimIds.map(id => this.c.store.get('claim', id, pid));
             for (const claim of claims)
                 for (const id of claim.evidenceIds) {
-                    const e = this.evidence.verify(pid, id), artifact = this.c.store.get('artifact', e.artifactId, pid), runId = e.runId ?? artifact.runId;
+                    const e = this.evidence.verify(pid, id);
+                    // ponytail: report bundles do not yet collect PDF provenance; add typed PDF bindings before permitting these claims.
+                    ensure(!e.document, 'REPORT_DOCUMENT_BINDING_PENDING', '当前报告尚未支持完整 PDF 版本与页图引用；请先在文档页回查，不生成缺原件绑定的成果包');
+                    const artifact = this.c.store.get('artifact', e.artifactId, pid), runId = e.runId ?? artifact.runId;
                     if (runId && !runIds.includes(runId)) {
                         ensure(runIds.length < 100, 'REPORT_TOO_LARGE', '报告关联运行超过上限', 413);
                         runIds.push(runId);

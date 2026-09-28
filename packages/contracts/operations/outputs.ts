@@ -1,3 +1,4 @@
+import {DOCUMENT_OUTPUT_SCHEMAS,DOCUMENT_EVIDENCE_LINK_SCHEMA,DISCOVERY_OUTPUT_SCHEMA} from './document-schemas.js';
 import {GIT_OUTPUT_SCHEMAS} from './git-schemas.js';
 import {REPORT_OUTPUT_SCHEMAS} from './report-schemas.js';
 import {SCHEDULER_OUTPUT_SCHEMAS} from './scheduler-schemas.js';
@@ -82,9 +83,9 @@ const CORE_OUTPUT_SCHEMAS = {
         contentKind: enumeration('metadata', 'abstract', 'full_text'),
         versionAssurance: enumeration('requested-address-unverified', 'provider-record'), pageMapping: { const: 'unavailable' },
         artifactId: string, artifactDigest: string, rawArtifactIds: strings, fullTextRead: boolean, retrievedAt: string,
-        scopeSessionId: nullableString, scopeAttemptId: nullableString,
+        scopeSessionId: nullableString, scopeAttemptId: nullableString,scopeTaskId:nullableString,reportedVersion:nullableString,resolvedId:string,license:nullableString,
         sourceResponses: array(object({ url: string, contentType: string })), limitations: strings
-    })
+    },['scopeTaskId','reportedVersion','resolvedId','license'])
 } as const satisfies Record<string, JsonSchema>;
 
 const nullable = <const S extends JsonSchema>(schema: S) => ({ anyOf: [schema, { type: 'null' }] } as const);
@@ -99,7 +100,7 @@ const team = row('team', {
     rootSessionId: string, goal: string, state: enumeration('awaiting_approval', 'active', 'paused', 'draining', 'completed', 'partial', 'failed', 'cancelled'), settings,
     delegationEnabled: boolean, planVersion: integer, directiveVersion: integer, planDigest: string, approvalId: string, summarySent: boolean, autoSummarize: boolean, blockReason: string, sourceRevisionId: string
 }, ['autoSummarize', 'blockReason', 'sourceRevisionId']);
-const evidence = row('evidence', { type: enumeration('artifact', 'run', 'paper', 'code'), artifactId: string, digest: string, locator, quote: string, description: string, runId: string }, ['runId']);
+const evidence = row('evidence', { type: enumeration('artifact', 'run', 'paper', 'code'), artifactId: string, digest: string, locator, quote: string, description: string, runId: string,document:DOCUMENT_EVIDENCE_LINK_SCHEMA }, ['runId','document']);
 const skillSource = object({ repository: string, commit: string, path: string, blob: string });
 const member = row('campaign-member', { campaignId: string, roundId: string, experimentId: string, intentId: string, required: boolean, repairDecisionId: string }, ['repairDecisionId']);
 const decision = row('campaign-decision', {
@@ -118,7 +119,7 @@ const artifact = row('artifact', { title: string, digest: string, size: integer,
 export const OUTPUT_SCHEMAS = {
     ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,...SCHEDULER_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
-    ...SOURCE_OUTPUT_SCHEMAS,
+    ...SOURCE_OUTPUT_SCHEMAS,...DOCUMENT_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,
     reviewed_change_prepare:CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
@@ -149,15 +150,10 @@ export const OUTPUT_SCHEMAS = {
         version: integer, enabled: object({ alphaxiv: boolean, openalex: boolean, biorxiv: boolean, pubmed: boolean, crossref: boolean }), requestLimit: integer, requestsUsed: integer,
         credentials: object({ openalexKeyConfigured: boolean, ncbiKeyConfigured: boolean, ncbiEmailConfigured: boolean }),
         capabilities: array(object({ id: string, category: enumeration('literature', 'compute', 'collaboration', 'publication'), operations: strings, implementation: enumeration('http-adapter', 'existing-runner', 'not-implemented', 'existing-service'), verification: enumeration('fixture-only', 'local-example-tested', 'not-live-tested', 'unavailable', 'local-tests'), credential: string, content: string, limitation: string }, ['credential', 'content', 'limitation'])),
-        budgetUnit: string, defaults: string
+        budgetUnit: string, defaults: string,observations:array(object({id:string,source,host:string,status:string,startedAt:string,httpStatus:nullable(integer),retryAfter:nullable(string),error:nullable(string)}))
     }),
     literature_search: row('literature-search', { query: string, source: { const: 'crossref' }, retrievedAt: string, coverage: { const: 'metadata-only' }, items: array(object({ doi: string, title: string, authors: strings, date: array(integer), journal: string, url: string, fullTextRead: { const: false }, source: { const: 'crossref' } })) }),
-    literature_discover: row('connector-search', {
-        query: string, settingsVersion: integer, scopeSessionId: nullableString, scopeTaskId: nullableString, scopeAttemptId: nullableString,
-        request: object({ query: string, sources: array(source), limit: integer, strategy: enumeration('keyword', 'embedding'), prioritize: enumeration('default', 'recency', 'historical', 'popular'), publishedAfter: string, publishedBefore: string }, ['publishedAfter', 'publishedBefore']),
-        items: array(object({ source, id: string, title: string, abstract: string, publicationDate: nullableString, doi: string, url: string, citations: number, votes: number, snippets: array(object({ text: string, reportedPage: nullable(number) })), contentKind: { const: 'metadata' }, fullTextRead: { const: false }, duplicates: array(object({ source, id: string })) }, ['doi', 'citations', 'votes', 'snippets'])),
-        sources: array(object({ source, status: enumeration('succeeded', 'failed', 'disabled'), count: integer, error: string }, ['error'])), status: enumeration('complete', 'partial'), retrievedAt: string, coverage: string
-    }),
+    literature_discover: DISCOVERY_OUTPUT_SCHEMA,
     project_inspect: object({
         textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }),
         project: object({ id: string, name: string }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),

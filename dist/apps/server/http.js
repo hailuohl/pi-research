@@ -70,7 +70,8 @@ export function createHttpServer(options) {
                 const chunks = [];
                 for await (const chunk of req) {
                     size += chunk.length;
-                    ensure(size <= 3 * 1024 * 1024, 'BODY_TOO_LARGE', '请求最多 3 MiB', 413);
+                    const maximum = route === '/operations/document_import' ? 48 * 1024 * 1024 : 3 * 1024 * 1024;
+                    ensure(size <= maximum, 'BODY_TOO_LARGE', route === '/operations/document_import' ? '文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB' : '请求最多 3 MiB', 413);
                     chunks.push(Buffer.from(chunk));
                 }
                 let body;

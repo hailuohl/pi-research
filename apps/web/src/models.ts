@@ -4,6 +4,16 @@ import type {ComputeQueueInspection} from '../../../dist/packages/scheduler/comp
 import type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
 export type {ComputeQueueInspection,ComputeLimits,ComputeConfiguration,ComputeQueueItem,ComputeWaitReason,ComputeUsage,ComputeAvailable} from '../../../dist/packages/scheduler/compute-types.js';
 export type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
+import type {DocumentVersion,DocumentEvidenceLink} from '../../../dist/packages/documents/types.js';
+export type {DocumentVersion,DocumentEvidenceLink} from '../../../dist/packages/documents/types.js';
+import type {DocumentParsingService} from '../../../dist/packages/documents/parse-service.js';
+export type {DocumentPage} from '../../../dist/packages/documents/parse-types.js';
+export type DocumentParserStatus=ReturnType<DocumentParsingService['status']>;
+export type DocumentParseJobDTO=ReturnType<DocumentParsingService['inspect']>;
+export type DocumentPageReadDTO=ReturnType<DocumentParsingService['readPage']>;
+import type {LiteratureTaskDTO} from '../../../dist/packages/literature/tasks.js';
+export type {LiteratureTaskDTO} from '../../../dist/packages/literature/tasks.js';
+export interface DocumentLocation {documentVersionId:string;parseResultId?:string;pageNumber?:number;start?:number;end?:number;}
 export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision, Wakeup };
 import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig } from '../../../dist/packages/domain/types.js';
 export type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig };
@@ -35,6 +45,9 @@ export interface ReportInspection {
     runs:Array<{runId:string;experimentId:string;revision:number;state:string;integrity:string;judgment:string;sourceDigest:string;gitCommit?:string;metrics:Array<{name:string;value:number;unit:string;referenceId:string}>}>;
 }
 export interface ProjectState {
+    literatureTasks?:LiteratureTaskDTO[];
+    documents?:Row<DocumentVersion>[];
+    documentParseJobs?:DocumentParseJobDTO[];
     compute?:ComputeQueueInspection;
     agentCapacity?:AgentCapacityDTO;
     developmentTasks?:DevelopmentTaskDTO[];

@@ -1,3 +1,4 @@
+import { verifyDocumentLink } from './document-link.js';
 import { captureAcceptance, assertAcceptanceCurrent } from './acceptance.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -11,7 +12,8 @@ export class EvidenceService {
     constructor(c) {
         this.c = c;
     }
-    put(projectId, title, bytes, mediaType = 'text/plain', origin = 'user', extra = {}) {
+    /** Host-only staging: immutable CAS bytes, without publishing any database record. */
+    prepareArtifact(projectId, title, bytes, mediaType = 'text/plain', origin = 'user', extra = {}) {
         this.c.store.get('project', projectId);
         text(title, 'title', 200);
         ensure(bytes.length <= 32 * 1024 * 1024, 'ARTIFACT_TOO_LARGE', '产物超过 32 MiB', 413);
@@ -22,8 +24,11 @@ export class EvidenceService {
             writeFileSync(path, bytes, { mode: 0o444, flag: 'wx' });
         else
             ensure(digest(readFileSync(path)) === hash, 'ARTIFACT_CORRUPTED', '产物库校验失败', 500);
-        return this.c.store.create('artifact', projectId, { ...extra, title, digest: hash, size: bytes.length, path, mediaType, origin });
+        return { ...extra, title, digest: hash, size: bytes.length, path, mediaType, origin };
     }
+    /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
+    publishPrepared(projectId, prepared) { this.c.store.get('project', projectId); return this.c.store.create('artifact', projectId, prepared); }
+    put(projectId, title, bytes, mediaType = 'text/plain', origin = 'user', extra = {}) { return this.publishPrepared(projectId, this.prepareArtifact(projectId, title, bytes, mediaType, origin, extra)); }
     read(actor, id) { const a = this.c.store.get('artifact', id); scope(actor, a.projectId); const bytes = readFileSync(a.path); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
     register(actor, projectId, artifactId, start, end, description, type = 'artifact', runId) {
         scope(actor, projectId);
@@ -37,7 +42,22 @@ export class EvidenceService {
             this.c.store.get('run', runId, projectId);
         return this.c.store.create('evidence', projectId, { type, artifactId: a.id, digest: a.digest, locator: { start, end }, quote: content.slice(start, end), description: text(description, 'description', 2000), ...(runId ? { runId } : {}) });
     }
-    verify(projectId, evidenceId) { const e = this.c.store.get('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); return e; }
+    verify(projectId, evidenceId) { const e = this.c.store.get('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); if (e.document)
+        verifyDocumentLink(this.c, projectId, e.document, e.artifactId); return e; }
+    registerDocument(actor, projectId, input) {
+        userOnly(actor);
+        scope(actor, projectId);
+        assertProjectWritable(this.c.store, projectId);
+        return this.c.store.transaction(() => {
+            const result = this.c.store.get('document-parse-result', input.parseResultId, projectId);
+            const page = result.pages.find(p => p.pageNumber === integer(input.pageNumber, 'pageNumber', 1, 10000));
+            ensure(page, 'DOCUMENT_PAGE_NOT_FOUND', '原文没有该页', 404);
+            const document = { documentVersionId: input.documentVersionId, rawDigest: result.rawDigest, parseResultId: result.id, pageNumber: page.pageNumber, textArtifactDigest: page.textArtifactDigest };
+            verifyDocumentLink(this.c, projectId, document, page.textArtifactId);
+            const e = this.register(actor, projectId, page.textArtifactId, input.start, input.end, input.description, 'paper');
+            return this.c.store.update('evidence', e.id, e.version, { document });
+        });
+    }
     proposeClaim(actor, projectId, statement, evidenceIds, limitations = [], taskId) {
         scope(actor, projectId);
         ensure(evidenceIds.length > 0, 'EVIDENCE_REQUIRED', '结论候选必须引用证据', 400);

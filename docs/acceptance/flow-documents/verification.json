@@ -1,0 +1,69 @@
+{
+  "date": "2026-09-28",
+  "registryOperations": 79,
+  "initialFullRegression": {
+    "tests": 493,
+    "pass": 489,
+    "fail": 1,
+    "skipped": 3,
+    "durationMs": 168996.8339,
+    "issue": "New archive guard also rejected the existing development cancellation-after-archive flow"
+  },
+  "afterCompatibilityRepair": {
+    "command": "npm run test:core",
+    "tests": 493,
+    "pass": 490,
+    "fail": 0,
+    "skipped": 3,
+    "durationMs": 155491.7775,
+    "beforeFinalEvidenceRangeUIRepair": true
+  },
+  "finalRelated": [
+    {
+      "command": "node --test tests/unit/literature-ui.test.mjs tests/unit/workflow-ui.test.mjs",
+      "pass": 13,
+      "fail": 0
+    },
+    {
+      "command": "node --test tests/unit/literature-tasks.test.mjs tests/unit/literature-ui.test.mjs",
+      "pass": 15,
+      "fail": 0
+    }
+  ],
+  "cleanBuild": {
+    "source": ".validation/clean-build-rub3sS/summary.json",
+    "node": "24.19.0",
+    "platform": "win32",
+    "lockSha256": "c50e82528bda0350b504de14c794a1caaed22750611d88a331ae172bc21ea5cc",
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ],
+    "identical": true,
+    "files": 339,
+    "distManifestSha256": "2644f0353f16eeaa7ac6acf2aba66eeb0603690a1f2627c2180bdeee3ff4b80b"
+  },
+  "review": {
+    "closed": [
+      "A committed exact search/DocumentVersion receipt recovers its task without another request or version",
+      "Large document import bodies are hashed before Registry writer transactions; staged artifacts publish only after permission recheck"
+    ],
+    "independentlyRechecked": true,
+    "browserRepairs": [
+      "Explicit arXiv vN in an ID is displayed as a version request",
+      "Evidence navigation includes its exact UTF16 range; late responses cannot replace newer selections; page 25 restores its containing list"
+    ],
+    "remaining": "Full PDF provenance in reports/export is not implemented; creation with document-linked claims explicitly fails instead of silently omitting original provenance"
+  },
+  "modelCalls": 0
+}

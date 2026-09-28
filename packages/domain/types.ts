@@ -188,6 +188,7 @@ export interface Evidence {
     quote: string;
     description: string;
     runId?: string;
+    document?: import('../documents/types.js').DocumentEvidenceLink;
 }
 export interface Claim {
     statement: string;

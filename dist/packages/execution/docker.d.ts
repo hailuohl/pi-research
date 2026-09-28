@@ -34,7 +34,9 @@ export declare const BOOTSTRAP = "cp -R /source/. /work/ && chmod -R u+rwX /work
 export declare function stageInputs(job: DockerJob): void;
 export declare function dockerEnv(): NodeJS.ProcessEnv;
 export declare function docker(context: string, args: string[], timeout?: number, limit?: number): Promise<string>;
-export declare function preflight(context: string, image: string): Promise<string>;
+export declare function preflight(context: string, image: string, options?: {
+    allowLocalImageId?: boolean;
+}): Promise<string>;
 /** Read-only local engine identity; context aliases are not independent compute targets. */
 export declare function probeDockerTarget(context: string): Promise<{
     targetId: string;

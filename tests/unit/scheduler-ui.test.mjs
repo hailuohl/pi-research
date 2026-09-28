@@ -5,8 +5,8 @@ import {readFileSync} from 'node:fs';
 const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);globalThis.React=vendor.React;
 const {SchedulerView,ComputeWait,computeReasonLabels}=await import('../../dist/web/assets/scheduler-view.js');
 const limits={maxRuns:2,maxDevelopment:2,maxJobs:4,cpus:null,memoryMb:null,maxQueued:null};
-const usage={jobs:2,runs:1,development:1,cpus:2,memoryMb:512,unknown:1};
-const available={jobs:2,runs:1,development:1,cpus:null,memoryMb:null};
+const usage={jobs:2,runs:1,development:1,documents:0,cpus:2,memoryMb:512,unknown:1};
+const available={jobs:2,runs:1,development:1,documents:0,cpus:null,memoryMb:null};
 const capacity={version:1,maxWorkers:2,available:0,unit:'pi-worker',httpConcurrencyMeasured:false,counts:{held:2,reserved:0,running:1,stopping:0,unknown:1},queued:[{sessionId:'session',role:'coordinator',reasons:[{code:'global-capacity',message:'等待共享 Worker 容量'}]}]};
 const compute={scope:'shared-data-directory',configuration:{version:1,targetId:'global',limits},usage,available,queued:1,targets:[{targetId:'engine',backend:'docker',contexts:['default','desktop-linux'],configuration:{version:0,targetId:'engine',limits},usage,available}],items:[{kind:'run',id:'run',projectId:'project',sequence:1,state:'unknown',held:true,backend:'docker',targetId:'engine',requested:{cpus:1,memoryMb:256},generation:2,leaseUntil:0,nextAttemptAt:0,reason:'recovery_due'}],nextCursor:50};
 function view(){const v=new SchedulerView({data:{project:{id:'project'},compute:structuredClone(compute),agentCapacity:structuredClone(capacity)},perform:async f=>{try{return await f();}catch{return undefined;}}});v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};return v;}

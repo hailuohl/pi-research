@@ -5,6 +5,33 @@ import { ensure, DomainError } from '../domain/errors.js';
 import { object } from '../contracts/validation.js';
 import { normalizeDate, reconstructAbstract, rank, routePaperId, inWindow } from './contracts.js';
 import { parsePubmed } from './pubmed.js';
+/** Exact official routes only; never follow a provider-supplied publisher URL. */
+export function pdfTarget(source, rawId, requestedVersion, credentials) {
+    const { id } = routePaperId(rawId, source);
+    const version = requestedVersion?.replace(/^v/, '');
+    ensure(version === undefined || /^[1-9]\d{0,5}$/.test(version), 'INVALID_INPUT', '版本必须是正整数', 400);
+    if (source === 'alphaxiv') {
+        const embedded = id.match(/v([1-9]\d*)$/)?.[1];
+        ensure(!embedded || !version || embedded === version, 'PAPER_VERSION_MISMATCH', '论文地址与指定版本不一致', 400);
+        const v = version ?? embedded;
+        ensure(v, 'PAPER_VERSION_REQUIRED', '获取原始 arXiv PDF 需要明确 vN 版本', 400);
+        const resolvedId = id.replace(/v[1-9]\d*$/, '') + 'v' + v;
+        return { url: new URL(`https://arxiv.org/pdf/${resolvedId}`), resolvedId, requestedVersion: v, versionAssurance: 'requested-address-unverified' };
+    }
+    if (source === 'biorxiv') {
+        ensure(version, 'PAPER_VERSION_REQUIRED', '获取原始 bioRxiv PDF 需要明确版本', 400);
+        return { url: new URL(`https://www.biorxiv.org/content/${id}v${version}.full.pdf`), resolvedId: id, requestedVersion: version, versionAssurance: 'requested-address-unverified' };
+    }
+    if (source === 'openalex') {
+        ensure(credentials.openalexKey, 'CONNECTOR_CREDENTIAL_REQUIRED', 'OpenAlex 原始内容下载需要用户配置 OpenAlex API key', 409);
+        ensure(/^W\d+$/.test(id), 'PAPER_ID_REQUIRED', 'OpenAlex 原始内容需要明确 W ID', 400);
+        ensure(!version, 'PAPER_VERSION_UNSUPPORTED', 'OpenAlex 内容地址不能核实指定出版版本', 400);
+        const url = new URL(`https://content.openalex.org/works/${id}.pdf`);
+        url.searchParams.set('api_key', credentials.openalexKey);
+        return { url, resolvedId: id, requestedVersion: null, versionAssurance: 'provider-record' };
+    }
+    throw new DomainError('FULL_TEXT_UNAVAILABLE', '此来源没有已核实的原始 PDF 获取路径；摘要不代替全文', 409);
+}
 const str = (v) => typeof v === 'string' ? v : '';
 function json(raw) { try {
     return JSON.parse(raw);
@@ -104,7 +131,7 @@ export async function readProvider(source, id, request, credentials) {
         const x = json((await request(url, oaAuth(credentials))).text), h = oaHit(x, 'openalex');
         const actualId = str(x.id).replace(/^https:\/\/openalex.org\//, '');
         ensure(id.startsWith('10.') ? h.doi === id : actualId === id, 'PAPER_ID_MISMATCH', '来源返回的论文与请求不一致', 502);
-        return { ...common, title: h.title, content: h.abstract || JSON.stringify(x, null, 2), contentKind: h.abstract ? 'abstract' : 'metadata', sourceUrl: url.href, versionAssurance: 'provider-record' };
+        return { ...common, title: h.title, content: h.abstract || JSON.stringify(x, null, 2), contentKind: h.abstract ? 'abstract' : 'metadata', sourceUrl: url.href, versionAssurance: 'provider-record', ...(/^W\d+$/.test(actualId) ? { resolvedId: actualId } : {}), ...(typeof x.best_oa_location?.license === 'string' ? { license: x.best_oa_location.license } : {}) };
     }
     if (source === 'biorxiv') {
         const url = new URL(`https://api.biorxiv.org/details/biorxiv/${id}/na/json`);
@@ -112,8 +139,9 @@ export async function readProvider(source, id, request, credentials) {
         ensure(Array.isArray(data.collection), 'PROVIDER_SCHEMA_INVALID', 'bioRxiv 缺少 collection', 502);
         const candidates = data.collection.filter((x) => str(x.doi).toLowerCase() === id);
         ensure(candidates.length, 'PAPER_NOT_FOUND', 'bioRxiv 未返回该 DOI', 404);
+        ensure(candidates.every((x) => /^[1-9]\d{0,5}$/.test(String(x.version))), 'PROVIDER_SCHEMA_INVALID', 'bioRxiv 版本字段无效', 502);
         const x = candidates.sort((a, b) => Number(b.version) - Number(a.version))[0];
-        return { ...common, title: str(x.title) || id, content: str(x.abstract) || JSON.stringify(x, null, 2), contentKind: x.abstract ? 'abstract' : 'metadata', sourceUrl: url.href, versionAssurance: 'provider-record' };
+        return { ...common, title: str(x.title) || id, content: str(x.abstract) || JSON.stringify(x, null, 2), contentKind: x.abstract ? 'abstract' : 'metadata', sourceUrl: url.href, versionAssurance: 'provider-record', reportedVersion: String(x.version), resolvedId: id, ...(typeof x.license === 'string' ? { license: x.license } : {}) };
     }
     if (source === 'pubmed') {
         const url = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');

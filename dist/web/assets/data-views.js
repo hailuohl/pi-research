@@ -1,6 +1,5 @@
-import { TextEvidencePanel } from './text-evidence.js';
 import { api, artifactText, downloadArtifact } from './api.js';
-import { short, date } from './models.js';
+import { short } from './models.js';
 import { Icon, Badge, Empty, SectionTitle } from './ui.js';
 export class WorkspaceView extends React.Component {
     constructor() {
@@ -93,7 +92,7 @@ export class EvidenceView extends React.Component {
                                     throw Error('当前文本导入限制为 1 MiB');
                                 const content = await file.text();
                                 if (content.includes('\0'))
-                                    throw Error('此入口不接受二进制文件；PDF全文模块尚未实现');
+                                    throw Error('此入口只接受文本；PDF 请到“文献任务与原文”导入');
                                 const a = await api('/artifacts', { projectId: data.project.id, title: file.name, content, mediaType: 'text/plain' });
                                 this.setState({ active: a.id, content });
                             }, '文本资料已保存');
@@ -145,7 +144,10 @@ export class EvidenceView extends React.Component {
                         e.locator.end,
                         " \u00B7 \u4EA7\u7269 ",
                         short(e.artifactId)),
-                    React.createElement("button", { className: "text-button", onClick: () => this.open(e.artifactId) }, "\u67E5\u770B\u539F\u59CB\u4EA7\u7269"))) : React.createElement("div", { className: "inline-empty" }, "\u68C0\u7D22\u547D\u4E2D\u6216\u6587\u4EF6\u5B58\u5728\uFF0C\u4E0D\u81EA\u52A8\u4EE3\u8868\u7ED3\u8BBA\u5DF2\u88AB\u8BC1\u636E\u652F\u6301\u3002")),
+                    React.createElement("button", { className: "text-button", onClick: () => this.open(e.artifactId) }, "\u67E5\u770B\u539F\u59CB\u4EA7\u7269"),
+                    e.document && this.props.onDocument ? React.createElement("button", { className: "secondary compact", onClick: () => { const link = e.document; this.props.onDocument?.({ documentVersionId: link.documentVersionId, parseResultId: link.parseResultId, pageNumber: link.pageNumber, start: e.locator.start, end: e.locator.end }); } },
+                        "\u56DE\u67E5\u56FA\u5B9A\u6587\u6863\u9875 ",
+                        e.document.pageNumber) : null)) : React.createElement("div", { className: "inline-empty" }, "\u68C0\u7D22\u547D\u4E2D\u6216\u6587\u4EF6\u5B58\u5728\uFF0C\u4E0D\u81EA\u52A8\u4EE3\u8868\u7ED3\u8BBA\u5DF2\u88AB\u8BC1\u636E\u652F\u6301\u3002")),
             React.createElement("section", { className: "surface" },
                 React.createElement("div", { className: "surface-heading" },
                     React.createElement("h2", null, "\u7ED3\u8BBA\u5019\u9009\u4E0E\u9A8C\u6536"),
@@ -167,42 +169,7 @@ export class EvidenceView extends React.Component {
     }
 }
 export { ReportsView } from './report-view.js';
-export class LiteratureView extends React.Component {
-    constructor() {
-        super(...arguments);
-        this.state = { query: '', searching: false };
-    }
-    render() { return React.createElement("div", { className: "page-scroll" },
-        React.createElement(SectionTitle, { title: "\u6587\u732E\u68C0\u7D22", sub: "\u5143\u6570\u636E\u68C0\u7D22\u4E0E\u672C\u5730\u539F\u6587\u8BC1\u636E\u5206\u5F00\u8BB0\u5F55\u3002" }),
-        React.createElement(TextEvidencePanel, { data: this.props.data, perform: this.props.perform }),
-        React.createElement("div", { className: "notice" },
-            React.createElement(Icon, { name: "evidence" }),
-            React.createElement("p", null, "\u68C0\u7D22\u6761\u76EE\u4E0D\u7B49\u4E8E\u5DF2\u9605\u8BFB\u5168\u6587\u3002\u591A\u6E90\u8BED\u4E49\u68C0\u7D22\u3001\u8BBA\u6587 PDF \u9605\u8BFB\u548C\u539F\u59CB\u56FE\u8868\u5B9A\u4F4D\u5C1A\u672A\u5B9E\u73B0\uFF0C\u4E5F\u672A\u5728\u672C\u73AF\u5883\u9A8C\u8BC1\u5916\u90E8\u63A5\u53E3\u3002")),
-        React.createElement("form", { className: "search-panel", onSubmit: (e) => { e.preventDefault(); this.setState({ searching: true }); this.props.perform(() => api('/literature-search', { projectId: this.props.data.project.id, query: this.state.query, limit: 8 })).finally(() => this.setState({ searching: false })); } },
-            React.createElement(Icon, { name: "search" }),
-            React.createElement("input", { "aria-label": "\u6587\u732E\u68C0\u7D22\u8BCD", placeholder: "\u8F93\u5165\u7814\u7A76\u5173\u952E\u8BCD", value: this.state.query, onChange: (e) => this.setState({ query: e.target.value }) }),
-            React.createElement("button", { className: "primary", disabled: this.state.searching || !this.state.query.trim() }, this.state.searching ? '检索中…' : '检索文献')),
-        this.props.data.searches.slice().reverse().map(s => React.createElement("section", { className: "surface", key: s.id },
-            React.createElement("div", { className: "surface-heading" },
-                React.createElement("h2", null, s.query),
-                React.createElement("span", { className: "small muted" },
-                    "Crossref \u00B7 ",
-                    date(s.createdAt),
-                    " \u00B7 \u4EC5\u5143\u6570\u636E")),
-            s.items.length ? s.items.map((item, i) => React.createElement("article", { className: "paper-item", key: item.doi || i },
-                React.createElement("div", { className: "paper-number" }, String(i + 1).padStart(2, '0')),
-                React.createElement("div", null,
-                    React.createElement("h3", null, item.title),
-                    React.createElement("p", null, item.authors.join(', ')),
-                    React.createElement("span", { className: "small muted" },
-                        item.journal,
-                        " \u00B7 ",
-                        item.date.join('-'),
-                        " \u00B7 \u672A\u8BFB\u5168\u6587"),
-                    item.url ? React.createElement("a", { href: item.url, target: "_blank", rel: "noopener noreferrer" },
-                        "\u6253\u5F00\u6765\u6E90 ",
-                        React.createElement(Icon, { name: "arrow", size: 14 })) : null))) : React.createElement("div", { className: "inline-empty" }, "\u6B64\u6765\u6E90\u672A\u8FD4\u56DE\u5339\u914D\u6761\u76EE\uFF0C\u4E0D\u80FD\u636E\u6B64\u8BA4\u4E3A\u4E0D\u5B58\u5728\u76F8\u5173\u7814\u7A76\u3002")))); }
-}
+export { LiteratureView } from './literature-view.js';
 export class SettingsView extends React.Component {
     constructor() {
         super(...arguments);

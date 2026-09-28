@@ -75,9 +75,9 @@ export async function docker(context: string, args: string[], timeout = 10000, l
         child.on('close', code => {clearTimeout(timer); failure ? reject(failure) : code === 0 ? resolve(stdout.trim()) : reject(new Error(stderr || `Docker exited ${code}`));});
     });
 }
-export async function preflight(context: string, image: string): Promise<string> {
+export async function preflight(context: string, image: string, options:{allowLocalImageId?:boolean}={}): Promise<string> {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(context)) throw new Error('Explicit Docker context required');
-    if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$/.test(image)) throw new Error('Docker image must be pinned by sha256 digest');
+    if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*@sha256:[a-f0-9]{64}$/.test(image)&&!(options.allowLocalImageId&&/^sha256:[a-f0-9]{64}$/.test(image))) throw new Error('Docker image must be pinned by sha256 digest');
     const contexts = JSON.parse(await docker(context, ['context', 'inspect', context]));
     const endpoint = contexts[0]?.Endpoints?.docker?.Host;
     if (typeof endpoint !== 'string' || !(/^(unix:\/\/\/[^\0\r\n]+|npipe:\/\/\/\/\.\/pipe\/[^\0\r\n]+)$/.test(endpoint))) throw new Error('Only local Unix socket or named pipe Docker contexts are permitted');

@@ -133,7 +133,7 @@ class ExperimentModal extends React.Component {
 class App extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun: saved().selectedRun ?? '', selectedReport: saved().selectedReport ?? '', messages: [], stream: '', streamTruncated: false, eventNotice: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
+        this.state = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun: saved().selectedRun ?? '', selectedReport: saved().selectedReport ?? '', selectedDocument: saved().selectedDocument ?? null, messages: [], stream: '', streamTruncated: false, eventNotice: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
         this.refreshEpoch = 0;
         this.mounted = true;
         this.perform = async (fn, success) => {
@@ -176,8 +176,8 @@ class App extends React.Component {
     }
     componentWillUnmount() { this.mounted = false; this.invalidateRead(); this.feed?.stop(); clearInterval(this.timer); clearTimeout(this.noticeTimer); }
     componentDidUpdate(_, prev) {
-        if (['projectId', 'sessionId', 'tab', 'selectedExp', 'selectedRun', 'selectedReport'].some(k => prev[k] !== this.state[k]))
-            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport }));
+        if (['projectId', 'sessionId', 'tab', 'selectedExp', 'selectedRun', 'selectedReport', 'selectedDocument'].some(k => prev[k] !== this.state[k]))
+            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport, selectedDocument: this.state.selectedDocument }));
         if (!this.state.loggedIn && prev.loggedIn) {
             this.feed?.stop();
             this.feed = undefined;
@@ -242,7 +242,7 @@ class App extends React.Component {
                 this.readController = undefined;
         }
     }
-    switchProject(id) { this.invalidateRead(); this.feed?.stop(); this.feed = undefined; this.setState({ projectId: id, sessionId: '', selectedExp: '', selectedRun: '', selectedReport: '', stream: '', streamTruncated: false, eventNotice: '', data: null }, () => { void this.refresh(); }); }
+    switchProject(id) { this.invalidateRead(); this.feed?.stop(); this.feed = undefined; this.setState({ projectId: id, sessionId: '', selectedExp: '', selectedRun: '', selectedReport: '', selectedDocument: null, stream: '', streamTruncated: false, eventNotice: '', data: null }, () => { void this.refresh(); }); }
     selectSession(id) { this.invalidateRead(); this.setState({ sessionId: id, tab: 'chat', stream: '', streamTruncated: false }, () => { void this.refresh(); }); }
     open(modal, data = null) { this.setState({ modal, modalData: data, error: '' }); }
     async newSession() {
@@ -258,7 +258,7 @@ class App extends React.Component {
         const base = { onClose: this.close, busy };
         const done = () => this.setState({ modal: '', modalData: null });
         if (modal === 'project')
-            return React.createElement(Modal, { ...base, title: "\u65B0\u5EFA\u672C\u5730\u9879\u76EE", submitLabel: "\u521B\u5EFA\u9879\u76EE", onSubmit: fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); this.setState({ projectId: p.id, sessionId: s.id, selectedExp: '', selectedRun: '', selectedReport: '', tab: 'chat' }); done(); }) },
+            return React.createElement(Modal, { ...base, title: "\u65B0\u5EFA\u672C\u5730\u9879\u76EE", submitLabel: "\u521B\u5EFA\u9879\u76EE", onSubmit: fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); this.setState({ projectId: p.id, sessionId: s.id, selectedExp: '', selectedRun: '', selectedReport: '', selectedDocument: null, tab: 'chat' }); done(); }) },
                 React.createElement("label", null,
                     "\u9879\u76EE\u540D\u79F0",
                     React.createElement("input", { "aria-label": "\u9879\u76EE\u540D\u79F0", name: "name", required: true, maxLength: 120, placeholder: "\u4F8B\u5982\uFF1A\u6750\u6599\u7B5B\u9009\u7814\u7A76" })),
@@ -439,9 +439,9 @@ class App extends React.Component {
                                         tab === 'experiments' ? React.createElement(Experiments, { data: data, selected: this.state.selectedExp, onSelect: selectedExp => { this.invalidateRead(); this.setState({ selectedExp, selectedRun: '' }); }, onRun: (selectedRun, selectedExp) => this.setState({ selectedRun, selectedExp }), onCreate: () => this.open('experiment'), onChild: () => this.open('experiment', { parentId: experiment?.id }) }) :
                                             tab === 'changes' ? React.createElement(ChangesView, { key: data.project.id, data: data, perform: this.perform }) :
                                                 tab === 'workspace' ? React.createElement(WorkspaceView, { key: data.project.id, data: data, perform: this.perform }) :
-                                                    tab === 'integrations' ? React.createElement(IntegrationsView, { key: data.project.id, projectId: data.project.id }) :
-                                                        tab === 'literature' ? React.createElement(LiteratureView, { key: data.project.id, data: data, perform: this.perform }) :
-                                                            tab === 'evidence' ? React.createElement(EvidenceView, { key: data.project.id, data: data, perform: this.perform, onRegister: (artifactId, content) => this.open('evidence', { artifactId, content }), onClaim: () => this.open('claim') }) :
+                                                    tab === 'integrations' ? React.createElement(IntegrationsView, { key: data.project.id, projectId: data.project.id, onLiterature: () => this.setState({ tab: 'literature' }) }) :
+                                                        tab === 'literature' ? React.createElement(LiteratureView, { key: data.project.id, data: data, perform: this.perform, selectedDocument: this.state.selectedDocument ?? undefined, onDocument: selectedDocument => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: 'integrations' }) }) :
+                                                            tab === 'evidence' ? React.createElement(EvidenceView, { onDocument: selectedDocument => this.setState({ selectedDocument, tab: 'literature' }), key: data.project.id, data: data, perform: this.perform, onRegister: (artifactId, content) => this.open('evidence', { artifactId, content }), onClaim: () => this.open('claim') }) :
                                                                 tab === 'reports' ? React.createElement(ReportsView, { key: data.project.id, data: data, perform: this.perform, selectedReport: this.state.selectedReport, onSelect: selectedReport => this.setState({ selectedReport }), onRun: (selectedRun, selectedExp) => { if (!data.runs.some(r => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some(e => e.id === selectedExp)) {
                                                                         this.setState({ error: '指定报告 Run 不在当前项目中，未跳转到其他运行。' });
                                                                         return;

@@ -14,8 +14,22 @@ export declare class ConnectorTransport {
     private ncbiNext;
     private interval;
     constructor(options?: TransportOptions);
-    text(url: URL, headers: Record<string, string>, validate: () => void, maxBytes?: number, signal?: AbortSignal): Promise<{
+    bytes(url: URL, headers: Record<string, string>, validate: () => void, maxBytes?: number, signal?: AbortSignal, observe?: (value: {
+        httpStatus: number;
+        retryAfter: string | null;
+    }) => void): Promise<{
+        body: Buffer<ArrayBuffer>;
+        bytes: number;
+        contentType: string;
+        status: number;
+        rateLimitRemaining: string | null;
+    }>;
+    text(url: URL, headers: Record<string, string>, validate: () => void, maxBytes?: number, signal?: AbortSignal, observe?: (value: {
+        httpStatus: number;
+        retryAfter: string | null;
+    }) => void): Promise<{
         text: string;
+        body: Buffer<ArrayBuffer>;
         bytes: number;
         contentType: string;
         status: number;

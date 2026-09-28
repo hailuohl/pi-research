@@ -67,7 +67,10 @@ export class ReportService {
             assertProjectWritable(this.c.store,pid);const x=object(value),title=text(x.title??'研究结果记录','title',200),runIds=[...new Set(strings(x.runIds??[],'runIds',100))],claimIds=[...new Set(strings(x.claimIds??[],'claimIds',100))];
             ensure(Object.keys(x).every(k=>['projectId','title','runIds','claimIds'].includes(k))&&(!x.projectId||x.projectId===pid),'INVALID_INPUT','报告只接受当前项目的运行与结论 ID',400);
             const claims=claimIds.map(id=>this.c.store.get<Claim>('claim',id,pid));
-            for(const claim of claims)for(const id of claim.evidenceIds){const e=this.evidence.verify(pid,id),artifact=this.c.store.get<Artifact>('artifact',e.artifactId,pid),runId=e.runId??artifact.runId;if(runId&&!runIds.includes(runId)){ensure(runIds.length<100,'REPORT_TOO_LARGE','报告关联运行超过上限',413);runIds.push(runId);}}
+            for(const claim of claims)for(const id of claim.evidenceIds){const e=this.evidence.verify(pid,id);
+                // ponytail: report bundles do not yet collect PDF provenance; add typed PDF bindings before permitting these claims.
+                ensure(!e.document,'REPORT_DOCUMENT_BINDING_PENDING','当前报告尚未支持完整 PDF 版本与页图引用；请先在文档页回查，不生成缺原件绑定的成果包');
+                const artifact=this.c.store.get<Artifact>('artifact',e.artifactId,pid),runId=e.runId??artifact.runId;if(runId&&!runIds.includes(runId)){ensure(runIds.length<100,'REPORT_TOO_LARGE','报告关联运行超过上限',413);runIds.push(runId);}}
             const runs=runIds.map(id=>this.c.store.get<Run>('run',id,pid));
             ensure(runs.length+claims.length>0,'REPORT_EMPTY','请选择真实运行或已采纳结论',400);ensure(runs.every(r=>['succeeded','failed','cancelled'].includes(r.state)),'RUN_NOT_TERMINAL','未终态运行不能列为最终结果');
             ensure(new Set(runs.map(r=>r.manifest.contractDigest)).size<=1,'INCOMPARABLE_CONTRACTS','不同运行契约不能直接合并比较');

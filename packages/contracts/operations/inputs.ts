@@ -1,3 +1,4 @@
+import {DOCUMENT_INPUT_SCHEMAS,DISCOVERY_INPUT_SCHEMA} from './document-schemas.js';
 import {GIT_INPUT_SCHEMAS} from './git-schemas.js';
 import {REPORT_INPUT_SCHEMAS} from './report-schemas.js';
 import {SCHEDULER_INPUT_SCHEMAS} from './scheduler-schemas.js';
@@ -36,11 +37,11 @@ const candidate = s.object({ title: s.string(200), hypothesis: s.string(), confi
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
     ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS,...SCHEDULER_INPUT_SCHEMAS,
-    ...SOURCE_INPUT_SCHEMAS,
+    ...SOURCE_INPUT_SCHEMAS,...DOCUMENT_INPUT_SCHEMAS,
     research_skill_list: s.object({}),
     research_skill_read: s.object({ skillId: id, resource: s.string(200) }, ['skillId']),
     connector_status: s.object({}),
-    literature_discover: s.object({ query: s.string(500), sources: s.nullable(s.array(sources, 5, 1)), limit: s.nullable(s.integer(1, 20)), strategy: s.nullable(s.enum(['keyword', 'embedding'])), prioritize: s.nullable(s.enum(['default', 'recency', 'historical', 'popular'])), publishedAfter: { ...s.string(10), format: 'date' }, publishedBefore: { ...s.string(10), format: 'date' } }, ['query']),
+    literature_discover: DISCOVERY_INPUT_SCHEMA,
     paper_read: s.object({ id: s.string(300), source: sources }, ['id']),
     campaign_inspect: s.object({ campaignId: id }, ['campaignId']),
     campaign_enroll: s.object({ campaignId: id, intentId: id, expectedVersion: version, required: s.nullable(s.boolean()), repairDecisionId: id }, ['campaignId', 'intentId', 'expectedVersion']),
