@@ -2,7 +2,8 @@ import { s } from './schema.js';
 const id = s.string(100), string = { type: 'string' }, number = { type: 'number' }, integer = { type: 'integer' };
 const array = (items) => ({ type: 'array', items });
 const object = (properties, optional) => ({ type: 'object', properties, required: Object.keys(properties).filter(k => !optional?.includes(k)), additionalProperties: false });
-const reference = object({ id: string, type: s.enum(['run', 'run-source', 'artifact', 'evidence', 'development-job', 'development-review', 'claim']), targetId: string, label: string, runId: string, path: string, digest: string, relation: s.enum(['exact', 'ancestry']) }, ['runId', 'path', 'digest', 'relation']);
+const document = object({ documentVersionId: string, rawDigest: string, parseResultId: string, pageNumber: integer, textArtifactDigest: string, start: integer, end: integer, pageLabel: { anyOf: [string, { type: 'null' }] }, rawArtifactId: string, imageArtifactId: string });
+const reference = object({ id: string, type: s.enum(['run', 'run-source', 'artifact', 'evidence', 'development-job', 'development-review', 'claim']), targetId: string, label: string, runId: string, path: string, digest: string, relation: s.enum(['exact', 'ancestry']), document }, ['runId', 'path', 'digest', 'relation', 'document']);
 export const REPORT_INPUT_SCHEMAS = {
     report_create: s.object({ title: s.string(200), runIds: s.array(id, 100), claimIds: s.array(id, 100) }),
     report_inspect: s.object({ reportId: id }, ['reportId']),

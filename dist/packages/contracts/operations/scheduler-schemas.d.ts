@@ -236,7 +236,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("unknown" | "development" | "jobs" | "runs" | "documents" | "cpus" | "memoryMb")[];
+                readonly required: ("unknown" | "development" | "documents" | "jobs" | "runs" | "cpus" | "memoryMb")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -269,7 +269,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: ("development" | "jobs" | "runs" | "documents" | "cpus" | "memoryMb")[];
+                readonly required: ("development" | "documents" | "jobs" | "runs" | "cpus" | "memoryMb")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -379,7 +379,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                 };
                             };
-                            readonly required: ("unknown" | "development" | "jobs" | "runs" | "documents" | "cpus" | "memoryMb")[];
+                            readonly required: ("unknown" | "development" | "documents" | "jobs" | "runs" | "cpus" | "memoryMb")[];
                             readonly additionalProperties: false;
                         };
                         readonly available: {
@@ -412,7 +412,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("development" | "jobs" | "runs" | "documents" | "cpus" | "memoryMb")[];
+                            readonly required: ("development" | "documents" | "jobs" | "runs" | "cpus" | "memoryMb")[];
                             readonly additionalProperties: false;
                         };
                     };

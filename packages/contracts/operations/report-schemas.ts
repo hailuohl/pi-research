@@ -3,7 +3,8 @@ import {s,type JsonSchema} from './schema.js';
 const id=s.string(100),string={type:'string'} as const,number={type:'number'} as const,integer={type:'integer'} as const;
 const array=<const T extends JsonSchema>(items:T)=>({type:'array',items} as const);
 const object=<const P extends Record<string,JsonSchema>,const O extends readonly (keyof P & string)[]=[]>(properties:P,optional?:O)=>({type:'object',properties,required:Object.keys(properties).filter(k=>!optional?.includes(k)) as Exclude<keyof P & string,O[number]>[],additionalProperties:false} as const);
-const reference=object({id:string,type:s.enum(['run','run-source','artifact','evidence','development-job','development-review','claim']),targetId:string,label:string,runId:string,path:string,digest:string,relation:s.enum(['exact','ancestry'])},['runId','path','digest','relation']);
+const document=object({documentVersionId:string,rawDigest:string,parseResultId:string,pageNumber:integer,textArtifactDigest:string,start:integer,end:integer,pageLabel:{anyOf:[string,{type:'null'}]},rawArtifactId:string,imageArtifactId:string});
+const reference=object({id:string,type:s.enum(['run','run-source','artifact','evidence','development-job','development-review','claim']),targetId:string,label:string,runId:string,path:string,digest:string,relation:s.enum(['exact','ancestry']),document},['runId','path','digest','relation','document']);
 export const REPORT_INPUT_SCHEMAS={
     report_create:s.object({title:s.string(200),runIds:s.array(id,100),claimIds:s.array(id,100)}),
     report_inspect:s.object({reportId:id},['reportId']),

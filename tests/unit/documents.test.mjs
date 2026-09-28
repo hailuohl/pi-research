@@ -69,8 +69,6 @@ test('document evidence verifies raw PDF, parse job, fixed page text and page im
  s.app.store.update('document-parse-job',job.id,job.version,{resultId:result.id});
  const e=s.app.evidence.registerDocument(USER,s.project.id,{documentVersionId:d.id,parseResultId:result.id,pageNumber:1,start:0,end:10,description:'unit provenance fixture, not a scientific result'});
  assert.equal(s.app.evidence.verify(s.project.id,e.id).document.rawDigest,d.original.digest);
- const claim=s.app.evidence.proposeClaim(USER,s.project.id,'Unit provenance claim only',[e.id]);s.app.evidence.decideClaim(USER,claim.id,claim.version,'accepted');
- assert.throws(()=>s.app.reports.create(USER,s.project.id,{title:'Cannot omit PDF provenance',claimIds:[claim.id]}),{code:'REPORT_DOCUMENT_BINDING_PENDING'});
  const other=s.d.import(USER,s.project.id,{title:'other',mediaType:'application/pdf',contentBase64:Buffer.from('%PDF-other').toString('base64')},'other');
  assert.throws(()=>s.app.evidence.registerDocument(USER,s.project.id,{documentVersionId:other.id,parseResultId:result.id,pageNumber:1,start:0,end:10,description:'forged'}),{code:'EVIDENCE_INVALID'});
  const replacement=s.app.evidence.put(s.project.id,'forged-image.png',Buffer.from('different image'),'image/png','document:derived');

@@ -3360,7 +3360,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "cursor" | "quality" | "end" | "versionAssurance" | "requestedVersion" | "rawDigest" | "pageCount" | "resultId" | "documentVersionId" | "items" | "observedVersion")[];
+        readonly required: ("complete" | "cursor" | "quality" | "end" | "versionAssurance" | "requestedVersion" | "rawDigest" | "pageCount" | "resultId" | "documentVersionId" | "observedVersion" | "items")[];
         readonly additionalProperties: false;
     };
     readonly document_page_read: {

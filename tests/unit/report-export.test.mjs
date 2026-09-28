@@ -19,6 +19,23 @@ function prepared(extraOutput,title='Unit report ../../ title stays text') {
  return {...s,run,report,service};
 }
 const exportsFor=s=>s.app.store.list('artifact',s.project.id).filter(a=>a.origin==='report-export');
+test('binary noise is not treated as a host path, while readable paths and secrets still block export',async()=>{
+ for(const [label,content,code] of [
+  ['compressed noise','A:/',null],
+  ['drive metadata','C:\\private\\report.pdf','EXPORT_HOST_PATH_DETECTED'],
+  ['UNC metadata','\\\\host\\share\\report.pdf','EXPORT_HOST_PATH_DETECTED'],
+  ['host marker','snapshotPath: /private/research/report.pdf','EXPORT_HOST_PATH_DETECTED'],
+  ['credential','api_key = "sk-unit-test-value-0123456789"','EXPORT_SENSITIVE_CONTENT']
+ ]){
+  const bytes=Buffer.concat([Buffer.from([255,254]),Buffer.from(content),Buffer.from([255,254])]);
+  const s=prepared((_s,r)=>writeFileSync(join(r.outputDir,'binary-fixture.bin'),bytes));
+  try{
+   if(code){await assert.rejects(s.service.create(USER,s.project.id,{reportId:s.report.id},label),{code});assert.equal(exportsFor(s).length,0);}
+   else{const collected=s.app.reports.collectExport(USER,s.project.id,s.report.id);assert.ok(collected.files.some(f=>f.bytes.equals(bytes)));assert.ok((await s.service.create(USER,s.project.id,{reportId:s.report.id},label)).digest);}
+  }finally{s.close();}
+ }
+});
+
 test('native tar export contains every fixed collected byte and logical mode, excludes mutable workspace, and commits once',async()=>{
  const s=prepared();try {
   writeFileSync(join(s.baseline.workspace,'mutable-workspace-only.txt'),'never export current workspace');

@@ -38,6 +38,7 @@ export interface DevelopmentReviewDTO {
 export interface ReportReference {
     id:string; type:'run'|'run-source'|'artifact'|'evidence'|'development-job'|'development-review'|'claim';
     targetId:string; label:string; runId?:string; path?:string; digest?:string; relation?:'exact'|'ancestry';
+    document?:DocumentEvidenceLink & {start:number;end:number;pageLabel:string|null;rawArtifactId:string;imageArtifactId:string};
 }
 export interface ReportRecord {id:string;artifactId:string;runIds:string[];claimIds:string[];evidenceIds?:string[];}
 export interface ReportInspection {

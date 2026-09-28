@@ -10,6 +10,7 @@ export declare class ReportService {
     private bytes;
     private checkRecord;
     private checkProposal;
+    private document;
     create(actor: Actor, pid: string, value: unknown): Row<Artifact>;
     inspect(actor: Actor, pid: string, id: string): ReportInspection;
     readReference(actor: Actor, pid: string, id: string, referenceId: string, cursor?: number, limit?: number): {

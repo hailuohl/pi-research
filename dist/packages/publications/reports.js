@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import { basename, dirname, isAbsolute } from 'node:path';
 import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { verifyRunRecord } from '../evidence/run-verifier.js';
+import { verifyDocumentLink } from '../evidence/document-link.js';
+import { checkDocumentVersion } from '../documents/parse-service.js';
 import { assertAcceptanceCurrent } from '../evidence/acceptance.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { object, text, strings, integer } from '../contracts/validation.js';
@@ -18,6 +20,14 @@ function safeExportBytes(bytes, context) {
     const value = bytes.toString('utf8');
     const roots = [context.dataDir, context.repoRoot].map(path => path.replaceAll('\\', '/').replace(/\/+$/, '').toLowerCase());
     let decoded = value;
+    ensure(!roots.some(root => root.length > 1 && value.replaceAll('\\', '/').toLowerCase().includes(root)), 'EXPORT_HOST_PATH_DETECTED', '导出内容包含宿主路径；请检查原始运行记录，文件不会被自动改写', 400);
+    try {
+        new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    }
+    catch {
+        // ponytail: binary path heuristics cover readable ASCII runs of 8+ bytes; a format-aware metadata audit is needed for encoded payloads.
+        decoded = (bytes.toString('latin1').match(/[\x09\x0a\x0d\x20-\x7e]{8,}/g) ?? []).join('\n');
+    }
     for (let layer = 0; layer < 5; layer++) {
         const normalized = decoded.replaceAll('\\', '/'), lower = normalized.toLowerCase();
         const hostPath = roots.some(root => root.length > 1 && lower.includes(root)) || /(?:^|[^A-Za-z0-9_])[A-Za-z]:\//.test(normalized) || /(?:^|[\s"'(=,])\/{2,}[^\s/"']+\/+[^\s/"']+/.test(normalized) || /\b(?:host[_ -]?(?:path|directory)|(?:bind(?: mount)?|mount) source(?: path)?|snapshotPath|controlDir)\b[^\r\n/]{0,96}\/[^\s"'<>]+/i.test(normalized) || /--mount[^\r\n]{0,300}[,\s]src=\/[^\s"'<>]+/i.test(normalized);
@@ -73,6 +83,28 @@ export class ReportService {
             ensure(review.jobId === p.testJobId && review.sourceDigest === candidateSnapshot.digest && acceptance.taskId === review.taskId, 'REPORT_REVIEW_BINDING_INVALID', '独立审查不属于该测试和候选源码');
         }
     }
+    document(pid, e, checked) {
+        const chain = verifyDocumentLink(this.c, pid, e.document, e.artifactId), { document: d, result: r, job, manifest, bytes } = chain, content = bytes.toString('utf8');
+        integer(e.locator.start, 'start', 0, content.length);
+        integer(e.locator.end, 'end', e.locator.start + 1, content.length);
+        ensure(e.digest === chain.page.textArtifactDigest && content.slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '报告页段引用或内容已失效');
+        const approval = this.c.store.get('approval', job.approvalId, pid);
+        ensure(approval.status === 'approved' && approval.scope === 'document.parse' && approval.subjectKind === 'document-parse-job' && approval.subjectId === job.id && approval.digest === job.manifestDigest, 'APPROVAL_STALE', '文档解析批准已失效');
+        if (!checked.has(r.id)) {
+            const original = this.c.store.get('artifact', d.original.artifactId, pid), output = this.c.store.get('artifact', r.manifestArtifactId, pid);
+            ensure(original.size === d.original.size && original.mediaType === d.original.mediaType && original.mediaType === 'application/pdf' && output.mediaType === 'application/json', 'REPORT_DOCUMENT_CHANGED', '文档产物固定类型或长度已改变');
+            ensure(manifest.formatVersion === 1 && manifest.profileId === r.profileId && r.profileId === job.manifest.profileId && r.profileDigest === job.manifest.profileDigest && r.imageId === job.imageId && r.pageCount === manifest.pageCount && r.pages.length === manifest.pages.length && digest(r.quality) === digest(manifest.quality), 'REPORT_DOCUMENT_CHANGED', '解析身份或提取质量已改变');
+            for (const [index, page] of r.pages.entries()) {
+                const fixed = manifest.pages[index], t = this.c.store.get('artifact', page.textArtifactId, pid), i = this.c.store.get('artifact', page.imageArtifactId, pid);
+                ensure(fixed && page.pageNumber === fixed.pageNumber && page.textArtifactDigest === fixed.textDigest && page.imageArtifactDigest === fixed.imageDigest && t.digest === fixed.textDigest && i.digest === fixed.imageDigest && t.size === fixed.textBytes && i.size === fixed.imageBytes && t.mediaType === 'text/plain' && i.mediaType === 'image/png' && digest(page.paragraphs) === digest(fixed.paragraphs) && page.textStatus === fixed.textStatus && page.pageLabel === fixed.pageLabel && page.width === fixed.width && page.height === fixed.height && page.imageWidth === fixed.imageWidth && page.imageHeight === fixed.imageHeight, 'REPORT_DOCUMENT_CHANGED', '固定页元数据已改变');
+            }
+            // Version markers may occur on an unquoted page; check its text without exporting it.
+            const texts = d.source.provider === 'alphaxiv' ? r.pages.map(p => this.bytes(pid, p.textArtifactId, { digest: p.textArtifactDigest }).bytes.toString('utf8')) : [];
+            ensure(digest(checkDocumentVersion(d.source, texts)) === digest({ requestedVersion: r.requestedVersion, observedVersion: r.observedVersion, versionAssurance: r.versionAssurance }), 'REPORT_DOCUMENT_CHANGED', 'PDF 版本保证记录已改变');
+            checked.add(r.id);
+        }
+        return chain;
+    }
     create(actor, pid, value) {
         userOnly(actor);
         scope(actor, pid);
@@ -83,9 +115,7 @@ export class ReportService {
             const claims = claimIds.map(id => this.c.store.get('claim', id, pid));
             for (const claim of claims)
                 for (const id of claim.evidenceIds) {
-                    const e = this.evidence.verify(pid, id);
-                    // ponytail: report bundles do not yet collect PDF provenance; add typed PDF bindings before permitting these claims.
-                    ensure(!e.document, 'REPORT_DOCUMENT_BINDING_PENDING', '当前报告尚未支持完整 PDF 版本与页图引用；请先在文档页回查，不生成缺原件绑定的成果包');
+                    const e = this.c.store.get('evidence', id, pid);
                     const artifact = this.c.store.get('artifact', e.artifactId, pid), runId = e.runId ?? artifact.runId;
                     if (runId && !runIds.includes(runId)) {
                         ensure(runIds.length < 100, 'REPORT_TOO_LARGE', '报告关联运行超过上限', 413);
@@ -113,10 +143,39 @@ export class ReportService {
                 }
                 return id;
             };
-            const artifact = (id, runId) => { const { artifact: a } = this.bytes(pid, id); if (excluded(a.title))
+            const artifact = (id, runId) => { const a = bindings.artifacts.find(b => b.id === id) ?? this.bytes(pid, id).artifact; if (excluded(a.title))
                 return undefined; if (!bindings.artifacts.some(b => b.id === id))
                 bindings.artifacts.push({ id, digest: a.digest, size: a.size, title: a.title, mediaType: a.mediaType }); return add({ type: 'artifact', targetId: id, label: a.title, digest: a.digest, ...(runId ? { runId } : {}) }); };
-            const evidence = (id) => { const e = this.evidence.verify(pid, id); ensure(artifact(e.artifactId, e.runId), 'REPORT_UNSAFE_REFERENCE', '证据指向不适合交付的凭据或宿主诊断文件'); return add({ type: 'evidence', targetId: id, label: e.description, digest: e.digest, ...(e.runId ? { runId: e.runId } : {}) }, { evidenceId: e.id, artifactId: e.artifactId, digest: e.digest, locator: e.locator, quote: e.quote, description: e.description, type: e.type, runId: e.runId }); };
+            const checkedDocuments = new Set();
+            const evidence = (id) => {
+                const prior = references.find(ref => ref.type === 'evidence' && ref.targetId === id);
+                if (prior)
+                    return prior.id;
+                const e = this.c.store.get('evidence', id, pid);
+                if (!e.document)
+                    this.evidence.verify(pid, id);
+                ensure(artifact(e.artifactId, e.runId), 'REPORT_UNSAFE_REFERENCE', '证据指向不适合交付的凭据或宿主诊断文件');
+                let document, provenance;
+                if (e.document) {
+                    const { document: d, result: r, page, job } = this.document(pid, e, checkedDocuments);
+                    for (const id of [d.original.artifactId, page.imageArtifactId, r.manifestArtifactId])
+                        ensure(artifact(id), 'REPORT_UNSAFE_REFERENCE', '文档来源产物不适合交付');
+                    bindings.documents ??= [];
+                    let binding = bindings.documents.find(b => b.parseResultId === r.id);
+                    if (!binding) {
+                        const { title, original, derivedText, source, contentKind, acquiredAt, license, rawResponseArtifactIds, scopeSessionId, scopeTaskId, limitations } = d;
+                        const { documentVersionId, jobId, rawDigest, manifestDigest, profileId, profileDigest, imageId, pageCount, manifestArtifactId, manifestArtifactDigest, versionAssurance, requestedVersion, observedVersion, quality } = r;
+                        const { lockDigest, scriptDigest, environmentImageDigest, resources } = job.manifest;
+                        binding = clean({ documentVersionId: d.id, documentDigest: digest(d), parseResultId: r.id, resultDigest: digest(r), document: { title, original, derivedText, source, contentKind, acquiredAt, license, rawResponseArtifactIds, scopeSessionId, scopeTaskId, limitations }, result: { documentVersionId, jobId, rawDigest, manifestDigest, profileId, profileDigest, imageId, pageCount, manifestArtifactId, manifestArtifactDigest, versionAssurance, requestedVersion, observedVersion, quality, pages: [] }, parser: { profileId, profileDigest, lockDigest, scriptDigest, environmentImageDigest, resources, approvalId: job.approvalId } });
+                        bindings.documents.push(binding);
+                    }
+                    if (!binding.result.pages.some(p => p.pageNumber === page.pageNumber))
+                        binding.result.pages.push(clean(page));
+                    document = { ...e.document, ...e.locator, pageLabel: page.pageLabel, rawArtifactId: d.original.artifactId, imageArtifactId: page.imageArtifactId };
+                    provenance = [clean({ ...binding, result: { ...binding.result, pages: [page] } })];
+                }
+                return add({ type: 'evidence', targetId: id, label: e.description, digest: e.digest, ...(e.runId ? { runId: e.runId } : {}), ...(document ? { document } : {}) }, { evidenceId: e.id, artifactId: e.artifactId, digest: e.digest, locator: e.locator, quote: e.quote, description: e.description, type: e.type, runId: e.runId, ...(document ? { document, provenance, locatorUnit: 'UTF-16 code units', licenseNotice: 'License statements are retained as supplied; local export does not grant redistribution permission.' } : {}) });
+            };
             for (const r of runs) {
                 bindings.runs.push({ runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, contractDigest: r.manifest.contractDigest, artifactIds: [...r.artifactIds], evidenceIds: [...r.evidenceIds] });
                 bindings.sources.push({ runId: r.id, sourceDigest: r.manifest.snapshotDigest, files: structuredClone(r.manifest.sourceFiles) });
@@ -196,10 +255,29 @@ export class ReportService {
         }
         for (const a of bound.bindings.artifacts)
             try {
-                this.bytes(pid, a.id, a);
+                const current = this.bytes(pid, a.id, a).artifact;
+                ensure(current.title === a.title && current.mediaType === a.mediaType, 'REPORT_SOURCE_CHANGED', '报告产物元数据已改变');
             }
             catch (error) {
                 fail(error, true);
+            }
+        for (const b of bound.bindings.documents ?? [])
+            try {
+                ensure(digest(this.c.store.get('document-version', b.documentVersionId, pid)) === b.documentDigest && digest(this.c.store.get('document-parse-result', b.parseResultId, pid)) === b.resultDigest, 'REPORT_DOCUMENT_CHANGED', '报告固定文档或解析记录已改变');
+                ensure(this.c.store.get('document-parse-job', b.result.jobId, pid).approvalId === b.parser.approvalId, 'REPORT_DOCUMENT_CHANGED', '报告固定解析批准已改变');
+            }
+            catch (error) {
+                fail(error, true);
+            }
+        const checkedDocuments = new Set();
+        for (const ref of bound.references.filter(ref => ref.document))
+            try {
+                const e = this.c.store.get('evidence', ref.targetId, pid), frozen = JSON.parse(bound.bindings.objects.find(o => o.referenceId === ref.id).content);
+                ensure(e.document && digest({ ...e.document, ...e.locator, pageLabel: ref.document.pageLabel, rawArtifactId: ref.document.rawArtifactId, imageArtifactId: ref.document.imageArtifactId }) === digest(ref.document) && e.artifactId === frozen.artifactId && e.digest === frozen.digest && e.quote === frozen.quote && e.description === frozen.description && e.type === frozen.type && e.runId === frozen.runId, 'REPORT_DOCUMENT_CHANGED', '报告页段证据已改变');
+                this.document(pid, e, checkedDocuments);
+            }
+            catch (error) {
+                fail(error, asError(error).code !== 'APPROVAL_STALE');
             }
         for (const b of bound.bindings.runs)
             try {
@@ -279,7 +357,7 @@ export class ReportService {
     }
     stateDigest(pid) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor, pid, id, expectedBindingsDigest, expectedStateDigest) {
         const r = this.record(actor, pid, id);

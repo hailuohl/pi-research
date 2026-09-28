@@ -22,6 +22,6 @@ export function verifyDocumentLink(c, pid, link, artifactId) {
     }
     const fixed = manifest.pages?.find(p => p.pageNumber === link.pageNumber);
     ensure(manifest.rawDigest === link.rawDigest && fixed?.textDigest === page.textArtifactDigest && fixed?.imageDigest === page.imageArtifactDigest && digest(fixed.paragraphs) === digest(page.paragraphs) && fixed.textStatus === page.textStatus, 'EVIDENCE_INVALID', '原页清单与派生产物不匹配');
-    return { document: d, result: r, page, bytes };
+    return { document: d, result: r, page, bytes, job, manifest: manifest };
 }
 //# sourceMappingURL=document-link.js.map

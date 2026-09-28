@@ -7,12 +7,22 @@ function provenanceSignature(data, reportId) {
     const runIds = new Set(data.reports.find(r => r.id === reportId)?.runIds ?? []);
     return JSON.stringify([data.project.id, data.project.version, data.project.archived,
         versions(data.claims), versions(data.approvals), versions(data.tasks), versions(data.teams), versions(data.changeProposals), versions(data.experiments), versions(data.reviews),
-        versions(data.runs.filter(r => runIds.has(r.id)))]);
+        versions(data.runs.filter(r => runIds.has(r.id))), versions(data.documents), versions(data.evidence), versions(data.artifacts),
+        (data.documentParseJobs ?? []).map(j => [j.id, j.state, j.integrity, j.resultId ?? null, j.manifestDigest, j.rawDigest, j.approvalId]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))]);
+}
+function sameReference(a, b) {
+    const keys = ['id', 'type', 'targetId', 'digest', 'runId', 'path', 'relation'];
+    const documentKeys = ['documentVersionId', 'rawDigest', 'parseResultId', 'pageNumber', 'textArtifactDigest', 'start', 'end', 'pageLabel', 'rawArtifactId', 'imageArtifactId'];
+    return keys.every(key => a[key] === b[key]) && (!a.document && !b.document || !!a.document && !!b.document && documentKeys.every(key => a.document[key] === b.document[key]));
+}
+function validDocument(ref) {
+    const d = ref.document;
+    return ref.type === 'evidence' && d && ['documentVersionId', 'rawDigest', 'parseResultId', 'textArtifactDigest', 'rawArtifactId', 'imageArtifactId'].every(key => typeof d[key] === 'string' && !!d[key]) && Number.isSafeInteger(d.pageNumber) && d.pageNumber > 0 && Number.isSafeInteger(d.start) && d.start >= 0 && Number.isSafeInteger(d.end) && d.end > d.start;
 }
 export class ReportsView extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { title: '研究结果记录', selected: [], selectedClaims: [], pendingArtifactId: '', report: null, body: '', loading: false, error: '', checking: false, verificationError: '', reference: null, content: '', cursor: 0, complete: false, reading: false, referenceError: '', exported: null };
+        this.state = { title: '研究结果记录', selected: [], selectedClaims: [], pendingArtifactId: '', report: null, body: '', loading: false, error: '', checking: false, verificationError: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, referenceError: '', exported: null };
         this.reportEpoch = 0;
         this.referenceEpoch = 0;
         this.inspectionEpoch = 0;
@@ -28,7 +38,7 @@ export class ReportsView extends React.Component {
             else {
                 this.reportEpoch++;
                 this.referenceEpoch++;
-                this.setState({ report: null, body: '', reference: null, content: '', exported: null, error: '' });
+                this.setState({ report: null, body: '', reference: null, verifiedReference: null, content: '', exported: null, error: '' });
             }
         }
         else if (this.state.report && provenanceSignature(prev.data, this.state.report.id) !== provenanceSignature(this.props.data, this.state.report.id))
@@ -65,7 +75,7 @@ export class ReportsView extends React.Component {
     async open(id) {
         const epoch = ++this.reportEpoch, signature = provenanceSignature(this.props.data, id);
         this.referenceEpoch++;
-        this.setState({ report: null, body: '', loading: true, error: '', checking: false, verificationError: '', reference: null, content: '', cursor: 0, complete: false, reading: false, exported: null });
+        this.setState({ report: null, body: '', loading: true, error: '', checking: false, verificationError: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, exported: null });
         try {
             const row = this.props.data.reports.find(r => r.id === id);
             if (!row)
@@ -93,13 +103,13 @@ export class ReportsView extends React.Component {
         if (append && (this.state.reading || this.state.reference?.id !== referenceId || this.state.complete))
             return;
         const epoch = ++this.referenceEpoch, reportEpoch = this.reportEpoch, cursor = append ? this.state.cursor : 0;
-        this.setState({ reference, reading: true, referenceError: '', ...(!append ? { content: '', cursor: 0, complete: false } : {}) });
+        this.setState({ reference, verifiedReference: null, reading: true, referenceError: '', ...(!append ? { content: '', cursor: 0, complete: false } : {}) });
         try {
             const result = await this.call('report_reference_read', { reportId: report.id, referenceId, cursor, limit: 16000 });
-            if (result.reference.id !== referenceId || result.reference.type !== reference.type || result.reference.targetId !== reference.targetId)
+            if (!sameReference(result.reference, reference) || (reference.document && !validDocument(result.reference)))
                 throw Error('返回的证据不属于所选引用。');
             if (this.mounted && epoch === this.referenceEpoch && reportEpoch === this.reportEpoch)
-                this.setState({ content: (append ? this.state.content : '') + result.content, cursor: result.end, complete: result.complete });
+                this.setState({ verifiedReference: result.reference, content: (append ? this.state.content : '') + result.content, cursor: result.end, complete: result.complete });
         }
         catch (error) {
             if (this.mounted && epoch === this.referenceEpoch && reportEpoch === this.reportEpoch)
@@ -109,6 +119,18 @@ export class ReportsView extends React.Component {
             if (this.mounted && epoch === this.referenceEpoch && reportEpoch === this.reportEpoch)
                 this.setState({ reading: false });
         }
+    }
+    documentReference() {
+        const s = this.state, ref = s.verifiedReference;
+        return this.mounted && !s.reading && !s.referenceError && !s.checking && !s.verificationError && s.report?.integrity === 'verified' && ref && ref.id === s.reference?.id && s.report.references.some(r => sameReference(r, ref)) && validDocument(ref) ? ref.document : null;
+    }
+    openDocument() { const d = this.documentReference(); if (d)
+        this.props.onDocument?.({ documentVersionId: d.documentVersionId, parseResultId: d.parseResultId, pageNumber: d.pageNumber, start: d.start, end: d.end }); }
+    async downloadDocument(kind) {
+        const d = this.documentReference();
+        if (!d)
+            return;
+        await this.props.perform(() => downloadArtifact(kind === 'raw' ? d.rawArtifactId : d.imageArtifactId, kind === 'raw' ? `${d.documentVersionId}.pdf` : `${d.documentVersionId}-page-${d.pageNumber}.png`));
     }
     async create() {
         await this.props.perform(async () => {
@@ -134,7 +156,7 @@ export class ReportsView extends React.Component {
         const selectedRuns = data.runs.filter(r => s.selected.includes(r.id)), mixed = new Set(selectedRuns.map(r => r.manifest.contractDigest)).size > 1;
         const available = s.selected.every(id => eligible.some(r => r.id === id)) && s.selectedClaims.every(id => claims.some(c => c.id === id));
         return React.createElement("div", { className: "page-scroll" },
-            React.createElement(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u8FD0\u884C\u3001\u539F\u59CB\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
+            React.createElement(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
             React.createElement("section", { className: "surface report-builder" },
                 React.createElement("h2", null, "\u751F\u6210\u53EF\u8FFD\u6EAF\u7ED3\u679C\u8BB0\u5F55"),
                 React.createElement("label", null,
@@ -205,6 +227,7 @@ export class ReportsView extends React.Component {
                             React.createElement("p", { className: "small muted" }, "\u751F\u6210\u4E0E\u53D1\u8D77\u4E0B\u8F7D\u4E0D\u4EE3\u8868\u6587\u4EF6\u5DF2\u843D\u76D8\uFF1B\u8BF7\u5728\u4E0B\u8F7D\u76EE\u5F55\u6838\u5BF9\u3002")) : null,
                         React.createElement("details", { open: true },
                             React.createElement("summary", null, "\u56FA\u5B9A\u8FD0\u884C\u4E0E\u5B9E\u6D4B\u6307\u6807"),
+                            !report.runs.length ? React.createElement("p", { className: "small muted" }, "\u672C\u62A5\u544A\u672A\u7EB3\u5165\u6B63\u5F0F\u8FD0\u884C\uFF1B\u6587\u6863\u7ED3\u8BBA\u4E0D\u4EE3\u8868\u8FD0\u884C\u5B9E\u6D4B\u7ED3\u679C\u3002") : null,
                             report.runs.map(run => React.createElement("div", { className: "inspector-section", key: run.runId },
                                 React.createElement("h3", null,
                                     "Run ",
@@ -249,6 +272,22 @@ export class ReportsView extends React.Component {
                                 s.reference.path ?? s.reference.targetId),
                             s.reference.digest ? React.createElement("code", { className: "digest" }, s.reference.digest) : null,
                             s.referenceError ? React.createElement("p", { role: "alert", className: "error-text" }, s.referenceError) : null,
+                            s.reference.document ? React.createElement("div", null,
+                                React.createElement("p", { className: "small muted" },
+                                    "\u7269\u7406\u9875 ",
+                                    s.reference.document.pageNumber,
+                                    " \u00B7 \u9875\u6807\u7B7E ",
+                                    s.reference.document.pageLabel ?? '未知',
+                                    " \u00B7 UTF-16 [",
+                                    s.reference.document.start,
+                                    ", ",
+                                    s.reference.document.end,
+                                    ")"),
+                                React.createElement("div", { className: "actions wrap" },
+                                    React.createElement("button", { className: "secondary compact", disabled: !this.documentReference() || !this.props.onDocument, onClick: () => this.openDocument() }, "\u56DE\u5230\u56FA\u5B9A\u9875\u6BB5"),
+                                    React.createElement("button", { className: "secondary compact", disabled: !this.documentReference(), onClick: () => void this.downloadDocument('raw') }, "\u4E0B\u8F7D\u539F\u4EF6 PDF"),
+                                    React.createElement("button", { className: "secondary compact", disabled: !this.documentReference(), onClick: () => void this.downloadDocument('image') }, "\u4E0B\u8F7D\u5F15\u7528\u9875 PNG")),
+                                React.createElement("p", { className: "small muted" }, "\u6765\u6E90\u3001\u7248\u672C\u3001\u8BB8\u53EF\u548C\u89E3\u6790\u8D28\u91CF\u89C1\u4E0B\u65B9\u56FA\u5B9A\u8BB0\u5F55\uFF1B\u8BB8\u53EF\u672A\u77E5\u4E0D\u4EE3\u8868\u83B7\u5F97\u518D\u5206\u53D1\u8BB8\u53EF\u3002")) : null,
                             React.createElement("pre", { className: "document-preview" }, s.content || (s.reading ? '读取固定内容…' : '（空内容）')),
                             React.createElement("button", { className: "secondary compact", disabled: s.reading || s.complete, onClick: () => void this.readReference(s.reference.id, true) }, s.reading ? '读取中…' : s.complete ? '已完整读取' : '读取后续内容')) : null,
                         React.createElement("details", null,

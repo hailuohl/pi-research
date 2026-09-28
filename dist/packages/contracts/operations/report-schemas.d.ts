@@ -154,6 +154,47 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                         readonly relation: {
                             readonly enum: readonly ["exact", "ancestry"];
                         };
+                        readonly document: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly documentVersionId: {
+                                    readonly type: "string";
+                                };
+                                readonly rawDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly parseResultId: {
+                                    readonly type: "string";
+                                };
+                                readonly pageNumber: {
+                                    readonly type: "integer";
+                                };
+                                readonly textArtifactDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly start: {
+                                    readonly type: "integer";
+                                };
+                                readonly end: {
+                                    readonly type: "integer";
+                                };
+                                readonly pageLabel: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawArtifactId: {
+                                    readonly type: "string";
+                                };
+                                readonly imageArtifactId: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly required: ("textArtifactDigest" | "start" | "end" | "pageNumber" | "rawDigest" | "documentVersionId" | "pageLabel" | "rawArtifactId" | "imageArtifactId" | "parseResultId")[];
+                            readonly additionalProperties: false;
+                        };
                     };
                     readonly required: ("id" | "type" | "targetId" | "label")[];
                     readonly additionalProperties: false;
@@ -248,6 +289,47 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                     };
                     readonly relation: {
                         readonly enum: readonly ["exact", "ancestry"];
+                    };
+                    readonly document: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly documentVersionId: {
+                                readonly type: "string";
+                            };
+                            readonly rawDigest: {
+                                readonly type: "string";
+                            };
+                            readonly parseResultId: {
+                                readonly type: "string";
+                            };
+                            readonly pageNumber: {
+                                readonly type: "integer";
+                            };
+                            readonly textArtifactDigest: {
+                                readonly type: "string";
+                            };
+                            readonly start: {
+                                readonly type: "integer";
+                            };
+                            readonly end: {
+                                readonly type: "integer";
+                            };
+                            readonly pageLabel: {
+                                readonly anyOf: readonly [{
+                                    readonly type: "string";
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                            readonly rawArtifactId: {
+                                readonly type: "string";
+                            };
+                            readonly imageArtifactId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("textArtifactDigest" | "start" | "end" | "pageNumber" | "rawDigest" | "documentVersionId" | "pageLabel" | "rawArtifactId" | "imageArtifactId" | "parseResultId")[];
+                        readonly additionalProperties: false;
                     };
                 };
                 readonly required: ("id" | "type" | "targetId" | "label")[];

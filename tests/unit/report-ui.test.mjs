@@ -81,3 +81,68 @@ test('persisted provenance changes recheck status only, preserve reading positio
  assert.equal(v.state.body,'Original Markdown');assert.equal(v.state.content,'Already read');assert.equal(v.state.cursor,12);assert.equal(v.state.reference.id,'a');
  prev=v.props;v.props={...prev,data:structuredClone(prev.data)};v.componentDidUpdate(prev);assert.equal(pending.length,2);
 });
+const documentRef=()=>({...ref('pdf'),type:'evidence',document:{documentVersionId:'fixed-v1',rawDigest:'raw-digest',parseResultId:'parse-v1',pageNumber:2,textArtifactDigest:'text-digest',start:17,end:29,pageLabel:'ii',rawArtifactId:'raw-pdf',imageArtifactId:'page-png'}});
+const referenceResponse=reference=>response({reference,content:'{"license":"unknown","sourceUrl":"javascript:alert(1)","quality":"unverified"}',mediaType:'application/json',cursor:0,end:90,complete:true});
+
+test('PDF actions require a completed matching read and preserve the exact nonzero UTF-16 location',async t=>{
+ const old=globalThis.fetch;t.after(()=>{globalThis.fetch=old;});let resolve;
+ globalThis.fetch=()=>new Promise(r=>{resolve=r;});
+ const v=view(),reference=documentRef();v.state.report.references=[reference];let target;
+ v.props.onDocument=value=>{target=value;};
+ const reading=v.readReference(reference.id);
+ const actions=()=>elements(v.render()).filter(n=>n.type==='button'&&['回到固定页段','下载原件 PDF','下载引用页 PNG'].includes(n.props.children));
+ assert.equal(actions().length,3);assert.ok(actions().every(n=>n.props.disabled));v.openDocument();assert.equal(target,undefined);
+ resolve(referenceResponse(reference));await reading;
+ assert.ok(actions().every(n=>!n.props.disabled));actions()[0].props.onClick();
+ assert.deepEqual(target,{documentVersionId:'fixed-v1',parseResultId:'parse-v1',pageNumber:2,start:17,end:29});
+ assert.ok(elements(v.render()).every(n=>!n.props.href&&!n.props.dangerouslySetInnerHTML));
+ assert.ok(elements(v.render()).some(n=>n.type==='p'&&n.props.children==='本报告未纳入正式运行；文档结论不代表运行实测结果。'));
+ assert.ok(elements(v.render()).some(n=>n.type==='p'&&String(n.props.children).includes('许可未知不代表获得再分发许可')));
+});
+
+test('PDF reference identity binds every location and artifact field; a mismatch cannot navigate or download',async t=>{
+ const old=globalThis.fetch;t.after(()=>{globalThis.fetch=old;});
+ for(const key of Object.keys(documentRef().document)){
+  const v=view(),reference=documentRef();v.state.report.references=[reference];let calls=0,navigated=false;
+  v.props.onDocument=()=>{navigated=true;};
+  const wrong=structuredClone(reference);wrong.document[key]=typeof wrong.document[key]==='number'?wrong.document[key]+1:'wrong';
+  globalThis.fetch=async()=>{calls++;return referenceResponse(wrong);};
+  await v.readReference(reference.id);assert.match(v.state.referenceError,/不属于/,key);assert.equal(v.state.verifiedReference,null);
+  v.openDocument();await v.downloadDocument('raw');assert.equal(navigated,false);assert.equal(calls,1);
+ }
+});
+
+test('PDF downloads use authenticated artifact IDs only after explicit clicks and late reads cannot grant actions',async t=>{
+ const oldFetch=globalThis.fetch,oldDocument=globalThis.document,oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;
+ t.after(()=>{globalThis.fetch=oldFetch;globalThis.document=oldDocument;URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;});
+ const pending=[],requests=[],downloads=[];
+ globalThis.fetch=(url,options)=>{requests.push({url,options});return new Promise(resolve=>pending.push(resolve));};
+ URL.createObjectURL=()=> 'blob:local-download';URL.revokeObjectURL=()=>{};
+ globalThis.document={body:{appendChild(){}},createElement:()=>({click(){downloads.push({name:this.download,href:this.href});},remove(){}})};
+ const v=view(),reference=documentRef();v.state.report.references=[reference,ref('b')];
+ const late=v.readReference(reference.id),current=v.readReference('b');pending[1](referenceResponse(ref('b')));await current;pending[0](referenceResponse(reference));await late;
+ assert.equal(v.state.verifiedReference.id,'b');assert.equal(v.documentReference(),null);
+ const valid=v.readReference(reference.id);pending[2](referenceResponse(reference));await valid;assert.equal(requests.length,3,'reading never starts downloads');
+ for(const [kind,id,name] of [['raw','raw-pdf','fixed-v1.pdf'],['image','page-png','fixed-v1-page-2.png']]){
+  const download=v.downloadDocument(kind),request=requests.at(-1);
+  assert.equal(request.url,`/api/artifacts/${id}/content`);assert.ok(request.options.headers.Authorization.startsWith('Bearer '));
+  pending.at(-1)({ok:true,blob:async()=>new Blob(['fixed bytes'])});await download;
+  assert.deepEqual(downloads.at(-1),{name,href:'blob:local-download'});
+ }
+ v.componentWillUnmount();await v.downloadDocument('raw');assert.equal(requests.length,5);
+});
+
+test('document and parse result changes reverify report provenance without resetting the reference cursor',async t=>{
+ const old=globalThis.fetch;t.after(()=>{globalThis.fetch=old;});const pending=[];
+ globalThis.fetch=()=>new Promise(resolve=>pending.push(resolve));
+ const v=view(),reference=documentRef();v.state.report.references=[reference];
+ Object.assign(v.state,{reference,verifiedReference:reference,content:'Fixed source metadata',cursor:123,body:'Original report'});
+ v.props.data.documents=[{id:'fixed-v1',version:1}];v.props.data.documentParseJobs=[{id:'parse-job',state:'succeeded',integrity:'complete',resultId:'parse-v1'}];
+ for(const patch of [{documents:[{id:'fixed-v1',version:2}]},{documentParseJobs:[{id:'parse-job',state:'succeeded',integrity:'invalid',resultId:'parse-v1'}]},{documentParseJobs:[{id:'parse-job',state:'succeeded',integrity:'invalid',resultId:'parse-v2'}]}]){
+  const prev=v.props;v.props={...prev,data:{...prev.data,...patch}};v.componentDidUpdate(prev);
+  assert.equal(v.state.checking,true);assert.equal(v.documentReference(),null);
+  pending.at(-1)(response({...v.state.report,validity:'stale',reasons:['Fixed document changed']}));await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(v.state.cursor,123);assert.equal(v.state.content,'Fixed source metadata');assert.equal(v.state.body,'Original report');
+ }
+ assert.equal(pending.length,3);
+});

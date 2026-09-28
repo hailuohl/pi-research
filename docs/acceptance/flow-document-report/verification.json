@@ -1,0 +1,52 @@
+{
+  "date": "2026-09-28",
+  "registryOperations": 79,
+  "relatedChecks": {
+    "reportDocument": 12,
+    "reportExportAndTransport": 16,
+    "uiAndContracts": 25,
+    "note": "Final MIME/size additions were subsequently covered by full regression"
+  },
+  "fullRegression": {
+    "command": "npm run test:core",
+    "tests": 504,
+    "pass": 501,
+    "fail": 0,
+    "skipped": 3,
+    "durationMs": 166641.8989
+  },
+  "cleanBuild": {
+    "source": ".validation/clean-build-q5wZ1U/summary.json",
+    "sourceSha256": "3750011ce2ca66bc6c4ae6bd7d51a36627fd982539aa6ba5f742296d97a6c3bc",
+    "node": "24.19.0",
+    "lockSha256": "c50e82528bda0350b504de14c794a1caaed22750611d88a331ae172bc21ea5cc",
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ],
+    "files": 339,
+    "identical": true,
+    "distManifestSha256": "d02d5d039292ddfc6d59efd29aca5c20f23a7f7c88ee5ef3d55d85288dc69d4a"
+  },
+  "independentReview": {
+    "scope": "Report fixed provenance/approval/history/export/schema/UI identity and late responses; read-only review",
+    "blockingFindings": 0,
+    "reviewerDidNotRerunTests": true
+  },
+  "fix": {
+    "issue": "PDF compressed bytes contained a random A:/ pattern causing a false host-path rejection",
+    "resolution": "Preserve global known-root and credential scans; apply generic binary path heuristics to readable ASCII runs of 8 or more bytes; text rules unchanged",
+    "limitation": "Finite heuristic, not a general decoder or exhaustive audit of encoded binary metadata"
+  },
+  "modelCalls": 0
+}

@@ -1,4 +1,6 @@
 import type { Run, SourceSnapshot } from '../domain/types.js';
+import type { DocumentVersion, DocumentEvidenceLink } from '../documents/types.js';
+import type { DocumentParseResult, DocumentParseManifest } from '../documents/parse-types.js';
 export interface ReportReference {
     id: string;
     type: 'run' | 'run-source' | 'artifact' | 'evidence' | 'development-job' | 'development-review' | 'claim';
@@ -8,6 +10,13 @@ export interface ReportReference {
     path?: string;
     digest?: string;
     relation?: 'exact' | 'ancestry';
+    document?: DocumentEvidenceLink & {
+        start: number;
+        end: number;
+        pageLabel: string | null;
+        rawArtifactId: string;
+        imageArtifactId: string;
+    };
 }
 export interface ReportRun {
     runId: string;
@@ -37,6 +46,17 @@ export interface ReportInspection {
     runs: ReportRun[];
 }
 export interface ReportBindings {
+    documents?: Array<{
+        documentVersionId: string;
+        documentDigest: string;
+        parseResultId: string;
+        resultDigest: string;
+        document: DocumentVersion;
+        result: DocumentParseResult;
+        parser: Pick<DocumentParseManifest, 'profileId' | 'profileDigest' | 'lockDigest' | 'scriptDigest' | 'environmentImageDigest' | 'resources'> & {
+            approvalId: string;
+        };
+    }>;
     runs: Array<{
         runId: string;
         manifestDigest: string;
