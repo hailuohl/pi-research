@@ -30,7 +30,7 @@ node dist/apps/server/index.js
 
 **实现与审查** 页已支持选择实验固定版本、准备私有 Git 工作区、查看/保存代码、批准开发测试、阅读日志、启动独立审查并批准完整源码差异。通过后创建新子实验，再到 **实验与运行** 单独批准正式 Run、回查指标与固定源码。真实 Pi、失败修复、Docker 测试及正式运行的完整浏览器路径见[首条闭环验收](docs/acceptance/flow-implementation/RESULTS.zh-CN.md)。
 
-**报告与成果** 页可从所选 Run 和已采纳结论生成固定报告，点击指标回查证据、源码、开发测试和审查；PDF 证据可返回固定原页/字符区间并下载原件与页图。显式生成的本地 `tar.gz` 包保留原 PDF、引用页、解析清单与来源/许可记录；许可未知不会被改成已获再分发许可。来源失效后保留历史原文并阻止新导出，旧报告兼容。导出需要原生 `tar`，压缩在数据库写锁之外执行，原始输入及清单最多 30 MiB、压缩包最多 32 MiB；超限不静默省略文件。逻辑文件模式保存在清单中。文稿 PDF/源文件与该成果包的联动仍待补齐，详见[文档报告与交付验收](docs/acceptance/flow-document-report/RESULTS.zh-CN.md)。
+**报告与成果** 页可从所选 Run、已采纳结论和固定文稿构建生成报告，点击指标回查证据、源码、开发测试和审查；PDF 证据可返回固定原页/字符区间并下载原件与页图。最多纳入 20 个成功且来源有效的文稿构建，支持仅文稿报告，精确回跳其修订/作业/PDF，并回查图形生成代码、声明输入和同作业输出；这些关联不等于逐点科学数值已验证。显式生成的本地 `tar.gz` 包保留文稿 PDF、可编辑源文件、图形来源及文献原 PDF/引用页/解析与许可记录；许可未知不会被改成已获再分发许可。来源失效后保留历史原文并阻止新报告/新导出，旧报告兼容。CSV/TSV 即使原来按通用二进制归档，也可经摘要和严格 UTF-8 检查作纯文本回查，原字节不改。导出需要原生 `tar`，压缩在数据库写锁之外执行，原始输入及清单最多 30 MiB、压缩包最多 32 MiB；可编辑路径和按摘要存放的文件都计入上限，超限不静默省略。见[文稿成果包实物](docs/acceptance/flow-publication-report/RESULTS.zh-CN.md)与[文献页段交付](docs/acceptance/flow-document-report/RESULTS.zh-CN.md)。
 
 同页新增 **固定文稿与隔离构建**：从 pdfLaTeX/XeLaTeX/LuaLaTeX 基础模板或文件创建不可变修订，绑定既有图形产物，单独批准构建后查看诊断、源文件行号、PDF 页图与下载。已知图形保留 Run/Sandbox 来源，未知来源不补造；编译失败或不完整不会显示可用 PDF，来源失效后保留历史结果并标明状态。先在本机显式执行 `node scripts/setup-document-build.mjs desktop-linux`，再在页面填入生成的固定镜像配置；完整步骤和资源限制见[编译器说明](scripts/document-build/README.md)。运行时不联网装包；三引擎与 BibTeX/Biber 已实测，中文推荐本批验过的 XeLaTeX 设置，LuaLaTeX 大型中文字体在 768 MiB 预算下失败。每份文稿最多 64 文件、合计 16 MiB；单文本 2 MiB、单图/PDF 8 MiB，只接受受限相对文件名。编译通过不代表科学审查或排版检查通过，见[文稿验收与实际 PDF](docs/acceptance/flow-publication/RESULTS.zh-CN.md)。
 

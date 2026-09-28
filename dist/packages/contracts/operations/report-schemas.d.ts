@@ -33,8 +33,20 @@ export declare const REPORT_INPUT_SCHEMAS: {
                 };
                 readonly minItems: number;
             };
+            readonly publicationResultIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
         };
-        readonly required: readonly ("title" | "runIds" | "claimIds")[];
+        readonly required: readonly ("title" | "runIds" | "claimIds" | "publicationResultIds")[];
         readonly additionalProperties: false;
     };
     readonly report_inspect: {
@@ -134,7 +146,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly type: {
-                            readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim"];
+                            readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code"];
                         };
                         readonly targetId: {
                             readonly type: "string";
@@ -256,6 +268,43 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
+            readonly publications: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly resultId: {
+                            readonly type: "string";
+                        };
+                        readonly jobId: {
+                            readonly type: "string";
+                        };
+                        readonly revisionId: {
+                            readonly type: "string";
+                        };
+                        readonly title: {
+                            readonly type: "string";
+                        };
+                        readonly sourceDigest: {
+                            readonly type: "string";
+                        };
+                        readonly pdfArtifactId: {
+                            readonly type: "string";
+                        };
+                        readonly pdfDigest: {
+                            readonly type: "string";
+                        };
+                        readonly pages: {
+                            readonly type: "integer";
+                        };
+                        readonly referenceId: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly required: ("jobId" | "sourceDigest" | "pages" | "title" | "resultId" | "revisionId" | "pdfArtifactId" | "pdfDigest" | "referenceId")[];
+                    readonly additionalProperties: false;
+                };
+            };
         };
         readonly required: ("id" | "validity" | "formatVersion" | "artifactId" | "title" | "integrity" | "reasons" | "references" | "runs")[];
         readonly additionalProperties: false;
@@ -270,7 +319,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                     readonly type: {
-                        readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim"];
+                        readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code"];
                     };
                     readonly targetId: {
                         readonly type: "string";

@@ -1,9 +1,10 @@
+import type { ManuscriptRevision, PublicationBuildResult, PublicationManifest } from './build-types.js';
 import type { Run, SourceSnapshot } from '../domain/types.js';
 import type { DocumentVersion, DocumentEvidenceLink } from '../documents/types.js';
 import type { DocumentParseResult, DocumentParseManifest } from '../documents/parse-types.js';
 export interface ReportReference {
     id: string;
-    type: 'run' | 'run-source' | 'artifact' | 'evidence' | 'development-job' | 'development-review' | 'claim';
+    type: 'run' | 'run-source' | 'artifact' | 'evidence' | 'development-job' | 'development-review' | 'claim' | 'publication' | 'figure-source' | 'figure-source-code';
     targetId: string;
     label: string;
     runId?: string;
@@ -34,7 +35,19 @@ export interface ReportRun {
         referenceId: string;
     }>;
 }
+export interface ReportPublication {
+    resultId: string;
+    revisionId: string;
+    jobId: string;
+    title: string;
+    sourceDigest: string;
+    pdfArtifactId: string;
+    pdfDigest: string;
+    pages: number;
+    referenceId: string;
+}
 export interface ReportInspection {
+    publications?: ReportPublication[];
     id: string;
     artifactId: string;
     title: string;
@@ -46,6 +59,32 @@ export interface ReportInspection {
     runs: ReportRun[];
 }
 export interface ReportBindings {
+    publications?: Array<{
+        resultId: string;
+        resultDigest: string;
+        revisionId: string;
+        revisionDigest: string;
+        revision: ManuscriptRevision;
+        result: PublicationBuildResult;
+        compiler: Pick<PublicationManifest, 'profileId' | 'profileDigest' | 'lockDigest' | 'scriptDigest' | 'dockerfileDigest' | 'environmentImageDigest' | 'command' | 'resources'> & {
+            imageId: string;
+            approvalId: string;
+        };
+        referenceId: string;
+    }>;
+    figureSources?: Array<{
+        jobId: string;
+        manifestDigest: string;
+        sourceDigest: string;
+        files: SourceSnapshot['files'];
+        artifactIds: string[];
+        dataArtifacts: Array<{
+            id: string;
+            digest: string;
+            size: number;
+            sourceAcceptanceId?: string;
+        }>;
+    }>;
     documents?: Array<{
         documentVersionId: string;
         documentDigest: string;

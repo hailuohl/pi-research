@@ -239,7 +239,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -275,7 +275,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -388,7 +388,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                 };
                             };
-                            readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                            readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                             readonly additionalProperties: false;
                         };
                         readonly available: {
@@ -424,7 +424,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                            readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                             readonly additionalProperties: false;
                         };
                     };

@@ -2,13 +2,12 @@ import { api, artifactText, downloadArtifact } from './api.js';
 import { short, label } from './models.js';
 import { SectionTitle, Badge, Empty } from './ui.js';
 import { PublicationView } from './publication-view.js';
-const referenceTypes = { run: '正式运行', 'run-source': '固定运行源码', artifact: '原始产物', evidence: '定位证据', 'development-job': '开发测试', 'development-review': '独立审查', claim: '已采纳结论' };
+const referenceTypes = { run: '正式运行', 'run-source': '固定运行源码', artifact: '原始产物', evidence: '定位证据', 'development-job': '开发测试', 'development-review': '独立审查', claim: '已采纳结论', publication: '固定文稿构建', 'figure-source': '图形生成来源', 'figure-source-code': '图形生成源码' };
 function provenanceSignature(data, reportId) {
-    const versions = (rows) => (rows ?? []).map(row => { const r = row; return [r.id, r.version ?? null, r.status ?? null]; }).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
-    const runIds = new Set(data.reports.find(r => r.id === reportId)?.runIds ?? []);
+    const versions = (rows) => (rows ?? []).map(row => { const r = row; return [r.id, r.version ?? null, r.status ?? null, r.state ?? null, r.integrity ?? null, r.sourceDigest ?? null]; }).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
     return JSON.stringify([data.project.id, data.project.version, data.project.archived,
-        versions(data.claims), versions(data.approvals), versions(data.tasks), versions(data.teams), versions(data.changeProposals), versions(data.experiments), versions(data.reviews),
-        versions(data.runs.filter(r => runIds.has(r.id))), versions(data.documents), versions(data.evidence), versions(data.artifacts),
+        versions(data.claims), versions(data.approvals), versions(data.tasks), versions(data.teams), versions(data.changeProposals), versions(data.experiments), versions(data.reviews), versions(data.sandboxJobs), versions(data.developmentTasks), versions(data.intents), versions(data.sessions),
+        versions(data.runs), versions(data.documents), versions(data.evidence), versions(data.artifacts),
         (data.documentParseJobs ?? []).map(j => [j.id, j.state, j.integrity, j.resultId ?? null, j.manifestDigest, j.rawDigest, j.approvalId]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))]);
 }
 function sameReference(a, b) {
@@ -23,7 +22,8 @@ function validDocument(ref) {
 export class ReportsView extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { title: '研究结果记录', selected: [], selectedClaims: [], pendingArtifactId: '', report: null, body: '', loading: false, error: '', checking: false, verificationError: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, referenceError: '', exported: null };
+        this.state = { publications: [], title: '研究结果记录', selected: [], selectedClaims: [], pendingArtifactId: '', report: null, body: '', loading: false, error: '', checking: false, verificationError: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, referenceError: '', exported: null };
+        this.publicationView = null;
         this.reportEpoch = 0;
         this.referenceEpoch = 0;
         this.inspectionEpoch = 0;
@@ -33,6 +33,15 @@ export class ReportsView extends React.Component {
         void this.open(this.props.selectedReport); }
     componentWillUnmount() { this.mounted = false; this.reportEpoch++; this.referenceEpoch++; }
     componentDidUpdate(prev) {
+        if (this.props.data.project.id !== prev.data.project.id) {
+            this.reportEpoch++;
+            this.referenceEpoch++;
+            this.inspectionEpoch++;
+            this.setState({ publications: [], selected: [], selectedClaims: [], pendingArtifactId: '', report: null, body: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, exported: null, error: '', loading: false, checking: false, verificationError: '', referenceError: '' });
+            if (this.props.selectedReport)
+                void this.open(this.props.selectedReport);
+            return;
+        }
         if (this.props.selectedReport !== prev.selectedReport) {
             if (this.props.selectedReport)
                 void this.open(this.props.selectedReport);
@@ -133,10 +142,17 @@ export class ReportsView extends React.Component {
             return;
         await this.props.perform(() => downloadArtifact(kind === 'raw' ? d.rawArtifactId : d.imageArtifactId, kind === 'raw' ? `${d.documentVersionId}.pdf` : `${d.documentVersionId}-page-${d.pageNumber}.png`));
     }
+    addPublication(result, title) { if (this.state.publications.length >= 20 || this.state.publications.some(p => p.result.id === result.id) || result.status !== 'succeeded' || !result.converged || result.hadErrors || !result.pdf || result.sourceValidity !== 'current')
+        return; this.setState({ publications: [...this.state.publications, { result, title }] }); }
+    openPublication(resultId) { const publication = this.state.report?.publications?.find(p => p.resultId === resultId); if (!publication || this.state.report?.integrity !== 'verified' || !this.publicationView)
+        return; void this.publicationView.openFixed(publication.revisionId, publication.jobId); }
+    async downloadReference() { const report = this.state.report, ref = this.state.reference; if (!this.mounted || !report || report.integrity !== 'verified' || this.state.checking || this.state.verificationError || ref?.type !== 'artifact' || !report.references.some(r => sameReference(r, ref)))
+        return; await this.props.perform(() => downloadArtifact(ref.targetId, ref.path?.split('/').pop() ?? ref.label)); }
     async create() {
+        const projectId = this.props.data.project.id;
         await this.props.perform(async () => {
-            const artifact = await this.call('report_create', { title: this.state.title, runIds: this.state.selected, claimIds: this.state.selectedClaims });
-            if (!this.mounted)
+            const artifact = await this.call('report_create', { title: this.state.title, runIds: this.state.selected, claimIds: this.state.selectedClaims, ...(this.state.publications.length ? { publicationResultIds: this.state.publications.map(p => p.result.id) } : {}) });
+            if (!this.mounted || projectId !== this.props.data.project.id)
                 return;
             const row = this.props.data.reports.find(r => r.artifactId === artifact.id);
             if (row)
@@ -158,12 +174,29 @@ export class ReportsView extends React.Component {
         const available = s.selected.every(id => eligible.some(r => r.id === id)) && s.selectedClaims.every(id => claims.some(c => c.id === id));
         return React.createElement("div", { className: "page-scroll" },
             React.createElement(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
-            React.createElement(PublicationView, { key: data.project.id, data: data, perform: perform }),
+            React.createElement(PublicationView, { key: data.project.id, ref: (view) => { this.publicationView = view; }, data: data, perform: perform, selectedResultIds: s.publications.map(p => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }),
             React.createElement("section", { className: "surface report-builder" },
                 React.createElement("h2", null, "\u751F\u6210\u53EF\u8FFD\u6EAF\u7ED3\u679C\u8BB0\u5F55"),
                 React.createElement("label", null,
                     "\u62A5\u544A\u540D\u79F0",
                     React.createElement("input", { "aria-label": "\u62A5\u544A\u540D\u79F0", required: true, maxLength: 200, value: s.title, onChange: (e) => this.setState({ title: e.target.value }) })),
+                React.createElement("fieldset", null,
+                    React.createElement("legend", null,
+                        "\u7EB3\u5165\u7684\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\uFF08",
+                        s.publications.length,
+                        "/20\uFF09"),
+                    React.createElement("p", { className: "small muted" }, "\u5728\u4E0A\u65B9\u9009\u62E9\u6210\u529F\u4E14\u6765\u6E90\u6709\u6548\u7684\u6784\u5EFA\uFF0C\u70B9\u51FB\u201C\u7EB3\u5165\u6B64\u56FA\u5B9A\u6784\u5EFA\u201D\u3002\u4EC5\u6709\u6587\u7A3F\u4E5F\u53EF\u751F\u6210\u62A5\u544A\u3002"),
+                    s.publications.map(p => React.createElement("div", { className: "inspector-section", key: p.result.id },
+                        React.createElement("strong", null, p.title),
+                        React.createElement("p", { className: "small muted" },
+                            "\u4FEE\u8BA2 ",
+                            short(p.result.revisionId),
+                            " \u00B7 \u6784\u5EFA ",
+                            short(p.result.jobId)),
+                        React.createElement("code", { className: "digest" }, p.result.sourceDigest),
+                        React.createElement("button", { className: "text-button danger", onClick: () => this.setState({ publications: s.publications.filter(row => row.result.id !== p.result.id) }) },
+                            "\u79FB\u9664\u6784\u5EFA ",
+                            short(p.result.jobId))))),
                 React.createElement("div", { className: "run-selection" }, eligible.map(r => React.createElement("label", { key: r.id },
                     React.createElement("input", { type: "checkbox", checked: s.selected.includes(r.id), onChange: (e) => this.setState({ selected: e.target.checked ? [...s.selected, r.id] : s.selected.filter(id => id !== r.id) }) }),
                     React.createElement("span", null,
@@ -182,7 +215,7 @@ export class ReportsView extends React.Component {
                         c.statement))) : null,
                 mixed ? React.createElement("p", { role: "alert", className: "error-text" }, "\u6240\u9009 Run \u7684\u8FD0\u884C\u5951\u7EA6\u4E0D\u540C\uFF0C\u8BF7\u5206\u5F00\u751F\u6210\u62A5\u544A\u3002") : null,
                 !available ? React.createElement("p", { role: "alert", className: "error-text" }, "\u90E8\u5206\u6240\u9009\u8BB0\u5F55\u5DF2\u4E0D\u53EF\u7528\u6216\u5931\u6548\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002") : null,
-                React.createElement("button", { className: "primary", disabled: !s.title.trim() || !(s.selected.length + s.selectedClaims.length) || mixed || !available || !!s.pendingArtifactId, onClick: () => void this.create() }, "\u751F\u6210\u56FA\u5B9A\u7ED3\u679C\u62A5\u544A"),
+                React.createElement("button", { className: "primary", disabled: !s.title.trim() || !(s.selected.length + s.selectedClaims.length + s.publications.length) || mixed || !available || !!s.pendingArtifactId, onClick: () => void this.create() }, "\u751F\u6210\u56FA\u5B9A\u7ED3\u679C\u62A5\u544A"),
                 React.createElement("p", { className: "small muted" }, "\u670D\u52A1\u7AEF\u91CD\u65B0\u6838\u9A8C\u6765\u6E90\u4E0E\u539F\u59CB\u6307\u6807\u3002\u5931\u8D25\u6216\u4E0D\u5B8C\u6574\u7684 Run \u4F1A\u4FDD\u7559\u5176\u771F\u5B9E\u72B6\u6001\uFF0C\u4E0D\u8865\u5199\u7ED3\u679C\u3002"),
                 s.pendingArtifactId ? React.createElement("p", { role: "status" },
                     "\u62A5\u544A\u4EA7\u7269\u5DF2\u4FDD\u5B58\uFF0C\u7B49\u5F85\u9879\u76EE\u8BB0\u5F55\u5237\u65B0\u3002",
@@ -229,7 +262,7 @@ export class ReportsView extends React.Component {
                             React.createElement("p", { className: "small muted" }, "\u751F\u6210\u4E0E\u53D1\u8D77\u4E0B\u8F7D\u4E0D\u4EE3\u8868\u6587\u4EF6\u5DF2\u843D\u76D8\uFF1B\u8BF7\u5728\u4E0B\u8F7D\u76EE\u5F55\u6838\u5BF9\u3002")) : null,
                         React.createElement("details", { open: true },
                             React.createElement("summary", null, "\u56FA\u5B9A\u8FD0\u884C\u4E0E\u5B9E\u6D4B\u6307\u6807"),
-                            !report.runs.length ? React.createElement("p", { className: "small muted" }, "\u672C\u62A5\u544A\u672A\u7EB3\u5165\u6B63\u5F0F\u8FD0\u884C\uFF1B\u6587\u6863\u7ED3\u8BBA\u4E0D\u4EE3\u8868\u8FD0\u884C\u5B9E\u6D4B\u7ED3\u679C\u3002") : null,
+                            !report.runs.length ? React.createElement("p", { className: "small muted" }, "\u672C\u62A5\u544A\u672A\u7EB3\u5165\u6B63\u5F0F\u8FD0\u884C\uFF1B\u6587\u7A3F\u4E0E\u6587\u6863\u6765\u6E90\u4E0D\u4EE3\u8868\u8FD0\u884C\u5B9E\u6D4B\u7ED3\u679C\u3002") : null,
                             report.runs.map(run => React.createElement("div", { className: "inspector-section", key: run.runId },
                                 React.createElement("h3", null,
                                     "Run ",
@@ -259,6 +292,28 @@ export class ReportsView extends React.Component {
                                         " ",
                                         metric.unit))))))),
                         React.createElement("details", { open: true },
+                            React.createElement("summary", null, "\u56FA\u5B9A\u6587\u7A3F\u4E0E\u56FE\u5F62\u6765\u6E90"),
+                            report.publications?.length ? report.publications.map(p => React.createElement("div", { className: "inspector-section", key: p.resultId },
+                                React.createElement("h3", null, p.title),
+                                React.createElement("p", null,
+                                    "\u4FEE\u8BA2 ",
+                                    short(p.revisionId),
+                                    " \u00B7 \u6784\u5EFA ",
+                                    short(p.jobId),
+                                    " \u00B7 ",
+                                    p.pages,
+                                    " \u9875"),
+                                React.createElement("code", { className: "digest" },
+                                    "\u6E90\u7801 ",
+                                    p.sourceDigest),
+                                React.createElement("code", { className: "digest" },
+                                    "PDF ",
+                                    p.pdfDigest),
+                                React.createElement("div", { className: "actions wrap" },
+                                    React.createElement("button", { className: "secondary compact", disabled: report.integrity !== 'verified', onClick: () => this.openPublication(p.resultId) }, "\u56DE\u67E5\u56FA\u5B9A\u6587\u7A3F\u4E0E PDF"),
+                                    React.createElement("button", { className: "text-button", onClick: () => void this.readReference(p.referenceId) }, "\u8BFB\u53D6\u56FA\u5B9A\u6784\u5EFA\u6765\u6E90")))) : React.createElement("p", { className: "small muted" }, "\u672C\u62A5\u544A\u672A\u7EB3\u5165\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\u3002"),
+                            React.createElement("p", { className: "small muted" }, "\u56FE\u5F62\u751F\u6210\u6E90\u7801\u3001\u8F93\u5165\u6570\u636E\u4E0E\u540C\u4F5C\u4E1A\u8F93\u51FA\u6309\u4E0B\u65B9\u56FA\u5B9A\u5F15\u7528\u56DE\u67E5\uFF1B\u5DF2\u77E5\u751F\u6210\u5173\u7CFB\u4E0D\u4EE3\u8868\u9010\u70B9\u6570\u503C\u9A8C\u8BC1\u3002")),
+                        React.createElement("details", { open: true },
                             React.createElement("summary", null, "\u7ED1\u5B9A\u7684\u8BC1\u636E\u4E0E\u6765\u6E90"),
                             report.references.length ? React.createElement("ul", null, report.references.map(ref => React.createElement("li", { key: ref.id },
                                 React.createElement("button", { className: "text-button", disabled: !Object.prototype.hasOwnProperty.call(referenceTypes, ref.type), onClick: () => void this.readReference(ref.id) }, ref.label),
@@ -274,6 +329,7 @@ export class ReportsView extends React.Component {
                                 s.reference.path ?? s.reference.targetId),
                             s.reference.digest ? React.createElement("code", { className: "digest" }, s.reference.digest) : null,
                             s.referenceError ? React.createElement("p", { role: "alert", className: "error-text" }, s.referenceError) : null,
+                            s.reference.type === 'artifact' ? React.createElement("button", { className: "secondary compact", disabled: report.integrity !== 'verified' || s.checking || !!s.verificationError || !report.references.some(ref => sameReference(ref, s.reference)), onClick: () => void this.downloadReference() }, "\u4E0B\u8F7D\u56FA\u5B9A\u539F\u59CB\u4EA7\u7269") : null,
                             s.reference.document ? React.createElement("div", null,
                                 React.createElement("p", { className: "small muted" },
                                     "\u7269\u7406\u9875 ",

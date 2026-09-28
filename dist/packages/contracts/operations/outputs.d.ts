@@ -7865,7 +7865,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -7901,7 +7901,7 @@ export declare const OUTPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -8014,7 +8014,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                 };
                             };
-                            readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                            readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                             readonly additionalProperties: false;
                         };
                         readonly available: {
@@ -8050,7 +8050,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "jobs" | "documents" | "publications")[];
+                            readonly required: ("development" | "cpus" | "memoryMb" | "runs" | "publications" | "jobs" | "documents")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -8512,7 +8512,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly type: {
-                            readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim"];
+                            readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code"];
                         };
                         readonly targetId: {
                             readonly type: "string";
@@ -8634,6 +8634,43 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
+            readonly publications: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly resultId: {
+                            readonly type: "string";
+                        };
+                        readonly jobId: {
+                            readonly type: "string";
+                        };
+                        readonly revisionId: {
+                            readonly type: "string";
+                        };
+                        readonly title: {
+                            readonly type: "string";
+                        };
+                        readonly sourceDigest: {
+                            readonly type: "string";
+                        };
+                        readonly pdfArtifactId: {
+                            readonly type: "string";
+                        };
+                        readonly pdfDigest: {
+                            readonly type: "string";
+                        };
+                        readonly pages: {
+                            readonly type: "integer";
+                        };
+                        readonly referenceId: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly required: ("jobId" | "sourceDigest" | "pages" | "title" | "resultId" | "revisionId" | "pdfArtifactId" | "pdfDigest" | "referenceId")[];
+                    readonly additionalProperties: false;
+                };
+            };
         };
         readonly required: ("id" | "validity" | "formatVersion" | "artifactId" | "title" | "integrity" | "reasons" | "references" | "runs")[];
         readonly additionalProperties: false;
@@ -8648,7 +8685,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                     readonly type: {
-                        readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim"];
+                        readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code"];
                     };
                     readonly targetId: {
                         readonly type: "string";

@@ -12,14 +12,18 @@
 | PR06 | trusted-example 与 Docker 真实适配器已接入；非白名单 Python 正式 Run、单独批准、归档及不重复恢复已实测 | GPU/其他目标另验；当前只证明本机 Linux CPU Docker 路径 |
 | PR07 | 共享计算队列覆盖正式/开发/文档解析/文稿构建；Worker 槽位、资源配置、有界日志及事件恢复已验。文稿 worker 同容器恢复、取消和共享额度已实测；文献未知网络请求不自动重放 | HTTP 请求级全局限流、其余历史实体分页/虚拟化、原生 Pi 记录恢复预检与完整性能迁移、硬磁盘配额和其他目标仍待验 |
 | PR08 | Root Pi 与另一个真实 Pi reviewer 完成独立审查闭环；Worker 持久槽位、实际退出后释放及项目/团队并发边界已验 | 完整有界授权、资源与故障矩阵，以及单/多 Agent 效益对照；一次审查通过不证明多 Agent 收益 |
-| PR09 | 实现/测试/审查/整合、报告引用、调度、日志、文献及页段回跳已实测；新增固定文稿编辑、单独批准、错误行定位与 PDF 页图，桌面/390px 和修订/作业刷新恢复通过 | 浏览器下载实际落盘和本地文件选择器尚未验收；文稿页码刷新回第 1 页。本批未单独采集 console errors；完整类型/构建迁移、大历史列表及其他页面仍保留 |
+| PR09 | 实现/测试/审查/整合、报告引用、调度、日志、文献及页段回跳已实测；文稿编辑/批准/PDF、报告精确回跳和绘图代码/CSV 原文回查已验，桌面/390px 与报告刷新恢复通过 | 浏览器下载实际落盘和本地文件选择器尚未验收；文稿页码刷新回第 1 页。本批未单独采集 console errors；完整类型/构建迁移、大历史列表及其他页面仍保留 |
 | PR10 | 核心流程已验：四源实网成功、PubMed 网络失败单列；不可变 DocumentVersion、arXiv v1/v2、v1 隔离解析 15 页及页段回查完成。中文/扫描页、共享配额、恢复留证；文档证据已进入固定报告和离线包 | PubMed 环境、OpenAlex/bioRxiv 原 PDF 实网、自动结构抽取、完整跨源分页/覆盖评估、显式文档语料及 Agent 细粒度文档授权仍待完成 |
 | PR11 | 技能修订、审阅/撤销、固定 bundle、显式能力预检与回滚已实现；TaskAttempt/Session/受控读取一致，真实 IPC 证明在途不升级；真实 Pi 代码与批准容器生成 PNG/CSV。latex 声明已接入固定编译器预检 | 原生 UI 上传、二进制资源、完整 diagram/paper 工作流、其他后端和大历史分页仍保留；内置包文本更新前需补齐旧 bundle 历史迁移。先前 Pi 会话保存代码/请求后 aborted，不伪称会话成功完成 |
-| PR12 | 固定报告、来源核验、PDF 页段与离线包已验；新增不可变文稿、隔离三引擎/Bib 构建、错误回查与 PDF 预览。中文两页实物绑定既有图形/源码/批准来源，旧报告兼容 | 文稿 PDF/源文件与报告成果包联动、图形/数值来源回跳、完整论文写作和模板/diagram 能力仍待完成；未发布到远端 |
+| PR12 | 固定报告/PDF 页段、不可变文稿、隔离三引擎/Bib 构建、错误定位/PDF 预览已验；文稿 PDF/源文件/图形源码与同作业数据进入报告成果包，实际解包逐字节核对；原 Run 指标/来源和旧报告兼容 | 完整论文写作、图形逐点数值关系及更多模板/diagram 能力仍待完成；执行来源关联不等于科学数值证明。未发布到远端 |
 | PR13 | 待实施 | SSH→Slurm 等真实后端、远程工作台，按目标分别验收 |
 | PR14 | 待实施 | 迁移/备份、显式发布、同步冲突、桌面和团队分发 |
 
-最近证据：[固定文稿、隔离构建与错误回查](acceptance/flow-publication/RESULTS.zh-CN.md)、[真实构建](acceptance/flow-publication/live-evidence.json)与[浏览器](acceptance/flow-publication/browser-evidence.json)。缺图真实失败准确定位 `main.tex:13`；保留中间中文溢出版本，修订断行后生成 2 页、35,395 字节、3 轮收敛的[实际 PDF](acceptance/flow-publication/compiled-document.pdf)。固定图形绑定此前 Sandbox 来源，未冒称正式 Run 或科学结果；批准失效的历史 PDF 保持原字节。
+最近证据：[固定文稿进入报告与离线成果包](acceptance/flow-publication-report/RESULTS.zh-CN.md)、[实际解包](acceptance/flow-publication-report/live-evidence.json)与[浏览器回查](acceptance/flow-publication-report/browser-evidence.json)。报告 `134330d1…` 绑定原文稿/构建/PDF、绘图脚本和同作业 CSV，200,914 字节包实际解包 25 个条目，23 个固定文件与原字节一致；桌面/390px、精确文稿回跳与刷新通过。
+
+文稿交付批次统一回归 **563 pass / 0 fail / 22 skip（共 585）**；之后 CSV/TSV 预览修复相关 **22/22**，最终干净构建 **368 文件一致**。固定批准身份 P2 已修复并独立关闭，CSV 回查修复亦复核通过。主验收原 91 条记录不变；旧真实 Run 报告在备份上仍 verified/current，173 条旧记录保持原字节。单独撤销副本证明历史可读、新报告/新导出拒绝。本批无新模型请求、重新编译或远端发布。
+
+上一批[固定文稿、隔离构建与错误回查](acceptance/flow-publication/RESULTS.zh-CN.md)、[真实构建](acceptance/flow-publication/live-evidence.json)与[浏览器](acceptance/flow-publication/browser-evidence.json)保留。缺图真实失败准确定位 `main.tex:13`；保留中间中文溢出版本，修订断行后生成 2 页、35,395 字节、3 轮收敛的[实际 PDF](acceptance/flow-publication/compiled-document.pdf)。固定图形绑定此前 Sandbox 来源，未冒称正式 Run 或科学结果；批准失效的历史 PDF 保持原字节。
 
 文稿批次统一回归 **546 pass / 0 fail / 22 skip（共 568）**，最后能力目录元数据修正后相关 **17/17**；最终干净构建 **368 个 dist 文件一致**。最终镜像 18 个实际探针、前一镜像同容器恢复/共享额度/取消与超时分别留证，独立复核无本批阻断。旧 52 条记录不变，新增模型请求 0。XeLaTeX 中文已验；Lua 中文字体在 768 MiB 下被杀并准确失败。输出监控不是宿主硬磁盘配额。
 
@@ -53,6 +57,6 @@
 
 [正式运行与结果回查](acceptance/flow-run/RESULTS.zh-CN.md)、[源码准备与真实 Pi](acceptance/flow-source/RESULTS.zh-CN.md)、[PR04](acceptance/pr04/RESULTS.zh-CN.md)、[PR03](acceptance/pr03/RESULTS.zh-CN.md)、[PR02 首批](acceptance/pr02/RESULTS.zh-CN.md)和[PR01](acceptance/pr01/RESULTS.zh-CN.md)保留当时结果。首条真实旅程通过，不意味着整体计划完成，也不凭示例指标宣称科学发现。
 
-下一批推进 PR12“固定文稿 PDF/源文件→报告与离线成果包→图形和数值来源回跳”。内置 paper 文本更新需先补齐旧 bundle 历史迁移，现有冻结包保持不变。PR07 其余并发/历史分页等保留，不继续围绕已完成页面打磨非阻断细节。PR01–14 原范围全部保留，包括 PR08 多 Agent 效益、PR09 完整迁移、PR10 剩余文献能力、PR11 剩余技能能力、PR12 论文、PR13 远端及 PR14 分发。
+下一批补 PR11 内置技能包升级与旧 bundle 历史兼容，再更新 paper 指导，现有冻结包保持不变。PR07 其余并发/历史分页等保留，不继续围绕已完成页面打磨非阻断细节。PR01–14 原范围全部保留，包括 PR08 多 Agent 效益、PR09 完整迁移、PR10 剩余文献能力、PR11 剩余技能能力、PR12 论文、PR13 远端及 PR14 分发。
 
 尚待核验：浏览器下载事件按 5 秒有界等待仍超时，本地下载路径未确认；上述服务端验证包已保存，可直接本地交付。远端/GPU 仍缺环境。浏览器坐标点击错位已用原生键盘完成，不作为产品功能缺失。非阻断后续项：reviewer 摘要误将空 stdout 归为 stderr；原始 stderr 确有 5 tests / OK，后续改进精确引用，本批不重做审查。

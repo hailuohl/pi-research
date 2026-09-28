@@ -16,6 +16,7 @@ export class PublicationView extends React.Component {
     constructor() {
         super(...arguments);
         this.state = { templates: [], status: null, revisions: [], nextRevision: null, revision: null, jobs: [], nextJob: null, job: null, result: null, sourcePath: '', source: '', sourceComplete: false, sourceLine: null, busy: false, loading: false, error: '', context: 'desktop-linux', image: '', seedVersion: 0, pollStopped: false, sourceChecking: false, sourceCheckError: '' };
+        this.workspaceElement = null;
         this.mounted = true;
         this.selectionEpoch = 0;
         this.sourceEpoch = 0;
@@ -34,7 +35,7 @@ export class PublicationView extends React.Component {
     componentDidUpdate(prev) { const { revision, job } = this.state; if (revision && job && publicationSourceSignature(prev.data, revision, job) !== publicationSourceSignature(this.props.data, revision, job))
         void this.refreshJob(job.id); }
     componentWillUnmount() { this.mounted = false; this.selectionEpoch++; this.sourceEpoch++; this.jobEpoch++; this.refreshEpoch++; clearTimeout(this.timer); }
-    async initialize() { this.setState({ loading: true, error: '' }); try {
+    async initialize() { const selection = this.selectionEpoch; this.setState({ loading: true, error: '' }); try {
         const [templates, status, list] = await Promise.all([this.call('publication_templates'), this.call('publication_status'), this.call('manuscript_list', { cursor: 0, limit: 30 })]);
         if (!this.mounted)
             return;
@@ -44,7 +45,7 @@ export class PublicationView extends React.Component {
             saved = JSON.parse(localStorage.getItem(this.storageKey()) ?? 'null');
         }
         catch { }
-        if (typeof saved?.revisionId === 'string')
+        if (selection === this.selectionEpoch && typeof saved?.revisionId === 'string')
             await this.openRevision(saved.revisionId, typeof saved.jobId === 'string' ? saved.jobId : undefined);
     }
     catch (error) {
@@ -161,9 +162,14 @@ export class PublicationView extends React.Component {
     async moreJobs() { const revision = this.state.revision, selection = this.selectionEpoch; if (!revision || this.state.nextJob === null)
         return; const list = await this.call('publication_build_list', { revisionId: revision.id, cursor: this.state.nextJob, limit: 30 }); if (this.mounted && selection === this.selectionEpoch)
         this.setState({ jobs: [...this.state.jobs, ...list.items.filter(j => !this.state.jobs.some(old => old.id === j.id))], nextJob: list.nextCursor }); }
+    async openFixed(revisionId, jobId) { await this.openRevision(revisionId, jobId); if (this.mounted && this.state.revision?.id === revisionId && this.state.job?.id === jobId)
+        this.workspaceElement?.focus(); }
+    selectableResult() { const s = this.state, r = s.result, j = s.job; return !s.loading && !s.sourceChecking && !s.sourceCheckError && j?.state === 'succeeded' && j.integrity === 'complete' && r?.status === 'succeeded' && r.converged && !r.hadErrors && !!r.pdf && r.sourceValidity === 'current' && r.id === j.resultId && r.jobId === j.id && r.revisionId === s.revision?.id ? r : null; }
+    selectResult() { const result = this.selectableResult(); if (result)
+        this.props.onSelectResult?.(result, this.state.revision.title); }
     render() { const s = this.state, r = s.revision, j = s.job, approval = this.props.data.approvals.find(a => a.id === j?.approvalId); return React.createElement("div", { "aria-label": "\u6587\u7A3F\u6784\u5EFA\u5DE5\u4F5C\u533A" },
         React.createElement(ManuscriptEditor, { key: s.seedVersion, seed: s.seed, templates: s.templates, data: this.props.data, busy: s.busy, onFreeze: draft => void this.freeze(draft) }),
-        React.createElement("section", { className: "surface report-builder" },
+        React.createElement("section", { className: "surface report-builder", tabIndex: -1, ref: (node) => { this.workspaceElement = node; }, "aria-label": "\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\u56DE\u67E5" },
             React.createElement("h2", null, "\u9694\u79BB\u6587\u7A3F\u6784\u5EFA"),
             s.loading ? React.createElement("p", { role: "status" }, "\u6B63\u5728\u8BFB\u53D6\u56FA\u5B9A\u6587\u7A3F\u2026") : null,
             s.error ? React.createElement("p", { role: "alert", className: "error-text" }, s.error) : null,
@@ -298,6 +304,7 @@ export class PublicationView extends React.Component {
                             "\u5386\u53F2\u6784\u5EFA\uFF0C\u5F53\u524D\u6765\u6E90\u5931\u6548\u3002",
                             s.result.sourceError ?? 'PUBLICATION_SOURCE_STALE',
                             "\uFF1B\u5386\u53F2 PDF \u4E0E\u56FA\u5B9A\u6E90\u6587\u4EF6\u4ECD\u53EF\u56DE\u67E5\u3002") : React.createElement("p", { className: "small muted" }, s.result.sourceValidity === 'current' ? '当前来源有效（最近一次核验）' : '当前来源状态未知，请刷新此构建。'),
+                        this.props.onSelectResult ? React.createElement("button", { className: "secondary", disabled: !this.selectableResult() || this.props.selectedResultIds?.includes(s.result.id) || (this.props.selectedResultIds?.length ?? 0) >= 20, onClick: () => this.selectResult() }, this.props.selectedResultIds?.includes(s.result.id) ? '已纳入待生成报告' : '纳入此固定构建') : null,
                         React.createElement("h3", null, "\u56FA\u5B9A\u6784\u5EFA\u8BCA\u65AD"),
                         s.result.diagnostics.length ? React.createElement("ul", null, s.result.diagnostics.map((d, i) => React.createElement("li", { key: i },
                             d.severity,

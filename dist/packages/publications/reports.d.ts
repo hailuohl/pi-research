@@ -1,3 +1,4 @@
+import type { ResearchApp } from '../research-app.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Row, Artifact } from '../domain/types.js';
 import type { EvidenceService } from '../evidence/service.js';
@@ -5,10 +6,13 @@ import type { ReportReference, ReportInspection, ReportExportCollection } from '
 export declare class ReportService {
     private c;
     private evidence;
-    constructor(c: AppContext, evidence: EvidenceService);
+    private app?;
+    constructor(c: AppContext, evidence: EvidenceService, app?: ResearchApp | undefined);
     private record;
     private bytes;
     private checkRecord;
+    private publication;
+    private figureJob;
     private checkProposal;
     private document;
     create(actor: Actor, pid: string, value: unknown): Row<Artifact>;

@@ -42,9 +42,11 @@ function safeExportBytes(bytes, context) {
 export class ReportService {
     c;
     evidence;
-    constructor(c, evidence) {
+    app;
+    constructor(c, evidence, app) {
         this.c = c;
         this.evidence = evidence;
+        this.app = app;
     }
     record(actor, pid, id) { userOnly(actor); scope(actor, pid); return this.c.store.get('report', id, pid); }
     bytes(pid, id, expected) {
@@ -56,6 +58,22 @@ export class ReportService {
         ensure(r.formatVersion === 1 && r.bindings && r.references && r.runs && r.bindingsDigest === digest(payload(r)), 'REPORT_BINDING_INVALID', '报告绑定缺失或已改变');
         this.bytes(r.projectId, r.artifactId, { digest: r.artifactDigest });
         return r;
+    }
+    publication(actor, pid, id) {
+        ensure(this.app, 'PUBLICATION_UNAVAILABLE', '文稿服务不可用');
+        const result = this.app.publicationBuilds.result(actor, pid, id), job = this.app.publicationBuilds.get(actor, pid, result.jobId);
+        ensure(result.pdf && result.status === 'succeeded' && job.state === 'succeeded' && job.integrity === 'complete' && job.exitCode === 0, 'REPORT_PUBLICATION_INCOMPLETE', '成果报告只接受完整成功的文稿 PDF');
+        const revision = this.app.publicationBuilds.assertCurrent(job, true);
+        ensure(result.revisionId === revision.id, 'PUBLICATION_RESULT_INVALID', '结果文稿版本不符');
+        return { result: this.c.store.get('publication-build-result', id, pid), revision, job };
+    }
+    figureJob(pid, id) {
+        ensure(this.app, 'PUBLICATION_UNAVAILABLE', '文稿服务不可用');
+        const job = this.c.store.get('sandbox-job', id, pid);
+        ensure(job.state === 'succeeded' && job.integrity === 'complete' && job.exitCode === 0, 'REPORT_FIGURE_SOURCE_INVALID', '图形来源作业必须完整成功');
+        this.app.development.assertCurrent(job, true);
+        job.artifactIds.forEach(id => this.bytes(pid, id));
+        return job;
     }
     checkProposal(pid, p) {
         const { baseExperimentId, baseRevision, baseSnapshot, contractDigest, title, hypothesis, changes, candidateSnapshot } = p;
@@ -110,8 +128,15 @@ export class ReportService {
         scope(actor, pid);
         return this.c.store.transaction(() => {
             assertProjectWritable(this.c.store, pid);
-            const x = object(value), title = text(x.title ?? '研究结果记录', 'title', 200), runIds = [...new Set(strings(x.runIds ?? [], 'runIds', 100))], claimIds = [...new Set(strings(x.claimIds ?? [], 'claimIds', 100))];
-            ensure(Object.keys(x).every(k => ['projectId', 'title', 'runIds', 'claimIds'].includes(k)) && (!x.projectId || x.projectId === pid), 'INVALID_INPUT', '报告只接受当前项目的运行与结论 ID', 400);
+            const x = object(value), title = text(x.title ?? '研究结果记录', 'title', 200), runIds = [...new Set(strings(x.runIds ?? [], 'runIds', 100))], claimIds = [...new Set(strings(x.claimIds ?? [], 'claimIds', 100))], publicationResultIds = [...new Set(strings(x.publicationResultIds ?? [], 'publicationResultIds', 20))];
+            ensure(Object.keys(x).every(k => ['projectId', 'title', 'runIds', 'claimIds', 'publicationResultIds'].includes(k)) && (!x.projectId || x.projectId === pid), 'INVALID_INPUT', '报告只接受当前项目的运行、结论与固定文稿结果 ID', 400);
+            const publications = publicationResultIds.map(id => this.publication(actor, pid, id));
+            for (const { revision } of publications)
+                for (const file of revision.files)
+                    if (file.provenance.kind === 'run' && !runIds.includes(file.provenance.id)) {
+                        ensure(runIds.length < 100, 'REPORT_TOO_LARGE', '报告关联运行超过上限', 413);
+                        runIds.push(file.provenance.id);
+                    }
             const claims = claimIds.map(id => this.c.store.get('claim', id, pid));
             for (const claim of claims)
                 for (const id of claim.evidenceIds) {
@@ -123,7 +148,7 @@ export class ReportService {
                     }
                 }
             const runs = runIds.map(id => this.c.store.get('run', id, pid));
-            ensure(runs.length + claims.length > 0, 'REPORT_EMPTY', '请选择真实运行或已采纳结论', 400);
+            ensure(runs.length + claims.length + publications.length > 0, 'REPORT_EMPTY', '请选择真实运行、已采纳结论或完整文稿结果', 400);
             ensure(runs.every(r => ['succeeded', 'failed', 'cancelled'].includes(r.state)), 'RUN_NOT_TERMINAL', '未终态运行不能列为最终结果');
             ensure(new Set(runs.map(r => r.manifest.contractDigest)).size <= 1, 'INCOMPARABLE_CONTRACTS', '不同运行契约不能直接合并比较');
             claims.forEach(c => { ensure(c.status === 'accepted', 'CLAIM_NOT_ACCEPTED', '报告确定性结论只允许已采纳 Claim'); this.evidence.assertClaimCurrent(c); });
@@ -176,6 +201,35 @@ export class ReportService {
                 }
                 return add({ type: 'evidence', targetId: id, label: e.description, digest: e.digest, ...(e.runId ? { runId: e.runId } : {}), ...(document ? { document } : {}) }, { evidenceId: e.id, artifactId: e.artifactId, digest: e.digest, locator: e.locator, quote: e.quote, description: e.description, type: e.type, runId: e.runId, ...(document ? { document, provenance, locatorUnit: 'UTF-16 code units', licenseNotice: 'License statements are retained as supplied; local export does not grant redistribution permission.' } : {}) });
             };
+            for (const { result, revision, job } of publications) {
+                for (const id of [revision.manifestArtifactId, ...revision.files.map(f => f.artifactId), result.manifestArtifactId, ...result.logs.map(f => f.artifactId), ...result.previews.map(f => f.artifactId), result.pdf.artifactId])
+                    ensure(artifact(id), 'REPORT_UNSAFE_REFERENCE', '文稿产物不适合交付');
+                const { profileId, profileDigest, lockDigest, scriptDigest, dockerfileDigest, environmentImageDigest, command, resources } = job.manifest;
+                const compiler = { profileId, profileDigest, lockDigest, scriptDigest, dockerfileDigest, environmentImageDigest, command, resources, imageId: result.imageId, approvalId: job.approvalId };
+                const referenceId = add({ type: 'publication', targetId: result.id, label: revision.title, digest: digest(result) }, { resultId: result.id, revisionId: revision.id, revision, result, compiler, notice: '编译成功仅验证文稿构建，不证明科学结论或图形数值。' });
+                (bindings.publications ??= []).push(clean({ resultId: result.id, resultDigest: digest(result), revisionId: revision.id, revisionDigest: digest(revision), revision, result, compiler, referenceId }));
+                for (const file of revision.files) {
+                    const provenance = file.provenance;
+                    let source = { notice: '来源未验证；未推断数据、绘图脚本或数值关系。' };
+                    if (provenance.kind === 'run')
+                        source = { runId: provenance.id, notice: 'Run 归档产物；仅 Run 指标证据验证实测数值，不表示已验证图形逐点数据映射。' };
+                    if (provenance.kind === 'sandbox-job') {
+                        const figure = this.figureJob(pid, provenance.id);
+                        const dataArtifacts = figure.manifest.dataArtifacts.map(({ path, ...a }) => a);
+                        if (!(bindings.figureSources ??= []).some(b => b.jobId === figure.id)) {
+                            bindings.figureSources.push(clean({ jobId: figure.id, manifestDigest: figure.manifestDigest, sourceDigest: figure.sourceDigest, files: figure.manifest.inputSnapshot.files, artifactIds: figure.artifactIds, dataArtifacts }));
+                            for (const id of [...figure.artifactIds, ...dataArtifacts.map(a => a.id)])
+                                ensure(artifact(id), 'REPORT_UNSAFE_REFERENCE', '图形来源产物不适合交付');
+                            for (const f of figure.manifest.inputSnapshot.files) {
+                                ensure(!excluded(f.path), 'REPORT_UNSAFE_REFERENCE', '图形固定源码含不适合交付的文件');
+                                add({ type: 'figure-source-code', targetId: figure.id, path: f.path, digest: f.digest, label: f.path, relation: 'exact' });
+                            }
+                        }
+                        source = { jobId: figure.id, sourceDigest: figure.sourceDigest, manifestDigest: figure.manifestDigest, command: figure.manifest.command, image: figure.manifest.environmentImageDigest, imageId: figure.imageId, approvalId: figure.grantId, dataArtifacts, artifactIds: figure.artifactIds, notice: '已声明输入与同作业产物；未证明每项输入均被使用，未验证图形逐点科学数值映射。' };
+                    }
+                    add({ type: 'figure-source', targetId: revision.id, path: file.path, label: `文稿文件来源：${file.path}`, digest: file.digest }, { revisionId: revision.id, file, source });
+                }
+            }
             for (const r of runs) {
                 bindings.runs.push({ runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, contractDigest: r.manifest.contractDigest, artifactIds: [...r.artifactIds], evidenceIds: [...r.evidenceIds] });
                 bindings.sources.push({ runId: r.id, sourceDigest: r.manifest.snapshotDigest, files: structuredClone(r.manifest.sourceFiles) });
@@ -220,7 +274,7 @@ export class ReportService {
                 add({ type: 'claim', targetId: c.id, label: c.statement.slice(0, 120), digest: digest(claimContent(c)) }, { claimId: c.id, ...claimContent(c), status: c.status, validity: c.validity ?? 'current' });
                 c.evidenceIds.forEach(evidence);
             }
-            const id = randomUUID(), link = (referenceId, label) => `[${escaped(label)}](pi-research://report/${id}/reference/${referenceId})`, body = [`# ${escaped(title)}`, '\n这是根据实际终态运行和已采纳结论生成的确定性记录，不是新的模型推断。进程成功或审查通过不等于科学假设成立。', ...summaries.map(r => `\n## Run ${r.runId}\n\n执行：${r.state}；完整性：${r.integrity}；科研判断：${r.judgment}\n\n固定源码摘要：${r.sourceDigest}\n\n${r.metrics.length ? '| 指标 | 实测值 | 单位 |\n|---|---:|---|\n' + r.metrics.map(m => `| ${escaped(m.name)} | ${link(m.referenceId, String(m.value))} | ${escaped(m.unit)} |`).join('\n') : '未获得完整实测指标。'}`), ...claims.map(c => `\n## 已采纳结论\n\n${escaped(c.statement)}\n\n限制：${escaped(c.limitations.join('；') || '未填写；不意味着不存在限制。')}`), '\n## 固定引用\n', ...references.map(r => `- ${link(r.id, r.label)}${r.relation === 'ancestry' ? '（仅为祖先来源，不表示当前源码通过该测试或审查）' : ''}`), '\n## 适用性与限制\n\n报告原文是生成时的历史记录。使用结论或导出成果前，应在工作台重新核对前提与审查是否仍有效。模板中的合成数据不代表真实材料性能；其他研究结论也必须根据自己的数据和协议判断。'].join('\n');
+            const id = randomUUID(), link = (referenceId, label) => `[${escaped(label)}](pi-research://report/${id}/reference/${referenceId})`, body = [`# ${escaped(title)}`, '\n这是根据所选实际终态运行、已采纳结论和固定文稿构建结果生成的确定性记录，不是新的模型推断。进程成功或审查通过不等于科学假设成立。', ...summaries.map(r => `\n## Run ${r.runId}\n\n执行：${r.state}；完整性：${r.integrity}；科研判断：${r.judgment}\n\n固定源码摘要：${r.sourceDigest}\n\n${r.metrics.length ? '| 指标 | 实测值 | 单位 |\n|---|---:|---|\n' + r.metrics.map(m => `| ${escaped(m.name)} | ${link(m.referenceId, String(m.value))} | ${escaped(m.unit)} |`).join('\n') : '未获得完整实测指标。'}`), ...claims.map(c => `\n## 已采纳结论\n\n${escaped(c.statement)}\n\n限制：${escaped(c.limitations.join('；') || '未填写；不意味着不存在限制。')}`), ...publications.map(({ result, revision }) => `\n## 固定文稿\n\n${escaped(revision.title)}；修订：${revision.id}；PDF：${result.pdf.digest}\n\n图形关联仅说明固定来源、已声明输入与同作业产物，不代表已验证逐点科学数值。未知来源保持未验证。`), '\n## 固定引用\n', ...references.map(r => `- ${link(r.id, r.label)}${r.relation === 'ancestry' ? '（仅为祖先来源，不表示当前源码通过该测试或审查）' : ''}`), '\n## 适用性与限制\n\n报告原文是生成时的历史记录。使用结论或导出成果前，应在工作台重新核对前提与审查是否仍有效。模板中的合成数据不代表真实材料性能；其他研究结论也必须根据自己的数据和协议判断。'].join('\n');
             const datedBody = body.replace('\n', `\n\n生成时间：${new Date().toISOString()}\n`);
             const a = this.evidence.put(pid, title.slice(0, 197) + '.md', Buffer.from(datedBody), 'text/markdown', 'report'), data = { artifactId: a.id, artifactDigest: a.digest, title, formatVersion: 1, runIds, claimIds, evidenceIds: [...new Set([...runs.flatMap(r => r.evidenceIds), ...claims.flatMap(c => c.evidenceIds)])], references, runs: summaries, bindings };
             this.c.store.create('report', pid, { ...data, bindingsDigest: digest(payload(data)) }, id);
@@ -248,6 +302,8 @@ export class ReportService {
             bound = this.checkRecord(r);
             result.references = bound.references;
             result.runs = bound.runs;
+            if (bound.bindings.publications)
+                result.publications = bound.bindings.publications.map(b => ({ resultId: b.resultId, revisionId: b.revisionId, jobId: b.result.jobId, title: b.revision.title, sourceDigest: b.revision.sourceDigest, pdfArtifactId: b.result.pdf.artifactId, pdfDigest: b.result.pdf.digest, pages: b.result.pdf.pages, referenceId: b.referenceId }));
         }
         catch (error) {
             fail(error, true);
@@ -268,6 +324,23 @@ export class ReportService {
             }
             catch (error) {
                 fail(error, true);
+            }
+        for (const b of bound.bindings.publications ?? [])
+            try {
+                ensure(digest(this.c.store.get('manuscript-revision', b.revisionId, pid)) === b.revisionDigest && digest(this.c.store.get('publication-build-result', b.resultId, pid)) === b.resultDigest, 'REPORT_PUBLICATION_CHANGED', '固定文稿或结果记录改变');
+                const { job } = this.publication(actor, pid, b.resultId);
+                ensure(job.approvalId === b.compiler.approvalId, 'REPORT_PUBLICATION_CHANGED', '固定编译批准身份改变');
+            }
+            catch (error) {
+                fail(error);
+            }
+        for (const b of bound.bindings.figureSources ?? [])
+            try {
+                const job = this.figureJob(pid, b.jobId);
+                ensure(job.manifestDigest === b.manifestDigest && job.sourceDigest === b.sourceDigest && digest(job.artifactIds) === digest(b.artifactIds), 'REPORT_FIGURE_SOURCE_INVALID', '图形来源记录改变');
+            }
+            catch (error) {
+                fail(error);
             }
         const checkedDocuments = new Set();
         for (const ref of bound.references.filter(ref => ref.document))
@@ -327,7 +400,14 @@ export class ReportService {
             const binding = r.bindings.artifacts.find(a => a.id === reference.targetId);
             ensure(binding, 'REPORT_BINDING_INVALID', '缺少产物绑定');
             ({ bytes } = this.bytes(pid, binding.id, binding));
-            mediaType = binding.mediaType;
+            mediaType = binding.mediaType === 'application/octet-stream' && /\.(csv|tsv)$/i.test(binding.title) ? 'text/plain' : binding.mediaType;
+        }
+        else if (reference.type === 'figure-source-code') {
+            const b = r.bindings.figureSources?.find(b => b.jobId === reference.targetId), job = this.c.store.get('sandbox-job', reference.targetId, pid), file = b?.files.find(f => f.path === reference.path);
+            ensure(b && file && job.manifestDigest === b.manifestDigest && digest(job.manifest) === b.manifestDigest, 'REPORT_SOURCE_CHANGED', '固定图形源码绑定不符');
+            bytes = readStableFile(job.manifest.inputSnapshot.path, file.path, 2 * 1024 * 1024);
+            ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '图形源码引用已改变');
+            mediaType = 'text/plain';
         }
         else if (reference.type === 'run-source') {
             const run = this.c.store.get('run', reference.targetId, pid), binding = r.bindings.runs.find(b => b.runId === run.id), file = r.bindings.sources.find(b => b.runId === run.id)?.files.find(f => f.path === reference.path);
@@ -357,7 +437,7 @@ export class ReportService {
     }
     stateDigest(pid) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor, pid, id, expectedBindingsDigest, expectedStateDigest) {
         const r = this.record(actor, pid, id);
@@ -385,6 +465,20 @@ export class ReportService {
                 ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '导出源码与固定绑定不符');
                 add(`sources/${source.sourceDigest}/${file.path}`, bytes, file.mode);
             }
+        }
+        for (const source of r.bindings.figureSources ?? []) {
+            const job = this.c.store.get('sandbox-job', source.jobId, pid);
+            for (const file of source.files) {
+                const bytes = readStableFile(job.manifest.inputSnapshot.path, file.path, Math.min(30 * 1024 * 1024, file.size));
+                ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '图形源码与固定绑定不符');
+                add(`sources/${source.sourceDigest}/${file.path}`, bytes, file.mode);
+            }
+        }
+        for (const publication of r.bindings.publications ?? []) {
+            for (const file of publication.revision.files)
+                add(`manuscripts/${publication.revisionId}/${file.path}`, this.bytes(pid, file.artifactId, file).bytes);
+            const pdf = publication.result.pdf;
+            add(`publications/${publication.resultId}/document.pdf`, this.bytes(pid, pdf.artifactId, { digest: pdf.digest, size: pdf.bytes }).bytes);
         }
         for (const artifact of r.bindings.artifacts) {
             ensure(!excluded(artifact.title), 'EXPORT_PATH_DENIED', '产物名称属于敏感文件');

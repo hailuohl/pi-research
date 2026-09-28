@@ -96,7 +96,7 @@ test('PDF actions require a completed matching read and preserve the exact nonze
  assert.ok(actions().every(n=>!n.props.disabled));actions()[0].props.onClick();
  assert.deepEqual(target,{documentVersionId:'fixed-v1',parseResultId:'parse-v1',pageNumber:2,start:17,end:29});
  assert.ok(elements(v.render()).every(n=>!n.props.href&&!n.props.dangerouslySetInnerHTML));
- assert.ok(elements(v.render()).some(n=>n.type==='p'&&n.props.children==='本报告未纳入正式运行；文档结论不代表运行实测结果。'));
+ assert.ok(elements(v.render()).some(n=>n.type==='p'&&n.props.children==='本报告未纳入正式运行；文稿与文档来源不代表运行实测结果。'));
  assert.ok(elements(v.render()).some(n=>n.type==='p'&&String(n.props.children).includes('许可未知不代表获得再分发许可')));
 });
 

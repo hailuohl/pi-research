@@ -48,7 +48,7 @@ const TOOL_METADATA: Record<string, {
     compute_capacity_configure:{description:'用户入口：显式修改共享或目标计算预算，保留已批准资源契约及未知占位。',example:{expectedVersion:1,limits:{maxJobs:2,maxRuns:1,maxDevelopment:1,cpus:null,memoryMb:null,maxQueued:null}}},
     agent_capacity_inspect:{description:'用户入口：读取共享 Pi worker 槽位及当前项目有效容量；HTTP 并发与账单没有单独计量。',example:{}},
     agent_capacity_configure:{description:'用户入口：显式配置共享 Pi worker 上限；不扩大项目授权或解除未知用量。',example:{expectedVersion:1,maxWorkers:2}},
-    report_create:{description:'用户入口：从所选真实终态运行和已采纳结论生成固定结果报告；不授予 Agent 生成最终用户报告的权限。',example:{title:'研究结果记录',runIds:['run-id'],claimIds:[]}},
+    report_create:{description:'用户入口：从所选真实终态运行、已采纳结论或成功完整的固定文稿构建生成报告，冻结来源与产物；不授予 Agent 生成最终用户报告的权限。',example:{title:'研究结果记录',runIds:['run-id'],claimIds:[],publicationResultIds:[]}},
     report_inspect:{description:'用户入口：读取固定报告引用及当前来源有效性，保留历史原文。',example:{reportId:'report-id'}},
     report_reference_read:{description:'用户入口：按报告内类型化引用读取原始证据或固定源码，不解析任意 URL。',example:{reportId:'report-id',referenceId:'reference-id',cursor:0,limit:16000}},
     report_export:{description:'用户入口：显式生成仅含固定报告、源码与归档证据的本地成果包，不发布到外部。',example:{reportId:'report-id'}},
