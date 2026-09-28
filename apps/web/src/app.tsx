@@ -1,3 +1,4 @@
+import {SchedulerView} from './scheduler-view.js';
 import {IntegrationsView} from './integrations.js';
 import {ChangesView} from './changes.js';
 import {ImplementationView} from './implementation.js';
@@ -28,7 +29,7 @@ interface State {
     tokenDraft: string;
     loggedIn: boolean;
 }
-const navigation = [['chat', '研究会话', 'chat'], ['implementation','实现与审查','branch'], ['campaigns', '研究活动', 'branch'], ['experiments', '实验与运行', 'experiment'], ['workspace', '项目工作区', 'folder'], ['changes','变更提案','branch'], ['literature', '文献检索', 'search'], ['integrations', '技能与连接器', 'settings'], ['evidence', '资料与证据', 'evidence'], ['reports', '报告与成果', 'report'], ['settings', '设置与能力', 'settings']];
+const navigation = [['chat', '研究会话', 'chat'], ['scheduler','资源与调度','settings'], ['implementation','实现与审查','branch'], ['campaigns', '研究活动', 'branch'], ['experiments', '实验与运行', 'experiment'], ['workspace', '项目工作区', 'folder'], ['changes','变更提案','branch'], ['literature', '文献检索', 'search'], ['integrations', '技能与连接器', 'settings'], ['evidence', '资料与证据', 'evidence'], ['reports', '报告与成果', 'report'], ['settings', '设置与能力', 'settings']];
 const manualTasks = [{ key: 'sources', role: 'literature', objective: '整理用户已提供资料及候选文献；检索策略与最终排序由主协调者负责。明确未阅读的全文。', dependencies: [] }, { key: 'analysis', role: 'analyst', objective: '核查已有运行指标及其证据；缺少必要输入则阻塞，不编造结果。', dependencies: [], critical: true }, { key: 'review', role: 'reviewer', objective: '独立核查分析结论与真实证据。', dependencies: ['sources'], reviewOf: 'analysis' }, { key: 'report', role: 'writer', objective: '根据已验收的输入形成实际报告产物，说明限制。', dependencies: ['analysis', 'review'], expectedOutputs:[{kind:'report',schemaId:'report',required:true}], acceptanceRuleIds:['artifact-required'] }];
 function saved() {
     try {
@@ -219,7 +220,8 @@ class App extends React.Component<{}, State> {
  <main className={'main-pane ' + (tab === 'chat' ? 'chat-pane' : '')}>
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} session={currentSession} perform={this.perform}/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
                 tab === 'chat' ? <Chat data={data} boot={boot} session={currentSession} messages={this.state.messages} stream={this.state.stream} perform={this.perform} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)}/> :
-                    tab === 'implementation' ? <ImplementationView key={data.project.id} data={data} sessionId={this.state.sessionId} busy={this.state.busy} perform={this.perform} onSession={sessionId=>this.setState({sessionId})} onChat={id=>this.selectSession(id)} onExperiment={selectedExp=>this.setState({selectedExp,selectedRun:'',tab:'experiments'})}/> :
+                    tab === 'scheduler' ? <SchedulerView key={data.project.id} data={data} perform={this.perform}/> :
+                    tab === 'implementation' ? <ImplementationView onScheduler={()=>this.setState({tab:'scheduler'})} key={data.project.id} data={data} sessionId={this.state.sessionId} busy={this.state.busy} perform={this.perform} onSession={sessionId=>this.setState({sessionId})} onChat={id=>this.selectSession(id)} onExperiment={selectedExp=>this.setState({selectedExp,selectedRun:'',tab:'experiments'})}/> :
                     tab === 'campaigns' ? <CampaignView key={data.project.id} data={data} busy={this.state.busy} perform={this.perform} onSession={id => this.selectSession(id)} onExperiment={id => this.setState({selectedExp:id,tab:'experiments'})}/> :
                     tab === 'experiments' ? <Experiments data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.refreshEpoch++; this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>this.setState({selectedRun,selectedExp})} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
                         tab === 'changes' ? <ChangesView key={data.project.id} data={data} perform={this.perform}/> :
@@ -228,7 +230,7 @@ class App extends React.Component<{}, State> {
                             tab === 'literature' ? <LiteratureView key={data.project.id} data={data} perform={this.perform}/> :
                                 tab === 'evidence' ? <EvidenceView key={data.project.id} data={data} perform={this.perform} onRegister={(artifactId, content) => this.open('evidence', { artifactId, content })} onClaim={() => this.open('claim')}/> :
                                     tab === 'reports' ? <ReportsView key={data.project.id} data={data} perform={this.perform} selectedReport={this.state.selectedReport} onSelect={selectedReport=>this.setState({selectedReport})} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定报告 Run 不在当前项目中，未跳转到其他运行。'});return;}this.refreshEpoch++;this.setState({selectedRun,selectedExp,tab:'experiments'});}}/> : null}
- </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector data={data} boot={boot} tab={tab} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onToggle={() => this.toggle()} onTeam={() => this.open('team')} onPrepare={() => {
+ </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector onScheduler={()=>this.setState({tab:'scheduler'})} data={data} boot={boot} tab={tab} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onToggle={() => this.toggle()} onTeam={() => this.open('team')} onPrepare={() => {
                     if (experiment)
                         this.perform(() => api('/run-intents', { experimentId: experiment.id }), '已准备不可变快照，等待人工批准');
                 }} onChild={() => this.open('experiment', { parentId: experiment?.id })} onConfig={() => {

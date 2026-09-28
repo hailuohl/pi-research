@@ -9,25 +9,26 @@ import {superviseDockerRun} from '../../packages/runners/docker-supervisor.js';
 import type {DockerRun,DockerRunResult,RunExecution,RunnerProcess} from '../../packages/runners/adapter.js';
 import type {Run} from '../../packages/domain/types.js';
 import {ensure} from '../../packages/domain/errors.js';
+import {ComputeQueue} from '../../packages/scheduler/compute-queue.js';
 
 const [dataDir,repoRoot,runId]=process.argv.slice(2);
 if(!dataDir||!repoRoot||!runId)throw new Error('Usage: supervisor DATA REPO RUN');
 const store=new Store(join(dataDir,'state.db')),ctx={dataDir,repoRoot,store};
-const service=new RunService(ctx,new ApprovalService(ctx),new EvidenceService(ctx));
+const compute=new ComputeQueue(ctx),service=new RunService(ctx,new ApprovalService(ctx),new EvidenceService(ctx),compute);
 const controlDir=join(dataDir,'jobs',runId,'control');
-const run=store.transaction(()=>{
+if(store.get<Run>('run',runId).state==='queued')try{await compute.verifyTarget('run',runId);}catch{await compute.stop();store.close();process.exit(0);}
+const run=compute.withAdmission('run',runId,()=>{
     const r=store.get<Run>('run',runId);if(TERMINAL.includes(r.state))return null;
     const docker=r.manifest.contract.runner==='docker';
     if(r.state==='queued'){try{service.assertLaunchable(r);}catch(error){service.cancelBeforeLaunch(r,error);return null;}}
     else if(!docker||!r.execution||r.execution.leaseUntil>Date.now())return null;
-    if(store.list<Run>('run').some(x=>x.id!==runId&&['submitting','running','cancelling','unknown'].includes(x.state)))return null;
     if(docker){
         const before:RunExecution=r.execution??{backend:'docker',dockerContext:r.manifest.contract.dockerContext??'default',containerName:`pi-research-${r.id}`,controlDir,generation:0,leaseUntil:0,startRequested:false,recoveryCount:0};
         return store.update<Run>('run',r.id,r.version,{state:r.state==='queued'?'submitting':r.state,supervisorPid:process.pid,heartbeat:Date.now(),execution:{...before,generation:before.generation+1,leaseUntil:Date.now()+60000,recoveryCount:before.recoveryCount+(before.generation>0?1:0)}});
     }
     return store.update<Run>('run',r.id,r.version,{state:'submitting',supervisorPid:process.pid,heartbeat:Date.now(),startedAt:now()});
 });
-if(!run){store.close();process.exit(0);}
+if(!run){await compute.stop();store.close();process.exit(0);}
 mkdirSync(controlDir,{recursive:true,mode:0o700});
 function receipt(exitCode:number|null,state:'succeeded'|'failed'|'cancelled',error?:string,facts?:DockerRunResult){
     const name=facts?`terminal-${facts.generation}`:'terminal',value={manifestDigest:run!.manifestDigest,exitCode,state,...(error?{error}:{}),...(facts?{facts}:{})};
@@ -39,7 +40,7 @@ try {
         const generation=run.execution.generation;
         const fence=()=>{const r=store.get<Run>('run',runId);ensure(!TERMINAL.includes(r.state)&&r.execution?.generation===generation&&r.execution.leaseUntil>Date.now(),'LEASE_EXPIRED','监管器已失去作业租约');};
         await superviseDockerRun(run as DockerRun,{
-            read:()=>store.get<Run>('run',runId) as DockerRun,fence,
+            read:()=>store.get<Run>('run',runId) as DockerRun,fence,verifyTarget:()=>compute.verifyTarget('run',runId),
             assertGrant:r=>service.assertExecutionGrant(r),
             patch:value=>store.transaction(()=>{fence();const r=store.get<Run>('run',runId);if(value.execution?.startRequested&&!r.execution!.startRequested){ensure(!r.cancelRequested,'RUN_CANCELLED','作业已请求取消');service.assertExecutionGrant(r);}return store.update<Run>('run',runId,r.version,value) as DockerRun;}),
             finalize:facts=>{fence();receipt(facts.exitCode,facts.state,facts.error,facts);},
@@ -60,4 +61,4 @@ try {
         }catch(error){receipt(null,'failed',(error as Error).message);}
         finally{if(timer)clearInterval(timer);if(timeout)clearTimeout(timeout);}
     }
-} finally {store.close();}
+} finally {await compute.stop();store.close();}

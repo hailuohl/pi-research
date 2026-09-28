@@ -35,6 +35,12 @@ export declare function stageInputs(job: DockerJob): void;
 export declare function dockerEnv(): NodeJS.ProcessEnv;
 export declare function docker(context: string, args: string[], timeout?: number, limit?: number): Promise<string>;
 export declare function preflight(context: string, image: string): Promise<string>;
+/** Read-only local engine identity; context aliases are not independent compute targets. */
+export declare function probeDockerTarget(context: string): Promise<{
+    targetId: string;
+    engineId: string;
+    endpoint: string;
+}>;
 export interface Container {
     Id: string;
     Image: string;

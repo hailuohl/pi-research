@@ -197,7 +197,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly const: "none";
                             };
                         };
-                        readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
+                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
                     };
                     readonly contractDigest: {
@@ -359,7 +359,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "boolean";
                     };
                 };
-                readonly required: ("generation" | "leaseUntil" | "containerName" | "controlDir" | "startRequested" | "recoveryCount" | "dockerContext" | "backend")[];
+                readonly required: ("generation" | "backend" | "leaseUntil" | "containerName" | "controlDir" | "startRequested" | "recoveryCount" | "dockerContext")[];
                 readonly additionalProperties: false;
             };
         };
@@ -1090,7 +1090,7 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly type: "string";
                 };
             };
-            readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "digest" | "status" | "reason" | "subjectKind" | "subjectId" | "scope")[];
+            readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "digest" | "status" | "scope" | "reason" | "subjectKind" | "subjectId")[];
             readonly additionalProperties: false;
         };
     };
@@ -1219,7 +1219,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: "none";
                     };
                 };
-                readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
+                readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                 readonly additionalProperties: false;
             };
             readonly contractDigest: {
@@ -1306,7 +1306,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: "drain";
                     };
                 };
-                readonly required: ("strategy" | "shutdownPolicy" | "enabled" | "maxActiveAgents" | "maxConcurrentAssistants" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
+                readonly required: ("maxActiveAgents" | "maxConcurrentAssistants" | "strategy" | "shutdownPolicy" | "enabled" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
                 readonly additionalProperties: false;
             };
             readonly delegationEnabled: {
@@ -1405,7 +1405,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: "drain";
                     };
                 };
-                readonly required: ("strategy" | "shutdownPolicy" | "enabled" | "maxActiveAgents" | "maxConcurrentAssistants" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
+                readonly required: ("maxActiveAgents" | "maxConcurrentAssistants" | "strategy" | "shutdownPolicy" | "enabled" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
                 readonly additionalProperties: false;
             };
             readonly delegationEnabled: {
@@ -2322,7 +2322,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "source" | "query" | "retrievedAt" | "coverage" | "items")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "source" | "query" | "items" | "retrievedAt" | "coverage")[];
         readonly additionalProperties: false;
     };
     readonly literature_discover: {
@@ -2532,7 +2532,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "scopeTaskId" | "scopeAttemptId" | "sources" | "query" | "retrievedAt" | "scopeSessionId" | "coverage" | "items" | "request" | "settingsVersion")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "scopeTaskId" | "scopeAttemptId" | "sources" | "query" | "items" | "retrievedAt" | "scopeSessionId" | "coverage" | "request" | "settingsVersion")[];
         readonly additionalProperties: false;
     };
     readonly project_inspect: {
@@ -2608,7 +2608,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: 0;
                     };
                 };
-                readonly required: ("version" | "sources" | "enabled" | "limits" | "networkCalls" | "modelCalls" | "corpusId" | "method" | "parserVersion")[];
+                readonly required: ("version" | "limits" | "sources" | "enabled" | "networkCalls" | "modelCalls" | "corpusId" | "method" | "parserVersion")[];
                 readonly additionalProperties: false;
             };
             readonly project: {
@@ -2889,7 +2889,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "limit" | "limitations" | "status" | "artifactIds" | "query" | "deduplicateExact" | "mmrLambda" | "coverage" | "corpusId" | "method" | "hits" | "usage" | "configurationVersion")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "limit" | "limitations" | "status" | "artifactIds" | "query" | "usage" | "deduplicateExact" | "mmrLambda" | "coverage" | "corpusId" | "method" | "hits" | "configurationVersion")[];
         readonly additionalProperties: false;
     };
     readonly campaign_enroll: {
@@ -3050,7 +3050,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "status" | "action" | "campaignId" | "observationIds" | "candidates" | "reason" | "inputDigest" | "roundId" | "decisionDigest")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "status" | "action" | "reason" | "campaignId" | "observationIds" | "candidates" | "inputDigest" | "roundId" | "decisionDigest")[];
         readonly additionalProperties: false;
     };
     readonly campaign_inspect: {
@@ -3172,7 +3172,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "state" | "contractDigest" | "direction" | "goal" | "rootSessionId" | "planDigest" | "limits" | "rootModel" | "baselineExperimentId" | "focusExperimentId" | "primaryMetric" | "currentRoundId" | "roundNumber" | "autoAnalyze" | "consecutiveRegressions")[];
+                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "state" | "contractDigest" | "limits" | "direction" | "goal" | "rootSessionId" | "planDigest" | "rootModel" | "baselineExperimentId" | "focusExperimentId" | "primaryMetric" | "currentRoundId" | "roundNumber" | "autoAnalyze" | "consecutiveRegressions")[];
                 readonly additionalProperties: false;
             };
             readonly members: {
@@ -3475,7 +3475,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "status" | "action" | "campaignId" | "observationIds" | "candidates" | "reason" | "inputDigest" | "roundId" | "decisionDigest")[];
+                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "status" | "action" | "reason" | "campaignId" | "observationIds" | "candidates" | "inputDigest" | "roundId" | "decisionDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3934,7 +3934,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly const: "none";
                             };
                         };
-                        readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
+                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
                     };
                     readonly contractDigest: {
@@ -4122,7 +4122,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly const: "none";
                             };
                         };
-                        readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
+                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "runner" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
                     };
                     readonly contractDigest: {
@@ -4284,7 +4284,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "boolean";
                     };
                 };
-                readonly required: ("generation" | "leaseUntil" | "containerName" | "controlDir" | "startRequested" | "recoveryCount" | "dockerContext" | "backend")[];
+                readonly required: ("generation" | "backend" | "leaseUntil" | "containerName" | "controlDir" | "startRequested" | "recoveryCount" | "dockerContext")[];
                 readonly additionalProperties: false;
             };
         };
@@ -4750,6 +4750,708 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "source" | "title" | "limitations" | "scopeAttemptId" | "artifactId" | "artifactDigest" | "contentKind" | "versionAssurance" | "pageMapping" | "sourceResponses" | "idInSource" | "requestedId" | "sourceUrl" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "scopeSessionId")[];
         readonly additionalProperties: false;
     };
+    readonly compute_target_probe: {
+        readonly type: "object";
+        readonly properties: {
+            readonly context: {
+                readonly type: "string";
+            };
+            readonly targetId: {
+                readonly type: "string";
+            };
+            readonly backend: {
+                readonly const: "docker";
+            };
+            readonly observedAt: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("targetId" | "context" | "backend" | "observedAt")[];
+        readonly additionalProperties: false;
+    };
+    readonly compute_queue_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly scope: {
+                readonly const: "shared-data-directory";
+            };
+            readonly configuration: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly version: {
+                        readonly type: "integer";
+                    };
+                    readonly targetId: {
+                        readonly type: "string";
+                    };
+                    readonly limits: {
+                        readonly type: "object";
+                        readonly properties: {
+                            maxRuns: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            maxDevelopment: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            maxJobs: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            cpus: {
+                                readonly anyOf: readonly [{
+                                    readonly maximum?: number | undefined;
+                                    readonly minimum?: number | undefined;
+                                    readonly type: "number";
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                            memoryMb: {
+                                readonly anyOf: readonly [{
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                            maxQueued: {
+                                readonly anyOf: readonly [{
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                        };
+                        readonly required: ("maxRuns" | "maxDevelopment" | "cpus" | "memoryMb" | "maxJobs" | "maxQueued")[];
+                        readonly additionalProperties: false;
+                    };
+                };
+                readonly required: ("version" | "targetId" | "limits")[];
+                readonly additionalProperties: false;
+            };
+            readonly usage: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly jobs: {
+                        readonly type: "integer";
+                    };
+                    readonly runs: {
+                        readonly type: "integer";
+                    };
+                    readonly development: {
+                        readonly type: "integer";
+                    };
+                    readonly cpus: {
+                        readonly type: "number";
+                    };
+                    readonly memoryMb: {
+                        readonly type: "integer";
+                    };
+                    readonly unknown: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("unknown" | "development" | "jobs" | "runs" | "cpus" | "memoryMb")[];
+                readonly additionalProperties: false;
+            };
+            readonly available: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly jobs: {
+                        readonly type: "integer";
+                    };
+                    readonly runs: {
+                        readonly type: "integer";
+                    };
+                    readonly development: {
+                        readonly type: "integer";
+                    };
+                    readonly cpus: {
+                        readonly anyOf: readonly [{
+                            readonly type: "number";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly memoryMb: {
+                        readonly anyOf: readonly [{
+                            readonly type: "integer";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                };
+                readonly required: ("development" | "jobs" | "runs" | "cpus" | "memoryMb")[];
+                readonly additionalProperties: false;
+            };
+            readonly queued: {
+                readonly type: "integer";
+            };
+            readonly targets: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly targetId: {
+                            readonly type: "string";
+                        };
+                        readonly backend: {
+                            readonly enum: readonly ["docker", "trusted-example"];
+                        };
+                        readonly contexts: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly configuration: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly version: {
+                                    readonly type: "integer";
+                                };
+                                readonly targetId: {
+                                    readonly type: "string";
+                                };
+                                readonly limits: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        maxRuns: {
+                                            readonly type: "integer";
+                                            readonly minimum: number;
+                                            readonly maximum: number;
+                                        };
+                                        maxDevelopment: {
+                                            readonly type: "integer";
+                                            readonly minimum: number;
+                                            readonly maximum: number;
+                                        };
+                                        maxJobs: {
+                                            readonly type: "integer";
+                                            readonly minimum: number;
+                                            readonly maximum: number;
+                                        };
+                                        cpus: {
+                                            readonly anyOf: readonly [{
+                                                readonly maximum?: number | undefined;
+                                                readonly minimum?: number | undefined;
+                                                readonly type: "number";
+                                            }, {
+                                                readonly type: "null";
+                                            }];
+                                        };
+                                        memoryMb: {
+                                            readonly anyOf: readonly [{
+                                                readonly type: "integer";
+                                                readonly minimum: number;
+                                                readonly maximum: number;
+                                            }, {
+                                                readonly type: "null";
+                                            }];
+                                        };
+                                        maxQueued: {
+                                            readonly anyOf: readonly [{
+                                                readonly type: "integer";
+                                                readonly minimum: number;
+                                                readonly maximum: number;
+                                            }, {
+                                                readonly type: "null";
+                                            }];
+                                        };
+                                    };
+                                    readonly required: ("maxRuns" | "maxDevelopment" | "cpus" | "memoryMb" | "maxJobs" | "maxQueued")[];
+                                    readonly additionalProperties: false;
+                                };
+                            };
+                            readonly required: ("version" | "targetId" | "limits")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly usage: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly jobs: {
+                                    readonly type: "integer";
+                                };
+                                readonly runs: {
+                                    readonly type: "integer";
+                                };
+                                readonly development: {
+                                    readonly type: "integer";
+                                };
+                                readonly cpus: {
+                                    readonly type: "number";
+                                };
+                                readonly memoryMb: {
+                                    readonly type: "integer";
+                                };
+                                readonly unknown: {
+                                    readonly type: "integer";
+                                };
+                            };
+                            readonly required: ("unknown" | "development" | "jobs" | "runs" | "cpus" | "memoryMb")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly available: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly jobs: {
+                                    readonly type: "integer";
+                                };
+                                readonly runs: {
+                                    readonly type: "integer";
+                                };
+                                readonly development: {
+                                    readonly type: "integer";
+                                };
+                                readonly cpus: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "number";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly memoryMb: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "integer";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("development" | "jobs" | "runs" | "cpus" | "memoryMb")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly required: ("targetId" | "backend" | "available" | "contexts" | "configuration" | "usage")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly kind: {
+                            readonly enum: readonly ["run", "development"];
+                        };
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly projectId: {
+                            readonly type: "string";
+                        };
+                        readonly sequence: {
+                            readonly type: "integer";
+                        };
+                        readonly state: {
+                            readonly type: "string";
+                        };
+                        readonly held: {
+                            readonly type: "boolean";
+                        };
+                        readonly backend: {
+                            readonly enum: readonly ["docker", "trusted-example"];
+                        };
+                        readonly targetId: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly requested: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly cpus: {
+                                    readonly type: "number";
+                                };
+                                readonly memoryMb: {
+                                    readonly type: "integer";
+                                };
+                            };
+                            readonly required: ("cpus" | "memoryMb")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly generation: {
+                            readonly type: "integer";
+                        };
+                        readonly leaseUntil: {
+                            readonly type: "integer";
+                        };
+                        readonly nextAttemptAt: {
+                            readonly type: "integer";
+                        };
+                        readonly reason: {
+                            readonly enum: readonly ["ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
+                        };
+                    };
+                    readonly required: ("id" | "kind" | "projectId" | "generation" | "state" | "targetId" | "sequence" | "backend" | "leaseUntil" | "held" | "requested" | "reason" | "nextAttemptAt")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly nextCursor: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+        };
+        readonly required: ("queued" | "available" | "scope" | "targets" | "configuration" | "usage" | "items" | "nextCursor")[];
+        readonly additionalProperties: false;
+    };
+    readonly compute_capacity_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly targetId: {
+                readonly type: "string";
+            };
+            readonly limits: {
+                readonly type: "object";
+                readonly properties: {
+                    maxRuns: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    maxDevelopment: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    maxJobs: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    cpus: {
+                        readonly anyOf: readonly [{
+                            readonly maximum?: number | undefined;
+                            readonly minimum?: number | undefined;
+                            readonly type: "number";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    memoryMb: {
+                        readonly anyOf: readonly [{
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    maxQueued: {
+                        readonly anyOf: readonly [{
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                };
+                readonly required: ("maxRuns" | "maxDevelopment" | "cpus" | "memoryMb" | "maxJobs" | "maxQueued")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("version" | "targetId" | "limits")[];
+        readonly additionalProperties: false;
+    };
+    readonly agent_capacity_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly maxWorkers: {
+                readonly type: "integer";
+            };
+            readonly available: {
+                readonly type: "integer";
+            };
+            readonly unit: {
+                readonly const: "pi-worker";
+            };
+            readonly httpConcurrencyMeasured: {
+                readonly const: false;
+            };
+            readonly counts: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly reserved: {
+                        readonly type: "integer";
+                    };
+                    readonly running: {
+                        readonly type: "integer";
+                    };
+                    readonly stopping: {
+                        readonly type: "integer";
+                    };
+                    readonly unknown: {
+                        readonly type: "integer";
+                    };
+                    readonly held: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                readonly additionalProperties: false;
+            };
+            readonly queued: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly sessionId: {
+                            readonly type: "string";
+                        };
+                        readonly role: {
+                            readonly enum: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+                        };
+                        readonly reasons: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly code: {
+                                        readonly type: "string";
+                                    };
+                                    readonly message: {
+                                        readonly type: "string";
+                                    };
+                                };
+                                readonly required: ("code" | "message")[];
+                                readonly additionalProperties: false;
+                            };
+                        };
+                    };
+                    readonly required: ("sessionId" | "role" | "reasons")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly project: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly projectId: {
+                        readonly type: "string";
+                    };
+                    readonly maxActiveAgents: {
+                        readonly type: "integer";
+                    };
+                    readonly maxConcurrentAssistants: {
+                        readonly type: "integer";
+                    };
+                    readonly effectiveMaxAgents: {
+                        readonly type: "integer";
+                    };
+                    readonly counts: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly reserved: {
+                                readonly type: "integer";
+                            };
+                            readonly running: {
+                                readonly type: "integer";
+                            };
+                            readonly stopping: {
+                                readonly type: "integer";
+                            };
+                            readonly unknown: {
+                                readonly type: "integer";
+                            };
+                            readonly held: {
+                                readonly type: "integer";
+                            };
+                        };
+                        readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly assistantHeld: {
+                        readonly type: "integer";
+                    };
+                    readonly available: {
+                        readonly type: "integer";
+                    };
+                    readonly assistantAvailable: {
+                        readonly type: "integer";
+                    };
+                    readonly byRole: {
+                        readonly type: "object";
+                        readonly propertyNames: {
+                            readonly enum: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+                        };
+                        readonly additionalProperties: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly blockedBy: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "string";
+                        };
+                    };
+                };
+                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "effectiveMaxAgents" | "counts" | "assistantAvailable")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("version" | "available" | "maxWorkers" | "unit" | "httpConcurrencyMeasured" | "counts")[];
+        readonly additionalProperties: false;
+    };
+    readonly agent_capacity_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly maxWorkers: {
+                readonly type: "integer";
+            };
+            readonly available: {
+                readonly type: "integer";
+            };
+            readonly unit: {
+                readonly const: "pi-worker";
+            };
+            readonly httpConcurrencyMeasured: {
+                readonly const: false;
+            };
+            readonly counts: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly reserved: {
+                        readonly type: "integer";
+                    };
+                    readonly running: {
+                        readonly type: "integer";
+                    };
+                    readonly stopping: {
+                        readonly type: "integer";
+                    };
+                    readonly unknown: {
+                        readonly type: "integer";
+                    };
+                    readonly held: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                readonly additionalProperties: false;
+            };
+            readonly queued: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly sessionId: {
+                            readonly type: "string";
+                        };
+                        readonly role: {
+                            readonly enum: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+                        };
+                        readonly reasons: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly code: {
+                                        readonly type: "string";
+                                    };
+                                    readonly message: {
+                                        readonly type: "string";
+                                    };
+                                };
+                                readonly required: ("code" | "message")[];
+                                readonly additionalProperties: false;
+                            };
+                        };
+                    };
+                    readonly required: ("sessionId" | "role" | "reasons")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly project: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly projectId: {
+                        readonly type: "string";
+                    };
+                    readonly maxActiveAgents: {
+                        readonly type: "integer";
+                    };
+                    readonly maxConcurrentAssistants: {
+                        readonly type: "integer";
+                    };
+                    readonly effectiveMaxAgents: {
+                        readonly type: "integer";
+                    };
+                    readonly counts: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly reserved: {
+                                readonly type: "integer";
+                            };
+                            readonly running: {
+                                readonly type: "integer";
+                            };
+                            readonly stopping: {
+                                readonly type: "integer";
+                            };
+                            readonly unknown: {
+                                readonly type: "integer";
+                            };
+                            readonly held: {
+                                readonly type: "integer";
+                            };
+                        };
+                        readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly assistantHeld: {
+                        readonly type: "integer";
+                    };
+                    readonly available: {
+                        readonly type: "integer";
+                    };
+                    readonly assistantAvailable: {
+                        readonly type: "integer";
+                    };
+                    readonly byRole: {
+                        readonly type: "object";
+                        readonly propertyNames: {
+                            readonly enum: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+                        };
+                        readonly additionalProperties: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly blockedBy: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "string";
+                        };
+                    };
+                };
+                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "effectiveMaxAgents" | "counts" | "assistantAvailable")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("version" | "available" | "maxWorkers" | "unit" | "httpConcurrencyMeasured" | "counts")[];
+        readonly additionalProperties: false;
+    };
     readonly report_inspect: {
         readonly type: "object";
         readonly properties: {
@@ -4868,7 +5570,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "validity" | "title" | "integrity" | "formatVersion" | "reasons" | "references" | "runs" | "artifactId")[];
+        readonly required: ("id" | "validity" | "title" | "integrity" | "runs" | "formatVersion" | "reasons" | "references" | "artifactId")[];
         readonly additionalProperties: false;
     };
     readonly report_reference_read: {

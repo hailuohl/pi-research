@@ -216,7 +216,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "validity" | "title" | "integrity" | "formatVersion" | "reasons" | "references" | "runs" | "artifactId")[];
+        readonly required: ("id" | "validity" | "title" | "integrity" | "runs" | "formatVersion" | "reasons" | "references" | "artifactId")[];
         readonly additionalProperties: false;
     };
     readonly report_reference_read: {

@@ -1,5 +1,6 @@
 import {GIT_OUTPUT_SCHEMAS} from './git-schemas.js';
 import {REPORT_OUTPUT_SCHEMAS} from './report-schemas.js';
+import {SCHEDULER_OUTPUT_SCHEMAS} from './scheduler-schemas.js';
 import {REVIEW_OUTPUT_SCHEMAS} from './review-schemas.js';
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from './development-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
@@ -115,7 +116,7 @@ const artifact = row('artifact', { title: string, digest: string, size: integer,
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
-    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,...SCHEDULER_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,

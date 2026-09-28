@@ -48,7 +48,7 @@ export declare class TeamService {
     disable(actor: Actor, id: string): Row<Team>;
     pause(actor: Actor, id: string): Row<Team>;
     resume(actor: Actor, id: string): Row<Team>;
-    fail(attemptId: string, error: string, unknown?: boolean): void;
+    fail(attemptId: string, error: string, unknown?: boolean, notStarted?: boolean): void;
     recover(): void;
     retry(actor: Actor, taskId: string): Row<Task>;
     cancel(actor: Actor, taskId: string): Row<Task>;

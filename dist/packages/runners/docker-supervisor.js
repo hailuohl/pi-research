@@ -18,7 +18,7 @@ export async function superviseDockerRun(initial, callbacks) {
         throw error;
     } };
     const current = () => { fence(); return callbacks.read(); };
-    const adapter = new DockerAdapter(initial, fence);
+    const adapter = new DockerAdapter(initial, fence, callbacks.verifyTarget);
     const update = (execution, other = {}) => {
         const run = current();
         const next = callbacks.patch({ ...other, execution: { ...run.execution, ...execution } });

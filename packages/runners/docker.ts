@@ -19,15 +19,16 @@ export class DockerAdapter implements RunnerAdapter {
     readonly capabilities: RunnerCapabilities = {backend: 'docker', isolated: true, recoverable: true};
     readonly job: DockerJob;
     imageId?: string;
-    constructor(readonly run: DockerRun, private readonly fence: () => void) {this.job = formalDockerJob(run); this.imageId = run.execution.imageId;}
-    async preflight(): Promise<void> {this.imageId = await preflight(this.job.manifest.dockerContext, this.job.manifest.environmentImageDigest); this.fence();}
+    constructor(readonly run: DockerRun, private readonly fence: () => void,private readonly verifyTarget?:()=>Promise<void>) {this.job = formalDockerJob(run); this.imageId = run.execution.imageId;}
+    private async guarded<T>(fn:()=>Promise<T>):Promise<T>{await this.verifyTarget?.();this.fence();const result=await fn();await this.verifyTarget?.();this.fence();return result;}
+    async preflight(): Promise<void> {this.imageId = await this.guarded(()=>preflight(this.job.manifest.dockerContext, this.job.manifest.environmentImageDigest));}
     async stage(): Promise<void> {
         this.fence();
         mkdirSync(this.job.outputDir, {recursive: true, mode: 0o777}); chmodSync(this.job.outputDir, 0o777);
         mkdirSync(this.job.controlDir, {recursive: true, mode: 0o700});
         stageInputs(this.job);
     }
-    async inspect(): Promise<Container | null> {const result = await inspect(this.job); this.fence(); return result;}
+    async inspect(): Promise<Container | null> {return this.guarded(()=>inspect(this.job));}
     /** Create-or-adopt only. Starting requires a separately persisted startRequested fence. */
     async submit(): Promise<Container> {
         let container = await this.inspect();
@@ -35,7 +36,7 @@ export class DockerAdapter implements RunnerAdapter {
             if (this.job.startRequested || this.job.containerId) throw new Error('Formal run container is confirmed missing; never resubmit');
             if (!this.imageId) throw new Error('Docker preflight is required before submission');
             this.fence();
-            try {await docker(this.job.manifest.dockerContext, createArgs(this.job));}
+            try {await this.guarded(()=>docker(this.job.manifest.dockerContext, createArgs(this.job)));}
             catch (error) {container = await this.inspect(); if (!container) throw error;}
             container ??= await this.inspect();
             if (!container) throw new Error('Created formal run container cannot be observed');
@@ -44,7 +45,8 @@ export class DockerAdapter implements RunnerAdapter {
         this.job.containerId = container.Id;
         return container;
     }
-    private capture(args: string[], onLog: RunnerLogSink): RunnerProcess {
+    private async capture(args: string[], onLog: RunnerLogSink): Promise<RunnerProcess> {
+        await this.verifyTarget?.();
         this.fence();
         const child = spawn('docker', ['--context', this.job.manifest.dockerContext, ...args, this.job.containerId!], {shell: false, windowsHide: true, env: dockerEnv(), stdio: ['ignore', 'pipe', 'pipe']});
         const completion = new Promise<{exitCode: number | null; signal?: NodeJS.Signals | null; error?: string}>(resolve => {
@@ -54,6 +56,7 @@ export class DockerAdapter implements RunnerAdapter {
             child.on('error', e => {error = e.message;});
             child.on('close', (exitCode, signal) => resolve({exitCode, signal, ...(error ? {error} : {})}));
         });
+        try{await this.verifyTarget?.();this.fence();}catch(error){child.kill();await completion;throw error;}
         return {pid: child.pid, completion, cancel: async () => {await this.cancel();}, detach: async () => {child.kill();}};
     }
     async start(onLog: RunnerLogSink): Promise<RunnerProcess> {
@@ -69,15 +72,16 @@ export class DockerAdapter implements RunnerAdapter {
     }
     async cancel(): Promise<Container | null> {
         const container = await this.inspect();
-        if (container?.State.Status === 'created') return retireUncertainStart(this.job, this.fence);
-        if (container?.State.Running) {this.fence(); await docker(this.job.manifest.dockerContext, ['kill', container.Id]);}
+        if (container?.State.Status === 'created') return this.retireStart();
+        if (container?.State.Running) await this.guarded(()=>docker(this.job.manifest.dockerContext, ['kill', container.Id]));
         return this.inspect();
     }
     async reconcile(): Promise<Container | null> {
         const container = await this.inspect();
-        if (container?.State.Status === 'created' && this.job.startRequested) return retireUncertainStart(this.job, this.fence);
+        if (container?.State.Status === 'created' && this.job.startRequested) return this.retireStart();
         return container;
     }
+    private retireStart(){return retireUncertainStart(this.job,this.fence,(context,args)=>this.guarded(()=>docker(context,args)),()=>this.inspect());}
     /** Validate stopped output without granting it evidence authority; RunService archives it. */
     async collect(): Promise<{incomplete: boolean; outputExceeded: boolean; errors: string[]}> {
         const container = await this.inspect();

@@ -1,3 +1,4 @@
+import { ComputeWait } from './scheduler-view.js';
 import { api, artifactText, downloadArtifact } from './api.js';
 import { short, label } from './models.js';
 import { SectionTitle, Badge, Empty } from './ui.js';
@@ -141,6 +142,7 @@ class DevelopmentJob extends React.Component {
                 "\u9000\u51FA\u7801 ",
                 job.exitCode ?? '—')),
         React.createElement("code", { className: "digest" }, job.sourceDigest),
+        !terminal ? React.createElement(ComputeWait, { data: data, kind: "development", id: job.id, onScheduler: this.props.onScheduler }) : null,
         job.error ? React.createElement("p", { className: "error-text" }, job.error) : null,
         this.state.error ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.error) : null,
         React.createElement("label", null,
@@ -256,7 +258,7 @@ export class ImplementationView extends React.Component {
                         React.createElement("button", { className: "primary", disabled: busy, onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), '已批准固定开发测试，尚未提交') }, "\u6279\u51C6\u6B64\u5F00\u53D1\u6D4B\u8BD5"),
                         React.createElement("button", { className: "secondary", disabled: busy, onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false })) }, "\u62D2\u7EDD")) : null,
                     !t.jobId && approval?.status === 'approved' ? React.createElement("button", { className: "primary", disabled: busy || this.state.dirty, onClick: () => perform(() => this.call('development_submit', { developmentTaskId: t.id }), '已提交独立开发测试') }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u5F00\u53D1\u6D4B\u8BD5") : null); }) : React.createElement("p", { className: "inline-empty" }, "\u6B64\u4F1A\u8BDD\u5C1A\u672A\u8BF7\u6C42\u5F00\u53D1\u6D4B\u8BD5\u3002\u53EF\u56DE\u5230\u804A\u5929\u8BA9 Pi \u5B8C\u6210\u5B9E\u73B0\u5E76\u8BF7\u6C42\u6D4B\u8BD5\u3002"),
-                jobs.slice().reverse().map(j => React.createElement(DevelopmentJob, { key: j.id, job: j, data: data, sessionId: session.id, perform: perform }))) : null,
+                jobs.slice().reverse().map(j => React.createElement(DevelopmentJob, { onScheduler: this.props.onScheduler, key: j.id, job: j, data: data, sessionId: session.id, perform: perform }))) : null,
             session ? React.createElement("section", { className: "surface" },
                 React.createElement("div", { className: "surface-heading" },
                     React.createElement("h2", null, "\u72EC\u7ACB\u5BA1\u67E5")),

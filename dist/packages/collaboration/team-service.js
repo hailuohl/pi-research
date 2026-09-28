@@ -101,8 +101,7 @@ export class TeamService {
             }
             this.aggregateReviews(id);
             const all = this.c.store.list('task', p.id), tasks = all.filter(x => x.teamId === id), running = all.filter(x => x.execution === 'running').length;
-            const max = Math.min(p.settings.maxConcurrentAssistants, t.settings.maxConcurrentAssistants);
-            if (running >= max)
+            if (running >= p.settings.maxConcurrentAssistants || tasks.filter(x => x.execution === 'running').length >= t.settings.maxConcurrentAssistants)
                 return null;
             const byKey = new Map(tasks.map(x => [x.key, x]));
             for (const task of tasks.filter(x => x.execution === 'pending')) {
@@ -375,7 +374,7 @@ export class TeamService {
             return next;
         });
     }
-    fail(attemptId, error, unknown = false) {
+    fail(attemptId, error, unknown = false, notStarted = false) {
         return this.c.store.transaction(() => {
             const a = this.c.store.get('task-attempt', attemptId);
             if (a.state !== 'running')
@@ -387,14 +386,15 @@ export class TeamService {
             if (unknown)
                 this.budget.markUnknown(a.budgetReservationId);
             else
-                this.budget.settle(a.budgetReservationId, 1);
+                this.budget.settle(a.budgetReservationId, notStarted ? 0 : 1);
             this.c.store.event(a.projectId, 'task.failed', { taskId: task.id, attemptId, error, unknown });
             this.refresh(task.teamId);
         });
     }
     recover() {
         for (const a of this.c.store.list('task-attempt').filter(x => x.state === 'running' && x.leaseUntil < Date.now()))
-            this.fail(a.id, 'Worker 租约过期；用量待对账', true);
+            this.c.store.transaction(() => { const current = this.c.store.get('task-attempt', a.id); if (current.state === 'running' && current.leaseUntil < Date.now())
+                this.fail(a.id, 'Worker 租约过期；用量待对账', true); });
     }
     retry(actor, taskId) {
         userOnly(actor);

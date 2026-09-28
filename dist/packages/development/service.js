@@ -173,6 +173,7 @@ export class DevelopmentService {
             const s = this.access(actor, pid, t.sessionId, true);
             this.current(t, pid, true, true);
             ensure(snapshotDirectory(s.workspace, join(this.app.context.dataDir, 'snapshots'), { legacy: t.manifest.inputSnapshot.files.every(f => f.mode === undefined) }).digest === t.sourceDigest, 'DEVELOPMENT_SOURCE_STALE', '工作区已变化，请重新准备并批准测试');
+            this.app.compute.assertEnqueue('development', pid, t.manifest.dockerContext);
             const jobId = randomUUID(), root = join(this.app.context.dataDir, 'sandbox-jobs', jobId), outputDir = join(root, 'output'), controlDir = join(root, 'control');
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
@@ -212,6 +213,8 @@ export class DevelopmentService {
         return this.app.store.transaction(() => { const j = this.app.store.get('sandbox-job', id, pid); this.access(actor, pid, j.sessionId); ensure(actor.type === 'user' || actor.sessionId === j.sessionId, 'TASK_SCOPE_DENIED', '助手只能取消自己会话的测试', 403); if (!SANDBOX_TERMINAL.includes(j.state)) {
             this.app.store.update('sandbox-job', id, j.version, { cancelRequested: true });
             this.app.store.event(pid, 'development.cancel_requested', { jobId: id });
+            if (j.state === 'queued' && !j.startRequested && !j.containerId)
+                this.finalize(id, { state: 'cancelled', exitCode: null, error: 'Cancelled before execution', incomplete: true });
         } return this.inspect(actor, pid, id); });
     }
     finalize(id, result) {

@@ -3,9 +3,10 @@ import {appendFileSync, mkdirSync, writeFileSync, readdirSync, lstatSync, exists
 import {join} from 'node:path';
 import {setTimeout as pause} from 'node:timers/promises';
 import {ResearchApp} from '../../packages/research-app.js';
-import {docker, dockerEnv, inspect, preflight, createArgs, stageInputs, retireUncertainStart} from '../../packages/execution/docker.js';
+import {docker, dockerEnv, inspect as inspectDocker, preflight, createArgs, stageInputs, retireUncertainStart} from '../../packages/execution/docker.js';
 import {LEASE_MS} from '../../packages/execution/service.js';
 import type {SandboxJob, SandboxState} from '../../packages/execution/contracts.js';
+import type {Row} from '../../packages/domain/types.js';
 import {SANDBOX_TERMINAL} from '../../packages/execution/contracts.js';
 const [dataDir, repoRoot, jobId, rawGeneration] = process.argv.slice(2);
 if (!dataDir || !repoRoot || !jobId || !rawGeneration) throw new Error('Usage: execution-worker DATA REPO JOB GENERATION');
@@ -21,6 +22,8 @@ const current = () => {
 };
 const patch = (value: Partial<SandboxJob>) => store.transaction(() => {const j = current(); return store.update<SandboxJob>('sandbox-job', j.id, j.version, value);});
 const renew = () => patch({leaseUntil: Date.now() + LEASE_MS, workerPid: process.pid});
+async function checked<T>(fn:()=>Promise<T>):Promise<T>{await app.compute.verifyTarget('development',jobId);current();const result=await fn();await app.compute.verifyTarget('development',jobId);current();return result;}
+async function inspect(job:Row<SandboxJob>){return checked(()=>inspectDocker(job));}
 function initializeLogs() {
     const job = current();
     mkdirSync(job.controlDir, {recursive: true, mode: 0o700});
@@ -58,7 +61,7 @@ function outputSize(path: string): number {
 async function stopOwned() {
     const job = current(), container = await inspect(job);
     current();
-    if (container?.State.Running) await docker(job.manifest.dockerContext, ['kill', container.Id]);
+    if (container?.State.Running) await checked(()=>docker(job.manifest.dockerContext, ['kill', container.Id]));
 }
 function collectLogs(start = false) {
     const job = current();
@@ -99,7 +102,7 @@ try {
     initializeLogs();
     externalPossible = Boolean(job.startRequested || job.containerId || job.recoveryCount > 0);
     if (job.cancelRequested) throw new Error('Cancellation requested before preparation');
-    const imageId = await preflight(job.manifest.dockerContext, job.manifest.environmentImageDigest);
+    const imageId = await checked(()=>preflight(job.manifest.dockerContext, job.manifest.environmentImageDigest));
     job = current();
     if (job.cancelRequested) throw new Error('Cancellation requested before container creation');
     let container = await inspect(job);
@@ -111,7 +114,7 @@ try {
         job = current();
         if (job.cancelRequested) throw new Error('Cancellation requested before container creation');
         externalPossible = true;
-        try {await docker(job.manifest.dockerContext, createArgs(job));}
+        try {await checked(()=>docker(job.manifest.dockerContext, createArgs(job)));}
         catch (error) {container = await inspect(current()); if (!container) throw error;}
         container ??= await inspect(current());
         if (!container) throw new Error('Created container cannot be observed');
@@ -128,11 +131,11 @@ try {
                 app.development.assertCurrent(latest);
                 return patch({startRequested: true, startedAt: new Date().toISOString()});
             });
-            collectLogs(true);
+            await checked(async()=>collectLogs(true));
         }
     } else if (!job.startRequested) throw new Error('Container ran without persisted start authorization');
     if (!SANDBOX_TERMINAL.includes(store.get<SandboxJob>('sandbox-job', jobId).state)) {
-        if (!logger) collectLogs();
+        if (!logger) await checked(async()=>collectLogs());
         let stopping: SandboxState | undefined, reason: string | undefined;
         while (true) {
             job = current();
@@ -163,7 +166,7 @@ try {
             let stopped = !externalPossible, exitCode: number | null = null;
             if (externalPossible) {
                 let observed = await inspect(job);
-                if (observed?.State.Status === 'created' && job.startRequested) {incomplete = true; observed = await retireUncertainStart(job, current);}
+                if (observed?.State.Status === 'created' && job.startRequested) {incomplete = true; observed = await retireUncertainStart(job,current,(context,args)=>checked(()=>docker(context,args)),()=>inspect(job));}
                 if (observed?.State.Running) {await stopOwned(); observed = await inspect(current());}
                 stopped = observed ? ['exited', 'dead'].includes(observed.State.Status) || (observed.State.Status === 'created' && !job.startRequested) : true;
                 if (!observed && (job.startRequested || job.containerId)) incomplete = true;
@@ -178,5 +181,6 @@ try {
 } finally {
     clearInterval(timer);
     logger?.kill();
+    await app.compute.stop();
     store.close();
 }

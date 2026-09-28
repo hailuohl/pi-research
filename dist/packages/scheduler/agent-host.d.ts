@@ -1,8 +1,9 @@
-import { type ChildProcess } from 'node:child_process';
+import { fork, type ChildProcess } from 'node:child_process';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Session, Row, ModelConfig } from '../domain/types.js';
 import { ToolDispatcher } from '../research-tools/dispatcher.js';
 interface Active {
+    admissionId: string;
     child: ChildProcess;
     sessionId: string;
     generation: number;
@@ -25,6 +26,7 @@ interface HostDependencies {
         message: string;
     };
     workerEntry?: string;
+    fork?: typeof fork;
 }
 export declare class AgentHost {
     private app;
@@ -34,11 +36,16 @@ export declare class AgentHost {
     private timer?;
     private ticking;
     private stopped;
+    private readonly ownerHost;
+    private readonly admission;
     constructor(app: ResearchApp, dependencies?: HostDependencies);
     private inspect;
     status(): {
         activeWorkers: number;
         maxModelWorkers: number;
+        workerCapacity: import("./agent-admission.js").AgentCapacityDTO;
+        workerUnit: string;
+        httpConcurrencyMeasured: boolean;
         toolIsolation: string;
         osSandboxVerified: boolean;
         ready: boolean;
@@ -48,7 +55,9 @@ export declare class AgentHost {
     start(): void;
     ensureReady(session: Row<Session>): void;
     tick(): void;
+    private claimSession;
     private launch;
+    private exited;
     private valid;
     private onMessage;
     private savePath;

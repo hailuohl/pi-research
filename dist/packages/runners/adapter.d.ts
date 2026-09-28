@@ -51,6 +51,7 @@ export interface DockerRunResult {
     generation: number;
 }
 export interface DockerSupervisorCallbacks {
+    verifyTarget?(): Promise<void>;
     read(): DockerRun;
     patch(patch: Partial<Run> & {
         execution?: RunExecution;

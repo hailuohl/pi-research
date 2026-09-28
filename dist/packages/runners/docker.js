@@ -14,16 +14,19 @@ export function formalDockerJob(run) {
 export class DockerAdapter {
     run;
     fence;
+    verifyTarget;
     capabilities = { backend: 'docker', isolated: true, recoverable: true };
     job;
     imageId;
-    constructor(run, fence) {
+    constructor(run, fence, verifyTarget) {
         this.run = run;
         this.fence = fence;
+        this.verifyTarget = verifyTarget;
         this.job = formalDockerJob(run);
         this.imageId = run.execution.imageId;
     }
-    async preflight() { this.imageId = await preflight(this.job.manifest.dockerContext, this.job.manifest.environmentImageDigest); this.fence(); }
+    async guarded(fn) { await this.verifyTarget?.(); this.fence(); const result = await fn(); await this.verifyTarget?.(); this.fence(); return result; }
+    async preflight() { this.imageId = await this.guarded(() => preflight(this.job.manifest.dockerContext, this.job.manifest.environmentImageDigest)); }
     async stage() {
         this.fence();
         mkdirSync(this.job.outputDir, { recursive: true, mode: 0o777 });
@@ -31,7 +34,7 @@ export class DockerAdapter {
         mkdirSync(this.job.controlDir, { recursive: true, mode: 0o700 });
         stageInputs(this.job);
     }
-    async inspect() { const result = await inspect(this.job); this.fence(); return result; }
+    async inspect() { return this.guarded(() => inspect(this.job)); }
     /** Create-or-adopt only. Starting requires a separately persisted startRequested fence. */
     async submit() {
         let container = await this.inspect();
@@ -42,7 +45,7 @@ export class DockerAdapter {
                 throw new Error('Docker preflight is required before submission');
             this.fence();
             try {
-                await docker(this.job.manifest.dockerContext, createArgs(this.job));
+                await this.guarded(() => docker(this.job.manifest.dockerContext, createArgs(this.job)));
             }
             catch (error) {
                 container = await this.inspect();
@@ -58,7 +61,8 @@ export class DockerAdapter {
         this.job.containerId = container.Id;
         return container;
     }
-    capture(args, onLog) {
+    async capture(args, onLog) {
+        await this.verifyTarget?.();
         this.fence();
         const child = spawn('docker', ['--context', this.job.manifest.dockerContext, ...args, this.job.containerId], { shell: false, windowsHide: true, env: dockerEnv(), stdio: ['ignore', 'pipe', 'pipe'] });
         const completion = new Promise(resolve => {
@@ -82,6 +86,15 @@ export class DockerAdapter {
             child.on('error', e => { error = e.message; });
             child.on('close', (exitCode, signal) => resolve({ exitCode, signal, ...(error ? { error } : {}) }));
         });
+        try {
+            await this.verifyTarget?.();
+            this.fence();
+        }
+        catch (error) {
+            child.kill();
+            await completion;
+            throw error;
+        }
         return { pid: child.pid, completion, cancel: async () => { await this.cancel(); }, detach: async () => { child.kill(); } };
     }
     async start(onLog) {
@@ -101,19 +114,18 @@ export class DockerAdapter {
     async cancel() {
         const container = await this.inspect();
         if (container?.State.Status === 'created')
-            return retireUncertainStart(this.job, this.fence);
-        if (container?.State.Running) {
-            this.fence();
-            await docker(this.job.manifest.dockerContext, ['kill', container.Id]);
-        }
+            return this.retireStart();
+        if (container?.State.Running)
+            await this.guarded(() => docker(this.job.manifest.dockerContext, ['kill', container.Id]));
         return this.inspect();
     }
     async reconcile() {
         const container = await this.inspect();
         if (container?.State.Status === 'created' && this.job.startRequested)
-            return retireUncertainStart(this.job, this.fence);
+            return this.retireStart();
         return container;
     }
+    retireStart() { return retireUncertainStart(this.job, this.fence, (context, args) => this.guarded(() => docker(context, args)), () => this.inspect()); }
     /** Validate stopped output without granting it evidence authority; RunService archives it. */
     async collect() {
         const container = await this.inspect();

@@ -12,7 +12,7 @@ export async function superviseDockerRun(initial: DockerRun, callbacks: DockerSu
     let externalPossible = Boolean(initial.execution.startRequested || initial.execution.containerId || initial.execution.recoveryCount > 0);
     const fence = () => {try {callbacks.fence(); if (callbacks.read().execution.generation !== generation) throw new Error('Formal runner generation lost');} catch (error) {lostLease = true; throw error;}};
     const current = () => {fence(); return callbacks.read();};
-    const adapter = new DockerAdapter(initial, fence);
+    const adapter = new DockerAdapter(initial, fence,callbacks.verifyTarget);
     const update = (execution: Partial<RunExecution>, other: Parameters<DockerSupervisorCallbacks['patch']>[0] = {}) => {
         const run = current();
         const next = callbacks.patch({...other, execution: {...run.execution, ...execution}});

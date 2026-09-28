@@ -81,7 +81,7 @@ function authorizeRegistered(c: OperationContext, name: string, x: Record<string
 }
 function externalReplay(c: OperationContext, name: string, x: Record<string, unknown>) {
     // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
-    if (name === 'report_export') return {key:c.idempotencyKey!,completed:true};
+    if (name === 'report_export'||name==='compute_target_probe') return {key:c.idempotencyKey!,completed:true};
     if (name === 'paper_read') return paperReplay(c, x);
     const discover = name === 'literature_discover';
     const serviceScope = discover ? `connector-search:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}` : `literature:${c.projectId}`;
@@ -161,6 +161,11 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('compute_target_probe',{idempotencyPolicy:'key-required',asynchronous:true,authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.compute.probeContext(c.actor,x.context as string,c.validate)}),
+    make('compute_queue_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.compute.inspect(c.actor,c.projectId,x)}),
+    make('compute_capacity_configure',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.compute.configure(c.actor,x)}),
+    make('agent_capacity_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:c=>c.app.agentAdmission.inspect(c.actor,c.projectId)}),
+    make('agent_capacity_configure',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.agentAdmission.configure(c.actor,x)}),
     make('report_create',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.reports.create(c.actor,c.projectId,x)}),
     make('report_inspect',{idempotencyPolicy:'read-only',authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.reports.inspect(c.actor,c.projectId,x.reportId as string)}),
     make('report_reference_read',{idempotencyPolicy:'read-only',authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.reports.readReference(c.actor,c.projectId,x.reportId as string,x.referenceId as string,x.cursor as number|undefined,x.limit as number|undefined)}),
@@ -342,7 +347,7 @@ export class OperationRegistry {
             return spec.execute(context, input);
         };
         if (spec.asynchronous) {
-            if (id === 'report_export') {
+            if (id === 'report_export'||id==='compute_target_probe') {
                 const previous=lookup();
                 if(previous)return output(previous.value);
             }

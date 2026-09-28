@@ -126,6 +126,7 @@ export class DevelopmentService {
             if(t.jobId)return this.inspect(actor,pid,t.jobId);
             const s=this.access(actor,pid,t.sessionId,true);this.current(t,pid,true,true);
             ensure(snapshotDirectory(s.workspace,join(this.app.context.dataDir,'snapshots'),{legacy:t.manifest.inputSnapshot.files.every(f=>f.mode===undefined)}).digest===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备并批准测试');
+            this.app.compute.assertEnqueue('development',pid,t.manifest.dockerContext);
             const jobId=randomUUID(),root=join(this.app.context.dataDir,'sandbox-jobs',jobId),outputDir=join(root,'output'),controlDir=join(root,'control');
             mkdirSync(outputDir,{recursive:true,mode:0o777});chmodSync(outputDir,0o777);mkdirSync(controlDir,{recursive:true,mode:0o700});
             this.app.store.onRollback(()=>{rmdirSync(controlDir);rmdirSync(outputDir);rmdirSync(root);});
@@ -147,7 +148,7 @@ export class DevelopmentService {
         try {const stat=fstatSync(fd);ensure(stat.isFile()&&stat.ino===before.ino&&stat.dev===before.dev,'ARTIFACT_CHANGED','日志被替换');const bytes=Buffer.alloc(Math.min(65536,Math.max(0,stat.size-position))),n=readSync(fd,bytes,0,bytes.length,position);return {jobId:id,stream,content:bytes.subarray(0,n).toString('utf8'),cursor:position+n,complete:SANDBOX_TERMINAL.includes(j.state)&&position+n>=stat.size};}finally{closeSync(fd);}
     }
     cancel(actor:Actor,pid:string,id:string) {
-        return this.app.store.transaction(()=>{const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);this.access(actor,pid,j.sessionId);ensure(actor.type==='user'||actor.sessionId===j.sessionId,'TASK_SCOPE_DENIED','助手只能取消自己会话的测试',403);if(!SANDBOX_TERMINAL.includes(j.state)) {this.app.store.update<SandboxJob>('sandbox-job',id,j.version,{cancelRequested:true});this.app.store.event(pid,'development.cancel_requested',{jobId:id});}return this.inspect(actor,pid,id);});
+        return this.app.store.transaction(()=>{const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);this.access(actor,pid,j.sessionId);ensure(actor.type==='user'||actor.sessionId===j.sessionId,'TASK_SCOPE_DENIED','助手只能取消自己会话的测试',403);if(!SANDBOX_TERMINAL.includes(j.state)) {this.app.store.update<SandboxJob>('sandbox-job',id,j.version,{cancelRequested:true});this.app.store.event(pid,'development.cancel_requested',{jobId:id});if(j.state==='queued'&&!j.startRequested&&!j.containerId)this.finalize(id,{state:'cancelled',exitCode:null,error:'Cancelled before execution',incomplete:true});}return this.inspect(actor,pid,id);});
     }
     finalize(id:string,result:{state:SandboxState;exitCode:number|null;error?:string;logTruncated?:boolean;recovered?:boolean;incomplete?:boolean;generation?:number}) {
         return this.app.store.transaction(()=>{

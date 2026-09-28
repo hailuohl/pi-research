@@ -10,6 +10,7 @@ export declare class Store {
     private rollbackCallbacks;
     private commitCallbacks;
     constructor(path: string);
+    private migrateComputeQueue;
     onRollback(fn: () => void): void;
     afterCommit(fn: () => void): void;
     transaction<T>(fn: () => T): T;

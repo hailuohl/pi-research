@@ -1664,6 +1664,129 @@ export declare const INPUT_SCHEMAS: {
             readonly additionalProperties: false;
         }];
     };
+    readonly compute_target_probe: {
+        readonly type: "object";
+        readonly properties: {
+            readonly context: {
+                readonly pattern: "^[A-Za-z0-9][A-Za-z0-9._-]*$";
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["context"];
+        readonly additionalProperties: false;
+    };
+    readonly compute_queue_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ("cursor" | "limit")[];
+        readonly additionalProperties: false;
+    };
+    readonly compute_capacity_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly targetId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly limits: {
+                readonly minProperties: 1;
+                readonly type: "object";
+                readonly properties: {
+                    maxRuns: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    maxDevelopment: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    maxJobs: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    cpus: {
+                        readonly anyOf: readonly [{
+                            readonly maximum?: number | undefined;
+                            readonly minimum?: number | undefined;
+                            readonly type: "number";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    memoryMb: {
+                        readonly anyOf: readonly [{
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    maxQueued: {
+                        readonly anyOf: readonly [{
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                };
+                readonly required: readonly ("maxRuns" | "maxDevelopment" | "cpus" | "memoryMb" | "maxJobs" | "maxQueued")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: readonly ["expectedVersion", "limits"];
+        readonly additionalProperties: false;
+    };
+    readonly agent_capacity_inspect: {
+        readonly type: "object";
+        readonly properties: {};
+        readonly required: readonly never[];
+        readonly additionalProperties: false;
+    };
+    readonly agent_capacity_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly maxWorkers: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["expectedVersion", "maxWorkers"];
+        readonly additionalProperties: false;
+    };
     readonly report_create: {
         readonly type: "object";
         readonly properties: {

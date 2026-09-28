@@ -6,6 +6,7 @@ import { ToolDispatcher } from '../research-tools/dispatcher.js';
 import { inspectPi } from '../pi-adapter/runtime.js';
 import { asError, ensure, DomainError } from '../domain/errors.js';
 import { assertWorkspaceReady } from '../workspace/git-service.js';
+import { randomUUID } from 'node:crypto';
 const clean = (s) => s.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]').slice(0, 32000);
 export class AgentHost {
     app;
@@ -15,13 +16,16 @@ export class AgentHost {
     timer;
     ticking = false;
     stopped = false;
+    ownerHost = randomUUID();
+    admission;
     constructor(app, dependencies = {}) {
         this.app = app;
         this.dependencies = dependencies;
         this.tools = new ToolDispatcher(app);
+        this.admission = app.agentAdmission;
     }
     inspect(model) { return (this.dependencies.inspect ?? inspectPi)(this.app.context.repoRoot, model); }
-    status() { return { ...this.inspect(this.app.sessions.model()), activeWorkers: this.active.size, maxModelWorkers: 2, toolIsolation: 'host-allowlist-no-shell', osSandboxVerified: false }; }
+    status() { const capacity = this.admission.snapshot(); return { ...this.inspect(this.app.sessions.model()), activeWorkers: capacity.counts.held, maxModelWorkers: capacity.maxWorkers, workerCapacity: capacity, workerUnit: 'pi-worker', httpConcurrencyMeasured: false, toolIsolation: 'host-allowlist-no-shell', osSandboxVerified: false }; }
     start() {
         this.timer = setInterval(() => {
             try {
@@ -47,10 +51,13 @@ export class AgentHost {
             this.app.runs.reconcile();
             this.app.runs.launchPending();
             this.app.execution.launchPending();
+            this.admission.recover();
             this.app.teams.recover();
             this.app.campaigns.observe();
             this.app.wakeups.reconcile();
             for (const active of this.active.values()) {
+                if (active.ended)
+                    continue;
                 const s = this.app.store.get('session', active.sessionId);
                 const a = active.attemptId ? this.app.store.get('task-attempt', active.attemptId) : null;
                 if (!this.valid(active) || a && a.state !== 'running' || Date.now() - active.started > 300000) {
@@ -58,9 +65,8 @@ export class AgentHost {
                     continue;
                 }
                 if (Date.now() - active.lastHeartbeat > 3000) {
-                    this.app.store.update('session', s.id, s.version, { leaseUntil: Date.now() + 30000 });
-                    if (a)
-                        this.app.teams.heartbeat(a.id);
+                    this.app.store.transaction(() => { this.admission.heartbeat(active.admissionId, this.ownerHost, active.generation); const latest = this.app.store.get('session', s.id); ensure(latest.generation === active.generation, 'LEASE_EXPIRED', '会话已失效'); this.app.store.update('session', latest.id, latest.version, { leaseUntil: Date.now() + 30000 }); if (a)
+                        this.app.teams.heartbeat(a.id); });
                     active.lastHeartbeat = Date.now();
                 }
                 if (!s.taskId && !active.actor.wakeupId)
@@ -80,15 +86,20 @@ export class AgentHost {
             }
             // Recover abandoned single writers, but never retry a possibly paid request automatically.
             for (const s of this.app.store.list('session').filter(s => s.state === 'running' && !this.active.has(s.id) && s.leaseUntil < Date.now())) {
-                this.app.store.update('session', s.id, s.version, { state: 'failed', lastError: '会话租约过期；请核对后显式重试', generation: s.generation + 1, leaseUntil: 0 });
-                for (const m of this.app.sessions.messages(SYSTEM, s.id).filter(m => m.status === 'running'))
-                    this.app.store.update('message', m.id, m.version, { status: 'failed', error: '进程中断，用量待对账' });
+                this.app.store.transaction(() => {
+                    const latest = this.app.store.get('session', s.id);
+                    if (latest.state !== 'running' || latest.leaseUntil >= Date.now())
+                        return;
+                    this.app.store.update('session', s.id, latest.version, { state: 'failed', lastError: '会话租约过期；请核对后显式重试', generation: latest.generation + 1, leaseUntil: 0 });
+                    for (const m of this.app.sessions.messages(SYSTEM, s.id).filter(m => m.status === 'running'))
+                        this.app.store.update('message', m.id, m.version, { status: 'failed', error: '进程中断，用量待对账' });
+                });
             }
             this.app.wakeups.reconcile();
-            if (this.active.size >= 2)
+            if (!this.admission.snapshot().available)
                 return;
             for (const s of this.app.store.list('session').filter(s => !s.taskId && s.state === 'queued')) {
-                if (this.active.size >= 2)
+                if (!this.admission.snapshot().available)
                     break;
                 if (!this.inspect(s.model).ready)
                     continue;
@@ -104,7 +115,7 @@ export class AgentHost {
                     this.launch(s, next.content, next.id);
             }
             for (const w of this.app.store.list('wakeup').filter(w => w.state === 'pending')) {
-                if (this.active.size >= 2)
+                if (!this.admission.snapshot().available)
                     break;
                 const root = this.app.sessions.get(SYSTEM, w.rootSessionId);
                 try {
@@ -113,18 +124,28 @@ export class AgentHost {
                 catch {
                     continue;
                 }
-                const dispatched = this.app.wakeups.dispatch(w.id, this.inspect(root.model));
-                if (dispatched)
-                    this.launch(this.app.sessions.get(SYSTEM, root.id), dispatched.message.content, dispatched.message.id);
+                const dispatch = this.app.store.transaction(() => { if (this.admission.sessionHeld(root.id) || !this.admission.check(root.projectId, root.role))
+                    return null; const dispatched = this.app.wakeups.dispatch(w.id, this.inspect(root.model)); if (!dispatched)
+                    return null; const prepared = this.claimSession(this.app.sessions.get(SYSTEM, root.id), dispatched.message.id); ensure(prepared, 'AGENT_CAPACITY_CHANGED', 'Worker 准入未完成'); return { dispatched, prepared }; });
+                if (dispatch)
+                    this.launch(dispatch.prepared.session, dispatch.dispatched.message.content, dispatch.dispatched.message.id, undefined, dispatch.prepared);
             }
             for (const team of this.app.store.list('team').filter(t => t.state === 'active')) {
-                if (this.active.size >= 2)
+                if (!this.admission.snapshot().available)
                     break;
                 const root = this.app.store.get('session', team.rootSessionId);
-                const claimed = this.app.teams.claim(team.id, !this.inspect(root.model).ready);
-                if (claimed) {
-                    const s = this.app.store.get('session', claimed.attempt.sessionId);
-                    this.launch(s, JSON.stringify(claimed.context, null, 2), undefined, claimed.attempt);
+                const dispatch = this.app.store.transaction(() => {
+                    if (!this.admission.check(team.projectId, 'implementer', team.id))
+                        return null;
+                    const claimed = this.app.teams.claim(team.id, !this.inspect(root.model).ready);
+                    if (!claimed)
+                        return null;
+                    const s = this.app.store.get('session', claimed.attempt.sessionId), prepared = this.claimSession(s, undefined, claimed.attempt);
+                    ensure(prepared, 'AGENT_CAPACITY_CHANGED', 'Worker 准入未完成');
+                    return { claimed, prepared };
+                });
+                if (dispatch) {
+                    this.launch(dispatch.prepared.session, JSON.stringify(dispatch.claimed.context, null, 2), undefined, dispatch.claimed.attempt, dispatch.prepared);
                 }
             }
         }
@@ -132,14 +153,16 @@ export class AgentHost {
             this.ticking = false;
         }
     }
-    launch(session, prompt, messageId, attempt) {
-        const skillBundle = this.app.skills.bootstrap(session.role);
-        this.ensureReady(session);
+    claimSession(session, messageId, attempt) {
         const store = this.app.store;
-        const claimed = store.transaction(() => {
+        return store.transaction(() => {
             const latest = store.get('session', session.id);
             assertWorkspaceReady(this.app.context, latest.id);
-            ensure(!['running', 'archived'].includes(latest.state), 'SESSION_BUSY', '会话已有有效写入者');
+            if (['running', 'archived'].includes(latest.state))
+                return null;
+            const slot = this.admission.tryAcquire(latest, latest.generation + 1, this.ownerHost, attempt?.teamId);
+            if (!slot)
+                return null;
             const next = store.update('session', latest.id, latest.version, { state: 'running', generation: latest.generation + 1, leaseUntil: Date.now() + 30000, lastError: undefined });
             if (messageId) {
                 const m = store.get('message', messageId);
@@ -148,34 +171,84 @@ export class AgentHost {
                 if (m.wakeupId)
                     this.app.wakeups.markStarted(m.wakeupId, next.id, next.generation, m.id);
             }
-            return next;
+            return { session: next, slot };
         });
+    }
+    launch(session, prompt, messageId, attempt, prepared) {
+        const reservation = prepared ?? this.claimSession(session, messageId, attempt);
+        if (!reservation)
+            return;
+        const { session: claimed, slot } = reservation, store = this.app.store;
         const wakeupId = messageId ? store.get('message', messageId).wakeupId : undefined;
         const actor = { ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
-        const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = join(home, 'pi');
-        mkdirSync(agentDir, { recursive: true, mode: 0o700 });
-        mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
-        const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: home, USERPROFILE: home, PI_API_KEY: process.env.PI_API_KEY, NO_COLOR: '1' };
-        // Only the selected model credential enters a worker. No SSH/cloud credentials or inherited Node flags.
-        const child = fork(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: claimed.workspace, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
-        const active = { child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };
-        this.active.set(claimed.id, active);
-        child.stdout?.on('data', () => { });
-        child.stderr?.on('data', () => { });
-        child.on('message', raw => { void this.onMessage(active, raw, sessionDir).catch(e => this.finish(active, clean(asError(e).message))); });
-        child.on('error', e => this.finish(active, clean(e.message)));
-        child.on('exit', (code) => {
-            if (!active.ended)
-                this.finish(active, `Worker 退出（${code}）；请求或工具用量可能需要对账`);
-        });
-        const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
-        active.contextMessageIds = hostMessages.map(m => m.id);
-        const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
-        this.app.store.event(claimed.projectId, 'session.skill_bundle_bound', { sessionId: claimed.id, generation: claimed.generation, bundleId: skillBundle.bundleId });
-        child.send({ type: 'start', skillBundle, repoRoot: this.app.context.repoRoot, workspace: claimed.workspace, agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
-        store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, attemptId: attempt?.id });
+        let active, requested = false;
+        try {
+            const skillBundle = this.app.skills.bootstrap(session.role);
+            this.ensureReady(claimed);
+            const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = join(home, 'pi');
+            mkdirSync(agentDir, { recursive: true, mode: 0o700 });
+            mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
+            const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: home, USERPROFILE: home, PI_API_KEY: process.env.PI_API_KEY, NO_COLOR: '1' };
+            // Only the selected model credential enters a worker. No SSH/cloud credentials or inherited Node flags.
+            this.admission.markSpawnRequested(slot.id, this.ownerHost, claimed.generation);
+            requested = true;
+            const child = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: claimed.workspace, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+            const worker = { admissionId: slot.id, child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };
+            active = worker;
+            this.active.set(claimed.id, worker);
+            child.stdout?.on('data', () => { });
+            child.stderr?.on('data', () => { });
+            child.on('message', raw => { void this.onMessage(worker, raw, sessionDir).catch(e => this.finish(worker, clean(asError(e).message))); });
+            child.on('error', e => this.finish(worker, clean(e.message)));
+            child.once('exit', code => this.exited(worker, code));
+            child.once('close', code => { if (this.active.get(worker.sessionId) === worker)
+                this.exited(worker, code); });
+            this.admission.markRunning(slot.id, this.ownerHost, claimed.generation, child.pid);
+            const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
+            worker.contextMessageIds = hostMessages.map(m => m.id);
+            const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
+            this.app.store.event(claimed.projectId, 'session.skill_bundle_bound', { sessionId: claimed.id, generation: claimed.generation, bundleId: skillBundle.bundleId });
+            child.send({ type: 'start', skillBundle, repoRoot: this.app.context.repoRoot, workspace: claimed.workspace, agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
+            store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, attemptId: attempt?.id });
+        }
+        catch (error) {
+            if (active) {
+                this.finish(active, clean(error.message));
+                return;
+            }
+            store.transaction(() => { this.admission.release(slot.id, this.ownerHost, claimed.generation, requested ? 'synchronous-fork-failure' : 'not-forked'); if (attempt)
+                this.app.teams.fail(attempt.id, 'Worker 启动前失败', false, true); if (messageId) {
+                const m = store.get('message', messageId);
+                if (m.status === 'running')
+                    store.update('message', m.id, m.version, { status: 'failed', error: 'Worker 启动前失败' });
+            } if (wakeupId) {
+                const w = this.app.wakeups.get(SYSTEM, wakeupId);
+                store.update('wakeup', w.id, w.version, { state: 'queued' });
+                this.app.wakeups.finish(w.id, 'Worker 启动前失败', false);
+            } const latest = store.get('session', claimed.id); if (latest.generation === claimed.generation)
+                store.update('session', latest.id, latest.version, { state: 'failed', leaseUntil: 0, lastError: 'Worker 启动前失败' }); });
+        }
+    }
+    exited(a, code) {
+        try {
+            if (!a.ended)
+                this.finish(a, `Worker 退出（${code}）；请求或工具用量可能需要对账`);
+            this.admission.release(a.admissionId, this.ownerHost, a.generation, 'confirmed-exit');
+        }
+        finally {
+            if (this.active.get(a.sessionId) === a)
+                this.active.delete(a.sessionId);
+        }
     }
     valid(a) {
+        if (a.admissionId) {
+            try {
+                this.admission.assertOwned(a.admissionId, this.ownerHost, a.generation);
+            }
+            catch {
+                return false;
+            }
+        }
         const s = this.app.store.get('session', a.sessionId);
         if (s.generation !== a.generation || s.state !== 'running')
             return false;
@@ -285,17 +358,20 @@ export class AgentHost {
             return;
         error = error ?? a.providerError ?? (a.actor.wakeupId && !a.assistantOutput ? 'Pi 已结束但没有可展示的最终分析；请核对后重试' : undefined) ?? (this.valid(a) ? undefined : '会话已中止或自动分析来源已失效');
         a.ended = true;
-        this.active.delete(a.sessionId);
         const store = this.app.store;
         store.transaction(() => {
+            this.admission.stopping(a.admissionId, this.ownerHost, a.generation);
             const s = store.get('session', a.sessionId);
             if (a.attemptId) {
                 const attempt = store.get('task-attempt', a.attemptId);
                 if (attempt.state === 'running')
                     this.app.teams.fail(a.attemptId, error ?? 'Pi 结束但没有提交结构化结果', !!error);
             }
-            if (a.actor.wakeupId)
-                this.app.wakeups.finish(a.actor.wakeupId, error, !!error);
+            if (a.actor.wakeupId) {
+                const wakeup = this.app.wakeups.get(SYSTEM, a.actor.wakeupId);
+                if (wakeup.generation === a.generation)
+                    this.app.wakeups.finish(a.actor.wakeupId, error, !!error);
+            }
             for (const id of a.messageIds) {
                 const m = store.get('message', id);
                 if (m.status === 'running')
@@ -315,11 +391,18 @@ export class AgentHost {
         this.stopped = true;
         if (this.timer)
             clearInterval(this.timer);
-        for (const a of this.active.values()) {
+        const stopping = [...this.active.values()];
+        const exits = stopping.map(a => new Promise(resolve => { if (a.child.exitCode !== null || a.child.signalCode !== null) {
+            resolve();
+            return;
+        } const done = () => { clearTimeout(force); clearTimeout(deadline); a.child.off('exit', done); a.child.off('close', done); resolve(); }; a.child.once('exit', done); a.child.once('close', done); const force = setTimeout(() => a.child.kill('SIGKILL'), 2000), deadline = setTimeout(done, 4000); }));
+        for (const a of stopping) {
             this.abortProcess(a);
             this.finish(a, '控制服务关闭；Agent 停止，正式实验不受影响');
         }
+        await Promise.all(exits);
         await this.app.git.stop();
+        await this.app.compute.stop();
     }
 }
 //# sourceMappingURL=agent-host.js.map

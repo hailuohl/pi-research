@@ -30,7 +30,8 @@ test('real Docker development: Python, isolation, failure, cancellation, disconn
     const approve = id => {const a=app.store.get('approval',id);app.approvals.decide(USER,id,a.version,true);};
     async function wait(id,predicate=terminal,timeout=45000) {
         const end=Date.now()+timeout;
-        while(Date.now()<end) {const j=app.store.get('sandbox-job',id);if(predicate(j))return j;await pause(200);}
+        // After the disconnect case this fixture has no AgentHost; explicitly drive its controller.
+        while(Date.now()<end) {app.execution.launchPending();const j=app.store.get('sandbox-job',id);if(predicate(j))return j;await pause(200);}
         const j=app.store.get('sandbox-job',id);throw new Error(`Job did not reach expected state: ${JSON.stringify({id,state:j.state,error:j.error,controlDir:j.controlDir})}`);
     }
     function prepare(source,options={}) {

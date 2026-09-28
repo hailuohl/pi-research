@@ -1,5 +1,9 @@
 import type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision } from '../../../dist/packages/research-workflows/types.js';
 import type { Wakeup } from '../../../dist/packages/scheduler/wakeups.js';
+import type {ComputeQueueInspection} from '../../../dist/packages/scheduler/compute-types.js';
+import type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
+export type {ComputeQueueInspection,ComputeLimits,ComputeConfiguration,ComputeQueueItem,ComputeWaitReason,ComputeUsage,ComputeAvailable} from '../../../dist/packages/scheduler/compute-types.js';
+export type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
 export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision, Wakeup };
 import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig } from '../../../dist/packages/domain/types.js';
 export type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig };
@@ -31,6 +35,8 @@ export interface ReportInspection {
     runs:Array<{runId:string;experimentId:string;revision:number;state:string;integrity:string;judgment:string;sourceDigest:string;gitCommit?:string;metrics:Array<{name:string;value:number;unit:string;referenceId:string}>}>;
 }
 export interface ProjectState {
+    compute?:ComputeQueueInspection;
+    agentCapacity?:AgentCapacityDTO;
     developmentTasks?:DevelopmentTaskDTO[];
     sandboxJobs?:SandboxJobDTO[];
     reviews?:DevelopmentReviewDTO[];

@@ -19,10 +19,11 @@ import { snapshotDirectory, verifySnapshot, listFiles, safePath } from '../works
 import { verifyTrustedExample, validateContract } from './contracts.js';
 import { finiteMetrics } from '../contracts/validation.js';
 import {readStableFile} from '../workspace/stable-file.js';
+import {ComputeQueue} from '../scheduler/compute-queue.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
     private launching = new Set<string>();
-    constructor(private c: AppContext, private approvals: ApprovalService, private evidence: EvidenceService) { }
+    constructor(private c: AppContext, private approvals: ApprovalService, private evidence: EvidenceService, private compute = new ComputeQueue(c)) { }
     get(actor: Actor, id: string) { const run = this.c.store.get<Run>('run', id); scope(actor, run.projectId!); return run; }
     prepare(actor: Actor, experimentId: string) {
         if (actor.type !== 'user')
@@ -54,6 +55,7 @@ export class RunService {
             this.approvals.assert(intent.approvalId, intent.projectId!, id, intent.manifestDigest, 'run.submit');
             verifySnapshot(intent.manifest.snapshotPath, intent.manifest.sourceFiles);
             verifyTrustedExample(intent.manifest, this.c.repoRoot);
+            this.compute.assertEnqueue('run',intent.projectId!,intent.manifest.contract.runner==='docker'?intent.manifest.contract.dockerContext??'default':undefined);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir,0o777);
@@ -103,19 +105,18 @@ export class RunService {
         this.c.store.event(run.projectId, 'run.cancelled_before_launch', {runId: run.id, reason: reason.code});
     }
     launchPending() {
+        this.compute.tick();
         this.c.store.transaction(() => {
-            for (const run of this.c.store.list<Run>('run').filter(r => r.state === 'queued' && !r.startedAt && !r.childPid)) {
+            for (const id of this.compute.queued('run')) {
+                const run=this.c.store.get<Run>('run',id);
+                if(run.state!=='queued'||run.startedAt||run.childPid)continue;
                 try { this.assertLaunchable(run); }
                 catch (error) { this.cancelBeforeLaunch(run, error); }
             }
         });
-        const all = this.c.store.list<Run>('run');
-        const active=all.find(r=>['submitting','running','cancelling','unknown'].includes(r.state));
-        if(active&&(!active.execution||active.execution.leaseUntil>Date.now()))return;
-        const run=active??all.find(r=>r.state==='queued'&&!r.startedAt&&!r.childPid&&!this.launching.has(r.id));
-        if (!run)
-            return;
-        if(this.launching.has(run.id))return;
+        const id=this.compute.candidates('run').find(id=>!this.launching.has(id));
+        if(!id)return;
+        const run=this.c.store.get<Run>('run',id);
         this.launching.add(run.id);
         const logDir = join(this.c.dataDir, 'jobs', run.id, 'control');
         mkdirSync(logDir, { recursive: true, mode: 0o700 });
@@ -192,7 +193,9 @@ export class RunService {
         });
     }
     reconcile() {
-        for (const r of this.c.store.list<Run>('run').filter(r => !TERMINAL.includes(r.state) && r.state !== 'queued')) {
+        for (const id of this.compute.active('run')) {
+            const r=this.c.store.get<Run>('run',id);
+            if(TERMINAL.includes(r.state)||r.state==='queued')continue;
             const receipt = join(this.c.dataDir, 'jobs', r.id, 'control', r.execution?`terminal-${r.execution.generation}.json`:'terminal.json');
             if (existsSync(receipt)) {
                 try {

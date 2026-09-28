@@ -89,8 +89,7 @@ export class TeamService {
             catch(error) { const e=asError(error); this.c.store.update<Team>('team',t.id,t.version,{state:'paused',blockReason:`计划需要重新建立：${e.code} — ${e.message}`}); this.sessions.system(t.rootSessionId,`旧协作计划未通过当前依赖校验，已暂停分配：${e.code}。已有结果保留；请重新建立并批准计划。`); return null; }
             this.aggregateReviews(id);
             const all = this.c.store.list<Task>('task', p.id), tasks = all.filter(x => x.teamId === id), running = all.filter(x => x.execution === 'running').length;
-            const max = Math.min(p.settings.maxConcurrentAssistants, t.settings.maxConcurrentAssistants);
-            if (running >= max)
+            if (running >= p.settings.maxConcurrentAssistants || tasks.filter(x=>x.execution==='running').length >= t.settings.maxConcurrentAssistants)
                 return null;
             const byKey = new Map(tasks.map(x => [x.key, x]));
             for (const task of tasks.filter(x => x.execution === 'pending')) {
@@ -337,7 +336,7 @@ export class TeamService {
         });
     }
 
-    fail(attemptId: string, error: string, unknown = false) {
+    fail(attemptId: string, error: string, unknown = false, notStarted = false) {
         return this.c.store.transaction(() => {
             const a = this.c.store.get<TaskAttempt>('task-attempt', attemptId);
             if (a.state !== 'running')
@@ -349,14 +348,14 @@ export class TeamService {
             if (unknown)
                 this.budget.markUnknown(a.budgetReservationId);
             else
-                this.budget.settle(a.budgetReservationId, 1);
+                this.budget.settle(a.budgetReservationId, notStarted ? 0 : 1);
             this.c.store.event(a.projectId, 'task.failed', { taskId: task.id, attemptId, error, unknown });
             this.refresh(task.teamId);
         });
     }
     recover() {
         for (const a of this.c.store.list<TaskAttempt>('task-attempt').filter(x => x.state === 'running' && x.leaseUntil < Date.now()))
-            this.fail(a.id, 'Worker 租约过期；用量待对账', true);
+            this.c.store.transaction(()=>{const current=this.c.store.get<TaskAttempt>('task-attempt',a.id);if(current.state==='running'&&current.leaseUntil<Date.now())this.fail(a.id, 'Worker 租约过期；用量待对账', true);});
     }
     retry(actor: Actor, taskId: string) {
         userOnly(actor);

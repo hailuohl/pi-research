@@ -98,6 +98,18 @@ export async function preflight(context, image) {
         throw new Error('Linux containers are required');
     return docker(context, ['image', 'inspect', '--format', '{{.Id}}', image]);
 }
+/** Read-only local engine identity; context aliases are not independent compute targets. */
+export async function probeDockerTarget(context) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,100}$/.test(context))
+        throw new Error('Explicit Docker context required');
+    const configured = JSON.parse(await docker(context, ['context', 'inspect', context])), endpoint = configured[0]?.Endpoints?.docker?.Host;
+    if (typeof endpoint !== 'string' || !(/^(unix:\/\/\/[^\0\r\n]+|npipe:\/\/\/\/\.\/pipe\/[^\0\r\n]+)$/.test(endpoint)))
+        throw new Error('Only local Docker endpoints are supported');
+    const info = JSON.parse(await docker(context, ['info', '--format', '{{json .}}']));
+    if (info.OSType !== 'linux' || typeof info.ID !== 'string' || !/^[A-Za-z0-9._:-]{1,200}$/.test(info.ID))
+        throw new Error('A Linux Docker engine identity is required');
+    return { targetId: 'docker-' + digest(info.ID), engineId: info.ID, endpoint: endpoint.startsWith('npipe:') ? endpoint.toLowerCase() : endpoint };
+}
 export async function inspect(job) {
     try {
         const value = JSON.parse(await docker(job.manifest.dockerContext, ['inspect', '--type', 'container', job.containerId ?? job.containerName]))[0];

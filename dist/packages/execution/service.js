@@ -9,17 +9,33 @@ export class ExecutionService {
     }
     launchPending() {
         const store = this.app.store;
-        const job = store.transaction(() => {
-            const jobs = store.list('sandbox-job');
-            // ponytail: one development sandbox globally; PR07 adds project quotas.
-            const active = jobs.find(j => !SANDBOX_TERMINAL.includes(j.state) && j.state !== 'queued');
-            if (active && active.leaseUntil > Date.now())
-                return null;
-            const next = active ?? jobs.find(j => j.state === 'queued');
-            if (!next)
-                return null;
-            return store.update('sandbox-job', next.id, next.version, { state: next.state === 'queued' ? 'starting' : next.state, generation: next.generation + 1, leaseUntil: Date.now() + LEASE_MS, recoveryCount: next.recoveryCount + (next.generation > 0 ? 1 : 0) });
-        });
+        this.app.compute.tick();
+        for (const id of this.app.compute.queued('development'))
+            store.transaction(() => {
+                const job = store.get('sandbox-job', id);
+                if (job.state !== 'queued')
+                    return;
+                try {
+                    this.app.development.assertCurrent(job, false);
+                }
+                catch (error) {
+                    this.app.development.finalize(id, { state: 'failed', exitCode: null, error: error.message, incomplete: true });
+                }
+            });
+        let claimed = null;
+        for (const id of this.app.compute.candidates('development')) {
+            claimed = this.app.compute.withAdmission('development', id, () => {
+                const next = store.get('sandbox-job', id);
+                if (SANDBOX_TERMINAL.includes(next.state) || next.state !== 'queued' && next.leaseUntil > Date.now())
+                    return null;
+                if (next.state === 'queued')
+                    this.app.development.assertCurrent(next, false);
+                return store.update('sandbox-job', next.id, next.version, { state: next.state === 'queued' ? 'starting' : next.state, generation: next.generation + 1, leaseUntil: Date.now() + LEASE_MS, recoveryCount: next.recoveryCount + (next.generation > 0 ? 1 : 0) });
+            });
+            if (claimed)
+                break;
+        }
+        const job = claimed;
         if (!job)
             return;
         const worker = spawn(process.execPath, [fileURLToPath(new URL('../../apps/execution-worker/index.js', import.meta.url)), this.app.context.dataDir, this.app.context.repoRoot, job.id, String(job.generation)], { shell: false, detached: true, windowsHide: true, stdio: 'ignore' });

@@ -1,0 +1,24 @@
+{
+  "sourceCommit": "311077e",
+  "existingRecords": 145,
+  "byteIdenticalRecords": 144,
+  "normalExistingGitLeaseRenewals": [
+    {
+      "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57",
+      "fields": [
+        "until",
+        "version",
+        "updatedAt"
+      ],
+      "branch": "refs/heads/session-7b7ef384-b639-4ba9-ae38-6dd32de63292",
+      "ownerUnchanged": true,
+      "generationUnchanged": true
+    }
+  ],
+  "schemaVersions": [
+    1,
+    2,
+    3
+  ],
+  "backup": ".validation/flow-run-ui/before-scheduler-311077e.db"
+}

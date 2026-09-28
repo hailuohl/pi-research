@@ -3,13 +3,15 @@ import type { Actor, RunIntent, Run, Row } from '../domain/types.js';
 import type { DockerRunResult } from './adapter.js';
 import { ApprovalService } from '../policy/approvals.js';
 import { EvidenceService } from '../evidence/service.js';
+import { ComputeQueue } from '../scheduler/compute-queue.js';
 export declare const TERMINAL: string[];
 export declare class RunService {
     private c;
     private approvals;
     private evidence;
+    private compute;
     private launching;
-    constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService);
+    constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue);
     get(actor: Actor, id: string): Row<Run>;
     prepare(actor: Actor, experimentId: string): Row<RunIntent>;
     submit(actor: Actor, id: string): Row<Run>;
