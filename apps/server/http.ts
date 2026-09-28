@@ -81,6 +81,13 @@ export function createHttpServer(options: ServerOptions) {
                     const operation = operationRoute(app, route, body, key, controller.signal, req.method!, url.search);
                     if (operation) return json(await operation.result);
                 } finally { res.off('close', cancel); }
+                if(route==='/projects/import') {
+                    ensure(req.method==='POST','METHOD_NOT_ALLOWED','导入只接受 POST',405);
+                    const scope=`${req.method}:${route}`,request={body,query:url.search},prior=app.store.operationResult(scope,key!,request);
+                    if(prior.found)return json(prior.value);
+                    const prepared=await app.projects.prepareImport(USER,body);
+                    return json(app.store.operation(scope,key!,request,()=>app.projects.importDirectory(USER,body,prepared)));
+                }
                 const value = app.store.operation(`${req.method}:${route}`, key!, { body, query: url.search }, () => writeRoute(app, host, route, body, req.method));
                 return json(value);
             }

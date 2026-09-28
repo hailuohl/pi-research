@@ -1,3 +1,4 @@
+import {GIT_OUTPUT_SCHEMAS} from './git-schemas.js';
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from './development-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
 import type { InferSchema, JsonSchema } from './schema.js';
@@ -18,7 +19,7 @@ const row = <const K extends string, const P extends Record<string, JsonSchema>,
     ...properties
 }, optional);
 
-const sourceFile = object({ path: string, size: integer, digest: string });
+const sourceFile = object({ path: string, size: integer, digest: string,mode:enumeration('100644','100755') },['mode']);
 const snapshot = object({ digest: string, path: string, files: array(sourceFile) });
 const contract = object({
     command: strings,
@@ -110,7 +111,7 @@ const contextTask = object({ id: string, key: string, result: taskResult }, ['re
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
-    ...DEVELOPMENT_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,

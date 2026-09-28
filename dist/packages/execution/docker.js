@@ -7,7 +7,15 @@ import { safePath } from '../workspace/files.js';
 import { digest } from '../storage/store.js';
 export const JOB_LABEL = 'pi-research.sandbox-job';
 export const MANIFEST_LABEL = 'pi-research.manifest';
-export const BOOTSTRAP = 'cp -R /source/. /work/ && chmod -R u+rwX /work && exec "$@"';
+// Legacy snapshots without modes default to ordinary, non-executable files.
+export const BOOTSTRAP = 'cp -R /source/. /work/ && chmod -R u+rwX /work && find /work -type f -exec chmod 644 {} + && exec "$@"';
+function sourceBootstrap(job) {
+    const executable = job.manifest.inputSnapshot.files.filter(f => f.mode === '100755').map(f => {
+        safePath(job.manifest.inputSnapshot.path, f.path);
+        return "'/work/" + f.path.replace(/'/g, "'\\''") + "'";
+    });
+    return executable.length ? BOOTSTRAP.replace(' && exec', ` && chmod 755 -- ${executable.join(' ')} && exec`) : BOOTSTRAP;
+}
 export function stageInputs(job) {
     if (job.startRequested || job.containerId)
         throw new Error('Cannot modify inputs after container creation');
@@ -32,13 +40,25 @@ export function stageInputs(job) {
             mkdirSync(dirname(target), { recursive: true, mode: 0o755 });
             for (let dir = dirname(target); dir !== temp; dir = dirname(dir))
                 chmodSync(dir, 0o755);
-            writeFileSync(target, bytes, { mode: 0o444, flag: 'wx' });
-            chmodSync(target, 0o444);
+            if (f.mode !== undefined && f.mode !== '100644' && f.mode !== '100755')
+                throw new Error('Unsupported source file mode');
+            const mode = f.mode === '100755' ? 0o555 : 0o444;
+            writeFileSync(target, bytes, { mode, flag: 'wx' });
+            chmodSync(target, mode);
         }
         renameSync(temp, destination);
     };
     stage('source', job.manifest.inputSnapshot.files.map(f => ({ ...f, root: job.manifest.inputSnapshot.path, target: f.path })));
     stage('data', job.manifest.dataArtifacts.map(a => ({ ...a, root: dirname(a.path), path: basename(a.path), target: a.id })));
+    const bootstrap = join(job.controlDir, 'bootstrap.sh'), script = sourceBootstrap(job);
+    if (existsSync(bootstrap)) {
+        if (readStableFile(job.controlDir, 'bootstrap.sh', Buffer.byteLength(script)).toString() !== script)
+            throw new Error('Sandbox bootstrap mismatch');
+    }
+    else {
+        writeFileSync(bootstrap, script, { mode: 0o444, flag: 'wx' });
+        chmodSync(bootstrap, 0o444);
+    }
 }
 export function dockerEnv() {
     return Object.fromEntries(['PATH', 'SystemRoot', 'WINDIR', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
@@ -119,9 +139,9 @@ export function createArgs(job) {
     };
     return ['create', '--pull', 'never', '--name', job.containerName, '--label', `${JOB_LABEL}=${job.id}`, '--label', `${MANIFEST_LABEL}=${job.manifestDigest}`,
         '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--pids-limit', String(r.pids), '--cpus', String(r.cpus), '--memory', `${r.memoryMb}m`, '--memory-swap', `${r.memoryMb}m`, '--user', '65532:65532',
-        '--tmpfs', `/work:rw,nosuid,nodev,uid=65532,gid=65532,mode=1777,size=${r.workMb}m`, '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,uid=65532,gid=65532,mode=1777,size=32m',
-        ...mount(join(job.controlDir, 'source'), '/source', true), ...m.dataArtifacts.flatMap(a => mount(join(job.controlDir, 'data', a.id), `/data/${a.id}`, true)), ...mount(job.outputDir, '/output', false),
+        '--tmpfs', `/work:rw,nosuid,nodev,exec,uid=65532,gid=65532,mode=1777,size=${r.workMb}m`, '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,uid=65532,gid=65532,mode=1777,size=32m',
+        ...mount(join(job.controlDir, 'source'), '/source', true), ...mount(join(job.controlDir, 'bootstrap.sh'), '/pi-bootstrap.sh', true), ...m.dataArtifacts.flatMap(a => mount(join(job.controlDir, 'data', a.id), `/data/${a.id}`, true)), ...mount(job.outputDir, '/output', false),
         '--workdir', '/work', '--env', 'PI_OUTPUT_DIR=/output', '--env', 'PYTHONDONTWRITEBYTECODE=1', '--env', 'HOME=/tmp', '--log-driver', 'local', '--log-opt', `max-size=${Math.max(1, Math.ceil(r.logBytes / 1048576))}m`, '--log-opt', 'max-file=1', '--log-opt', 'compress=false',
-        '--entrypoint', '/bin/sh', m.environmentImageDigest, '-c', BOOTSTRAP, '--', ...m.command];
+        '--entrypoint', '/bin/sh', m.environmentImageDigest, '/pi-bootstrap.sh', ...m.command];
 }
 //# sourceMappingURL=docker.js.map

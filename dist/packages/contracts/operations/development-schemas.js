@@ -3,7 +3,7 @@ const MiB = 1024 * 1024, id = s.string(100), integer = s.integer(0, Number.MAX_S
 const digest = { ...s.string(64), minLength: 64, pattern: '^[a-f0-9]{64}$' };
 const image = { ...s.string(300), pattern: '^[a-zA-Z0-9][a-zA-Z0-9._/:\\-]*@sha256:[a-f0-9]{64}$' };
 const resources = s.object({ cpus: s.integer(1, 8), memoryMb: s.integer(64, 8192), pids: s.integer(16, 512), timeoutSeconds: s.integer(1, 600), workMb: s.integer(16, 1024), outputBytes: s.integer(1, 128 * MiB), logBytes: s.integer(1, 16 * MiB) });
-const file = s.object({ path: s.string(1000), digest, size: integer }, ['path', 'digest', 'size']);
+const file = s.object({ path: s.string(1000), digest, size: integer, mode: s.enum(['100644', '100755']) }, ['path', 'digest', 'size']);
 const data = s.object({ id, digest, size: integer, sourceAcceptanceId: id }, ['id', 'digest', 'size']);
 const manifest = s.object({
     purpose: { const: 'development-test' }, sessionId: id, inputSnapshot: s.object({ digest, files: s.array(file, 5000) }, ['digest', 'files']), sourceRevisionId: id,

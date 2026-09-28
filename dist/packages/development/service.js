@@ -11,6 +11,7 @@ import { safePath, snapshotDirectory, verifySnapshot } from '../workspace/files.
 import { readStableFile } from '../workspace/stable-file.js';
 import { validateSourceRevision } from '../workspace/source-access.js';
 import { captureAcceptance, assertAcceptanceCurrent } from '../evidence/acceptance.js';
+import { assertWorkspaceReady } from '../workspace/git-service.js';
 const MiB = 1024 * 1024;
 const DEFAULTS = { cpus: 1, memoryMb: 256, pids: 64, timeoutSeconds: 60, workMb: 128, outputBytes: 32 * MiB, logBytes: 2 * MiB };
 const LIMITS = { cpus: 8, memoryMb: 8192, pids: 512, timeoutSeconds: 600, workMb: 1024, outputBytes: 128 * MiB, logBytes: 16 * MiB };
@@ -48,6 +49,7 @@ export class DevelopmentService {
         if (write) {
             assertProjectWritable(this.app.store, pid);
             ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
+            assertWorkspaceReady(this.app.context, s.id);
         }
         return s;
     }
@@ -170,7 +172,7 @@ export class DevelopmentService {
                 return this.inspect(actor, pid, t.jobId);
             const s = this.access(actor, pid, t.sessionId, true);
             this.current(t, pid, true, true);
-            ensure(snapshotDirectory(s.workspace, join(this.app.context.dataDir, 'snapshots')).digest === t.sourceDigest, 'DEVELOPMENT_SOURCE_STALE', '工作区已变化，请重新准备并批准测试');
+            ensure(snapshotDirectory(s.workspace, join(this.app.context.dataDir, 'snapshots'), { legacy: t.manifest.inputSnapshot.files.every(f => f.mode === undefined) }).digest === t.sourceDigest, 'DEVELOPMENT_SOURCE_STALE', '工作区已变化，请重新准备并批准测试');
             const jobId = randomUUID(), root = join(this.app.context.dataDir, 'sandbox-jobs', jobId), outputDir = join(root, 'output'), controlDir = join(root, 'control');
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);

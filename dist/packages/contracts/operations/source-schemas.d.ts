@@ -247,6 +247,9 @@ export declare const SOURCE_OUTPUT_SCHEMAS: {
                             readonly minimum: number;
                             readonly maximum: number;
                         };
+                        readonly mode: {
+                            readonly enum: readonly ["100644", "100755"];
+                        };
                     };
                     readonly required: readonly ["path", "digest", "size"];
                     readonly additionalProperties: false;
@@ -304,6 +307,9 @@ export declare const SOURCE_OUTPUT_SCHEMAS: {
                 readonly type: "integer";
                 readonly minimum: number;
                 readonly maximum: number;
+            };
+            readonly mode: {
+                readonly enum: readonly ["100644", "100755"];
             };
             readonly cursor: {
                 readonly type: "integer";
@@ -462,6 +468,20 @@ export declare const SOURCE_OUTPUT_SCHEMAS: {
                                 readonly type: "null";
                             }];
                         };
+                        readonly beforeMode: {
+                            readonly anyOf: readonly [{
+                                readonly enum: readonly ["100644", "100755"];
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly afterMode: {
+                            readonly anyOf: readonly [{
+                                readonly enum: readonly ["100644", "100755"];
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
                     };
                     readonly required: readonly ["path", "status", "beforeDigest", "afterDigest"];
                     readonly additionalProperties: false;
@@ -489,6 +509,16 @@ export declare const SOURCE_OUTPUT_SCHEMAS: {
             };
             readonly prepared: {
                 readonly type: "boolean";
+            };
+            readonly gitState: {
+                readonly enum: readonly ["pending", "ready", "conflict", "failed"];
+            };
+            readonly gitOperationId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
             };
             readonly snapshotId: {
                 readonly pattern?: string | undefined;

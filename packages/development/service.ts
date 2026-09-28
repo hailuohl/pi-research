@@ -14,6 +14,7 @@ import {safePath, snapshotDirectory, verifySnapshot} from '../workspace/files.js
 import {readStableFile} from '../workspace/stable-file.js';
 import {validateSourceRevision} from '../workspace/source-access.js';
 import {captureAcceptance,assertAcceptanceCurrent} from '../evidence/acceptance.js';
+import {assertWorkspaceReady} from '../workspace/git-service.js';
 
 const MiB=1024*1024;
 const DEFAULTS: SandboxResources={cpus:1,memoryMb:256,pids:64,timeoutSeconds:60,workMb:128,outputBytes:32*MiB,logBytes:2*MiB};
@@ -42,7 +43,7 @@ export class DevelopmentService {
                 else ensure(own.generation===actor.generation&&own.state==='running'&&own.leaseUntil>Date.now(),'LEASE_EXPIRED','会话执行租约失效');
             }
         }
-        if(write) {assertProjectWritable(this.app.store,pid);ensure(s.state!=='archived','SESSION_ARCHIVED','会话已归档');}
+        if(write) {assertProjectWritable(this.app.store,pid);ensure(s.state!=='archived','SESSION_ARCHIVED','会话已归档');assertWorkspaceReady(this.app.context,s.id);}
         return s;
     }
     private data(actor:Actor,pid:string,id:string) {
@@ -124,7 +125,7 @@ export class DevelopmentService {
             const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);
             if(t.jobId)return this.inspect(actor,pid,t.jobId);
             const s=this.access(actor,pid,t.sessionId,true);this.current(t,pid,true,true);
-            ensure(snapshotDirectory(s.workspace,join(this.app.context.dataDir,'snapshots')).digest===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备并批准测试');
+            ensure(snapshotDirectory(s.workspace,join(this.app.context.dataDir,'snapshots'),{legacy:t.manifest.inputSnapshot.files.every(f=>f.mode===undefined)}).digest===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备并批准测试');
             const jobId=randomUUID(),root=join(this.app.context.dataDir,'sandbox-jobs',jobId),outputDir=join(root,'output'),controlDir=join(root,'control');
             mkdirSync(outputDir,{recursive:true,mode:0o777});chmodSync(outputDir,0o777);mkdirSync(controlDir,{recursive:true,mode:0o700});
             this.app.store.onRollback(()=>{rmdirSync(controlDir);rmdirSync(outputDir);rmdirSync(root);});

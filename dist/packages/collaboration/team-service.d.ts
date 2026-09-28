@@ -18,7 +18,7 @@ export declare class TeamService {
     private assertInputsCurrent;
     private assertDispatchPlan;
     /** Claim and reserve atomically. No network, model or process launch in this transaction. */
-    claim(id: string): {
+    claim(id: string, prepareOnly?: boolean): {
         task: Row<Task>;
         attempt: Row<TaskAttempt>;
         context: unknown;

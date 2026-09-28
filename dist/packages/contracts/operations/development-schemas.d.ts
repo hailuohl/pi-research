@@ -309,6 +309,9 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                             readonly minimum: number;
                                             readonly maximum: number;
                                         };
+                                        readonly mode: {
+                                            readonly enum: readonly ["100644", "100755"];
+                                        };
                                     };
                                     readonly required: readonly ["path", "digest", "size"];
                                     readonly additionalProperties: false;
@@ -607,6 +610,9 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                             readonly type: "integer";
                                             readonly minimum: number;
                                             readonly maximum: number;
+                                        };
+                                        readonly mode: {
+                                            readonly enum: readonly ["100644", "100755"];
                                         };
                                     };
                                     readonly required: readonly ["path", "digest", "size"];
@@ -991,6 +997,9 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                                 readonly minimum: number;
                                                 readonly maximum: number;
                                             };
+                                            readonly mode: {
+                                                readonly enum: readonly ["100644", "100755"];
+                                            };
                                         };
                                         readonly required: readonly ["path", "digest", "size"];
                                         readonly additionalProperties: false;
@@ -1288,6 +1297,9 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                                 readonly type: "integer";
                                                 readonly minimum: number;
                                                 readonly maximum: number;
+                                            };
+                                            readonly mode: {
+                                                readonly enum: readonly ["100644", "100755"];
                                             };
                                         };
                                         readonly required: readonly ["path", "digest", "size"];
@@ -1653,6 +1665,9 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                             readonly type: "integer";
                                             readonly minimum: number;
                                             readonly maximum: number;
+                                        };
+                                        readonly mode: {
+                                            readonly enum: readonly ["100644", "100755"];
                                         };
                                     };
                                     readonly required: readonly ["path", "digest", "size"];

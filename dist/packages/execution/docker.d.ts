@@ -2,7 +2,7 @@ import type { Row } from '../domain/types.js';
 import type { SandboxJob } from './contracts.js';
 export declare const JOB_LABEL = "pi-research.sandbox-job";
 export declare const MANIFEST_LABEL = "pi-research.manifest";
-export declare const BOOTSTRAP = "cp -R /source/. /work/ && chmod -R u+rwX /work && exec \"$@\"";
+export declare const BOOTSTRAP = "cp -R /source/. /work/ && chmod -R u+rwX /work && find /work -type f -exec chmod 644 {} + && exec \"$@\"";
 export declare function stageInputs(job: Row<SandboxJob>): void;
 export declare function dockerEnv(): NodeJS.ProcessEnv;
 export declare function docker(context: string, args: string[], timeout?: number, limit?: number): Promise<string>;

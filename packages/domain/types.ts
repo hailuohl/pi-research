@@ -36,6 +36,7 @@ export interface Project {
     description: string;
     workspace: string;
     archived: boolean;
+    gitHistoryEnabled?: boolean;
     settings: CollaborationSettings;
 }
 export interface ModelConfig {
@@ -119,6 +120,7 @@ export interface Manifest {
         path: string;
         digest: string;
         size: number;
+        mode?: '100644' | '100755';
     }>;
     createdAt: string;
 }
@@ -272,7 +274,7 @@ export interface TaskResult {
     verdict?: 'accept' | 'reject' | 'disputed';
 }
 
-export interface SourceSnapshot {digest:string; path:string; files:Array<{path:string;size:number;digest:string}>}
+export interface SourceSnapshot {digest:string; path:string; files:Array<{path:string;size:number;digest:string;mode?:'100644'|'100755'}>}
 export interface SourceRevision {
     captureKind?: 'observed-now';
     experimentId: string;

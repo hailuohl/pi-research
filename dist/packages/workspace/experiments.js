@@ -8,7 +8,7 @@ import { scope, userOnly } from '../policy/permissions.js';
 import { object, text } from '../contracts/validation.js';
 import { ensure } from '../domain/errors.js';
 import { digest } from '../storage/store.js';
-import { listFiles, safePath, readText, writeText } from './files.js';
+import { listFiles, safePath, readText, writeText, copySourceModes, setSourceModes } from './files.js';
 import { verifySnapshot } from './files.js';
 import { readStableFile } from './stable-file.js';
 import { EXAMPLE_CONTRACT, validateContract } from '../runners/contracts.js';
@@ -41,6 +41,7 @@ export class ExperimentService {
                 mkdirSync(dirname(dest), { recursive: true });
                 writeFileSync(dest, readFileSync(safePath(source, f.path)), { mode: 0o600 });
             }
+            copySourceModes(source, workspace, listFiles(source));
             if (x.config !== undefined) {
                 object(x.config);
                 writeFileSync(join(workspace, 'config.json'), JSON.stringify(x.config, null, 2), { mode: 0o600 });
@@ -71,6 +72,7 @@ export class ExperimentService {
             ensure(digest(bytes) === f.digest && bytes.length === f.size, 'SNAPSHOT_CORRUPTED', '复制的字节与批准的快照不一致');
             writeFileSync(dest, bytes, { mode: 0o600 });
         }
+        setSourceModes(workspace, snapshot.files);
         const child = this.c.store.create('experiment', parent.projectId, { title: stored.title, hypothesis: stored.hypothesis, parentId: parent.id, lifecycle: 'provisional', contract: parent.contract, contractDigest: parent.contractDigest, workspace, notes: [], revision: 1, changeProposalId: stored.id }, id);
         captureSourceRevision(this.c, child);
         this.c.store.event(parent.projectId, 'experiment.created', { id, parentId: parent.id, changeProposalId: stored.id });

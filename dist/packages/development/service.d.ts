@@ -16,6 +16,7 @@ export declare class DevelopmentService {
                     path: string;
                     size: number;
                     digest: string;
+                    mode?: "100644" | "100755";
                 }[];
             };
             dataArtifacts: {
@@ -62,6 +63,7 @@ export declare class DevelopmentService {
                     path: string;
                     size: number;
                     digest: string;
+                    mode?: "100644" | "100755";
                 }[];
             };
             dataArtifacts: {
@@ -116,6 +118,7 @@ export declare class DevelopmentService {
                     path: string;
                     size: number;
                     digest: string;
+                    mode?: "100644" | "100755";
                 }[];
             };
             dataArtifacts: {
@@ -169,6 +172,7 @@ export declare class DevelopmentService {
                     path: string;
                     size: number;
                     digest: string;
+                    mode?: "100644" | "100755";
                 }[];
             };
             dataArtifacts: {
@@ -229,6 +233,7 @@ export declare class DevelopmentService {
                     path: string;
                     size: number;
                     digest: string;
+                    mode?: "100644" | "100755";
                 }[];
             };
             dataArtifacts: {
@@ -291,6 +296,7 @@ export declare class DevelopmentService {
                     path: string;
                     size: number;
                     digest: string;
+                    mode?: "100644" | "100755";
                 }[];
             };
             dataArtifacts: {

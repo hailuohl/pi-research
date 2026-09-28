@@ -1,0 +1,12 @@
+✔ explicit Git opt-in gates pending tools and prepares two independent real worktrees (6274.1439ms)
+✔ Registry diff and commit retain ignored, untracked, deleted and executable-mode changes in Git objects (5877.3352ms)
+✔ real Git receipt recovers SQL publication failure without a second commit and preserves legacy CAS ancestry (7607.889ms)
+✔ dirty directory-to-file changes survive an interrupted unpublished checkout and explicit recovery (4920.1704ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 24824.7868

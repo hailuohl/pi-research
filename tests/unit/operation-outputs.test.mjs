@@ -1,4 +1,5 @@
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/development-schemas.js';
+import {GIT_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/git-schemas.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setup, USER, approve, campaign, fixtureFinish} from '../support/research.mjs';
@@ -94,7 +95,7 @@ test('all existing public tools have closed, literal success contracts exercised
   const changeArtifact=s.app.evidence.put(s.project.id,'change.txt',Buffer.from('new source'),'text/plain',`agent:${root.sessionId}`);
   await call('change_proposal_prepare',{baseExperimentId:s.baseline.id,expectedRevision:1,title:'patch',hypothesis:'fixture',changes:[{path:'new.txt',expectedDigest:null,artifactId:changeArtifact.id}]});
   // Four source-access operations are covered by their own feature tests.
-  const expected=Object.keys(TOOL_DEFINITIONS).filter(name=>!Object.hasOwn(SOURCE_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(DEVELOPMENT_OUTPUT_SCHEMAS,name));
+  const expected=Object.keys(TOOL_DEFINITIONS).filter(name=>!Object.hasOwn(SOURCE_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(DEVELOPMENT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(GIT_OUTPUT_SCHEMAS,name));
   assert.deepEqual([...seen].sort(),expected.sort());
   const corrupt=structuredClone(evidence);corrupt.locator.typo=1;
   assert.throws(()=>validateSchema(OUTPUT_SCHEMAS.evidence_read,corrupt,'output'),{code:'INVALID_OUTPUT'});

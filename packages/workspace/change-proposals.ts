@@ -8,7 +8,7 @@ import {scope,userOnly} from '../policy/permissions.js';
 import {ensure} from '../domain/errors.js';
 import {object,text,integer} from '../contracts/validation.js';
 import {digest} from '../storage/store.js';
-import {safePath,snapshotDirectory,verifySnapshot} from './files.js';
+import {safePath,snapshotDirectory,verifySnapshot,setSourceModes} from './files.js';
 import {readStableFile} from './stable-file.js';
 
 /** Immutable, explicitly reviewed file handoff. This is NOT a Git merge or a test runner. */
@@ -53,6 +53,7 @@ export class ChangeProposalService {
         mkdirSync(staging,{recursive:true,mode:0o700});
         try{
             for(const f of baseSnapshot.files){const dst=safePath(staging,f.path);mkdirSync(dirname(dst),{recursive:true});writeFileSync(dst,readStableFile(baseSnapshot.path,f.path,64*1024*1024),{mode:0o600});}
+            setSourceModes(staging,baseSnapshot.files);
             for(const c of changes){const dst=safePath(staging,c.path);if(c.artifactId===null)rmSync(dst);else{const {bytes}=this.content(actor,projectId,c.artifactId);ensure(digest(bytes)===c.artifactDigest,'ARTIFACT_CORRUPTED','准备过程中产物发生变化');mkdirSync(dirname(dst),{recursive:true});writeFileSync(dst,bytes,{mode:0o600});}}
             const candidateSnapshot=snapshotDirectory(staging,root);
             ensure(candidateSnapshot.digest!==baseSnapshot.digest,'CHANGE_EMPTY','提案没有实际改变源码');
@@ -66,7 +67,7 @@ export class ChangeProposalService {
                 const proposal=this.app.store.create<ChangeProposal>('change-proposal',projectId,{...data,digest:hash,approvalId:a.id,state:'prepared',testsStatus:testJobId?'passed':'not_run'},id);
                 this.app.store.event(projectId,'change.prepared',{proposalId:id,baseExperimentId:base.id,candidateDigest:candidateSnapshot.digest});return proposal;
             });
-        }finally{rmSync(staging,{recursive:true,force:true});}
+        }finally{rmSync(staging,{recursive:true,force:true});rmSync(staging+'.source-modes.json',{force:true});}
     }
     inspect(actor:Actor,id:string){const p=this.get(actor,id);ensure(digest(this.payload(p))===p.digest,'CHANGE_PROPOSAL_CORRUPTED','变更提案摘要不一致');return {proposal:p,files:p.changes.map(c=>({path:c.path,expectedDigest:c.expectedDigest,artifactDigest:c.artifactDigest,before:c.expectedDigest?readStableFile(p.baseSnapshot.path,c.path,2*1024*1024).toString('utf8'):null,after:c.artifactId?this.app.evidence.read(actor,c.artifactId).bytes.toString('utf8'):null}))};}
     apply(actor:Actor,id:string){
@@ -78,7 +79,7 @@ export class ChangeProposalService {
             ensure(!this.app.projects.get(actor,p.projectId!).archived,'PROJECT_ARCHIVED','项目已归档');
             this.app.approvals.assert(p.approvalId,p.projectId!,p.id,p.digest,'change.integrate');
             const base=this.app.experiments.get(actor,p.baseExperimentId);
-            ensure(base.lifecycle!=='archived' && base.revision===p.baseRevision && base.contractDigest===p.contractDigest && snapshotDirectory(base.workspace,join(this.app.context.dataDir,'snapshots')).digest===p.baseSnapshot.digest,'CHANGE_BASE_STALE','基准已经变化，请基于新版本重新准备和批准');
+            ensure(base.lifecycle!=='archived' && base.revision===p.baseRevision && base.contractDigest===p.contractDigest && snapshotDirectory(base.workspace,join(this.app.context.dataDir,'snapshots'),{legacy:p.baseSnapshot.files.every(f=>f.mode===undefined)}).digest===p.baseSnapshot.digest,'CHANGE_BASE_STALE','基准已经变化，请基于新版本重新准备和批准');
             for(const c of p.changes)if(c.artifactId){const v=this.content(actor,p.projectId!,c.artifactId);ensure(v.artifact.digest===c.artifactDigest && v.taskResultDigest===c.taskResultDigest && v.sourceAcceptanceId===c.sourceAcceptanceId,'CHANGE_SOURCE_STALE','产物或任务验收已发生变化');}
             verifySnapshot(p.candidateSnapshot.path,p.candidateSnapshot.files);
             if(p.testJobId)this.app.development.assertResultMatches(actor,p.projectId!,p.testJobId,p.candidateSnapshot.digest);

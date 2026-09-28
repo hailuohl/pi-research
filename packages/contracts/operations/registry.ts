@@ -10,6 +10,7 @@ import {readText, writeText, listFiles} from '../../workspace/files.js';
 import {INPUT_SCHEMAS} from './inputs.js';
 import {OUTPUT_SCHEMAS} from './outputs.js';
 import {validateSchema, type JsonSchema} from './schema.js';
+import {assertWorkspaceReady} from '../../workspace/git-service.js';
 
 export interface OperationScope {
     projectId: string;
@@ -158,6 +159,11 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('workspace_history_inspect',{idempotencyPolicy:'read-only',requiresSession:true,authorize:(c)=>{c.app.git.inspect(c.actor,c.projectId,c.session!.id);},preconditions:noPrecondition,execute:c=>c.app.git.inspect(c.actor,c.projectId,c.session!.id)}),
+    make('workspace_history_diff',{idempotencyPolicy:'read-only',requiresSession:true,authorize:(c)=>{c.app.git.inspect(c.actor,c.projectId,c.session!.id);},preconditions:noPrecondition,execute:c=>c.app.git.diff(c.actor,c.projectId,c.session!.id)}),
+    make('workspace_history_commit',{idempotencyPolicy:'key-required',requiresSession:true,authorize:(c)=>{c.app.git.inspect(c.actor,c.projectId,c.session!.id);},preconditions:noPrecondition,execute:(c,x)=>c.app.git.commit(c.actor,c.projectId,c.session!.id,x)}),
+    make('workspace_history_set_mode',{idempotencyPolicy:'key-required',requiresSession:true,authorize:(c)=>{c.app.git.inspect(c.actor,c.projectId,c.session!.id);},preconditions:noPrecondition,execute:(c,x)=>c.app.git.setMode(c.actor,c.projectId,c.session!.id,x)}),
+    make('workspace_history_operation',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.git.operation(c.actor,c.projectId,x.operationId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.git.operation(c.actor,c.projectId,x.operationId as string)}),
     make('development_prepare', {idempotencyPolicy:'key-required',requiresSession:true,authorize:noPrecondition,preconditions:noPrecondition,execute:(c,x)=>c.app.development.prepare(c.actor,c.projectId,c.session!.id,x)}),
     make('development_submit', {idempotencyPolicy:'key-required',authorize:(c,x)=>{c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.development.submit(c.actor,c.projectId,x.developmentTaskId as string)}),
     make('development_inspect', {idempotencyPolicy:'read-only',authorize:(c,x)=>{x.jobId?c.app.development.inspect(c.actor,c.projectId,x.jobId as string):c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string);},preconditions:noPrecondition,execute:(c,x)=>x.jobId?c.app.development.inspect(c.actor,c.projectId,x.jobId as string):c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string)}),
@@ -204,7 +210,7 @@ const SPECS: OperationSpec[] = [
         ensure(c.actor.type === 'user' || x.source !== 'project', 'SCOPE_DENIED', '不能通过助手写入项目共享工作区', 403);
     }, preconditions: (c, x) => {
         assertProjectWritable(c.app.store, c.projectId);
-        if (x.source !== 'project') ensure(c.session!.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
+        if (x.source !== 'project') {ensure(c.session!.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');assertWorkspaceReady(c.app.context,c.session!.id);}
     }, execute: (c, x) => x.source === 'project'
         ? c.app.projects.writeFile(c.actor, c.projectId, x.path as string, x.content as string, x.expectedDigest as string | null)
         : writeText(c.session!.workspace, x.path as string, x.content as string, x.expectedDigest as string | null, c.app.store)}),

@@ -102,13 +102,26 @@ async function main() {
             ensure(!!source && !source.startsWith('--'), 'SOURCE_REQUIRED', '用法：import <本地目录> --name <项目名称> [--data <目录>]');
             const app = new ResearchApp(dataDir, root);
             try {
-                const p = app.projects.importDirectory(USER, { name: option('--name') ?? '导入的研究项目', sourcePath: source });
+                const input={name:option('--name')??'导入的研究项目',sourcePath:source},prepared=await app.projects.prepareImport(USER,input);
+                const p = app.projects.importDirectory(USER,input,prepared);
                 app.sessions.create(USER, p.id, { title: '研究主会话' });
                 print({ id: p.id, name: p.name, fileCount: app.projects.listFiles(USER, p.id).length, dataDir, originalUnchanged: true });
             }
             finally {
                 app.close();
             }
+            return;
+        }
+        case 'history-enable':
+        case 'history-sync':
+        case 'history-retry': {
+            const projectId=option('--project');ensure(projectId,'PROJECT_REQUIRED','需要 --project <项目ID>');
+            const app=new ResearchApp(dataDir,root);
+            try {
+                if(command==='history-enable')print(app.git.enable(USER,projectId));
+                else if(command==='history-retry'){const id=option('--operation');ensure(id,'OPERATION_REQUIRED','需要 --operation <操作ID>');print(app.git.retry(USER,projectId,id));}
+                else {app.projects.get(USER,projectId);await app.git.drain(projectId);print(app.store.list('git-operation',projectId).map(op=>app.git.operation(USER,projectId,op.id)));}
+            }finally{app.close();}
             return;
         }
         case 'request': {
@@ -127,7 +140,7 @@ async function main() {
                 process.exitCode = 1;
             return;
         }
-        default: console.log(`Pi Research 0.3.1-experimental\n\n  doctor [--json]                    检查运行环境（不调用模型）\n  demo-campaign [--json]             真实4次运行 + 持久化活动/轮次/决定（不调用模型）\n  demo [--data <目录>] [--json]       真实运行4个随包受信数值实验\n  import <目录> --name <名称>          复制导入本地源码，不修改原目录\n  operation <id> --project <id> --input <JSON> [--session <id>] [--key <id>]\n  request GET /projects              访问正在运行的同一控制服务\n  request POST /projects --body '{"name":"研究"}'\n\n  skills [skill-id] [--resource <path>]  只读受管技能\n  connectors --project <id>             查看来源授权与能力\n  connector-config --project <id> --enable openalex,pubmed  显式启用来源\n  discover --project <id> --query <问题> --sources openalex  发出文献查询\n  paper <论文ID> --project <id>          保存论文文本或摘要\n\n启动工作台：node dist/apps/server/index.js\n数据目录：PI_DATA_DIR 或 --data；模型凭据：仅 .env / 受控环境变量。`);
+        default: console.log(`Pi Research 0.3.1-experimental\n\n  doctor [--json]                    检查运行环境（不调用模型）\n  demo-campaign [--json]             真实4次运行 + 持久化活动/轮次/决定（不调用模型）\n  demo [--data <目录>] [--json]       真实运行4个随包受信数值实验\n  import <目录> --name <名称>          复制导入本地源码，不修改原目录\n  history-enable --project <id>        显式启用项目本地 Git 历史\n  history-sync --project <id>          处理已排队 Git 操作\n  history-retry --project <id> --operation <id>  恢复已停止的 Git 操作\n  operation <id> --project <id> --input <JSON> [--session <id>] [--key <id>]\n  request GET /projects              访问正在运行的同一控制服务\n  request POST /projects --body '{"name":"研究"}'\n\n  skills [skill-id] [--resource <path>]  只读受管技能\n  connectors --project <id>             查看来源授权与能力\n  connector-config --project <id> --enable openalex,pubmed  显式启用来源\n  discover --project <id> --query <问题> --sources openalex  发出文献查询\n  paper <论文ID> --project <id>          保存论文文本或摘要\n\n启动工作台：node dist/apps/server/index.js\n数据目录：PI_DATA_DIR 或 --data；模型凭据：仅 .env / 受控环境变量。`);
     }
 }
 main().catch(e => { console.error(JSON.stringify({ error: { code: e.code ?? 'CLI_FAILED', message: e instanceof Error ? e.message : String(e) } })); process.exitCode = 1; });

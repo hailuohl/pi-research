@@ -6,7 +6,7 @@ import { scope, userOnly } from '../policy/permissions.js';
 import { ensure } from '../domain/errors.js';
 import { object, text, integer } from '../contracts/validation.js';
 import { digest } from '../storage/store.js';
-import { safePath, snapshotDirectory, verifySnapshot } from './files.js';
+import { safePath, snapshotDirectory, verifySnapshot, setSourceModes } from './files.js';
 import { readStableFile } from './stable-file.js';
 /** Immutable, explicitly reviewed file handoff. This is NOT a Git merge or a test runner. */
 export class ChangeProposalService {
@@ -69,6 +69,7 @@ export class ChangeProposalService {
                 mkdirSync(dirname(dst), { recursive: true });
                 writeFileSync(dst, readStableFile(baseSnapshot.path, f.path, 64 * 1024 * 1024), { mode: 0o600 });
             }
+            setSourceModes(staging, baseSnapshot.files);
             for (const c of changes) {
                 const dst = safePath(staging, c.path);
                 if (c.artifactId === null)
@@ -99,6 +100,7 @@ export class ChangeProposalService {
         }
         finally {
             rmSync(staging, { recursive: true, force: true });
+            rmSync(staging + '.source-modes.json', { force: true });
         }
     }
     inspect(actor, id) { const p = this.get(actor, id); ensure(digest(this.payload(p)) === p.digest, 'CHANGE_PROPOSAL_CORRUPTED', '变更提案摘要不一致'); return { proposal: p, files: p.changes.map(c => ({ path: c.path, expectedDigest: c.expectedDigest, artifactDigest: c.artifactDigest, before: c.expectedDigest ? readStableFile(p.baseSnapshot.path, c.path, 2 * 1024 * 1024).toString('utf8') : null, after: c.artifactId ? this.app.evidence.read(actor, c.artifactId).bytes.toString('utf8') : null })) }; }
@@ -113,7 +115,7 @@ export class ChangeProposalService {
             ensure(!this.app.projects.get(actor, p.projectId).archived, 'PROJECT_ARCHIVED', '项目已归档');
             this.app.approvals.assert(p.approvalId, p.projectId, p.id, p.digest, 'change.integrate');
             const base = this.app.experiments.get(actor, p.baseExperimentId);
-            ensure(base.lifecycle !== 'archived' && base.revision === p.baseRevision && base.contractDigest === p.contractDigest && snapshotDirectory(base.workspace, join(this.app.context.dataDir, 'snapshots')).digest === p.baseSnapshot.digest, 'CHANGE_BASE_STALE', '基准已经变化，请基于新版本重新准备和批准');
+            ensure(base.lifecycle !== 'archived' && base.revision === p.baseRevision && base.contractDigest === p.contractDigest && snapshotDirectory(base.workspace, join(this.app.context.dataDir, 'snapshots'), { legacy: p.baseSnapshot.files.every(f => f.mode === undefined) }).digest === p.baseSnapshot.digest, 'CHANGE_BASE_STALE', '基准已经变化，请基于新版本重新准备和批准');
             for (const c of p.changes)
                 if (c.artifactId) {
                     const v = this.content(actor, p.projectId, c.artifactId);

@@ -17,7 +17,7 @@ export declare function validateSourceRevision(c: AppContext, projectId: string,
 /** Called only in experiment write transactions; reads never invent historical revisions. */
 export declare function captureSourceRevision(c: AppContext, e: Row<Experiment>, observedNow?: boolean): Row<SourceRevision>;
 /** Copy verified bytes, never filesystem links or caller-selected roots. */
-export declare function copySourceRevision(r: Row<SourceRevision>, workspace: string): void;
+export declare function copySourceRevision(r: Row<SourceRevision>, workspace: string, copyModes?: boolean): void;
 export declare class SourceAccessService {
     private app;
     constructor(app: ResearchApp);
@@ -28,6 +28,7 @@ export declare class SourceAccessService {
             path: string;
             size: number;
             digest: string;
+            mode?: "100644" | "100755";
         }[];
         snapshotId: string;
         experimentId: string;
@@ -42,6 +43,7 @@ export declare class SourceAccessService {
         path: string;
         size: number;
         digest: string;
+        mode?: "100644" | "100755";
         snapshotId: string;
         experimentId: string;
         revision: number;
@@ -65,9 +67,13 @@ export declare class SourceAccessService {
             status: "added" | "deleted" | "modified";
             beforeDigest: string | null;
             afterDigest: string | null;
+            beforeMode: "100644" | "100755" | null;
+            afterMode: "100644" | "100755" | null;
         }[];
     };
     prepare(actor: Actor, projectId: string, sessionId: string, value: unknown): {
+        gitState?: "failed" | "pending" | "conflict" | "ready" | undefined;
+        gitOperationId?: string | undefined;
         sessionId: string;
         sessionVersion: number;
         prepared: boolean;

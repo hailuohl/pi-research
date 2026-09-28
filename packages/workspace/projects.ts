@@ -1,14 +1,22 @@
 import { assertProjectWritable } from '../policy/lifecycle.js';
-import { mkdirSync, copyFileSync, existsSync, readFileSync, writeFileSync, lstatSync, rmSync } from 'node:fs';
-import { join, dirname, resolve } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { mkdirSync, copyFileSync, existsSync, writeFileSync, lstatSync, rmSync } from 'node:fs';
+import { join, dirname, resolve, relative, isAbsolute } from 'node:path';
+import { randomUUID,createHash } from 'node:crypto';
 import type { AppContext } from '../domain/context.js';
 import { DEFAULT_COLLABORATION, type Actor, type Project, type CollaborationSettings } from '../domain/types.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { bool, integer, object, oneOf, text } from '../contracts/validation.js';
 import { ensure } from '../domain/errors.js';
-import { listFiles, readText, writeText, safePath } from './files.js';
+import { listFiles, readText, writeText, safePath,readSourceMode,setSourceModes,copySourceModes,type SourceMode } from './files.js';
+import {readStableFile} from './stable-file.js';
+import {GitCommand,type GitImport} from './git-command.js';
+import {digest} from '../storage/store.js';
+interface ImportPlan {inputDigest:string;source:string;entries:Array<{path:string;bytes:Buffer;mode:SourceMode}>;sourceDigest:string;git:GitImport|null;dirty:boolean;}
+export interface PreparedProjectImport {sourceDigest:string;}
+const IMPORT_EXCLUDED=['.git','.gitmodules (rejected)','node_modules','.pi','.env','.env.*','.DS_Store','.pi-research','.pi-runtime','.npmrc','.pypirc'];
+function hasGitMetadata(source:string) {for(let path=source;;path=dirname(path)){if(existsSync(join(path,'.git')))return true;if(dirname(path)===path)return false;}}
 export class ProjectService {
+    private readonly importPlans=new WeakMap<PreparedProjectImport,ImportPlan>();
     constructor(private c: AppContext) { }
     get(actor: Actor, id: string) { scope(actor, id); const p = this.c.store.get<Project>('project', id); ensure(!p.archived, 'PROJECT_ARCHIVED', '项目已归档', 409); return p; }
     create(actor: Actor, input: unknown) {
@@ -19,9 +27,11 @@ export class ProjectService {
             const id = randomUUID();
             const workspace = join(this.c.dataDir, 'projects', id, 'source');
             mkdirSync(workspace, { recursive: true, mode: 0o700 });
+            this.c.store.onRollback(()=>rmSync(safePath(this.c.dataDir,`projects/${id}`),{recursive:true,force:true}));
             if (x.template === 'curve-fit') {
                 for (const file of ['experiment.mjs', 'config.json', 'README.md'])
                     copyFileSync(join(this.c.repoRoot, 'examples', 'curve-fit', file), join(workspace, file));
+                copySourceModes(join(this.c.repoRoot,'examples','curve-fit'),workspace,['experiment.mjs','config.json','README.md'].map(path=>({path})));
             }
             else {
                 ensure(x.template === undefined || x.template === 'empty', 'INVALID_INPUT', '不支持的模板', 400);
@@ -32,36 +42,43 @@ export class ProjectService {
             return p;
         });
     }
-    importDirectory(actor: Actor, input: unknown) {
-        userOnly(actor);
-        const x = object(input), source = resolve(text(x.sourcePath, 'sourcePath', 4096));
+    private importInput(input:unknown) {
+        const x=object(input);ensure(Object.keys(x).every(k=>['name','description','sourcePath'].includes(k)),'INVALID_INPUT','导入只接受名称、描述和源码目录',400);
+        return {name:text(x.name,'name',120),description:text(x.description??'','description',2000,true),sourcePath:resolve(text(x.sourcePath,'sourcePath',4096))};
+    }
+    private checkImportSource(source:string) {
         ensure(existsSync(source) && lstatSync(source).isDirectory() && !lstatSync(source).isSymbolicLink(), 'PATH_DENIED', '导入源必须是本机真实目录', 403);
-        ensure(source !== this.c.dataDir && !source.startsWith(this.c.dataDir + '/'), 'PATH_DENIED', '不能将应用数据目录作为项目源码导入', 403);
+        const rel=relative(resolve(this.c.dataDir),source);ensure(rel!==''&&(rel==='..'||rel.startsWith('..\\')||rel.startsWith('../')||isAbsolute(rel)),'PATH_DENIED','不能将应用数据目录作为项目源码导入',403);
+    }
+    private captureImport(input:ReturnType<ProjectService['importInput']>,git:GitImport|null):ImportPlan {
+        const source=input.sourcePath;this.checkImportSource(source);
         const files = listFiles(source);
         ensure(files.length > 0, 'EMPTY_WORKSPACE', '导入目录没有可用源码文件', 400);
-        ensure(files.reduce((n, f) => n + f.size, 0) <= 64 * 1024 * 1024, 'SNAPSHOT_TOO_LARGE', '当前导入上限为64 MiB；大数据集需单独版本化', 413);
-        const entries = files.map(f => ({ path: f.path, bytes: readFileSync(safePath(source, f.path)) }));
-        let created: string | undefined;
-        try {
-            return this.c.store.transaction(() => {
-                const p = this.create(actor, { name: x.name, description: x.description ?? '', template: 'empty' });
-                created = p.workspace;
-                rmSync(join(p.workspace, 'README.md'), { force: true });
-                for (const f of entries) {
-                    const path = safePath(p.workspace, f.path);
-                    mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
-                    writeFileSync(path, f.bytes, { mode: 0o600, flag: 'wx' });
-                }
-                this.c.store.create('project-import', p.id, { sourcePath: source, fileCount: entries.length, mode: 'copy-without-git-metadata', excluded: 'Git metadata, credentials, node_modules and Pi runtime data' });
-                this.c.store.event(p.id, 'project.imported', { projectId: p.id, fileCount: entries.length });
-                return p;
-            });
-        }
-        catch (error) {
-            if (created)
-                rmSync(created, { recursive: true, force: true });
-            throw error;
-        }
+        ensure(!files.some(f=>f.path.split('/').includes('.gitmodules')),'UNSUPPORTED_SUBMODULE','导入不自动展开 Git 子模块',422);
+        const tracked=new Map(git?.files.map(f=>[f.path,f])??[]);let total=0;
+        const entries=files.map(f=>{const bytes=readStableFile(source,f.path,64*1024*1024);total+=bytes.length;ensure(total<=64*1024*1024,'SNAPSHOT_TOO_LARGE','当前导入上限为64 MiB；大数据集需单独版本化',413);ensure(!bytes.subarray(0,150).toString().startsWith('version https://git-lfs.github.com/spec'),'UNSUPPORTED_LFS','请先解析 Git LFS 文件再导入',422);return {path:f.path,bytes,mode:process.platform==='win32'?(tracked.get(f.path)?.mode??'100644'):readSourceMode(source,f.path)};});
+        const sourceDigest=digest(entries.map(f=>({path:f.path,size:f.bytes.length,digest:digest(f.bytes),mode:f.mode})).sort((a,b)=>a.path.localeCompare(b.path)));
+        const dirty=!!git&&(entries.length!==git.files.length||entries.some(f=>{const old=tracked.get(f.path);return !old||old.mode!==f.mode||old.oid!==createHash('sha1').update(`blob ${f.bytes.length}\0`).update(f.bytes).digest('hex');}));
+        return {inputDigest:digest(input),source,entries,sourceDigest,git,dirty};
+    }
+    /** Git and source I/O preflight runs before the caller opens its SQLite write transaction. */
+    async prepareImport(actor:Actor,input:unknown):Promise<PreparedProjectImport> {
+        userOnly(actor);const x=this.importInput(input);this.checkImportSource(x.sourcePath);
+        const git=hasGitMetadata(x.sourcePath)?await GitCommand.readImport(x.sourcePath):null,plan=this.captureImport(x,git),prepared={sourceDigest:plan.sourceDigest};
+        this.importPlans.set(prepared,plan);return prepared;
+    }
+    importDirectory(actor:Actor,input:unknown,prepared?:PreparedProjectImport) {
+        userOnly(actor);const x=this.importInput(input);
+        let plan:ImportPlan;
+        if(prepared){const p=this.importPlans.get(prepared);ensure(p&&p.inputDigest===digest(x),'IMPORT_PLAN_INVALID','需要匹配请求的宿主导入预检',400);plan=p;}
+        else {this.checkImportSource(x.sourcePath);ensure(!hasGitMetadata(x.sourcePath),'IMPORT_PREFLIGHT_REQUIRED','Git 项目需要先完成异步导入预检',409);plan=this.captureImport(x,null);}
+        return this.c.store.transaction(()=>{
+            const p=this.create(actor,{name:x.name,description:x.description,template:'empty'});rmSync(join(p.workspace,'README.md'),{force:true});
+            for(const f of plan.entries){const path=safePath(p.workspace,f.path);mkdirSync(dirname(path),{recursive:true,mode:0o700});writeFileSync(path,f.bytes,{mode:0o600,flag:'wx'});}
+            setSourceModes(p.workspace,plan.entries);
+            this.c.store.create('project-import',p.id,{sourcePath:plan.source,fileCount:plan.entries.length,sourceDigest:plan.sourceDigest,mode:'copy-without-git-metadata',excluded:IMPORT_EXCLUDED,untracked:'included unless excluded',submodules:'rejected',lfs:'unresolved pointers rejected',...(plan.git?{commit:plan.git.commit,remote:plan.git.remote,dirty:plan.dirty,dirtyMeaning:'imported snapshot differs from recorded HEAD; includes excluded tracked files',gitHistory:'observed working-copy import; original history not copied'}:{})});
+            this.c.store.event(p.id,'project.imported',{projectId:p.id,fileCount:plan.entries.length,sourceDigest:plan.sourceDigest});return p;
+        });
     }
     update(actor: Actor, id: string, input: unknown) { userOnly(actor); const p = this.get(actor, id), x = object(input); const version = integer(x.expectedVersion, 'expectedVersion', 1); return this.c.store.transaction(() => { const next = this.c.store.update<Project>('project', id, version, { name: x.name === undefined ? p.name : text(x.name, 'name', 120), description: x.description === undefined ? p.description : text(x.description, 'description', 2000, true) }); this.c.store.event(id, 'project.updated', { id, version: next.version }); return next; }); }
     archive(actor: Actor, id: string, version: number) {

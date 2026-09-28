@@ -5,6 +5,7 @@ import { SYSTEM } from '../domain/types.js';
 import { ToolDispatcher } from '../research-tools/dispatcher.js';
 import { inspectPi } from '../pi-adapter/runtime.js';
 import { asError, ensure, DomainError } from '../domain/errors.js';
+import { assertWorkspaceReady } from '../workspace/git-service.js';
 const clean = (s) => s.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]').slice(0, 32000);
 export class AgentHost {
     app;
@@ -42,6 +43,7 @@ export class AgentHost {
             return;
         this.ticking = true;
         try {
+            this.app.git.tick();
             this.app.runs.reconcile();
             this.app.runs.launchPending();
             this.app.execution.launchPending();
@@ -90,6 +92,12 @@ export class AgentHost {
                     break;
                 if (!this.inspect(s.model).ready)
                     continue;
+                try {
+                    assertWorkspaceReady(this.app.context, s.id);
+                }
+                catch {
+                    continue;
+                }
                 const messages = this.app.sessions.messages(SYSTEM, s.id).filter(m => m.status === 'queued');
                 const next = messages.find(m => m.role === 'user') ?? messages.find(m => m.origin === 'automation');
                 if (next)
@@ -99,6 +107,12 @@ export class AgentHost {
                 if (this.active.size >= 2)
                     break;
                 const root = this.app.sessions.get(SYSTEM, w.rootSessionId);
+                try {
+                    assertWorkspaceReady(this.app.context, root.id);
+                }
+                catch {
+                    continue;
+                }
                 const dispatched = this.app.wakeups.dispatch(w.id, this.inspect(root.model));
                 if (dispatched)
                     this.launch(this.app.sessions.get(SYSTEM, root.id), dispatched.message.content, dispatched.message.id);
@@ -107,9 +121,7 @@ export class AgentHost {
                 if (this.active.size >= 2)
                     break;
                 const root = this.app.store.get('session', team.rootSessionId);
-                if (!this.inspect(root.model).ready)
-                    continue;
-                const claimed = this.app.teams.claim(team.id);
+                const claimed = this.app.teams.claim(team.id, !this.inspect(root.model).ready);
                 if (claimed) {
                     const s = this.app.store.get('session', claimed.attempt.sessionId);
                     this.launch(s, JSON.stringify(claimed.context, null, 2), undefined, claimed.attempt);
@@ -126,6 +138,7 @@ export class AgentHost {
         const store = this.app.store;
         const claimed = store.transaction(() => {
             const latest = store.get('session', session.id);
+            assertWorkspaceReady(this.app.context, latest.id);
             ensure(!['running', 'archived'].includes(latest.state), 'SESSION_BUSY', '会话已有有效写入者');
             const next = store.update('session', latest.id, latest.version, { state: 'running', generation: latest.generation + 1, leaseUntil: Date.now() + 30000, lastError: undefined });
             if (messageId) {
@@ -306,6 +319,7 @@ export class AgentHost {
             this.abortProcess(a);
             this.finish(a, '控制服务关闭；Agent 停止，正式实验不受影响');
         }
+        await this.app.git.stop();
     }
 }
 //# sourceMappingURL=agent-host.js.map

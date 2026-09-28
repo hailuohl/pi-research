@@ -97,6 +97,14 @@ export function writeRoute(app, host, path, body, method = 'POST') {
         return research;
     if (kind === 'projects' && id && action === 'text-evidence')
         return app.textEvidence.configure(USER, id, x);
+    if (kind === 'projects' && id && action === 'git-enable') {
+        ensure(Object.keys(x).length === 0, 'INVALID_INPUT', '启用 Git 不接受额外字段', 400);
+        return app.git.enable(USER, id);
+    }
+    if (kind === 'projects' && id && action === 'git-retry') {
+        ensure(Object.keys(x).length === 1 && 'operationId' in x, 'INVALID_INPUT', '恢复需要 operationId', 400);
+        return app.git.retry(USER, id, text(x.operationId, 'operationId', 100));
+    }
     if (kind === 'change-proposals' && id && action === 'apply')
         return app.changes.apply(USER, id);
     if (path === '/projects/import')

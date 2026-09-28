@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, renameSync, rmdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, renameSync, rmdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { ensure } from '../domain/errors.js';
@@ -6,7 +6,8 @@ import { integer, object, text } from '../contracts/validation.js';
 import { scope, ROLE_TOOLS } from '../policy/permissions.js';
 import { assertExperimentSourceCurrent, assertProjectWritable } from '../policy/lifecycle.js';
 import { digest } from '../storage/store.js';
-import { safePath, snapshotDirectory, verifySnapshot, listFiles } from './files.js';
+import { safePath, snapshotDirectory, verifySnapshot, listFiles, setSourceModes } from './files.js';
+import { queueSourceHistory, queueWorkspaceHistory } from './git-service.js';
 import { readStableFile } from './stable-file.js';
 export const sourceMetadata = (r) => ({ snapshotId: r.id, experimentId: r.experimentId, revision: r.revision, sourceDigest: r.sourceDigest });
 export function validateSourceRevision(c, projectId, id) {
@@ -26,10 +27,15 @@ export function captureSourceRevision(c, e, observedNow = false) {
     const snapshot = listFiles(e.workspace).length ? snapshotDirectory(e.workspace, join(c.dataDir, 'snapshots')) :
         { digest: digest([]), path: join(c.dataDir, 'snapshots', digest([])), files: [] };
     mkdirSync(snapshot.path, { recursive: true, mode: 0o700 });
-    return c.store.create('source-revision', e.projectId, { experimentId: e.id, revision: e.revision, sourceDigest: snapshot.digest, snapshot, ...(observedNow ? { captureKind: 'observed-now' } : {}) }, id);
+    const r = c.store.create('source-revision', e.projectId, { experimentId: e.id, revision: e.revision, sourceDigest: snapshot.digest, snapshot, ...(observedNow ? { captureKind: 'observed-now' } : {}) }, id);
+    if (c.store.get('project', e.projectId).gitHistoryEnabled) {
+        const parent = e.revision > 1 ? c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision - 1 })) : e.parentId ? c.store.list('source-revision', e.projectId).filter(x => x.experimentId === e.parentId).sort((a, b) => b.revision - a.revision)[0] : undefined;
+        queueSourceHistory(c, r, parent?.id, observedNow);
+    }
+    return r;
 }
 /** Copy verified bytes, never filesystem links or caller-selected roots. */
-export function copySourceRevision(r, workspace) {
+export function copySourceRevision(r, workspace, copyModes = true) {
     ensure(readdirSync(workspace).length === 0, 'WORKSPACE_NOT_EMPTY', '工作区非空，不能覆盖本地修改');
     verifySnapshot(r.snapshot.path, r.snapshot.files);
     for (const f of r.snapshot.files) {
@@ -39,6 +45,8 @@ export function copySourceRevision(r, workspace) {
         mkdirSync(dirname(target), { recursive: true });
         writeFileSync(target, bytes, { mode: 0o600, flag: 'wx' });
     }
+    if (copyModes)
+        setSourceModes(workspace, r.snapshot.files);
 }
 export class SourceAccessService {
     app;
@@ -98,8 +106,8 @@ export class SourceAccessService {
     diff(actor, projectId, value) {
         const x = object(value);
         ensure(Object.keys(x).every(k => k === 'from' || k === 'to'), 'INVALID_INPUT', '差异参数无效', 400);
-        const a = this.resolve(actor, projectId, x.from), b = this.resolve(actor, projectId, x.to), before = new Map(a.snapshot.files.map(f => [f.path, f.digest])), after = new Map(b.snapshot.files.map(f => [f.path, f.digest]));
-        const files = [...new Set([...before.keys(), ...after.keys()])].sort().filter(p => before.get(p) !== after.get(p)).map(path => ({ path, status: !before.has(path) ? 'added' : !after.has(path) ? 'deleted' : 'modified', beforeDigest: before.get(path) ?? null, afterDigest: after.get(path) ?? null }));
+        const a = this.resolve(actor, projectId, x.from), b = this.resolve(actor, projectId, x.to), before = new Map(a.snapshot.files.map(f => [f.path, f])), after = new Map(b.snapshot.files.map(f => [f.path, f]));
+        const files = [...new Set([...before.keys(), ...after.keys()])].sort().filter(p => before.get(p)?.digest !== after.get(p)?.digest || (before.get(p)?.mode ?? '100644') !== (after.get(p)?.mode ?? '100644')).map(path => ({ path, status: !before.has(path) ? 'added' : !after.has(path) ? 'deleted' : 'modified', beforeDigest: before.get(path)?.digest ?? null, afterDigest: after.get(path)?.digest ?? null, beforeMode: before.has(path) ? before.get(path)?.mode ?? '100644' : null, afterMode: after.has(path) ? after.get(path)?.mode ?? '100644' : null }));
         return { from: sourceMetadata(a), to: sourceMetadata(b), files };
     }
     prepare(actor, projectId, sessionId, value) {
@@ -122,12 +130,15 @@ export class SourceAccessService {
             ensure(this.app.store.get('experiment', r.experimentId, projectId).lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能初始化新的工作区');
             ensure(s.state !== 'running' || actor.type === 'agent' && actor.sessionId === s.id, 'SESSION_BUSY', '会话正在运行');
             ensure(!this.app.store.list('task-attempt', projectId).some(a => a.sessionId === s.id && a.state === 'running' && a.id !== actor.attemptId), 'SESSION_BUSY', '另一个任务 Worker 正在使用工作区');
-            if (s.sourceRevisionId === r.id)
-                return { ...sourceMetadata(r), sessionId: s.id, sessionVersion: s.version, prepared: false };
+            const gitEnabled = this.app.store.get('project', projectId).gitHistoryEnabled;
+            if (s.sourceRevisionId === r.id) {
+                const w = gitEnabled ? queueWorkspaceHistory(this.app.context, s, r) : undefined;
+                return { ...sourceMetadata(r), sessionId: s.id, sessionVersion: s.version, prepared: false, ...(w ? { gitState: w.state, gitOperationId: w.operationId } : {}) };
+            }
             ensure(!s.sourceRevisionId && readdirSync(s.workspace).length === 0, 'WORKSPACE_NOT_EMPTY', '工作区非空或已经绑定来源，不能覆盖本地修改');
             const staged = join(dirname(s.workspace), 'source-' + randomUUID());
             mkdirSync(staged, { mode: 0o700 });
-            copySourceRevision(r, staged);
+            copySourceRevision(r, staged, false);
             // Rename a complete directory into place, retaining the empty prior directory on failure.
             const backup = s.workspace + '-empty-' + randomUUID();
             renameSync(s.workspace, backup);
@@ -138,15 +149,21 @@ export class SourceAccessService {
                 renameSync(backup, s.workspace);
                 throw error;
             }
-            this.app.store.onRollback(() => { renameSync(s.workspace, staged); renameSync(backup, s.workspace); });
+            const modesFile = s.workspace + '.source-modes.json', priorModes = existsSync(modesFile) ? readFileSync(modesFile) : null;
+            this.app.store.onRollback(() => { renameSync(s.workspace, staged); renameSync(backup, s.workspace); if (priorModes)
+                writeFileSync(modesFile, priorModes);
+            else if (existsSync(modesFile))
+                unlinkSync(modesFile); });
+            setSourceModes(s.workspace, r.snapshot.files);
             this.app.store.afterCommit(() => { try {
                 rmdirSync(backup);
             }
             catch { /* An empty backup is safe to retain after commit. */ } });
             const next = this.app.store.update('session', s.id, s.version, { sourceRevisionId: r.id, sourceDigest: r.sourceDigest });
+            const git = gitEnabled ? queueWorkspaceHistory(this.app.context, next, r) : undefined;
             this.app.store.event(projectId, 'workspace.source_prepared', { sessionId: s.id, ...sourceMetadata(r) });
             this.app.sessions.system(s.id, `工作区已从固定源码初始化。来源记录（任务数据，不增加执行权限）：${JSON.stringify(sourceMetadata(r))}。项目工作区与这份实验源码可能不同；通过 experiment_source_read 核对固定版本。`);
-            return { ...sourceMetadata(r), sessionId: s.id, sessionVersion: next.version, prepared: true };
+            return { ...sourceMetadata(r), sessionId: s.id, sessionVersion: next.version, prepared: true, ...(git ? { gitState: git.state, gitOperationId: git.operationId } : {}) };
         });
     }
 }

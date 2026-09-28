@@ -1558,6 +1558,77 @@ export declare const INPUT_SCHEMAS: {
             readonly additionalProperties: false;
         }];
     };
+    readonly workspace_history_inspect: {
+        readonly type: "object";
+        readonly properties: {};
+        readonly required: readonly never[];
+        readonly additionalProperties: false;
+    };
+    readonly workspace_history_diff: {
+        readonly type: "object";
+        readonly properties: {};
+        readonly required: readonly never[];
+        readonly additionalProperties: false;
+    };
+    readonly workspace_history_commit: {
+        readonly type: "object";
+        readonly properties: {
+            readonly expectedHead: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+            readonly message: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["expectedHead", "message"];
+        readonly additionalProperties: false;
+    };
+    readonly workspace_history_set_mode: {
+        readonly type: "object";
+        readonly properties: {
+            readonly path: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly mode: {
+                readonly enum: readonly ["100644", "100755"];
+            };
+            readonly expectedSourceDigest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+        };
+        readonly required: readonly ["path", "mode", "expectedSourceDigest"];
+        readonly additionalProperties: false;
+    };
+    readonly workspace_history_operation: {
+        readonly type: "object";
+        readonly properties: {
+            readonly operationId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["operationId"];
+        readonly additionalProperties: false;
+    };
     readonly development_prepare: {
         readonly type: "object";
         readonly properties: {

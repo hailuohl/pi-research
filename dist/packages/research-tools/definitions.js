@@ -1,6 +1,11 @@
 import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
 import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
 const TOOL_METADATA = {
+    workspace_history_inspect: { description: '查询当前会话受管 Git 工作区是否已就绪及固定 HEAD；pending 时先等待，不能继续改源码。', example: {} },
+    workspace_history_diff: { description: '比较当前实际工作区与已记录 Git 版本；包括未跟踪/被 gitignore 忽略的获准源码、删除和文件模式变化。', example: {} },
+    workspace_history_commit: { description: '将当前精确源码保存为新的本地 Git 提交，返回异步操作标识；不推送、不整合、不批准科学运行。', example: { expectedHead: '0000000000000000000000000000000000000000', message: '保存已实现的研究程序' } },
+    workspace_history_set_mode: { description: '将私有源码设为普通或可执行文件，并校验整个工作区的预期摘要。Windows 同样保留逻辑执行模式。', example: { path: 'main.py', mode: '100755', expectedSourceDigest: '0000000000000000000000000000000000000000000000000000000000000000' } },
+    workspace_history_operation: { description: '查看持久 Git 操作状态和提交回执；失败或冲突须让用户查看后恢复，不盲目覆盖。', example: { operationId: 'git-operation-id' } },
     development_prepare: { description: '冻结当前私有工作区、argv、固定镜像和资源限制，准备一次独立开发测试批准。不执行宿主 Shell，不创建科学实验；变化后必须重新准备。', example: { command: ['python', '-m', 'unittest', 'discover', '-v'], environmentImageDigest: 'python:3.12-slim@sha256:0000000000000000000000000000000000000000000000000000000000000000', dockerContext: 'default' } },
     development_submit: { description: '提交用户已批准的精确开发测试，立即返回持久作业标识；未批准或源码变化会拒绝。', example: { developmentTaskId: 'development-task-id' } },
     development_inspect: { description: '读取开发测试任务或独立沙箱作业的实际状态和归档引用。命令成功不表示科学假说成立。', example: { jobId: 'sandbox-job-id' } },
