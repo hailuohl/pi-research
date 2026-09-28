@@ -44,6 +44,8 @@ export interface ModelConfig {
     thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 }
 export interface Session {
+    sourceRevisionId?: string;
+    sourceDigest?: string;
     title: string;
     role: Role;
     state: 'idle' | 'queued' | 'running' | 'interrupted' | 'failed' | 'waiting' | 'archived';
@@ -216,6 +218,7 @@ export interface TaskSpec {
     acceptanceRuleIds?: string[];
 }
 export interface Team {
+    sourceRevisionId?: string;
     rootSessionId: string;
     goal: string;
     state: 'awaiting_approval' | 'active' | 'paused' | 'draining' | 'completed' | 'partial' | 'failed' | 'cancelled';
@@ -270,6 +273,13 @@ export interface TaskResult {
 }
 
 export interface SourceSnapshot {digest:string; path:string; files:Array<{path:string;size:number;digest:string}>}
+export interface SourceRevision {
+    captureKind?: 'observed-now';
+    experimentId: string;
+    revision: number;
+    sourceDigest: string;
+    snapshot: SourceSnapshot;
+}
 export interface ChangeProposal {
     baseExperimentId:string; baseRevision:number; baseSnapshot:SourceSnapshot; contractDigest:string;
     title:string; hypothesis:string;

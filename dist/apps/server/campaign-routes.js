@@ -1,3 +1,5 @@
+import { operationRoute } from './operation-routes.js';
+import { randomUUID } from 'node:crypto';
 import { USER } from '../../packages/domain/types.js';
 import { integer, text } from '../../packages/contracts/validation.js';
 export function readCampaignRoute(app, path) {
@@ -33,10 +35,8 @@ export function writeCampaignRoute(app, path, x) {
             return app.campaigns.resume(USER, id, integer(x.expectedVersion, 'expectedVersion', 1));
         if (action === 'stop')
             return app.campaigns.stop(USER, id, x);
-        if (action === 'members')
-            return app.campaigns.enroll(USER, id, x);
-        if (action === 'decisions')
-            return app.decisions.propose(USER, id, x);
+        if (action === 'members' || action === 'decisions')
+            return operationRoute(app, path, x, randomUUID(), new AbortController().signal, 'POST', '').result;
     }
     if (kind === 'campaign-decisions' && id && action === 'apply')
         return app.decisions.apply(USER, id, integer(x.expectedVersion, 'expectedVersion', 1));

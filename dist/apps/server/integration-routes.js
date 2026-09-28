@@ -13,7 +13,7 @@ export function readIntegrationRoute(app, path, url) {
     if (p) {
         app.store.get('project', p[1]);
         if (p[2] === 'connectors')
-            return app.connectors.settings(USER, p[1]);
+            return app.operations.execute(USER, 'connector_status', {}, { projectId: p[1] });
         return { searches: app.store.list('connector-search', p[1]).slice(-30), papers: app.store.list('paper-read', p[1]).slice(-30), scope: 'last-30-per-kind' };
     }
     return undefined;
@@ -21,6 +21,5 @@ export function readIntegrationRoute(app, path, url) {
 export function writeIntegrationRoute(app, path, body) { const p = path.match(/^\/projects\/([^/]+)\/connectors$/); if (p)
     return app.connectors.configure(USER, p[1], body); return undefined; }
 /** This asynchronous branch must run outside Store.operation's synchronous transaction. */
-export async function asyncIntegrationRoute(app, path, body, key, signal) { const x = object(body), pid = text(x.projectId, 'projectId', 100); if (path === '/connectors/discover')
-    return app.connectors.discover(USER, pid, x, `http:${key}`, () => { }, signal); const { projectId, ...input } = x; return app.operations.execute(USER, 'paper_read', input, { projectId: pid, idempotencyKey: key, signal }); }
+export async function asyncIntegrationRoute(app, path, body, key, signal) { const { projectId, ...input } = object(body); return app.operations.execute(USER, path === '/connectors/discover' ? 'literature_discover' : 'paper_read', input, { projectId: text(projectId, 'projectId', 100), idempotencyKey: key, signal }); }
 //# sourceMappingURL=integration-routes.js.map

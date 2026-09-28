@@ -7,7 +7,11 @@ export declare class Store {
     path: string;
     readonly db: DatabaseSync;
     private depth;
+    private rollbackCallbacks;
+    private commitCallbacks;
     constructor(path: string);
+    onRollback(fn: () => void): void;
+    afterCommit(fn: () => void): void;
     transaction<T>(fn: () => T): T;
     create<T extends object>(kind: string, projectId: string | null, data: T, id?: string): Row<T>;
     get<T = Record<string, unknown>>(kind: string, id: string, projectId?: string): Row<T>;

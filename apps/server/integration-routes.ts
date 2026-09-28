@@ -5,9 +5,9 @@ const ROLES=['coordinator','literature','designer','implementer','analyst','revi
 export function readIntegrationRoute(app:ResearchApp,path:string,url:URL):unknown{
  if(path==='/skills'){const role=oneOf(url.searchParams.get('role')??'coordinator',ROLES,'role');return {bundleId:app.skills.bundleId,skills:app.skills.list(role)};}
  const skill=path.match(/^\/skills\/([a-z0-9-]+)$/);if(skill)return app.skills.read('coordinator',skill[1],url.searchParams.get('resource')??undefined);
- const p=path.match(/^\/projects\/([^/]+)\/(connectors|connector-history)$/);if(p){app.store.get('project',p[1]);if(p[2]==='connectors')return app.connectors.settings(USER,p[1]);return {searches:app.store.list('connector-search',p[1]).slice(-30),papers:app.store.list('paper-read',p[1]).slice(-30),scope:'last-30-per-kind'};}
+ const p=path.match(/^\/projects\/([^/]+)\/(connectors|connector-history)$/);if(p){app.store.get('project',p[1]);if(p[2]==='connectors')return app.operations.execute(USER,'connector_status',{},{projectId:p[1]});return {searches:app.store.list('connector-search',p[1]).slice(-30),papers:app.store.list('paper-read',p[1]).slice(-30),scope:'last-30-per-kind'};}
  return undefined;
 }
 export function writeIntegrationRoute(app:ResearchApp,path:string,body:unknown):unknown{const p=path.match(/^\/projects\/([^/]+)\/connectors$/);if(p)return app.connectors.configure(USER,p[1],body);return undefined;}
 /** This asynchronous branch must run outside Store.operation's synchronous transaction. */
-export async function asyncIntegrationRoute(app:ResearchApp,path:string,body:unknown,key:string,signal:AbortSignal){const x=object(body),pid=text(x.projectId,'projectId',100);if(path==='/connectors/discover')return app.connectors.discover(USER,pid,x,`http:${key}`,()=>{},signal);const {projectId,...input}=x;return app.operations.execute(USER,'paper_read',input,{projectId:pid,idempotencyKey:key,signal});}
+export async function asyncIntegrationRoute(app:ResearchApp,path:string,body:unknown,key:string,signal:AbortSignal){const {projectId,...input}=object(body);return app.operations.execute(USER,path==='/connectors/discover'?'literature_discover':'paper_read',input,{projectId:text(projectId,'projectId',100),idempotencyKey:key,signal});}

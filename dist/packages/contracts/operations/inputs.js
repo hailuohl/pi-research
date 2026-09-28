@@ -1,3 +1,4 @@
+import { SOURCE_INPUT_SCHEMAS } from './source-schemas.js';
 import { s } from './schema.js';
 const id = s.string(100), version = s.integer(1), cursor = s.nullable(s.integer(0)), source = s.nullable(s.enum(['session', 'project']));
 const strings = (max = 100) => s.array(s.string(1000), max);
@@ -26,6 +27,7 @@ const plan = s.object({ goal: s.string(8000), tasks: s.array(task, 24, 1), budge
 const candidate = s.object({ title: s.string(200), hypothesis: s.string(), config }, ['title', 'hypothesis', 'config']);
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...SOURCE_INPUT_SCHEMAS,
     research_skill_list: s.object({}),
     research_skill_read: s.object({ skillId: id, resource: s.string(200) }, ['skillId']),
     connector_status: s.object({}),

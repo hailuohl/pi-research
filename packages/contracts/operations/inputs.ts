@@ -1,3 +1,4 @@
+import {SOURCE_INPUT_SCHEMAS} from './source-schemas.js';
 import { s, type JsonSchema, type InferSchema } from './schema.js';
 
 const id = s.string(100), version = s.integer(1), cursor = s.nullable(s.integer(0)), source = s.nullable(s.enum(['session', 'project']));
@@ -28,6 +29,7 @@ const candidate = s.object({ title: s.string(200), hypothesis: s.string(), confi
 
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...SOURCE_INPUT_SCHEMAS,
     research_skill_list: s.object({}),
     research_skill_read: s.object({ skillId: id, resource: s.string(200) }, ['skillId']),
     connector_status: s.object({}),

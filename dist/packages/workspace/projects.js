@@ -102,6 +102,6 @@ export class ProjectService {
     }
     listFiles(actor, id) { return listFiles(this.get(actor, id).workspace); }
     readFile(actor, id, path) { return readText(this.get(actor, id).workspace, path); }
-    writeFile(actor, id, path, content, expectedDigest) { userOnly(actor); const p = this.get(actor, id); const result = writeText(p.workspace, path, content, expectedDigest); this.c.store.event(id, 'workspace.file_changed', { path, digest: result.digest }); return result; }
+    writeFile(actor, id, path, content, expectedDigest) { userOnly(actor); return this.c.store.transaction(() => { const p = this.get(actor, id); const result = writeText(p.workspace, path, content, expectedDigest, this.c.store); this.c.store.event(id, 'workspace.file_changed', { path, digest: result.digest }); return result; }); }
 }
 //# sourceMappingURL=projects.js.map

@@ -1,3 +1,4 @@
+import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -26,15 +27,15 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
         const app = server.app, project = app.projects.create(USER, { name: 'Operations', template: 'curve-fit' });
         const specs = await request('/operations');
         assert.equal(specs.status, 200);
-        assert.deepEqual(specs.value.map(s => s.id).sort(), ['run_prepare', 'run_submit', 'workspace_read', 'workspace_write', 'change_proposal_prepare', 'task_result_submit', 'paper_read'].sort());
+        assert.deepEqual(specs.value.map(s => s.id).sort(), Object.keys(TOOL_DEFINITIONS).sort());
         const session = app.sessions.create(USER, project.id, {});
         app.store.update('session', session.id, session.version, {state: 'running', generation: 1, leaseUntil: Date.now() + 60000});
         const tools = new ToolDispatcher(app), agent = {type: 'agent', projectId: project.id, sessionId: session.id, role: 'coordinator', generation: 1};
         for (const spec of specs.value) {
-            const http = await request(`/operations/${spec.id}`, {projectId: project.id, sessionId: session.id, input: {}});
-            const command = cli('operation', spec.id, '--project', project.id, '--session', session.id, '--input', '{}');
+            const http = await request(`/operations/${spec.id}`, {projectId: project.id, sessionId: session.id, input: {unexpected: true}});
+            const command = cli('operation', spec.id, '--project', project.id, '--session', session.id, '--input', '{"unexpected":true}');
             let toolError;
-            try {await tools.execute(agent, spec.id, {}, `invalid-${spec.id}`);} catch (error) {toolError = {code: error.code, message: error.message};}
+            try {await tools.execute(agent, spec.id, {unexpected:true}, `invalid-${spec.id}`);} catch (error) {toolError = {code: error.code, message: error.message};}
             assert.equal(http.status, 400);
             assert.equal(command.status, 1);
             assert.deepEqual(JSON.parse(command.stderr).error, http.value.error, spec.id);

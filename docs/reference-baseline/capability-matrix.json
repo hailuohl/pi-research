@@ -855,17 +855,20 @@
         "PR05"
       ],
       "alignment": "equivalent",
-      "reason": "已批准文本映射可形成子实验；选定源读取、开发测试和Git整合仍缺。",
+      "reason": "固定源码版本读取和私有工作区准备、任务来源绑定、跨团队撤销已落地；开发测试及Git整合仍待PR04/05。",
       "files": [
         "packages/workspace/change-proposals.ts",
-        "packages/workspace/experiments.ts"
+        "packages/workspace/experiments.ts",
+        "packages/workspace/source-access.ts"
       ],
       "interfaces": [
         "packages/workspace/change-proposals.ts"
       ],
       "tests": [
         "tests/unit/handoff-hardening.test.mjs",
-        "tests/integration/handoff-http.test.mjs"
+        "tests/integration/handoff-http.test.mjs",
+        "tests/integration/source-selection.test.mjs",
+        "tests/unit/source-lineage.test.mjs"
       ],
       "dimensions": {
         "code": {
@@ -883,7 +886,9 @@
         "contractTests": {
           "status": "local-tested",
           "evidence": [
-            "tests/integration/handoff-http.test.mjs"
+            "tests/integration/handoff-http.test.mjs",
+            "tests/integration/source-selection.test.mjs",
+            "tests/unit/source-lineage.test.mjs"
           ]
         },
         "targetIntegration": {
@@ -1024,20 +1029,12 @@
     }
   ],
   "operationMigration": {
-    "inputSchemas": 33,
-    "registeredOperations": [
-      "run_prepare",
-      "run_submit",
-      "workspace_read",
-      "workspace_write",
-      "change_proposal_prepare",
-      "task_result_submit",
-      "paper_read"
-    ],
-    "outputSchemas": 7,
-    "status": "partial",
+    "inputSchemas": 37,
+    "outputSchemas": 37,
+    "registeredOperations": 37,
+    "status": "all-current-tools-contract-tested",
     "evidence": [
-      "docs/acceptance/pr02/RESULTS.zh-CN.md"
+      "docs/acceptance/pr03/RESULTS.zh-CN.md"
     ],
     "liveVerified": false
   }

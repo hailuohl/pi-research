@@ -1,5 +1,6 @@
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
+import { assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 export function reviewStateDigest(store, projectId, target) {
     return digest(store.list('task', projectId).filter(r => r.teamId === target.teamId && r.reviewOf === target.key)
         .map(r => ({ id: r.id, attemptId: r.attemptId, generation: r.generation, execution: r.execution, acceptance: r.acceptance, result: r.result ?? null })));
@@ -17,6 +18,14 @@ export function taskAcceptanceBasis(store, projectId, taskId) {
         const t = byId.get(id);
         ensure(t && t.execution === 'output_submitted' && t.acceptance === 'accepted' && t.result?.outcome === 'completed', 'TASK_NOT_ACCEPTED', '结果不是当前已采纳的完整任务成果');
         visiting.add(id);
+        const team = store.get('team', t.teamId, projectId);
+        let source;
+        if (team.sourceRevisionId) {
+            const revision = store.get('source-revision', team.sourceRevisionId, projectId);
+            ensure(revision.sourceDigest === revision.snapshot.digest && digest(revision.snapshot.files) === revision.sourceDigest, 'SNAPSHOT_CORRUPTED', '验收源码清单校验失败');
+            assertExperimentSourceCurrent(store, store.get('experiment', revision.experimentId, projectId));
+            source = { snapshotId: revision.id, sourceDigest: revision.sourceDigest, experimentId: revision.experimentId, revision: revision.revision };
+        }
         const a = store.get('task-attempt', t.attemptId, projectId);
         const r = store.list('task-result', projectId)
             .find(r => r.taskId === id && r.attemptId === a.id);
@@ -53,7 +62,7 @@ export function taskAcceptanceBasis(store, projectId, taskId) {
             }
         }
         const reviewTarget = t.reviewOf ? all.find(d => d.teamId === t.teamId && d.key === t.reviewOf) : undefined;
-        nodes.set(id, { id, attemptId: a.id, resultId: r.id, resultDigest: r.digest, inputDigest: a.inputDigest,
+        nodes.set(id, { ...(source ? { source } : {}), id, attemptId: a.id, resultId: r.id, resultDigest: r.digest, inputDigest: a.inputDigest,
             generation: t.generation, planVersion: t.planVersion, directiveVersion: t.directiveVersion,
             dependencies: t.dependencies, reviewOf: t.reviewOf ?? null, reviewTargetDigest: reviewTarget?.result ? digest(reviewTarget.result) : null,
             reviews: reviews.map(r => r.id), manualReviewId: manual?.id ?? null,

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync, renameSync, copyFileSync, chmodSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync, renameSync, copyFileSync, chmodSync, realpathSync, unlinkSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, dirname, sep } from 'node:path';
-import { digest, stable } from '../storage/store.js';
+import { digest, stable, type Store } from '../storage/store.js';
 import { ensure, DomainError } from '../domain/errors.js';
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024;
 const EXCLUDED = new Set(['.git', 'node_modules', '.pi', '.env', '.DS_Store', '.pi-research', '.pi-runtime', '.npmrc', '.pypirc']);
@@ -28,7 +28,25 @@ export function safePath(root: string, path: string, allowRoot = false): string 
     return target;
 }
 export function readText(root: string, path: string) { const file = safePath(root, path); ensure(existsSync(file) && lstatSync(file).isFile(), 'NOT_FOUND', '文件不存在', 404); ensure(lstatSync(file).size <= MAX_TEXT_BYTES, 'FILE_TOO_LARGE', '文件过大，不能作为文本打开', 413); const raw = readFileSync(file); ensure(!raw.includes(0), 'BINARY_FILE', '不能作为文本读取二进制文件', 415); return { path, content: raw.toString('utf8'), digest: digest(raw), size: raw.length }; }
-export function writeText(root: string, path: string, content: string, expectedDigest: string | null) { const file = safePath(root, path); const bytes = Buffer.from(content); ensure(bytes.length <= MAX_TEXT_BYTES, 'FILE_TOO_LARGE', '文件过大', 413); const previous = existsSync(file) ? digest(readFileSync(file)) : null; ensure(previous === expectedDigest, 'FILE_VERSION_CONFLICT', '文件已被其他操作修改，请刷新并比较差异'); mkdirSync(dirname(file), { recursive: true, mode: 0o700 }); const temporary = file + '.tmp-' + process.pid; writeFileSync(temporary, bytes, { mode: 0o600 }); renameSync(temporary, file); return { path, digest: digest(bytes), size: bytes.length }; }
+export function writeText(root: string, path: string, content: string, expectedDigest: string | null, store?: Store) {
+    const write = () => {
+        const file = safePath(root, path), bytes = Buffer.from(content);
+        ensure(bytes.length <= MAX_TEXT_BYTES, 'FILE_TOO_LARGE', '文件过大', 413);
+        const before = existsSync(file) ? readFileSync(file) : null;
+        ensure((before === null ? null : digest(before)) === expectedDigest, 'FILE_VERSION_CONFLICT', '文件已被其他操作修改，请刷新并比较差异');
+        mkdirSync(dirname(file), {recursive: true, mode: 0o700});
+        const temporary = file + '.tmp-' + process.pid;
+        writeFileSync(temporary, bytes, {mode: 0o600}); renameSync(temporary, file);
+        const nextDigest = digest(bytes);
+        store?.onRollback(() => {
+            const target = safePath(root, path);
+            ensure(existsSync(target) && digest(readFileSync(target)) === nextDigest, 'FILE_VERSION_CONFLICT', '事务外文件修改需要人工恢复');
+            if (before === null) unlinkSync(target); else writeFileSync(target, before, {mode: 0o600});
+        });
+        return {path, digest: nextDigest, size: bytes.length};
+    };
+    return store ? store.transaction(write) : write();
+}
 export function listFiles(root: string, sub = ''): Array<{
     path: string;
     size: number;

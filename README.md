@@ -22,7 +22,8 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 33 个 Pi 工具已有精确输入 Schema；首批 7 个操作通过 OperationRegistry 统一 HTTP/CLI/Pi 的验证、权限与幂等处理。可通过 `GET /api/operations` 查看已迁移操作，或 `operation <id> --project <id> --input <JSON>` 调用。
+- 33 个旧工具和 4 个源码动作已通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用。
+- 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 
 ## 读取技能

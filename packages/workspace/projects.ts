@@ -101,5 +101,5 @@ export class ProjectService {
     }
     listFiles(actor: Actor, id: string) { return listFiles(this.get(actor, id).workspace); }
     readFile(actor: Actor, id: string, path: string) { return readText(this.get(actor, id).workspace, path); }
-    writeFile(actor: Actor, id: string, path: string, content: string, expectedDigest: string | null) { userOnly(actor); const p = this.get(actor, id); const result = writeText(p.workspace, path, content, expectedDigest); this.c.store.event(id, 'workspace.file_changed', { path, digest: result.digest }); return result; }
+    writeFile(actor: Actor, id: string, path: string, content: string, expectedDigest: string | null) { userOnly(actor); return this.c.store.transaction(() => { const p = this.get(actor, id); const result = writeText(p.workspace, path, content, expectedDigest, this.c.store); this.c.store.event(id, 'workspace.file_changed', { path, digest: result.digest }); return result; }); }
 }

@@ -1,7 +1,8 @@
 import type { Store } from '../storage/store.js';
 import { digest } from '../storage/store.js';
-import type { Task, TaskAttempt, TaskResult, Evidence, Artifact, AcceptanceRecord } from '../domain/types.js';
+import type { Task, TaskAttempt, TaskResult, Evidence, Artifact, AcceptanceRecord, Team, SourceRevision, Experiment } from '../domain/types.js';
 import { ensure } from '../domain/errors.js';
+import {assertExperimentSourceCurrent} from '../policy/lifecycle.js';
 
 type ManualReview = {taskId: string; resultDigest: string; verdict: string; reviewStateDigest?: string};
 export function reviewStateDigest(store: Store, projectId: string, target: Task) {
@@ -22,6 +23,15 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
         ensure(t && t.execution === 'output_submitted' && t.acceptance === 'accepted' && t.result?.outcome === 'completed',
             'TASK_NOT_ACCEPTED', '结果不是当前已采纳的完整任务成果');
         visiting.add(id);
+        const team=store.get<Team>('team',t.teamId,projectId);
+        let source: {snapshotId:string;sourceDigest:string;experimentId:string;revision:number}|undefined;
+        if(team.sourceRevisionId) {
+            const revision=store.get<SourceRevision>('source-revision',team.sourceRevisionId,projectId);
+            ensure(revision.sourceDigest===revision.snapshot.digest&&digest(revision.snapshot.files)===revision.sourceDigest,
+                'SNAPSHOT_CORRUPTED','验收源码清单校验失败');
+            assertExperimentSourceCurrent(store,store.get<Experiment>('experiment',revision.experimentId,projectId));
+            source={snapshotId:revision.id,sourceDigest:revision.sourceDigest,experimentId:revision.experimentId,revision:revision.revision};
+        }
         const a = store.get<TaskAttempt>('task-attempt', t.attemptId!, projectId);
         const r = store.list<{taskId:string;attemptId:string;digest:string;result:TaskResult}>('task-result',projectId)
             .find(r => r.taskId === id && r.attemptId === a.id);
@@ -56,7 +66,7 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
             }
         }
         const reviewTarget = t.reviewOf ? all.find(d => d.teamId === t.teamId && d.key === t.reviewOf) : undefined;
-        nodes.set(id,{id,attemptId:a.id,resultId:r.id,resultDigest:r.digest,inputDigest:a.inputDigest,
+        nodes.set(id,{...(source?{source}:{}),id,attemptId:a.id,resultId:r.id,resultDigest:r.digest,inputDigest:a.inputDigest,
             generation:t.generation,planVersion:t.planVersion,directiveVersion:t.directiveVersion,
             dependencies:t.dependencies,reviewOf:t.reviewOf ?? null,reviewTargetDigest:reviewTarget?.result ? digest(reviewTarget.result) : null,
             reviews:reviews.map(r=>r.id),manualReviewId:manual?.id ?? null,

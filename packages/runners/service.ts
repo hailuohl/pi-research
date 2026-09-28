@@ -8,7 +8,7 @@ import { mkdirSync, readFileSync, existsSync, writeFileSync, openSync, closeSync
 import { join } from 'node:path';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Experiment, RunIntent, Run, Manifest, Row } from '../domain/types.js';
-import { ensure } from '../domain/errors.js';
+import { ensure, asError } from '../domain/errors.js';
 import { scope, userOnly, toolAllowed } from '../policy/permissions.js';
 import { ApprovalService } from '../policy/approvals.js';
 import { EvidenceService } from '../evidence/service.js';
@@ -63,18 +63,40 @@ export class RunService {
             return this.c.store.update<Run>('run', id, run.version, { heartbeat: Date.now() });
         });
     }
+    /** Recheck the durable execution grant inside the transaction that claims a queued Run. */
+    assertLaunchable(run: Row<Run>) {
+        ensure(run.state === 'queued' && !run.startedAt && !run.childPid && !run.cancelRequested, 'RUN_NOT_LAUNCHABLE', '作业已启动、取消或不再排队');
+        assertProjectWritable(this.c.store, run.projectId!);
+        const e = this.c.store.get<Experiment>('experiment', run.experimentId, run.projectId!);
+        assertExperimentSourceCurrent(this.c.store, e);
+        ensure(e.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能执行');
+        const intent = this.c.store.get<RunIntent>('run-intent', run.intentId, run.projectId!);
+        ensure(intent.status === 'submitted' && intent.runId === run.id && intent.experimentId === e.id && run.manifest.experimentId === e.id &&
+            intent.manifestDigest === run.manifestDigest && digest(intent.manifest) === run.manifestDigest && digest(run.manifest) === run.manifestDigest,
+            'APPROVAL_STALE', '作业、运行意向与已批准快照不一致');
+        ensure(e.revision === run.manifest.experimentRevision && e.contractDigest === run.manifest.contractDigest,
+            'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
+        assertOutcomeBoundary(this.c.store, e);
+        this.approvals.assert(intent.approvalId, run.projectId!, intent.id, run.manifestDigest, 'run.submit');
+    }
+    /** Both launch callers hold the same write transaction as their authorization check. */
+    cancelBeforeLaunch(run: Row<Run>, error: unknown) {
+        if (run.state !== 'queued' || run.startedAt || run.childPid) return;
+        const reason = asError(error);
+        this.c.store.update<Run>('run', run.id, run.version, {state: 'cancelled', cancelRequested: true, integrity: 'incomplete', endedAt: now(), error: `${reason.code}: ${reason.message}`});
+        this.c.store.event(run.projectId, 'run.cancelled_before_launch', {runId: run.id, reason: reason.code});
+    }
     launchPending() {
-        this.c.store.transaction(()=>{
-            for(const r of this.c.store.list<Run>('run').filter(r=>r.state==='queued'))
-                if(this.c.store.get('project',r.projectId!).archived) {
-                    this.c.store.update<Run>('run',r.id,r.version,{state:'cancelled',cancelRequested:true,integrity:'incomplete',endedAt:now(),error:'项目已归档；作业未启动'});
-                    this.c.store.event(r.projectId,'run.cancelled_before_launch',{runId:r.id,reason:'project_archived'});
-                }
+        this.c.store.transaction(() => {
+            for (const run of this.c.store.list<Run>('run').filter(r => r.state === 'queued' && !r.startedAt && !r.childPid)) {
+                try { this.assertLaunchable(run); }
+                catch (error) { this.cancelBeforeLaunch(run, error); }
+            }
         });
         const all = this.c.store.list<Run>('run');
         if (all.some(r => ['submitting', 'running', 'cancelling', 'unknown'].includes(r.state)))
             return;
-        const run = all.find(r => r.state === 'queued' && !this.launching.has(r.id));
+        const run = all.find(r => r.state === 'queued' && !r.startedAt && !r.childPid && !this.launching.has(r.id));
         if (!run)
             return;
         this.launching.add(run.id);

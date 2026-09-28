@@ -14,6 +14,10 @@ export declare class RunService {
     submit(actor: Actor, id: string): Row<Run>;
     /** Keep the version read and heartbeat write in one inter-process SQLite transaction. */
     heartbeat(id: string): Row<Run>;
+    /** Recheck the durable execution grant inside the transaction that claims a queued Run. */
+    assertLaunchable(run: Row<Run>): void;
+    /** Both launch callers hold the same write transaction as their authorization check. */
+    cancelBeforeLaunch(run: Row<Run>, error: unknown): void;
     launchPending(): void;
     cancel(actor: Actor, id: string): Row<Run>;
     logs(actor: Actor, id: string, cursor?: number): {

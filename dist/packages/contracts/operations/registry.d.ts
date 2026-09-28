@@ -24,6 +24,7 @@ export interface OperationSpec {
     outputSchema: JsonSchema;
     idempotencyPolicy: 'read-only' | 'key-required';
     asynchronous?: boolean;
+    requiresSession?: boolean;
     authorize: (context: OperationContext, input: Record<string, unknown>) => void;
     preconditions: (context: OperationContext, input: Record<string, unknown>) => void;
     execute: (context: OperationContext, input: Record<string, unknown>) => unknown;
@@ -35,6 +36,7 @@ export declare class OperationRegistry {
     constructor(app: ResearchApp);
     has(id: string): boolean;
     specs(): {
+        requiresSession?: true | undefined;
         id: string;
         inputSchema: JsonSchema;
         outputSchema: JsonSchema;

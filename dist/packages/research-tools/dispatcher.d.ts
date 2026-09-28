@@ -11,6 +11,5 @@ export declare class ToolDispatcher {
         name: string;
     }[];
     authorize(actor: Actor, name: string): import("../domain/types.js").Row<import("../domain/types.js").Session>;
-    execute(actor: Actor, name: string, raw: unknown, callId: string): Promise<any>;
-    private invoke;
+    execute(actor: Actor, name: string, raw: unknown, callId: string): Promise<unknown>;
 }

@@ -1,14 +1,39 @@
+import { ensure } from '../domain/errors.js';
 function sourceTasks(store, projectId, evidenceIds) {
     return evidenceIds.flatMap(id => {
         const e = store.get('evidence', id, projectId), a = store.get('artifact', e.artifactId, projectId);
         return a.taskId ? [a.taskId] : [];
     });
 }
+function boundSourceTasks(store, projectId, team) {
+    if (!team.sourceRevisionId)
+        return [];
+    const source = store.get('source-revision', team.sourceRevisionId, projectId), tasks = new Set(), seen = new Set();
+    let experimentId = source.experimentId;
+    while (experimentId) {
+        ensure(!seen.has(experimentId), 'EXPERIMENT_CYCLE', '实验血缘存在循环');
+        seen.add(experimentId);
+        const experiment = store.get('experiment', experimentId, projectId);
+        if (experiment.changeProposalId) {
+            const proposal = store.get('change-proposal', experiment.changeProposalId, projectId);
+            for (const change of proposal.changes) {
+                if (change.taskId)
+                    tasks.add(change.taskId);
+                if (change.sourceAcceptanceId)
+                    for (const id of store.get('acceptance-record', change.sourceAcceptanceId, projectId).taskIds)
+                        tasks.add(id);
+            }
+        }
+        experimentId = experiment.parentId;
+    }
+    return [...tasks];
+}
 /** A review is an acceptance prerequisite: invalidation flows in BOTH directions.
- * Sources explicitly assigned as evidence can connect teams within one project.
+ * Evidence and bound source revisions connect teams within one project.
  */
 export function invalidationClosure(store, projectId, ids) {
     const all = store.list('task', projectId), affected = new Set(ids);
+    const boundSources = new Map(store.list('team', projectId).map(team => [team.id, boundSourceTasks(store, projectId, team)]));
     let changed = true;
     while (changed) {
         changed = false;
@@ -18,6 +43,7 @@ export function invalidationClosure(store, projectId, ids) {
             const dependencies = all.filter(d => d.teamId === t.teamId &&
                 (t.dependencies.includes(d.key) || t.reviewOf === d.key || d.reviewOf === t.key)).map(d => d.id);
             dependencies.push(...sourceTasks(store, projectId, [...(t.inputEvidenceIds ?? []), ...(t.result?.evidenceIds ?? [])]));
+            dependencies.push(...(boundSources.get(t.teamId) ?? []));
             if (dependencies.some(id => affected.has(id))) {
                 affected.add(t.id);
                 changed = true;

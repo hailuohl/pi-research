@@ -1,4 +1,3 @@
-import { asyncIntegrationRoute } from './integration-routes.js';
 import { operationRoute } from './operation-routes.js';
 import http from 'node:http';
 import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
@@ -7,7 +6,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { ResearchApp } from '../../packages/research-app.js';
 import { AgentHost } from '../../packages/scheduler/agent-host.js';
 import { asError, DomainError, ensure } from '../../packages/domain/errors.js';
-import { object, text, integer } from '../../packages/contracts/validation.js';
+import { text } from '../../packages/contracts/validation.js';
 import { safePath } from '../../packages/workspace/files.js';
 import { USER } from '../../packages/domain/types.js';
 import { readRoute, writeRoute } from './routes.js';
@@ -40,6 +39,8 @@ export function createHttpServer(options) {
                     if (route === '/operations')
                         return json(app.operations.specs());
                     const files = route.match(/^\/projects\/([^/]+)\/files$/);
+                    if (files)
+                        ensure([...url.searchParams.keys()].every(key => key === 'path') && url.searchParams.getAll('path').length <= 1, 'INVALID_INPUT', '项目文件接口只接受 path；指定实验版本请使用 experiment_source_read', 400);
                     if (files && url.searchParams.has('path'))
                         return json(await app.operations.execute(USER, 'workspace_read', { source: 'project', path: url.searchParams.get('path') }, { projectId: files[1] }));
                     const match = route.match(/^\/artifacts\/([^/]+)\/content$/);
@@ -78,16 +79,9 @@ export function createHttpServer(options) {
                     const operation = operationRoute(app, route, body, key, controller.signal, req.method, url.search);
                     if (operation)
                         return json(await operation.result);
-                    if (route === '/connectors/discover')
-                        return json(await asyncIntegrationRoute(app, route, body, key, controller.signal));
                 }
                 finally {
                     res.off('close', cancel);
-                }
-                if (route === '/literature-search') {
-                    const x = object(body);
-                    const result = await app.literature.search(text(x.projectId, 'projectId', 100), text(x.query, 'query', 500), integer(x.limit ?? 8, 'limit', 1, 20), `user:${key}`);
-                    return json(result);
                 }
                 const value = app.store.operation(`${req.method}:${route}`, key, { body, query: url.search }, () => writeRoute(app, host, route, body, req.method));
                 return json(value);

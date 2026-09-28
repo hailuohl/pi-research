@@ -1,3 +1,4 @@
+import { SourceAccessService } from './workspace/source-access.js';
 import { OperationRegistry } from './contracts/operations/registry.js';
 import { TextEvidenceService } from './text-evidence/service.js';
 import { SkillService } from './skills/service.js';
@@ -18,6 +19,7 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly sources: SourceAccessService;
     readonly operations: OperationRegistry;
     readonly textEvidence: TextEvidenceService;
     readonly skills: SkillService;

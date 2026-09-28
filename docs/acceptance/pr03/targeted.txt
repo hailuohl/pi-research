@@ -1,0 +1,29 @@
+✔ real supervisor refuses a queued Run after its accepted source is revoked (391.9544ms)
+✔ launchPending cancels revoked queued sources before spawning a supervisor (161.313ms)
+✔ source revocation preserves a completed real Run and its immutable outputs (519.0901ms)
+✔ launch grant rechecks approval and the intent-to-Run binding at the supervisor boundary (555.0863ms)
+✔ HTTP, CLI and Pi dispatcher select degree-2 child source while project remains degree-1 (528.2921ms)
+✔ source cache cannot outlive revoked lineage and Registry failure restores prepared workspace (233.0396ms)
+✔ actual source revisions read immutable bytes, ranges, diff and preserve local edits (145.2857ms)
+✔ legacy source capture is explicit current-only preparation, never a read side effect (64.0476ms)
+✔ claimed assistants receive only approved source binding and private source copy (117.6852ms)
+✔ preparation restores the empty workspace on a rejected binding and rejects corrupted CAS (79.3582ms)
+✔ a failed revision capture transaction restores the mutable source bytes (50.8071ms)
+✔ empty draft source is versioned while formal runs still reject an empty workspace (38.9579ms)
+✔ source task-context.json remains project data when an assistant is claimed (119.2914ms)
+✔ outer transaction failure restores prepared workspace and permits retry (79.3609ms)
+✔ outer transaction failure restores changed and newly created experiment files (79.6641ms)
+✔ archived projects preserve fixed source reads but reject new revisions, preparation and notes (48.8262ms)
+✔ revoked source approval blocks fresh assistant effects and accepted derivatives across teams while retaining raw history (333.5977ms)
+✔ unbound legacy task acceptance keeps its previous basis shape and digest (53.0433ms)
+✔ source revocation reaches already applied proposals through multiple clean-base teams (506.9213ms)
+✔ nested filesystem callbacks follow the outer transaction and do not leak to later transactions (12.3232ms)
+✔ project and private workspace writes restore bytes when the enclosing operation fails (62.6456ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4876.5932

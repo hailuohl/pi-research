@@ -15,11 +15,9 @@ const store = new Store(join(dataDir, 'state.db')), ctx = { dataDir, repoRoot, s
 const service = new RunService(ctx, new ApprovalService(ctx), new EvidenceService(ctx));
 const run = store.transaction(() => {
     const r = store.get<Run>('run', runId);
-    if (r.state !== 'queued' || r.cancelRequested) return null;
-    if (store.get('project',r.projectId!).archived) {
-        store.update<Run>('run',r.id,r.version,{state:'cancelled',cancelRequested:true,integrity:'incomplete',endedAt:now(),error:'项目已归档；监管器拒绝启动'});
-        store.event(r.projectId,'run.cancelled_before_launch',{runId:r.id,reason:'project_archived'});return null;
-    }
+    if (r.state !== 'queued' || r.startedAt || r.childPid) return null;
+    try { service.assertLaunchable(r); }
+    catch (error) { service.cancelBeforeLaunch(r, error); return null; }
     if (store.list<Run>('run').some(x => x.id !== runId && ['submitting', 'running', 'cancelling', 'unknown'].includes(x.state)))
         return null;
     return store.update<Run>('run', r.id, r.version, { state: 'submitting', supervisorPid: process.pid, heartbeat: Date.now(), startedAt: now() });

@@ -165,6 +165,22 @@ export class AgentHost {
         const s = this.app.store.get('session', a.sessionId);
         if (s.generation !== a.generation || s.state !== 'running')
             return false;
+        if (a.actor.taskId) {
+            const task = this.app.store.get('task', a.actor.taskId);
+            if (task.execution === 'superseded' || task.generation !== a.actor.generation || task.attemptId !== a.actor.attemptId)
+                return false;
+            const state = this.app.store.get('task-attempt', a.actor.attemptId).state;
+            if (state !== 'running' && state !== 'finished')
+                return false;
+            if (state === 'running') {
+                try {
+                    this.app.teams.active(a.actor);
+                }
+                catch {
+                    return false;
+                }
+            }
+        }
         if (a.actor.wakeupId) {
             try {
                 this.app.wakeups.assertActive(a.actor);

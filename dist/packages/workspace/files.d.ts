@@ -1,3 +1,4 @@
+import { type Store } from '../storage/store.js';
 export declare const MAX_TEXT_BYTES: number;
 export declare function safePath(root: string, path: string, allowRoot?: boolean): string;
 export declare function readText(root: string, path: string): {
@@ -6,7 +7,7 @@ export declare function readText(root: string, path: string): {
     digest: string;
     size: number;
 };
-export declare function writeText(root: string, path: string, content: string, expectedDigest: string | null): {
+export declare function writeText(root: string, path: string, content: string, expectedDigest: string | null, store?: Store): {
     path: string;
     digest: string;
     size: number;

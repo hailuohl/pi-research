@@ -16,6 +16,8 @@ export class Store {
     path;
     db;
     depth = 0;
+    rollbackCallbacks = [];
+    commitCallbacks = [];
     constructor(path) {
         this.path = path;
         mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
@@ -29,23 +31,55 @@ export class Store {
  CREATE TABLE IF NOT EXISTS inbox(consumer TEXT NOT NULL,event_id TEXT NOT NULL,PRIMARY KEY(consumer,event_id));
  INSERT OR IGNORE INTO schema_migrations VALUES(1,datetime('now'));`);
     }
+    onRollback(fn) { ensure(this.depth > 0, 'TRANSACTION_REQUIRED', '回滚处理必须绑定事务', 500); this.rollbackCallbacks.push(fn); }
+    afterCommit(fn) { ensure(this.depth > 0, 'TRANSACTION_REQUIRED', '提交处理必须绑定事务', 500); this.commitCallbacks.push(fn); }
     transaction(fn) {
         if (this.depth > 0)
             return fn();
         this.db.exec('BEGIN IMMEDIATE');
         this.depth++;
+        let committed = false;
         try {
             const result = fn();
             ensure(!(result instanceof Promise), 'ASYNC_TRANSACTION', '事务回调必须同步', 500);
             this.db.exec('COMMIT');
+            committed = true;
             return result;
         }
         catch (e) {
+            let recoveryFailed = false;
+            // Keep the writer lock until filesystem compensation has finished.
+            for (const rollback of [...this.rollbackCallbacks].reverse()) {
+                try {
+                    rollback();
+                }
+                catch {
+                    recoveryFailed = true;
+                }
+            }
             this.db.exec('ROLLBACK');
+            if (recoveryFailed)
+                throw new DomainError('TRANSACTION_RECOVERY_FAILED', '数据库已回滚，但文件恢复未完成；保留的工作副本需要检查，禁止盲目重试', 500);
             throw e;
         }
         finally {
             this.depth--;
+            const afterCommit = this.commitCallbacks;
+            this.rollbackCallbacks = [];
+            this.commitCallbacks = [];
+            if (committed) {
+                let cleanupFailed = false;
+                for (const callback of afterCommit) {
+                    try {
+                        callback();
+                    }
+                    catch {
+                        cleanupFailed = true;
+                    }
+                }
+                if (cleanupFailed)
+                    throw new DomainError('POST_COMMIT_CLEANUP_FAILED', '操作已提交，但临时文件清理未完成；可用原幂等键回查结果', 500);
+            }
         }
     }
     create(kind, projectId, data, id = randomUUID()) { const time = now(); const row = { ...data, id, kind, projectId, version: 1, createdAt: time, updatedAt: time }; this.db.prepare('INSERT INTO records VALUES(?,?,?,?,?)').run(kind, id, projectId, 1, JSON.stringify(row)); return row; }

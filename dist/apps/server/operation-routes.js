@@ -17,6 +17,21 @@ export function operationRoute(app, path, body, key, signal, method, query) {
                 idempotencyKey: key, signal,
             }) };
     }
+    const legacyInput = object(body), legacyScope = { scope: `${method}:${path}`, input: { body, query } };
+    const projectOperations = { '/connectors/discover': 'literature_discover', '/literature-search': 'literature_search', '/text-evidence-search': 'text_evidence_search', '/artifacts': 'artifact_create', '/evidence': 'evidence_register', '/experiments': 'experiment_plan_submit' };
+    if (projectOperations[path]) {
+        const { projectId, ...input } = legacyInput, id = projectOperations[path];
+        return { result: app.operations.execute(USER, id, input, { projectId: text(projectId, 'projectId', 100), idempotencyKey: key, signal, ...(['literature_discover', 'literature_search'].includes(id) ? {} : { legacy: legacyScope }) }) };
+    }
+    const campaign = path.match(/^\/campaigns\/([^/]+)\/(members|decisions)$/);
+    const team = path.match(/^\/sessions\/([^/]+)\/teams$/);
+    const child = path.match(/^\/experiments\/([^/]+)\/children$/);
+    if (campaign || team || child) {
+        const field = campaign ? 'campaignId' : child ? 'parentId' : undefined;
+        ensure(!field || !Object.hasOwn(legacyInput, field), 'INVALID_INPUT', '请求不能覆盖路径标识', 400);
+        const row = app.store.get(campaign ? 'campaign' : team ? 'session' : 'experiment', (campaign ?? team ?? child)[1]);
+        return { result: app.operations.execute(USER, campaign ? campaign[2] === 'members' ? 'campaign_enroll' : 'campaign_decision_submit' : team ? 'collaboration_plan_submit' : 'experiment_plan_submit', { ...legacyInput, ...(field ? { [field]: row.id } : {}) }, { projectId: row.projectId, ...(team ? { sessionId: row.id } : {}), idempotencyKey: key, legacy: legacyScope }) };
+    }
     const submit = path.match(/^\/run-intents\/([^/]+)\/submit$/);
     const files = path.match(/^\/projects\/([^/]+)\/files$/);
     if (!['/run-intents', '/change-proposals', '/connectors/paper'].includes(path) && !submit && !files)

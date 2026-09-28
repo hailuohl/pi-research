@@ -10,7 +10,7 @@ export async function integrationCli(args, root, dataDir) { const command = args
     return true;
 } const projectId = option('--project'); ensure(projectId, 'PROJECT_REQUIRED', '使用 --project 指定本地项目 ID', 400); const app = new ResearchApp(dataDir, root); try {
     if (command === 'connectors')
-        print(app.connectors.settings(USER, projectId));
+        print(app.operations.execute(USER, 'connector_status', {}, { projectId }));
     else if (command === 'connector-config') {
         const cfg = app.connectors.settings(USER, projectId), enabled = {};
         for (const id of (option('--enable') ?? '').split(',').filter(Boolean))
@@ -20,7 +20,7 @@ export async function integrationCli(args, root, dataDir) { const command = args
         print(app.connectors.configure(USER, projectId, { expectedVersion: cfg.version, enabled, ...(option('--request-limit') ? { requestLimit: Number(option('--request-limit')) } : {}) }));
     }
     else if (command === 'discover')
-        print(await app.connectors.discover(USER, projectId, { query: option('--query'), sources: (option('--sources') ?? 'crossref').split(','), limit: Number(option('--limit') ?? 8), strategy: option('--strategy') ?? 'keyword', prioritize: option('--prioritize') ?? 'default', publishedAfter: option('--after'), publishedBefore: option('--before') }, option('--key') ?? randomUUID()));
+        print(await app.operations.execute(USER, 'literature_discover', { query: option('--query'), sources: (option('--sources') ?? 'crossref').split(','), limit: Number(option('--limit') ?? 8), strategy: option('--strategy') ?? 'keyword', prioritize: option('--prioritize') ?? 'default', ...(option('--after') ? { publishedAfter: option('--after') } : {}), ...(option('--before') ? { publishedBefore: option('--before') } : {}) }, { projectId, idempotencyKey: option('--key') ?? randomUUID() }));
     else
         print(await app.operations.execute(USER, 'paper_read', { id: args[1], ...(option('--source') ? { source: option('--source') } : {}) }, { projectId, idempotencyKey: option('--key') ?? randomUUID() }));
 }
