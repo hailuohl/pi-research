@@ -5,21 +5,31 @@ import {randomUUID} from 'node:crypto';
 import {readStableFile} from '../workspace/stable-file.js';
 import {safePath} from '../workspace/files.js';
 import {digest} from '../storage/store.js';
-import type {Row} from '../domain/types.js';
-import type {SandboxJob} from './contracts.js';
+import type {SourceSnapshot} from '../domain/types.js';
+/** Docker mechanics shared by development jobs and formal Runs; no business-purpose coupling. */
+export interface DockerJob {
+    id: string; containerName: string; containerId?: string; startRequested: boolean;
+    manifestDigest: string; controlDir: string; outputDir: string;
+    manifest: {
+        inputSnapshot: SourceSnapshot;
+        dataArtifacts: Array<{id: string; path: string; digest: string; size: number}>;
+        command: string[]; environmentImageDigest: string; dockerContext: string;
+        resources: {pids: number; cpus: number; memoryMb: number; workMb: number; logBytes: number};
+    };
+}
 
 export const JOB_LABEL = 'pi-research.sandbox-job';
 export const MANIFEST_LABEL = 'pi-research.manifest';
 // Legacy snapshots without modes default to ordinary, non-executable files.
 export const BOOTSTRAP = 'cp -R /source/. /work/ && chmod -R u+rwX /work && find /work -type f -exec chmod 644 {} + && exec "$@"';
-function sourceBootstrap(job: Row<SandboxJob>): string {
+function sourceBootstrap(job: DockerJob): string {
     const executable = job.manifest.inputSnapshot.files.filter(f => f.mode === '100755').map(f => {
         safePath(job.manifest.inputSnapshot.path, f.path);
         return "'/work/" + f.path.replace(/'/g, "'\\''") + "'";
     });
     return executable.length ? BOOTSTRAP.replace(' && exec', ` && chmod 755 -- ${executable.join(' ')} && exec`) : BOOTSTRAP;
 }
-export function stageInputs(job: Row<SandboxJob>) {
+export function stageInputs(job: DockerJob) {
     if (job.startRequested || job.containerId) throw new Error('Cannot modify inputs after container creation');
     const stage = (name: string, files: Array<{root: string; path: string; target: string; digest: string; size: number; mode?: '100644' | '100755'}>) => {
         const destination = join(job.controlDir, name);
@@ -75,7 +85,7 @@ export async function preflight(context: string, image: string): Promise<string>
     return docker(context, ['image', 'inspect', '--format', '{{.Id}}', image]);
 }
 export interface Container {Id: string; Image: string; Config: {Labels: Record<string, string>}; State: {Status: string; Running: boolean; ExitCode: number; StartedAt: string; FinishedAt: string; Error?: string};}
-export async function inspect(job: Row<SandboxJob>): Promise<Container | null> {
+export async function inspect(job: DockerJob): Promise<Container | null> {
     try {
         const value = JSON.parse(await docker(job.manifest.dockerContext, ['inspect', '--type', 'container', job.containerId ?? job.containerName]))[0] as Container;
         if (value.Config.Labels?.[JOB_LABEL] !== job.id || value.Config.Labels?.[MANIFEST_LABEL] !== job.manifestDigest || (job.containerId && value.Id !== job.containerId)) throw new Error('Container ownership mismatch');
@@ -86,7 +96,7 @@ export async function inspect(job: Row<SandboxJob>): Promise<Container | null> {
     }
 }
 /** Retire an ambiguous prior start without ever issuing another start request. */
-export async function retireUncertainStart(job: Row<SandboxJob>, fence: () => unknown, run = docker, read = inspect): Promise<Container | null> {
+export async function retireUncertainStart(job: DockerJob, fence: () => unknown, run = docker, read = inspect): Promise<Container | null> {
     let container = await read(job);
     fence();
     if (container?.State.Status === 'created') {
@@ -102,7 +112,7 @@ export async function retireUncertainStart(job: Row<SandboxJob>, fence: () => un
     }
     return container;
 }
-export function createArgs(job: Row<SandboxJob>): string[] {
+export function createArgs(job: DockerJob): string[] {
     const m = job.manifest, r = m.resources;
     const mount = (path: string, target: string, readonly: boolean) => {
         if (/[\0\r\n,]/.test(path)) throw new Error('Unsupported bind mount path');

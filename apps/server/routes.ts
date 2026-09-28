@@ -67,7 +67,7 @@ export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: 
     }
     if (kind === 'runs' && id) {
         if (action === 'logs')
-            return app.operations.execute(USER, 'run_logs', {runId: id, cursor: integer(Number(url.searchParams.get('cursor') ?? 0), 'cursor', 0)}, {projectId: app.runs.get(USER, id).projectId!});
+            return app.operations.execute(USER, 'run_logs', {runId: id, cursor: integer(Number(url.searchParams.get('cursor') ?? 0), 'cursor', 0),...(url.searchParams.has('stream')?{stream:url.searchParams.get('stream')}:{})}, {projectId: app.runs.get(USER, id).projectId!});
         if (action === 'manifest')
             return app.runs.get(USER, id).manifest;
         return app.operations.execute(USER, 'run_inspect', {runId: id}, {projectId: app.runs.get(USER, id).projectId!});

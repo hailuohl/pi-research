@@ -16,10 +16,121 @@ function saved() {
         return {};
     }
 }
+class ExperimentModal extends React.Component {
+    constructor() {
+        super(...arguments);
+        this.state = { runner: 'trusted-example', metrics: [0], error: '' };
+        this.nextMetric = 1;
+    }
+    render() {
+        const { parent, busy, onClose, perform, onSave } = this.props, docker = !parent && this.state.runner === 'docker';
+        return React.createElement(Modal, { busy: busy, onClose: onClose, wide: true, title: parent ? '派生子实验' : '建立实验草案', submitLabel: "\u4FDD\u5B58\u5B9E\u9A8C\u8349\u6848", onSubmit: fd => perform(async () => {
+                this.setState({ error: '' });
+                try {
+                    const config = String(fd.get('config') ?? '').trim();
+                    const input = { title: fd.get('title'), hypothesis: fd.get('hypothesis'), ...(parent ? { parentId: parent.id } : {}), ...(config ? { config: JSON.parse(config) } : {}) };
+                    if (docker) {
+                        const metrics = Object.create(null);
+                        for (const id of this.state.metrics) {
+                            const name = String(fd.get(`metric-${id}`)).trim();
+                            if (Object.prototype.hasOwnProperty.call(metrics, name))
+                                throw Error('指标名称不能重复');
+                            metrics[name] = { unit: String(fd.get(`unit-${id}`)).trim(), direction: String(fd.get(`direction-${id}`)) };
+                        }
+                        const outputs = String(fd.get('outputs')).split(/\r?\n/).map(p => p.trim()).filter(Boolean);
+                        const args = String(fd.get('args') ?? '');
+                        input.contract = { runner: 'docker', image: String(fd.get('image')).trim(), dockerContext: String(fd.get('context')).trim(), command: [String(fd.get('executable')).trim(), ...(args ? args.split(/\r?\n/) : [])], environment: {}, datasetVersion: String(fd.get('dataset')).trim(), evaluationProtocolVersion: String(fd.get('protocol')).trim(), metrics, expectedArtifacts: [...new Set(['metrics.json', ...outputs])], cpus: Number(fd.get('cpus')), memoryMb: Number(fd.get('memory')), timeoutSeconds: Number(fd.get('timeout')) };
+                    }
+                    await onSave(input);
+                }
+                catch (error) {
+                    this.setState({ error: error instanceof Error ? error.message : String(error) });
+                    throw error;
+                }
+            }) },
+            this.state.error ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.error) : null,
+            React.createElement("label", null,
+                "\u5B9E\u9A8C\u540D\u79F0",
+                React.createElement("input", { name: "title", "aria-label": "\u5B9E\u9A8C\u540D\u79F0", defaultValue: parent ? '新候选实验' : '基线实验', required: true, maxLength: 200 })),
+            React.createElement("label", null,
+                "\u7814\u7A76\u5047\u8BBE",
+                React.createElement("textarea", { name: "hypothesis", "aria-label": "\u7814\u7A76\u5047\u8BBE", required: true, placeholder: "\u8981\u68C0\u9A8C\u7684\u5047\u8BBE\u3001\u5BF9\u7167\u6761\u4EF6\u548C\u9884\u671F\u7ED3\u679C" })),
+            parent ? React.createElement("p", { className: "notice" },
+                "\u7EE7\u627F\u7236\u5B9E\u9A8C\u8FD0\u884C\u534F\u8BAE\uFF1A",
+                parent.contract.runner === 'docker' ? 'Docker' : '受信数值示例',
+                "\uFF0C\u5165\u53E3 ",
+                parent.contract.command.join(' '),
+                "\u3002\u6B64\u5904\u4E0D\u4FEE\u6539\u955C\u50CF\u3001\u6307\u6807\u6216\u8D44\u6E90\u5951\u7EA6\u3002") : React.createElement("label", null,
+                "\u8FD0\u884C\u65B9\u5F0F",
+                React.createElement("select", { name: "runner", "aria-label": "\u8FD0\u884C\u65B9\u5F0F", value: this.state.runner, onChange: (e) => this.setState({ runner: e.target.value }) },
+                    React.createElement("option", { value: "trusted-example" }, "\u53D7\u4FE1\u66F2\u7EBF\u62DF\u5408\u793A\u4F8B"),
+                    React.createElement("option", { value: "docker" }, "Docker \u00B7 \u81EA\u6709\u7814\u7A76\u7A0B\u5E8F"))),
+            docker ? React.createElement("div", null,
+                React.createElement("label", null,
+                    "\u56FA\u5B9A\u955C\u50CF\u6458\u8981",
+                    React.createElement("input", { name: "image", "aria-label": "\u56FA\u5B9A\u955C\u50CF\u6458\u8981", required: true, placeholder: "python@sha256:\u2026", pattern: ".+@sha256:[a-f0-9]{64}", maxLength: 250 })),
+                React.createElement("label", null,
+                    "\u672C\u5730 Docker context",
+                    React.createElement("input", { name: "context", "aria-label": "Docker context", defaultValue: "desktop-linux", required: true, maxLength: 100 })),
+                React.createElement("p", { className: "small muted" }, "\u586B\u5199\u672C\u673A\u5DF2\u914D\u7F6E\u7684 Linux Docker context \u548C\u5DF2\u5B58\u5728\u7684\u56FA\u5B9A\u955C\u50CF\uFF1B\u4FDD\u5B58\u4E0D\u4F1A\u4E0B\u8F7D\u955C\u50CF\uFF0C\u4E5F\u4E0D\u4EE3\u8868\u5F15\u64CE\u9A8C\u8BC1\u901A\u8FC7\u3002"),
+                React.createElement("label", null,
+                    "\u53EF\u6267\u884C\u7A0B\u5E8F",
+                    React.createElement("input", { name: "executable", "aria-label": "\u53EF\u6267\u884C\u7A0B\u5E8F", defaultValue: "python", required: true })),
+                React.createElement("label", null,
+                    "\u53C2\u6570\uFF08\u6BCF\u884C\u4E00\u4E2A\uFF0C\u4FDD\u7559\u7A7A\u683C\uFF09",
+                    React.createElement("textarea", { name: "args", "aria-label": "\u7A0B\u5E8F\u53C2\u6570", defaultValue: "main.py", rows: 3 })),
+                React.createElement("div", { className: "form-columns" },
+                    React.createElement("label", null,
+                        "\u6570\u636E\u7248\u672C",
+                        React.createElement("input", { name: "dataset", "aria-label": "\u6570\u636E\u7248\u672C", required: true, placeholder: "\u4F8B\u5982 dataset-v1", maxLength: 200 })),
+                    React.createElement("label", null,
+                        "\u8BC4\u4F30\u534F\u8BAE\u7248\u672C",
+                        React.createElement("input", { name: "protocol", "aria-label": "\u8BC4\u4F30\u534F\u8BAE\u7248\u672C", required: true, placeholder: "\u4F8B\u5982 holdout-v1", maxLength: 200 }))),
+                React.createElement("fieldset", null,
+                    React.createElement("legend", null, "\u5B9E\u6D4B\u6307\u6807"),
+                    this.state.metrics.map((id, index) => React.createElement("div", { className: "form-columns", key: id },
+                        React.createElement("label", null,
+                            "\u6307\u6807\u540D\u79F0 ",
+                            index + 1,
+                            React.createElement("input", { name: `metric-${id}`, required: true, maxLength: 80, defaultValue: index === 0 ? 'mse' : '' })),
+                        React.createElement("label", null,
+                            "\u5355\u4F4D ",
+                            index + 1,
+                            React.createElement("input", { name: `unit-${id}`, required: true, maxLength: 100, placeholder: "\u4F8B\u5982 dimensionless" })),
+                        React.createElement("label", null,
+                            "\u65B9\u5411 ",
+                            index + 1,
+                            React.createElement("select", { name: `direction-${id}` },
+                                React.createElement("option", { value: "min" }, "\u8D8A\u4F4E\u8D8A\u597D"),
+                                React.createElement("option", { value: "max" }, "\u8D8A\u9AD8\u8D8A\u597D"))),
+                        React.createElement("button", { type: "button", className: "text-button", disabled: this.state.metrics.length === 1, onClick: () => this.setState({ metrics: this.state.metrics.filter(n => n !== id) }) },
+                            "\u79FB\u9664\u6307\u6807 ",
+                            index + 1))),
+                    React.createElement("button", { type: "button", className: "secondary compact", onClick: () => this.setState({ metrics: [...this.state.metrics, this.nextMetric++] }) }, "\u6DFB\u52A0\u6307\u6807")),
+                React.createElement("label", null,
+                    "\u5FC5\u9700\u4EA7\u7269\uFF08\u6BCF\u884C\u4E00\u4E2A\u76F8\u5BF9\u8DEF\u5F84\uFF09",
+                    React.createElement("textarea", { name: "outputs", "aria-label": "\u5FC5\u9700\u4EA7\u7269", defaultValue: "metrics.json", rows: 3 })),
+                React.createElement("p", { className: "small muted" }, "metrics.json \u59CB\u7EC8\u5FC5\u9700\uFF1B\u7A0B\u5E8F\u5C06\u6307\u6807\u53CA\u6587\u4EF6\u5199\u5165 PI_OUTPUT_DIR \u6307\u5B9A\u7684\u8F93\u51FA\u76EE\u5F55\u3002"),
+                React.createElement("div", { className: "form-columns" },
+                    React.createElement("label", null,
+                        "CPU \u6838\u6570",
+                        React.createElement("input", { name: "cpus", type: "number", min: 1, max: 64, defaultValue: 1, required: true })),
+                    React.createElement("label", null,
+                        "\u5185\u5B58 MiB",
+                        React.createElement("input", { name: "memory", type: "number", min: 64, max: 65536, defaultValue: 256, required: true })),
+                    React.createElement("label", null,
+                        "\u8D85\u65F6\u79D2\u6570",
+                        React.createElement("input", { name: "timeout", type: "number", min: 1, max: 86400, defaultValue: 60, required: true })))) : null,
+            React.createElement("label", null,
+                "\u7248\u672C\u5316\u914D\u7F6E JSON\uFF08\u53EF\u9009\uFF09",
+                React.createElement("textarea", { key: parent?.id ?? this.state.runner, name: "config", "aria-label": "\u7248\u672C\u5316\u914D\u7F6E JSON", className: "code-input", defaultValue: (parent?.contract.runner ?? this.state.runner) === 'trusted-example' ? JSON.stringify({ polynomialDegree: parent ? 2 : 1, ridge: 0.000001 }, null, 2) : '', rows: 5 })),
+            React.createElement("p", { className: "small muted" }, "\u7559\u7A7A\u4FDD\u7559\u6765\u6E90\u6587\u4EF6\uFF1B\u586B\u5199\u65F6\u5C06\u914D\u7F6E\u4FDD\u5B58\u4E3A config.json\u3002\u521B\u5EFA\u5B9E\u9A8C\u4E0D\u4F1A\u8FD0\u884C\u4EE3\u7801\uFF0C\u6B63\u5F0F\u8FD0\u884C\u53E6\u884C\u51C6\u5907\u5E76\u6279\u51C6\u3002"));
+    }
+}
 class App extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', messages: [], stream: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
+        this.state = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun: saved().selectedRun ?? '', messages: [], stream: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
         this.refreshing = false;
         this.refreshEpoch = 0;
         this.cursor = 0;
@@ -61,8 +172,8 @@ class App extends React.Component {
     }
     componentWillUnmount() { clearInterval(this.timer); clearTimeout(this.noticeTimer); }
     componentDidUpdate(_, prev) {
-        if (['projectId', 'sessionId', 'tab', 'selectedExp'].some(k => prev[k] !== this.state[k]))
-            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp }));
+        if (['projectId', 'sessionId', 'tab', 'selectedExp', 'selectedRun'].some(k => prev[k] !== this.state[k]))
+            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun }));
     }
     async refresh(quiet = false) {
         if (this.refreshing || quiet && this.state.busy)
@@ -131,17 +242,7 @@ class App extends React.Component {
                 React.createElement("div", { className: "notice" },
                     React.createElement("p", null, "\u66F2\u7EBF\u62DF\u5408\u4F7F\u7528\u56FA\u5B9A\u5408\u6210\u6570\u636E\uFF0C\u771F\u5B9E\u6267\u884C\u6570\u503C\u8BA1\u7B97\u3002\u5B83\u7528\u4E8E\u9A8C\u8BC1\u7CFB\u7EDF\uFF0C\u4E0D\u662F\u6750\u6599\u7814\u7A76\u6216 LLM \u6A21\u62DF\u3002")));
         if (modal === 'experiment')
-            return React.createElement(Modal, { ...base, wide: true, title: modalData?.parentId ? '派生子实验' : '建立实验草案', submitLabel: "\u4FDD\u5B58\u5B9E\u9A8C\u8349\u6848", onSubmit: fd => this.perform(async () => { const e = await api('/experiments', { projectId: data.project.id, title: fd.get('title'), hypothesis: fd.get('hypothesis'), ...(modalData?.parentId ? { parentId: modalData.parentId } : {}), config: JSON.parse(String(fd.get('config'))) }); this.setState({ selectedExp: e.id, tab: 'experiments' }); done(); }) },
-                React.createElement("label", null,
-                    "\u5B9E\u9A8C\u540D\u79F0",
-                    React.createElement("input", { "aria-label": "\u5B9E\u9A8C\u540D\u79F0", name: "title", defaultValue: modalData?.parentId ? '新候选实验' : '基线实验', required: true })),
-                React.createElement("label", null,
-                    "\u7814\u7A76\u5047\u8BBE",
-                    React.createElement("textarea", { "aria-label": "\u7814\u7A76\u5047\u8BBE", name: "hypothesis", required: true, placeholder: "\u8981\u68C0\u9A8C\u7684\u5047\u8BBE\u3001\u5BF9\u7167\u6761\u4EF6\u548C\u9884\u671F\u7ED3\u679C" })),
-                React.createElement("label", null,
-                    "\u7248\u672C\u5316\u914D\u7F6E JSON",
-                    React.createElement("textarea", { "aria-label": "\u7248\u672C\u5316\u914D\u7F6E JSON", name: "config", className: "code-input", defaultValue: JSON.stringify({ polynomialDegree: modalData?.parentId ? 2 : 1, ridge: 0.000001 }, null, 2), required: true, rows: 5 })),
-                React.createElement("p", { className: "small muted" }, "\u914D\u7F6E\u968F\u4EE3\u7801\u8FDB\u5165\u5FEB\u7167\uFF0C\u4E0D\u901A\u8FC7\u4E34\u65F6\u547D\u4EE4\u884C\u53C2\u6570\u4FEE\u6539\u5B9E\u9A8C\u6761\u4EF6\u3002\u6D3E\u751F\u5B9E\u9A8C\u7EE7\u627F\u7236\u8282\u70B9\u8FD0\u884C\u5951\u7EA6\u3002"));
+            return React.createElement(ExperimentModal, { ...base, parent: data.experiments.find(e => e.id === modalData?.parentId), perform: this.perform, onSave: async (input) => { const e = await api('/experiments', { projectId: data.project.id, ...input }); this.setState({ selectedExp: e.id, tab: 'experiments' }); done(); } });
         if (modal === 'config')
             return React.createElement(Modal, { ...base, wide: true, title: "\u5B9E\u9A8C\u7248\u672C\u5316\u914D\u7F6E", submitLabel: modalData.frozen ? '关闭只读配置' : '保存配置修订', onSubmit: fd => this.perform(async () => {
                     if (!modalData.frozen)
@@ -301,14 +402,14 @@ class App extends React.Component {
                         React.createElement("p", { className: "small muted" }, "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002")) :
                         tab === 'chat' ? React.createElement(Chat, { data: data, boot: boot, session: currentSession, messages: this.state.messages, stream: this.state.stream, perform: this.perform, onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: 'experiments' }), onWorkspace: () => this.setState({ tab: 'workspace' }), onSession: id => this.selectSession(id) }) :
                             tab === 'campaigns' ? React.createElement(CampaignView, { key: data.project.id, data: data, busy: this.state.busy, perform: this.perform, onSession: id => this.selectSession(id), onExperiment: id => this.setState({ selectedExp: id, tab: 'experiments' }) }) :
-                                tab === 'experiments' ? React.createElement(Experiments, { data: data, selected: this.state.selectedExp, onSelect: selectedExp => { this.refreshEpoch++; this.setState({ selectedExp }); }, onCreate: () => this.open('experiment'), onChild: () => this.open('experiment', { parentId: experiment?.id }) }) :
+                                tab === 'experiments' ? React.createElement(Experiments, { data: data, selected: this.state.selectedExp, onSelect: selectedExp => { this.refreshEpoch++; this.setState({ selectedExp, selectedRun: '' }); }, onRun: (selectedRun, selectedExp) => this.setState({ selectedRun, selectedExp }), onCreate: () => this.open('experiment'), onChild: () => this.open('experiment', { parentId: experiment?.id }) }) :
                                     tab === 'changes' ? React.createElement(ChangesView, { key: data.project.id, data: data, perform: this.perform }) :
                                         tab === 'workspace' ? React.createElement(WorkspaceView, { key: data.project.id, data: data, perform: this.perform }) :
                                             tab === 'integrations' ? React.createElement(IntegrationsView, { key: data.project.id, projectId: data.project.id }) :
                                                 tab === 'literature' ? React.createElement(LiteratureView, { key: data.project.id, data: data, perform: this.perform }) :
                                                     tab === 'evidence' ? React.createElement(EvidenceView, { key: data.project.id, data: data, perform: this.perform, onRegister: (artifactId, content) => this.open('evidence', { artifactId, content }), onClaim: () => this.open('claim') }) :
                                                         tab === 'reports' ? React.createElement(ReportsView, { key: data.project.id, data: data, perform: this.perform }) : null),
-                    data && boot && ['chat', 'experiments'].includes(tab) ? React.createElement(Inspector, { data: data, boot: boot, tab: tab, experiment: experiment, perform: this.perform, onToggle: () => this.toggle(), onTeam: () => this.open('team'), onPrepare: () => {
+                    data && boot && ['chat', 'experiments'].includes(tab) ? React.createElement(Inspector, { data: data, boot: boot, tab: tab, experiment: experiment, selectedRun: this.state.selectedRun, onRun: selectedRun => this.setState({ selectedRun }), perform: this.perform, onToggle: () => this.toggle(), onTeam: () => this.open('team'), onPrepare: () => {
                             if (experiment)
                                 this.perform(() => api('/run-intents', { experimentId: experiment.id }), '已准备不可变快照，等待人工批准');
                         }, onChild: () => this.open('experiment', { parentId: experiment?.id }), onConfig: () => {

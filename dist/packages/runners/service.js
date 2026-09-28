@@ -2,15 +2,16 @@ import { assertExperimentSourceCurrent, assertProjectWritable } from '../policy/
 import { answerDisposition, assertOutcomeBoundary } from './outcome.js';
 import { object, text, integer, oneOf } from '../contracts/validation.js';
 import { collectRunArtifacts } from './artifacts.js';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, existsSync, openSync, closeSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, openSync, closeSync, chmodSync, lstatSync, fstatSync, readSync, constants } from 'node:fs';
 import { join } from 'node:path';
 import { ensure, asError } from '../domain/errors.js';
 import { scope, userOnly, toolAllowed } from '../policy/permissions.js';
 import { digest, now } from '../storage/store.js';
-import { snapshotDirectory, verifySnapshot } from '../workspace/files.js';
-import { verifyTrustedExample } from './contracts.js';
+import { snapshotDirectory, verifySnapshot, safePath } from '../workspace/files.js';
+import { verifyTrustedExample, validateContract } from './contracts.js';
+import { readStableFile } from '../workspace/stable-file.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
     c;
@@ -26,7 +27,23 @@ export class RunService {
     prepare(actor, experimentId) {
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_prepare');
-        return this.c.store.transaction(() => { const e = this.c.store.get('experiment', experimentId); scope(actor, e.projectId); assertProjectWritable(this.c.store, e.projectId); assertExperimentSourceCurrent(this.c.store, e); ensure(e.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能执行'); assertOutcomeBoundary(this.c.store, e); const snap = snapshotDirectory(e.workspace, join(this.c.dataDir, 'snapshots')); const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: snap.path, sourceFiles: snap.files, createdAt: now() }; verifyTrustedExample(manifest, this.c.repoRoot); const id = randomUUID(), hash = digest(manifest); const approval = this.approvals.request(e.projectId, 'run-intent', id, hash, 'run.submit', '批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限'); const result = this.c.store.create('run-intent', e.projectId, { experimentId: e.id, manifest, manifestDigest: hash, approvalId: approval.id, status: 'prepared' }, id); this.c.store.event(e.projectId, 'run.prepared', { intentId: id, experimentId: e.id, approvalId: approval.id, snapshotDigest: snap.digest }); return result; });
+        return this.c.store.transaction(() => {
+            const e = this.c.store.get('experiment', experimentId);
+            scope(actor, e.projectId);
+            assertProjectWritable(this.c.store, e.projectId);
+            assertExperimentSourceCurrent(this.c.store, e);
+            ensure(e.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能执行');
+            assertOutcomeBoundary(this.c.store, e);
+            validateContract(e.contract);
+            const snap = snapshotDirectory(e.workspace, join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
+            const binding = revision ? this.c.store.maybe('git-source-binding', revision.id) : undefined;
+            const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: snap.path, sourceFiles: snap.files, createdAt: now(), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
+            verifyTrustedExample(manifest, this.c.repoRoot);
+            const id = randomUUID(), hash = digest(manifest), approval = this.approvals.request(e.projectId, 'run-intent', id, hash, 'run.submit', '批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限');
+            const result = this.c.store.create('run-intent', e.projectId, { experimentId: e.id, manifest, manifestDigest: hash, approvalId: approval.id, status: 'prepared' }, id);
+            this.c.store.event(e.projectId, 'run.prepared', { intentId: id, experimentId: e.id, approvalId: approval.id, snapshotDigest: snap.digest });
+            return result;
+        });
     }
     submit(actor, id) {
         if (actor.type !== 'user')
@@ -44,13 +61,11 @@ export class RunService {
             this.approvals.assert(intent.approvalId, intent.projectId, id, intent.manifestDigest, 'run.submit');
             verifySnapshot(intent.manifest.snapshotPath, intent.manifest.sourceFiles);
             verifyTrustedExample(intent.manifest, this.c.repoRoot);
-            if (intent.manifest.contract.runner === 'docker') {
-                const check = spawnSync('docker', ['version', '--format', '{{.Server.Version}}'], { encoding: 'utf8', timeout: 4000 });
-                ensure(check.status === 0, 'RUNNER_UNAVAILABLE', 'Docker 服务未就绪；不会回退到无隔离宿主执行', 503);
-            }
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
-            const run = this.c.store.create('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir, cancelRequested: false, artifactIds: [], evidenceIds: [] }, runId);
+            chmodSync(outputDir, 0o777);
+            const execution = intent.manifest.contract.runner === 'docker' ? { backend: 'docker', dockerContext: intent.manifest.contract.dockerContext ?? 'default', containerName: `pi-research-${runId}`, controlDir: join(this.c.dataDir, 'jobs', runId, 'control'), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
+            const run = this.c.store.create('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir, cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}) }, runId);
             this.c.store.update('run-intent', id, intent.version, { status: 'submitted', runId });
             this.c.store.event(intent.projectId, 'run.queued', { runId, intentId: id });
             return run;
@@ -68,6 +83,10 @@ export class RunService {
     /** Recheck the durable execution grant inside the transaction that claims a queued Run. */
     assertLaunchable(run) {
         ensure(run.state === 'queued' && !run.startedAt && !run.childPid && !run.cancelRequested, 'RUN_NOT_LAUNCHABLE', '作业已启动、取消或不再排队');
+        this.assertExecutionGrant(run);
+    }
+    /** Also used just before Docker start and while supervising a running immutable job. */
+    assertExecutionGrant(run) {
         assertProjectWritable(this.c.store, run.projectId);
         const e = this.c.store.get('experiment', run.experimentId, run.projectId);
         assertExperimentSourceCurrent(this.c.store, e);
@@ -76,6 +95,9 @@ export class RunService {
         ensure(intent.status === 'submitted' && intent.runId === run.id && intent.experimentId === e.id && run.manifest.experimentId === e.id &&
             intent.manifestDigest === run.manifestDigest && digest(intent.manifest) === run.manifestDigest && digest(run.manifest) === run.manifestDigest, 'APPROVAL_STALE', '作业、运行意向与已批准快照不一致');
         ensure(e.revision === run.manifest.experimentRevision && e.contractDigest === run.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
+        ensure(digest(run.manifest.contract) === run.manifest.contractDigest && digest(run.manifest.sourceFiles) === run.manifest.snapshotDigest, 'MANIFEST_CORRUPTED', '运行契约或源码清单摘要不符');
+        if (run.execution)
+            ensure(run.execution.backend === 'docker' && run.manifest.contract.runner === 'docker' && run.execution.dockerContext === (run.manifest.contract.dockerContext ?? 'default') && run.execution.containerName === `pi-research-${run.id}` && run.execution.controlDir === join(this.c.dataDir, 'jobs', run.id, 'control'), 'APPROVAL_STALE', '运行目标与批准契约不符');
         assertOutcomeBoundary(this.c.store, e);
         this.approvals.assert(intent.approvalId, run.projectId, intent.id, run.manifestDigest, 'run.submit');
     }
@@ -99,17 +121,21 @@ export class RunService {
             }
         });
         const all = this.c.store.list('run');
-        if (all.some(r => ['submitting', 'running', 'cancelling', 'unknown'].includes(r.state)))
+        const active = all.find(r => ['submitting', 'running', 'cancelling', 'unknown'].includes(r.state));
+        if (active && (!active.execution || active.execution.leaseUntil > Date.now()))
             return;
-        const run = all.find(r => r.state === 'queued' && !r.startedAt && !r.childPid && !this.launching.has(r.id));
+        const run = active ?? all.find(r => r.state === 'queued' && !r.startedAt && !r.childPid && !this.launching.has(r.id));
         if (!run)
+            return;
+        if (this.launching.has(run.id))
             return;
         this.launching.add(run.id);
         const logDir = join(this.c.dataDir, 'jobs', run.id, 'control');
         mkdirSync(logDir, { recursive: true, mode: 0o700 });
         const fd = openSync(join(logDir, 'supervisor.log'), 'a', 0o600);
         try {
-            const child = spawn(process.execPath, [join(this.c.repoRoot, 'dist', 'apps', 'runner-supervisor', 'index.js'), this.c.dataDir, this.c.repoRoot, run.id], { detached: process.platform !== 'win32', stdio: ['ignore', fd, fd], env: { PATH: process.env.PATH ?? '', SystemRoot: process.env.SystemRoot ?? '', HOME: logDir }, windowsHide: true });
+            const env = Object.fromEntries(['PATH', 'SystemRoot', 'WINDIR', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
+            const child = spawn(process.execPath, [join(this.c.repoRoot, 'dist', 'apps', 'runner-supervisor', 'index.js'), this.c.dataDir, this.c.repoRoot, run.id], { detached: true, stdio: ['ignore', fd, fd], env, windowsHide: true });
             child.on('error', () => { this.launching.delete(run.id); });
             child.unref();
         }
@@ -124,23 +150,78 @@ export class RunService {
             const r = this.get(actor, id);
             if (TERMINAL.includes(r.state))
                 return r;
-            ensure(r.state !== 'unknown', 'PROVIDER_STATE_UNKNOWN', '作业状态未知，禁止盲目按 PID 取消；请先对账', 409);
+            ensure(r.state !== 'unknown' || r.execution?.backend === 'docker', 'PROVIDER_STATE_UNKNOWN', '作业状态未知，禁止盲目按 PID 取消；请先对账', 409);
             const queued = r.state === 'queued';
             const result = this.c.store.update('run', id, r.version, { cancelRequested: true, state: queued ? 'cancelled' : 'cancelling', ...(queued ? { integrity: 'incomplete', endedAt: now() } : {}) });
             this.c.store.event(r.projectId, 'run.cancel_requested', { runId: id });
             return result;
         });
     }
-    logs(actor, id, cursor = 0) { const run = this.get(actor, id); const path = join(run.outputDir, 'stdout.log'); const bytes = existsSync(path) ? readFileSync(path) : Buffer.alloc(0); const start = Math.min(Math.max(0, cursor), bytes.length), end = Math.min(start + 65536, bytes.length); return { content: bytes.subarray(start, end).toString('utf8'), cursor: end, complete: TERMINAL.includes(run.state) && end === bytes.length }; }
-    finalize(id, exitCode, state, error) {
+    logs(actor, id, cursor = 0, stream = 'stdout') {
+        const run = this.get(actor, id);
+        integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER);
+        oneOf(stream, ['stdout', 'stderr'], 'stream');
+        const path = safePath(run.execution?.controlDir ?? run.outputDir, `${stream}.log`);
+        if (!existsSync(path))
+            return { content: '', cursor, complete: TERMINAL.includes(run.state) };
+        const before = lstatSync(path);
+        ensure(before.isFile(), 'ARTIFACT_NOT_FILE', '日志必须是普通文件');
+        const fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+        try {
+            const stat = fstatSync(fd);
+            ensure(stat.isFile() && stat.ino === before.ino && stat.dev === before.dev, 'ARTIFACT_CHANGED', '日志已被替换');
+            const start = Math.min(cursor, stat.size), bytes = Buffer.alloc(Math.min(65536, stat.size - start)), n = readSync(fd, bytes, 0, bytes.length, start);
+            return { content: bytes.subarray(0, n).toString('utf8'), cursor: start + n, complete: TERMINAL.includes(run.state) && start + n >= stat.size };
+        }
+        finally {
+            closeSync(fd);
+        }
+    }
+    sourceList(actor, id) { const r = this.get(actor, id); verifySnapshot(r.manifest.snapshotPath, r.manifest.sourceFiles); const revisionId = r.manifest.sourceRevisionId ?? digest({ projectId: r.projectId, experimentId: r.experimentId, revision: r.manifest.experimentRevision }), binding = this.c.store.maybe('git-source-binding', revisionId); return { runId: r.id, experimentId: r.experimentId, revision: r.manifest.experimentRevision, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit ?? (binding?.sourceDigest === r.manifest.snapshotDigest ? binding.gitCommit : undefined), files: r.manifest.sourceFiles }; }
+    sourceRead(actor, id, value) {
+        const x = object(value), r = this.get(actor, id), meta = this.sourceList(actor, id), path = text(x.path, 'path', 1000), f = meta.files.find(f => f.path === path);
+        ensure(f, 'NOT_FOUND', '运行快照中没有该文件', 404);
+        ensure(f.size <= 2 * 1024 * 1024, 'FILE_TOO_LARGE', '该源码文件超过文本预览上限', 413);
+        const bytes = readStableFile(r.manifest.snapshotPath, path, 2 * 1024 * 1024);
+        ensure(bytes.length === f.size && digest(bytes) === f.digest, 'SNAPSHOT_CORRUPTED', '运行源码字节不符');
+        ensure(!bytes.includes(0), 'BINARY_FILE', '该文件不能作为文本源码预览', 415);
+        let content;
+        try {
+            content = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        }
+        catch {
+            ensure(false, 'BINARY_FILE', '源码不是 UTF-8 文本', 415);
+        }
+        const cursor = integer(x.cursor ?? 0, 'cursor', 0, content.length), limit = integer(x.limit ?? 16000, 'limit', 1, 64000), end = Math.min(content.length, cursor + limit), { files, ...metadata } = meta;
+        return { ...metadata, ...f, content: content.slice(cursor, end), cursor, end, complete: end === content.length };
+    }
+    finalize(id, exitCode, state, error, facts) {
         return this.c.store.transaction(() => {
             let r = this.c.store.get('run', id);
             if (TERMINAL.includes(r.state))
                 return r;
-            const { integrity, metrics, artifactIds, evidenceIds, errors } = collectRunArtifacts(r, this.evidence);
+            if (facts)
+                ensure(r.execution?.generation === facts.generation && r.execution.leaseUntil > Date.now(), 'LEASE_EXPIRED', '旧监管器不能归档当前作业');
+            const collected = collectRunArtifacts(r, this.evidence), { metrics, artifactIds, evidenceIds, errors } = collected;
+            let integrity = collected.integrity;
+            if (facts?.incomplete && integrity !== 'invalid')
+                integrity = 'incomplete';
+            if (r.execution) {
+                try {
+                    this.assertExecutionGrant(r);
+                }
+                catch {
+                    integrity = 'invalid';
+                    errors.push('运行来源或批准已失效');
+                }
+            }
             if (errors.length)
                 error = [error, ...errors].filter(Boolean).join('; ').slice(0, 8000);
-            r = this.c.store.update('run', id, r.version, { state, integrity, judgment: 'pending', answerDisposition: metrics && evidenceIds.length ? 'answered' : 'needs_review', exitCode, endedAt: now(), heartbeat: Date.now(), metrics, artifactIds, evidenceIds, ...(error ? { error } : {}) });
+            if (r.execution) {
+                const report = { runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit, command: r.manifest.contract.command, image: r.manifest.contract.image, imageId: r.execution.imageId, containerId: r.execution.containerId, exitCode, state, integrity, error, artifactIds: [...artifactIds], scientificConclusion: false }, a = this.evidence.put(r.projectId, 'execution.json', Buffer.from(JSON.stringify(report, null, 2)), 'application/json', 'run', { runId: r.id });
+                artifactIds.push(a.id);
+            }
+            r = this.c.store.update('run', id, r.version, { state, integrity, judgment: 'pending', answerDisposition: metrics && evidenceIds.length ? 'answered' : 'needs_review', exitCode, endedAt: now(), heartbeat: Date.now(), metrics, artifactIds, evidenceIds, ...(error ? { error } : {}), ...(r.execution ? { execution: { ...r.execution, leaseUntil: 0, logTruncated: facts?.logTruncated ?? r.execution.logTruncated, outputExceeded: facts?.outputExceeded ?? r.execution.outputExceeded } } : {}) });
             if (metrics && evidenceIds.length > 0) {
                 const exp = this.c.store.get('experiment', r.experimentId);
                 if (exp.revision === r.manifest.experimentRevision && exp.lifecycle === 'provisional')
@@ -171,21 +252,27 @@ export class RunService {
     }
     reconcile() {
         for (const r of this.c.store.list('run').filter(r => !TERMINAL.includes(r.state) && r.state !== 'queued')) {
-            const receipt = join(this.c.dataDir, 'jobs', r.id, 'control', 'terminal.json');
+            const receipt = join(this.c.dataDir, 'jobs', r.id, 'control', r.execution ? `terminal-${r.execution.generation}.json` : 'terminal.json');
             if (existsSync(receipt)) {
                 try {
                     const x = JSON.parse(readFileSync(receipt, 'utf8'));
                     ensure(x.manifestDigest === r.manifestDigest && TERMINAL.includes(x.state), 'INVALID_RECEIPT', '运行收据不匹配');
-                    this.finalize(r.id, x.exitCode, x.state, x.error);
+                    if (r.execution) {
+                        ensure(x.facts?.generation === r.execution.generation, 'INVALID_RECEIPT', 'Docker 运行回执 generation 不符');
+                        this.c.store.transaction(() => { const current = this.c.store.get('run', r.id); if (current.execution)
+                            this.c.store.update('run', r.id, current.version, { execution: { ...current.execution, leaseUntil: Date.now() + 60000 } }); this.finalize(r.id, x.exitCode, x.state, x.error, x.facts); });
+                    }
+                    else
+                        this.finalize(r.id, x.exitCode, x.state, x.error);
                 }
                 catch (e) {
                     this.c.store.event(r.projectId, 'run.reconciliation_error', { runId: r.id, message: e.message });
                 }
             }
-            else if (r.heartbeat && Date.now() - r.heartbeat > 15000 && r.state !== 'unknown') {
+            else if (r.heartbeat && Date.now() - r.heartbeat > (r.execution ? 60000 : 15000) && r.state !== 'unknown') {
                 this.c.store.transaction(() => {
                     const current = this.c.store.get('run', r.id);
-                    if (!TERMINAL.includes(current.state) && current.state !== 'unknown' && current.heartbeat && Date.now() - current.heartbeat > 15000) {
+                    if (!TERMINAL.includes(current.state) && current.state !== 'unknown' && current.heartbeat && Date.now() - current.heartbeat > (current.execution ? 60000 : 15000)) {
                         this.c.store.update('run', current.id, current.version, { state: 'unknown', error: '监管心跳超时；不自动重复提交或按旧 PID 取消' });
                         this.c.store.event(current.projectId, 'run.unknown', { runId: current.id });
                     }

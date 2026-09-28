@@ -67,7 +67,7 @@ export class WorkspaceView extends React.Component {
                         React.createElement("span", null, "\u51B2\u7A81\u65F6\u4FDD\u7559\u5F53\u524D\u7F16\u8F91\uFF0C\u4E0D\u8986\u76D6\u65B0\u7248\u672C")))),
             React.createElement("div", { className: "notice" },
                 React.createElement(Icon, { name: "folder" }),
-                React.createElement("p", null, "\u8FD9\u91CC\u4E0D\u63D0\u4F9B\u5BBF\u4E3B Shell\u3002\u4EFB\u610F\u5B9E\u9A8C\u4EE3\u7801\u5FC5\u987B\u8FDB\u5165\u53D7\u63A7 Docker Runner\uFF1B\u5F53\u524D\u73AF\u5883\u672A\u5B8C\u6210 Docker \u7684\u771F\u5B9E\u6267\u884C\u9A8C\u6536\u3002")));
+                React.createElement("p", null, "\u8FD9\u91CC\u4E0D\u63D0\u4F9B\u5BBF\u4E3B Shell\u3002\u4EFB\u610F\u5B9E\u9A8C\u4EE3\u7801\u5FC5\u987B\u8FDB\u5165\u53D7\u63A7 Docker Runner\uFF1B\u6E90\u7801\u3001\u56FA\u5B9A\u955C\u50CF\u4E0E\u8D44\u6E90\u5728\u6BCF\u6B21\u8FD0\u884C\u524D\u5355\u72EC\u6279\u51C6\u3002")));
     }
 }
 export class EvidenceView extends React.Component {

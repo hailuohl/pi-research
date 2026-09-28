@@ -8,11 +8,12 @@ const strings = (max = 100) => s.array(s.string(1000), max);
 const sources = s.enum(['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref']);
 const config = { type: 'object', additionalProperties: s.json('Experiment-specific configuration values; arbitrary keys and nested JSON are intentional because each runner owns its configuration contract.'), description: 'Runner-specific experiment configuration; schema validation does not apply defaults or coerce values.' } as const;
 const contract = s.object({
-    runner: s.enum(['trusted-example', 'docker']), image: s.string(250), command: s.array(s.string(1000), 30, 1),
-    environment: { type: 'object', additionalProperties: s.json('Runner environment metadata; the service currently supplies an empty execution environment.') },
+    runner: s.enum(['trusted-example', 'docker']), image: s.string(250), command: s.array({...s.string(1000,0),pattern:'^[^\u0000]*$'}, 30, 1),
+    environment: s.object({}),
     datasetVersion: s.string(200), evaluationProtocolVersion: s.string(200),
     metrics: { type: 'object', minProperties: 1, propertyNames: s.string(80), additionalProperties: s.object({ unit: s.string(100), direction: s.enum(['min', 'max']) }, ['unit', 'direction']) },
     expectedArtifacts: strings(30), timeoutSeconds: s.nullable(s.integer(1, 86400)), cpus: s.nullable(s.integer(1, 64)), memoryMb: s.nullable(s.integer(64, 65536)),
+    dockerContext:{...s.string(100),pattern:'^[A-Za-z0-9][A-Za-z0-9_.-]*$'},pids:s.integer(16,512),workMb:s.integer(16,1024),logBytes:s.integer(1,16*1024*1024),outputBytes:s.integer(1,128*1024*1024),networkPolicy:{const:'none'},
 }, ['runner', 'command', 'datasetVersion', 'evaluationProtocolVersion', 'metrics', 'expectedArtifacts']);
 const output = s.object({
     kind: s.enum(['report', 'dataset', 'patch', 'analysis', 'review', 'code', 'text']),
@@ -57,7 +58,9 @@ export const INPUT_SCHEMAS = {
     run_prepare: s.object({ experimentId: id }, ['experimentId']),
     run_submit: s.object({ intentId: id }, ['intentId']),
     run_inspect: s.object({ runId: id }, ['runId']),
-    run_logs: s.object({ runId: id, cursor }, ['runId']),
+    run_logs: s.object({ runId: id, cursor,stream:s.enum(['stdout','stderr']) }, ['runId']),
+    run_source_list:s.object({runId:id},['runId']),
+    run_source_read:s.object({runId:id,path:s.string(1000),cursor:s.integer(0),limit:s.integer(1,64000)},['runId','path']),
     approval_request: s.object({}),
     collaboration_plan_submit: plan,
     agent_delegate: plan,

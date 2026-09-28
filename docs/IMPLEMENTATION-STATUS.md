@@ -5,20 +5,20 @@
 | 关卡 | 当前状态 | 仍需完成 |
 |---|---|---|
 | PR01 | 构建、固定来源、双版回归、SDK 契约、无依赖启动已验；智谱 Coding Plan 的真实工具调用/流输出/引导/同会话恢复/中止已验 | 完整科研旅程仍待集成；上游 M0 页面基线仍为空 |
-| PR02 | 33 个旧工具及源码、开发测试、Git 工作区动作共 47 套契约，统一 Registry/HTTP/CLI/Pi | 前端全面类型消费随 PR09；完整 Pi 科研旅程待集成 |
+| PR02 | 33 个旧工具及源码、开发测试、Git 工作区、固定 Run 源码动作共 49 套契约，统一 Registry/HTTP/CLI/Pi | 前端全面类型消费随 PR09；完整 Pi 科研旅程待集成 |
 | PR03 | 指定版本/CAS、范围读取、文件差异、工作区与团队来源绑定、撤销及回滚检查通过本机测试 | 模型/浏览器真实旅程；跨进程硬崩溃后的文件系统与数据库对账随 PR05/07完善 |
 | PR04 | SandboxJob/DevelopmentTask、固定容器 Python、隔离/取消/服务关闭/worker 恢复与源码绑定已通过本机真实验收 | 工作台与 Pi 真实旅程；宿主硬配额、自动清理及更广目标环境随后续关卡 |
 | PR05 | 显式启用受管项目 Git、独立 worktree、完整源码差异/模式、提交与持久回执恢复已接入；导入保存来源且不复制 Git 配置 | 工作台入口与证据联动；完整并发/迁移矩阵进一步验收。源码准备批次通过不代表 PR05 所有场景已完成 |
-| PR06 | 通用化待实施；已补队列启动时的来源/批准复核 | RunnerAdapter、非白名单 Docker 任务与恢复；不将现有示例验收算通用运行器 |
+| PR06 | trusted-example 与 Docker 真实适配器已接入；非白名单 Python 正式 Run、单独批准、归档及不重复恢复已实测 | GPU/其他目标另验；当前只证明本机 Linux CPU Docker 路径 |
 | PR07 | 待实施 | 查询索引、事件恢复、配额调度、有界日志和性能证据 |
 | PR08 | 待实施 | 有界授权、真实单 Agent 闭环，随后多 Agent 对照 |
-| PR09 | 待实施 | 工作台类型/构建迁移、流程页面、证据联动及真实浏览器旅程 |
+| PR09 | Docker 原生表单、历史 Run、双流日志、原始产物预览和固定源码回查已通过桌面/390px 浏览器操作 | 实现/开发测试/独立审查页面串联；下载落盘自动化待补；完整类型/构建迁移及其他页面仍保留 |
 | PR10 | 待实施 | 五源实网、DocumentVersion、原始 PDF/页定位 |
 | PR11 | 待实施 | 技能导入审查、固定、回滚、能力预检与真实产物 |
 | PR12 | 待实施 | 隔离 LaTeX 构建、来源绑定、报告跳转与成果包 |
 | PR13 | 待实施 | SSH→Slurm 等真实后端、远程工作台，按目标分别验收 |
 | PR14 | 待实施 | 迁移/备份、显式发布、同步冲突、桌面和团队分发 |
 
-最近证据：[源码准备批次与真实 Pi 接入](acceptance/flow-source/RESULTS.zh-CN.md)。[PR04](acceptance/pr04/RESULTS.zh-CN.md)、[PR03](acceptance/pr03/RESULTS.zh-CN.md)、[PR02 首批](acceptance/pr02/RESULTS.zh-CN.md)和[PR01](acceptance/pr01/RESULTS.zh-CN.md)保留当时结果。整体目标尚未完成，不把局部后端验收当作完整浏览器科研旅程。
+最近证据：[正式运行与结果回查批次](acceptance/flow-run/RESULTS.zh-CN.md)。[源码准备与真实 Pi](acceptance/flow-source/RESULTS.zh-CN.md)、[PR04](acceptance/pr04/RESULTS.zh-CN.md)、[PR03](acceptance/pr03/RESULTS.zh-CN.md)、[PR02 首批](acceptance/pr02/RESULTS.zh-CN.md)和[PR01](acceptance/pr01/RESULTS.zh-CN.md)保留当时结果。整体目标尚未完成，不把局部后端验收当作完整浏览器科研旅程。
 
-下一批固定为“批准新 Python 程序→正式 Docker Run→回查指标和产物”，并接通闭环所需的工作台入口。Docker 与智谱真实 Pi 已可用；其他远程账户/GPU 环境按对应后续验收单列，不阻塞这条本地 CPU 闭环。
+下一批固定为“选定子实验源码→真实 Pi 实现→批准开发测试→独立审查→批准整合”，接入本批已验证的正式运行与回查页面，完成首条真实科研闭环。Docker 与智谱真实 Pi 已可用；其他远程账户/GPU 环境按对应后续验收单列。

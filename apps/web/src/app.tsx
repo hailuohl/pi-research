@@ -14,6 +14,7 @@ interface State {
     sessionId: string;
     tab: string;
     selectedExp: string;
+    selectedRun: string;
     messages: Row<Message>[];
     stream: string;
     modal: string;
@@ -35,8 +36,50 @@ function saved() {
         return {};
     }
 }
+class ExperimentModal extends React.Component<{
+    busy:boolean; parent?:any; onClose:()=>void; perform:Perform; onSave:(input:any)=>Promise<void>;
+}, {runner:string; metrics:number[];error:string}> {
+    state={runner:'trusted-example',metrics:[0],error:''};
+    private nextMetric=1;
+    render() {
+        const {parent,busy,onClose,perform,onSave}=this.props,docker=!parent&&this.state.runner==='docker';
+        return <Modal busy={busy} onClose={onClose} wide title={parent?'派生子实验':'建立实验草案'} submitLabel="保存实验草案" onSubmit={fd=>perform(async()=>{
+            this.setState({error:''});
+            try {
+            const config=String(fd.get('config')??'').trim();
+            const input:any={title:fd.get('title'),hypothesis:fd.get('hypothesis'),...(parent?{parentId:parent.id}:{}),...(config?{config:JSON.parse(config)}:{})};
+            if(docker){
+                const metrics:Record<string,{unit:string;direction:string}>=Object.create(null);
+                for(const id of this.state.metrics){const name=String(fd.get(`metric-${id}`)).trim();if(Object.prototype.hasOwnProperty.call(metrics,name))throw Error('指标名称不能重复');metrics[name]={unit:String(fd.get(`unit-${id}`)).trim(),direction:String(fd.get(`direction-${id}`))};}
+                const outputs=String(fd.get('outputs')).split(/\r?\n/).map(p=>p.trim()).filter(Boolean);
+                const args=String(fd.get('args')??'');
+                input.contract={runner:'docker',image:String(fd.get('image')).trim(),dockerContext:String(fd.get('context')).trim(),command:[String(fd.get('executable')).trim(),...(args?args.split(/\r?\n/):[])],environment:{},datasetVersion:String(fd.get('dataset')).trim(),evaluationProtocolVersion:String(fd.get('protocol')).trim(),metrics,expectedArtifacts:[...new Set(['metrics.json',...outputs])],cpus:Number(fd.get('cpus')),memoryMb:Number(fd.get('memory')),timeoutSeconds:Number(fd.get('timeout'))};
+            }
+            await onSave(input);
+            } catch(error){this.setState({error:error instanceof Error?error.message:String(error)});throw error;}
+        })}>
+            {this.state.error?<p role="alert" className="error-text">{this.state.error}</p>:null}
+            <label>实验名称<input name="title" aria-label="实验名称" defaultValue={parent?'新候选实验':'基线实验'} required maxLength={200}/></label>
+            <label>研究假设<textarea name="hypothesis" aria-label="研究假设" required placeholder="要检验的假设、对照条件和预期结果"/></label>
+            {parent?<p className="notice">继承父实验运行协议：{parent.contract.runner==='docker'?'Docker':'受信数值示例'}，入口 {parent.contract.command.join(' ')}。此处不修改镜像、指标或资源契约。</p>:<label>运行方式<select name="runner" aria-label="运行方式" value={this.state.runner} onChange={(e:any)=>this.setState({runner:e.target.value})}><option value="trusted-example">受信曲线拟合示例</option><option value="docker">Docker · 自有研究程序</option></select></label>}
+            {docker?<div>
+                <label>固定镜像摘要<input name="image" aria-label="固定镜像摘要" required placeholder="python@sha256:…" pattern=".+@sha256:[a-f0-9]{64}" maxLength={250}/></label>
+                <label>本地 Docker context<input name="context" aria-label="Docker context" defaultValue="desktop-linux" required maxLength={100}/></label>
+                <p className="small muted">填写本机已配置的 Linux Docker context 和已存在的固定镜像；保存不会下载镜像，也不代表引擎验证通过。</p>
+                <label>可执行程序<input name="executable" aria-label="可执行程序" defaultValue="python" required/></label>
+                <label>参数（每行一个，保留空格）<textarea name="args" aria-label="程序参数" defaultValue="main.py" rows={3}/></label>
+                <div className="form-columns"><label>数据版本<input name="dataset" aria-label="数据版本" required placeholder="例如 dataset-v1" maxLength={200}/></label><label>评估协议版本<input name="protocol" aria-label="评估协议版本" required placeholder="例如 holdout-v1" maxLength={200}/></label></div>
+                <fieldset><legend>实测指标</legend>{this.state.metrics.map((id,index)=><div className="form-columns" key={id}><label>指标名称 {index+1}<input name={`metric-${id}`} required maxLength={80} defaultValue={index===0?'mse':''}/></label><label>单位 {index+1}<input name={`unit-${id}`} required maxLength={100} placeholder="例如 dimensionless"/></label><label>方向 {index+1}<select name={`direction-${id}`}><option value="min">越低越好</option><option value="max">越高越好</option></select></label><button type="button" className="text-button" disabled={this.state.metrics.length===1} onClick={()=>this.setState({metrics:this.state.metrics.filter(n=>n!==id)})}>移除指标 {index+1}</button></div>)}<button type="button" className="secondary compact" onClick={()=>this.setState({metrics:[...this.state.metrics,this.nextMetric++]})}>添加指标</button></fieldset>
+                <label>必需产物（每行一个相对路径）<textarea name="outputs" aria-label="必需产物" defaultValue="metrics.json" rows={3}/></label><p className="small muted">metrics.json 始终必需；程序将指标及文件写入 PI_OUTPUT_DIR 指定的输出目录。</p>
+                <div className="form-columns"><label>CPU 核数<input name="cpus" type="number" min={1} max={64} defaultValue={1} required/></label><label>内存 MiB<input name="memory" type="number" min={64} max={65536} defaultValue={256} required/></label><label>超时秒数<input name="timeout" type="number" min={1} max={86400} defaultValue={60} required/></label></div>
+            </div>:null}
+            <label>版本化配置 JSON（可选）<textarea key={parent?.id??this.state.runner} name="config" aria-label="版本化配置 JSON" className="code-input" defaultValue={(parent?.contract.runner??this.state.runner)==='trusted-example'?JSON.stringify({polynomialDegree:parent?2:1,ridge:0.000001},null,2):''} rows={5}/></label>
+            <p className="small muted">留空保留来源文件；填写时将配置保存为 config.json。创建实验不会运行代码，正式运行另行准备并批准。</p>
+        </Modal>;
+    }
+}
 class App extends React.Component<{}, State> {
-    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', messages: [], stream: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
+    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'', messages: [], stream: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
     private timer?: number;
     private refreshing = false;
     private refreshEpoch = 0;
@@ -52,8 +95,8 @@ class App extends React.Component<{}, State> {
     }
     componentWillUnmount() { clearInterval(this.timer); clearTimeout(this.noticeTimer); }
     componentDidUpdate(_: any, prev: State) {
-        if (['projectId', 'sessionId', 'tab', 'selectedExp'].some(k => (prev as any)[k] !== (this.state as any)[k]))
-            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp }));
+        if (['projectId', 'sessionId', 'tab', 'selectedExp','selectedRun'].some(k => (prev as any)[k] !== (this.state as any)[k]))
+            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp,selectedRun:this.state.selectedRun }));
     }
     async refresh(quiet = false) {
         if (this.refreshing || quiet && this.state.busy)
@@ -136,7 +179,7 @@ class App extends React.Component<{}, State> {
         if (modal === 'project')
             return <Modal {...base} title="新建本地项目" submitLabel="创建项目" onSubmit={fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); this.setState({ projectId: p.id, sessionId: s.id, selectedExp: '', tab: 'chat' }); done(); })}><label>项目名称<input aria-label="项目名称" name="name" required maxLength={120} placeholder="例如：材料筛选研究"/></label><label>项目说明<textarea name="description" placeholder="研究目标、范围或输入资料"/></label><label>项目模板<select aria-label="项目模板" name="template" defaultValue="curve-fit"><option value="curve-fit">真实曲线拟合示例 · 可直接运行</option><option value="empty">空项目 · 自行准备文件</option></select></label><div className="notice"><p>曲线拟合使用固定合成数据，真实执行数值计算。它用于验证系统，不是材料研究或 LLM 模拟。</p></div></Modal>;
         if (modal === 'experiment')
-            return <Modal {...base} wide title={modalData?.parentId ? '派生子实验' : '建立实验草案'} submitLabel="保存实验草案" onSubmit={fd => this.perform(async () => { const e = await api('/experiments', { projectId: data!.project.id, title: fd.get('title'), hypothesis: fd.get('hypothesis'), ...(modalData?.parentId ? { parentId: modalData.parentId } : {}), config: JSON.parse(String(fd.get('config'))) }); this.setState({ selectedExp: e.id, tab: 'experiments' }); done(); })}><label>实验名称<input aria-label="实验名称" name="title" defaultValue={modalData?.parentId ? '新候选实验' : '基线实验'} required/></label><label>研究假设<textarea aria-label="研究假设" name="hypothesis" required placeholder="要检验的假设、对照条件和预期结果"/></label><label>版本化配置 JSON<textarea aria-label="版本化配置 JSON" name="config" className="code-input" defaultValue={JSON.stringify({ polynomialDegree: modalData?.parentId ? 2 : 1, ridge: 0.000001 }, null, 2)} required rows={5}/></label><p className="small muted">配置随代码进入快照，不通过临时命令行参数修改实验条件。派生实验继承父节点运行契约。</p></Modal>;
+            return <ExperimentModal {...base} parent={data!.experiments.find(e=>e.id===modalData?.parentId)} perform={this.perform} onSave={async input=>{const e=await api('/experiments',{projectId:data!.project.id,...input});this.setState({selectedExp:e.id,tab:'experiments'});done();}}/>;
         if (modal === 'config')
             return <Modal {...base} wide title="实验版本化配置" submitLabel={modalData.frozen ? '关闭只读配置' : '保存配置修订'} onSubmit={fd => this.perform(async () => {
                     if (!modalData.frozen)
@@ -175,14 +218,14 @@ class App extends React.Component<{}, State> {
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} session={currentSession} perform={this.perform}/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
                 tab === 'chat' ? <Chat data={data} boot={boot} session={currentSession} messages={this.state.messages} stream={this.state.stream} perform={this.perform} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)}/> :
                     tab === 'campaigns' ? <CampaignView key={data.project.id} data={data} busy={this.state.busy} perform={this.perform} onSession={id => this.selectSession(id)} onExperiment={id => this.setState({selectedExp:id,tab:'experiments'})}/> :
-                    tab === 'experiments' ? <Experiments data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.refreshEpoch++; this.setState({ selectedExp }); }} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
+                    tab === 'experiments' ? <Experiments data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.refreshEpoch++; this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>this.setState({selectedRun,selectedExp})} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
                         tab === 'changes' ? <ChangesView key={data.project.id} data={data} perform={this.perform}/> :
                         tab === 'workspace' ? <WorkspaceView key={data.project.id} data={data} perform={this.perform}/> :
                             tab === 'integrations' ? <IntegrationsView key={data.project.id} projectId={data.project.id}/> :
                             tab === 'literature' ? <LiteratureView key={data.project.id} data={data} perform={this.perform}/> :
                                 tab === 'evidence' ? <EvidenceView key={data.project.id} data={data} perform={this.perform} onRegister={(artifactId, content) => this.open('evidence', { artifactId, content })} onClaim={() => this.open('claim')}/> :
                                     tab === 'reports' ? <ReportsView key={data.project.id} data={data} perform={this.perform}/> : null}
- </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector data={data} boot={boot} tab={tab} experiment={experiment} perform={this.perform} onToggle={() => this.toggle()} onTeam={() => this.open('team')} onPrepare={() => {
+ </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector data={data} boot={boot} tab={tab} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onToggle={() => this.toggle()} onTeam={() => this.open('team')} onPrepare={() => {
                     if (experiment)
                         this.perform(() => api('/run-intents', { experimentId: experiment.id }), '已准备不可变快照，等待人工批准');
                 }} onChild={() => this.open('experiment', { parentId: experiment?.id })} onConfig={() => {

@@ -38,12 +38,12 @@ export declare class WakeupService {
         team: {
             id: string;
             goal: string;
-            state: "failed" | "completed" | "cancelled" | "awaiting_approval" | "active" | "paused" | "draining" | "partial";
+            state: "failed" | "cancelled" | "completed" | "awaiting_approval" | "active" | "paused" | "draining" | "partial";
         };
         tasks: {
             id: string;
             key: string;
-            execution: "running" | "failed" | "cancelled" | "pending" | "output_submitted" | "blocked" | "superseded" | "waiting_user";
+            execution: "failed" | "cancelled" | "running" | "pending" | "output_submitted" | "blocked" | "superseded" | "waiting_user";
             acceptance: "pending" | "rejected" | "accepted" | "disputed";
             result: import("../domain/types.js").TaskResult | null;
         }[];

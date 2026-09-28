@@ -5,6 +5,8 @@ const TOOL_METADATA: Record<string, {
     description: string;
     example: unknown;
 }> = {
+    run_source_list:{description:'列出指定正式 Run 实际执行的固定源码清单、摘要与 Git 绑定，不读取当前可变实验目录。',example:{runId:'run-id'}},
+    run_source_read:{description:'按文件及字符范围读取指定 Run 的真实固定源码，返回源码版本、摘要、模式和游标。',example:{runId:'run-id',path:'main.py',cursor:0,limit:16000}},
     workspace_history_inspect:{description:'查询当前会话受管 Git 工作区是否已就绪及固定 HEAD；pending 时先等待，不能继续改源码。',example:{}},
     workspace_history_diff:{description:'比较当前实际工作区与已记录 Git 版本；包括未跟踪/被 gitignore 忽略的获准源码、删除和文件模式变化。',example:{}},
     workspace_history_commit:{description:'将当前精确源码保存为新的本地 Git 提交，返回异步操作标识；不推送、不整合、不批准科学运行。',example:{expectedHead:'0000000000000000000000000000000000000000',message:'保存已实现的研究程序'}},

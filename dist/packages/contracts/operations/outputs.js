@@ -24,13 +24,14 @@ const contract = object({
     datasetVersion: string, evaluationProtocolVersion: string,
     metrics: { type: 'object', additionalProperties: object({ unit: string, direction: enumeration('min', 'max') }) },
     expectedArtifacts: strings, timeoutSeconds: integer, runner: enumeration('trusted-example', 'docker'),
-    image: string, cpus: integer, memoryMb: integer
-}, ['image']);
+    image: string, cpus: integer, memoryMb: integer, dockerContext: string, pids: integer, workMb: integer, logBytes: integer, outputBytes: integer, networkPolicy: { const: 'none' }
+}, ['image', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy']);
 const manifest = object({
     experimentId: string, experimentVersion: integer, experimentRevision: integer,
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
-    sourceFiles: array(sourceFile), createdAt: string
-});
+    sourceFiles: array(sourceFile), createdAt: string, sourceRevisionId: string, gitCommit: string
+}, ['sourceRevisionId', 'gitCommit']);
+const runnerExecution = object({ backend: { const: 'docker' }, dockerContext: string, containerName: string, containerId: string, imageId: string, controlDir: string, generation: integer, leaseUntil: number, startRequested: boolean, recoveryCount: integer, logTruncated: boolean, logsIncomplete: boolean, outputExceeded: boolean }, ['containerId', 'imageId', 'logTruncated', 'logsIncomplete', 'outputExceeded']);
 const taskResult = object({
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,
     claims: array(object({ statement: string, evidenceIds: strings, limitations: strings })),
@@ -50,8 +51,8 @@ const CORE_OUTPUT_SCHEMAS = {
         answerDisposition: enumeration('answered', 'unanswered', 'needs_review'), answerReviewId: string,
         outputDir: string, supervisorPid: integer, childPid: integer, heartbeat: number, startedAt: string, endedAt: string,
         exitCode: { anyOf: [integer, { type: 'null' }] }, cancelRequested: boolean,
-        metrics: { type: 'object', additionalProperties: number }, error: string, artifactIds: strings, evidenceIds: strings
-    }, ['answerDisposition', 'answerReviewId', 'supervisorPid', 'childPid', 'heartbeat', 'startedAt', 'endedAt', 'exitCode', 'metrics', 'error']),
+        metrics: { type: 'object', additionalProperties: number }, error: string, artifactIds: strings, evidenceIds: strings, execution: runnerExecution
+    }, ['answerDisposition', 'answerReviewId', 'supervisorPid', 'childPid', 'heartbeat', 'startedAt', 'endedAt', 'exitCode', 'metrics', 'error', 'execution']),
     workspace_read: object({ path: string, content: string, digest: string, size: integer }),
     workspace_write: object({ path: string, digest: string, size: integer }),
     change_proposal_prepare: row('change-proposal', {
@@ -116,6 +117,8 @@ export const OUTPUT_SCHEMAS = {
     evidence_read: evidence,
     session_notice_read: object({ messageId: string, content: string, cursor: integer, complete: boolean }),
     run_logs: object({ content: string, cursor: integer, complete: boolean }),
+    run_source_list: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, files: array(sourceFile) }, ['gitCommit']),
+    run_source_read: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, path: string, size: integer, digest: string, mode: enumeration('100644', '100755'), cursor: integer, end: integer, complete: boolean, content: string }, ['gitCommit', 'mode']),
     approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string }, ['decidedAt'])),
     experiment_plan_submit: row('experiment', { title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId']),
     collaboration_plan_submit: team,

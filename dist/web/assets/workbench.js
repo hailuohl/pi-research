@@ -1,6 +1,6 @@
 import { WakeupPanel } from './campaigns.js';
 import { comparableRuns, comparisonMetric } from './models.js';
-import { api } from './api.js';
+import { api, artifactText, downloadArtifact } from './api.js';
 import { short, number, date, label } from './models.js';
 import { Icon, Badge, Empty, SectionTitle } from './ui.js';
 export class Chat extends React.Component {
@@ -101,7 +101,7 @@ export class Chat extends React.Component {
                     React.createElement("span", null, "Ctrl + Enter \u53D1\u9001"))));
     }
 }
-export function Experiments({ data, selected, onSelect, onCreate, onChild }) {
+export function Experiments({ data, selected, onSelect, onCreate, onChild, onRun }) {
     const roots = data.experiments.filter(e => !e.parentId);
     const tree = (e, depth = 0) => React.createElement("div", { className: "experiment-branch", key: e.id },
         React.createElement("button", { className: 'experiment-node ' + (selected === e.id ? 'selected' : ''), style: { marginLeft: Math.min(depth, 6) * 20 }, onClick: () => onSelect(e.id) },
@@ -159,11 +159,14 @@ export function Experiments({ data, selected, onSelect, onCreate, onChild }) {
                             React.createElement("th", null, "\u5B9E\u6D4B\u6307\u6807\uFF08\u6309\u8FD0\u884C\u5951\u7EA6\uFF09"))),
                     React.createElement("tbody", null, data.runs.slice().reverse().map(r => React.createElement("tr", { key: r.id, onClick: () => onSelect(r.experimentId), className: r.experimentId === selected ? 'selected-row' : '' },
                         React.createElement("td", null,
-                            React.createElement("strong", null, data.experiments.find(e => e.id === r.experimentId)?.title),
-                            React.createElement("small", null,
-                                short(r.id),
+                            React.createElement("button", { className: "text-button", onClick: (event) => { event.stopPropagation(); if (onRun)
+                                    onRun(r.id, r.experimentId);
+                                else
+                                    onSelect(r.experimentId); } },
+                                data.experiments.find(e => e.id === r.experimentId)?.title,
                                 " \u00B7 ",
-                                date(r.createdAt))),
+                                short(r.id)),
+                            React.createElement("small", null, date(r.createdAt))),
                         React.createElement("td", null,
                             React.createElement(Badge, { value: r.state })),
                         React.createElement("td", null,
@@ -208,35 +211,160 @@ export function OutcomeReview({ run, perform }) {
             React.createElement("button", { className: "secondary", onClick: () => review('unanswered') }, "\u672A\u56DE\u7B54\uFF1A\u5141\u8BB8\u51C6\u5907\u4FEE\u590D"),
             React.createElement("button", { className: "secondary", onClick: () => review('answered') }, "\u5DF2\u56DE\u7B54\uFF1A\u51BB\u7ED3\u8282\u70B9")));
 }
-export class Inspector extends React.Component {
+class RunFiles extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { logs: '', runId: '' };
+        this.state = { stream: 'stdout', logs: '', cursor: 0, logComplete: false, logLoading: false, logError: '', artifactId: '', artifactContent: '', artifactLoading: false, artifactError: '', files: [], sourceLoaded: false, sourcePath: '', sourceContent: '', sourceCursor: 0, sourceComplete: false, sourceLoading: false, sourceError: '', gitCommit: this.props.run.manifest.gitCommit ?? '' };
+        this.logEpoch = 0;
+        this.sourceEpoch = 0;
+        this.artifactEpoch = 0;
     }
-    componentDidMount() { this.loadLogs(); }
-    componentDidUpdate(prev) {
-        const run = this.currentRun();
-        if (run?.id !== this.state.runId || prev.data.runs.find((r) => r.id === run?.id)?.version !== run?.version)
-            this.loadLogs();
-    }
-    currentRun() { const runs = this.props.data.runs.filter(r => r.experimentId === this.props.experiment?.id); return runs[runs.length - 1]; }
+    componentDidMount() { void this.loadLogs(); this.timer = window.setInterval(() => { if (!this.state.logComplete)
+        void this.loadLogs(); }, 1500); }
+    componentWillUnmount() { clearInterval(this.timer); this.logEpoch++; this.sourceEpoch++; this.artifactEpoch++; }
     async loadLogs() {
-        const r = this.currentRun();
-        if (!r) {
-            if (this.state.runId)
-                this.setState({ logs: '', runId: '' });
+        if (this.state.logLoading)
             return;
-        }
-        const id = r.id;
+        const epoch = this.logEpoch, { stream, cursor } = this.state;
+        this.setState({ logLoading: true, logError: '' });
         try {
-            const log = await api(`/runs/${id}/logs`);
-            if (this.currentRun()?.id === id)
-                this.setState({ runId: id, logs: log.content });
+            const page = await api(`/runs/${this.props.run.id}/logs?stream=${stream}&cursor=${cursor}`);
+            if (epoch === this.logEpoch)
+                this.setState({ logs: this.state.logs + page.content, cursor: page.cursor, logComplete: page.complete });
         }
-        catch {
-            this.setState({ runId: id, logs: '日志暂不可读' });
+        catch (error) {
+            if (epoch === this.logEpoch)
+                this.setState({ logError: error instanceof Error ? error.message : String(error) });
+        }
+        finally {
+            if (epoch === this.logEpoch)
+                this.setState({ logLoading: false });
         }
     }
+    selectStream(stream) { this.logEpoch++; this.setState({ stream, logs: '', cursor: 0, logComplete: false, logLoading: false, logError: '' }, () => void this.loadLogs()); }
+    async openArtifact(id) {
+        const epoch = ++this.artifactEpoch;
+        this.setState({ artifactId: id, artifactContent: '', artifactLoading: true, artifactError: '' });
+        try {
+            const content = await artifactText(id);
+            if (content.includes('\0'))
+                throw Error('二进制产物请下载查看。');
+            if (epoch === this.artifactEpoch)
+                this.setState({ artifactContent: content.length > 65536 ? content.slice(0, 65536) + '\n…预览到此，下载可查看完整文件。' : content });
+        }
+        catch (error) {
+            if (epoch === this.artifactEpoch)
+                this.setState({ artifactError: error instanceof Error ? error.message : String(error) });
+        }
+        finally {
+            if (epoch === this.artifactEpoch)
+                this.setState({ artifactLoading: false });
+        }
+    }
+    sourceOperation(name, input) { return api(`/operations/${name}`, { projectId: this.props.data.project.id, input: { runId: this.props.run.id, ...input } }); }
+    async loadSource() {
+        const epoch = ++this.sourceEpoch;
+        this.setState({ sourceLoading: true, sourceError: '' });
+        try {
+            const result = await this.sourceOperation('run_source_list', {});
+            if (result.sourceDigest !== this.props.run.manifest.snapshotDigest)
+                throw Error('源码摘要与所选运行不一致。');
+            if (epoch === this.sourceEpoch)
+                this.setState({ files: result.files, sourceLoaded: true, gitCommit: result.gitCommit ?? '' });
+        }
+        catch (error) {
+            if (epoch === this.sourceEpoch)
+                this.setState({ sourceError: error instanceof Error ? error.message : String(error) });
+        }
+        finally {
+            if (epoch === this.sourceEpoch)
+                this.setState({ sourceLoading: false });
+        }
+    }
+    async readSource(path, append = false) {
+        if (append && this.state.sourceLoading)
+            return;
+        const epoch = ++this.sourceEpoch, cursor = append ? this.state.sourceCursor : 0;
+        this.setState({ sourceLoading: true, sourceError: '', sourcePath: path, ...(!append ? { sourceContent: '', sourceCursor: 0, sourceComplete: false } : {}) });
+        try {
+            const result = await this.sourceOperation('run_source_read', { path, cursor, limit: 16000 });
+            if (result.sourceDigest !== this.props.run.manifest.snapshotDigest)
+                throw Error('源码摘要与所选运行不一致。');
+            if (epoch === this.sourceEpoch)
+                this.setState({ sourceContent: (append ? this.state.sourceContent : '') + result.content, sourceCursor: result.end, sourceComplete: result.complete });
+        }
+        catch (error) {
+            if (epoch === this.sourceEpoch)
+                this.setState({ sourceError: error instanceof Error ? error.message : String(error) });
+        }
+        finally {
+            if (epoch === this.sourceEpoch)
+                this.setState({ sourceLoading: false });
+        }
+    }
+    render() {
+        const { run, data, perform } = this.props, artifacts = run.artifactIds.map(id => data.artifacts.find(a => a.id === id)).filter(a => !!a), file = this.state.files.find(f => f.path === this.state.sourcePath);
+        return React.createElement("div", null,
+            React.createElement("details", { open: true },
+                React.createElement("summary", null, "\u771F\u5B9E\u8FD0\u884C\u65E5\u5FD7"),
+                React.createElement("label", null,
+                    "\u65E5\u5FD7\u6D41",
+                    React.createElement("select", { "aria-label": "\u65E5\u5FD7\u6D41", value: this.state.stream, onChange: (e) => this.selectStream(e.target.value) },
+                        React.createElement("option", { value: "stdout" }, "\u6807\u51C6\u8F93\u51FA stdout"),
+                        React.createElement("option", { value: "stderr" }, "\u9519\u8BEF\u8F93\u51FA stderr"))),
+                React.createElement("pre", { className: "logs", "aria-label": `${this.state.stream} 日志` }, this.state.logs || (this.state.logLoading ? '读取日志…' : '此流暂无内容。')),
+                this.state.logError ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.logError) : null,
+                React.createElement("button", { className: "secondary compact", disabled: this.state.logLoading || this.state.logComplete, onClick: () => void this.loadLogs() }, this.state.logLoading ? '正在读取…' : this.state.logComplete ? '已读至日志结尾' : '加载后续日志'),
+                React.createElement("p", { className: "small muted" },
+                    "\u5DF2\u8BFB\u53D6 ",
+                    this.state.cursor,
+                    " \u5B57\u8282\uFF1B\u8FD0\u884C\u671F\u95F4\u81EA\u52A8\u7EE7\u7EED\u8BFB\u53D6\u3002")),
+            React.createElement("details", { open: true },
+                React.createElement("summary", null, "\u539F\u59CB\u6307\u6807\u4E0E\u4EA7\u7269"),
+                artifacts.length ? React.createElement("ul", null, artifacts.map(a => React.createElement("li", { key: a.id },
+                    React.createElement("button", { className: "text-button", onClick: () => void this.openArtifact(a.id) }, a.title),
+                    React.createElement("button", { className: "text-button", "aria-label": `下载 ${a.title}`, onClick: () => perform(() => downloadArtifact(a.id, a.title)) }, "\u4E0B\u8F7D"),
+                    React.createElement("small", { className: "muted" },
+                        a.size,
+                        " \u5B57\u8282 \u00B7 ",
+                        short(a.digest))))) : React.createElement("p", { className: "small muted" }, "\u5C1A\u65E0\u5F52\u6863\u4EA7\u7269\u3002\u6267\u884C\u7ED3\u675F\u540E\u5728\u8FD9\u91CC\u67E5\u770B\u539F\u59CB metrics.json \u4E0E\u8F93\u51FA\u6587\u4EF6\u3002"),
+                this.state.artifactLoading ? React.createElement("p", { role: "status" }, "\u8BFB\u53D6\u4EA7\u7269\u2026") : null,
+                this.state.artifactError ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.artifactError) : null,
+                this.state.artifactId && !this.state.artifactLoading && !this.state.artifactError ? React.createElement("pre", { className: "logs", "aria-label": "\u539F\u59CB\u4EA7\u7269\u5185\u5BB9" }, this.state.artifactContent || '（空文件）') : null),
+            React.createElement("details", null,
+                React.createElement("summary", null, "\u672C\u6B21\u8FD0\u884C\u7684\u56FA\u5B9A\u6E90\u7801"),
+                React.createElement("p", { className: "small muted" },
+                    "\u5B9E\u9A8C\u4FEE\u8BA2 v",
+                    run.manifest.experimentRevision,
+                    " \u00B7 \u6E90\u7801 SHA-256"),
+                React.createElement("code", { className: "digest" }, run.manifest.snapshotDigest),
+                this.state.gitCommit ? React.createElement("p", null,
+                    "Git commit ",
+                    React.createElement("code", { className: "digest" }, this.state.gitCommit)) : null,
+                React.createElement("button", { className: "secondary compact", disabled: this.state.sourceLoading, onClick: () => void this.loadSource() }, "\u8BFB\u53D6\u8FD0\u884C\u6E90\u7801\u6E05\u5355"),
+                this.state.sourceLoaded ? React.createElement("label", null,
+                    "\u56FA\u5B9A\u6E90\u7801\u6587\u4EF6",
+                    React.createElement("select", { "aria-label": "\u56FA\u5B9A\u6E90\u7801\u6587\u4EF6", value: this.state.sourcePath, onChange: (e) => { if (e.target.value)
+                            void this.readSource(e.target.value); } },
+                        React.createElement("option", { value: "" }, "\u9009\u62E9\u6587\u4EF6"),
+                        this.state.files.map(f => React.createElement("option", { key: f.path, value: f.path },
+                            f.path,
+                            " \u00B7 ",
+                            f.size,
+                            " \u5B57\u8282")))) : null,
+                this.state.sourceError ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.sourceError) : null,
+                file ? React.createElement("div", null,
+                    React.createElement("p", { className: "small muted" },
+                        file.path,
+                        " \u00B7 ",
+                        file.mode ?? '旧版未记录模式'),
+                    React.createElement("code", { className: "digest" }, file.digest),
+                    React.createElement("pre", { className: "logs", "aria-label": "\u56FA\u5B9A\u8FD0\u884C\u6E90\u7801" }, this.state.sourceContent || (this.state.sourceLoading ? '读取源码…' : '（空文件）')),
+                    React.createElement("button", { className: "secondary compact", disabled: this.state.sourceLoading || this.state.sourceComplete, onClick: () => void this.readSource(file.path, true) }, this.state.sourceComplete ? '源码已完整读取' : '读取后续源码')) : null));
+    }
+}
+export class Inspector extends React.Component {
+    currentRun() { const runs = this.props.data.runs.filter(r => r.experimentId === this.props.experiment?.id); return runs.find(r => r.id === this.props.selectedRun) ?? runs[runs.length - 1]; }
     render() {
         const { data, boot, experiment: e, perform } = this.props;
         const teams = data.teams.slice().reverse();
@@ -269,7 +397,7 @@ export class Inspector extends React.Component {
                     React.createElement("dd", null,
                         React.createElement("code", null, e.contract.command.join(' '))),
                     React.createElement("dt", null, "\u8BA1\u7B97\u65B9\u5F0F"),
-                    React.createElement("dd", null, e.contract.runner === 'trusted-example' ? '受信本地数值示例' : 'Docker · 待真实验证'),
+                    React.createElement("dd", null, e.contract.runner === 'trusted-example' ? '受信本地数值示例' : 'Docker · 固定镜像隔离运行'),
                     React.createElement("dt", null, "\u6570\u636E\u7248\u672C"),
                     React.createElement("dd", null, e.contract.datasetVersion)),
                 React.createElement("div", { className: "stack-actions" },
@@ -288,13 +416,44 @@ export class Inspector extends React.Component {
                     React.createElement("code", { className: "digest" },
                         intent.manifest.snapshotDigest.slice(0, 20),
                         "\u2026"),
+                    React.createElement("dl", { className: "details" },
+                        React.createElement("dt", null, "\u6267\u884C\u53C2\u6570"),
+                        React.createElement("dd", null,
+                            React.createElement("code", null, JSON.stringify(intent.manifest.contract.command))),
+                        React.createElement("dt", null, "\u955C\u50CF"),
+                        React.createElement("dd", null,
+                            React.createElement("code", null, intent.manifest.contract.image ?? '受信示例')),
+                        React.createElement("dt", null, "\u8D44\u6E90"),
+                        React.createElement("dd", null,
+                            intent.manifest.contract.cpus,
+                            " CPU \u00B7 ",
+                            intent.manifest.contract.memoryMb,
+                            " MiB \u00B7 ",
+                            intent.manifest.contract.timeoutSeconds,
+                            " \u79D2"),
+                        React.createElement("dt", null, "\u5FC5\u9700\u4EA7\u7269"),
+                        React.createElement("dd", null, intent.manifest.contract.expectedArtifacts.join('、'))),
                     approval.status === 'pending' ? React.createElement("div", { className: "stack-actions" },
-                        React.createElement("button", { className: "primary", onClick: () => perform(async () => { await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }); await api(`/run-intents/${intent.id}/submit`, {}); }, '已提交真实运行') }, "\u6279\u51C6\u5E76\u63D0\u4EA4"),
-                        React.createElement("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false }), '已拒绝运行') }, "\u62D2\u7EDD")) : approval.status === 'approved' ? React.createElement("button", { className: "primary", onClick: () => perform(() => api(`/run-intents/${intent.id}/submit`, {})) }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C") : null) : null,
+                        React.createElement("button", { className: "primary", onClick: () => perform(async () => { await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }); const submitted = await api(`/run-intents/${intent.id}/submit`, {}); this.props.onRun?.(submitted.id); }, '已提交真实运行') }, "\u6279\u51C6\u5E76\u63D0\u4EA4"),
+                        React.createElement("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false }), '已拒绝运行') }, "\u62D2\u7EDD")) : approval.status === 'approved' ? React.createElement("button", { className: "primary", onClick: () => perform(async () => { const submitted = await api(`/run-intents/${intent.id}/submit`, {}); this.props.onRun?.(submitted.id); }) }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C") : null) : null,
                 run ? React.createElement("div", { className: "run-detail" },
+                    React.createElement("label", null,
+                        "\u67E5\u770B\u8FD0\u884C",
+                        React.createElement("select", { "aria-label": "\u67E5\u770B\u8FD0\u884C", value: run.id, onChange: (event) => this.props.onRun?.(event.target.value) }, data.runs.filter(r => r.experimentId === e.id).slice().reverse().map(r => React.createElement("option", { key: r.id, value: r.id },
+                            date(r.createdAt),
+                            " \u00B7 ",
+                            short(r.id),
+                            " \u00B7 ",
+                            label(r.state))))),
                     React.createElement("h4", null,
-                        "\u6700\u8FD1\u4E00\u6B21\u8FD0\u884C ",
+                        "\u8FD0\u884C ",
                         React.createElement("code", null, short(run.id))),
+                    run.execution ? React.createElement("dl", { className: "details" },
+                        React.createElement("dt", null, "Docker context"),
+                        React.createElement("dd", null, run.execution.dockerContext),
+                        React.createElement("dt", null, "\u5B9E\u9645\u955C\u50CF ID"),
+                        React.createElement("dd", null,
+                            React.createElement("code", { className: "digest" }, run.execution.imageId ?? '等待容器预检'))) : null,
                     React.createElement("div", { className: "actions" },
                         React.createElement(Badge, { value: run.state }),
                         React.createElement(Badge, { value: run.integrity })),
@@ -307,9 +466,7 @@ export class Inspector extends React.Component {
                         run.judgment === 'pending' ? '尚未判定' : run.judgment),
                     run.error ? React.createElement("p", { className: "error-text" }, run.error) : null,
                     ['queued', 'running', 'submitting'].includes(run.state) ? React.createElement("button", { className: "danger-outline", onClick: () => perform(() => api(`/runs/${run.id}/cancel`, {}), '已请求取消指定实验') }, "\u53D6\u6D88\u8FD9\u4E2A\u5B9E\u9A8C") : null,
-                    React.createElement("details", { open: true },
-                        React.createElement("summary", null, "\u771F\u5B9E\u8FD0\u884C\u65E5\u5FD7"),
-                        React.createElement("pre", { className: "logs" }, this.state.logs || '等待日志…'))) : null) : null,
+                    React.createElement(RunFiles, { key: run.id, run: run, data: data, perform: perform })) : null) : null,
             React.createElement("div", { className: "inspector-section" },
                 React.createElement("div", { className: "toggle-heading" },
                     React.createElement("div", null,

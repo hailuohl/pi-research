@@ -178,6 +178,24 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly memoryMb: {
                                 readonly type: "integer";
                             };
+                            readonly dockerContext: {
+                                readonly type: "string";
+                            };
+                            readonly pids: {
+                                readonly type: "integer";
+                            };
+                            readonly workMb: {
+                                readonly type: "integer";
+                            };
+                            readonly logBytes: {
+                                readonly type: "integer";
+                            };
+                            readonly outputBytes: {
+                                readonly type: "integer";
+                            };
+                            readonly networkPolicy: {
+                                readonly const: "none";
+                            };
                         };
                         readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "runner" | "environment" | "metrics" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
@@ -215,6 +233,12 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                     readonly createdAt: {
+                        readonly type: "string";
+                    };
+                    readonly sourceRevisionId: {
+                        readonly type: "string";
+                    };
+                    readonly gitCommit: {
                         readonly type: "string";
                     };
                 };
@@ -291,6 +315,52 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "string";
                 };
+            };
+            readonly execution: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly backend: {
+                        readonly const: "docker";
+                    };
+                    readonly dockerContext: {
+                        readonly type: "string";
+                    };
+                    readonly containerName: {
+                        readonly type: "string";
+                    };
+                    readonly containerId: {
+                        readonly type: "string";
+                    };
+                    readonly imageId: {
+                        readonly type: "string";
+                    };
+                    readonly controlDir: {
+                        readonly type: "string";
+                    };
+                    readonly generation: {
+                        readonly type: "integer";
+                    };
+                    readonly leaseUntil: {
+                        readonly type: "number";
+                    };
+                    readonly startRequested: {
+                        readonly type: "boolean";
+                    };
+                    readonly recoveryCount: {
+                        readonly type: "integer";
+                    };
+                    readonly logTruncated: {
+                        readonly type: "boolean";
+                    };
+                    readonly logsIncomplete: {
+                        readonly type: "boolean";
+                    };
+                    readonly outputExceeded: {
+                        readonly type: "boolean";
+                    };
+                };
+                readonly required: ("generation" | "leaseUntil" | "containerName" | "controlDir" | "startRequested" | "recoveryCount" | "dockerContext" | "backend")[];
+                readonly additionalProperties: false;
             };
         };
         readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "experimentId" | "state" | "manifest" | "manifestDigest" | "integrity" | "outputDir" | "cancelRequested" | "artifactIds" | "intentId" | "evidenceIds" | "judgment")[];
@@ -559,6 +629,98 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: ("complete" | "cursor" | "content")[];
         readonly additionalProperties: false;
     };
+    readonly run_source_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly runId: {
+                readonly type: "string";
+            };
+            readonly experimentId: {
+                readonly type: "string";
+            };
+            readonly revision: {
+                readonly type: "integer";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly gitCommit: {
+                readonly type: "string";
+            };
+            readonly files: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly path: {
+                            readonly type: "string";
+                        };
+                        readonly size: {
+                            readonly type: "integer";
+                        };
+                        readonly digest: {
+                            readonly type: "string";
+                        };
+                        readonly mode: {
+                            readonly type: "string";
+                            readonly enum: ["100644", "100755"];
+                        };
+                    };
+                    readonly required: ("path" | "size" | "digest")[];
+                    readonly additionalProperties: false;
+                };
+            };
+        };
+        readonly required: ("experimentId" | "revision" | "sourceDigest" | "files" | "runId")[];
+        readonly additionalProperties: false;
+    };
+    readonly run_source_read: {
+        readonly type: "object";
+        readonly properties: {
+            readonly runId: {
+                readonly type: "string";
+            };
+            readonly experimentId: {
+                readonly type: "string";
+            };
+            readonly revision: {
+                readonly type: "integer";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly gitCommit: {
+                readonly type: "string";
+            };
+            readonly path: {
+                readonly type: "string";
+            };
+            readonly size: {
+                readonly type: "integer";
+            };
+            readonly digest: {
+                readonly type: "string";
+            };
+            readonly mode: {
+                readonly type: "string";
+                readonly enum: ["100644", "100755"];
+            };
+            readonly cursor: {
+                readonly type: "integer";
+            };
+            readonly end: {
+                readonly type: "integer";
+            };
+            readonly complete: {
+                readonly type: "boolean";
+            };
+            readonly content: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("complete" | "path" | "size" | "digest" | "experimentId" | "revision" | "cursor" | "sourceDigest" | "end" | "runId" | "content")[];
+        readonly additionalProperties: false;
+    };
     readonly approval_request: {
         readonly type: "array";
         readonly items: {
@@ -719,6 +881,24 @@ export declare const OUTPUT_SCHEMAS: {
                     };
                     readonly memoryMb: {
                         readonly type: "integer";
+                    };
+                    readonly dockerContext: {
+                        readonly type: "string";
+                    };
+                    readonly pids: {
+                        readonly type: "integer";
+                    };
+                    readonly workMb: {
+                        readonly type: "integer";
+                    };
+                    readonly logBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly outputBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly networkPolicy: {
+                        readonly const: "none";
                     };
                 };
                 readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "runner" | "environment" | "metrics" | "datasetVersion" | "evaluationProtocolVersion")[];
@@ -3389,6 +3569,24 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly memoryMb: {
                                 readonly type: "integer";
                             };
+                            readonly dockerContext: {
+                                readonly type: "string";
+                            };
+                            readonly pids: {
+                                readonly type: "integer";
+                            };
+                            readonly workMb: {
+                                readonly type: "integer";
+                            };
+                            readonly logBytes: {
+                                readonly type: "integer";
+                            };
+                            readonly outputBytes: {
+                                readonly type: "integer";
+                            };
+                            readonly networkPolicy: {
+                                readonly const: "none";
+                            };
                         };
                         readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "runner" | "environment" | "metrics" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
@@ -3426,6 +3624,12 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                     readonly createdAt: {
+                        readonly type: "string";
+                    };
+                    readonly sourceRevisionId: {
+                        readonly type: "string";
+                    };
+                    readonly gitCommit: {
                         readonly type: "string";
                     };
                 };
@@ -3553,6 +3757,24 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly memoryMb: {
                                 readonly type: "integer";
                             };
+                            readonly dockerContext: {
+                                readonly type: "string";
+                            };
+                            readonly pids: {
+                                readonly type: "integer";
+                            };
+                            readonly workMb: {
+                                readonly type: "integer";
+                            };
+                            readonly logBytes: {
+                                readonly type: "integer";
+                            };
+                            readonly outputBytes: {
+                                readonly type: "integer";
+                            };
+                            readonly networkPolicy: {
+                                readonly const: "none";
+                            };
                         };
                         readonly required: ("command" | "expectedArtifacts" | "cpus" | "memoryMb" | "timeoutSeconds" | "runner" | "environment" | "metrics" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
@@ -3590,6 +3812,12 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                     readonly createdAt: {
+                        readonly type: "string";
+                    };
+                    readonly sourceRevisionId: {
+                        readonly type: "string";
+                    };
+                    readonly gitCommit: {
                         readonly type: "string";
                     };
                 };
@@ -3666,6 +3894,52 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "string";
                 };
+            };
+            readonly execution: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly backend: {
+                        readonly const: "docker";
+                    };
+                    readonly dockerContext: {
+                        readonly type: "string";
+                    };
+                    readonly containerName: {
+                        readonly type: "string";
+                    };
+                    readonly containerId: {
+                        readonly type: "string";
+                    };
+                    readonly imageId: {
+                        readonly type: "string";
+                    };
+                    readonly controlDir: {
+                        readonly type: "string";
+                    };
+                    readonly generation: {
+                        readonly type: "integer";
+                    };
+                    readonly leaseUntil: {
+                        readonly type: "number";
+                    };
+                    readonly startRequested: {
+                        readonly type: "boolean";
+                    };
+                    readonly recoveryCount: {
+                        readonly type: "integer";
+                    };
+                    readonly logTruncated: {
+                        readonly type: "boolean";
+                    };
+                    readonly logsIncomplete: {
+                        readonly type: "boolean";
+                    };
+                    readonly outputExceeded: {
+                        readonly type: "boolean";
+                    };
+                };
+                readonly required: ("generation" | "leaseUntil" | "containerName" | "controlDir" | "startRequested" | "recoveryCount" | "dockerContext" | "backend")[];
+                readonly additionalProperties: false;
             };
         };
         readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "experimentId" | "state" | "manifest" | "manifestDigest" | "integrity" | "outputDir" | "cancelRequested" | "artifactIds" | "intentId" | "evidenceIds" | "judgment")[];

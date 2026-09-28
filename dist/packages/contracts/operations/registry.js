@@ -115,7 +115,7 @@ function executeRegistered(c, name, x) {
         case 'run_inspect': return app.store.get('run', text(x.runId, 'runId', 100), pid);
         case 'run_logs':
             app.store.get('run', text(x.runId, 'runId', 100), pid);
-            return app.runs.logs(actor, x.runId, integer(x.cursor ?? 0, 'cursor', 0));
+            return app.runs.logs(actor, x.runId, integer(x.cursor ?? 0, 'cursor', 0), x.stream);
         case 'approval_request': return app.store.list('approval', pid).filter(a => a.status === 'pending');
         case 'collaboration_plan_submit':
         case 'agent_delegate': return app.teams.create(actor, session.id, x);
@@ -137,6 +137,8 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('run_source_list', { idempotencyPolicy: 'read-only', authorize: recordScope('run', 'runId'), preconditions: noPrecondition, execute: (c, x) => c.app.runs.sourceList(c.actor, x.runId) }),
+    make('run_source_read', { idempotencyPolicy: 'read-only', authorize: recordScope('run', 'runId'), preconditions: noPrecondition, execute: (c, x) => c.app.runs.sourceRead(c.actor, x.runId, x) }),
     make('workspace_history_inspect', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c) => { c.app.git.inspect(c.actor, c.projectId, c.session.id); }, preconditions: noPrecondition, execute: c => c.app.git.inspect(c.actor, c.projectId, c.session.id) }),
     make('workspace_history_diff', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c) => { c.app.git.inspect(c.actor, c.projectId, c.session.id); }, preconditions: noPrecondition, execute: c => c.app.git.diff(c.actor, c.projectId, c.session.id) }),
     make('workspace_history_commit', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c) => { c.app.git.inspect(c.actor, c.projectId, c.session.id); }, preconditions: noPrecondition, execute: (c, x) => c.app.git.commit(c.actor, c.projectId, c.session.id, x) }),

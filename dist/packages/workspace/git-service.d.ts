@@ -33,14 +33,14 @@ export declare class GitService {
         branch: string;
         head: string | undefined;
         operationId: string;
-        operationState: "queued" | "running" | "failed" | "complete" | "conflict";
+        operationState: "failed" | "queued" | "running" | "complete" | "conflict";
         error: string | undefined;
         sourceDigest: string;
     };
     operation(actor: Actor, pid: string, id: string): {
         operationId: string;
         action: "source" | "checkout" | "commit";
-        state: "queued" | "running" | "failed" | "complete" | "conflict";
+        state: "failed" | "queued" | "running" | "complete" | "conflict";
         sourceRevisionId: string;
         sessionId: string | undefined;
         sourceDigest: string;
@@ -63,7 +63,7 @@ export declare class GitService {
     commit(actor: Actor, pid: string, sessionId: string, value: unknown): {
         operationId: string;
         action: "source" | "checkout" | "commit";
-        state: "queued" | "running" | "failed" | "complete" | "conflict";
+        state: "failed" | "queued" | "running" | "complete" | "conflict";
         sourceRevisionId: string;
         sessionId: string | undefined;
         sourceDigest: string;
@@ -86,7 +86,7 @@ export declare class GitService {
     retry(actor: Actor, pid: string, id: string): {
         operationId: string;
         action: "source" | "checkout" | "commit";
-        state: "queued" | "running" | "failed" | "complete" | "conflict";
+        state: "failed" | "queued" | "running" | "complete" | "conflict";
         sourceRevisionId: string;
         sessionId: string | undefined;
         sourceDigest: string;

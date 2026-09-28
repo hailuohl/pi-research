@@ -1,3 +1,4 @@
+import type {RunExecution} from '../runners/adapter.js';
 export interface Entity {
     id: string;
     kind: string;
@@ -95,6 +96,12 @@ export interface ResearchContract {
     image?: string;
     cpus: number;
     memoryMb: number;
+    dockerContext?: string;
+    pids?: number;
+    workMb?: number;
+    logBytes?: number;
+    outputBytes?: number;
+    networkPolicy?: 'none';
 }
 export interface Experiment {
     title: string;
@@ -123,6 +130,8 @@ export interface Manifest {
         mode?: '100644' | '100755';
     }>;
     createdAt: string;
+    sourceRevisionId?: string;
+    gitCommit?: string;
 }
 export interface RunIntent {
     experimentId: string;
@@ -154,6 +163,7 @@ export interface Run {
     error?: string;
     artifactIds: string[];
     evidenceIds: string[];
+    execution?: RunExecution;
 }
 export interface Artifact {
     title: string;

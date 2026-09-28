@@ -1,4 +1,4 @@
-import {readdirSync} from 'node:fs';
+import {readdirSync,existsSync} from 'node:fs';
 import {join} from 'node:path';
 import type {Row, Run, Artifact} from '../domain/types.js';
 import {SYSTEM} from '../domain/types.js';
@@ -22,10 +22,12 @@ export function collectRunArtifacts(run: Row<Run>, evidence: EvidenceService) {
                 ensure(!entry.isSymbolicLink(), 'PATH_DENIED', `${path}: 不接受符号链接`);
                 if (entry.isDirectory()) { walk(path, depth + 1); continue; }
                 const bytes = readStableFile(run.outputDir, path, path === 'metrics.json' ? 1024 * 1024 : 32 * 1024 * 1024);
-                ensure(total + bytes.length <= 128 * 1024 * 1024, 'OUTPUT_TOTAL_LIMIT', '本地归档总大小超过128 MiB');
+                ensure(total + bytes.length <= (run.manifest.contract.outputBytes??128*1024*1024), 'OUTPUT_TOTAL_LIMIT', '本地归档超过运行契约的输出上限');
                 total += bytes.length;
                 const type = path.endsWith('.json') ? 'application/json' : path.endsWith('.csv') ? 'text/csv' : 'text/plain';
-                artifacts.set(path, evidence.put(run.projectId!, path, bytes, type, 'run', {runId: run.id}));
+                const reserved=!!run.execution&&['stdout.log','stderr.log','execution.json'].includes(path);
+                const title=reserved?`output/${path}`:path;artifacts.set(title,evidence.put(run.projectId!,title,bytes,type,'run',{runId:run.id}));
+                if(reserved){unsafe=true;errors.push(`${path}: 输出占用了宿主日志或回执名称`);}
             } catch (error) {
                 const e = asError(error);
                 if (e.code === 'PATH_DENIED' || e.code === 'ARTIFACT_CHANGED') unsafe = true;
@@ -34,6 +36,11 @@ export function collectRunArtifacts(run: Row<Run>, evidence: EvidenceService) {
         }
     };
     try { walk('', 0); } catch (error) { unsafe = true; errors.push(asError(error).message); }
+    if(run.execution)for(const name of ['stdout.log','stderr.log','diagnostic.log']) {
+        const path=safePath(run.execution.controlDir,name);if(name==='diagnostic.log'&&!existsSync(path))continue;
+        try{const bytes=!existsSync(path)&&!run.execution.startRequested?Buffer.alloc(0):readStableFile(run.execution.controlDir,name,name==='diagnostic.log'?65536:run.manifest.contract.logBytes??16*1024*1024);artifacts.set(name,evidence.put(run.projectId!,name,bytes,'text/plain','run',{runId:run.id}));}
+        catch(error){errors.push(`${name}: ${asError(error).message}`);}
+    }
     let integrity: Run['integrity'] = unsafe ? 'invalid' : 'incomplete';
     let metrics: Record<string, number> | undefined;
     const metric = artifacts.get('metrics.json');

@@ -48,6 +48,8 @@ test('all existing public tools have closed, literal success contracts exercised
   fixtureFinish(s,run);s.app.campaigns.observe();
   await call('run_inspect',{runId:run.id});
   await call('run_logs',{runId:run.id});
+  await call('run_source_list',{runId:run.id});
+  await call('run_source_read',{runId:run.id,path:'config.json',cursor:0,limit:32});
   const inspected=await call('campaign_inspect',{campaignId:c.id});
   const d=await call('campaign_decision_submit',{campaignId:c.id,expectedVersion:inspected.campaign.version,action:'promote',selectedRunId:run.id,observationIds:inspected.observations.map(o=>o.id),reason:'fixture',candidates:[{title:'child',hypothesis:'test',config:{polynomialDegree:2,ridge:0.000001}}]});
   approve(s.app,d.approvalId);s.app.decisions.apply(USER,d.id,d.version);

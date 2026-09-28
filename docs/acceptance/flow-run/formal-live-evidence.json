@@ -1,0 +1,455 @@
+{
+  "dataDir": ".validation/formal-run-live-gwMKPL",
+  "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+  "context": "desktop-linux",
+  "checks": [
+    {
+      "name": "unapproved-blocked",
+      "intentId": "ddb785d4-e87d-4fe3-a6a9-568fb86d25c6",
+      "createdRun": false
+    },
+    {
+      "name": "approved-python-disconnect",
+      "runId": "854ed86e-36b2-4f8b-9523-ee5a0eb7d1ee",
+      "state": "succeeded",
+      "integrity": "complete",
+      "exitCode": 0,
+      "supervisorPid": 26320,
+      "containerId": "03fbafd2622e572cdd888609fefe9998b0f29251320f33f6e830fdbab60576da",
+      "generation": 1,
+      "logsIncomplete": false,
+      "manifestDigest": "0e7fd77b0be40d7dfa8aeee0eb316f65a08fc8dcd6101435b8562de86bc2524e",
+      "artifactIds": [
+        "59d968dc-9d6a-479b-8148-7789305fa6b4",
+        "bd4a3032-df60-4e85-bb03-15fc6523baf0",
+        "8e554f95-54bf-4fcb-a803-636f0be21db2",
+        "4dfd2a4b-6240-4f5e-b5ce-0ddd771fb684",
+        "fc4ccb46-ee24-47b1-90a8-94485f488797",
+        "d6e74a0c-7480-4632-8743-88f1235e64af"
+      ],
+      "evidenceIds": [
+        "4d63dd1f-2627-492b-b91d-49efc2deec52"
+      ],
+      "archiveProof": [
+        {
+          "id": "59d968dc-9d6a-479b-8148-7789305fa6b4",
+          "title": "metrics.json",
+          "digest": "0e9f2f0a3d452afd51cc7c42fc9138ecb123153f01a4ccf87d996c86607fd02c",
+          "size": 44,
+          "content": "{\"mse\": 0.0, \"slope\": 3.0, \"intercept\": 2.0}"
+        },
+        {
+          "id": "bd4a3032-df60-4e85-bb03-15fc6523baf0",
+          "title": "predictions.csv",
+          "digest": "4fbdbda0f0009a9df215585498f1a771bb80b2fb7ae4383bc7ad80329b2f0c23",
+          "size": 73
+        },
+        {
+          "id": "8e554f95-54bf-4fcb-a803-636f0be21db2",
+          "title": "started.txt",
+          "digest": "03494afd4248c42f5fa1237bf2eeebe751ab8d9c977d55405fcb17469dbd91f8",
+          "size": 7
+        },
+        {
+          "id": "4dfd2a4b-6240-4f5e-b5ce-0ddd771fb684",
+          "title": "stdout.log",
+          "digest": "13cf59f59a28961500c0cf27df34f74b8b45306f06851d126005bc1d480c59d1",
+          "size": 17,
+          "content": "measured-ols 0.0\n"
+        },
+        {
+          "id": "fc4ccb46-ee24-47b1-90a8-94485f488797",
+          "title": "stderr.log",
+          "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0,
+          "content": ""
+        },
+        {
+          "id": "d6e74a0c-7480-4632-8743-88f1235e64af",
+          "title": "execution.json",
+          "digest": "4b70bdfef74b3e26b38fa94448d78bc8fbcdb66d52016397613fd53866249317",
+          "size": 897
+        }
+      ]
+    },
+    {
+      "name": "zero-exit-missing-artifact",
+      "runId": "c34bdd3d-3aec-4468-be4c-eb6388b3e02b",
+      "state": "failed",
+      "integrity": "incomplete",
+      "exitCode": 0,
+      "supervisorPid": 216856,
+      "containerId": "d3247b738c95f2c7e98b0dffa62db4785d511e73d0c815dace27ae1da68260a0",
+      "generation": 1,
+      "logsIncomplete": true,
+      "manifestDigest": "372a0904d8666e99be4e5ee1810fcd6dc0800c75c5f469e8fe0cc6373402d239",
+      "artifactIds": [
+        "d9dfea34-5b4c-4185-8cc2-3dc3e02913d7",
+        "6154a2f9-ee52-4a9d-a87e-41fd6f19ec82",
+        "895aa2fd-e8bb-4c74-bcfd-59b2785ef18f",
+        "02e40fd9-b0cf-4c55-a0ba-c0dda375c379",
+        "eb13e36c-8ef7-4a66-b1fb-6d1d536e565b"
+      ],
+      "evidenceIds": [
+        "00f3642b-42d5-442d-b697-ec89f2a244fa"
+      ],
+      "archiveProof": [
+        {
+          "id": "d9dfea34-5b4c-4185-8cc2-3dc3e02913d7",
+          "title": "metrics.json",
+          "digest": "4e445269d4c33bcf662d59c783927041476b153b5ae7ad7ba621b33a56502692",
+          "size": 9,
+          "content": "{\"mse\":0}"
+        },
+        {
+          "id": "6154a2f9-ee52-4a9d-a87e-41fd6f19ec82",
+          "title": "stdout.log",
+          "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0,
+          "content": ""
+        },
+        {
+          "id": "895aa2fd-e8bb-4c74-bcfd-59b2785ef18f",
+          "title": "stderr.log",
+          "digest": "d659c58aae2874a6740f642cc53038045ddbdaa299f2e9e18611f1e371f7cb0f",
+          "size": 55,
+          "content": "missing-predictions-marker\nFORMAL_RUN_EXECUTION_FAILED\n"
+        },
+        {
+          "id": "02e40fd9-b0cf-4c55-a0ba-c0dda375c379",
+          "title": "diagnostic.log",
+          "digest": "7c01248a45709e8154f38bd4ce274de042483980e6a9c72cdd94fd0602bd1dbf",
+          "size": 49
+        },
+        {
+          "id": "eb13e36c-8ef7-4a66-b1fb-6d1d536e565b",
+          "title": "execution.json",
+          "digest": "b30482d56e2110fd079ecc4b9d5dcf487883077c1a748dee46678cd9c10b5d5d",
+          "size": 971
+        }
+      ]
+    },
+    {
+      "name": "python-failure-stderr",
+      "runId": "e54aea32-f18f-46fb-af4b-383243c8b65d",
+      "state": "failed",
+      "integrity": "incomplete",
+      "exitCode": 1,
+      "supervisorPid": 91176,
+      "containerId": "2fed79241ec0657c74919febc889a472685bba9dff76e09da74fe690e7492c91",
+      "generation": 1,
+      "logsIncomplete": true,
+      "manifestDigest": "80254886f97af53609c8baa81971e24848c3b59da724feea53ea388b7034edae",
+      "artifactIds": [
+        "5afa0fd2-5d93-4ddf-94ca-993b29c43cf0",
+        "5005d932-59d2-49d2-affb-e05577216c6f",
+        "09fe5718-e1cb-4d1f-bcfa-8dd05a8cf9c0",
+        "a533af06-69b9-4888-9291-554c2e09f2b6"
+      ],
+      "evidenceIds": [],
+      "archiveProof": [
+        {
+          "id": "5afa0fd2-5d93-4ddf-94ca-993b29c43cf0",
+          "title": "stdout.log",
+          "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0,
+          "content": ""
+        },
+        {
+          "id": "5005d932-59d2-49d2-affb-e05577216c6f",
+          "title": "stderr.log",
+          "digest": "4dadd0f1dee1efc8f9e8f9c2a9c3136fb174c6e48dbc8ca10e320939c9c246ff",
+          "size": 223,
+          "content": "formal-failure-marker\nTraceback (most recent call last):\n  File \"/work/formal.py\", line 3, in <module>\n    raise RuntimeError('deliberate formal failure')\nRuntimeError: deliberate formal failure\nFORMAL_RUN_EXECUTION_FAILED\n"
+        },
+        {
+          "id": "09fe5718-e1cb-4d1f-bcfa-8dd05a8cf9c0",
+          "title": "diagnostic.log",
+          "digest": "72bd61a27bcdd3961a662b3b870628db60fabb5d9e9e9feaa0ec7cf07ca47380",
+          "size": 97
+        },
+        {
+          "id": "a533af06-69b9-4888-9291-554c2e09f2b6",
+          "title": "execution.json",
+          "digest": "8ef6553eac0329c0e1a8de79bebcdba779f2ea43e507380091db1e17e5b4d8e8",
+          "size": 1079
+        }
+      ]
+    },
+    {
+      "name": "cancel",
+      "runId": "6e20cb6f-e5e0-4d92-9527-9e191c23172b",
+      "state": "cancelled",
+      "integrity": "incomplete",
+      "exitCode": 137,
+      "supervisorPid": 75404,
+      "containerId": "01734d34dfd9c4783a8dbdbe96863a4cc1ca531d3f7f2e66912eb4ac23237e3f",
+      "generation": 1,
+      "logsIncomplete": true,
+      "manifestDigest": "e5e5d50b0539e7937f4fe11683fafafe877980b2e997e9c548fd8fb042ac2c1f",
+      "artifactIds": [
+        "d3853b09-1f6a-4da4-890e-ee8e06a92871",
+        "0c08f4ae-1988-48e5-a811-ab2ba2e7efba",
+        "cc2f5222-49f8-44c5-96e0-e9f9405e6d2d",
+        "955a7d7d-fa2b-49d4-92b5-7f2de55d772d",
+        "590dc839-0460-4135-83cd-9a3e7ec3b867"
+      ],
+      "evidenceIds": [],
+      "archiveProof": [
+        {
+          "id": "d3853b09-1f6a-4da4-890e-ee8e06a92871",
+          "title": "started.txt",
+          "digest": "03494afd4248c42f5fa1237bf2eeebe751ab8d9c977d55405fcb17469dbd91f8",
+          "size": 7
+        },
+        {
+          "id": "0c08f4ae-1988-48e5-a811-ab2ba2e7efba",
+          "title": "stdout.log",
+          "digest": "eff64b343dcb2b1dc113648e7089b9ce9f8a7f6c7808a03a2cffb4ad7302f606",
+          "size": 8,
+          "content": "started\n"
+        },
+        {
+          "id": "cc2f5222-49f8-44c5-96e0-e9f9405e6d2d",
+          "title": "stderr.log",
+          "digest": "38caf878871d8249dd16403514c4fb5c6f42003bede805e4fbb6fbe733a825a0",
+          "size": 28,
+          "content": "FORMAL_RUN_EXECUTION_FAILED\n"
+        },
+        {
+          "id": "955a7d7d-fa2b-49d4-92b5-7f2de55d772d",
+          "title": "diagnostic.log",
+          "digest": "93fd9b8c7879bcffbcf23b3aca8de989a8135c8579414a3e4aecd5ac3e52f7f4",
+          "size": 132
+        },
+        {
+          "id": "590dc839-0460-4135-83cd-9a3e7ec3b867",
+          "title": "execution.json",
+          "digest": "fb4f2075b75cd2d41460c98ba173c2de9289c518f2498dd19e521e196bd9e137",
+          "size": 1163
+        }
+      ]
+    },
+    {
+      "name": "timeout",
+      "runId": "7e782cd8-5044-4906-8439-113a5ca6a7cb",
+      "state": "failed",
+      "integrity": "incomplete",
+      "exitCode": 137,
+      "supervisorPid": 84636,
+      "containerId": "964465958b7ba4e1edb8423e76286366fa53ba82b2b8f9a1187cc11dd2d56aed",
+      "generation": 1,
+      "logsIncomplete": true,
+      "manifestDigest": "52aaefca7ce1898cb8c3650fb1cca2d47f7c6469f040ac4bdf4240b577e10dd6",
+      "artifactIds": [
+        "8e001351-e942-44e7-9b74-41d026ef28a9",
+        "d8cfb8c2-e2a2-4f96-988e-f66e1024e30e",
+        "0704684b-af1a-487e-b2d0-b53e05da1a60",
+        "fb3f2f77-2696-4143-90d6-429f81a0f47b",
+        "35db3fbc-b8ac-4721-b33a-89c1d69274d8"
+      ],
+      "evidenceIds": [],
+      "archiveProof": [
+        {
+          "id": "8e001351-e942-44e7-9b74-41d026ef28a9",
+          "title": "started.txt",
+          "digest": "03494afd4248c42f5fa1237bf2eeebe751ab8d9c977d55405fcb17469dbd91f8",
+          "size": 7
+        },
+        {
+          "id": "d8cfb8c2-e2a2-4f96-988e-f66e1024e30e",
+          "title": "stdout.log",
+          "digest": "eff64b343dcb2b1dc113648e7089b9ce9f8a7f6c7808a03a2cffb4ad7302f606",
+          "size": 8,
+          "content": "started\n"
+        },
+        {
+          "id": "0704684b-af1a-487e-b2d0-b53e05da1a60",
+          "title": "stderr.log",
+          "digest": "38caf878871d8249dd16403514c4fb5c6f42003bede805e4fbb6fbe733a825a0",
+          "size": 28,
+          "content": "FORMAL_RUN_EXECUTION_FAILED\n"
+        },
+        {
+          "id": "fb3f2f77-2696-4143-90d6-429f81a0f47b",
+          "title": "diagnostic.log",
+          "digest": "30996216a7d62fbd56943e4247c5cd10d3c894b16b91a8b93c7a189848cb2aa5",
+          "size": 126
+        },
+        {
+          "id": "35db3fbc-b8ac-4721-b33a-89c1d69274d8",
+          "title": "execution.json",
+          "digest": "e6a731f2e1826e57867f05df97a69355a602a4061d952446e8c6e5b7309e0f0d",
+          "size": 1154
+        }
+      ]
+    },
+    {
+      "name": "same-container-recovery",
+      "runId": "0fe86725-f29e-4c4b-b3ae-d35d5701b0f0",
+      "state": "failed",
+      "integrity": "incomplete",
+      "exitCode": 0,
+      "supervisorPid": 139944,
+      "containerId": "b3634c2873b1604f126e8045832663de6536ed61881fb8a37ee8fb4af03ab63e",
+      "generation": 2,
+      "logsIncomplete": true,
+      "manifestDigest": "7c286750a752f79d78ccc70063625254bef756f6497c1c553bc804d9cd961683",
+      "artifactIds": [
+        "7b5ac192-f6e8-48bd-a149-5b7b5e465e40",
+        "eff434e1-d336-441b-bba3-76728bda44a7",
+        "a02700fd-6926-4e33-aea0-29f72cafcebb",
+        "6a1deed7-2124-4c74-a93f-c2ce40d6526f",
+        "b24a1981-4fd7-4b19-bc88-4d4e179fd8a2",
+        "929c8e5f-9b5d-4189-9906-739c79276adc"
+      ],
+      "evidenceIds": [
+        "5ecae058-b26b-4a18-b993-8d7fdfd3be6d"
+      ],
+      "previousSupervisorPid": 155016,
+      "previousContainerId": "b3634c2873b1604f126e8045832663de6536ed61881fb8a37ee8fb4af03ab63e",
+      "archiveProof": [
+        {
+          "id": "7b5ac192-f6e8-48bd-a149-5b7b5e465e40",
+          "title": "metrics.json",
+          "digest": "0e9f2f0a3d452afd51cc7c42fc9138ecb123153f01a4ccf87d996c86607fd02c",
+          "size": 44,
+          "content": "{\"mse\": 0.0, \"slope\": 3.0, \"intercept\": 2.0}"
+        },
+        {
+          "id": "eff434e1-d336-441b-bba3-76728bda44a7",
+          "title": "once.txt",
+          "digest": "ad06e72726f6d8ff00228160453949c1ceb89571c99332e4815f9edce2acad07",
+          "size": 5
+        },
+        {
+          "id": "a02700fd-6926-4e33-aea0-29f72cafcebb",
+          "title": "predictions.csv",
+          "digest": "4fbdbda0f0009a9df215585498f1a771bb80b2fb7ae4383bc7ad80329b2f0c23",
+          "size": 73
+        },
+        {
+          "id": "6a1deed7-2124-4c74-a93f-c2ce40d6526f",
+          "title": "stdout.log",
+          "digest": "6eaa9ceb75779c0f10d066062fd90e7b7986ace18cdbbf05c0a3c22d819e5dd0",
+          "size": 65,
+          "content": "before-supervisor-crash\nbefore-supervisor-crash\nmeasured-ols 0.0\n"
+        },
+        {
+          "id": "b24a1981-4fd7-4b19-bc88-4d4e179fd8a2",
+          "title": "stderr.log",
+          "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0,
+          "content": ""
+        },
+        {
+          "id": "929c8e5f-9b5d-4189-9906-739c79276adc",
+          "title": "execution.json",
+          "digest": "20d52de07c7e04aa70ce78c4982bcf31ae9386c373a3e1824ef4b970dbb91b7a",
+          "size": 896
+        }
+      ]
+    },
+    {
+      "name": "tampered-source-blocked",
+      "runId": "a500dda1-ea27-43fc-a935-3db7e6359dfe",
+      "state": "failed",
+      "integrity": "incomplete",
+      "exitCode": null,
+      "supervisorPid": 155692,
+      "generation": 1,
+      "logsIncomplete": true,
+      "manifestDigest": "be41adcfa55a902da88146f961297b35ea342b1b9edcad112468cf28876bf2b8",
+      "artifactIds": [
+        "4695c839-d21c-46df-bd65-4ee88b3343bf",
+        "8b70ff3b-66b1-48b1-87f0-8f8743415dc3",
+        "813b276c-f9b6-432a-87aa-eef76576ae1f",
+        "3bff1a85-ff98-491e-a37c-330138e8b3eb"
+      ],
+      "evidenceIds": [],
+      "archiveProof": [
+        {
+          "id": "4695c839-d21c-46df-bd65-4ee88b3343bf",
+          "title": "stdout.log",
+          "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0,
+          "content": ""
+        },
+        {
+          "id": "8b70ff3b-66b1-48b1-87f0-8f8743415dc3",
+          "title": "stderr.log",
+          "digest": "38caf878871d8249dd16403514c4fb5c6f42003bede805e4fbb6fbe733a825a0",
+          "size": 28,
+          "content": "FORMAL_RUN_EXECUTION_FAILED\n"
+        },
+        {
+          "id": "813b276c-f9b6-432a-87aa-eef76576ae1f",
+          "title": "diagnostic.log",
+          "digest": "144ba9b0747ed037b27885db37851791f65d0f6451305e7a2bed67d41a0dbf44",
+          "size": 720
+        },
+        {
+          "id": "3bff1a85-ff98-491e-a37c-330138e8b3eb",
+          "title": "execution.json",
+          "digest": "a7c4570821add4227668596b676eeac93bf118021d6ff480f0407d165394a0e8",
+          "size": 848
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "engine": {
+    "Platform": {
+      "Name": "Docker Desktop 4.91.0 (239619)"
+    },
+    "Version": "29.8.0",
+    "ApiVersion": "1.56",
+    "MinAPIVersion": "1.40",
+    "Os": "linux",
+    "Arch": "amd64",
+    "Components": [
+      {
+        "Name": "Engine",
+        "Version": "29.8.0",
+        "Details": {
+          "ApiVersion": "1.56",
+          "Arch": "amd64",
+          "BuildTime": "Thu Sep  3 21:51:20 2026",
+          "Experimental": "false",
+          "GitCommit": "3ce5872",
+          "GoVersion": "go1.26.8",
+          "KernelVersion": "6.18.33.2-microsoft-standard-WSL2",
+          "MinAPIVersion": "1.40",
+          "Module": "github.com/moby/moby/v2",
+          "ModuleVersion": "v2.0.0+unknown",
+          "Os": "linux"
+        }
+      },
+      {
+        "Name": "containerd",
+        "Version": "v2.3.4",
+        "Details": {
+          "GitCommit": "db8809540e1a7a9da5d518876894933ff55692ab"
+        }
+      },
+      {
+        "Name": "runc",
+        "Version": "1.4.3",
+        "Details": {
+          "GitCommit": "v1.4.3-0-gbb14dabe"
+        }
+      },
+      {
+        "Name": "docker-init",
+        "Version": "0.19.0",
+        "Details": {
+          "GitCommit": "de40ad0"
+        }
+      }
+    ],
+    "GitCommit": "3ce5872",
+    "GoVersion": "go1.26.8",
+    "KernelVersion": "6.18.33.2-microsoft-standard-WSL2",
+    "BuildTime": "2026-09-03T21:51:20.000000000+00:00"
+  }
+}
