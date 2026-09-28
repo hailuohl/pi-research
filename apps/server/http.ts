@@ -67,8 +67,8 @@ export function createHttpServer(options: ServerOptions) {
                 const chunks: Buffer[] = [];
                 for await (const chunk of req) {
                     size += chunk.length;
-                    const maximum=route==='/operations/document_import'?48*1024*1024:3*1024*1024;
-                    ensure(size <= maximum, 'BODY_TOO_LARGE', route==='/operations/document_import'?'文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB':'请求最多 3 MiB', 413);
+                    const maximum=route==='/operations/document_import'?48*1024*1024:route==='/operations/manuscript_create'?24*1024*1024:3*1024*1024;
+                    ensure(size <= maximum, 'BODY_TOO_LARGE', route==='/operations/document_import'?'文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB':route==='/operations/manuscript_create'?'文稿输入 JSON 最多 24 MiB；原始文件合计最多 16 MiB':'请求最多 3 MiB', 413);
                     chunks.push(Buffer.from(chunk));
                 }
                 let body: unknown;

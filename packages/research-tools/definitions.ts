@@ -5,6 +5,19 @@ const TOOL_METADATA: Record<string, {
     description: string;
     example: unknown;
 }> = {
+    publication_templates:{description:'用户入口：读取固定文稿基础模板；模板文字不代表科学结论。',example:{}},
+    manuscript_create:{description:'用户入口：冻结完整文稿、引擎与固定资产，编辑创建新修订，不启动编译。',example:{title:'Manuscript',engine:'pdflatex',mainFile:'main.tex',bibliography:'none',files:[{path:'main.tex',contentBase64:'SGVsbG8='}]}},
+    manuscript_list:{description:'用户入口：有界列出固定文稿修订。',example:{cursor:0,limit:30}},
+    manuscript_inspect:{description:'用户入口：读取固定文稿清单及已知资产来源。',example:{revisionId:'manuscript-id'}},
+    manuscript_source_read:{description:'用户入口：按UTF16游标读取固定文稿源码，不执行其中内容。',example:{revisionId:'manuscript-id',path:'main.tex',cursor:0,limit:16000}},
+    publication_status:{description:'用户入口：读取固定文稿编译配置；缺少依赖不自动安装。',example:{}},
+    publication_configure:{description:'用户入口：核对并保存固定LaTeX构建镜像，不编译文稿。',example:{expectedVersion:0,dockerContext:'desktop-linux',imageDigest:'sha256:'+'0'.repeat(64)}},
+    publication_prepare:{description:'用户入口：冻结文稿、编译器和资源，生成独立待批准构建清单。',example:{revisionId:'manuscript-id'}},
+    publication_submit:{description:'用户入口：提交已单独批准的固定文稿构建。',example:{jobId:'publication-job-id'}},
+    publication_inspect:{description:'用户入口：回查固定文稿作业的真实状态与结果标识。',example:{jobId:'publication-job-id'}},
+    publication_cancel:{description:'用户入口：请求取消固定构建，只作用于已核对归属的容器。',example:{jobId:'publication-job-id'}},
+    publication_result:{description:'用户入口：读取固定编译诊断、PDF及页图；错误PDF不能冒充成功。',example:{resultId:'publication-result-id'}},
+    publication_build_list:{description:'用户入口：有界回查当前项目或指定文稿的构建历史。',example:{cursor:0,limit:30}},
     skill_package_import:{description:'用户入口：导入固定 UTF-8 技能/资源或受限 ZIP，形成待审版本，不执行脚本。',example:{packageId:'local-method',revisionTag:'v1',description:'用户方法',roles:['coordinator'],license:null,requirements:{tools:[],backends:[],artifactIds:[]},files:[{path:'SKILL.md',contentBase64:'IyBNZXRob2Q='}]}},
     skill_package_list:{description:'用户入口：查看项目技能修订、审阅/撤销记录和当前启用包。',example:{}},
     skill_package_inspect:{description:'用户入口：回查固定技能修订及审阅决定。',example:{revisionId:'revision-id'}},

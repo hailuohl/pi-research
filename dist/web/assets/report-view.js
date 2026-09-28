@@ -1,6 +1,7 @@
 import { api, artifactText, downloadArtifact } from './api.js';
 import { short, label } from './models.js';
 import { SectionTitle, Badge, Empty } from './ui.js';
+import { PublicationView } from './publication-view.js';
 const referenceTypes = { run: '正式运行', 'run-source': '固定运行源码', artifact: '原始产物', evidence: '定位证据', 'development-job': '开发测试', 'development-review': '独立审查', claim: '已采纳结论' };
 function provenanceSignature(data, reportId) {
     const versions = (rows) => (rows ?? []).map(row => { const r = row; return [r.id, r.version ?? null, r.status ?? null]; }).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
@@ -157,6 +158,7 @@ export class ReportsView extends React.Component {
         const available = s.selected.every(id => eligible.some(r => r.id === id)) && s.selectedClaims.every(id => claims.some(c => c.id === id));
         return React.createElement("div", { className: "page-scroll" },
             React.createElement(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
+            React.createElement(PublicationView, { key: data.project.id, data: data, perform: perform }),
             React.createElement("section", { className: "surface report-builder" },
                 React.createElement("h2", null, "\u751F\u6210\u53EF\u8FFD\u6EAF\u7ED3\u679C\u8BB0\u5F55"),
                 React.createElement("label", null,

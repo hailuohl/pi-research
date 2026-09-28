@@ -1,3 +1,4 @@
+import { compilerProfile } from '../publications/build-service.js';
 import { ensure, asError } from '../domain/errors.js';
 import { userOnly, scope } from '../policy/permissions.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
@@ -44,9 +45,15 @@ function missingSkills(app, pid, role, bundleId, skillIds, automation = false, a
             if (!tools.has(tool))
                 missing.push({ skillId: id, kind: 'tool', value: tool, reason: '当前角色/自动化实际工具列表未提供此工具' });
         for (const backend of entry.requirements?.backends ?? []) {
-            const ready = backend === 'docker' && !!app.store.db.prepare("SELECT 1 FROM compute_contexts WHERE context='default' AND status='ready' AND target_id IS NOT NULL AND engine_id IS NOT NULL AND next_probe_at>? LIMIT 1").get(Date.now());
+            const compiler = backend === 'latex' ? app.store.maybe('publication-compiler-settings', 'global') : undefined;
+            let configured = false;
+            try {
+                configured = !!compiler && compiler.profileDigest === compilerProfile(app.context.repoRoot).profileDigest;
+            }
+            catch { }
+            const context = backend === 'latex' ? compiler?.dockerContext : 'default', ready = (backend === 'docker' || backend === 'latex' && configured) && !!context && !!app.store.db.prepare("SELECT 1 FROM compute_contexts WHERE context=? AND status='ready' AND target_id IS NOT NULL AND engine_id IS NOT NULL AND next_probe_at>? LIMIT 1").get(context, Date.now());
             if (!ready)
-                missing.push({ skillId: id, kind: 'backend', value: backend, reason: backend === 'docker' ? '默认 Docker 目标未核验或核验已过期；请先核对计算目标' : '后端未实现或没有已核验配置' });
+                missing.push({ skillId: id, kind: 'backend', value: backend, reason: backend === 'docker' ? '默认 Docker 目标未核验或核验已过期；请先核对计算目标' : backend === 'latex' ? '固定文稿编译镜像未配置、内容已变或目标核验已过期' : '后端未实现或没有已核验配置' });
         }
         for (const artifactId of entry.requirements?.artifactIds ?? []) {
             const a = app.store.maybe('artifact', artifactId);

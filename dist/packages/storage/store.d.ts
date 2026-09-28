@@ -29,6 +29,7 @@ export declare class Store {
     private rollbackCallbacks;
     private commitCallbacks;
     constructor(path: string);
+    private migratePublicationQueue;
     private migrateDocumentQueue;
     private migrateComputeQueue;
     onRollback(fn: () => void): void;

@@ -4,7 +4,7 @@ import { ensure, DomainError } from '../domain/errors.js';
 import { docker, probeDockerTarget, JOB_LABEL, MANIFEST_LABEL } from '../execution/docker.js';
 const TERMINAL = ['succeeded', 'failed', 'cancelled', 'timed_out'];
 const DEFAULTS = { maxRuns: 1, maxDevelopment: 1, maxJobs: 2, cpus: null, memoryMb: null, maxQueued: null };
-const sourceKind = (kind) => kind === 'document' ? 'document-parse-job' : kind === 'development' ? 'sandbox-job' : 'run';
+const sourceKind = (kind) => kind === 'publication' ? 'publication-build-job' : kind === 'document' ? 'document-parse-job' : kind === 'development' ? 'sandbox-job' : 'run';
 /** One SQLite-backed budget for formal Runs and development jobs; leases never release resources. */
 export class ComputeQueue {
     c;
@@ -33,8 +33,8 @@ export class ComputeQueue {
     }
     usage(targetId = 'host') {
         const where = targetId === 'host' ? 'held=1' : "held=1 AND (target_id=? OR (?<>'host-example' AND backend='docker' AND bound=0))", params = targetId === 'host' ? [] : [targetId, targetId];
-        const r = this.c.store.db.prepare(`SELECT count(*) jobs,COALESCE(sum(kind='run'),0) runs,COALESCE(sum(kind='development'),0) development,COALESCE(sum(kind='document'),0) documents,COALESCE(sum(cpu_millis),0) cpu,COALESCE(sum(memory_mb),0) memory,COALESCE(sum(phase='unknown'),0) unknown FROM compute_queue WHERE ${where}`).get(...params);
-        return { jobs: Number(r.jobs), runs: Number(r.runs), development: Number(r.development), documents: Number(r.documents), cpus: Number(r.cpu) / 1000, memoryMb: Number(r.memory), unknown: Number(r.unknown) };
+        const r = this.c.store.db.prepare(`SELECT count(*) jobs,COALESCE(sum(kind='run'),0) runs,COALESCE(sum(kind='development'),0) development,COALESCE(sum(kind='document'),0) documents,COALESCE(sum(kind='publication'),0) publications,COALESCE(sum(cpu_millis),0) cpu,COALESCE(sum(memory_mb),0) memory,COALESCE(sum(phase='unknown'),0) unknown FROM compute_queue WHERE ${where}`).get(...params);
+        return { jobs: Number(r.jobs), runs: Number(r.runs), development: Number(r.development), documents: Number(r.documents), publications: Number(r.publications), cpus: Number(r.cpu) / 1000, memoryMb: Number(r.memory), unknown: Number(r.unknown) };
     }
     targetReady(r, fresh = false) {
         if (r.backend === 'trusted-example')
@@ -42,10 +42,10 @@ export class ComputeQueue {
         const ctx = this.context(r.context_name);
         return !!(r.bound && ctx?.status === 'ready' && ctx.engine_id === r.engine_id && ctx.endpoint === r.endpoint && (!fresh || ctx.next_probe_at > Date.now()));
     }
-    fits(r, limits, used) { return used.jobs + 1 <= limits.maxJobs && (r.kind === 'document' ? used.documents < 1 : used[r.kind === 'run' ? 'runs' : 'development'] + 1 <= limits[r.kind === 'run' ? 'maxRuns' : 'maxDevelopment']) && (limits.cpus === null || Math.round(used.cpus * 1000) + r.cpu_millis <= Math.round(limits.cpus * 1000)) && (limits.memoryMb === null || used.memoryMb + r.memory_mb <= limits.memoryMb); }
-    available(limits, usage) { return { jobs: Math.max(0, limits.maxJobs - usage.jobs), runs: Math.max(0, limits.maxRuns - usage.runs), development: Math.max(0, limits.maxDevelopment - usage.development), documents: Math.max(0, 1 - usage.documents), cpus: limits.cpus === null ? null : Math.max(0, Math.round(limits.cpus * 1000) - Math.round(usage.cpus * 1000)) / 1000, memoryMb: limits.memoryMb === null ? null : Math.max(0, limits.memoryMb - usage.memoryMb) }; }
-    effectiveAvailable(host, target) { const min = (a, b) => a === null ? b : b === null ? a : Math.min(a, b); return { jobs: Math.min(host.jobs, target.jobs), runs: Math.min(host.runs, target.runs), development: Math.min(host.development, target.development), documents: Math.min(host.documents, target.documents), cpus: min(host.cpus, target.cpus), memoryMb: min(host.memoryMb, target.memoryMb) }; }
-    tooLarge(r) { const empty = { jobs: 0, runs: 0, development: 0, documents: 0, cpus: 0, memoryMb: 0, unknown: 0 }; return !this.fits(r, this.config().limits, empty) || !this.fits(r, this.config(r.target_id).limits, empty); }
+    fits(r, limits, used) { return used.jobs + 1 <= limits.maxJobs && (r.kind === 'publication' ? used.publications < 1 : r.kind === 'document' ? used.documents < 1 : used[r.kind === 'run' ? 'runs' : 'development'] + 1 <= limits[r.kind === 'run' ? 'maxRuns' : 'maxDevelopment']) && (limits.cpus === null || Math.round(used.cpus * 1000) + r.cpu_millis <= Math.round(limits.cpus * 1000)) && (limits.memoryMb === null || used.memoryMb + r.memory_mb <= limits.memoryMb); }
+    available(limits, usage) { return { jobs: Math.max(0, limits.maxJobs - usage.jobs), runs: Math.max(0, limits.maxRuns - usage.runs), development: Math.max(0, limits.maxDevelopment - usage.development), documents: Math.max(0, 1 - usage.documents), publications: Math.max(0, 1 - usage.publications), cpus: limits.cpus === null ? null : Math.max(0, Math.round(limits.cpus * 1000) - Math.round(usage.cpus * 1000)) / 1000, memoryMb: limits.memoryMb === null ? null : Math.max(0, limits.memoryMb - usage.memoryMb) }; }
+    effectiveAvailable(host, target) { const min = (a, b) => a === null ? b : b === null ? a : Math.min(a, b); return { jobs: Math.min(host.jobs, target.jobs), runs: Math.min(host.runs, target.runs), development: Math.min(host.development, target.development), documents: Math.min(host.documents, target.documents), publications: Math.min(host.publications, target.publications), cpus: min(host.cpus, target.cpus), memoryMb: min(host.memoryMb, target.memoryMb) }; }
+    tooLarge(r) { const empty = { jobs: 0, runs: 0, development: 0, documents: 0, publications: 0, cpus: 0, memoryMb: 0, unknown: 0 }; return !this.fits(r, this.config().limits, empty) || !this.fits(r, this.config(r.target_id).limits, empty); }
     capacity(r) { if (!this.fits(r, this.config().limits, this.usage()))
         return 'host_capacity'; if (!this.fits(r, this.config(r.target_id).limits, this.usage(r.target_id)))
         return 'target_capacity'; }
@@ -61,7 +61,7 @@ SELECT q.* FROM compute_queue q JOIN compute_limits h ON h.target_id='host' LEFT
 WHERE q.phase='queued' AND q.bound=1 AND q.next_attempt_at<=? AND (q.backend='trusted-example' OR EXISTS(SELECT 1 FROM compute_contexts c WHERE c.context=q.context_name AND c.status='ready' AND c.engine_id=q.engine_id AND c.endpoint=q.endpoint AND c.next_probe_at>?))
 AND ${acceptable('cpus', 'q.cpu_millis', 1000)} AND ${acceptable('memoryMb', 'q.memory_mb')}
 AND (${effective('maxJobs')})>=1 AND json_extract(h.data,'$.maxJobs')>=1
-AND (q.kind='run' AND (${effective('maxRuns')})>=1 AND json_extract(h.data,'$.maxRuns')>=1 OR q.kind='development' AND (${effective('maxDevelopment')})>=1 AND json_extract(h.data,'$.maxDevelopment')>=1 OR q.kind='document')),
+AND (q.kind='run' AND (${effective('maxRuns')})>=1 AND json_extract(h.data,'$.maxRuns')>=1 OR q.kind='development' AND (${effective('maxDevelopment')})>=1 AND json_extract(h.data,'$.maxDevelopment')>=1 OR q.kind IN ('document','publication'))),
 heads AS (SELECT target_id,min(sequence) sequence FROM eligible GROUP BY target_id)
 SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequence LIMIT 256`).all(Date.now(), Date.now());
     }
@@ -151,7 +151,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
     }
     async ownsLegacy(q) {
         const record = this.c.store.get(sourceKind(q.kind), q.id, q.project_id), execution = q.kind === 'run' ? record.execution : record;
-        const name = q.kind === 'run' ? `pi-research-${q.id}` : q.kind === 'document' ? `pi-document-${q.id}` : `pi-development-${q.id}`, id = execution?.containerId, container = await this.inspectContainer(q.context_name, id ?? name);
+        const name = q.kind === 'run' ? `pi-research-${q.id}` : q.kind === 'document' ? `pi-document-${q.id}` : q.kind === 'publication' ? `pi-publication-${q.id}` : `pi-development-${q.id}`, id = execution?.containerId, container = await this.inspectContainer(q.context_name, id ?? name);
         return !!(container && (!id || container.Id === id) && container.Config?.Labels?.[JOB_LABEL] === q.id && container.Config?.Labels?.[MANIFEST_LABEL] === record.manifestDigest);
     }
     async verifyTarget(kind, id) {

@@ -1,4 +1,11 @@
 import type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision } from '../../../dist/packages/research-workflows/types.js';
+export type {ManuscriptRevision,PublicationBuildResult,PublicationEngine,BibliographyMode} from '../../../dist/packages/publications/build-types.js';
+import type {MANUSCRIPT_TEMPLATES} from '../../../dist/packages/publications/templates.js';
+export type ManuscriptTemplate=typeof MANUSCRIPT_TEMPLATES[number];
+import type {PublicationBuildService} from '../../../dist/packages/publications/build-service.js';
+export type PublicationCompilerStatus=ReturnType<PublicationBuildService['status']>;
+export type PublicationBuildJobDTO=ReturnType<PublicationBuildService['inspect']>;
+export type PublicationBuildResultDTO=ReturnType<PublicationBuildService['result']>;
 import type { Wakeup } from '../../../dist/packages/scheduler/wakeups.js';
 import type {ComputeQueueInspection} from '../../../dist/packages/scheduler/compute-types.js';
 import type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';

@@ -1,3 +1,5 @@
+import {compilerProfile} from '../publications/build-service.js';
+import type {CompilerConfiguration} from '../publications/build-types.js';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Artifact, Row, Session, Task, TaskAttempt } from '../domain/types.js';
 import { ensure, asError } from '../domain/errors.js';
@@ -27,7 +29,7 @@ function missingSkills(app:ResearchApp,pid:string,role:Session['role'],bundleId:
     try{app.skills.ensureBundleStartAllowed(pid,bundleId);}catch(e){const x=asError(e);missing.push({skillId:'',kind:'binding',value:bundleId,reason:`${x.code} — ${x.message}`});}
     for(const id of skillIds){const entry=catalog.skills.find(s=>s.id===id);if(!entry){missing.push({skillId:id,kind:'binding',value:id,reason:'技能不在固定包或当前角色可选目录中'});continue;}
         for(const tool of entry.requirements?.tools??[])if(!tools.has(tool))missing.push({skillId:id,kind:'tool',value:tool,reason:'当前角色/自动化实际工具列表未提供此工具'});
-        for(const backend of entry.requirements?.backends??[]){const ready=backend==='docker'&&!!app.store.db.prepare("SELECT 1 FROM compute_contexts WHERE context='default' AND status='ready' AND target_id IS NOT NULL AND engine_id IS NOT NULL AND next_probe_at>? LIMIT 1").get(Date.now());if(!ready)missing.push({skillId:id,kind:'backend',value:backend,reason:backend==='docker'?'默认 Docker 目标未核验或核验已过期；请先核对计算目标':'后端未实现或没有已核验配置'});}
+        for(const backend of entry.requirements?.backends??[]){const compiler=backend==='latex'?app.store.maybe<CompilerConfiguration>('publication-compiler-settings','global'):undefined;let configured=false;try{configured=!!compiler&&compiler.profileDigest===compilerProfile(app.context.repoRoot).profileDigest;}catch{}const context=backend==='latex'?compiler?.dockerContext:'default',ready=(backend==='docker'||backend==='latex'&&configured)&&!!context&&!!app.store.db.prepare("SELECT 1 FROM compute_contexts WHERE context=? AND status='ready' AND target_id IS NOT NULL AND engine_id IS NOT NULL AND next_probe_at>? LIMIT 1").get(context,Date.now());if(!ready)missing.push({skillId:id,kind:'backend',value:backend,reason:backend==='docker'?'默认 Docker 目标未核验或核验已过期；请先核对计算目标':backend==='latex'?'固定文稿编译镜像未配置、内容已变或目标核验已过期':'后端未实现或没有已核验配置'});}
         for(const artifactId of entry.requirements?.artifactIds??[]){const a=app.store.maybe<Artifact>('artifact',artifactId);if(!a||a.projectId!==pid||allowedArtifacts&&!allowedArtifacts.has(artifactId))missing.push({skillId:id,kind:'artifact',value:artifactId,reason:'数据不存在或不在当前任务/自动分析授权资源范围'});}
     }
     return missing;

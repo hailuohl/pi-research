@@ -1,0 +1,364 @@
+{
+  "capturedAt": "2026-09-28T13:14:21.984Z",
+  "projectId": "8e7e45d0-ff95-4c5d-bf05-ec8e7dc592ef",
+  "final": {
+    "revisionId": "fe5e19df-eb14-42f2-8d05-7ebf6ad38378",
+    "resultId": "046e5a64f957d5971d97368c7c792afaca7e3e4061db07eb02732cd6c8d54b1b",
+    "jobId": "fb89073a-c8f7-458d-867f-a18ba907608e"
+  },
+  "sourceData": "Previous real skill/figure project copied via SQLite online backup; original untouched",
+  "revisions": [
+    {
+      "manifestArtifactId": "04e96899-abe1-4832-aef5-8a41172e0836",
+      "manifestArtifactDigest": "16c27e78402e4354604c78dfe2ae7dec2ad7b7316f7be7e7040943dcc19594b8",
+      "title": "固定图形文稿验收·缺图版本",
+      "engine": "xelatex",
+      "mainFile": "main.tex",
+      "bibliography": "none",
+      "templateId": "article-xelatex",
+      "sourceDigest": "4b1491751aeadd4e0b9ba039ecd92a2355c3da096acb4905b06a2eae617f6d9d",
+      "files": [
+        {
+          "path": "main.tex",
+          "artifactId": "fef14946-d08a-4c15-b203-d1a3763b9b21",
+          "digest": "bb9dd8b204c9a593b2499c3d95f2844967c2ad761ff237593ca645f556218fe1",
+          "size": 567,
+          "mediaType": "text/plain",
+          "provenance": {
+            "kind": "unknown"
+          }
+        }
+      ],
+      "id": "6da792dc-c1d2-45f6-9b25-cb94160630b5",
+      "kind": "manuscript-revision",
+      "projectId": "8e7e45d0-ff95-4c5d-bf05-ec8e7dc592ef",
+      "version": 1,
+      "createdAt": "2026-09-28T12:57:40.736Z",
+      "updatedAt": "2026-09-28T12:57:40.736Z"
+    },
+    {
+      "manifestArtifactId": "ae177098-32da-4393-b144-9fab2fb90355",
+      "manifestArtifactDigest": "8a5ec8842ec09c19b1a620e89be6db7550d99185427375894c3135fd99cfc420",
+      "title": "固定图形与参考文献·修复版本",
+      "engine": "xelatex",
+      "mainFile": "main.tex",
+      "bibliography": "biber",
+      "sourceDigest": "44e502c095f160344f870ff74b9445cfa45b11dd81217bdec6d381c2a6836976",
+      "files": [
+        {
+          "path": "figure.png",
+          "artifactId": "9cb1ff2e-4bec-400c-aa87-7a429210fbf8",
+          "digest": "9248c17b78443dbb151f1a391fadc5eb2bd79b5684b79015342bdb3963b11918",
+          "size": 2021,
+          "mediaType": "image/png",
+          "provenance": {
+            "kind": "sandbox-job",
+            "id": "a2e21ae4-d85f-4326-b91c-203536464dac",
+            "sourceDigest": "235bd3dba62c79c540a9da8ad3efd7b1cdc831f6270ea19d3791aeed8a530a5f",
+            "manifestDigest": "3b97293e84fdd7022fbd7e202c0c0f63b68f75eec7f0628cddd2c8fbe9afc416",
+            "approvalId": "c07b44f4-856c-4aca-a555-a64923e352a8"
+          }
+        },
+        {
+          "path": "main.tex",
+          "artifactId": "02ac4d59-aa30-404b-bbce-e110f499f598",
+          "digest": "bf1092e1b7064a622f2dcd46a384ee857826f4c758c5ee6e0c8fe209cc1be4ca",
+          "size": 981,
+          "mediaType": "text/plain",
+          "provenance": {
+            "kind": "unknown"
+          }
+        },
+        {
+          "path": "references.bib",
+          "artifactId": "6fb78bb5-8f0d-4971-b7a0-36a9e0c5324c",
+          "digest": "e382152a5dc1b377153ac5687526372061764d9bf0562e6a158ddb23bf9fe919",
+          "size": 162,
+          "mediaType": "text/plain",
+          "provenance": {
+            "kind": "unknown"
+          }
+        }
+      ],
+      "id": "145eb60b-25aa-4db2-8738-be3e7fa3591e",
+      "kind": "manuscript-revision",
+      "projectId": "8e7e45d0-ff95-4c5d-bf05-ec8e7dc592ef",
+      "version": 1,
+      "createdAt": "2026-09-28T13:00:10.923Z",
+      "updatedAt": "2026-09-28T13:00:10.923Z"
+    },
+    {
+      "manifestArtifactId": "319c6ea5-2356-4b7e-8bbb-c6f932a4f78a",
+      "manifestArtifactDigest": "83b9b17647c8f003d42199cc59eb9863dca43b8a45e0beefad00138f3b0777ef",
+      "title": "固定图形与参考文献·中文排版修订",
+      "engine": "xelatex",
+      "mainFile": "main.tex",
+      "bibliography": "biber",
+      "sourceDigest": "1748fe7f77a47dacfef9061aeae0fb6dfbff7981bcfc30a4d3a4b8dd3b1309f2",
+      "files": [
+        {
+          "path": "figure.png",
+          "artifactId": "9cb1ff2e-4bec-400c-aa87-7a429210fbf8",
+          "digest": "9248c17b78443dbb151f1a391fadc5eb2bd79b5684b79015342bdb3963b11918",
+          "size": 2021,
+          "mediaType": "image/png",
+          "provenance": {
+            "kind": "sandbox-job",
+            "id": "a2e21ae4-d85f-4326-b91c-203536464dac",
+            "sourceDigest": "235bd3dba62c79c540a9da8ad3efd7b1cdc831f6270ea19d3791aeed8a530a5f",
+            "manifestDigest": "3b97293e84fdd7022fbd7e202c0c0f63b68f75eec7f0628cddd2c8fbe9afc416",
+            "approvalId": "c07b44f4-856c-4aca-a555-a64923e352a8"
+          }
+        },
+        {
+          "path": "main.tex",
+          "artifactId": "1e4e31ab-b8f9-42c3-aac2-a7e2e7685488",
+          "digest": "bb356457b4f414a2c8d7330129003b53d23d824d1cd3f85360a55bfa6aaee4b5",
+          "size": 1041,
+          "mediaType": "text/plain",
+          "provenance": {
+            "kind": "unknown"
+          }
+        },
+        {
+          "path": "references.bib",
+          "artifactId": "79cfa340-57c6-4d3a-a4f5-209a97ad234d",
+          "digest": "e382152a5dc1b377153ac5687526372061764d9bf0562e6a158ddb23bf9fe919",
+          "size": 162,
+          "mediaType": "text/plain",
+          "provenance": {
+            "kind": "unknown"
+          }
+        }
+      ],
+      "id": "fe5e19df-eb14-42f2-8d05-7ebf6ad38378",
+      "kind": "manuscript-revision",
+      "projectId": "8e7e45d0-ff95-4c5d-bf05-ec8e7dc592ef",
+      "version": 1,
+      "createdAt": "2026-09-28T13:04:41.215Z",
+      "updatedAt": "2026-09-28T13:04:41.215Z"
+    }
+  ],
+  "builds": [
+    {
+      "id": "52ac92e8-8355-449f-b314-e55872d8aa3d",
+      "revisionId": "6da792dc-c1d2-45f6-9b25-cb94160630b5",
+      "state": "failed",
+      "integrity": "complete",
+      "exitCode": 1,
+      "sourceDigest": "4b1491751aeadd4e0b9ba039ecd92a2355c3da096acb4905b06a2eae617f6d9d",
+      "manifestDigest": "7586e8fd289d3afa2a608d02dc75112dda4c60d0daafa45baf8cf9560005a31a",
+      "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+      "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+      "resultId": "8f6b727a8e1fbf18ac44ed38efa8cd084c1ce6aacc977806d7781e3c6b6c5fda"
+    },
+    {
+      "id": "62e450a5-6f8f-4967-9166-bbea7465c85d",
+      "revisionId": "145eb60b-25aa-4db2-8738-be3e7fa3591e",
+      "state": "succeeded",
+      "integrity": "complete",
+      "exitCode": 0,
+      "sourceDigest": "44e502c095f160344f870ff74b9445cfa45b11dd81217bdec6d381c2a6836976",
+      "manifestDigest": "721badd880f518c605a5639e7a179106efed78d18baf8324caa32df4c4e0710e",
+      "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+      "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+      "resultId": "3f84f51b67b5966bb9234afa06f87020e05ff85c345cfe7c27597c0480e5963b"
+    },
+    {
+      "id": "fb89073a-c8f7-458d-867f-a18ba907608e",
+      "revisionId": "fe5e19df-eb14-42f2-8d05-7ebf6ad38378",
+      "state": "succeeded",
+      "integrity": "complete",
+      "exitCode": 0,
+      "sourceDigest": "1748fe7f77a47dacfef9061aeae0fb6dfbff7981bcfc30a4d3a4b8dd3b1309f2",
+      "manifestDigest": "ff4c2e7fd6040d4193052daab8813c325269e505540292b2ccabad14396a66c9",
+      "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+      "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+      "resultId": "046e5a64f957d5971d97368c7c792afaca7e3e4061db07eb02732cd6c8d54b1b"
+    }
+  ],
+  "results": [
+    {
+      "id": "8f6b727a8e1fbf18ac44ed38efa8cd084c1ce6aacc977806d7781e3c6b6c5fda",
+      "jobId": "52ac92e8-8355-449f-b314-e55872d8aa3d",
+      "revisionId": "6da792dc-c1d2-45f6-9b25-cb94160630b5",
+      "sourceDigest": "4b1491751aeadd4e0b9ba039ecd92a2355c3da096acb4905b06a2eae617f6d9d",
+      "status": "failed",
+      "hadErrors": true,
+      "converged": false,
+      "passes": 1,
+      "engineVersion": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+      "sourceValidity": "current",
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "missing_image",
+          "message": "Unable to load picture or PDF file 'figure.png'.",
+          "file": "main.tex",
+          "line": 13,
+          "pass": 1
+        }
+      ],
+      "pdf": null,
+      "previews": [],
+      "logs": [
+        {
+          "artifactId": "54eb15b2-5e5b-4a83-86ba-cdc8816fed3c",
+          "digest": "10816df332a81540c3ce59855014f87b10cbb74aa86bb5ae4545d1568783884b",
+          "bytes": 3184
+        }
+      ]
+    },
+    {
+      "id": "3f84f51b67b5966bb9234afa06f87020e05ff85c345cfe7c27597c0480e5963b",
+      "jobId": "62e450a5-6f8f-4967-9166-bbea7465c85d",
+      "revisionId": "145eb60b-25aa-4db2-8738-be3e7fa3591e",
+      "sourceDigest": "44e502c095f160344f870ff74b9445cfa45b11dd81217bdec6d381c2a6836976",
+      "status": "succeeded",
+      "hadErrors": false,
+      "converged": true,
+      "passes": 3,
+      "engineVersion": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+      "sourceValidity": "stale",
+      "sourceError": "APPROVAL_STALE",
+      "diagnostics": [],
+      "pdf": {
+        "artifactId": "5fb1fcd3-2024-4d54-a0ad-a02f6f703193",
+        "digest": "e93818d78cb0efb22e1b476183b2d9a5a2c91601120563a65e2679b082119ea5",
+        "bytes": 35279,
+        "pages": 2
+      },
+      "previews": [
+        {
+          "artifactId": "7b0b1513-f2b5-4a17-bdc2-7dc24d80d1c1",
+          "digest": "57d88df7b3ac3d57f75b81ef434a2d89f941927f3683d52ca1b7ffa600602a49",
+          "bytes": 73776,
+          "pageNumber": 1,
+          "width": 1132,
+          "height": 1600
+        },
+        {
+          "artifactId": "048ea20a-47b5-4fa0-b1c1-ddace0402ecc",
+          "digest": "466d1286b8c89d07c041f6d56a77825a92afcb758c2800ef51ff99be7974d564",
+          "bytes": 53266,
+          "pageNumber": 2,
+          "width": 1132,
+          "height": 1600
+        }
+      ],
+      "logs": [
+        {
+          "artifactId": "8bb2f653-1bd7-4691-82df-6d5b8c0f3174",
+          "digest": "f5aa1b0aaecf54775b7e084fd1646cc521962314d2f9415323884930dbf715c1",
+          "bytes": 14665
+        }
+      ]
+    },
+    {
+      "id": "046e5a64f957d5971d97368c7c792afaca7e3e4061db07eb02732cd6c8d54b1b",
+      "jobId": "fb89073a-c8f7-458d-867f-a18ba907608e",
+      "revisionId": "fe5e19df-eb14-42f2-8d05-7ebf6ad38378",
+      "sourceDigest": "1748fe7f77a47dacfef9061aeae0fb6dfbff7981bcfc30a4d3a4b8dd3b1309f2",
+      "status": "succeeded",
+      "hadErrors": false,
+      "converged": true,
+      "passes": 3,
+      "engineVersion": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+      "sourceValidity": "current",
+      "diagnostics": [],
+      "pdf": {
+        "artifactId": "31098326-c5de-455e-871d-9e861d33ff2f",
+        "digest": "d9b48807d0011c3c23dbab04d7bd6ef780a20ce2cc6e98d134f7ef6de6f5c56e",
+        "bytes": 35395,
+        "pages": 2
+      },
+      "previews": [
+        {
+          "artifactId": "bd47464c-1cd6-4ee7-861f-8df7c57e4ee1",
+          "digest": "14572c3a4d8646d9e0b64dc452439771274e68d55b6abdb178ffc284eeda2d0d",
+          "bytes": 78477,
+          "pageNumber": 1,
+          "width": 1132,
+          "height": 1600
+        },
+        {
+          "artifactId": "21a60935-5b71-4c6b-afac-8e87580f308b",
+          "digest": "466d1286b8c89d07c041f6d56a77825a92afcb758c2800ef51ff99be7974d564",
+          "bytes": 53266,
+          "pageNumber": 2,
+          "width": 1132,
+          "height": 1600
+        }
+      ],
+      "logs": [
+        {
+          "artifactId": "269a2ed0-5bc0-4dfd-a477-a7d4dc47cb8b",
+          "digest": "58aa05d076c23cea7b04fdd5d67e8ab43c0fbff61a104c1f457340864e6c7b44",
+          "bytes": 12959
+        }
+      ]
+    }
+  ],
+  "figureProvenance": {
+    "path": "figure.png",
+    "artifactId": "9cb1ff2e-4bec-400c-aa87-7a429210fbf8",
+    "digest": "9248c17b78443dbb151f1a391fadc5eb2bd79b5684b79015342bdb3963b11918",
+    "size": 2021,
+    "mediaType": "image/png",
+    "provenance": {
+      "kind": "sandbox-job",
+      "id": "a2e21ae4-d85f-4326-b91c-203536464dac",
+      "sourceDigest": "235bd3dba62c79c540a9da8ad3efd7b1cdc831f6270ea19d3791aeed8a530a5f",
+      "manifestDigest": "3b97293e84fdd7022fbd7e202c0c0f63b68f75eec7f0628cddd2c8fbe9afc416",
+      "approvalId": "c07b44f4-856c-4aca-a555-a64923e352a8"
+    }
+  },
+  "withdrawal": {
+    "jobId": "62e450a5-6f8f-4967-9166-bbea7465c85d",
+    "resultId": "3f84f51b67b5966bb9234afa06f87020e05ff85c345cfe7c27597c0480e5963b",
+    "sourceValidity": "stale",
+    "sourceError": "APPROVAL_STALE",
+    "pdfDigestUnchanged": "e93818d78cb0efb22e1b476183b2d9a5a2c91601120563a65e2679b082119ea5",
+    "method": "Existing approval invalidation service invoked only in the isolated acceptance copy"
+  },
+  "verification": {
+    "threeImmutableRevisions": true,
+    "allSourceAndOutputBytesMatch": true,
+    "missingImageAtLine13": true,
+    "firstSyntaxSuccessHadVisualOverflow": true,
+    "finalChineseLinebreakFix": true,
+    "finalOverfullHboxAbsent": true,
+    "old52RecordsUnchanged": 52,
+    "originalDatabaseUntouched": true,
+    "httpCliAgreement": true,
+    "authenticatedDownloadsExact": true,
+    "additionalModelUsageRecords": 0,
+    "authenticatedDownloadArtifacts": [
+      {
+        "artifactId": "31098326-c5de-455e-871d-9e861d33ff2f",
+        "digest": "d9b48807d0011c3c23dbab04d7bd6ef780a20ce2cc6e98d134f7ef6de6f5c56e"
+      },
+      {
+        "artifactId": "9cb1ff2e-4bec-400c-aa87-7a429210fbf8",
+        "digest": "9248c17b78443dbb151f1a391fadc5eb2bd79b5684b79015342bdb3963b11918"
+      },
+      {
+        "artifactId": "1e4e31ab-b8f9-42c3-aac2-a7e2e7685488",
+        "digest": "bb356457b4f414a2c8d7330129003b53d23d824d1cd3f85360a55bfa6aaee4b5"
+      },
+      {
+        "artifactId": "79cfa340-57c6-4d3a-a4f5-209a97ad234d",
+        "digest": "e382152a5dc1b377153ac5687526372061764d9bf0562e6a158ddb23bf9fe919"
+      },
+      {
+        "artifactId": "319c6ea5-2356-4b7e-8bbb-c6f932a4f78a",
+        "digest": "83b9b17647c8f003d42199cc59eb9863dca43b8a45e0beefad00138f3b0777ef"
+      }
+    ]
+  },
+  "limits": [
+    "PDF/source/manifest download requests were verified over authenticated HTTP; browser download destination was not confirmed",
+    "Compiler success alone did not catch Chinese paragraph overflow in the intermediate revision; final manuscript added explicit XeTeX Chinese line breaking and was visually rechecked",
+    "Preview page selection resets to page 1 on reload; fixed manuscript revision and job identity are restored"
+  ]
+}

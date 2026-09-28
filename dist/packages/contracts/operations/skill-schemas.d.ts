@@ -20,7 +20,7 @@ export declare const SKILL_REQUIREMENTS_SCHEMA: {
             };
         };
     };
-    readonly required: ("tools" | "backends" | "artifactIds")[];
+    readonly required: ("artifactIds" | "tools" | "backends")[];
     readonly additionalProperties: false;
 };
 export declare const SKILL_INPUT_SCHEMAS: {
@@ -381,7 +381,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("tools" | "backends" | "artifactIds")[];
+                readonly required: ("artifactIds" | "tools" | "backends")[];
                 readonly additionalProperties: false;
             };
             readonly files: {
@@ -410,7 +410,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly const: "text-only";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "roles" | "license" | "files" | "authorization" | "packageId" | "revisionTag" | "description" | "requirements" | "contentDigest")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "description" | "requirements" | "contentDigest")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_list: {
@@ -510,7 +510,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                             };
                                         };
                                     };
-                                    readonly required: ("tools" | "backends" | "artifactIds")[];
+                                    readonly required: ("artifactIds" | "tools" | "backends")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly files: {
@@ -539,7 +539,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                     readonly const: "text-only";
                                 };
                             };
-                            readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "roles" | "license" | "files" | "authorization" | "packageId" | "revisionTag" | "description" | "requirements" | "contentDigest")[];
+                            readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "description" | "requirements" | "contentDigest")[];
                             readonly additionalProperties: false;
                         };
                         readonly reviews: {
@@ -583,7 +583,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "contentDigest" | "decision" | "revisionId" | "note")[];
+                                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -625,7 +625,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "contentDigest" | "revisionId" | "note")[];
+                                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -635,7 +635,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("revisions" | "configuration")[];
+        readonly required: ("configuration" | "revisions")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_inspect: {
@@ -711,7 +711,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                 };
                             };
                         };
-                        readonly required: ("tools" | "backends" | "artifactIds")[];
+                        readonly required: ("artifactIds" | "tools" | "backends")[];
                         readonly additionalProperties: false;
                     };
                     readonly files: {
@@ -740,7 +740,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly const: "text-only";
                     };
                 };
-                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "roles" | "license" | "files" | "authorization" | "packageId" | "revisionTag" | "description" | "requirements" | "contentDigest")[];
+                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "description" | "requirements" | "contentDigest")[];
                 readonly additionalProperties: false;
             };
             readonly reviews: {
@@ -784,7 +784,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "contentDigest" | "decision" | "revisionId" | "note")[];
+                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -826,7 +826,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "contentDigest" | "revisionId" | "note")[];
+                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -850,7 +850,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("digest" | "revisionId" | "resource" | "content")[];
+        readonly required: ("digest" | "revisionId" | "content" | "resource")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_review: {
@@ -892,7 +892,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "contentDigest" | "decision" | "revisionId" | "note")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_revoke: {
@@ -931,7 +931,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "contentDigest" | "revisionId" | "note")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
         readonly additionalProperties: false;
     };
     readonly skill_bundle_configure: {

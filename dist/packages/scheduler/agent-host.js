@@ -54,6 +54,7 @@ export class AgentHost {
             this.app.runs.launchPending();
             this.app.execution.launchPending();
             this.app.documentParsing.tick();
+            this.app.publicationBuilds.tick();
             this.app.literatureTasks.tick();
             this.admission.recover();
             this.app.teams.recover();
@@ -439,6 +440,7 @@ export class AgentHost {
         await Promise.all(exits);
         await this.app.git.stop();
         await this.app.documentParsing.stop();
+        await this.app.publicationBuilds.stop();
         await this.app.compute.stop();
     }
 }

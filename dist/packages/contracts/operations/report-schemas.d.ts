@@ -192,7 +192,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("documentVersionId" | "rawDigest" | "start" | "end" | "parseResultId" | "pageNumber" | "textArtifactDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                            readonly required: ("end" | "pageNumber" | "documentVersionId" | "rawDigest" | "start" | "parseResultId" | "textArtifactDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -247,17 +247,17 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("value" | "referenceId" | "name" | "unit")[];
+                                readonly required: ("value" | "name" | "referenceId" | "unit")[];
                                 readonly additionalProperties: false;
                             };
                         };
                     };
-                    readonly required: ("sourceDigest" | "experimentId" | "revision" | "state" | "integrity" | "runId" | "judgment" | "metrics")[];
+                    readonly required: ("sourceDigest" | "experimentId" | "revision" | "integrity" | "state" | "runId" | "judgment" | "metrics")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("id" | "validity" | "title" | "artifactId" | "integrity" | "formatVersion" | "reasons" | "references" | "runs")[];
+        readonly required: ("id" | "validity" | "formatVersion" | "artifactId" | "title" | "integrity" | "reasons" | "references" | "runs")[];
         readonly additionalProperties: false;
     };
     readonly report_reference_read: {
@@ -328,7 +328,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("documentVersionId" | "rawDigest" | "start" | "end" | "parseResultId" | "pageNumber" | "textArtifactDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                        readonly required: ("end" | "pageNumber" | "documentVersionId" | "rawDigest" | "start" | "parseResultId" | "textArtifactDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -351,7 +351,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "cursor" | "content" | "mediaType" | "end" | "reference")[];
+        readonly required: ("complete" | "cursor" | "end" | "mediaType" | "content" | "reference")[];
         readonly additionalProperties: false;
     };
 };

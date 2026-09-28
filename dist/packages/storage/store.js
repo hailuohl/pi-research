@@ -49,6 +49,32 @@ CREATE INDEX IF NOT EXISTS records_kind_session ON records(kind,json_extract(dat
 INSERT INTO schema_migrations VALUES(4,datetime('now'));`);
         });
         this.migrateDocumentQueue();
+        this.migratePublicationQueue();
+    }
+    migratePublicationQueue() {
+        this.transaction(() => {
+            if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=6').get())
+                return;
+            const context = "json_extract(r.data,'$.manifest.dockerContext')", phase = "json_extract(r.data,'$.state')";
+            const columns = 'kind,id,project_id,backend,context_name,phase,held,cpu_millis,memory_mb,target_id,generation,lease_until,source_version';
+            const values = `'publication',r.id,r.project_id,'docker',${context},${phase},CASE WHEN ${phase} IN ('starting','running','unknown') THEN 1 ELSE 0 END,CAST(ROUND(json_extract(r.data,'$.manifest.resources.cpus')*1000) AS INTEGER),json_extract(r.data,'$.manifest.resources.memoryMb'),(SELECT target_id FROM compute_contexts WHERE context=${context}),COALESCE(json_extract(r.data,'$.generation'),0),COALESCE(json_extract(r.data,'$.leaseUntil'),0),r.version`;
+            const active = `r.kind='publication-build-job' AND ${phase} IN ('queued','starting','running','unknown')`;
+            const sync = `INSERT OR IGNORE INTO compute_contexts(context) SELECT ${context} FROM records r WHERE r.kind=NEW.kind AND r.id=NEW.id;
+INSERT INTO compute_queue(${columns}) SELECT ${values} FROM records r WHERE r.kind=NEW.kind AND r.id=NEW.id
+ON CONFLICT(kind,id) DO UPDATE SET phase=excluded.phase,held=excluded.held,generation=excluded.generation,lease_until=excluded.lease_until,source_version=excluded.source_version,
+target_id=CASE WHEN compute_queue.bound=1 THEN compute_queue.target_id ELSE excluded.target_id END,
+next_attempt_at=CASE WHEN excluded.phase='unknown' AND compute_queue.phase<>'unknown' THEN CAST(strftime('%s','now') AS INTEGER)*1000+5000 ELSE compute_queue.next_attempt_at END;`;
+            const target = "(SELECT target_id FROM compute_contexts WHERE context=json_extract(NEW.data,'$.manifest.dockerContext'))";
+            const gate = `SELECT CASE WHEN (SELECT json_extract(data,'$.maxQueued') FROM compute_limits WHERE target_id='host') IS NOT NULL AND (SELECT count(*) FROM compute_queue WHERE phase='queued')>=(SELECT json_extract(data,'$.maxQueued') FROM compute_limits WHERE target_id='host') THEN RAISE(ABORT,'COMPUTE_QUEUE_FULL') END;
+SELECT CASE WHEN EXISTS(SELECT 1 FROM compute_limits l WHERE l.target_id NOT IN ('host','host-example') AND json_extract(l.data,'$.maxQueued') IS NOT NULL AND (l.target_id=${target} OR ${target} IS NULL) AND (SELECT count(*) FROM compute_queue q WHERE q.phase='queued' AND (q.target_id=l.target_id OR q.backend='docker' AND q.bound=0))>=json_extract(l.data,'$.maxQueued')) THEN RAISE(ABORT,'COMPUTE_TARGET_QUEUE_FULL') END;`;
+            this.db.exec(`INSERT OR IGNORE INTO compute_contexts(context) SELECT DISTINCT ${context} FROM records r WHERE ${active};
+INSERT INTO compute_queue(${columns}) SELECT ${values} FROM records r WHERE ${active} ORDER BY r.rowid;
+CREATE TRIGGER publication_queue_insert_gate BEFORE INSERT ON records WHEN NEW.kind='publication-build-job' AND json_extract(NEW.data,'$.state')='queued' BEGIN ${gate} END;
+CREATE TRIGGER publication_queue_update_gate BEFORE UPDATE ON records WHEN NEW.kind='publication-build-job' AND json_extract(NEW.data,'$.state')='queued' AND json_extract(OLD.data,'$.state')<>'queued' BEGIN ${gate} END;
+CREATE TRIGGER publication_queue_insert AFTER INSERT ON records WHEN NEW.kind='publication-build-job' AND json_extract(NEW.data,'$.state') IN ('queued','starting','running','unknown') BEGIN ${sync} END;
+CREATE TRIGGER publication_queue_update AFTER UPDATE ON records WHEN NEW.kind='publication-build-job' AND (EXISTS(SELECT 1 FROM compute_queue WHERE kind='publication' AND id=NEW.id) OR json_extract(NEW.data,'$.state') IN ('queued','starting','running','unknown')) BEGIN ${sync} END;
+INSERT INTO schema_migrations VALUES(6,datetime('now'));`);
+        });
     }
     migrateDocumentQueue() {
         this.transaction(() => {

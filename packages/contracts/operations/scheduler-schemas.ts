@@ -4,8 +4,8 @@ const array=<const T extends JsonSchema>(items:T)=>({type:'array',items} as cons
 const object=<const P extends Record<string,JsonSchema>,const O extends readonly (keyof P & string)[]=[]>(properties:P,optional?:O)=>({type:'object',properties,required:Object.keys(properties).filter(k=>!optional?.includes(k)) as Exclude<keyof P & string,O[number]>[],additionalProperties:false} as const);
 const limitFields={maxRuns:s.integer(0,256),maxDevelopment:s.integer(0,256),maxJobs:s.integer(0,256),cpus:s.nullable(s.number(0,1024)),memoryMb:s.nullable(s.integer(0,Number.MAX_SAFE_INTEGER)),maxQueued:s.nullable(s.integer(0,Number.MAX_SAFE_INTEGER))};
 const limits=object(limitFields),configuration=object({version:int,targetId:str,limits});
-const usage=object({jobs:int,runs:int,development:int,documents:int,cpus:num,memoryMb:int,unknown:int});
-const available=object({jobs:int,runs:int,development:int,documents:int,cpus:s.nullable(num),memoryMb:s.nullable(int)});
+const usage=object({jobs:int,runs:int,development:int,documents:int,publications:int,cpus:num,memoryMb:int,unknown:int});
+const available=object({jobs:int,runs:int,development:int,documents:int,publications:int,cpus:s.nullable(num),memoryMb:s.nullable(int)});
 const counts=object({reserved:int,running:int,stopping:int,unknown:int,held:int});
 const roles=s.enum(['coordinator','literature','designer','implementer','analyst','reviewer','writer']);
 const agents=object({version:int,maxWorkers:int,available:int,unit:{const:'pi-worker'},httpConcurrencyMeasured:{const:false},counts,
@@ -22,6 +22,6 @@ export const SCHEDULER_OUTPUT_SCHEMAS={
     compute_target_probe:object({context:str,targetId:str,backend:{const:'docker'},observedAt:str}),
     compute_queue_inspect:object({scope:{const:'shared-data-directory'},configuration,usage,available,queued:int,
         targets:array(object({targetId:str,backend:s.enum(['docker','trusted-example']),contexts:array(str),configuration,usage,available})),
-        items:array(object({kind:s.enum(['run','development','document']),id:str,projectId:str,sequence:int,state:str,held:bool,backend:s.enum(['docker','trusted-example']),targetId:s.nullable(str),requested:object({cpus:num,memoryMb:int}),generation:int,leaseUntil:int,nextAttemptAt:int,reason:s.enum(['ready','worker_active','recovery_due','target_unresolved','target_unavailable','target_changed','legacy_target_unknown','request_too_large','host_capacity','target_capacity','earlier_job','recovery_backoff','manual_recovery_required'])})),nextCursor:s.nullable(int)}),
+        items:array(object({kind:s.enum(['run','development','document','publication']),id:str,projectId:str,sequence:int,state:str,held:bool,backend:s.enum(['docker','trusted-example']),targetId:s.nullable(str),requested:object({cpus:num,memoryMb:int}),generation:int,leaseUntil:int,nextAttemptAt:int,reason:s.enum(['ready','worker_active','recovery_due','target_unresolved','target_unavailable','target_changed','legacy_target_unknown','request_too_large','host_capacity','target_capacity','earlier_job','recovery_backoff','manual_recovery_required'])})),nextCursor:s.nullable(int)}),
     compute_capacity_configure:configuration,agent_capacity_inspect:agents,agent_capacity_configure:agents,
 } as const satisfies Record<string,JsonSchema>;

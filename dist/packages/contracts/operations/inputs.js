@@ -1,3 +1,4 @@
+import { PUBLICATION_INPUT_SCHEMAS } from './publication-schemas.js';
 import { SKILL_INPUT_SCHEMAS } from './skill-schemas.js';
 import { DOCUMENT_INPUT_SCHEMAS, DISCOVERY_INPUT_SCHEMA } from './document-schemas.js';
 import { GIT_INPUT_SCHEMAS } from './git-schemas.js';
@@ -36,6 +37,7 @@ const candidate = s.object({ title: s.string(200), hypothesis: s.string(), confi
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
     ...SKILL_INPUT_SCHEMAS,
+    ...PUBLICATION_INPUT_SCHEMAS,
     ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS, ...SCHEDULER_INPUT_SCHEMAS,
     ...SOURCE_INPUT_SCHEMAS, ...DOCUMENT_INPUT_SCHEMAS,
     research_skill_list: s.object({}),

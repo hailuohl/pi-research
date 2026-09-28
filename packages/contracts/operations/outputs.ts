@@ -1,3 +1,4 @@
+import {PUBLICATION_OUTPUT_SCHEMAS} from './publication-schemas.js';
 import {SKILL_OUTPUT_SCHEMAS,SKILL_REQUIREMENTS_SCHEMA} from './skill-schemas.js';
 import {DOCUMENT_OUTPUT_SCHEMAS,DOCUMENT_EVIDENCE_LINK_SCHEMA,DISCOVERY_OUTPUT_SCHEMA} from './document-schemas.js';
 import {GIT_OUTPUT_SCHEMAS} from './git-schemas.js';
@@ -119,6 +120,7 @@ const artifact = row('artifact', { title: string, digest: string, size: integer,
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
     ...SKILL_OUTPUT_SCHEMAS,
+    ...PUBLICATION_OUTPUT_SCHEMAS,
     ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,...SCHEDULER_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,...DOCUMENT_OUTPUT_SCHEMAS,

@@ -1,0 +1,1675 @@
+export declare const PUBLICATION_INPUT_SCHEMAS: {
+    readonly publication_templates: {
+        readonly type: "object";
+        readonly properties: {};
+        readonly required: readonly never[];
+        readonly additionalProperties: false;
+    };
+    readonly manuscript_create: {
+        readonly type: "object";
+        readonly properties: {
+            readonly title: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly mainFile: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly templateId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly files: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly path: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly contentBase64: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly artifactId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                    };
+                    readonly required: readonly ["path"];
+                    readonly additionalProperties: false;
+                };
+                readonly minItems: number;
+            };
+        };
+        readonly required: readonly ["title", "engine", "mainFile", "bibliography", "files"];
+        readonly additionalProperties: false;
+    };
+    readonly manuscript_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ("limit" | "cursor")[];
+        readonly additionalProperties: false;
+    };
+    readonly manuscript_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["revisionId"];
+        readonly additionalProperties: false;
+    };
+    readonly manuscript_source_read: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly path: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["revisionId", "path"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_status: {
+        readonly type: "object";
+        readonly properties: {};
+        readonly required: readonly never[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly dockerContext: {
+                readonly pattern: "^[A-Za-z0-9][A-Za-z0-9_.-]*$";
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly imageDigest: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["expectedVersion", "dockerContext", "imageDigest"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["revisionId"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_submit: {
+        readonly type: "object";
+        readonly properties: {
+            readonly jobId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["jobId"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly jobId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["jobId"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_cancel: {
+        readonly type: "object";
+        readonly properties: {
+            readonly jobId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["jobId"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_result: {
+        readonly type: "object";
+        readonly properties: {
+            readonly resultId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["resultId"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_build_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ("limit" | "cursor" | "revisionId")[];
+        readonly additionalProperties: false;
+    };
+};
+export declare const PUBLICATION_OUTPUT_SCHEMAS: {
+    readonly publication_templates: {
+        readonly type: "array";
+        readonly items: {
+            readonly type: "object";
+            readonly properties: {
+                readonly id: {
+                    readonly type: "string";
+                };
+                readonly title: {
+                    readonly type: "string";
+                };
+                readonly engine: {
+                    readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+                };
+                readonly mainFile: {
+                    readonly type: "string";
+                };
+                readonly bibliography: {
+                    readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+                };
+                readonly files: {
+                    readonly type: "array";
+                    readonly items: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly path: {
+                                readonly type: "string";
+                            };
+                            readonly content: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("path" | "content")[];
+                        readonly additionalProperties: false;
+                    };
+                };
+            };
+            readonly required: ("id" | "engine" | "bibliography" | "files" | "title" | "mainFile")[];
+            readonly additionalProperties: false;
+        };
+    };
+    readonly manuscript_create: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly kind: {
+                readonly const: "manuscript-revision";
+            };
+            readonly projectId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly createdAt: {
+                readonly type: "string";
+            };
+            readonly updatedAt: {
+                readonly type: "string";
+            };
+        } & {
+            readonly title: {
+                readonly type: "string";
+            };
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly mainFile: {
+                readonly type: "string";
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly templateId: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly manifestArtifactId: {
+                readonly type: "string";
+            };
+            readonly manifestArtifactDigest: {
+                readonly type: "string";
+            };
+            readonly files: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly path: {
+                            readonly type: "string";
+                        };
+                        readonly artifactId: {
+                            readonly type: "string";
+                        };
+                        readonly digest: {
+                            readonly type: "string";
+                        };
+                        readonly size: {
+                            readonly type: "integer";
+                        };
+                        readonly mediaType: {
+                            readonly type: "string";
+                        };
+                        readonly provenance: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly kind: {
+                                    readonly enum: readonly ["unknown", "run", "sandbox-job"];
+                                };
+                                readonly id: {
+                                    readonly type: "string";
+                                };
+                                readonly sourceDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly manifestDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly approvalId: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly required: "kind"[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly required: ("path" | "size" | "digest" | "artifactId" | "mediaType" | "provenance")[];
+                    readonly additionalProperties: false;
+                };
+            };
+        };
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "sourceDigest" | "engine" | "bibliography" | "files" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly additionalProperties: false;
+    };
+    readonly manuscript_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly kind: {
+                readonly const: "manuscript-revision";
+            };
+            readonly projectId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly createdAt: {
+                readonly type: "string";
+            };
+            readonly updatedAt: {
+                readonly type: "string";
+            };
+        } & {
+            readonly title: {
+                readonly type: "string";
+            };
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly mainFile: {
+                readonly type: "string";
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly templateId: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly manifestArtifactId: {
+                readonly type: "string";
+            };
+            readonly manifestArtifactDigest: {
+                readonly type: "string";
+            };
+            readonly files: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly path: {
+                            readonly type: "string";
+                        };
+                        readonly artifactId: {
+                            readonly type: "string";
+                        };
+                        readonly digest: {
+                            readonly type: "string";
+                        };
+                        readonly size: {
+                            readonly type: "integer";
+                        };
+                        readonly mediaType: {
+                            readonly type: "string";
+                        };
+                        readonly provenance: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly kind: {
+                                    readonly enum: readonly ["unknown", "run", "sandbox-job"];
+                                };
+                                readonly id: {
+                                    readonly type: "string";
+                                };
+                                readonly sourceDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly manifestDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly approvalId: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly required: "kind"[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly required: ("path" | "size" | "digest" | "artifactId" | "mediaType" | "provenance")[];
+                    readonly additionalProperties: false;
+                };
+            };
+        };
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "sourceDigest" | "engine" | "bibliography" | "files" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly additionalProperties: false;
+    };
+    readonly manuscript_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly kind: {
+                            readonly const: "manuscript-revision";
+                        };
+                        readonly projectId: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly version: {
+                            readonly type: "integer";
+                        };
+                        readonly createdAt: {
+                            readonly type: "string";
+                        };
+                        readonly updatedAt: {
+                            readonly type: "string";
+                        };
+                    } & {
+                        readonly title: {
+                            readonly type: "string";
+                        };
+                        readonly engine: {
+                            readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+                        };
+                        readonly mainFile: {
+                            readonly type: "string";
+                        };
+                        readonly bibliography: {
+                            readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+                        };
+                        readonly templateId: {
+                            readonly type: "string";
+                        };
+                        readonly sourceDigest: {
+                            readonly type: "string";
+                        };
+                        readonly manifestArtifactId: {
+                            readonly type: "string";
+                        };
+                        readonly manifestArtifactDigest: {
+                            readonly type: "string";
+                        };
+                        readonly files: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly path: {
+                                        readonly type: "string";
+                                    };
+                                    readonly artifactId: {
+                                        readonly type: "string";
+                                    };
+                                    readonly digest: {
+                                        readonly type: "string";
+                                    };
+                                    readonly size: {
+                                        readonly type: "integer";
+                                    };
+                                    readonly mediaType: {
+                                        readonly type: "string";
+                                    };
+                                    readonly provenance: {
+                                        readonly type: "object";
+                                        readonly properties: {
+                                            readonly kind: {
+                                                readonly enum: readonly ["unknown", "run", "sandbox-job"];
+                                            };
+                                            readonly id: {
+                                                readonly type: "string";
+                                            };
+                                            readonly sourceDigest: {
+                                                readonly type: "string";
+                                            };
+                                            readonly manifestDigest: {
+                                                readonly type: "string";
+                                            };
+                                            readonly approvalId: {
+                                                readonly type: "string";
+                                            };
+                                        };
+                                        readonly required: "kind"[];
+                                        readonly additionalProperties: false;
+                                    };
+                                };
+                                readonly required: ("path" | "size" | "digest" | "artifactId" | "mediaType" | "provenance")[];
+                                readonly additionalProperties: false;
+                            };
+                        };
+                    };
+                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "sourceDigest" | "engine" | "bibliography" | "files" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly nextCursor: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+        };
+        readonly required: ("items" | "nextCursor")[];
+        readonly additionalProperties: false;
+    };
+    readonly manuscript_source_read: {
+        readonly type: "object";
+        readonly properties: {
+            readonly path: {
+                readonly type: "string";
+            };
+            readonly content: {
+                readonly type: "string";
+            };
+            readonly digest: {
+                readonly type: "string";
+            };
+            readonly mediaType: {
+                readonly type: "string";
+            };
+            readonly cursor: {
+                readonly type: "integer";
+            };
+            readonly end: {
+                readonly type: "integer";
+            };
+            readonly complete: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: ("complete" | "cursor" | "path" | "digest" | "end" | "mediaType" | "content")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_status: {
+        readonly type: "object";
+        readonly properties: {
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly configured: {
+                readonly type: "boolean";
+            };
+            readonly profileId: {
+                readonly const: "latex-document-v1";
+            };
+            readonly limits: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly cpus: {
+                        readonly type: "number";
+                    };
+                    readonly memoryMb: {
+                        readonly type: "integer";
+                    };
+                    readonly pids: {
+                        readonly type: "integer";
+                    };
+                    readonly timeoutSeconds: {
+                        readonly type: "integer";
+                    };
+                    readonly workMb: {
+                        readonly type: "integer";
+                    };
+                    readonly logBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly outputBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly maxFiles: {
+                        readonly type: "integer";
+                    };
+                    readonly maxSourceBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly maxPages: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("cpus" | "memoryMb" | "pids" | "timeoutSeconds" | "workMb" | "logBytes" | "outputBytes" | "maxFiles" | "maxSourceBytes" | "maxPages")[];
+                readonly additionalProperties: false;
+            };
+            readonly configuration: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly profileId: {
+                        readonly const: "latex-document-v1";
+                    };
+                    readonly lockDigest: {
+                        readonly type: "string";
+                    };
+                    readonly scriptDigest: {
+                        readonly type: "string";
+                    };
+                    readonly dockerfileDigest: {
+                        readonly type: "string";
+                    };
+                    readonly profileDigest: {
+                        readonly type: "string";
+                    };
+                    readonly dockerContext: {
+                        readonly type: "string";
+                    };
+                    readonly imageDigest: {
+                        readonly type: "string";
+                    };
+                    readonly imageId: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("profileId" | "dockerContext" | "imageDigest" | "imageId" | "profileDigest" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly configured: {
+                readonly type: "boolean";
+            };
+            readonly profileId: {
+                readonly const: "latex-document-v1";
+            };
+            readonly limits: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly cpus: {
+                        readonly type: "number";
+                    };
+                    readonly memoryMb: {
+                        readonly type: "integer";
+                    };
+                    readonly pids: {
+                        readonly type: "integer";
+                    };
+                    readonly timeoutSeconds: {
+                        readonly type: "integer";
+                    };
+                    readonly workMb: {
+                        readonly type: "integer";
+                    };
+                    readonly logBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly outputBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly maxFiles: {
+                        readonly type: "integer";
+                    };
+                    readonly maxSourceBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly maxPages: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("cpus" | "memoryMb" | "pids" | "timeoutSeconds" | "workMb" | "logBytes" | "outputBytes" | "maxFiles" | "maxSourceBytes" | "maxPages")[];
+                readonly additionalProperties: false;
+            };
+            readonly configuration: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly profileId: {
+                        readonly const: "latex-document-v1";
+                    };
+                    readonly lockDigest: {
+                        readonly type: "string";
+                    };
+                    readonly scriptDigest: {
+                        readonly type: "string";
+                    };
+                    readonly dockerfileDigest: {
+                        readonly type: "string";
+                    };
+                    readonly profileDigest: {
+                        readonly type: "string";
+                    };
+                    readonly dockerContext: {
+                        readonly type: "string";
+                    };
+                    readonly imageDigest: {
+                        readonly type: "string";
+                    };
+                    readonly imageId: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("profileId" | "dockerContext" | "imageDigest" | "imageId" | "profileDigest" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly mainFile: {
+                readonly type: "string";
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly imageDigest: {
+                readonly type: "string";
+            };
+            readonly dockerContext: {
+                readonly type: "string";
+            };
+            readonly resources: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly cpus: {
+                        readonly type: "number";
+                    };
+                    readonly memoryMb: {
+                        readonly type: "integer";
+                    };
+                    readonly pids: {
+                        readonly type: "integer";
+                    };
+                    readonly timeoutSeconds: {
+                        readonly type: "integer";
+                    };
+                    readonly workMb: {
+                        readonly type: "integer";
+                    };
+                    readonly logBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly outputBytes: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("cpus" | "memoryMb" | "pids" | "timeoutSeconds" | "workMb" | "logBytes" | "outputBytes")[];
+                readonly additionalProperties: false;
+            };
+            readonly generation: {
+                readonly type: "integer";
+            };
+            readonly startRequested: {
+                readonly type: "boolean";
+            };
+            readonly cancelRequested: {
+                readonly type: "boolean";
+            };
+            readonly exitCode: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly artifactIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly imageId: {
+                readonly type: "string";
+            };
+            readonly resultId: {
+                readonly type: "string";
+            };
+            readonly error: {
+                readonly type: "string";
+            };
+            readonly startedAt: {
+                readonly type: "string";
+            };
+            readonly endedAt: {
+                readonly type: "string";
+            };
+            readonly profileId: {
+                readonly const: "latex-document-v1";
+            };
+            readonly lockDigest: {
+                readonly type: "string";
+            };
+            readonly scriptDigest: {
+                readonly type: "string";
+            };
+            readonly dockerfileDigest: {
+                readonly type: "string";
+            };
+            readonly profileDigest: {
+                readonly type: "string";
+            };
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly jobId: {
+                readonly type: "string";
+            };
+            readonly revisionId: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly state: {
+                readonly enum: readonly ["prepared", "queued", "starting", "running", "unknown", "succeeded", "failed", "cancelled", "timed_out"];
+            };
+            readonly integrity: {
+                readonly enum: readonly ["pending", "complete", "incomplete", "invalid"];
+            };
+            readonly manifestDigest: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "jobId" | "sourceDigest" | "approvalId" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "state" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_submit: {
+        readonly type: "object";
+        readonly properties: {
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly mainFile: {
+                readonly type: "string";
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly imageDigest: {
+                readonly type: "string";
+            };
+            readonly dockerContext: {
+                readonly type: "string";
+            };
+            readonly resources: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly cpus: {
+                        readonly type: "number";
+                    };
+                    readonly memoryMb: {
+                        readonly type: "integer";
+                    };
+                    readonly pids: {
+                        readonly type: "integer";
+                    };
+                    readonly timeoutSeconds: {
+                        readonly type: "integer";
+                    };
+                    readonly workMb: {
+                        readonly type: "integer";
+                    };
+                    readonly logBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly outputBytes: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("cpus" | "memoryMb" | "pids" | "timeoutSeconds" | "workMb" | "logBytes" | "outputBytes")[];
+                readonly additionalProperties: false;
+            };
+            readonly generation: {
+                readonly type: "integer";
+            };
+            readonly startRequested: {
+                readonly type: "boolean";
+            };
+            readonly cancelRequested: {
+                readonly type: "boolean";
+            };
+            readonly exitCode: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly artifactIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly imageId: {
+                readonly type: "string";
+            };
+            readonly resultId: {
+                readonly type: "string";
+            };
+            readonly error: {
+                readonly type: "string";
+            };
+            readonly startedAt: {
+                readonly type: "string";
+            };
+            readonly endedAt: {
+                readonly type: "string";
+            };
+            readonly profileId: {
+                readonly const: "latex-document-v1";
+            };
+            readonly lockDigest: {
+                readonly type: "string";
+            };
+            readonly scriptDigest: {
+                readonly type: "string";
+            };
+            readonly dockerfileDigest: {
+                readonly type: "string";
+            };
+            readonly profileDigest: {
+                readonly type: "string";
+            };
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly jobId: {
+                readonly type: "string";
+            };
+            readonly revisionId: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly state: {
+                readonly enum: readonly ["prepared", "queued", "starting", "running", "unknown", "succeeded", "failed", "cancelled", "timed_out"];
+            };
+            readonly integrity: {
+                readonly enum: readonly ["pending", "complete", "incomplete", "invalid"];
+            };
+            readonly manifestDigest: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "jobId" | "sourceDigest" | "approvalId" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "state" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly mainFile: {
+                readonly type: "string";
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly imageDigest: {
+                readonly type: "string";
+            };
+            readonly dockerContext: {
+                readonly type: "string";
+            };
+            readonly resources: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly cpus: {
+                        readonly type: "number";
+                    };
+                    readonly memoryMb: {
+                        readonly type: "integer";
+                    };
+                    readonly pids: {
+                        readonly type: "integer";
+                    };
+                    readonly timeoutSeconds: {
+                        readonly type: "integer";
+                    };
+                    readonly workMb: {
+                        readonly type: "integer";
+                    };
+                    readonly logBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly outputBytes: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("cpus" | "memoryMb" | "pids" | "timeoutSeconds" | "workMb" | "logBytes" | "outputBytes")[];
+                readonly additionalProperties: false;
+            };
+            readonly generation: {
+                readonly type: "integer";
+            };
+            readonly startRequested: {
+                readonly type: "boolean";
+            };
+            readonly cancelRequested: {
+                readonly type: "boolean";
+            };
+            readonly exitCode: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly artifactIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly imageId: {
+                readonly type: "string";
+            };
+            readonly resultId: {
+                readonly type: "string";
+            };
+            readonly error: {
+                readonly type: "string";
+            };
+            readonly startedAt: {
+                readonly type: "string";
+            };
+            readonly endedAt: {
+                readonly type: "string";
+            };
+            readonly profileId: {
+                readonly const: "latex-document-v1";
+            };
+            readonly lockDigest: {
+                readonly type: "string";
+            };
+            readonly scriptDigest: {
+                readonly type: "string";
+            };
+            readonly dockerfileDigest: {
+                readonly type: "string";
+            };
+            readonly profileDigest: {
+                readonly type: "string";
+            };
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly jobId: {
+                readonly type: "string";
+            };
+            readonly revisionId: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly state: {
+                readonly enum: readonly ["prepared", "queued", "starting", "running", "unknown", "succeeded", "failed", "cancelled", "timed_out"];
+            };
+            readonly integrity: {
+                readonly enum: readonly ["pending", "complete", "incomplete", "invalid"];
+            };
+            readonly manifestDigest: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "jobId" | "sourceDigest" | "approvalId" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "state" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_cancel: {
+        readonly type: "object";
+        readonly properties: {
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly mainFile: {
+                readonly type: "string";
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly imageDigest: {
+                readonly type: "string";
+            };
+            readonly dockerContext: {
+                readonly type: "string";
+            };
+            readonly resources: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly cpus: {
+                        readonly type: "number";
+                    };
+                    readonly memoryMb: {
+                        readonly type: "integer";
+                    };
+                    readonly pids: {
+                        readonly type: "integer";
+                    };
+                    readonly timeoutSeconds: {
+                        readonly type: "integer";
+                    };
+                    readonly workMb: {
+                        readonly type: "integer";
+                    };
+                    readonly logBytes: {
+                        readonly type: "integer";
+                    };
+                    readonly outputBytes: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("cpus" | "memoryMb" | "pids" | "timeoutSeconds" | "workMb" | "logBytes" | "outputBytes")[];
+                readonly additionalProperties: false;
+            };
+            readonly generation: {
+                readonly type: "integer";
+            };
+            readonly startRequested: {
+                readonly type: "boolean";
+            };
+            readonly cancelRequested: {
+                readonly type: "boolean";
+            };
+            readonly exitCode: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly artifactIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly imageId: {
+                readonly type: "string";
+            };
+            readonly resultId: {
+                readonly type: "string";
+            };
+            readonly error: {
+                readonly type: "string";
+            };
+            readonly startedAt: {
+                readonly type: "string";
+            };
+            readonly endedAt: {
+                readonly type: "string";
+            };
+            readonly profileId: {
+                readonly const: "latex-document-v1";
+            };
+            readonly lockDigest: {
+                readonly type: "string";
+            };
+            readonly scriptDigest: {
+                readonly type: "string";
+            };
+            readonly dockerfileDigest: {
+                readonly type: "string";
+            };
+            readonly profileDigest: {
+                readonly type: "string";
+            };
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly jobId: {
+                readonly type: "string";
+            };
+            readonly revisionId: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly state: {
+                readonly enum: readonly ["prepared", "queued", "starting", "running", "unknown", "succeeded", "failed", "cancelled", "timed_out"];
+            };
+            readonly integrity: {
+                readonly enum: readonly ["pending", "complete", "incomplete", "invalid"];
+            };
+            readonly manifestDigest: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "jobId" | "sourceDigest" | "approvalId" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "state" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_result: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly kind: {
+                readonly const: "publication-build-result";
+            };
+            readonly projectId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly createdAt: {
+                readonly type: "string";
+            };
+            readonly updatedAt: {
+                readonly type: "string";
+            };
+        } & {
+            readonly revisionId: {
+                readonly type: "string";
+            };
+            readonly jobId: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly manifestDigest: {
+                readonly type: "string";
+            };
+            readonly imageId: {
+                readonly type: "string";
+            };
+            readonly manifestArtifactId: {
+                readonly type: "string";
+            };
+            readonly manifestArtifactDigest: {
+                readonly type: "string";
+            };
+            readonly engine: {
+                readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+            };
+            readonly bibliography: {
+                readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+            };
+            readonly engineVersion: {
+                readonly type: "string";
+            };
+            readonly status: {
+                readonly enum: readonly ["succeeded", "failed", "timed_out", "non_convergent"];
+            };
+            readonly hadErrors: {
+                readonly type: "boolean";
+            };
+            readonly converged: {
+                readonly type: "boolean";
+            };
+            readonly passes: {
+                readonly type: "integer";
+            };
+            readonly diagnostics: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly severity: {
+                            readonly enum: readonly ["error", "warning"];
+                        };
+                        readonly code: {
+                            readonly type: "string";
+                        };
+                        readonly message: {
+                            readonly type: "string";
+                        };
+                        readonly file: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly line: {
+                            readonly anyOf: readonly [{
+                                readonly type: "integer";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly pass: {
+                            readonly anyOf: readonly [{
+                                readonly type: "integer";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                    };
+                    readonly required: ("code" | "file" | "severity" | "message" | "line" | "pass")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly pdf: {
+                readonly anyOf: readonly [{
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly pages: {
+                            readonly type: "integer";
+                        };
+                        readonly artifactId: {
+                            readonly type: "string";
+                        };
+                        readonly digest: {
+                            readonly type: "string";
+                        };
+                        readonly bytes: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly required: ("bytes" | "digest" | "pages" | "artifactId")[];
+                    readonly additionalProperties: false;
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly previews: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly pageNumber: {
+                            readonly type: "integer";
+                        };
+                        readonly width: {
+                            readonly type: "integer";
+                        };
+                        readonly height: {
+                            readonly type: "integer";
+                        };
+                        readonly artifactId: {
+                            readonly type: "string";
+                        };
+                        readonly digest: {
+                            readonly type: "string";
+                        };
+                        readonly bytes: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly required: ("bytes" | "digest" | "pageNumber" | "width" | "height" | "artifactId")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly logs: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        artifactId: {
+                            readonly type: "string";
+                        };
+                        digest: {
+                            readonly type: "string";
+                        };
+                        bytes: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly required: ("bytes" | "digest" | "artifactId")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly sourceValidity: {
+                readonly enum: readonly ["current", "stale"];
+            };
+            readonly sourceError: {
+                readonly type: "string";
+            };
+            readonly profileId: {
+                readonly const: "latex-document-v1";
+            };
+            readonly lockDigest: {
+                readonly type: "string";
+            };
+            readonly scriptDigest: {
+                readonly type: "string";
+            };
+            readonly dockerfileDigest: {
+                readonly type: "string";
+            };
+            readonly profileDigest: {
+                readonly type: "string";
+            };
+            readonly formatVersion: {
+                readonly const: 1;
+            };
+        };
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "jobId" | "sourceDigest" | "pdf" | "previews" | "logs" | "formatVersion" | "profileId" | "engine" | "bibliography" | "engineVersion" | "status" | "hadErrors" | "converged" | "passes" | "diagnostics" | "imageId" | "revisionId" | "profileDigest" | "manifestDigest" | "manifestArtifactId" | "manifestArtifactDigest" | "sourceValidity")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_build_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly engine: {
+                            readonly enum: readonly ["pdflatex", "xelatex", "lualatex"];
+                        };
+                        readonly mainFile: {
+                            readonly type: "string";
+                        };
+                        readonly bibliography: {
+                            readonly enum: readonly ["auto", "none", "bibtex", "biber"];
+                        };
+                        readonly imageDigest: {
+                            readonly type: "string";
+                        };
+                        readonly dockerContext: {
+                            readonly type: "string";
+                        };
+                        readonly resources: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly cpus: {
+                                    readonly type: "number";
+                                };
+                                readonly memoryMb: {
+                                    readonly type: "integer";
+                                };
+                                readonly pids: {
+                                    readonly type: "integer";
+                                };
+                                readonly timeoutSeconds: {
+                                    readonly type: "integer";
+                                };
+                                readonly workMb: {
+                                    readonly type: "integer";
+                                };
+                                readonly logBytes: {
+                                    readonly type: "integer";
+                                };
+                                readonly outputBytes: {
+                                    readonly type: "integer";
+                                };
+                            };
+                            readonly required: ("cpus" | "memoryMb" | "pids" | "timeoutSeconds" | "workMb" | "logBytes" | "outputBytes")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly generation: {
+                            readonly type: "integer";
+                        };
+                        readonly startRequested: {
+                            readonly type: "boolean";
+                        };
+                        readonly cancelRequested: {
+                            readonly type: "boolean";
+                        };
+                        readonly exitCode: {
+                            readonly anyOf: readonly [{
+                                readonly type: "integer";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly artifactIds: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly imageId: {
+                            readonly type: "string";
+                        };
+                        readonly resultId: {
+                            readonly type: "string";
+                        };
+                        readonly error: {
+                            readonly type: "string";
+                        };
+                        readonly startedAt: {
+                            readonly type: "string";
+                        };
+                        readonly endedAt: {
+                            readonly type: "string";
+                        };
+                        readonly profileId: {
+                            readonly const: "latex-document-v1";
+                        };
+                        readonly lockDigest: {
+                            readonly type: "string";
+                        };
+                        readonly scriptDigest: {
+                            readonly type: "string";
+                        };
+                        readonly dockerfileDigest: {
+                            readonly type: "string";
+                        };
+                        readonly profileDigest: {
+                            readonly type: "string";
+                        };
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly jobId: {
+                            readonly type: "string";
+                        };
+                        readonly revisionId: {
+                            readonly type: "string";
+                        };
+                        readonly approvalId: {
+                            readonly type: "string";
+                        };
+                        readonly state: {
+                            readonly enum: readonly ["prepared", "queued", "starting", "running", "unknown", "succeeded", "failed", "cancelled", "timed_out"];
+                        };
+                        readonly integrity: {
+                            readonly enum: readonly ["pending", "complete", "incomplete", "invalid"];
+                        };
+                        readonly manifestDigest: {
+                            readonly type: "string";
+                        };
+                        readonly sourceDigest: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly required: ("id" | "jobId" | "sourceDigest" | "approvalId" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "dockerContext" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "state" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest" | "resources")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly nextCursor: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+        };
+        readonly required: ("items" | "nextCursor")[];
+        readonly additionalProperties: false;
+    };
+};

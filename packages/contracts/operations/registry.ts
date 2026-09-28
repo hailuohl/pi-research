@@ -82,7 +82,7 @@ function authorizeRegistered(c: OperationContext, name: string, x: Record<string
 }
 function externalReplay(c: OperationContext, name: string, x: Record<string, unknown>) {
     // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
-    if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import'].includes(name)) return {key:c.idempotencyKey!,completed:true};
+    if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(name)) return {key:c.idempotencyKey!,completed:true};
     if (name === 'paper_read') return paperReplay(c, x);
     const discover = name === 'literature_discover';
     const serviceScope = discover ? `connector-search:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}` : `literature:${c.projectId}`;
@@ -162,6 +162,19 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('publication_templates',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:c=>c.app.publicationBuilds.templates(c.actor,c.projectId)}),
+    make('manuscript_create',{asynchronous:true,idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.createRevision(c.actor,c.projectId,x,c.validate,c.idempotencyKey)}),
+    make('manuscript_list',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.revisions(c.actor,c.projectId,x.cursor as number|undefined,x.limit as number|undefined)}),
+    make('manuscript_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.revision(c.actor,c.projectId,x.revisionId as string)}),
+    make('manuscript_source_read',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.readSource(c.actor,c.projectId,x.revisionId as string,x.path as string,x.cursor as number|undefined,x.limit as number|undefined)}),
+    make('publication_status',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:c=>c.app.publicationBuilds.status(c.actor,c.projectId)}),
+    make('publication_configure',{asynchronous:true,idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.configure(c.actor,x,c.validate,c.idempotencyKey)}),
+    make('publication_prepare',{asynchronous:true,idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.prepare(c.actor,c.projectId,x,c.idempotencyKey,c.validate)}),
+    make('publication_submit',{asynchronous:true,idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.submit(c.actor,c.projectId,x.jobId as string)}),
+    make('publication_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.inspect(c.actor,c.projectId,x.jobId as string)}),
+    make('publication_cancel',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.cancel(c.actor,c.projectId,x.jobId as string)}),
+    make('publication_result',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.result(c.actor,c.projectId,x.resultId as string)}),
+    make('publication_build_list',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationBuilds.jobs(c.actor,c.projectId,x)}),
     make('skill_package_import',{asynchronous:true,idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.import(c.actor,c.projectId,x,c.idempotencyKey!)}),
     make('skill_package_list',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:c=>c.app.skills.catalog(c.actor,c.projectId)}),
     make('skill_package_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.inspect(c.actor,c.projectId,x.revisionId as string)}),
@@ -334,7 +347,7 @@ export class OperationRegistry {
         spec.authorize(context, input);
         const workspaceId = spec.requiresSession || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
         // Large local document bodies are hashed before any writer transaction; metadata remains part of identity.
-        const request = {name: id,input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:id==='skill_package_import'?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
+        const request = {name: id,input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:['skill_package_import','manuscript_create'].includes(id)?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value: unknown) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
             const result: unknown = JSON.parse(JSON.stringify(value));
@@ -375,7 +388,7 @@ export class OperationRegistry {
             return spec.execute(context, input);
         };
         if (spec.asynchronous) {
-            if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import'].includes(id)) {
+            if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(id)) {
                 const previous=lookup();
                 if(previous)return output(previous.value);
             }
