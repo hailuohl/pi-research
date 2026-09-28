@@ -1,6 +1,6 @@
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Row } from '../domain/types.js';
-import type { Campaign, CampaignMember, ResearchRound, RunObservation, CampaignDecision } from './types.js';
+import type { Campaign, CampaignMember, ResearchRound, RunObservation, CampaignDecision, ResearchCandidate } from './types.js';
 /** Business state only. Never starts a model or a process while holding a transaction. */
 export declare class CampaignService {
     private app;
@@ -19,7 +19,7 @@ export declare class CampaignService {
     private closeRound;
     stop(actor: Actor, id: string, value: unknown): Row<Campaign>;
     /** Internal caller must hold Store.transaction and validate the campaign state/version first. */
-    addMember(c: Row<Campaign>, intentId: string, required: boolean, repairDecisionId?: string): Row<CampaignMember>;
+    addMember(c: Row<Campaign>, intentId: string, required: boolean, repairDecisionId?: string, candidate?: Row<ResearchCandidate>): Row<CampaignMember>;
     enroll(actor: Actor, id: string, value: unknown): Row<CampaignMember>;
     observe(): void;
     verifyObservation(c: Row<Campaign>, observationId: string): Row<RunObservation>;

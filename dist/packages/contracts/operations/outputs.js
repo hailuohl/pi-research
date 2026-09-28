@@ -1,4 +1,5 @@
 import { PUBLICATION_OUTPUT_SCHEMAS } from './publication-schemas.js';
+import { RESEARCH_PLAN_OUTPUT_SCHEMAS, EXPERIMENT_PLAN_SCHEMA, RESEARCH_CANDIDATE_SCHEMA, PLAN_SOURCE_SCHEMA } from './research-plan-schemas.js';
 import { SKILL_OUTPUT_SCHEMAS, SKILL_REQUIREMENTS_SCHEMA } from './skill-schemas.js';
 import { DOCUMENT_OUTPUT_SCHEMAS, DOCUMENT_EVIDENCE_LINK_SCHEMA, DISCOVERY_OUTPUT_SCHEMA } from './document-schemas.js';
 import { GIT_OUTPUT_SCHEMAS } from './git-schemas.js';
@@ -99,20 +100,21 @@ const team = row('team', {
 }, ['autoSummarize', 'blockReason', 'sourceRevisionId']);
 const evidence = row('evidence', { type: enumeration('artifact', 'run', 'paper', 'code'), artifactId: string, digest: string, locator, quote: string, description: string, runId: string, document: DOCUMENT_EVIDENCE_LINK_SCHEMA }, ['runId', 'document']);
 const skillSource = object({ repository: string, commit: string, path: string, blob: string });
-const member = row('campaign-member', { campaignId: string, roundId: string, experimentId: string, intentId: string, required: boolean, repairDecisionId: string }, ['repairDecisionId']);
+const member = row('campaign-member', { campaignId: string, roundId: string, experimentId: string, intentId: string, required: boolean, repairDecisionId: string, candidateId: string, repairOfMemberId: string, repairRootMemberId: string }, ['repairDecisionId', 'candidateId', 'repairOfMemberId', 'repairRootMemberId']);
 const decision = row('campaign-decision', {
     campaignId: string, roundId: string, action: enumeration('repair', 'refill', 'promote', 'stop'), reason: string, observationIds: strings, selectedRunId: string,
     // Candidate configuration is an explicitly user-defined JSON object in DecisionService.
-    candidates: array(object({ title: string, hypothesis: string, config: { type: 'object', additionalProperties: {} } })),
+    candidates: array(object({ title: string, hypothesis: string, config: { type: 'object', additionalProperties: {} }, implementation: enumeration('config', 'reviewed-code') }, ['config', 'implementation'])),
     inputDigest: string, approvalId: string, decisionDigest: string, status: enumeration('proposed', 'applied'), appliedAt: string,
-    effects: object({ experimentIds: strings, intentIds: strings, roundId: string, stopped: boolean })
-}, ['selectedRunId', 'appliedAt', 'effects']);
+    effects: object({ experimentIds: strings, intentIds: strings, roundId: string, stopped: boolean, candidateIds: strings }, ['candidateIds']), planRevisionId: string, planDigest: string
+}, ['selectedRunId', 'appliedAt', 'effects', 'planRevisionId', 'planDigest']);
 const corpusSource = object({ artifactId: string, digest: string, title: string, size: integer });
 const chunkSource = object({ artifactId: string, digest: string, title: string, locator, lineStart: integer, lineEnd: integer });
 const contextTask = object({ id: string, key: string, result: taskResult }, ['result']);
 const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string }, ['wakeupId', 'runId', 'taskId']);
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    ...RESEARCH_PLAN_OUTPUT_SCHEMAS,
     ...SKILL_OUTPUT_SCHEMAS,
     ...PUBLICATION_OUTPUT_SCHEMAS,
     ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS, ...SCHEDULER_OUTPUT_SCHEMAS,
@@ -171,9 +173,9 @@ export const OUTPUT_SCHEMAS = {
             limits: object({ maxRounds: integer, maxCandidatesPerRound: integer, maxUnansweredRunsPerNode: integer, maxConsecutiveRegressions: integer, maxAnalysisAttempts: integer, deadline: string }, ['deadline']),
             autoAnalyze: boolean, approvalId: string, planDigest: string, consecutiveRegressions: integer, stopReason: string
         }, ['stopReason']),
-        members: array(member), rounds: array(row('research-round', { campaignId: string, number: integer, parentExperimentId: string, state: enumeration('open', 'closed'), decisionId: string }, ['decisionId'])),
+        members: array(member), rounds: array(row('research-round', { campaignId: string, number: integer, parentExperimentId: string, state: enumeration('open', 'closed'), decisionId: string, parentSource: PLAN_SOURCE_SCHEMA }, ['decisionId', 'parentSource'])), plans: array(EXPERIMENT_PLAN_SCHEMA), candidates: array(RESEARCH_CANDIDATE_SCHEMA),
         observations: array(row('run-observation', { campaignId: string, roundId: string, memberId: string, runId: string, experimentId: string, manifestDigest: string, contentDigest: string, executionState: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, metrics: { type: 'object', additionalProperties: number }, evidenceIds: strings, validation: enumeration('verified', 'incomplete', 'invalid'), explanation: string, status: enumeration('pending', 'decided'), decisionId: string }, ['decisionId'])), decisions: array(decision)
-    })
+    }, ['plans', 'candidates'])
 };
 export { string, number, integer, boolean, nullableString, strings, enumeration, array, object, row, nullable };
 //# sourceMappingURL=outputs.js.map

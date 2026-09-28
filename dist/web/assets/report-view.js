@@ -3,12 +3,12 @@ import { short, label } from './models.js';
 import { SectionTitle, Badge, Empty } from './ui.js';
 import { PublicationView } from './publication-view.js';
 import { publicationReviewStatus } from './publication-review-view.js';
-const referenceTypes = { run: '正式运行', 'run-source': '固定运行源码', artifact: '原始产物', evidence: '定位证据', 'development-job': '开发测试', 'development-review': '独立审查', claim: '已采纳结论', publication: '固定文稿构建', 'publication-review': '固定论文审查', 'figure-source': '图形生成来源', 'figure-source-code': '图形生成源码' };
+const referenceTypes = { run: '正式运行', 'run-source': '固定运行源码', artifact: '原始产物', evidence: '定位证据', 'development-job': '开发测试', 'development-review': '独立审查', claim: '已采纳结论', publication: '固定文稿构建', 'publication-review': '固定论文审查', 'figure-source': '图形生成来源', 'figure-source-code': '图形生成源码', 'research-comparison': '固定研究比较', 'experiment-plan': '固定研究方案' };
 function provenanceSignature(data, reportId) {
     const versions = (rows) => (rows ?? []).map(row => { const r = row; return [r.id, r.version ?? null, r.status ?? null, r.state ?? null, r.integrity ?? null, r.sourceDigest ?? null]; }).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
     return JSON.stringify([data.project.id, data.project.version, data.project.archived,
         versions(data.claims), versions(data.approvals), versions(data.tasks), versions(data.teams), versions(data.changeProposals), versions(data.experiments), versions(data.reviews), versions(data.sandboxJobs), versions(data.developmentTasks), versions(data.intents), versions(data.sessions),
-        versions(data.runs), versions(data.documents), versions(data.evidence), versions(data.artifacts),
+        versions(data.campaigns), versions(data.rounds), versions(data.members), versions(data.observations), versions(data.decisions), versions(data.experimentPlans), versions(data.researchCandidates), versions(data.runs), versions(data.documents), versions(data.evidence), versions(data.artifacts),
         (data.documentParseJobs ?? []).map(j => [j.id, j.state, j.integrity, j.resultId ?? null, j.manifestDigest, j.rawDigest, j.approvalId]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))]);
 }
 function sameReference(a, b) {
@@ -23,7 +23,7 @@ function validDocument(ref) {
 export class ReportsView extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { publications: [], title: '研究结果记录', selected: [], selectedClaims: [], pendingArtifactId: '', report: null, body: '', loading: false, error: '', checking: false, verificationError: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, referenceError: '', exported: null };
+        this.state = { publications: [], title: '研究结果记录', selected: [], selectedClaims: [], selectedCampaigns: [], pendingArtifactId: '', report: null, body: '', loading: false, error: '', checking: false, verificationError: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, referenceError: '', exported: null };
         this.publicationView = null;
         this.reportEpoch = 0;
         this.referenceEpoch = 0;
@@ -38,7 +38,7 @@ export class ReportsView extends React.Component {
             this.reportEpoch++;
             this.referenceEpoch++;
             this.inspectionEpoch++;
-            this.setState({ publications: [], selected: [], selectedClaims: [], pendingArtifactId: '', report: null, body: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, exported: null, error: '', loading: false, checking: false, verificationError: '', referenceError: '' });
+            this.setState({ publications: [], selected: [], selectedClaims: [], selectedCampaigns: [], pendingArtifactId: '', report: null, body: '', reference: null, verifiedReference: null, content: '', cursor: 0, complete: false, reading: false, exported: null, error: '', loading: false, checking: false, verificationError: '', referenceError: '' });
             if (this.props.selectedReport)
                 void this.open(this.props.selectedReport);
             return;
@@ -154,7 +154,7 @@ export class ReportsView extends React.Component {
     async create() {
         const projectId = this.props.data.project.id;
         await this.props.perform(async () => {
-            const artifact = await this.call('report_create', { title: this.state.title, runIds: this.state.selected, claimIds: this.state.selectedClaims, ...(this.state.publications.length ? { publicationResultIds: this.state.publications.map(p => p.result.id) } : {}) });
+            const artifact = await this.call('report_create', { title: this.state.title, runIds: this.state.selected, claimIds: this.state.selectedClaims, ...(this.state.selectedCampaigns.length ? { campaignIds: this.state.selectedCampaigns } : {}), ...(this.state.publications.length ? { publicationResultIds: this.state.publications.map(p => p.result.id) } : {}) });
             if (!this.mounted || projectId !== this.props.data.project.id)
                 return;
             const row = this.props.data.reports.find(r => r.artifactId === artifact.id);
@@ -174,7 +174,7 @@ export class ReportsView extends React.Component {
     render() {
         const { data, perform } = this.props, s = this.state, report = s.report, eligible = data.runs.filter(r => ['succeeded', 'failed', 'cancelled'].includes(r.state)), claims = data.claims.filter(c => c.status === 'accepted' && c.validity !== 'stale');
         const selectedRuns = data.runs.filter(r => s.selected.includes(r.id)), mixed = new Set(selectedRuns.map(r => r.manifest.contractDigest)).size > 1;
-        const available = s.selected.every(id => eligible.some(r => r.id === id)) && s.selectedClaims.every(id => claims.some(c => c.id === id));
+        const available = s.selectedCampaigns.every(id => (data.campaigns ?? []).some(c => c.id === id) && (data.experimentPlans ?? []).some(p => p.campaignId === id)) && s.selected.every(id => eligible.some(r => r.id === id)) && s.selectedClaims.every(id => claims.some(c => c.id === id));
         return React.createElement("div", { className: "page-scroll" },
             React.createElement(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
             React.createElement(PublicationView, { key: data.project.id, ref: (view) => { this.publicationView = view; }, data: data, perform: perform, onSession: this.props.onSession, selectedResultIds: s.publications.map(p => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }),
@@ -200,6 +200,17 @@ export class ReportsView extends React.Component {
                         React.createElement("button", { className: "text-button danger", onClick: () => this.setState({ publications: s.publications.filter(row => row.result.id !== p.result.id) }) },
                             "\u79FB\u9664\u6784\u5EFA ",
                             short(p.result.jobId))))),
+                React.createElement("fieldset", null,
+                    React.createElement("legend", null,
+                        "\u7EB3\u5165\u56FA\u5B9A\u7814\u7A76\u6D3B\u52A8\uFF08",
+                        s.selectedCampaigns.length,
+                        "/5\uFF09"),
+                    React.createElement("p", { className: "small muted" }, "\u81EA\u52A8\u7EB3\u5165\u8BE5\u6D3B\u52A8\u7684\u771F\u5B9E\u89C2\u6D4B\u548C\u5BF9\u7167 Run\uFF0C\u4FDD\u7559\u5931\u8D25\u3001\u65E0\u7ED3\u8BBA\u4E0E\u505C\u6B62\u539F\u56E0\uFF1B\u65B9\u6848\u58F0\u660E\u4E0D\u7B49\u4E8E\u79D1\u5B66\u7ED3\u8BBA\u3002"),
+                    (data.campaigns ?? []).filter(c => (data.experimentPlans ?? []).some(p => p.campaignId === c.id)).map(c => React.createElement("label", { className: "checkbox-label", key: c.id },
+                        React.createElement("input", { type: "checkbox", checked: s.selectedCampaigns.includes(c.id), disabled: !s.selectedCampaigns.includes(c.id) && s.selectedCampaigns.length >= 5, onChange: (e) => this.setState({ selectedCampaigns: e.target.checked ? [...s.selectedCampaigns, c.id] : s.selectedCampaigns.filter(id => id !== c.id) }) }),
+                        c.goal,
+                        " \u00B7 ",
+                        label(c.state)))),
                 React.createElement("div", { className: "run-selection" }, eligible.map(r => React.createElement("label", { key: r.id },
                     React.createElement("input", { type: "checkbox", checked: s.selected.includes(r.id), onChange: (e) => this.setState({ selected: e.target.checked ? [...s.selected, r.id] : s.selected.filter(id => id !== r.id) }) }),
                     React.createElement("span", null,
@@ -218,7 +229,7 @@ export class ReportsView extends React.Component {
                         c.statement))) : null,
                 mixed ? React.createElement("p", { role: "alert", className: "error-text" }, "\u6240\u9009 Run \u7684\u8FD0\u884C\u5951\u7EA6\u4E0D\u540C\uFF0C\u8BF7\u5206\u5F00\u751F\u6210\u62A5\u544A\u3002") : null,
                 !available ? React.createElement("p", { role: "alert", className: "error-text" }, "\u90E8\u5206\u6240\u9009\u8BB0\u5F55\u5DF2\u4E0D\u53EF\u7528\u6216\u5931\u6548\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002") : null,
-                React.createElement("button", { className: "primary", disabled: !s.title.trim() || !(s.selected.length + s.selectedClaims.length + s.publications.length) || mixed || !available || !!s.pendingArtifactId, onClick: () => void this.create() }, "\u751F\u6210\u56FA\u5B9A\u7ED3\u679C\u62A5\u544A"),
+                React.createElement("button", { className: "primary", disabled: !s.title.trim() || !(s.selected.length + s.selectedClaims.length + s.publications.length + s.selectedCampaigns.length) || mixed || !available || !!s.pendingArtifactId, onClick: () => void this.create() }, "\u751F\u6210\u56FA\u5B9A\u7ED3\u679C\u62A5\u544A"),
                 React.createElement("p", { className: "small muted" }, "\u670D\u52A1\u7AEF\u91CD\u65B0\u6838\u9A8C\u6765\u6E90\u4E0E\u539F\u59CB\u6307\u6807\u3002\u5931\u8D25\u6216\u4E0D\u5B8C\u6574\u7684 Run \u4F1A\u4FDD\u7559\u5176\u771F\u5B9E\u72B6\u6001\uFF0C\u4E0D\u8865\u5199\u7ED3\u679C\u3002"),
                 s.pendingArtifactId ? React.createElement("p", { role: "status" },
                     "\u62A5\u544A\u4EA7\u7269\u5DF2\u4FDD\u5B58\uFF0C\u7B49\u5F85\u9879\u76EE\u8BB0\u5F55\u5237\u65B0\u3002",
@@ -263,6 +274,26 @@ export class ReportsView extends React.Component {
                                 s.exported.digest),
                             React.createElement("button", { className: "secondary", onClick: () => perform(() => downloadArtifact(s.exported.id, s.exported.title)) }, "\u4E0B\u8F7D\u79BB\u7EBF\u5305"),
                             React.createElement("p", { className: "small muted" }, "\u751F\u6210\u4E0E\u53D1\u8D77\u4E0B\u8F7D\u4E0D\u4EE3\u8868\u6587\u4EF6\u5DF2\u843D\u76D8\uFF1B\u8BF7\u5728\u4E0B\u8F7D\u76EE\u5F55\u6838\u5BF9\u3002")) : null,
+                        React.createElement("details", { open: true },
+                            React.createElement("summary", null, "\u56FA\u5B9A\u7814\u7A76\u65B9\u6848\u4E0E\u6BD4\u8F83\u5FEB\u7167"),
+                            report.researchCampaigns?.length ? report.researchCampaigns.map(c => React.createElement("div", { className: "inspector-section", key: c.campaignId },
+                                React.createElement("h3", null,
+                                    "\u6D3B\u52A8 ",
+                                    short(c.campaignId)),
+                                React.createElement("p", null,
+                                    "\u62A5\u544A\u751F\u6210\u65F6\uFF1A",
+                                    label(c.state),
+                                    " \u00B7 ",
+                                    c.primaryMetric,
+                                    "\uFF08",
+                                    c.unit,
+                                    "\uFF09\u00B7 \u9700\u8981\u7814\u7A76\u8005\u5BA1\u9605"),
+                                React.createElement("p", { className: "small muted" }, "\u4E0B\u65B9\u8BB0\u5F55\u662F\u751F\u6210\u65F6\u7684\u56FA\u5B9A\u5FEB\u7167\uFF1B\u5F53\u524D\u6709\u6548\u6027\u89C1\u62A5\u544A\u6838\u9A8C\u72B6\u6001\u3002\u6267\u884C\u6210\u529F\u4E0D\u81EA\u52A8\u5224\u5B9A\u79D1\u5B66\u6210\u529F\u3002"),
+                                React.createElement("button", { className: "text-button", onClick: () => void this.readReference(c.referenceId) }, "\u8BFB\u53D6\u56FA\u5B9A\u6BD4\u8F83\u4E0E\u771F\u5B9E\u89C2\u6D4B"),
+                                c.planReferences.map(p => React.createElement("button", { key: p.planRevisionId, className: "text-button", onClick: () => void this.readReference(p.referenceId) },
+                                    "\u8BFB\u53D6\u56FA\u5B9A\u65B9\u6848 ",
+                                    short(p.planRevisionId))),
+                                React.createElement("button", { className: "secondary compact", disabled: !this.props.onCampaign || report.integrity !== 'verified' || !(data.campaigns ?? []).some(item => item.id === c.campaignId), onClick: () => this.props.onCampaign?.(c.campaignId) }, "\u56DE\u67E5\u6B64\u7814\u7A76\u6D3B\u52A8"))) : React.createElement("p", { className: "small muted" }, "\u672C\u62A5\u544A\u672A\u7ED1\u5B9A\u56FA\u5B9A\u7814\u7A76\u65B9\u6848\uFF0C\u4E0D\u80FD\u8FFD\u8BA4\u5386\u53F2\u65B9\u6848\u6216\u6BD4\u8F83\u3002")),
                         React.createElement("details", { open: true },
                             React.createElement("summary", null, "\u56FA\u5B9A\u8FD0\u884C\u4E0E\u5B9E\u6D4B\u6307\u6807"),
                             !report.runs.length ? React.createElement("p", { className: "small muted" }, "\u672C\u62A5\u544A\u672A\u7EB3\u5165\u6B63\u5F0F\u8FD0\u884C\uFF1B\u6587\u7A3F\u4E0E\u6587\u6863\u6765\u6E90\u4E0D\u4EE3\u8868\u8FD0\u884C\u5B9E\u6D4B\u7ED3\u679C\u3002") : null,

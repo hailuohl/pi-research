@@ -1,0 +1,821 @@
+{
+  "capturedAt": "2026-09-28T23:08:54.566Z",
+  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+  "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+  "campaign": {
+    "state": "stopped",
+    "roundNumber": 2,
+    "limits": {
+      "maxRounds": 2,
+      "maxCandidatesPerRound": 6,
+      "maxUnansweredRunsPerNode": 2,
+      "maxConsecutiveRegressions": 3,
+      "maxAnalysisAttempts": 2
+    },
+    "stopReason": "已完成两轮软件验收，按预定上限停止。二阶对照MSE=0.000050345031695457565，三阶修复=0.00005135731444943983，四阶=0.000051416001308461135，单位squared-target；两项候选都没有降低持出误差。999阶失败无指标，保留unanswered和独立修复链。仅固定240行合成数据/180-60切分的单次流程检查，不得称为外部发现或多Agent收益证明；不追加候选，不自动调用模型或Run。",
+    "primaryMetric": "mse",
+    "direction": "min"
+  },
+  "report": {
+    "id": "d6b1a226-aea6-4469-bda5-b2fabbfb6232",
+    "artifactId": "defed3cc-1797-4733-8ec2-fc7998b037b9",
+    "digest": "b2bfca8e33c0c2b7edb02d2382e9e901dc7ec416353316cbef170eaeb9638a33",
+    "bindingsDigest": "218ce8b5104215b4e1e2f7b458d011e840408bd05ce19ef8293ff7e9ab133853"
+  },
+  "archive": {
+    "artifactId": "b80a22bc-8500-4c9c-88f3-826d23ad54e6",
+    "digest": "35573fb10691b2f0c9d0f7f7e429ea096454010851d4c3e86d8502385ba6b70c",
+    "bytes": 71348,
+    "entries": 57,
+    "fixedFiles": 55
+  },
+  "control": {
+    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+    "degree": 2,
+    "metrics": {
+      "mse": 0.000050345031695457565,
+      "train_mse": 0.00004962382619455619,
+      "r2": 0.9999474271448613
+    },
+    "oldRecordUnchanged": true
+  },
+  "projectVersusParent": {
+    "projectDegree": 1,
+    "projectConfigDigest": "b550f39ca3964183c259fd465a6fbad0d0b7d8301943dd6236f9ac856bd1c9b0",
+    "controlDegree": 2
+  },
+  "appliedPlans": [
+    {
+      "decisionId": "0b1c2c48-837d-404d-95ef-b1ebcecca90f",
+      "action": "promote",
+      "planRevisionId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+      "planDigest": "d2a662f15159c213f0844e90e88e975735ca4a68a42ce2b759644affa16e3702",
+      "approvalId": "48e4b625-67e3-4444-a080-d9ff537dd203"
+    },
+    {
+      "decisionId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+      "action": "repair",
+      "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+      "planDigest": "cb460bc39204dcf3e08e3e9d9050bf9b5520baf57f43f662553787f13b6dd964",
+      "approvalId": "21d10dcd-398e-4c34-ab05-6239e34d2bce"
+    },
+    {
+      "decisionId": "c808afd8-818e-4f90-ac36-0963503317f9",
+      "action": "refill",
+      "planRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+      "planDigest": "11ab506171ec45aceedcdc950748f7ee45797074bd56698233f48e0f95ad2f1a",
+      "approvalId": "ed946f27-909e-4a87-be94-5e698b7c21bb"
+    }
+  ],
+  "candidates": [
+    {
+      "id": "2f1b17a3-17f2-4231-8864-148c5ea24776",
+      "planRevisionId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+      "decisionId": "0b1c2c48-837d-404d-95ef-b1ebcecca90f",
+      "parentSource": {
+        "snapshotId": "747c93dfe13712d69d05aedc21e1ea52acf97533cb2534afe2e2b8c485a67709",
+        "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+        "revision": 1,
+        "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4"
+      },
+      "state": "prepared",
+      "experimentId": "17d51894-e2b3-4a11-886a-1b400d73e7df",
+      "intentId": "8a5e2b91-f807-4475-980a-7d6afb04d8da"
+    },
+    {
+      "id": "56b11824-343a-4098-ae9e-23c2b87320ef",
+      "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+      "decisionId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+      "parentSource": {
+        "snapshotId": "21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16",
+        "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+        "revision": 1,
+        "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf"
+      },
+      "state": "prepared",
+      "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+      "proposalId": "e0d71444-9b2c-408e-be4b-eac0cc9f8640",
+      "testJobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+      "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+      "reviewAcceptanceId": "492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a",
+      "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+      "intentId": "50e0ce8e-864e-49cd-887e-0c17763caf4b",
+      "repairOfMemberId": "3a79bb33-bbb7-4e89-8112-643566b01756",
+      "repairRootMemberId": "3a79bb33-bbb7-4e89-8112-643566b01756"
+    },
+    {
+      "id": "9a2b455a-1108-462c-a369-5d0d00849e00",
+      "planRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+      "decisionId": "c808afd8-818e-4f90-ac36-0963503317f9",
+      "parentSource": {
+        "snapshotId": "0033fa0f82608594c8a05099375f753e8a995110462b9e6ce592790578f649c6",
+        "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+        "revision": 1,
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80"
+      },
+      "state": "prepared",
+      "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+      "intentId": "4628e213-fffd-4b03-96f3-595593cdffa3"
+    }
+  ],
+  "runs": [
+    {
+      "candidateId": "2f1b17a3-17f2-4231-8864-148c5ea24776",
+      "id": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+      "experimentId": "17d51894-e2b3-4a11-886a-1b400d73e7df",
+      "intentId": "8a5e2b91-f807-4475-980a-7d6afb04d8da",
+      "state": "succeeded",
+      "integrity": "complete",
+      "answerDisposition": "answered",
+      "metrics": {
+        "mse": 0.000051416001308461135,
+        "train_mse": 0.00004920642594527707,
+        "r2": 0.9999463087836561
+      },
+      "artifactIds": [
+        "9d1646a4-b235-467c-8bec-e4bf7a2e5899",
+        "8bf9a060-5b67-432f-87ab-d400c20a3aa7",
+        "4bad84e1-63b5-4695-81c0-0b4dbdc2761a",
+        "f2d78ff3-61c4-4ea7-8a37-6bb2e1812cf6",
+        "de976af2-a18d-4e62-81c3-5d9ada4af843",
+        "2e1f344d-52da-483d-aab5-9b8da7431ffe"
+      ],
+      "evidenceIds": [
+        "cb2f3e9d-8da5-43da-b817-a2b6c8e4f78d"
+      ],
+      "degree": 4,
+      "manifestDigest": "722fa6b9c49b833e6fb79d3f7385e120dd384116991da19ec5c2b4ae310194d6",
+      "sourceDigest": "3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70"
+    },
+    {
+      "candidateId": "56b11824-343a-4098-ae9e-23c2b87320ef",
+      "id": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+      "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+      "intentId": "50e0ce8e-864e-49cd-887e-0c17763caf4b",
+      "state": "succeeded",
+      "integrity": "complete",
+      "answerDisposition": "answered",
+      "metrics": {
+        "mse": 0.00005135731444943983,
+        "train_mse": 0.00004921126609753724,
+        "r2": 0.9999463700674737
+      },
+      "artifactIds": [
+        "b668e920-5719-4578-b1ca-7518f836f255",
+        "f04a28bf-bb68-4a71-88d8-432eed5b4228",
+        "b238dee6-07b2-474e-ac44-6e59c1f12434",
+        "f806296b-86e3-4abe-b783-ee4a647957a5",
+        "e0edefa3-35af-4382-86e1-a11e4e784274",
+        "14b6552b-f78e-4022-82f5-13db8f2ceed4"
+      ],
+      "evidenceIds": [
+        "1da32244-9ce3-4876-9813-9ec115d22c44"
+      ],
+      "degree": 3,
+      "manifestDigest": "001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053",
+      "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4"
+    },
+    {
+      "candidateId": "9a2b455a-1108-462c-a369-5d0d00849e00",
+      "id": "18d75977-85ef-4946-a148-e2966ef2b18a",
+      "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+      "intentId": "4628e213-fffd-4b03-96f3-595593cdffa3",
+      "state": "failed",
+      "integrity": "incomplete",
+      "answerDisposition": "unanswered",
+      "answerReviewId": "af18ce1d-c26d-4223-9cfc-38418e846816",
+      "artifactIds": [
+        "52438855-52ef-4cb4-8d87-5555a38f5e45",
+        "80467a30-e8b0-4666-9d9c-17dd9be1de3f",
+        "e0dc1fdf-cfea-43f9-8ce5-4d206a5361fe",
+        "b87fe290-8f32-4182-bb9e-96fdd55b7cb4"
+      ],
+      "evidenceIds": [],
+      "degree": 999,
+      "manifestDigest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+      "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf"
+    }
+  ],
+  "review": {
+    "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+    "taskId": "7f136510-8595-4660-b71d-5d2897eeab3d",
+    "attemptId": "53ade3e1-aed8-4294-b6b1-d71f0660c75c",
+    "producerSessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+    "reviewerSessionId": "5e553104-88dd-4388-9d37-e1942dc1ea98",
+    "jobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+    "verdict": "accept",
+    "acceptance": "accepted",
+    "allRequiredEvidenceReadAndCited": true
+  },
+  "modelRuns": [
+    {
+      "session": {
+        "id": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+        "role": "coordinator",
+        "state": "idle",
+        "skillBundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd"
+      },
+      "model": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3"
+      },
+      "native": {
+        "digest": "2752b4d231bc1fd6949e32f66041f4fc1c2d6aaf74362a873dd56c9becaba4d4",
+        "bytes": 93532,
+        "lastRole": "assistant",
+        "lastTool": null,
+        "assistantStopReasons": [
+          "toolUse",
+          "toolUse",
+          "toolUse",
+          "toolUse",
+          "stop"
+        ],
+        "toolReceiptCount": 8,
+        "successfulSubmitReceiptCount": 0,
+        "toolErrorReceipts": []
+      },
+      "actualEvidenceReadIds": [],
+      "actualReviewedSourceReads": [],
+      "usageObservations": [
+        {
+          "id": "1338408c-c4a6-4941-b4b0-d1984ca82000",
+          "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+          "status": "reported",
+          "stopReason": "toolUse",
+          "usage": {
+            "input": 19948,
+            "output": 78,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "reasoning": 16,
+            "totalTokens": 20026,
+            "cost": {
+              "input": 0.0279272,
+              "output": 0.0003432,
+              "cacheRead": 0,
+              "cacheWrite": 0,
+              "total": 0.028270399999999998
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        },
+        {
+          "id": "215f16cf-2328-43f9-bfc6-ea92e99721b8",
+          "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+          "status": "reported",
+          "stopReason": "toolUse",
+          "usage": {
+            "input": 1790,
+            "output": 964,
+            "cacheRead": 20224,
+            "cacheWrite": 0,
+            "reasoning": 42,
+            "totalTokens": 22978,
+            "cost": {
+              "input": 0.002506,
+              "output": 0.0042416,
+              "cacheRead": 0.00525824,
+              "cacheWrite": 0,
+              "total": 0.01200584
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        },
+        {
+          "id": "6011c3bf-88aa-46e6-ae5a-e9c881140e5c",
+          "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+          "status": "reported",
+          "stopReason": "stop",
+          "usage": {
+            "input": 1079,
+            "output": 424,
+            "cacheRead": 23040,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 24543,
+            "cost": {
+              "input": 0.0015106,
+              "output": 0.0018656,
+              "cacheRead": 0.0059904,
+              "cacheWrite": 0,
+              "total": 0.0093666
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        },
+        {
+          "id": "9b8c8aa8-628d-41d9-b976-a5967f51c117",
+          "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+          "status": "reported",
+          "stopReason": "toolUse",
+          "usage": {
+            "input": 357,
+            "output": 51,
+            "cacheRead": 19904,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 20312,
+            "cost": {
+              "input": 0.0004998,
+              "output": 0.0002244,
+              "cacheRead": 0.00517504,
+              "cacheWrite": 0,
+              "total": 0.00589924
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        },
+        {
+          "id": "b13a560d-97da-4d4d-90ae-cd560513fb7d",
+          "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+          "status": "reported",
+          "stopReason": "toolUse",
+          "usage": {
+            "input": 1149,
+            "output": 119,
+            "cacheRead": 21952,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 23220,
+            "cost": {
+              "input": 0.0016086,
+              "output": 0.0005236,
+              "cacheRead": 0.00570752,
+              "cacheWrite": 0,
+              "total": 0.00783972
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        }
+      ],
+      "usageNotice": "Saved SDK observations are not HTTP request counts or billing totals."
+    },
+    {
+      "session": {
+        "id": "5e553104-88dd-4388-9d37-e1942dc1ea98",
+        "role": "reviewer",
+        "state": "idle",
+        "taskId": "7f136510-8595-4660-b71d-5d2897eeab3d",
+        "skillBundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd"
+      },
+      "model": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3"
+      },
+      "native": {
+        "digest": "93ccb9bf2c62e719919fb3c08f13c41dfd144bd4e58defaf849908bd790f0401",
+        "bytes": 60464,
+        "lastRole": "toolResult",
+        "lastTool": "task_result_submit",
+        "assistantStopReasons": [
+          "toolUse",
+          "toolUse",
+          "toolUse"
+        ],
+        "toolReceiptCount": 10,
+        "successfulSubmitReceiptCount": 1,
+        "toolErrorReceipts": [
+          {
+            "tool": "task_context_read",
+            "toolCallId": "call_d4a75351ef044eeba5434824",
+            "contentDigest": "e108fa623f6d91bc3bd8fe8fd01bc39b6bf459818b8c6f95342e6a4f4f4eb13e"
+          }
+        ]
+      },
+      "actualEvidenceReadIds": [
+        "17208bec-fed8-4fb8-bd73-f23a9db40ff5",
+        "2cf7d030-e157-4191-a4ec-b74624b3d7c3",
+        "c4a02ebf-aaa6-415b-8e61-c80a63b632d5",
+        "b0dc3387-a88c-4472-9471-33e28c278bbf"
+      ],
+      "actualReviewedSourceReads": [
+        {
+          "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+          "path": "main.py",
+          "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+          "cursor": 0,
+          "end": 2617,
+          "complete": true
+        },
+        {
+          "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+          "path": "test_main.py",
+          "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+          "cursor": 0,
+          "end": 2639,
+          "complete": true
+        }
+      ],
+      "usageObservations": [
+        {
+          "id": "610c9f71-5cdc-4e75-8fbd-a4ce37a36f65",
+          "sessionId": "5e553104-88dd-4388-9d37-e1942dc1ea98",
+          "status": "reported",
+          "stopReason": "toolUse",
+          "usage": {
+            "input": 2709,
+            "output": 127,
+            "cacheRead": 6336,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 9172,
+            "cost": {
+              "input": 0.0037925999999999997,
+              "output": 0.0005588,
+              "cacheRead": 0.00164736,
+              "cacheWrite": 0,
+              "total": 0.0059987600000000006
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        },
+        {
+          "id": "92fb4c13-c74c-4586-8a64-971733d4d698",
+          "sessionId": "5e553104-88dd-4388-9d37-e1942dc1ea98",
+          "status": "reported",
+          "stopReason": "toolUse",
+          "usage": {
+            "input": 1219,
+            "output": 318,
+            "cacheRead": 9024,
+            "cacheWrite": 0,
+            "reasoning": 0,
+            "totalTokens": 10561,
+            "cost": {
+              "input": 0.0017066,
+              "output": 0.0013992,
+              "cacheRead": 0.00234624,
+              "cacheWrite": 0,
+              "total": 0.00545204
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        },
+        {
+          "id": "fec75e73-3748-4637-abac-0608ba24ec96",
+          "sessionId": "5e553104-88dd-4388-9d37-e1942dc1ea98",
+          "status": "reported",
+          "stopReason": "toolUse",
+          "usage": {
+            "input": 5159,
+            "output": 748,
+            "cacheRead": 10240,
+            "cacheWrite": 0,
+            "reasoning": 51,
+            "totalTokens": 16147,
+            "cost": {
+              "input": 0.0072226,
+              "output": 0.0032912,
+              "cacheRead": 0.0026624,
+              "cacheWrite": 0,
+              "total": 0.0131762
+            }
+          },
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        }
+      ],
+      "usageNotice": "Saved SDK observations are not HTTP request counts or billing totals."
+    }
+  ],
+  "referenceFiles": [
+    {
+      "referenceId": "a60dfe7d5ba31ba3662300c7595b93c638afb17c142cfe2f5a58fa7e0a5b143b",
+      "path": "research/04cb3e03-e22e-442d-bfb1-e3c74660d367.json",
+      "digest": "dc3265139cc4f2a98a9a14150e9d63e64244eace95813c441f79c95c3e50816a",
+      "bytes": 34915
+    },
+    {
+      "referenceId": "966d335933631b6ba612aa8404583bb87f002c82a272a9fd950760001974c7f8",
+      "path": "plans/ac89a09f-4893-4f64-a33f-88c5999495e6.json",
+      "digest": "8e8a75105cb1f9026ebd0711ed9e7d599cc2ec2b1b7c906010020933e3bde392",
+      "bytes": 4809
+    },
+    {
+      "referenceId": "31002ee1af17f4138f9721989b757644a3a070286a3812a15296792ce0bfaae9",
+      "path": "plans/8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3.json",
+      "digest": "cb7f53ec97ec59177075a652a714947c6b937f6a4b35991d26c2dea035dad98b",
+      "bytes": 6232
+    },
+    {
+      "referenceId": "9ee67ccdb3593b4136f60b70a31fc62e4c593535f303ac284fbef9eed5351192",
+      "path": "plans/1643eb42-a2a6-4531-9725-4f011502b52b.json",
+      "digest": "b0cacae28dc7bc6c442f8cd99fb346827c1f2065c531edb286ea5224c1d86e94",
+      "bytes": 6566
+    }
+  ],
+  "rawArtifactFiles": [
+    {
+      "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+      "artifactId": "c635e6b8-be64-4f85-a2a8-8d25ea9d8471",
+      "title": "metrics.json",
+      "path": "run-artifacts/ca819399-1714-4aaa-b50e-ef1700b3991f/c635e6b8-be64-4f85-a2a8-8d25ea9d8471-metrics.json",
+      "bytes": 93,
+      "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841"
+    },
+    {
+      "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+      "artifactId": "9655e139-97dd-484f-8f68-1b7dd8d4435e",
+      "title": "model.json",
+      "path": "run-artifacts/ca819399-1714-4aaa-b50e-ef1700b3991f/9655e139-97dd-484f-8f68-1b7dd8d4435e-model.json",
+      "bytes": 91,
+      "digest": "80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037"
+    },
+    {
+      "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+      "artifactId": "84411932-b54b-4398-be59-68fbd73386f6",
+      "title": "predictions.csv",
+      "path": "run-artifacts/ca819399-1714-4aaa-b50e-ef1700b3991f/84411932-b54b-4398-be59-68fbd73386f6-predictions.csv",
+      "bytes": 3463,
+      "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547"
+    },
+    {
+      "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+      "artifactId": "5e83a064-dfcb-4776-bb40-940bfd27a201",
+      "title": "stdout.log",
+      "path": "run-artifacts/ca819399-1714-4aaa-b50e-ef1700b3991f/5e83a064-dfcb-4776-bb40-940bfd27a201-stdout.log",
+      "bytes": 120,
+      "digest": "7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6"
+    },
+    {
+      "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+      "artifactId": "6cd2b1a3-6f76-4fe4-b935-5687c85bf79a",
+      "title": "stderr.log",
+      "path": "run-artifacts/ca819399-1714-4aaa-b50e-ef1700b3991f/6cd2b1a3-6f76-4fe4-b935-5687c85bf79a-stderr.log",
+      "bytes": 0,
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+      "artifactId": "8b9e594c-ca81-4bfb-91c5-7381289335a1",
+      "title": "execution.json",
+      "path": "run-artifacts/ca819399-1714-4aaa-b50e-ef1700b3991f/8b9e594c-ca81-4bfb-91c5-7381289335a1-execution.json",
+      "bytes": 944,
+      "digest": "4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445"
+    },
+    {
+      "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+      "artifactId": "52438855-52ef-4cb4-8d87-5555a38f5e45",
+      "title": "stdout.log",
+      "path": "run-artifacts/18d75977-85ef-4946-a148-e2966ef2b18a/52438855-52ef-4cb4-8d87-5555a38f5e45-stdout.log",
+      "bytes": 0,
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+      "artifactId": "80467a30-e8b0-4666-9d9c-17dd9be1de3f",
+      "title": "stderr.log",
+      "path": "run-artifacts/18d75977-85ef-4946-a148-e2966ef2b18a/80467a30-e8b0-4666-9d9c-17dd9be1de3f-stderr.log",
+      "bytes": 379,
+      "digest": "fb368f00096e7266d1cbb883431971ade7ed288b86197d46b30600b7a9e39421"
+    },
+    {
+      "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+      "artifactId": "e0dc1fdf-cfea-43f9-8ce5-4d206a5361fe",
+      "title": "diagnostic.log",
+      "bytes": 143,
+      "digest": "a18372df76ea22857924f8b88813ad228e1f6cb10c4628f312c72897296b1973",
+      "omitted": true,
+      "reason": "Host diagnostic text remains private; its original bytes are hash-checked."
+    },
+    {
+      "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+      "artifactId": "b87fe290-8f32-4182-bb9e-96fdd55b7cb4",
+      "title": "execution.json",
+      "path": "run-artifacts/18d75977-85ef-4946-a148-e2966ef2b18a/b87fe290-8f32-4182-bb9e-96fdd55b7cb4-execution.json",
+      "bytes": 1163,
+      "digest": "3d18d275a01740f9fcc022f3629ac381cf3f25ed3e8ce6fccc188144d7937066"
+    },
+    {
+      "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+      "artifactId": "b668e920-5719-4578-b1ca-7518f836f255",
+      "title": "metrics.json",
+      "path": "run-artifacts/4265e905-7bba-4d94-a9b3-d9897f6bfd81/b668e920-5719-4578-b1ca-7518f836f255-metrics.json",
+      "bytes": 92,
+      "digest": "7135a163043f87ea9b4c15e7936250bf3f8179f1252dba433aa876975fa91f73"
+    },
+    {
+      "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+      "artifactId": "f04a28bf-bb68-4a71-88d8-432eed5b4228",
+      "title": "model.json",
+      "path": "run-artifacts/4265e905-7bba-4d94-a9b3-d9897f6bfd81/f04a28bf-bb68-4a71-88d8-432eed5b4228-model.json",
+      "bytes": 113,
+      "digest": "3ddb4910e87ef8b6b813effe7b3af66a0270d48a73e8f14cc9b0b96e40466789"
+    },
+    {
+      "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+      "artifactId": "b238dee6-07b2-474e-ac44-6e59c1f12434",
+      "title": "predictions.csv",
+      "path": "run-artifacts/4265e905-7bba-4d94-a9b3-d9897f6bfd81/b238dee6-07b2-474e-ac44-6e59c1f12434-predictions.csv",
+      "bytes": 3457,
+      "digest": "f4011de2ef62fdeee585539320030e770735aad3d03804829679b3e59bfa56ed"
+    },
+    {
+      "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+      "artifactId": "f806296b-86e3-4abe-b783-ee4a647957a5",
+      "title": "stdout.log",
+      "path": "run-artifacts/4265e905-7bba-4d94-a9b3-d9897f6bfd81/f806296b-86e3-4abe-b783-ee4a647957a5-stdout.log",
+      "bytes": 119,
+      "digest": "1c9fca698c9be5bf66d55799754896ab988118f87402f612ff08cbd50d2b5326"
+    },
+    {
+      "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+      "artifactId": "e0edefa3-35af-4382-86e1-a11e4e784274",
+      "title": "stderr.log",
+      "path": "run-artifacts/4265e905-7bba-4d94-a9b3-d9897f6bfd81/e0edefa3-35af-4382-86e1-a11e4e784274-stderr.log",
+      "bytes": 0,
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+      "artifactId": "14b6552b-f78e-4022-82f5-13db8f2ceed4",
+      "title": "execution.json",
+      "path": "run-artifacts/4265e905-7bba-4d94-a9b3-d9897f6bfd81/14b6552b-f78e-4022-82f5-13db8f2ceed4-execution.json",
+      "bytes": 944,
+      "digest": "fe650daf9de42b09479053459287708b08f2bcb9e3677edfb4da9cb604c65e06"
+    },
+    {
+      "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+      "artifactId": "9d1646a4-b235-467c-8bec-e4bf7a2e5899",
+      "title": "metrics.json",
+      "path": "run-artifacts/85360021-a5af-457d-a315-c1f55b1bb6b3/9d1646a4-b235-467c-8bec-e4bf7a2e5899-metrics.json",
+      "bytes": 93,
+      "digest": "5b2c3cd4d52c64478c4763b92c97db9fca44ea0be608a4db9b3f2c74e277efda"
+    },
+    {
+      "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+      "artifactId": "8bf9a060-5b67-432f-87ab-d400c20a3aa7",
+      "title": "model.json",
+      "path": "run-artifacts/85360021-a5af-457d-a315-c1f55b1bb6b3/8bf9a060-5b67-432f-87ab-d400c20a3aa7-model.json",
+      "bytes": 138,
+      "digest": "99e424096547075d628ad4e55a6715acbda5fe663f2379ff42dd2e3a8b8035ac"
+    },
+    {
+      "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+      "artifactId": "4bad84e1-63b5-4695-81c0-0b4dbdc2761a",
+      "title": "predictions.csv",
+      "path": "run-artifacts/85360021-a5af-457d-a315-c1f55b1bb6b3/4bad84e1-63b5-4695-81c0-0b4dbdc2761a-predictions.csv",
+      "bytes": 3466,
+      "digest": "a3f811874659110a10753d830ba34c9a5e3de63229be30594e7bd948654fbc55"
+    },
+    {
+      "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+      "artifactId": "f2d78ff3-61c4-4ea7-8a37-6bb2e1812cf6",
+      "title": "stdout.log",
+      "path": "run-artifacts/85360021-a5af-457d-a315-c1f55b1bb6b3/f2d78ff3-61c4-4ea7-8a37-6bb2e1812cf6-stdout.log",
+      "bytes": 120,
+      "digest": "baedaf8db0098a57a1b525ca700f6778bcf39deee75e51ef45ef75690c63dbad"
+    },
+    {
+      "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+      "artifactId": "de976af2-a18d-4e62-81c3-5d9ada4af843",
+      "title": "stderr.log",
+      "path": "run-artifacts/85360021-a5af-457d-a315-c1f55b1bb6b3/de976af2-a18d-4e62-81c3-5d9ada4af843-stderr.log",
+      "bytes": 0,
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+      "artifactId": "2e1f344d-52da-483d-aab5-9b8da7431ffe",
+      "title": "execution.json",
+      "path": "run-artifacts/85360021-a5af-457d-a315-c1f55b1bb6b3/2e1f344d-52da-483d-aab5-9b8da7431ffe-execution.json",
+      "bytes": 885,
+      "digest": "e069c541bb36b682a3968e88095caf7bf232f2ae0e0ca2e11aa0e5229b05f58d"
+    },
+    {
+      "jobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+      "artifactId": "c36c63ef-32c7-438f-9887-6d5050c983d2",
+      "title": "stdout.log",
+      "path": "development-artifacts/c36c63ef-32c7-438f-9887-6d5050c983d2-stdout.log",
+      "bytes": 0,
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "jobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+      "artifactId": "1a1a0218-72d6-4082-9048-3304c21cb17b",
+      "title": "stderr.log",
+      "path": "development-artifacts/1a1a0218-72d6-4082-9048-3304c21cb17b-stderr.log",
+      "bytes": 619,
+      "digest": "2796e6718fe26905a061c713866039d9ccf2440752b61f77c383165af8716212"
+    },
+    {
+      "jobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+      "artifactId": "b84a81a8-b017-4f57-aa98-eb663a9fa5e2",
+      "title": "test-report.json",
+      "path": "development-artifacts/b84a81a8-b017-4f57-aa98-eb663a9fa5e2-test-report.json",
+      "bytes": 677,
+      "digest": "23a987c98bb461fb2b9d3e2c5c5a2c7b41305650a41c67a94f79a13f1c379bda"
+    }
+  ],
+  "compatibility": {
+    "baselineRecords": 433,
+    "unchangedCopyRecords": 431,
+    "copyChangedRecords": [
+      {
+        "kind": "workspace-lease",
+        "id": "33aa40c4716a435c27d81a65402a3c1e28d6fd9eb50a1016bb50349e429d66a5"
+      },
+      {
+        "kind": "workspace-lease",
+        "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57"
+      }
+    ],
+    "sourceChangedRecords": [
+      {
+        "kind": "workspace-lease",
+        "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57"
+      }
+    ],
+    "sourceDatabaseUnchanged": false,
+    "sourceBusinessRecordsUnchanged": true,
+    "sourceReadOnly": true,
+    "oldNativeFilesUnchanged": [
+      {
+        "sessionId": "0d288cab-1c32-4eee-8ddd-d074d7b129ea",
+        "state": "failed",
+        "digest": "e59aa3b0de34c2588f471afc0acf932105480b4fb6b0cf98345f5d7b3dd87895"
+      },
+      {
+        "sessionId": "0d401e39-5bab-4557-ae5e-5c474dcc7487",
+        "state": "failed",
+        "digest": "f13fb3e83375819ebcd39d2c48bc478ce4546f3934d9805b1ec983ab4ea56314"
+      },
+      {
+        "sessionId": "2bdec317-22fe-475d-9d48-137951e64174",
+        "state": "failed",
+        "digest": "bb260ee642ac936fc2dcb24590ec701d0f1955826212f507de8a5a553226a290"
+      },
+      {
+        "sessionId": "5e82e677-f2e2-468d-9b69-b02f1b56cbd0",
+        "state": "failed",
+        "digest": "b546917e9f3b9dcffc3ec8817601a54cd6746d0756a425fd97980e37f9bd3756"
+      },
+      {
+        "sessionId": "63fe7ff0-0e52-46ce-b0c5-664e8101a5f5",
+        "state": "idle",
+        "digest": "c62509ad1ba04c2d6096cbdfaa681f89f947d1934a6221e04a640f04da6e069d"
+      },
+      {
+        "sessionId": "6bdd25ef-2c78-48d1-a14c-79eba5e56c76",
+        "state": "failed",
+        "digest": "4eae7f45a134997138a789c53d2ab8a9e8ad7e6a6d4e1b8222178874c99ad28e"
+      },
+      {
+        "sessionId": "7b7ef384-b639-4ba9-ae38-6dd32de63292",
+        "state": "idle",
+        "digest": "782bdad5dd7ae4652425d30dc3e96f1aec85e88f783ec5c924eb617ccca882ce"
+      },
+      {
+        "sessionId": "7bdb390a-960d-4755-81b5-508fcd43ccee",
+        "state": "idle",
+        "digest": "a19dcadf4982350e751c9c8b117a25286effdf041f6e0f03682e29033638012c"
+      },
+      {
+        "sessionId": "e1e62038-3ada-46ba-8e1f-33d9fe1e58d2",
+        "state": "interrupted",
+        "digest": "d0e147298583d0d1a3320b7bdf9942ca6692a09cf0261509c9e9fec6495c5910"
+      },
+      {
+        "sessionId": "e7308089-e238-40fb-b06f-ae3e27cd83ac",
+        "state": "idle",
+        "digest": "0d6ae03d4aa604a011b3b227f502086e75657ca596098473b0a1b19fee9da7cc"
+      }
+    ],
+    "newNumericalRuns": 3,
+    "newCompilerJobs": 0
+  },
+  "checks": {
+    "readOnlySQLite": true,
+    "noHttpCalls": true,
+    "actualUnpack": true,
+    "allManifestFileHashesMatch": true,
+    "fixedPlanAndComparisonBytesMatch": true,
+    "packageSourcesAndArtifactsMatchOriginalBytes": true,
+    "originalFailureRetained": true,
+    "distinctTestReviewIntegrationAndRunApprovals": true,
+    "reviewInputsActuallyReadAndCited": true,
+    "reviewerSuccessfulNativeSubmitReceipts": 1
+  },
+  "limitations": [
+    "Synthetic polynomial fitting is software acceptance, not an external scientific discovery.",
+    "Scientific success is not inferred from exit code, passing tests, or reviewer acceptance.",
+    "Model usage observations are not HTTP counts or bills; tool receipts are reported only when present in native traces.",
+    "Native JSONL is retained privately; delivered native evidence is metadata with original-byte hashes."
+  ],
+  "environmentRecovery": {
+    "cause": "Acceptance database copy omitted managed Git objects, so its stored parent commit was absent in the new local repository.",
+    "recovery": "Copied original read-only object database into the acceptance repository, verified bound parent commit, retried the failed operation through the owner API.",
+    "parentCommit": "61dcde6a882f4852a48fa8930e320babd7d23951",
+    "retriedOperationId": "f1d8df6959d0ac3b88d7490a13d1204ea963ef63d0dbbc98aed5c58182c2699c",
+    "originalRepositoryUnchanged": true
+  }
+}

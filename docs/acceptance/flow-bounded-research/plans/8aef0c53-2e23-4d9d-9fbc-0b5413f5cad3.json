@@ -1,0 +1,121 @@
+{
+  "plan": {
+    "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+    "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+    "decisionId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+    "decisionApprovalId": "21d10dcd-398e-4c34-ab05-6239e34d2bce",
+    "campaignApprovalId": "aed6f851-dac8-4569-8bb7-4d242a762d6c",
+    "campaignPlanDigest": "f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597",
+    "parentSource": {
+      "snapshotId": "21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16",
+      "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+      "revision": 1,
+      "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf"
+    },
+    "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+    "hypothesis": "将无效999阶修复为3阶，并使协议测试依照配置检查阶数与系数数量，可恢复同一数据切分下的真实输出。",
+    "controlRunIds": [
+      "ca819399-1714-4aaa-b50e-ef1700b3991f"
+    ],
+    "changedFactors": [
+      "polynomialDegree由999改为3。",
+      "私有test_main.py补充输入边界检查并按配置验证输出协议，保留样本数、切分和产物字段检查。"
+    ],
+    "dataSplit": "固定父源码内data.csv 240行，前180训练/后60测试，数据不改；无额外数据产物。",
+    "dataArtifactIds": [],
+    "primaryMetric": "mse",
+    "guardrailMetrics": [],
+    "repetitions": {
+      "count": 1,
+      "rationale": "确定性软件修复验收一次，不估计泛化能力或方法优越性。"
+    },
+    "successCriteria": "真实开发测试通过，独立审查接受固定来源，单独批准整合与Run；实际归档metrics/model/predictions后人工检查。",
+    "inconclusiveCriteria": "缺失产物、失败或审查拒绝时保留状态，不声称科研结论。",
+    "stoppingCriteria": "共享修复链最多2次尝试，最多2轮；下一轮比较后停止，不自动重试模型或Run。",
+    "previousRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+    "controlBindings": [
+      {
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1",
+        "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+        "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+        "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80"
+      }
+    ],
+    "dataBindings": [],
+    "inputRuns": [
+      {
+        "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+        "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+        "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+        "terminal": true,
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1"
+      },
+      {
+        "intentId": "4628e213-fffd-4b03-96f3-595593cdffa3",
+        "approvalId": "b72cda9d-feca-44bb-bb50-076465d1b3da",
+        "manifestDigest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+        "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf",
+        "terminal": true,
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "contentDigest": "c730912181f72317f7e8bc413af9fe0ae78fa9dcb7ac3a8819d5901f47288112",
+        "answerReviewId": "af18ce1d-c26d-4223-9cfc-38418e846816"
+      }
+    ],
+    "observationIds": [
+      "dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d"
+    ],
+    "inputDigest": "7b10ccc0e5e3b2c9f3195054c1c861c494f9de18d5f60857745349a99aee5410",
+    "digest": "cb460bc39204dcf3e08e3e9d9050bf9b5520baf57f43f662553787f13b6dd964",
+    "id": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+    "kind": "experiment-plan-revision",
+    "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+    "version": 1,
+    "createdAt": "2026-09-28T22:51:08.303Z",
+    "updatedAt": "2026-09-28T22:51:08.303Z"
+  },
+  "candidates": [
+    {
+      "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+      "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+      "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+      "decisionId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+      "spec": {
+        "title": "Pi受审三阶修复",
+        "hypothesis": "修复无效参数并完善配置相关测试，保留算法与数据，恢复可复核数值输出。",
+        "implementation": "reviewed-code"
+      },
+      "parentSource": {
+        "snapshotId": "21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16",
+        "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+        "revision": 1,
+        "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf"
+      },
+      "state": "prepared",
+      "repairOfMemberId": "3a79bb33-bbb7-4e89-8112-643566b01756",
+      "repairRootMemberId": "3a79bb33-bbb7-4e89-8112-643566b01756",
+      "id": "56b11824-343a-4098-ae9e-23c2b87320ef",
+      "kind": "research-candidate",
+      "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+      "version": 3,
+      "createdAt": "2026-09-28T22:51:38.279Z",
+      "updatedAt": "2026-09-28T23:00:16.562Z",
+      "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+      "proposalId": "e0d71444-9b2c-408e-be4b-eac0cc9f8640",
+      "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+      "intentId": "50e0ce8e-864e-49cd-887e-0c17763caf4b",
+      "testJobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+      "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+      "reviewAcceptanceId": "492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a",
+      "integrationApprovalId": "13d287ba-bcf3-4578-80f2-3dcd99280a82",
+      "testApprovalId": "43c55c23-205e-4fe0-a2ca-6db824aef4fa",
+      "reviewApprovalId": "690f519d-8a37-4ad5-9996-7513717f1115",
+      "runApprovalId": "6c03e537-fe67-43c5-a979-5a07b6c27750"
+    }
+  ],
+  "validity": "current",
+  "reasons": []
+}

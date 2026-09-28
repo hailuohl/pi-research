@@ -1,0 +1,23 @@
+{
+  "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+  "manifestDigest": "722fa6b9c49b833e6fb79d3f7385e120dd384116991da19ec5c2b4ae310194d6",
+  "sourceDigest": "3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70",
+  "command": [
+    "python",
+    "main.py"
+  ],
+  "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+  "imageId": "sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+  "containerId": "90568caca05382bb537d59aba30ab63df6872dd415f759ad88cbc60e94ae6400",
+  "exitCode": 0,
+  "state": "succeeded",
+  "integrity": "complete",
+  "artifactIds": [
+    "9d1646a4-b235-467c-8bec-e4bf7a2e5899",
+    "8bf9a060-5b67-432f-87ab-d400c20a3aa7",
+    "4bad84e1-63b5-4695-81c0-0b4dbdc2761a",
+    "f2d78ff3-61c4-4ea7-8a37-6bb2e1812cf6",
+    "de976af2-a18d-4e62-81c3-5d9ada4af843"
+  ],
+  "scientificConclusion": false
+}

@@ -14,11 +14,16 @@ function parseProposal(value) {
     const raw = value.candidates ?? [];
     ensure(Array.isArray(raw) && raw.length <= 24, 'INVALID_INPUT', 'candidates 最多 24 项', 400);
     const candidates = raw.map(item => {
-        const x = object(item), config = object(x.config);
-        ensure(digest(config) && JSON.stringify(config).length <= 16000, 'INVALID_INPUT', '候选配置过大', 400);
-        return { title: text(x.title, 'title', 200), hypothesis: text(x.hypothesis, 'hypothesis', 10000), config };
+        const x = object(item), implementation = x.implementation === undefined ? 'config' : oneOf(x.implementation, ['config', 'reviewed-code'], 'implementation');
+        const config = implementation === 'config' ? object(x.config) : undefined;
+        ensure(implementation !== 'reviewed-code' || x.config === undefined, 'INVALID_INPUT', '受审代码候选不接受另行配置覆盖', 400);
+        ensure(!config || JSON.stringify(config).length <= 16000, 'INVALID_INPUT', '候选配置过大', 400);
+        return { title: text(x.title, 'title', 200), hypothesis: text(x.hypothesis, 'hypothesis', 10000), ...(config ? { config } : {}), ...(x.implementation !== undefined ? { implementation } : {}) };
     });
-    ensure(['refill', 'promote'].includes(action) || candidates.length === 0, 'INVALID_INPUT', 'Repair/Stop 不接受新候选', 400);
+    const planned = value.experimentPlan !== undefined;
+    ensure(action !== 'repair' || (planned ? candidates.length === 1 && candidates[0].implementation === 'reviewed-code' : candidates.length === 0), 'INVALID_INPUT', '新方案 Repair 必须有一个受审代码候选', 400);
+    ensure(action !== 'stop' || candidates.length === 0, 'INVALID_INPUT', 'Stop 不接受候选', 400);
+    ensure(planned || candidates.every(c => c.implementation !== 'reviewed-code'), 'PLAN_REQUIRED', '受审候选需要明确研究方案', 400);
     ensure(action !== 'refill' || candidates.length > 0, 'INVALID_INPUT', 'Refill 至少需要一个候选', 400);
     const selectedRunId = value.selectedRunId ? text(value.selectedRunId, 'selectedRunId', 100) : undefined;
     ensure(action === 'promote' ? !!selectedRunId : !selectedRunId, 'INVALID_INPUT', '只有 Promote 必须指定 selectedRunId', 400);
@@ -49,7 +54,8 @@ export class DecisionService {
         const observations = p.observationIds.map(id => this.app.campaigns.verifyObservation(c, id));
         ensure(observations.some(o => o.status === 'pending'), 'RESULT_ALREADY_DECIDED', '这些观测已处理；请读取新增结果或使用用户停止控制');
         const members = this.app.campaigns.members(SYSTEM, c.id).filter(m => m.roundId === c.currentRoundId);
-        const uniqueExperiments = new Set(members.map(m => m.experimentId));
+        const uniqueExperiments = new Set(members.filter(m => !m.repairOfMemberId).map(m => m.experimentId));
+        const pending = this.app.store.list('research-candidate', c.projectId).filter(candidate => candidate.campaignId === c.id && candidate.roundId === c.currentRoundId && candidate.state === 'awaiting_implementation');
         if (p.action === 'repair') {
             ensure(observations.length === 1, 'INVALID_INPUT', '一次 Repair 只针对一个无结果运行', 400);
             const observation = observations[0], run = this.app.store.get('run', observation.runId);
@@ -58,13 +64,16 @@ export class DecisionService {
             ensure(observation.validation === 'incomplete' && e.lifecycle === 'provisional' &&
                 (!run.metrics || Object.keys(run.metrics).length === 0), 'RESULT_ALREADY_ANSWERED', '已有测量或无效证据不允许自动按无结果修复；请审核或派生新实验');
             ensure(answerDisposition(run) === 'unanswered', 'RESULT_REVIEW_REQUIRED', '须由用户先判断失败是否回答研究问题，不能按退出码机械修复');
-            ensure(members.filter(m => m.experimentId === e.id).length < c.limits.maxUnansweredRunsPerNode, 'REPAIR_LIMIT', '该节点已达到无结果运行上限');
+            const member = members.find(m => m.id === observation.memberId), root = member.repairRootMemberId ?? members.find(m => m.experimentId === member.experimentId).id;
+            const rootMember = members.find(m => m.id === root);
+            ensure(members.filter(m => m.experimentId === rootMember.experimentId || m.repairRootMemberId === root || m.experimentId === e.id).length + pending.filter(p => p.repairRootMemberId === root).length < c.limits.maxUnansweredRunsPerNode, 'REPAIR_LIMIT', '该节点已达到无结果运行上限');
             const latest = members.filter(m => m.experimentId === e.id).at(-1);
             ensure(latest.id === observation.memberId, 'OBSERVATION_STALE', 'Repair 必须针对该节点的最新尝试');
         }
         if (p.action === 'refill')
-            ensure(uniqueExperiments.size + p.candidates.length <= c.limits.maxCandidatesPerRound, 'CANDIDATE_LIMIT', '补充候选将超出本轮上限');
+            ensure(uniqueExperiments.size + pending.filter(p => !p.repairOfMemberId).length + p.candidates.length <= c.limits.maxCandidatesPerRound, 'CANDIDATE_LIMIT', '补充候选将超出本轮上限');
         if (p.action === 'promote') {
+            ensure(pending.length === 0, 'ROUND_INCOMPLETE', '本轮仍有待实现候选');
             ensure(c.roundNumber < c.limits.maxRounds, 'ROUND_LIMIT', '已达到研究轮次上限，请停止或建立新的研究活动');
             ensure(p.candidates.length <= c.limits.maxCandidatesPerRound, 'CANDIDATE_LIMIT', '下一轮候选超出上限');
             for (const m of members.filter(m => m.required)) {
@@ -87,14 +96,17 @@ export class DecisionService {
             this.app.campaigns.coordinator(actor, c);
             ensure(c.version === integer(x.expectedVersion, 'expectedVersion', 1), 'VERSION_CONFLICT', '研究活动版本已变化');
             this.validate(c, proposal);
-            const decisionId = randomUUID(), inputDigest = this.inputDigest(c), body = {
-                campaignId: id, roundId: c.currentRoundId, ...proposal, inputDigest
-            };
+            const decisionId = randomUUID(), inputDigest = this.inputDigest(c);
+            // Allocate the approval identity inside this transaction so the immutable plan can bind it.
+            const approval = this.app.approvals.request(c.projectId, 'campaign-decision', decisionId, '', 'campaign.decision', `执行 ${proposal.action} 决定；可能创建 ${proposal.candidates.length} 个待批准方案。不批准任何正式计算。`);
+            const plan = x.experimentPlan === undefined ? undefined : this.app.researchPlans.create(actor, c, decisionId, approval.id, proposal, x.experimentPlan, inputDigest);
+            const body = { campaignId: id, roundId: c.currentRoundId, ...proposal, inputDigest, ...(plan ? { planRevisionId: plan.id, planDigest: plan.digest } : {}) };
             const decisionDigest = digest(body);
-            const approval = this.app.approvals.request(c.projectId, 'campaign-decision', decisionId, decisionDigest, 'campaign.decision', `执行 ${proposal.action} 决定；可能创建 ${proposal.candidates.length} 个待批准方案。不批准任何正式计算。`);
+            this.app.store.update('approval', approval.id, approval.version, { digest: decisionDigest });
             const decision = this.app.store.create('campaign-decision', c.projectId, {
                 ...body, approvalId: approval.id, decisionDigest, status: 'proposed'
             }, decisionId);
+            this.app.researchPlans.assertDecision(decision);
             this.app.store.event(c.projectId, 'campaign.decision_proposed', { campaignId: id, decisionId, action: proposal.action });
             return decision;
         });
@@ -110,9 +122,10 @@ export class DecisionService {
             this.app.campaigns.assertActive(c);
             ensure(this.inputDigest(c) === d.inputDigest && c.currentRoundId === d.roundId, 'APPROVAL_STALE', '决定依据已变化，请基于最新结果重新提出并批准');
             this.app.approvals.assert(d.approvalId, c.projectId, d.id, d.decisionDigest, 'campaign.decision');
+            this.app.researchPlans.assertDecision(d);
             const body = { campaignId: d.campaignId, roundId: d.roundId, action: d.action, reason: d.reason,
                 observationIds: d.observationIds, ...(d.selectedRunId ? { selectedRunId: d.selectedRunId } : {}),
-                candidates: d.candidates, inputDigest: d.inputDigest };
+                candidates: d.candidates, inputDigest: d.inputDigest, ...(d.planRevisionId ? { planRevisionId: d.planRevisionId, planDigest: d.planDigest } : {}) };
             ensure(digest(body) === d.decisionDigest, 'APPROVAL_STALE', '批准后决定内容被改动');
             const observations = this.validate(c, d);
             let parentId = c.focusExperimentId, stopReason;
@@ -131,14 +144,20 @@ export class DecisionService {
                     this.app.store.update('research-round', oldRound.id, oldRound.version, { state: 'closed' });
                     parentId = selected.experimentId;
                     const round = this.app.store.create('research-round', c.projectId, {
-                        campaignId: c.id, number: c.roundNumber + 1, parentExperimentId: parentId, state: 'open', decisionId: id
+                        campaignId: c.id, number: c.roundNumber + 1, parentExperimentId: parentId, state: 'open', decisionId: id, ...(d.planRevisionId ? { parentSource: this.app.store.get('experiment-plan-revision', d.planRevisionId, c.projectId).parentSource } : {})
                     });
                     c = this.app.store.update('campaign', c.id, c.version, { focusExperimentId: parentId,
                         currentRoundId: round.id, roundNumber: round.number, consecutiveRegressions: regressions });
                 }
             }
-            const experimentIds = [], intentIds = [];
-            if (!stopReason && ['refill', 'promote'].includes(d.action)) {
+            let experimentIds = [], intentIds = [], candidateIds;
+            if (!stopReason && d.planRevisionId) {
+                const effects = this.app.researchPlans.materialize(actor, c, d);
+                experimentIds = effects.experimentIds;
+                intentIds = effects.intentIds;
+                candidateIds = effects.candidateIds;
+            }
+            else if (!stopReason && ['refill', 'promote'].includes(d.action)) {
                 for (const spec of d.candidates) {
                     const e = this.app.experiments.create(actor, c.projectId, { ...spec, parentId });
                     const intent = this.app.runs.prepare(actor, e.id);
@@ -155,7 +174,7 @@ export class DecisionService {
                 c = this.app.store.update('campaign', c.id, c.version, {});
             for (const observation of observations.filter(o => o.status === 'pending'))
                 this.app.store.update('run-observation', observation.id, observation.version, { status: 'decided', decisionId: id });
-            const effects = { experimentIds, intentIds, roundId: c.currentRoundId, stopped: c.state === 'stopped' };
+            const effects = { experimentIds, intentIds, roundId: c.currentRoundId, stopped: c.state === 'stopped', ...(candidateIds ? { candidateIds } : {}) };
             const applied = this.app.store.update('campaign-decision', id, d.version, { status: 'applied', appliedAt: now(), effects });
             this.app.store.event(c.projectId, 'campaign.decision_applied', { campaignId: c.id, decisionId: id, action: d.action, effects });
             return applied;

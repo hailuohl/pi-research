@@ -5,6 +5,10 @@ const TOOL_METADATA: Record<string, {
     description: string;
     example: unknown;
 }> = {
+    campaign_plan_inspect:{description:'用户入口：读取不可变研究方案、精确父源码及候选绑定；条件是研究声明，不是科学结论。',example:{planRevisionId:'experiment-plan-id'}},
+    campaign_candidate_prepare:{description:'用户入口：按已批准研究方案准备专用私有实现会话；不批准开发测试、整合或正式运行。',example:{candidateId:'research-candidate-id',sessionId:'coordinator-session-id'}},
+    campaign_candidate_attach:{description:'用户入口：核对已测试、已审查并经批准整合的候选，接入活动并准备正式清单；Run仍另行批准。',example:{candidateId:'research-candidate-id',proposalId:'reviewed-proposal-id'}},
+    campaign_comparison:{description:'用户入口：核对固定方案与真实观测、指标单位和限制，不自动判科学成功。',example:{campaignId:'campaign-id'}},
     publication_review_prepare:{description:'用户入口：为精确成功文稿构建准备独立论文审查计划；另行批准后启动，不改文稿或自动编译。',example:{resultId:'publication-result-id',rootSessionId:'coordinator-session-id',inputEvidenceIds:[]}},
     publication_review_inspect:{description:'用户入口：回查固定论文审查目标、任务意见及有效性；不把任务完成当科学审查通过。',example:{reviewId:'publication-review-id'}},
     publication_review_list:{description:'用户入口：列出精确文稿构建的全部论文审查，不关联普通历史审查。',example:{resultId:'publication-result-id'}},

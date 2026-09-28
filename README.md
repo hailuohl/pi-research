@@ -24,7 +24,7 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 104 个操作（包含固定源码、开发测试、Git、独立审查、报告、容量、文献、技能管理、文稿构建与固定论文审查）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、文稿构建、报告交付、技能管理与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
+- 108 个操作（包含固定源码、开发测试、Git、独立审查、报告、容量、文献、技能管理、文稿构建、固定论文审查与研究方案）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、文稿构建、报告交付、技能管理与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 
@@ -47,6 +47,8 @@ node dist/apps/server/index.js
 **文献任务与原文** 页支持持久检索/获取、32 MiB 内原始 PDF/文本导入、不可变 DocumentVersion、原始响应与派生摘要分离，以及固定解析器的单独批准。PDF 在隔离 Docker 中生成页图/文本，文档作业共享计算预算；证据按固定版本、物理页和 UTF-16 区间回查，刷新后保留位置。解析镜像需显式运行[setup 指引](scripts/pdf-parser/README.md)后配置，不自动安装或开启来源。PubMed 本机网络、其他原件来源实网、完整表图/OCR、跨源分页和显式文档语料授权仍有未完成项。见[文献与文档验收](docs/acceptance/flow-documents/RESULTS.zh-CN.md)。
 
 **技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。内置发行可在原生选择器中显式升级或回滚，修改自定义修订默认保留原内置基线；完整 bundleId 回滚恢复原组合。未配置项目的新绑定默认当前发行，已有会话/TaskAttempt 不随配置变化，重试不自动升级。旧发行的目录/角色/正文/资源按原字节归档，启动前验证全包，未知或损坏版本拒绝加载；原生 SDK `/skill:` 文件展开继续关闭。只对显式选用技能检查实际工具、数据和后端；Docker 需资源页核对 `default` 目标，latex 需固定编译器及对应目标。已启动会话缺少唯一版本依据时保留原生文件并阻塞恢复。新版 paper/reports 指导匹配现有隔离构建和成果包，仍保留用户批准边界。见[内置升级与旧会话验收](docs/acceptance/flow-builtin-skills/RESULTS.zh-CN.md)和[技能图形产物](docs/acceptance/flow-skills/RESULTS.zh-CN.md)；核心论文写作、新任务正常结束及固定论文审查绑定已验收，原生 UI 上传提交和 diagram 等仍在后续计划中。
+
+**研究活动** 页可填写不可变研究方案，明确实际对照、变化因素、数据切分、指标、重复依据与停止条件。参数候选从固定父源码派生，下一轮使用所选实测 Run 的来源；无结果修复先经私有实现、开发测试、独立审查和批准整合，保留失败 Run 并共用修复次数上限。决定批准只准备候选，正式 Run 另行批准。活动比较与方案可冻结进报告及离线包，来源撤销后阻止新运行/新交付；旧方案与包保留。数据与成功条件是待验证声明，不自动证明实验实际使用了每份数据或科研假设成立。见[有界研究验收](docs/acceptance/flow-bounded-research/RESULTS.zh-CN.md)。
 
 ## 读取技能
 
@@ -91,4 +93,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker、首条浏览器科研闭环、四源文献检索/读取、arXiv 指定版本 PDF、固定文稿隔离编译及核心论文写作、审查绑定与报告交付已实测；PubMed 本机网络、其他原文来源、模型供应商/GPU/远程环境仍需各自验收。下一步为有界方案、批准测试运行及结果比较与停止；远程计算、Git 发布、Overleaf、diagram 与实例申请保留在后续计划中，完整实施计划尚未完成。
+各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker、首条浏览器科研闭环、四源文献检索/读取、arXiv 指定版本 PDF、固定文稿隔离编译、核心论文写作、审查绑定和有界两轮研究已实测；PubMed 本机网络、其他原文来源、模型供应商/GPU/远程环境仍需各自验收。完整 WorkingGrant/RunGrant/DiscoveryGrant、单/多 Agent 收益对照、远程计算、Git 发布、Overleaf、diagram 与实例申请保留在后续计划中，完整实施计划尚未完成。

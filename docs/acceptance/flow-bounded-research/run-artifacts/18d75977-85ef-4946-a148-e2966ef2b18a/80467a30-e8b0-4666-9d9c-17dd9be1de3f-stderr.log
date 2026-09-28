@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/work/main.py", line 76, in <module>
+    main()
+  File "/work/main.py", line 56, in main
+    coeffs = fit_polynomial(train, degree)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/work/main.py", line 33, in fit_polynomial
+    raise ValueError("not enough data points")
+ValueError: not enough data points
+FORMAL_RUN_EXECUTION_FAILED

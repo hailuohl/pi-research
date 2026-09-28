@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-28T23:10:41.712Z",
+  "scope": "Isolated service-level revocation probe of real completed bounded research records; no model, Host, experiment or compiler executed",
+  "isolation": {
+    "sourceOpenedReadOnly": true,
+    "sqliteOnlineBackup": true,
+    "sourceDatabaseWritten": false,
+    "sandboxDirectory": ".validation/bounded-revocation-4Chzs1",
+    "liveSelectedRecordCount": 8,
+    "liveSelectedRecordsUnchanged": true
+  },
+  "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+  "reportId": "d6b1a226-aea6-4469-bda5-b2fabbfb6232",
+  "legacyReportId": "a41b281c-bfd2-47cf-bfee-e47bf79bbaf6",
+  "revoked": {
+    "kind": "development-review-original-approval",
+    "approvalId": "690f519d-8a37-4ad5-9996-7513717f1115",
+    "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+    "decisionId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+    "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+    "statusBefore": "approved",
+    "statusAfter": "stale"
+  },
+  "before": {
+    "campaignState": "stopped",
+    "reportValidity": "current",
+    "reportIntegrity": "verified",
+    "legacyValidity": "current",
+    "descendantPrepareSucceeded": true,
+    "descendantRunApproval": "approved",
+    "descendantSubmitted": false
+  },
+  "after": {
+    "planValidity": "stale",
+    "planReasons": [
+      "APPROVAL_STALE"
+    ],
+    "reportValidity": "stale",
+    "reportIntegrity": "verified",
+    "legacyValidity": "current",
+    "legacyIntegrity": "verified",
+    "newReportRejected": "PLAN_INPUT_STALE",
+    "newRequestKeyExportRejected": "REPORT_STALE",
+    "ordinaryDescendantPrepareRejected": "APPROVAL_STALE",
+    "ordinaryDescendantSubmitRejected": "APPROVAL_STALE",
+    "rejectionIsNotCampaignStopped": true,
+    "intentRemainsPrepared": true
+  },
+  "preserved": {
+    "reportBodyDigest": "b2bfca8e33c0c2b7edb02d2382e9e901dc7ec416353316cbef170eaeb9638a33",
+    "referenceDigest": "dc3265139cc4f2a98a9a14150e9d63e64244eace95813c441f79c95c3e50816a",
+    "archiveArtifactId": "b80a22bc-8500-4c9c-88f3-826d23ad54e6",
+    "archiveDigest": "35573fb10691b2f0c9d0f7f7e429ea096454010851d4c3e86d8502385ba6b70c",
+    "archiveBytes": 71348,
+    "allBytesUnchanged": true
+  },
+  "execution": {
+    "modelRequested": false,
+    "workerForked": false,
+    "newRunSubmitted": false
+  },
+  "result": "passed"
+}

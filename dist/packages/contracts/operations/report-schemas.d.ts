@@ -45,8 +45,20 @@ export declare const REPORT_INPUT_SCHEMAS: {
                 };
                 readonly minItems: number;
             };
+            readonly campaignIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
         };
-        readonly required: readonly ("title" | "runIds" | "claimIds" | "publicationResultIds")[];
+        readonly required: readonly ("title" | "runIds" | "claimIds" | "publicationResultIds" | "campaignIds")[];
         readonly additionalProperties: false;
     };
     readonly report_inspect: {
@@ -146,7 +158,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly type: {
-                            readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code", "publication-review"];
+                            readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code", "publication-review", "research-comparison", "experiment-plan"];
                         };
                         readonly targetId: {
                             readonly type: "string";
@@ -259,12 +271,12 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("value" | "name" | "referenceId" | "unit")[];
+                                readonly required: ("value" | "name" | "unit" | "referenceId")[];
                                 readonly additionalProperties: false;
                             };
                         };
                     };
-                    readonly required: ("sourceDigest" | "experimentId" | "revision" | "integrity" | "state" | "runId" | "judgment" | "metrics")[];
+                    readonly required: ("sourceDigest" | "experimentId" | "revision" | "integrity" | "state" | "runId" | "metrics" | "judgment")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -412,6 +424,50 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
+            readonly researchCampaigns: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly campaignId: {
+                            readonly type: "string";
+                        };
+                        readonly state: {
+                            readonly type: "string";
+                        };
+                        readonly primaryMetric: {
+                            readonly type: "string";
+                        };
+                        readonly unit: {
+                            readonly type: "string";
+                        };
+                        readonly conclusion: {
+                            readonly enum: readonly ["requires_review"];
+                        };
+                        readonly referenceId: {
+                            readonly type: "string";
+                        };
+                        readonly planReferences: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly planRevisionId: {
+                                        readonly type: "string";
+                                    };
+                                    readonly referenceId: {
+                                        readonly type: "string";
+                                    };
+                                };
+                                readonly required: ("planRevisionId" | "referenceId")[];
+                                readonly additionalProperties: false;
+                            };
+                        };
+                    };
+                    readonly required: ("state" | "primaryMetric" | "campaignId" | "conclusion" | "unit" | "referenceId" | "planReferences")[];
+                    readonly additionalProperties: false;
+                };
+            };
         };
         readonly required: ("id" | "validity" | "formatVersion" | "artifactId" | "title" | "integrity" | "reasons" | "references" | "runs")[];
         readonly additionalProperties: false;
@@ -426,7 +482,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                     readonly type: {
-                        readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code", "publication-review"];
+                        readonly enum: readonly ["run", "run-source", "artifact", "evidence", "development-job", "development-review", "claim", "publication", "figure-source", "figure-source-code", "publication-review", "research-comparison", "experiment-plan"];
                     };
                     readonly targetId: {
                         readonly type: "string";

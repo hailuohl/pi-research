@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-29",
+  "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+  "reportId": "d6b1a226-aea6-4469-bda5-b2fabbfb6232",
+  "surface": "in-app browser, native form controls and keyboard activation",
+  "verifiedFlows": [
+    "Create and approve two-round campaign; enroll the existing control RunIntent without rerunning it",
+    "Refill plan: explicit hypothesis, controls, factors, split, repetitions and stop criteria; separate decision and Run approvals",
+    "Inspect actual 999-degree failure stderr; no metrics shown",
+    "Repair plan: bind dedicated private session; true Pi edits only private config and tests",
+    "Approve and submit actual development test; separately prepare and approve independent review; inspect full integration diff and approve child creation",
+    "Attach applied reviewed proposal; separately approve and submit repaired Run",
+    "Promote from exact repaired Run source; separately approve and submit final four-degree Run",
+    "Compare three verified measurements and one incomplete failure with squared-target units; approve Stop at round 2/2",
+    "Create campaign report and archive; read complete frozen plan JSON with sourceDigest b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+    "Reload report: same report, current/verified and frozen stopped state; jump back to exact campaign",
+    "390px comparison to exact failure 18d75977: Inspector selects that Run and retains unanswered judgment",
+    "Reload campaign at 390px: same selected activity, stopped at round 2/2"
+  ],
+  "viewport": {"width":390,"height":844,"documentScrollWidth":375,"bodyScrollWidth":375,"pageHorizontalOverflow":false},
+  "screenshots": ["report-desktop.png","report-mobile.png","comparison-mobile.png"],
+  "limitations": [
+    "Failure outcome review used the existing authenticated owner HTTP route after browser log inspection; the native prompt dialog was not automated.",
+    "Browser archive download destination and a separate console-error inventory were not verified; authenticated archive response bytes were verified separately.",
+    "Comparison uses a horizontally scrollable table on narrow screens; fixed source text and native controls remain available."
+  ]
+}

@@ -20,6 +20,7 @@ export class RunService {
     approvals;
     evidence;
     compute;
+    researchSourceGuard;
     launching = new Set();
     constructor(c, approvals, evidence, compute = new ComputeQueue(c)) {
         this.c = c;
@@ -39,6 +40,7 @@ export class RunService {
             ensure(e.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能执行');
             assertOutcomeBoundary(this.c.store, e);
             validateContract(e.contract);
+            this.researchSourceGuard?.(experimentId, 'prepare');
             const snap = snapshotDirectory(e.workspace, join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
             const binding = revision ? this.c.store.maybe('git-source-binding', revision.id) : undefined;
             const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: snap.path, sourceFiles: snap.files, createdAt: now(), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
@@ -58,6 +60,7 @@ export class RunService {
             if (intent.runId)
                 return this.c.store.get('run', intent.runId);
             assertProjectWritable(this.c.store, intent.projectId);
+            this.researchSourceGuard?.(intent.experimentId, 'submit', intent.id);
             const e = this.c.store.get('experiment', intent.experimentId, intent.projectId);
             assertExperimentSourceCurrent(this.c.store, e);
             ensure(e.revision === intent.manifest.experimentRevision && e.contractDigest === intent.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
@@ -92,6 +95,7 @@ export class RunService {
     }
     /** Also used just before Docker start and while supervising a running immutable job. */
     assertExecutionGrant(run) {
+        this.researchSourceGuard?.(run.experimentId, 'execute', run.intentId);
         assertProjectWritable(this.c.store, run.projectId);
         const e = this.c.store.get('experiment', run.experimentId, run.projectId);
         assertExperimentSourceCurrent(this.c.store, e);

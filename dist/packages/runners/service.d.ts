@@ -10,6 +10,7 @@ export declare class RunService {
     private approvals;
     private evidence;
     private compute;
+    researchSourceGuard?: (experimentId: string, stage: 'prepare' | 'submit' | 'execute', intentId?: string) => void;
     private launching;
     constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue);
     get(actor: Actor, id: string): Row<Run>;

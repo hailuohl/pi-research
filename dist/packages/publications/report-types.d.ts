@@ -1,3 +1,4 @@
+import type { ResearchPlanService } from '../research-workflows/plans.js';
 import type { PublicationReviewInspection, PublicationReviewSnapshot } from './reviews-types.js';
 import type { ManuscriptRevision, PublicationBuildResult, PublicationManifest } from './build-types.js';
 import type { Run, SourceSnapshot } from '../domain/types.js';
@@ -5,7 +6,7 @@ import type { DocumentVersion, DocumentEvidenceLink } from '../documents/types.j
 import type { DocumentParseResult, DocumentParseManifest } from '../documents/parse-types.js';
 export interface ReportReference {
     id: string;
-    type: 'run' | 'run-source' | 'artifact' | 'evidence' | 'development-job' | 'development-review' | 'claim' | 'publication' | 'figure-source' | 'figure-source-code' | 'publication-review';
+    type: 'run' | 'run-source' | 'artifact' | 'evidence' | 'development-job' | 'development-review' | 'claim' | 'publication' | 'figure-source' | 'figure-source-code' | 'publication-review' | 'research-comparison' | 'experiment-plan';
     targetId: string;
     label: string;
     runId?: string;
@@ -47,7 +48,20 @@ export interface ReportPublication {
     pages: number;
     referenceId: string;
 }
+export interface ReportResearchCampaign {
+    campaignId: string;
+    state: string;
+    primaryMetric: string;
+    unit: string;
+    conclusion: 'requires_review';
+    referenceId: string;
+    planReferences: Array<{
+        planRevisionId: string;
+        referenceId: string;
+    }>;
+}
 export interface ReportInspection {
+    researchCampaigns?: ReportResearchCampaign[];
     publications?: ReportPublication[];
     publicationReviews?: Array<{
         resultId: string;
@@ -67,6 +81,16 @@ export interface ReportInspection {
     runs: ReportRun[];
 }
 export interface ReportBindings {
+    researchCampaigns?: Array<{
+        campaignId: string;
+        snapshot: ReturnType<ResearchPlanService['reportSnapshot']>;
+        snapshotDigest: string;
+        referenceId: string;
+        planReferences: Array<{
+            planRevisionId: string;
+            referenceId: string;
+        }>;
+    }>;
     publicationReviews?: Array<{
         resultId: string;
         reviewIds: string[];

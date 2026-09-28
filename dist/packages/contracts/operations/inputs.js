@@ -1,4 +1,5 @@
 import { PUBLICATION_INPUT_SCHEMAS } from './publication-schemas.js';
+import { RESEARCH_PLAN_INPUT_SCHEMAS, EXPERIMENT_PLAN_INPUT_SCHEMA, RESEARCH_CANDIDATE_INPUT_SCHEMA } from './research-plan-schemas.js';
 import { SKILL_INPUT_SCHEMAS } from './skill-schemas.js';
 import { DOCUMENT_INPUT_SCHEMAS, DISCOVERY_INPUT_SCHEMA } from './document-schemas.js';
 import { GIT_INPUT_SCHEMAS } from './git-schemas.js';
@@ -33,9 +34,10 @@ const task = s.object({
     acceptanceRuleIds: s.nullable(s.array(s.enum(['artifact-required', 'evidence-required', 'claims-evidenced']), 10)),
 }, ['key', 'role', 'objective']);
 const plan = s.object({ goal: s.string(8000), tasks: s.array(task, 24, 1), budget: s.nullable(s.integer(1, 100)), autoSummarize: s.nullable(s.boolean()) }, ['goal', 'tasks']);
-const candidate = s.object({ title: s.string(200), hypothesis: s.string(), config }, ['title', 'hypothesis', 'config']);
+const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...RESEARCH_PLAN_INPUT_SCHEMAS,
     ...SKILL_INPUT_SCHEMAS,
     ...PUBLICATION_INPUT_SCHEMAS,
     ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS, ...SCHEDULER_INPUT_SCHEMAS,
@@ -47,7 +49,7 @@ export const INPUT_SCHEMAS = {
     paper_read: s.object({ id: s.string(300), source: sources }, ['id']),
     campaign_inspect: s.object({ campaignId: id }, ['campaignId']),
     campaign_enroll: s.object({ campaignId: id, intentId: id, expectedVersion: version, required: s.nullable(s.boolean()), repairDecisionId: id }, ['campaignId', 'intentId', 'expectedVersion']),
-    campaign_decision_submit: s.object({ campaignId: id, expectedVersion: version, action: s.enum(['repair', 'refill', 'promote', 'stop']), observationIds: { ...strings(), minItems: 1, uniqueItems: true }, reason: s.string(8000), selectedRunId: id, candidates: s.nullable(s.array(candidate, 24)) }, ['campaignId', 'expectedVersion', 'action', 'observationIds', 'reason']),
+    campaign_decision_submit: s.object({ campaignId: id, expectedVersion: version, action: s.enum(['repair', 'refill', 'promote', 'stop']), observationIds: { ...strings(), minItems: 1, uniqueItems: true }, reason: s.string(8000), selectedRunId: id, candidates: s.nullable(s.array(candidate, 24)), experimentPlan: EXPERIMENT_PLAN_INPUT_SCHEMA }, ['campaignId', 'expectedVersion', 'action', 'observationIds', 'reason']),
     change_proposal_prepare: s.object({ testJobId: id, baseExperimentId: id, expectedRevision: version, title: s.string(200), hypothesis: s.string(), changes: s.array(s.object({ path: s.string(1000), artifactId: s.nullable(id), expectedDigest: s.nullable(s.string(64)) }, ['path', 'artifactId', 'expectedDigest']), 50, 1) }, ['baseExperimentId', 'expectedRevision', 'title', 'hypothesis', 'changes']),
     reviewed_change_prepare: s.object({ reviewId: id, title: s.string(200), hypothesis: s.string() }, ['reviewId', 'title', 'hypothesis']),
     artifact_read: s.object({ artifactId: id, cursor: s.nullable(s.integer(0, 2 * 1024 * 1024)) }, ['artifactId']),

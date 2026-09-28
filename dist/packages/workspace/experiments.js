@@ -1,4 +1,4 @@
-import { captureSourceRevision } from './source-access.js';
+import { captureSourceRevision, validateSourceRevision, copySourceRevision } from './source-access.js';
 import { assertOutcomeBoundary } from '../runners/outcome.js';
 import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { randomUUID } from 'node:crypto';
@@ -20,6 +20,25 @@ export class ExperimentService {
         this.projects = projects;
     }
     get(actor, id) { const e = this.c.store.get('experiment', id); scope(actor, e.projectId); return e; }
+    /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
+    createFromRevision(actor, projectId, snapshotId, spec) {
+        userOnly(actor);
+        scope(actor, projectId);
+        assertProjectWritable(this.c.store, projectId);
+        const source = validateSourceRevision(this.c, projectId, snapshotId), parent = this.get(actor, source.experimentId);
+        ensure(parent.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能派生');
+        const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');
+        mkdirSync(workspace, { recursive: true, mode: 0o700 });
+        copySourceRevision(source, workspace);
+        if (spec.config !== undefined) {
+            const prior = source.snapshot.files.some(f => f.path === 'config.json') ? object(JSON.parse(readStableFile(source.snapshot.path, 'config.json', 1024 * 1024).toString('utf8'))) : {};
+            writeFileSync(join(workspace, 'config.json'), JSON.stringify({ ...prior, ...object(spec.config) }, null, 2), { mode: 0o600 });
+        }
+        const child = this.c.store.create('experiment', projectId, { title: text(spec.title, 'title', 200), hypothesis: text(spec.hypothesis, 'hypothesis', 10000), parentId: parent.id, lifecycle: 'provisional', contract: parent.contract, contractDigest: parent.contractDigest, workspace, notes: [], revision: 1 }, id);
+        captureSourceRevision(this.c, child);
+        this.c.store.event(projectId, 'experiment.created', { id, parentId: parent.id, parentSourceRevisionId: source.id });
+        return child;
+    }
     create(actor, projectId, input) {
         scope(actor, projectId);
         const p = this.projects.get(actor, projectId), x = object(input);

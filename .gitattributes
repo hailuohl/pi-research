@@ -9,4 +9,6 @@ docs/acceptance/flow-paper-writing/*/predictions.csv -text whitespace=cr-at-eol
 docs/acceptance/flow-paper-writing/*/build-*.txt -text -whitespace
 docs/acceptance/flow-paper-writing/*.tar.gz binary
 docs/acceptance/flow-publication-review/*.tar.gz binary
+docs/acceptance/flow-bounded-research/*.tar.gz binary
+docs/acceptance/flow-bounded-research/run-artifacts/**/*.csv -text whitespace=cr-at-eol
 skills/releases/*/blobs/* -text

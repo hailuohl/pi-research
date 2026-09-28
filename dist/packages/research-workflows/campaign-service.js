@@ -6,6 +6,8 @@ import { scope, userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { TERMINAL } from '../runners/service.js';
 import { inspectObservation, runContentDigest } from './observations.js';
+import { assertExperimentSourceCurrent } from '../policy/lifecycle.js';
+import { captureSourceRevision, sourceMetadata } from '../workspace/source-access.js';
 function parseLimits(value) {
     const x = object(value ?? {});
     const limits = {
@@ -66,7 +68,7 @@ export class CampaignService {
                 direction: baseline.contract.metrics[primaryMetric].direction, state: 'draft', currentRoundId: roundId,
                 roundNumber: 1, approvalId: approval.id, planDigest, consecutiveRegressions: 0 }, id);
             this.app.store.create('research-round', projectId, { campaignId: id, number: 1,
-                parentExperimentId: baseline.id, state: 'open' }, roundId);
+                parentExperimentId: baseline.id, parentSource: sourceMetadata(captureSourceRevision(this.app.context, baseline)), state: 'open' }, roundId);
             this.app.budget.configure(projectId, id, limits.maxAnalysisAttempts);
             this.app.store.event(projectId, 'campaign.created', { campaignId: id, approvalId: approval.id });
             return c;
@@ -132,7 +134,7 @@ export class CampaignService {
         });
     }
     /** Internal caller must hold Store.transaction and validate the campaign state/version first. */
-    addMember(c, intentId, required, repairDecisionId) {
+    addMember(c, intentId, required, repairDecisionId, candidate) {
         const intent = this.app.store.get('run-intent', intentId, c.projectId);
         const e = this.app.store.get('experiment', intent.experimentId, c.projectId);
         ensure(intent.manifest.contractDigest === c.contractDigest && e.contractDigest === c.contractDigest, 'CONTRACT_CHANGED', '运行契约不同，不能进入同一研究比较');
@@ -143,23 +145,36 @@ export class CampaignService {
             return same;
         }
         const current = all.filter(m => m.roundId === c.currentRoundId);
-        ensure(e.id === c.focusExperimentId || e.parentId === c.focusExperimentId, 'LINEAGE_MISMATCH', '本轮方案必须来自共同父实验');
+        const repairParent = candidate?.repairOfMemberId ? this.app.store.get('campaign-member', candidate.repairOfMemberId, c.projectId) : undefined;
+        if (candidate)
+            ensure(candidate.campaignId === c.id && candidate.roundId === c.currentRoundId && candidate.intentId === intentId && candidate.experimentId === e.id, 'PLAN_CANDIDATE_MISMATCH', '方案候选与运行清单不一致');
+        ensure(e.id === c.focusExperimentId || e.parentId === c.focusExperimentId || repairParent && repairParent.campaignId === c.id && repairParent.roundId === c.currentRoundId && e.parentId === repairParent.experimentId, 'LINEAGE_MISMATCH', '本轮方案必须来自固定父实验或明确修复来源');
         const sameExperiment = current.filter(m => m.experimentId === e.id);
-        if (sameExperiment.length) {
+        let legacyRepairRoot;
+        if (repairParent) {
+            const decision = this.app.store.get('campaign-decision', repairDecisionId, c.projectId);
+            ensure(decision.status === 'applied' && decision.action === 'repair' && decision.campaignId === c.id && decision.planRevisionId === candidate.planRevisionId && decision.observationIds.some(id => this.app.store.get('run-observation', id, c.projectId).memberId === repairParent.id), 'REPAIR_APPROVAL_REQUIRED', '修复候选未绑定当前已应用方案');
+            ensure(!all.some(m => m.repairDecisionId === decision.id), 'REPAIR_APPROVAL_REQUIRED', '修复方案已使用');
+            const root = repairParent.repairRootMemberId ?? current.find(m => m.experimentId === repairParent.experimentId).id, rootMember = this.app.store.get('campaign-member', root, c.projectId);
+            ensure(candidate.repairRootMemberId === root && current.filter(m => m.experimentId === rootMember.experimentId || m.repairRootMemberId === root).length < c.limits.maxUnansweredRunsPerNode, 'REPAIR_LIMIT', '修复链已达上限');
+        }
+        else if (sameExperiment.length) {
             ensure(!!repairDecisionId, 'REPAIR_APPROVAL_REQUIRED', '同节点重复运行需有界 Repair 决定');
             const repair = this.app.store.get('campaign-decision', repairDecisionId, c.projectId);
             ensure(repair.campaignId === c.id && repair.roundId === c.currentRoundId && repair.action === 'repair' && repair.status === 'applied', 'REPAIR_APPROVAL_REQUIRED', '修复授权无效');
             const source = this.app.store.get('run-observation', repair.observationIds[0], c.projectId);
             ensure(source.experimentId === e.id && !all.some(m => m.repairDecisionId === repairDecisionId), 'REPAIR_APPROVAL_REQUIRED', '修复授权属于其他节点或已消耗');
             ensure(sameExperiment.length < c.limits.maxUnansweredRunsPerNode, 'REPAIR_LIMIT', '已达到该节点的无结果尝试上限');
+            legacyRepairRoot = sameExperiment[0].repairRootMemberId ?? sameExperiment[0].id;
         }
         else {
             ensure(!repairDecisionId, 'REPAIR_APPROVAL_REQUIRED', '修复授权不能用于新候选');
-            ensure(new Set(current.map(m => m.experimentId)).size < c.limits.maxCandidatesPerRound, 'CANDIDATE_LIMIT', '已达到本轮候选上限');
+            const pending = this.app.store.list('research-candidate', c.projectId).filter(p => p.campaignId === c.id && p.roundId === c.currentRoundId && p.state === 'awaiting_implementation' && !p.repairOfMemberId && p.id !== candidate?.id);
+            ensure(new Set(current.filter(m => !m.repairOfMemberId).map(m => m.experimentId)).size + pending.length < c.limits.maxCandidatesPerRound, 'CANDIDATE_LIMIT', '已达到本轮候选上限');
         }
         return this.app.store.create('campaign-member', c.projectId, {
             campaignId: c.id, roundId: c.currentRoundId, experimentId: e.id, intentId, required,
-            ...(repairDecisionId ? { repairDecisionId } : {})
+            ...(repairDecisionId ? { repairDecisionId } : {}), ...(legacyRepairRoot ? { repairRootMemberId: legacyRepairRoot } : {}), ...(candidate ? { candidateId: candidate.id, ...(candidate.repairOfMemberId ? { repairOfMemberId: candidate.repairOfMemberId, repairRootMemberId: candidate.repairRootMemberId } : {}) } : {})
         });
     }
     enroll(actor, id, value) {
@@ -212,6 +227,8 @@ export class CampaignService {
         const o = this.app.store.get('run-observation', observationId, c.projectId);
         ensure(o.campaignId === c.id && o.roundId === c.currentRoundId, 'OBSERVATION_SCOPE_DENIED', '证据不属于活动当前轮次', 403);
         const run = this.app.store.get('run', o.runId, c.projectId);
+        assertExperimentSourceCurrent(this.app.store, this.app.store.get('experiment', run.experimentId, c.projectId));
+        this.app.researchPlans.assertRunSource(run.experimentId, 'execute', run.intentId);
         ensure(runContentDigest(run) === o.contentDigest && run.manifestDigest === o.manifestDigest, 'OBSERVATION_STALE', '观测记录与真实运行不一致');
         const inspected = inspectObservation(run, this.app.evidence);
         ensure(inspected.validation === o.validation && digest(inspected.metrics) === digest(o.metrics), 'EVIDENCE_INVALID', '观测证据已经失效');

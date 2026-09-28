@@ -1,7 +1,7 @@
+import { ResearchPlanFields, ResearchPlanPanel, readResearchPlan, readPlanCandidates } from './research-plan.js';
 import { api } from './api.js';
 import { short, label, number } from './models.js';
 import { Badge, Empty, Modal, SectionTitle } from './ui.js';
-const candidateExample = JSON.stringify([{ title: '新的受控候选', hypothesis: '在固定协议下比较，不预设结论', config: { polynomialDegree: 2, ridge: 0.000001 } }], null, 2);
 export function WakeupPanel({ data, perform, busy, onSession, sessionId }) {
     const items = data.wakeups.filter(w => !sessionId || w.rootSessionId === sessionId);
     if (!items.length)
@@ -48,7 +48,7 @@ export class CampaignView extends React.Component {
         super(...arguments);
         this.state = { selected: '', create: false, decision: false, action: 'refill' };
     }
-    choose() { return this.props.data.campaigns.find(c => c.id === this.state.selected) ?? this.props.data.campaigns[0]; }
+    choose() { const id = this.props.selectedCampaign ?? this.state.selected; return id ? this.props.data.campaigns.find(c => c.id === id) : this.props.data.campaigns[0]; }
     approve(id) { const a = this.props.data.approvals.find(a => a.id === id); if (!a)
         throw new Error('批准记录不存在，请刷新'); return api(`/approvals/${id}/decide`, { expectedVersion: a.version, approved: true }); }
     createModal() {
@@ -56,6 +56,7 @@ export class CampaignView extends React.Component {
         return React.createElement(Modal, { title: "\u5EFA\u7ACB\u6301\u7EED\u7814\u7A76\u6D3B\u52A8", wide: true, busy: busy, onClose: () => this.setState({ create: false }), submitLabel: "\u4FDD\u5B58\u6D3B\u52A8\u8349\u6848", onSubmit: fd => perform(async () => {
                 const c = await api('/campaigns', { projectId: data.project.id, goal: fd.get('goal'), rootSessionId: fd.get('session'), baselineExperimentId: fd.get('baseline'), primaryMetric: fd.get('metric') || undefined, autoAnalyze: fd.get('automatic') === 'on', limits: { maxRounds: Number(fd.get('rounds')), maxAnalysisAttempts: Number(fd.get('attempts')) } });
                 this.setState({ create: false, selected: c.id });
+                this.props.onSelect?.(c.id);
             }) },
             React.createElement("label", null,
                 "\u7814\u7A76\u76EE\u6807",
@@ -86,13 +87,13 @@ export class CampaignView extends React.Component {
         const observations = data.observations.filter(o => o.campaignId === c.id && o.roundId === c.currentRoundId);
         return React.createElement(Modal, { title: "\u63D0\u4EA4\u6709\u8BC1\u636E\u7684\u7814\u7A76\u51B3\u5B9A", wide: true, busy: busy, onClose: () => this.setState({ decision: false }), submitLabel: "\u4FDD\u5B58\u51B3\u5B9A\u63D0\u6848", onSubmit: fd => perform(async () => {
                 const action = String(fd.get('action'));
-                await api(`/campaigns/${c.id}/decisions`, { expectedVersion: c.version, action, reason: fd.get('reason'), observationIds: fd.getAll('observations'), ...(action === 'promote' ? { selectedRunId: fd.get('selectedRun') } : {}), candidates: ['refill', 'promote'].includes(action) ? JSON.parse(String(fd.get('candidates'))) : [] });
+                await api(`/campaigns/${c.id}/decisions`, { expectedVersion: c.version, action, reason: fd.get('reason'), observationIds: fd.getAll('observations'), ...(action === 'promote' ? { selectedRunId: fd.get('selectedRun') } : {}), candidates: action === 'stop' ? [] : readPlanCandidates(fd), ...(action === 'stop' ? {} : { experimentPlan: readResearchPlan(fd, c.primaryMetric) }) });
                 this.setState({ decision: false });
             }, '决定已保存，尚未应用') },
             React.createElement("label", null,
                 "\u51B3\u5B9A\u7C7B\u578B",
                 React.createElement("select", { name: "action", value: this.state.action, onChange: (e) => this.setState({ action: e.target.value }) },
-                    React.createElement("option", { value: "repair" }, "Repair \u00B7 \u539F\u8282\u70B9\u65E0\u7ED3\u679C\u4FEE\u590D"),
+                    React.createElement("option", { value: "repair" }, "Repair \u00B7 \u65E0\u7ED3\u679C\u5019\u9009\u7684\u53D7\u5BA1\u4FEE\u590D"),
                     React.createElement("option", { value: "refill" }, "Refill \u00B7 \u540C\u4E00\u7236\u8282\u70B9\u8865\u5145\u5019\u9009"),
                     React.createElement("option", { value: "promote" }, "Promote \u00B7 \u4FDD\u7559\u7ED3\u679C\u5E76\u521B\u5EFA\u4E0B\u4E00\u8F6E"),
                     React.createElement("option", { value: "stop" }, "Stop \u00B7 \u7ED3\u675F\u5F53\u524D\u7814\u7A76"))),
@@ -116,10 +117,8 @@ export class CampaignView extends React.Component {
                     c.primaryMetric,
                     "=",
                     number(o.metrics[c.primaryMetric]))))) : null,
-            ['refill', 'promote'].includes(this.state.action) ? React.createElement("label", null,
-                "\u5019\u9009\u914D\u7F6E JSON\uFF08Promote \u53EF\u586B []\uFF0C\u968F\u540E\u624B\u52A8\u767B\u8BB0\u5019\u9009\uFF09",
-                React.createElement("textarea", { name: "candidates", className: "code-input", rows: 8, defaultValue: candidateExample, required: true })) : null,
-            React.createElement("p", { className: "small muted" }, "\u5FC5\u9700\u5019\u9009\u5C1A\u672A\u5B8C\u6210\u65F6\uFF0C\u670D\u52A1\u7AEF\u62D2\u7EDD Promote\u3002Repair \u53EA\u6388\u6743\u4E00\u6B21\u65E0\u7ED3\u679C\u8282\u70B9\u4FEE\u590D\uFF1B\u5B83\u4E0D\u4F1A\u81EA\u52A8\u4FEE\u6539\u4EE3\u7801\u6216\u91CD\u8DD1\u3002\u6279\u51C6\u7ED1\u5B9A\u5F53\u524D\u8F93\u5165\u7248\u672C\u3002"));
+            this.state.action !== 'stop' ? React.createElement(ResearchPlanFields, { key: this.state.action, data: data, campaign: c, repair: this.state.action === 'repair' }) : null,
+            React.createElement("p", { className: "small muted" }, "\u5FC5\u9700\u5019\u9009\u5C1A\u672A\u5B8C\u6210\u65F6\uFF0C\u670D\u52A1\u7AEF\u62D2\u7EDD Promote\u3002Repair \u4EC5\u7528\u4E8E\u5DF2\u8BA4\u5B9A\u65E0\u7ED3\u679C\u7684\u5931\u8D25\uFF0C\u5E76\u4FDD\u7559\u539F Run\u3002\u6279\u51C6\u65B9\u6848\u53EA\u51C6\u5907\u5019\u9009\uFF1B\u6D4B\u8BD5\u3001\u5BA1\u67E5\u3001\u6574\u5408\u548C\u6B63\u5F0F Run \u4ECD\u5355\u72EC\u6279\u51C6\u3002"));
     }
     decisionCard(d) {
         const { data, perform, busy } = this.props;
@@ -133,6 +132,11 @@ export class CampaignView extends React.Component {
                 React.createElement(Badge, { value: d.status }),
                 a ? React.createElement(Badge, { value: a.status }) : null),
             React.createElement("p", { className: "prose-text" }, d.reason),
+            d.planRevisionId ? React.createElement("p", null,
+                "\u56FA\u5B9A\u65B9\u6848 ",
+                short(d.planRevisionId),
+                " \u00B7 ",
+                short(d.planDigest)) : React.createElement("p", { className: "small muted" }, "\u5386\u53F2\u517C\u5BB9\u51B3\u5B9A\uFF1A\u672A\u7ED1\u5B9A\u56FA\u5B9A\u7814\u7A76\u65B9\u6848"),
             React.createElement("p", { className: "small muted" },
                 "\u5F15\u7528 ",
                 d.observationIds.length,
@@ -156,10 +160,10 @@ export class CampaignView extends React.Component {
         return React.createElement("div", { className: "campaign-page" },
             React.createElement(SectionTitle, { title: "\u7814\u7A76\u6D3B\u52A8", sub: "\u6301\u4E45\u5316\u8F6E\u6B21\u3001\u771F\u5B9E\u89C2\u6D4B\u548C\u6709\u754C\u51B3\u7B56\uFF1B\u4E0D\u662F\u65E0\u9650\u8FD0\u884C\u7684\u804A\u5929\u3002" },
                 React.createElement("button", { className: "primary", disabled: busy || !data.experiments.length || !data.sessions.some(s => s.role === 'coordinator' && s.state !== 'archived'), onClick: () => this.setState({ create: true }) }, "\u65B0\u5EFA\u7814\u7A76\u6D3B\u52A8")),
-            !c ? React.createElement(Empty, { title: "\u5C1A\u672A\u5EFA\u7ACB\u7814\u7A76\u6D3B\u52A8" }, "\u5148\u521B\u5EFA\u4E3B\u4F1A\u8BDD\u4E0E\u57FA\u7EBF\u5B9E\u9A8C\uFF0C\u518D\u5EFA\u7ACB\u6D3B\u52A8\u3002\u6B63\u5F0F\u8BA1\u7B97\u59CB\u7EC8\u5355\u72EC\u6279\u51C6\u3002") : React.createElement("div", null,
+            !c ? React.createElement(Empty, { title: data.campaigns.length ? "指定研究活动不可用" : "尚未建立研究活动" }, data.campaigns.length ? React.createElement("button", { className: "secondary", onClick: () => { this.setState({ selected: data.campaigns[0].id }); this.props.onSelect?.(data.campaigns[0].id); } }, "\u660E\u786E\u9009\u62E9\u53EF\u7528\u6D3B\u52A8") : "先创建主会话与基线实验，再建立活动。正式计算始终单独批准。") : React.createElement("div", null,
                 React.createElement("label", { className: "campaign-picker" },
                     "\u5F53\u524D\u6D3B\u52A8",
-                    React.createElement("select", { value: c.id, onChange: (e) => this.setState({ selected: e.target.value }) }, data.campaigns.map(item => React.createElement("option", { key: item.id, value: item.id }, item.goal.slice(0, 80))))),
+                    React.createElement("select", { value: c.id, onChange: (e) => { this.setState({ selected: e.target.value, decision: false }); this.props.onSelect?.(e.target.value); } }, data.campaigns.map(item => React.createElement("option", { key: item.id, value: item.id }, item.goal.slice(0, 80))))),
                 React.createElement("section", { className: "campaign-overview" },
                     React.createElement("div", { className: "actions" },
                         React.createElement(Badge, { value: c.state }),
@@ -246,7 +250,10 @@ export class CampaignView extends React.Component {
                                             React.createElement("pre", null, JSON.stringify({ observationId: o.id, evidenceIds: o.evidenceIds, metrics: o.metrics }, null, 2)))) : React.createElement("span", { className: "muted" }, "\u7B49\u5F85\u771F\u5B9E\u7ED3\u679C")),
                                     React.createElement("td", null, !r && i ? React.createElement("div", null,
                                         a?.status === 'pending' ? React.createElement("button", { className: "secondary compact", disabled: busy, onClick: () => perform(() => this.approve(a.id)) }, "\u5355\u72EC\u6279\u51C6\u6B64\u8FD0\u884C") : null,
-                                        React.createElement("button", { className: "secondary compact", disabled: busy || a?.status !== 'approved', onClick: () => perform(() => api(`/run-intents/${i.id}/submit`, {}), '正式 Run 已提交') }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C")) : React.createElement("button", { className: "text-button", onClick: () => onExperiment(m.experimentId) }, "\u65E5\u5FD7\u4E0E\u5FEB\u7167"))); })))) : React.createElement("p", { className: "muted" }, "\u8FD9\u4E00\u8F6E\u5C1A\u672A\u767B\u8BB0\u5019\u9009\u3002"))),
+                                        React.createElement("button", { className: "secondary compact", disabled: busy || a?.status !== 'approved', onClick: () => perform(() => api(`/run-intents/${i.id}/submit`, {}), '正式 Run 已提交') }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C")) : React.createElement("button", { className: "text-button", disabled: !!r && !this.props.onRun, onClick: () => { if (r)
+                                            this.props.onRun?.(r.id, m.experimentId);
+                                        else
+                                            onExperiment(m.experimentId); } }, "\u65E5\u5FD7\u4E0E\u5FEB\u7167"))); })))) : React.createElement("p", { className: "muted" }, "\u8FD9\u4E00\u8F6E\u5C1A\u672A\u767B\u8BB0\u5019\u9009\u3002"))),
                     c.state === 'active' ? React.createElement("form", { className: "enroll-form", onSubmit: (e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); perform(() => api(`/campaigns/${c.id}/members`, { expectedVersion: c.version, intentId: fd.get('intent'), ...(fd.get('repair') ? { repairDecisionId: fd.get('repair') } : {}) }), '已登记候选，未启动运行'); } },
                         React.createElement("label", null,
                             "\u767B\u8BB0\u5DF2\u51C6\u5907\u7684\u56FA\u5B9A RunIntent",
@@ -264,6 +271,7 @@ export class CampaignView extends React.Component {
                                     d.reason.slice(0, 55))))),
                         React.createElement("button", { className: "secondary", disabled: busy || !available.length }, "\u767B\u8BB0\u672C\u8F6E\u5019\u9009")) : null,
                     c.state === 'active' && !available.length ? React.createElement("p", { className: "small muted" }, "\u6CA1\u6709\u53EF\u767B\u8BB0\u7684\u8FD0\u884C\u6E05\u5355\u3002\u8BF7\u5230\u300C\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u300D\u9009\u62E9\u5F53\u524D\u7236\u5B9E\u9A8C\u6216\u5176\u5B50\u5B9E\u9A8C\uFF0C\u5148\u51C6\u5907\u4E0D\u53EF\u53D8\u5FEB\u7167\u3002\u65E0\u7ED3\u679C\u8282\u70B9\u91CD\u65B0\u767B\u8BB0\u65F6\uFF0C\u9700\u9009\u62E9\u672C\u8F6E\u5DF2\u5E94\u7528\u7684 Repair \u51B3\u5B9A\u3002") : null),
+                React.createElement(ResearchPlanPanel, { key: c.id, data: data, campaign: c, busy: busy, perform: perform, onExperiment: onExperiment, onImplementation: this.props.onImplementation, onRun: this.props.onRun }),
                 React.createElement("section", { className: "campaign-section" },
                     React.createElement("h2", null, "\u51B3\u7B56\u5386\u53F2"),
                     data.decisions.filter(d => d.campaignId === c.id).map(d => this.decisionCard(d)),

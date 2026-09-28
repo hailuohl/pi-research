@@ -23,6 +23,7 @@ import {readLogPage} from '../execution/log-page.js';
 import {ComputeQueue} from '../scheduler/compute-queue.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
+    researchSourceGuard?: (experimentId:string,stage:'prepare'|'submit'|'execute',intentId?:string)=>void;
     private launching = new Set<string>();
     constructor(private c: AppContext, private approvals: ApprovalService, private evidence: EvidenceService, private compute = new ComputeQueue(c)) { }
     get(actor: Actor, id: string) { const run = this.c.store.get<Run>('run', id); scope(actor, run.projectId!); return run; }
@@ -32,6 +33,7 @@ export class RunService {
         return this.c.store.transaction(() => {
             const e=this.c.store.get<Experiment>('experiment',experimentId);scope(actor,e.projectId!);assertProjectWritable(this.c.store,e.projectId!);assertExperimentSourceCurrent(this.c.store,e);ensure(e.lifecycle!=='archived','EXPERIMENT_ARCHIVED','归档实验不能执行');assertOutcomeBoundary(this.c.store,e);
             validateContract(e.contract);
+            this.researchSourceGuard?.(experimentId,'prepare');
             const snap=snapshotDirectory(e.workspace,join(this.c.dataDir,'snapshots')),revision=this.c.store.maybe<SourceRevision>('source-revision',digest({projectId:e.projectId,experimentId:e.id,revision:e.revision}));
             const binding=revision?this.c.store.maybe<GitSourceBinding>('git-source-binding',revision.id):undefined;
             const manifest:Manifest={experimentId:e.id,experimentVersion:e.version,experimentRevision:e.revision,contract:structuredClone(e.contract),contractDigest:e.contractDigest,snapshotDigest:snap.digest,snapshotPath:snap.path,sourceFiles:snap.files,createdAt:now(),...(revision?.sourceDigest===snap.digest?{sourceRevisionId:revision.id,...(binding&&binding.sourceDigest===snap.digest?{gitCommit:binding.gitCommit}:{})}:{})};
@@ -49,6 +51,7 @@ export class RunService {
             if (intent.runId)
                 return this.c.store.get<Run>('run', intent.runId);
             assertProjectWritable(this.c.store,intent.projectId!);
+            this.researchSourceGuard?.(intent.experimentId,'submit',intent.id);
             const e = this.c.store.get<Experiment>('experiment', intent.experimentId, intent.projectId!);
             assertExperimentSourceCurrent(this.c.store,e);
             ensure(e.revision === intent.manifest.experimentRevision && e.contractDigest === intent.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
@@ -83,6 +86,7 @@ export class RunService {
     }
     /** Also used just before Docker start and while supervising a running immutable job. */
     assertExecutionGrant(run: Row<Run>) {
+        this.researchSourceGuard?.(run.experimentId,'execute',run.intentId);
         assertProjectWritable(this.c.store, run.projectId!);
         const e = this.c.store.get<Experiment>('experiment', run.experimentId, run.projectId!);
         assertExperimentSourceCurrent(this.c.store, e);

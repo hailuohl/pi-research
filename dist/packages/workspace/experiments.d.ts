@@ -6,6 +6,12 @@ export declare class ExperimentService {
     private projects;
     constructor(c: AppContext, projects: ProjectService);
     get(actor: Actor, id: string): Row<Experiment>;
+    /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
+    createFromRevision(actor: Actor, projectId: string, snapshotId: string, spec: {
+        title: string;
+        hypothesis: string;
+        config?: Record<string, unknown>;
+    }): Row<Experiment>;
     create(actor: Actor, projectId: string, input: unknown): Row<Experiment>;
     /** Host-only integration of a fixed proposal; never takes caller-supplied filesystem paths. */
     createApprovedChild(actor: Actor, proposal: Row<ChangeProposal>): Row<Experiment>;

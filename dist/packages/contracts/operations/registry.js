@@ -83,7 +83,7 @@ function executeRegistered(c, name, x) {
         const c = app.campaigns.get(actor, campaignId);
         app.campaigns.coordinator(actor, c);
         if (name === 'campaign_inspect')
-            return { campaign: c, members: app.campaigns.members(actor, c.id), rounds: app.campaigns.rounds(actor, c.id), observations: app.campaigns.observations(actor, c.id), decisions: app.campaigns.decisions(actor, c.id) };
+            return { campaign: c, members: app.campaigns.members(actor, c.id), rounds: app.campaigns.rounds(actor, c.id), observations: app.campaigns.observations(actor, c.id), decisions: app.campaigns.decisions(actor, c.id), plans: app.store.list('experiment-plan-revision', pid).filter(p => p.campaignId === c.id), candidates: app.store.list('research-candidate', pid).filter(p => p.campaignId === c.id) };
         if (name === 'campaign_enroll')
             return app.campaigns.enroll(actor, c.id, x);
         if (name === 'campaign_decision_submit')
@@ -141,6 +141,10 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('campaign_plan_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.researchPlans.inspect(c.actor, c.projectId, x.planRevisionId) }),
+    make('campaign_candidate_prepare', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.researchPlans.prepareCandidate(c.actor, c.projectId, x) }),
+    make('campaign_candidate_attach', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.researchPlans.attachCandidate(c.actor, c.projectId, x) }),
+    make('campaign_comparison', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.researchPlans.comparison(c.actor, c.projectId, x) }),
     make('publication_review_prepare', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.publicationReviews.prepare(c.actor, c.projectId, x) }),
     make('publication_review_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.inspect(c.actor, c.projectId, x.reviewId) }),
     make('publication_review_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.list(c.actor, c.projectId, { resultId: x.resultId }) }),

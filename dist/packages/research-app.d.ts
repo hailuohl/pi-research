@@ -19,6 +19,7 @@ import { ChangeProposalService } from './workspace/change-proposals.js';
 import { WakeupService } from './scheduler/wakeups.js';
 import { DecisionService } from './research-workflows/decision-service.js';
 import { CampaignService } from './research-workflows/campaign-service.js';
+import { ResearchPlanService } from './research-workflows/plans.js';
 import { ReportService } from './publications/reports.js';
 import { LiteratureService } from './literature/service.js';
 import { SessionService } from './pi-adapter/sessions.js';
@@ -52,6 +53,7 @@ export declare class ResearchApp {
     readonly wakeups: WakeupService;
     readonly decisions: DecisionService;
     readonly campaigns: CampaignService;
+    readonly researchPlans: ResearchPlanService;
     readonly literature: LiteratureService;
     readonly reports: ReportService;
     readonly sessions: SessionService;
