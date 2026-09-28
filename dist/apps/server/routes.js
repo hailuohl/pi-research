@@ -183,8 +183,6 @@ export function writeRoute(app, host, path, body, method = 'POST') {
         return app.evidence.proposeClaim(USER, text(x.projectId, 'projectId', 100), text(x.statement, 'statement', 10000), strings(x.evidenceIds, 'evidenceIds'), strings(x.limitations ?? [], 'limitations'));
     if (kind === 'claims' && id && action === 'decide')
         return app.evidence.decideClaim(USER, id, integer(x.expectedVersion, 'expectedVersion', 1), oneOf(x.status, ['accepted', 'rejected', 'disputed'], 'status'));
-    if (path === '/reports')
-        return app.reports.create(USER, text(x.projectId, 'projectId', 100), x);
     if (path === '/settings/model')
         return app.sessions.configure(USER, x);
     throw new DomainError('NOT_FOUND', '此操作未实现', 404);

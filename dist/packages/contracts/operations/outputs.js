@@ -1,4 +1,5 @@
 import { GIT_OUTPUT_SCHEMAS } from './git-schemas.js';
+import { REPORT_OUTPUT_SCHEMAS } from './report-schemas.js';
 import { REVIEW_OUTPUT_SCHEMAS } from './review-schemas.js';
 import { DEVELOPMENT_OUTPUT_SCHEMAS } from './development-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
@@ -105,16 +106,19 @@ const decision = row('campaign-decision', {
 const corpusSource = object({ artifactId: string, digest: string, title: string, size: integer });
 const chunkSource = object({ artifactId: string, digest: string, title: string, locator, lineStart: integer, lineEnd: integer });
 const contextTask = object({ id: string, key: string, result: taskResult }, ['result']);
+const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string }, ['wakeupId', 'runId', 'taskId']);
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
-    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,
     reviewed_change_prepare: CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
     artifact_read: object({ artifactId: string, digest: string, title: string, mediaType: string, content: string, cursor: integer, complete: boolean }),
-    artifact_create: row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string }, ['wakeupId', 'runId', 'taskId']),
+    artifact_create: artifact,
+    report_create: artifact,
+    report_export: artifact,
     evidence_register: evidence,
     evidence_read: evidence,
     session_notice_read: object({ messageId: string, content: string, cursor: integer, complete: boolean }),

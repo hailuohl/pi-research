@@ -88,27 +88,7 @@ export class EvidenceView extends React.Component<{
  <section className="surface"><div className="surface-heading"><h2>结论候选与验收</h2><button className="secondary compact" disabled={!data.evidence.length} onClick={this.props.onClaim}>提出结论候选</button></div>{data.claims.map(c => <div className="claim-record" key={c.id}><Badge value={c.status}/><p>{c.statement}</p>{c.validity==='stale'?<p className="inline-warning">前提或审查已失效：仅保留历史，不用于新报告。</p>:null}<p className="small muted">限制：{c.limitations.join('；') || '未填写'} · 证据 {c.evidenceIds.map(short).join(', ')}</p>{c.status === 'proposal' && c.validity !== 'stale' ? <div className="actions"><button className="secondary compact" onClick={() => perform(() => api(`/claims/${c.id}/decide`, { expectedVersion: c.version, status: 'accepted' }), '结论已由用户采纳')}>人工确认采纳</button><button className="text-button" onClick={() => perform(() => api(`/claims/${c.id}/decide`, { expectedVersion: c.version, status: 'disputed' }))}>标为争议</button><button className="text-button danger" onClick={() => perform(() => api(`/claims/${c.id}/decide`, { expectedVersion: c.version, status: 'rejected' }))}>拒绝</button></div> : null}</div>)}{!data.claims.length ? <div className="inline-empty">尚无结论候选。多个 Agent 一致同意，不会自动生成已采纳事实。</div> : null}</section></div>;
     }
 }
-export class ReportsView extends React.Component<{
-    data: ProjectState;
-    perform: Perform;
-}, {
-    title: string;
-    content: string;
-    artifactId: string;
-    selected: string[] | null;
-}> {
-    state = { title: '研究结果报告', content: '', artifactId: '', selected: null as string[] | null };
-    async open(id: string) { await this.props.perform(async () => this.setState({ artifactId: id, content: await artifactText(id) })); }
-    render() {
-        const { data, perform } = this.props;
-        const eligible = data.runs.filter(r => ['succeeded', 'failed', 'cancelled'].includes(r.state));
-        const selected = this.state.selected ?? eligible.map(r => r.id);
-        const reports = data.artifacts.filter(a => a.origin === 'report');
-        const current = data.artifacts.find(a => a.id === this.state.artifactId);
-        return <div className="page-scroll"><SectionTitle title="报告与成果" sub="从实际结果生成真实文件，不补写未测量的数据。"/><section className="surface report-builder"><h2>生成可追溯结果记录</h2><label>报告名称<input aria-label="报告名称" value={this.state.title} onChange={(e: any) => this.setState({ title: e.target.value })}/></label><div className="run-selection">{eligible.map(r => <label key={r.id}><input type="checkbox" checked={selected.includes(r.id)} onChange={(e: any) => this.setState({ selected: e.target.checked ? [...selected, r.id] : selected.filter(id => id !== r.id) })}/><span>{data.experiments.find(e => e.id === r.experimentId)?.title}<small>{short(r.id)}</small></span><Badge value={r.integrity}/></label>)}</div><div className="actions"><button className="primary" disabled={!selected.length || !this.state.title.trim()} onClick={() => perform(async () => { const a = await api('/reports', { projectId: data.project.id, title: this.state.title, runIds: selected, claimIds: data.claims.filter(c => c.status === 'accepted' && c.validity !== 'stale').map(c => c.id) }); this.setState({ artifactId: a.id, content: await artifactText(a.id) }); }, '已生成实际 Markdown 报告')}><Icon name="report" size={16}/>生成结果报告</button><span className="small muted">只纳入选中终态 Run 与当前有效的已采纳 Claim；{data.claims.filter(c => c.validity === 'stale').length} 条失效结论保留在历史中，不纳入本次报告</span></div></section>
- <div className="evidence-grid"><section className="surface artifact-list"><div className="surface-heading"><h2>已生成报告</h2></div>{reports.map(a => <button className={'artifact-item ' + (a.id === this.state.artifactId ? 'active' : '')} onClick={() => this.open(a.id)} key={a.id}><Icon name="report"/><div><strong>{a.title}</strong><small>{date(a.createdAt)}</small></div></button>)}{!reports.length ? <div className="inline-empty">尚未生成报告。</div> : null}</section><section className="surface artifact-preview"><div className="surface-heading"><h2>{current?.title ?? '报告预览'}</h2>{current ? <button className="secondary compact" onClick={() => perform(() => downloadArtifact(current.id, current.title))}>下载 Markdown</button> : null}</div>{this.state.content ? <pre className="document-preview">{this.state.content}</pre> : <Empty title="证据先于结论"><p>报告将保留运行状态、实测指标、快照和证据 ID。LaTeX 与 PDF 编译尚未实现。</p></Empty>}</section></div></div>;
-    }
-}
+export {ReportsView} from './report-view.js';
 export class LiteratureView extends React.Component<{
     data: ProjectState;
     perform: Perform;

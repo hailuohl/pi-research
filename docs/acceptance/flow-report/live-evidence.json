@@ -1,0 +1,373 @@
+{
+  "capturedAt": "2026-09-28T06:44:49.296Z",
+  "method": "Report and export requested through real browser UI; archive independently listed, extracted and checked against current fixed report bindings",
+  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+  "reportId": "28b4360a-b410-4956-b56e-125e094a74f7",
+  "artifactId": "d7c6a428-1642-4a1d-98cd-ea3e5cf44d0b",
+  "formatVersion": 1,
+  "bindingsDigest": "c50594f06f6e2e53561430ebcd7e58de7db6d0986cdcc3f02256872217b658ec",
+  "inspection": {
+    "id": "28b4360a-b410-4956-b56e-125e094a74f7",
+    "artifactId": "d7c6a428-1642-4a1d-98cd-ea3e5cf44d0b",
+    "title": "二阶回归真实实现与审查结果记录",
+    "formatVersion": 1,
+    "integrity": "verified",
+    "validity": "current",
+    "reasons": [],
+    "references": [
+      {
+        "type": "run",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "label": "Run ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+        "id": "64a53514d128703de8f880b3ed105f6c542aec76227629a9c53efd3ddaf60f97"
+      },
+      {
+        "type": "artifact",
+        "targetId": "c635e6b8-be64-4f85-a2a8-8d25ea9d8471",
+        "label": "metrics.json",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "d15bc211d75cf880de400374bf308c15daeab8e55be5f618a4f03069be12ad00"
+      },
+      {
+        "type": "artifact",
+        "targetId": "9655e139-97dd-484f-8f68-1b7dd8d4435e",
+        "label": "model.json",
+        "digest": "80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "1c750c3fb5ed9a1556e98a5785fa42d6e6d6a6100f5caef8d51f9c3fe05ce1f8"
+      },
+      {
+        "type": "artifact",
+        "targetId": "84411932-b54b-4398-be59-68fbd73386f6",
+        "label": "predictions.csv",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "40c6aba13e6264a548bf19e91a6b14b58b004db5473d308b0d3cf54f1d36f56c"
+      },
+      {
+        "type": "artifact",
+        "targetId": "5e83a064-dfcb-4776-bb40-940bfd27a201",
+        "label": "stdout.log",
+        "digest": "7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "21cb2a21ffd27b283318d7fc830fe671c59ff37e0b3d15aaa64b7bb3d8fa9132"
+      },
+      {
+        "type": "artifact",
+        "targetId": "6cd2b1a3-6f76-4fe4-b935-5687c85bf79a",
+        "label": "stderr.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "f7dbafa59f308a367a2f5268fcc7552ff4055e35c58fa840472a2b74f48cb700"
+      },
+      {
+        "type": "artifact",
+        "targetId": "8b9e594c-ca81-4bfb-91c5-7381289335a1",
+        "label": "execution.json",
+        "digest": "4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "145a2c4b543cfe85399d7b5e61ab16ea34b1aafb969f3439728061b24f2b4a4d"
+      },
+      {
+        "type": "evidence",
+        "targetId": "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+        "label": "真实运行输出指标（解释仍需审核）",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "config.json",
+        "digest": "f91a8e608c044d16c872ce4c75f0709407ab63ea5e0aba9452c81ee9353c8f33",
+        "label": "config.json",
+        "relation": "exact",
+        "id": "6e27f5ab6ec2a3c39f587bd517548fa96289a4a0675dacd2ed9605f3f67433ed"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "data.csv",
+        "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+        "label": "data.csv",
+        "relation": "exact",
+        "id": "abefe8e969aed717a17a472bcbf4a425bd32bd64ce1b6d6552a5bd31e841c9fa"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "main.py",
+        "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+        "label": "main.py",
+        "relation": "exact",
+        "id": "602e97a6c77279689f7742483d3860ed683e5bf048641d43fa28e482505e92f9"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "README.md",
+        "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+        "label": "README.md",
+        "relation": "exact",
+        "id": "60f9f6ac7bacb85271b10612337cfabf04d968c2d860add2d19b416045a98bd9"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "test_main.py",
+        "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+        "label": "test_main.py",
+        "relation": "exact",
+        "id": "65720765cf3e62af89830771991776ac39e62707da667222e00632fb540299f5"
+      },
+      {
+        "type": "development-job",
+        "targetId": "074803b8-5d7c-4892-b78d-725db988e7d7",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5",
+        "relation": "exact",
+        "label": "该源码版本的开发测试",
+        "id": "4f5b088b8909139c7ecc3d304150f5e73563b65e816a0992b64fc84dbbe2360b"
+      },
+      {
+        "type": "artifact",
+        "targetId": "f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a",
+        "label": "stdout.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "id": "4a2d8eca3e979900287da3c127dc9bf4e4d182812ecba24e26a013cb2d2894fe"
+      },
+      {
+        "type": "artifact",
+        "targetId": "6a31fde5-077a-4437-b750-89aea3bfff10",
+        "label": "stderr.log",
+        "digest": "50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+        "id": "ee7153b3bc26526b8cf22e40d68f6b2c9c5e94b56f476c2674846952bc697ea3"
+      },
+      {
+        "type": "artifact",
+        "targetId": "d0c4e3d0-e6ff-4ad2-b32c-75d017304786",
+        "label": "test-report.json",
+        "digest": "6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+        "id": "cc74e4d710e578cf6fb436b3167f21094235a92e998bda076e9bdb289627aaaa"
+      },
+      {
+        "type": "development-review",
+        "targetId": "4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc",
+        "relation": "exact",
+        "label": "该源码版本的独立审查",
+        "id": "09ab325da5d58c6fa73253513f9bbe5757fe59045761fb3cbea67f0494c6a56b"
+      },
+      {
+        "type": "artifact",
+        "targetId": "ecfc93f7-2f82-4b0d-82f9-fe950676456c",
+        "label": "development-review-manifest.json",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "id": "bc11213e3038d37d8341f54ea5807336736cba83cf36d758907fab60e0b719b0"
+      },
+      {
+        "type": "evidence",
+        "targetId": "235c2f4a-4760-45e7-b15c-1e9a03443c4f",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "id": "a05105db4eb5c14d8fc6cbc6ab7ea926694da4769da9a2e4a2fdefce19544b04"
+      },
+      {
+        "type": "artifact",
+        "targetId": "1bd1306d-f6da-4a44-987a-6b1d746c65e0",
+        "label": "development-review-test-report.json",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "id": "cafd1a8154f1e063dd1f44b4840d2c9851f9951b078016d32b2d416899fcb3cc"
+      },
+      {
+        "type": "evidence",
+        "targetId": "1ca8106b-789a-411f-8663-0b8a4649db92",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "id": "8f62c9500f47669ab8f2dea81a24a4f830582391511346b7a7dd425457a7dedc"
+      },
+      {
+        "type": "artifact",
+        "targetId": "ce9238fc-aa03-4350-8ada-64a7fd29e098",
+        "label": "development-review-stdout.json",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "id": "43196cfe4de283fe22f957762556d256177d74e71ea8cb830af667d0f7a73fbf"
+      },
+      {
+        "type": "evidence",
+        "targetId": "51577370-5ff9-4375-9a72-3edf6d8123e8",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "id": "90efad6c66b338a5fdcbcde2a82f23db9545c3f3929d41c8489ac1955aa1a721"
+      },
+      {
+        "type": "artifact",
+        "targetId": "81d735f1-c612-42a1-9861-b0da17913835",
+        "label": "development-review-stderr.json",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "id": "3f0fbb957170eac7d9d589943d814808522add4fd51f8cae17b1cb91b4d5b814"
+      },
+      {
+        "type": "evidence",
+        "targetId": "8679e01e-cfe2-4c40-aec4-5eb2c3e17f20",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "id": "ed3883756d05e9f1d64ea60c5536e2c1b5cb9ba6c4b16994a0da4269000ac11a"
+      }
+    ],
+    "runs": [
+      {
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+        "revision": 1,
+        "state": "succeeded",
+        "integrity": "complete",
+        "judgment": "pending",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+        "gitCommit": "61dcde6a882f4852a48fa8930e320babd7d23951",
+        "metrics": [
+          {
+            "name": "mse",
+            "value": 0.000050345031695457565,
+            "unit": "squared-target",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          },
+          {
+            "name": "train_mse",
+            "value": 0.00004962382619455619,
+            "unit": "未定义",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          },
+          {
+            "name": "r2",
+            "value": 0.9999474271448613,
+            "unit": "未定义",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          }
+        ]
+      }
+    ]
+  },
+  "export": {
+    "artifactId": "961e1dac-dd7b-467a-b5c7-057338591e91",
+    "title": "report-28b4360a-b410-4956-b56e-125e094a74f7.tar.gz",
+    "digest": "6d30ce67b4ecfc24235947e52233adaf0f134d5cc8ccdd575af67d2e0948dd0d",
+    "size": 17148,
+    "files": [
+      {
+        "path": "artifacts/142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "size": 1521
+      },
+      {
+        "path": "artifacts/1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "size": 93
+      },
+      {
+        "path": "artifacts/4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+        "digest": "4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+        "size": 944
+      },
+      {
+        "path": "artifacts/50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+        "digest": "50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+        "size": 513
+      },
+      {
+        "path": "artifacts/562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "size": 323
+      },
+      {
+        "path": "artifacts/5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "size": 3463
+      },
+      {
+        "path": "artifacts/6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+        "digest": "6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+        "size": 677
+      },
+      {
+        "path": "artifacts/7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+        "digest": "7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+        "size": 120
+      },
+      {
+        "path": "artifacts/80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+        "digest": "80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+        "size": 91
+      },
+      {
+        "path": "artifacts/e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "size": 1076
+      },
+      {
+        "path": "artifacts/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0
+      },
+      {
+        "path": "artifacts/ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "size": 848
+      },
+      {
+        "path": "report.md",
+        "digest": "10cb140dd8ac95dcc22e630e421afe715cf95da90c4141dc28ff718a5d9aa407",
+        "size": 5690
+      },
+      {
+        "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/config.json",
+        "mode": "100644",
+        "digest": "f91a8e608c044d16c872ce4c75f0709407ab63ea5e0aba9452c81ee9353c8f33",
+        "size": 27
+      },
+      {
+        "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/data.csv",
+        "mode": "100644",
+        "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+        "size": 8657
+      },
+      {
+        "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/main.py",
+        "mode": "100644",
+        "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+        "size": 2617
+      },
+      {
+        "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/README.md",
+        "mode": "100644",
+        "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+        "size": 61
+      },
+      {
+        "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/test_main.py",
+        "mode": "100644",
+        "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+        "size": 2308
+      }
+    ],
+    "entries": 20
+  },
+  "verification": {
+    "allFilesMatch": true,
+    "allFilesRegular": true,
+    "currentCredentialAbsent": true,
+    "applicationPathsAbsent": true,
+    "mutableWorkspaceExcluded": true
+  },
+  "browserDownload": "Requested in browser; destination path not confirmed"
+}

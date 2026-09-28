@@ -20,7 +20,7 @@ export function operationRoute(app: ResearchApp, path: string, body: unknown, ke
         }) };
     }
     const legacyInput = object(body), legacyScope = {scope: `${method}:${path}`, input: {body, query}};
-    const projectOperations: Record<string, string> = {'/connectors/discover': 'literature_discover', '/literature-search': 'literature_search', '/text-evidence-search': 'text_evidence_search', '/artifacts': 'artifact_create', '/evidence': 'evidence_register', '/experiments': 'experiment_plan_submit'};
+    const projectOperations: Record<string, string> = {'/reports':'report_create','/connectors/discover': 'literature_discover', '/literature-search': 'literature_search', '/text-evidence-search': 'text_evidence_search', '/artifacts': 'artifact_create', '/evidence': 'evidence_register', '/experiments': 'experiment_plan_submit'};
     if (projectOperations[path]) {
         const {projectId, ...input} = legacyInput, id = projectOperations[path];
         return {result: app.operations.execute(USER, id, input, {projectId: text(projectId, 'projectId', 100), idempotencyKey: key, signal, ...(['literature_discover', 'literature_search'].includes(id) ? {} : {legacy: legacyScope})})};

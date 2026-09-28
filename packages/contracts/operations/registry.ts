@@ -4,7 +4,7 @@ import type {ResearchApp} from '../../research-app.js';
 import type {Actor, Session, Row, Task, TaskAttempt, Project} from '../../domain/types.js';
 import {ensure} from '../../domain/errors.js';
 import {text, object, integer} from '../validation.js';
-import {scope, toolAllowed, AUTOMATION_TOOLS} from '../../policy/permissions.js';
+import {scope, userOnly, toolAllowed, AUTOMATION_TOOLS} from '../../policy/permissions.js';
 import {assertProjectWritable} from '../../policy/lifecycle.js';
 import {readText, writeText, listFiles} from '../../workspace/files.js';
 import {INPUT_SCHEMAS} from './inputs.js';
@@ -80,6 +80,8 @@ function authorizeRegistered(c: OperationContext, name: string, x: Record<string
     }
 }
 function externalReplay(c: OperationContext, name: string, x: Record<string, unknown>) {
+    // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
+    if (name === 'report_export') return {key:c.idempotencyKey!,completed:true};
     if (name === 'paper_read') return paperReplay(c, x);
     const discover = name === 'literature_discover';
     const serviceScope = discover ? `connector-search:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}` : `literature:${c.projectId}`;
@@ -159,6 +161,10 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('report_create',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.reports.create(c.actor,c.projectId,x)}),
+    make('report_inspect',{idempotencyPolicy:'read-only',authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.reports.inspect(c.actor,c.projectId,x.reportId as string)}),
+    make('report_reference_read',{idempotencyPolicy:'read-only',authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.reports.readReference(c.actor,c.projectId,x.reportId as string,x.referenceId as string,x.cursor as number|undefined,x.limit as number|undefined)}),
+    make('report_export',{idempotencyPolicy:'key-required',asynchronous:true,authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.exports.create(c.actor,c.projectId,{reportId:x.reportId as string},c.idempotencyKey!,c.validate)}),
     make('development_review_prepare',{idempotencyPolicy:'key-required',authorize:(c,x)=>{c.app.development.inspect(c.actor,c.projectId,x.jobId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.prepare(c.actor,c.projectId,x)}),
     make('development_review_inspect',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.developmentReviews.inspect(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.inspect(c.actor,c.projectId,x.reviewId as string)}),
     make('development_review_source_list',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.developmentReviews.sourceList(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.sourceList(c.actor,c.projectId,x.reviewId as string)}),
@@ -309,7 +315,7 @@ export class OperationRegistry {
             if (id === 'run_submit') { path = `/run-intents/${input.intentId}/submit`; body = {}; }
             if (id === 'change_proposal_prepare') { path = '/change-proposals'; body = {projectId: pid, ...input}; }
             if (id === 'workspace_write' && input.source === 'project') { path = `/projects/${pid}/files`; const {source, ...rest} = input; body = rest; }
-            const projectPaths: Record<string, string> = {text_evidence_search: '/text-evidence-search', artifact_create: '/artifacts', evidence_register: '/evidence', experiment_plan_submit: '/experiments'};
+            const projectPaths: Record<string, string> = {report_create:'/reports',text_evidence_search: '/text-evidence-search', artifact_create: '/artifacts', evidence_register: '/evidence', experiment_plan_submit: '/experiments'};
             if (projectPaths[id]) { path = projectPaths[id]; body = {projectId: pid, ...input}; }
             if (id === 'campaign_enroll' || id === 'campaign_decision_submit') { path = `/campaigns/${input.campaignId}/${id === 'campaign_enroll' ? 'members' : 'decisions'}`; const {campaignId, ...rest} = input; body = rest; }
             if (id === 'collaboration_plan_submit' || id === 'agent_delegate') { path = `/sessions/${session!.id}/teams`; body = input; }
@@ -336,6 +342,10 @@ export class OperationRegistry {
             return spec.execute(context, input);
         };
         if (spec.asynchronous) {
+            if (id === 'report_export') {
+                const previous=lookup();
+                if(previous)return output(previous.value);
+            }
             context.validate();
             const hash = digest(request), pendingId = digest({scope: operationScope, key});
             const inFlight = this.pending.get(pendingId);

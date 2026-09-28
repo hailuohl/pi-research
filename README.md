@@ -24,11 +24,13 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 54 个操作（包含旧工具、固定源码、开发测试、Git、独立审查及受审整合）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用。
+- 58 个操作（包含固定源码、开发测试、Git、独立审查、受审整合及报告交付）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；报告生成/导出保留用户权限，不因统一接口扩大 Agent 权限。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 
 **实现与审查** 页已支持选择实验固定版本、准备私有 Git 工作区、查看/保存代码、批准开发测试、阅读日志、启动独立审查并批准完整源码差异。通过后创建新子实验，再到 **实验与运行** 单独批准正式 Run、回查指标与固定源码。真实 Pi、失败修复、Docker 测试及正式运行的完整浏览器路径见[首条闭环验收](docs/acceptance/flow-implementation/RESULTS.zh-CN.md)。
+
+**报告与成果** 页可从所选 Run 生成固定报告，点击指标回查原始证据，查看对应源码、开发测试和审查，再显式生成本地 `tar.gz` 成果包。来源撤销后保留历史原文并阻止新导出；旧版报告明确标示没有固定引用绑定。导出需要原生 `tar`，压缩在数据库写锁之外执行，原始输入及清单最多 30 MiB、压缩包最多 32 MiB。包内保留逻辑文件模式，Windows 导出后在支持执行权限的平台按清单恢复。报告/PDF 编译仍属后续范围，详见[报告交付验收](docs/acceptance/flow-report/RESULTS.zh-CN.md)。
 
 ## 读取技能
 

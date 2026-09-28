@@ -166,57 +166,7 @@ export class EvidenceView extends React.Component {
                 !data.claims.length ? React.createElement("div", { className: "inline-empty" }, "\u5C1A\u65E0\u7ED3\u8BBA\u5019\u9009\u3002\u591A\u4E2A Agent \u4E00\u81F4\u540C\u610F\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u751F\u6210\u5DF2\u91C7\u7EB3\u4E8B\u5B9E\u3002") : null));
     }
 }
-export class ReportsView extends React.Component {
-    constructor() {
-        super(...arguments);
-        this.state = { title: '研究结果报告', content: '', artifactId: '', selected: null };
-    }
-    async open(id) { await this.props.perform(async () => this.setState({ artifactId: id, content: await artifactText(id) })); }
-    render() {
-        const { data, perform } = this.props;
-        const eligible = data.runs.filter(r => ['succeeded', 'failed', 'cancelled'].includes(r.state));
-        const selected = this.state.selected ?? eligible.map(r => r.id);
-        const reports = data.artifacts.filter(a => a.origin === 'report');
-        const current = data.artifacts.find(a => a.id === this.state.artifactId);
-        return React.createElement("div", { className: "page-scroll" },
-            React.createElement(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u4ECE\u5B9E\u9645\u7ED3\u679C\u751F\u6210\u771F\u5B9E\u6587\u4EF6\uFF0C\u4E0D\u8865\u5199\u672A\u6D4B\u91CF\u7684\u6570\u636E\u3002" }),
-            React.createElement("section", { className: "surface report-builder" },
-                React.createElement("h2", null, "\u751F\u6210\u53EF\u8FFD\u6EAF\u7ED3\u679C\u8BB0\u5F55"),
-                React.createElement("label", null,
-                    "\u62A5\u544A\u540D\u79F0",
-                    React.createElement("input", { "aria-label": "\u62A5\u544A\u540D\u79F0", value: this.state.title, onChange: (e) => this.setState({ title: e.target.value }) })),
-                React.createElement("div", { className: "run-selection" }, eligible.map(r => React.createElement("label", { key: r.id },
-                    React.createElement("input", { type: "checkbox", checked: selected.includes(r.id), onChange: (e) => this.setState({ selected: e.target.checked ? [...selected, r.id] : selected.filter(id => id !== r.id) }) }),
-                    React.createElement("span", null,
-                        data.experiments.find(e => e.id === r.experimentId)?.title,
-                        React.createElement("small", null, short(r.id))),
-                    React.createElement(Badge, { value: r.integrity })))),
-                React.createElement("div", { className: "actions" },
-                    React.createElement("button", { className: "primary", disabled: !selected.length || !this.state.title.trim(), onClick: () => perform(async () => { const a = await api('/reports', { projectId: data.project.id, title: this.state.title, runIds: selected, claimIds: data.claims.filter(c => c.status === 'accepted' && c.validity !== 'stale').map(c => c.id) }); this.setState({ artifactId: a.id, content: await artifactText(a.id) }); }, '已生成实际 Markdown 报告') },
-                        React.createElement(Icon, { name: "report", size: 16 }),
-                        "\u751F\u6210\u7ED3\u679C\u62A5\u544A"),
-                    React.createElement("span", { className: "small muted" },
-                        "\u53EA\u7EB3\u5165\u9009\u4E2D\u7EC8\u6001 Run \u4E0E\u5F53\u524D\u6709\u6548\u7684\u5DF2\u91C7\u7EB3 Claim\uFF1B",
-                        data.claims.filter(c => c.validity === 'stale').length,
-                        " \u6761\u5931\u6548\u7ED3\u8BBA\u4FDD\u7559\u5728\u5386\u53F2\u4E2D\uFF0C\u4E0D\u7EB3\u5165\u672C\u6B21\u62A5\u544A"))),
-            React.createElement("div", { className: "evidence-grid" },
-                React.createElement("section", { className: "surface artifact-list" },
-                    React.createElement("div", { className: "surface-heading" },
-                        React.createElement("h2", null, "\u5DF2\u751F\u6210\u62A5\u544A")),
-                    reports.map(a => React.createElement("button", { className: 'artifact-item ' + (a.id === this.state.artifactId ? 'active' : ''), onClick: () => this.open(a.id), key: a.id },
-                        React.createElement(Icon, { name: "report" }),
-                        React.createElement("div", null,
-                            React.createElement("strong", null, a.title),
-                            React.createElement("small", null, date(a.createdAt))))),
-                    !reports.length ? React.createElement("div", { className: "inline-empty" }, "\u5C1A\u672A\u751F\u6210\u62A5\u544A\u3002") : null),
-                React.createElement("section", { className: "surface artifact-preview" },
-                    React.createElement("div", { className: "surface-heading" },
-                        React.createElement("h2", null, current?.title ?? '报告预览'),
-                        current ? React.createElement("button", { className: "secondary compact", onClick: () => perform(() => downloadArtifact(current.id, current.title)) }, "\u4E0B\u8F7D Markdown") : null),
-                    this.state.content ? React.createElement("pre", { className: "document-preview" }, this.state.content) : React.createElement(Empty, { title: "\u8BC1\u636E\u5148\u4E8E\u7ED3\u8BBA" },
-                        React.createElement("p", null, "\u62A5\u544A\u5C06\u4FDD\u7559\u8FD0\u884C\u72B6\u6001\u3001\u5B9E\u6D4B\u6307\u6807\u3001\u5FEB\u7167\u548C\u8BC1\u636E ID\u3002LaTeX \u4E0E PDF \u7F16\u8BD1\u5C1A\u672A\u5B9E\u73B0\u3002")))));
-    }
-}
+export { ReportsView } from './report-view.js';
 export class LiteratureView extends React.Component {
     constructor() {
         super(...arguments);

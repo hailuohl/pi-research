@@ -131,7 +131,7 @@ class ExperimentModal extends React.Component {
 class App extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun: saved().selectedRun ?? '', messages: [], stream: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
+        this.state = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun: saved().selectedRun ?? '', selectedReport: saved().selectedReport ?? '', messages: [], stream: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
         this.refreshing = false;
         this.refreshEpoch = 0;
         this.cursor = 0;
@@ -173,8 +173,8 @@ class App extends React.Component {
     }
     componentWillUnmount() { clearInterval(this.timer); clearTimeout(this.noticeTimer); }
     componentDidUpdate(_, prev) {
-        if (['projectId', 'sessionId', 'tab', 'selectedExp', 'selectedRun'].some(k => prev[k] !== this.state[k]))
-            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun }));
+        if (['projectId', 'sessionId', 'tab', 'selectedExp', 'selectedRun', 'selectedReport'].some(k => prev[k] !== this.state[k]))
+            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport }));
     }
     async refresh(quiet = false) {
         if (this.refreshing || quiet && this.state.busy)
@@ -212,7 +212,7 @@ class App extends React.Component {
             this.refreshing = false;
         }
     }
-    switchProject(id) { this.refreshEpoch++; this.cursor = 0; this.setState({ projectId: id, sessionId: '', selectedExp: '', stream: '', data: null }, () => { void this.refresh(); }); }
+    switchProject(id) { this.refreshEpoch++; this.cursor = 0; this.setState({ projectId: id, sessionId: '', selectedExp: '', selectedRun: '', selectedReport: '', stream: '', data: null }, () => { void this.refresh(); }); }
     selectSession(id) { this.refreshEpoch++; this.setState({ sessionId: id, tab: 'chat', stream: '' }, () => { void this.refresh(); }); }
     open(modal, data = null) { this.setState({ modal, modalData: data, error: '' }); }
     async newSession() {
@@ -228,7 +228,7 @@ class App extends React.Component {
         const base = { onClose: this.close, busy };
         const done = () => this.setState({ modal: '', modalData: null });
         if (modal === 'project')
-            return React.createElement(Modal, { ...base, title: "\u65B0\u5EFA\u672C\u5730\u9879\u76EE", submitLabel: "\u521B\u5EFA\u9879\u76EE", onSubmit: fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); this.setState({ projectId: p.id, sessionId: s.id, selectedExp: '', tab: 'chat' }); done(); }) },
+            return React.createElement(Modal, { ...base, title: "\u65B0\u5EFA\u672C\u5730\u9879\u76EE", submitLabel: "\u521B\u5EFA\u9879\u76EE", onSubmit: fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); this.setState({ projectId: p.id, sessionId: s.id, selectedExp: '', selectedRun: '', selectedReport: '', tab: 'chat' }); done(); }) },
                 React.createElement("label", null,
                     "\u9879\u76EE\u540D\u79F0",
                     React.createElement("input", { "aria-label": "\u9879\u76EE\u540D\u79F0", name: "name", required: true, maxLength: 120, placeholder: "\u4F8B\u5982\uFF1A\u6750\u6599\u7B5B\u9009\u7814\u7A76" })),
@@ -410,7 +410,10 @@ class App extends React.Component {
                                                 tab === 'integrations' ? React.createElement(IntegrationsView, { key: data.project.id, projectId: data.project.id }) :
                                                     tab === 'literature' ? React.createElement(LiteratureView, { key: data.project.id, data: data, perform: this.perform }) :
                                                         tab === 'evidence' ? React.createElement(EvidenceView, { key: data.project.id, data: data, perform: this.perform, onRegister: (artifactId, content) => this.open('evidence', { artifactId, content }), onClaim: () => this.open('claim') }) :
-                                                            tab === 'reports' ? React.createElement(ReportsView, { key: data.project.id, data: data, perform: this.perform }) : null),
+                                                            tab === 'reports' ? React.createElement(ReportsView, { key: data.project.id, data: data, perform: this.perform, selectedReport: this.state.selectedReport, onSelect: selectedReport => this.setState({ selectedReport }), onRun: (selectedRun, selectedExp) => { if (!data.runs.some(r => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some(e => e.id === selectedExp)) {
+                                                                    this.setState({ error: '指定报告 Run 不在当前项目中，未跳转到其他运行。' });
+                                                                    return;
+                                                                } this.refreshEpoch++; this.setState({ selectedRun, selectedExp, tab: 'experiments' }); } }) : null),
                     data && boot && ['chat', 'experiments'].includes(tab) ? React.createElement(Inspector, { data: data, boot: boot, tab: tab, experiment: experiment, selectedRun: this.state.selectedRun, onRun: selectedRun => this.setState({ selectedRun }), perform: this.perform, onToggle: () => this.toggle(), onTeam: () => this.open('team'), onPrepare: () => {
                             if (experiment)
                                 this.perform(() => api('/run-intents', { experimentId: experiment.id }), '已准备不可变快照，等待人工批准');

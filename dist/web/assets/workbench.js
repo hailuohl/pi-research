@@ -364,7 +364,7 @@ class RunFiles extends React.Component {
     }
 }
 export class Inspector extends React.Component {
-    currentRun() { const runs = this.props.data.runs.filter(r => r.experimentId === this.props.experiment?.id); return runs.find(r => r.id === this.props.selectedRun) ?? runs[runs.length - 1]; }
+    currentRun() { const runs = this.props.data.runs.filter(r => r.experimentId === this.props.experiment?.id); return this.props.selectedRun ? runs.find(r => r.id === this.props.selectedRun) : runs[runs.length - 1]; }
     render() {
         const { data, boot, experiment: e, perform } = this.props;
         const teams = data.teams.slice().reverse();
@@ -436,6 +436,7 @@ export class Inspector extends React.Component {
                     approval.status === 'pending' ? React.createElement("div", { className: "stack-actions" },
                         React.createElement("button", { className: "primary", onClick: () => perform(async () => { await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }); const submitted = await api(`/run-intents/${intent.id}/submit`, {}); this.props.onRun?.(submitted.id); }, '已提交真实运行') }, "\u6279\u51C6\u5E76\u63D0\u4EA4"),
                         React.createElement("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false }), '已拒绝运行') }, "\u62D2\u7EDD")) : approval.status === 'approved' ? React.createElement("button", { className: "primary", onClick: () => perform(async () => { const submitted = await api(`/run-intents/${intent.id}/submit`, {}); this.props.onRun?.(submitted.id); }) }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C") : null) : null,
+                this.props.selectedRun && !run ? React.createElement("p", { role: "alert", className: "error-text" }, "\u6307\u5B9A Run \u4E0D\u5C5E\u4E8E\u5F53\u524D\u5B9E\u9A8C\u6216\u5DF2\u4E0D\u53EF\u7528\uFF0C\u672A\u663E\u793A\u5176\u4ED6\u8FD0\u884C\u3002") : null,
                 run ? React.createElement("div", { className: "run-detail" },
                     React.createElement("label", null,
                         "\u67E5\u770B\u8FD0\u884C",

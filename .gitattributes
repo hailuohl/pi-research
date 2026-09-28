@@ -3,3 +3,4 @@
 *.jpg binary
 *.pdf binary
 docs/acceptance/flow-implementation/run-predictions.csv -text whitespace=cr-at-eol
+docs/acceptance/flow-report/*.tar.gz binary

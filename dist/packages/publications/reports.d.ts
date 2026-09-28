@@ -1,9 +1,26 @@
 import type { AppContext } from '../domain/context.js';
-import type { Actor } from '../domain/types.js';
+import type { Actor, Row, Artifact } from '../domain/types.js';
 import type { EvidenceService } from '../evidence/service.js';
+import type { ReportReference, ReportInspection, ReportExportCollection } from './report-types.js';
 export declare class ReportService {
     private c;
     private evidence;
     constructor(c: AppContext, evidence: EvidenceService);
-    create(actor: Actor, projectId: string, value: unknown): import("../domain/types.js").Row<import("../domain/types.js").Artifact>;
+    private record;
+    private bytes;
+    private checkRecord;
+    private checkProposal;
+    create(actor: Actor, pid: string, value: unknown): Row<Artifact>;
+    inspect(actor: Actor, pid: string, id: string): ReportInspection;
+    readReference(actor: Actor, pid: string, id: string, referenceId: string, cursor?: number, limit?: number): {
+        reference: ReportReference;
+        content: string;
+        mediaType: string;
+        cursor: number;
+        end: number;
+        complete: boolean;
+    };
+    private stateDigest;
+    assertExportCurrent(actor: Actor, pid: string, id: string, expectedBindingsDigest: string, expectedStateDigest: string): void;
+    collectExport(actor: Actor, pid: string, id: string): ReportExportCollection;
 }

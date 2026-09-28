@@ -2,7 +2,7 @@ import { digest } from '../../storage/store.js';
 import { routePaperId, parseSearch } from '../../connectors/contracts.js';
 import { ensure } from '../../domain/errors.js';
 import { text, object, integer } from '../validation.js';
-import { scope, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
+import { scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
 import { assertProjectWritable } from '../../policy/lifecycle.js';
 import { readText, writeText, listFiles } from '../../workspace/files.js';
 import { INPUT_SCHEMAS } from './inputs.js';
@@ -56,6 +56,9 @@ function authorizeRegistered(c, name, x) {
     }
 }
 function externalReplay(c, name, x) {
+    // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
+    if (name === 'report_export')
+        return { key: c.idempotencyKey, completed: true };
     if (name === 'paper_read')
         return paperReplay(c, x);
     const discover = name === 'literature_discover';
@@ -137,6 +140,10 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('report_create', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.reports.create(c.actor, c.projectId, x) }),
+    make('report_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { userOnly(c.actor); recordScope('report', 'reportId')(c, x); }, preconditions: noPrecondition, execute: (c, x) => c.app.reports.inspect(c.actor, c.projectId, x.reportId) }),
+    make('report_reference_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => { userOnly(c.actor); recordScope('report', 'reportId')(c, x); }, preconditions: noPrecondition, execute: (c, x) => c.app.reports.readReference(c.actor, c.projectId, x.reportId, x.referenceId, x.cursor, x.limit) }),
+    make('report_export', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: (c, x) => { userOnly(c.actor); recordScope('report', 'reportId')(c, x); }, preconditions: noPrecondition, execute: (c, x) => c.app.exports.create(c.actor, c.projectId, { reportId: x.reportId }, c.idempotencyKey, c.validate) }),
     make('development_review_prepare', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.development.inspect(c.actor, c.projectId, x.jobId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.prepare(c.actor, c.projectId, x) }),
     make('development_review_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.inspect(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.inspect(c.actor, c.projectId, x.reviewId) }),
     make('development_review_source_list', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId) }),
@@ -319,7 +326,7 @@ export class OperationRegistry {
                 const { source, ...rest } = input;
                 body = rest;
             }
-            const projectPaths = { text_evidence_search: '/text-evidence-search', artifact_create: '/artifacts', evidence_register: '/evidence', experiment_plan_submit: '/experiments' };
+            const projectPaths = { report_create: '/reports', text_evidence_search: '/text-evidence-search', artifact_create: '/artifacts', evidence_register: '/evidence', experiment_plan_submit: '/experiments' };
             if (projectPaths[id]) {
                 path = projectPaths[id];
                 body = { projectId: pid, ...input };
@@ -363,6 +370,11 @@ export class OperationRegistry {
             return spec.execute(context, input);
         };
         if (spec.asynchronous) {
+            if (id === 'report_export') {
+                const previous = lookup();
+                if (previous)
+                    return output(previous.value);
+            }
             context.validate();
             const hash = digest(request), pendingId = digest({ scope: operationScope, key });
             const inFlight = this.pending.get(pendingId);

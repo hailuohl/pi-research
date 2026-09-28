@@ -1,4 +1,5 @@
 import { GIT_INPUT_SCHEMAS } from './git-schemas.js';
+import { REPORT_INPUT_SCHEMAS } from './report-schemas.js';
 import { REVIEW_INPUT_SCHEMAS } from './review-schemas.js';
 import { DEVELOPMENT_INPUT_SCHEMAS } from './development-schemas.js';
 import { SOURCE_INPUT_SCHEMAS } from './source-schemas.js';
@@ -31,7 +32,7 @@ const plan = s.object({ goal: s.string(8000), tasks: s.array(task, 24, 1), budge
 const candidate = s.object({ title: s.string(200), hypothesis: s.string(), config }, ['title', 'hypothesis', 'config']);
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
-    ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS,
+    ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS,
     ...SOURCE_INPUT_SCHEMAS,
     research_skill_list: s.object({}),
     research_skill_read: s.object({ skillId: id, resource: s.string(200) }, ['skillId']),

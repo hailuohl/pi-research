@@ -21,6 +21,15 @@ export interface DevelopmentReviewDTO {
     teamId:string; taskId:string; approvalId:string;
     status:'awaiting_approval'|'pending'|'running'|'passed'|'rejected'|'disputed'|'failed'|'stale';
 }
+export interface ReportReference {
+    id:string; type:'run'|'run-source'|'artifact'|'evidence'|'development-job'|'development-review'|'claim';
+    targetId:string; label:string; runId?:string; path?:string; digest?:string; relation?:'exact'|'ancestry';
+}
+export interface ReportRecord {id:string;artifactId:string;runIds:string[];claimIds:string[];evidenceIds?:string[];}
+export interface ReportInspection {
+    id:string;artifactId:string;title:string;formatVersion:0|1;integrity:'verified'|'invalid';validity:'current'|'stale'|'legacy';reasons:string[];references:ReportReference[];
+    runs:Array<{runId:string;experimentId:string;revision:number;state:string;integrity:string;judgment:string;sourceDigest:string;gitCommit?:string;metrics:Array<{name:string;value:number;unit:string;referenceId:string}>}>;
+}
 export interface ProjectState {
     developmentTasks?:DevelopmentTaskDTO[];
     sandboxJobs?:SandboxJobDTO[];
@@ -37,7 +46,7 @@ export interface ProjectState {
     artifacts: Row<Artifact>[];
     evidence: Row<Evidence>[];
     claims: Row<Claim>[];
-    reports: any[];
+    reports: ReportRecord[];
     changeProposals: Row<ChangeProposal>[];
     searches: any[];
     usage: any[];

@@ -5,6 +5,10 @@ const TOOL_METADATA: Record<string, {
     description: string;
     example: unknown;
 }> = {
+    report_create:{description:'用户入口：从所选真实终态运行和已采纳结论生成固定结果报告；不授予 Agent 生成最终用户报告的权限。',example:{title:'研究结果记录',runIds:['run-id'],claimIds:[]}},
+    report_inspect:{description:'用户入口：读取固定报告引用及当前来源有效性，保留历史原文。',example:{reportId:'report-id'}},
+    report_reference_read:{description:'用户入口：按报告内类型化引用读取原始证据或固定源码，不解析任意 URL。',example:{reportId:'report-id',referenceId:'reference-id',cursor:0,limit:16000}},
+    report_export:{description:'用户入口：显式生成仅含固定报告、源码与归档证据的本地成果包，不发布到外部。',example:{reportId:'report-id'}},
     development_review_prepare:{description:'从自己主会话成功且完整的开发测试准备独立 Reviewer 计划；用户批准后才启动，不把测试通过当作审查通过。',example:{jobId:'sandbox-job-id'}},
     development_review_inspect:{description:'读取固定开发候选的独立审查状态、任务及证据；只有 status passed 才可准备受审整合。',example:{reviewId:'review-id'}},
     development_review_source_list:{description:'列出本审查目标已测试的固定候选源码；它可能不同于任务基础 experiment revision。',example:{reviewId:'review-id'}},
