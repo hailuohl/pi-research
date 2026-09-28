@@ -10,6 +10,7 @@ export declare class TeamService {
     private approvals;
     private budget;
     private evidence;
+    skillPreflight?: (task: Row<Task>) => string;
     reviewValidator?: (task: Row<Task>) => void;
     private validateReview;
     constructor(c: AppContext, sessions: SessionService, approvals: ApprovalService, budget: BudgetService, evidence: EvidenceService);
@@ -31,6 +32,12 @@ export declare class TeamService {
     };
     /** A task reads only explicit inputs, dependency/review outputs, or its own immutable artifacts. */
     resources(actor: Actor): {
+        artifactIds: Set<string>;
+        evidenceIds: Set<string>;
+        runIds: Set<string>;
+        taskIds: Set<string>;
+    };
+    resourcesForTask(task: Row<Task>): {
         artifactIds: Set<string>;
         evidenceIds: Set<string>;
         runIds: Set<string>;

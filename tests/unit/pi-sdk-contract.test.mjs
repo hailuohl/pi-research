@@ -48,9 +48,12 @@ test('installed real SDK creates isolated session and reopens the exact native f
         }
         assert.throws(() => buildSessionOptions(sdk, {...setup, sessionFile: join(sessionDir, 'missing.jsonl')}, [], runtime, model), /PI_SESSION_NOT_FOUND/);
         const customTools = [{name: 'contract_read', label: 'contract_read', description: 'offline check', parameters: Type.Object({}), execute: async () => ({content: [{type: 'text', text: 'offline'}], details: {}})}];
-        const options = buildSessionOptions(sdk, setup, customTools, runtime, model);
+        const skillPath=join(home,'mutable-skill.md');writeFileSync(skillPath,'UNREVIEWED_NEW_BYTES');
+        const options = buildSessionOptions(sdk, {...setup,skills:[{name:'reviewed-method',description:'Reviewed earlier',filePath:skillPath,baseDir:home,source:'fixture',disableModelInvocation:false}]}, customTools, runtime, model);
         ({session} = await sdk.createAgentSession(options));
         assert.deepEqual(session.getActiveToolNames(), ['contract_read']);
+        assert.deepEqual(options.resourceLoader.getSkills().skills,[]);
+        assert.equal(session._expandSkillCommand('/skill:reviewed-method arguments'),'/skill:reviewed-method arguments','pinned SDK cannot bypass controlled reads to load changed bytes');
         assert.deepEqual(options.resourceLoader.getAgentsFiles().agentsFiles, []);
         assert.equal(options.resourceLoader.getSystemPrompt(), 'trusted only');
         // This synthetic persistence fixture is an offline contract check, never live evidence.

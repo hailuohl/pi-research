@@ -46,6 +46,8 @@ export interface ModelConfig {
     thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 }
 export interface Session {
+    skillIds?: string[];
+    skillBundleId?: string;
     sourceRevisionId?: string;
     sourceDigest?: string;
     title: string;
@@ -220,6 +222,7 @@ export interface ExpectedTaskOutput {
     minBytes?: number;
 }
 export interface TaskSpec {
+    skillIds?: string[];
     key: string;
     role: Exclude<Role, 'coordinator'>;
     objective: string;
@@ -262,6 +265,7 @@ export interface Task extends TaskSpec {
     result?: TaskResult;
 }
 export interface TaskAttempt {
+    skillBundleId?: string;
     teamId: string;
     taskId: string;
     sessionId: string;

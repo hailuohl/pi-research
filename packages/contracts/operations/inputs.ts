@@ -1,3 +1,4 @@
+import {SKILL_INPUT_SCHEMAS} from './skill-schemas.js';
 import {DOCUMENT_INPUT_SCHEMAS,DISCOVERY_INPUT_SCHEMA} from './document-schemas.js';
 import {GIT_INPUT_SCHEMAS} from './git-schemas.js';
 import {REPORT_INPUT_SCHEMAS} from './report-schemas.js';
@@ -28,7 +29,7 @@ const task = s.object({
     key: { ...s.string(60), pattern: '^[a-zA-Z0-9_-]+$' },
     role: s.enum(['literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer']),
     objective: s.string(), dependencies: s.nullable(strings(24)), critical: s.boolean(), required: s.boolean(), inputEvidenceIds: s.nullable(strings()),
-    reviewOf: s.string(60), expectedOutputs: s.array(output, 24),
+    skillIds:s.array(id,32), reviewOf: s.string(60), expectedOutputs: s.array(output, 24),
     acceptanceRuleIds: s.nullable(s.array(s.enum(['artifact-required', 'evidence-required', 'claims-evidenced']), 10)),
 }, ['key', 'role', 'objective']);
 const plan = s.object({ goal: s.string(8000), tasks: s.array(task, 24, 1), budget: s.nullable(s.integer(1, 100)), autoSummarize: s.nullable(s.boolean()) }, ['goal', 'tasks']);
@@ -36,6 +37,7 @@ const candidate = s.object({ title: s.string(200), hypothesis: s.string(), confi
 
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...SKILL_INPUT_SCHEMAS,
     ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS,...SCHEDULER_INPUT_SCHEMAS,
     ...SOURCE_INPUT_SCHEMAS,...DOCUMENT_INPUT_SCHEMAS,
     research_skill_list: s.object({}),

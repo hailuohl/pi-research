@@ -1,3 +1,4 @@
+import {prepareSessionSkills} from '../skills/runtime.js';
 import { fork, type ChildProcess } from 'node:child_process';
 import { mkdirSync, existsSync } from 'node:fs';
 import { join, resolve, relative, isAbsolute } from 'node:path';
@@ -123,15 +124,18 @@ export class AgentHost {
                 try{assertWorkspaceReady(this.app.context,s.id);}catch{continue;}
                 const messages = this.app.sessions.messages(SYSTEM, s.id).filter(m => m.status === 'queued');
                 const next = messages.find(m => m.role === 'user') ?? messages.find(m => m.origin === 'automation');
-                if (next)
-                    this.launch(s, next.content, next.id);
+                if (next) {
+                    try { this.launch(s, next.content, next.id); } catch(error) {const e=asError(error),latest=this.app.store.get<Session>('session',s.id);this.app.store.update<Session>('session',s.id,latest.version,{state:'failed',lastError:`${e.code} — ${e.message}`});}
+                }
             }
             for (const w of this.app.store.list<Wakeup>('wakeup').filter(w => w.state === 'pending')) {
                 if (!this.admission.snapshot().available) break;
                 const root = this.app.sessions.get(SYSTEM, w.rootSessionId);
                 try{assertWorkspaceReady(this.app.context,root.id);}catch{continue;}
+                try {
                 const dispatch=this.app.store.transaction(()=>{if(this.admission.sessionHeld(root.id)||!this.admission.check(root.projectId!,root.role))return null;const dispatched=this.app.wakeups.dispatch(w.id,this.inspect(root.model));if(!dispatched)return null;const prepared=this.claimSession(this.app.sessions.get(SYSTEM,root.id),dispatched.message.id);ensure(prepared,'AGENT_CAPACITY_CHANGED','Worker 准入未完成');return {dispatched,prepared};});
                 if(dispatch)this.launch(dispatch.prepared.session,dispatch.dispatched.message.content,dispatch.dispatched.message.id,undefined,dispatch.prepared);
+                } catch(error) {const e=asError(error),latest=this.app.store.get<Wakeup>('wakeup',w.id);if(latest.blockReason!==`${e.code} — ${e.message}`)this.app.store.update<Wakeup>('wakeup',w.id,latest.version,{blockReason:`${e.code} — ${e.message}`});}
             }
             for (const team of this.app.store.list<Team>('team').filter(t => t.state === 'active')) {
                 if (!this.admission.snapshot().available)
@@ -166,7 +170,14 @@ export class AgentHost {
                 store.update<Message>('message', m.id, m.version, { status: 'running' });
                 if (m.wakeupId) this.app.wakeups.markStarted(m.wakeupId, next.id, next.generation, m.id);
             }
-            return {session:next,slot};
+            const wakeupId=messageId?store.get<Message>('message',messageId).wakeupId:undefined;
+            const actor:Actor={type:'agent',projectId:next.projectId!,sessionId:next.id,role:next.role,generation:attempt?.generation??next.generation,...(attempt?{taskId:attempt.taskId,attemptId:attempt.id}:{}),...(wakeupId?{wakeupId}:{})};
+            // Resolve against the pre-claim generation; the whole claim rolls back on missing capability.
+            const bundleId=prepareSessionSkills(this.app,latest,actor);
+            ensure(!attempt||attempt.skillBundleId===bundleId,'SKILL_BINDING_MISMATCH','任务与会话技能包不一致');
+            const bound=store.update<Session>('session',next.id,next.version,{skillBundleId:bundleId});
+            store.event(next.projectId,'session.skill_bundle_bound',{sessionId:next.id,generation:next.generation,bundleId});
+            return {session:bound,slot};
         });
     }
     private launch(session: Row<Session>, prompt: string, messageId?: string, attempt?: Row<TaskAttempt>,prepared?:{session:Row<Session>;slot:Row<AgentAdmission>}) {
@@ -176,15 +187,20 @@ export class AgentHost {
         const actor: Actor = { ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId!, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
         let active:Active|undefined,requested=false;
         try {
-        const skillBundle = this.app.skills.bootstrap(session.role);
+        const bundleId=prepareSessionSkills(this.app,claimed,actor);
+        const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId!,claimed.role,bundleId);
         this.ensureReady(claimed);
         const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = join(home, 'pi');
         mkdirSync(agentDir, { recursive: true, mode: 0o700 });
         mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
         const env: NodeJS.ProcessEnv = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: home, USERPROFILE: home, PI_API_KEY: process.env.PI_API_KEY, NO_COLOR: '1' };
         // Only the selected model credential enters a worker. No SSH/cloud credentials or inherited Node flags.
-        this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);requested=true;
-        const child = (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: claimed.workspace, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+        const child = store.transaction(()=>{
+            // Serialize the final revocation check with process creation across controllers.
+            this.app.skills.ensureBundleStartAllowed(claimed.projectId!,bundleId);
+            this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);requested=true;
+            return (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: claimed.workspace, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+        });
         const worker: Active = {admissionId:slot.id, child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };active=worker;
         this.active.set(claimed.id, worker);
         child.stdout?.on('data', () => { });
@@ -197,12 +213,12 @@ export class AgentHost {
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
         worker.contextMessageIds = hostMessages.map(m => m.id);
         const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
-        this.app.store.event(claimed.projectId, 'session.skill_bundle_bound', {sessionId:claimed.id, generation:claimed.generation, bundleId:skillBundle.bundleId});
         child.send({ type: 'start', skillBundle, repoRoot: this.app.context.repoRoot, workspace: claimed.workspace, agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
+            const failure=asError(error),startError=`${failure.code} — ${failure.message}`;
             if(active){this.finish(active,clean((error as Error).message));return;}
-            store.transaction(()=>{this.admission.release(slot.id,this.ownerHost,claimed.generation,requested?'synchronous-fork-failure':'not-forked');if(attempt)this.app.teams.fail(attempt.id,'Worker 启动前失败',false,true);if(messageId){const m=store.get<Message>('message',messageId);if(m.status==='running')store.update<Message>('message',m.id,m.version,{status:'failed',error:'Worker 启动前失败'});}if(wakeupId){const w=this.app.wakeups.get(SYSTEM,wakeupId);store.update<Wakeup>('wakeup',w.id,w.version,{state:'queued'});this.app.wakeups.finish(w.id,'Worker 启动前失败',false);}const latest=store.get<Session>('session',claimed.id);if(latest.generation===claimed.generation)store.update<Session>('session',latest.id,latest.version,{state:'failed',leaseUntil:0,lastError:'Worker 启动前失败'});});
+            store.transaction(()=>{this.admission.release(slot.id,this.ownerHost,claimed.generation,requested?'synchronous-fork-failure':'not-forked');if(attempt)this.app.teams.fail(attempt.id,startError,false,true);if(messageId){const m=store.get<Message>('message',messageId);if(m.status==='running')store.update<Message>('message',m.id,m.version,{status:'failed',error:startError});}if(wakeupId){const w=this.app.wakeups.get(SYSTEM,wakeupId);store.update<Wakeup>('wakeup',w.id,w.version,{state:'queued',attempts:Math.max(0,w.attempts-1)});this.app.wakeups.finish(w.id,startError,false);}const latest=store.get<Session>('session',claimed.id);if(latest.generation===claimed.generation)store.update<Session>('session',latest.id,latest.version,{state:'failed',leaseUntil:0,lastError:startError});});
         }
     }
     private exited(a:Active,code:number|null) {

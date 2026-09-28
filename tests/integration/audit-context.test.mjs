@@ -6,6 +6,8 @@ async function until(h,fn){for(let i=0;i<100;i++){h.tick();if(fn())return;await 
 test('A12 restored session receives and acknowledges fresh host notifications only once',async()=>{
  const s=setup(),h=new AgentHost(s.app,{inspect:()=>({ready:true,code:'IPC_FIXTURE',message:'No model'}),workerEntry:resolve('tests/fixtures/context-worker.mjs')});try{
  let session=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',session.id,session.version,{piSessionPath:join(s.dir,'sessions',session.id,'pi','existing.jsonl')});
+ // This fixture restores a known released bundle, not an unproven legacy Pi history.
+ s.app.store.event(s.project.id,'session.skill_bundle_bound',{sessionId:session.id,generation:0,bundleId:s.app.skills.bundleId});
  const note=s.app.sessions.system(session.id,'A12_RESULT_NEW_HOST_CONTEXT');
  const m=s.app.sessions.send(USER,session.id,{content:'Summarize'});await until(h,()=>s.app.store.get('message',m.id).status==='completed');
  let replies=s.app.sessions.messages(USER,session.id).filter(m=>m.role==='assistant').map(m=>JSON.parse(m.content));assert.equal(replies[0].hostMessages?.[0]?.id,note.id);assert.match(replies[0].hostMessages[0].content,/A12_RESULT/);

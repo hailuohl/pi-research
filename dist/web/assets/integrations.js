@@ -1,6 +1,7 @@
 import { literatureSourceURL } from './literature-view.js';
 import { api, artifactText, downloadArtifact } from './api.js';
 import { SectionTitle } from './ui.js';
+import { SkillManager } from './skill-manager.js';
 const sources = ['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref'];
 /** Existing workbench layout; no implicit external requests when this view mounts. */
 export class IntegrationsView extends React.Component {
@@ -41,6 +42,7 @@ export class IntegrationsView extends React.Component {
                 React.createElement("button", { className: "secondary", disabled: s.busy, onClick: () => this.run(() => this.load()) }, "\u5237\u65B0\u672C\u5730\u72B6\u6001")),
             React.createElement("p", { className: "inline-warning" }, "\u5F00\u542F\u6765\u6E90\u53EA\u6388\u6743\u5411\u8BE5\u5916\u90E8\u670D\u52A1\u53D1\u9001\u67E5\u8BE2\uFF0C\u4E0D\u4FDD\u8BC1\u7F51\u7EDC\u53EF\u8FBE\u6216\u5168\u6587\u53EF\u5F97\u3002\u5B9E\u9645\u8BF7\u6C42\u72B6\u6001\u5355\u72EC\u8BB0\u5F55\uFF1B\u6765\u6E90\u9519\u8BEF\u4E0D\u4EE3\u8868\u6CA1\u6709\u76F8\u5173\u8BBA\u6587\u3002\u4E0D\u4F1A\u6388\u4E88\u8BA1\u7B97\u3001\u53D1\u5E03\u6216\u989D\u5916\u6A21\u578B\u8C03\u7528\u6743\u9650\u3002"),
             s.error ? React.createElement("p", { role: "alert", className: "error-text" }, s.error) : null,
+            React.createElement(SkillManager, { key: this.props.projectId, projectId: this.props.projectId, sessionId: this.props.sessionId }),
             React.createElement("section", { className: "surface" },
                 React.createElement("div", { className: "surface-heading" },
                     React.createElement("h2", null, "\u6587\u732E\u6765\u6E90\u6388\u6743"),

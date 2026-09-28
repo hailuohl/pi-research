@@ -1,6 +1,15 @@
 import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
 import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
 const TOOL_METADATA = {
+    skill_package_import: { description: '用户入口：导入固定 UTF-8 技能/资源或受限 ZIP，形成待审版本，不执行脚本。', example: { packageId: 'local-method', revisionTag: 'v1', description: '用户方法', roles: ['coordinator'], license: null, requirements: { tools: [], backends: [], artifactIds: [] }, files: [{ path: 'SKILL.md', contentBase64: 'IyBNZXRob2Q=' }] } },
+    skill_package_list: { description: '用户入口：查看项目技能修订、审阅/撤销记录和当前启用包。', example: {} },
+    skill_package_inspect: { description: '用户入口：回查固定技能修订及审阅决定。', example: { revisionId: 'revision-id' } },
+    skill_package_read: { description: '用户入口：按固定清单读取待审或历史技能资源，仅作为文本。', example: { revisionId: 'revision-id', resource: 'SKILL.md' } },
+    skill_package_review: { description: '用户入口：审阅指定内容摘要，批准或拒绝该技能版本；不授予执行权限。', example: { revisionId: 'revision-id', decision: 'approved', note: '已阅读固定正文和声明' } },
+    skill_package_revoke: { description: '用户入口：撤销指定技能版本，阻止未来启动，保留历史记录。', example: { revisionId: 'revision-id', note: '停止使用该版本' } },
+    skill_bundle_configure: { description: '用户入口：启用或回滚到已审阅的固定技能版本组合，不改已有任务。', example: { expectedVersion: 0, revisionIds: [] } },
+    skill_session_select: { description: '用户入口：在尚未启动 Pi 的会话选择必需技能，固定包并回查能力预检。', example: { sessionId: 'session-id', expectedVersion: 1, skillIds: [] } },
+    skill_preflight: { description: '用户入口：检查会话固定技能的工具、后端和数据条件，不启动模型。', example: { sessionId: 'session-id' } },
     literature_task_create: { description: '用户入口：排队一次持久文献检索或原文获取；沿用已启用来源和请求预算，未知请求不自动重试。', example: { kind: 'search', search: { query: 'machine learning', sources: ['crossref'], limit: 2 } } },
     literature_task_inspect: { description: '用户入口：按持久任务 ID 回查当前状态及完整已保存检索结果，不触发新网络请求。', example: { taskId: 'literature-task-id' } },
     literature_task_cancel: { description: '用户入口：取消尚未完成的文献任务；已经保存的原件和结果保持历史记录。', example: { taskId: 'literature-task-id' } },

@@ -5,7 +5,7 @@
 | 关卡 | 当前状态 | 仍需完成 |
 |---|---|---|
 | PR01 | 构建、固定来源、双版回归、SDK 契约、无依赖启动已验；智谱真实工具调用及首条科研闭环已验 | 更广任务与环境仍需逐项验收；上游 M0 页面基线仍为空 |
-| PR02 | 79 个统一 Registry 动作契约；文献任务、文档版本、解析与页段证据已接入，测试/审查/整合进入真实浏览器闭环 | 前端全面类型消费随 PR09，不能以单条旅程替代所有传输及边界场景验收 |
+| PR02 | 88 个统一 Registry 动作契约；新增技能导入/审阅/配置/撤销/显式选择与预检，文献和研究流程共用受控接口 | 前端全面类型消费随 PR09，不能以单条旅程替代所有传输及边界场景验收 |
 | PR03 | 指定版本/CAS、范围读取、文件差异、工作区与团队来源绑定、撤销及回滚检查通过；真实 Pi 从指定二阶来源实现，一阶项目副本保持不变 | 跨进程硬崩溃后的文件系统与数据库对账随 PR05/07完善 |
 | PR04 | SandboxJob/DevelopmentTask、固定容器 Python、隔离/取消/服务关闭/worker 恢复与源码绑定已验；浏览器人工审批、首次失败、同原生 Pi 会话修复及重新批准后 5/5 开发测试已实测 | 宿主硬配额、自动清理及更广目标环境随后续关卡 |
 | PR05 | 显式启用受管项目 Git、独立 worktree、完整源码差异/模式、提交与持久回执恢复已接入；工作台私有源码入口及测试/审查/提案/Git/CAS 关联已进入首条闭环 | 完整并发/迁移矩阵进一步验收；本条闭环不代表 PR05 所有场景已完成 |
@@ -14,12 +14,16 @@
 | PR08 | Root Pi 与另一个真实 Pi reviewer 完成独立审查闭环；Worker 持久槽位、实际退出后释放及项目/团队并发边界已验 | 完整有界授权、资源与故障矩阵，以及单/多 Agent 效益对照；一次审查通过不证明多 Agent 收益 |
 | PR09 | 实现/测试/审查/整合、报告引用、调度、日志与断连恢复已实测；新增文献任务、原件版本、批准解析、页图及精确字符区间回跳。桌面/390px 键盘与刷新恢复通过，浏览器 console errors=0 | 浏览器下载实际落盘和本地文件选择器尚未验收；完整类型/构建迁移、大历史列表及其他页面仍保留 |
 | PR10 | 核心流程已验：四源实网成功、PubMed 网络失败单列；不可变 DocumentVersion、arXiv v1/v2、v1 隔离解析 15 页及页段回查完成。中文/扫描页、共享配额、恢复留证；文档证据已进入固定报告和离线包 | PubMed 环境、OpenAlex/bioRxiv 原 PDF 实网、自动结构抽取、完整跨源分页/覆盖评估、显式文档语料及 Agent 细粒度文档授权仍待完成 |
-| PR11 | 待实施 | 技能导入审查、固定、回滚、能力预检与真实产物 |
+| PR11 | 技能修订、审阅/撤销、受限 ZIP、固定 bundle、显式能力预检与回滚已实现；TaskAttempt/Session/受控读取绑定一致。真实 IPC 证明在途不升级；真实 Pi 代码与批准容器生成 v1 PNG/CSV，撤销后的新会话零模型启动 | 原生 UI 文件选择器提交待验；二进制资源、完整 diagram/paper 执行器及产物、其他后端和大审阅历史分页仍保留。此次 Pi 会话保存代码/请求后 aborted，未伪称会话成功完成 |
 | PR12 | 不可变 Markdown、固定引用清单、失效核验、指标/源码/测试/审查及本地成果包已实测；新增 PDF 原件/解析/引用页来源与精确区间回跳，真实解包保持原字节；旧运行报告可用 | 论文写作、图表生成来源、隔离 LaTeX/PDF 构建等仍待完成；未发布到远端 |
 | PR13 | 待实施 | SSH→Slurm 等真实后端、远程工作台，按目标分别验收 |
 | PR14 | 待实施 | 迁移/备份、显式发布、同步冲突、桌面和团队分发 |
 
-最近证据：[PDF 页段进入报告与交付](acceptance/flow-document-report/RESULTS.zh-CN.md)、[真实包核验](acceptance/flow-document-report/live-evidence.json)及[浏览器](acceptance/flow-document-report/browser-evidence.json)。报告 `604044d4…` 保留原 PDF、来源/许可、解析与精确区间，浏览器 v1 和中文页段回跳/刷新通过；1,303,750 字节成果包实际解包 11 个条目，9 个固定文件字节一致。原 57 条文档记录未改；旧真实运行报告在备份库中仍 current/verified。
+最近证据：[技能审阅、固定版本与启动预检](acceptance/flow-skills/RESULTS.zh-CN.md)、[真实 Pi/容器记录](acceptance/flow-skills/live-evidence.json)与[真实 IPC](acceptance/flow-skills/ipc-evidence.json)。v1/v2 ZIP 经 CLI 导入，浏览器审阅/启用/选择、配置回滚与撤销通过；原生文件选择器提交尚未确认。真实 Pi 保存 v1 代码与批准请求后 aborted；保存的固定作业经浏览器批准后成功且完整，生成 480×320 PNG、21 点 CSV，源码/产物摘要和数值独立核对。撤销后的新会话 generation=0、Worker/model records=0。
+
+技能批次统一回归 **521 pass / 0 fail / 3 skip**；随后新增真实 IPC **1/1**，无产品源码变化。干净构建 **352 个 dist 文件一致**。原生 SDK `/skill:` 绕过摘要读取的 P2 已关闭并经真实离线 SDK/独立复核；旧 78 条文档记录保持不变，历史报告仍 current/verified。完整 PR11 与论文执行器没有因此宣称完成。
+
+上一批[PDF 页段进入报告与交付](acceptance/flow-document-report/RESULTS.zh-CN.md)、[真实包核验](acceptance/flow-document-report/live-evidence.json)及[浏览器](acceptance/flow-document-report/browser-evidence.json)保留。报告 `604044d4…` 保留原 PDF、来源/许可、解析与精确区间，浏览器 v1 和中文页段回跳/刷新通过；1,303,750 字节成果包实际解包 11 个条目，9 个固定文件字节一致。原 57 条文档记录未改；旧真实运行报告在备份库中仍 current/verified。
 
 文档报告批次最终统一回归 **501 pass / 0 fail / 3 skip**；干净安装/构建/类型检查通过，**339 个 dist 文件一致**。二进制随机路径误报已修复；可读宿主路径和凭据仍拒绝，有限检测边界留证。独立只读审查无本批阻断。没有新增模型调用、PDF 解析或远程发布。
 
@@ -45,6 +49,6 @@
 
 [正式运行与结果回查](acceptance/flow-run/RESULTS.zh-CN.md)、[源码准备与真实 Pi](acceptance/flow-source/RESULTS.zh-CN.md)、[PR04](acceptance/pr04/RESULTS.zh-CN.md)、[PR03](acceptance/pr03/RESULTS.zh-CN.md)、[PR02 首批](acceptance/pr02/RESULTS.zh-CN.md)和[PR01](acceptance/pr01/RESULTS.zh-CN.md)保留当时结果。首条真实旅程通过，不意味着整体计划完成，也不凭示例指标宣称科学发现。
 
-下一批推进 PR11“技能导入审阅→固定版本授权→任务预检与回滚”，先固定污染配置、运行中版本稳定、撤销与真实产物验收。PR07 其余并发/历史分页等保留，不继续围绕已完成页面打磨非阻断细节。PR01–14 原范围全部保留，包括 PR08 多 Agent 效益、PR09 完整迁移、PR10 剩余文献能力、PR11 技能、PR12 论文、PR13 远端及 PR14 分发。
+下一批推进 PR12“固定文稿→隔离 LaTeX/PDF 构建→错误定位与产物回查”，并补足相应 paper 技能执行能力。PR07 其余并发/历史分页等保留，不继续围绕已完成页面打磨非阻断细节。PR01–14 原范围全部保留，包括 PR08 多 Agent 效益、PR09 完整迁移、PR10 剩余文献能力、PR11 剩余技能能力、PR12 论文、PR13 远端及 PR14 分发。
 
 尚待核验：浏览器下载事件按 5 秒有界等待仍超时，本地下载路径未确认；上述服务端验证包已保存，可直接本地交付。远端/GPU 仍缺环境。浏览器坐标点击错位已用原生键盘完成，不作为产品功能缺失。非阻断后续项：reviewer 摘要误将空 stdout 归为 stderr；原始 stderr 确有 5 tests / OK，后续改进精确引用，本批不重做审查。

@@ -1,3 +1,4 @@
+import { SKILL_OUTPUT_SCHEMAS, SKILL_REQUIREMENTS_SCHEMA } from './skill-schemas.js';
 import { DOCUMENT_OUTPUT_SCHEMAS, DOCUMENT_EVIDENCE_LINK_SCHEMA, DISCOVERY_OUTPUT_SCHEMA } from './document-schemas.js';
 import { GIT_OUTPUT_SCHEMAS } from './git-schemas.js';
 import { REPORT_OUTPUT_SCHEMAS } from './report-schemas.js';
@@ -111,6 +112,7 @@ const contextTask = object({ id: string, key: string, result: taskResult }, ['re
 const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string }, ['wakeupId', 'runId', 'taskId']);
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    ...SKILL_OUTPUT_SCHEMAS,
     ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS, ...SCHEDULER_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS, ...DOCUMENT_OUTPUT_SCHEMAS,
@@ -133,12 +135,12 @@ export const OUTPUT_SCHEMAS = {
     agent_delegate: team,
     task_inspect: array(row('task', {
         key: string, role, objective: string, dependencies: strings, critical: boolean, reviewOf: string, required: boolean, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings,
-        teamId: string, sessionId: string, execution, acceptance, planVersion: integer, directiveVersion: integer, attemptCount: integer, generation: integer, attemptId: string, blockReason: string, result: taskResult, reviewId: string
-    }, ['critical', 'reviewOf', 'required', 'inputEvidenceIds', 'expectedOutputs', 'acceptanceRuleIds', 'sessionId', 'attemptId', 'blockReason', 'result', 'reviewId'])),
+        teamId: string, sessionId: string, execution, acceptance, planVersion: integer, directiveVersion: integer, attemptCount: integer, generation: integer, attemptId: string, blockReason: string, result: taskResult, reviewId: string, skillIds: strings
+    }, ['critical', 'reviewOf', 'required', 'inputEvidenceIds', 'expectedOutputs', 'acceptanceRuleIds', 'sessionId', 'attemptId', 'blockReason', 'result', 'reviewId', 'skillIds'])),
     task_result_read: object({ id: string, key: string, execution, acceptance, result: taskResult }, ['result']),
-    task_context_read: nullable(object({ schemaVersion: { const: 1 }, taskId: string, teamId: string, goal: string, objective: string, role, planVersion: integer, directiveVersion: integer, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings, upstream: array(contextTask), reviewOf: nullable(contextTask), restrictions: strings, stopConditions: strings, source: object({ snapshotId: string, experimentId: string, revision: integer, sourceDigest: string }), developmentReview: object({ reviewId: string, jobId: string, sourceDigest: string, manifestEvidenceId: string, testEvidenceIds: strings }) }, ['source', 'developmentReview'])),
+    task_context_read: nullable(object({ skillBundleId: string, skillIds: strings, schemaVersion: { const: 1 }, taskId: string, teamId: string, goal: string, objective: string, role, planVersion: integer, directiveVersion: integer, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings, upstream: array(contextTask), reviewOf: nullable(contextTask), restrictions: strings, stopConditions: strings, source: object({ snapshotId: string, experimentId: string, revision: integer, sourceDigest: string }), developmentReview: object({ reviewId: string, jobId: string, sourceDigest: string, manifestEvidenceId: string, testEvidenceIds: strings }) }, ['source', 'developmentReview', 'skillBundleId', 'skillIds'])),
     task_progress_report: object({ seq: integer, id: string, projectId: nullableString, type: { const: 'task.progress' }, payload: object({ sessionId: string, taskId: string, message: string }, ['taskId']), createdAt: string }),
-    research_skill_list: object({ bundleId: string, skills: array(object({ id: string, description: string, digest: string, resources: strings, source: skillSource })) }),
+    research_skill_list: object({ bundleId: string, revisionIds: strings, skills: array(object({ id: string, description: string, digest: string, resources: strings, source: skillSource, revisionId: string, requirements: SKILL_REQUIREMENTS_SCHEMA }, ['revisionId', 'requirements'])) }, ['revisionIds']),
     research_skill_read: object({ id: string, resource: string, content: string, digest: string, bundleId: string, source: skillSource }),
     connector_status: object({
         version: integer, enabled: object({ alphaxiv: boolean, openalex: boolean, biorxiv: boolean, pubmed: boolean, crossref: boolean }), requestLimit: integer, requestsUsed: integer,

@@ -1,0 +1,30 @@
+{
+  "source": {
+    "path": ".validation/skill-binding-ipc-evidence.json",
+    "sha256": "9a4d5f3c3e084a0b27045989b46af9bc5b892e65f72c5e649c259d77972e799a"
+  },
+  "fixture": "real-child-ipc-no-sdk-no-model",
+  "modelRequests": 0,
+  "forks": 1,
+  "projectId": "f5064d57-ed5a-40d0-9a22-74b81e8ebade",
+  "sessionId": "3dd58b93-7c87-4f36-9bc1-0d6714518980",
+  "initialBundleId": "ea0155caa761a43c1823706335529047c9870e5a56805e166cefbe20139bd453",
+  "currentBundleId": "3800b365e4120e8f719dc498e1dd6f7eced6beeffe3ff003baa993ba50577429",
+  "revokedRevisionId": "fcf8f9c3-df27-4abe-9022-6620b7264d25",
+  "reads": [
+    {
+      "bundleId": "ea0155caa761a43c1823706335529047c9870e5a56805e166cefbe20139bd453",
+      "digest": "ce890a8c202cb25b686b4e3f8723f646dbe69320acde7a21d0ddd35a73849682"
+    },
+    {
+      "bundleId": "ea0155caa761a43c1823706335529047c9870e5a56805e166cefbe20139bd453",
+      "digest": "ce890a8c202cb25b686b4e3f8723f646dbe69320acde7a21d0ddd35a73849682"
+    }
+  ],
+  "newStart": {
+    "state": "failed",
+    "generation": 1,
+    "error": "SKILL_CAPABILITY_MISSING — bundle binding:ea0155caa761a43c1823706335529047c9870e5a56805e166cefbe20139bd453 — SKILL_REVOKED — 技能版本已撤销，不能启动或启用",
+    "workersHeld": 0
+  }
+}

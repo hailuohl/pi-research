@@ -1,3 +1,4 @@
+import {readCatalog,readSkill,inspectSessionSkills,selectSessionSkills} from '../../skills/runtime.js';
 import {digest} from '../../storage/store.js';
 import {routePaperId, parseSearch} from '../../connectors/contracts.js';
 import type {ResearchApp} from '../../research-app.js';
@@ -81,7 +82,7 @@ function authorizeRegistered(c: OperationContext, name: string, x: Record<string
 }
 function externalReplay(c: OperationContext, name: string, x: Record<string, unknown>) {
     // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
-    if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare'].includes(name)) return {key:c.idempotencyKey!,completed:true};
+    if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import'].includes(name)) return {key:c.idempotencyKey!,completed:true};
     if (name === 'paper_read') return paperReplay(c, x);
     const discover = name === 'literature_discover';
     const serviceScope = discover ? `connector-search:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}` : `literature:${c.projectId}`;
@@ -110,8 +111,8 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
         }
         switch (name) {
             case 'text_evidence_search': return app.textEvidence.search(actor,pid,x);
-            case 'research_skill_list': return {bundleId:app.skills.bundleId,skills:app.skills.list((session?.role ?? 'coordinator'))};
-            case 'research_skill_read': return app.skills.read((session?.role ?? 'coordinator'),text(x.skillId,'skillId',100),x.resource===undefined?undefined:text(x.resource,'resource',200));
+            case 'research_skill_list': return session?readCatalog(app,{...actor,sessionId:session.id},pid):app.skills.bundleCatalog(pid,'coordinator',app.skills.configuration(pid).bundleId);
+            case 'research_skill_read': return session?readSkill(app,{...actor,sessionId:session.id},pid,text(x.skillId,'skillId',100),x.resource as string|undefined):app.skills.bundleRead(pid,'coordinator',app.skills.configuration(pid).bundleId,text(x.skillId,'skillId',100),x.resource as string|undefined);
             case 'connector_status': return {...app.connectors.settings(actor,pid),observations:app.connectors.observations(actor,pid)};
             case 'session_notice_read': {
                 const m = app.sessions.messages(actor, session!.id).find(m => m.id === text(x.messageId, 'messageId', 100));
@@ -161,6 +162,15 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('skill_package_import',{asynchronous:true,idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.import(c.actor,c.projectId,x,c.idempotencyKey!)}),
+    make('skill_package_list',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:c=>c.app.skills.catalog(c.actor,c.projectId)}),
+    make('skill_package_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.inspect(c.actor,c.projectId,x.revisionId as string)}),
+    make('skill_package_read',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.readRevision(c.actor,c.projectId,x.revisionId as string,x.resource as string|undefined)}),
+    make('skill_package_review',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.review(c.actor,c.projectId,x,c.idempotencyKey)}),
+    make('skill_package_revoke',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.revoke(c.actor,c.projectId,x,c.idempotencyKey)}),
+    make('skill_bundle_configure',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.skills.configure(c.actor,c.projectId,x,c.idempotencyKey)}),
+    make('skill_session_select',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>selectSessionSkills(c.app,c.actor,c.projectId,x)}),
+    make('skill_preflight',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>inspectSessionSkills(c.app,c.actor,c.projectId,x.sessionId as string)}),
     make('literature_task_create',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.literatureTasks.create(c.actor,c.projectId,x)}),
     make('literature_task_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.literatureTasks.inspect(c.actor,c.projectId,x.taskId as string)}),
     make('literature_task_cancel',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.literatureTasks.cancel(c.actor,c.projectId,x.taskId as string)}),
@@ -324,7 +334,7 @@ export class OperationRegistry {
         spec.authorize(context, input);
         const workspaceId = spec.requiresSession || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
         // Large local document bodies are hashed before any writer transaction; metadata remains part of identity.
-        const request = {name: id,input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
+        const request = {name: id,input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:id==='skill_package_import'?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value: unknown) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
             const result: unknown = JSON.parse(JSON.stringify(value));
@@ -365,7 +375,7 @@ export class OperationRegistry {
             return spec.execute(context, input);
         };
         if (spec.asynchronous) {
-            if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare'].includes(id)) {
+            if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import'].includes(id)) {
                 const previous=lookup();
                 if(previous)return output(previous.value);
             }

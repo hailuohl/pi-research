@@ -24,7 +24,7 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 79 个操作（包含固定源码、开发测试、Git、独立审查、受审整合、报告交付、容量及文献/文档流程）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、报告生成/导出与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
+- 88 个操作（包含固定源码、开发测试、Git、独立审查、报告、容量、文献与技能管理流程）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、报告交付、技能管理与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 
@@ -37,6 +37,8 @@ node dist/apps/server/index.js
 长任务日志按 **64 KiB 有界窗口**回查，字节游标支持大日志和跨页中文/emoji；文件身份变化时显式重新读取。开发日志仅在展开时读取。工作台用带鉴权的 SSE 唤醒、按项目事件补拉和 20 秒权威状态兜底恢复连接；刷新及切会话从一致快照恢复当前输出，不重放旧回答或自动重试作业。截断/省略明确标示，完整历史分页仍在后续范围。详见[日志与断线恢复验收](docs/acceptance/flow-events/RESULTS.zh-CN.md)。
 
 **文献任务与原文** 页支持持久检索/获取、32 MiB 内原始 PDF/文本导入、不可变 DocumentVersion、原始响应与派生摘要分离，以及固定解析器的单独批准。PDF 在隔离 Docker 中生成页图/文本，文档作业共享计算预算；证据按固定版本、物理页和 UTF-16 区间回查，刷新后保留位置。解析镜像需显式运行[setup 指引](scripts/pdf-parser/README.md)后配置，不自动安装或开启来源。PubMed 本机网络、其他原件来源实网、完整表图/OCR、跨源分页和显式文档语料授权仍有未完成项。见[文献与文档验收](docs/acceptance/flow-documents/RESULTS.zh-CN.md)。
+
+**技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。会话/TaskAttempt 固定包，重试不自动升级，按需读取走同一摘要校验；原生 SDK `/skill:` 文件展开已关闭。只对显式选用技能检查实际工具、数据和后端，缺失则不启动模型；Docker 需资源页核对 `default` 目标。已有原生会话缺少唯一版本依据时保留文件并阻塞恢复。见[技能批次及图形产物](docs/acceptance/flow-skills/RESULTS.zh-CN.md)；原生 UI 上传提交和完整论文执行器仍待验收。
 
 ## 读取技能
 

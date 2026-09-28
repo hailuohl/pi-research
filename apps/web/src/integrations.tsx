@@ -1,10 +1,11 @@
 import {literatureSourceURL} from './literature-view.js';
 import {api,artifactText,downloadArtifact} from './api.js';
 import {SectionTitle,Empty} from './ui.js';
+import {SkillManager} from './skill-manager.js';
 const sources=['alphaxiv','openalex','biorxiv','pubmed','crossref'];
 interface IntegrationState{skills:any[];bundleId:string;config:any;selectedSkill:any;selectedSources:string[];query:string;priority:string;strategy:string;after:string;before:string;limit:number;search:any;paper:any;paperText:string;history:any;busy:boolean;error:string;}
 /** Existing workbench layout; no implicit external requests when this view mounts. */
-export class IntegrationsView extends React.Component<{projectId:string;onLiterature?:()=>void},IntegrationState>{
+export class IntegrationsView extends React.Component<{projectId:string;sessionId?:string;onLiterature?:()=>void},IntegrationState>{
  state:IntegrationState={skills:[],bundleId:'',config:null,selectedSkill:null,selectedSources:['crossref'],query:'',priority:'default',strategy:'keyword',after:'',before:'',limit:8,search:null,paper:null,paperText:'',history:null,busy:false,error:''};
  private mounted=true;
  componentDidMount(){void this.run(()=>this.load());}
@@ -20,6 +21,7 @@ export class IntegrationsView extends React.Component<{projectId:string;onLitera
  return <div className="page-scroll integrations-page"><SectionTitle title="技能与连接器" sub="受管科研方法与显式授权的文献来源，共用项目的权限和证据服务。">{this.props.onLiterature?<button className="primary" onClick={this.props.onLiterature}>前往持久文献任务</button>:null}<button className="secondary" disabled={s.busy} onClick={()=>this.run(()=>this.load())}>刷新本地状态</button></SectionTitle>
  <p className="inline-warning">开启来源只授权向该外部服务发送查询，不保证网络可达或全文可得。实际请求状态单独记录；来源错误不代表没有相关论文。不会授予计算、发布或额外模型调用权限。</p>
  {s.error?<p role="alert" className="error-text">{s.error}</p>:null}
+ <SkillManager key={this.props.projectId} projectId={this.props.projectId} sessionId={this.props.sessionId}/>
  <section className="surface"><div className="surface-heading"><h2>文献来源授权</h2><span className="small muted">新来源默认关闭；Crossref 保留原默认</span></div>
  {c?<div><div className="connector-switches">{sources.map(source=><label key={source}><input type="checkbox" disabled={s.busy} checked={!!c.enabled[source]} onChange={(e:any)=>this.configure(source,e.target.checked)}/><strong>{source}</strong><span>{c.enabled[source]?'已启用':'关闭'}</span></label>)}</div><p className="small muted">已预留/发起 HTTP 请求 {c.requestsUsed} / {c.requestLimit} 次。不是费用硬上限；服务可收费或限流，失败也会占用请求次数。</p><div className="actions"><label>请求上限 <input type="number" min="1" max="10000" defaultValue={c.requestLimit} key={'cap-'+c.version} aria-label="请求上限" id={'request-cap-'+this.props.projectId}/></label><button className="secondary" disabled={s.busy} onClick={()=>this.run(async()=>{const input=document.getElementById('request-cap-'+this.props.projectId) as HTMLInputElement;const config=await api(`/projects/${this.props.projectId}/connectors`,{expectedVersion:c.version,requestLimit:Number(input.value)});this.setState({config});})}>保存请求上限</button></div><p className="small muted">OpenAlex 密钥：{c.credentials.openalexKeyConfigured?'已在宿主配置':'未配置'}；NCBI 密钥：{c.credentials.ncbiKeyConfigured?'已在宿主配置':'未配置'}。密钥不传给 Agent、不显示在页面。</p></div>:<p className="muted">读取本地设置中…</p>}
  <div className="inspector-section"><h3>最近实际请求观测（不等于持续健康保证）</h3>{Array.isArray(s.history?.observations)?<div className="table-wrap"><table><thead><tr><th>来源授权</th><th>最近观测</th><th>HTTP / 限流 / 错误</th></tr></thead><tbody>{sources.map(source=>{const observation=s.history.observations.find((item:any)=>item.source===source);return <tr key={source}><td>{source} · {c?.enabled[source]?'已授权':'未授权'}</td><td>{observation?`${observation.startedAt} · ${observation.status==='succeeded'?'该次请求成功':observation.status==='reserved'?'请求已预留，结果未确认':'失败或结果未知'}`:'最近50次请求中没有该来源观测'}</td><td>{observation?`HTTP ${observation.httpStatus??'未取得'} · Retry-After ${observation.retryAfter??'无'} · ${observation.error??'未记录错误'}`:'未观测；不推断健康或无文献'}</td></tr>;})}</tbody></table></div>:<p className="small muted">本接口尚未返回实际请求观测；来源开关仅表示授权，不表示健康。</p>}</div>

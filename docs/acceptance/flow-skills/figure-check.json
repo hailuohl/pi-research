@@ -1,0 +1,13 @@
+{
+  "protocol": "acceptance-figure/v1",
+  "width": 480,
+  "height": 320,
+  "pointCount": 21,
+  "xMin": 0.0,
+  "xMax": 1.0,
+  "yMin": 0.0,
+  "yMax": 1.0,
+  "finite": true,
+  "synthetic": true,
+  "note": "Synthetic-data acceptance chart; not scientific evidence."
+}

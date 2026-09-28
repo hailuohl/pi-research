@@ -56,7 +56,8 @@ export function buildSessionOptions(sdk: Pick<typeof import('@earendil-works/pi-
         tools: customTools.map(t => t.name), noTools: 'builtin', customTools,
         sessionManager,
         settingsManager: sdk.SettingsManager.inMemory({ defaultTools: [], compaction: { enabled: false }, retry: { enabled: false, maxRetries: 0, provider: { maxRetries: 0 } }, cacheWarming: 'off', enableAnalytics: false, enableInstallTelemetry: false, defaultProjectTrust: 'never', httpIdleTimeoutMs: 120000 }),
-        resourceLoader: { getExtensions: () => ({ extensions: [], errors: [], runtime: sdk.createExtensionRuntime() }), getSkills: () => ({ skills: setup.skills ?? [], diagnostics: [] }), getPrompts: () => ({ prompts: [], diagnostics: [] }), getThemes: () => ({ themes: [], diagnostics: [] }), getAgentsFiles: () => ({ agentsFiles: [] }), getSystemPrompt: () => setup.systemPrompt, getSystemPromptSource: () => undefined, getAppendSystemPrompt: () => [], getAppendSystemPromptSources: () => [], extendResources: () => { }, reload: async () => { } }
+        // Native /skill expansion reads filePath without our digest check. All skill text crosses the controlled tool instead.
+        resourceLoader: { getExtensions: () => ({ extensions: [], errors: [], runtime: sdk.createExtensionRuntime() }), getSkills: () => ({ skills: [], diagnostics: [] }), getPrompts: () => ({ prompts: [], diagnostics: [] }), getThemes: () => ({ themes: [], diagnostics: [] }), getAgentsFiles: () => ({ agentsFiles: [] }), getSystemPrompt: () => setup.systemPrompt, getSystemPromptSource: () => undefined, getAppendSystemPrompt: () => [], getAppendSystemPromptSources: () => [], extendResources: () => { }, reload: async () => { } }
     } satisfies CreateAgentSessionOptions;
 }
 const roleInstructions: Record<Role, string> = {

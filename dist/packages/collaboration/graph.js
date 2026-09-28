@@ -5,6 +5,8 @@ export function validateGraph(value, maxTasks = 24) {
     const tasks = value.map(raw => {
         const x = object(raw);
         const task = { key: text(x.key, 'key', 60), role: oneOf(x.role, ['literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer'], 'role'), objective: text(x.objective, 'objective'), dependencies: strings(x.dependencies ?? [], 'dependencies', maxTasks), critical: x.critical === undefined ? false : bool(x.critical, 'critical'), required: x.required === undefined ? true : bool(x.required, 'required'), inputEvidenceIds: strings(x.inputEvidenceIds ?? [], 'inputEvidenceIds') };
+        if (x.skillIds !== undefined)
+            task.skillIds = strings(x.skillIds, 'skillIds', 32);
         ensure(/^[a-zA-Z0-9_-]+$/.test(task.key), 'INVALID_INPUT', '任务 key 只能含字母、数字、下划线和连字符', 400);
         if (x.reviewOf !== undefined)
             task.reviewOf = text(x.reviewOf, 'reviewOf', 60);

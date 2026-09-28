@@ -1,0 +1,74 @@
+import {api} from './api.js';
+import type {Row} from './models.js';
+import type {SkillPackageRevision,ReviewRecord,SkillRevocation,SkillConfiguration} from '../../../dist/packages/skills/types.js';
+import {label} from './models.js';
+
+type Inspection={revision:Row<SkillPackageRevision>;reviews:Row<ReviewRecord>[];revocations:Row<SkillRevocation>[]};
+type Configuration=SkillConfiguration & {version:number};
+type Catalog={configuration:Configuration;revisions:Inspection[]};
+const call=<T=any>(projectId:string,name:string,input:unknown={})=>api<T>(`/operations/${name}`,{projectId,input});
+const words=(value:string)=>value.split(/[\s,，]+/).filter(Boolean);
+const roles=['coordinator','literature','designer','implementer','analyst','reviewer','writer'];
+export async function skillFileBase64(file:File){
+ if(file.size>2*1024*1024)throw Error('单个上传文件不能超过 2 MiB');
+ const bytes=new Uint8Array(await file.arrayBuffer());let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary);
+}
+class SkillImport extends React.Component<{busy:boolean;submit:(input:any)=>Promise<void>},{packageId:string;revisionTag:string;description:string;license:string;roles:string[];tools:string;backends:string;artifactIds:string;files:File[];error:string}>{
+ state={packageId:'',revisionTag:'',description:'',license:'',roles:['coordinator'],tools:'',backends:'',artifactIds:'',files:[] as File[],error:''};
+ private mounted=true;private submitting=false;
+ componentWillUnmount(){this.mounted=false;}
+ async submit(){if(this.submitting||this.props.busy)return;this.submitting=true;this.setState({error:''});try{
+  const s=this.state;if(!s.files.length||s.files.length>64)throw Error('请选择 1–64 个文本文件，或单个 ZIP');
+  if(s.files.reduce((n,f)=>n+f.size,0)>2*1024*1024)throw Error('上传总量不能超过 2 MiB');
+  const zip=s.files.some(f=>/\.zip$/i.test(f.name));if(zip&&s.files.length!==1)throw Error('ZIP 必须单独上传');
+  const payload=zip?{zipBase64:await skillFileBase64(s.files[0])}:{files:await Promise.all(s.files.map(async file=>({path:file.name,contentBase64:await skillFileBase64(file)})))};
+  if(this.mounted)await this.props.submit({packageId:s.packageId,revisionTag:s.revisionTag,description:s.description,roles:s.roles,license:s.license.trim()||null,requirements:{tools:words(s.tools),backends:words(s.backends),artifactIds:words(s.artifactIds)},...payload});
+ }catch(e){if(this.mounted)this.setState({error:e instanceof Error?e.message:String(e)});}finally{this.submitting=false;}}
+ render(){const s=this.state;return <details><summary>导入待审技能版本</summary><form onSubmit={(e:any)=>{e.preventDefault();void this.submit();}}>
+  <div className="integration-controls"><label>包 ID<input required maxLength={100} value={s.packageId} onChange={(e:any)=>this.setState({packageId:e.target.value})}/></label><label>版本标签<input required maxLength={100} value={s.revisionTag} onChange={(e:any)=>this.setState({revisionTag:e.target.value})}/></label></div>
+  <label>描述<input required maxLength={2000} value={s.description} onChange={(e:any)=>this.setState({description:e.target.value})}/></label><label>许可证声明（空白表示未知）<input value={s.license} maxLength={500} onChange={(e:any)=>this.setState({license:e.target.value})}/></label>
+  <fieldset><legend>适用角色</legend><div className="connector-switches">{roles.map(role=><label key={role}><input type="checkbox" checked={s.roles.includes(role)} onChange={(e:any)=>this.setState({roles:e.target.checked?[...s.roles,role]:s.roles.filter(r=>r!==role)})}/>{label(role)}</label>)}</div></fieldset>
+  <div className="integration-controls"><label>必需工具（空格或逗号分隔）<input value={s.tools} onChange={(e:any)=>this.setState({tools:e.target.value})}/></label><label>必需后端<input value={s.backends} onChange={(e:any)=>this.setState({backends:e.target.value})}/></label><label>必需数据 artifact ID<input value={s.artifactIds} onChange={(e:any)=>this.setState({artifactIds:e.target.value})}/></label></div>
+  <label>选择 SKILL.md 和文本资源，或受限 ZIP<input type="file" multiple disabled={this.props.busy} onChange={(e:any)=>this.setState({files:Array.from(e.target.files??[])})}/></label><p className="small muted">最多64个文件，每个文本128 KiB，总量及 ZIP 最多2 MiB。普通多选保留文件名；嵌套资源请用 ZIP。脚本仅保存为文本，不运行。</p>
+  {s.error?<p role="alert" className="error-text">{s.error}</p>:null}<button className="primary" disabled={this.props.busy||!s.files.length||!s.roles.length}>导入为待审版本</button>
+ </form></details>;}
+}
+interface ManagerState {catalog:Catalog|null;selected:Inspection|null;content:{resource:string;content:string;digest:string}|null;enabled:string[];note:string;busy:boolean;reading:boolean;error:string;notice:string;}
+type Preflight={sessionId:string;version:number;skillBundleId:string|null;skillIds:string[];ready:boolean;missing:Array<{skillId:string;kind:string;value:string;reason:string}>};
+class SkillSession extends React.Component<{projectId:string;sessionId?:string;catalog:Catalog|null},{result:Preflight|null;selected:string[];builtin:string[];busy:boolean;error:string}>{
+ state={result:null as Preflight|null,selected:[] as string[],builtin:[] as string[],busy:false,error:''};private mounted=true;private epoch=0;
+ componentDidMount(){void this.load();}componentWillUnmount(){this.mounted=false;this.epoch++;}
+ componentDidUpdate(prev:Readonly<SkillSession['props']>){if(prev.projectId!==this.props.projectId||prev.sessionId!==this.props.sessionId){this.epoch++;this.setState({result:null,selected:[],busy:false,error:''});void this.load();}}
+ async load(save=false){if(!this.props.sessionId)return;const epoch=++this.epoch,sessionId=this.props.sessionId,projectId=this.props.projectId,input=save?{sessionId,expectedVersion:this.state.result!.version,skillIds:this.state.selected}:{sessionId};this.setState({busy:true,error:'',result:null});try{
+  const [result,builtin]=await Promise.all([call<Preflight>(projectId,save?'skill_session_select':'skill_preflight',input),api<{skills:Array<{id:string}>}>('/skills')]);
+  if(this.mounted&&epoch===this.epoch)this.setState({result,selected:result.skillIds,builtin:builtin.skills.map(skill=>skill.id)});
+ }catch(e){if(this.mounted&&epoch===this.epoch)this.setState({error:e instanceof Error?e.message:String(e)});}finally{if(this.mounted&&epoch===this.epoch)this.setState({busy:false});}}
+ render(){const s=this.state,ids=Array.from(new Set([...s.builtin,...(this.props.catalog?.revisions??[]).filter(item=>this.props.catalog!.configuration.revisionIds.includes(item.revision.id)).map(item=>item.revision.packageId),...s.selected]));return <div className="inspector-section"><h3>当前会话显式技能选择</h3>{!this.props.sessionId?<p>先在研究会话中创建或选择会话，再选择本次任务必需技能。</p>:<div><p className="small code-wrap">会话 {this.props.sessionId} · 固定 Bundle {s.result?.skillBundleId??'未绑定'}</p><p className="small muted">只检查显式选用的技能；未选择的目录项不会阻止启动。已开始原生 Pi 的会话不能改绑，请新建会话。保存选择不会启动模型。</p><div className="connector-switches">{ids.map(id=><label key={id}><input type="checkbox" checked={s.selected.includes(id)} disabled={s.busy||!s.result} onChange={(e:any)=>this.setState({selected:e.target.checked?[...s.selected,id]:s.selected.filter(x=>x!==id)})}/>{id}</label>)}</div><div className="actions wrap"><button className="primary" disabled={s.busy||!s.result} onClick={()=>this.load(true)}>保存显式选择并预检</button><button className="secondary" disabled={s.busy} onClick={()=>this.load()}>刷新已保存选择的预检</button></div>{s.busy?<p role="status">正在核对会话绑定与能力…</p>:null}{s.result?<div><p role="status">已保存选择：{s.result.skillIds.join('、')||'无'} · {s.result.ready?'本次预检通过；启动时仍会重新核对':'启动被阻止'}</p>{s.result.missing.map((item,i)=><p className="inline-warning code-wrap" key={i}>{item.skillId} · {item.kind} · {item.value}：{item.reason}</p>)}</div>:null}</div>}{s.error?<p role="alert" className="error-text">{s.error}</p>:null}</div>;}
+}
+export class SkillManager extends React.Component<{projectId:string;sessionId?:string},ManagerState>{
+ state:ManagerState={catalog:null,selected:null,content:null,enabled:[],note:'',busy:false,reading:false,error:'',notice:''};
+ private mounted=true;private epoch=0;private readEpoch=0;private locked=false;
+ componentDidMount(){void this.refresh();}
+ componentWillUnmount(){this.mounted=false;this.epoch++;this.readEpoch++;}
+ componentDidUpdate(prev:Readonly<SkillManager['props']>){if(prev.projectId!==this.props.projectId){this.epoch++;this.readEpoch++;this.locked=false;this.setState({catalog:null,selected:null,content:null,enabled:[],busy:false,reading:false,error:'',notice:''});void this.refresh();}}
+ private current(epoch:number){return this.mounted&&epoch===this.epoch;}
+ async refresh(){await this.run(async epoch=>{const catalog=await call<Catalog>(this.props.projectId,'skill_package_list');if(this.current(epoch))this.setState({catalog,enabled:catalog.configuration.revisionIds});});}
+ async run(fn:(epoch:number)=>Promise<void>,notice=''){if(this.locked)return;this.locked=true;const epoch=this.epoch;this.setState({busy:true,error:'',notice:''});try{await fn(epoch);if(this.current(epoch)&&notice)this.setState({notice});}catch(e){if(this.current(epoch))this.setState({error:e instanceof Error?e.message:String(e)});}finally{if(this.current(epoch)){this.locked=false;this.setState({busy:false});}}}
+ async inspect(revisionId:string){const request=++this.readEpoch,epoch=this.epoch;this.setState({selected:null,content:null,note:'',reading:true,error:''});try{const selected=await call<Inspection>(this.props.projectId,'skill_package_inspect',{revisionId});if(this.current(epoch)&&request===this.readEpoch)this.setState({selected});}catch(e){if(this.current(epoch)&&request===this.readEpoch)this.setState({error:e instanceof Error?e.message:String(e)});}finally{if(this.current(epoch)&&request===this.readEpoch)this.setState({reading:false});}}
+ async read(resource:string){const revisionId=this.state.selected?.revision.id;if(!revisionId)return;const request=++this.readEpoch,epoch=this.epoch;this.setState({content:null,reading:true,error:''});try{const content=await call<ManagerState['content']>(this.props.projectId,'skill_package_read',{revisionId,resource});if(this.current(epoch)&&request===this.readEpoch)this.setState({content});}catch(e){if(this.current(epoch)&&request===this.readEpoch)this.setState({error:e instanceof Error?e.message:String(e)});}finally{if(this.current(epoch)&&request===this.readEpoch)this.setState({reading:false});}}
+ async mutate(name:string,input:unknown,notice:string){await this.run(async epoch=>{const projectId=this.props.projectId;await call(projectId,name,input);const catalog=await call<Catalog>(projectId,'skill_package_list');if(this.current(epoch)){const id=this.state.selected?.revision.id;this.setState({catalog,enabled:catalog.configuration.revisionIds,selected:catalog.revisions.find(item=>item.revision.id===id)??null});}},notice);}
+ render(){const s=this.state,selected=s.selected,r=selected?.revision;return <section className="surface report-builder"><div className="surface-heading"><h2>技能版本与启动预检</h2><button className="secondary" disabled={s.busy} onClick={()=>this.refresh()}>刷新技能状态</button></div>
+  <p className="small muted">审阅只批准文本加载；声明需求不会授予工具、数据或计算权限。未知许可证不代表获得再分发许可。图形与论文执行能力须分别预检，目录展示不代表执行器已实现。</p>
+  {s.error?<p role="alert" className="error-text">{s.error}</p>:null}{s.notice?<p role="status">{s.notice}</p>:null}{s.busy?<p role="status">正在保存或读取权威状态…</p>:null}
+  <SkillImport key={this.props.projectId} busy={s.busy} submit={input=>this.mutate('skill_package_import',input,'已导入待审版本；尚未启用。')}/>
+  <h3>固定版本目录 / 配置指针</h3><p className="small code-wrap">当前 Bundle {s.catalog?.configuration.bundleId??'读取中'} · 配置版本 {s.catalog?.configuration.version??'—'}</p>
+  {!s.catalog?<p>尚未取得技能状态，请刷新重试。</p>:!s.catalog.revisions.length?<p className="inline-empty">尚无导入的技能版本。</p>:<div className="run-selection">{s.catalog.revisions.map(item=>{const revision=item.revision,approved=item.reviews[item.reviews.length-1]?.decision==='approved',revoked=item.revocations.length>0;return <div key={revision.id}><label><input type="checkbox" aria-label={`配置启用 ${revision.packageId} ${revision.revisionTag}`} disabled={s.busy||(!s.enabled.includes(revision.id)&&(!approved||revoked))} checked={s.enabled.includes(revision.id)} onChange={(e:any)=>this.setState({enabled:e.target.checked?[...s.enabled,revision.id]:s.enabled.filter(id=>id!==revision.id)})}/> {revision.packageId} / {revision.revisionTag} · {revoked?'已撤销':approved?'审阅通过':item.reviews.length?'审阅未通过':'待审'}</label><button className="text-button code-wrap" onClick={()=>this.inspect(revision.id)}>审阅原文与资源 · {revision.id}</button><p className="small muted">{revision.description}</p><p className="small code-wrap">必需工具：{revision.requirements.tools.join(', ')||'无'}；后端：{revision.requirements.backends.join(', ')||'无'}；数据：{revision.requirements.artifactIds.join(', ')||'无'}。许可证：{revision.license??'未知'}</p></div>;})}</div>}
+  <button className="secondary" disabled={s.busy||!s.catalog} onClick={()=>this.mutate('skill_bundle_configure',{expectedVersion:s.catalog!.configuration.version,revisionIds:s.enabled},'已切换固定配置；已有会话绑定不自动升级。')}>保存启用 / 回滚到所选版本</button><p className="small muted">回滚时取消新版并勾选已批准旧版；同一包只选一个版本。启用不等于任务必需，须在会话中显式选择。</p>
+  {s.reading?<p role="status">读取固定版本…</p>:null}{r&&selected?<div className="inspector-section"><h3>{r.packageId} / {r.revisionTag}</h3><p className="small code-wrap">Revision {r.id}<br/>SHA-256 {r.contentDigest}<br/>角色 {r.roles.map(label).join('、')} · 许可证 {r.license??'未知'}</p><div className="actions wrap">{r.files.map(file=><button key={file.path} className="secondary compact code-wrap" onClick={()=>this.read(file.path)}>{file.path} · {file.size} B</button>)}</div>
+   {s.content?<div><p className="small code-wrap">{s.content.resource} · SHA-256 {s.content.digest}</p><pre className="integration-content">{s.content.content}</pre></div>:null}
+   <label>审阅 / 撤销理由<textarea value={s.note} maxLength={4000} onChange={(e:any)=>this.setState({note:e.target.value})}/></label><div className="actions wrap"><button className="primary" disabled={s.busy||!s.note.trim()||!!selected.revocations.length} onClick={()=>this.mutate('skill_package_review',{revisionId:r.id,decision:'approved',note:s.note},'审阅决定已保存；仍需显式启用。')}>批准此固定文本版本</button><button className="secondary" disabled={s.busy||!s.note.trim()||!!selected.revocations.length} onClick={()=>this.mutate('skill_package_review',{revisionId:r.id,decision:'rejected',note:s.note},'拒绝决定已保存。')}>拒绝</button><button className="danger-outline" disabled={s.busy||!s.note.trim()||!!selected.revocations.length} onClick={()=>this.mutate('skill_package_revoke',{revisionId:r.id,note:s.note},'版本已撤销；历史原文与决定保留。')}>撤销此版本</button></div>
+   {selected.reviews.map(review=><p className="small" key={review.id}>{label(review.decision)} · {review.note} · {review.contentDigest}</p>)}{selected.revocations.map(revoke=><p className="small" key={revoke.id}>撤销 · {revoke.note}</p>)}
+  </div>:null}
+ <SkillSession projectId={this.props.projectId} sessionId={this.props.sessionId} catalog={s.catalog}/>
+ </section>;}
+}
