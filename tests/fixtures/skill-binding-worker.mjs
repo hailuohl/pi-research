@@ -1,6 +1,6 @@
 // Real child-process IPC fixture only. No Pi SDK, provider, or model call.
-let bundleId;const reads=[];
-function read(index){process.send({type:'tool',tool:'research_skill_read',input:{skillId:'ipc-binding-fixture'},toolCallId:`read-${index}`,requestId:`read-${index}`});}
+let bundleId;const reads=[],skillId=process.env.SKILL_BINDING_FIXTURE_SKILL??'ipc-binding-fixture';
+function read(index){process.send({type:'tool',tool:'research_skill_read',input:{skillId},toolCallId:`read-${index}`,requestId:`read-${index}`});}
 process.on('message',m=>{
  if(m.type==='start'){
   bundleId=m.skillBundle.bundleId;

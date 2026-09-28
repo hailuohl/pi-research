@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "6683733f868b846a6bed3434bba1ff2bdceed99aece0538ac75fe1c70bbd89f2";
+export declare const BUNDLE_ID = "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -144,7 +144,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when producing a report, comparison, durable research note, or end-of-round handoff.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/openresearch/pi-research-reports/SKILL.md";
-    readonly digest: "722fb5b708289ccd369e789831ba816d5a957dd053e409e3fa2b018f03407936";
+    readonly digest: "34e81e4131c0d357b0ffdbc8e08200b2d0c204552b986aba633ef0e760cbbced";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -190,7 +190,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when drafting a manuscript, preprint, LaTeX section, or checking references and compilation needs.";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/openresearch/pi-research-paper/SKILL.md";
-    readonly digest: "de7dea0bda7027b4c315e25bc3697fb2e5b228174434ae11a2158661b6828022";
+    readonly digest: "b891b00397bb77733b91c7f168192a6bce576b3240c4f47f1f89e06f390ad1b4";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {setup,USER,approve} from '../support/research.mjs';
 import {ToolDispatcher} from '../../dist/packages/research-tools/dispatcher.js';
 import {ConnectorService} from '../../dist/packages/connectors/service.js';import {ConnectorTransport} from '../../dist/packages/connectors/transport.js';
-function root(s){let q=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',q.id,q.version,{state:'running',generation:1,leaseUntil:Date.now()+30000});return{type:'agent',role:'coordinator',sessionId:q.id,projectId:s.project.id,generation:1};}
+function root(s){let q=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',q.id,q.version,{state:'running',generation:1,skillBundleId:s.app.skills.configuration(s.project.id).bundleId,leaseUntil:Date.now()+30000});return{type:'agent',role:'coordinator',sessionId:q.id,projectId:s.project.id,generation:1};}
 function enable(s){const c=s.app.connectors.settings(USER,s.project.id);s.app.connectors.configure(USER,s.project.id,{expectedVersion:c.version,enabled:{openalex:true,pubmed:true,biorxiv:true,alphaxiv:true}});}
 const hit={id:'https://openalex.org/W123',doi:'https://doi.org/10.1234/fixture',title:'Fixture not a real paper',abstract_inverted_index:{original:[0],text:[1]}};
 function network(s,fn){s.app.connectors=new ConnectorService(s.app.context,s.app.evidence,{transport:new ConnectorTransport({fetcher:fn,minIntervalMs:0}),credentials:()=>({})});}

@@ -3182,6 +3182,13 @@ export declare const INPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly builtinBundleId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
         };
         readonly required: readonly ["expectedVersion"];
         readonly additionalProperties: false;

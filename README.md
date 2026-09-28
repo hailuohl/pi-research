@@ -40,7 +40,7 @@ node dist/apps/server/index.js
 
 **文献任务与原文** 页支持持久检索/获取、32 MiB 内原始 PDF/文本导入、不可变 DocumentVersion、原始响应与派生摘要分离，以及固定解析器的单独批准。PDF 在隔离 Docker 中生成页图/文本，文档作业共享计算预算；证据按固定版本、物理页和 UTF-16 区间回查，刷新后保留位置。解析镜像需显式运行[setup 指引](scripts/pdf-parser/README.md)后配置，不自动安装或开启来源。PubMed 本机网络、其他原件来源实网、完整表图/OCR、跨源分页和显式文档语料授权仍有未完成项。见[文献与文档验收](docs/acceptance/flow-documents/RESULTS.zh-CN.md)。
 
-**技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。会话/TaskAttempt 固定包，重试不自动升级，按需读取走同一摘要校验；原生 SDK `/skill:` 文件展开已关闭。只对显式选用技能检查实际工具、数据和后端，缺失则不启动模型；Docker 需资源页核对 `default` 目标，latex 需已配置的固定编译器及核对过的对应目标。已有原生会话缺少唯一版本依据时保留文件并阻塞恢复。内置技能文本继续冻结在原发布版本；应用与运行时能力目录反映当前实现，内置包升级前仍需补齐历史 bundle 迁移。见[技能批次及图形产物](docs/acceptance/flow-skills/RESULTS.zh-CN.md)；原生 UI 上传提交与完整论文写作流程仍待验收。
+**技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。内置发行可在原生选择器中显式升级或回滚，修改自定义修订默认保留原内置基线；完整 bundleId 回滚恢复原组合。未配置项目的新绑定默认当前发行，已有会话/TaskAttempt 不随配置变化，重试不自动升级。旧发行的目录/角色/正文/资源按原字节归档，启动前验证全包，未知或损坏版本拒绝加载；原生 SDK `/skill:` 文件展开继续关闭。只对显式选用技能检查实际工具、数据和后端；Docker 需资源页核对 `default` 目标，latex 需固定编译器及对应目标。已启动会话缺少唯一版本依据时保留原生文件并阻塞恢复。新版 paper/reports 指导匹配现有隔离构建和成果包，仍保留用户批准边界。见[内置升级与旧会话验收](docs/acceptance/flow-builtin-skills/RESULTS.zh-CN.md)和[技能图形产物](docs/acceptance/flow-skills/RESULTS.zh-CN.md)；原生 UI 上传提交、完整写作和 diagram 能力仍待验收。
 
 ## 读取技能
 
@@ -48,6 +48,8 @@ node dist/apps/server/index.js
 node dist/apps/cli/index.js skills
 node dist/apps/cli/index.js skills pi-research-lit-review
 ```
+
+以上命令读取当前内置发行；会话的受控技能读取遵循该会话固定的 bundle。维护发布流程见[发行归档说明](skills/releases/README.md)，普通构建或启动不会重建信任摘要。
 
 Pi适配代码把受管目录/总览和按需读取工具接入Worker。实际模型调用仍需安装固定SDK与配置自己的密钥：
 

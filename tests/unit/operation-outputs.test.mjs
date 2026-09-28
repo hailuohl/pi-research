@@ -27,7 +27,7 @@ test('all existing public tools have closed, literal success contracts exercised
  const s=setup(), savedFetch=globalThis.fetch, seen=new Set();
  try {
   const current=s.app.store.get('session',s.session.id);
-  s.app.store.update('session',current.id,current.version,{state:'running',generation:1,leaseUntil:Date.now()+120000});
+  s.app.store.update('session',current.id,current.version,{state:'running',generation:1,skillBundleId:s.app.skills.configuration(s.project.id).bundleId,leaseUntil:Date.now()+120000});
   const root={type:'agent',projectId:s.project.id,sessionId:s.session.id,generation:1,role:'coordinator'}, tools=new ToolDispatcher(s.app);
   let serial=0;
   const check=(name,value)=>{validateSchema(OUTPUT_SCHEMAS[name],value,'output');seen.add(name);return value;};

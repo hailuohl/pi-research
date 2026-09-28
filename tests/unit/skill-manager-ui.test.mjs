@@ -9,7 +9,7 @@ const view=()=>sync(new SkillManager({projectId:'project',sessionId:'session'}))
 function nodes(node,out=[]){if(!node||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}assert.ok(typeof node.type==='string'||typeof node.type==='function');out.push(node);nodes(node.props.children,out);return out;}
 const text=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(text).join(' '):typeof node!=='object'?String(node):text(node.props.children);
 const revision=id=>({revision:{id,packageId:'figure',revisionTag:id,description:'plot',roles:['coordinator'],license:null,requirements:{tools:['plot'],backends:['latex'],artifactIds:[]},files:[{path:'SKILL.md',size:20,digest:'hash'}],contentDigest:'hash',authorization:'text-only'},reviews:[],revocations:[]});
-const catalog={configuration:{version:3,bundleId:'bundle',revisionIds:[]},revisions:[revision('r1')]};
+const catalog={configuration:{version:3,bundleId:'bundle',builtinBundleId:'builtin-old',revisionIds:[]},revisions:[revision('r1')],builtinReleases:[{bundleId:'builtin-old',current:false,skillCount:12},{bundleId:'builtin-new',current:true,skillCount:12}]};
 function session(v){const element=nodes(v.render()).find(n=>n.type?.name==='SkillSession');return sync(new element.type(element.props));}
 const reply=value=>({ok:true,json:async()=>value});
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
@@ -43,10 +43,10 @@ test('revision and resource late responses cannot overwrite the newly selected f
 });
 
 test('configuration uses expected version and only explicitly checked fixed revisions',async t=>{
- const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=view();v.state.catalog=catalog;v.state.enabled=['r1'];
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=view();v.state.catalog=catalog;v.state.enabled=['r1'];v.state.builtinBundleId='builtin-old';
  globalThis.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return reply(url.endsWith('skill_package_list')?catalog:catalog.configuration);};
  await nodes(v.render()).find(n=>n.type==='button'&&text(n).includes('保存启用')).props.onClick();
- assert.deepEqual(requests[0].input,{expectedVersion:3,revisionIds:['r1']});assert.ok(requests[0].url.endsWith('skill_bundle_configure'));
+ assert.deepEqual(requests[0].input,{expectedVersion:3,revisionIds:['r1'],builtinBundleId:'builtin-old'});assert.ok(requests[0].url.endsWith('skill_bundle_configure'));
 });
 
 test('review and revocation controls bind the selected revision and retain the written reason',async t=>{
@@ -70,4 +70,34 @@ test('session saves explicit skills, reports preflight reasons, and ignores late
  const save=nodes(v.render()).find(n=>n.type==='button'&&text(n).includes('保存显式')).props.onClick();assert.deepEqual(pending[2].input,{sessionId:'new-session',expectedVersion:7,skillIds:['figure']});
  pending[2].resolve(reply({...result,skillIds:['figure'],ready:false,missing:[{skillId:'figure',kind:'backend',value:'latex',reason:'未实现隔离编译'}]}));await save;
  assert.match(text(v.render()),/启动被阻止/);assert.match(text(v.render()),/未实现隔离编译/);v.componentWillUnmount();
+});
+
+
+test('builtin release upgrade is explicit, keeps custom revisions, and leaves old session preflight intact',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=view(),configured={...catalog,configuration:{...catalog.configuration,revisionIds:['r1']}};
+ globalThis.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return reply(url.endsWith('skill_package_list')?configured:configured.configuration);};
+ await v.refresh();
+ let tree=v.render(),select=nodes(tree).find(n=>n.type==='select');
+ assert.equal(select.props.value,'builtin-old');assert.equal(select.props.children.length,2);assert.match(text(tree),/可选发行版本\s+2\s+个/);assert.match(text(tree),/仅影响后续新绑定/);assert.match(text(tree),/未配置项目的新绑定默认使用当前发行/);
+ const existing=session(v);existing.state.result={sessionId:'session',version:9,skillBundleId:'old-session-composite',skillIds:['figure'],ready:false,missing:[{skillId:'figure',kind:'tool',value:'plot',reason:'原版本能力不可用'}]};existing.state.selected=['figure'];
+ select.props.onChange({target:{value:'builtin-new'}});assert.deepEqual(v.state.enabled,['r1']);assert.equal(requests.length,1);
+ await nodes(v.render()).find(n=>n.type==='button'&&text(n).includes('保存启用')).props.onClick();
+ assert.deepEqual(requests[1].input,{expectedVersion:3,revisionIds:['r1'],builtinBundleId:'builtin-new'});
+ existing.props={...existing.props,catalog:{...configured,configuration:{...configured.configuration,builtinBundleId:'builtin-new'}}};
+ assert.match(text(existing.render()),/old-session-composite/);assert.match(text(existing.render()),/原版本能力不可用/);assert.match(text(existing.render()),/启动被阻止/);
+});
+
+test('late catalog loads and upgrades cannot replace another project builtin selection',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const pending=[],v=view();
+ globalThis.fetch=(url,options)=>new Promise(resolve=>pending.push({url,...JSON.parse(options.body),resolve}));
+ const first=v.refresh(),previous=v.props;v.props={projectId:'next-project'};v.componentDidUpdate(previous);
+ assert.equal(v.state.catalog,null);assert.equal(v.state.builtinBundleId,'');
+ const next={...catalog,configuration:{...catalog.configuration,builtinBundleId:'builtin-new'}};
+ pending[1].resolve(reply(next));await tick();pending[0].resolve(reply(catalog));await first;
+ assert.equal(v.state.builtinBundleId,'builtin-new');assert.equal(v.state.catalog,next);
+ const save=v.mutate('skill_bundle_configure',{expectedVersion:3,revisionIds:[],builtinBundleId:'builtin-old'},'saved'),before=v.props;
+ v.props={projectId:'third-project'};v.componentDidUpdate(before);
+ pending[3].resolve(reply(catalog));await tick();pending[2].resolve(reply(next.configuration));await tick();
+ assert.equal(pending[4].projectId,'next-project');pending[4].resolve(reply(next));await save;
+ assert.equal(v.state.catalog,catalog);assert.equal(v.state.builtinBundleId,'builtin-old');assert.equal(v.state.notice,'');assert.equal(v.state.busy,false);
 });

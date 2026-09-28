@@ -1,0 +1,292 @@
+{
+  "capturedAt": "2026-09-28T18:46:40.559Z",
+  "projectId": "8e7e45d0-ff95-4c5d-bf05-ec8e7dc592ef",
+  "configuration": {
+    "version": 6,
+    "bundleId": "ec658764b18b3cb65f0772feba6ef8969a1ef507e2035b90a3838f6f197f670a",
+    "builtinBundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+    "revisionIds": [
+      "6d4f3e2b-4b12-40fb-9cfd-34714cbb1e53"
+    ]
+  },
+  "configurationTransitions": [
+    {
+      "bundleId": "ec658764b18b3cb65f0772feba6ef8969a1ef507e2035b90a3838f6f197f670a",
+      "builtinBundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+      "previousBundleId": "70f72324f575712e85002cb9ac65c9f0f4db43a0c2c85614105f38c7165f1063",
+      "revisionIds": [
+        "6d4f3e2b-4b12-40fb-9cfd-34714cbb1e53"
+      ]
+    },
+    {
+      "bundleId": "70f72324f575712e85002cb9ac65c9f0f4db43a0c2c85614105f38c7165f1063",
+      "builtinBundleId": "6683733f868b846a6bed3434bba1ff2bdceed99aece0538ac75fe1c70bbd89f2",
+      "previousBundleId": "ec658764b18b3cb65f0772feba6ef8969a1ef507e2035b90a3838f6f197f670a",
+      "revisionIds": [
+        "6d4f3e2b-4b12-40fb-9cfd-34714cbb1e53"
+      ]
+    },
+    {
+      "bundleId": "ec658764b18b3cb65f0772feba6ef8969a1ef507e2035b90a3838f6f197f670a",
+      "builtinBundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+      "previousBundleId": "70f72324f575712e85002cb9ac65c9f0f4db43a0c2c85614105f38c7165f1063",
+      "revisionIds": [
+        "6d4f3e2b-4b12-40fb-9cfd-34714cbb1e53"
+      ]
+    }
+  ],
+  "oldSession": {
+    "id": "d8372752-c5a4-4c9d-99dd-7c4612c0a911",
+    "bundleId": "70f72324f575712e85002cb9ac65c9f0f4db43a0c2c85614105f38c7165f1063",
+    "generation": 1,
+    "paperDigest": "de7dea0bda7027b4c315e25bc3697fb2e5b228174434ae11a2158661b6828022",
+    "preflight": {
+      "sessionId": "d8372752-c5a4-4c9d-99dd-7c4612c0a911",
+      "version": 38,
+      "skillBundleId": "70f72324f575712e85002cb9ac65c9f0f4db43a0c2c85614105f38c7165f1063",
+      "skillIds": [
+        "acceptance-figure"
+      ],
+      "ready": false,
+      "missing": [
+        {
+          "skillId": "acceptance-figure",
+          "kind": "backend",
+          "value": "docker",
+          "reason": "默认 Docker 目标未核验或核验已过期；请先核对计算目标"
+        }
+      ]
+    },
+    "nativeFileDigest": "57640f432c287d88adfef254d2ec4e1ebd621dc41dc485c54af3cecdc35cac15",
+    "nativeFileUnchanged": true
+  },
+  "newSession": {
+    "id": "b4feab5d-871a-4d76-aa8c-7b9401d8c3bf",
+    "bundleId": "ec658764b18b3cb65f0772feba6ef8969a1ef507e2035b90a3838f6f197f670a",
+    "generation": 0,
+    "paperDigest": "b891b00397bb77733b91c7f168192a6bce576b3240c4f47f1f89e06f390ad1b4",
+    "skillIds": [
+      "pi-research-paper"
+    ],
+    "preflight": {
+      "sessionId": "b4feab5d-871a-4d76-aa8c-7b9401d8c3bf",
+      "version": 2,
+      "skillBundleId": "ec658764b18b3cb65f0772feba6ef8969a1ef507e2035b90a3838f6f197f670a",
+      "skillIds": [
+        "pi-research-paper"
+      ],
+      "ready": true,
+      "missing": []
+    }
+  },
+  "releases": [
+    {
+      "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+      "current": true,
+      "skillCount": 14
+    },
+    {
+      "bundleId": "6683733f868b846a6bed3434bba1ff2bdceed99aece0538ac75fe1c70bbd89f2",
+      "current": false,
+      "skillCount": 14
+    }
+  ],
+  "archive": {
+    "legacyId": "6683733f868b846a6bed3434bba1ff2bdceed99aece0538ac75fe1c70bbd89f2",
+    "manifestDigest": "602fd69718ffe349b4ba2ce2531e8b3e427a27f826622da91f7ed070d7f5d367",
+    "sourceCommit": "5fd8511",
+    "skills": 14,
+    "files": [
+      {
+        "path": "skills/openresearch/pi-research-overview/SKILL.md",
+        "digest": "5a511f85b11b45d083747eb0d64b0e4396469aafdf0e70a56ed9589467f38806",
+        "bytes": 3159
+      },
+      {
+        "path": "skills/openresearch/pi-research-create/SKILL.md",
+        "digest": "3960cb2e658bb7208d04078c9ef9244839876a9d8d8e7d008ef73955299ccd0a",
+        "bytes": 2428
+      },
+      {
+        "path": "skills/openresearch/pi-research-experiment-tree/SKILL.md",
+        "digest": "cfbd4178626646e8be5e23cbaeb46439dbe5a2350a5d56b7be7894e9024408f6",
+        "bytes": 3073
+      },
+      {
+        "path": "skills/openresearch/pi-research-git/SKILL.md",
+        "digest": "32fc7a6560fbebd4c8488afcf5e4362839a4fad85ca4cb824c9ed475f678de91",
+        "bytes": 2559
+      },
+      {
+        "path": "skills/openresearch/pi-research-agent-delegation/SKILL.md",
+        "digest": "74e7cfec80151b5722d0e1c1daf75772032fc947a2e185cf7c640f562b4cfb56",
+        "bytes": 2840
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/SKILL.md",
+        "digest": "1e14da9bd14ea16cd36d38c57df9c454c1949de2a9b7586968fab2a79e23ccf3",
+        "bytes": 2750
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/local.md",
+        "digest": "6a216654ed6069e8959c2fd3a5b5cbaf2bb04e76c12efdde41cfed078a5c78b7",
+        "bytes": 616
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/ssh.md",
+        "digest": "5b8a497ab023fac473b660b5cbf85961afb7d5de231aba955a11e1d65dfd2c62",
+        "bytes": 716
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/slurm.md",
+        "digest": "b3fd81092d8c18d4d1b9687c1e13e5fea71ee2b45166e7a51464731ac520bea2",
+        "bytes": 715
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/k8s.md",
+        "digest": "a321bac4fa039a0cde698e73201773da275098ee99610db7538a51b9462de097",
+        "bytes": 596
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/ray.md",
+        "digest": "404a3fcfdbe8a66c75d2169df2e006fc27071ade03dc9abd2b6c236bf0fc72a1",
+        "bytes": 596
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/hf.md",
+        "digest": "04dc0a6f797134afe4e8db41d554c2688dcac61d872731fa923a9ff4596d5854",
+        "bytes": 594
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/modal.md",
+        "digest": "841ab793672ec85a07fa5b5b566cb31485f2709a7c60a82e0bdcc7944d233dd7",
+        "bytes": 600
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/tinker.md",
+        "digest": "b747a1c81807e97135a3a579ea53d1b3ecc7fff0fa02ed39ff22e4eb5f3b10a8",
+        "bytes": 729
+      },
+      {
+        "path": "skills/openresearch/pi-research-compute/references/openresearch.md",
+        "digest": "81bcc82858ae56bb5d064529ae90aca99a7fb0ff27c058fe640a615a9453d728",
+        "bytes": 614
+      },
+      {
+        "path": "skills/openresearch/pi-research-instances/SKILL.md",
+        "digest": "a3482be12289897c9d5a0c07c8bb6269ecaee3cd84d6a87ddb51c1cf9203e162",
+        "bytes": 1853
+      },
+      {
+        "path": "skills/openresearch/pi-research-evidence/SKILL.md",
+        "digest": "8a2eb3b79eea9f6ef66cea51fda81d0858fe29a059c657201ebfe8305523c7d3",
+        "bytes": 2574
+      },
+      {
+        "path": "skills/openresearch/pi-research-reports/SKILL.md",
+        "digest": "722fb5b708289ccd369e789831ba816d5a957dd053e409e3fa2b018f03407936",
+        "bytes": 2326
+      },
+      {
+        "path": "skills/openresearch/pi-research-figures/SKILL.md",
+        "digest": "104a0fbe5956ac53659ed85a18ca3a0b1fbf9c7b3dbfc584e55beef58c9ded01",
+        "bytes": 2457
+      },
+      {
+        "path": "skills/openresearch/pi-research-figures/references/curves.md",
+        "digest": "e6c99ffe0b119ced12816571cc86e230bf13d422c967d9d6d57d753921b06ffc",
+        "bytes": 602
+      },
+      {
+        "path": "skills/openresearch/pi-research-figures/references/scaling.md",
+        "digest": "340d38d97c74b326af4b0115339ef44f2560f5688e35316fbc367e166cd014ba",
+        "bytes": 579
+      },
+      {
+        "path": "skills/openresearch/pi-research-figures/references/comparison.md",
+        "digest": "9cbf20b32934ab1d053cbf48e3023b0c4d905bfa7deab10a57fc13e6a8d232fd",
+        "bytes": 591
+      },
+      {
+        "path": "skills/openresearch/pi-research-figures/references/pareto.md",
+        "digest": "e1938c26168ec217f9a1b4fc8f1ef8f39f2a2adcb64889008ffa001a267b8cd6",
+        "bytes": 574
+      },
+      {
+        "path": "skills/openresearch/pi-research-figures/references/matrix.md",
+        "digest": "16c436e4d53b7eceb1ef3aeb5ed00e83639d989c810244d3c772cb50e3b7712a",
+        "bytes": 593
+      },
+      {
+        "path": "skills/openresearch/pi-research-figures/references/diagram.md",
+        "digest": "e33af55a195e889d0dbda8ab4000d9b0847802f2826ddf8f235ff82f3ea6a734",
+        "bytes": 585
+      },
+      {
+        "path": "skills/openresearch/pi-research-paper/SKILL.md",
+        "digest": "de7dea0bda7027b4c315e25bc3697fb2e5b228174434ae11a2158661b6828022",
+        "bytes": 2513
+      },
+      {
+        "path": "skills/openresearch/pi-research-customize/SKILL.md",
+        "digest": "1fcf97a9022ff9c5acbde566bd697380bf5d0b0fc061dd9bb837bd28ffbde5c6",
+        "bytes": 2182
+      },
+      {
+        "path": "skills/openresearch/pi-research-feedback/SKILL.md",
+        "digest": "7840904e65469f6aab637771caad1cd5a78d895eaed0c7460986f4c9396a50f5",
+        "bytes": 1985
+      },
+      {
+        "path": "skills/openresearch/pi-research-lit-review/SKILL.md",
+        "digest": "63b186ee963d40497a454bf98792599e5b7e0dc1374c98ed74e272f22e780808",
+        "bytes": 5587
+      }
+    ],
+    "allOriginalGitBytesMatch": true,
+    "allHistoricalReadsMatch": true
+  },
+  "compatibility": {
+    "oldRecords": 95,
+    "unchangedRecords": 94,
+    "intentionallyChanged": [
+      {
+        "kind": "skill-configuration",
+        "id": "8e7e45d0-ff95-4c5d-bf05-ec8e7dc592ef"
+      }
+    ],
+    "originalDatabaseUnchanged": true,
+    "existingModelUsageRecords": 13,
+    "newModelRequests": 0,
+    "newCompilerJobs": 0
+  },
+  "httpCliAgreement": true,
+  "casCopy": {
+    "source": "Original skill-flow acceptance CAS",
+    "reason": "SQLite online backup alone does not copy separate skill-blobs",
+    "files": [
+      {
+        "digest": "78e85aa9227ec3f64f15ca3f4eff3aadd50f38f4302c480ac2d757cc06ebaa67",
+        "bytes": 147
+      },
+      {
+        "digest": "3b75e6adf58544eae67345a4baea8a437d73b5b616b48727b6a5ebd6747a30e9",
+        "bytes": 949
+      },
+      {
+        "digest": "4581c0145a450461a8079149be4dfbdcf45433ee4280557db07117b60d91bfd3",
+        "bytes": 904
+      },
+      {
+        "digest": "f4fd2cabc1a33bbdc64c274dfd15b953fa12792f7759b8c10426c90202165127",
+        "bytes": 949
+      },
+      {
+        "digest": "e13ecc2fa64dcc1b84118bf989d0d3a75488bfb81ebec12d92a6299d2f505cad",
+        "bytes": 904
+      }
+    ],
+    "allDigestsVerified": true,
+    "originalUnchanged": true
+  }
+}

@@ -12,7 +12,7 @@ export interface SkillMissing {skillId:string;kind:'tool'|'backend'|'artifact'|'
 export function sessionSkillBundle(app:ResearchApp,s:Row<Session>):string {
     if(s.skillBundleId)return s.skillBundleId;
     const rows=app.store.db.prepare("SELECT DISTINCT json_extract(payload,'$.bundleId') bundle FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.skill_bundle_bound' LIMIT 2").all(s.projectId!,s.id);
-    if(!rows.length&&!s.piSessionPath)return app.skills.configuration(s.projectId!).bundleId;
+    if(!rows.length&&!s.piSessionPath&&s.generation===0)return app.skills.configuration(s.projectId!).bundleId;
     ensure(rows.length===1&&typeof rows[0].bundle==='string','SKILL_BINDING_UNKNOWN','旧 Pi 会话无法证明唯一技能包；请创建新会话，原生历史保持不变');
     return String(rows[0].bundle);
 }

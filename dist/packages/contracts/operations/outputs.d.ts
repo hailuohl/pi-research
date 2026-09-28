@@ -2126,6 +2126,9 @@ export declare const OUTPUT_SCHEMAS: {
             readonly bundleId: {
                 readonly type: "string";
             };
+            readonly builtinBundleId: {
+                readonly type: "string";
+            };
             readonly revisionIds: {
                 readonly type: "array";
                 readonly items: {
@@ -12743,6 +12746,9 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly bundleId: {
                         readonly type: "string";
                     };
+                    readonly builtinBundleId: {
+                        readonly type: "string";
+                    };
                     readonly revisionIds: {
                         readonly type: "array";
                         readonly items: {
@@ -12750,7 +12756,7 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("version" | "revisionIds" | "bundleId")[];
+                readonly required: ("version" | "revisionIds" | "bundleId" | "builtinBundleId")[];
                 readonly additionalProperties: false;
             };
             readonly revisions: {
@@ -12952,8 +12958,27 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
+            readonly builtinReleases: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly bundleId: {
+                            readonly type: "string";
+                        };
+                        readonly current: {
+                            readonly type: "boolean";
+                        };
+                        readonly skillCount: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly required: ("current" | "bundleId" | "skillCount")[];
+                    readonly additionalProperties: false;
+                };
+            };
         };
-        readonly required: ("configuration" | "revisions")[];
+        readonly required: ("configuration" | "revisions" | "builtinReleases")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_inspect: {
@@ -13261,6 +13286,9 @@ export declare const OUTPUT_SCHEMAS: {
             readonly bundleId: {
                 readonly type: "string";
             };
+            readonly builtinBundleId: {
+                readonly type: "string";
+            };
             readonly revisionIds: {
                 readonly type: "array";
                 readonly items: {
@@ -13268,7 +13296,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("version" | "revisionIds" | "bundleId")[];
+        readonly required: readonly ["version", "bundleId", "revisionIds"];
         readonly additionalProperties: false;
     };
     readonly skill_session_select: {

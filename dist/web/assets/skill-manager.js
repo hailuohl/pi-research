@@ -128,7 +128,7 @@ class SkillSession extends React.Component {
                 this.props.sessionId,
                 " \u00B7 \u56FA\u5B9A Bundle ",
                 s.result?.skillBundleId ?? '未绑定'),
-            React.createElement("p", { className: "small muted" }, "\u53EA\u68C0\u67E5\u663E\u5F0F\u9009\u7528\u7684\u6280\u80FD\uFF1B\u672A\u9009\u62E9\u7684\u76EE\u5F55\u9879\u4E0D\u4F1A\u963B\u6B62\u542F\u52A8\u3002\u5DF2\u5F00\u59CB\u539F\u751F Pi \u7684\u4F1A\u8BDD\u4E0D\u80FD\u6539\u7ED1\uFF0C\u8BF7\u65B0\u5EFA\u4F1A\u8BDD\u3002\u4FDD\u5B58\u9009\u62E9\u4E0D\u4F1A\u542F\u52A8\u6A21\u578B\u3002"),
+            React.createElement("p", { className: "small muted" }, "\u9879\u76EE\u914D\u7F6E\u5347\u7EA7\u4E0D\u4F1A\u6539\u53D8\u6B64\u4F1A\u8BDD\u7684\u56FA\u5B9A Bundle \u6216\u5386\u53F2\u4EFB\u52A1\u7ED1\u5B9A\u3002\u53EA\u68C0\u67E5\u663E\u5F0F\u9009\u7528\u7684\u6280\u80FD\uFF1B\u672A\u9009\u62E9\u7684\u76EE\u5F55\u9879\u4E0D\u4F1A\u963B\u6B62\u542F\u52A8\u3002\u5DF2\u5F00\u59CB\u539F\u751F Pi \u7684\u4F1A\u8BDD\u4E0D\u80FD\u6539\u7ED1\uFF0C\u8BF7\u65B0\u5EFA\u4F1A\u8BDD\u3002\u4FDD\u5B58\u9009\u62E9\u4E0D\u4F1A\u542F\u52A8\u6A21\u578B\u3002"),
             React.createElement("div", { className: "connector-switches" }, ids.map(id => React.createElement("label", { key: id },
                 React.createElement("input", { type: "checkbox", checked: s.selected.includes(id), disabled: s.busy || !s.result, onChange: (e) => this.setState({ selected: e.target.checked ? [...s.selected, id] : s.selected.filter(x => x !== id) }) }),
                 id))),
@@ -155,7 +155,7 @@ class SkillSession extends React.Component {
 export class SkillManager extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { catalog: null, selected: null, content: null, enabled: [], note: '', busy: false, reading: false, error: '', notice: '' };
+        this.state = { catalog: null, selected: null, content: null, enabled: [], builtinBundleId: '', note: '', busy: false, reading: false, error: '', notice: '' };
         this.mounted = true;
         this.epoch = 0;
         this.readEpoch = 0;
@@ -167,12 +167,12 @@ export class SkillManager extends React.Component {
         this.epoch++;
         this.readEpoch++;
         this.locked = false;
-        this.setState({ catalog: null, selected: null, content: null, enabled: [], busy: false, reading: false, error: '', notice: '' });
+        this.setState({ catalog: null, selected: null, content: null, enabled: [], builtinBundleId: '', busy: false, reading: false, error: '', notice: '' });
         void this.refresh();
     } }
     current(epoch) { return this.mounted && epoch === this.epoch; }
     async refresh() { await this.run(async (epoch) => { const catalog = await call(this.props.projectId, 'skill_package_list'); if (this.current(epoch))
-        this.setState({ catalog, enabled: catalog.configuration.revisionIds }); }); }
+        this.setState({ catalog, enabled: catalog.configuration.revisionIds, builtinBundleId: catalog.configuration.builtinBundleId }); }); }
     async run(fn, notice = '') { if (this.locked)
         return; this.locked = true; const epoch = this.epoch; this.setState({ busy: true, error: '', notice: '' }); try {
         await fn(epoch);
@@ -218,7 +218,7 @@ export class SkillManager extends React.Component {
     } }
     async mutate(name, input, notice) { await this.run(async (epoch) => { const projectId = this.props.projectId; await call(projectId, name, input); const catalog = await call(projectId, 'skill_package_list'); if (this.current(epoch)) {
         const id = this.state.selected?.revision.id;
-        this.setState({ catalog, enabled: catalog.configuration.revisionIds, selected: catalog.revisions.find(item => item.revision.id === id) ?? null });
+        this.setState({ catalog, enabled: catalog.configuration.revisionIds, builtinBundleId: catalog.configuration.builtinBundleId, selected: catalog.revisions.find(item => item.revision.id === id) ?? null });
     } }, notice); }
     render() {
         const s = this.state, selected = s.selected, r = selected?.revision;
@@ -237,6 +237,23 @@ export class SkillManager extends React.Component {
                 s.catalog?.configuration.bundleId ?? '读取中',
                 " \u00B7 \u914D\u7F6E\u7248\u672C ",
                 s.catalog?.configuration.version ?? '—'),
+            s.catalog ? React.createElement("div", null,
+                React.createElement("p", { className: "small code-wrap" },
+                    "\u5F53\u524D\u5185\u7F6E\u57FA\u7EBF ",
+                    s.catalog.configuration.builtinBundleId,
+                    " \u00B7 \u53EF\u9009\u53D1\u884C\u7248\u672C ",
+                    s.catalog.builtinReleases.length,
+                    " \u4E2A"),
+                React.createElement("label", null,
+                    "\u65B0\u7ED1\u5B9A\u4F7F\u7528\u7684\u5185\u7F6E\u53D1\u884C\u7248\u672C",
+                    React.createElement("select", { value: s.builtinBundleId, disabled: s.busy, onChange: (e) => this.setState({ builtinBundleId: e.target.value }) }, s.catalog.builtinReleases.map(release => React.createElement("option", { key: release.bundleId, value: release.bundleId },
+                        release.bundleId,
+                        " \u00B7 ",
+                        release.skillCount,
+                        " \u4E2A\u6280\u80FD",
+                        release.current ? ' · 当前发行' : '',
+                        release.bundleId === s.catalog.configuration.builtinBundleId ? ' · 已配置基线' : '')))),
+                React.createElement("p", { className: "small muted" }, "\u9009\u62E9\u53D1\u884C\u7248\u672C\u540E\u4FDD\u5B58\u624D\u4F1A\u5207\u6362\uFF0C\u4EC5\u5F71\u54CD\u540E\u7EED\u65B0\u7ED1\u5B9A\uFF1B\u5DF2\u7ED1\u5B9A\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F Bundle ID\uFF0C\u5E76\u6309\u539F\u7248\u672C\u9884\u68C0\u3002\u672A\u914D\u7F6E\u9879\u76EE\u7684\u65B0\u7ED1\u5B9A\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u53D1\u884C\u3002\u81EA\u5B9A\u4E49\u4FEE\u8BA2\u4FDD\u6301\u52FE\u9009\uFF0C\u5347\u7EA7\u5185\u7F6E\u7248\u672C\u987B\u5728\u6B64\u663E\u5F0F\u9009\u62E9\u3002")) : null,
             !s.catalog ? React.createElement("p", null, "\u5C1A\u672A\u53D6\u5F97\u6280\u80FD\u72B6\u6001\uFF0C\u8BF7\u5237\u65B0\u91CD\u8BD5\u3002") : !s.catalog.revisions.length ? React.createElement("p", { className: "inline-empty" }, "\u5C1A\u65E0\u5BFC\u5165\u7684\u6280\u80FD\u7248\u672C\u3002") : React.createElement("div", { className: "run-selection" }, s.catalog.revisions.map(item => { const revision = item.revision, approved = item.reviews[item.reviews.length - 1]?.decision === 'approved', revoked = item.revocations.length > 0; return React.createElement("div", { key: revision.id },
                 React.createElement("label", null,
                     React.createElement("input", { type: "checkbox", "aria-label": `配置启用 ${revision.packageId} ${revision.revisionTag}`, disabled: s.busy || (!s.enabled.includes(revision.id) && (!approved || revoked)), checked: s.enabled.includes(revision.id), onChange: (e) => this.setState({ enabled: e.target.checked ? [...s.enabled, revision.id] : s.enabled.filter(id => id !== revision.id) }) }),
@@ -259,7 +276,7 @@ export class SkillManager extends React.Component {
                     revision.requirements.artifactIds.join(', ') || '无',
                     "\u3002\u8BB8\u53EF\u8BC1\uFF1A",
                     revision.license ?? '未知')); })),
-            React.createElement("button", { className: "secondary", disabled: s.busy || !s.catalog, onClick: () => this.mutate('skill_bundle_configure', { expectedVersion: s.catalog.configuration.version, revisionIds: s.enabled }, '已切换固定配置；已有会话绑定不自动升级。') }, "\u4FDD\u5B58\u542F\u7528 / \u56DE\u6EDA\u5230\u6240\u9009\u7248\u672C"),
+            React.createElement("button", { className: "secondary", disabled: s.busy || !s.catalog, onClick: () => this.mutate('skill_bundle_configure', { expectedVersion: s.catalog.configuration.version, revisionIds: s.enabled, builtinBundleId: s.builtinBundleId }, '已切换固定配置；仅影响后续新绑定，已有会话及历史任务保留原 ID。') }, "\u4FDD\u5B58\u542F\u7528 / \u56DE\u6EDA\u5230\u6240\u9009\u7248\u672C"),
             React.createElement("p", { className: "small muted" }, "\u56DE\u6EDA\u65F6\u53D6\u6D88\u65B0\u7248\u5E76\u52FE\u9009\u5DF2\u6279\u51C6\u65E7\u7248\uFF1B\u540C\u4E00\u5305\u53EA\u9009\u4E00\u4E2A\u7248\u672C\u3002\u542F\u7528\u4E0D\u7B49\u4E8E\u4EFB\u52A1\u5FC5\u9700\uFF0C\u987B\u5728\u4F1A\u8BDD\u4E2D\u663E\u5F0F\u9009\u62E9\u3002"),
             s.reading ? React.createElement("p", { role: "status" }, "\u8BFB\u53D6\u56FA\u5B9A\u7248\u672C\u2026") : null,
             r && selected ? React.createElement("div", { className: "inspector-section" },
