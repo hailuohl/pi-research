@@ -12,6 +12,7 @@ export function stable(value) {
 }
 export const digest = (value) => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : stable(value)).digest('hex');
 export const now = () => new Date().toISOString();
+export const EVENT_PAYLOAD_BYTES = 64 * 1024, EVENT_PAGE_PAYLOAD_BYTES = 256 * 1024;
 function rethrowComputeGate(error) {
     const message = error.message;
     for (const code of ['COMPUTE_TARGET_PROBE_REQUIRED', 'COMPUTE_TARGET_QUEUE_FULL', 'COMPUTE_QUEUE_FULL'])
@@ -23,6 +24,7 @@ export class Store {
     path;
     db;
     depth = 0;
+    reading = false;
     rollbackCallbacks = [];
     commitCallbacks = [];
     constructor(path) {
@@ -38,6 +40,14 @@ export class Store {
  CREATE TABLE IF NOT EXISTS inbox(consumer TEXT NOT NULL,event_id TEXT NOT NULL,PRIMARY KEY(consumer,event_id));
  INSERT OR IGNORE INTO schema_migrations VALUES(1,datetime('now'));`);
         this.migrateComputeQueue();
+        this.transaction(() => {
+            if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=4').get())
+                return;
+            this.db.exec(`CREATE INDEX IF NOT EXISTS events_project_sequence ON events(project_id,seq);
+CREATE INDEX IF NOT EXISTS events_session_type_sequence ON events(project_id,json_extract(payload,'$.sessionId'),type,seq);
+CREATE INDEX IF NOT EXISTS records_kind_session ON records(kind,json_extract(data,'$.sessionId'));
+INSERT INTO schema_migrations VALUES(4,datetime('now'));`);
+        });
     }
     migrateComputeQueue() {
         this.db.exec('BEGIN IMMEDIATE');
@@ -92,6 +102,7 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
     onRollback(fn) { ensure(this.depth > 0, 'TRANSACTION_REQUIRED', '回滚处理必须绑定事务', 500); this.rollbackCallbacks.push(fn); }
     afterCommit(fn) { ensure(this.depth > 0, 'TRANSACTION_REQUIRED', '提交处理必须绑定事务', 500); this.commitCallbacks.push(fn); }
     transaction(fn) {
+        ensure(!this.reading, 'READ_ONLY_TRANSACTION', '只读快照中不能开启写事务', 500);
         if (this.depth > 0)
             return fn();
         this.db.exec('BEGIN IMMEDIATE');
@@ -140,6 +151,28 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
             }
         }
     }
+    /** Consistent synchronous reads without reserving SQLite's writer lock. */
+    readSnapshot(fn) {
+        const invoke = () => { const result = fn(); ensure(!(result instanceof Promise), 'ASYNC_TRANSACTION', '读快照回调必须同步', 500); return result; };
+        if (this.db.isTransaction)
+            return invoke();
+        const queryOnly = Number(this.db.prepare('PRAGMA query_only').get().query_only);
+        this.db.exec('PRAGMA query_only=ON; BEGIN');
+        this.reading = true;
+        try {
+            const result = invoke();
+            this.db.exec('COMMIT');
+            return result;
+        }
+        catch (error) {
+            this.db.exec('ROLLBACK');
+            throw error;
+        }
+        finally {
+            this.reading = false;
+            this.db.exec(`PRAGMA query_only=${queryOnly ? 'ON' : 'OFF'}`);
+        }
+    }
     create(kind, projectId, data, id = randomUUID()) { const time = now(); const row = { ...data, id, kind, projectId, version: 1, createdAt: time, updatedAt: time }; try {
         this.db.prepare('INSERT INTO records VALUES(?,?,?,?,?)').run(kind, id, projectId, 1, JSON.stringify(row));
     }
@@ -175,6 +208,31 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
     } return row; }
     event(projectId, type, payload) { const id = randomUUID(); const at = now(); const result = this.db.prepare('INSERT INTO events(id,project_id,type,payload,created_at) VALUES(?,?,?,?,?)').run(id, projectId, type, JSON.stringify(payload), at); return { seq: Number(result.lastInsertRowid), id, projectId, type, payload, createdAt: at }; }
     events(after = 0, projectId, limit = 500) { const rows = projectId === undefined ? this.db.prepare('SELECT * FROM events WHERE seq>? ORDER BY seq LIMIT ?').all(after, limit) : this.db.prepare('SELECT * FROM events WHERE seq>? AND project_id=? ORDER BY seq LIMIT ?').all(after, projectId, limit); return rows.map(r => ({ seq: Number(r.seq), id: r.id, projectId: r.project_id, type: r.type, payload: JSON.parse(r.payload), createdAt: r.created_at })); }
+    eventCursor(projectId) { return Number((projectId === undefined ? this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events').get() : this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events WHERE project_id=?').get(projectId)).cursor); }
+    eventPage(after = 0, projectId, limit = 200) {
+        ensure(Number.isSafeInteger(after) && after >= 0, 'INVALID_INPUT', '事件游标必须是非负安全整数', 400);
+        ensure(Number.isSafeInteger(limit) && limit >= 1 && limit <= 500, 'INVALID_INPUT', '事件页大小必须为1–500', 400);
+        return this.readSnapshot(() => {
+            const latestCursor = this.eventCursor(projectId);
+            if (after > latestCursor)
+                return { items: [], cursor: latestCursor, hasMore: false, latestCursor, reset: true };
+            const columns = `seq,id,project_id,type,created_at,length(CAST(payload AS BLOB)) payload_bytes,CASE WHEN length(CAST(payload AS BLOB))<=${EVENT_PAYLOAD_BYTES} THEN payload ELSE NULL END payload`;
+            const rows = projectId === undefined ? this.db.prepare(`SELECT ${columns} FROM events WHERE seq>? AND seq<=? ORDER BY seq LIMIT ?`).iterate(after, latestCursor, limit + 1) : this.db.prepare(`SELECT ${columns} FROM events WHERE project_id=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?`).iterate(projectId, after, latestCursor, limit + 1);
+            let bytes = 0, hasMore = false;
+            const items = [];
+            for (const row of rows) {
+                if (items.length === limit) {
+                    hasMore = true;
+                    break;
+                }
+                const size = Number(row.payload_bytes), omitted = row.payload === null || bytes + size > EVENT_PAGE_PAYLOAD_BYTES;
+                if (!omitted)
+                    bytes += size;
+                items.push({ seq: Number(row.seq), id: String(row.id), projectId: row.project_id === null ? null : String(row.project_id), type: String(row.type), payload: omitted ? null : JSON.parse(row.payload), createdAt: String(row.created_at), ...(omitted ? { omitted: true, payloadBytes: size } : {}) });
+            }
+            return { items, cursor: items.at(-1)?.seq ?? after, hasMore, latestCursor, reset: false };
+        });
+    }
     consume(consumer, eventId, fn) {
         return this.transaction(() => {
             if (this.db.prepare('SELECT 1 FROM inbox WHERE consumer=? AND event_id=?').get(consumer, eventId))

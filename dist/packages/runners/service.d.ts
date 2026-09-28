@@ -25,11 +25,7 @@ export declare class RunService {
     cancelBeforeLaunch(run: Row<Run>, error: unknown): void;
     launchPending(): void;
     cancel(actor: Actor, id: string): Row<Run>;
-    logs(actor: Actor, id: string, cursor?: number, stream?: 'stdout' | 'stderr'): {
-        content: string;
-        cursor: number;
-        complete: boolean;
-    };
+    logs(actor: Actor, id: string, cursor?: number, stream?: 'stdout' | 'stderr', identity?: string | null): import("../execution/log-page.js").LogPage;
     sourceList(actor: Actor, id: string): {
         runId: string;
         experimentId: string;

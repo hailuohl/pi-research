@@ -13,12 +13,19 @@ export function hasToken() { return !!token; }
 export class ApiError extends Error {
     constructor(public code: string, message: string, public status: number) { super(message); }
 }
-export async function api<T = any>(path: string, body?: unknown, method = 'POST'): Promise<T> {
-    const response = await fetch('/api' + path, { method: body === undefined ? 'GET' : method, headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(22000) });
+export async function api<T = any>(path: string, body?: unknown, method = 'POST', signal?:AbortSignal): Promise<T> {
+    const timeout=AbortSignal.timeout(22000);
+    const response = await fetch('/api' + path, { method: body === undefined ? 'GET' : method, headers: { Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal:signal?AbortSignal.any([signal,timeout]):timeout });
     const data = await response.json();
     if (!response.ok)
         throw new ApiError(data.error?.code ?? 'HTTP_ERROR', data.error?.message ?? `HTTP ${response.status}`, response.status);
     return data as T;
+}
+export async function eventStream(path:string,signal:AbortSignal){
+    const response=await fetch('/api'+path,{headers:{Authorization:`Bearer ${token}`,Accept:'text/event-stream'},signal});
+    if(!response.ok)throw new ApiError('EVENT_STREAM_UNAVAILABLE','事件连接暂不可用',response.status);
+    if(!response.body||!response.headers.get('content-type')?.includes('text/event-stream'))throw Error('事件连接未返回有效流');
+    return response.body;
 }
 export async function artifactText(id: string) {
     const r = await fetch(`/api/artifacts/${encodeURIComponent(id)}/content`, { headers: { Authorization: `Bearer ${token}` } });

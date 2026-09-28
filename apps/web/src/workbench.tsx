@@ -1,3 +1,4 @@
+import {LogView,type LogPage} from './log-view.js';
 import {ComputeWait} from './scheduler-view.js';
 import { WakeupPanel } from './campaigns.js';
 import { comparableRuns, comparisonMetric } from './models.js';
@@ -12,6 +13,7 @@ export class Chat extends React.Component<{
     session: Row<Session> | undefined;
     messages: Row<Message>[];
     stream: string;
+    streamTruncated?:boolean;
     perform: Perform;
     onNew: () => void;
     onExperiments: () => void;
@@ -31,7 +33,7 @@ export class Chat extends React.Component<{
                         this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));
                 }}><Icon name="evidence"/></button></div> : null}</div>
  {!canSend ? <div className="notice runtime-notice"><span className="status-dot amber"/><div><strong>Pi 尚未就绪</strong><p>{boot.runtime.message} 项目、快照、真实数值实验和证据管理仍可使用。</p></div></div> : null}
- <div className="conversation" aria-live="polite">{messages.length === 0 ? <div className="welcome"><div className="welcome-mark">π</div><h2>让研究过程，<br />有迹可循。</h2><p>从问题到实验，再到可信证据。<br />每一次运行都有自己的快照，每一步决定都保留依据。</p><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>建立一个可复现的实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目代码与配置</span><Icon name="arrow"/></button></div><p className="small muted">这是工作台的引导界面，不是模型生成的研究结果。</p></div> : messages.map(m => <article className={'message message-' + m.role} key={m.id}><div className="message-avatar">{m.role === 'user' ? '我' : m.role === 'assistant' ? 'π' : '·'}</div><div className="message-body"><div className="message-meta"><strong>{m.role === 'user' ? '你' : m.role === 'assistant' ? (m.wakeupId ? 'Pi · 结果分析' : 'Pi') : (m.wakeupId ? '持久化结果通知' : '工作台状态通知')}</strong><span>{date(m.createdAt)}</span>{m.status === 'failed' || m.status === 'cancelled' ? <Badge value={m.status}/> : null}</div><div className="prose-text">{m.content || '（本次响应没有可展示的文本）'}</div>{m.error ? <p className="error-text">{m.error}</p> : null}<div className="message-tools"><button onClick={() => this.props.perform(async () => { const fork = await api(`/sessions/${session!.id}/branch`, { messageId: m.id }); return fork; }, '已创建对话分支；实验记录保持不变')}>从此处分支</button>{m.role === 'user' && ['failed', 'cancelled'].includes(m.status) ? <button onClick={() => this.props.perform(() => api(`/sessions/${session!.id}/retry`, { messageId: m.id }))}>重试此消息</button> : null}</div></div></article>)}<WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/>{this.props.stream ? <article className="message"><div className="message-avatar">π</div><div className="message-body"><div className="message-meta">Pi · 流式输出，等待最终消息</div><div className="prose-text">{this.props.stream}</div></div></article> : null}</div>
+ <div className="conversation" aria-live="polite">{messages.length === 0 ? <div className="welcome"><div className="welcome-mark">π</div><h2>让研究过程，<br />有迹可循。</h2><p>从问题到实验，再到可信证据。<br />每一次运行都有自己的快照，每一步决定都保留依据。</p><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>建立一个可复现的实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目代码与配置</span><Icon name="arrow"/></button></div><p className="small muted">这是工作台的引导界面，不是模型生成的研究结果。</p></div> : messages.map(m => <article className={'message message-' + m.role} key={m.id}><div className="message-avatar">{m.role === 'user' ? '我' : m.role === 'assistant' ? 'π' : '·'}</div><div className="message-body"><div className="message-meta"><strong>{m.role === 'user' ? '你' : m.role === 'assistant' ? (m.wakeupId ? 'Pi · 结果分析' : 'Pi') : (m.wakeupId ? '持久化结果通知' : '工作台状态通知')}</strong><span>{date(m.createdAt)}</span>{m.status === 'failed' || m.status === 'cancelled' ? <Badge value={m.status}/> : null}</div><div className="prose-text">{m.content || '（本次响应没有可展示的文本）'}</div>{(m as Message & {contentTruncated?:boolean}).contentTruncated?<p className="small muted">此消息展示内容达到上限；原生会话记录保留，当前展示不代表完整消息。</p>:null}{m.error ? <p className="error-text">{m.error}</p> : null}<div className="message-tools"><button onClick={() => this.props.perform(async () => { const fork = await api(`/sessions/${session!.id}/branch`, { messageId: m.id }); return fork; }, '已创建对话分支；实验记录保持不变')}>从此处分支</button>{m.role === 'user' && ['failed', 'cancelled'].includes(m.status) ? <button onClick={() => this.props.perform(() => api(`/sessions/${session!.id}/retry`, { messageId: m.id }))}>重试此消息</button> : null}</div></div></article>)}<WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/>{this.props.stream ? <article className="message"><div className="message-avatar">π</div><div className="message-body"><div className="message-meta">Pi · 流式输出，等待最终消息</div><div className="prose-text">{this.props.stream}</div>{this.props.streamTruncated?<p className="small muted">仅显示当前输出尾部，前文已省略；完整内容以原生会话记录为准。</p>:null}</div></article> : null}</div>
  <div className="composer-wrap"><form className="composer" onSubmit={(e: any) => {
                 e.preventDefault();
                 if (!session || !this.state.draft.trim())
@@ -74,26 +76,13 @@ export function OutcomeReview({run,perform}:{run:Row<Run>;perform:Perform}) {
 }
 type RunSourceFile={path:string;size:number;digest:string;mode?:string};
 class RunFiles extends React.Component<{run:Row<Run>;data:ProjectState;perform:Perform},{
-    stream:'stdout'|'stderr'; logs:string; cursor:number; logComplete:boolean; logLoading:boolean; logError:string;
     artifactId:string; artifactContent:string; artifactLoading:boolean; artifactError:string;
     files:RunSourceFile[]; sourceLoaded:boolean; sourcePath:string; sourceContent:string; sourceCursor:number; sourceComplete:boolean; sourceLoading:boolean; sourceError:string; gitCommit:string;
 }> {
-    state={stream:'stdout' as 'stdout'|'stderr',logs:'',cursor:0,logComplete:false,logLoading:false,logError:'',artifactId:'',artifactContent:'',artifactLoading:false,artifactError:'',files:[] as RunSourceFile[],sourceLoaded:false,sourcePath:'',sourceContent:'',sourceCursor:0,sourceComplete:false,sourceLoading:false,sourceError:'',gitCommit:this.props.run.manifest.gitCommit??''};
-    private timer?:number;
-    private logEpoch=0;
+    state={artifactId:'',artifactContent:'',artifactLoading:false,artifactError:'',files:[] as RunSourceFile[],sourceLoaded:false,sourcePath:'',sourceContent:'',sourceCursor:0,sourceComplete:false,sourceLoading:false,sourceError:'',gitCommit:this.props.run.manifest.gitCommit??''};
     private sourceEpoch=0;
     private artifactEpoch=0;
-    componentDidMount(){void this.loadLogs();this.timer=window.setInterval(()=>{if(!this.state.logComplete)void this.loadLogs();},1500);}
-    componentWillUnmount(){clearInterval(this.timer);this.logEpoch++;this.sourceEpoch++;this.artifactEpoch++;}
-    async loadLogs(){
-        if(this.state.logLoading)return;
-        const epoch=this.logEpoch,{stream,cursor}=this.state;
-        this.setState({logLoading:true,logError:''});
-        try {const page=await api(`/runs/${this.props.run.id}/logs?stream=${stream}&cursor=${cursor}`);if(epoch===this.logEpoch)this.setState({logs:this.state.logs+page.content,cursor:page.cursor,logComplete:page.complete});}
-        catch(error){if(epoch===this.logEpoch)this.setState({logError:error instanceof Error?error.message:String(error)});}
-        finally{if(epoch===this.logEpoch)this.setState({logLoading:false});}
-    }
-    selectStream(stream:'stdout'|'stderr'){this.logEpoch++;this.setState({stream,logs:'',cursor:0,logComplete:false,logLoading:false,logError:''},()=>void this.loadLogs());}
+    componentWillUnmount(){this.sourceEpoch++;this.artifactEpoch++;}
     async openArtifact(id:string){
         const epoch=++this.artifactEpoch;this.setState({artifactId:id,artifactContent:'',artifactLoading:true,artifactError:''});
         try {const content=await artifactText(id);if(content.includes('\0'))throw Error('二进制产物请下载查看。');if(epoch===this.artifactEpoch)this.setState({artifactContent:content.length>65536?content.slice(0,65536)+'\n…预览到此，下载可查看完整文件。':content});}
@@ -118,7 +107,7 @@ class RunFiles extends React.Component<{run:Row<Run>;data:ProjectState;perform:P
     render(){
         const {run,data,perform}=this.props,artifacts=run.artifactIds.map(id=>data.artifacts.find(a=>a.id===id)).filter(a=>!!a),file=this.state.files.find(f=>f.path===this.state.sourcePath);
         return <div>
-            <details open><summary>真实运行日志</summary><label>日志流<select aria-label="日志流" value={this.state.stream} onChange={(e:any)=>this.selectStream(e.target.value)}><option value="stdout">标准输出 stdout</option><option value="stderr">错误输出 stderr</option></select></label><pre className="logs" aria-label={`${this.state.stream} 日志`}>{this.state.logs||(this.state.logLoading?'读取日志…':'此流暂无内容。')}</pre>{this.state.logError?<p role="alert" className="error-text">{this.state.logError}</p>:null}<button className="secondary compact" disabled={this.state.logLoading||this.state.logComplete} onClick={()=>void this.loadLogs()}>{this.state.logLoading?'正在读取…':this.state.logComplete?'已读至日志结尾':'加载后续日志'}</button><p className="small muted">已读取 {this.state.cursor} 字节；运行期间自动继续读取。</p></details>
+            <details open><summary>真实运行日志</summary><LogView streamLabel="日志流" read={(request,signal)=>api<LogPage>(`/runs/${run.id}/logs?stream=${request.stream}&cursor=${request.cursor}${request.identity?'&identity='+encodeURIComponent(request.identity):''}`,undefined,'GET',signal)}/></details>
             <details open><summary>原始指标与产物</summary>{artifacts.length?<ul>{artifacts.map(a=><li key={a.id}><button className="text-button" onClick={()=>void this.openArtifact(a.id)}>{a.title}</button><button className="text-button" aria-label={`下载 ${a.title}`} onClick={()=>perform(()=>downloadArtifact(a.id,a.title))}>下载</button><small className="muted">{a.size} 字节 · {short(a.digest)}</small></li>)}</ul>:<p className="small muted">尚无归档产物。执行结束后在这里查看原始 metrics.json 与输出文件。</p>}{this.state.artifactLoading?<p role="status">读取产物…</p>:null}{this.state.artifactError?<p role="alert" className="error-text">{this.state.artifactError}</p>:null}{this.state.artifactId&&!this.state.artifactLoading&&!this.state.artifactError?<pre className="logs" aria-label="原始产物内容">{this.state.artifactContent||'（空文件）'}</pre>:null}</details>
             <details><summary>本次运行的固定源码</summary><p className="small muted">实验修订 v{run.manifest.experimentRevision} · 源码 SHA-256</p><code className="digest">{run.manifest.snapshotDigest}</code>{this.state.gitCommit?<p>Git commit <code className="digest">{this.state.gitCommit}</code></p>:null}<button className="secondary compact" disabled={this.state.sourceLoading} onClick={()=>void this.loadSource()}>读取运行源码清单</button>{this.state.sourceLoaded?<label>固定源码文件<select aria-label="固定源码文件" value={this.state.sourcePath} onChange={(e:any)=>{if(e.target.value)void this.readSource(e.target.value);}}><option value="">选择文件</option>{this.state.files.map(f=><option key={f.path} value={f.path}>{f.path} · {f.size} 字节</option>)}</select></label>:null}{this.state.sourceError?<p role="alert" className="error-text">{this.state.sourceError}</p>:null}{file?<div><p className="small muted">{file.path} · {file.mode??'旧版未记录模式'}</p><code className="digest">{file.digest}</code><pre className="logs" aria-label="固定运行源码">{this.state.sourceContent||(this.state.sourceLoading?'读取源码…':'（空文件）')}</pre><button className="secondary compact" disabled={this.state.sourceLoading||this.state.sourceComplete} onClick={()=>void this.readSource(file.path,true)}>{this.state.sourceComplete?'源码已完整读取':'读取后续源码'}</button></div>:null}</details>
         </div>;

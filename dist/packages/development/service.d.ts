@@ -211,12 +211,15 @@ export declare class DevelopmentService {
         logTruncated: boolean | undefined;
         cancelRequested: boolean;
     };
-    logs(actor: Actor, pid: string, id: string, stream: unknown, cursor?: unknown): {
-        jobId: string;
-        stream: string;
+    logs(actor: Actor, pid: string, id: string, stream: unknown, cursor?: unknown, identity?: string | null): {
         content: string;
         cursor: number;
         complete: boolean;
+        start: number;
+        size: number;
+        identity: string | null;
+        jobId: string;
+        stream: string;
     };
     cancel(actor: Actor, pid: string, id: string): {
         id: string;

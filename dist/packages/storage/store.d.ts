@@ -3,10 +3,29 @@ import type { Row } from '../domain/types.js';
 export declare function stable(value: unknown): string;
 export declare const digest: (value: unknown) => string;
 export declare const now: () => string;
+export interface EventPageItem {
+    seq: number;
+    id: string;
+    projectId: string | null;
+    type: string;
+    payload: unknown;
+    createdAt: string;
+    omitted?: true;
+    payloadBytes?: number;
+}
+export interface EventPage {
+    items: EventPageItem[];
+    cursor: number;
+    hasMore: boolean;
+    latestCursor: number;
+    reset: boolean;
+}
+export declare const EVENT_PAYLOAD_BYTES: number, EVENT_PAGE_PAYLOAD_BYTES: number;
 export declare class Store {
     path: string;
     readonly db: DatabaseSync;
     private depth;
+    private reading;
     private rollbackCallbacks;
     private commitCallbacks;
     constructor(path: string);
@@ -14,6 +33,8 @@ export declare class Store {
     onRollback(fn: () => void): void;
     afterCommit(fn: () => void): void;
     transaction<T>(fn: () => T): T;
+    /** Consistent synchronous reads without reserving SQLite's writer lock. */
+    readSnapshot<T>(fn: () => T): T;
     create<T extends object>(kind: string, projectId: string | null, data: T, id?: string): Row<T>;
     get<T = Record<string, unknown>>(kind: string, id: string, projectId?: string): Row<T>;
     maybe<T = Record<string, unknown>>(kind: string, id: string): Row<T> | undefined;
@@ -35,6 +56,8 @@ export declare class Store {
         payload: any;
         createdAt: import("node:sqlite").SQLOutputValue;
     }[];
+    eventCursor(projectId?: string): number;
+    eventPage(after?: number, projectId?: string, limit?: number): EventPage;
     consume(consumer: string, eventId: string, fn: () => void): boolean;
     operationResult<T>(scope: string, key: string, input: unknown): {
         found: false;

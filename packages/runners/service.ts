@@ -4,7 +4,7 @@ import {object,text,integer,oneOf} from '../contracts/validation.js';
 import {collectRunArtifacts} from './artifacts.js';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, existsSync, writeFileSync, openSync, closeSync, chmodSync, lstatSync, fstatSync, readSync, constants } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, writeFileSync, openSync, closeSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Experiment, RunIntent, Run, Manifest, Row, SourceRevision } from '../domain/types.js';
@@ -19,6 +19,7 @@ import { snapshotDirectory, verifySnapshot, listFiles, safePath } from '../works
 import { verifyTrustedExample, validateContract } from './contracts.js';
 import { finiteMetrics } from '../contracts/validation.js';
 import {readStableFile} from '../workspace/stable-file.js';
+import {readLogPage} from '../execution/log-page.js';
 import {ComputeQueue} from '../scheduler/compute-queue.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
@@ -145,12 +146,9 @@ export class RunService {
             return result;
         });
     }
-    logs(actor: Actor, id: string, cursor = 0, stream:'stdout'|'stderr'='stdout') {
-        const run=this.get(actor,id);integer(cursor,'cursor',0,Number.MAX_SAFE_INTEGER);oneOf(stream,['stdout','stderr'] as const,'stream');
-        const path=safePath(run.execution?.controlDir??run.outputDir,`${stream}.log`);
-        if(!existsSync(path))return {content:'',cursor,complete:TERMINAL.includes(run.state)};
-        const before=lstatSync(path);ensure(before.isFile(),'ARTIFACT_NOT_FILE','日志必须是普通文件');
-        const fd=openSync(path,constants.O_RDONLY|(constants.O_NOFOLLOW??0));try{const stat=fstatSync(fd);ensure(stat.isFile()&&stat.ino===before.ino&&stat.dev===before.dev,'ARTIFACT_CHANGED','日志已被替换');const start=Math.min(cursor,stat.size),bytes=Buffer.alloc(Math.min(65536,stat.size-start)),n=readSync(fd,bytes,0,bytes.length,start);return {content:bytes.subarray(0,n).toString('utf8'),cursor:start+n,complete:TERMINAL.includes(run.state)&&start+n>=stat.size};}finally{closeSync(fd);}
+    logs(actor: Actor, id: string, cursor = 0, stream:'stdout'|'stderr'='stdout',identity?:string|null) {
+        const run=this.get(actor,id);oneOf(stream,['stdout','stderr'] as const,'stream');
+        return readLogPage(run.execution?.controlDir??run.outputDir,`${stream}.log`,cursor,{terminal:TERMINAL.includes(run.state),identity});
     }
     sourceList(actor:Actor,id:string) {const r=this.get(actor,id);verifySnapshot(r.manifest.snapshotPath,r.manifest.sourceFiles);const revisionId=r.manifest.sourceRevisionId??digest({projectId:r.projectId,experimentId:r.experimentId,revision:r.manifest.experimentRevision}),binding=this.c.store.maybe<GitSourceBinding>('git-source-binding',revisionId);return {runId:r.id,experimentId:r.experimentId,revision:r.manifest.experimentRevision,sourceDigest:r.manifest.snapshotDigest,gitCommit:r.manifest.gitCommit??(binding?.sourceDigest===r.manifest.snapshotDigest?binding.gitCommit:undefined),files:r.manifest.sourceFiles};}
     sourceRead(actor:Actor,id:string,value:unknown) {

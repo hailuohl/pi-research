@@ -1,10 +1,11 @@
+import {ProjectEventFeed} from './event-feed.js';
 import {SchedulerView} from './scheduler-view.js';
 import {IntegrationsView} from './integrations.js';
 import {ChangesView} from './changes.js';
 import {ImplementationView} from './implementation.js';
 import { CampaignView } from './campaigns.js';
 import { api, ApiError, hasToken, setToken } from './api.js';
-import type { Bootstrap, ProjectState, Row, Message } from './models.js';
+import type { Bootstrap, ProjectState, Row, Message, Session } from './models.js';
 import { short, label } from './models.js';
 import { Icon, Modal, Empty } from './ui.js';
 import { Chat, Experiments, Inspector, type Perform } from './workbench.js';
@@ -20,6 +21,8 @@ interface State {
     selectedReport:string;
     messages: Row<Message>[];
     stream: string;
+    streamTruncated:boolean;
+    eventNotice:string;
     modal: string;
     modalData: any;
     busy: boolean;
@@ -82,65 +85,59 @@ class ExperimentModal extends React.Component<{
     }
 }
 class App extends React.Component<{}, State> {
-    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'', messages: [], stream: '', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
+    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'', messages: [], stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
     private timer?: number;
-    private refreshing = false;
+    private refreshing?:Promise<boolean>;
     private refreshEpoch = 0;
-    private cursor = 0;
+    private readController?:AbortController;
+    private feed?:ProjectEventFeed;
+    private mounted=true;
     private noticeTimer?: number;
     componentDidMount() {
-        if (this.state.loggedIn)
-            void this.refresh();
-        this.timer = window.setInterval(() => {
-            if (this.state.loggedIn)
-                void this.refresh(true);
-        }, 1300);
+        if(this.state.loggedIn)void this.refresh();
+        this.timer=window.setInterval(()=>{if(this.state.loggedIn){if(this.feed)this.feed.wake();else void this.refresh(true);}},20000);
     }
-    componentWillUnmount() { clearInterval(this.timer); clearTimeout(this.noticeTimer); }
-    componentDidUpdate(_: any, prev: State) {
-        if (['projectId', 'sessionId', 'tab', 'selectedExp','selectedRun','selectedReport'].some(k => (prev as any)[k] !== (this.state as any)[k]))
-            localStorage.setItem('pi-research-ui-v1', JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp,selectedRun:this.state.selectedRun,selectedReport:this.state.selectedReport }));
+    componentWillUnmount(){this.mounted=false;this.invalidateRead();this.feed?.stop();clearInterval(this.timer);clearTimeout(this.noticeTimer);}
+    componentDidUpdate(_:any,prev:State){
+        if(['projectId','sessionId','tab','selectedExp','selectedRun','selectedReport'].some(k=>(prev as any)[k] !==(this.state as any)[k]))
+            localStorage.setItem('pi-research-ui-v1',JSON.stringify({projectId:this.state.projectId,sessionId:this.state.sessionId,tab:this.state.tab,selectedExp:this.state.selectedExp,selectedRun:this.state.selectedRun,selectedReport:this.state.selectedReport}));
+        if(!this.state.loggedIn&&prev.loggedIn){this.feed?.stop();this.feed=undefined;this.invalidateRead();}
     }
-    async refresh(quiet = false) {
-        if (this.refreshing || quiet && this.state.busy)
-            return;
-        this.refreshing = true;
-        const epoch = this.refreshEpoch;
-        try {
-            const boot = await api<Bootstrap>('/bootstrap');
-            const projectId = boot.projects.some(p => p.id === this.state.projectId) ? this.state.projectId : boot.projects[0]?.id ?? '';
-            const data = projectId ? await api<ProjectState>(`/projects/${projectId}/state`) : null;
-            const sessionId = data?.sessions.some(s => s.id === this.state.sessionId) ? this.state.sessionId : data?.sessions.find(s => s.role === 'coordinator' && s.state !== 'archived')?.id ?? '';
-            const [messages, events] = await Promise.all([sessionId ? api<Row<Message>[]>(`/sessions/${sessionId}/messages`) : Promise.resolve([]), api(`/events?after=${this.cursor}`)]);
-            let stream = this.state.stream;
-            for (const event of events.items) {
-                if (event.payload.sessionId === sessionId) {
-                    if (event.type === 'session.delta')
-                        stream += event.payload.text;
-                    if (['session.message_completed', 'agent.finished'].includes(event.type))
-                        stream = '';
-                }
-            }
-            if (epoch !== this.refreshEpoch)
-                return;
-            this.cursor = events.cursor;
-            const selectedExp = data?.experiments.some(e => e.id === this.state.selectedExp) ? this.state.selectedExp : data?.experiments[0]?.id ?? '';
-            this.setState({ boot, data, projectId, sessionId, messages, selectedExp, stream: stream.slice(-32000), connected: true });
-        }
-        catch (error) {
-            if (error instanceof ApiError && error.status === 401)
-                this.setState({ loggedIn: false, error: error.message });
-            else
-                this.setState({ connected: false, ...(!quiet ? { error: error instanceof Error ? error.message : String(error) } : {}) });
-        }
-        finally {
-            this.refreshing = false;
-        }
+    private invalidateRead(){this.refreshEpoch++;this.readController?.abort();this.refreshing=undefined;}
+    refresh(quiet=false):Promise<boolean>{
+        if(!this.mounted||quiet&&this.state.busy)return Promise.resolve(false);
+        if(this.refreshing)return this.refreshing;
+        const reading=this.readState(quiet);this.refreshing=reading;
+        void reading.finally(()=>{if(this.refreshing===reading)this.refreshing=undefined;});return reading;
+    }
+    private async readState(quiet:boolean):Promise<boolean>{
+        const epoch=this.refreshEpoch,controller=new AbortController();this.readController=controller;
+        try{
+            const boot=await api<Bootstrap>('/bootstrap',undefined,'GET',controller.signal);
+            const projectId=boot.projects.some(p=>p.id===this.state.projectId)?this.state.projectId:boot.projects[0]?.id??'';
+            let data=projectId?await api<ProjectState>(`/projects/${projectId}/state`,undefined,'GET',controller.signal):null;
+            const sessionId=data?.sessions.some(s=>s.id===this.state.sessionId)?this.state.sessionId:data?.sessions.find(s=>s.role==='coordinator'&&s.state!=='archived')?.id??'';
+            const view=sessionId?await api<{session:Row<Session>;messages:Row<Message>[];progress:{generation:number;active:boolean;content:string;truncated:boolean;cursor:number}}>(`/sessions/${sessionId}/view`,undefined,'GET',controller.signal):null;
+            if(!this.mounted||epoch!==this.refreshEpoch)return false;
+            if(view&&view.session.id!==sessionId)throw Error('会话快照与当前选择不一致');
+            if(data&&view)data={...data,sessions:data.sessions.map(s=>s.id===sessionId?view.session:s)};
+            const active=!!view?.progress.active&&view.progress.generation===view.session.generation;
+            const selectedExp=data?.experiments.some(e=>e.id===this.state.selectedExp)?this.state.selectedExp:data?.experiments[0]?.id??'';
+            await new Promise<void>(resolve=>this.setState({boot,data,projectId,sessionId,messages:view?.messages??[],selectedExp,stream:active?view!.progress.content:'',streamTruncated:active&&!!view?.progress.truncated,connected:true},resolve));
+            if(!this.mounted||epoch!==this.refreshEpoch)return false;
+            if(this.feed?.projectId!==projectId){this.feed?.stop();this.feed=undefined;if(projectId){const feed=new ProjectEventFeed(projectId,()=>this.refresh(true),eventNotice=>{if(this.mounted&&this.feed===feed)this.setState({eventNotice});});this.feed=feed;feed.start();}}
+            return true;
+        }catch(error){
+            if(!this.mounted||epoch!==this.refreshEpoch||controller.signal.aborted)return false;
+            if(error instanceof ApiError&&error.status===401)this.setState({loggedIn:false,error:error.message});
+            else this.setState({connected:false,...(!quiet?{error:error instanceof Error?error.message:String(error)}:{})});
+            return false;
+        }finally{if(this.readController===controller)this.readController=undefined;}
     }
     perform: Perform = async (fn, success) => {
         if (this.state.busy)
             return;
-        this.refreshEpoch++;
+        this.invalidateRead();
         this.setState({ busy: true, error: '' });
         try {
             const result = await fn();
@@ -160,8 +157,8 @@ class App extends React.Component<{}, State> {
             this.setState({ busy: false });
         }
     };
-    switchProject(id: string) { this.refreshEpoch++; this.cursor = 0; this.setState({ projectId: id, sessionId: '', selectedExp: '', selectedRun:'',selectedReport:'', stream: '', data: null }, () => { void this.refresh(); }); }
-    selectSession(id: string) { this.refreshEpoch++; this.setState({ sessionId: id, tab: 'chat', stream: '' }, () => { void this.refresh(); }); }
+    switchProject(id: string) { this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ projectId: id, sessionId: '', selectedExp: '', selectedRun:'',selectedReport:'', stream: '',streamTruncated:false,eventNotice:'', data: null }, () => { void this.refresh(); }); }
+    selectSession(id: string) { this.invalidateRead(); this.setState({ sessionId: id, tab: 'chat', stream: '',streamTruncated:false }, () => { void this.refresh(); }); }
     open(modal: string, data: any = null) { this.setState({ modal, modalData: data, error: '' }); }
     close = () => {
         if (!this.state.busy)
@@ -215,21 +212,21 @@ class App extends React.Component<{}, State> {
         const currentSession = data?.sessions.find(s => s.id === this.state.sessionId), experiment = data?.experiments.find(e => e.id === this.state.selectedExp);
         return <div className="app-shell"><nav className="sidebar" aria-label="主导航"><a className="brand" href="#" onClick={(e: any) => { e.preventDefault(); this.setState({ tab: 'chat' }); }}><span>π</span><div>Pi Research<small>RESEARCH WORKSPACE</small></div></a><button className="new-project" onClick={() => this.open('project')}><Icon name="plus" size={16}/>新建项目</button><div className="sidebar-caption">WORKSPACE</div><div className="nav-list">{navigation.map(([id, name, icon]) => <button key={id} className={tab === id ? 'active' : ''} onClick={() => this.setState({ tab: id })}><Icon name={icon} size={18}/><span>{name}</span>{id === 'experiments' && data?.experiments.length ? <em>{data.experiments.length}</em> : null}</button>)}</div><div className="sidebar-sessions"><div className="sidebar-caption">会话<button aria-label="新建会话" title="新建会话" className="icon-button" disabled={!data} onClick={() => this.newSession()}><Icon name="plus" size={15}/></button></div>{data?.sessions.filter(s => s.role === 'coordinator' && s.state !== 'archived').map(s => <button key={s.id} className={s.id === this.state.sessionId ? 'selected-session' : ''} onClick={() => this.selectSession(s.id)}><span className={'session-dot ' + (s.state === 'running' ? 'live' : '')}/><span>{s.title}</span></button>)}</div><div className="sidebar-footer"><div className="local-avatar"><Icon name="folder"/></div><div><strong>本地工作空间</strong><small>数据由你掌握</small></div><span className={'status-dot ' + (this.state.connected ? '' : 'amber')}/></div></nav>
  <div className="workspace-shell"><header className="topbar"><div className="breadcrumb"><span>项目</span><Icon name="chevron" size={12}/><select aria-label="当前项目" value={this.state.projectId} onChange={(e: any) => this.switchProject(e.target.value)}>{!boot?.projects.length ? <option value="">尚未创建项目</option> : boot.projects.map(p => <option value={p.id} key={p.id}>{p.name}</option>)}</select></div><div className="topbar-right"><span className={'connection-state ' + (this.state.connected ? 'ready' : '')}><span className={'status-dot ' + (this.state.connected ? '' : 'amber')}/>{this.state.connected ? '本地服务在线' : '正在重连'}</span><span className="version-label">v0.2 · 开发版</span></div></header>
- {this.state.error ? <div className="global-error" role="alert"><strong>操作未完成</strong><span>{this.state.error}</span><button className="icon-button" aria-label="关闭错误提示" onClick={() => this.setState({ error: '' })}><Icon name="close" size={16}/></button></div> : null}{this.state.notice ? <div className="toast" role="status"><Icon name="check" size={16}/>{this.state.notice}</div> : null}
+ {this.state.eventNotice?<p className="small muted" role="status">{this.state.eventNotice}</p>:null}{this.state.error ? <div className="global-error" role="alert"><strong>操作未完成</strong><span>{this.state.error}</span><button className="icon-button" aria-label="关闭错误提示" onClick={() => this.setState({ error: '' })}><Icon name="close" size={16}/></button></div> : null}{this.state.notice ? <div className="toast" role="status"><Icon name="check" size={16}/>{this.state.notice}</div> : null}
  <div className={'workbench-content ' + (['chat', 'experiments'].includes(tab) && data ? 'with-inspector' : '')}>
  <main className={'main-pane ' + (tab === 'chat' ? 'chat-pane' : '')}>
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} session={currentSession} perform={this.perform}/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
-                tab === 'chat' ? <Chat data={data} boot={boot} session={currentSession} messages={this.state.messages} stream={this.state.stream} perform={this.perform} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)}/> :
+                tab === 'chat' ? <Chat data={data} boot={boot} session={currentSession} messages={this.state.messages} stream={this.state.stream} streamTruncated={this.state.streamTruncated} perform={this.perform} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)}/> :
                     tab === 'scheduler' ? <SchedulerView key={data.project.id} data={data} perform={this.perform}/> :
-                    tab === 'implementation' ? <ImplementationView onScheduler={()=>this.setState({tab:'scheduler'})} key={data.project.id} data={data} sessionId={this.state.sessionId} busy={this.state.busy} perform={this.perform} onSession={sessionId=>this.setState({sessionId})} onChat={id=>this.selectSession(id)} onExperiment={selectedExp=>this.setState({selectedExp,selectedRun:'',tab:'experiments'})}/> :
+                    tab === 'implementation' ? <ImplementationView onScheduler={()=>this.setState({tab:'scheduler'})} key={data.project.id} data={data} sessionId={this.state.sessionId} busy={this.state.busy} perform={this.perform} onSession={sessionId=>{this.invalidateRead();this.setState({sessionId,stream:'',streamTruncated:false},()=>void this.refresh());}} onChat={id=>this.selectSession(id)} onExperiment={selectedExp=>this.setState({selectedExp,selectedRun:'',tab:'experiments'})}/> :
                     tab === 'campaigns' ? <CampaignView key={data.project.id} data={data} busy={this.state.busy} perform={this.perform} onSession={id => this.selectSession(id)} onExperiment={id => this.setState({selectedExp:id,tab:'experiments'})}/> :
-                    tab === 'experiments' ? <Experiments data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.refreshEpoch++; this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>this.setState({selectedRun,selectedExp})} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
+                    tab === 'experiments' ? <Experiments data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.invalidateRead(); this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>this.setState({selectedRun,selectedExp})} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
                         tab === 'changes' ? <ChangesView key={data.project.id} data={data} perform={this.perform}/> :
                         tab === 'workspace' ? <WorkspaceView key={data.project.id} data={data} perform={this.perform}/> :
                             tab === 'integrations' ? <IntegrationsView key={data.project.id} projectId={data.project.id}/> :
                             tab === 'literature' ? <LiteratureView key={data.project.id} data={data} perform={this.perform}/> :
                                 tab === 'evidence' ? <EvidenceView key={data.project.id} data={data} perform={this.perform} onRegister={(artifactId, content) => this.open('evidence', { artifactId, content })} onClaim={() => this.open('claim')}/> :
-                                    tab === 'reports' ? <ReportsView key={data.project.id} data={data} perform={this.perform} selectedReport={this.state.selectedReport} onSelect={selectedReport=>this.setState({selectedReport})} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定报告 Run 不在当前项目中，未跳转到其他运行。'});return;}this.refreshEpoch++;this.setState({selectedRun,selectedExp,tab:'experiments'});}}/> : null}
+                                    tab === 'reports' ? <ReportsView key={data.project.id} data={data} perform={this.perform} selectedReport={this.state.selectedReport} onSelect={selectedReport=>this.setState({selectedReport})} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定报告 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp,tab:'experiments'});}}/> : null}
  </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector onScheduler={()=>this.setState({tab:'scheduler'})} data={data} boot={boot} tab={tab} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onToggle={() => this.toggle()} onTeam={() => this.open('team')} onPrepare={() => {
                     if (experiment)
                         this.perform(() => api('/run-intents', { experimentId: experiment.id }), '已准备不可变快照，等待人工批准');

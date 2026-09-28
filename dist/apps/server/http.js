@@ -10,8 +10,10 @@ import { text } from '../../packages/contracts/validation.js';
 import { safePath } from '../../packages/workspace/files.js';
 import { USER } from '../../packages/domain/types.js';
 import { readRoute, writeRoute } from './routes.js';
+import { EventStreamHub, eventQuery } from './event-stream.js';
 export function createHttpServer(options) {
     const app = new ResearchApp(options.dataDir, options.repoRoot), host = new AgentHost(app), tokenFile = join(app.context.dataDir, 'access.token');
+    const events = new EventStreamHub(app.store);
     if (!existsSync(tokenFile))
         writeFileSync(tokenFile, randomBytes(32).toString('hex'), { mode: 0o600, flag: 'wx' });
     const token = readFileSync(tokenFile, 'utf8').trim();
@@ -36,6 +38,13 @@ export function createHttpServer(options) {
                 ensure(provided.length === expected.length && timingSafeEqual(provided, expected), 'UNAUTHORIZED', '需要启动终端显示的本地访问令牌', 401);
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    if (route === '/events/stream') {
+                        const query = eventQuery(url, true, req.headers['last-event-id']);
+                        if (query.projectId)
+                            app.projects.get(USER, query.projectId);
+                        events.open(req, res, query);
+                        return;
+                    }
                     if (route === '/operations')
                         return json(app.operations.specs());
                     const files = route.match(/^\/projects\/([^/]+)\/files$/);
@@ -116,6 +125,7 @@ export function createHttpServer(options) {
     server.requestTimeout = 20000;
     server.headersTimeout = 10000;
     server.maxHeadersCount = 50;
-    return { app, host, token, server, listen: () => new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = server.address().port; host.start(); resolve(port); }); }), close: async () => { await host.stop(); server.closeIdleConnections(); await new Promise(resolve => server.close(() => resolve())); app.close(); } };
+    let closing;
+    return { app, host, token, server, listen: () => new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = server.address().port; host.start(); resolve(port); }); }), close: () => closing ??= (async () => { events.close(); await host.stop(); server.closeIdleConnections(); await new Promise(resolve => server.close(() => resolve())); app.close(); })() };
 }
 //# sourceMappingURL=http.js.map

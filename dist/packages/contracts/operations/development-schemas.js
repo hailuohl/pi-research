@@ -19,11 +19,11 @@ export const DEVELOPMENT_INPUT_SCHEMAS = {
     development_prepare: s.object({ title: s.string(200), command: s.array({ ...s.string(1000, 0), pattern: '^[^\u0000]*$' }, 64, 1), environmentImageDigest: image, dockerContext: { ...s.string(100), pattern: '^[a-zA-Z0-9][a-zA-Z0-9_.-]*$' }, resources, deadline: s.string(50), expectedArtifacts: s.array(s.string(1000), 32), dataArtifactIds: s.array(id, 10) }, ['command', 'environmentImageDigest']),
     development_submit: s.object({ developmentTaskId: id }, ['developmentTaskId']),
     development_inspect: { type: 'object', anyOf: [s.object({ developmentTaskId: id }, ['developmentTaskId']), s.object({ jobId: id }, ['jobId'])] },
-    development_logs: s.object({ jobId: id, stream: s.enum(['stdout', 'stderr']), cursor: integer }, ['jobId']),
+    development_logs: s.object({ jobId: id, stream: s.enum(['stdout', 'stderr']), cursor: integer, identity: s.nullable(s.string(100)) }, ['jobId']),
     development_cancel: s.object({ jobId: id }, ['jobId']),
 };
 export const DEVELOPMENT_OUTPUT_SCHEMAS = {
     development_prepare: task, development_submit: job, development_inspect: { type: 'object', anyOf: [task, job] }, development_cancel: job,
-    development_logs: s.object({ jobId: id, stream: s.enum(['stdout', 'stderr']), content: s.string(65536, 0), cursor: integer, complete: s.boolean() }, ['jobId', 'stream', 'content', 'cursor', 'complete']),
+    development_logs: s.object({ jobId: id, stream: s.enum(['stdout', 'stderr']), content: s.string(65536, 0), cursor: integer, complete: s.boolean(), start: integer, size: integer, identity: s.nullable(s.string(100)) }, ['jobId', 'stream', 'content', 'cursor', 'complete', 'start', 'size', 'identity']),
 };
 //# sourceMappingURL=development-schemas.js.map

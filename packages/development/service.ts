@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {mkdirSync, readdirSync, chmodSync, rmdirSync, existsSync, openSync, closeSync, fstatSync, lstatSync, readSync, constants} from 'node:fs';
+import {mkdirSync, readdirSync, chmodSync, rmdirSync, existsSync} from 'node:fs';
 import {join, dirname, basename} from 'node:path';
 import type {ResearchApp} from '../research-app.js';
 import type {Actor, Artifact, Row, Session, Task, TaskAttempt, Team, SourceRevision, Experiment} from '../domain/types.js';
@@ -15,6 +15,7 @@ import {readStableFile} from '../workspace/stable-file.js';
 import {validateSourceRevision} from '../workspace/source-access.js';
 import {captureAcceptance,assertAcceptanceCurrent} from '../evidence/acceptance.js';
 import {assertWorkspaceReady} from '../workspace/git-service.js';
+import {readLogPage} from '../execution/log-page.js';
 
 const MiB=1024*1024;
 const DEFAULTS: SandboxResources={cpus:1,memoryMb:256,pids:64,timeoutSeconds:60,workMb:128,outputBytes:32*MiB,logBytes:2*MiB};
@@ -139,13 +140,9 @@ export class DevelopmentService {
         const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);this.access(actor,pid,j.sessionId);
         return {id:j.id,jobId:j.id,developmentTaskId:j.developmentTaskId,sessionId:j.sessionId,version:j.version,sourceDigest:j.sourceDigest,manifestDigest:j.manifestDigest,manifest:publicManifest(j.manifest),imageId:j.imageId,grantId:j.grantId,state:j.state,integrity:j.integrity,exitCode:j.exitCode??null,error:j.error?diagnostic(j.error,j.startRequested):undefined,startedAt:j.startedAt,endedAt:j.endedAt,artifactIds:j.artifactIds,stdoutArtifactId:j.stdoutArtifactId,stderrArtifactId:j.stderrArtifactId,reportArtifactId:j.reportArtifactId,logTruncated:j.logTruncated,cancelRequested:j.cancelRequested};
     }
-    logs(actor:Actor,pid:string,id:string,stream:unknown,cursor:unknown=0) {
+    logs(actor:Actor,pid:string,id:string,stream:unknown,cursor:unknown=0,identity?:string|null) {
         this.inspect(actor,pid,id);ensure(stream==='stdout'||stream==='stderr','INVALID_INPUT','日志流必须是 stdout 或 stderr',400);
-        const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid),position=integer(cursor,'cursor',0,Number.MAX_SAFE_INTEGER),path=safePath(j.controlDir,`${stream}.log`);
-        if(!existsSync(path))return {jobId:id,stream,content:'',cursor:position,complete:SANDBOX_TERMINAL.includes(j.state)};
-        const before=lstatSync(path);ensure(before.isFile(),'ARTIFACT_NOT_FILE','日志必须为普通文件');
-        const fd=openSync(path,constants.O_RDONLY|(constants.O_NOFOLLOW??0));
-        try {const stat=fstatSync(fd);ensure(stat.isFile()&&stat.ino===before.ino&&stat.dev===before.dev,'ARTIFACT_CHANGED','日志被替换');const bytes=Buffer.alloc(Math.min(65536,Math.max(0,stat.size-position))),n=readSync(fd,bytes,0,bytes.length,position);return {jobId:id,stream,content:bytes.subarray(0,n).toString('utf8'),cursor:position+n,complete:SANDBOX_TERMINAL.includes(j.state)&&position+n>=stat.size};}finally{closeSync(fd);}
+        const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);return {jobId:id,stream,...readLogPage(j.controlDir,`${stream}.log`,cursor,{terminal:SANDBOX_TERMINAL.includes(j.state),identity})};
     }
     cancel(actor:Actor,pid:string,id:string) {
         return this.app.store.transaction(()=>{const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);this.access(actor,pid,j.sessionId);ensure(actor.type==='user'||actor.sessionId===j.sessionId,'TASK_SCOPE_DENIED','助手只能取消自己会话的测试',403);if(!SANDBOX_TERMINAL.includes(j.state)) {this.app.store.update<SandboxJob>('sandbox-job',id,j.version,{cancelRequested:true});this.app.store.event(pid,'development.cancel_requested',{jobId:id});if(j.state==='queued'&&!j.startRequested&&!j.containerId)this.finalize(id,{state:'cancelled',exitCode:null,error:'Cancelled before execution',incomplete:true});}return this.inspect(actor,pid,id);});

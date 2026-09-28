@@ -65,6 +65,7 @@ export interface Message {
     sessionId: string;
     role: 'user' | 'assistant' | 'system';
     content: string;
+    contentTruncated?: boolean;
     mode: 'prompt' | 'steer' | 'follow_up';
     status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
     error?: string;

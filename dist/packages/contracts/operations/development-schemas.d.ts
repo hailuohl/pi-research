@@ -174,6 +174,17 @@ export declare const DEVELOPMENT_INPUT_SCHEMAS: {
                 readonly minimum: number;
                 readonly maximum: number;
             };
+            readonly identity: {
+                readonly anyOf: readonly [{
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                }, {
+                    readonly type: "null";
+                }];
+            };
         };
         readonly required: readonly ["jobId"];
         readonly additionalProperties: false;
@@ -1963,8 +1974,29 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
             readonly complete: {
                 readonly type: "boolean";
             };
+            readonly start: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly size: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly identity: {
+                readonly anyOf: readonly [{
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                }, {
+                    readonly type: "null";
+                }];
+            };
         };
-        readonly required: readonly ["jobId", "stream", "content", "cursor", "complete"];
+        readonly required: readonly ["jobId", "stream", "content", "cursor", "complete", "start", "size", "identity"];
         readonly additionalProperties: false;
     };
 };

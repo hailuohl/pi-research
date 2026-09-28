@@ -7,6 +7,7 @@ import { USER } from '../../packages/domain/types.js';
 import { DomainError, ensure } from '../../packages/domain/errors.js';
 import { object, text, integer, bool, strings, oneOf } from '../../packages/contracts/validation.js';
 import { CAPABILITIES } from '../../packages/contracts/capabilities.js';
+import { eventQuery } from './event-stream.js';
 export function readRoute(app, host, path, url) {
     const integration = readIntegrationRoute(app, path, url);
     if (integration !== undefined)
@@ -21,9 +22,10 @@ export function readRoute(app, host, path, url) {
     if (path === '/capabilities')
         return CAPABILITIES;
     if (path === '/events') {
-        const after = integer(Number(url.searchParams.get('after') ?? 0), 'after', 0);
-        const items = app.store.events(after, url.searchParams.get('projectId') ?? undefined);
-        return { items, cursor: items.length ? items[items.length - 1].seq : after };
+        const query = eventQuery(url);
+        if (query.projectId)
+            app.projects.get(USER, query.projectId);
+        return app.store.eventPage(query.after, query.projectId, query.limit);
     }
     if (kind === 'change-proposals' && id)
         return action === 'diff' ? app.changes.inspect(USER, id) : app.changes.get(USER, id);
@@ -43,6 +45,8 @@ export function readRoute(app, host, path, url) {
             return p;
     }
     if (kind === 'sessions' && id) {
+        if (action === 'view')
+            return app.sessions.view(USER, id);
         if (action === 'messages')
             return app.sessions.messages(USER, id);
         if (!action)
@@ -70,7 +74,7 @@ export function readRoute(app, host, path, url) {
     }
     if (kind === 'runs' && id) {
         if (action === 'logs')
-            return app.operations.execute(USER, 'run_logs', { runId: id, cursor: integer(Number(url.searchParams.get('cursor') ?? 0), 'cursor', 0), ...(url.searchParams.has('stream') ? { stream: url.searchParams.get('stream') } : {}) }, { projectId: app.runs.get(USER, id).projectId });
+            return app.operations.execute(USER, 'run_logs', { runId: id, cursor: integer(Number(url.searchParams.get('cursor') ?? 0), 'cursor', 0, Number.MAX_SAFE_INTEGER), ...(url.searchParams.has('stream') ? { stream: url.searchParams.get('stream') } : {}), ...(url.searchParams.has('identity') ? { identity: url.searchParams.get('identity') } : {}) }, { projectId: app.runs.get(USER, id).projectId });
         if (action === 'manifest')
             return app.runs.get(USER, id).manifest;
         return app.operations.execute(USER, 'run_inspect', { runId: id }, { projectId: app.runs.get(USER, id).projectId });

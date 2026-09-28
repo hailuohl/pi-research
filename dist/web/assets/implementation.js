@@ -1,3 +1,4 @@
+import { LogView } from './log-view.js';
 import { ComputeWait } from './scheduler-view.js';
 import { api, artifactText, downloadArtifact } from './api.js';
 import { short, label } from './models.js';
@@ -108,56 +109,37 @@ class PrivateWorkspace extends React.Component {
 class DevelopmentJob extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { job: this.props.job, stream: 'stdout', logs: '', cursor: 0, complete: false, error: '', artifact: '' };
-        this.epoch = 0;
-        this.fetching = false;
+        this.state = { expanded: false, artifact: '' };
         this.artifactEpoch = 0;
     }
-    componentDidMount() { void this.poll(); this.timer = window.setInterval(() => void this.poll(), 1800); }
-    componentWillUnmount() { clearInterval(this.timer); this.epoch++; this.artifactEpoch++; }
-    async poll() { if (this.fetching)
-        return; this.fetching = true; const epoch = this.epoch; try {
-        const { project } = this.props.data;
-        const job = await op(project.id, this.props.sessionId, 'development_inspect', { jobId: this.props.job.id });
-        const page = this.state.complete ? null : await op(project.id, this.props.sessionId, 'development_logs', { jobId: job.id, stream: this.state.stream, cursor: this.state.cursor });
-        if (epoch === this.epoch)
-            this.setState({ job, error: '', ...(page ? { logs: this.state.logs + page.content, cursor: page.cursor, complete: page.complete } : {}) });
+    componentWillUnmount() { this.artifactEpoch++; }
+    render() {
+        const { job, data, perform } = this.props, terminal = ['succeeded', 'failed', 'cancelled', 'timed_out'].includes(job.state);
+        return React.createElement("div", { className: "inspector-section" },
+            React.createElement("h3", null,
+                "\u5F00\u53D1\u6D4B\u8BD5\u4F5C\u4E1A ",
+                short(job.id)),
+            React.createElement("div", { className: "actions" },
+                React.createElement(Badge, { value: job.state }),
+                React.createElement(Badge, { value: job.integrity }),
+                React.createElement("span", null,
+                    "\u9000\u51FA\u7801 ",
+                    job.exitCode ?? '—')),
+            React.createElement("code", { className: "digest" }, job.sourceDigest),
+            !terminal ? React.createElement(ComputeWait, { data: data, kind: "development", id: job.id, onScheduler: this.props.onScheduler }) : null,
+            job.error ? React.createElement("p", { className: "error-text" }, job.error) : null,
+            React.createElement("details", { open: this.state.expanded, onToggle: (e) => { const expanded = e.currentTarget.open; if (expanded !== this.state.expanded)
+                    this.setState({ expanded }); } },
+                React.createElement("summary", null, "\u67E5\u770B\u5F00\u53D1\u6D4B\u8BD5\u65E5\u5FD7\u4E0E\u4EA7\u7269"),
+                this.state.expanded ? React.createElement("div", null,
+                    React.createElement(LogView, { streamLabel: "\u5F00\u53D1\u6D4B\u8BD5\u65E5\u5FD7\u6D41", read: (request, signal) => api('/operations/development_logs', { projectId: data.project.id, sessionId: this.props.sessionId, input: { jobId: job.id, ...request } }, 'POST', signal) }),
+                    React.createElement("ul", null, job.artifactIds.map(id => { const a = data.artifacts.find(a => a.id === id); return React.createElement("li", { key: id },
+                        React.createElement("button", { className: "text-button", onClick: () => { const seq = ++this.artifactEpoch; void perform(async () => { const content = await artifactText(id); if (seq === this.artifactEpoch)
+                                this.setState({ artifact: content.slice(0, 65536) }); }); } }, a?.title ?? short(id)),
+                        React.createElement("button", { className: "text-button", onClick: () => perform(() => downloadArtifact(id, a?.title ?? id)) }, "\u4E0B\u8F7D")); })),
+                    this.state.artifact ? React.createElement("pre", { className: "logs" }, this.state.artifact) : null) : null),
+            !terminal ? React.createElement("button", { className: "text-button danger", onClick: () => perform(() => op(data.project.id, this.props.sessionId, 'development_cancel', { jobId: job.id })) }, "\u53D6\u6D88\u5F00\u53D1\u6D4B\u8BD5") : null);
     }
-    catch (error) {
-        if (epoch === this.epoch)
-            this.setState({ error: message(error) });
-    }
-    finally {
-        if (epoch === this.epoch)
-            this.fetching = false;
-    } }
-    render() { const { job } = this.state, { data, perform } = this.props, terminal = ['succeeded', 'failed', 'cancelled', 'timed_out'].includes(job.state); return React.createElement("div", { className: "inspector-section" },
-        React.createElement("h3", null,
-            "\u5F00\u53D1\u6D4B\u8BD5\u4F5C\u4E1A ",
-            short(job.id)),
-        React.createElement("div", { className: "actions" },
-            React.createElement(Badge, { value: job.state }),
-            React.createElement(Badge, { value: job.integrity }),
-            React.createElement("span", null,
-                "\u9000\u51FA\u7801 ",
-                job.exitCode ?? '—')),
-        React.createElement("code", { className: "digest" }, job.sourceDigest),
-        !terminal ? React.createElement(ComputeWait, { data: data, kind: "development", id: job.id, onScheduler: this.props.onScheduler }) : null,
-        job.error ? React.createElement("p", { className: "error-text" }, job.error) : null,
-        this.state.error ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.error) : null,
-        React.createElement("label", null,
-            "\u5F00\u53D1\u6D4B\u8BD5\u65E5\u5FD7\u6D41",
-            React.createElement("select", { "aria-label": "\u5F00\u53D1\u6D4B\u8BD5\u65E5\u5FD7\u6D41", value: this.state.stream, onChange: (e) => { this.epoch++; this.fetching = false; this.setState({ stream: e.target.value, logs: '', cursor: 0, complete: false }, () => void this.poll()); } },
-                React.createElement("option", { value: "stdout" }, "stdout"),
-                React.createElement("option", { value: "stderr" }, "stderr"))),
-        React.createElement("pre", { className: "logs" }, this.state.logs || '此流暂无日志。'),
-        React.createElement("button", { className: "text-button", disabled: this.state.complete, onClick: () => void this.poll() }, this.state.complete ? '日志已完整读取' : '加载后续日志'),
-        !terminal ? React.createElement("button", { className: "text-button danger", onClick: () => perform(() => op(data.project.id, this.props.sessionId, 'development_cancel', { jobId: job.id })) }, "\u53D6\u6D88\u5F00\u53D1\u6D4B\u8BD5") : null,
-        React.createElement("ul", null, job.artifactIds.map(id => { const a = data.artifacts.find(a => a.id === id); return React.createElement("li", { key: id },
-            React.createElement("button", { className: "text-button", onClick: () => { const seq = ++this.artifactEpoch; void perform(async () => { const content = await artifactText(id); if (seq === this.artifactEpoch)
-                    this.setState({ artifact: content.slice(0, 65536) }); }); } }, a?.title ?? short(id)),
-            React.createElement("button", { className: "text-button", onClick: () => perform(() => downloadArtifact(id, a?.title ?? id)) }, "\u4E0B\u8F7D")); })),
-        this.state.artifact ? React.createElement("pre", { className: "logs" }, this.state.artifact) : null); }
 }
 export class ImplementationView extends React.Component {
     constructor() {

@@ -129,7 +129,7 @@ export const OUTPUT_SCHEMAS = {
     evidence_register: evidence,
     evidence_read: evidence,
     session_notice_read: object({ messageId: string, content: string, cursor: integer, complete: boolean }),
-    run_logs: object({ content: string, cursor: integer, complete: boolean }),
+    run_logs: object({ content: string, cursor: integer, complete: boolean,start:integer,size:integer,identity:nullableString }),
     run_source_list:object({runId:string,experimentId:string,revision:integer,sourceDigest:string,gitCommit:string,files:array(sourceFile)},['gitCommit']),
     run_source_read:object({runId:string,experimentId:string,revision:integer,sourceDigest:string,gitCommit:string,path:string,size:integer,digest:string,mode:enumeration('100644','100755'),cursor:integer,end:integer,complete:boolean,content:string},['gitCommit','mode']),
     approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string }, ['decidedAt'])),

@@ -27,7 +27,8 @@ interface Active {
     assistantOutput?: boolean;
     contextMessageIds?: string[];
 }
-const clean = (s: string) => s.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]').slice(0, 32000);
+const redact = (s: string) => s.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]');
+const clean = (s: string) => redact(s).slice(0, 32000);
 /** Dependency injection is in-process test infrastructure only; HTTP/config never select a replacement worker. */
 interface HostDependencies {
     inspect?: (repoRoot: string, model: ModelConfig) => {ready: boolean; code: string; message: string};
@@ -196,7 +197,7 @@ export class AgentHost {
         const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
         this.app.store.event(claimed.projectId, 'session.skill_bundle_bound', {sessionId:claimed.id, generation:claimed.generation, bundleId:skillBundle.bundleId});
         child.send({ type: 'start', skillBundle, repoRoot: this.app.context.repoRoot, workspace: claimed.workspace, agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
-        store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, attemptId: attempt?.id });
+        store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             if(active){this.finish(active,clean((error as Error).message));return;}
             store.transaction(()=>{this.admission.release(slot.id,this.ownerHost,claimed.generation,requested?'synchronous-fork-failure':'not-forked');if(attempt)this.app.teams.fail(attempt.id,'Worker 启动前失败',false,true);if(messageId){const m=store.get<Message>('message',messageId);if(m.status==='running')store.update<Message>('message',m.id,m.version,{status:'failed',error:'Worker 启动前失败'});}if(wakeupId){const w=this.app.wakeups.get(SYSTEM,wakeupId);store.update<Wakeup>('wakeup',w.id,w.version,{state:'queued'});this.app.wakeups.finish(w.id,'Worker 启动前失败',false);}const latest=store.get<Session>('session',claimed.id);if(latest.generation===claimed.generation)store.update<Session>('session',latest.id,latest.version,{state:'failed',leaseUntil:0,lastError:'Worker 启动前失败'});});
@@ -261,12 +262,17 @@ export class AgentHost {
         if (m?.type === 'assistant_message') {
             if (m.error) a.providerError = clean(String(m.error));
             else if (typeof m.content === 'string' && m.content.trim()) a.assistantOutput = true;
-            const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: clean(String(m.content ?? '')), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? clean(String(m.error)) : undefined, usage: m.usage });
-            this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, messageId: record.id });
-            this.app.store.create('model-usage', s.projectId, { sessionId: s.id, attemptId: a.attemptId ?? null, provider: s.model.provider, model: s.model.model, usage: m.usage, status: m.usage ? 'reported' : 'unknown', stopReason: m.stopReason ?? null });
+            const content=redact(String(m.content??''));
+            this.app.store.transaction(()=>{
+                ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');
+                const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? clean(String(m.error)) : undefined, usage: m.usage });
+                this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, generation:s.generation,messageId: record.id });
+                this.app.store.create('model-usage', s.projectId, { sessionId: s.id, attemptId: a.attemptId ?? null, provider: s.model.provider, model: s.model.model, usage: m.usage, status: m.usage ? 'reported' : 'unknown', stopReason: m.stopReason ?? null });
+            });
         }
-        if (m?.type === 'delta' && typeof m.text === 'string')
-            this.app.store.event(s.projectId, 'session.delta', { sessionId: s.id, text: clean(m.text.slice(0, 4000)) });
+        if (m?.type === 'delta' && typeof m.text === 'string') {
+            const text=redact(m.text);this.app.store.transaction(()=>{ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');this.app.store.event(s.projectId, 'session.delta', { sessionId: s.id, generation:a.generation,text:text.slice(0,4000),truncated:text.length>4000 });});
+        }
         if (m?.type === 'message_ack') {
             const msg = this.app.store.maybe<Message>('message', m.messageId);
             if (msg && msg.sessionId === s.id && msg.status === 'queued') {
@@ -316,7 +322,7 @@ export class AgentHost {
                 const queued = this.app.sessions.messages(SYSTEM, s.id).some(m => m.status === 'queued');
                 store.update<Session>('session', s.id, s.version, { state: queued ? 'queued' : error ? 'failed' : 'idle', leaseUntil: 0, lastError: error });
             }
-            store.event(s.projectId, 'agent.finished', { sessionId: s.id, error: error ?? null, attemptId: a.attemptId ?? null });
+            store.event(s.projectId, 'agent.finished', { sessionId: s.id, generation:a.generation,error: error ?? null, attemptId: a.attemptId ?? null });
         });
         if (a.child.connected)
             a.child.disconnect();

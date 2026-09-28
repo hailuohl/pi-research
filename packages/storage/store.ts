@@ -13,6 +13,9 @@ export function stable(value: unknown): string {
 }
 export const digest = (value: unknown) => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : stable(value)).digest('hex');
 export const now = () => new Date().toISOString();
+export interface EventPageItem {seq:number;id:string;projectId:string|null;type:string;payload:unknown;createdAt:string;omitted?:true;payloadBytes?:number;}
+export interface EventPage {items:EventPageItem[];cursor:number;hasMore:boolean;latestCursor:number;reset:boolean;}
+export const EVENT_PAYLOAD_BYTES=64*1024,EVENT_PAGE_PAYLOAD_BYTES=256*1024;
 function rethrowComputeGate(error:unknown):never {
     const message=(error as Error).message;
     for(const code of ['COMPUTE_TARGET_PROBE_REQUIRED','COMPUTE_TARGET_QUEUE_FULL','COMPUTE_QUEUE_FULL'])if(message.includes(code))throw new DomainError(code,code==='COMPUTE_TARGET_PROBE_REQUIRED'?'请先核对 Docker 目标身份':code==='COMPUTE_TARGET_QUEUE_FULL'?'目标等待队列已满；如已更换引擎，请先重新核对':'计算等待队列已满',409);
@@ -21,6 +24,7 @@ function rethrowComputeGate(error:unknown):never {
 export class Store {
     readonly db: DatabaseSync;
     private depth = 0;
+    private reading = false;
     private rollbackCallbacks: Array<() => void> = [];
     private commitCallbacks: Array<() => void> = [];
     constructor(public path: string) {
@@ -35,6 +39,10 @@ export class Store {
  CREATE TABLE IF NOT EXISTS inbox(consumer TEXT NOT NULL,event_id TEXT NOT NULL,PRIMARY KEY(consumer,event_id));
  INSERT OR IGNORE INTO schema_migrations VALUES(1,datetime('now'));`);
         this.migrateComputeQueue();
+        this.transaction(()=>{if(this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=4').get())return;this.db.exec(`CREATE INDEX IF NOT EXISTS events_project_sequence ON events(project_id,seq);
+CREATE INDEX IF NOT EXISTS events_session_type_sequence ON events(project_id,json_extract(payload,'$.sessionId'),type,seq);
+CREATE INDEX IF NOT EXISTS records_kind_session ON records(kind,json_extract(data,'$.sessionId'));
+INSERT INTO schema_migrations VALUES(4,datetime('now'));`);});
     }
     private migrateComputeQueue() {
         this.db.exec('BEGIN IMMEDIATE');
@@ -82,6 +90,7 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
     onRollback(fn: () => void) { ensure(this.depth > 0, 'TRANSACTION_REQUIRED', '回滚处理必须绑定事务', 500); this.rollbackCallbacks.push(fn); }
     afterCommit(fn: () => void) { ensure(this.depth > 0, 'TRANSACTION_REQUIRED', '提交处理必须绑定事务', 500); this.commitCallbacks.push(fn); }
     transaction<T>(fn: () => T): T {
+        ensure(!this.reading,'READ_ONLY_TRANSACTION','只读快照中不能开启写事务',500);
         if (this.depth > 0)
             return fn();
         this.db.exec('BEGIN IMMEDIATE');
@@ -116,6 +125,16 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
             }
         }
     }
+    /** Consistent synchronous reads without reserving SQLite's writer lock. */
+    readSnapshot<T>(fn:()=>T):T {
+        const invoke=()=>{const result=fn();ensure(!(result instanceof Promise),'ASYNC_TRANSACTION','读快照回调必须同步',500);return result;};
+        if(this.db.isTransaction)return invoke();
+        const queryOnly=Number(this.db.prepare('PRAGMA query_only').get()!.query_only);
+        this.db.exec('PRAGMA query_only=ON; BEGIN');this.reading=true;
+        try{const result=invoke();this.db.exec('COMMIT');return result;}
+        catch(error){this.db.exec('ROLLBACK');throw error;}
+        finally{this.reading=false;this.db.exec(`PRAGMA query_only=${queryOnly?'ON':'OFF'}`);}
+    }
     create<T extends object>(kind: string, projectId: string | null, data: T, id: string = randomUUID()): Row<T> { const time = now(); const row = { ...data, id, kind, projectId, version: 1, createdAt: time, updatedAt: time } as Row<T>;try{this.db.prepare('INSERT INTO records VALUES(?,?,?,?,?)').run(kind, id, projectId, 1, JSON.stringify(row));}catch(error){rethrowComputeGate(error);}return row; }
     get<T = Record<string, unknown>>(kind: string, id: string, projectId?: string): Row<T> {
         const r = this.db.prepare('SELECT data FROM records WHERE kind=? AND id=?').get(kind, id);
@@ -140,6 +159,18 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
     update<T extends object>(kind: string, id: string, version: number, patch: Partial<T>): Row<T> { const previous = this.get<T>(kind, id); ensure(previous.version === version, 'VERSION_CONFLICT', '内容已更新，请刷新后重试'); const row = { ...previous, ...patch, id: previous.id, kind: previous.kind, projectId: previous.projectId, createdAt: previous.createdAt, updatedAt: now(), version: version + 1 };try{const result = this.db.prepare('UPDATE records SET data=?,version=? WHERE kind=? AND id=? AND version=?').run(JSON.stringify(row), row.version, kind, id, version);ensure(result.changes === 1, 'VERSION_CONFLICT', '并发更新冲突');}catch(error){rethrowComputeGate(error);}return row; }
     event(projectId: string | null, type: string, payload: unknown) { const id = randomUUID(); const at = now(); const result = this.db.prepare('INSERT INTO events(id,project_id,type,payload,created_at) VALUES(?,?,?,?,?)').run(id, projectId, type, JSON.stringify(payload), at); return { seq: Number(result.lastInsertRowid), id, projectId, type, payload, createdAt: at }; }
     events(after = 0, projectId?: string, limit = 500) { const rows = projectId === undefined ? this.db.prepare('SELECT * FROM events WHERE seq>? ORDER BY seq LIMIT ?').all(after, limit) : this.db.prepare('SELECT * FROM events WHERE seq>? AND project_id=? ORDER BY seq LIMIT ?').all(after, projectId, limit); return rows.map(r => ({ seq: Number(r.seq), id: r.id, projectId: r.project_id, type: r.type, payload: JSON.parse(r.payload as string), createdAt: r.created_at })); }
+    eventCursor(projectId?:string):number {return Number((projectId===undefined?this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events').get():this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events WHERE project_id=?').get(projectId))!.cursor);}
+    eventPage(after=0,projectId?:string,limit=200):EventPage {
+        ensure(Number.isSafeInteger(after)&&after>=0,'INVALID_INPUT','事件游标必须是非负安全整数',400);ensure(Number.isSafeInteger(limit)&&limit>=1&&limit<=500,'INVALID_INPUT','事件页大小必须为1–500',400);
+        return this.readSnapshot(()=>{
+            const latestCursor=this.eventCursor(projectId);if(after>latestCursor)return {items:[],cursor:latestCursor,hasMore:false,latestCursor,reset:true};
+            const columns=`seq,id,project_id,type,created_at,length(CAST(payload AS BLOB)) payload_bytes,CASE WHEN length(CAST(payload AS BLOB))<=${EVENT_PAYLOAD_BYTES} THEN payload ELSE NULL END payload`;
+            const rows=projectId===undefined?this.db.prepare(`SELECT ${columns} FROM events WHERE seq>? AND seq<=? ORDER BY seq LIMIT ?`).iterate(after,latestCursor,limit+1):this.db.prepare(`SELECT ${columns} FROM events WHERE project_id=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?`).iterate(projectId,after,latestCursor,limit+1);
+            let bytes=0,hasMore=false;const items:EventPageItem[]=[];
+            for(const row of rows){if(items.length===limit){hasMore=true;break;}const size=Number(row.payload_bytes),omitted=row.payload===null||bytes+size>EVENT_PAGE_PAYLOAD_BYTES;if(!omitted)bytes+=size;items.push({seq:Number(row.seq),id:String(row.id),projectId:row.project_id===null?null:String(row.project_id),type:String(row.type),payload:omitted?null:JSON.parse(row.payload as string),createdAt:String(row.created_at),...(omitted?{omitted:true as const,payloadBytes:size}:{})});}
+            return {items,cursor:items.at(-1)?.seq??after,hasMore,latestCursor,reset:false};
+        });
+    }
     consume(consumer: string, eventId: string, fn: () => void) {
         return this.transaction(() => {
             if (this.db.prepare('SELECT 1 FROM inbox WHERE consumer=? AND event_id=?').get(consumer, eventId))

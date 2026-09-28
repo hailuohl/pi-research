@@ -1,3 +1,4 @@
+import { LogView } from './log-view.js';
 import { ComputeWait } from './scheduler-view.js';
 import { WakeupPanel } from './campaigns.js';
 import { comparableRuns, comparisonMetric } from './models.js';
@@ -60,6 +61,7 @@ export class Chat extends React.Component {
                             React.createElement("span", null, date(m.createdAt)),
                             m.status === 'failed' || m.status === 'cancelled' ? React.createElement(Badge, { value: m.status }) : null),
                         React.createElement("div", { className: "prose-text" }, m.content || '（本次响应没有可展示的文本）'),
+                        m.contentTruncated ? React.createElement("p", { className: "small muted" }, "\u6B64\u6D88\u606F\u5C55\u793A\u5185\u5BB9\u8FBE\u5230\u4E0A\u9650\uFF1B\u539F\u751F\u4F1A\u8BDD\u8BB0\u5F55\u4FDD\u7559\uFF0C\u5F53\u524D\u5C55\u793A\u4E0D\u4EE3\u8868\u5B8C\u6574\u6D88\u606F\u3002") : null,
                         m.error ? React.createElement("p", { className: "error-text" }, m.error) : null,
                         React.createElement("div", { className: "message-tools" },
                             React.createElement("button", { onClick: () => this.props.perform(async () => { const fork = await api(`/sessions/${session.id}/branch`, { messageId: m.id }); return fork; }, '已创建对话分支；实验记录保持不变') }, "\u4ECE\u6B64\u5904\u5206\u652F"),
@@ -69,7 +71,8 @@ export class Chat extends React.Component {
                     React.createElement("div", { className: "message-avatar" }, "\u03C0"),
                     React.createElement("div", { className: "message-body" },
                         React.createElement("div", { className: "message-meta" }, "Pi \u00B7 \u6D41\u5F0F\u8F93\u51FA\uFF0C\u7B49\u5F85\u6700\u7EC8\u6D88\u606F"),
-                        React.createElement("div", { className: "prose-text" }, this.props.stream))) : null),
+                        React.createElement("div", { className: "prose-text" }, this.props.stream),
+                        this.props.streamTruncated ? React.createElement("p", { className: "small muted" }, "\u4EC5\u663E\u793A\u5F53\u524D\u8F93\u51FA\u5C3E\u90E8\uFF0C\u524D\u6587\u5DF2\u7701\u7565\uFF1B\u5B8C\u6574\u5185\u5BB9\u4EE5\u539F\u751F\u4F1A\u8BDD\u8BB0\u5F55\u4E3A\u51C6\u3002") : null)) : null),
             React.createElement("div", { className: "composer-wrap" },
                 React.createElement("form", { className: "composer", onSubmit: (e) => {
                         e.preventDefault();
@@ -215,34 +218,11 @@ export function OutcomeReview({ run, perform }) {
 class RunFiles extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { stream: 'stdout', logs: '', cursor: 0, logComplete: false, logLoading: false, logError: '', artifactId: '', artifactContent: '', artifactLoading: false, artifactError: '', files: [], sourceLoaded: false, sourcePath: '', sourceContent: '', sourceCursor: 0, sourceComplete: false, sourceLoading: false, sourceError: '', gitCommit: this.props.run.manifest.gitCommit ?? '' };
-        this.logEpoch = 0;
+        this.state = { artifactId: '', artifactContent: '', artifactLoading: false, artifactError: '', files: [], sourceLoaded: false, sourcePath: '', sourceContent: '', sourceCursor: 0, sourceComplete: false, sourceLoading: false, sourceError: '', gitCommit: this.props.run.manifest.gitCommit ?? '' };
         this.sourceEpoch = 0;
         this.artifactEpoch = 0;
     }
-    componentDidMount() { void this.loadLogs(); this.timer = window.setInterval(() => { if (!this.state.logComplete)
-        void this.loadLogs(); }, 1500); }
-    componentWillUnmount() { clearInterval(this.timer); this.logEpoch++; this.sourceEpoch++; this.artifactEpoch++; }
-    async loadLogs() {
-        if (this.state.logLoading)
-            return;
-        const epoch = this.logEpoch, { stream, cursor } = this.state;
-        this.setState({ logLoading: true, logError: '' });
-        try {
-            const page = await api(`/runs/${this.props.run.id}/logs?stream=${stream}&cursor=${cursor}`);
-            if (epoch === this.logEpoch)
-                this.setState({ logs: this.state.logs + page.content, cursor: page.cursor, logComplete: page.complete });
-        }
-        catch (error) {
-            if (epoch === this.logEpoch)
-                this.setState({ logError: error instanceof Error ? error.message : String(error) });
-        }
-        finally {
-            if (epoch === this.logEpoch)
-                this.setState({ logLoading: false });
-        }
-    }
-    selectStream(stream) { this.logEpoch++; this.setState({ stream, logs: '', cursor: 0, logComplete: false, logLoading: false, logError: '' }, () => void this.loadLogs()); }
+    componentWillUnmount() { this.sourceEpoch++; this.artifactEpoch++; }
     async openArtifact(id) {
         const epoch = ++this.artifactEpoch;
         this.setState({ artifactId: id, artifactContent: '', artifactLoading: true, artifactError: '' });
@@ -308,18 +288,7 @@ class RunFiles extends React.Component {
         return React.createElement("div", null,
             React.createElement("details", { open: true },
                 React.createElement("summary", null, "\u771F\u5B9E\u8FD0\u884C\u65E5\u5FD7"),
-                React.createElement("label", null,
-                    "\u65E5\u5FD7\u6D41",
-                    React.createElement("select", { "aria-label": "\u65E5\u5FD7\u6D41", value: this.state.stream, onChange: (e) => this.selectStream(e.target.value) },
-                        React.createElement("option", { value: "stdout" }, "\u6807\u51C6\u8F93\u51FA stdout"),
-                        React.createElement("option", { value: "stderr" }, "\u9519\u8BEF\u8F93\u51FA stderr"))),
-                React.createElement("pre", { className: "logs", "aria-label": `${this.state.stream} 日志` }, this.state.logs || (this.state.logLoading ? '读取日志…' : '此流暂无内容。')),
-                this.state.logError ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.logError) : null,
-                React.createElement("button", { className: "secondary compact", disabled: this.state.logLoading || this.state.logComplete, onClick: () => void this.loadLogs() }, this.state.logLoading ? '正在读取…' : this.state.logComplete ? '已读至日志结尾' : '加载后续日志'),
-                React.createElement("p", { className: "small muted" },
-                    "\u5DF2\u8BFB\u53D6 ",
-                    this.state.cursor,
-                    " \u5B57\u8282\uFF1B\u8FD0\u884C\u671F\u95F4\u81EA\u52A8\u7EE7\u7EED\u8BFB\u53D6\u3002")),
+                React.createElement(LogView, { streamLabel: "\u65E5\u5FD7\u6D41", read: (request, signal) => api(`/runs/${run.id}/logs?stream=${request.stream}&cursor=${request.cursor}${request.identity ? '&identity=' + encodeURIComponent(request.identity) : ''}`, undefined, 'GET', signal) })),
             React.createElement("details", { open: true },
                 React.createElement("summary", null, "\u539F\u59CB\u6307\u6807\u4E0E\u4EA7\u7269"),
                 artifacts.length ? React.createElement("ul", null, artifacts.map(a => React.createElement("li", { key: a.id },
