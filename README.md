@@ -15,6 +15,8 @@ node dist/apps/cli/index.js doctor
 node dist/apps/server/index.js
 ```
 
+已在本地 `.env` 配置 Pi 供应商、模型和密钥时，用 `node --env-file=.env dist/apps/server/index.js` 启动以加载配置；不要提交 `.env`。
+
 打开终端显示的本地地址，不要泄露访问令牌。左侧新增 **技能与连接器**：可以查看/读取技能、启用文献来源、检索、读取论文内容与查看获取历史。启用来源不等于自动检索；打开页面仅访问本地服务。
 
 ## 实际提供
@@ -22,9 +24,11 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 33 个旧工具和 4 个源码动作已通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用。
+- 54 个操作（包含旧工具、固定源码、开发测试、Git、独立审查及受审整合）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
+
+**实现与审查** 页已支持选择实验固定版本、准备私有 Git 工作区、查看/保存代码、批准开发测试、阅读日志、启动独立审查并批准完整源码差异。通过后创建新子实验，再到 **实验与运行** 单独批准正式 Run、回查指标与固定源码。真实 Pi、失败修复、Docker 测试及正式运行的完整浏览器路径见[首条闭环验收](docs/acceptance/flow-implementation/RESULTS.zh-CN.md)。
 
 ## 读取技能
 
@@ -67,4 +71,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-各阶段测试记录单独留存，不把历史发布包结果当作当前验收。真实文献联网、浏览器研究旅程、Pi 模型、Docker/远程仍需各自验收。远程计算、Git发布、Overleaf、LaTeX编译/实例申请保留在后续计划中。
+各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker 和首条浏览器科研闭环已实测；真实文献联网、其他供应商/GPU/远程环境仍需各自验收。远程计算、Git发布、Overleaf、LaTeX编译/实例申请保留在后续计划中。

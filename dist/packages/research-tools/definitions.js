@@ -1,6 +1,11 @@
 import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
 import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
 const TOOL_METADATA = {
+    development_review_prepare: { description: '从自己主会话成功且完整的开发测试准备独立 Reviewer 计划；用户批准后才启动，不把测试通过当作审查通过。', example: { jobId: 'sandbox-job-id' } },
+    development_review_inspect: { description: '读取固定开发候选的独立审查状态、任务及证据；只有 status passed 才可准备受审整合。', example: { reviewId: 'review-id' } },
+    development_review_source_list: { description: '列出本审查目标已测试的固定候选源码；它可能不同于任务基础 experiment revision。', example: { reviewId: 'review-id' } },
+    development_review_source_read: { description: '读取获准审查目标的实际固定候选源码及摘要；Reviewer 仅能读本任务目标。', example: { reviewId: 'review-id', path: 'main.py', cursor: 0, limit: 16000 } },
+    reviewed_change_prepare: { description: '从测试和独立审查均通过的固定候选自动生成完整源码差异提案，保留删除与执行模式；用户批准后才创建子实验。', example: { reviewId: 'review-id', title: '经审查候选', hypothesis: '验证已实现变化的测量结果' } },
     run_source_list: { description: '列出指定正式 Run 实际执行的固定源码清单、摘要与 Git 绑定，不读取当前可变实验目录。', example: { runId: 'run-id' } },
     run_source_read: { description: '按文件及字符范围读取指定 Run 的真实固定源码，返回源码版本、摘要、模式和游标。', example: { runId: 'run-id', path: 'main.py', cursor: 0, limit: 16000 } },
     workspace_history_inspect: { description: '查询当前会话受管 Git 工作区是否已就绪及固定 HEAD；pending 时先等待，不能继续改源码。', example: {} },

@@ -8,12 +8,16 @@ export declare class ChangeProposalService {
     private payload;
     private content;
     prepare(actor: Actor, projectId: string, value: unknown): Row<ChangeProposal>;
+    /** The reviewed flow derives the entire candidate from tested CAS, never caller-supplied file mappings. */
+    prepareReviewed(actor: Actor, projectId: string, value: unknown): Row<ChangeProposal>;
     inspect(actor: Actor, id: string): {
         proposal: Row<ChangeProposal>;
         files: {
             path: string;
             expectedDigest: string | null;
             artifactDigest: string | null;
+            beforeMode: "100644" | "100755" | undefined;
+            afterMode: "100644" | "100755" | undefined;
             before: string | null;
             after: string | null;
         }[];

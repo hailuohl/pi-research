@@ -245,6 +245,8 @@ export interface Team {
     blockReason?: string;
 }
 export interface Task extends TaskSpec {
+    /** Host-created binding for an independent review of a fixed development result. */
+    reviewId?: string;
     teamId: string;
     sessionId?: string;
     execution: 'pending' | 'running' | 'output_submitted' | 'failed' | 'cancelled' | 'blocked' | 'superseded' | 'waiting_user';
@@ -315,6 +317,8 @@ export interface ChangeProposal {
         taskId?: string;
         taskResultDigest?: string;
         sourceAcceptanceId?: string;
+        mode?: '100644' | '100755';
+        beforeMode?: '100644' | '100755';
     }>;
     candidateSnapshot: SourceSnapshot;
     digest: string;
@@ -325,4 +329,7 @@ export interface ChangeProposal {
     appliedExperimentId?: string;
     sourceValidity?: 'current' | 'stale';
     invalidatedBy?: string;
+    flow?: 'reviewed-development';
+    reviewId?: string;
+    reviewAcceptanceId?: string;
 }

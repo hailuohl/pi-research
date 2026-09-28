@@ -1,6 +1,7 @@
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { assertExperimentSourceCurrent } from '../policy/lifecycle.js';
+import { developmentReviewAcceptanceBasis } from '../development/reviews-types.js';
 export function reviewStateDigest(store, projectId, target) {
     return digest(store.list('task', projectId).filter(r => r.teamId === target.teamId && r.reviewOf === target.key)
         .map(r => ({ id: r.id, attemptId: r.attemptId, generation: r.generation, execution: r.execution, acceptance: r.acceptance, result: r.result ?? null })));
@@ -18,6 +19,7 @@ export function taskAcceptanceBasis(store, projectId, taskId) {
         const t = byId.get(id);
         ensure(t && t.execution === 'output_submitted' && t.acceptance === 'accepted' && t.result?.outcome === 'completed', 'TASK_NOT_ACCEPTED', '结果不是当前已采纳的完整任务成果');
         visiting.add(id);
+        const developmentReview = developmentReviewAcceptanceBasis(store, projectId, t);
         const team = store.get('team', t.teamId, projectId);
         let source;
         if (team.sourceRevisionId) {
@@ -51,6 +53,8 @@ export function taskAcceptanceBasis(store, projectId, taskId) {
             ensure(dependency, 'ACCEPTANCE_STALE', '任务依赖已丢失');
             visit(dependency.id);
         }
+        for (const acceptanceId of developmentReview?.inputAcceptanceIds ?? [])
+            visit(store.get('acceptance-record', acceptanceId, projectId).taskId);
         for (const eid of [...(t.inputEvidenceIds ?? []), ...t.result.evidenceIds]) {
             const e = store.get('evidence', eid, projectId), artifact = store.get('artifact', e.artifactId, projectId);
             if (artifact.taskId && artifact.taskId !== id) {
@@ -62,7 +66,7 @@ export function taskAcceptanceBasis(store, projectId, taskId) {
             }
         }
         const reviewTarget = t.reviewOf ? all.find(d => d.teamId === t.teamId && d.key === t.reviewOf) : undefined;
-        nodes.set(id, { ...(source ? { source } : {}), id, attemptId: a.id, resultId: r.id, resultDigest: r.digest, inputDigest: a.inputDigest,
+        nodes.set(id, { ...(developmentReview ? { developmentReview } : {}), ...(source ? { source } : {}), id, attemptId: a.id, resultId: r.id, resultDigest: r.digest, inputDigest: a.inputDigest,
             generation: t.generation, planVersion: t.planVersion, directiveVersion: t.directiveVersion,
             dependencies: t.dependencies, reviewOf: t.reviewOf ?? null, reviewTargetDigest: reviewTarget?.result ? digest(reviewTarget.result) : null,
             reviews: reviews.map(r => r.id), manualReviewId: manual?.id ?? null,

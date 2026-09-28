@@ -3,6 +3,7 @@ import { digest } from '../storage/store.js';
 import type { Task, TaskAttempt, TaskResult, Evidence, Artifact, AcceptanceRecord, Team, SourceRevision, Experiment } from '../domain/types.js';
 import { ensure } from '../domain/errors.js';
 import {assertExperimentSourceCurrent} from '../policy/lifecycle.js';
+import {developmentReviewAcceptanceBasis} from '../development/reviews-types.js';
 
 type ManualReview = {taskId: string; resultDigest: string; verdict: string; reviewStateDigest?: string};
 export function reviewStateDigest(store: Store, projectId: string, target: Task) {
@@ -23,6 +24,7 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
         ensure(t && t.execution === 'output_submitted' && t.acceptance === 'accepted' && t.result?.outcome === 'completed',
             'TASK_NOT_ACCEPTED', '结果不是当前已采纳的完整任务成果');
         visiting.add(id);
+        const developmentReview=developmentReviewAcceptanceBasis(store,projectId,t);
         const team=store.get<Team>('team',t.teamId,projectId);
         let source: {snapshotId:string;sourceDigest:string;experimentId:string;revision:number}|undefined;
         if(team.sourceRevisionId) {
@@ -56,6 +58,7 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
             const dependency = all.find(d => d.teamId === t.teamId && d.key === key);
             ensure(dependency, 'ACCEPTANCE_STALE', '任务依赖已丢失');visit(dependency.id);
         }
+        for(const acceptanceId of developmentReview?.inputAcceptanceIds??[])visit(store.get<AcceptanceRecord>('acceptance-record',acceptanceId,projectId).taskId);
         for (const eid of [...(t.inputEvidenceIds ?? []),...t.result.evidenceIds]) {
             const e = store.get<Evidence>('evidence',eid,projectId), artifact = store.get<Artifact>('artifact',e.artifactId,projectId);
             if (artifact.taskId && artifact.taskId !== id) {
@@ -66,7 +69,7 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
             }
         }
         const reviewTarget = t.reviewOf ? all.find(d => d.teamId === t.teamId && d.key === t.reviewOf) : undefined;
-        nodes.set(id,{...(source?{source}:{}),id,attemptId:a.id,resultId:r.id,resultDigest:r.digest,inputDigest:a.inputDigest,
+        nodes.set(id,{...(developmentReview?{developmentReview}:{}),...(source?{source}:{}),id,attemptId:a.id,resultId:r.id,resultDigest:r.digest,inputDigest:a.inputDigest,
             generation:t.generation,planVersion:t.planVersion,directiveVersion:t.directiveVersion,
             dependencies:t.dependencies,reviewOf:t.reviewOf ?? null,reviewTargetDigest:reviewTarget?.result ? digest(reviewTarget.result) : null,
             reviews:reviews.map(r=>r.id),manualReviewId:manual?.id ?? null,

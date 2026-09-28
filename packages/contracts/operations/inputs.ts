@@ -1,4 +1,5 @@
 import {GIT_INPUT_SCHEMAS} from './git-schemas.js';
+import {REVIEW_INPUT_SCHEMAS} from './review-schemas.js';
 import {DEVELOPMENT_INPUT_SCHEMAS} from './development-schemas.js';
 import {SOURCE_INPUT_SCHEMAS} from './source-schemas.js';
 import { s, type JsonSchema, type InferSchema } from './schema.js';
@@ -32,7 +33,7 @@ const candidate = s.object({ title: s.string(200), hypothesis: s.string(), confi
 
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
-    ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS,
+    ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS,
     ...SOURCE_INPUT_SCHEMAS,
     research_skill_list: s.object({}),
     research_skill_read: s.object({ skillId: id, resource: s.string(200) }, ['skillId']),
@@ -43,6 +44,7 @@ export const INPUT_SCHEMAS = {
     campaign_enroll: s.object({ campaignId: id, intentId: id, expectedVersion: version, required: s.nullable(s.boolean()), repairDecisionId: id }, ['campaignId', 'intentId', 'expectedVersion']),
     campaign_decision_submit: s.object({ campaignId: id, expectedVersion: version, action: s.enum(['repair', 'refill', 'promote', 'stop']), observationIds: { ...strings(), minItems: 1, uniqueItems: true }, reason: s.string(8000), selectedRunId: id, candidates: s.nullable(s.array(candidate, 24)) }, ['campaignId', 'expectedVersion', 'action', 'observationIds', 'reason']),
     change_proposal_prepare: s.object({ testJobId: id, baseExperimentId: id, expectedRevision: version, title: s.string(200), hypothesis: s.string(), changes: s.array(s.object({ path: s.string(1000), artifactId: s.nullable(id), expectedDigest: s.nullable(s.string(64)) }, ['path', 'artifactId', 'expectedDigest']), 50, 1) }, ['baseExperimentId', 'expectedRevision', 'title', 'hypothesis', 'changes']),
+    reviewed_change_prepare:s.object({reviewId:id,title:s.string(200),hypothesis:s.string()},['reviewId','title','hypothesis']),
     artifact_read: s.object({ artifactId: id, cursor: s.nullable(s.integer(0, 2 * 1024 * 1024)) }, ['artifactId']),
     session_notice_read: s.object({ messageId: id, cursor: s.nullable(s.integer(0, Number.MAX_SAFE_INTEGER)) }, ['messageId']),
     project_inspect: s.object({}),

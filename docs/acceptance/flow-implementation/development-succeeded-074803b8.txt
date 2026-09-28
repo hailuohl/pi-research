@@ -1,0 +1,10 @@
+test_empty_data_rejected (test_main.FitTests.test_empty_data_rejected) ... ok
+test_exact_quadratic_coefficients (test_main.FitTests.test_exact_quadratic_coefficients) ... ok
+test_predict_valid (test_main.FitTests.test_predict_valid) ... ok
+test_singular_input_rejected (test_main.FitTests.test_singular_input_rejected) ... ok
+test_fixed_data_and_outputs (test_main.ProtocolTests.test_fixed_data_and_outputs) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.094s
+
+OK

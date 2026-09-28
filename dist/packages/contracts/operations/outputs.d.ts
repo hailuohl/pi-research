@@ -366,6 +366,210 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "experimentId" | "state" | "manifest" | "manifestDigest" | "integrity" | "outputDir" | "cancelRequested" | "artifactIds" | "intentId" | "evidenceIds" | "judgment")[];
         readonly additionalProperties: false;
     };
+    readonly reviewed_change_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly kind: {
+                readonly const: "change-proposal";
+            };
+            readonly projectId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly createdAt: {
+                readonly type: "string";
+            };
+            readonly updatedAt: {
+                readonly type: "string";
+            };
+        } & {
+            readonly baseExperimentId: {
+                readonly type: "string";
+            };
+            readonly baseRevision: {
+                readonly type: "integer";
+            };
+            readonly baseSnapshot: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly digest: {
+                        readonly type: "string";
+                    };
+                    readonly path: {
+                        readonly type: "string";
+                    };
+                    readonly files: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly path: {
+                                    readonly type: "string";
+                                };
+                                readonly size: {
+                                    readonly type: "integer";
+                                };
+                                readonly digest: {
+                                    readonly type: "string";
+                                };
+                                readonly mode: {
+                                    readonly type: "string";
+                                    readonly enum: ["100644", "100755"];
+                                };
+                            };
+                            readonly required: ("path" | "size" | "digest")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                };
+                readonly required: ("path" | "digest" | "files")[];
+                readonly additionalProperties: false;
+            };
+            readonly contractDigest: {
+                readonly type: "string";
+            };
+            readonly title: {
+                readonly type: "string";
+            };
+            readonly hypothesis: {
+                readonly type: "string";
+            };
+            readonly changes: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly path: {
+                            readonly type: "string";
+                        };
+                        readonly expectedDigest: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly artifactId: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly artifactDigest: {
+                            readonly anyOf: readonly [{
+                                readonly type: "string";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly taskId: {
+                            readonly type: "string";
+                        };
+                        readonly taskResultDigest: {
+                            readonly type: "string";
+                        };
+                        readonly sourceAcceptanceId: {
+                            readonly type: "string";
+                        };
+                        readonly mode: {
+                            readonly type: "string";
+                            readonly enum: ["100644", "100755"];
+                        };
+                        readonly beforeMode: {
+                            readonly type: "string";
+                            readonly enum: ["100644", "100755"];
+                        };
+                    };
+                    readonly required: ("path" | "artifactId" | "expectedDigest" | "artifactDigest")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly candidateSnapshot: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly digest: {
+                        readonly type: "string";
+                    };
+                    readonly path: {
+                        readonly type: "string";
+                    };
+                    readonly files: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly path: {
+                                    readonly type: "string";
+                                };
+                                readonly size: {
+                                    readonly type: "integer";
+                                };
+                                readonly digest: {
+                                    readonly type: "string";
+                                };
+                                readonly mode: {
+                                    readonly type: "string";
+                                    readonly enum: ["100644", "100755"];
+                                };
+                            };
+                            readonly required: ("path" | "size" | "digest")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                };
+                readonly required: ("path" | "digest" | "files")[];
+                readonly additionalProperties: false;
+            };
+            readonly digest: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly state: {
+                readonly type: "string";
+                readonly enum: ["prepared", "applied"];
+            };
+            readonly testsStatus: {
+                readonly type: "string";
+                readonly enum: ["not_run", "passed"];
+            };
+            readonly testJobId: {
+                readonly type: "string";
+            };
+            readonly appliedExperimentId: {
+                readonly type: "string";
+            };
+            readonly sourceValidity: {
+                readonly type: "string";
+                readonly enum: ["current", "stale"];
+            };
+            readonly invalidatedBy: {
+                readonly type: "string";
+            };
+            readonly flow: {
+                readonly const: "reviewed-development";
+            };
+            readonly reviewId: {
+                readonly type: "string";
+            };
+            readonly reviewAcceptanceId: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "digest" | "approvalId" | "title" | "state" | "hypothesis" | "changes" | "baseExperimentId" | "contractDigest" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
+        readonly additionalProperties: false;
+    };
     readonly workspace_list: {
         readonly type: "array";
         readonly items: {
@@ -671,7 +875,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("experimentId" | "revision" | "sourceDigest" | "files" | "runId")[];
+        readonly required: ("sourceDigest" | "experimentId" | "revision" | "files" | "runId")[];
         readonly additionalProperties: false;
     };
     readonly run_source_read: {
@@ -718,7 +922,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("complete" | "path" | "size" | "digest" | "experimentId" | "revision" | "cursor" | "sourceDigest" | "end" | "runId" | "content")[];
+        readonly required: ("complete" | "path" | "size" | "digest" | "sourceDigest" | "experimentId" | "revision" | "cursor" | "runId" | "end" | "content")[];
         readonly additionalProperties: false;
     };
     readonly approval_request: {
@@ -920,7 +1124,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "integer";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "parentId" | "revision" | "title" | "workspace" | "hypothesis" | "contract" | "contractDigest" | "lifecycle" | "notes")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revision" | "parentId" | "title" | "workspace" | "hypothesis" | "contract" | "contractDigest" | "lifecycle" | "notes")[];
         readonly additionalProperties: false;
     };
     readonly collaboration_plan_submit: {
@@ -1019,7 +1223,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "state" | "settings" | "goal" | "approvalId" | "planVersion" | "directiveVersion" | "rootSessionId" | "delegationEnabled" | "planDigest" | "summarySent")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "planVersion" | "directiveVersion" | "state" | "settings" | "goal" | "rootSessionId" | "delegationEnabled" | "planDigest" | "summarySent")[];
         readonly additionalProperties: false;
     };
     readonly agent_delegate: {
@@ -1118,7 +1322,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "state" | "settings" | "goal" | "approvalId" | "planVersion" | "directiveVersion" | "rootSessionId" | "delegationEnabled" | "planDigest" | "summarySent")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "planVersion" | "directiveVersion" | "state" | "settings" | "goal" | "rootSessionId" | "delegationEnabled" | "planDigest" | "summarySent")[];
         readonly additionalProperties: false;
     };
     readonly task_inspect: {
@@ -1206,7 +1410,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly type: "integer";
                             };
                         };
-                        readonly required: ("kind" | "schemaId" | "required")[];
+                        readonly required: ("kind" | "required" | "schemaId")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -1309,8 +1513,11 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly required: ("outcome" | "artifactIds" | "evidenceIds" | "claims" | "unresolvedQuestions" | "summary")[];
                     readonly additionalProperties: false;
                 };
+                readonly reviewId: {
+                    readonly type: "string";
+                };
             };
-            readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "key" | "role" | "generation" | "teamId" | "execution" | "acceptance" | "dependencies" | "objective" | "planVersion" | "directiveVersion" | "attemptCount")[];
+            readonly required: ("key" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "teamId" | "execution" | "acceptance" | "generation" | "planVersion" | "directiveVersion" | "attemptCount" | "role" | "objective" | "dependencies")[];
             readonly additionalProperties: false;
         };
     };
@@ -1393,7 +1600,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "key" | "execution" | "acceptance")[];
+        readonly required: ("key" | "id" | "execution" | "acceptance")[];
         readonly additionalProperties: false;
     };
     readonly task_context_read: {
@@ -1457,7 +1664,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly type: "integer";
                             };
                         };
-                        readonly required: ("kind" | "schemaId" | "required")[];
+                        readonly required: ("kind" | "required" | "schemaId")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -1540,7 +1747,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly additionalProperties: false;
                             };
                         };
-                        readonly required: ("id" | "key")[];
+                        readonly required: ("key" | "id")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -1616,7 +1823,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly additionalProperties: false;
                             };
                         };
-                        readonly required: ("id" | "key")[];
+                        readonly required: ("key" | "id")[];
                         readonly additionalProperties: false;
                     }, {
                         readonly type: "null";
@@ -1650,11 +1857,36 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("snapshotId" | "experimentId" | "revision" | "sourceDigest")[];
+                    readonly required: ("sourceDigest" | "snapshotId" | "experimentId" | "revision")[];
+                    readonly additionalProperties: false;
+                };
+                readonly developmentReview: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly reviewId: {
+                            readonly type: "string";
+                        };
+                        readonly jobId: {
+                            readonly type: "string";
+                        };
+                        readonly sourceDigest: {
+                            readonly type: "string";
+                        };
+                        readonly manifestEvidenceId: {
+                            readonly type: "string";
+                        };
+                        readonly testEvidenceIds: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "string";
+                            };
+                        };
+                    };
+                    readonly required: ("jobId" | "sourceDigest" | "manifestEvidenceId" | "testEvidenceIds" | "reviewId")[];
                     readonly additionalProperties: false;
                 };
             };
-            readonly required: ("role" | "teamId" | "taskId" | "reviewOf" | "inputEvidenceIds" | "expectedOutputs" | "acceptanceRuleIds" | "objective" | "goal" | "planVersion" | "directiveVersion" | "schemaVersion" | "upstream" | "restrictions" | "stopConditions")[];
+            readonly required: ("teamId" | "taskId" | "reviewOf" | "planVersion" | "directiveVersion" | "role" | "objective" | "inputEvidenceIds" | "expectedOutputs" | "acceptanceRuleIds" | "goal" | "schemaVersion" | "upstream" | "restrictions" | "stopConditions")[];
             readonly additionalProperties: false;
         }, {
             readonly type: "null";
@@ -2704,7 +2936,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "action" | "status" | "campaignId" | "observationIds" | "candidates" | "reason" | "approvalId" | "inputDigest" | "roundId" | "decisionDigest")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "action" | "status" | "campaignId" | "observationIds" | "candidates" | "reason" | "inputDigest" | "roundId" | "decisionDigest")[];
         readonly additionalProperties: false;
     };
     readonly campaign_inspect: {
@@ -2826,7 +3058,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "state" | "direction" | "goal" | "contractDigest" | "approvalId" | "rootSessionId" | "planDigest" | "limits" | "rootModel" | "baselineExperimentId" | "focusExperimentId" | "primaryMetric" | "currentRoundId" | "roundNumber" | "autoAnalyze" | "consecutiveRegressions")[];
+                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "state" | "direction" | "goal" | "contractDigest" | "rootSessionId" | "planDigest" | "limits" | "rootModel" | "baselineExperimentId" | "focusExperimentId" | "primaryMetric" | "currentRoundId" | "roundNumber" | "autoAnalyze" | "consecutiveRegressions")[];
                 readonly additionalProperties: false;
             };
             readonly members: {
@@ -3013,7 +3245,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "experimentId" | "manifestDigest" | "integrity" | "runId" | "status" | "metrics" | "campaignId" | "evidenceIds" | "roundId" | "validation" | "memberId" | "contentDigest" | "executionState" | "explanation")[];
+                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "experimentId" | "runId" | "manifestDigest" | "integrity" | "status" | "metrics" | "campaignId" | "evidenceIds" | "roundId" | "validation" | "memberId" | "contentDigest" | "executionState" | "explanation")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3129,7 +3361,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "action" | "status" | "campaignId" | "observationIds" | "candidates" | "reason" | "approvalId" | "inputDigest" | "roundId" | "decisionDigest")[];
+                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "action" | "status" | "campaignId" | "observationIds" | "candidates" | "reason" | "inputDigest" | "roundId" | "decisionDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3650,7 +3882,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "experimentId" | "manifest" | "manifestDigest" | "status" | "approvalId")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "approvalId" | "experimentId" | "manifest" | "manifestDigest" | "status")[];
         readonly additionalProperties: false;
     };
     readonly run_submit: {
@@ -4095,6 +4327,14 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly sourceAcceptanceId: {
                             readonly type: "string";
                         };
+                        readonly mode: {
+                            readonly type: "string";
+                            readonly enum: ["100644", "100755"];
+                        };
+                        readonly beforeMode: {
+                            readonly type: "string";
+                            readonly enum: ["100644", "100755"];
+                        };
                     };
                     readonly required: ("path" | "artifactId" | "expectedDigest" | "artifactDigest")[];
                     readonly additionalProperties: false;
@@ -4163,8 +4403,17 @@ export declare const OUTPUT_SCHEMAS: {
             readonly invalidatedBy: {
                 readonly type: "string";
             };
+            readonly flow: {
+                readonly const: "reviewed-development";
+            };
+            readonly reviewId: {
+                readonly type: "string";
+            };
+            readonly reviewAcceptanceId: {
+                readonly type: "string";
+            };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "digest" | "title" | "state" | "hypothesis" | "changes" | "baseExperimentId" | "contractDigest" | "approvalId" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "digest" | "approvalId" | "title" | "state" | "hypothesis" | "changes" | "baseExperimentId" | "contractDigest" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
         readonly additionalProperties: false;
     };
     readonly task_result_submit: {
@@ -4273,7 +4522,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "digest" | "taskId" | "result" | "attemptId" | "planVersion" | "directiveVersion" | "inputDigest")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "digest" | "taskId" | "result" | "planVersion" | "directiveVersion" | "attemptId" | "inputDigest")[];
         readonly additionalProperties: false;
     };
     readonly paper_read: {
@@ -4385,6 +4634,380 @@ export declare const OUTPUT_SCHEMAS: {
             };
         };
         readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "source" | "title" | "scopeAttemptId" | "artifactId" | "limitations" | "artifactDigest" | "contentKind" | "versionAssurance" | "pageMapping" | "sourceResponses" | "idInSource" | "requestedId" | "sourceUrl" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "scopeSessionId")[];
+        readonly additionalProperties: false;
+    };
+    readonly development_review_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly producerSessionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly baseSourceRevisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly teamId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly taskId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly approvalId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly manifestEvidenceId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly testEvidenceIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+            readonly requiredEvidenceIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+            readonly digest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+            readonly status: {
+                readonly enum: readonly ["awaiting_approval", "pending", "running", "passed", "rejected", "disputed", "failed", "stale"];
+            };
+            readonly reviewerSessionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly verdict: {
+                readonly enum: readonly ["accept", "reject", "disputed"];
+            };
+            readonly reviewId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly jobId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceDigest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["id", "reviewId", "jobId", "sourceDigest", "producerSessionId", "teamId", "taskId", "approvalId", "manifestEvidenceId", "testEvidenceIds", "requiredEvidenceIds", "digest", "status"];
+        readonly additionalProperties: false;
+    };
+    readonly development_review_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly producerSessionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly baseSourceRevisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly teamId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly taskId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly approvalId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly manifestEvidenceId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly testEvidenceIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+            readonly requiredEvidenceIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+            readonly digest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+            readonly status: {
+                readonly enum: readonly ["awaiting_approval", "pending", "running", "passed", "rejected", "disputed", "failed", "stale"];
+            };
+            readonly reviewerSessionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly verdict: {
+                readonly enum: readonly ["accept", "reject", "disputed"];
+            };
+            readonly reviewId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly jobId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceDigest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["id", "reviewId", "jobId", "sourceDigest", "producerSessionId", "teamId", "taskId", "approvalId", "manifestEvidenceId", "testEvidenceIds", "requiredEvidenceIds", "digest", "status"];
+        readonly additionalProperties: false;
+    };
+    readonly development_review_source_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly files: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        path: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        size: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        digest: {
+                            minLength: number;
+                            pattern: string;
+                            type: "string";
+                            description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            maxLength: number;
+                        };
+                        mode: {
+                            readonly enum: readonly ["100644", "100755"];
+                        };
+                    };
+                    readonly required: readonly ["path", "size", "digest"];
+                    readonly additionalProperties: false;
+                };
+                readonly minItems: number;
+            };
+            readonly reviewId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly jobId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceDigest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+        };
+        readonly required: readonly ["reviewId", "jobId", "sourceDigest", "files"];
+        readonly additionalProperties: false;
+    };
+    readonly development_review_source_read: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly end: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly complete: {
+                readonly type: "boolean";
+            };
+            readonly content: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly path: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly size: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly digest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+            readonly mode: {
+                readonly enum: readonly ["100644", "100755"];
+            };
+            readonly reviewId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly jobId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceDigest: {
+                minLength: number;
+                pattern: string;
+                type: "string";
+                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                maxLength: number;
+            };
+        };
+        readonly required: readonly ["reviewId", "jobId", "sourceDigest", "path", "size", "digest", "cursor", "end", "complete", "content"];
         readonly additionalProperties: false;
     };
     readonly workspace_history_inspect: {

@@ -10,6 +10,8 @@ export declare class TeamService {
     private approvals;
     private budget;
     private evidence;
+    reviewValidator?: (task: Row<Task>) => void;
+    private validateReview;
     constructor(c: AppContext, sessions: SessionService, approvals: ApprovalService, budget: BudgetService, evidence: EvidenceService);
     get(actor: Actor, id: string): Row<Team>;
     tasks(actor: Actor, id: string): Row<Task>[];

@@ -3,7 +3,28 @@ import type { Wakeup } from '../../../dist/packages/scheduler/wakeups.js';
 export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision, Wakeup };
 import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig } from '../../../dist/packages/domain/types.js';
 export type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig };
+export interface DevelopmentManifestDTO {
+    command:string[]; environmentImageDigest:string; dockerContext:string; deadline:string;
+    resources:Record<string,number>; expectedArtifacts:string[]; sourceRevisionId?:string;
+}
+export interface DevelopmentTaskDTO {
+    id:string; sessionId:string; title:string; sourceDigest:string; grantId:string;
+    state:string; jobId?:string; manifest:DevelopmentManifestDTO;
+}
+export interface SandboxJobDTO {
+    id:string; jobId?:string; developmentTaskId:string; sessionId:string; sourceDigest:string;
+    state:string; integrity:string; exitCode?:number|null; error?:string; artifactIds:string[];
+    manifest:DevelopmentManifestDTO;
+}
+export interface DevelopmentReviewDTO {
+    id:string; jobId:string; sourceDigest:string; producerSessionId:string;
+    teamId:string; taskId:string; approvalId:string;
+    status:'awaiting_approval'|'pending'|'running'|'passed'|'rejected'|'disputed'|'failed'|'stale';
+}
 export interface ProjectState {
+    developmentTasks?:DevelopmentTaskDTO[];
+    sandboxJobs?:SandboxJobDTO[];
+    reviews?:DevelopmentReviewDTO[];
     textEvidence?: {enabled:boolean;version:number;corpusId?:string|null;sources:Array<{artifactId:string;title:string;digest:string}>};
     project: Row<Project>;
     sessions: Row<Session>[];

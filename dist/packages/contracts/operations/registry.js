@@ -137,6 +137,11 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('development_review_prepare', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.development.inspect(c.actor, c.projectId, x.jobId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.prepare(c.actor, c.projectId, x) }),
+    make('development_review_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.inspect(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.inspect(c.actor, c.projectId, x.reviewId) }),
+    make('development_review_source_list', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId) }),
+    make('development_review_source_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.developmentReviews.sourceList(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.developmentReviews.sourceRead(c.actor, c.projectId, x.reviewId, x.path, x.cursor, x.limit) }),
+    make('reviewed_change_prepare', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.developmentReviews.inspect(c.actor, c.projectId, x.reviewId); }, preconditions: noPrecondition, execute: (c, x) => c.app.changes.prepareReviewed(c.actor, c.projectId, x) }),
     make('run_source_list', { idempotencyPolicy: 'read-only', authorize: recordScope('run', 'runId'), preconditions: noPrecondition, execute: (c, x) => c.app.runs.sourceList(c.actor, x.runId) }),
     make('run_source_read', { idempotencyPolicy: 'read-only', authorize: recordScope('run', 'runId'), preconditions: noPrecondition, execute: (c, x) => c.app.runs.sourceRead(c.actor, x.runId, x) }),
     make('workspace_history_inspect', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c) => { c.app.git.inspect(c.actor, c.projectId, c.session.id); }, preconditions: noPrecondition, execute: c => c.app.git.inspect(c.actor, c.projectId, c.session.id) }),

@@ -15,3 +15,15 @@ test('Pi restore uses exact stored session path, never most recent',()=>{
 });
 test('missing Pi package is reported, never replaced by simulated AI',()=>{const result=inspectPi('/definitely-not-installed',{provider:'',model:'',thinking:'off'});assert.equal(result.ready,false);assert.equal(result.code,'PI_NOT_INSTALLED');assert.equal(result.liveVerified,false);});
 test('research instructions separate model guesses from measured evidence',()=>{assert.match(systemInstruction('analyst'),/未运行/);assert.match(systemInstruction('reviewer'),/独立/);assert.match(systemInstruction('coordinator'),/不能自行批准/);});
+test('coordinator instructions use the tested review flow and yield at each user approval boundary',()=>{
+    const instruction=systemInstruction('coordinator'),steps=['workspace_prepare_from_revision','workspace_write','development_prepare','development_review_prepare','reviewed_change_prepare'];
+    for(let i=0;i<steps.length;i++){assert.ok(instruction.includes(steps[i]));if(i)assert.ok(instruction.indexOf(steps[i])>instruction.indexOf(steps[i-1]));}
+    assert.match(instruction,/结束当前回复，等待用户批准开发测试/);assert.match(instruction,/不要忙轮询审批或假称已批准/);
+    assert.match(instruction,/succeeded 且 integrity=complete/);assert.match(instruction,/审查计划仍需用户批准/);assert.match(instruction,/完整差异.*另行批准整合/);
+    assert.match(instruction,/手动 artifact.*change_proposal_prepare/);assert.doesNotMatch(instruction,/新代码须通过 change_proposal_prepare/);
+});
+test('development reviewers must read the fixed target and cite every required evidence input with a verdict',()=>{
+    const instruction=systemInstruction('reviewer');
+    for(const tool of ['task_context_read','developmentReview','development_review_source_list','development_review_source_read','evidence_read','artifact_read','task_result_submit'])assert.ok(instruction.includes(tool),tool);
+    assert.match(instruction,/基础版本不能替代该候选/);assert.match(instruction,/verdict=accept\/reject\/disputed/);assert.match(instruction,/evidenceIds 中引用全部必需输入证据 ID/);assert.match(instruction,/成功提交后停止/);
+});

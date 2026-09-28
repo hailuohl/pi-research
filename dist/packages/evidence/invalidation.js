@@ -16,6 +16,9 @@ function boundSourceTasks(store, projectId, team) {
         const experiment = store.get('experiment', experimentId, projectId);
         if (experiment.changeProposalId) {
             const proposal = store.get('change-proposal', experiment.changeProposalId, projectId);
+            if (proposal.reviewAcceptanceId)
+                for (const id of store.get('acceptance-record', proposal.reviewAcceptanceId, projectId).taskIds)
+                    tasks.add(id);
             for (const change of proposal.changes) {
                 if (change.taskId)
                     tasks.add(change.taskId);
@@ -67,7 +70,7 @@ export function expireDerivations(store, projectId, taskIds, directiveId) {
                 store.update('claim', c.id, c.version, { validity: 'stale', invalidatedBy: directiveId });
         }
     for (const p of store.list('change-proposal', projectId))
-        if (p.changes.some(c => c.taskId && taskIds.has(c.taskId) || c.sourceAcceptanceId && expired.has(c.sourceAcceptanceId))) {
+        if (p.reviewAcceptanceId && expired.has(p.reviewAcceptanceId) || p.changes.some(c => c.taskId && taskIds.has(c.taskId) || c.sourceAcceptanceId && expired.has(c.sourceAcceptanceId))) {
             if (p.sourceValidity !== 'stale')
                 store.update('change-proposal', p.id, p.version, { sourceValidity: 'stale', invalidatedBy: directiveId });
             // Applied children and existing Runs remain immutable history, never rolled back.

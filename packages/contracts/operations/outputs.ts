@@ -1,4 +1,5 @@
 import {GIT_OUTPUT_SCHEMAS} from './git-schemas.js';
+import {REVIEW_OUTPUT_SCHEMAS} from './review-schemas.js';
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from './development-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
 import type { InferSchema, JsonSchema } from './schema.js';
@@ -64,11 +65,11 @@ const CORE_OUTPUT_SCHEMAS = {
         title: string, hypothesis: string,
         changes: array(object({
             path: string, expectedDigest: nullableString, artifactId: nullableString, artifactDigest: nullableString,
-            taskId: string, taskResultDigest: string, sourceAcceptanceId: string
-        }, ['taskId', 'taskResultDigest', 'sourceAcceptanceId'])),
+            taskId: string, taskResultDigest: string, sourceAcceptanceId: string,mode:enumeration('100644','100755'),beforeMode:enumeration('100644','100755')
+        }, ['taskId', 'taskResultDigest', 'sourceAcceptanceId','mode','beforeMode'])),
         candidateSnapshot: snapshot, digest: string, approvalId: string, state: enumeration('prepared', 'applied'),
-        testsStatus: enumeration('not_run', 'passed'), testJobId: string, appliedExperimentId: string, sourceValidity: enumeration('current', 'stale'), invalidatedBy: string
-    }, ['testJobId', 'appliedExperimentId', 'sourceValidity', 'invalidatedBy']),
+        testsStatus: enumeration('not_run', 'passed'), testJobId: string, appliedExperimentId: string, sourceValidity: enumeration('current', 'stale'), invalidatedBy: string,flow:{const:'reviewed-development'},reviewId:string,reviewAcceptanceId:string
+    }, ['testJobId', 'appliedExperimentId', 'sourceValidity', 'invalidatedBy','flow','reviewId','reviewAcceptanceId']),
     task_result_submit: row('task-result', {
         taskId: string, attemptId: string, planVersion: integer, directiveVersion: integer,
         inputDigest: string, digest: string, result: taskResult
@@ -112,10 +113,11 @@ const contextTask = object({ id: string, key: string, result: taskResult }, ['re
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
-    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,
+    reviewed_change_prepare:CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
     artifact_read: object({ artifactId: string, digest: string, title: string, mediaType: string, content: string, cursor: integer, complete: boolean }),
     artifact_create: row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string }, ['wakeupId', 'runId', 'taskId']),
@@ -131,10 +133,10 @@ export const OUTPUT_SCHEMAS = {
     agent_delegate: team,
     task_inspect: array(row('task', {
         key: string, role, objective: string, dependencies: strings, critical: boolean, reviewOf: string, required: boolean, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings,
-        teamId: string, sessionId: string, execution, acceptance, planVersion: integer, directiveVersion: integer, attemptCount: integer, generation: integer, attemptId: string, blockReason: string, result: taskResult
-    }, ['critical', 'reviewOf', 'required', 'inputEvidenceIds', 'expectedOutputs', 'acceptanceRuleIds', 'sessionId', 'attemptId', 'blockReason', 'result'])),
+        teamId: string, sessionId: string, execution, acceptance, planVersion: integer, directiveVersion: integer, attemptCount: integer, generation: integer, attemptId: string, blockReason: string, result: taskResult,reviewId:string
+    }, ['critical', 'reviewOf', 'required', 'inputEvidenceIds', 'expectedOutputs', 'acceptanceRuleIds', 'sessionId', 'attemptId', 'blockReason', 'result','reviewId'])),
     task_result_read: object({ id: string, key: string, execution, acceptance, result: taskResult }, ['result']),
-    task_context_read: nullable(object({ schemaVersion: { const: 1 }, taskId: string, teamId: string, goal: string, objective: string, role, planVersion: integer, directiveVersion: integer, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings, upstream: array(contextTask), reviewOf: nullable(contextTask), restrictions: strings, stopConditions: strings, source: object({ snapshotId: string, experimentId: string, revision: integer, sourceDigest: string }) }, ['source'])),
+    task_context_read: nullable(object({ schemaVersion: { const: 1 }, taskId: string, teamId: string, goal: string, objective: string, role, planVersion: integer, directiveVersion: integer, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings, upstream: array(contextTask), reviewOf: nullable(contextTask), restrictions: strings, stopConditions: strings, source: object({ snapshotId: string, experimentId: string, revision: integer, sourceDigest: string }),developmentReview:object({reviewId:string,jobId:string,sourceDigest:string,manifestEvidenceId:string,testEvidenceIds:strings}) }, ['source','developmentReview'])),
     task_progress_report: object({ seq: integer, id: string, projectId: nullableString, type: { const: 'task.progress' }, payload: object({ sessionId: string, taskId: string, message: string }, ['taskId']), createdAt: string }),
     research_skill_list: object({ bundleId: string, skills: array(object({ id: string, description: string, digest: string, resources: strings, source: skillSource })) }),
     research_skill_read: object({ id: string, resource: string, content: string, digest: string, bundleId: string, source: skillSource }),

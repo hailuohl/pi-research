@@ -17,6 +17,7 @@ function boundSourceTasks(store: Store, projectId: string, team: Team) {
         const experiment: Experiment=store.get<Experiment>('experiment',experimentId,projectId);
         if(experiment.changeProposalId) {
             const proposal=store.get<ChangeProposal>('change-proposal',experiment.changeProposalId,projectId);
+            if(proposal.reviewAcceptanceId)for(const id of store.get<AcceptanceRecord>('acceptance-record',proposal.reviewAcceptanceId,projectId).taskIds)tasks.add(id);
             for(const change of proposal.changes) {
                 if(change.taskId) tasks.add(change.taskId);
                 if(change.sourceAcceptanceId) for(const id of store.get<AcceptanceRecord>('acceptance-record',change.sourceAcceptanceId,projectId).taskIds) tasks.add(id);
@@ -56,7 +57,7 @@ export function expireDerivations(store: Store, projectId: string, taskIds: Set<
         (c.sourceAcceptanceIds??[]).some(id=>expired.has(id)) || sourceTasks(store,projectId,c.evidenceIds).some(id=>taskIds.has(id))) {
         if(c.validity!=='stale') store.update<Claim>('claim',c.id,c.version,{validity:'stale',invalidatedBy:directiveId});
     }
-    for(const p of store.list<ChangeProposal>('change-proposal',projectId)) if(p.changes.some(c=>c.taskId && taskIds.has(c.taskId) || c.sourceAcceptanceId && expired.has(c.sourceAcceptanceId))) {
+    for(const p of store.list<ChangeProposal>('change-proposal',projectId)) if(p.reviewAcceptanceId&&expired.has(p.reviewAcceptanceId)||p.changes.some(c=>c.taskId && taskIds.has(c.taskId) || c.sourceAcceptanceId && expired.has(c.sourceAcceptanceId))) {
         if(p.sourceValidity!=='stale') store.update<ChangeProposal>('change-proposal',p.id,p.version,{sourceValidity:'stale',invalidatedBy:directiveId});
         // Applied children and existing Runs remain immutable history, never rolled back.
         if(p.state==='prepared') for(const a of store.list<{subjectId:string;status:string}>('approval',projectId).filter(a=>a.subjectId===p.id && a.status!=='stale'))

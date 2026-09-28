@@ -1,6 +1,7 @@
 import type { Store } from '../storage/store.js';
 import type { Project, Experiment, ChangeProposal } from '../domain/types.js';
 import { ensure } from '../domain/errors.js';
+import {assertAcceptanceCurrent} from '../evidence/acceptance.js';
 
 /** Call inside the write transaction at the point a NEW side effect is authorized. */
 export function assertProjectWritable(store: Store, projectId: string) {
@@ -17,6 +18,7 @@ export function assertExperimentSourceCurrent(store: Store, experiment: Experime
         if (e.changeProposalId) {
             const proposal = store.get<ChangeProposal>('change-proposal', e.changeProposalId);
             ensure(proposal.sourceValidity !== 'stale', 'CHANGE_SOURCE_STALE', '实验来源的审查已失效，请重新审查并准备新版本');
+            if(proposal.flow==='reviewed-development') {ensure(proposal.reviewAcceptanceId,'CHANGE_SOURCE_STALE','受审实验缺少审查绑定');assertAcceptanceCurrent(store,proposal.projectId!,proposal.reviewAcceptanceId);}
         }
         if (!e.parentId) break;
         ensure(!seen.has(e.parentId), 'EXPERIMENT_CYCLE', '实验血缘存在循环');

@@ -159,6 +159,11 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('development_review_prepare',{idempotencyPolicy:'key-required',authorize:(c,x)=>{c.app.development.inspect(c.actor,c.projectId,x.jobId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.prepare(c.actor,c.projectId,x)}),
+    make('development_review_inspect',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.developmentReviews.inspect(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.inspect(c.actor,c.projectId,x.reviewId as string)}),
+    make('development_review_source_list',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.developmentReviews.sourceList(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.sourceList(c.actor,c.projectId,x.reviewId as string)}),
+    make('development_review_source_read',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.developmentReviews.sourceList(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.sourceRead(c.actor,c.projectId,x.reviewId as string,x.path as string,x.cursor as number|undefined,x.limit as number|undefined)}),
+    make('reviewed_change_prepare',{idempotencyPolicy:'key-required',authorize:(c,x)=>{c.app.developmentReviews.inspect(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.changes.prepareReviewed(c.actor,c.projectId,x)}),
     make('run_source_list',{idempotencyPolicy:'read-only',authorize:recordScope('run','runId'),preconditions:noPrecondition,execute:(c,x)=>c.app.runs.sourceList(c.actor,x.runId as string)}),
     make('run_source_read',{idempotencyPolicy:'read-only',authorize:recordScope('run','runId'),preconditions:noPrecondition,execute:(c,x)=>c.app.runs.sourceRead(c.actor,x.runId as string,x)}),
     make('workspace_history_inspect',{idempotencyPolicy:'read-only',requiresSession:true,authorize:(c)=>{c.app.git.inspect(c.actor,c.projectId,c.session!.id);},preconditions:noPrecondition,execute:c=>c.app.git.inspect(c.actor,c.projectId,c.session!.id)}),

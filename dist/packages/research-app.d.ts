@@ -1,3 +1,4 @@
+import { DevelopmentReviewService } from './development/reviews.js';
 import { GitService } from './workspace/git-service.js';
 import { DevelopmentService } from './development/service.js';
 import { ExecutionService } from './execution/service.js';
@@ -24,6 +25,7 @@ import { RunService } from './runners/service.js';
 export declare class ResearchApp {
     readonly git: GitService;
     readonly development: DevelopmentService;
+    readonly developmentReviews: DevelopmentReviewService;
     readonly execution: ExecutionService;
     readonly sources: SourceAccessService;
     readonly operations: OperationRegistry;

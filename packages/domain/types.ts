@@ -245,6 +245,8 @@ export interface Team {
     blockReason?: string;
 }
 export interface Task extends TaskSpec {
+    /** Host-created binding for an independent review of a fixed development result. */
+    reviewId?: string;
     teamId: string;
     sessionId?: string;
     execution: 'pending' | 'running' | 'output_submitted' | 'failed' | 'cancelled' | 'blocked' | 'superseded' | 'waiting_user';
@@ -295,6 +297,9 @@ export interface SourceRevision {
 export interface ChangeProposal {
     baseExperimentId:string; baseRevision:number; baseSnapshot:SourceSnapshot; contractDigest:string;
     title:string; hypothesis:string;
-    changes:Array<{path:string;expectedDigest:string|null;artifactId:string|null;artifactDigest:string|null;taskId?:string;taskResultDigest?:string;sourceAcceptanceId?:string}>;
+    changes:Array<{path:string;expectedDigest:string|null;artifactId:string|null;artifactDigest:string|null;taskId?:string;taskResultDigest?:string;sourceAcceptanceId?:string;mode?:'100644'|'100755';beforeMode?:'100644'|'100755'}>;
     candidateSnapshot:SourceSnapshot; digest:string; approvalId:string; state:'prepared'|'applied'; testsStatus:'not_run'|'passed'; testJobId?:string; appliedExperimentId?:string; sourceValidity?:'current'|'stale'; invalidatedBy?:string;
+    flow?:'reviewed-development';
+    reviewId?:string;
+    reviewAcceptanceId?:string;
 }

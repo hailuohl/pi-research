@@ -43,7 +43,7 @@ export class IntegrationsView extends React.Component {
                 React.createElement("div", { className: "surface-heading" },
                     React.createElement("h2", null, "\u6587\u732E\u6765\u6E90\u6388\u6743"),
                     React.createElement("span", { className: "small muted" }, "\u65B0\u6765\u6E90\u9ED8\u8BA4\u5173\u95ED\uFF1BCrossref \u4FDD\u7559\u539F\u9ED8\u8BA4")),
-                c ? React.createElement(React.Fragment, null,
+                c ? React.createElement("div", null,
                     React.createElement("div", { className: "connector-switches" }, sources.map(source => React.createElement("label", { key: source },
                         React.createElement("input", { type: "checkbox", disabled: s.busy, checked: !!c.enabled[source], onChange: (e) => this.configure(source, e.target.checked) }),
                         React.createElement("strong", null, source),
