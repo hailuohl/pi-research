@@ -21,8 +21,8 @@ test('real pinned Pi worker: tools, stream, steer, usage, exact reopen and abort
     const evidence = {sdk: '0.87.1', node: process.versions.node, model, events: [], sessionFile: null, completed: false};
     const evidencePath = resolve(process.env.PI_LIVE_EVIDENCE || join(home, 'evidence.json'));
     const tools = [
-        {name: 'live_read', description: 'Read the fixed private source.txt; input must be {}.', example: {}},
-        {name: 'live_write', description: 'Write only the private result.txt. Supply input.content equal to the source text.', example: {content: token}}
+        {name: 'live_read', description: 'Read the fixed private source.txt; input must be {}.', example: {}, inputSchema: {type:'object',properties:{},additionalProperties:false}},
+        {name: 'live_write', description: 'Write only the private result.txt. Supply input.content equal to the source text.', example: {content: token}, inputSchema: {type:'object',properties:{content:{type:'string',minLength:1,maxLength:100}},required:['content'],additionalProperties:false}}
     ];
     async function run(piSessionPath, abort = false) {
         const events = [];

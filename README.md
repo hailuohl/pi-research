@@ -2,7 +2,7 @@
 
 **增强试验派生版 · OpenResearch 技能与文献连接器适配**
 
-本开发副本正在按 [优化实施计划](docs/IMPLEMENTATION-PLAN.zh-CN.md) 推进 PR01。原 ZIP 保持冻结；版本号沿用源包身份，不代表新发布。当前进度和可复跑证据见 [PR01 验证记录](docs/acceptance/pr01/RESULTS.zh-CN.md) 与 [能力矩阵](docs/reference-baseline/PR01.md)。
+本开发副本基于 v0.3.1 按 [优化实施计划](docs/IMPLEMENTATION-PLAN.zh-CN.md) 持续推进。原 ZIP 保持冻结；版本号沿用源包身份，不代表新发布。当前进度见 [实施状态](docs/IMPLEMENTATION-STATUS.md)，证据见 [PR01](docs/acceptance/pr01/RESULTS.zh-CN.md)、[PR02 首批](docs/acceptance/pr02/RESULTS.zh-CN.md) 与 [能力矩阵](docs/reference-baseline/PR01.md)。
 
 由 0.3.0-experimental 独立派生。保留既有实验、审批、快照、协作、Campaign 与有效性修复；新增受管技能目录和五源文献接口。不是完整 OpenResearch 替代品，也不是所有后端已连接的生产系统。
 
@@ -22,6 +22,7 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
+- 33 个 Pi 工具已有精确输入 Schema；首批 7 个操作通过 OperationRegistry 统一 HTTP/CLI/Pi 的验证、权限与幂等处理。可通过 `GET /api/operations` 查看已迁移操作，或 `operation <id> --project <id> --input <JSON>` 调用。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 
 ## 读取技能
@@ -65,4 +66,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-原发布包的历史测试记录不作为本开发副本的验收结果；本次结果单独记录在上方 PR01 验证记录中。真实文献联网、浏览器研究旅程、Pi 模型、Docker/远程仍需各自验收。远程计算、Git发布、Overleaf、LaTeX编译/实例申请保留在后续计划中。
+各阶段测试记录单独留存，不把历史发布包结果当作当前验收。真实文献联网、浏览器研究旅程、Pi 模型、Docker/远程仍需各自验收。远程计算、Git发布、Overleaf、LaTeX编译/实例申请保留在后续计划中。

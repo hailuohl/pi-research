@@ -1,7 +1,29 @@
+import {validateSchema, s as schema, type JsonSchema} from '../contracts/operations/schema.js';
 import type { CreateAgentSessionOptions, ToolDefinition, Skill } from '@earendil-works/pi-coding-agent';
 import { piFailure } from './runtime.js';
 import { readFileSync, existsSync } from 'node:fs';
 import type { Role, ModelConfig } from '../domain/types.js';
+/** Validate raw model arguments before Pi's optional-null normalization and primitive coercion. */
+export function buildCustomTools(definitions: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[], dispatch: (name: string, input: unknown, callId: string) => Promise<unknown>): ToolDefinition[] {
+    let calls = 0;
+    return definitions.map(definition => {
+        const parameters = schema.object({input: definition.inputSchema}, ['input']);
+        return {
+            name: definition.name, label: definition.name, description: `${definition.description}\ninput 示例：${JSON.stringify(definition.example)}`,
+            parameters: parameters as ToolDefinition['parameters'],
+            prepareArguments: (args: unknown) => {
+                try { validateSchema(parameters, args); }
+                catch (error) { throw new Error(`INVALID_INPUT: ${error instanceof Error ? error.message : String(error)}`); }
+                return args as {input: Record<string, unknown>};
+            },
+            execute: async (callId: string, args: {input: Record<string, unknown>}) => {
+                if (++calls > 40) throw new Error('TOOL_CALL_LIMIT: 每次会话最多40次工具调用');
+                const result = await dispatch(definition.name, args.input, callId);
+                return {content: [{type: 'text', text: JSON.stringify(result)}], details: {}};
+            }
+        };
+    });
+}
 export interface SessionSetup {
     cwd: string;
     agentDir: string;
@@ -12,7 +34,7 @@ export interface SessionSetup {
     skills?: Skill[];
 }
 /** Compile against the pinned SDK; imports stay type-only for dependency-free core startup. */
-export function buildSessionOptions(sdk: Pick<typeof import('@earendil-works/pi-coding-agent'), 'SessionManager' | 'SettingsManager' | 'createExtensionRuntime' | 'CURRENT_SESSION_VERSION'>, setup: SessionSetup, customTools: ToolDefinition[], modelRuntime: CreateAgentSessionOptions['modelRuntime'], model: CreateAgentSessionOptions['model']) {
+export function buildSessionOptions(sdk: Pick<typeof import('@earendil-works/pi-coding-agent'), 'SessionManager' | 'SettingsManager' | 'createExtensionRuntime' | 'CURRENT_SESSION_VERSION'>, setup: SessionSetup, customTools: ToolDefinition[], modelRuntime: CreateAgentSessionOptions['modelRuntime'], model: CreateAgentSessionOptions['model']): CreateAgentSessionOptions {
     let sessionManager;
     if (setup.sessionFile) {
         if (!existsSync(setup.sessionFile)) throw new Error('PI_SESSION_NOT_FOUND: 指定原生会话文件不存在');

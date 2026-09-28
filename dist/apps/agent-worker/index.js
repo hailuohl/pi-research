@@ -2,11 +2,11 @@ import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { buildSessionOptions, systemInstruction, assistantFailure } from '../../packages/pi-adapter/options.js';
+import { buildSessionOptions, buildCustomTools, systemInstruction, assistantFailure } from '../../packages/pi-adapter/options.js';
 import { locatePi, inspectPi, piFailure } from '../../packages/pi-adapter/runtime.js';
 let session;
 let providerFailure;
-let started = false, stopping = false, toolCalls = 0, turns = 0;
+let started = false, stopping = false, turns = 0;
 let seq = 0;
 const pending = new Map();
 function send(value) {
@@ -53,7 +53,6 @@ process.on('message', async (message) => {
         if (!installed)
             throw new Error('PI_NOT_INSTALLED');
         const sdk = await import(pathToFileURL(installed.sdkPath).href);
-        const ai = await import(pathToFileURL(installed.aiPath).href);
         mkdirSync(raw.agentDir, { recursive: true, mode: 0o700 });
         mkdirSync(raw.sessionDir, { recursive: true, mode: 0o700 });
         const modelRuntime = await sdk.ModelRuntime.create({ authPath: join(raw.agentDir, 'auth.json'), modelsPath: raw.modelsPath });
@@ -64,15 +63,9 @@ process.on('message', async (message) => {
             await modelRuntime.setRuntimeApiKey(raw.model.provider, process.env.PI_API_KEY);
         if (!modelRuntime.hasConfiguredAuth(raw.model.provider))
             throw new Error('AUTH_MISSING: 请为所选供应商配置凭据');
-        const Type = ai.Type;
-        if (!Type)
-            throw new Error('SDK_CONTRACT_MISMATCH: 缺少 Type 导出');
-        const customTools = raw.tools.map((t) => ({ name: t.name, label: t.name, description: `${t.description}\ninput 示例：${JSON.stringify(t.example)}`, parameters: Type.Object({ input: Type.Record(Type.String(), Type.Unknown()) }), execute: async (toolCallId, args) => {
-                if (++toolCalls > 40)
-                    throw new Error('TOOL_CALL_LIMIT: 每次会话最多40次工具调用');
-                const result = await rpc(t.name, args.input, toolCallId);
-                return { content: [{ type: 'text', text: JSON.stringify(result) }], details: {} };
-            } }));
+        if (raw.tools.some(t => !t.inputSchema || t.inputSchema.type !== 'object'))
+            throw new Error('SDK_CONTRACT_MISMATCH: 工具缺少精确输入 Schema');
+        const customTools = buildCustomTools(raw.tools, rpc);
         const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
         if (session.model?.provider !== raw.model.provider || session.model?.id !== raw.model.model)

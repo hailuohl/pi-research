@@ -1,7 +1,9 @@
-import { toolAllowed, ROLE_TOOLS, AUTOMATION_TOOLS } from '../policy/permissions.js';
+import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
+import { validateSchema } from '../contracts/operations/schema.js';
+import { ROLE_TOOLS, AUTOMATION_TOOLS } from '../policy/permissions.js';
 import { ensure } from '../domain/errors.js';
 import { object, text, integer } from '../contracts/validation.js';
-import { readText, writeText, listFiles } from '../workspace/files.js';
+import { listFiles } from '../workspace/files.js';
 import { TOOL_DEFINITIONS } from './definitions.js';
 export class ToolDispatcher {
     app;
@@ -9,40 +11,12 @@ export class ToolDispatcher {
         this.app = app;
     }
     definitions(role, automation = false) { return (ROLE_TOOLS[role] ?? []).filter(name => TOOL_DEFINITIONS[name] && (!automation || AUTOMATION_TOOLS.includes(name))).map(name => ({ name, ...TOOL_DEFINITIONS[name] })); }
-    /** Ownership and fencing apply even to replays; completed calls may only return their stored response. */
-    identity(actor, name) {
-        ensure(actor.type === 'agent' && !!actor.sessionId && !!actor.projectId, 'PERMISSION_DENIED', '需要宿主派发的 Agent 身份', 403);
-        const s = this.app.sessions.get(actor, actor.sessionId);
-        ensure(s.role === actor.role && s.projectId === actor.projectId && s.taskId === actor.taskId, 'SCOPE_DENIED', '角色或任务与会话归属不一致', 403);
-        toolAllowed(actor, name);
-        if (actor.wakeupId) {
-            ensure(AUTOMATION_TOOLS.includes(name), 'AUTOMATION_TOOL_DENIED', '自动分析不能执行计算、修改工作区、批准或继续委派', 403);
-            const w = this.app.wakeups.get(actor, actor.wakeupId);
-            ensure(w.rootSessionId === s.id && w.generation === actor.generation, 'SCOPE_DENIED', '通知与会话执行不匹配', 403);
-        }
-        ensure(s.state !== 'archived' && !this.app.store.get('project', s.projectId).archived, 'SCOPE_DENIED', '归档项目或会话不可由 Agent 继续访问', 403);
-        if (actor.taskId) {
-            ensure(!!actor.attemptId, 'PERMISSION_DENIED', '缺少任务尝试身份', 403);
-            const t = this.app.store.get('task', actor.taskId, actor.projectId), a = this.app.store.get('task-attempt', actor.attemptId, actor.projectId);
-            ensure(t.execution !== 'superseded', 'TASK_INPUT_STALE', '任务需求已失效');
-            ensure(t.attemptId === a.id && a.sessionId === s.id && a.taskId === t.id && a.generation === actor.generation && t.generation === actor.generation, 'LEASE_EXPIRED', '任务尝试已被替代');
-        }
-        else
-            ensure(s.generation === actor.generation, 'LEASE_EXPIRED', '旧 Worker 已失去会话写入权');
-        return s;
-    }
-    authorize(actor, name) {
-        const s = this.identity(actor, name);
-        if (actor.wakeupId)
-            this.app.wakeups.assertActive(actor);
-        if (actor.taskId)
-            this.app.teams.active(actor);
-        else
-            ensure(s.state === 'running' && s.leaseUntil > Date.now(), 'LEASE_EXPIRED', '会话已中止或租约过期');
-        return s;
-    }
+    authorize(actor, name) { return this.app.operations.authorizeAgent(actor, name); }
     async execute(actor, name, raw, callId) {
-        const session = this.identity(actor, name), input = object(raw), pid = session.projectId;
+        if (this.app.operations.has(name))
+            return this.app.operations.execute(actor, name, raw, { projectId: actor.projectId, sessionId: actor.sessionId, idempotencyKey: callId });
+        const session = this.app.operations.agentIdentity(actor, name), input = object(raw), pid = session.projectId;
+        validateSchema(INPUT_SCHEMAS[name], input);
         text(callId, 'toolCallId', 200);
         const request = { name, input }, scope = `agent:${session.id}`;
         if (name === 'text_evidence_search') {
@@ -53,10 +27,8 @@ export class ToolDispatcher {
         if (previous.found)
             return previous.value;
         this.authorize(actor, name);
-        if (name === 'literature_discover' || name === 'paper_read') {
-            const result = name === 'literature_discover'
-                ? await this.app.connectors.discover(actor, pid, input, `${session.id}:${callId}`, () => { this.authorize(actor, name); })
-                : await this.app.connectors.paper(actor, pid, input, `${session.id}:${callId}`, () => { this.authorize(actor, name); });
+        if (name === 'literature_discover') {
+            const result = await this.app.connectors.discover(actor, pid, input, `${session.id}:${callId}`, () => { this.authorize(actor, name); });
             this.authorize(actor, name);
             return this.app.store.operation(scope, callId, request, () => { this.app.store.event(pid, 'tool.executed', { sessionId: session.id, taskId: actor.taskId, tool: name, callId }); return result; });
         }
@@ -111,11 +83,6 @@ export class ToolDispatcher {
                 return { textCorpus: this.app.textEvidence.status(actor, pid), project: { id: pid, name: this.app.projects.get(actor, pid).name }, experiments: this.app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: r.evidenceIds.filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: this.app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id) };
             }
             case 'workspace_list': return listFiles(ownOrProject());
-            case 'workspace_read': return readText(ownOrProject(), text(x.path, 'path', 1000));
-            case 'workspace_write':
-                ensure(x.source !== 'project', 'SCOPE_DENIED', '不能通过助手写入项目共享工作区', 403);
-                return writeText(session.workspace, text(x.path, 'path', 1000), text(x.content, 'content', 2 * 1024 * 1024, true), x.expectedDigest === null ? null : text(x.expectedDigest, 'expectedDigest', 64));
-            case 'change_proposal_prepare': return this.app.changes.prepare(actor, pid, x);
             case 'artifact_read': {
                 const { artifact, bytes } = this.app.evidence.read(actor, text(x.artifactId, 'artifactId', 100));
                 ensure(!bytes.includes(0) && bytes.length <= 2 * 1024 * 1024, 'ARTIFACT_TEXT_REQUIRED', '该产物不能通过文本工具读取', 415);
@@ -126,12 +93,6 @@ export class ToolDispatcher {
             case 'evidence_register': return this.app.evidence.register(actor, pid, text(x.artifactId, 'artifactId', 100), integer(x.start, 'start', 0), integer(x.end, 'end', 1), text(x.description, 'description', 2000));
             case 'evidence_read': return this.app.evidence.verify(pid, text(x.evidenceId, 'evidenceId', 100));
             case 'experiment_plan_submit': return this.app.experiments.create(actor, pid, x);
-            case 'run_prepare':
-                this.app.store.get('experiment', text(x.experimentId, 'experimentId', 100), pid);
-                return this.app.runs.prepare(actor, x.experimentId);
-            case 'run_submit':
-                this.app.store.get('run-intent', text(x.intentId, 'intentId', 100), pid);
-                return this.app.runs.submit(actor, x.intentId);
             case 'run_inspect': return this.app.store.get('run', text(x.runId, 'runId', 100), pid);
             case 'run_logs':
                 this.app.store.get('run', text(x.runId, 'runId', 100), pid);
@@ -153,7 +114,6 @@ export class ToolDispatcher {
                 ensure(!!actor.attemptId, 'TASK_REQUIRED', '主会话没有助手简报');
                 return this.app.store.list('context-snapshot', pid).find(c => c.attemptId === actor.attemptId)?.content ?? null;
             case 'task_progress_report': return this.app.store.event(pid, 'task.progress', { sessionId: session.id, taskId: actor.taskId, message: text(x.message, 'message', 2000) });
-            case 'task_result_submit': return this.app.teams.submit(actor, x);
             default: throw new Error(`Missing handler for approved tool: ${name}`);
         }
     }

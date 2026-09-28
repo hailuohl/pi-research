@@ -10,4 +10,4 @@ export function readIntegrationRoute(app:ResearchApp,path:string,url:URL):unknow
 }
 export function writeIntegrationRoute(app:ResearchApp,path:string,body:unknown):unknown{const p=path.match(/^\/projects\/([^/]+)\/connectors$/);if(p)return app.connectors.configure(USER,p[1],body);return undefined;}
 /** This asynchronous branch must run outside Store.operation's synchronous transaction. */
-export async function asyncIntegrationRoute(app:ResearchApp,path:string,body:unknown,key:string,signal:AbortSignal){const x=object(body),pid=text(x.projectId,'projectId',100);if(path==='/connectors/discover')return app.connectors.discover(USER,pid,x,`http:${key}`,()=>{},signal);return app.connectors.paper(USER,pid,x,`http:${key}`,()=>{},signal);}
+export async function asyncIntegrationRoute(app:ResearchApp,path:string,body:unknown,key:string,signal:AbortSignal){const x=object(body),pid=text(x.projectId,'projectId',100);if(path==='/connectors/discover')return app.connectors.discover(USER,pid,x,`http:${key}`,()=>{},signal);const {projectId,...input}=x;return app.operations.execute(USER,'paper_read',input,{projectId:pid,idempotencyKey:key,signal});}

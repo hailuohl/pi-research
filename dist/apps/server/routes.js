@@ -1,3 +1,5 @@
+import { operationRoute } from './operation-routes.js';
+import { randomUUID } from 'node:crypto';
 import { readIntegrationRoute, writeIntegrationRoute } from './integration-routes.js';
 import { readCampaignRoute, writeCampaignRoute } from './campaign-routes.js';
 import { listFiles } from '../../packages/workspace/files.js';
@@ -79,6 +81,12 @@ export function readRoute(app, host, path, url) {
     throw new DomainError('NOT_FOUND', '接口不存在', 404);
 }
 export function writeRoute(app, host, path, body, method = 'POST') {
+    // Direct in-process callers retain the same thin compatibility translation as HTTP.
+    if (path !== '/connectors/paper') {
+        const migrated = operationRoute(app, path, body, randomUUID(), new AbortController().signal, method, '');
+        if (migrated)
+            return migrated.result;
+    }
     const integration = writeIntegrationRoute(app, path, body);
     if (integration !== undefined)
         return integration;
@@ -90,8 +98,6 @@ export function writeRoute(app, host, path, body, method = 'POST') {
         return app.textEvidence.search(USER, text(x.projectId, 'projectId', 100), x);
     if (kind === 'projects' && id && action === 'text-evidence')
         return app.textEvidence.configure(USER, id, x);
-    if (path === '/change-proposals')
-        return app.changes.prepare(USER, text(x.projectId, 'projectId', 100), x);
     if (kind === 'change-proposals' && id && action === 'apply')
         return app.changes.apply(USER, id);
     if (path === '/projects/import')
@@ -106,8 +112,6 @@ export function writeRoute(app, host, path, body, method = 'POST') {
                     app.teams.disable(USER, t.id);
             return p;
         }
-        if (action === 'files')
-            return app.projects.writeFile(USER, id, text(x.path, 'path', 1000), text(x.content, 'content', 2 * 1024 * 1024, true), x.expectedDigest === null ? null : text(x.expectedDigest, 'expectedDigest', 64));
         if (action === 'archive')
             return app.projects.archive(USER, id, integer(x.expectedVersion, 'expectedVersion', 1));
         if (!action)
@@ -168,10 +172,6 @@ export function writeRoute(app, host, path, body, method = 'POST') {
         if (action === 'notes')
             return app.experiments.note(USER, id, text(x.note, 'note', 10000));
     }
-    if (path === '/run-intents')
-        return app.runs.prepare(USER, text(x.experimentId, 'experimentId', 100));
-    if (kind === 'run-intents' && id && action === 'submit')
-        return app.runs.submit(USER, id);
     if (kind === 'runs' && id && action === 'outcome-review')
         return app.runs.reviewOutcome(USER, id, x);
     if (kind === 'runs' && id && action === 'cancel')

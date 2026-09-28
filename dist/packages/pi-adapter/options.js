@@ -1,5 +1,32 @@
+import { validateSchema, s as schema } from '../contracts/operations/schema.js';
 import { piFailure } from './runtime.js';
 import { readFileSync, existsSync } from 'node:fs';
+/** Validate raw model arguments before Pi's optional-null normalization and primitive coercion. */
+export function buildCustomTools(definitions, dispatch) {
+    let calls = 0;
+    return definitions.map(definition => {
+        const parameters = schema.object({ input: definition.inputSchema }, ['input']);
+        return {
+            name: definition.name, label: definition.name, description: `${definition.description}\ninput 示例：${JSON.stringify(definition.example)}`,
+            parameters: parameters,
+            prepareArguments: (args) => {
+                try {
+                    validateSchema(parameters, args);
+                }
+                catch (error) {
+                    throw new Error(`INVALID_INPUT: ${error instanceof Error ? error.message : String(error)}`);
+                }
+                return args;
+            },
+            execute: async (callId, args) => {
+                if (++calls > 40)
+                    throw new Error('TOOL_CALL_LIMIT: 每次会话最多40次工具调用');
+                const result = await dispatch(definition.name, args.input, callId);
+                return { content: [{ type: 'text', text: JSON.stringify(result) }], details: {} };
+            }
+        };
+    });
+}
 /** Compile against the pinned SDK; imports stay type-only for dependency-free core startup. */
 export function buildSessionOptions(sdk, setup, customTools, modelRuntime, model) {
     let sessionManager;

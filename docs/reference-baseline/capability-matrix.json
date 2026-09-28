@@ -1022,5 +1022,23 @@
         }
       }
     }
-  ]
+  ],
+  "operationMigration": {
+    "inputSchemas": 33,
+    "registeredOperations": [
+      "run_prepare",
+      "run_submit",
+      "workspace_read",
+      "workspace_write",
+      "change_proposal_prepare",
+      "task_result_submit",
+      "paper_read"
+    ],
+    "outputSchemas": 7,
+    "status": "partial",
+    "evidence": [
+      "docs/acceptance/pr02/RESULTS.zh-CN.md"
+    ],
+    "liveVerified": false
+  }
 }

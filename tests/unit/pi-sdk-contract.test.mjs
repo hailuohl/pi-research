@@ -4,9 +4,27 @@ import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync}
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {pathToFileURL, fileURLToPath} from 'node:url';
-import {buildSessionOptions} from '../../dist/packages/pi-adapter/options.js';
+import {buildSessionOptions, buildCustomTools} from '../../dist/packages/pi-adapter/options.js';
+import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
 import {inspectPi, locatePi, piFailure} from '../../dist/packages/pi-adapter/runtime.js';
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
+
+test('Pi receives exact tool schemas and raw validation blocks SDK coercion before dispatch', async () => {
+    const installed = locatePi(repoRoot), sdk = await import(pathToFileURL(installed.aiPath).href);
+    let calls = 0;
+    const tools = buildCustomTools(Object.entries(TOOL_DEFINITIONS).map(([name, definition]) => ({name, ...definition})), async () => {calls++; return {};});
+    for (const tool of tools) {
+        const valid = {input: TOOL_DEFINITIONS[tool.name].example};
+        assert.deepEqual(tool.prepareArguments(valid), valid);
+        assert.deepEqual(sdk.validateToolArguments(tool, {id: 'example', name: tool.name, arguments: valid}), valid);
+        assert.throws(() => tool.prepareArguments({...valid, actor: 'forged'}), /INVALID_INPUT/);
+    }
+    const run = tools.find(tool => tool.name === 'run_prepare');
+    assert.throws(() => run.prepareArguments({input: {experimentId: 123}}), /INVALID_INPUT/);
+    const read = tools.find(tool => tool.name === 'run_logs');
+    assert.throws(() => read.prepareArguments({input: {runId: 'run', cursor: '12'}}), /INVALID_INPUT/);
+    assert.equal(calls, 0);
+});
 
 test('installed real SDK creates isolated session and reopens the exact native file offline', {skip: !locatePi(repoRoot) && 'SDK absent; install locked dependencies for offline SDK contract'}, async () => {
     const installed = locatePi(repoRoot);

@@ -1,4 +1,6 @@
-export const TOOL_DEFINITIONS = {
+import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
+import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
+const TOOL_METADATA = {
     research_skill_list: { description: '列出当前角色可按需读取的受管技能目录；不会授予额外工具权限。', example: {} },
     research_skill_read: { description: '按受管清单读取有来源、版本和内容摘要的技能或参考文件；拒绝任意路径。', example: { skillId: 'pi-research-lit-review' } },
     connector_status: { description: '读取来源开关、请求次数与实际能力；已编码不等于已通过真实外部接口验收。', example: {} },
@@ -33,4 +35,5 @@ export const TOOL_DEFINITIONS = {
     task_progress_report: { description: '写入可观察进展，不会改变验收状态。', example: { message: '正在核查已有证据' } },
     task_result_submit: { description: '提交结构化结果。完成声明不是科研事实；claims 必须引用 evidenceIds；Reviewer 必须给出 verdict。提交后结束任务。', example: { summary: '工作结果与限制', outcome: 'completed', evidenceIds: [], artifactIds: [], claims: [], unresolvedQuestions: [], verdict: 'accept' } }
 };
+export const TOOL_DEFINITIONS = Object.fromEntries(Object.entries(TOOL_METADATA).map(([id, info]) => [id, { ...info, inputSchema: INPUT_SCHEMAS[id], ...(OUTPUT_SCHEMAS[id] ? { outputSchema: OUTPUT_SCHEMAS[id] } : {}) }]));
 //# sourceMappingURL=definitions.js.map

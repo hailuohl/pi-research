@@ -1,5 +1,7 @@
 # PR01 实施与验收记录
 
+本文件保留 PR01 当时的验收结果；最新进度见 [实施状态](../../IMPLEMENTATION-STATUS.md)。
+
 日期：2026-09-28（Asia/Shanghai）。范围：实施计划 PR01 的代码与本地验证。**真实模型调用尚未执行，PR01 整体尚未放行；PR02–14 尚未开始实施。**
 
 开发目录是独立的 `pi-research/`，由用户提供的 v0.3.1-experimental-skills ZIP 导入。两份原 ZIP 和 `review/` 源码副本保留。初始导入提交为 `f5ef5aef3ca4af6a18bbc58f40c21e92536e87f0`；当前代码可在本地 `implementation/pr01-reproducible-baseline` 分支查看，未配置远端或推送。

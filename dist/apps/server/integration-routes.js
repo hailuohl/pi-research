@@ -22,5 +22,5 @@ export function writeIntegrationRoute(app, path, body) { const p = path.match(/^
     return app.connectors.configure(USER, p[1], body); return undefined; }
 /** This asynchronous branch must run outside Store.operation's synchronous transaction. */
 export async function asyncIntegrationRoute(app, path, body, key, signal) { const x = object(body), pid = text(x.projectId, 'projectId', 100); if (path === '/connectors/discover')
-    return app.connectors.discover(USER, pid, x, `http:${key}`, () => { }, signal); return app.connectors.paper(USER, pid, x, `http:${key}`, () => { }, signal); }
+    return app.connectors.discover(USER, pid, x, `http:${key}`, () => { }, signal); const { projectId, ...input } = x; return app.operations.execute(USER, 'paper_read', input, { projectId: pid, idempotencyKey: key, signal }); }
 //# sourceMappingURL=integration-routes.js.map

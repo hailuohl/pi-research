@@ -1,4 +1,5 @@
 import {asyncIntegrationRoute} from './integration-routes.js';
+import {operationRoute} from './operation-routes.js';
 import http from 'node:http';
 import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
@@ -42,6 +43,9 @@ export function createHttpServer(options: ServerOptions) {
                 ensure(provided.length === expected.length && timingSafeEqual(provided, expected), 'UNAUTHORIZED', '需要启动终端显示的本地访问令牌', 401);
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    if (route === '/operations') return json(app.operations.specs());
+                    const files = route.match(/^\/projects\/([^/]+)\/files$/);
+                    if (files && url.searchParams.has('path')) return json(await app.operations.execute(USER, 'workspace_read', { source: 'project', path: url.searchParams.get('path') }, { projectId: files[1] }));
                     const match = route.match(/^\/artifacts\/([^/]+)\/content$/);
                     if (match) {
                         const { artifact, bytes } = app.evidence.read(USER, match[1]);
@@ -54,7 +58,8 @@ export function createHttpServer(options: ServerOptions) {
                 }
                 ensure(['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method ?? ''), 'METHOD_NOT_ALLOWED', '请求方法不支持', 405);
                 ensure((req.headers['content-type'] ?? '').startsWith('application/json'), 'UNSUPPORTED_MEDIA_TYPE', '请使用 application/json', 415);
-                const key = text(req.headers['idempotency-key'], 'Idempotency-Key', 200);
+                const rawKey = req.headers['idempotency-key'];
+                const key = rawKey === undefined && route.startsWith('/operations/') ? undefined : text(rawKey, 'Idempotency-Key', 200);
                 let size = 0;
                 const chunks: Buffer[] = [];
                 for await (const chunk of req) {
@@ -69,17 +74,20 @@ export function createHttpServer(options: ServerOptions) {
                 catch {
                     throw new DomainError('INVALID_JSON', '请求不是有效 JSON', 400);
                 }
-                if (route === '/connectors/discover' || route === '/connectors/paper') {
-                    const controller=new AbortController();const cancel=()=>{if(!res.writableEnded)controller.abort();};res.on('close',cancel);
-                    try { return json(await asyncIntegrationRoute(app,route,body,key,controller.signal)); }
-                    finally {res.off('close',cancel);}
-                }
+                const controller = new AbortController();
+                const cancel = () => { if (!res.writableEnded) controller.abort(); };
+                res.on('close', cancel);
+                try {
+                    const operation = operationRoute(app, route, body, key, controller.signal, req.method!, url.search);
+                    if (operation) return json(await operation.result);
+                    if (route === '/connectors/discover') return json(await asyncIntegrationRoute(app, route, body, key!, controller.signal));
+                } finally { res.off('close', cancel); }
                 if (route === '/literature-search') {
                     const x = object(body);
                     const result = await app.literature.search(text(x.projectId, 'projectId', 100), text(x.query, 'query', 500), integer(x.limit ?? 8, 'limit', 1, 20), `user:${key}`);
                     return json(result);
                 }
-                const value = app.store.operation(`${req.method}:${route}`, key, { body, query: url.search }, () => writeRoute(app, host, route, body, req.method));
+                const value = app.store.operation(`${req.method}:${route}`, key!, { body, query: url.search }, () => writeRoute(app, host, route, body, req.method));
                 return json(value);
             }
             ensure(req.method === 'GET' || req.method === 'HEAD', 'METHOD_NOT_ALLOWED', '只读静态资源', 405);

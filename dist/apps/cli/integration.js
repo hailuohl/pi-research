@@ -22,7 +22,7 @@ export async function integrationCli(args, root, dataDir) { const command = args
     else if (command === 'discover')
         print(await app.connectors.discover(USER, projectId, { query: option('--query'), sources: (option('--sources') ?? 'crossref').split(','), limit: Number(option('--limit') ?? 8), strategy: option('--strategy') ?? 'keyword', prioritize: option('--prioritize') ?? 'default', publishedAfter: option('--after'), publishedBefore: option('--before') }, option('--key') ?? randomUUID()));
     else
-        print(await app.connectors.paper(USER, projectId, { id: args[1], source: option('--source') }, option('--key') ?? randomUUID()));
+        print(await app.operations.execute(USER, 'paper_read', { id: args[1], ...(option('--source') ? { source: option('--source') } : {}) }, { projectId, idempotencyKey: option('--key') ?? randomUUID() }));
 }
 finally {
     app.close();

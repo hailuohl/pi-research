@@ -11,7 +11,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { ResearchApp } from '../../packages/research-app.js';
 import { USER, type Run, type Row } from '../../packages/domain/types.js';
 import { inspectPi } from '../../packages/pi-adapter/runtime.js';
-import { ensure } from '../../packages/domain/errors.js';
+import { DomainError, ensure } from '../../packages/domain/errors.js';
 const root = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 if (existsSync(join(root, '.env')))
     process.loadEnvFile(join(root, '.env'));
@@ -20,6 +20,10 @@ const option = (name: string) => { const i = args.indexOf(name); return i >= 0 ?
 const dataDir = resolve(option('--data') ?? process.env.PI_DATA_DIR ?? join(root, '.pi-research'));
 const json = args.includes('--json');
 function print(value: unknown) { console.log(JSON.stringify(value, null, 2)); }
+function parseJson(value: string): unknown {
+    try { return JSON.parse(value); }
+    catch { throw new DomainError('INVALID_JSON', '请求不是有效 JSON', 400); }
+}
 async function demo() {
     const app = new ResearchApp(dataDir, root);
     try {
@@ -70,6 +74,14 @@ async function demo() {
 async function main() {
     if(await integrationCli(args,root,dataDir))return;
     switch (command) {
+        case 'operation': {
+            const id = args[1], projectId = option('--project'), input = option('--input');
+            ensure(id && !id.startsWith('--') && projectId && input !== undefined, 'INVALID_INPUT', '用法：operation <id> --project <id> [--session <id>] --input <JSON> [--key <id>]', 400);
+            const value = parseJson(input), app = new ResearchApp(dataDir, root);
+            try { print(await app.operations.execute(USER, id, value, { projectId, sessionId: option('--session'), idempotencyKey: option('--key') ?? randomUUID() })); }
+            finally { app.close(); }
+            return;
+        }
         case 'doctor': {
             const probe = spawnSync('docker', ['version', '--format', '{{.Server.Version}}'], { encoding: 'utf8', timeout: 3000 });
             const pi = inspectPi(root, { provider: process.env.PI_PROVIDER ?? '', model: process.env.PI_MODEL ?? '', thinking: 'medium' });
@@ -104,10 +116,10 @@ async function main() {
             ensure(['GET', 'POST', 'PATCH', 'PUT', 'DELETE'].includes(method) && path.startsWith('/') && !path.startsWith('//'), 'INVALID_INPUT', '用法：request GET /projects 或 request POST /projects --body <JSON>');
             const port = Number(process.env.PORT ?? 4317);
             ensure(Number.isInteger(port) && port > 0 && port <= 65535, 'INVALID_PORT', 'PORT 无效');
-            const token = readFileSync(join(dataDir, 'access.token'), 'utf8').trim();
             const body = option('--body');
             if (body)
-                JSON.parse(body);
+                parseJson(body);
+            const token = readFileSync(join(dataDir, 'access.token'), 'utf8').trim();
             const response = await fetch(`http://127.0.0.1:${port}/api${path}`, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Idempotency-Key': option('--key') ?? randomUUID() }, body: method === 'GET' ? undefined : body ?? '{}', redirect: 'error', signal: AbortSignal.timeout(30000) });
             const result = await response.json();
             print(result);
@@ -115,7 +127,7 @@ async function main() {
                 process.exitCode = 1;
             return;
         }
-        default: console.log(`Pi Research 0.3.1-experimental\n\n  doctor [--json]                    检查运行环境（不调用模型）\n  demo-campaign [--json]             真实4次运行 + 持久化活动/轮次/决定（不调用模型）\n  demo [--data <目录>] [--json]       真实运行4个随包受信数值实验\n  import <目录> --name <名称>          复制导入本地源码，不修改原目录\n  request GET /projects              访问正在运行的同一控制服务\n  request POST /projects --body '{"name":"研究"}'\n\n  skills [skill-id] [--resource <path>]  只读受管技能\n  connectors --project <id>             查看来源授权与能力\n  connector-config --project <id> --enable openalex,pubmed  显式启用来源\n  discover --project <id> --query <问题> --sources openalex  发出文献查询\n  paper <论文ID> --project <id>          保存论文文本或摘要\n\n启动工作台：node dist/apps/server/index.js\n数据目录：PI_DATA_DIR 或 --data；模型凭据：仅 .env / 受控环境变量。`);
+        default: console.log(`Pi Research 0.3.1-experimental\n\n  doctor [--json]                    检查运行环境（不调用模型）\n  demo-campaign [--json]             真实4次运行 + 持久化活动/轮次/决定（不调用模型）\n  demo [--data <目录>] [--json]       真实运行4个随包受信数值实验\n  import <目录> --name <名称>          复制导入本地源码，不修改原目录\n  operation <id> --project <id> --input <JSON> [--session <id>] [--key <id>]\n  request GET /projects              访问正在运行的同一控制服务\n  request POST /projects --body '{"name":"研究"}'\n\n  skills [skill-id] [--resource <path>]  只读受管技能\n  connectors --project <id>             查看来源授权与能力\n  connector-config --project <id> --enable openalex,pubmed  显式启用来源\n  discover --project <id> --query <问题> --sources openalex  发出文献查询\n  paper <论文ID> --project <id>          保存论文文本或摘要\n\n启动工作台：node dist/apps/server/index.js\n数据目录：PI_DATA_DIR 或 --data；模型凭据：仅 .env / 受控环境变量。`);
     }
 }
 main().catch(e => { console.error(JSON.stringify({ error: { code: e.code ?? 'CLI_FAILED', message: e instanceof Error ? e.message : String(e) } })); process.exitCode = 1; });

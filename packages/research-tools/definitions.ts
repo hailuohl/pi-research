@@ -1,4 +1,7 @@
-export const TOOL_DEFINITIONS: Record<string, {
+import {INPUT_SCHEMAS} from '../contracts/operations/inputs.js';
+import {OUTPUT_SCHEMAS} from '../contracts/operations/outputs.js';
+import type {JsonSchema} from '../contracts/operations/schema.js';
+const TOOL_METADATA: Record<string, {
     description: string;
     example: unknown;
 }> = {
@@ -37,3 +40,5 @@ export const TOOL_DEFINITIONS: Record<string, {
     task_progress_report: { description: '写入可观察进展，不会改变验收状态。', example: { message: '正在核查已有证据' } },
     task_result_submit: { description: '提交结构化结果。完成声明不是科研事实；claims 必须引用 evidenceIds；Reviewer 必须给出 verdict。提交后结束任务。', example: { summary: '工作结果与限制', outcome: 'completed', evidenceIds: [], artifactIds: [], claims: [], unresolvedQuestions: [], verdict: 'accept' } }
 };
+
+export const TOOL_DEFINITIONS: Record<string, {description: string; example: unknown; inputSchema: JsonSchema; outputSchema?: JsonSchema}> = Object.fromEntries(Object.entries(TOOL_METADATA).map(([id, info]) => [id, {...info, inputSchema: INPUT_SCHEMAS[id as keyof typeof INPUT_SCHEMAS], ...(OUTPUT_SCHEMAS[id as keyof typeof OUTPUT_SCHEMAS] ? {outputSchema: OUTPUT_SCHEMAS[id as keyof typeof OUTPUT_SCHEMAS]} : {})}]));
