@@ -81,7 +81,7 @@ export class AgentHost {
             this.app.campaigns.observe();
             this.app.wakeups.reconcile();
             for (const active of this.active.values()) {
-                if(active.ended)continue;
+                if(active.ended || active.stopError)continue;
                 const s = this.app.store.get<Session>('session', active.sessionId);
                 const a = active.attemptId ? this.app.store.get<TaskAttempt>('task-attempt', active.attemptId) : null;
                 if (!this.valid(active)) {
@@ -93,6 +93,11 @@ export class AgentHost {
                     continue;
                 }
                 if (Date.now() - active.lastHeartbeat > 3000) {
+                    // Fixed inputs are verified at tool boundaries and once per heartbeat, not per text delta.
+                    if (a?.state === 'running') {
+                        try { this.app.teams.active(active.actor); }
+                        catch (error) { this.abortProcess(active, clean(asError(error).message)); continue; }
+                    }
                     this.app.store.transaction(()=>{this.admission.heartbeat(active.admissionId,this.ownerHost,active.generation);const latest=this.app.store.get<Session>('session',s.id);ensure(latest.generation===active.generation,'LEASE_EXPIRED','会话已失效');this.app.store.update<Session>('session',latest.id,latest.version,{leaseUntil:Date.now()+30000});if(a)this.app.teams.heartbeat(a.id);});
                     active.lastHeartbeat = Date.now();
                 }
@@ -233,13 +238,14 @@ export class AgentHost {
     private valid(a: Active) {
         if(a.admissionId){try{this.admission.assertOwned(a.admissionId,this.ownerHost,a.generation);}catch{return false;}}
         const s = this.app.store.get<Session>('session', a.sessionId);
-        if (s.generation !== a.generation || s.state !== 'running') return false;
+        if (s.generation !== a.generation || s.state !== 'running' || s.leaseUntil <= Date.now()) return false;
         if (a.actor.taskId) {
             const task = this.app.store.get<Task>('task', a.actor.taskId);
             if (task.execution === 'superseded' || task.generation !== a.actor.generation || task.attemptId !== a.actor.attemptId) return false;
-            const state = this.app.store.get<TaskAttempt>('task-attempt', a.actor.attemptId!).state;
-            if (state !== 'running' && state !== 'finished') return false;
-            if (state === 'running') { try { this.app.teams.active(a.actor); } catch { return false; } }
+            const attempt = this.app.store.get<TaskAttempt>('task-attempt', a.actor.attemptId!);
+            if (attempt.taskId !== task.id || attempt.sessionId !== s.id || attempt.generation !== a.actor.generation) return false;
+            if (attempt.state !== 'running' && attempt.state !== 'finished') return false;
+            if (attempt.state === 'running' && (task.execution !== 'running' || attempt.leaseUntil <= Date.now())) return false;
         }
         if (a.actor.wakeupId) { try { this.app.wakeups.assertActive(a.actor); } catch { return false; } }
         return true;
@@ -250,6 +256,8 @@ export class AgentHost {
         if (m?.type === 'tool') {
             try {
                 ensure(!a.stopError && this.valid(a), 'LEASE_EXPIRED', '会话已中止');
+                // Cached reads also require current inputs while a task is running; finished submit receipts may drain.
+                if (a.attemptId && this.app.store.get<TaskAttempt>('task-attempt', a.attemptId).state === 'running') this.app.teams.active(a.actor);
                 const result = await this.tools.execute(a.actor, String(m.tool), m.input, String(m.toolCallId));
                 if (a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, result });

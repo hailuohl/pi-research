@@ -16,7 +16,7 @@ export declare class TeamService {
     constructor(c: AppContext, sessions: SessionService, approvals: ApprovalService, budget: BudgetService, evidence: EvidenceService);
     get(actor: Actor, id: string): Row<Team>;
     tasks(actor: Actor, id: string): Row<Task>[];
-    create(actor: Actor, rootSessionId: string, value: unknown): Row<Team>;
+    create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean): Row<Team>;
     activate(actor: Actor, id: string): Row<Team>;
     private assertInputsCurrent;
     private assertDispatchPlan;

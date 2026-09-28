@@ -1,9 +1,10 @@
+import type {PublicationReviewInspection,PublicationReviewSnapshot} from './reviews-types.js';
 import type {ManuscriptRevision,PublicationBuildResult,PublicationManifest} from './build-types.js';
 import type {Run,SourceSnapshot} from '../domain/types.js';
 import type {DocumentVersion,DocumentEvidenceLink} from '../documents/types.js';
 import type {DocumentParseResult,DocumentParseManifest} from '../documents/parse-types.js';
 export interface ReportReference {
-    id:string;type:'run'|'run-source'|'artifact'|'evidence'|'development-job'|'development-review'|'claim'|'publication'|'figure-source'|'figure-source-code';targetId:string;label:string;
+    id:string;type:'run'|'run-source'|'artifact'|'evidence'|'development-job'|'development-review'|'claim'|'publication'|'figure-source'|'figure-source-code'|'publication-review';targetId:string;label:string;
     runId?:string;path?:string;digest?:string;relation?:'exact'|'ancestry';
     document?:DocumentEvidenceLink&{start:number;end:number;pageLabel:string|null;rawArtifactId:string;imageArtifactId:string};
 }
@@ -14,9 +15,11 @@ export interface ReportRun {
 export interface ReportPublication {resultId:string;revisionId:string;jobId:string;title:string;sourceDigest:string;pdfArtifactId:string;pdfDigest:string;pages:number;referenceId:string;}
 export interface ReportInspection {
     publications?:ReportPublication[];
+    publicationReviews?:Array<{resultId:string;reviewIds:string[];reviews:Array<PublicationReviewInspection&{referenceId:string}>}>;
     id:string;artifactId:string;title:string;formatVersion:0|1;integrity:'verified'|'invalid';validity:'current'|'stale'|'legacy';reasons:string[];references:ReportReference[];runs:ReportRun[];
 }
 export interface ReportBindings {
+    publicationReviews?:Array<{resultId:string;reviewIds:string[];reviews:Array<{snapshot:PublicationReviewSnapshot;snapshotDigest:string;referenceId:string}>}>;
     publications?:Array<{resultId:string;resultDigest:string;revisionId:string;revisionDigest:string;revision:ManuscriptRevision;result:PublicationBuildResult;compiler:Pick<PublicationManifest,'profileId'|'profileDigest'|'lockDigest'|'scriptDigest'|'dockerfileDigest'|'environmentImageDigest'|'command'|'resources'>&{imageId:string;approvalId:string};referenceId:string}>;
     figureSources?:Array<{jobId:string;manifestDigest:string;sourceDigest:string;files:SourceSnapshot['files'];artifactIds:string[];dataArtifacts:Array<{id:string;digest:string;size:number;sourceAcceptanceId?:string}>}>;
     documents?:Array<{documentVersionId:string;documentDigest:string;parseResultId:string;resultDigest:string;document:DocumentVersion;result:DocumentParseResult;parser:Pick<DocumentParseManifest,'profileId'|'profileDigest'|'lockDigest'|'scriptDigest'|'environmentImageDigest'|'resources'>&{approvalId:string}}>;

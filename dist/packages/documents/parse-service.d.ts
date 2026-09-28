@@ -18,7 +18,7 @@ export declare function validateParserOutput(root: string, rawDigest: string): {
 export declare function checkDocumentVersion(source: DocumentVersion['source'], texts: string[]): {
     requestedVersion: string | null;
     observedVersion: string | null;
-    versionAssurance: "unverified" | "marker-match";
+    versionAssurance: "marker-match" | "unverified";
 };
 export declare class DocumentParsingService {
     private app;
@@ -224,7 +224,7 @@ export declare class DocumentParsingService {
             ocr: false;
             score: null;
         };
-        versionAssurance: "unverified" | "marker-match";
+        versionAssurance: "marker-match" | "unverified";
         requestedVersion: string | null;
         observedVersion: string | null;
         items: DocumentPage[];

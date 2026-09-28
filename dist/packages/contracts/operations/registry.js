@@ -141,6 +141,9 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('publication_review_prepare', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.publicationReviews.prepare(c.actor, c.projectId, x) }),
+    make('publication_review_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.inspect(c.actor, c.projectId, x.reviewId) }),
+    make('publication_review_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.list(c.actor, c.projectId, { resultId: x.resultId }) }),
     make('publication_templates', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: c => c.app.publicationBuilds.templates(c.actor, c.projectId) }),
     make('manuscript_create', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.createRevision(c.actor, c.projectId, x, c.validate, c.idempotencyKey) }),
     make('manuscript_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.revisions(c.actor, c.projectId, x.cursor, x.limit) }),

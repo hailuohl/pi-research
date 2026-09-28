@@ -2,6 +2,7 @@ import { api, artifactBlob, downloadArtifact } from './api.js';
 import { verifiedPageImage } from './literature-view.js';
 import { short, label } from './models.js';
 import { Badge } from './ui.js';
+import { PublicationReviewPanel } from './publication-review-view.js';
 function publicationPath(path) { return !!path && path.length <= 240 && path.split('/').every(part => /^[A-Za-z0-9_][A-Za-z0-9_. -]*$/.test(part) && !/[. ]$/.test(part) && !/^AGENTS(?:\.|$)/i.test(part) && !/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part)); }
 export function publicationSourcePath(path) { return publicationPath(path) && /\.(tex|bib|sty|cls|bst|txt|csv)$/i.test(path); }
 function publicationPathAvailable(path, files) { const target = path.toLowerCase(); return publicationPath(path) && !files.some(f => { const existing = f.path.toLowerCase(); return existing === target || existing.startsWith(target + '/') || target.startsWith(existing + '/'); }); }
@@ -17,7 +18,7 @@ function publicationSourceSignature(data, revision, job) {
 export class PublicationView extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { templates: [], status: null, revisions: [], nextRevision: null, revision: null, jobs: [], nextJob: null, job: null, result: null, sourcePath: '', source: '', sourceComplete: false, sourceLine: null, busy: false, loading: false, error: '', context: 'desktop-linux', image: '', seedVersion: 0, pollStopped: false, sourceChecking: false, sourceCheckError: '' };
+        this.state = { templates: [], status: null, revisions: [], nextRevision: null, revision: null, jobs: [], nextJob: null, job: null, result: null, sourcePath: '', source: '', sourceComplete: false, sourceLine: null, busy: false, loading: false, error: '', context: 'desktop-linux', image: '', seedVersion: 0, pollStopped: false, sourceChecking: false, sourceCheckError: '', selectedReviewId: '' };
         this.workspaceElement = null;
         this.mounted = true;
         this.selectionEpoch = 0;
@@ -75,7 +76,7 @@ export class PublicationView extends React.Component {
     } }
     async freeze(draft) { await this.run(async () => { const { assets, files, ...settings } = draft, revision = await this.call('manuscript_create', { ...settings, files: [...files.map(f => ({ path: f.path, contentBase64: publicationBase64(f.content) })), ...assets] }); if (!this.mounted)
         return; this.setState({ revisions: [revision, ...this.state.revisions.filter(r => r.id !== revision.id)] }); await this.openRevision(revision.id); }); }
-    async openRevision(id, jobId) { const epoch = ++this.selectionEpoch; this.sourceEpoch++; this.jobEpoch++; clearTimeout(this.timer); this.remember(id, jobId); this.setState({ revision: null, job: null, result: null, jobs: [], source: '', sourcePath: '', sourceComplete: false, sourceLine: null, error: '', loading: true, pollStopped: false, sourceChecking: false, sourceCheckError: '' }); try {
+    async openRevision(id, jobId) { const epoch = ++this.selectionEpoch; this.sourceEpoch++; this.jobEpoch++; clearTimeout(this.timer); this.remember(id, jobId); this.setState({ selectedReviewId: '', revision: null, job: null, result: null, jobs: [], source: '', sourcePath: '', sourceComplete: false, sourceLine: null, error: '', loading: true, pollStopped: false, sourceChecking: false, sourceCheckError: '' }); try {
         const [revision, list] = await Promise.all([this.call('manuscript_inspect', { revisionId: id }), this.call('publication_build_list', { revisionId: id, cursor: 0, limit: 30 })]);
         if (revision.id !== id)
             throw Error('返回的文稿不是所选修订。');
@@ -130,7 +131,7 @@ export class PublicationView extends React.Component {
     } if (this.mounted && selection === this.selectionEpoch)
         this.setState({ seed: { title: revision.title, engine: revision.engine, mainFile: revision.mainFile, bibliography: revision.bibliography, files, assets }, seedVersion: this.state.seedVersion + 1 }); }); }
     async openJob(id) { const revision = this.state.revision; if (!revision)
-        return; const epoch = ++this.jobEpoch, selection = this.selectionEpoch; clearTimeout(this.timer); this.polls = 0; this.remember(revision.id, id); this.setState({ job: null, result: null, error: '', pollStopped: false }); await this.refreshJob(id, epoch, selection); }
+        return; const epoch = ++this.jobEpoch, selection = this.selectionEpoch; clearTimeout(this.timer); this.polls = 0; this.remember(revision.id, id); this.setState({ selectedReviewId: '', job: null, result: null, error: '', pollStopped: false }); await this.refreshJob(id, epoch, selection); }
     async refreshJob(id, epoch = this.jobEpoch, selection = this.selectionEpoch) { const request = ++this.refreshEpoch; clearTimeout(this.timer); this.setState({ sourceChecking: true, sourceCheckError: '' }); try {
         const job = await this.call('publication_inspect', { jobId: id });
         if (!this.mounted || epoch !== this.jobEpoch || selection !== this.selectionEpoch || request !== this.refreshEpoch)
@@ -164,8 +165,10 @@ export class PublicationView extends React.Component {
     async moreJobs() { const revision = this.state.revision, selection = this.selectionEpoch; if (!revision || this.state.nextJob === null)
         return; const list = await this.call('publication_build_list', { revisionId: revision.id, cursor: this.state.nextJob, limit: 30 }); if (this.mounted && selection === this.selectionEpoch)
         this.setState({ jobs: [...this.state.jobs, ...list.items.filter(j => !this.state.jobs.some(old => old.id === j.id))], nextJob: list.nextCursor }); }
-    async openFixed(revisionId, jobId) { await this.openRevision(revisionId, jobId); if (this.mounted && this.state.revision?.id === revisionId && this.state.job?.id === jobId)
-        this.workspaceElement?.focus(); }
+    async openFixed(revisionId, jobId, reviewId) { const opening = this.openRevision(revisionId, jobId), selection = this.selectionEpoch; await opening; if (this.mounted && selection === this.selectionEpoch && this.state.revision?.id === revisionId && this.state.job?.id === jobId) {
+        this.setState({ selectedReviewId: reviewId ?? '' });
+        this.workspaceElement?.focus();
+    } }
     selectableResult() { const s = this.state, r = s.result, j = s.job; return !s.loading && !s.sourceChecking && !s.sourceCheckError && j?.state === 'succeeded' && j.integrity === 'complete' && r?.status === 'succeeded' && r.converged && !r.hadErrors && !!r.pdf && r.sourceValidity === 'current' && r.id === j.resultId && r.jobId === j.id && r.revisionId === s.revision?.id ? r : null; }
     selectResult() { const result = this.selectableResult(); if (result)
         this.props.onSelectResult?.(result, this.state.revision.title); }
@@ -313,6 +316,7 @@ export class PublicationView extends React.Component {
                             s.result.sourceError ?? 'PUBLICATION_SOURCE_STALE',
                             "\uFF1B\u5386\u53F2 PDF \u4E0E\u56FA\u5B9A\u6E90\u6587\u4EF6\u4ECD\u53EF\u56DE\u67E5\u3002") : React.createElement("p", { className: "small muted" }, s.result.sourceValidity === 'current' ? '当前来源有效（最近一次核验）' : '当前来源状态未知，请刷新此构建。'),
                         this.props.onSelectResult ? React.createElement("button", { className: "secondary", disabled: !this.selectableResult() || this.props.selectedResultIds?.includes(s.result.id) || (this.props.selectedResultIds?.length ?? 0) >= 20, onClick: () => this.selectResult() }, this.props.selectedResultIds?.includes(s.result.id) ? '已纳入待生成报告' : '纳入此固定构建') : null,
+                        React.createElement(PublicationReviewPanel, { key: s.result.id, data: this.props.data, result: s.result, ready: !!this.selectableResult(), perform: this.props.perform, onSession: this.props.onSession, selectedReviewId: s.selectedReviewId }),
                         React.createElement("h3", null, "\u56FA\u5B9A\u6784\u5EFA\u8BCA\u65AD"),
                         s.result.diagnostics.length ? React.createElement("ul", null, s.result.diagnostics.map((d, i) => React.createElement("li", { key: i },
                             d.severity,

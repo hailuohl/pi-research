@@ -1,10 +1,11 @@
+import type { PublicationReviewInspection, PublicationReviewSnapshot } from './reviews-types.js';
 import type { ManuscriptRevision, PublicationBuildResult, PublicationManifest } from './build-types.js';
 import type { Run, SourceSnapshot } from '../domain/types.js';
 import type { DocumentVersion, DocumentEvidenceLink } from '../documents/types.js';
 import type { DocumentParseResult, DocumentParseManifest } from '../documents/parse-types.js';
 export interface ReportReference {
     id: string;
-    type: 'run' | 'run-source' | 'artifact' | 'evidence' | 'development-job' | 'development-review' | 'claim' | 'publication' | 'figure-source' | 'figure-source-code';
+    type: 'run' | 'run-source' | 'artifact' | 'evidence' | 'development-job' | 'development-review' | 'claim' | 'publication' | 'figure-source' | 'figure-source-code' | 'publication-review';
     targetId: string;
     label: string;
     runId?: string;
@@ -48,6 +49,13 @@ export interface ReportPublication {
 }
 export interface ReportInspection {
     publications?: ReportPublication[];
+    publicationReviews?: Array<{
+        resultId: string;
+        reviewIds: string[];
+        reviews: Array<PublicationReviewInspection & {
+            referenceId: string;
+        }>;
+    }>;
     id: string;
     artifactId: string;
     title: string;
@@ -59,6 +67,15 @@ export interface ReportInspection {
     runs: ReportRun[];
 }
 export interface ReportBindings {
+    publicationReviews?: Array<{
+        resultId: string;
+        reviewIds: string[];
+        reviews: Array<{
+            snapshot: PublicationReviewSnapshot;
+            snapshotDigest: string;
+            referenceId: string;
+        }>;
+    }>;
     publications?: Array<{
         resultId: string;
         resultDigest: string;

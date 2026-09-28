@@ -3,12 +3,19 @@ let mode, output, committedId;
 const send=value=>process.connected&&process.send(value);
 process.on('message',m=>{
  if(m.type==='start'){
-  const parts=m.prompt.match(/HOST_FINISH (\w+) (\w+)/);mode=parts[1];
-  output={summary:'Host lifecycle fixture',outcome:parts[2],artifactIds:[],evidenceIds:[],claims:[],unresolvedQuestions:[]};
+  const parts=m.prompt.match(/HOST_FINISH (\w+) (\w+)/),context=JSON.parse(m.prompt);mode=parts?.[1]??(context.publicationReview?'stream':undefined);
+  output={summary:'Host lifecycle fixture',outcome:parts?.[2]??'completed',artifactIds:[],evidenceIds:context.inputEvidenceIds??[],claims:[],unresolvedQuestions:[],...(m.role==='reviewer'?{verdict:'accept'}:{})};
   send({type:'ready',model:{provider:m.model.provider,id:m.model.model}});
   if(mode==='hold')return;
+  if(mode==='stream'){for(let i=0;i<160;i++)send({type:'delta',text:`STREAM_CHUNK_${i}\n`});return;}
   if(mode==='missing'){send({type:'done'});return;}
   send({type:'tool',tool:'task_result_submit',requestId:1,toolCallId:'fixed-submit',input:output});
+ }else if(m.type==='fixture_submit'){
+  send({type:'tool',tool:'task_result_submit',requestId:1,toolCallId:'fixed-submit',input:output});
+ }else if(m.type==='fixture_context'){
+  send({type:'tool',tool:'task_context_read',requestId:4,toolCallId:'cached-context',input:{}});
+ }else if(m.type==='tool_response'&&m.requestId===4){
+  send({type:'fixture_context_result',errorCode:m.error?.code??null,hasResult:!!m.result});
  }else if(m.type==='tool_response'&&m.requestId===1){
   committedId=m.result?.id;
   send({type:'tool',tool:'task_result_submit',requestId:2,toolCallId:'fixed-submit',input:output});

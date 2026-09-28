@@ -2,7 +2,8 @@ import { api, artifactText, downloadArtifact } from './api.js';
 import { short, label } from './models.js';
 import { SectionTitle, Badge, Empty } from './ui.js';
 import { PublicationView } from './publication-view.js';
-const referenceTypes = { run: '正式运行', 'run-source': '固定运行源码', artifact: '原始产物', evidence: '定位证据', 'development-job': '开发测试', 'development-review': '独立审查', claim: '已采纳结论', publication: '固定文稿构建', 'figure-source': '图形生成来源', 'figure-source-code': '图形生成源码' };
+import { publicationReviewStatus } from './publication-review-view.js';
+const referenceTypes = { run: '正式运行', 'run-source': '固定运行源码', artifact: '原始产物', evidence: '定位证据', 'development-job': '开发测试', 'development-review': '独立审查', claim: '已采纳结论', publication: '固定文稿构建', 'publication-review': '固定论文审查', 'figure-source': '图形生成来源', 'figure-source-code': '图形生成源码' };
 function provenanceSignature(data, reportId) {
     const versions = (rows) => (rows ?? []).map(row => { const r = row; return [r.id, r.version ?? null, r.status ?? null, r.state ?? null, r.integrity ?? null, r.sourceDigest ?? null]; }).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
     return JSON.stringify([data.project.id, data.project.version, data.project.archived,
@@ -146,6 +147,8 @@ export class ReportsView extends React.Component {
         return; this.setState({ publications: [...this.state.publications, { result, title }] }); }
     openPublication(resultId) { const publication = this.state.report?.publications?.find(p => p.resultId === resultId); if (!publication || this.state.report?.integrity !== 'verified' || !this.publicationView)
         return; void this.publicationView.openFixed(publication.revisionId, publication.jobId); }
+    openPublicationReview(resultId, reviewId) { const report = this.state.report, review = report?.publicationReviews?.find(p => p.resultId === resultId)?.reviews.find(r => r.id === reviewId); if (!review || review.publicationResultId !== resultId || report?.integrity !== 'verified' || this.state.checking || this.state.verificationError)
+        return; void this.publicationView?.openFixed(review.revisionId, review.jobId, review.id); }
     async downloadReference() { const report = this.state.report, ref = this.state.reference; if (!this.mounted || !report || report.integrity !== 'verified' || this.state.checking || this.state.verificationError || ref?.type !== 'artifact' || !report.references.some(r => sameReference(r, ref)))
         return; await this.props.perform(() => downloadArtifact(ref.targetId, ref.path?.split('/').pop() ?? ref.label)); }
     async create() {
@@ -174,7 +177,7 @@ export class ReportsView extends React.Component {
         const available = s.selected.every(id => eligible.some(r => r.id === id)) && s.selectedClaims.every(id => claims.some(c => c.id === id));
         return React.createElement("div", { className: "page-scroll" },
             React.createElement(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
-            React.createElement(PublicationView, { key: data.project.id, ref: (view) => { this.publicationView = view; }, data: data, perform: perform, selectedResultIds: s.publications.map(p => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }),
+            React.createElement(PublicationView, { key: data.project.id, ref: (view) => { this.publicationView = view; }, data: data, perform: perform, onSession: this.props.onSession, selectedResultIds: s.publications.map(p => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }),
             React.createElement("section", { className: "surface report-builder" },
                 React.createElement("h2", null, "\u751F\u6210\u53EF\u8FFD\u6EAF\u7ED3\u679C\u8BB0\u5F55"),
                 React.createElement("label", null,
@@ -313,6 +316,28 @@ export class ReportsView extends React.Component {
                                     React.createElement("button", { className: "secondary compact", disabled: report.integrity !== 'verified', onClick: () => this.openPublication(p.resultId) }, "\u56DE\u67E5\u56FA\u5B9A\u6587\u7A3F\u4E0E PDF"),
                                     React.createElement("button", { className: "text-button", onClick: () => void this.readReference(p.referenceId) }, "\u8BFB\u53D6\u56FA\u5B9A\u6784\u5EFA\u6765\u6E90")))) : React.createElement("p", { className: "small muted" }, "\u672C\u62A5\u544A\u672A\u7EB3\u5165\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\u3002"),
                             React.createElement("p", { className: "small muted" }, "\u56FE\u5F62\u751F\u6210\u6E90\u7801\u3001\u8F93\u5165\u6570\u636E\u4E0E\u540C\u4F5C\u4E1A\u8F93\u51FA\u6309\u4E0B\u65B9\u56FA\u5B9A\u5F15\u7528\u56DE\u67E5\uFF1B\u5DF2\u77E5\u751F\u6210\u5173\u7CFB\u4E0D\u4EE3\u8868\u9010\u70B9\u6570\u503C\u9A8C\u8BC1\u3002")),
+                        React.createElement("details", { open: true },
+                            React.createElement("summary", null, "\u56FA\u5B9A\u8BBA\u6587\u5BA1\u67E5\u5FEB\u7167"),
+                            report.publicationReviews ? report.publicationReviews.map(group => React.createElement("div", { className: "inspector-section", key: group.resultId },
+                                React.createElement("h3", null,
+                                    "\u6784\u5EFA\u7ED3\u679C ",
+                                    short(group.resultId)),
+                                !group.reviewIds.length ? React.createElement("p", null, "\u672A\u5BA1\u67E5") : null,
+                                group.reviews.map(review => React.createElement("div", { key: review.id },
+                                    React.createElement("h4", null,
+                                        "\u5BA1\u67E5 ",
+                                        short(review.id)),
+                                    React.createElement("p", null,
+                                        "\u62A5\u544A\u751F\u6210\u65F6\uFF1A",
+                                        publicationReviewStatus(review.status),
+                                        " \u00B7 ",
+                                        review.validity === 'current' ? '当时有效' : '当时已失效',
+                                        " \u00B7 \u8BBA\u6587\u610F\u89C1\uFF1A",
+                                        review.verdict ?? '尚无固定审查意见'),
+                                    review.summary ? React.createElement("pre", { className: "document-preview" }, review.summary) : null,
+                                    React.createElement("p", { className: "small muted" }, "\u8FD9\u662F\u62A5\u544A\u751F\u6210\u65F6\u7684\u56FA\u5B9A\u5FEB\u7167\uFF1B\u5F53\u524D\u6709\u6548\u6027\u89C1\u62A5\u544A\u6838\u9A8C\u72B6\u6001\uFF0C\u56DE\u67E5\u53EF\u6838\u9A8C\u5F53\u524D\u5BA1\u67E5\u3002"),
+                                    React.createElement("button", { className: "text-button", onClick: () => void this.readReference(review.referenceId) }, "\u8BFB\u53D6\u56FA\u5B9A\u5BA1\u67E5\u8BB0\u5F55"),
+                                    React.createElement("button", { className: "secondary", disabled: report.integrity !== 'verified' || s.checking || !!s.verificationError, onClick: () => this.openPublicationReview(group.resultId, review.id) }, "\u56DE\u67E5\u6B64\u6784\u5EFA\u4E0E\u5BA1\u67E5"))))) : React.createElement("p", { className: "small muted" }, "\u65E7\u62A5\u544A\u672A\u8BB0\u5F55\u8BBA\u6587\u5BA1\u67E5\uFF0C\u4E0D\u80FD\u636E\u6B64\u8BA4\u5B9A\u5DF2\u901A\u8FC7\u3002")),
                         React.createElement("details", { open: true },
                             React.createElement("summary", null, "\u7ED1\u5B9A\u7684\u8BC1\u636E\u4E0E\u6765\u6E90"),
                             report.references.length ? React.createElement("ul", null, report.references.map(ref => React.createElement("li", { key: ref.id },

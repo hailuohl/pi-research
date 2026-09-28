@@ -1,6 +1,9 @@
 import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
 import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
 const TOOL_METADATA = {
+    publication_review_prepare: { description: '用户入口：为精确成功文稿构建准备独立论文审查计划；另行批准后启动，不改文稿或自动编译。', example: { resultId: 'publication-result-id', rootSessionId: 'coordinator-session-id', inputEvidenceIds: [] } },
+    publication_review_inspect: { description: '用户入口：回查固定论文审查目标、任务意见及有效性；不把任务完成当科学审查通过。', example: { reviewId: 'publication-review-id' } },
+    publication_review_list: { description: '用户入口：列出精确文稿构建的全部论文审查，不关联普通历史审查。', example: { resultId: 'publication-result-id' } },
     publication_templates: { description: '用户入口：读取固定文稿基础模板；模板文字不代表科学结论。', example: {} },
     manuscript_create: { description: '用户入口：冻结完整文稿、引擎与固定资产，编辑创建新修订，不启动编译。', example: { title: 'Manuscript', engine: 'pdflatex', mainFile: 'main.tex', bibliography: 'none', files: [{ path: 'main.tex', contentBase64: 'SGVsbG8=' }] } },
     manuscript_list: { description: '用户入口：有界列出固定文稿修订。', example: { cursor: 0, limit: 30 } },

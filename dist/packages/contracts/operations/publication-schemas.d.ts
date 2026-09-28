@@ -1,4 +1,147 @@
+export declare const PUBLICATION_REVIEW_SCHEMA: {
+    readonly type: "object";
+    readonly properties: {
+        readonly id: {
+            readonly type: "string";
+        };
+        readonly publicationResultId: {
+            readonly type: "string";
+        };
+        readonly revisionId: {
+            readonly type: "string";
+        };
+        readonly jobId: {
+            readonly type: "string";
+        };
+        readonly sourceDigest: {
+            readonly type: "string";
+        };
+        readonly pdfDigest: {
+            readonly type: "string";
+        };
+        readonly rootSessionId: {
+            readonly type: "string";
+        };
+        readonly teamId: {
+            readonly type: "string";
+        };
+        readonly taskId: {
+            readonly type: "string";
+        };
+        readonly approvalId: {
+            readonly type: "string";
+        };
+        readonly digest: {
+            readonly type: "string";
+        };
+        readonly status: {
+            readonly enum: readonly ["awaiting_approval", "pending", "running", "passed", "rejected", "disputed", "failed"];
+        };
+        readonly validity: {
+            readonly enum: readonly ["current", "stale"];
+        };
+        readonly requiredEvidenceIds: {
+            readonly type: "array";
+            readonly items: {
+                readonly type: "string";
+            };
+        };
+        readonly artifactIds: {
+            readonly type: "array";
+            readonly items: {
+                readonly type: "string";
+            };
+        };
+        readonly reason: {
+            readonly type: "string";
+        };
+        readonly reviewerSessionId: {
+            readonly type: "string";
+        };
+        readonly attemptId: {
+            readonly type: "string";
+        };
+        readonly inputDigest: {
+            readonly type: "string";
+        };
+        readonly taskResultId: {
+            readonly type: "string";
+        };
+        readonly taskResultDigest: {
+            readonly type: "string";
+        };
+        readonly verdict: {
+            readonly enum: readonly ["accept", "reject", "disputed"];
+        };
+        readonly summary: {
+            readonly type: "string";
+        };
+    };
+    readonly required: ("id" | "digest" | "jobId" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "requiredEvidenceIds" | "validity" | "status" | "revisionId" | "artifactIds" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+    readonly additionalProperties: false;
+};
 export declare const PUBLICATION_INPUT_SCHEMAS: {
+    readonly publication_review_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly resultId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly rootSessionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly inputEvidenceIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+        };
+        readonly required: readonly ["resultId", "rootSessionId"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_review_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly reviewId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["reviewId"];
+        readonly additionalProperties: false;
+    };
+    readonly publication_review_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly resultId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["resultId"];
+        readonly additionalProperties: false;
+    };
     readonly publication_templates: {
         readonly type: "object";
         readonly properties: {};
@@ -262,6 +405,257 @@ export declare const PUBLICATION_INPUT_SCHEMAS: {
     };
 };
 export declare const PUBLICATION_OUTPUT_SCHEMAS: {
+    readonly publication_review_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly publicationResultId: {
+                readonly type: "string";
+            };
+            readonly revisionId: {
+                readonly type: "string";
+            };
+            readonly jobId: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly pdfDigest: {
+                readonly type: "string";
+            };
+            readonly rootSessionId: {
+                readonly type: "string";
+            };
+            readonly teamId: {
+                readonly type: "string";
+            };
+            readonly taskId: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly digest: {
+                readonly type: "string";
+            };
+            readonly status: {
+                readonly enum: readonly ["awaiting_approval", "pending", "running", "passed", "rejected", "disputed", "failed"];
+            };
+            readonly validity: {
+                readonly enum: readonly ["current", "stale"];
+            };
+            readonly requiredEvidenceIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly artifactIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly reason: {
+                readonly type: "string";
+            };
+            readonly reviewerSessionId: {
+                readonly type: "string";
+            };
+            readonly attemptId: {
+                readonly type: "string";
+            };
+            readonly inputDigest: {
+                readonly type: "string";
+            };
+            readonly taskResultId: {
+                readonly type: "string";
+            };
+            readonly taskResultDigest: {
+                readonly type: "string";
+            };
+            readonly verdict: {
+                readonly enum: readonly ["accept", "reject", "disputed"];
+            };
+            readonly summary: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "digest" | "jobId" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "requiredEvidenceIds" | "validity" | "status" | "revisionId" | "artifactIds" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_review_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly publicationResultId: {
+                readonly type: "string";
+            };
+            readonly revisionId: {
+                readonly type: "string";
+            };
+            readonly jobId: {
+                readonly type: "string";
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly pdfDigest: {
+                readonly type: "string";
+            };
+            readonly rootSessionId: {
+                readonly type: "string";
+            };
+            readonly teamId: {
+                readonly type: "string";
+            };
+            readonly taskId: {
+                readonly type: "string";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly digest: {
+                readonly type: "string";
+            };
+            readonly status: {
+                readonly enum: readonly ["awaiting_approval", "pending", "running", "passed", "rejected", "disputed", "failed"];
+            };
+            readonly validity: {
+                readonly enum: readonly ["current", "stale"];
+            };
+            readonly requiredEvidenceIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly artifactIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly reason: {
+                readonly type: "string";
+            };
+            readonly reviewerSessionId: {
+                readonly type: "string";
+            };
+            readonly attemptId: {
+                readonly type: "string";
+            };
+            readonly inputDigest: {
+                readonly type: "string";
+            };
+            readonly taskResultId: {
+                readonly type: "string";
+            };
+            readonly taskResultDigest: {
+                readonly type: "string";
+            };
+            readonly verdict: {
+                readonly enum: readonly ["accept", "reject", "disputed"];
+            };
+            readonly summary: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "digest" | "jobId" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "requiredEvidenceIds" | "validity" | "status" | "revisionId" | "artifactIds" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+        readonly additionalProperties: false;
+    };
+    readonly publication_review_list: {
+        readonly maxItems?: number | undefined;
+        readonly type: "array";
+        readonly items: {
+            readonly type: "object";
+            readonly properties: {
+                readonly id: {
+                    readonly type: "string";
+                };
+                readonly publicationResultId: {
+                    readonly type: "string";
+                };
+                readonly revisionId: {
+                    readonly type: "string";
+                };
+                readonly jobId: {
+                    readonly type: "string";
+                };
+                readonly sourceDigest: {
+                    readonly type: "string";
+                };
+                readonly pdfDigest: {
+                    readonly type: "string";
+                };
+                readonly rootSessionId: {
+                    readonly type: "string";
+                };
+                readonly teamId: {
+                    readonly type: "string";
+                };
+                readonly taskId: {
+                    readonly type: "string";
+                };
+                readonly approvalId: {
+                    readonly type: "string";
+                };
+                readonly digest: {
+                    readonly type: "string";
+                };
+                readonly status: {
+                    readonly enum: readonly ["awaiting_approval", "pending", "running", "passed", "rejected", "disputed", "failed"];
+                };
+                readonly validity: {
+                    readonly enum: readonly ["current", "stale"];
+                };
+                readonly requiredEvidenceIds: {
+                    readonly type: "array";
+                    readonly items: {
+                        readonly type: "string";
+                    };
+                };
+                readonly artifactIds: {
+                    readonly type: "array";
+                    readonly items: {
+                        readonly type: "string";
+                    };
+                };
+                readonly reason: {
+                    readonly type: "string";
+                };
+                readonly reviewerSessionId: {
+                    readonly type: "string";
+                };
+                readonly attemptId: {
+                    readonly type: "string";
+                };
+                readonly inputDigest: {
+                    readonly type: "string";
+                };
+                readonly taskResultId: {
+                    readonly type: "string";
+                };
+                readonly taskResultDigest: {
+                    readonly type: "string";
+                };
+                readonly verdict: {
+                    readonly enum: readonly ["accept", "reject", "disputed"];
+                };
+                readonly summary: {
+                    readonly type: "string";
+                };
+            };
+            readonly required: ("id" | "digest" | "jobId" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "requiredEvidenceIds" | "validity" | "status" | "revisionId" | "artifactIds" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+            readonly additionalProperties: false;
+        };
+        readonly minItems: number;
+    };
     readonly publication_templates: {
         readonly type: "array";
         readonly items: {

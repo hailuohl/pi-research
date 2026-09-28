@@ -170,6 +170,20 @@ export class ReportService {
                     add({type:'figure-source',targetId:revision.id,path:file.path,label:`文稿文件来源：${file.path}`,digest:file.digest},{revisionId:revision.id,file,source});
                 }
             }
+            if(publications.length)bindings.publicationReviews=[];
+            for(const {result} of publications) {
+                const reviews=this.app!.publicationReviews.list(actor,pid,{resultId:result.id}).sort((a,b)=>a.id.localeCompare(b.id));
+                ensure(reviews.length<=20,'REPORT_TOO_LARGE','单个文稿结果关联审查超过 20 个',413);
+                const frozen:NonNullable<ReportBindings['publicationReviews']>[number]={resultId:result.id,reviewIds:reviews.map(review=>review.id),reviews:[]};
+                for(const review of reviews) {
+                    const snapshot=this.app!.publicationReviews.snapshot(actor,pid,review.id),snapshotDigest=digest(snapshot);
+                    snapshot.artifacts.forEach(a=>ensure(artifact(a.id),'REPORT_UNSAFE_REFERENCE','论文审查输入产物不适合交付'));
+                    snapshot.evidence.forEach(e=>evidence(e.id));
+                    const referenceId=add({type:'publication-review',targetId:review.id,label:`固定论文审查：${review.status}`,digest:snapshotDigest},snapshot);
+                    frozen.reviews.push({snapshot:clean(snapshot),snapshotDigest,referenceId});
+                }
+                bindings.publicationReviews!.push(frozen);
+            }
             for(const r of runs){
                 bindings.runs.push({runId:r.id,manifestDigest:r.manifestDigest,sourceDigest:r.manifest.snapshotDigest,contractDigest:r.manifest.contractDigest,artifactIds:[...r.artifactIds],evidenceIds:[...r.evidenceIds]});bindings.sources.push({runId:r.id,sourceDigest:r.manifest.snapshotDigest,files:structuredClone(r.manifest.sourceFiles)});
                 const binding=r.manifest.sourceRevisionId?this.c.store.maybe<GitSourceBinding>('git-source-binding',r.manifest.sourceRevisionId):undefined,gitCommit=r.manifest.gitCommit??(binding?.sourceDigest===r.manifest.snapshotDigest?binding.gitCommit:undefined);
@@ -189,7 +203,7 @@ export class ReportService {
                 }
             }
             for(const c of claims){const acceptanceIds=c.sourceAcceptanceIds??(c.sourceAcceptanceId?[c.sourceAcceptanceId]:[]);bindings.claims.push({id:c.id,contentDigest:digest(claimContent(c)),acceptanceIds});add({type:'claim',targetId:c.id,label:c.statement.slice(0,120),digest:digest(claimContent(c))},{claimId:c.id,...claimContent(c),status:c.status,validity:c.validity??'current'});c.evidenceIds.forEach(evidence);}
-            const id=randomUUID(),link=(referenceId:string,label:string)=>`[${escaped(label)}](pi-research://report/${id}/reference/${referenceId})`,body=[`# ${escaped(title)}`,'\n这是根据所选实际终态运行、已采纳结论和固定文稿构建结果生成的确定性记录，不是新的模型推断。进程成功或审查通过不等于科学假设成立。',...summaries.map(r=>`\n## Run ${r.runId}\n\n执行：${r.state}；完整性：${r.integrity}；科研判断：${r.judgment}\n\n固定源码摘要：${r.sourceDigest}\n\n${r.metrics.length?'| 指标 | 实测值 | 单位 |\n|---|---:|---|\n'+r.metrics.map(m=>`| ${escaped(m.name)} | ${link(m.referenceId,String(m.value))} | ${escaped(m.unit)} |`).join('\n'):'未获得完整实测指标。'}`),...claims.map(c=>`\n## 已采纳结论\n\n${escaped(c.statement)}\n\n限制：${escaped(c.limitations.join('；')||'未填写；不意味着不存在限制。')}`),...publications.map(({result,revision})=>`\n## 固定文稿\n\n${escaped(revision.title)}；修订：${revision.id}；PDF：${result.pdf!.digest}\n\n图形关联仅说明固定来源、已声明输入与同作业产物，不代表已验证逐点科学数值。未知来源保持未验证。`),'\n## 固定引用\n',...references.map(r=>`- ${link(r.id,r.label)}${r.relation==='ancestry'?'（仅为祖先来源，不表示当前源码通过该测试或审查）':''}`),'\n## 适用性与限制\n\n报告原文是生成时的历史记录。使用结论或导出成果前，应在工作台重新核对前提与审查是否仍有效。模板中的合成数据不代表真实材料性能；其他研究结论也必须根据自己的数据和协议判断。'].join('\n');
+            const id=randomUUID(),link=(referenceId:string,label:string)=>`[${escaped(label)}](pi-research://report/${id}/reference/${referenceId})`,body=[`# ${escaped(title)}`,'\n这是根据所选实际终态运行、已采纳结论和固定文稿构建结果生成的确定性记录，不是新的模型推断。进程成功或审查通过不等于科学假设成立。',...summaries.map(r=>`\n## Run ${r.runId}\n\n执行：${r.state}；完整性：${r.integrity}；科研判断：${r.judgment}\n\n固定源码摘要：${r.sourceDigest}\n\n${r.metrics.length?'| 指标 | 实测值 | 单位 |\n|---|---:|---|\n'+r.metrics.map(m=>`| ${escaped(m.name)} | ${link(m.referenceId,String(m.value))} | ${escaped(m.unit)} |`).join('\n'):'未获得完整实测指标。'}`),...claims.map(c=>`\n## 已采纳结论\n\n${escaped(c.statement)}\n\n限制：${escaped(c.limitations.join('；')||'未填写；不意味着不存在限制。')}`),...publications.map(({result,revision})=>`\n## 固定文稿\n\n${escaped(revision.title)}；修订：${revision.id}；PDF：${result.pdf!.digest}\n\n图形关联仅说明固定来源、已声明输入与同作业产物，不代表已验证逐点科学数值。未知来源保持未验证。`),...bindings.publicationReviews?.map(b=>`\n## 固定论文审查\n\n构建结果：${b.resultId}；${b.reviews.length?b.reviews.map(({snapshot})=>`${snapshot.review.id}：${snapshot.review.status}`).join('；'):'not-reviewed（未审查）'}。\n\n论文审查仅覆盖固定文本、证据与构建日志，不表示模型已视觉审读 PDF；代码审查单独记录。`)??[],'\n## 固定引用\n',...references.map(r=>`- ${link(r.id,r.label)}${r.relation==='ancestry'?'（仅为祖先来源，不表示当前源码通过该测试或审查）':''}`),'\n## 适用性与限制\n\n报告原文是生成时的历史记录。使用结论或导出成果前，应在工作台重新核对前提与审查是否仍有效。模板中的合成数据不代表真实材料性能；其他研究结论也必须根据自己的数据和协议判断。'].join('\n');
             const datedBody=body.replace('\n',`\n\n生成时间：${new Date().toISOString()}\n`);
             const a=this.evidence.put(pid,title.slice(0,197)+'.md',Buffer.from(datedBody),'text/markdown','report'),data:ReportRecord={artifactId:a.id,artifactDigest:a.digest,title,formatVersion:1,runIds,claimIds,evidenceIds:[...new Set([...runs.flatMap(r=>r.evidenceIds),...claims.flatMap(c=>c.evidenceIds)])],references,runs:summaries,bindings};
             this.c.store.create<ReportRecord>('report',pid,{...data,bindingsDigest:digest(payload(data))},id);this.c.store.event(pid,'report.created',{reportId:id,artifactId:a.id,runIds,claimIds});return a;
@@ -208,6 +222,13 @@ export class ReportService {
         for(const b of bound.bindings.publications??[])try {
             ensure(digest(this.c.store.get<ManuscriptRevision>('manuscript-revision',b.revisionId,pid))===b.revisionDigest&&digest(this.c.store.get<PublicationBuildResult>('publication-build-result',b.resultId,pid))===b.resultDigest,'REPORT_PUBLICATION_CHANGED','固定文稿或结果记录改变');
             const {job}=this.publication(actor,pid,b.resultId);ensure(job.approvalId===b.compiler.approvalId,'REPORT_PUBLICATION_CHANGED','固定编译批准身份改变');
+        }catch(error){fail(error);}
+        if(bound.bindings.publicationReviews)result.publicationReviews=bound.bindings.publicationReviews.map(b=>({resultId:b.resultId,reviewIds:b.reviewIds,reviews:b.reviews.map(r=>({...r.snapshot.review,referenceId:r.referenceId}))}));
+        for(const b of bound.bindings.publicationReviews??[])try {
+            ensure(this.app,'PUBLICATION_UNAVAILABLE','论文审查服务不可用');
+            const ids=this.app.publicationReviews.list(actor,pid,{resultId:b.resultId}).map(review=>review.id).sort();
+            ensure(digest(ids)===digest([...b.reviewIds].sort()),'REPORT_PUBLICATION_REVIEWS_CHANGED','固定文稿的完整审查集合改变，请重新生成报告');
+            for(const review of b.reviews)ensure(digest(this.app.publicationReviews.snapshot(actor,pid,review.snapshot.review.id))===review.snapshotDigest,'REPORT_PUBLICATION_REVIEW_CHANGED','固定论文审查状态或输入改变，请重新生成报告');
         }catch(error){fail(error);}
         for(const b of bound.bindings.figureSources??[])try {const job=this.figureJob(pid,b.jobId);ensure(job.manifestDigest===b.manifestDigest&&job.sourceDigest===b.sourceDigest&&digest(job.artifactIds)===digest(b.artifactIds),'REPORT_FIGURE_SOURCE_INVALID','图形来源记录改变');}catch(error){fail(error);}
         const checkedDocuments=new Set<string>();
@@ -234,7 +255,7 @@ export class ReportService {
     }
     private stateDigest(pid:string) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor:Actor,pid:string,id:string,expectedBindingsDigest:string,expectedStateDigest:string) {
         const r=this.record(actor,pid,id);assertProjectWritable(this.c.store,pid);ensure(r.formatVersion===1&&r.bindingsDigest===expectedBindingsDigest&&digest(payload(r))===expectedBindingsDigest&&this.stateDigest(pid)===expectedStateDigest,'REPORT_EXPORT_STALE','打包期间报告或关联状态已变化，请重新导出');
@@ -248,6 +269,7 @@ export class ReportService {
         for(const source of r.bindings.sources){const run=this.c.store.get<Run>('run',source.runId,pid);for(const file of source.files){safePath(run.manifest.snapshotPath,file.path);const bytes=readStableFile(run.manifest.snapshotPath,file.path,Math.min(30*1024*1024,file.size));ensure(bytes.length===file.size&&digest(bytes)===file.digest,'SNAPSHOT_CORRUPTED','导出源码与固定绑定不符');add(`sources/${source.sourceDigest}/${file.path}`,bytes,file.mode);}}
         for(const source of r.bindings.figureSources??[]){const job=this.c.store.get<SandboxJob>('sandbox-job',source.jobId,pid);for(const file of source.files){const bytes=readStableFile(job.manifest.inputSnapshot.path,file.path,Math.min(30*1024*1024,file.size));ensure(bytes.length===file.size&&digest(bytes)===file.digest,'SNAPSHOT_CORRUPTED','图形源码与固定绑定不符');add(`sources/${source.sourceDigest}/${file.path}`,bytes,file.mode);}}
         for(const publication of r.bindings.publications??[]){for(const file of publication.revision.files)add(`manuscripts/${publication.revisionId}/${file.path}`,this.bytes(pid,file.artifactId,file).bytes);const pdf=publication.result.pdf!;add(`publications/${publication.resultId}/document.pdf`,this.bytes(pid,pdf.artifactId,{digest:pdf.digest,size:pdf.bytes}).bytes);}
+        for(const group of r.bindings.publicationReviews??[])for(const review of group.reviews){const frozen=r.bindings.objects.find(o=>o.referenceId===review.referenceId);ensure(frozen,'REPORT_BINDING_INVALID','缺少固定论文审查内容');add(`reviews/${review.snapshot.review.id}.json`,Buffer.from(frozen.content));}
         for(const artifact of r.bindings.artifacts){ensure(!excluded(artifact.title),'EXPORT_PATH_DENIED','产物名称属于敏感文件');add(`artifacts/${artifact.digest}`,this.bytes(pid,artifact.id,artifact).bytes);}
         const manifest:ReportExportCollection['manifest']={formatVersion:1,report:inspection,bindingsDigest:r.bindingsDigest,stateDigest:stateBefore,bindings:r.bindings},manifestBytes=Buffer.from(JSON.stringify(manifest));safeExportBytes(manifestBytes,this.c);ensure(total+manifestBytes.length<=30*1024*1024,'EXPORT_TOO_LARGE','成果包文件与清单合计超过 30 MiB',413);ensure(this.stateDigest(pid)===stateBefore,'REPORT_EXPORT_STALE','收集期间报告或关联状态发生变化');return {manifest,files};
     }

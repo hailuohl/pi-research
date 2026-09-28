@@ -1,4 +1,5 @@
 import { PublicationBuildService } from './publications/build-service.js';
+import { PublicationReviewService } from './publications/reviews.js';
 import { DevelopmentReviewService } from './development/reviews.js';
 import { DocumentService } from './documents/service.js';
 import { DocumentParsingService } from './documents/parse-service.js';
@@ -31,6 +32,7 @@ import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
     readonly publicationBuilds: PublicationBuildService;
+    readonly publicationReviews: PublicationReviewService;
     readonly documents: DocumentService;
     readonly documentParsing: DocumentParsingService;
     readonly literatureTasks: LiteratureTaskService;

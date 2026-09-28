@@ -250,6 +250,8 @@ export interface Team {
     blockReason?: string;
 }
 export interface Task extends TaskSpec {
+    /** Host-created binding for an independent review of one fixed manuscript build. */
+    publicationReviewId?: string;
     /** Host-created binding for an independent review of a fixed development result. */
     reviewId?: string;
     teamId: string;

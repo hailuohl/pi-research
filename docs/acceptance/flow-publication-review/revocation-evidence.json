@@ -1,0 +1,21 @@
+{
+  "isolatedCopy": true,
+  "mainDataUntouched": true,
+  "reportId": "a41b281c-bfd2-47cf-bfee-e47bf79bbaf6",
+  "revokedReviewId": "ae7529034681c1128d897e8991423064914de0d66e144ffe020ac7bcad033158",
+  "revokedApprovalId": "8b48b082-e505-4a6e-b748-3df614597f35",
+  "reviewValidity": "stale",
+  "reportValidity": "stale",
+  "reportIntegrity": "verified",
+  "reasons": [
+    "APPROVAL_STALE"
+  ],
+  "newExportRejected": "REPORT_STALE",
+  "newReportRejected": "APPROVAL_STALE",
+  "cannotOmitRevokedReviewInFavorOfOtherAccept": true,
+  "historicalBodyUnchanged": "32dd22abb7d9da6c05999b179a3f60d3c685c184b12c652e5ac3f913549ff3f3",
+  "historicalArchiveUnchanged": "4b3d8fa95dd1a067c73cce7b5de5b52cb3ed2a4a0189f46ef9b1bc5c3a4f58e1",
+  "existingExportReceiptReplaysHistoricalArchive": true,
+  "legacyReportStillCurrent": true,
+  "historicalReferencesRemainReadable": true
+}

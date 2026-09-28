@@ -428,7 +428,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("targetId" | "configuration" | "backend" | "available" | "contexts" | "usage")[];
+                    readonly required: ("targetId" | "configuration" | "usage" | "backend" | "available" | "contexts")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -491,7 +491,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "kind" | "projectId" | "generation" | "targetId" | "state" | "leaseUntil" | "backend" | "reason" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("id" | "kind" | "projectId" | "generation" | "targetId" | "state" | "leaseUntil" | "reason" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -503,7 +503,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("queued" | "configuration" | "items" | "nextCursor" | "available" | "scope" | "targets" | "usage")[];
+        readonly required: ("queued" | "configuration" | "scope" | "usage" | "items" | "nextCursor" | "available" | "targets")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {
@@ -636,7 +636,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("sessionId" | "reasons" | "role")[];
+                    readonly required: ("sessionId" | "role" | "reasons")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -777,7 +777,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("sessionId" | "reasons" | "role")[];
+                    readonly required: ("sessionId" | "role" | "reasons")[];
                     readonly additionalProperties: false;
                 };
             };

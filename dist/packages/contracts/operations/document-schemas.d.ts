@@ -284,7 +284,7 @@ export declare const DOCUMENT_EVIDENCE_LINK_SCHEMA: {
             readonly type: "string";
         };
     };
-    readonly required: ("pageNumber" | "documentVersionId" | "rawDigest" | "parseResultId" | "textArtifactDigest")[];
+    readonly required: ("pageNumber" | "textArtifactDigest" | "documentVersionId" | "rawDigest" | "parseResultId")[];
     readonly additionalProperties: false;
 };
 export declare const DOCUMENT_INPUT_SCHEMAS: {
@@ -2296,7 +2296,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("source" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "license" | "contentKind" | "original" | "limitations" | "acquiredAt")[];
+        readonly required: ("source" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "limitations" | "license" | "contentKind" | "original" | "acquiredAt")[];
         readonly additionalProperties: false;
     };
     readonly document_inspect: {
@@ -2455,7 +2455,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("source" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "license" | "contentKind" | "original" | "limitations" | "acquiredAt")[];
+        readonly required: ("source" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "limitations" | "license" | "contentKind" | "original" | "acquiredAt")[];
         readonly additionalProperties: false;
     };
     readonly document_list: {
@@ -2619,7 +2619,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("source" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "license" | "contentKind" | "original" | "limitations" | "acquiredAt")[];
+                    readonly required: ("source" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "limitations" | "license" | "contentKind" | "original" | "acquiredAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3338,7 +3338,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                         readonly type: "integer";
                                     };
                                 };
-                                readonly required: ("end" | "index" | "start")[];
+                                readonly required: ("end" | "start" | "index")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -3346,7 +3346,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["text-extracted", "no-text-layer"];
                         };
                     };
-                    readonly required: ("pageNumber" | "width" | "height" | "paragraphs" | "textArtifactDigest" | "pageLabel" | "imageWidth" | "imageHeight" | "textArtifactId" | "imageArtifactId" | "imageArtifactDigest" | "textStatus")[];
+                    readonly required: ("pageNumber" | "width" | "height" | "textArtifactDigest" | "textArtifactId" | "imageArtifactDigest" | "textStatus" | "paragraphs" | "pageLabel" | "imageWidth" | "imageHeight" | "imageArtifactId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3360,7 +3360,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "cursor" | "end" | "resultId" | "items" | "requestedVersion" | "documentVersionId" | "versionAssurance" | "rawDigest" | "observedVersion" | "pageCount" | "quality")[];
+        readonly required: ("complete" | "cursor" | "end" | "resultId" | "quality" | "items" | "requestedVersion" | "documentVersionId" | "versionAssurance" | "rawDigest" | "observedVersion" | "pageCount")[];
         readonly additionalProperties: false;
     };
     readonly document_page_read: {
@@ -3427,7 +3427,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("end" | "index" | "start")[];
+                    readonly required: ("end" | "start" | "index")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3444,7 +3444,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("complete" | "cursor" | "end" | "pageNumber" | "width" | "height" | "resultId" | "content" | "documentVersionId" | "rawDigest" | "paragraphs" | "textArtifactDigest" | "pageLabel" | "imageWidth" | "imageHeight" | "textArtifactId" | "imageArtifactId" | "imageArtifactDigest" | "textStatus")[];
+        readonly required: ("complete" | "cursor" | "end" | "pageNumber" | "width" | "height" | "resultId" | "textArtifactDigest" | "textArtifactId" | "imageArtifactDigest" | "textStatus" | "content" | "documentVersionId" | "rawDigest" | "paragraphs" | "pageLabel" | "imageWidth" | "imageHeight" | "imageArtifactId")[];
         readonly additionalProperties: false;
     };
     readonly document_evidence_register: {
@@ -3520,7 +3520,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("pageNumber" | "documentVersionId" | "rawDigest" | "parseResultId" | "textArtifactDigest")[];
+                readonly required: ("pageNumber" | "textArtifactDigest" | "documentVersionId" | "rawDigest" | "parseResultId")[];
                 readonly additionalProperties: false;
             };
         };
