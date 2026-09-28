@@ -1,0 +1,160 @@
+{
+  "taskId": "9696cdeb-dd42-48a2-9ee7-144aae48200b",
+  "attemptId": "bdd21409-e7a7-45f8-9148-d186708bd8bb",
+  "sessionId": "2bdec317-22fe-475d-9d48-137951e64174",
+  "teamId": "8f608f64-6483-443e-81e2-50a152b216d3",
+  "approvalId": "3aa22784-7817-4297-9358-1f7dd9df4321",
+  "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+  "paperSkillDigest": "b891b00397bb77733b91c7f168192a6bce576b3240c4f47f1f89e06f390ad1b4",
+  "inputDigest": "acaac56c51dffce91cf168336ba830e9f7fb21cdbc98f130ec3ca992ffd9d300",
+  "taskResultId": "f7556ff7-bc51-4f58-886f-25c648383ed3",
+  "taskResultDigest": "6fe63dd9d6124cbe5d2edb125c423cfad1f28497d5d573a66acd2a13f0c0a930",
+  "taskExecution": "output_submitted",
+  "taskAcceptance": "accepted",
+  "attemptState": "finished",
+  "sessionState": "failed",
+  "sessionError": "模型请求已中止",
+  "model": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "thinking": "off"
+  },
+  "result": {
+    "summary": "已保存新的不可变 main.tex 修订（artifact 80ad6315，text/plain，9498 字节），未覆盖旧产物。所修 4 项：(1) 正规方程 eq:norma 左端改为对 j=0..d 显式求和并补充矩阵形式与实现对应说明；(2) 源码总摘要、Run 标识等长 ID 用 \\allowbreak 分行，可复现性源码清单改为逐文件分项列表（含大小、模式与首尾截断摘要），消除页边溢出；(3) 交付状态改为持久措辞：区分撰写时点与系统后续固定记录，注明前次修订已构建、本修订待构建与审查；(4) 外部有效性措辞改为“未作评估/尚未被检验，而非证明其不存在”。Run 标识、指标、系数、预测样本数值、240/180/60、二阶模型、synthetic 及 judgment pending 均未改动；无新增实验、外部引用或宏包。本修订尚待系统构建与审查，编译/审查通过与否以系统后续固定记录为准。",
+    "outcome": "completed",
+    "evidenceIds": [
+      "246c48f6-26e5-4965-be4a-1a842f78d58d",
+      "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+      "1b17a4f2-5601-4da2-847e-144f4e63d53e",
+      "bae575d9-2715-4bcb-9262-ca10ea84b621",
+      "125a653b-0570-41e9-adea-160cb647a741"
+    ],
+    "artifactIds": [
+      "80ad6315-aa0c-4fa6-991d-b279bc67451a"
+    ],
+    "claims": [],
+    "unresolvedQuestions": []
+  },
+  "artifact": {
+    "id": "80ad6315-aa0c-4fa6-991d-b279bc67451a",
+    "digest": "342c4b0627506756e8949ecef70aeab56032da51fc30afa19c17e7285126fe36",
+    "bytes": 9498,
+    "title": "main.tex",
+    "mediaType": "text/plain",
+    "origin": "agent:2bdec317-22fe-475d-9d48-137951e64174",
+    "taskId": "9696cdeb-dd42-48a2-9ee7-144aae48200b"
+  },
+  "toolSequence": [
+    "research_skill_read",
+    "task_context_read",
+    "evidence_read",
+    "evidence_read",
+    "evidence_read",
+    "evidence_read",
+    "evidence_read",
+    "artifact_create",
+    "task_result_submit"
+  ],
+  "usage": [
+    {
+      "id": "2c3d5737-dc92-440c-b246-d29cd9381023",
+      "status": "reported",
+      "stopReason": "toolUse",
+      "usage": {
+        "input": 936,
+        "output": 27,
+        "cacheRead": 10176,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 11139,
+        "cost": {
+          "input": 0.0013104,
+          "output": 0.0001188,
+          "cacheRead": 0.00264576,
+          "cacheWrite": 0,
+          "total": 0.00407496
+        }
+      }
+    },
+    {
+      "id": "e3f168be-8b60-4ec4-ba0c-753d799f4c13",
+      "status": "reported",
+      "stopReason": "toolUse",
+      "usage": {
+        "input": 1054,
+        "output": 230,
+        "cacheRead": 11072,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 12356,
+        "cost": {
+          "input": 0.0014755999999999999,
+          "output": 0.001012,
+          "cacheRead": 0.00287872,
+          "cacheWrite": 0,
+          "total": 0.00536632
+        }
+      }
+    },
+    {
+      "id": "e3dbfec1-0d76-4dcd-916d-fb03c00282ce",
+      "status": "reported",
+      "stopReason": "toolUse",
+      "usage": {
+        "input": 9681,
+        "output": 3240,
+        "cacheRead": 12096,
+        "cacheWrite": 0,
+        "reasoning": 91,
+        "totalTokens": 25017,
+        "cost": {
+          "input": 0.0135534,
+          "output": 0.014256000000000001,
+          "cacheRead": 0.00314496,
+          "cacheWrite": 0,
+          "total": 0.03095436
+        }
+      }
+    },
+    {
+      "id": "70545e02-a506-46b8-a607-8f62e9b082ed",
+      "status": "reported",
+      "stopReason": "toolUse",
+      "usage": {
+        "input": 3546,
+        "output": 451,
+        "cacheRead": 21760,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 25757,
+        "cost": {
+          "input": 0.0049644,
+          "output": 0.0019844000000000003,
+          "cacheRead": 0.0056576,
+          "cacheWrite": 0,
+          "total": 0.0126064
+        }
+      }
+    },
+    {
+      "id": "5b6ad4e7-fb8d-45d9-871a-61c5b2d5828e",
+      "status": "reported",
+      "stopReason": "aborted",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 0,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      }
+    }
+  ],
+  "notice": "Task output was durably submitted; native session termination is recorded separately and is not upgraded to success"
+}

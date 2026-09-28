@@ -263,7 +263,7 @@ export class TeamService {
                 claim.evidenceIds.forEach(id => this.evidence.verify(pid, id));
             }
             validateDeliverables(task, result, id => this.evidence.read(actor, id));
-            if (task.reviewOf || task.reviewId)
+            if (task.role === 'reviewer' || task.reviewOf || task.reviewId)
                 ensure(!!result.verdict, 'REVIEW_VERDICT_REQUIRED', '审查任务必须给出明确意见', 400);
             if (task.reviewId && result.outcome === 'completed') {
                 const review = this.c.store.get('development-review', task.reviewId, pid);

@@ -1,0 +1,88 @@
+{
+  "kind": "fixed-paper-review-input",
+  "writer": {
+    "taskId": "9696cdeb-dd42-48a2-9ee7-144aae48200b",
+    "attemptId": "bdd21409-e7a7-45f8-9148-d186708bd8bb",
+    "sessionId": "2bdec317-22fe-475d-9d48-137951e64174",
+    "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+    "inputDigest": "acaac56c51dffce91cf168336ba830e9f7fb21cdbc98f130ec3ca992ffd9d300",
+    "resultDigest": "6fe63dd9d6124cbe5d2edb125c423cfad1f28497d5d573a66acd2a13f0c0a930",
+    "taskExecution": "output_submitted",
+    "taskAcceptance": "accepted",
+    "nativeSessionState": "failed"
+  },
+  "manuscript": {
+    "revisionId": "4d04072b-ba5e-4890-b005-02c24df684de",
+    "sourceDigest": "10129e7a8236cee106623d3ced3492a10797b929d0589058c7b5f85ca194bf2e",
+    "files": [
+      {
+        "path": "main.tex",
+        "artifactId": "80ad6315-aa0c-4fa6-991d-b279bc67451a",
+        "digest": "342c4b0627506756e8949ecef70aeab56032da51fc30afa19c17e7285126fe36",
+        "size": 9498,
+        "mediaType": "text/plain",
+        "provenance": {
+          "kind": "unknown"
+        }
+      },
+      {
+        "path": "predictions.csv",
+        "artifactId": "84411932-b54b-4398-be59-68fbd73386f6",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "size": 3463,
+        "mediaType": "text/csv",
+        "provenance": {
+          "kind": "run",
+          "id": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+          "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+          "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+          "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af"
+        }
+      }
+    ]
+  },
+  "build": {
+    "jobId": "be4d0f6a-e3a9-4603-9543-39eda7e7cd37",
+    "resultId": "d0d59f0e5f5d6a9a8d3319821f9d0f7ba06046c0b510c30405def847d8e73700",
+    "manifestDigest": "233ee7226d3a08a6b671597a5ac74aa1c122aeb351944fc25be5f232774183d4",
+    "approvalId": "0b7a52bc-1d11-4863-86ac-ff46f4310904",
+    "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+    "pdf": {
+      "artifactId": "9dd71230-2951-4723-8b98-1d6b3a009651",
+      "digest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+      "bytes": 130528,
+      "pages": 3
+    },
+    "hadErrors": false,
+    "converged": true,
+    "passes": 2
+  },
+  "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+  "fixedMainSource": {
+    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+    "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+    "revision": 1,
+    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+    "gitCommit": "61dcde6a882f4852a48fa8930e320babd7d23951",
+    "path": "main.py",
+    "size": 2617,
+    "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+    "mode": "100644",
+    "content": "import csv, json, os, pathlib\n\n\ndef solve_normal_equations(matrix, rhs):\n    \"\"\"Gauss-Jordan with partial pivoting; raises ValueError on singular matrix.\"\"\"\n    n = len(rhs)\n    a = [row[:] for row in matrix]\n    b = list(rhs)\n    for i in range(n):\n        pivot = max(range(i, n), key=lambda k: abs(a[k][i]))\n        if abs(a[pivot][i]) < 1e-12:\n            raise ValueError(\"singular normal-equation matrix\")\n        a[i], a[pivot] = a[pivot], a[i]\n        b[i], b[pivot] = b[pivot], b[i]\n        v = a[i][i]\n        a[i] = [x / v for x in a[i]]\n        b[i] /= v\n        for k in range(n):\n            if k == i:\n                continue\n            v = a[k][i]\n            a[k] = [x - v * y for x, y in zip(a[k], a[i])]\n            b[k] -= v * b[i]\n    return b\n\n\ndef fit_polynomial(rows, degree):\n    \"\"\"Least-squares polynomial fit. rows: iterable of (x, y).\"\"\"\n    train = list(rows)\n    if degree < 0:\n        raise ValueError(\"degree must be non-negative\")\n    if len(train) < degree + 1:\n        raise ValueError(\"not enough data points\")\n    n = degree + 1\n    a = [[sum(x ** (i + j) for x, y in train) for j in range(n)] for i in range(n)]\n    b = [sum(y * x ** i for x, y in train) for i in range(n)]\n    return solve_normal_equations(a, b)\n\n\ndef predict(coeffs, x):\n    return sum(v * x ** i for i, v in enumerate(coeffs))\n\n\ndef mse(coeffs, rows):\n    if not rows:\n        raise ValueError(\"no data\")\n    return sum((predict(coeffs, x) - y) ** 2 for x, y in rows) / len(rows)\n\n\ndef main():\n    cfg = json.loads(pathlib.Path('config.json').read_text())\n    degree = cfg['polynomialDegree']\n    with open('data.csv') as f:\n        data = [(float(r['x']), float(r['y'])) for r in csv.DictReader(f)]\n    train, test = data[:180], data[180:]\n    coeffs = fit_polynomial(train, degree)\n    mean = sum(y for _, y in test) / len(test)\n    metrics = {\n        'mse': mse(coeffs, test),\n        'train_mse': mse(coeffs, train),\n        'r2': 1 - sum((predict(coeffs, x) - y) ** 2 for x, y in test)\n                  / sum((y - mean) ** 2 for _, y in test),\n    }\n    out = pathlib.Path(os.environ['PI_OUTPUT_DIR'])\n    out.mkdir(exist_ok=True)\n    (out / 'metrics.json').write_text(json.dumps(metrics))\n    (out / 'model.json').write_text(json.dumps({'degree': degree, 'coefficients': coeffs}))\n    with (out / 'predictions.csv').open('w', newline='') as f:\n        w = csv.writer(f)\n        w.writerow(['x', 'actual', 'predicted'])\n        w.writerows((x, y, predict(coeffs, x)) for x, y in test)\n    print(json.dumps({'degree': degree, 'metrics': metrics}), flush=True)\n\n\nif __name__ == '__main__':\n    main()\n",
+    "cursor": 0,
+    "end": 2617,
+    "complete": true
+  },
+  "visualCheck": {
+    "by": "Primary agent inspection of fixed PNG previews, not Pi reviewer image access",
+    "pdfDigest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+    "pages": 3,
+    "observations": [
+      "All three page images inspected; no physical page clipping observed in the revision",
+      "Long source digest now breaks across lines; source-file list is split into separate items",
+      "Final compiler log still reports Overfull hbox widths about 5.23, 33.50, 28.57 and 10.44 pt; these warnings have not been erased"
+    ],
+    "note": "Text and numbers must be independently checked; no verdict is predetermined"
+  },
+  "scope": "Review wording, equations, numeric consistency and final compiler diagnostics. Do not claim you viewed the PDF page images."
+}

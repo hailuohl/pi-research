@@ -510,6 +510,10 @@ export class Inspector extends React.Component {
                     ['failed', 'cancelled', 'blocked'].includes(t.execution) ? React.createElement("button", { className: "text-button", onClick: () => perform(() => api(`/tasks/${t.id}/retry`, {})) }, "\u65B0\u5C1D\u8BD5\u91CD\u8BD5") : null,
                     t.result ? React.createElement("details", null,
                         React.createElement("summary", null, "\u7ED3\u679C\u4E0E\u9650\u5236"),
+                        t.role === 'reviewer' ? React.createElement("p", { className: "small", role: "status" },
+                            "\u5BA1\u67E5\u610F\u89C1\uFF1A",
+                            t.result.verdict === 'accept' ? '接受' : t.result.verdict === 'reject' ? '拒绝' : t.result.verdict === 'disputed' ? '存在争议' : '未提供；不能视为通过',
+                            "\uFF08\u72EC\u7ACB\u4E8E\u4EFB\u52A1\u9A8C\u6536\u72B6\u6001\uFF09") : null,
                         React.createElement("p", { className: "small prose-text" }, t.result.summary)) : null,
                     t.execution === 'output_submitted' && ['pending', 'rejected', 'disputed'].includes(t.acceptance) ? React.createElement("button", { className: "text-button", onClick: () => {
                             const reason = prompt('人工审查依据（将保留记录）');

@@ -1,0 +1,128 @@
+{
+  "revisionId": "625cdab4-6426-4cc8-bcb5-8c8e186f6285",
+  "jobId": "57aaf1d8-0cd2-449c-910c-eaef773dec70",
+  "resultId": "c41789f4d99e41c8d769fc3588da2e7d212a4f4cf41522d227214ed13cc2caeb",
+  "sourceDigest": "bd7218c070765fc029ffef2be4a23c86301f5eb8765547554d4e5bb20b688e55",
+  "writerArtifactId": "9415f622-444f-44aa-9b7e-ec8adbc4f9aa",
+  "writerDigest": "45e60b5223eba719f50d0d099769b89bfb63d3cdae4f405ddf6c4495dd6d37e9",
+  "state": "succeeded",
+  "integrity": "complete",
+  "passes": 2,
+  "hadErrors": false,
+  "converged": true,
+  "pdf": {
+    "artifactId": "1fb338e0-b326-4215-bb4c-2d61fc6ca10a",
+    "digest": "aef6bf099a885c890fc4826bf290b9ccf146c0020021d6b95226a6e739fbb57d",
+    "bytes": 121953,
+    "pages": 3
+  },
+  "diagnostics": [],
+  "sourceValidity": "current",
+  "revision": {
+    "manifestArtifactId": "e82afd28-22c7-4f83-848e-71e851fd30df",
+    "manifestArtifactDigest": "312611b7744aa4240a0b996ea94c37cdbf2ff43547d5188469fc62093be86219",
+    "title": "固定二次回归技术报告·真实 Pi 草稿",
+    "engine": "xelatex",
+    "mainFile": "main.tex",
+    "bibliography": "none",
+    "sourceDigest": "bd7218c070765fc029ffef2be4a23c86301f5eb8765547554d4e5bb20b688e55",
+    "files": [
+      {
+        "path": "main.tex",
+        "artifactId": "9415f622-444f-44aa-9b7e-ec8adbc4f9aa",
+        "digest": "45e60b5223eba719f50d0d099769b89bfb63d3cdae4f405ddf6c4495dd6d37e9",
+        "size": 8031,
+        "mediaType": "text/plain",
+        "provenance": {
+          "kind": "unknown"
+        }
+      },
+      {
+        "path": "predictions.csv",
+        "artifactId": "84411932-b54b-4398-be59-68fbd73386f6",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "size": 3463,
+        "mediaType": "text/csv",
+        "provenance": {
+          "kind": "run",
+          "id": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+          "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+          "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+          "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af"
+        }
+      }
+    ],
+    "id": "625cdab4-6426-4cc8-bcb5-8c8e186f6285",
+    "kind": "manuscript-revision",
+    "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+    "version": 1,
+    "createdAt": "2026-09-28T19:13:36.271Z",
+    "updatedAt": "2026-09-28T19:13:36.271Z"
+  },
+  "result": {
+    "formatVersion": 1,
+    "profileId": "latex-document-v1",
+    "sourceDigest": "bd7218c070765fc029ffef2be4a23c86301f5eb8765547554d4e5bb20b688e55",
+    "engine": "xelatex",
+    "bibliography": "none",
+    "engineVersion": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)",
+    "status": "succeeded",
+    "hadErrors": false,
+    "converged": true,
+    "passes": 2,
+    "diagnostics": [],
+    "pdf": {
+      "artifactId": "1fb338e0-b326-4215-bb4c-2d61fc6ca10a",
+      "digest": "aef6bf099a885c890fc4826bf290b9ccf146c0020021d6b95226a6e739fbb57d",
+      "bytes": 121953,
+      "pages": 3
+    },
+    "previews": [
+      {
+        "artifactId": "2516f551-2895-4bca-8f6d-dbbd55180e26",
+        "digest": "44a1b04b6ed8fd8ce85aee62b7a9569cde845df13bcfc6e525082b4f298604aa",
+        "bytes": 397298,
+        "pageNumber": 1,
+        "width": 1132,
+        "height": 1600
+      },
+      {
+        "artifactId": "b1cab6d1-bd6e-41d1-b550-80af53216928",
+        "digest": "108a62bd344797e4598318613b44deb0997d774acb214bde023218942c1eb170",
+        "bytes": 375655,
+        "pageNumber": 2,
+        "width": 1132,
+        "height": 1600
+      },
+      {
+        "artifactId": "0b76fb39-5c78-4b8a-95ad-01d67ec9ad54",
+        "digest": "3479fb390f554852c58fa803fc4173cae538fd0f83b3df3f86fe9f9a597e045b",
+        "bytes": 167950,
+        "pageNumber": 3,
+        "width": 1132,
+        "height": 1600
+      }
+    ],
+    "logs": [
+      {
+        "artifactId": "058c0e44-3f53-44db-a5ae-ae8da0b0b91f",
+        "digest": "46e380840a75144141470628c02f45a68811017120c04887d1a49bdb8551a13c",
+        "bytes": 11061
+      }
+    ],
+    "revisionId": "625cdab4-6426-4cc8-bcb5-8c8e186f6285",
+    "jobId": "57aaf1d8-0cd2-449c-910c-eaef773dec70",
+    "manifestDigest": "2fd3dd573e3372162f80f4a3060f673052097eadac7ef7ddceb3d18094ad4c42",
+    "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+    "imageId": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+    "manifestArtifactId": "f7a4c587-96c7-42d8-99fe-5fdb40ba4821",
+    "manifestArtifactDigest": "40d4157f4ba08f9cc710a9eb72115df17c6f437e36b6b042122abb4b3ee9659e",
+    "id": "c41789f4d99e41c8d769fc3588da2e7d212a4f4cf41522d227214ed13cc2caeb",
+    "kind": "publication-build-result",
+    "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+    "version": 1,
+    "createdAt": "2026-09-28T19:18:00.822Z",
+    "updatedAt": "2026-09-28T19:18:00.822Z",
+    "sourceValidity": "current"
+  }
+}

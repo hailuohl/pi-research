@@ -34,13 +34,15 @@ node dist/apps/server/index.js
 
 同页新增 **固定文稿与隔离构建**：从 pdfLaTeX/XeLaTeX/LuaLaTeX 基础模板或文件创建不可变修订，绑定既有图形产物，单独批准构建后查看诊断、源文件行号、PDF 页图与下载。已知图形保留 Run/Sandbox 来源，未知来源不补造；编译失败或不完整不会显示可用 PDF，来源失效后保留历史结果并标明状态。先在本机显式执行 `node scripts/setup-document-build.mjs desktop-linux`，再在页面填入生成的固定镜像配置；完整步骤和资源限制见[编译器说明](scripts/document-build/README.md)。运行时不联网装包；三引擎与 BibTeX/Biber 已实测，中文推荐本批验过的 XeLaTeX 设置，LuaLaTeX 大型中文字体在 768 MiB 预算下失败。每份文稿最多 64 文件、合计 16 MiB；单文本 2 MiB、单图/PDF 8 MiB，只接受受限相对文件名。编译通过不代表科学审查或排版检查通过，见[文稿验收与实际 PDF](docs/acceptance/flow-publication/RESULTS.zh-CN.md)。
 
+文稿主文件也可直接选择已归档的 TeX 产物：页面核对并保留原 artifactId 与摘要，提供只读预览，冻结修订时继续绑定该原件。Reviewer 必须提交明确意见；任务结果“已验收”与审查 verdict 分开显示。真实 Pi 已完成核心写作、固定 TeX、独立批准编译、独立审查及报告/成果包回查，见[真实论文写作验收](docs/acceptance/flow-paper-writing/RESULTS.zh-CN.md)。该批四个任务结果均已提交并验收，但四个原生 Pi 会话保留 failed／模型请求中止记录，不应视为会话成功。
+
 **资源与调度** 页可配置共享作业数、CPU/内存预算和排队上限，查看服务端计算的占用、可用额度与等待原因。正式 Run、开发测试、文档解析和文稿构建共享持久预留；共享同一 SQLite 的控制服务不能各自重复分配额度。Docker context 按真实引擎归并，首次使用或切换引擎可显式“核对 Docker 目标”；不重绑旧作业。未知作业继续占位，终态释放。Pi Worker 另设全局上限，同时服从项目/团队上限，任务提交后等待进程实际退出才释放；Worker 数量不等于模型 HTTP 并发。默认正式/开发各 1 槽、解析/文稿各固定 1 槽，共享计算总槽 2、Worker 2；CPU/内存/排队预算默认未设置，不代表硬件空闲。详见[调度验收](docs/acceptance/flow-scheduler/RESULTS.zh-CN.md)。
 
 长任务日志按 **64 KiB 有界窗口**回查，字节游标支持大日志和跨页中文/emoji；文件身份变化时显式重新读取。开发日志仅在展开时读取。工作台用带鉴权的 SSE 唤醒、按项目事件补拉和 20 秒权威状态兜底恢复连接；刷新及切会话从一致快照恢复当前输出，不重放旧回答或自动重试作业。截断/省略明确标示，完整历史分页仍在后续范围。详见[日志与断线恢复验收](docs/acceptance/flow-events/RESULTS.zh-CN.md)。
 
 **文献任务与原文** 页支持持久检索/获取、32 MiB 内原始 PDF/文本导入、不可变 DocumentVersion、原始响应与派生摘要分离，以及固定解析器的单独批准。PDF 在隔离 Docker 中生成页图/文本，文档作业共享计算预算；证据按固定版本、物理页和 UTF-16 区间回查，刷新后保留位置。解析镜像需显式运行[setup 指引](scripts/pdf-parser/README.md)后配置，不自动安装或开启来源。PubMed 本机网络、其他原件来源实网、完整表图/OCR、跨源分页和显式文档语料授权仍有未完成项。见[文献与文档验收](docs/acceptance/flow-documents/RESULTS.zh-CN.md)。
 
-**技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。内置发行可在原生选择器中显式升级或回滚，修改自定义修订默认保留原内置基线；完整 bundleId 回滚恢复原组合。未配置项目的新绑定默认当前发行，已有会话/TaskAttempt 不随配置变化，重试不自动升级。旧发行的目录/角色/正文/资源按原字节归档，启动前验证全包，未知或损坏版本拒绝加载；原生 SDK `/skill:` 文件展开继续关闭。只对显式选用技能检查实际工具、数据和后端；Docker 需资源页核对 `default` 目标，latex 需固定编译器及对应目标。已启动会话缺少唯一版本依据时保留原生文件并阻塞恢复。新版 paper/reports 指导匹配现有隔离构建和成果包，仍保留用户批准边界。见[内置升级与旧会话验收](docs/acceptance/flow-builtin-skills/RESULTS.zh-CN.md)和[技能图形产物](docs/acceptance/flow-skills/RESULTS.zh-CN.md)；原生 UI 上传提交、完整写作和 diagram 能力仍待验收。
+**技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。内置发行可在原生选择器中显式升级或回滚，修改自定义修订默认保留原内置基线；完整 bundleId 回滚恢复原组合。未配置项目的新绑定默认当前发行，已有会话/TaskAttempt 不随配置变化，重试不自动升级。旧发行的目录/角色/正文/资源按原字节归档，启动前验证全包，未知或损坏版本拒绝加载；原生 SDK `/skill:` 文件展开继续关闭。只对显式选用技能检查实际工具、数据和后端；Docker 需资源页核对 `default` 目标，latex 需固定编译器及对应目标。已启动会话缺少唯一版本依据时保留原生文件并阻塞恢复。新版 paper/reports 指导匹配现有隔离构建和成果包，仍保留用户批准边界。见[内置升级与旧会话验收](docs/acceptance/flow-builtin-skills/RESULTS.zh-CN.md)和[技能图形产物](docs/acceptance/flow-skills/RESULTS.zh-CN.md)；核心论文写作已验收，论文审查机器绑定、原生会话终态说明、原生 UI 上传提交和 diagram 等仍在后续计划中。
 
 ## 读取技能
 
@@ -85,4 +87,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker、首条浏览器科研闭环、四源文献检索/读取、arXiv 指定版本 PDF 及固定文稿隔离编译已实测；PubMed 本机网络、其他原文来源、模型供应商/GPU/远程环境仍需各自验收。远程计算、Git 发布、Overleaf、完整论文写作与实例申请保留在后续计划中。
+各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker、首条浏览器科研闭环、四源文献检索/读取、arXiv 指定版本 PDF、固定文稿隔离编译及核心论文写作与审查已实测；PubMed 本机网络、其他原文来源、模型供应商/GPU/远程环境仍需各自验收。远程计算、Git 发布、Overleaf、论文审查机器绑定、diagram 与实例申请保留在后续计划中，完整实施计划尚未完成。

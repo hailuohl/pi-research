@@ -4,4 +4,8 @@
 *.pdf binary
 docs/acceptance/flow-implementation/run-predictions.csv -text whitespace=cr-at-eol
 docs/acceptance/flow-report/*.tar.gz binary
+docs/acceptance/flow-paper-writing/*/predictions.csv -text whitespace=cr-at-eol
+# Preserve the compiler's exact diagnostic bytes, including trailing spaces.
+docs/acceptance/flow-paper-writing/*/build-*.txt -text -whitespace
+docs/acceptance/flow-paper-writing/*.tar.gz binary
 skills/releases/*/blobs/* -text

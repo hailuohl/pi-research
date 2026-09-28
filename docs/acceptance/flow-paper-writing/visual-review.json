@@ -1,0 +1,26 @@
+{
+  "reviewer": "Primary Codex agent inspecting actual fixed PNG page previews",
+  "firstDraft": {
+    "pdfDigest": "aef6bf099a885c890fc4826bf290b9ccf146c0020021d6b95226a6e739fbb57d",
+    "pagesViewed": [1, 2, 3],
+    "blockingPresentationIssues": ["Long source digest on page 1 extends beyond the text boundary", "Page 3 source-file list clips at the right page edge"],
+    "result": "Preserved as first draft; not treated as ready merely because compilation succeeded"
+  },
+  "revisedDraft": {
+    "pdfDigest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+    "pagesViewed": [1, 2, 3],
+    "physicalPageClippingObserved": false,
+    "readableFontsEquationsAndTable": true,
+    "sourceDigestNowBreaksAcrossLines": true,
+    "sourceFileListUsesSeparateItems": true,
+    "remainingOverfullHboxWidthsPt": [5.23077, 33.49619, 28.5745, 10.43744],
+    "result": "Readable technical acceptance draft, with known nonblocking typesetting warnings retained"
+  },
+  "additionalPrimaryFinding": {
+    "location": "Revised TeX reproducibility source-file list",
+    "issue": "The text says abbreviated hashes retain eight characters at each end, but the displayed suffixes contain three or four characters and one prefix contains nine",
+    "impact": "The full machine-bound hashes remain correct in the original Run and package manifest; the prose abbreviation-length description needs later correction",
+    "status": "Known nonblocking manuscript wording issue; not represented as a finding caught by the Pi reviewer"
+  },
+  "scope": "No new numerical experiment or scientific-validity judgment was performed"
+}

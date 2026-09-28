@@ -226,7 +226,7 @@ export class TeamService {
                 claim.evidenceIds.forEach(id => this.evidence.verify(pid, id));
             }
             validateDeliverables(task, result, id => this.evidence.read(actor, id));
-            if (task.reviewOf||task.reviewId)
+            if (task.role==='reviewer'||task.reviewOf||task.reviewId)
                 ensure(!!result.verdict, 'REVIEW_VERDICT_REQUIRED', '审查任务必须给出明确意见', 400);
             if(task.reviewId&&result.outcome==='completed'){const review=this.c.store.get<DevelopmentReview>('development-review',task.reviewId,pid);ensure(review.requiredEvidenceIds.every(id=>result.evidenceIds.includes(id)),'EVIDENCE_REQUIRED','开发审查必须引用全部必要输入证据');}
             const record = this.c.store.create('task-result', pid, { taskId: task.id, attemptId: attempt.id, planVersion: task.planVersion, directiveVersion: task.directiveVersion, inputDigest: attempt.inputDigest, digest: digest(result), result });

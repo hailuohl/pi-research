@@ -2,7 +2,9 @@ import { api, artifactBlob, downloadArtifact } from './api.js';
 import { verifiedPageImage } from './literature-view.js';
 import { short, label } from './models.js';
 import { Badge } from './ui.js';
-export function publicationSourcePath(path) { return !!path && path.length <= 240 && !/^[./\\]|[\\:\x00-\x1f]/.test(path) && path.split('/').every(part => part !== '' && part !== '.' && part !== '..') && /\.(tex|bib|sty|cls|bst|txt|csv)$/i.test(path); }
+function publicationPath(path) { return !!path && path.length <= 240 && path.split('/').every(part => /^[A-Za-z0-9_][A-Za-z0-9_. -]*$/.test(part) && !/[. ]$/.test(part) && !/^AGENTS(?:\.|$)/i.test(part) && !/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part)); }
+export function publicationSourcePath(path) { return publicationPath(path) && /\.(tex|bib|sty|cls|bst|txt|csv)$/i.test(path); }
+function publicationPathAvailable(path, files) { const target = path.toLowerCase(); return publicationPath(path) && !files.some(f => { const existing = f.path.toLowerCase(); return existing === target || existing.startsWith(target + '/') || target.startsWith(existing + '/'); }); }
 export function publicationLineRange(content, line) { if (!Number.isSafeInteger(line) || line < 1)
     return null; const lines = content.split('\n'); if (line > lines.length)
     return null; const start = lines.slice(0, line - 1).reduce((sum, value) => sum + value.length + 1, 0); return { start, end: start + lines[line - 1].length }; }
@@ -176,7 +178,7 @@ export class PublicationView extends React.Component {
             React.createElement("details", null,
                 React.createElement("summary", null, "\u56FA\u5B9A\u7F16\u8BD1\u73AF\u5883\u914D\u7F6E"),
                 React.createElement("p", null, s.status?.configured ? '固定编译镜像已配置，每个构建另行批准。' : '编译环境未配置；需在宿主准备固定镜像。页面不会下载或安装依赖。'),
-                s.status?.configuration ? React.createElement("code", { className: "digest" }, s.status.configuration.imageDigest) : null,
+                s.status?.configuration ? React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } }, s.status.configuration.imageDigest) : null,
                 React.createElement("form", { onSubmit: (e) => { e.preventDefault(); void this.run(async () => { const status = await this.call('publication_configure', { expectedVersion: s.status.version, dockerContext: s.context, imageDigest: s.image.trim() }); if (this.mounted)
                         this.setState({ status }); }); } },
                     React.createElement("label", null,
@@ -199,7 +201,7 @@ export class PublicationView extends React.Component {
                         row.engine)))),
             s.nextRevision !== null ? React.createElement("button", { className: "text-button", onClick: () => void this.run(() => this.moreRevisions()) }, "\u8BFB\u53D6\u66F4\u591A\u5386\u53F2\u4FEE\u8BA2") : null,
             r ? React.createElement("div", null,
-                React.createElement("code", { className: "digest" },
+                React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                     "\u6587\u7A3F\u6E90\u7801 SHA-256 ",
                     r.sourceDigest),
                 React.createElement("p", null,
@@ -210,14 +212,20 @@ export class PublicationView extends React.Component {
                     r.bibliography),
                 React.createElement("button", { className: "secondary", onClick: () => this.props.perform(() => downloadArtifact(r.manifestArtifactId, 'manuscript-manifest.json')) }, "\u4E0B\u8F7D\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355"),
                 React.createElement("div", { className: "actions wrap" },
-                    React.createElement("button", { className: "secondary", disabled: s.busy, onClick: () => void this.editRevision() }, "\u590D\u5236\u6B64\u4FEE\u8BA2\u5230\u65B0\u8349\u7A3F"),
+                    React.createElement("button", { className: "secondary", disabled: s.busy, onClick: () => void this.editRevision() }, "\u590D\u5236\u6587\u672C\u5230\u53EF\u7F16\u8F91\u65B0\u8349\u7A3F\uFF08\u91CD\u65B0\u5F52\u6863\u6587\u672C\uFF09"),
                     React.createElement("button", { className: "primary", disabled: s.busy || !s.status?.configured, onClick: () => void this.run(async () => { const selection = this.selectionEpoch, job = await this.call('publication_prepare', { revisionId: r.id }); if (this.mounted && selection === this.selectionEpoch)
                             await this.openJob(job.id); }) }, "\u51C6\u5907\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA")),
+                React.createElement("p", { className: "small muted" }, "\u590D\u5236\u6587\u672C\u4F1A\u8F6C\u6362\u4E3A\u53EF\u7F16\u8F91\u5185\u5BB9\uFF0C\u518D\u51BB\u7ED3\u65F6\u91CD\u65B0\u5F52\u6863\uFF1B\u539F\u6587\u672C\u4EA7\u7269\u7ED1\u5B9A\u4E0D\u6CBF\u7528\uFF0C\u65E7\u4FEE\u8BA2\u4E0E\u539F\u4EA7\u7269\u4FDD\u7559\u3002"),
                 React.createElement("details", null,
                     React.createElement("summary", null, "\u56FA\u5B9A\u6587\u4EF6\u4E0E\u5DF2\u77E5\u6765\u6E90"),
                     r.files.map(f => React.createElement("div", { className: "inspector-section", key: f.path },
                         React.createElement("strong", null, f.path),
-                        React.createElement("code", { className: "digest" }, f.digest),
+                        React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                            "\u4EA7\u7269 ID ",
+                            f.artifactId),
+                        React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                            "SHA-256 ",
+                            f.digest),
                         React.createElement("p", { className: "small muted" },
                             f.provenance.kind,
                             " \u00B7 ",
@@ -260,27 +268,27 @@ export class PublicationView extends React.Component {
                         j.mainFile,
                         " \u00B7 \u53C2\u8003\u6587\u732E ",
                         j.bibliography),
-                    React.createElement("code", { className: "digest" },
+                    React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                         "\u56FA\u5B9A\u6765\u6E90 ",
                         j.sourceDigest),
-                    React.createElement("code", { className: "digest" },
+                    React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                         "\u6784\u5EFA\u6E05\u5355 ",
                         j.manifestDigest),
-                    React.createElement("code", { className: "digest" },
+                    React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                         "\u955C\u50CF ",
                         j.imageDigest),
-                    React.createElement("code", { className: "digest" },
+                    React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                         "\u7F16\u8BD1\u914D\u7F6E ",
                         j.profileDigest),
                     React.createElement("details", null,
                         React.createElement("summary", null, "\u56FA\u5B9A\u6784\u5EFA\u811A\u672C\u4E0E\u4F9D\u8D56"),
-                        React.createElement("code", { className: "digest" },
+                        React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                             "\u811A\u672C ",
                             j.scriptDigest),
-                        React.createElement("code", { className: "digest" },
+                        React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                             "\u4F9D\u8D56\u9501 ",
                             j.lockDigest),
-                        React.createElement("code", { className: "digest" },
+                        React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
                             "Dockerfile ",
                             j.dockerfileDigest)),
                     React.createElement("p", { className: "small muted" },
@@ -330,23 +338,64 @@ export function publicationBase64(content) { const bytes = new TextEncoder().enc
 class ManuscriptEditor extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { title: '研究文稿', templateId: '', engine: 'pdflatex', mainFile: 'main.tex', bibliography: 'none', files: [], assets: [], selected: '', newPath: 'references.bib', assetId: '', assetPath: 'figure.png', error: '' };
+        this.state = { title: '研究文稿', templateId: '', engine: 'pdflatex', mainFile: 'main.tex', bibliography: 'none', files: [], assets: [], selected: '', newPath: 'references.bib', assetId: '', assetPath: 'main.tex', error: '', checking: false, preview: '', previewComplete: false };
+        this.epoch = 0;
+        this.mounted = true;
     }
     componentDidMount() { if (this.props.seed)
         this.setState({ ...this.props.seed, templateId: this.props.seed.templateId ?? '', selected: this.props.seed.mainFile }); }
-    template(id) { const t = this.props.templates.find(t => t.id === id); if (t)
-        this.setState({ templateId: t.id, engine: t.engine, mainFile: t.mainFile, bibliography: t.bibliography, files: t.files.map(f => ({ ...f })), selected: t.mainFile, error: '' }); }
-    addFile() { const path = this.state.newPath.trim(); if (!publicationSourcePath(path) || this.state.files.some(f => f.path === path) || this.state.assets.some(f => f.path === path)) {
+    componentWillUnmount() { this.mounted = false; this.epoch++; }
+    changeAsset(patch) { this.epoch++; this.setState({ ...patch, checking: false, preview: '', previewComplete: false, error: '' }); }
+    template(id) { this.changeAsset({}); const t = this.props.templates.find(t => t.id === id); if (!t)
+        return; if (t.files.some(f => !publicationPathAvailable(f.path, this.state.assets))) {
+        this.setState({ error: '模板与固定文件路径冲突；请先移除冲突引用，现有草稿未改变。' });
+        return;
+    } this.setState({ templateId: t.id, engine: t.engine, mainFile: t.mainFile, bibliography: t.bibliography, files: t.files.map(f => ({ ...f })), selected: t.mainFile, error: '' }); }
+    addFile() { const path = this.state.newPath.trim(); if (!publicationSourcePath(path) || !publicationPathAvailable(path, [...this.state.files, ...this.state.assets])) {
         this.setState({ error: '请输入唯一的相对文本文件路径，例如 sections/method.tex。' });
         return;
     } this.setState({ files: [...this.state.files, { path, content: '' }], selected: path, error: '' }); }
-    addAsset() { const s = this.state, path = s.assetPath.trim(); if (!path || /^[./\\]|[\\:\x00-\x1f]/.test(path) || path.split('/').some(p => !p || p === '.' || p === '..') || s.files.some(f => f.path === path) || s.assets.some(f => f.path === path) || !this.props.data.artifacts.some(a => a.id === s.assetId)) {
-        this.setState({ error: '请选择当前项目的产物，并指定唯一的相对目标路径。' });
-        return;
-    } this.setState({ assets: [...s.assets, { path, artifactId: s.assetId }], error: '' }); }
-    render() { const s = this.state, file = s.files.find(f => f.path === s.selected); return React.createElement("section", { className: "surface report-builder" },
+    readArtifact(artifactId) { return api('/operations/artifact_read', { projectId: this.props.data.project.id, input: { artifactId, cursor: 0 } }); }
+    async addAsset() {
+        if (this.state.checking || this.props.busy)
+            return;
+        const { assetId, assetPath } = this.state, path = assetPath.trim(), projectId = this.props.data.project.id, artifact = this.props.data.artifacts.find(a => a.id === assetId && a.projectId === projectId);
+        if (!artifact || !publicationPathAvailable(path, [...this.state.files, ...this.state.assets]) || !publicationSourcePath(path) && !/\.(png|jpe?g|pdf)$/i.test(path)) {
+            this.setState({ error: '请选择当前项目的产物，并指定唯一且受支持的相对目标路径。' });
+            return;
+        }
+        const epoch = ++this.epoch;
+        this.setState({ checking: true, error: '', preview: '', previewComplete: false });
+        try {
+            if (!Number.isSafeInteger(artifact.size) || artifact.size < 0 || artifact.size > (publicationSourcePath(path) ? 2 : 8) * 1024 * 1024)
+                throw Error('产物超过单文件上限：文本 2 MiB，图形 8 MiB。');
+            let preview = '', previewComplete = false;
+            if (publicationSourcePath(path)) {
+                const part = await this.readArtifact(assetId);
+                if (part.artifactId !== assetId || part.digest !== artifact.digest || typeof part.content !== 'string' || part.content.length > 16000 || part.cursor !== part.content.length || typeof part.complete !== 'boolean' || !part.complete && part.cursor !== 16000 || part.content.includes('\0'))
+                    throw Error('固定文本预览的产物、摘要或窗口不匹配。');
+                preview = part.content;
+                previewComplete = part.complete;
+            }
+            if (!this.mounted || epoch !== this.epoch || this.props.data.project.id !== projectId)
+                return;
+            const current = this.props.data.artifacts.find(a => a.id === assetId && a.projectId === projectId);
+            if (!current || current.digest !== artifact.digest || current.size !== artifact.size || !publicationPathAvailable(path, [...this.state.files, ...this.state.assets]))
+                throw Error('产物或目标路径已改变，请重新选择。');
+            this.setState({ assets: [...this.state.assets, { path, artifactId: assetId }], preview, previewComplete, error: '' });
+        }
+        catch (error) {
+            if (this.mounted && epoch === this.epoch)
+                this.setState({ error: String(error) });
+        }
+        finally {
+            if (this.mounted && epoch === this.epoch)
+                this.setState({ checking: false });
+        }
+    }
+    render() { const s = this.state, file = s.files.find(f => f.path === s.selected), artifact = this.props.data.artifacts.find(a => a.id === s.assetId), allFiles = [...s.files, ...s.assets]; return React.createElement("section", { className: "surface report-builder" },
         React.createElement("h2", null, "\u56FA\u5B9A\u6587\u7A3F\u4FEE\u8BA2"),
-        React.createElement("p", { className: "small muted" }, "\u4ECE\u53D7\u7BA1\u6A21\u677F\u5F00\u59CB\u7F16\u8F91\uFF0C\u51BB\u7ED3\u65F6\u521B\u5EFA\u65B0\u4FEE\u8BA2\uFF1B\u65E7\u6E90\u6587\u4EF6\u4E0E PDF \u4FDD\u7559\u3002\u7F16\u8BD1\u901A\u8FC7\u4E0D\u4EE3\u8868\u79D1\u5B66\u5BA1\u67E5\u901A\u8FC7\u3002"),
+        React.createElement("p", { className: "small muted" }, "\u9009\u62E9\u5DF2\u5F52\u6863 TeX \u56FA\u5B9A\u5F15\u7528\uFF0C\u6216\u4ECE\u53D7\u7BA1\u6A21\u677F\u7F16\u8F91\uFF1B\u51BB\u7ED3\u65F6\u521B\u5EFA\u65B0\u4FEE\u8BA2\uFF0C\u65E7\u6E90\u6587\u4EF6\u4E0E PDF \u4FDD\u7559\u3002\u7F16\u8BD1\u901A\u8FC7\u4E0D\u4EE3\u8868\u79D1\u5B66\u5BA1\u67E5\u901A\u8FC7\u3002"),
         React.createElement("label", null,
             "\u57FA\u7840\u6A21\u677F",
             React.createElement("select", { "aria-label": "\u6587\u7A3F\u57FA\u7840\u6A21\u677F", value: s.templateId, onChange: (e) => this.template(e.target.value) },
@@ -364,7 +413,11 @@ class ManuscriptEditor extends React.Component {
                 React.createElement("select", { "aria-label": "\u53C2\u8003\u6587\u732E\u7B56\u7565", value: s.bibliography, onChange: (e) => this.setState({ bibliography: e.target.value }) }, ['none', 'auto', 'bibtex', 'biber'].map(mode => React.createElement("option", { key: mode, value: mode }, mode)))),
             React.createElement("label", null,
                 "\u4E3B TeX \u6587\u4EF6",
-                React.createElement("select", { "aria-label": "\u4E3B TeX \u6587\u4EF6", value: s.mainFile, onChange: (e) => this.setState({ mainFile: e.target.value }) }, s.files.filter(f => f.path.endsWith('.tex')).map(f => React.createElement("option", { key: f.path, value: f.path }, f.path))))),
+                React.createElement("select", { "aria-label": "\u4E3B TeX \u6587\u4EF6", value: s.mainFile, onChange: (e) => this.setState({ mainFile: e.target.value }) },
+                    React.createElement("option", { value: "" }, "\u9009\u62E9\u4E3B\u6587\u4EF6"),
+                    allFiles.filter(f => f.path.endsWith('.tex')).map(f => React.createElement("option", { key: f.path, value: f.path },
+                        f.path,
+                        'artifactId' in f ? ' · 固定产物' : ''))))),
         React.createElement("label", null,
             "\u7F16\u8F91\u8349\u7A3F\u6587\u4EF6",
             React.createElement("select", { "aria-label": "\u7F16\u8F91\u8349\u7A3F\u6587\u4EF6", value: s.selected, onChange: (e) => this.setState({ selected: e.target.value }) }, s.files.map(f => React.createElement("option", { key: f.path, value: f.path }, f.path)))),
@@ -372,35 +425,68 @@ class ManuscriptEditor extends React.Component {
             React.createElement("label", null,
                 file.path,
                 React.createElement("textarea", { "aria-label": "\u6587\u7A3F\u6E90\u6587\u4EF6\u5185\u5BB9", rows: 18, spellCheck: false, value: file.content, onChange: (e) => this.setState({ files: s.files.map(f => f.path === file.path ? { ...f, content: e.target.value } : f) }) })),
-            React.createElement("button", { className: "text-button danger", disabled: file.path === s.mainFile, onClick: () => this.setState({ files: s.files.filter(f => f.path !== file.path), selected: s.mainFile }) }, "\u5220\u9664\u5F53\u524D\u8349\u7A3F\u6587\u4EF6")) : React.createElement("p", { className: "inline-empty" }, "\u9009\u62E9\u6A21\u677F\u540E\u7F16\u8F91\u7EAF\u6587\u672C\u6E90\u7801\u3002"),
+            React.createElement("button", { className: "text-button danger", disabled: file.path === s.mainFile, onClick: () => this.setState({ files: s.files.filter(f => f.path !== file.path), selected: s.mainFile }) }, "\u5220\u9664\u5F53\u524D\u8349\u7A3F\u6587\u4EF6")) : React.createElement("p", { className: "inline-empty" }, "\u5DF2\u5F52\u6863\u6E90\u7801\u4FDD\u6301\u53EA\u8BFB\u5F15\u7528\uFF1B\u9700\u8981\u7F16\u8F91\u65F6\u53EF\u9009\u6A21\u677F\u6216\u6DFB\u52A0\u65B0\u8349\u7A3F\u6587\u4EF6\u3002"),
         React.createElement("div", { className: "form-columns" },
             React.createElement("label", null,
                 "\u65B0\u589E\u6587\u672C\u6587\u4EF6\u8DEF\u5F84",
                 React.createElement("input", { "aria-label": "\u65B0\u589E\u6587\u672C\u6587\u4EF6\u8DEF\u5F84", value: s.newPath, onChange: (e) => this.setState({ newPath: e.target.value }) })),
             React.createElement("button", { className: "secondary", onClick: () => this.addFile() }, "\u6DFB\u52A0\u8349\u7A3F\u6587\u4EF6")),
-        React.createElement("h3", null, "\u56FA\u5B9A\u56FE\u5F62\u4E0E\u8D44\u4EA7"),
+        React.createElement("h3", null, "\u5DF2\u5F52\u6863\u6E90\u7801\u4E0E\u8D44\u4EA7"),
+        React.createElement("p", { className: "small muted" }, "\u56FA\u5B9A\u6E90\u6587\u4EF6\u4FDD\u6301\u539F\u4EA7\u7269\u7ED1\u5B9A\uFF0C\u4E0D\u8FDB\u5165\u7F16\u8F91\u533A\uFF1B\u52A0\u5165\u4E0E\u51BB\u7ED3\u4E0D\u4F1A\u542F\u52A8\u7F16\u8BD1\u3002"),
         React.createElement("label", null,
             "\u5F53\u524D\u9879\u76EE\u5DF2\u5F52\u6863\u4EA7\u7269",
-            React.createElement("select", { "aria-label": "\u6587\u7A3F\u56FA\u5B9A\u8D44\u4EA7", value: s.assetId, onChange: (e) => this.setState({ assetId: e.target.value }) },
+            React.createElement("select", { "aria-label": "\u6587\u7A3F\u56FA\u5B9A\u8D44\u4EA7", value: s.assetId, onChange: (e) => this.changeAsset({ assetId: e.target.value }) },
                 React.createElement("option", { value: "" }, "\u9009\u62E9\u4EA7\u7269"),
-                this.props.data.artifacts.map(a => React.createElement("option", { key: a.id, value: a.id },
+                this.props.data.artifacts.filter(a => a.projectId === this.props.data.project.id).map(a => React.createElement("option", { key: a.id, value: a.id },
                     a.title,
                     " \u00B7 ",
+                    short(a.id),
+                    " \u00B7 ",
                     short(a.digest))))),
+        artifact ? React.createElement("div", { className: "inspector-section" },
+            React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                "\u4EA7\u7269 ID ",
+                artifact.id),
+            React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                "SHA-256 ",
+                artifact.digest),
+            React.createElement("p", { className: "small muted" },
+                artifact.size,
+                " \u5B57\u8282 \u00B7 ",
+                artifact.mediaType),
+            artifact.origin ? React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                "\u767B\u8BB0 origin\uFF1A",
+                artifact.origin) : null,
+            artifact.taskId ? React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                "\u767B\u8BB0 taskId\uFF1A",
+                artifact.taskId) : null,
+            React.createElement("p", { className: "small muted" }, "\u4EE5\u4E0A\u4E3A\u65E2\u6709\u767B\u8BB0\u4FE1\u606F\uFF0C\u4E0D\u4EE3\u8868\u5DF2\u6838\u9A8C\u6765\u6E90\u6216\u79D1\u5B66\u5BA1\u67E5\u901A\u8FC7\u3002")) : null,
         React.createElement("label", null,
             "\u8D44\u4EA7\u5728\u6587\u7A3F\u4E2D\u7684\u8DEF\u5F84",
-            React.createElement("input", { "aria-label": "\u8D44\u4EA7\u76EE\u6807\u8DEF\u5F84", value: s.assetPath, onChange: (e) => this.setState({ assetPath: e.target.value }) })),
-        React.createElement("button", { className: "secondary", onClick: () => this.addAsset() }, "\u52A0\u5165\u56FA\u5B9A\u8D44\u4EA7"),
+            React.createElement("input", { "aria-label": "\u8D44\u4EA7\u76EE\u6807\u8DEF\u5F84", value: s.assetPath, onChange: (e) => this.changeAsset({ assetPath: e.target.value }) })),
+        React.createElement("button", { className: "secondary", disabled: s.checking || this.props.busy, onClick: () => void this.addAsset() }, publicationSourcePath(s.assetPath.trim()) ? '加入固定源文件' : '加入固定资产'),
+        s.checking ? React.createElement("p", { role: "status" }, "\u6B63\u5728\u6838\u9A8C\u5B8C\u6574\u6587\u672C\u4E0E\u56FA\u5B9A\u4EA7\u7269\u6458\u8981\u2026") : null,
+        s.preview || s.previewComplete ? React.createElement("div", null,
+            React.createElement("label", null,
+                "\u56FA\u5B9A\u6587\u672C\u9884\u89C8\uFF08\u53EA\u8BFB\uFF09",
+                React.createElement("textarea", { "aria-label": "\u56FA\u5B9A\u6587\u672C\u9884\u89C8\uFF08\u53EA\u8BFB\uFF09", readOnly: true, rows: 8, value: s.preview })),
+            React.createElement("p", { className: "small muted" },
+                s.previewComplete ? '预览已完整显示' : '仅显示前 16,000 字符，未将部分预览用作完整草稿',
+                "\uFF1B\u5B8C\u6574\u539F\u4EA7\u7269\u4FDD\u6301\u56FA\u5B9A\u5F15\u7528\u3002")) : null,
         React.createElement("ul", null, s.assets.map(a => React.createElement("li", { key: a.path },
             a.path,
-            " \u00B7 ",
-            short(a.artifactId),
+            React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                "\u4EA7\u7269 ID ",
+                a.artifactId),
+            React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
+                "SHA-256 ",
+                this.props.data.artifacts.find(row => row.id === a.artifactId)?.digest ?? '产物记录不可用'),
             " ",
-            React.createElement("button", { className: "text-button danger", onClick: () => this.setState({ assets: s.assets.filter(f => f.path !== a.path) }) },
+            React.createElement("button", { className: "text-button danger", disabled: a.path === s.mainFile || s.checking, onClick: () => this.setState({ assets: s.assets.filter(f => f.path !== a.path) }) },
                 "\u79FB\u9664 ",
                 a.path)))),
         s.error ? React.createElement("p", { role: "alert", className: "error-text" }, s.error) : null,
-        React.createElement("button", { className: "primary", disabled: this.props.busy || !s.title.trim() || !s.files.some(f => f.path === s.mainFile), onClick: () => this.props.onFreeze({ title: s.title, engine: s.engine, mainFile: s.mainFile, bibliography: s.bibliography, ...(s.templateId ? { templateId: s.templateId } : {}), files: s.files, assets: s.assets }) }, "\u51BB\u7ED3\u4E3A\u65B0\u6587\u7A3F\u4FEE\u8BA2")); }
+        React.createElement("button", { className: "primary", disabled: this.props.busy || s.checking || !s.title.trim() || !s.mainFile.endsWith('.tex') || !allFiles.some(f => f.path === s.mainFile), onClick: () => this.props.onFreeze({ title: s.title, engine: s.engine, mainFile: s.mainFile, bibliography: s.bibliography, ...(s.templateId ? { templateId: s.templateId } : {}), files: s.files, assets: s.assets }) }, "\u51BB\u7ED3\u4E3A\u65B0\u6587\u7A3F\u4FEE\u8BA2")); }
 }
 class PublicationPreview extends React.Component {
     constructor() {
@@ -443,7 +529,7 @@ class PublicationPreview extends React.Component {
             r.passes,
             " \u8F6E \u00B7 ",
             r.engineVersion),
-        React.createElement("code", { className: "digest" },
+        React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } },
             "Manifest ",
             r.manifestDigest),
         React.createElement("div", { className: "actions wrap" },

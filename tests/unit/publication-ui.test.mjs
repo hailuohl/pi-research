@@ -11,10 +11,39 @@ function view(){return sync(new PublicationView({data:{project:{id:'project'},ar
 const flatten=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(flatten).join(' '):typeof node!=='object'?String(node):typeof node.type==='function'&&!node.type.prototype?.render?flatten(node.type(node.props)):flatten(node.props.children);
 function nodes(node,out=[]){if(node==null||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}assert.ok(typeof node.type==='string'||typeof node.type==='function');out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)nodes(node.type(node.props),out);else nodes(node.props.children,out);return out;}
 test('publication paths and source line selection reject traversal and preserve unicode bytes',()=>{
- for(const path of ['../secret.tex','/etc/passwd.tex','https://x/a.tex','a/../b.tex','a\\b.tex','a//b.tex'])assert.equal(publicationSourcePath(path),false,path);
+ for(const path of ['../secret.tex','/etc/passwd.tex','https://x/a.tex','a/../b.tex','a\\b.tex','a//b.tex','AGENTS.tex','nul.tex','sections./a.tex','sections /a.tex'])assert.equal(publicationSourcePath(path),false,path);
  assert.equal(publicationSourcePath('sections/method.tex'),true);assert.equal(publicationSourcePath('references.bst'),true);
  assert.deepEqual(publicationLineRange('首行\n🙂 line\nlast',2),{start:3,end:10});assert.equal(publicationLineRange('line',2),null);assert.equal(publicationLineRange('line',0),null);
  assert.equal(Buffer.from(publicationBase64('中文🙂'),'base64').toString('utf8'),'中文🙂');
+});
+
+function editor(){const v=view(),element=nodes(v.render()).find(n=>n.type?.name==='ManuscriptEditor'),e=sync(new element.type({...element.props,data:{...element.props.data,artifacts:[{id:'writer-tex',projectId:'project',digest,size:32,title:'main.tex',mediaType:'text/plain',origin:'agent:writer',taskId:'writer-task'}]}}));e.state.assetId='writer-tex';return e;}
+const textPart={artifactId:'writer-tex',digest,content:'fixed source',cursor:12,complete:true};
+test('archived TeX is a read-only main file and freezes the original artifact binding without compilation',async()=>{
+ const e=editor(),requests=[];e.readArtifact=async id=>{requests.push(id);return textPart;};await e.addAsset();
+ assert.deepEqual(requests,['writer-tex']);assert.deepEqual(e.state.files,[]);assert.deepEqual(e.state.assets,[{path:'main.tex',artifactId:'writer-tex'}]);assert.equal(e.state.preview,'fixed source');
+ const tree=e.render(),text=flatten(tree),all=nodes(tree);assert.match(text,/writer-tex/);assert.match(text,new RegExp(digest));assert.match(text,/agent:writer/);assert.match(text,/writer-task/);assert.match(text,/既有登记信息/);
+ assert.equal(all.find(n=>n.type==='textarea'&&n.props['aria-label']==='固定文本预览（只读）').props.readOnly,true);
+ assert.equal(all.find(n=>n.type==='button'&&/^移除\s+main.tex$/.test(flatten(n))).props.disabled,true);
+ const freeze=all.find(n=>n.type==='button'&&flatten(n)==='冻结为新文稿修订');assert.equal(freeze.props.disabled,false);
+ const v=view(),calls=[];v.call=async(name,input)=>{calls.push({name,input});return revision;};v.openRevision=async()=>{};e.props.onFreeze=draft=>v.freeze(draft);await freeze.props.onClick();
+ assert.deepEqual(calls.map(c=>c.name),['manuscript_create']);assert.deepEqual(calls[0].input.files,[{path:'main.tex',artifactId:'writer-tex'}]);v.componentWillUnmount();e.componentWillUnmount();
+});
+test('fixed text rejects invalid identity, digest, windows, size, foreign projects and backend validation errors',async()=>{
+ for(const patch of [{artifactId:'other'},{digest:'b'.repeat(64)},{cursor:1},{complete:false},{content:'\0',cursor:1}]){const e=editor();e.readArtifact=async()=>({...textPart,...patch});await e.addAsset();assert.equal(e.state.assets.length,0);assert.match(e.state.error,/不匹配/);}
+ for(const patch of [{size:2*1024*1024+1},{projectId:'other'}]){const e=editor();Object.assign(e.props.data.artifacts[0],patch);let calls=0;e.readArtifact=async()=>{calls++;return textPart;};await e.addAsset();assert.equal(calls,0);assert.equal(e.state.assets.length,0);assert.ok(e.state.error);}
+ for(const message of ['invalid UTF-8','NUL rejected','ARTIFACT_CORRUPTED']){const e=editor();e.readArtifact=async()=>{throw Error(message);};await e.addAsset();assert.equal(e.state.assets.length,0);assert.match(e.state.error,new RegExp(message));assert.equal(e.state.checking,false);}
+ const e=editor();e.readArtifact=async()=>({...textPart,content:'x'.repeat(16000),cursor:16000,complete:false});await e.addAsset();assert.equal(e.state.assets.length,1);assert.match(flatten(e.render()),/仅显示前 16,000 字符/);assert.equal(e.state.files.length,0);
+});
+test('fixed sources and editable files share path conflicts and template conflicts never overwrite',async()=>{
+ for(const path of ['MAIN.tex','main.tex/section.tex','sections']){const e=editor();e.state.files=[{path:path==='sections'?'sections/method.tex':'main.tex',content:'keep'}];e.state.assetPath=path;e.readArtifact=async()=>{throw Error('must not read');};await e.addAsset();assert.equal(e.state.assets.length,0);assert.equal(e.state.files[0].content,'keep');assert.ok(e.state.error);}
+ const e=editor();e.state.assets=[{path:'MAIN.tex',artifactId:'writer-tex'}];e.state.newPath='main.tex';e.addFile();assert.equal(e.state.files.length,0);
+ e.props.templates=[{id:'template',engine:'pdflatex',mainFile:'main.tex',bibliography:'none',files:[{path:'main.tex',content:'replacement'}]}];e.template('template');assert.equal(e.state.templateId,'');assert.equal(e.state.files.length,0);assert.deepEqual(e.state.assets,[{path:'MAIN.tex',artifactId:'writer-tex'}]);assert.match(e.state.error,/现有草稿未改变/);
+});
+test('late artifact reads cannot add after selection, path, template, project, metadata or lifecycle changes',async()=>{
+ for(const change of [e=>e.changeAsset({assetId:'other'}),e=>e.changeAsset({assetPath:'other.tex'}),e=>e.template(''),e=>{e.props.data.project={id:'other'};},e=>{e.props.data.artifacts=[];},e=>e.componentWillUnmount(),e=>{e.state.files=[{path:'MAIN.tex',content:'new'}];}]){
+  const e=editor();let resolve;e.readArtifact=()=>new Promise(r=>{resolve=r;});const pending=e.addAsset();assert.equal(e.state.checking,true);assert.equal(nodes(e.render()).find(n=>n.type==='button'&&flatten(n)==='冻结为新文稿修订').props.disabled,true);change(e);resolve(textPart);await pending;assert.equal(e.state.assets.length,0);
+ }
 });
 test('React16 publication UI preserves separate prepare, approval and submit and safe diagnostics',()=>{
  const v=view();v.state.revision=revision;v.state.job=job;v.state.jobs=[job];v.props.data.approvals=[{id:'approval',status:'pending',version:1}];
