@@ -5,7 +5,7 @@ import { s, validateSchema } from '../../dist/packages/contracts/operations/sche
 import { TOOL_DEFINITIONS } from '../../dist/packages/research-tools/definitions.js';
 
 test('every advertised tool example satisfies its exact input contract', () => {
-    assert.equal(Object.keys(INPUT_SCHEMAS).length, 37);
+    assert.equal(Object.keys(INPUT_SCHEMAS).length, 42);
     assert.deepEqual(Object.keys(INPUT_SCHEMAS).sort(), Object.keys(TOOL_DEFINITIONS).sort());
     for (const [name, definition] of Object.entries(TOOL_DEFINITIONS))
         assert.doesNotThrow(() => validateSchema(INPUT_SCHEMAS[name], definition.example), name);

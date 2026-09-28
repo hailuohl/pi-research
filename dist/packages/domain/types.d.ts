@@ -307,7 +307,8 @@ export interface ChangeProposal {
     digest: string;
     approvalId: string;
     state: 'prepared' | 'applied';
-    testsStatus: 'not_run';
+    testsStatus: 'not_run' | 'passed';
+    testJobId?: string;
     appliedExperimentId?: string;
     sourceValidity?: 'current' | 'stale';
     invalidatedBy?: string;

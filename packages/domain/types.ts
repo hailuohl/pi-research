@@ -284,5 +284,5 @@ export interface ChangeProposal {
     baseExperimentId:string; baseRevision:number; baseSnapshot:SourceSnapshot; contractDigest:string;
     title:string; hypothesis:string;
     changes:Array<{path:string;expectedDigest:string|null;artifactId:string|null;artifactDigest:string|null;taskId?:string;taskResultDigest?:string;sourceAcceptanceId?:string}>;
-    candidateSnapshot:SourceSnapshot; digest:string; approvalId:string; state:'prepared'|'applied'; testsStatus:'not_run'; appliedExperimentId?:string; sourceValidity?:'current'|'stale'; invalidatedBy?:string;
+    candidateSnapshot:SourceSnapshot; digest:string; approvalId:string; state:'prepared'|'applied'; testsStatus:'not_run'|'passed'; testJobId?:string; appliedExperimentId?:string; sourceValidity?:'current'|'stale'; invalidatedBy?:string;
 }

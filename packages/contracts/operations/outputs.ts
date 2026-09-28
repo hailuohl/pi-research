@@ -1,3 +1,4 @@
+import {DEVELOPMENT_OUTPUT_SCHEMAS} from './development-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
 import type { InferSchema, JsonSchema } from './schema.js';
 
@@ -64,8 +65,8 @@ const CORE_OUTPUT_SCHEMAS = {
             taskId: string, taskResultDigest: string, sourceAcceptanceId: string
         }, ['taskId', 'taskResultDigest', 'sourceAcceptanceId'])),
         candidateSnapshot: snapshot, digest: string, approvalId: string, state: enumeration('prepared', 'applied'),
-        testsStatus: { const: 'not_run' }, appliedExperimentId: string, sourceValidity: enumeration('current', 'stale'), invalidatedBy: string
-    }, ['appliedExperimentId', 'sourceValidity', 'invalidatedBy']),
+        testsStatus: enumeration('not_run', 'passed'), testJobId: string, appliedExperimentId: string, sourceValidity: enumeration('current', 'stale'), invalidatedBy: string
+    }, ['testJobId', 'appliedExperimentId', 'sourceValidity', 'invalidatedBy']),
     task_result_submit: row('task-result', {
         taskId: string, attemptId: string, planVersion: integer, directiveVersion: integer,
         inputDigest: string, digest: string, result: taskResult
@@ -109,6 +110,7 @@ const contextTask = object({ id: string, key: string, result: taskResult }, ['re
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    ...DEVELOPMENT_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,

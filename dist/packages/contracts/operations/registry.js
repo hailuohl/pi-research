@@ -136,6 +136,11 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('development_prepare', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: noPrecondition, preconditions: noPrecondition, execute: (c, x) => c.app.development.prepare(c.actor, c.projectId, c.session.id, x) }),
+    make('development_submit', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.development.get(c.actor, c.projectId, x.developmentTaskId); }, preconditions: noPrecondition, execute: (c, x) => c.app.development.submit(c.actor, c.projectId, x.developmentTaskId) }),
+    make('development_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { x.jobId ? c.app.development.inspect(c.actor, c.projectId, x.jobId) : c.app.development.get(c.actor, c.projectId, x.developmentTaskId); }, preconditions: noPrecondition, execute: (c, x) => x.jobId ? c.app.development.inspect(c.actor, c.projectId, x.jobId) : c.app.development.get(c.actor, c.projectId, x.developmentTaskId) }),
+    make('development_logs', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.development.inspect(c.actor, c.projectId, x.jobId); }, preconditions: noPrecondition, execute: (c, x) => c.app.development.logs(c.actor, c.projectId, x.jobId, x.stream ?? 'stdout', x.cursor ?? 0) }),
+    make('development_cancel', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.development.inspect(c.actor, c.projectId, x.jobId); }, preconditions: noPrecondition, execute: (c, x) => c.app.development.cancel(c.actor, c.projectId, x.jobId) }),
     make('experiment_source_list', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.sources.resolve(c.actor, c.projectId, x); if (c.actor.type === 'agent')
             c.app.operations.authorizeAgent(c.actor, 'experiment_source_list'); }, preconditions: noPrecondition, execute: (c, x) => c.app.sources.list(c.actor, c.projectId, x) }),
     make('experiment_source_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => { const { path, cursor, limit, ...selector } = x; c.app.sources.resolve(c.actor, c.projectId, selector); if (c.actor.type === 'agent')

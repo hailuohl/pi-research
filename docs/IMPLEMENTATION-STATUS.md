@@ -5,9 +5,9 @@
 | 关卡 | 当前状态 | 仍需完成 |
 |---|---|---|
 | PR01 | 构建、固定来源、双版回归、真实 SDK 离线契约、无依赖启动已验 | 真实供应商调用与恢复；上游 M0 页面基线仍为空 |
-| PR02 | 33 个旧工具已全部迁入 Registry，并含 PR03 的 4 个新动作；37 套输入/输出契约与生成类型通过本地验证 | 前端全面类型消费随 PR09；真实 Pi 旅程仍待配置验收 |
+| PR02 | 33 个旧工具已全部迁入 Registry，并含 PR03 的 4 个与 PR04 的 5 个新动作；42 套输入/输出契约与生成类型通过本地验证 | 前端全面类型消费随 PR09；真实 Pi 旅程仍待配置验收 |
 | PR03 | 指定版本/CAS、范围读取、文件差异、工作区与团队来源绑定、撤销及回滚检查通过本机测试 | 模型/浏览器真实旅程；跨进程硬崩溃后的文件系统与数据库对账随 PR05/07完善 |
-| PR04 | 待实施 | SandboxJob/DevelopmentTask、受控 Python 测试及隔离/取消/源绑定 |
+| PR04 | SandboxJob/DevelopmentTask、固定容器 Python、隔离/取消/服务关闭/worker 恢复与源码绑定已通过本机真实验收 | 工作台与 Pi 真实旅程；宿主硬配额、自动清理及更广目标环境随后续关卡 |
 | PR05 | 待实施 | 项目 GitWorkspace、租约、不可变历史迁移；当前开发仓库 Git 不等同此产品能力 |
 | PR06 | 通用化待实施；已补队列启动时的来源/批准复核 | RunnerAdapter、非白名单 Docker 任务与恢复；不将现有示例验收算通用运行器 |
 | PR07 | 待实施 | 查询索引、事件恢复、配额调度、有界日志和性能证据 |
@@ -19,6 +19,6 @@
 | PR13 | 待实施 | SSH→Slurm 等真实后端、远程工作台，按目标分别验收 |
 | PR14 | 待实施 | 迁移/备份、显式发布、同步冲突、桌面和团队分发 |
 
-最近证据：[PR02 补齐与 PR03 记录](acceptance/pr03/RESULTS.zh-CN.md)。[PR02 首批](acceptance/pr02/RESULTS.zh-CN.md)和[PR01](acceptance/pr01/RESULTS.zh-CN.md)保留当时结果。真实模型尚未执行属于外部配置待验，不阻塞可独立实现的后续代码；整体目标尚未完成，也未宣称目标环境全部可用。
+最近证据：[PR04 真实 Docker 验收](acceptance/pr04/RESULTS.zh-CN.md)。[PR03](acceptance/pr03/RESULTS.zh-CN.md)、[PR02 首批](acceptance/pr02/RESULTS.zh-CN.md)和[PR01](acceptance/pr01/RESULTS.zh-CN.md)保留当时结果。真实模型尚未执行属于外部配置待验，不阻塞可独立实现的后续代码；整体目标尚未完成，也未宣称目标环境全部可用。
 
-下一步推进 PR04 的受控开发测试，以及 PR05/06 的版本/运行器基础设施。本机 Docker CLI 可用，但 Linux engine 尚未运行；尚未把 Docker 代码或本地数值示例当作通用沙箱验收。
+下一步推进 PR05 的项目 Git 历史、独立工作区和写租约，以及 PR06 的正式 RunnerAdapter。本机 Docker Linux engine 已恢复且实际执行新增 Python 沙箱；开发测试通过不等同正式科学运行器或整体计划通过。

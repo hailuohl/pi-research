@@ -44,6 +44,7 @@ export class AgentHost {
         try {
             this.app.runs.reconcile();
             this.app.runs.launchPending();
+            this.app.execution.launchPending();
             this.app.teams.recover();
             this.app.campaigns.observe();
             this.app.wakeups.reconcile();

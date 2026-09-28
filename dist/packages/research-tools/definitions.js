@@ -1,6 +1,11 @@
 import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
 import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
 const TOOL_METADATA = {
+    development_prepare: { description: '冻结当前私有工作区、argv、固定镜像和资源限制，准备一次独立开发测试批准。不执行宿主 Shell，不创建科学实验；变化后必须重新准备。', example: { command: ['python', '-m', 'unittest', 'discover', '-v'], environmentImageDigest: 'python:3.12-slim@sha256:0000000000000000000000000000000000000000000000000000000000000000', dockerContext: 'default' } },
+    development_submit: { description: '提交用户已批准的精确开发测试，立即返回持久作业标识；未批准或源码变化会拒绝。', example: { developmentTaskId: 'development-task-id' } },
+    development_inspect: { description: '读取开发测试任务或独立沙箱作业的实际状态和归档引用。命令成功不表示科学假说成立。', example: { jobId: 'sandbox-job-id' } },
+    development_logs: { description: '分页读取沙箱 stdout/stderr；cursor 为字节位置，最多64KiB。作业完成以 development_inspect 的状态为准。', example: { jobId: 'sandbox-job-id', stream: 'stderr', cursor: 0 } },
+    development_cancel: { description: '请求取消当前会话的开发测试沙箱；只作用于已核对所有权的容器，不按任意宿主PID杀进程。', example: { jobId: 'sandbox-job-id' } },
     experiment_source_list: { description: '列出指定 experimentId/revision 或已登记 snapshotId 的不可变源码清单和 sourceDigest；不接受宿主路径。旧实验未登记版本时先显式准备空工作区。', example: { experimentId: 'experiment-id', revision: 1 } },
     experiment_source_read: { description: '读取指定 revision/snapshot 的源码范围，返回路径、文件 hash、sourceDigest 和游标。助手只能读已分配来源；项目工作区不等于选定实验。', example: { experimentId: 'experiment-id', revision: 1, path: 'config.json', cursor: 0, limit: 16000 } },
     experiment_source_diff: { description: '比较两个获准固定来源的文件清单，返回新增、修改、删除和前后 hash；分别 read 可获取正文。', example: { from: { experimentId: 'experiment-id', revision: 1 }, to: { experimentId: 'experiment-id', revision: 2 } } },

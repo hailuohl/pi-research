@@ -15,7 +15,7 @@ import {readStableFile} from './stable-file.js';
 export class ChangeProposalService {
     constructor(private app:ResearchApp){}
     get(actor:Actor,id:string){const p=this.app.store.get<ChangeProposal>('change-proposal',id);scope(actor,p.projectId!);return p;}
-    private payload(p:ChangeProposal){const {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot}=p;return {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot};}
+    private payload(p:ChangeProposal){const {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot}=p;return {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot,...(p.testJobId?{testJobId:p.testJobId}:{})};}
     private content(actor:Actor,projectId:string,id:string){
         const a=this.app.store.get<Artifact>('artifact',id,projectId);
         if(actor.type==='agent'){
@@ -36,7 +36,7 @@ export class ChangeProposalService {
         const x=object(value),base=this.app.store.get<Experiment>('experiment',text(x.baseExperimentId,'baseExperimentId',100),projectId);
         ensure(base.lifecycle!=='archived','EXPERIMENT_ARCHIVED','基准实验已归档');
         ensure(base.revision===integer(x.expectedRevision,'expectedRevision',1),'CHANGE_BASE_STALE','基准代码版本已变化');
-        const title=text(x.title,'title',200),hypothesis=text(x.hypothesis,'hypothesis',10000);
+        const title=text(x.title,'title',200),hypothesis=text(x.hypothesis,'hypothesis',10000),testJobId=x.testJobId===undefined?undefined:text(x.testJobId,'testJobId',100);
         ensure(Array.isArray(x.changes)&&x.changes.length>0&&x.changes.length<=50,'CHANGE_INVALID','需要 1–50 个明确的文件变更',400);
         const root=join(this.app.context.dataDir,'snapshots'),baseSnapshot=snapshotDirectory(base.workspace,root);
         const paths=new Set<string>();
@@ -60,9 +60,10 @@ export class ChangeProposalService {
             return this.app.store.transaction(()=>{
                 for(const c of changes) if('sourceAcceptanceId' in c && c.sourceAcceptanceId) assertAcceptanceCurrent(this.app.store,projectId,c.sourceAcceptanceId);
                 ensure(this.app.store.get<Experiment>('experiment',base.id).revision===base.revision,'CHANGE_BASE_STALE','基准版本已变化');
-                const data={baseExperimentId:base.id,baseRevision:base.revision,baseSnapshot,contractDigest:base.contractDigest,title,hypothesis,changes,candidateSnapshot};
+                if(testJobId)this.app.development.assertResultMatches(actor,projectId,testJobId,candidateSnapshot.digest);
+                const data={...(testJobId?{testJobId}:{}),baseExperimentId:base.id,baseRevision:base.revision,baseSnapshot,contractDigest:base.contractDigest,title,hypothesis,changes,candidateSnapshot};
                 const id=randomUUID(),hash=digest(data),a=this.app.approvals.request(projectId,'change-proposal',id,hash,'change.integrate','审阅固定变更后创建新子实验；不执行测试、不自动运行、不修改父实验');
-                const proposal=this.app.store.create<ChangeProposal>('change-proposal',projectId,{...data,digest:hash,approvalId:a.id,state:'prepared',testsStatus:'not_run'},id);
+                const proposal=this.app.store.create<ChangeProposal>('change-proposal',projectId,{...data,digest:hash,approvalId:a.id,state:'prepared',testsStatus:testJobId?'passed':'not_run'},id);
                 this.app.store.event(projectId,'change.prepared',{proposalId:id,baseExperimentId:base.id,candidateDigest:candidateSnapshot.digest});return proposal;
             });
         }finally{rmSync(staging,{recursive:true,force:true});}
@@ -80,6 +81,7 @@ export class ChangeProposalService {
             ensure(base.lifecycle!=='archived' && base.revision===p.baseRevision && base.contractDigest===p.contractDigest && snapshotDirectory(base.workspace,join(this.app.context.dataDir,'snapshots')).digest===p.baseSnapshot.digest,'CHANGE_BASE_STALE','基准已经变化，请基于新版本重新准备和批准');
             for(const c of p.changes)if(c.artifactId){const v=this.content(actor,p.projectId!,c.artifactId);ensure(v.artifact.digest===c.artifactDigest && v.taskResultDigest===c.taskResultDigest && v.sourceAcceptanceId===c.sourceAcceptanceId,'CHANGE_SOURCE_STALE','产物或任务验收已发生变化');}
             verifySnapshot(p.candidateSnapshot.path,p.candidateSnapshot.files);
+            if(p.testJobId)this.app.development.assertResultMatches(actor,p.projectId!,p.testJobId,p.candidateSnapshot.digest);
             const child=this.app.experiments.createApprovedChild(actor,p);
             this.app.store.update<ChangeProposal>('change-proposal',p.id,p.version,{state:'applied',appliedExperimentId:child.id});
             this.app.store.event(p.projectId,'change.applied',{proposalId:p.id,experimentId:child.id});return child;

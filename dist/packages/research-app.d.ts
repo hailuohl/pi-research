@@ -1,3 +1,5 @@
+import { DevelopmentService } from './development/service.js';
+import { ExecutionService } from './execution/service.js';
 import { SourceAccessService } from './workspace/source-access.js';
 import { OperationRegistry } from './contracts/operations/registry.js';
 import { TextEvidenceService } from './text-evidence/service.js';
@@ -19,6 +21,8 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly development: DevelopmentService;
+    readonly execution: ExecutionService;
     readonly sources: SourceAccessService;
     readonly operations: OperationRegistry;
     readonly textEvidence: TextEvidenceService;
