@@ -1,0 +1,20 @@
+{
+  "surface": "Existing in-app browser; native keyboard actions",
+  "realProvider": "zai-coding-cn / glm-5.3",
+  "teamId": "ecf27dcd-6203-4f9a-97a6-f9f325118a82",
+  "taskId": "b46443b4-f8d4-4755-a377-e9df1b041ee0",
+  "approvalAndStartViaUI": true,
+  "taskResultSummaryOpened": true,
+  "completedTaskAndWorkerCapacityVisible": true,
+  "coordinatorHeadingIsNotHelperSessionState": true,
+  "helperIdleIndependentlyVerifiedFromDatabase": true,
+  "cancelSessionId": "e1e62038-3ada-46ba-8e1f-33d9fe1e58d2",
+  "realStreamingOutputObservedBeforeStop": true,
+  "stopAgentViaUI": true,
+  "cancelledUserMessageAndInterruptedSessionVisible": true,
+  "cancellationPersistsAfterReload": true,
+  "completedResultPersistsAfterReload": true,
+  "screenshots": ["completed-desktop.png", "cancelled-desktop.png"],
+  "consoleErrorListCollected": false,
+  "narrowViewportRetested": false
+}

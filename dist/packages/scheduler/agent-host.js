@@ -65,8 +65,12 @@ export class AgentHost {
                     continue;
                 const s = this.app.store.get('session', active.sessionId);
                 const a = active.attemptId ? this.app.store.get('task-attempt', active.attemptId) : null;
-                if (!this.valid(active) || a && a.state !== 'running' || Date.now() - active.started > 300000) {
+                if (!this.valid(active)) {
                     this.abortProcess(active);
+                    continue;
+                }
+                if (Date.now() - active.started > 300000) {
+                    this.abortProcess(active, 'Agent 超过五分钟执行上限');
                     continue;
                 }
                 if (Date.now() - active.lastHeartbeat > 3000) {
@@ -81,7 +85,7 @@ export class AgentHost {
                         active.sent.add(m.id);
                         active.child.send({ type: m.mode, content: m.content, messageId: m.id });
                     }
-                if (s.taskId)
+                if (s.taskId && a?.state === 'running')
                     for (const d of this.app.store.list('directive', s.projectId).filter(d => d.kind !== 'revise' && d.taskIds.includes(s.taskId) && !d.deliveredSessionIds.includes(s.id))) {
                         if (active.sent.has(d.id))
                             continue;
@@ -314,7 +318,7 @@ export class AgentHost {
             return;
         if (m?.type === 'tool') {
             try {
-                ensure(this.valid(a), 'LEASE_EXPIRED', '会话已中止');
+                ensure(!a.stopError && this.valid(a), 'LEASE_EXPIRED', '会话已中止');
                 const result = await this.tools.execute(a.actor, String(m.tool), m.input, String(m.toolCallId));
                 if (a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, result });
@@ -329,7 +333,7 @@ export class AgentHost {
         if (m?.type === 'done') {
             if (m.sessionFile && this.valid(a))
                 this.savePath(a, String(m.sessionFile), sessionDir);
-            this.finish(a, m.aborted && !a.attemptId ? 'Agent 已中止' : undefined);
+            this.finish(a, m.aborted ? 'Agent 已中止' : undefined);
             return;
         }
         if (m?.type === 'failure') {
@@ -379,9 +383,10 @@ export class AgentHost {
         }
     }
     savePath(a, file, root) { const rel = relative(resolve(root), resolve(file)); ensure(rel !== '' && !rel.startsWith('..') && !isAbsolute(rel) && file.endsWith('.jsonl'), 'SESSION_PATH_INVALID', 'Pi Session 路径超出受控目录'); const s = this.app.store.get('session', a.sessionId); this.app.store.update('session', s.id, s.version, { piSessionPath: resolve(file) }); }
-    abortProcess(a) {
-        if (a.ended)
+    abortProcess(a, error = '会话已中止或任务已失效') {
+        if (a.ended || a.stopError)
             return;
+        a.stopError = error;
         if (a.child.connected)
             a.child.send({ type: 'abort' });
         const timer = setTimeout(() => {
@@ -393,7 +398,10 @@ export class AgentHost {
     finish(a, error) {
         if (a.ended)
             return;
-        error = error ?? a.providerError ?? (a.actor.wakeupId && !a.assistantOutput ? 'Pi 已结束但没有可展示的最终分析；请核对后重试' : undefined) ?? (this.valid(a) ? undefined : '会话已中止或自动分析来源已失效');
+        error = error ?? a.providerError ?? a.stopError ?? (a.actor.wakeupId && !a.assistantOutput ? 'Pi 已结束但没有可展示的最终分析；请核对后重试' : undefined) ?? (this.valid(a) ? undefined : '会话已中止或自动分析来源已失效');
+        const missingResult = !error && a.attemptId && this.app.store.get('task-attempt', a.attemptId).state === 'running';
+        if (missingResult)
+            error = 'Pi 结束但没有提交结构化结果';
         a.ended = true;
         const store = this.app.store;
         store.transaction(() => {
@@ -402,7 +410,7 @@ export class AgentHost {
             if (a.attemptId) {
                 const attempt = store.get('task-attempt', a.attemptId);
                 if (attempt.state === 'running')
-                    this.app.teams.fail(a.attemptId, error ?? 'Pi 结束但没有提交结构化结果', !!error);
+                    this.app.teams.fail(a.attemptId, error, !missingResult);
             }
             if (a.actor.wakeupId) {
                 const wakeup = this.app.wakeups.get(SYSTEM, a.actor.wakeupId);

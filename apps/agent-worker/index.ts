@@ -16,7 +16,7 @@ type WorkerMessage =
     | {type: 'start'; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
 let session: AgentSession | undefined;
 let providerFailure: string | undefined;
-let started = false, stopping = false, turns = 0;
+let started = false, stopping = false, taskSubmitted = false, turns = 0;
 let seq = 0;
 const pending = new Map<number, {
     resolve: (value: unknown) => void;
@@ -45,9 +45,10 @@ process.on('message', async (message) => {
         return;
     }
     if (raw?.type === 'steer' || raw?.type === 'follow_up') {
-        if (session) {
+        if (session && !taskSubmitted && !stopping) {
             try {
                 raw.type === 'steer' ? await session.steer(raw.content) : await session.followUp(raw.content);
+                if (taskSubmitted || stopping) { session.clearQueue(); return; }
                 send({ type: 'message_ack', messageId: raw.messageId });
             }
             catch (e) {
@@ -76,9 +77,19 @@ process.on('message', async (message) => {
             await modelRuntime.setRuntimeApiKey(raw.model.provider, process.env.PI_API_KEY);
         if (!modelRuntime.hasConfiguredAuth(raw.model.provider)) throw new Error('AUTH_MISSING: 请为所选供应商配置凭据');
         if (raw.tools.some(t => !t.inputSchema || t.inputSchema.type !== 'object')) throw new Error('SDK_CONTRACT_MISMATCH: 工具缺少精确输入 Schema');
-        const customTools = buildCustomTools(raw.tools, rpc);
+        const customTools = buildCustomTools(raw.tools, async (name, input, callId) => {
+            const result = await rpc(name, input, callId);
+            if (name === 'task_result_submit') taskSubmitted = true;
+            return result;
+        });
         const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
+        const finishTurn = session.agent.finishTurn;
+        session.agent.finishTurn = async (turn, signal) => {
+            const decision = await finishTurn?.(turn, signal);
+            if (taskSubmitted) { session!.clearQueue(); return {action: 'end'}; }
+            return decision ?? undefined;
+        };
         if (session.model?.provider !== raw.model.provider || session.model?.id !== raw.model.model) throw new Error('MODEL_FALLBACK_REFUSED: SDK 尝试切换未经批准的模型');
         send({ type: 'ready', sessionFile: session.sessionFile, sessionId: session.sessionId, activeTools: session.getActiveToolNames(), model: { provider: session.model?.provider, id: session.model?.id } });
         session.subscribe((e) => {

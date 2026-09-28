@@ -1,0 +1,284 @@
+{
+  "capturedAt": "2026-09-28T20:34:55.811Z",
+  "model": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "thinking": "off"
+  },
+  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+  "task": {
+    "id": "b46443b4-f8d4-4755-a377-e9df1b041ee0",
+    "teamId": "ecf27dcd-6203-4f9a-97a6-f9f325118a82",
+    "approvalId": "4485994d-2782-4423-8d18-499df0dd77b0",
+    "attemptId": "7b94c6b9-0c15-4b25-9ccc-e3bbe298e229",
+    "sessionId": "63fe7ff0-0e52-46ce-b0c5-664e8101a5f5",
+    "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+    "inputDigest": "ba30351dc8eb649d0e49cb3caa3aa5f147a6baf1987a8a8497cb2328a85e00fd",
+    "resultId": "4ac1677a-44eb-45d6-836a-c0000c4ba28f",
+    "resultDigest": "d5e4617d56041d82933c016d1cc0d26d615827522c88726ca09ff1978767130d",
+    "execution": "output_submitted",
+    "acceptance": "accepted",
+    "attemptState": "finished",
+    "sessionState": "idle",
+    "sessionError": null,
+    "result": {
+      "summary": "已读取唯一输入证据并归档 worker-finish.txt（artifact 40dfdaac-7022-4396-abf8-dae264d42dd6）：记录 Run ca819399-1714-4aaa-b50e-ef1700b3991f 的 mse=5.0345031695457565e-05（原精度，输出未声明单位），仅为已有合成数据的软件验收，无新实验或新计算。",
+      "outcome": "completed",
+      "evidenceIds": [
+        "b5ec55cc-0f1a-4650-8d13-5abf0380f89c"
+      ],
+      "artifactIds": [
+        "40dfdaac-7022-4396-abf8-dae264d42dd6"
+      ],
+      "claims": [],
+      "unresolvedQuestions": []
+    },
+    "artifact": {
+      "id": "40dfdaac-7022-4396-abf8-dae264d42dd6",
+      "digest": "dae279ea508a281eeb97b48afc2f4487a0b13b725cc8ab46b950f320c779c7dc",
+      "bytes": 419,
+      "origin": "agent:63fe7ff0-0e52-46ce-b0c5-664e8101a5f5"
+    },
+    "toolSequence": [
+      "evidence_read",
+      "task_context_read",
+      "artifact_create",
+      "task_result_submit"
+    ],
+    "budget": {
+      "limit": 1,
+      "used": 1,
+      "reserved": 0,
+      "unknown": 0,
+      "available": 0,
+      "unit": "agent-attempt"
+    }
+  },
+  "native": {
+    "digest": "c62509ad1ba04c2d6096cbdfaa681f89f947d1934a6221e04a640f04da6e069d",
+    "messageCount": 11,
+    "assistantStopReasons": [
+      "toolUse",
+      "toolUse",
+      "toolUse",
+      "toolUse"
+    ],
+    "receipts": [
+      {
+        "toolName": "task_context_read",
+        "toolCallId": "call_bbca534453d54e82a1e15329",
+        "isError": true
+      },
+      {
+        "toolName": "evidence_read",
+        "toolCallId": "call_ea8484568eff4510bd1231bb",
+        "isError": false
+      },
+      {
+        "toolName": "task_context_read",
+        "toolCallId": "call_670f087f332744fbafff6d1d",
+        "isError": false
+      },
+      {
+        "toolName": "artifact_create",
+        "toolCallId": "call_8d77b91c5df34881b2fa5313",
+        "isError": false
+      },
+      {
+        "toolName": "task_result_submit",
+        "toolCallId": "call_442ef4e343c341939c715eb5",
+        "isError": false
+      }
+    ],
+    "lastMessageRole": "toolResult",
+    "lastMessageTool": "task_result_submit",
+    "postReceiptAssistantMessages": 0,
+    "failedOrAbortedAssistantMessages": 0
+  },
+  "usageObservations": [
+    {
+      "id": "abb12efc-e18b-4c9d-bd9e-1a94f6d94e33",
+      "stopReason": "toolUse",
+      "status": "reported",
+      "usage": {
+        "input": 4493,
+        "output": 52,
+        "cacheRead": 6336,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 10881,
+        "cost": {
+          "input": 0.0062902,
+          "output": 0.0002288,
+          "cacheRead": 0.00164736,
+          "cacheWrite": 0,
+          "total": 0.008166360000000001
+        }
+      }
+    },
+    {
+      "id": "285a3d33-feaa-4451-94e0-14a81f502785",
+      "stopReason": "toolUse",
+      "status": "reported",
+      "usage": {
+        "input": 385,
+        "output": 13,
+        "cacheRead": 10816,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 11214,
+        "cost": {
+          "input": 0.000539,
+          "output": 0.0000572,
+          "cacheRead": 0.00281216,
+          "cacheWrite": 0,
+          "total": 0.00340836
+        }
+      }
+    },
+    {
+      "id": "a5700ab2-fd88-4386-8efe-6e2145d0f1b3",
+      "stopReason": "toolUse",
+      "status": "reported",
+      "usage": {
+        "input": 429,
+        "output": 185,
+        "cacheRead": 11200,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 11814,
+        "cost": {
+          "input": 0.0006006,
+          "output": 0.000814,
+          "cacheRead": 0.002912,
+          "cacheWrite": 0,
+          "total": 0.0043266
+        }
+      }
+    },
+    {
+      "id": "0b8a62f1-1528-451a-82cf-fe9862862965",
+      "stopReason": "toolUse",
+      "status": "reported",
+      "usage": {
+        "input": 530,
+        "output": 194,
+        "cacheRead": 11584,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 12308,
+        "cost": {
+          "input": 0.0007419999999999999,
+          "output": 0.0008536,
+          "cacheRead": 0.00301184,
+          "cacheWrite": 0,
+          "total": 0.00460744
+        }
+      }
+    }
+  ],
+  "cancellation": {
+    "sessionId": "e1e62038-3ada-46ba-8e1f-33d9fe1e58d2",
+    "state": "interrupted",
+    "generation": 2,
+    "streamDeltaCount": 941,
+    "nativeDigest": "d0e147298583d0d1a3320b7bdf9942ca6692a09cf0261509c9e9fec6495c5910",
+    "nativeAssistantStopReasons": [
+      "aborted"
+    ],
+    "userMessageStatuses": [
+      "cancelled"
+    ],
+    "completedAssistantMessages": 0,
+    "usageNote": "The interrupted generation is fenced before final host assistant/usage persistence; preserve native aborted output and treat provider usage as unconfirmed, not zero cost"
+  },
+  "workerSlots": [
+    {
+      "id": "a2ae8dadffaf590ff76fb6a431f6a83a03791226023c37228c5e2f06ff6e0c8f",
+      "sessionId": "63fe7ff0-0e52-46ce-b0c5-664e8101a5f5",
+      "state": "released"
+    },
+    {
+      "id": "2e9aefc23adc3d3d0c59273502eef0070eebf504464eaf0bc393a1ad0af5da8b",
+      "sessionId": "e1e62038-3ada-46ba-8e1f-33d9fe1e58d2",
+      "state": "released"
+    }
+  ],
+  "compatibility": {
+    "baselineRecords": 327,
+    "copyChangedRecords": [
+      {
+        "kind": "workspace-lease",
+        "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57"
+      }
+    ],
+    "sourceChangedRecords": [
+      {
+        "kind": "workspace-lease",
+        "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57"
+      }
+    ],
+    "nativeFilesUnchanged": [
+      {
+        "sessionId": "0d288cab-1c32-4eee-8ddd-d074d7b129ea",
+        "state": "failed",
+        "digest": "e59aa3b0de34c2588f471afc0acf932105480b4fb6b0cf98345f5d7b3dd87895"
+      },
+      {
+        "sessionId": "0d401e39-5bab-4557-ae5e-5c474dcc7487",
+        "state": "failed",
+        "digest": "f13fb3e83375819ebcd39d2c48bc478ce4546f3934d9805b1ec983ab4ea56314"
+      },
+      {
+        "sessionId": "2bdec317-22fe-475d-9d48-137951e64174",
+        "state": "failed",
+        "digest": "bb260ee642ac936fc2dcb24590ec701d0f1955826212f507de8a5a553226a290"
+      },
+      {
+        "sessionId": "5e82e677-f2e2-468d-9b69-b02f1b56cbd0",
+        "state": "failed",
+        "digest": "b546917e9f3b9dcffc3ec8817601a54cd6746d0756a425fd97980e37f9bd3756"
+      },
+      {
+        "sessionId": "6bdd25ef-2c78-48d1-a14c-79eba5e56c76",
+        "state": "failed",
+        "digest": "4eae7f45a134997138a789c53d2ab8a9e8ad7e6a6d4e1b8222178874c99ad28e"
+      },
+      {
+        "sessionId": "7b7ef384-b639-4ba9-ae38-6dd32de63292",
+        "state": "idle",
+        "digest": "782bdad5dd7ae4652425d30dc3e96f1aec85e88f783ec5c924eb617ccca882ce"
+      }
+    ],
+    "originalFourPaperFailuresUnchanged": [
+      "0d288cab-1c32-4eee-8ddd-d074d7b129ea",
+      "6bdd25ef-2c78-48d1-a14c-79eba5e56c76",
+      "2bdec317-22fe-475d-9d48-137951e64174",
+      "0d401e39-5bab-4557-ae5e-5c474dcc7487"
+    ],
+    "oldReportValidity": "current",
+    "oldReportIntegrity": "verified",
+    "runIds": [
+      "44083f93-3c75-4501-ba8f-b5b131ef87a3",
+      "63b6e637-edc4-4df8-9394-ea7f6e54ec37",
+      "b4c239d1-62e0-4d61-8e18-9facfd326887",
+      "ca819399-1714-4aaa-b50e-ef1700b3991f"
+    ],
+    "newNumericalRuns": 0
+  },
+  "limits": [
+    "Real-provider HTTP request count and billing were not intercepted; zero extra post-submit request is independently proved with the actual SDK and loopback server, while this live native transcript ends at the submit receipt.",
+    "Pre-timeout asynchronous operations are not universally revoked by the new stopError flag; new incoming requests are fenced and existing lease checks remain."
+  ],
+  "artifactContentCheck": {
+    "numericMse": 0.000050345031695457565,
+    "numericValueMatches": true,
+    "knownWordingIssue": "The model wrote dimensionless, while the original Run contract declares squared-target. The artifact remains unchanged and is not presented as scientifically reviewed."
+  },
+  "initialToolArgumentError": {
+    "tool": "task_context_read",
+    "message": "INVALID_INPUT: $.input: 缺少必需字段",
+    "recovered": true,
+    "note": "The first rejected tool call is retained in the native transcript; a later valid call succeeded."
+  }
+}

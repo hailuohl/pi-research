@@ -15,6 +15,7 @@ interface Active {
     sent: Set<string>;
     ended: boolean;
     providerError?: string;
+    stopError?: string;
     assistantOutput?: boolean;
     contextMessageIds?: string[];
 }
