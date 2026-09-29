@@ -1,0 +1,50 @@
+{
+  "capturedAt": "2026-09-29T13:49:03Z",
+  "scope": "Cumulative Wine data: offline backup, verify, isolated relocate restore",
+  "trigger": {
+    "previousError": "BACKUP_REFERENCE_INVALID",
+    "pathlessBindingReports": 3,
+    "fixedBinding": "report.bindings.figureSources[].dataArtifacts[]"
+  },
+  "backup": {
+    "created": true,
+    "verified": true,
+    "restoredOffline": true,
+    "relocated": true,
+    "files": 328,
+    "bytes": 18226472,
+    "manifestDigest": "4bbc3f2c85edf20615de541abb84dcafa16e03396753e0d2ab6804ebc8bd74cd",
+    "accessTokenAndModelConfigExcluded": true
+  },
+  "retention": {
+    "sourceRestoredAndReopenedRecords": 332,
+    "recordRowsSha256BeforeAfterAndRestored": "ccef849381c9e1c24adda8d35e292db07bb0928457ac327d28001236b9d4b695",
+    "artifactsIndividuallyDigestVerified": 112,
+    "artifactManifestSha256BeforeAfterAndRestored": "56c1ce66aa2252baaaba154045389e566a310bd5011ae2a09d331ab69e9e68cb",
+    "runs": 3,
+    "reports": 5,
+    "documentVersions": 1,
+    "textEvidenceSearches": 1,
+    "approvals": 19,
+    "originalControllerReopenedSamePortAndToken": true,
+    "activeWorkersAfterReopen": 0,
+    "relocatedCopyControllerStarted": false
+  },
+  "boundaries": {
+    "pathlessFigureInputResolvedByExactSameProjectArtifactId": true,
+    "missingOrCrossProjectIdRejected": true,
+    "digestSizeAndEntityTamperingRejected": true,
+    "explicitBadPathRejected": true,
+    "executionManifestMissingOrNestedPathRejected": true,
+    "failedBackupPublishesNoTarget": true
+  },
+  "checks": {
+    "fullRegressionBeforeNarrowReviewFix": { "passed": 761, "failed": 0, "skipped": 22 },
+    "affectedBackupAndRelocationAfterFix": { "passed": 10, "failed": 0 },
+    "cleanBuildIdenticalFilesAfterFix": 450,
+    "cleanBuildManifestSha256": "2d3b713809e7d05f1362aa8ca6500b116d6e9fed5efe9b5975ba99cc5edf43ee",
+    "independentDataRetentionReviewRemainingBlockers": 0,
+    "realPiCalls": 0,
+    "dockerJobs": 0
+  }
+}

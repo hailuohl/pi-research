@@ -122,7 +122,7 @@ function stateCheck(db) {
         ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(), 'BACKUP_RECOVERY_PENDING', '文本写入回执尚未清理', 409);
     if (table(db, 'compute_queue'))
         ensure(!db.prepare("SELECT 1 FROM compute_queue WHERE held<>0 OR phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(), 'BACKUP_BUSY', '还有计算等待、运行或未知结果', 409);
-    const rows = db.prepare('SELECT kind,id,data FROM records ORDER BY rowid').all().map(x => ({ kind: String(x.kind), id: String(x.id), value: JSON.parse(String(x.data)) }));
+    const rows = db.prepare('SELECT kind,id,project_id,data FROM records ORDER BY rowid').all().map(x => ({ kind: String(x.kind), id: String(x.id), projectId: x.project_id === null ? null : String(x.project_id), value: JSON.parse(String(x.data)) }));
     const sessions = new Map(rows.filter(x => x.kind === 'session').map(x => [x.id, x.value]));
     for (const { kind, id, value: r } of rows) {
         const state = String(r.state ?? '');
@@ -162,6 +162,7 @@ function stateCheck(db) {
 }
 async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
     const { rows, schema } = stateCheck(db), index = new Map(entries.map(e => [e.path, e])), verified = new Set(), git = new Map();
+    const artifacts = new Map(rows.filter(x => x.kind === 'artifact').map(x => [x.id, x]));
     const location = readDataLocation(db);
     ensure(!location || location.activeRoot === sourceRoot && digest(location.legacyRoots) === digest(legacyRoots), 'BACKUP_LOCATION_MISMATCH', '备份的数据位置与数据库不一致', 409);
     const logical = new DataPaths(sourceRoot, legacyRoots);
@@ -181,6 +182,17 @@ async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
     }
     function blob(value) { const found = ref(value.path, 'file'); if (value.digest !== undefined)
         ensure(found.entry.type === 'file' && found.entry.digest === value.digest && found.entry.size === value.size, 'BACKUP_CONTENT_MISMATCH', '固定产物内容不符：' + found.name, 409); }
+    function reportFigureArtifact(value, report) {
+        const id = value.id;
+        ensure(typeof id === 'string' && id.trim().length > 0 && typeof value.digest === 'string' && /^[a-f0-9]{64}$/.test(value.digest) && Number.isSafeInteger(value.size) && Number(value.size) >= 0, 'BACKUP_REFERENCE_INVALID', '报告图形数据绑定无效', 409);
+        const projectId = report.projectId;
+        ensure(typeof projectId === 'string' && projectId.trim().length > 0 && report.value.projectId === projectId, 'BACKUP_REFERENCE_INVALID', '报告项目归属不一致', 409);
+        const artifact = artifacts.get(id);
+        ensure(artifact, 'BACKUP_REFERENCE_MISSING', '备份缺少报告图形数据产物：' + id, 409);
+        ensure(artifact.id === id && artifact.value.id === id && typeof artifact.projectId === 'string' && artifact.projectId.trim().length > 0 && artifact.projectId === projectId && artifact.value.projectId === artifact.projectId, 'BACKUP_REFERENCE_INVALID', '报告图形数据产物 ID 或项目归属不一致', 409);
+        ensure(artifact.value.digest === value.digest && artifact.value.size === value.size, 'BACKUP_CONTENT_MISMATCH', '报告图形数据产物摘要或大小不符：' + id, 409);
+        blob(artifact.value);
+    }
     function snapshot(value) {
         const found = ref(value.path, 'directory', 'snapshots/'), files = value.files;
         ensure(Array.isArray(files) && digest(files) === value.digest, 'BACKUP_CONTENT_MISMATCH', '源码快照清单摘要不符', 409);
@@ -190,23 +202,40 @@ async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
             verified.add(key);
         }
     }
-    function frozen(value, key = '') {
+    function frozen(value, fields = [], record) {
+        const isPath = (...parts) => fields.length === parts.length && parts.every((part, index) => fields[index] === part), report = record?.kind === 'report', figureSources = report && isPath('bindings', 'figureSources'), figureDataArtifacts = report && isPath('bindings', 'figureSources', '[]', 'dataArtifacts');
         if (Array.isArray(value)) {
-            for (const item of value)
-                frozen(item, key);
+            for (const item of value) {
+                if (fields.at(-1) === 'dataArtifacts')
+                    ensure(!Array.isArray(item), 'BACKUP_REFERENCE_INVALID', '数据输入不能嵌套列表', 409);
+                if (figureSources || figureDataArtifacts)
+                    ensure(plain(item), 'BACKUP_REFERENCE_INVALID', '报告图形绑定条目无效', 409);
+                frozen(item, [...fields, '[]'], record);
+            }
             return;
         }
         if (!plain(value))
             return;
+        const key = fields.at(-1) ?? '', figureSource = report && isPath('bindings', 'figureSources', '[]'), figureDataArtifact = report && isPath('bindings', 'figureSources', '[]', 'dataArtifacts', '[]');
+        if (report && isPath('bindings') && Object.hasOwn(value, 'figureSources'))
+            ensure(Array.isArray(value.figureSources), 'BACKUP_REFERENCE_INVALID', '报告图形绑定列表无效', 409);
+        if (figureSource)
+            ensure(Array.isArray(value.dataArtifacts), 'BACKUP_REFERENCE_INVALID', '报告图形数据绑定列表无效', 409);
         if (['snapshot', 'inputSnapshot', 'baselineSnapshot', 'baseSnapshot', 'candidateSnapshot'].includes(key) && typeof value.path === 'string' && Array.isArray(value.files) && typeof value.digest === 'string')
             snapshot(value);
-        if (key === 'dataArtifacts')
+        if (figureDataArtifact) {
+            if (Object.hasOwn(value, 'path'))
+                blob(value);
+            else
+                reportFigureArtifact(value, record);
+        }
+        else if (key === 'dataArtifacts' || fields.at(-2) === 'dataArtifacts' && key === '[]')
             blob(value);
         for (const [name, item] of Object.entries(value))
             if (plain(item) || Array.isArray(item))
-                frozen(item, name);
+                frozen(item, [...fields, name], record);
     }
-    for (const { kind, value: r } of rows) {
+    for (const { kind, id, projectId, value: r } of rows) {
         if (['project', 'session', 'experiment', 'task-attempt'].includes(kind))
             ref(r.workspace, 'directory');
         if (kind === 'session' && r.piSessionPath)
@@ -253,7 +282,7 @@ async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
         }
         if (['run', 'run-intent'].includes(kind) && plain(r.manifest))
             snapshot({ path: r.manifest.snapshotPath, files: r.manifest.sourceFiles, digest: r.manifest.snapshotDigest });
-        frozen(r);
+        frozen(r, [], { kind, id, projectId, value: r });
     }
     for (const [pid, commits] of git) {
         ref(join(sourceRoot, 'projects', pid, 'git', 'repository.git'), 'directory');

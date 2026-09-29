@@ -69,7 +69,7 @@ function stateCheck(db:DatabaseSync) {
  ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check==='ok','BACKUP_DATABASE_INVALID','数据库完整性检查失败',409);
  if(table(db,'text_write_receipts'))ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(),'BACKUP_RECOVERY_PENDING','文本写入回执尚未清理',409);
  if(table(db,'compute_queue'))ensure(!db.prepare("SELECT 1 FROM compute_queue WHERE held<>0 OR phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(),'BACKUP_BUSY','还有计算等待、运行或未知结果',409);
- const rows=db.prepare('SELECT kind,id,data FROM records ORDER BY rowid').all().map(x=>({kind:String(x.kind),id:String(x.id),value:JSON.parse(String(x.data)) as Record<string,unknown>}));
+ const rows=db.prepare('SELECT kind,id,project_id,data FROM records ORDER BY rowid').all().map(x=>({kind:String(x.kind),id:String(x.id),projectId:x.project_id===null?null:String(x.project_id),value:JSON.parse(String(x.data)) as Record<string,unknown>}));
  const sessions=new Map(rows.filter(x=>x.kind==='session').map(x=>[x.id,x.value]));
  for(const {kind,id,value:r} of rows) {
   const state=String(r.state??'');let busy=false;
@@ -96,6 +96,7 @@ function stateCheck(db:DatabaseSync) {
 }
 async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entries:Entry[],legacyRoots:string[]=[]) {
  const {rows,schema}=stateCheck(db),index=new Map(entries.map(e=>[e.path,e])),verified=new Set<string>(),git=new Map<string,string[]>();
+ const artifacts=new Map(rows.filter(x=>x.kind==='artifact').map(x=>[x.id,x]));
  const location=readDataLocation(db);ensure(!location||location.activeRoot===sourceRoot&&digest(location.legacyRoots)===digest(legacyRoots),'BACKUP_LOCATION_MISMATCH','备份的数据位置与数据库不一致',409);
  const logical=new DataPaths(sourceRoot,legacyRoots);
  function ref(value:unknown,type:'file'|'directory',expectedPrefix?:string) {
@@ -103,18 +104,30 @@ async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entr
   ensure(entry?.type===type&&(!expectedPrefix||name.startsWith(expectedPrefix)),'BACKUP_REFERENCE_MISSING','备份缺少必需引用：'+name,409);return {name,entry,path:join(dataRoot,name)};
  }
  function blob(value:Record<string,unknown>) {const found=ref(value.path,'file');if(value.digest!==undefined)ensure(found.entry.type==='file'&&found.entry.digest===value.digest&&found.entry.size===value.size,'BACKUP_CONTENT_MISMATCH','固定产物内容不符：'+found.name,409);}
+ function reportFigureArtifact(value:Record<string,unknown>,report:typeof rows[number]) {
+  const id=value.id;ensure(typeof id==='string'&&id.trim().length>0&&typeof value.digest==='string'&&/^[a-f0-9]{64}$/.test(value.digest)&&Number.isSafeInteger(value.size)&&Number(value.size)>=0,'BACKUP_REFERENCE_INVALID','报告图形数据绑定无效',409);
+  const projectId=report.projectId;ensure(typeof projectId==='string'&&projectId.trim().length>0&&report.value.projectId===projectId,'BACKUP_REFERENCE_INVALID','报告项目归属不一致',409);
+  const artifact=artifacts.get(id);ensure(artifact,'BACKUP_REFERENCE_MISSING','备份缺少报告图形数据产物：'+id,409);
+  ensure(artifact.id===id&&artifact.value.id===id&&typeof artifact.projectId==='string'&&artifact.projectId.trim().length>0&&artifact.projectId===projectId&&artifact.value.projectId===artifact.projectId,'BACKUP_REFERENCE_INVALID','报告图形数据产物 ID 或项目归属不一致',409);
+  ensure(artifact.value.digest===value.digest&&artifact.value.size===value.size,'BACKUP_CONTENT_MISMATCH','报告图形数据产物摘要或大小不符：'+id,409);blob(artifact.value);
+ }
  function snapshot(value:Record<string,unknown>) {
   const found=ref(value.path,'directory','snapshots/'),files=value.files as SourceSnapshot['files'];ensure(Array.isArray(files)&&digest(files)===value.digest,'BACKUP_CONTENT_MISMATCH','源码快照清单摘要不符',409);
   const key=found.name+':'+value.digest;if(!verified.has(key)){verifySnapshot(found.path,files);verified.add(key);}
  }
- function frozen(value:unknown,key='') {
-  if(Array.isArray(value)){for(const item of value)frozen(item,key);return;}
+ function frozen(value:unknown,fields:string[]=[],record?:typeof rows[number]) {
+  const isPath=(...parts:string[])=>fields.length===parts.length&&parts.every((part,index)=>fields[index]===part),report=record?.kind==='report',figureSources=report&&isPath('bindings','figureSources'),figureDataArtifacts=report&&isPath('bindings','figureSources','[]','dataArtifacts');
+  if(Array.isArray(value)){for(const item of value){if(fields.at(-1)==='dataArtifacts')ensure(!Array.isArray(item),'BACKUP_REFERENCE_INVALID','数据输入不能嵌套列表',409);if(figureSources||figureDataArtifacts)ensure(plain(item),'BACKUP_REFERENCE_INVALID','报告图形绑定条目无效',409);frozen(item,[...fields,'[]'],record);}return;}
   if(!plain(value))return;
+  const key=fields.at(-1)??'',figureSource=report&&isPath('bindings','figureSources','[]'),figureDataArtifact=report&&isPath('bindings','figureSources','[]','dataArtifacts','[]');
+  if(report&&isPath('bindings')&&Object.hasOwn(value,'figureSources'))ensure(Array.isArray(value.figureSources),'BACKUP_REFERENCE_INVALID','报告图形绑定列表无效',409);
+  if(figureSource)ensure(Array.isArray(value.dataArtifacts),'BACKUP_REFERENCE_INVALID','报告图形数据绑定列表无效',409);
   if(['snapshot','inputSnapshot','baselineSnapshot','baseSnapshot','candidateSnapshot'].includes(key)&&typeof value.path==='string'&&Array.isArray(value.files)&&typeof value.digest==='string')snapshot(value);
-  if(key==='dataArtifacts')blob(value);
-  for(const [name,item] of Object.entries(value))if(plain(item)||Array.isArray(item))frozen(item,name);
+  if(figureDataArtifact){if(Object.hasOwn(value,'path'))blob(value);else reportFigureArtifact(value,record!);}
+  else if(key==='dataArtifacts'||fields.at(-2)==='dataArtifacts'&&key==='[]')blob(value);
+  for(const [name,item] of Object.entries(value))if(plain(item)||Array.isArray(item))frozen(item,[...fields,name],record);
  }
- for(const {kind,value:r} of rows) {
+ for(const {kind,id,projectId,value:r} of rows) {
   if(['project','session','experiment','task-attempt'].includes(kind))ref(r.workspace,'directory');
   if(kind==='session'&&r.piSessionPath)ref(r.piSessionPath,'file',`sessions/${r.id}/pi/`);
   if(kind==='artifact')blob(r);
@@ -135,7 +148,7 @@ async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entr
    ref(r.outputDir,'directory');if(r.controlDir)ref(r.controlDir,'directory');if(plain(r.execution)&&r.execution.controlDir)ref(r.execution.controlDir,'directory');
   }
   if(['run','run-intent'].includes(kind)&&plain(r.manifest))snapshot({path:r.manifest.snapshotPath,files:r.manifest.sourceFiles,digest:r.manifest.snapshotDigest});
-  frozen(r);
+  frozen(r,[],{kind,id,projectId,value:r});
  }
  for(const [pid,commits] of git){ref(join(sourceRoot,'projects',pid,'git','repository.git'),'directory');try{await new GitCommand(dataRoot,pid).verifyHistory(commits);}catch{ensure(false,'BACKUP_GIT_INVALID','受管Git对象、提交或独立存储校验失败：'+pid,409);}}
  return schema;

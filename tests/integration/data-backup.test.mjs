@@ -7,13 +7,72 @@ import {createDataBackup,verifyDataBackup,restoreDataBackup} from '../../dist/pa
 import {digest} from '../../dist/packages/storage/store.js';import {readSourceMode,setSourceMode} from '../../dist/packages/workspace/files.js';
 import {createHttpServer} from '../../dist/apps/server/http.js';import {gitEnvironment} from '../../dist/packages/workspace/git-command.js';
 import {WorkspaceLeases} from '../../dist/packages/workspace/leases.js';
-import {waitRun} from '../support/research.mjs';
+import {approve,waitRun} from '../support/research.mjs';
+import {publicationFixture,publicationPng} from '../support/publication.mjs';
 import {teamWakeupSource,wakeupId} from '../../dist/packages/scheduler/wakeups.js';
 import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
 function fixture(){const parent=mkdtempSync(join(realpathSync.native(tmpdir()),'pi-backup-')),data=join(parent,'data'),app=new ResearchApp(data,process.cwd()),project=app.projects.create(USER,{name:'本地备份夹具',template:'curve-fit'}),session=app.sessions.create(USER,project.id,{title:'保留的会话'});app.sessions.system(session.id,'软件备份夹具，不是模型结果');const artifact=app.evidence.put(project.id,'原文',Buffer.from('固定证据\n'));const experiment=app.experiments.create(USER,project.id,{title:'保留源码'}),intent=app.runs.prepare(USER,experiment.id);return {parent,data,app,project,session,artifact,experiment,intent,backup:join(parent,'backup'),close(){this.app.close();rmSync(parent,{recursive:true,force:true});}};}
 function records(data){const db=new DatabaseSync(join(data,'state.db'),{readOnly:true});try{return db.prepare('SELECT kind,id,version,data FROM records ORDER BY kind,id').all();}finally{db.close();}}
 function rewriteManifest(path,fn){const file=join(path,'manifest.json'),m=JSON.parse(readFileSync(file));fn(m);delete m.manifestDigest;m.manifestDigest=digest(m);writeFileSync(file,JSON.stringify(m));}
+function writeRecord(s,kind,id,value){s.app.store.db.prepare('UPDATE records SET data=? WHERE kind=? AND id=?').run(JSON.stringify(value),kind,id);}
 const physical = (s, reference) => s.app.store.paths.physical(reference);
+
+function figureReportFixture(s){
+ writeFileSync(join(physical(s,s.session.workspace),'plot.py'),'# UNIT frozen figure source');
+ const input=s.app.evidence.put(s.project.id,'figure-input.csv',Buffer.from('x,y\n1,2\n'),'text/csv');
+ const task=s.app.development.prepare(USER,s.project.id,s.session.id,{command:['python','plot.py'],environmentImageDigest:'python@sha256:'+'a'.repeat(64),dataArtifactIds:[input.id],expectedArtifacts:['figure.png']});
+ approve(s.app,task.grantId);const submitted=s.app.development.submit(USER,s.project.id,task.id),job=s.app.store.get('sandbox-job',submitted.id);
+ writeFileSync(join(physical(s,job.outputDir),'figure.png'),publicationPng);
+ const completed=s.app.development.finalize(job.id,{state:'succeeded',exitCode:0}),figure=completed.artifactIds.map(id=>s.app.store.get('artifact',id)).find(a=>a.title==='output/figure.png');
+ const publication=publicationFixture(s.app,s.project.id,{files:[{path:'figure.png',artifactId:figure.id}]}),saved=s.app.reports.create(USER,s.project.id,{publicationResultIds:[publication.result.id]}),report=s.app.store.list('report',s.project.id).find(r=>r.artifactId===saved.id);
+ assert.equal(report.bindings.figureSources[0].dataArtifacts[0].id,input.id);assert.equal('path' in report.bindings.figureSources[0].dataArtifacts[0],false);
+ return {input,report};
+}
+
+test('offline backup resolves report figure inputs from their fixed artifact IDs',async()=>{
+ const s=fixture();try{figureReportFixture(s);s.app.close();const created=await createDataBackup(s.data,s.backup,{offline:true});assert.equal((await verifyDataBackup(s.backup)).manifestDigest,created.manifestDigest);}finally{s.close();}
+});
+
+test('offline backup rejects missing, cross-project, malformed or changed report figure inputs',async()=>{
+ const s=fixture();try{
+  const {input,report}=figureReportFixture(s),otherProject=s.app.projects.create(USER,{name:'同摘要的另一项目'}),other=s.app.evidence.put(otherProject.id,'same-input.csv',Buffer.from('x,y\n1,2\n'),'text/csv');
+  const originalArtifact=s.app.store.get('artifact',input.id),originalJob=s.app.store.list('sandbox-job')[0],missingManifestPath=structuredClone(originalJob),directManifestArtifact=structuredClone(originalJob),nestedManifestArtifact=structuredClone(originalJob);delete missingManifestPath.manifest.dataArtifacts[0].path;directManifestArtifact.manifest.dataArtifacts={...directManifestArtifact.manifest.dataArtifacts[0]};delete directManifestArtifact.manifest.dataArtifacts.path;nestedManifestArtifact.manifest.dataArtifacts=[[{id:input.id,digest:input.digest,size:input.size}]];
+  const bindingOf=r=>r.bindings.figureSources[0].dataArtifacts[0],cases=[
+   ['missing ID','BACKUP_REFERENCE_INVALID',r=>{delete bindingOf(r).id;}],
+   ['empty ID','BACKUP_REFERENCE_INVALID',r=>{bindingOf(r).id='';}],
+   ['missing artifact','BACKUP_REFERENCE_MISSING',r=>{bindingOf(r).id='missing-artifact';}],
+   ['same digest from another project','BACKUP_REFERENCE_INVALID',r=>Object.assign(bindingOf(r),{id:other.id,digest:other.digest,size:other.size})],
+   ['invalid digest format','BACKUP_REFERENCE_INVALID',r=>{bindingOf(r).digest='A'.repeat(64);}],
+   ['changed digest','BACKUP_CONTENT_MISMATCH',r=>{bindingOf(r).digest='b'.repeat(64);}],
+   ['invalid size','BACKUP_REFERENCE_INVALID',r=>{bindingOf(r).size=-1;}],
+   ['changed size','BACKUP_CONTENT_MISMATCH',r=>{bindingOf(r).size++;}],
+   ['null path','BACKUP_REFERENCE_INVALID',r=>{bindingOf(r).path=null;}],
+   ['empty path','STORAGE_PATH_INVALID',r=>{bindingOf(r).path='';}],
+   ['non-string path','BACKUP_REFERENCE_INVALID',r=>{bindingOf(r).path=7;}],
+   ['missing dataArtifacts','BACKUP_REFERENCE_INVALID',r=>{delete r.bindings.figureSources[0].dataArtifacts;}],
+   ['non-array dataArtifacts','BACKUP_REFERENCE_INVALID',r=>{r.bindings.figureSources[0].dataArtifacts={};}],
+   ['non-object dataArtifacts entry','BACKUP_REFERENCE_INVALID',r=>{r.bindings.figureSources[0].dataArtifacts=[null];}],
+   ['non-array figureSources','BACKUP_REFERENCE_INVALID',r=>{r.bindings.figureSources={};}],
+   ['non-object figureSources entry','BACKUP_REFERENCE_INVALID',r=>{r.bindings.figureSources=[null];}],
+   ['artifact JSON ID mismatch','BACKUP_REFERENCE_INVALID',null,{artifact:{...originalArtifact,id:'forged-id'}}],
+   ['artifact JSON project mismatch','BACKUP_REFERENCE_INVALID',null,{artifact:{...originalArtifact,projectId:otherProject.id}}],
+   ['artifact SQL project mismatch','BACKUP_REFERENCE_INVALID',null,{sqlProject:['artifact',otherProject.id]}],
+   ['report JSON project mismatch','BACKUP_REFERENCE_INVALID',r=>{r.projectId=otherProject.id;}],
+   ['report SQL project mismatch','BACKUP_REFERENCE_INVALID',null,{sqlProject:['report',otherProject.id]}],
+   ['missing execution manifest artifact path','BACKUP_REFERENCE_INVALID',null,{job:missingManifestPath}],
+   ['pathless direct manifest artifact','BACKUP_REFERENCE_INVALID',null,{job:directManifestArtifact}],
+   ['nested pathless execution manifest artifact','BACKUP_REFERENCE_INVALID',null,{job:nestedManifestArtifact}],
+  ];
+  for(const [name,code,mutate,extra={}] of cases){
+   const changed=structuredClone(report);if(mutate)mutate(changed);writeRecord(s,'report',report.id,changed);if(extra.artifact)writeRecord(s,'artifact',input.id,extra.artifact);if(extra.job)writeRecord(s,'sandbox-job',originalJob.id,extra.job);if(extra.sqlProject)s.app.store.db.prepare('UPDATE records SET project_id=? WHERE kind=? AND id=?').run(extra.sqlProject[1],extra.sqlProject[0],extra.sqlProject[0]==='report'?report.id:input.id);
+   try{await assert.rejects(createDataBackup(s.data,s.backup,{offline:true}),{code},name);assert.equal(existsSync(s.backup),false,name);}
+   finally{writeRecord(s,'report',report.id,report);writeRecord(s,'artifact',input.id,originalArtifact);if(extra.job)writeRecord(s,'sandbox-job',originalJob.id,originalJob);if(extra.sqlProject)s.app.store.db.prepare('UPDATE records SET project_id=? WHERE kind=? AND id=?').run(extra.sqlProject[0]==='report'?report.projectId:input.projectId,extra.sqlProject[0],extra.sqlProject[0]==='report'?report.id:input.id);}
+  }
+  const artifactPath=physical(s,originalArtifact.path),bytes=readFileSync(artifactPath);chmodSync(artifactPath,0o600);writeFileSync(artifactPath,'changed entity bytes');
+  try{await assert.rejects(createDataBackup(s.data,s.backup,{offline:true}),{code:'BACKUP_CONTENT_MISMATCH'});assert.equal(existsSync(s.backup),false);}
+  finally{writeFileSync(artifactPath,bytes);}
+ }finally{s.close();}
+});
 
 test('offline backup and original-path restore retain SQLite history, native bytes, real Git worktree and logical modes',async()=>{
  const s=fixture();let server;try{
