@@ -21,7 +21,7 @@ const claimContent = (c) => clean({ statement: c.statement, evidenceIds: c.evide
 const payload = (r) => clean({ artifactId: r.artifactId, artifactDigest: r.artifactDigest, title: r.title, formatVersion: r.formatVersion, runIds: r.runIds, claimIds: r.claimIds, evidenceIds: r.evidenceIds, references: r.references, runs: r.runs, bindings: r.bindings });
 function safeExportBytes(bytes, context) {
     const value = bytes.toString('utf8');
-    const roots = [context.dataDir, context.repoRoot].map(path => path.replaceAll('\\', '/').replace(/\/+$/, '').toLowerCase());
+    const roots = [context.dataDir, context.repoRoot, ...context.store.paths.legacyRoots].map(path => path.replaceAll('\\', '/').replace(/\/+$/, '').toLowerCase());
     let decoded = value;
     ensure(!roots.some(root => root.length > 1 && value.replaceAll('\\', '/').toLowerCase().includes(root)), 'EXPORT_HOST_PATH_DETECTED', '导出内容包含宿主路径；请检查原始运行记录，文件不会被自动改写', 400);
     try {
@@ -53,7 +53,7 @@ export class ReportService {
     }
     record(actor, pid, id) { userOnly(actor); scope(actor, pid); return this.c.store.get('report', id, pid); }
     bytes(pid, id, expected) {
-        const a = this.c.store.get('artifact', id, pid), bytes = readStableFile(dirname(a.path), basename(a.path), 32 * 1024 * 1024);
+        const a = this.c.store.get('artifact', id, pid), bytes = readStableFile(dirname(this.c.store.paths.physical(a.path)), basename(this.c.store.paths.physical(a.path)), 32 * 1024 * 1024);
         ensure(bytes.length === a.size && digest(bytes) === a.digest && (!expected || a.digest === expected.digest && (expected.size === undefined || a.size === expected.size)), 'ARTIFACT_CORRUPTED', '报告引用的不可变文件已改变');
         return { artifact: a, bytes };
     }
@@ -83,7 +83,7 @@ export class ReportService {
         const value = { baseExperimentId, baseRevision, baseSnapshot, contractDigest, title, hypothesis, changes, candidateSnapshot, ...(p.testJobId ? { testJobId: p.testJobId } : {}), ...(p.flow ? { flow: p.flow, reviewId: p.reviewId, reviewAcceptanceId: p.reviewAcceptanceId } : {}) };
         ensure(digest(value) === p.digest && p.sourceValidity !== 'stale', 'CHANGE_SOURCE_STALE', '整合提案的固定绑定已改变或失效');
         ensure(digest(candidateSnapshot.files) === candidateSnapshot.digest, 'SNAPSHOT_CORRUPTED', '整合候选清单摘要不符');
-        verifySnapshot(candidateSnapshot.path, candidateSnapshot.files);
+        verifySnapshot(this.c.store.paths.physical(candidateSnapshot.path), candidateSnapshot.files);
         const approval = this.c.store.get('approval', p.approvalId, pid);
         ensure(approval.status === 'approved' && approval.subjectId === p.id && approval.scope === 'change.integrate' && approval.digest === p.digest, 'APPROVAL_STALE', '整合审批已失效');
         if (p.testJobId) {
@@ -91,7 +91,7 @@ export class ReportService {
             assertWorkingGrantJob(this.c.store, j);
             ensure(j.state === 'succeeded' && j.integrity === 'complete' && j.exitCode === 0 && j.sourceDigest === candidateSnapshot.digest && j.manifest.inputSnapshot.digest === j.sourceDigest && digest(j.manifest.inputSnapshot.files) === j.sourceDigest && digest(j.manifest) === j.manifestDigest, 'REPORT_TEST_BINDING_INVALID', '测试结果不属于该整合候选');
             ensure(grant.status === 'approved' && grant.scope === 'development.test' && grant.subjectKind === 'development-task' && grant.subjectId === j.developmentTaskId && grant.digest === j.manifestDigest, 'APPROVAL_STALE', '开发测试审批已失效');
-            verifySnapshot(j.manifest.inputSnapshot.path, j.manifest.inputSnapshot.files);
+            verifySnapshot(this.c.store.paths.physical(j.manifest.inputSnapshot.path), j.manifest.inputSnapshot.files);
             j.artifactIds.forEach(id => this.bytes(pid, id));
             for (const data of j.manifest.dataArtifacts) {
                 assertRunGrantArtifact(this.c.store, pid, this.bytes(pid, data.id, data).artifact);
@@ -171,7 +171,7 @@ export class ReportService {
                 assertRunGrantRun(this.c.store, r);
                 verifyRunRecord(r, this.evidence);
                 assertExperimentSourceCurrent(this.c.store, this.c.store.get('experiment', r.experimentId, pid));
-                verifySnapshot(r.manifest.snapshotPath, r.manifest.sourceFiles);
+                verifySnapshot(this.c.store.paths.physical(r.manifest.snapshotPath), r.manifest.sourceFiles);
             }
             const bindings = { runs: [], sources: [], artifacts: [], claims: [], proposals: [], objects: [] }, references = [], summaries = [];
             const add = (ref, data) => {
@@ -429,7 +429,7 @@ export class ReportService {
                 const run = this.c.store.get('run', b.runId, pid);
                 ensure(run.manifestDigest === b.manifestDigest && run.manifest.snapshotDigest === b.sourceDigest, 'REPORT_SOURCE_CHANGED', '报告运行绑定已变化');
                 verifyRunRecord(run, this.evidence);
-                verifySnapshot(run.manifest.snapshotPath, run.manifest.sourceFiles);
+                verifySnapshot(this.c.store.paths.physical(run.manifest.snapshotPath), run.manifest.sourceFiles);
             }
             catch (error) {
                 fail(error, true);
@@ -478,14 +478,14 @@ export class ReportService {
         else if (reference.type === 'figure-source-code') {
             const b = r.bindings.figureSources?.find(b => b.jobId === reference.targetId), job = this.c.store.get('sandbox-job', reference.targetId, pid), file = b?.files.find(f => f.path === reference.path);
             ensure(b && file && job.manifestDigest === b.manifestDigest && digest(job.manifest) === b.manifestDigest, 'REPORT_SOURCE_CHANGED', '固定图形源码绑定不符');
-            bytes = readStableFile(job.manifest.inputSnapshot.path, file.path, 2 * 1024 * 1024);
+            bytes = readStableFile(this.c.store.paths.physical(job.manifest.inputSnapshot.path), file.path, 2 * 1024 * 1024);
             ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '图形源码引用已改变');
             mediaType = 'text/plain';
         }
         else if (reference.type === 'run-source') {
             const run = this.c.store.get('run', reference.targetId, pid), binding = r.bindings.runs.find(b => b.runId === run.id), file = r.bindings.sources.find(b => b.runId === run.id)?.files.find(f => f.path === reference.path);
             ensure(binding && file && digest(run.manifest) === binding.manifestDigest && run.manifestDigest === binding.manifestDigest, 'REPORT_SOURCE_CHANGED', '固定运行源码绑定不符');
-            bytes = readStableFile(run.manifest.snapshotPath, file.path, 2 * 1024 * 1024);
+            bytes = readStableFile(this.c.store.paths.physical(run.manifest.snapshotPath), file.path, 2 * 1024 * 1024);
             ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '源码引用已改变');
             mediaType = 'text/plain';
         }
@@ -533,8 +533,8 @@ export class ReportService {
         for (const source of r.bindings.sources) {
             const run = this.c.store.get('run', source.runId, pid);
             for (const file of source.files) {
-                safePath(run.manifest.snapshotPath, file.path);
-                const bytes = readStableFile(run.manifest.snapshotPath, file.path, Math.min(30 * 1024 * 1024, file.size));
+                safePath(this.c.store.paths.physical(run.manifest.snapshotPath), file.path);
+                const bytes = readStableFile(this.c.store.paths.physical(run.manifest.snapshotPath), file.path, Math.min(30 * 1024 * 1024, file.size));
                 ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '导出源码与固定绑定不符');
                 add(`sources/${source.sourceDigest}/${file.path}`, bytes, file.mode);
             }
@@ -542,7 +542,7 @@ export class ReportService {
         for (const source of r.bindings.figureSources ?? []) {
             const job = this.c.store.get('sandbox-job', source.jobId, pid);
             for (const file of source.files) {
-                const bytes = readStableFile(job.manifest.inputSnapshot.path, file.path, Math.min(30 * 1024 * 1024, file.size));
+                const bytes = readStableFile(this.c.store.paths.physical(job.manifest.inputSnapshot.path), file.path, Math.min(30 * 1024 * 1024, file.size));
                 ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '图形源码与固定绑定不符');
                 add(`sources/${source.sourceDigest}/${file.path}`, bytes, file.mode);
             }

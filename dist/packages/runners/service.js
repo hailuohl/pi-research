@@ -42,10 +42,10 @@ export class RunService {
             assertOutcomeBoundary(this.c.store, e);
             validateContract(e.contract);
             this.researchSourceGuard?.(experimentId, 'prepare');
-            const snap = snapshotDirectory(e.workspace, join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
+            const snap = snapshotDirectory(this.c.store.paths.physical(e.workspace), join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
             const binding = revision ? this.c.store.maybe('git-source-binding', revision.id) : undefined;
-            const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: snap.path, sourceFiles: snap.files, createdAt: now(), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
-            verifyTrustedExample(manifest, this.c.repoRoot);
+            const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: this.c.store.paths.reference(snap.path), sourceFiles: snap.files, createdAt: now(), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
+            verifyTrustedExample(manifest, this.c.repoRoot, this.c.store.paths);
             const id = randomUUID(), hash = digest(manifest), approval = this.approvals.request(e.projectId, 'run-intent', id, hash, 'run.submit', '批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限');
             const result = this.c.store.create('run-intent', e.projectId, { experimentId: e.id, manifest, manifestDigest: hash, approvalId: approval.id, status: 'prepared' }, id);
             this.c.store.event(e.projectId, 'run.prepared', { intentId: id, experimentId: e.id, approvalId: approval.id, snapshotDigest: snap.digest });
@@ -69,15 +69,15 @@ export class RunService {
             ensure(e.revision === intent.manifest.experimentRevision && e.contractDigest === intent.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
             assertOutcomeBoundary(this.c.store, e);
             this.approvals.assert(intent.approvalId, intent.projectId, id, intent.manifestDigest, 'run.submit');
-            verifySnapshot(intent.manifest.snapshotPath, intent.manifest.sourceFiles);
-            verifyTrustedExample(intent.manifest, this.c.repoRoot);
+            verifySnapshot(this.c.store.paths.physical(intent.manifest.snapshotPath), intent.manifest.sourceFiles);
+            verifyTrustedExample(intent.manifest, this.c.repoRoot, this.c.store.paths);
             this.compute.assertEnqueue('run', intent.projectId, intent.manifest.contract.runner === 'docker' ? intent.manifest.contract.dockerContext ?? 'default' : undefined);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
             consumeRunGrant(this.c.store, intent, runId);
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
-            const execution = intent.manifest.contract.runner === 'docker' ? { backend: 'docker', dockerContext: intent.manifest.contract.dockerContext ?? 'default', containerName: `pi-research-${runId}`, controlDir: join(this.c.dataDir, 'jobs', runId, 'control'), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
-            const run = this.c.store.create('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir, cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}), ...(intent.runGrant ? { runGrant: intent.runGrant } : {}) }, runId);
+            const execution = intent.manifest.contract.runner === 'docker' ? { backend: 'docker', dockerContext: intent.manifest.contract.dockerContext ?? 'default', containerName: `pi-research-${runId}`, controlDir: this.c.store.paths.reference(join(this.c.dataDir, 'jobs', runId, 'control')), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
+            const run = this.c.store.create('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir: this.c.store.paths.reference(outputDir), cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}), ...(intent.runGrant ? { runGrant: intent.runGrant } : {}) }, runId);
             this.c.store.update('run-intent', id, intent.version, { status: 'submitted', runId });
             this.c.store.event(intent.projectId, 'run.queued', { runId, intentId: id });
             return run;
@@ -111,7 +111,7 @@ export class RunService {
         ensure(e.revision === run.manifest.experimentRevision && e.contractDigest === run.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
         ensure(digest(run.manifest.contract) === run.manifest.contractDigest && digest(run.manifest.sourceFiles) === run.manifest.snapshotDigest, 'MANIFEST_CORRUPTED', '运行契约或源码清单摘要不符');
         if (run.execution)
-            ensure(run.execution.backend === 'docker' && run.manifest.contract.runner === 'docker' && run.execution.dockerContext === (run.manifest.contract.dockerContext ?? 'default') && run.execution.containerName === `pi-research-${run.id}` && run.execution.controlDir === join(this.c.dataDir, 'jobs', run.id, 'control'), 'APPROVAL_STALE', '运行目标与批准契约不符');
+            ensure(run.execution.backend === 'docker' && run.manifest.contract.runner === 'docker' && run.execution.dockerContext === (run.manifest.contract.dockerContext ?? 'default') && run.execution.containerName === `pi-research-${run.id}` && this.c.store.paths.same(run.execution.controlDir, join(this.c.dataDir, 'jobs', run.id, 'control')), 'APPROVAL_STALE', '运行目标与批准契约不符');
         assertOutcomeBoundary(this.c.store, e);
         this.approvals.assert(intent.approvalId, run.projectId, intent.id, run.manifestDigest, 'run.submit');
     }
@@ -173,14 +173,14 @@ export class RunService {
     logs(actor, id, cursor = 0, stream = 'stdout', identity) {
         const run = this.get(actor, id);
         oneOf(stream, ['stdout', 'stderr'], 'stream');
-        return readLogPage(run.execution?.controlDir ?? run.outputDir, `${stream}.log`, cursor, { terminal: TERMINAL.includes(run.state), identity });
+        return readLogPage(this.c.store.paths.physical(run.execution?.controlDir ?? run.outputDir), `${stream}.log`, cursor, { terminal: TERMINAL.includes(run.state), identity });
     }
-    sourceList(actor, id) { const r = this.get(actor, id); verifySnapshot(r.manifest.snapshotPath, r.manifest.sourceFiles); const revisionId = r.manifest.sourceRevisionId ?? digest({ projectId: r.projectId, experimentId: r.experimentId, revision: r.manifest.experimentRevision }), binding = this.c.store.maybe('git-source-binding', revisionId); return { runId: r.id, experimentId: r.experimentId, revision: r.manifest.experimentRevision, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit ?? (binding?.sourceDigest === r.manifest.snapshotDigest ? binding.gitCommit : undefined), files: r.manifest.sourceFiles }; }
+    sourceList(actor, id) { const r = this.get(actor, id); verifySnapshot(this.c.store.paths.physical(r.manifest.snapshotPath), r.manifest.sourceFiles); const revisionId = r.manifest.sourceRevisionId ?? digest({ projectId: r.projectId, experimentId: r.experimentId, revision: r.manifest.experimentRevision }), binding = this.c.store.maybe('git-source-binding', revisionId); return { runId: r.id, experimentId: r.experimentId, revision: r.manifest.experimentRevision, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit ?? (binding?.sourceDigest === r.manifest.snapshotDigest ? binding.gitCommit : undefined), files: r.manifest.sourceFiles }; }
     sourceRead(actor, id, value) {
         const x = object(value), r = this.get(actor, id), meta = this.sourceList(actor, id), path = text(x.path, 'path', 1000), f = meta.files.find(f => f.path === path);
         ensure(f, 'NOT_FOUND', '运行快照中没有该文件', 404);
         ensure(f.size <= 2 * 1024 * 1024, 'FILE_TOO_LARGE', '该源码文件超过文本预览上限', 413);
-        const bytes = readStableFile(r.manifest.snapshotPath, path, 2 * 1024 * 1024);
+        const bytes = readStableFile(this.c.store.paths.physical(r.manifest.snapshotPath), path, 2 * 1024 * 1024);
         ensure(bytes.length === f.size && digest(bytes) === f.digest, 'SNAPSHOT_CORRUPTED', '运行源码字节不符');
         ensure(!bytes.includes(0), 'BINARY_FILE', '该文件不能作为文本源码预览', 415);
         let content;
@@ -200,7 +200,7 @@ export class RunService {
                 return r;
             if (facts)
                 ensure(r.execution?.generation === facts.generation && r.execution.leaseUntil > Date.now(), 'LEASE_EXPIRED', '旧监管器不能归档当前作业');
-            const collected = collectRunArtifacts(r, this.evidence), { metrics, artifactIds, evidenceIds, errors } = collected;
+            const collected = collectRunArtifacts(r, this.evidence, this.c.store.paths), { metrics, artifactIds, evidenceIds, errors } = collected;
             let integrity = collected.integrity;
             if (facts?.incomplete && integrity !== 'invalid')
                 integrity = 'incomplete';

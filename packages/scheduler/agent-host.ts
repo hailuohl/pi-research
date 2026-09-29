@@ -212,7 +212,7 @@ export class AgentHost {
             // Serialize the final revocation check with process creation across controllers.
             this.app.skills.ensureBundleStartAllowed(claimed.projectId!,bundleId);
             const marked=this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);store.update('agent-admission',marked.id,marked.version,{httpManagedVersion:1});requested=true;
-            return (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: claimed.workspace, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+            return (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
         });
         const worker: Active = {admissionId:slot.id, child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };active=worker;
         this.active.set(claimed.id, worker);
@@ -227,7 +227,7 @@ export class AgentHost {
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
         worker.contextMessageIds = hostMessages.map(m => m.id);
         const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
-        child.send({ type: 'start', managedHttp:true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: claimed.workspace, agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
+        child.send({ type: 'start', managedHttp:true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             const failure=asError(error),startError=`${failure.code} — ${failure.message}`;
@@ -337,7 +337,7 @@ export class AgentHost {
             }
         }
     }
-    private savePath(a: Active, file: string, root: string) { const rel = relative(resolve(root), resolve(file)); ensure(rel !== '' && !rel.startsWith('..') && !isAbsolute(rel) && file.endsWith('.jsonl'), 'SESSION_PATH_INVALID', 'Pi Session 路径超出受控目录'); const s = this.app.store.get<Session>('session', a.sessionId); this.app.store.update<Session>('session', s.id, s.version, { piSessionPath: resolve(file) }); }
+    private savePath(a: Active, file: string, root: string) { const rel = relative(resolve(root), resolve(file)); ensure(rel !== '' && !rel.startsWith('..') && !isAbsolute(rel) && file.endsWith('.jsonl'), 'SESSION_PATH_INVALID', 'Pi Session 路径超出受控目录'); const s = this.app.store.get<Session>('session', a.sessionId); if(s.piSessionPath&&this.app.store.paths.same(s.piSessionPath,resolve(file)))return;this.app.store.update<Session>('session', s.id, s.version, { piSessionPath: this.app.store.paths.reference(resolve(file)) }); }
     private abortProcess(a: Active, error = '会话已中止或任务已失效') {
         if (a.ended || a.stopError)
             return;

@@ -37,17 +37,17 @@ try {
         const generation=run.execution.generation;
         const fence=()=>{const r=store.get<Run>('run',runId);ensure(!TERMINAL.includes(r.state)&&r.execution?.generation===generation&&r.execution.leaseUntil>Date.now(),'LEASE_EXPIRED','监管器已失去作业租约');};
         await superviseDockerRun(run as DockerRun,{
-            read:()=>store.get<Run>('run',runId) as DockerRun,fence,verifyTarget:()=>compute.verifyTarget('run',runId),
+            paths:store.paths,read:()=>store.get<Run>('run',runId) as DockerRun,fence,verifyTarget:()=>compute.verifyTarget('run',runId),
             assertGrant:r=>service.assertExecutionGrant(r),
             patch:value=>store.transaction(()=>{fence();const r=store.get<Run>('run',runId);if(value.execution?.startRequested&&!r.execution!.startRequested){ensure(!r.cancelRequested,'RUN_CANCELLED','作业已请求取消');service.assertExecutionGrant(r);}return store.update<Run>('run',runId,r.version,value) as DockerRun;}),
             finalize:facts=>{fence();receipt(facts.exitCode,facts.state,facts.error,facts);},
         });
     } else {
-        const adapter=new TrustedExampleAdapter(run,repoRoot);
+        const adapter=new TrustedExampleAdapter(run,repoRoot,store.paths);
         let processHandle:RunnerProcess|undefined,timer:NodeJS.Timeout|undefined,timeout:NodeJS.Timeout|undefined,observedCancel=false,timedOut=false,truncated=false,bytes=0,authorityError:string|undefined;
         try {
             await adapter.preflight();await adapter.stage();
-            const log=join(run.outputDir,'stdout.log');writeFileSync(log,'',{mode:0o600});
+            const log=join(store.paths.physical(run.outputDir),'stdout.log');writeFileSync(log,'',{mode:0o600});
             store.transaction(()=>{const current=store.get<Run>('run',runId);ensure(current.state==='submitting'&&current.supervisorPid===process.pid&&!current.startRequested&&!current.childPid&&!current.cancelRequested,'RUN_NOT_LAUNCHABLE','运行不再允许启动');service.assertExecutionGrant(current,true);store.update<Run>('run',current.id,current.version,{startRequested:true,startedAt:now()});});
             processHandle=await adapter.start((_stream,chunk)=>{const remaining=Math.max(0,16*1024*1024-bytes);bytes+=chunk.length;if(remaining)appendFileSync(log,chunk.subarray(0,remaining));if(chunk.length>remaining){truncated=true;void processHandle?.cancel();}});
             store.transaction(()=>{const r=store.get<Run>('run',runId);store.update<Run>('run',r.id,r.version,{state:r.cancelRequested?'cancelling':'running',childPid:processHandle!.pid,heartbeat:Date.now()});});

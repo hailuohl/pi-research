@@ -3,7 +3,7 @@ import {appendFileSync, mkdirSync, writeFileSync, readdirSync, lstatSync, exists
 import {join} from 'node:path';
 import {setTimeout as pause} from 'node:timers/promises';
 import {ResearchApp} from '../../packages/research-app.js';
-import {docker, dockerEnv, inspect as inspectDocker, preflight, createArgs, stageInputs, retireUncertainStart} from '../../packages/execution/docker.js';
+import {physicalDockerJob,docker, dockerEnv, inspect as inspectDocker, preflight, createArgs, stageInputs, retireUncertainStart} from '../../packages/execution/docker.js';
 import {LEASE_MS} from '../../packages/execution/service.js';
 import type {SandboxJob, SandboxState} from '../../packages/execution/contracts.js';
 import type {Row} from '../../packages/domain/types.js';
@@ -23,12 +23,12 @@ const current = () => {
 const patch = (value: Partial<SandboxJob>) => store.transaction(() => {const j = current(); return store.update<SandboxJob>('sandbox-job', j.id, j.version, value);});
 const renew = () => patch({leaseUntil: Date.now() + LEASE_MS, workerPid: process.pid});
 async function checked<T>(fn:()=>Promise<T>):Promise<T>{await app.compute.verifyTarget('development',jobId);current();const result=await fn();await app.compute.verifyTarget('development',jobId);current();return result;}
-async function inspect(job:Row<SandboxJob>){return checked(()=>inspectDocker(job));}
+async function inspect(job:Row<SandboxJob>){return checked(()=>inspectDocker(physicalDockerJob(job,store.paths)));}
 function initializeLogs() {
     const job = current();
-    mkdirSync(job.controlDir, {recursive: true, mode: 0o700});
+    mkdirSync(store.paths.physical(job.controlDir), {recursive: true, mode: 0o700});
     for (const name of ['stdout.log', 'stderr.log']) {
-        const path = join(job.controlDir, name);
+        const path = join(store.paths.physical(job.controlDir), name);
         if (!existsSync(path)) writeFileSync(path, '', {mode: 0o600, flag: 'wx'});
     }
 }
@@ -36,12 +36,12 @@ function diagnostic(error: unknown) {
     const job = current();
     initializeLogs();
     const code = job.startRequested ? 'EXECUTION_FAILED' : 'PREFLIGHT_FAILED';
-    const available = Math.max(0, job.manifest.resources.logBytes - lstatSync(join(job.controlDir, 'stdout.log')).size - lstatSync(join(job.controlDir, 'stderr.log')).size);
+    const available = Math.max(0, job.manifest.resources.logBytes - lstatSync(join(store.paths.physical(job.controlDir), 'stdout.log')).size - lstatSync(join(store.paths.physical(job.controlDir), 'stderr.log')).size);
     const message = Buffer.from(`${code}\n`);
-    appendFileSync(join(job.controlDir, 'stderr.log'), message.subarray(0, available));
+    appendFileSync(join(store.paths.physical(job.controlDir), 'stderr.log'), message.subarray(0, available));
     bytes += Math.min(available, message.length);
     if (available < message.length) truncated = true;
-    writeFileSync(join(job.controlDir, 'diagnostic.log'), Buffer.from(String(error instanceof Error ? error.stack ?? error.message : error)).subarray(0, 65536), {mode: 0o600});
+    writeFileSync(join(store.paths.physical(job.controlDir), 'diagnostic.log'), Buffer.from(String(error instanceof Error ? error.stack ?? error.message : error)).subarray(0, 65536), {mode: 0o600});
     diagnosticWritten = true;
 }
 const timer = setInterval(() => {try {renew();} catch {lostLease = true; logger?.kill();}}, 3000);
@@ -69,7 +69,7 @@ function collectLogs(start = false) {
     bytes = 0;
     // A recovered worker cannot prove an uninterrupted log stream; finalize marks it incomplete.
     for (const name of ['stdout.log', 'stderr.log']) {
-        const path = join(job.controlDir, name);
+        const path = join(store.paths.physical(job.controlDir), name);
         if (existsSync(path)) bytes += lstatSync(path).size;
         else writeFileSync(path, '', {mode: 0o600});
     }
@@ -79,7 +79,7 @@ function collectLogs(start = false) {
         const remaining = Math.max(0, job.manifest.resources.logBytes - bytes);
         if (chunk.length > remaining) truncated = true;
         bytes += chunk.length;
-        try {if (remaining) appendFileSync(join(job.controlDir, name), chunk.subarray(0, remaining));} catch (error) {logError = (error as Error).message;}
+        try {if (remaining) appendFileSync(join(store.paths.physical(job.controlDir), name), chunk.subarray(0, remaining));} catch (error) {logError = (error as Error).message;}
     });
     logClosed = new Promise(resolve => {
         logger!.on('error', error => {logError = error.message; resolve();});
@@ -110,11 +110,11 @@ try {
         if (job.startRequested || job.containerId) {incomplete = true; throw new Error('Previously owned container is confirmed missing; execution evidence incomplete');}
         app.development.assertCurrent(current());
         job = patch({imageId});
-        stageInputs(job);
+        stageInputs(physicalDockerJob(job,store.paths));
         job = current();
         if (job.cancelRequested) throw new Error('Cancellation requested before container creation');
         externalPossible = true;
-        try {await checked(()=>docker(job.manifest.dockerContext, createArgs(job)));}
+        try {await checked(()=>docker(job.manifest.dockerContext, createArgs(physicalDockerJob(job,store.paths))));}
         catch (error) {container = await inspect(current()); if (!container) throw error;}
         container ??= await inspect(current());
         if (!container) throw new Error('Created container cannot be observed');
@@ -142,7 +142,7 @@ try {
             container = await inspect(job);
             if (!container) {incomplete = true; throw new Error('Owned container is confirmed missing during monitoring');}
             if (container.State.Status === 'exited' || container.State.Status === 'dead') {
-                if (outputSize(job.outputDir) > job.manifest.resources.outputBytes) {incomplete = true; stopping = 'failed'; reason = 'Sandbox output limit exceeded';}
+                if (outputSize(store.paths.physical(job.outputDir)) > job.manifest.resources.outputBytes) {incomplete = true; stopping = 'failed'; reason = 'Sandbox output limit exceeded';}
                 await finish(stopping ?? (container.State.ExitCode === 0 ? 'succeeded' : 'failed'), container.State.ExitCode, reason ?? (container.State.Error || undefined));
                 break;
             }
@@ -152,7 +152,7 @@ try {
             if (job.cancelRequested) {stopping = 'cancelled'; reason = 'Cancellation requested';}
             else if (Date.now() >= Math.min(Date.parse(job.manifest.deadline), Date.parse(job.startedAt ?? container.State.StartedAt) + job.manifest.resources.timeoutSeconds * 1000)) {stopping = 'timed_out'; reason = 'Sandbox deadline or timeout exceeded';}
             else if (truncated || logError) {stopping = 'failed'; reason = logError ?? 'Sandbox log limit exceeded';}
-            else if (outputSize(job.outputDir) > job.manifest.resources.outputBytes) {incomplete = true; stopping = 'failed'; reason = 'Sandbox output limit exceeded';}
+            else if (outputSize(store.paths.physical(job.outputDir)) > job.manifest.resources.outputBytes) {incomplete = true; stopping = 'failed'; reason = 'Sandbox output limit exceeded';}
             else {try {app.development.assertCurrent(job, false);} catch (error) {stopping = 'failed'; reason = (error as Error).message;}}
             if (stopping) await stopOwned();
             await pause(250);
@@ -166,7 +166,7 @@ try {
             let stopped = !externalPossible, exitCode: number | null = null;
             if (externalPossible) {
                 let observed = await inspect(job);
-                if (observed?.State.Status === 'created' && job.startRequested) {incomplete = true; observed = await retireUncertainStart(job,current,(context,args)=>checked(()=>docker(context,args)),()=>inspect(job));}
+                if (observed?.State.Status === 'created' && job.startRequested) {incomplete = true; observed = await retireUncertainStart(physicalDockerJob(job,store.paths),current,(context,args)=>checked(()=>docker(context,args)),()=>inspect(job));}
                 if (observed?.State.Running) {await stopOwned(); observed = await inspect(current());}
                 stopped = observed ? ['exited', 'dead'].includes(observed.State.Status) || (observed.State.Status === 'created' && !job.startRequested) : true;
                 if (!observed && (job.startRequested || job.containerId)) incomplete = true;

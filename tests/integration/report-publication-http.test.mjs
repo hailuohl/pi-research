@@ -31,9 +31,9 @@ test('owner HTTP and CLI report contracts freeze manuscript results and preserve
   assert.equal((await call('report_create',{...input,publicationResultIds:[{resultId:fixture.result.id}]})).value.error.code,'INVALID_INPUT');
   assert.equal((await call('report_create',{...input,pdfArtifactId:fixture.result.pdf.artifactId})).value.error.code,'INVALID_INPUT');
   const session=app.sessions.create(USER,p.id,{});await assert.rejects(()=>new ToolDispatcher(app).execute({type:'agent',projectId:p.id,sessionId:session.id,role:'coordinator',generation:0},'report_create',input,'denied'),{code:'TOOL_DENIED'});
-  const original=readFileSync(created.value.path);app.approvals.stale(fixture.job.id);
+  const exportPath=app.store.paths.physical(created.value.path),original=readFileSync(exportPath);app.approvals.stale(fixture.job.id);
   const stale=await call('report_inspect',{reportId:record.id});assert.equal(stale.status,200);assert.equal(stale.value.validity,'stale');assert.deepEqual(stale.value.publications,inspected.value.publications);
   assert.deepEqual(await call('report_reference_read',{reportId:record.id,referenceId:publication.referenceId,limit:64000}),fixed);
-  assert.deepEqual(readFileSync(created.value.path),original);assert.notEqual((await call('report_create',input)).status,200);assert.equal((await call('report_export',{reportId:record.id})).value.error.code,'REPORT_STALE');
+  assert.deepEqual(readFileSync(exportPath),original);assert.notEqual((await call('report_create',input)).status,200);assert.equal((await call('report_export',{reportId:record.id})).value.error.code,'REPORT_STALE');
  }finally{await server.close();assert.ok(resolve(dir).startsWith(resolve(tmpdir())+sep));rmSync(dir,{recursive:true,force:true});}
 });

@@ -18,8 +18,8 @@ import type {GitOperation, GitSourceBinding, GitWorkspace} from './git-types.js'
 
 const terminal=(state:GitOperation['state'])=>['complete','conflict','failed'].includes(state);
 const snapshot=(c:AppContext,path:string):SourceSnapshot=>{
-    if(listFiles(path).length)return snapshotDirectory(path,join(c.dataDir,'snapshots'));
-    const id=digest([]),root=join(c.dataDir,'snapshots',id);mkdirSync(root,{recursive:true});return {path:root,digest:id,files:[]};
+    const physical=c.store.paths.physical(path);if(listFiles(physical).length)return c.store.paths.referenceSnapshot(snapshotDirectory(physical,join(c.dataDir,'snapshots')));
+    const id=digest([]),root=join(c.dataDir,'snapshots',id);mkdirSync(root,{recursive:true});return {path:c.store.paths.reference(root),digest:id,files:[]};
 };
 export function queueSourceHistory(c:AppContext,r:Row<SourceRevision>,parentSourceRevisionId?:string,legacy=false) {
     return c.store.transaction(()=>{
@@ -36,8 +36,8 @@ export function queueWorkspaceHistory(c:AppContext,s:Row<Session>,r:Row<SourceRe
         if(old){ensure(old.sourceRevisionId===r.id,'WORKSPACE_NOT_EMPTY','已绑定另一 Git 来源，不能覆盖工作区');return old;}
         queueSourceHistory(c,r,undefined,true);
         const id=randomUUID(),branch=`refs/heads/session-${s.id}`,path=join(c.dataDir,'git-worktrees',s.projectId!,s.id),input=snapshot(c,s.workspace);
-        c.store.create<GitOperation>('git-operation',s.projectId,{action:'checkout',state:'queued',sourceRevisionId:r.id,sessionId:s.id,snapshot:input,branch,workspace:path,previousWorkspace:s.workspace,message:`Prepare session ${s.id}`,commitDate:now(),generation:0,leaseUntil:0},id);
-        const result=c.store.create<GitWorkspace>('git-workspace',s.projectId,{sessionId:s.id,sourceRevisionId:r.id,branch,path,state:'pending',operationId:id,snapshot:input},s.id);
+        c.store.create<GitOperation>('git-operation',s.projectId,{action:'checkout',state:'queued',sourceRevisionId:r.id,sessionId:s.id,snapshot:input,branch,workspace:c.store.paths.reference(path),previousWorkspace:s.workspace,message:`Prepare session ${s.id}`,commitDate:now(),generation:0,leaseUntil:0},id);
+        const result=c.store.create<GitWorkspace>('git-workspace',s.projectId,{sessionId:s.id,sourceRevisionId:r.id,branch,path:c.store.paths.reference(path),state:'pending',operationId:id,snapshot:input},s.id);
         c.store.event(s.projectId,'git.workspace_queued',{sessionId:s.id,operationId:id});return result;
     });
 }
@@ -105,7 +105,7 @@ export class GitService {
             this.app.workingGrants.assertWrite(actor,pid,sessionId,path,undefined,mode);
             const current=snapshot(this.app.context,s.workspace);ensure(current.digest===text(x.expectedSourceDigest,'expectedSourceDigest',64),'FILE_VERSION_CONFLICT','源码已变化');
             const before=current.files.find(f=>f.path===path);ensure(before,'NOT_FOUND','文件不存在',404);
-            setSourceMode(s.workspace,path,mode);this.app.store.onRollback(()=>setSourceMode(s.workspace,path,before.mode??'100644'));
+            setSourceMode(this.app.store.paths.physical(s.workspace),path,mode);this.app.store.onRollback(()=>setSourceMode(this.app.store.paths.physical(s.workspace),path,before.mode??'100644'));
             this.app.store.event(pid,'workspace.mode_changed',{sessionId,path,mode});return {path,mode,sourceDigest:snapshot(this.app.context,s.workspace).digest};});
     }
     migrate(actor:Actor,pid:string) {
@@ -134,13 +134,13 @@ export class GitService {
         const fence=()=>{leases.assert(pid,'repository',owner,claimed.lease.generation);const j=store.get<GitOperation>('git-operation',job.id);ensure(j.generation===job.generation&&j.leaseUntil>Date.now()&&j.state==='running','WORKSPACE_LEASE_EXPIRED','Git 执行器已失去租约');return j;};
         const renew=setInterval(()=>{try{store.transaction(()=>{const j=fence();leases.renew(pid,'repository',owner,claimed.lease.generation);store.update<GitOperation>('git-operation',j.id,j.version,{leaseUntil:Date.now()+60000});});}catch{}},3000);
         try {
-            assertProjectWritable(store,pid);validateSourceRevision(this.app.context,pid,job.sourceRevisionId);verifySnapshot(job.snapshot.path,job.snapshot.files);
+            assertProjectWritable(store,pid);validateSourceRevision(this.app.context,pid,job.sourceRevisionId);verifySnapshot(store.paths.physical(job.snapshot.path),job.snapshot.files);
             if(job.sessionId)this.validateSession(job);
             await repo.initialize();fence();mkdirSync(opDir,{recursive:true});
             let commit=await repo.ref(receipt);fence();const hadReceipt=!!commit;
             const parent=job.action==='commit'?job.expectedHead:job.parentSourceRevisionId?store.get<GitSourceBinding>('git-source-binding',job.parentSourceRevisionId).gitCommit:undefined;
             if(job.action!=='checkout') {
-                const wanted=await repo.commitSnapshot(job.snapshot,opDir,{parent,message:job.message,date:job.commitDate});fence();
+                const wanted=await repo.commitSnapshot(store.paths.physicalSnapshot(job.snapshot),opDir,{parent,message:job.message,date:job.commitDate});fence();
                 ensure(!commit||commit===wanted,'GIT_RECEIPT_CONFLICT','Git 操作回执与固定源码不符');
                 if(!commit){await repo.updateRef(receipt,wanted,null);fence();commit=wanted;}
             } else commit=store.get<GitSourceBinding>('git-source-binding',job.sourceRevisionId).gitCommit;
@@ -149,8 +149,8 @@ export class GitService {
             } else if(job.action==='checkout') {
                 ensure(snapshot(this.app.context,job.previousWorkspace!).digest===job.snapshot.digest,'GIT_DIRTY_CONFLICT','旧工作区在准备期间已变化，原目录保留');
                 const branchHead=await repo.ref(job.branch!);fence();ensure(!branchHead||branchHead===commit,'GIT_HEAD_CONFLICT','工作区分支已有其他来源');if(!branchHead){await repo.updateRef(job.branch!,commit!,null);fence();}
-                if(!existsSync(join(job.workspace!,'.git'))){await repo.addWorktree(job.workspace!,job.branch!,commit!);fence();}
-                const w=await repo.inspectWorktree(job.workspace!);fence();ensure(w.head===commit&&w.branch===job.branch,'GIT_WORKTREE_CONFLICT','已有工作区不属于此操作');
+                if(!existsSync(join(store.paths.physical(job.workspace!),'.git'))){await repo.addWorktree(store.paths.physical(job.workspace!),job.branch!,commit!);fence();}
+                const w=await repo.inspectWorktree(store.paths.physical(job.workspace!));fence();ensure(w.head===commit&&w.branch===job.branch,'GIT_WORKTREE_CONFLICT','已有工作区不属于此操作');
                 if(!hadReceipt)this.restoreSnapshot(job.snapshot,job.workspace!,store.get<SourceRevision>('source-revision',job.sourceRevisionId).snapshot);
                 ensure(snapshot(this.app.context,job.workspace!).digest===job.snapshot.digest,'GIT_DIRTY_CONFLICT','目标工作区内容已变化，禁止覆盖');
                 const old=await repo.ref(receipt);fence();ensure(!old||old===commit,'GIT_RECEIPT_CONFLICT','工作区操作回执不符');if(!old){await repo.updateRef(receipt,commit!,null);fence();}
@@ -158,7 +158,7 @@ export class GitService {
                 ensure(snapshot(this.app.context,job.workspace!).digest===job.snapshot.digest,'GIT_DIRTY_CONFLICT','提交准备后源码已变化，保留原目录与候选提交');
                 const old=await repo.ref(job.branch!);fence();ensure(old===job.expectedHead||old===commit,'GIT_HEAD_CONFLICT','分支出现其他提交，不能覆盖');
                 if(old!==commit){await repo.updateRef(job.branch!,commit!,job.expectedHead!);fence();}
-                await repo.setWorktreeIndex(job.workspace!,commit!);fence();
+                await repo.setWorktreeIndex(store.paths.physical(job.workspace!),commit!);fence();
             }
             store.transaction(()=>{
                 job=fence();assertProjectWritable(store,pid);validateSourceRevision(this.app.context,pid,job.sourceRevisionId);
@@ -192,6 +192,7 @@ export class GitService {
         return s;
     }
     private restoreSnapshot(input:SourceSnapshot,workspace:string,base:SourceSnapshot) {
+        workspace=this.app.store.paths.physical(workspace);input=this.app.store.paths.physicalSnapshot(input);
         verifySnapshot(input.path,input.files);const wanted=new Map(input.files.map(f=>[f.path,f])),original=new Map(base.files.map(f=>[f.path,f]));
         // Before the receipt exists, resume only recognizable base/candidate bytes, never overwrite an unrelated edit.
         const existing=listFiles(workspace);

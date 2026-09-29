@@ -19,7 +19,7 @@ export function assertRunGrantReference(store:Store,pid:string,ref:RunGrantRefer
 export function assertRunGrantEntry(store:Store,pid:string,g:RunGrant,intent:Row<RunIntent>){
     const e=g.entries.find(e=>e.intentId===intent.id),m=intent.manifest;ensure(e&&intent.experimentId===e.experimentId&&intent.approvalId===e.approvalId&&intent.manifestDigest===e.manifestDigest&&digest(m)===e.manifestDigest&&m.experimentId===e.experimentId&&m.experimentRevision===e.experimentRevision&&m.snapshotDigest===e.sourceDigest&&m.contractDigest===e.contractDigest&&digest(m.contract)===e.contractDigest&&digest(m.sourceFiles)===e.sourceDigest,'RUN_GRANT_INTENT_CHANGED','清单不在批准集合或原清单、源码、契约、批准身份已改变');
     const approval=store.get<Approval>('approval',e.approvalId,pid);ensure(approval.subjectKind==='run-intent'&&approval.subjectId===intent.id&&approval.scope==='run.submit'&&approval.digest===e.manifestDigest&&!approval.workingGrant,'APPROVAL_STALE','冻结清单的精确批准不符');
-    verifySnapshot(m.snapshotPath,m.sourceFiles);assertExperimentSourceCurrent(store,store.get<Experiment>('experiment',intent.experimentId,pid));return approval;
+    verifySnapshot(store.paths.physical(m.snapshotPath),m.sourceFiles);assertExperimentSourceCurrent(store,store.get<Experiment>('experiment',intent.experimentId,pid));return approval;
 }
 export function assertRunGrantIntent(store:Store,intent:Row<RunIntent>,admission=false){
     const a=store.get<Approval>('approval',intent.approvalId,intent.projectId!);

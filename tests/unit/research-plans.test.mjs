@@ -4,6 +4,7 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {setup,USER,approve,campaign,enroll,submit,fixtureFinish} from '../support/research.mjs';
 import {actor,result,acceptedSource} from '../support/collaboration.mjs';
+const physical=(s,reference)=>s.app.store.paths.physical(reference);
 
 function observed(s,overrides={}){const c=campaign(s,overrides),r=submit(s,enroll(s,c));fixtureFinish(s,r);s.app.campaigns.observe();return {c,r,o:s.app.campaigns.observations(USER,c.id)[0]};}
 function plan(r,extra={}){return {hypothesis:'A controlled software regression experiment',controlRunIds:[r.id],changedFactors:['polynomialDegree'],dataSplit:'Same fixed example dataset and holdout split; no external scientific claim',dataArtifactIds:[],primaryMetric:'mse',guardrailMetrics:['r2'],repetitions:{count:1,rationale:'Deterministic software acceptance only'},successCriteria:'Review actual held-out error and guardrails',inconclusiveCriteria:'Missing output or unverified evidence',stoppingCriteria:'Stop after the approved bounded comparison',...extra};}
@@ -12,18 +13,18 @@ function apply(s,d){approve(s.app,d.approvalId);return s.app.decisions.apply(USE
 function failedCandidate(s,c){const e=s.app.experiments.create(USER,s.project.id,{parentId:s.baseline.id,title:'unanswered software failure'}),r=submit(s,enroll(s,c,e));fixtureFinish(s,r,null,'failed');const failed=s.app.runs.get(USER,r.id);s.app.runs.reviewOutcome(USER,r.id,{expectedVersion:failed.version,disposition:'unanswered',reason:'Fixture explicitly failed before measurement'});s.app.campaigns.observe();return {e,r,o:s.app.campaigns.observations(USER,c.id).find(o=>o.runId===r.id)};}
 function reviewed(s,candidate){
  const session=s.app.sessions.create(USER,s.project.id,{title:'Isolated candidate implementation'});s.app.researchPlans.prepareCandidate(USER,s.project.id,{candidateId:candidate.id,sessionId:session.id});
- writeFileSync(join(session.workspace,'repair-check.py'),'assert 1 + 1 == 2\n');
+ writeFileSync(join(physical(s,session.workspace),'repair-check.py'),'assert 1 + 1 == 2\n');
  const t=s.app.development.prepare(USER,s.project.id,session.id,{command:['python','repair-check.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`});approve(s.app,t.grantId);
- const j=s.app.store.get('sandbox-job',s.app.development.submit(USER,s.project.id,t.id).id);writeFileSync(join(j.controlDir,'stdout.log'),'UNIT FIXTURE: actual execution covered by integration acceptance\n');writeFileSync(join(j.controlDir,'stderr.log'),'');const job=s.app.development.finalize(j.id,{state:'succeeded',exitCode:0});
+ const j=s.app.store.get('sandbox-job',s.app.development.submit(USER,s.project.id,t.id).id),controlDir=physical(s,j.controlDir);writeFileSync(join(controlDir,'stdout.log'),'UNIT FIXTURE: actual execution covered by integration acceptance\n');writeFileSync(join(controlDir,'stderr.log'),'');const job=s.app.development.finalize(j.id,{state:'succeeded',exitCode:0});
  const project=s.app.projects.get(USER,s.project.id);s.app.projects.settings(USER,project.id,{expectedVersion:project.version,enabled:true});
  const review=s.app.developmentReviews.prepare(USER,s.project.id,{jobId:job.id});approve(s.app,review.approvalId);s.app.teams.activate(USER,review.teamId);const claim=s.app.teams.claim(review.teamId);assert.ok(claim);s.app.teams.submit(actor(claim),result({verdict:'accept',evidenceIds:review.requiredEvidenceIds}));
  const p=s.app.changes.prepareReviewed(USER,s.project.id,{reviewId:review.id,title:candidate.spec.title,hypothesis:candidate.spec.hypothesis});approve(s.app,p.approvalId);const e=s.app.changes.apply(USER,p.id);return {p,e,t,job,review,session};
 }
 
 test('new plan fixes parent snapshot, merges parameter fields, and leaves formal Run unapproved',()=>{const s=setup();try{
- const {c,r,o}=observed(s),d=propose(s,c,o,r);writeFileSync(join(s.project.workspace,'project-only.txt'),'must not enter child');writeFileSync(join(s.baseline.workspace,'mutable-only.txt'),'must not replace captured parent');
+ const {c,r,o}=observed(s),d=propose(s,c,o,r);writeFileSync(join(physical(s,s.project.workspace),'project-only.txt'),'must not enter child');writeFileSync(join(physical(s,s.baseline.workspace),'mutable-only.txt'),'must not replace captured parent');
  const done=apply(s,d),inspection=s.app.researchPlans.inspect(USER,s.project.id,d.planRevisionId);assert.equal(inspection.validity,'current');assert.equal(inspection.candidates.length,1);assert.equal(done.effects.candidateIds[0],inspection.candidates[0].id);
- const e=s.app.experiments.get(USER,done.effects.experimentIds[0]),config=JSON.parse(readFileSync(join(e.workspace,'config.json'))),source=s.app.sources.list(USER,s.project.id,{experimentId:e.id,revision:1});assert.equal(config.polynomialDegree,3);assert.ok(Object.hasOwn(config,'ridge'));assert.equal(source.files.some(f=>f.path.endsWith('only.txt')),false);
+ const e=s.app.experiments.get(USER,done.effects.experimentIds[0]),config=JSON.parse(readFileSync(join(physical(s,e.workspace),'config.json'))),source=s.app.sources.list(USER,s.project.id,{experimentId:e.id,revision:1});assert.equal(config.polynomialDegree,3);assert.ok(Object.hasOwn(config,'ridge'));assert.equal(source.files.some(f=>f.path.endsWith('only.txt')),false);
  assert.throws(()=>s.app.runs.submit(USER,done.effects.intentIds[0]),{code:'APPROVAL_REQUIRED'});assert.equal(JSON.stringify(inspection).includes('snapshotPath'),false);
 }finally{s.close();}});
 
@@ -99,7 +100,7 @@ test('legacy same-node retries and reviewed repair descendants share the oldest 
 
 test('promotion fixes measured Run source for the next round and preserves unselected mutable bytes',()=>{const s=setup();try{
  const {c,r,o}=observed(s),first=apply(s,propose(s,c,o,r)),run=submit(s,s.app.store.get('run-intent',first.effects.intentIds[0]));fixtureFinish(s,run,{mse:0.05});s.app.campaigns.observe();const selected=s.app.runs.get(USER,run.id),source=s.app.experiments.get(USER,run.experimentId),observation=s.app.campaigns.observations(USER,c.id).find(o=>o.runId===run.id);
- writeFileSync(join(source.workspace,'later-unmeasured.txt'),'not part of selected run');const promoted=apply(s,propose(s,c,observation,r,'promote',{selectedRunId:run.id,candidates:[{title:'degree four',hypothesis:'next controlled factor',implementation:'config',config:{polynomialDegree:4}}]}));
+ writeFileSync(join(physical(s,source.workspace),'later-unmeasured.txt'),'not part of selected run');const promoted=apply(s,propose(s,c,observation,r,'promote',{selectedRunId:run.id,candidates:[{title:'degree four',hypothesis:'next controlled factor',implementation:'config',config:{polynomialDegree:4}}]}));
  const next=s.app.experiments.get(USER,promoted.effects.experimentIds[0]),planRevision=s.app.researchPlans.inspect(USER,s.project.id,promoted.planRevisionId).plan;assert.equal(next.parentId,run.experimentId);assert.equal(planRevision.parentSource.sourceDigest,selected.manifest.snapshotDigest);assert.equal(s.app.sources.list(USER,s.project.id,{experimentId:next.id,revision:1}).files.some(f=>f.path==='later-unmeasured.txt'),false);assert.equal(s.app.campaigns.rounds(USER,c.id).at(-1).parentSource.sourceDigest,selected.manifest.snapshotDigest);
 }finally{s.close();}});
 

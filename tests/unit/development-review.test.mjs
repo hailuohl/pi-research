@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {setup,USER,approve} from '../support/research.mjs';
+const physical=(app,reference)=>app.store.paths.physical(reference);
 import {actor,result,acceptedSource} from '../support/collaboration.mjs';
 import {DevelopmentReviewService} from '../../dist/packages/development/reviews.js';
 import {assertAcceptanceCurrent} from '../../dist/packages/evidence/acceptance.js';
@@ -11,9 +12,9 @@ import {invalidationClosure,expireDerivations} from '../../dist/packages/evidenc
 function service(s){const reviews=s.app.developmentReviews??new DevelopmentReviewService(s.app);s.app.teams.reviewValidator=task=>reviews.assertTaskCurrent(task);return reviews;}
 function enable(s){const p=s.app.projects.get(USER,s.project.id);if(!p.settings.enabled)s.app.projects.settings(USER,p.id,{expectedVersion:p.version,enabled:true});}
 function tested(s,extra={}) {
- s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});writeFileSync(join(s.session.workspace,'review-candidate.py'),'assert 1 + 1 == 2\n');
+ s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});writeFileSync(join(physical(s.app,s.session.workspace),'review-candidate.py'),'assert 1 + 1 == 2\n');
  const t=s.app.development.prepare(USER,s.project.id,s.session.id,{command:['python','review-candidate.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`,...extra});approve(s.app,t.grantId);
- const dto=s.app.development.submit(USER,s.project.id,t.id),j=s.app.store.get('sandbox-job',dto.id);writeFileSync(join(j.controlDir,'stdout.log'),'UNIT FIXTURE: passing test log\n');writeFileSync(join(j.controlDir,'stderr.log'),'');
+ const dto=s.app.development.submit(USER,s.project.id,t.id),j=s.app.store.get('sandbox-job',dto.id),controlDir=physical(s.app,j.controlDir);writeFileSync(join(controlDir,'stdout.log'),'UNIT FIXTURE: passing test log\n');writeFileSync(join(controlDir,'stderr.log'),'');
  const job=s.app.development.finalize(j.id,{state:'succeeded',exitCode:0});return {t,job};
 }
 function claim(s,review){approve(s.app,review.approvalId);s.app.teams.activate(USER,review.teamId);const claimed=s.app.teams.claim(review.teamId);assert.ok(claimed);return claimed;}
@@ -33,7 +34,7 @@ test('another root cannot prepare or inspect private review targets and reviewer
   assert.throws(()=>reviews.prepare(foreign,s.project.id,{jobId:job.id}),{code:'TASK_SCOPE_DENIED'});assert.equal(s.app.store.list('development-review').length,0);
   const r=reviews.prepare(USER,s.project.id,{jobId:job.id});assert.throws(()=>reviews.inspect(foreign,s.project.id,r.id),{code:'TASK_SCOPE_DENIED'});assert.throws(()=>reviews.sourceList(foreign,s.project.id,r.id),{code:'TASK_SCOPE_DENIED'});
   const c=claim(s,r),who=actor(c);assert.equal(c.context.developmentReview.reviewId,r.id);assert.notEqual(who.sessionId,s.session.id);assert.equal(who.role,'reviewer');
-  writeFileSync(join(s.session.workspace,'review-candidate.py'),'assert False\n');assert.equal(reviews.sourceRead(who,s.project.id,r.id,'review-candidate.py').content,'assert 1 + 1 == 2\n');
+  writeFileSync(join(physical(s.app,s.session.workspace),'review-candidate.py'),'assert False\n');assert.equal(reviews.sourceRead(who,s.project.id,r.id,'review-candidate.py').content,'assert 1 + 1 == 2\n');
   assert.doesNotThrow(()=>s.app.teams.assertResource(who,'artifact',job.stdoutArtifactId));assert.doesNotThrow(()=>s.app.teams.assertResource(who,'artifact',job.reportArtifactId));
   const unrelated=s.app.evidence.put(s.project.id,'private',Buffer.from('other input'));assert.throws(()=>s.app.teams.assertResource(who,'artifact',unrelated.id),{code:'TASK_SCOPE_DENIED'});
   const p=s.app.projects.create(USER,{name:'Other project'});assert.throws(()=>reviews.inspect(USER,p.id,r.id),{code:'SCOPE_DENIED'});

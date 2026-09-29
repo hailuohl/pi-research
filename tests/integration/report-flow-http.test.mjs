@@ -37,7 +37,7 @@ test('report UI/Registry/CLI bind original results, export once and preserve his
   await assert.rejects(()=>new ToolDispatcher(app).execute(actor,'report_export',{reportId:report.id},'forbidden'),{code:'TOOL_DENIED'});
   const exportKey=randomUUID(),exported=await call('report_export',{reportId:report.id},exportKey);assert.equal(exported.status,200,JSON.stringify(exported.value));assert.match(exported.value.title,/\.tar\.gz$/);
   const download=await fetch(base+`/artifacts/${exported.value.id}/content`,{headers});assert.equal(download.status,200);assert.match(download.headers.get('content-disposition'),/^attachment/);
-  const bytes=Buffer.from(await download.arrayBuffer());assert.equal(createHash('sha256').update(bytes).digest('hex'),exported.value.digest);assert.equal(Buffer.compare(bytes,readFileSync(exported.value.path)),0);
+  const bytes=Buffer.from(await download.arrayBuffer());assert.equal(createHash('sha256').update(bytes).digest('hex'),exported.value.digest);assert.equal(Buffer.compare(bytes,readFileSync(app.store.paths.physical(exported.value.path))),0);
   assert.deepEqual(await call('report_export',{reportId:report.id},exportKey),exported);assert.equal(app.store.list('report-export').length,1);
   app.projects.archive(USER,p.id,app.store.get('project',p.id).version);
   assert.deepEqual(await call('report_export',{reportId:report.id},exportKey),exported);

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import type {DataPaths} from '../storage/data-paths.js';
 import { join } from 'node:path';
 import type { ResearchContract, Manifest } from '../domain/types.js';
 import { ensure } from '../domain/errors.js';
@@ -36,13 +37,13 @@ export function validateContract(value: unknown): ResearchContract {
     const dockerContext=text(x.dockerContext??'default','dockerContext',100);ensure(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(dockerContext),'CONTRACT_INVALID','Docker context 无效',400);
     return { runner, image, command, environment: {}, datasetVersion: text(x.datasetVersion, 'datasetVersion', 200), evaluationProtocolVersion: text(x.evaluationProtocolVersion, 'evaluationProtocolVersion', 200), metrics: parsed, expectedArtifacts, timeoutSeconds: integer(x.timeoutSeconds ?? 300, 'timeoutSeconds', 1, 86400), cpus: integer(x.cpus ?? 1, 'cpus', 1, 64), memoryMb: integer(x.memoryMb ?? 1024, 'memoryMb', 64, 65536),dockerContext,networkPolicy:'none',pids:integer(x.pids??128,'pids',16,512),workMb:integer(x.workMb??256,'workMb',16,1024),logBytes:integer(x.logBytes??16*1024*1024,'logBytes',1,16*1024*1024),outputBytes:integer(x.outputBytes??128*1024*1024,'outputBytes',1,128*1024*1024) };
 }
-export function verifyTrustedExample(manifest: Manifest, repoRoot: string) {
+export function verifyTrustedExample(manifest: Manifest, repoRoot: string, paths?:DataPaths) {
     if (manifest.contract.runner !== 'trusted-example')
         return;
     ensure(digest(manifest.contract) === digest(EXAMPLE_CONTRACT), 'UNTRUSTED_HOST_EXECUTION', '可信示例契约已修改', 403);
     const entry = manifest.sourceFiles.find(f => f.path === 'experiment.mjs');
     ensure(entry && entry.digest === digest(readFileSync(join(repoRoot, 'examples', 'curve-fit', 'experiment.mjs'))), 'UNTRUSTED_HOST_EXECUTION', '任意代码不能使用宿主示例 Runner；请配置容器执行', 403);
-    const config = object(JSON.parse(readFileSync(join(manifest.snapshotPath, 'config.json'), 'utf8')));
+    const config = object(JSON.parse(readFileSync(join(paths?paths.physical(manifest.snapshotPath):manifest.snapshotPath, 'config.json'), 'utf8')));
     ensure(Object.keys(config).every(k => ['polynomialDegree', 'ridge', 'sleepMs', 'omitMetrics'].includes(k)), 'INVALID_INPUT', '示例配置包含未知参数', 400);
     integer(config.polynomialDegree, 'polynomialDegree', 0, 5);
     ensure(typeof config.ridge === 'number' && Number.isFinite(config.ridge) && config.ridge >= 0 && config.ridge <= 10, 'INVALID_INPUT', 'ridge 范围为 0–10', 400);

@@ -29,12 +29,12 @@ export class ExperimentService {
         ensure(parent.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能派生');
         const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');
         mkdirSync(workspace, { recursive: true, mode: 0o700 });
-        copySourceRevision(source, workspace);
+        copySourceRevision(source, workspace, true, this.c.store.paths);
         if (spec.config !== undefined) {
-            const prior = source.snapshot.files.some(f => f.path === 'config.json') ? object(JSON.parse(readStableFile(source.snapshot.path, 'config.json', 1024 * 1024).toString('utf8'))) : {};
+            const prior = source.snapshot.files.some(f => f.path === 'config.json') ? object(JSON.parse(readStableFile(this.c.store.paths.physical(source.snapshot.path), 'config.json', 1024 * 1024).toString('utf8'))) : {};
             writeFileSync(join(workspace, 'config.json'), JSON.stringify({ ...prior, ...object(spec.config) }, null, 2), { mode: 0o600 });
         }
-        const child = this.c.store.create('experiment', projectId, { title: text(spec.title, 'title', 200), hypothesis: text(spec.hypothesis, 'hypothesis', 10000), parentId: parent.id, lifecycle: 'provisional', contract: parent.contract, contractDigest: parent.contractDigest, workspace, notes: [], revision: 1 }, id);
+        const child = this.c.store.create('experiment', projectId, { title: text(spec.title, 'title', 200), hypothesis: text(spec.hypothesis, 'hypothesis', 10000), parentId: parent.id, lifecycle: 'provisional', contract: parent.contract, contractDigest: parent.contractDigest, workspace: this.c.store.paths.reference(workspace), notes: [], revision: 1 }, id);
         captureSourceRevision(this.c, child);
         this.c.store.event(projectId, 'experiment.created', { id, parentId: parent.id, parentSourceRevisionId: source.id });
         return child;
@@ -53,7 +53,7 @@ export class ExperimentService {
         return this.c.store.transaction(() => {
             const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');
             mkdirSync(workspace, { recursive: true, mode: 0o700 });
-            const source = parent?.workspace ?? p.workspace;
+            const source = this.c.store.paths.physical(parent?.workspace ?? p.workspace);
             for (const f of listFiles(source)) {
                 ensure(f.size <= 16 * 1024 * 1024, 'FILE_TOO_LARGE', '请独立版本化大型数据集', 413);
                 const dest = safePath(workspace, f.path);
@@ -65,7 +65,7 @@ export class ExperimentService {
                 object(x.config);
                 writeFileSync(join(workspace, 'config.json'), JSON.stringify(x.config, null, 2), { mode: 0o600 });
             }
-            const e = this.c.store.create('experiment', projectId, { title: text(x.title, 'title', 200), hypothesis: text(x.hypothesis ?? '尚未填写假设', 'hypothesis', 10000), parentId: parent?.id ?? null, lifecycle: 'provisional', contract, contractDigest: digest(contract), workspace, notes: [], revision: 1 }, id);
+            const e = this.c.store.create('experiment', projectId, { title: text(x.title, 'title', 200), hypothesis: text(x.hypothesis ?? '尚未填写假设', 'hypothesis', 10000), parentId: parent?.id ?? null, lifecycle: 'provisional', contract, contractDigest: digest(contract), workspace: this.c.store.paths.reference(workspace), notes: [], revision: 1 }, id);
             captureSourceRevision(this.c, e);
             this.c.store.event(projectId, 'experiment.created', { id, parentId: e.parentId });
             return e;
@@ -81,23 +81,23 @@ export class ExperimentService {
         const parent = this.get(actor, stored.baseExperimentId), snapshot = stored.candidateSnapshot;
         assertProjectWritable(this.c.store, parent.projectId);
         assertExperimentSourceCurrent(this.c.store, parent);
-        verifySnapshot(snapshot.path, snapshot.files);
+        verifySnapshot(this.c.store.paths.physical(snapshot.path), snapshot.files);
         const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');
         mkdirSync(workspace, { recursive: true, mode: 0o700 });
         for (const f of snapshot.files) {
             const dest = safePath(workspace, f.path);
             mkdirSync(dirname(dest), { recursive: true });
-            const bytes = readStableFile(snapshot.path, f.path, 64 * 1024 * 1024);
+            const bytes = readStableFile(this.c.store.paths.physical(snapshot.path), f.path, 64 * 1024 * 1024);
             ensure(digest(bytes) === f.digest && bytes.length === f.size, 'SNAPSHOT_CORRUPTED', '复制的字节与批准的快照不一致');
             writeFileSync(dest, bytes, { mode: 0o600 });
         }
         setSourceModes(workspace, snapshot.files);
-        const child = this.c.store.create('experiment', parent.projectId, { title: stored.title, hypothesis: stored.hypothesis, parentId: parent.id, lifecycle: 'provisional', contract: parent.contract, contractDigest: parent.contractDigest, workspace, notes: [], revision: 1, changeProposalId: stored.id }, id);
+        const child = this.c.store.create('experiment', parent.projectId, { title: stored.title, hypothesis: stored.hypothesis, parentId: parent.id, lifecycle: 'provisional', contract: parent.contract, contractDigest: parent.contractDigest, workspace: this.c.store.paths.reference(workspace), notes: [], revision: 1, changeProposalId: stored.id }, id);
         captureSourceRevision(this.c, child);
         this.c.store.event(parent.projectId, 'experiment.created', { id, parentId: parent.id, changeProposalId: stored.id });
         return child;
     }
-    readFile(actor, id, path) { return readText(this.get(actor, id).workspace, path); }
+    readFile(actor, id, path) { return readText(this.c.store.paths.physical(this.get(actor, id).workspace), path); }
     writeFile(actor, id, path, content, expectedDigest, expectedVersion) {
         userOnly(actor);
         return this.c.store.transaction(() => {
@@ -109,7 +109,7 @@ export class ExperimentService {
             ensure(e.version === expectedVersion, 'VERSION_CONFLICT', '实验已更新');
             ensure(this.c.store.list('run', e.projectId).filter(r => r.experimentId === id).every(r => ['succeeded', 'failed', 'cancelled'].includes(r.state)), 'WORKSPACE_BUSY', '实验仍在执行；请派生新候选而不是修改运行节点');
             captureSourceRevision(this.c, e);
-            const result = writeText(e.workspace, path, content, expectedDigest, this.c.store);
+            const result = writeText(this.c.store.paths.physical(e.workspace), path, content, expectedDigest, this.c.store);
             const revised = this.c.store.update('experiment', id, e.version, { revision: e.revision + 1 });
             captureSourceRevision(this.c, revised);
             this.c.store.event(e.projectId, 'experiment.revised', { id, path });

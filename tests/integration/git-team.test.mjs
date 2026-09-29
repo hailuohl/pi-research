@@ -22,7 +22,7 @@ test('source-bound Git tasks prepare real worktrees before reserving an attempt 
   assert.equal(s.app.teams.claim(team.id,true),null);assert.equal(s.app.store.list('task-attempt',s.project.id).length,0);
   const claimed=s.app.teams.claim(team.id);assert.ok(claimed,diagnostics(s));const session=s.app.store.get('session',claimed.attempt.sessionId),workspace=s.app.store.get('git-workspace',session.id);
   assert.equal(workspace.state,'ready');assert.equal(claimed.attempt.workspace,session.workspace);assert.equal(session.workspace,workspace.path);assert.equal(session.role,'implementer');assert.equal(session.taskId,claimed.task.id);assert.equal(session.sourceRevisionId,source.snapshotId);assert.equal(claimed.context.source.snapshotId,source.snapshotId);assert.equal(claimed.context.source.sourceDigest,source.sourceDigest);
-  assert.ok(existsSync(join(session.workspace,'.git')));const git=spawnSync('git',['-C',session.workspace,'rev-parse','--is-inside-work-tree'],{encoding:'utf8',windowsHide:true,timeout:15000});assert.equal(git.status,0,git.stderr);assert.equal(git.stdout.trim(),'true');
+  const sessionWorkspace=s.app.store.paths.physical(session.workspace);assert.ok(existsSync(join(sessionWorkspace,'.git')));const git=spawnSync('git',['-C',sessionWorkspace,'rev-parse','--is-inside-work-tree'],{encoding:'utf8',windowsHide:true,timeout:15000});assert.equal(git.status,0,git.stderr);assert.equal(git.stdout.trim(),'true');
   assert.equal(s.app.budget.summary(team.id).reserved,budget.reserved+1);assert.equal(s.app.store.list('task-attempt',s.project.id).length,1);assert.equal(s.app.store.list('model-usage',s.project.id).length,0);
  }finally{await host.stop();s.close();}
 });

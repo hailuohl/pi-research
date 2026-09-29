@@ -9,29 +9,35 @@ import { verifyTrustedExample } from './contracts.js';
 export class TrustedExampleAdapter {
     run;
     repoRoot;
+    paths;
     capabilities = { backend: 'trusted-example', isolated: false, recoverable: false };
     started = false;
     controlDir;
-    constructor(run, repoRoot) {
+    snapshotDir;
+    outputDir;
+    constructor(run, repoRoot, paths) {
         this.run = run;
         this.repoRoot = repoRoot;
-        this.controlDir = join(dirname(run.outputDir), 'control');
+        this.paths = paths;
+        this.outputDir = paths ? paths.physical(run.outputDir) : run.outputDir;
+        this.snapshotDir = paths ? paths.physical(run.manifest.snapshotPath) : run.manifest.snapshotPath;
+        this.controlDir = join(dirname(this.outputDir), 'control');
     }
     async preflight() {
         ensure(this.run.manifest.contract.runner === 'trusted-example', 'UNTRUSTED_HOST_EXECUTION', '可信示例适配器不能执行其他运行器', 403);
-        verifyTrustedExample(this.run.manifest, this.repoRoot);
+        verifyTrustedExample(this.run.manifest, this.repoRoot, this.paths);
         ensure(digest(this.run.manifest) === this.run.manifestDigest && digest(this.run.manifest.contract) === this.run.manifest.contractDigest && digest(this.run.manifest.sourceFiles) === this.run.manifest.snapshotDigest, 'MANIFEST_CORRUPTED', '运行清单摘要不一致');
-        verifySnapshot(this.run.manifest.snapshotPath, this.run.manifest.sourceFiles);
+        verifySnapshot(this.snapshotDir, this.run.manifest.sourceFiles);
     }
-    async stage() { mkdirSync(this.controlDir, { recursive: true, mode: 0o700 }); mkdirSync(this.run.outputDir, { recursive: true, mode: 0o700 }); }
+    async stage() { mkdirSync(this.controlDir, { recursive: true, mode: 0o700 }); mkdirSync(this.outputDir, { recursive: true, mode: 0o700 }); }
     async start(onLog) {
         await this.preflight();
         await this.stage();
         ensure(!this.started, 'RUN_ALREADY_STARTED', '同一适配器不能重复启动宿主进程');
         this.started = true;
-        const child = spawn(process.execPath, [join(this.run.manifest.snapshotPath, 'experiment.mjs')], {
-            cwd: this.run.manifest.snapshotPath, detached: process.platform !== 'win32', shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
-            env: { PATH: process.env.PATH ?? '', SystemRoot: process.env.SystemRoot ?? '', HOME: this.controlDir, PI_OUTPUT_DIR: this.run.outputDir },
+        const child = spawn(process.execPath, [join(this.snapshotDir, 'experiment.mjs')], {
+            cwd: this.snapshotDir, detached: process.platform !== 'win32', shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
+            env: { PATH: process.env.PATH ?? '', SystemRoot: process.env.SystemRoot ?? '', HOME: this.controlDir, PI_OUTPUT_DIR: this.outputDir },
         });
         let closed = false, error, forceKill;
         const kill = (signal) => { if (closed)

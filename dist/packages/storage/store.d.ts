@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import type { Row } from '../domain/types.js';
 import { TextWriteRecovery } from '../workspace/text-write-recovery.js';
+import { type DataPaths } from './data-paths.js';
 export declare function stable(value: unknown): string;
 export declare const digest: (value: unknown) => string;
 export declare const now: () => string;
@@ -25,6 +26,7 @@ export declare const EVENT_PAYLOAD_BYTES: number, EVENT_PAGE_PAYLOAD_BYTES: numb
 export declare class Store {
     path: string;
     readonly db: DatabaseSync;
+    readonly paths: DataPaths;
     private depth;
     private reading;
     private rollbackCallbacks;

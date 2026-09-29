@@ -30,9 +30,9 @@ export class SessionService {
         ensure(actor.type === 'user' || actor.type === 'system', 'PERMISSION_DENIED', '助手会话只能由调度器创建', 403);
         assertProjectWritable(this.c.store, projectId);
         const x = object(input), id = randomUUID();
-        const workspace = internal?.workspace ?? join(this.c.dataDir, 'sessions', id, 'workspace');
+        const workspace = internal?.workspace ? this.c.store.paths.physical(internal.workspace) : join(this.c.dataDir, 'sessions', id, 'workspace');
         mkdirSync(workspace, { recursive: true, mode: 0o700 });
-        const s = this.c.store.create('session', projectId, { title: text(x.title ?? '新研究会话', 'title', 160), role: internal?.role ?? 'coordinator', state: 'idle', workspace, piSessionPath: null, model: this.model(), generation: 0, leaseUntil: 0, ...(internal?.teamId ? { teamId: internal.teamId } : {}), ...(internal?.taskId ? { taskId: internal.taskId } : {}) }, id);
+        const s = this.c.store.create('session', projectId, { title: text(x.title ?? '新研究会话', 'title', 160), role: internal?.role ?? 'coordinator', state: 'idle', workspace: this.c.store.paths.reference(workspace), piSessionPath: null, model: this.model(), generation: 0, leaseUntil: 0, ...(internal?.teamId ? { teamId: internal.teamId } : {}), ...(internal?.taskId ? { taskId: internal.taskId } : {}) }, id);
         this.c.store.event(projectId, 'session.created', { sessionId: id, role: s.role });
         return s;
     }

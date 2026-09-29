@@ -108,14 +108,14 @@ export class DocumentParsingService {
         mkdirSync(outputDir, { mode: 0o777 });
         chmodSync(outputDir, 0o777);
         writeFileSync(join(source, 'parse.py'), readFileSync(join(this.app.context.repoRoot, 'scripts', 'pdf-parser', 'parse.py')), { mode: 0o444 });
-        const inputSnapshot = snapshotDirectory(source, join(this.app.context.dataDir, 'snapshots'));
+        const inputSnapshot = this.app.store.paths.referenceSnapshot(snapshotDirectory(source, join(this.app.context.dataDir, 'snapshots')));
         const manifest = { purpose: 'document-parse', documentVersionId: document.id, documentDigest: digest(document), rawArtifactId: artifact.id, rawDigest: artifact.digest, rawSize: artifact.size, ...profile, dockerContext: config.dockerContext, environmentImageDigest: config.imageDigest, command: ['python', '/work/parse.py', `/data/${artifact.id}`, '/output'], inputSnapshot, dataArtifacts: [{ id: artifact.id, digest: artifact.digest, size: artifact.size, path: artifact.path }], resources: { ...DOCUMENT_PARSE_RESOURCES } }, manifestDigest = digest(manifest);
         return this.app.store.transaction(() => {
             const publish = () => {
                 assertProjectWritable(this.app.store, pid);
                 ensure(digest(this.app.documents.get(actor, pid, document.id)) === manifest.documentDigest && this.app.store.get('document-parser-settings', 'global').version === config.version, 'DOCUMENT_SOURCE_STALE', '准备期间原件或解析配置已改变');
                 const approval = this.app.approvals.request(pid, 'document-parse-job', id, manifestDigest, 'document.parse', '只批准固定原PDF、固定解析器及固定资源；不会执行文档脚本，也不会自动加入语料');
-                this.app.store.create('document-parse-job', pid, { documentVersionId: document.id, manifest, manifestDigest, approvalId: approval.id, state: 'prepared', integrity: 'pending', containerName: 'pi-document-' + id, outputDir, controlDir, generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, recoveryCount: 0, artifactIds: [] }, id);
+                this.app.store.create('document-parse-job', pid, { documentVersionId: document.id, manifest, manifestDigest, approvalId: approval.id, state: 'prepared', integrity: 'pending', containerName: 'pi-document-' + id, outputDir: this.app.store.paths.reference(outputDir), controlDir: this.app.store.paths.reference(controlDir), generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, recoveryCount: 0, artifactIds: [] }, id);
                 this.app.store.event(pid, 'document.parse_prepared', { jobId: id, documentVersionId: document.id });
                 return this.inspect(actor, pid, id);
             };
@@ -123,7 +123,7 @@ export class DocumentParsingService {
         });
     }
     assertCurrent(job, verifyBytes = true) { assertProjectWritable(this.app.store, job.projectId); ensure(digest(job.manifest) === job.manifestDigest, 'DOCUMENT_JOB_CORRUPTED', '解析清单已改变'); const document = this.app.documents.get({ type: 'user' }, job.projectId, job.documentVersionId); assertDiscoveryDocument(this.app.store, job.projectId, document); ensure(digest(document) === job.manifest.documentDigest && document.original.digest === job.manifest.rawDigest, 'DOCUMENT_CORRUPTED', '原件版本记录已改变'); this.app.approvals.assert(job.approvalId, job.projectId, job.id, job.manifestDigest, 'document.parse'); if (verifyBytes) {
-        verifySnapshot(job.manifest.inputSnapshot.path, job.manifest.inputSnapshot.files);
+        verifySnapshot(this.app.store.paths.physical(job.manifest.inputSnapshot.path), job.manifest.inputSnapshot.files);
         const raw = this.app.evidence.read({ type: 'user' }, job.manifest.rawArtifactId);
         ensure(raw.artifact.projectId === job.projectId && raw.artifact.digest === job.manifest.rawDigest && raw.bytes.length === job.manifest.rawSize, 'DOCUMENT_CORRUPTED', '原件已改变');
     } return document; }
@@ -152,7 +152,7 @@ export class DocumentParsingService {
                 if (job.startRequested || state !== 'cancelled')
                     document = this.assertCurrent(job);
                 if (state === 'succeeded' && result.exitCode === 0 && !result.incomplete)
-                    parsed = validateParserOutput(job.outputDir, job.manifest.rawDigest);
+                    parsed = validateParserOutput(this.app.store.paths.physical(job.outputDir), job.manifest.rawDigest);
             }
             catch (e) {
                 if (state === 'succeeded')
@@ -164,9 +164,9 @@ export class DocumentParsingService {
             const put = (name, bytes, mediaType) => { const a = this.app.evidence.put(job.projectId, name, bytes, mediaType, 'document-parser'); artifactIds.push(a.id); return a; };
             for (const name of ['stdout.log', 'stderr.log'])
                 try {
-                    const path = safePath(job.controlDir, name);
+                    const path = safePath(this.app.store.paths.physical(job.controlDir), name);
                     ensure(existsSync(path) || !job.startRequested, 'DOCUMENT_LOG_MISSING', '解析日志缺失');
-                    put(name, existsSync(path) ? readStableFile(job.controlDir, name, DOCUMENT_PARSE_RESOURCES.logBytes) : Buffer.alloc(0), 'text/plain');
+                    put(name, existsSync(path) ? readStableFile(this.app.store.paths.physical(job.controlDir), name, DOCUMENT_PARSE_RESOURCES.logBytes) : Buffer.alloc(0), 'text/plain');
                 }
                 catch {
                     integrity = 'incomplete';

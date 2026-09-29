@@ -6,22 +6,23 @@ import {setup,USER,approve} from '../support/research.mjs';
 import {DevelopmentService} from '../../dist/packages/development/service.js';
 
 const input={command:['python','main.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`,expectedArtifacts:['result.txt']};
-function ready(s){const d=new DevelopmentService(s.app);writeFileSync(join(s.session.workspace,'main.py'),'assert 2 + 2 == 4\n');return d;}
+const physical=(app,reference)=>app.store.paths.physical(reference);
+function ready(s){const d=new DevelopmentService(s.app);writeFileSync(join(physical(s.app,s.session.workspace),'main.py'),'assert 2 + 2 == 4\n');return d;}
 function approved(s,d,value=input){const t=d.prepare(USER,s.project.id,s.session.id,value);approve(s.app,t.grantId);return t;}
 function fixture(s,d,t,{state='succeeded',exitCode=0,missing=false,...rest}={}){
- const j=d.submit(USER,s.project.id,t.id),stored=s.app.store.get('sandbox-job',j.jobId);
- writeFileSync(join(stored.controlDir,'stdout.log'),'UNIT FIXTURE: assertion passed\n');writeFileSync(join(stored.controlDir,'stderr.log'),exitCode?'UNIT FIXTURE: assertion failed\n':'');
- if(!missing)writeFileSync(join(stored.outputDir,'result.txt'),'unit fixture result');
+ const j=d.submit(USER,s.project.id,t.id),stored=s.app.store.get('sandbox-job',j.jobId),controlDir=physical(s.app,stored.controlDir),outputDir=physical(s.app,stored.outputDir);
+ writeFileSync(join(controlDir,'stdout.log'),'UNIT FIXTURE: assertion passed\n');writeFileSync(join(controlDir,'stderr.log'),exitCode?'UNIT FIXTURE: assertion failed\n':'');
+ if(!missing)writeFileSync(join(outputDir,'result.txt'),'unit fixture result');
  return d.finalize(j.jobId,{state,exitCode,...rest});
 }
 
 test('development freezes actual edited private source and requires exact user approval',()=>{
  const s=setup();try{const d=ready(s),t=d.prepare(USER,s.project.id,s.session.id,input),r=s.app.store.get('development-task',t.id);
-  assert.equal(readFileSync(join(r.manifest.inputSnapshot.path,'main.py'),'utf8'),'assert 2 + 2 == 4\n');
+  assert.equal(readFileSync(join(physical(s.app,r.manifest.inputSnapshot.path),'main.py'),'utf8'),'assert 2 + 2 == 4\n');
   assert.equal(t.manifest.purpose,'development-test');assert.equal(t.manifest.networkPolicy,'none');assert.equal(t.manifest.resources.memoryMb,256);
   assert.equal(JSON.stringify(t).includes(s.dir.replaceAll('\\','\\\\')),false);assert.equal(t.manifest.inputSnapshot.path,undefined);
   assert.throws(()=>d.submit(USER,s.project.id,t.id),{code:'APPROVAL_REQUIRED'});
-  approve(s.app,t.grantId);writeFileSync(join(s.session.workspace,'main.py'),'assert False\n');
+  approve(s.app,t.grantId);writeFileSync(join(physical(s.app,s.session.workspace),'main.py'),'assert False\n');
   assert.throws(()=>d.submit(USER,s.project.id,t.id),{code:'DEVELOPMENT_SOURCE_STALE'});
   const t2=approved(s,d);assert.notEqual(t.sourceDigest,t2.sourceDigest);
   const j=d.submit(USER,s.project.id,t2.id);assert.equal(d.submit(USER,s.project.id,t2.id).jobId,j.jobId);
@@ -41,7 +42,7 @@ test('strict inputs reject host paths, non-pinned images, excessive resources an
 test('successful fixture archive binds fixed candidate; later private edits do not invalidate matching historical candidate',()=>{
  const s=setup();try{const d=ready(s),t=approved(s,d),j=fixture(s,d,t);
   assert.equal(j.state,'succeeded');assert.equal(j.integrity,'complete');assert.equal(j.artifactIds.length,4);
-  writeFileSync(join(s.session.workspace,'main.py'),'assert False\n');
+  writeFileSync(join(physical(s.app,s.session.workspace),'main.py'),'assert False\n');
   assert.equal(d.assertResultMatches(USER,s.project.id,j.id,t.sourceDigest).jobId,j.id);
   assert.throws(()=>d.assertResultMatches(USER,s.project.id,j.id,'b'.repeat(64)),{code:'DEVELOPMENT_SOURCE_STALE'});
   const report=JSON.parse(s.app.evidence.read(USER,j.reportArtifactId).bytes);assert.equal(report.scientificConclusion,false);assert.equal(report.sourceDigest,t.sourceDigest);assert.deepEqual(report.command,input.command);
@@ -52,7 +53,7 @@ test('successful fixture archive binds fixed candidate; later private edits do n
 test('failed, missing, oversized, directory, recovered and truncated fixture outputs cannot become complete successes',()=>{
  for(const scenario of ['failed','missing','oversized','directory','recovered','truncated']){
   const s=setup();try{const d=ready(s),t=approved(s,d,{...input,...(scenario==='oversized'?{resources:{outputBytes:4}}:{})});
-   let j;if(['oversized','directory'].includes(scenario)){const dto=d.submit(USER,s.project.id,t.id),r=s.app.store.get('sandbox-job',dto.id);writeFileSync(join(r.controlDir,'stdout.log'),'');writeFileSync(join(r.controlDir,'stderr.log'),'');if(scenario==='directory')mkdirSync(join(r.outputDir,'result.txt'));else writeFileSync(join(r.outputDir,'result.txt'),'12345');j=d.finalize(r.id,{state:'succeeded',exitCode:0});}
+   let j;if(['oversized','directory'].includes(scenario)){const dto=d.submit(USER,s.project.id,t.id),r=s.app.store.get('sandbox-job',dto.id),controlDir=physical(s.app,r.controlDir),outputDir=physical(s.app,r.outputDir);writeFileSync(join(controlDir,'stdout.log'),'');writeFileSync(join(controlDir,'stderr.log'),'');if(scenario==='directory')mkdirSync(join(outputDir,'result.txt'));else writeFileSync(join(outputDir,'result.txt'),'12345');j=d.finalize(r.id,{state:'succeeded',exitCode:0});}
    else j=fixture(s,d,t,{state:scenario==='failed'?'failed':'succeeded',exitCode:scenario==='failed'?1:0,missing:scenario==='missing',recovered:scenario==='recovered',logTruncated:scenario==='truncated'});
    assert.equal(j.state,'failed',scenario);assert.ok(j.reportArtifactId);assert.ok(j.stdoutArtifactId);assert.ok(j.stderrArtifactId);
    assert.throws(()=>d.assertResultMatches(USER,s.project.id,j.id,t.sourceDigest),{code:'DEVELOPMENT_TEST_FAILED'});
@@ -61,7 +62,7 @@ test('failed, missing, oversized, directory, recovered and truncated fixture out
 });
 
 test('logs use bounded byte offsets and remain readable in unknown/cancelled state',()=>{
- const s=setup();try{const d=ready(s),t=approved(s,d),j=d.submit(USER,s.project.id,t.id),r=s.app.store.get('sandbox-job',j.id);assert.equal(d.logs(USER,s.project.id,j.id,'stdout').complete,false);writeFileSync(join(r.controlDir,'stdout.log'),'x'.repeat(70000));
+ const s=setup();try{const d=ready(s),t=approved(s,d),j=d.submit(USER,s.project.id,t.id),r=s.app.store.get('sandbox-job',j.id);assert.equal(d.logs(USER,s.project.id,j.id,'stdout').complete,false);writeFileSync(join(physical(s.app,r.controlDir),'stdout.log'),'x'.repeat(70000));
   s.app.store.update('sandbox-job',r.id,r.version,{state:'unknown'});
   const first=d.logs(USER,s.project.id,j.id,'stdout');assert.equal(first.content.length,65536);assert.equal(first.cursor,65536);assert.equal(first.complete,false);
   const second=d.logs(USER,s.project.id,j.id,'stdout',first.cursor);assert.equal(second.content.length,4464);assert.equal(second.complete,false);
@@ -82,7 +83,7 @@ test('task agents cannot read sibling jobs or inject ungranted data; source canc
  const s=setup();try{const d=ready(s),p=s.app.store.get('project',s.project.id);s.app.store.update('project',p.id,p.version,{settings:{...p.settings,enabled:true}});
   const team=s.app.teams.create(USER,s.session.id,{goal:'test scope',tasks:[{key:'code',role:'implementer',objective:'test source',dependencies:[]}]});approve(s.app,team.approvalId);s.app.teams.activate(USER,team.id);
   const c=s.app.teams.claim(team.id),a={type:'agent',projectId:s.project.id,sessionId:c.attempt.sessionId,role:'implementer',taskId:c.task.id,attemptId:c.attempt.id,generation:c.attempt.generation};
-  writeFileSync(join(c.attempt.workspace,'main.py'),'assert True\n');const hidden=s.app.evidence.put(s.project.id,'hidden',Buffer.from('secret'),'text/plain','user');
+  writeFileSync(join(physical(s.app,c.attempt.workspace),'main.py'),'assert True\n');const hidden=s.app.evidence.put(s.project.id,'hidden',Buffer.from('secret'),'text/plain','user');
   assert.throws(()=>d.prepare(a,s.project.id,a.sessionId,{...input,dataArtifactIds:[hidden.id]}),{code:'TASK_SCOPE_DENIED'});
   const root=approved(s,d),rootJob=d.submit(USER,s.project.id,root.id);assert.throws(()=>d.inspect(a,s.project.id,rootJob.id),{code:'TASK_SCOPE_DENIED'});
   const own=d.prepare(a,s.project.id,a.sessionId,input);approve(s.app,own.grantId);
@@ -94,8 +95,8 @@ test('task agents cannot read sibling jobs or inject ungranted data; source canc
 
 test('data bytes and approval status are rechecked before launch',()=>{
  const s=setup();try{const d=ready(s),a=s.app.evidence.put(s.project.id,'dataset',Buffer.from('1,2\n')),t=approved(s,d,{...input,dataArtifactIds:[a.id]}),j=d.submit(USER,s.project.id,t.id);
-  assert.equal(j.manifest.dataArtifacts[0].path,undefined);chmodSync(a.path,0o600);writeFileSync(a.path,'8,9\n');assert.throws(()=>d.assertCurrent(s.app.store.get('sandbox-job',j.id)),{code:'ARTIFACT_CORRUPTED'});
-  writeFileSync(a.path,'1,2\n');s.app.approvals.stale(t.id);assert.throws(()=>d.assertCurrent(s.app.store.get('sandbox-job',j.id)),{code:'APPROVAL_STALE'});
+  assert.equal(j.manifest.dataArtifacts[0].path,undefined);const artifactPath=physical(s.app,a.path);chmodSync(artifactPath,0o600);writeFileSync(artifactPath,'8,9\n');assert.throws(()=>d.assertCurrent(s.app.store.get('sandbox-job',j.id)),{code:'ARTIFACT_CORRUPTED'});
+  writeFileSync(artifactPath,'1,2\n');s.app.approvals.stale(t.id);assert.throws(()=>d.assertCurrent(s.app.store.get('sandbox-job',j.id)),{code:'APPROVAL_STALE'});
  }finally{s.close();}
 });
 
@@ -146,8 +147,8 @@ test('coordinator may inspect sibling tests but only the user can cancel them; a
 test('all ordinary outputs and worker diagnostic logs are archived with actual image identity; incomplete execution cannot pass',()=>{
  const s=setup();try{const d=ready(s),t=approved(s,d),j=d.submit(USER,s.project.id,t.id);let row=s.app.store.get('sandbox-job',j.id);
   const imageId=`sha256:${'b'.repeat(64)}`;row=s.app.store.update('sandbox-job',row.id,row.version,{imageId});
-  writeFileSync(join(row.controlDir,'diagnostic.log'),'UNIT FIXTURE: private host diagnostic');
-  writeFileSync(join(row.outputDir,'result.txt'),'expected');writeFileSync(join(row.outputDir,'test-report.json'),'untrusted report');mkdirSync(join(row.outputDir,'debug'));writeFileSync(join(row.outputDir,'debug','trace.txt'),'undeclared diagnostic');
+  const controlDir=physical(s.app,row.controlDir),outputDir=physical(s.app,row.outputDir);writeFileSync(join(controlDir,'diagnostic.log'),'UNIT FIXTURE: private host diagnostic');
+  writeFileSync(join(outputDir,'result.txt'),'expected');writeFileSync(join(outputDir,'test-report.json'),'untrusted report');mkdirSync(join(outputDir,'debug'));writeFileSync(join(outputDir,'debug','trace.txt'),'undeclared diagnostic');
   const r=d.finalize(j.id,{state:'succeeded',exitCode:0,incomplete:true});assert.equal(r.integrity,'incomplete');assert.equal(r.state,'failed');
   const artifacts=r.artifactIds.map(id=>s.app.store.get('artifact',id));assert.ok(artifacts.some(a=>a.title==='output/debug/trace.txt'));assert.ok(artifacts.some(a=>a.title==='output/test-report.json'));assert.ok(artifacts.some(a=>a.title==='diagnostic.log'));
   assert.equal(d.inspect(USER,s.project.id,j.id).imageId,imageId);assert.equal(JSON.parse(s.app.evidence.read(USER,r.reportArtifactId).bytes).imageId,imageId);
@@ -156,14 +157,14 @@ test('all ordinary outputs and worker diagnostic logs are archived with actual i
 
 test('undeclared oversized output and directory junctions prevent a complete result',()=>{
  for(const kind of ['oversized','junction']){const s=setup();try{const d=ready(s),t=approved(s,d,{...input,expectedArtifacts:[],resources:{outputBytes:4}}),j=d.submit(USER,s.project.id,t.id),row=s.app.store.get('sandbox-job',j.id);
-  if(kind==='oversized')writeFileSync(join(row.outputDir,'unexpected.bin'),'12345');else symlinkSync(row.controlDir,join(row.outputDir,'outside'),'junction');
+  if(kind==='oversized')writeFileSync(join(physical(s.app,row.outputDir),'unexpected.bin'),'12345');else symlinkSync(physical(s.app,row.controlDir),join(physical(s.app,row.outputDir),'outside'),'junction');
   const r=d.finalize(j.id,{state:'succeeded',exitCode:0});assert.equal(r.state,'failed');assert.equal(r.integrity,'incomplete');
  }finally{s.close();}}
 });
 
 function testedCandidate(s,outcome={}) {
  s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});
- const d=new DevelopmentService(s.app),path='development_candidate.py',content='assert sum([1, 2]) == 3\n';writeFileSync(join(s.session.workspace,path),content);
+ const d=new DevelopmentService(s.app),path='development_candidate.py',content='assert sum([1, 2]) == 3\n';writeFileSync(join(physical(s.app,s.session.workspace),path),content);
  const t=approved(s,d,{...input,command:['python',path]}),job=fixture(s,d,t,outcome),artifact=s.app.evidence.put(s.project.id,path,Buffer.from(content));
  const proposal={baseExperimentId:s.baseline.id,expectedRevision:1,title:'Tested candidate',hypothesis:'A code change requiring separate scientific evaluation',changes:[{path,expectedDigest:null,artifactId:artifact.id}],testJobId:job.id};
  return {d,t,job,artifact,proposal,path};
@@ -174,7 +175,7 @@ test('change proposal binds the exact successful job and applies its tested cand
   const p=s.app.changes.prepare(USER,s.project.id,proposal);assert.equal(p.testsStatus,'passed');assert.equal(p.testJobId,job.id);assert.equal(p.candidateSnapshot.digest,job.sourceDigest);
   assert.equal(s.app.changes.inspect(USER,p.id).proposal.testJobId,job.id);
   // Later editing the session does not mutate the candidate already tested and approved.
-  writeFileSync(join(s.session.workspace,path),'assert False\n');approve(s.app,p.approvalId);
+  writeFileSync(join(physical(s.app,s.session.workspace),path),'assert False\n');approve(s.app,p.approvalId);
   const child=s.app.changes.apply(USER,p.id);assert.equal(s.app.experiments.readFile(USER,child.id,path).content,'assert sum([1, 2]) == 3\n');
   assert.equal(s.app.store.list('run').length,0);assert.equal(s.app.store.get('change-proposal',p.id).testsStatus,'passed');
  }finally{s.close();}
@@ -204,7 +205,7 @@ test('revoked test source provenance blocks both proposal binding and an already
 test('proposal approval cannot bypass revoked test authorization or corrupted test archives',()=>{
  for(const scenario of ['approval','archive']){const s=setup();try{const {proposal,job,t}=testedCandidate(s),p=s.app.changes.prepare(USER,s.project.id,proposal);approve(s.app,p.approvalId);
   if(scenario==='approval')s.app.approvals.stale(t.id);
-  else {const artifact=s.app.store.get('artifact',job.reportArtifactId);chmodSync(artifact.path,0o600);writeFileSync(artifact.path,'tampered');}
+  else {const artifact=s.app.store.get('artifact',job.reportArtifactId),artifactPath=physical(s.app,artifact.path);chmodSync(artifactPath,0o600);writeFileSync(artifactPath,'tampered');}
   assert.throws(()=>s.app.changes.apply(USER,p.id),{code:scenario==='approval'?'APPROVAL_STALE':'ARTIFACT_CORRUPTED'});
   assert.equal(s.app.store.list('experiment').length,1);assert.equal(s.app.store.get('change-proposal',p.id).state,'prepared');
  }finally{s.close();}}

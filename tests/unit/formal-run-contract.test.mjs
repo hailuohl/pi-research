@@ -7,6 +7,7 @@ import {validateContract} from '../../dist/packages/runners/contracts.js';
 import {validateSchema} from '../../dist/packages/contracts/operations/schema.js';
 import {OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/outputs.js';
 import {digest} from '../../dist/packages/storage/store.js';
+const physical=(app,reference)=>app.store.paths.physical(reference);
 
 const contract={runner:'docker',image:`python@sha256:${'a'.repeat(64)}`,command:['python','main.py',''],environment:{},datasetVersion:'unit-dataset-v1',evaluationProtocolVersion:'unit-protocol-v1',metrics:{score:{unit:'ratio',direction:'max'}},expectedArtifacts:['metrics.json'],timeoutSeconds:30,cpus:1,memoryMb:128};
 function intent(s){const e=s.app.experiments.create(USER,s.project.id,{title:'Formal Docker contract only',contract});return {e,i:s.app.runs.prepare(USER,e.id)};}
@@ -29,7 +30,7 @@ test('fixed Run source APIs retain original bytes when mutable experiment files 
   assert.equal(operation(s,'run_source_list',{runId:run.id}).gitCommit,'a'.repeat(40));assert.deepEqual(s.app.store.get('run',run.id).manifest,manifestBefore);
   s.app.store.update('git-source-binding',binding.id,binding.version,{sourceDigest:'b'.repeat(64)});assert.equal(operation(s,'run_source_list',{runId:run.id}).gitCommit,undefined);
   // Simulate a later external edit: historical Run reads must still use its immutable CAS.
-  writeFileSync(join(e.workspace,'config.json'),'mutable experiment now differs');
+  writeFileSync(join(physical(s.app,e.workspace),'config.json'),'mutable experiment now differs');
   assert.equal(operation(s,'run_source_read',{runId:run.id,path:'config.json'}).content,before.content);assert.equal(operation(s,'run_source_list',{runId:run.id}).sourceDigest,list.sourceDigest);
   const page=operation(s,'run_source_read',{runId:run.id,path:'config.json',cursor:2,limit:5});assert.equal(page.content,before.content.slice(2,7));assert.equal(page.cursor,2);assert.equal(page.end,7);
   assert.throws(()=>operation(s,'run_source_read',{runId:run.id,path:'config.json',cursor:before.content.length+1}),{code:'INVALID_INPUT'});
@@ -39,7 +40,7 @@ test('fixed Run source APIs retain original bytes when mutable experiment files 
 });
 
 test('formal Run logs separate streams, bound pages and reject invalid stream or cursor inputs',()=>{
- const s=setup();try{const {i}=intent(s),run=submit(s,i);mkdirSync(run.execution.controlDir,{recursive:true});writeFileSync(join(run.execution.controlDir,'stdout.log'),'x'.repeat(70000));writeFileSync(join(run.execution.controlDir,'stderr.log'),'separate diagnostic');
+ const s=setup();try{const {i}=intent(s),run=submit(s,i),controlDir=physical(s.app,run.execution.controlDir);mkdirSync(controlDir,{recursive:true});writeFileSync(join(controlDir,'stdout.log'),'x'.repeat(70000));writeFileSync(join(controlDir,'stderr.log'),'separate diagnostic');
   const first=operation(s,'run_logs',{runId:run.id,stream:'stdout'});assert.equal(first.content.length,65536);assert.equal(first.cursor,65536);assert.equal(first.complete,false);
   const second=operation(s,'run_logs',{runId:run.id,stream:'stdout',cursor:first.cursor});assert.equal(second.content.length,4464);assert.equal(second.complete,false);assert.equal(operation(s,'run_logs',{runId:run.id,stream:'stderr'}).content,'separate diagnostic');
   for(const invalid of [{stream:'../secret'},{cursor:-1},{cursor:1.5},{cursor:Number.MAX_SAFE_INTEGER+1}])assert.throws(()=>operation(s,'run_logs',{runId:run.id,...invalid}),{code:'INVALID_INPUT'});

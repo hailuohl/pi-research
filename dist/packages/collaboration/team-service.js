@@ -143,7 +143,7 @@ export class TeamService {
                         const attemptId = randomUUID(), workspace = join(this.c.dataDir, 'workspaces', id, task.id, attemptId);
                         mkdirSync(workspace, { recursive: true, mode: 0o700 });
                         const s = this.sessions.create(SYSTEM, p.id, { title: `${task.role} · ${task.objective.slice(0, 60)}` }, { role: task.role, teamId: id, taskId: task.id, workspace });
-                        copySourceRevision(source, workspace);
+                        copySourceRevision(source, workspace, true, this.c.store.paths);
                         const bound = this.c.store.update('session', s.id, s.version, { sourceRevisionId: source.id, sourceDigest: source.sourceDigest });
                         queueWorkspaceHistory(this.c, bound, source);
                         prepared = this.c.store.create('task-workspace', p.id, { attemptId, sessionId: s.id }, prepareId);
@@ -158,10 +158,10 @@ export class TeamService {
                 let workspace = join(this.c.dataDir, 'workspaces', id, task.id, attemptId);
                 mkdirSync(workspace, { recursive: true, mode: 0o700 });
                 const session = prepared ? this.c.store.get('session', prepared.sessionId) : this.sessions.create(SYSTEM, p.id, { title: `${task.role} · ${task.objective.slice(0, 60)}` }, { role: task.role, teamId: id, taskId: task.id, workspace });
-                workspace = session.workspace;
+                workspace = this.c.store.paths.physical(session.workspace);
                 const plan = this.c.store.list('team-plan', p.id).find(x => x.teamId === id);
                 if (source && !prepared)
-                    copySourceRevision(source, workspace);
+                    copySourceRevision(source, workspace, true, this.c.store.paths);
                 this.c.store.update('session', session.id, session.version, { model: plan.model, skillBundleId, skillIds: task.skillIds, ...(source ? { sourceRevisionId: source.id, sourceDigest: source.sourceDigest } : {}) });
                 const developmentReview = task.reviewId ? this.c.store.get('development-review', task.reviewId, p.id) : undefined;
                 const publicationReview = task.publicationReviewId ? this.c.store.get('publication-review', task.publicationReviewId, p.id) : undefined;
@@ -172,7 +172,7 @@ export class TeamService {
                 if (!source)
                     writeFileSync(join(workspace, 'task-context.json'), JSON.stringify(inputs, null, 2), { mode: 0o400, flag: 'wx' });
                 this.c.store.create('context-snapshot', p.id, { taskId: task.id, attemptId, inputDigest, content: inputs });
-                const attempt = this.c.store.create('task-attempt', p.id, { skillBundleId, teamId: id, taskId: task.id, sessionId: session.id, generation, state: 'running', workspace, leaseUntil: Date.now() + 30000, inputDigest, budgetReservationId: reservation.id }, attemptId);
+                const attempt = this.c.store.create('task-attempt', p.id, { skillBundleId, teamId: id, taskId: task.id, sessionId: session.id, generation, state: 'running', workspace: this.c.store.paths.reference(workspace), leaseUntil: Date.now() + 30000, inputDigest, budgetReservationId: reservation.id }, attemptId);
                 const claimed = this.c.store.update('task', task.id, task.version, { execution: 'running', generation, attemptId, attemptCount: task.attemptCount + 1, sessionId: session.id, blockReason: undefined });
                 this.c.store.event(p.id, 'task.claimed', { teamId: id, taskId: task.id, attemptId, sessionId: session.id, generation });
                 return { task: claimed, attempt, context: inputs };

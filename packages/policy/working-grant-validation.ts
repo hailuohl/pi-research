@@ -56,5 +56,5 @@ export function assertWorkingGrantJob(store:Store,job:Row<SandboxJob>,admission=
     ensure(approval.subjectKind==='development-task'&&approval.subjectId===job.developmentTaskId&&approval.digest===job.manifestDigest&&approval.scope==='development.test'&&approval.status==='approved'&&digest(approval.workingGrant)===digest(m.workingGrant),'APPROVAL_STALE','单次测试的派生批准不匹配');
     const id=digest({grantId:g.id,developmentTaskId:job.developmentTaskId}),use=store.get<WorkingGrantUse>('working-grant-use',id,job.projectId!);
     ensure(use.grantId===g.id&&use.grantDigest===g.digest&&use.grantApprovalId===g.approvalId&&use.developmentTaskId===job.developmentTaskId&&use.manifestDigest===job.manifestDigest&&use.approvalId===job.grantId&&use.jobId===job.id,'WORKING_GRANT_USE_MISMATCH','测试作业与永久计次回执不匹配');
-    verifySnapshot(g.baselineSnapshot.path,g.baselineSnapshot.files);
+    verifySnapshot(store.paths.physical(g.baselineSnapshot.path),g.baselineSnapshot.files);
 }

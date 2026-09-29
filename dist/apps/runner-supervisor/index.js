@@ -59,7 +59,7 @@ try {
         const generation = run.execution.generation;
         const fence = () => { const r = store.get('run', runId); ensure(!TERMINAL.includes(r.state) && r.execution?.generation === generation && r.execution.leaseUntil > Date.now(), 'LEASE_EXPIRED', '监管器已失去作业租约'); };
         await superviseDockerRun(run, {
-            read: () => store.get('run', runId), fence, verifyTarget: () => compute.verifyTarget('run', runId),
+            paths: store.paths, read: () => store.get('run', runId), fence, verifyTarget: () => compute.verifyTarget('run', runId),
             assertGrant: r => service.assertExecutionGrant(r),
             patch: value => store.transaction(() => { fence(); const r = store.get('run', runId); if (value.execution?.startRequested && !r.execution.startRequested) {
                 ensure(!r.cancelRequested, 'RUN_CANCELLED', '作业已请求取消');
@@ -69,12 +69,12 @@ try {
         });
     }
     else {
-        const adapter = new TrustedExampleAdapter(run, repoRoot);
+        const adapter = new TrustedExampleAdapter(run, repoRoot, store.paths);
         let processHandle, timer, timeout, observedCancel = false, timedOut = false, truncated = false, bytes = 0, authorityError;
         try {
             await adapter.preflight();
             await adapter.stage();
-            const log = join(run.outputDir, 'stdout.log');
+            const log = join(store.paths.physical(run.outputDir), 'stdout.log');
             writeFileSync(log, '', { mode: 0o600 });
             store.transaction(() => { const current = store.get('run', runId); ensure(current.state === 'submitting' && current.supervisorPid === process.pid && !current.startRequested && !current.childPid && !current.cancelRequested, 'RUN_NOT_LAUNCHABLE', '运行不再允许启动'); service.assertExecutionGrant(current, true); store.update('run', current.id, current.version, { startRequested: true, startedAt: now() }); });
             processHandle = await adapter.start((_stream, chunk) => { const remaining = Math.max(0, 16 * 1024 * 1024 - bytes); bytes += chunk.length; if (remaining)

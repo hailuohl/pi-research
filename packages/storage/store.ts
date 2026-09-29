@@ -5,6 +5,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { DomainError, ensure } from '../domain/errors.js';
 import type { Row } from '../domain/types.js';
 import {TextWriteRecovery} from '../workspace/text-write-recovery.js';
+import {assertPhysicalDataRoot,loadDataPaths,readDataLocation,setDataLocation, type DataPaths} from './data-paths.js';
 export function stable(value: unknown): string {
     if (Array.isArray(value))
         return '[' + value.map(stable).join(',') + ']';
@@ -24,14 +25,17 @@ function rethrowComputeGate(error:unknown):never {
 }
 export class Store {
     readonly db: DatabaseSync;
+    readonly paths: DataPaths;
     private depth = 0;
     private reading = false;
     private rollbackCallbacks: Array<() => void> = [];
     private commitCallbacks: Array<() => void> = [];
     textWrites?:TextWriteRecovery;
     constructor(public path: string) {
+        assertPhysicalDataRoot(dirname(path));
         mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
         this.db = new DatabaseSync(path);
+        try {this.paths=loadDataPaths(this.db,dirname(path));}catch(error){this.db.close();throw error;}
         this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
  CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY,applied_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS records(kind TEXT NOT NULL,id TEXT NOT NULL,project_id TEXT,version INTEGER NOT NULL,data TEXT NOT NULL,PRIMARY KEY(kind,id));
@@ -48,6 +52,7 @@ INSERT INTO schema_migrations VALUES(4,datetime('now'));`);});
         this.migrateDocumentQueue();
         this.migratePublicationQueue();
         this.transaction(()=>{if(this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=7').get())return;this.db.exec("CREATE INDEX records_session_catalog ON records(kind,project_id,json_extract(data,'$.role')) WHERE kind='session'; INSERT INTO schema_migrations VALUES(7,datetime('now'));");});
+        this.transaction(()=>{if(!readDataLocation(this.db))setDataLocation(this.db,dirname(path));this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(9,datetime('now'));");});
         this.transaction(()=>{this.textWrites=new TextWriteRecovery(this.db,path);this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(8,datetime('now'));");});
         this.transaction(()=>{});
     }

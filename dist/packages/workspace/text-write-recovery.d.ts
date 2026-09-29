@@ -13,6 +13,7 @@ export declare function captureWritePreimage(root: string, path: string, metadat
 export declare class TextWriteRecovery {
     private db;
     private directory;
+    private dataRoot;
     private key;
     private current?;
     readonly conflicts: string[];

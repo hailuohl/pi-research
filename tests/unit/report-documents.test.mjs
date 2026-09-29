@@ -17,13 +17,13 @@ function prepared(raw=Buffer.from('%PDF-1.7\nUNIT fixture, not a scientific pape
  const profile=parserProfile(process.cwd()),imageId='sha256:'+'a'.repeat(64);
  s.app.store.create('document-parser-settings',null,{...profile,dockerContext:'default',imageDigest:imageId,imageId},'global');
  const prepared=s.app.documentParsing.prepare(USER,pid,{documentVersionId:document.id});approve(s.app,prepared.approvalId);
- const old=s.app.store.get('document-parse-job',prepared.id),job=s.app.store.update('document-parse-job',old.id,old.version,{imageId});
+ const old=s.app.store.get('document-parse-job',prepared.id),job=s.app.store.update('document-parse-job',old.id,old.version,{imageId}),outputDir=s.app.store.paths.physical(old.outputDir);
  const quality={readingOrder:'unverified',paragraphs:'heuristic',tables:'unknown',figures:'unknown',ocr:false,score:null};
  const pages=['中😀 引用文字，保留UTF-16区间。','未引用页，不能自动加入包。'].map((content,index)=>{
   const prefix=`page-000${index+1}`,bytes=Buffer.from(content),page={pageNumber:index+1,pageLabel:index===0?'i':'ii',width:400,height:200,imageWidth:1,imageHeight:1,textFile:prefix+'.txt',textDigest:digest(bytes),textBytes:bytes.length,imageFile:prefix+'.png',imageDigest:digest(png),imageBytes:png.length,paragraphs:[{index:1,start:0,end:content.length}],textStatus:'text-extracted'};
-  writeFileSync(join(job.outputDir,page.textFile),bytes);writeFileSync(join(job.outputDir,page.imageFile),png);return page;
+  writeFileSync(join(outputDir,page.textFile),bytes);writeFileSync(join(outputDir,page.imageFile),png);return page;
  });
- writeFileSync(join(job.outputDir,'manifest.json'),JSON.stringify({formatVersion:1,profileId:profile.profileId,rawDigest:document.original.digest,pageCount:2,quality,pages}));
+ writeFileSync(join(outputDir,'manifest.json'),JSON.stringify({formatVersion:1,profileId:profile.profileId,rawDigest:document.original.digest,pageCount:2,quality,pages}));
  const done=s.app.documentParsing.finalize(job.id,{state:'succeeded',exitCode:0});assert.equal(done.integrity,'complete');
  const result=s.app.documentParsing.result(USER,pid,done.resultId);
  const evidence=[0,4].map(start=>s.app.evidence.registerDocument(USER,pid,{documentVersionId:document.id,parseResultId:result.id,pageNumber:1,start,end:start+1,description:`UNIT 中文页段 ${start}`}));
@@ -46,7 +46,7 @@ test('PDF report freezes page, source, license and parser provenance; real tar c
   assert.ok(!bindings.artifacts.some(a=>a.id===s.result.pages[1].textArtifactId));
   assert.doesNotMatch(JSON.stringify(bindings),/snapshotPath|controlDir|outputDir|dockerContext/);
   const service=new ExportService(s.app.context,s.app.reports,s.app.evidence),bundle=await service.create(USER,s.pid,{reportId:s.report.id},'bundle');
-  const target=join(s.dir,'unpacked');mkdirSync(target);execFileSync(process.platform==='win32'?'C:/WINDOWS/system32/tar.exe':'tar',['-xf',bundle.path,'-C',target],{windowsHide:true,shell:false});
+  const target=join(s.dir,'unpacked');mkdirSync(target);execFileSync(process.platform==='win32'?'C:/WINDOWS/system32/tar.exe':'tar',['-xf',s.app.store.paths.physical(bundle.path),'-C',target],{windowsHide:true,shell:false});
   for(const file of collection.files)assert.deepEqual(readFileSync(join(target,file.path)),file.bytes);
   assert.deepEqual(readFileSync(join(target,'artifacts',s.document.original.digest)),s.raw);
   const manifest=JSON.parse(readFileSync(join(target,'manifest.json'),'utf8'));assert.equal(manifest.bindings.documents[0].document.source.requestedVersion,null);
@@ -61,7 +61,7 @@ test('PDF tampering and revoked parse approval block new reports and export whil
    const before=s.app.evidence.read(USER,s.report.artifactId).bytes,ref=s.report.references.find(r=>r.document),frozen=s.app.reports.readReference(USER,s.pid,s.report.id,ref.id).content;
    const update=(kind,row,patch)=>s.app.store.update(kind,row.id,s.app.store.get(kind,row.id).version,patch);
    if(['raw','text','image','manifest'].includes(change)){
-    const id={raw:s.document.original.artifactId,text:s.result.pages[0].textArtifactId,image:s.result.pages[0].imageArtifactId,manifest:s.result.manifestArtifactId}[change],a=s.app.store.get('artifact',id);chmodSync(a.path,0o600);writeFileSync(a.path,'corrupted');
+    const id={raw:s.document.original.artifactId,text:s.result.pages[0].textArtifactId,image:s.result.pages[0].imageArtifactId,manifest:s.result.manifestArtifactId}[change],a=s.app.store.get('artifact',id),path=s.app.store.paths.physical(a.path);chmodSync(path,0o600);writeFileSync(path,'corrupted');
    }else if(change==='document')update('document-version',s.document,{license:{value:'forged',assurance:'user-declared'}});
    else if(change==='pageLabel')update('document-parse-result',s.result,{pages:s.result.pages.map((p,i)=>i? p:{...p,pageLabel:'forged'})});
    else if(change==='quality')update('document-parse-result',s.result,{quality:{...s.result.quality,ocr:true}});

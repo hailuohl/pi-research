@@ -12,7 +12,7 @@ export async function superviseDockerRun(initial: DockerRun, callbacks: DockerSu
     let externalPossible = Boolean(initial.execution.startRequested || initial.execution.containerId || initial.execution.recoveryCount > 0);
     const fence = () => {try {callbacks.fence(); if (callbacks.read().execution.generation !== generation) throw new Error('Formal runner generation lost');} catch (error) {lostLease = true; throw error;}};
     const current = () => {fence(); return callbacks.read();};
-    const adapter = new DockerAdapter(initial, fence,callbacks.verifyTarget);
+    const adapter = new DockerAdapter(initial, fence,callbacks.verifyTarget,callbacks.paths);
     const update = (execution: Partial<RunExecution>, other: Parameters<DockerSupervisorCallbacks['patch']>[0] = {}) => {
         const run = current();
         const next = callbacks.patch({...other, execution: {...run.execution, ...execution}});
@@ -20,9 +20,9 @@ export async function superviseDockerRun(initial: DockerRun, callbacks: DockerSu
         return next;
     };
     const initializeLogs = () => {
-        mkdirSync(initial.execution.controlDir, {recursive: true, mode: 0o700});
+        mkdirSync(adapter.job.controlDir, {recursive: true, mode: 0o700});
         for (const name of ['stdout.log', 'stderr.log']) {
-            const path = join(initial.execution.controlDir, name);
+            const path = join(adapter.job.controlDir, name);
             if (!existsSync(path)) writeFileSync(path, '', {flag: 'wx', mode: 0o600});
             bytes += lstatSync(path).size;
         }
@@ -32,17 +32,17 @@ export async function superviseDockerRun(initial: DockerRun, callbacks: DockerSu
         const remaining = Math.max(0, adapter.job.manifest.resources.logBytes - bytes);
         if (chunk.length > remaining) logTruncated = true;
         bytes += chunk.length;
-        if (remaining) appendFileSync(join(initial.execution.controlDir, `${name}.log`), chunk.subarray(0, remaining));
+        if (remaining) appendFileSync(join(adapter.job.controlDir, `${name}.log`), chunk.subarray(0, remaining));
     };
     const diagnostic = (error: unknown) => {
         fence();
         const text = error instanceof Error ? error.stack ?? error.message : String(error);
-        writeFileSync(join(initial.execution.controlDir, 'diagnostic.log'), Buffer.from(text).subarray(0, 65536), {mode: 0o600});
+        writeFileSync(join(adapter.job.controlDir, 'diagnostic.log'), Buffer.from(text).subarray(0, 65536), {mode: 0o600});
         log('stderr', Buffer.from('FORMAL_RUN_EXECUTION_FAILED\n'));
     };
     const outputOverLimit = () => {
         const limit = (initial.manifest.contract as {outputBytes?: number}).outputBytes ?? 128 * 1024 * 1024;
-        let total = 0, count = 0; const pending = [initial.outputDir];
+        let total = 0, count = 0; const pending = [adapter.job.outputDir];
         try {
             while (pending.length) {
                 const dir = pending.pop()!;

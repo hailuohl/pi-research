@@ -20,17 +20,17 @@ export class EvidenceService {
         ensure(bytes.length <= 32 * 1024 * 1024, 'ARTIFACT_TOO_LARGE', '产物超过 32 MiB', 413);
         const hash = digest(bytes), dir = join(this.c.dataDir, 'artifacts');
         mkdirSync(dir, { recursive: true, mode: 0o700 });
-        const path = join(dir, hash);
-        if (!existsSync(path))
-            writeFileSync(path, bytes, { mode: 0o444, flag: 'wx' });
+        const physical = join(dir, hash);
+        if (!existsSync(physical))
+            writeFileSync(physical, bytes, { mode: 0o444, flag: 'wx' });
         else
-            ensure(digest(readFileSync(path)) === hash, 'ARTIFACT_CORRUPTED', '产物库校验失败', 500);
-        return { ...extra, title, digest: hash, size: bytes.length, path, mediaType, origin };
+            ensure(digest(readFileSync(physical)) === hash, 'ARTIFACT_CORRUPTED', '产物库校验失败', 500);
+        return { ...extra, title, digest: hash, size: bytes.length, path: this.c.store.paths.reference(physical), mediaType, origin };
     }
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId, prepared) { this.c.store.get('project', projectId); return this.c.store.create('artifact', projectId, prepared); }
     put(projectId, title, bytes, mediaType = 'text/plain', origin = 'user', extra = {}) { return this.publishPrepared(projectId, this.prepareArtifact(projectId, title, bytes, mediaType, origin, extra)); }
-    read(actor, id) { const a = this.c.store.get('artifact', id); scope(actor, a.projectId); const bytes = readFileSync(a.path); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    read(actor, id) { const a = this.c.store.get('artifact', id); scope(actor, a.projectId); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
     register(actor, projectId, artifactId, start, end, description, type = 'artifact', runId) {
         scope(actor, projectId);
         const a = this.c.store.get('artifact', artifactId, projectId);

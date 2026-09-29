@@ -54,7 +54,7 @@ export class ResearchPlanService {
             ensure(i.status === 'submitted' && i.runId === r.id && r.intentId === i.id && r.manifestDigest === b.manifestDigest, 'PLAN_RUN_STALE', '固定Run与批准清单不一致');
             this.app.approvals.assert(b.approvalId, pid, i.id, b.manifestDigest, 'run.submit');
         }
-        verifySnapshot(i.manifest.snapshotPath, i.manifest.sourceFiles);
+        verifySnapshot(this.app.store.paths.physical(i.manifest.snapshotPath), i.manifest.sourceFiles);
     }
     sourceForRun(pid, run) {
         const id = run.manifest.sourceRevisionId ?? digest({ projectId: pid, experimentId: run.experimentId, revision: run.manifest.experimentRevision });

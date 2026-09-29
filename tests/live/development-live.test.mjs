@@ -8,7 +8,7 @@ import {setTimeout as pause} from 'node:timers/promises';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {USER} from '../../dist/packages/domain/types.js';
 import {createHttpServer} from '../../dist/apps/server/http.js';
-import {docker, inspect, createArgs, stageInputs, preflight} from '../../dist/packages/execution/docker.js';
+import {docker, inspect, createArgs, stageInputs, preflight, physicalDockerJob} from '../../dist/packages/execution/docker.js';
 
 const image = process.env.PI_DEVELOPMENT_IMAGE;
 const context = process.env.PI_DEVELOPMENT_CONTEXT || 'desktop-linux';
@@ -37,7 +37,7 @@ test('real Docker development: Python, isolation, failure, cancellation, disconn
     function prepare(source,options={}) {
         const session=app.sessions.create(USER,project.id,{title:options.title??'live sandbox'});
         app.sources.prepare(USER,project.id,session.id,{experimentId:baseline.id,revision:1});
-        writeFileSync(join(session.workspace,'test_sandbox.py'),source);
+        writeFileSync(join(app.store.paths.physical(session.workspace),'test_sandbox.py'),source);
         const task=call('development_prepare',{command:['python','-u','test_sandbox.py'],environmentImageDigest:image,dockerContext:context,resources:{timeoutSeconds:30},...options},session.id);
         approve(task.grantId);const j=call('development_submit',{developmentTaskId:task.id},session.id);
         return {session,task,job:app.store.get('sandbox-job',j.id),source};
@@ -98,7 +98,7 @@ unittest.main(verbosity=2)
             app.execution.launchPending();await wait(p.job.id,j=>j.state==='running'||terminal(j));
             if(name==='cancel')call('development_cancel',{jobId:p.job.id});
             const j=await wait(p.job.id);record(name,j);assert.equal(j.state,name==='timeout'?'timed_out':'cancelled');
-            const c=await inspect(j);assert.equal(c.State.Running,false);assert.equal(c.State.Status,'exited');
+            const c=await inspect(physicalDockerJob(j,app.store.paths));assert.equal(c.State.Running,false);assert.equal(c.State.Status,'exited');
         });
         await check('lost worker reconciles the same container without a duplicate execution',async()=>{
             const p=prepare("import time,pathlib\np=pathlib.Path('/output/count.txt')\np.write_text(p.read_text()+'x' if p.exists() else 'x')\nprint('before-recovery',flush=True)\ntime.sleep(5)\nprint('after-recovery',flush=True)\n",{expectedArtifacts:['count.txt']});
@@ -107,7 +107,7 @@ unittest.main(verbosity=2)
             j=app.store.get('sandbox-job',j.id);app.store.update('sandbox-job',j.id,j.version,{leaseUntil:0});
             app.execution.launchPending();const done=await wait(j.id);record('worker-recovery',done);
             assert.equal(done.containerId,j.containerId);assert.equal(done.recoveryCount,1);assert.equal(done.integrity,'incomplete');assert.equal(done.state,'failed');
-            assert.equal(readFileSync(join(done.outputDir,'count.txt'),'utf8'),'x');
+            assert.equal(readFileSync(join(app.store.paths.physical(done.outputDir),'count.txt'),'utf8'),'x');
             const ids=await docker(context,['ps','-aq','--filter',`label=pi-research.sandbox-job=${j.id}`]);assert.equal(ids.split('\n').filter(Boolean).length,1);
         });
         await check('lost attach transport cannot certify complete success even if Python exits zero',async()=>{
@@ -132,10 +132,10 @@ unittest.main(verbosity=2)
         });
         await check('ambiguous persisted start can be cancelled without ever executing created container',async()=>{
             const p=prepare("import pathlib\npathlib.Path('/output/must-not-exist.txt').write_text('executed')\n");
-            const imageId=await preflight(context,image);stageInputs(p.job);await docker(context,createArgs(p.job));const c=await inspect(p.job);
+            const imageId=await preflight(context,image),dockerJob=physicalDockerJob(p.job,app.store.paths);stageInputs(dockerJob);await docker(context,createArgs(dockerJob));const c=await inspect(dockerJob);
             app.store.update('sandbox-job',p.job.id,p.job.version,{imageId,containerId:c.Id,startRequested:true,state:'unknown',generation:1,leaseUntil:0,startedAt:new Date().toISOString()});
             call('development_cancel',{jobId:p.job.id});app.execution.launchPending();const done=await wait(p.job.id);record('ambiguous-start-cancel',done);
-            assert.equal(done.state,'cancelled');assert.equal(done.integrity,'incomplete');assert.equal(await inspect(done),null);
+            assert.equal(done.state,'cancelled');assert.equal(done.integrity,'incomplete');assert.equal(await inspect(physicalDockerJob(done,app.store.paths)),null);
         });
         evidence.passed=failures===0;
     } finally {

@@ -99,7 +99,7 @@ function externalReplay(c: OperationContext, name: string, x: Record<string, unk
 
 function executeRegistered(c: OperationContext, name: string, x: Record<string, unknown>): unknown {
     const {app, actor, session, projectId: pid} = c;
-        const ownOrProject = () => { ensure(!x.source || x.source === 'session' || x.source === 'project' && (session?.role ?? 'coordinator') === 'coordinator', 'SCOPE_DENIED', '助手只能访问自己的工作区', 403); return x.source === 'project' ? app.projects.get(actor, pid).workspace : session!.workspace; };
+        const ownOrProject = () => { ensure(!x.source || x.source === 'session' || x.source === 'project' && (session?.role ?? 'coordinator') === 'coordinator', 'SCOPE_DENIED', '助手只能访问自己的工作区', 403); return app.store.paths.physical(x.source === 'project' ? app.projects.get(actor, pid).workspace : session!.workspace); };
         if (name.startsWith('campaign_')) {
             const campaignId = text(x.campaignId, 'campaignId', 100);
             if (actor.wakeupId) {
@@ -288,7 +288,7 @@ const SPECS: OperationSpec[] = [
     make('run_submit', {idempotencyPolicy: 'key-required', authorize: recordScope('run-intent', 'intentId'), preconditions: noPrecondition,
         execute: (c, x) => c.app.runs.submit(c.actor, x.intentId as string)}),
     make('workspace_read', {idempotencyPolicy: 'read-only', authorize: workspaceScope, preconditions: noPrecondition,
-        execute: (c, x) => x.source === 'project' ? c.app.projects.readFile(c.actor, c.projectId, x.path as string) : readText(c.session!.workspace, x.path as string)}),
+        execute: (c, x) => x.source === 'project' ? c.app.projects.readFile(c.actor, c.projectId, x.path as string) : readText(c.app.store.paths.physical(c.session!.workspace), x.path as string)}),
     make('workspace_write', {idempotencyPolicy: 'key-required', authorize: (c, x) => {
         workspaceScope(c, x);
         ensure(c.actor.type === 'user' || x.source !== 'project', 'SCOPE_DENIED', '不能通过助手写入项目共享工作区', 403);
@@ -297,7 +297,7 @@ const SPECS: OperationSpec[] = [
         if (x.source !== 'project') {ensure(c.session!.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');assertWorkspaceReady(c.app.context,c.session!.id);c.app.workingGrants.assertWrite(c.actor,c.projectId,c.session!.id,x.path as string,x.content as string);}
     }, execute: (c, x) => x.source === 'project'
         ? c.app.projects.writeFile(c.actor, c.projectId, x.path as string, x.content as string, x.expectedDigest as string | null)
-        : writeText(c.session!.workspace, x.path as string, x.content as string, x.expectedDigest as string | null, c.app.store)}),
+        : writeText(c.app.store.paths.physical(c.session!.workspace), x.path as string, x.content as string, x.expectedDigest as string | null, c.app.store)}),
     make('change_proposal_prepare', {idempotencyPolicy: 'key-required', authorize: recordScope('experiment', 'baseExperimentId'), preconditions: noPrecondition,
         execute: (c, x) => c.app.changes.prepare(c.actor, c.projectId, x)}),
     make('task_result_submit', {idempotencyPolicy: 'key-required', authorize: c => {

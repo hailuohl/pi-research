@@ -1,0 +1,213 @@
+{
+  "capturedAt": "2026-09-29T08:50:50.384Z",
+  "baselineCommit": "f99334f66539fc8fc6ea28929f8726df1ce7f2be",
+  "status": "implemented; live Pi and Docker acceptance blocked by local environment",
+  "scope": "Offline same-platform A to B to C relocation; one active copy; frontend layout deferred; distribution and hosted services outside this batch",
+  "acceptance": {
+    "preserveFrozenIdentity": "passed",
+    "currentRootReadWriteAndQuota": "passed via historical data plus bounded-grant integration fixture",
+    "invalidBoundaries": "passed",
+    "realPiAndDocker": "not completed",
+    "secondMoveAndHistory": "passed"
+  },
+  "historicalData": {
+    "sourceRecordsUnchanged": 53,
+    "sourceNonDatabaseFilesUnchanged": 48,
+    "firstMove": {
+      "files": 48,
+      "bytes": 460750,
+      "manifestDigest": "9ddb1bb23cb50f8c6fdc278fc5329f7a8fbb9a487a3854e820cc8af2d11bc4b1",
+      "schema": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "excluded": [
+        "access.token",
+        "state.db-shm",
+        "state.db-wal"
+      ],
+      "relocated": true
+    },
+    "secondMove": {
+      "files": 50,
+      "bytes": 473144,
+      "manifestDigest": "0e764cedcc9e70d3a4fc7a80321115d56f450861198d67e1264b089dc28d55b1",
+      "schema": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "excluded": [
+        "access.token",
+        "state.db-shm",
+        "state.db-wal"
+      ],
+      "relocated": true
+    },
+    "reopen": {
+      "recordsPreserved": 56,
+      "artifactsReadable": 7,
+      "oldNativeId": "01a0e7dd-74d3-7142-8aef-5542c2ed4546",
+      "oldNativeBytes": 98774,
+      "oldNativeDigest": "57640f432c287d88adfef254d2ec4e1ebd621dc41dc485c54af3cecdc35cac15",
+      "sdkOfflineOpen": {
+        "idUnchanged": true,
+        "cwdAtC": true,
+        "bytesUnchanged": true,
+        "providerCalled": false
+      },
+      "oldAbsoluteReferenceRetained": true,
+      "newUriReadable": true,
+      "pendingUndeliveredNoticeRetained": true,
+      "legacyRootsCount": 2,
+      "sourcePreserved": true,
+      "sessionMessages": 16
+    }
+  },
+  "liveExecution": {
+    "pi": {
+      "status": "blocked-before-worker",
+      "reason": "SKILL_CAPABILITY_MISSING — acceptance-figure backend:docker — 默认 Docker 目标未核验或核验已过期；请先核对计算目标",
+      "workersStarted": 0,
+      "providerRequests": 0,
+      "sdkOfflineInspectionOnly": true
+    },
+    "docker": {
+      "status": "startup-failed",
+      "reason": "initializing Ingest server: sailor-ingest.sock rename failed; The file cannot be accessed by the system.",
+      "observedAt": "2026-09-29T08:25:21.671426700Z",
+      "newJobsSubmitted": 0,
+      "similarIssue": "https://github.com/docker/desktop-feedback/issues/675"
+    },
+    "remaining": "Once Docker is available, resume the preserved native session and separately approve one fixed Docker test on the active C copy. Do not replay old completed jobs."
+  },
+  "browser": {
+    "recordedAt": "2026-09-29T08:33:54.653Z",
+    "latestMessages": 10,
+    "earlierMessages": 6,
+    "legacyMessages": 14,
+    "newLocalMessages": 2,
+    "oldCsvPreview": true,
+    "newArtifactPreview": true,
+    "refreshPreservedArtifactList": true,
+    "selectedArtifactResetOnRefresh": true,
+    "layoutEvaluated": false,
+    "screenshotsCopied": false,
+    "interaction": "semantic keyboard activation; existing pointer offset workaround"
+  },
+  "validation": {
+    "related": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0
+    },
+    "fullRegression": {
+      "tests": 772,
+      "pass": 749,
+      "fail": 1,
+      "skipped": 22
+    },
+    "cleanBuild": {
+      "node": "24.19.0",
+      "platform": "win32",
+      "files": 450,
+      "identical": true,
+      "manifestDigest": "d5d8e914feae4c3102ee63e7463469abffc37ada9f3eeef976669dc0cc3012d9",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ]
+    },
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "remainingCodeBlockers": 0,
+      "fixed": "WorkingGrant baseline verification resolves only at the I/O boundary; poisoned-old-root regression fails before and passes after fix."
+    },
+    "automatedFlow": [
+      "Same frozen approval and manifest identities across A/B/C",
+      "Old A files poisoned; all B/C reads use current data",
+      "Managed Git head and worktree usable after relocation",
+      "One bounded test submission, out-of-scope write refused, quota retained and exhausted after second move",
+      "Previously acknowledged native context receipt retained",
+      "Copied legacy pending text journal cannot replay against old root"
+    ],
+    "privateLogs": [
+      {
+        "file": "authority-before-fix.log",
+        "sha256": "5af33445066a93176007df2950677017e560d73b4108f348d9ebef4c17d1069c"
+      },
+      {
+        "file": "relocation-related-4.log",
+        "sha256": "fe2aa2cb292ef9fbd4d293b213ac01fbb9f0d43554c34f5be1e6da5bf430a290"
+      },
+      {
+        "file": "luna-remaining-related.log",
+        "sha256": "f610f7f2b6ebfdfd4e3887596d35a76e07c84bbd7cce9dbcb8d40603d72abdf6"
+      },
+      {
+        "file": "full-regression.log",
+        "sha256": "b1c8dde47713e093bef71cb7c7254031ddcedbcf117eb4d53c80ad2832d29e3a"
+      },
+      {
+        "file": "build.log",
+        "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+      },
+      {
+        "file": "clean-build.log",
+        "sha256": "2ff152828510d0ca0135ebcee47e9119379e19e0404aa8d94ac5c07b6fea1ea6"
+      },
+      {
+        "file": "handoff-related.log",
+        "sha256": "dd370254157ebbffb7ce095164dad35f0146c36b000acb53e0174ca75f313acd"
+      }
+    ],
+    "postRegression": {
+      "tests": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0
+      },
+      "remainingFailures": 0,
+      "fix": "Existing handoff fault injection now matches the physical candidate snapshot, preserving the corruption assertion; no production change or repeated full run."
+    },
+    "existingTestAdaptation": {
+      "tests": 219,
+      "pass": 219,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "limits": [
+    "Offline declaration is an operator contract, not automatic process isolation.",
+    "Independent copied databases do not share a global quota.",
+    "No cross-platform or overlay restore support.",
+    "The actual migrated data has no WorkingGrant; bounded authority is verified by an explicit integration fixture.",
+    "Real Pi and Docker execution remain unverified for this batch.",
+    "Artifact selection resets on refresh; records and previews remain available.",
+    "Five pre-existing frontend layout files remain outside this commit."
+  ]
+}

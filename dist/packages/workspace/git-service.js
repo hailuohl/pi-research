@@ -13,11 +13,12 @@ import { GitCommand } from './git-command.js';
 import { WorkspaceLeases } from './leases.js';
 const terminal = (state) => ['complete', 'conflict', 'failed'].includes(state);
 const snapshot = (c, path) => {
-    if (listFiles(path).length)
-        return snapshotDirectory(path, join(c.dataDir, 'snapshots'));
+    const physical = c.store.paths.physical(path);
+    if (listFiles(physical).length)
+        return c.store.paths.referenceSnapshot(snapshotDirectory(physical, join(c.dataDir, 'snapshots')));
     const id = digest([]), root = join(c.dataDir, 'snapshots', id);
     mkdirSync(root, { recursive: true });
-    return { path: root, digest: id, files: [] };
+    return { path: c.store.paths.reference(root), digest: id, files: [] };
 };
 export function queueSourceHistory(c, r, parentSourceRevisionId, legacy = false) {
     return c.store.transaction(() => {
@@ -40,8 +41,8 @@ export function queueWorkspaceHistory(c, s, r) {
         }
         queueSourceHistory(c, r, undefined, true);
         const id = randomUUID(), branch = `refs/heads/session-${s.id}`, path = join(c.dataDir, 'git-worktrees', s.projectId, s.id), input = snapshot(c, s.workspace);
-        c.store.create('git-operation', s.projectId, { action: 'checkout', state: 'queued', sourceRevisionId: r.id, sessionId: s.id, snapshot: input, branch, workspace: path, previousWorkspace: s.workspace, message: `Prepare session ${s.id}`, commitDate: now(), generation: 0, leaseUntil: 0 }, id);
-        const result = c.store.create('git-workspace', s.projectId, { sessionId: s.id, sourceRevisionId: r.id, branch, path, state: 'pending', operationId: id, snapshot: input }, s.id);
+        c.store.create('git-operation', s.projectId, { action: 'checkout', state: 'queued', sourceRevisionId: r.id, sessionId: s.id, snapshot: input, branch, workspace: c.store.paths.reference(path), previousWorkspace: s.workspace, message: `Prepare session ${s.id}`, commitDate: now(), generation: 0, leaseUntil: 0 }, id);
+        const result = c.store.create('git-workspace', s.projectId, { sessionId: s.id, sourceRevisionId: r.id, branch, path: c.store.paths.reference(path), state: 'pending', operationId: id, snapshot: input }, s.id);
         c.store.event(s.projectId, 'git.workspace_queued', { sessionId: s.id, operationId: id });
         return result;
     });
@@ -138,8 +139,8 @@ export class GitService {
             ensure(current.digest === text(x.expectedSourceDigest, 'expectedSourceDigest', 64), 'FILE_VERSION_CONFLICT', '源码已变化');
             const before = current.files.find(f => f.path === path);
             ensure(before, 'NOT_FOUND', '文件不存在', 404);
-            setSourceMode(s.workspace, path, mode);
-            this.app.store.onRollback(() => setSourceMode(s.workspace, path, before.mode ?? '100644'));
+            setSourceMode(this.app.store.paths.physical(s.workspace), path, mode);
+            this.app.store.onRollback(() => setSourceMode(this.app.store.paths.physical(s.workspace), path, before.mode ?? '100644'));
             this.app.store.event(pid, 'workspace.mode_changed', { sessionId, path, mode });
             return { path, mode, sourceDigest: snapshot(this.app.context, s.workspace).digest };
         });
@@ -190,7 +191,7 @@ export class GitService {
         try {
             assertProjectWritable(store, pid);
             validateSourceRevision(this.app.context, pid, job.sourceRevisionId);
-            verifySnapshot(job.snapshot.path, job.snapshot.files);
+            verifySnapshot(store.paths.physical(job.snapshot.path), job.snapshot.files);
             if (job.sessionId)
                 this.validateSession(job);
             await repo.initialize();
@@ -201,7 +202,7 @@ export class GitService {
             const hadReceipt = !!commit;
             const parent = job.action === 'commit' ? job.expectedHead : job.parentSourceRevisionId ? store.get('git-source-binding', job.parentSourceRevisionId).gitCommit : undefined;
             if (job.action !== 'checkout') {
-                const wanted = await repo.commitSnapshot(job.snapshot, opDir, { parent, message: job.message, date: job.commitDate });
+                const wanted = await repo.commitSnapshot(store.paths.physicalSnapshot(job.snapshot), opDir, { parent, message: job.message, date: job.commitDate });
                 fence();
                 ensure(!commit || commit === wanted, 'GIT_RECEIPT_CONFLICT', 'Git 操作回执与固定源码不符');
                 if (!commit) {
@@ -230,11 +231,11 @@ export class GitService {
                     await repo.updateRef(job.branch, commit, null);
                     fence();
                 }
-                if (!existsSync(join(job.workspace, '.git'))) {
-                    await repo.addWorktree(job.workspace, job.branch, commit);
+                if (!existsSync(join(store.paths.physical(job.workspace), '.git'))) {
+                    await repo.addWorktree(store.paths.physical(job.workspace), job.branch, commit);
                     fence();
                 }
-                const w = await repo.inspectWorktree(job.workspace);
+                const w = await repo.inspectWorktree(store.paths.physical(job.workspace));
                 fence();
                 ensure(w.head === commit && w.branch === job.branch, 'GIT_WORKTREE_CONFLICT', '已有工作区不属于此操作');
                 if (!hadReceipt)
@@ -257,7 +258,7 @@ export class GitService {
                     await repo.updateRef(job.branch, commit, job.expectedHead);
                     fence();
                 }
-                await repo.setWorktreeIndex(job.workspace, commit);
+                await repo.setWorktreeIndex(store.paths.physical(job.workspace), commit);
                 fence();
             }
             store.transaction(() => {
@@ -326,6 +327,8 @@ export class GitService {
         return s;
     }
     restoreSnapshot(input, workspace, base) {
+        workspace = this.app.store.paths.physical(workspace);
+        input = this.app.store.paths.physicalSnapshot(input);
         verifySnapshot(input.path, input.files);
         const wanted = new Map(input.files.map(f => [f.path, f])), original = new Map(base.files.map(f => [f.path, f]));
         // Before the receipt exists, resume only recognizable base/candidate bytes, never overwrite an unrelated edit.

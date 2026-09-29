@@ -8,17 +8,18 @@ import {readSourceMode, setSourceMode} from '../../dist/packages/workspace/files
 import {validateSchema} from '../../dist/packages/contracts/operations/schema.js';
 
 // These are service-record fixtures, not real Docker executions or model reviews.
+const physical=(s,reference)=>s.app.store.paths.physical(reference);
 function testedCandidate(s) {
  s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});
- const workspace=s.app.store.get('session',s.session.id).workspace;
+ const workspace=physical(s,s.app.store.get('session',s.session.id).workspace);
  unlinkSync(join(workspace,'config.json'));mkdirSync(join(workspace,'tools'));
  writeFileSync(join(workspace,'tools','run.sh'),'#!/bin/sh\necho reviewed\n');setSourceMode(workspace,'tools/run.sh','100755');
  setSourceMode(workspace,'experiment.mjs','100755');
  writeFileSync(join(workspace,'analysis.py'),'assert 2 + 2 == 4\n');
  const task=s.app.development.prepare(USER,s.project.id,s.session.id,{command:['python','analysis.py'],environmentImageDigest:'python@sha256:'+'a'.repeat(64),expectedArtifacts:['unit-result.txt']});
  assert.throws(()=>s.app.development.submit(USER,s.project.id,task.id),{code:'APPROVAL_REQUIRED'});approve(s.app,task.grantId);
- const submitted=s.app.development.submit(USER,s.project.id,task.id),job=s.app.store.get('sandbox-job',submitted.jobId);
- writeFileSync(join(job.controlDir,'stdout.log'),'UNIT FIXTURE: assertions passed, no Docker execution\n');writeFileSync(join(job.controlDir,'stderr.log'),'');writeFileSync(join(job.outputDir,'unit-result.txt'),'UNIT FIXTURE output');
+ const submitted=s.app.development.submit(USER,s.project.id,task.id),job=s.app.store.get('sandbox-job',submitted.jobId),controlDir=physical(s,job.controlDir),outputDir=physical(s,job.outputDir);
+ writeFileSync(join(controlDir,'stdout.log'),'UNIT FIXTURE: assertions passed, no Docker execution\n');writeFileSync(join(controlDir,'stderr.log'),'');writeFileSync(join(outputDir,'unit-result.txt'),'UNIT FIXTURE output');
  const completed=s.app.development.finalize(job.id,{state:'succeeded',exitCode:0});assert.equal(completed.integrity,'complete');
  const p=s.app.projects.get(USER,s.project.id);if(!p.settings.enabled)s.app.projects.settings(USER,p.id,{expectedVersion:p.version,enabled:true});
  const review=s.app.developmentReviews.prepare(USER,s.project.id,{jobId:job.id});
@@ -43,11 +44,11 @@ test('reviewed preparation freezes full tested candidate, deletion and executabl
   const p=proposal(s,f);assert.equal(p.flow,'reviewed-development');assert.equal(p.reviewId,f.review.id);assert.equal(p.reviewAcceptanceId,accepted.reviewAcceptanceId);assert.equal(p.testJobId,f.job.id);assert.equal(p.candidateSnapshot.digest,f.job.sourceDigest);
   assert.ok(p.changes.some(c=>c.path==='config.json'&&c.artifactId===null));assert.ok(p.changes.some(c=>c.path==='tools/run.sh'));assert.ok(!p.changes.some(c=>c.path==='unreviewed.py'));
   assert.ok(p.changes.some(c=>c.path==='experiment.mjs'),'mode-only change must be part of the fixed candidate');
-  assert.equal(readFileSync(join(p.candidateSnapshot.path,'tools','run.sh'),'utf8'),'#!/bin/sh\necho reviewed\n');assert.equal(p.candidateSnapshot.files.find(f=>f.path==='tools/run.sh').mode,'100755');
+  assert.equal(readFileSync(join(physical(s,p.candidateSnapshot.path),'tools','run.sh'),'utf8'),'#!/bin/sh\necho reviewed\n');assert.equal(p.candidateSnapshot.files.find(f=>f.path==='tools/run.sh').mode,'100755');
   assert.equal(s.app.store.get('approval',f.task.grantId).scope,'development.test');
   assert.notEqual(p.approvalId,f.task.grantId);assert.notEqual(p.approvalId,f.review.approvalId);assert.equal(s.app.store.get('approval',p.approvalId).scope,'change.integrate');
   assert.throws(()=>s.app.changes.apply(USER,p.id),{code:'APPROVAL_REQUIRED'});approve(s.app,p.approvalId);const child=s.app.changes.apply(USER,p.id);
-  assert.equal(existsSync(join(child.workspace,'config.json')),false);assert.equal(existsSync(join(s.baseline.workspace,'config.json')),true);assert.equal(readSourceMode(child.workspace,'tools/run.sh'),'100755');assert.equal(readSourceMode(child.workspace,'experiment.mjs'),'100755');assert.equal(existsSync(join(child.workspace,'unreviewed.py')),false);assert.equal(s.app.store.list('run').length,0);
+  const childWorkspace=physical(s,child.workspace),baselineWorkspace=physical(s,s.baseline.workspace);assert.equal(existsSync(join(childWorkspace,'config.json')),false);assert.equal(existsSync(join(baselineWorkspace,'config.json')),true);assert.equal(readSourceMode(childWorkspace,'tools/run.sh'),'100755');assert.equal(readSourceMode(childWorkspace,'experiment.mjs'),'100755');assert.equal(existsSync(join(childWorkspace,'unreviewed.py')),false);assert.equal(s.app.store.list('run').length,0);
  }finally{s.close();}
 });
 

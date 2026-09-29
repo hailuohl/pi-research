@@ -7,9 +7,11 @@ import {readStableFile} from '../workspace/stable-file.js';
 import {safePath} from '../workspace/files.js';
 import {finiteMetrics} from '../contracts/validation.js';
 import {asError, ensure} from '../domain/errors.js';
+import type {DataPaths} from '../storage/data-paths.js';
 
 /** Collect first, then derive completeness exclusively from the immutable archive. */
-export function collectRunArtifacts(run: Row<Run>, evidence: EvidenceService) {
+export function collectRunArtifacts(run: Row<Run>, evidence: EvidenceService, paths?:DataPaths) {
+    if(paths)run={...run,outputDir:paths.physical(run.outputDir),...(run.execution?{execution:{...run.execution,controlDir:paths.physical(run.execution.controlDir)}}:{})};
     const artifacts = new Map<string, Row<Artifact>>(), errors: string[] = [], evidenceIds: string[] = [];
     let total = 0, entries = 0, unsafe = false;
     const walk = (relative: string, depth: number) => {

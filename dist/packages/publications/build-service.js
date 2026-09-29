@@ -123,7 +123,7 @@ export class PublicationBuildService {
         ensure(intent.runId === r.id && intent.status === 'submitted' && intent.manifestDigest === p.manifestDigest && digest(intent.manifest) === p.manifestDigest && digest(r.manifest.sourceFiles) === p.sourceDigest, 'PUBLICATION_SOURCE_STALE', 'Run来源清单改变');
         this.app.approvals.assert(p.approvalId, pid, intent.id, p.manifestDigest, 'run.submit');
         if (verifyBytes)
-            verifySnapshot(r.manifest.snapshotPath, r.manifest.sourceFiles);
+            verifySnapshot(this.app.store.paths.physical(r.manifest.snapshotPath), r.manifest.sourceFiles);
         assertExperimentSourceCurrent(this.app.store, this.app.store.get('experiment', r.experimentId, pid));
     }
     else if (p.kind === 'sandbox-job') {
@@ -205,12 +205,12 @@ export class PublicationBuildService {
             mkdirSync(dirname(path), { recursive: true });
             writeFileSync(path, bytes, { mode: 0o444, flag: 'wx' });
         }
-        const inputSnapshot = snapshotDirectory(source, join(this.app.context.dataDir, 'snapshots'));
+        const inputSnapshot = this.app.store.paths.referenceSnapshot(snapshotDirectory(source, join(this.app.context.dataDir, 'snapshots')));
         const manifest = { purpose: 'publication-build', revisionId: revision.id, revisionDigest: digest(revision), sourceDigest: revision.sourceDigest, engine: revision.engine, mainFile: revision.mainFile, bibliography: revision.bibliography, ...profile, dockerContext: config.dockerContext, environmentImageDigest: config.imageDigest, command: ['python', '-I', '/opt/pi-document-build/build.py', revision.engine, revision.mainFile, revision.bibliography, revision.sourceDigest, '/output'], inputSnapshot, dataArtifacts: [], resources: { ...PUBLICATION_RESOURCES } }, manifestDigest = digest(manifest);
-        return this.app.store.transaction(() => { validate(); const publish = () => { validate(); assertProjectWritable(this.app.store, pid); ensure(digest(this.revision(actor, pid, revision.id)) === manifest.revisionDigest && this.app.store.get('publication-compiler-settings', 'global').version === config.version, 'PUBLICATION_SOURCE_STALE', '准备期间版本或配置改变'); revision.files.forEach(f => this.assertSource(pid, f, false)); const approval = this.app.approvals.request(pid, 'publication-build-job', id, manifestDigest, 'publication.build', '仅批准固定文稿、固定编译镜像及资源；编译成功不代表科学正确性'); this.app.store.create('publication-build-job', pid, { revisionId: revision.id, manifest, manifestDigest, approvalId: approval.id, state: 'prepared', integrity: 'pending', containerName: 'pi-publication-' + id, outputDir, controlDir, generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, recoveryCount: 0, artifactIds: [] }, id); this.app.store.event(pid, 'publication.build_prepared', { jobId: id, revisionId: revision.id }); return this.inspect(actor, pid, id); }; return key ? this.app.store.operation('publication-build-prepare:' + pid, key, value, publish) : publish(); });
+        return this.app.store.transaction(() => { validate(); const publish = () => { validate(); assertProjectWritable(this.app.store, pid); ensure(digest(this.revision(actor, pid, revision.id)) === manifest.revisionDigest && this.app.store.get('publication-compiler-settings', 'global').version === config.version, 'PUBLICATION_SOURCE_STALE', '准备期间版本或配置改变'); revision.files.forEach(f => this.assertSource(pid, f, false)); const approval = this.app.approvals.request(pid, 'publication-build-job', id, manifestDigest, 'publication.build', '仅批准固定文稿、固定编译镜像及资源；编译成功不代表科学正确性'); this.app.store.create('publication-build-job', pid, { revisionId: revision.id, manifest, manifestDigest, approvalId: approval.id, state: 'prepared', integrity: 'pending', containerName: 'pi-publication-' + id, outputDir: this.app.store.paths.reference(outputDir), controlDir: this.app.store.paths.reference(controlDir), generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, recoveryCount: 0, artifactIds: [] }, id); this.app.store.event(pid, 'publication.build_prepared', { jobId: id, revisionId: revision.id }); return this.inspect(actor, pid, id); }; return key ? this.app.store.operation('publication-build-prepare:' + pid, key, value, publish) : publish(); });
     }
     assertCurrent(job, verifyBytes = true) { assertProjectWritable(this.app.store, job.projectId); ensure(digest(job.manifest) === job.manifestDigest, 'PUBLICATION_JOB_CORRUPTED', '编译清单改变'); const r = this.revision({ type: 'user' }, job.projectId, job.revisionId); this.assertRevision(r, verifyBytes); ensure(digest(r) === job.manifest.revisionDigest && r.sourceDigest === job.manifest.sourceDigest, 'PUBLICATION_SOURCE_CORRUPTED', '文稿版本改变'); this.app.approvals.assert(job.approvalId, job.projectId, job.id, job.manifestDigest, 'publication.build'); r.files.forEach(f => this.assertSource(job.projectId, f, verifyBytes)); ensure(job.manifest.inputSnapshot.digest === digest(job.manifest.inputSnapshot.files) && job.manifest.inputSnapshot.files.length === r.files.length && r.files.every(f => job.manifest.inputSnapshot.files.some(s => s.path === 'source/' + f.path && s.digest === f.digest && s.size === f.size)), 'PUBLICATION_SOURCE_CORRUPTED', '编译输入快照与固定文稿不符'); if (verifyBytes)
-        verifySnapshot(job.manifest.inputSnapshot.path, job.manifest.inputSnapshot.files); return r; }
+        verifySnapshot(this.app.store.paths.physical(job.manifest.inputSnapshot.path), job.manifest.inputSnapshot.files); return r; }
     submit(actor, pid, id) { const before = this.get(actor, pid, id); if (before.state === 'prepared')
         this.assertCurrent(before, true); return this.app.store.transaction(() => { const job = this.get(actor, pid, id); if (job.state !== 'prepared')
         return this.inspect(actor, pid, id); this.assertCurrent(job, false); this.app.compute.assertEnqueue('publication', pid, job.manifest.dockerContext); this.app.store.update('publication-build-job', id, job.version, { state: 'queued' }); return this.inspect(actor, pid, id); }); }
@@ -250,8 +250,8 @@ export class PublicationBuildService {
             error = e instanceof DomainError ? e.code : 'PUBLICATION_SOURCE_STALE';
         }
         try {
-            if (existsSync(join(before.outputDir, 'build.json')))
-                parsed = validateBuildOutput(before.outputDir, before.manifest.sourceDigest, before.manifest.engine, before.manifest.bibliography);
+            if (existsSync(join(this.app.store.paths.physical(before.outputDir), 'build.json')))
+                parsed = validateBuildOutput(this.app.store.paths.physical(before.outputDir), before.manifest.sourceDigest, before.manifest.engine, before.manifest.bibliography);
             if (state === 'failed' && parsed?.manifest.status === 'timed_out')
                 state = 'timed_out';
             if (state === 'succeeded')
@@ -267,18 +267,18 @@ export class PublicationBuildService {
         const stage = (name, bytes, mediaType) => staged.push({ name, prepared: this.app.evidence.prepareArtifact(before.projectId, name, bytes, mediaType, 'publication-build') });
         for (const name of ['stdout.log', 'stderr.log'])
             try {
-                const path = safePath(before.controlDir, name);
+                const path = safePath(this.app.store.paths.physical(before.controlDir), name);
                 ensure(existsSync(path) || !before.startRequested, 'PUBLICATION_LOG_MISSING', '编译日志缺失');
-                stage(name, existsSync(path) ? readStableFile(before.controlDir, name, PUBLICATION_RESOURCES.logBytes) : Buffer.alloc(0), 'text/plain');
+                stage(name, existsSync(path) ? readStableFile(this.app.store.paths.physical(before.controlDir), name, PUBLICATION_RESOURCES.logBytes) : Buffer.alloc(0), 'text/plain');
             }
             catch {
                 integrity = 'incomplete';
                 if (state === 'succeeded')
                     state = 'failed';
             }
-        if (!parsed && existsSync(join(before.outputDir, 'build.log')))
+        if (!parsed && existsSync(join(this.app.store.paths.physical(before.outputDir), 'build.log')))
             try {
-                stage('build.log', readStableFile(before.outputDir, 'build.log', PUBLICATION_RESOURCES.logBytes), 'text/plain');
+                stage('build.log', readStableFile(this.app.store.paths.physical(before.outputDir), 'build.log', PUBLICATION_RESOURCES.logBytes), 'text/plain');
             }
             catch {
                 integrity = 'incomplete';

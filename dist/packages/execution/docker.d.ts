@@ -1,4 +1,5 @@
 import type { SourceSnapshot } from '../domain/types.js';
+import type { DataPaths } from '../storage/data-paths.js';
 /** Docker mechanics shared by development jobs and formal Runs; no business-purpose coupling. */
 export interface DockerJob {
     id: string;
@@ -28,6 +29,8 @@ export interface DockerJob {
         };
     };
 }
+/** Short-lived execution paths; the original approved manifest and its digest remain untouched. */
+export declare function physicalDockerJob(job: DockerJob, paths: DataPaths): DockerJob;
 export declare const JOB_LABEL = "pi-research.sandbox-job";
 export declare const MANIFEST_LABEL = "pi-research.manifest";
 export declare const BOOTSTRAP = "cp -R /source/. /work/ && chmod -R u+rwX /work && find /work -type f -exec chmod 644 {} + && exec \"$@\"";

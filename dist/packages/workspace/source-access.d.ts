@@ -1,6 +1,7 @@
 import type { ResearchApp } from '../research-app.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Experiment, Row, SourceRevision } from '../domain/types.js';
+import type { DataPaths } from '../storage/data-paths.js';
 export type SourceSelector = {
     experimentId: string;
     revision: number;
@@ -17,7 +18,7 @@ export declare function validateSourceRevision(c: AppContext, projectId: string,
 /** Called only in experiment write transactions; reads never invent historical revisions. */
 export declare function captureSourceRevision(c: AppContext, e: Row<Experiment>, observedNow?: boolean): Row<SourceRevision>;
 /** Copy verified bytes, never filesystem links or caller-selected roots. */
-export declare function copySourceRevision(r: Row<SourceRevision>, workspace: string, copyModes?: boolean): void;
+export declare function copySourceRevision(r: Row<SourceRevision>, workspace: string, copyModes?: boolean, paths?: DataPaths): void;
 export declare class SourceAccessService {
     private app;
     constructor(app: ResearchApp);

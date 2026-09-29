@@ -1,4 +1,5 @@
 import type { Row, Run } from '../domain/types.js';
+import type { DataPaths } from '../storage/data-paths.js';
 export interface RunnerCapabilities {
     backend: 'docker' | 'trusted-example';
     isolated: boolean;
@@ -51,6 +52,7 @@ export interface DockerRunResult {
     generation: number;
 }
 export interface DockerSupervisorCallbacks {
+    paths?: DataPaths;
     verifyTarget?(): Promise<void>;
     read(): DockerRun;
     patch(patch: Partial<Run> & {

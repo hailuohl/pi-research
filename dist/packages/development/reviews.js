@@ -90,13 +90,13 @@ export class DevelopmentReviewService {
         this.access(actor, pid, r, actor.type === 'agent');
         const job = this.app.store.get('sandbox-job', r.jobId, pid);
         ensure(job.sourceDigest === r.sourceDigest, 'DEVELOPMENT_REVIEW_CORRUPTED', '审查目标摘要不符');
-        verifySnapshot(job.manifest.inputSnapshot.path, job.manifest.inputSnapshot.files);
+        verifySnapshot(this.app.store.paths.physical(job.manifest.inputSnapshot.path), job.manifest.inputSnapshot.files);
         return { reviewId: r.id, jobId: r.jobId, sourceDigest: r.sourceDigest, files: job.manifest.inputSnapshot.files };
     }
     sourceRead(actor, pid, id, path, cursor = 0, limit = 16000) {
         const { files, ...meta } = this.sourceList(actor, pid, id), r = this.app.store.get('development-review', id, pid), job = this.app.store.get('sandbox-job', r.jobId, pid), file = files.find(f => f.path === text(path, 'path', 1000));
         ensure(file, 'NOT_FOUND', '审查快照中没有该文件', 404);
-        const bytes = readStableFile(job.manifest.inputSnapshot.path, file.path, 2 * 1024 * 1024);
+        const bytes = readStableFile(this.app.store.paths.physical(job.manifest.inputSnapshot.path), file.path, 2 * 1024 * 1024);
         ensure(bytes.length === file.size && digest(bytes) === file.digest, 'SNAPSHOT_CORRUPTED', '审查源码字节已改变');
         ensure(!bytes.includes(0), 'BINARY_FILE', '不能作为文本阅读此文件', 415);
         let content;

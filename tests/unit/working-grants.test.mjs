@@ -10,14 +10,15 @@ import {digest} from '../../dist/packages/storage/store.js';
 import {readSourceMode,snapshotDirectory} from '../../dist/packages/workspace/files.js';
 
 const input={command:['python','check.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`,resources:{cpus:2,memoryMb:512}};
+const physical=(s,reference)=>s.app.store.paths.physical(reference);
 function prepared(s,extra={}){
- s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});writeFileSync(join(s.session.workspace,'check.py'),'assert 2 + 2 == 4\n');writeFileSync(join(s.session.workspace,'editable.txt'),'1234');writeFileSync(join(s.session.workspace,'second.txt'),'1234');
+ const workspace=physical(s,s.session.workspace);s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});writeFileSync(join(workspace,'check.py'),'assert 2 + 2 == 4\n');writeFileSync(join(workspace,'editable.txt'),'1234');writeFileSync(join(workspace,'second.txt'),'1234');
  const template=s.app.development.prepare(USER,s.project.id,s.session.id,input),grant=s.app.workingGrants.prepare(USER,s.project.id,{developmentTaskId:template.id,editablePaths:['editable.txt','second.txt'],maxTests:2,maxChangedBytes:16,expiresAt:new Date(Date.now()+60000).toISOString(),...extra});return {template,grant};
 }
 function active(s,extra={}){const {template,grant}=prepared(s,extra);approve(s.app,grant.approvalId);return {template,grant:s.app.workingGrants.activate(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version})};}
 function prepareTest(s,extra={}){return s.app.development.prepare(USER,s.project.id,s.session.id,{...input,...extra});}
-function write(s,path,content){const file=join(s.session.workspace,path),expected=(()=>{try{return digest(readFileSync(file));}catch{return null;}})();return s.app.operations.execute(USER,'workspace_write',{source:'session',path,content,expectedDigest:expected},{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:crypto.randomUUID()});}
-function finished(s,task,success=true){const dto=s.app.development.submit(USER,s.project.id,task.id),job=s.app.store.get('sandbox-job',dto.id);writeFileSync(join(job.controlDir,'stdout.log'),'UNIT FIXTURE, not Docker execution\n');writeFileSync(join(job.controlDir,'stderr.log'),success?'':'UNIT FIXTURE failure\n');return s.app.development.finalize(job.id,{state:success?'succeeded':'failed',exitCode:success?0:1});}
+function write(s,path,content){const file=join(physical(s,s.session.workspace),path),expected=(()=>{try{return digest(readFileSync(file));}catch{return null;}})();return s.app.operations.execute(USER,'workspace_write',{source:'session',path,content,expectedDigest:expected},{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:crypto.randomUUID()});}
+function finished(s,task,success=true){const dto=s.app.development.submit(USER,s.project.id,task.id),job=s.app.store.get('sandbox-job',dto.id),controlDir=physical(s,job.controlDir);writeFileSync(join(controlDir,'stdout.log'),'UNIT FIXTURE, not Docker execution\n');writeFileSync(join(controlDir,'stderr.log'),success?'':'UNIT FIXTURE failure\n');return s.app.development.finalize(job.id,{state:success?'succeeded':'failed',exitCode:success?0:1});}
 function reviewed(s,job){const project=s.app.projects.get(USER,s.project.id);s.app.projects.settings(USER,s.project.id,{expectedVersion:project.version,enabled:true});const review=s.app.developmentReviews.prepare(USER,s.project.id,{jobId:job.id});approve(s.app,review.approvalId);s.app.teams.activate(USER,review.teamId);const claimed=s.app.teams.claim(review.teamId);assert.ok(claimed);s.app.teams.submit(actor(claimed),result({verdict:'accept',evidenceIds:review.requiredEvidenceIds}));return review;}
 
 test('WorkingGrant draft and activation freeze the template without authorizing model or formal Run',()=>{const s=setup();try{
@@ -27,19 +28,19 @@ test('WorkingGrant draft and activation freeze the template without authorizing 
  assert.throws(()=>s.app.workingGrants.prepare(USER,s.project.id,{developmentTaskId:template.id,editablePaths:['editable.txt'],maxTests:2,maxChangedBytes:16,expiresAt:new Date(Date.now()+60000).toISOString()}),{code:'WORKING_GRANT_ALREADY_BOUND'});
 }finally{s.close();}});
 
-test('activation rejects private source drift, model drift and unsupported unbound sessions',()=>{for(const mutation of ['source','model']){const s=setup();try{const {grant}=prepared(s);approve(s.app,grant.approvalId);if(mutation==='source')writeFileSync(join(s.session.workspace,'editable.txt'),'abcd');else{const session=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',session.id,session.version,{model:{...session.model,model:'changed'}});}assert.throws(()=>s.app.workingGrants.activate(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version}),{code:mutation==='source'?'WORKING_GRANT_TEMPLATE_STALE':'WORKING_GRANT_SCOPE_CHANGED'});assert.equal(s.app.sessions.get(USER,s.session.id).workingGrantId,undefined);}finally{s.close();}}
- const s=setup();try{writeFileSync(join(s.session.workspace,'check.py'),'assert True');const template=prepareTest(s);assert.throws(()=>s.app.workingGrants.prepare(USER,s.project.id,{developmentTaskId:template.id,editablePaths:['check.py'],maxTests:1,maxChangedBytes:16,expiresAt:new Date(Date.now()+60000).toISOString()}),{code:'WORKING_GRANT_SESSION_REQUIRED'});}finally{s.close();}});
+test('activation rejects private source drift, model drift and unsupported unbound sessions',()=>{for(const mutation of ['source','model']){const s=setup();try{const {grant}=prepared(s);approve(s.app,grant.approvalId);if(mutation==='source')writeFileSync(join(physical(s,s.session.workspace),'editable.txt'),'abcd');else{const session=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',session.id,session.version,{model:{...session.model,model:'changed'}});}assert.throws(()=>s.app.workingGrants.activate(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version}),{code:mutation==='source'?'WORKING_GRANT_TEMPLATE_STALE':'WORKING_GRANT_SCOPE_CHANGED'});assert.equal(s.app.sessions.get(USER,s.session.id).workingGrantId,undefined);}finally{s.close();}}
+ const s=setup();try{writeFileSync(join(physical(s,s.session.workspace),'check.py'),'assert True');const template=prepareTest(s);assert.throws(()=>s.app.workingGrants.prepare(USER,s.project.id,{developmentTaskId:template.id,editablePaths:['check.py'],maxTests:1,maxChangedBytes:16,expiresAt:new Date(Date.now()+60000).toISOString()}),{code:'WORKING_GRANT_SESSION_REQUIRED'});}finally{s.close();}});
 
 test('private writes use exact canonical paths and cumulative changed-file bytes, not length differences',()=>{const s=setup();try{
- active(s,{maxChangedBytes:7});write(s,'editable.txt','abcd');assert.equal(readFileSync(join(s.session.workspace,'editable.txt'),'utf8'),'abcd');assert.throws(()=>write(s,'second.txt','efgh'),{code:'WORKING_GRANT_BYTES_EXCEEDED'});assert.equal(readFileSync(join(s.session.workspace,'second.txt'),'utf8'),'1234');
+ active(s,{maxChangedBytes:7});write(s,'editable.txt','abcd');assert.equal(readFileSync(join(physical(s,s.session.workspace),'editable.txt'),'utf8'),'abcd');assert.throws(()=>write(s,'second.txt','efgh'),{code:'WORKING_GRANT_BYTES_EXCEEDED'});assert.equal(readFileSync(join(physical(s,s.session.workspace),'second.txt'),'utf8'),'1234');
  assert.throws(()=>write(s,'check.py','pass'),{code:'WORKING_GRANT_PATH_DENIED'});assert.throws(()=>write(s,'./editable.txt','pass'));assert.throws(()=>write(s,'editable.txt:stream','pass'));assert.throws(()=>write(s,'Editable.txt','pass'),{code:'WORKING_GRANT_PATH_DENIED'});
  write(s,'editable.txt','1234');assert.doesNotThrow(()=>write(s,'second.txt','efgh'));assert.throws(()=>s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1}),{code:'WORKING_GRANT_SOURCE_LOCKED'});
 }finally{s.close();}});
 
 test('mode changes and externally altered unapproved source are checked against the same original snapshot',()=>{const s=setup();try{
- active(s);let snap=snapshotDirectory(s.session.workspace,join(s.dir,'snapshots'));assert.throws(()=>s.app.git.setMode(USER,s.project.id,s.session.id,{path:'check.py',mode:'100755',expectedSourceDigest:snap.digest}),{code:'WORKING_GRANT_PATH_DENIED'});
- s.app.git.setMode(USER,s.project.id,s.session.id,{path:'editable.txt',mode:'100755',expectedSourceDigest:snap.digest});assert.equal(readSourceMode(s.session.workspace,'editable.txt'),'100755');
- writeFileSync(join(s.session.workspace,'check.py'),'assert False\n');assert.throws(()=>prepareTest(s),{code:'WORKING_GRANT_PATH_DENIED'});
+ active(s);const workspace=physical(s,s.session.workspace),snap=snapshotDirectory(workspace,join(s.dir,'snapshots'));assert.throws(()=>s.app.git.setMode(USER,s.project.id,s.session.id,{path:'check.py',mode:'100755',expectedSourceDigest:snap.digest}),{code:'WORKING_GRANT_PATH_DENIED'});
+ s.app.git.setMode(USER,s.project.id,s.session.id,{path:'editable.txt',mode:'100755',expectedSourceDigest:snap.digest});assert.equal(readSourceMode(workspace,'editable.txt'),'100755');
+ writeFileSync(join(workspace,'check.py'),'assert False\n');assert.throws(()=>prepareTest(s),{code:'WORKING_GRANT_PATH_DENIED'});
 }finally{s.close();}});
 
 test('each prepared test gets a distinct frozen derived receipt and only submit consumes permanent quota',()=>{const s=setup();try{
@@ -65,9 +66,9 @@ test('expiration blocks new effects and queued launch but does not invalidate co
 }finally{Date.now=clock;s.close();}});
 
 test('revocation blocks source writes and background recovery while preserving read/cancel and completed bytes',()=>{const s=setup();try{
- const {grant}=active(s),complete=finished(s,prepareTest(s)),pending=prepareTest(s),queued=s.app.development.submit(USER,s.project.id,pending.id),before=readFileSync(s.app.store.get('artifact',complete.reportArtifactId).path);
+ const {grant}=active(s),complete=finished(s,prepareTest(s)),pending=prepareTest(s),queued=s.app.development.submit(USER,s.project.id,pending.id),before=readFileSync(physical(s,s.app.store.get('artifact',complete.reportArtifactId).path));
  s.app.workingGrants.revoke(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version});assert.throws(()=>write(s,'editable.txt','abcd'),{code:'WORKING_GRANT_REVOKED'});assert.throws(()=>prepareTest(s),{code:'WORKING_GRANT_REVOKED'});assert.throws(()=>s.app.development.assertCurrent(s.app.store.get('sandbox-job',queued.id)),{code:'WORKING_GRANT_REVOKED'});assert.throws(()=>s.app.development.assertResultMatches(USER,s.project.id,complete.id,complete.sourceDigest),{code:'WORKING_GRANT_REVOKED'});
- assert.equal(s.app.development.logs(USER,s.project.id,complete.id,'stdout').complete,true);s.app.development.cancel(USER,s.project.id,queued.id);assert.deepEqual(readFileSync(s.app.store.get('artifact',complete.reportArtifactId).path),before);assert.equal(s.app.workingGrants.inspect(USER,s.project.id,grant.id).usage.used,2);
+ assert.equal(s.app.development.logs(USER,s.project.id,complete.id,'stdout').complete,true);s.app.development.cancel(USER,s.project.id,queued.id);assert.deepEqual(readFileSync(physical(s,s.app.store.get('artifact',complete.reportArtifactId).path)),before);assert.equal(s.app.workingGrants.inspect(USER,s.project.id,grant.id).usage.used,2);
 }finally{s.close();}});
 
 test('original authority identity and policy digest cannot be substituted after preparation',()=>{for(const mutation of ['approval','scope']){const s=setup();try{
@@ -81,7 +82,7 @@ test('revoking a completed granted test propagates through accepted review and i
 }finally{s.close();}});
 
 test('legacy unbound sessions retain per-test approval and no grant usage',()=>{const s=setup();try{
- writeFileSync(join(s.session.workspace,'check.py'),'assert True');const t=prepareTest(s);assert.equal(t.manifest.workingGrant,undefined);assert.throws(()=>s.app.development.submit(USER,s.project.id,t.id),{code:'APPROVAL_REQUIRED'});approve(s.app,t.grantId);assert.equal(s.app.development.submit(USER,s.project.id,t.id).state,'queued');assert.equal(s.app.store.list('working-grant-use').length,0);
+ writeFileSync(join(physical(s,s.session.workspace),'check.py'),'assert True');const t=prepareTest(s);assert.equal(t.manifest.workingGrant,undefined);assert.throws(()=>s.app.development.submit(USER,s.project.id,t.id),{code:'APPROVAL_REQUIRED'});approve(s.app,t.grantId);assert.equal(s.app.development.submit(USER,s.project.id,t.id).state,'queued');assert.equal(s.app.store.list('working-grant-use').length,0);
 }finally{s.close();}});
 
 test('two independent controllers racing for the last slot submit exactly one job',async()=>{const s=setup();try{

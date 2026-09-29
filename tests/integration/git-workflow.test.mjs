@@ -14,6 +14,7 @@ const operation = (s, name, input = {}, sessionId = s.session.id, key = randomUU
 const write = (s, path, content, sessionId = s.session.id) => operation(s, 'workspace_write', {path, content, expectedDigest:null}, sessionId);
 const history = (s, sessionId = s.session.id) => operation(s, 'workspace_history_inspect', {}, sessionId);
 const revision = (s, experiment = s.baseline) => s.app.store.get('source-revision', digest({projectId:s.project.id, experimentId:experiment.id, revision:experiment.revision}));
+const physical = (s, reference) => s.app.store.paths.physical(reference);
 const parents = (repo, commit) => execFileSync('git', ['--git-dir', repo.repoPath, 'rev-list', '--parents', '-n', '1', commit], {env:gitEnvironment(), windowsHide:true, encoding:'utf8'}).trim().split(' ').slice(1);
 async function ready(s, sessionId = s.session.id) {
  const prepared = s.app.sources.prepare(USER, s.project.id, sessionId, {experimentId:s.baseline.id, revision:1});
@@ -38,7 +39,7 @@ test('explicit Git opt-in gates pending tools and prepares two independent real 
   assert.equal(s.app.store.list('git-operation',s.project.id).length,0);
   assert.equal(history(s).state,'unbound');
   assert.equal(s.app.git.enable(USER,s.project.id).enabled,true);
-  const original=s.session.workspace;
+  const original=physical(s,s.session.workspace);
   const prepared=s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});
   assert.equal(prepared.gitState,'pending');
   assert.equal(history(s).state,'pending');
@@ -50,17 +51,18 @@ test('explicit Git opt-in gates pending tools and prepares two independent real 
   s.app.sources.prepare(USER,s.project.id,second.id,{experimentId:s.baseline.id,revision:1});
   await s.app.git.drain();
   const firstReady=s.app.sessions.get(USER,s.session.id),secondReady=s.app.sessions.get(USER,second.id);
-  assert.notEqual(firstReady.workspace,original);
-  assert.notEqual(firstReady.workspace,secondReady.workspace);
-  assert.ok(lstatSync(join(firstReady.workspace,'.git')).isFile());
-  const repo=new GitCommand(s.dir,s.project.id),firstGit=await repo.inspectWorktree(firstReady.workspace),secondGit=await repo.inspectWorktree(secondReady.workspace);
+  const firstWorkspace=physical(s,firstReady.workspace),secondWorkspace=physical(s,secondReady.workspace);
+  assert.notEqual(firstWorkspace,original);
+  assert.notEqual(firstWorkspace,secondWorkspace);
+  assert.ok(lstatSync(join(firstWorkspace,'.git')).isFile());
+  const repo=new GitCommand(s.dir,s.project.id),firstGit=await repo.inspectWorktree(firstWorkspace),secondGit=await repo.inspectWorktree(secondWorkspace);
   assert.equal(firstGit.head,secondGit.head);
   assert.notEqual(firstGit.branch,secondGit.branch);
   assert.equal(firstGit.dirty,false);
   assert.equal(secondGit.dirty,false);
   write(s,'private.txt','first session only');
-  assert.equal(existsSync(join(secondReady.workspace,'private.txt')),false);
-  assert.equal(existsSync(join(s.baseline.workspace,'private.txt')),false);
+  assert.equal(existsSync(join(secondWorkspace,'private.txt')),false);
+  assert.equal(existsSync(join(physical(s,s.baseline.workspace),'private.txt')),false);
   assert.equal(operation(s,'workspace_history_operation',{operationId:prepared.gitOperationId}).state,'complete');
  } finally {await close(s);}
 });
@@ -73,7 +75,7 @@ test('Registry diff and commit retain ignored, untracked, deleted and executable
   write(s,'.gitignore','ignored.txt\n');
   write(s,'ignored.txt','ignored is still source\n');
   write(s,'untracked.txt','untracked is still source\n');
-  unlinkSync(join(session.workspace,'README.md'));
+  unlinkSync(join(physical(s,session.workspace),'README.md'));
   const firstDiff=operation(s,'workspace_history_diff');
   const mode=operation(s,'workspace_history_set_mode',{path:'experiment.mjs',mode:'100755',expectedSourceDigest:firstDiff.sourceDigest});
   assert.equal(mode.mode,'100755');
@@ -109,10 +111,10 @@ test('Registry diff and commit retain ignored, untracked, deleted and executable
 test('real Git receipt recovers SQL publication failure without a second commit and preserves legacy CAS ancestry', async () => {
  const s=setup();
  try {
-  const original=revision(s),legacySnapshot=snapshotDirectory(s.baseline.workspace,join(s.dir,'snapshots'),{legacy:true});
+  const original=revision(s),legacySnapshot=snapshotDirectory(physical(s,s.baseline.workspace),join(s.dir,'snapshots'),{legacy:true});
   const legacy=s.app.store.update('source-revision',original.id,original.version,{snapshot:legacySnapshot,sourceDigest:legacySnapshot.digest});
   assert.ok(legacy.snapshot.files.every(f=>f.mode===undefined));
-  const legacyRecord=structuredClone(legacy),legacyBytes=legacy.snapshot.files.map(f=>[f.path,readFileSync(join(legacy.snapshot.path,f.path))]);
+  const legacyRecord=structuredClone(legacy),legacyBytes=legacy.snapshot.files.map(f=>[f.path,readFileSync(join(physical(s,legacy.snapshot.path),f.path))]);
   s.app.git.enable(USER,s.project.id);
   await ready(s);
   const initial=history(s),repo=new GitCommand(s.dir,s.project.id);
@@ -145,7 +147,7 @@ test('real Git receipt recovers SQL publication failure without a second commit 
   assert.equal(legacyBinding.originalCreatedAt,legacy.createdAt);
   assert.equal(legacyBinding.sourceDigest,legacy.sourceDigest);
   assert.deepEqual(s.app.store.get('source-revision',legacy.id),legacyRecord);
-  for(const [path,bytes] of legacyBytes)assert.deepEqual(readFileSync(join(legacy.snapshot.path,path)),bytes);
+  for(const [path,bytes] of legacyBytes)assert.deepEqual(readFileSync(join(physical(s,legacy.snapshot.path),path)),bytes);
  } finally {await close(s);}
 });
 
@@ -154,7 +156,8 @@ test('dirty directory-to-file changes survive an interrupted unpublished checkou
  try {
   s.app.experiments.writeFile(USER,s.baseline.id,'pkg/a.py','print(1)\n',null,s.baseline.version);
   s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:2});
-  unlinkSync(join(s.session.workspace,'pkg','a.py'));rmdirSync(join(s.session.workspace,'pkg'));writeFileSync(join(s.session.workspace,'pkg'),'user changed a directory into a file\n');
+  const sessionWorkspace=physical(s,s.session.workspace);
+  unlinkSync(join(sessionWorkspace,'pkg','a.py'));rmdirSync(join(sessionWorkspace,'pkg'));writeFileSync(join(sessionWorkspace,'pkg'),'user changed a directory into a file\n');
   s.app.git.enable(USER,s.project.id);
   let interrupted=false;
   GitCommand.prototype.addWorktree=async function(...args){const result=await add.apply(this,args);if(!interrupted){interrupted=true;unlinkSync(join(args[0],'pkg','a.py'));throw new Error('Interrupted partial checkout before snapshot restore');}return result;};
@@ -163,8 +166,8 @@ test('dirty directory-to-file changes survive an interrupted unpublished checkou
   s.app.git.retry(USER,s.project.id,pending.operationId);await s.app.git.drain();
   assert.equal(history(s).state,'ready',JSON.stringify(history(s)));
   const migrated=s.app.sessions.get(USER,s.session.id);
-  assert.equal(readFileSync(join(migrated.workspace,'pkg'),'utf8'),'user changed a directory into a file\n');
-  assert.equal(readFileSync(join(s.session.workspace,'pkg'),'utf8'),'user changed a directory into a file\n');
+  assert.equal(readFileSync(join(physical(s,migrated.workspace),'pkg'),'utf8'),'user changed a directory into a file\n');
+  assert.equal(readFileSync(join(physical(s,s.session.workspace),'pkg'),'utf8'),'user changed a directory into a file\n');
   const changes=operation(s,'workspace_history_diff').files;assert.ok(changes.some(f=>f.path==='pkg'&&f.status==='added'));assert.ok(changes.some(f=>f.path==='pkg/a.py'&&f.status==='deleted'));
  }finally{GitCommand.prototype.addWorktree=add;await close(s);}
 });

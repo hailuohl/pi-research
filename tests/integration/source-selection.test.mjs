@@ -23,6 +23,7 @@ test('HTTP, CLI and Pi dispatcher select degree-2 child source while project rem
     const parent = await ok('/experiments', {projectId: project.id, title: 'degree one'});
     const child = await ok(`/experiments/${parent.id}/children`, {title: 'degree two', config: {polynomialDegree: 2, ridge: 0.000001}});
     const session = await ok('/sessions', {projectId: project.id});
+    const sessionWorkspace = app.store.paths.physical(session.workspace);
     const selected = {experimentId: child.id, revision: 1};
     const operation = (name, input, sessionId) => ok(`/operations/${name}`, {projectId: project.id, ...(sessionId ? {sessionId} : {}), input});
     const projectFile = await ok(`/projects/${project.id}/files?path=config.json`);
@@ -43,7 +44,7 @@ test('HTTP, CLI and Pi dispatcher select degree-2 child source while project rem
     const prepared = await operation('workspace_prepare_from_revision', selected, session.id);
     assert.equal(prepared.sourceDigest, chosen.sourceDigest);
     assert.ok(app.sessions.pendingNotices(session.id).some(notice => notice.content.includes(chosen.snapshotId) && notice.content.includes(chosen.sourceDigest)), 'the next Pi prompt receives the selected source identity');
-    assert.equal(JSON.parse(readFileSync(join(session.workspace, 'config.json'), 'utf8')).polynomialDegree, 2);
+    assert.equal(JSON.parse(readFileSync(join(sessionWorkspace, 'config.json'), 'utf8')).polynomialDegree, 2);
     const row = app.store.get('session', session.id);
     app.store.update('session', row.id, row.version, {state: 'running', generation: 1, leaseUntil: Date.now() + 60000});
     const actor = {type: 'agent', projectId: project.id, sessionId: session.id, role: 'coordinator', generation: 1}, tools = new ToolDispatcher(app);
@@ -57,7 +58,7 @@ test('HTTP, CLI and Pi dispatcher select degree-2 child source while project rem
     const other = await ok('/projects', {name: 'other'});
     const cross = await request('/operations/experiment_source_read', {projectId: other.id, input: {snapshotId: chosen.snapshotId, path: 'config.json'}});
     assert.equal(cross.data.error.code, 'SCOPE_DENIED');
-    for (const path of ['../config.json', session.workspace]) {
+    for (const path of ['../config.json', sessionWorkspace]) {
       const denied = await request('/operations/experiment_source_read', {projectId: project.id, input: {...selected, path}});
       assert.equal(denied.data.error.code, 'PATH_DENIED');
     }
@@ -75,7 +76,7 @@ test('source cache cannot outlive revoked lineage and Registry failure restores 
     const event = s.app.store.event.bind(s.app.store);
     s.app.store.event = (pid, type, payload) => {if (type === 'operation.executed') throw Error('injected outer registry failure'); return event(pid, type, payload);};
     assert.throws(() => s.app.operations.execute(USER, 'workspace_prepare_from_revision', selected, {projectId: s.project.id, sessionId: s.session.id, idempotencyKey: key}), /injected outer registry failure/);
-    assert.deepEqual(readdirSync(s.session.workspace), []);
+    assert.deepEqual(readdirSync(s.app.store.paths.physical(s.session.workspace)), []);
     assert.equal(s.app.store.get('session', s.session.id).sourceRevisionId, undefined);
     s.app.store.event = event;
     const prepared = s.app.operations.execute(USER, 'workspace_prepare_from_revision', selected, {projectId: s.project.id, sessionId: s.session.id, idempotencyKey: key});

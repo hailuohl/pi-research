@@ -6,6 +6,7 @@ import {readStableFile} from '../workspace/stable-file.js';
 import {safePath} from '../workspace/files.js';
 import {digest} from '../storage/store.js';
 import type {SourceSnapshot} from '../domain/types.js';
+import type {DataPaths} from '../storage/data-paths.js';
 /** Docker mechanics shared by development jobs and formal Runs; no business-purpose coupling. */
 export interface DockerJob {
     id: string; containerName: string; containerId?: string; startRequested: boolean;
@@ -16,6 +17,10 @@ export interface DockerJob {
         command: string[]; environmentImageDigest: string; dockerContext: string;
         resources: {pids: number; cpus: number; memoryMb: number; workMb: number; logBytes: number};
     };
+}
+/** Short-lived execution paths; the original approved manifest and its digest remain untouched. */
+export function physicalDockerJob(job:DockerJob,paths:DataPaths):DockerJob {
+    return {...job,controlDir:paths.physical(job.controlDir),outputDir:paths.physical(job.outputDir),manifest:{...job.manifest,inputSnapshot:paths.physicalSnapshot(job.manifest.inputSnapshot),dataArtifacts:job.manifest.dataArtifacts.map(a=>({...a,path:paths.physical(a.path)}))}};
 }
 
 export const JOB_LABEL = 'pi-research.sandbox-job';

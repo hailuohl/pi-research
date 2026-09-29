@@ -37,7 +37,7 @@ export class ProjectService {
                 ensure(x.template === undefined || x.template === 'empty', 'INVALID_INPUT', '不支持的模板', 400);
                 writeFileSync(join(workspace, 'README.md'), `# ${name}\n\n项目文件由用户导入。\n`, { mode: 0o600 });
             }
-            const p = this.c.store.create<Project>('project', id, { name, description: text(x.description ?? '', 'description', 2000, true), workspace, archived: false, settings: { ...DEFAULT_COLLABORATION } }, id);
+            const p = this.c.store.create<Project>('project', id, { name, description: text(x.description ?? '', 'description', 2000, true), workspace:this.c.store.paths.reference(workspace), archived: false, settings: { ...DEFAULT_COLLABORATION } }, id);
             this.c.store.event(id, 'project.created', { id, name });
             return p;
         });
@@ -48,7 +48,7 @@ export class ProjectService {
     }
     private checkImportSource(source:string) {
         ensure(existsSync(source) && lstatSync(source).isDirectory() && !lstatSync(source).isSymbolicLink(), 'PATH_DENIED', '导入源必须是本机真实目录', 403);
-        const rel=relative(resolve(this.c.dataDir),source);ensure(rel!==''&&(rel==='..'||rel.startsWith('..\\')||rel.startsWith('../')||isAbsolute(rel)),'PATH_DENIED','不能将应用数据目录作为项目源码导入',403);
+        for(const root of [this.c.dataDir,...this.c.store.paths.legacyRoots]){const rel=relative(resolve(root),source);ensure(rel!==''&&(rel==='..'||rel.startsWith('..\\')||rel.startsWith('../')||isAbsolute(rel)),'PATH_DENIED','不能将当前或历史应用数据目录作为项目源码导入',403);}
     }
     private captureImport(input:ReturnType<ProjectService['importInput']>,git:GitImport|null):ImportPlan {
         const source=input.sourcePath;this.checkImportSource(source);
@@ -73,9 +73,9 @@ export class ProjectService {
         if(prepared){const p=this.importPlans.get(prepared);ensure(p&&p.inputDigest===digest(x),'IMPORT_PLAN_INVALID','需要匹配请求的宿主导入预检',400);plan=p;}
         else {this.checkImportSource(x.sourcePath);ensure(!hasGitMetadata(x.sourcePath),'IMPORT_PREFLIGHT_REQUIRED','Git 项目需要先完成异步导入预检',409);plan=this.captureImport(x,null);}
         return this.c.store.transaction(()=>{
-            const p=this.create(actor,{name:x.name,description:x.description,template:'empty'});rmSync(join(p.workspace,'README.md'),{force:true});
-            for(const f of plan.entries){const path=safePath(p.workspace,f.path);mkdirSync(dirname(path),{recursive:true,mode:0o700});writeFileSync(path,f.bytes,{mode:0o600,flag:'wx'});}
-            setSourceModes(p.workspace,plan.entries);
+            const p=this.create(actor,{name:x.name,description:x.description,template:'empty'}),workspace=this.c.store.paths.physical(p.workspace);rmSync(join(workspace,'README.md'),{force:true});
+            for(const f of plan.entries){const path=safePath(workspace,f.path);mkdirSync(dirname(path),{recursive:true,mode:0o700});writeFileSync(path,f.bytes,{mode:0o600,flag:'wx'});}
+            setSourceModes(workspace,plan.entries);
             this.c.store.create('project-import',p.id,{sourcePath:plan.source,fileCount:plan.entries.length,sourceDigest:plan.sourceDigest,mode:'copy-without-git-metadata',excluded:IMPORT_EXCLUDED,untracked:'included unless excluded',submodules:'rejected',lfs:'unresolved pointers rejected',...(plan.git?{commit:plan.git.commit,remote:plan.git.remote,dirty:plan.dirty,dirtyMeaning:'imported snapshot differs from recorded HEAD; includes excluded tracked files',gitHistory:'observed working-copy import; original history not copied'}:{})});
             this.c.store.event(p.id,'project.imported',{projectId:p.id,fileCount:plan.entries.length,sourceDigest:plan.sourceDigest});return p;
         });
@@ -118,7 +118,7 @@ export class ProjectService {
         ensure(next.maxConcurrentAssistants < next.maxActiveAgents, 'INVALID_INPUT', '必须给主协调者保留一个名额', 400);
         return this.c.store.transaction(() => { const updated = this.c.store.update<Project>('project', id, integer(x.expectedVersion, 'expectedVersion', 1), { settings: next }); this.c.store.event(id, 'project.collaboration_changed', { enabled: next.enabled }); return updated; });
     }
-    listFiles(actor: Actor, id: string) { return listFiles(this.get(actor, id).workspace); }
-    readFile(actor: Actor, id: string, path: string) { return readText(this.get(actor, id).workspace, path); }
-    writeFile(actor: Actor, id: string, path: string, content: string, expectedDigest: string | null) { userOnly(actor); return this.c.store.transaction(() => { const p = this.get(actor, id); const result = writeText(p.workspace, path, content, expectedDigest, this.c.store); this.c.store.event(id, 'workspace.file_changed', { path, digest: result.digest }); return result; }); }
+    listFiles(actor: Actor, id: string) { return listFiles(this.c.store.paths.physical(this.get(actor, id).workspace)); }
+    readFile(actor: Actor, id: string, path: string) { return readText(this.c.store.paths.physical(this.get(actor, id).workspace), path); }
+    writeFile(actor: Actor, id: string, path: string, content: string, expectedDigest: string | null) { userOnly(actor); return this.c.store.transaction(() => { const p = this.get(actor, id); const result = writeText(this.c.store.paths.physical(p.workspace), path, content, expectedDigest, this.c.store); this.c.store.event(id, 'workspace.file_changed', { path, digest: result.digest }); return result; }); }
 }

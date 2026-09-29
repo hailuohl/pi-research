@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, mkdirSync, writeFileSync, lstatSync, readdi
 import { join } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
 import { ResearchApp } from '../../packages/research-app.js';
-import { docker, dockerEnv, createArgs, stageInputs, inspect as inspectDocker, retireUncertainStart } from '../../packages/execution/docker.js';
+import { physicalDockerJob, docker, dockerEnv, createArgs, stageInputs, inspect as inspectDocker, retireUncertainStart } from '../../packages/execution/docker.js';
 import { verifyParserImage } from '../../packages/documents/parse-service.js';
 import { DOCUMENT_PARSE_TERMINAL } from '../../packages/documents/parse-types.js';
 const [dataDir, repoRoot, id, generationText] = process.argv.slice(2);
@@ -17,7 +17,7 @@ const current = () => { const j = store.get('document-parse-job', id); if (j.gen
 } return j; };
 const patch = (value) => store.transaction(() => { const j = current(); return store.update('document-parse-job', id, j.version, value); });
 const checked = async (fn) => { await app.compute.verifyTarget('document', id); current(); const result = await fn(); await app.compute.verifyTarget('document', id); current(); return result; };
-const inspect = () => checked(() => inspectDocker(current()));
+const inspect = () => checked(() => inspectDocker(physicalDockerJob(current(), store.paths)));
 const timer = setInterval(() => { try {
     patch({ leaseUntil: Date.now() + 60000, workerPid: process.pid });
 }
@@ -26,13 +26,13 @@ catch {
     logger?.kill();
 } }, 3000);
 function sizeExceeded() { const j = current(); let total = 0; try {
-    const entries = readdirSync(j.outputDir, { withFileTypes: true });
+    const entries = readdirSync(store.paths.physical(j.outputDir), { withFileTypes: true });
     if (entries.length > 201)
         return true;
     for (const entry of entries) {
         if (!entry.isFile() || entry.isSymbolicLink())
             return true;
-        total += lstatSync(join(j.outputDir, entry.name)).size;
+        total += lstatSync(join(store.paths.physical(j.outputDir), entry.name)).size;
         if (total > j.manifest.resources.outputBytes)
             return true;
     }
@@ -41,7 +41,7 @@ catch {
     return true;
 } return false; }
 async function stop() { const j = current(), c = await inspect(); if (c?.State.Status === 'created')
-    return retireUncertainStart(j, current, (context, args) => checked(() => docker(context, args)), () => inspect()); if (c?.State.Running)
+    return retireUncertainStart(physicalDockerJob(j, store.paths), current, (context, args) => checked(() => docker(context, args)), () => inspect()); if (c?.State.Running)
     await checked(() => docker(j.manifest.dockerContext, ['kill', c.Id])); return inspect(); }
 function capture(start) { const j = current(); logger = spawn('docker', ['--context', j.manifest.dockerContext, ...(start ? ['start', '--attach'] : ['logs', '--follow']), j.containerId], { shell: false, windowsHide: true, env: dockerEnv(), stdio: ['ignore', 'pipe', 'pipe'] }); for (const [stream, name] of [[logger.stdout, 'stdout.log'], [logger.stderr, 'stderr.log']])
     stream.on('data', (chunk) => { try {
@@ -51,7 +51,7 @@ function capture(start) { const j = current(); logger = spawn('docker', ['--cont
         if (chunk.length > remaining)
             truncated = true;
         if (remaining)
-            appendFileSync(join(j.controlDir, name), chunk.subarray(0, remaining));
+            appendFileSync(join(store.paths.physical(j.controlDir), name), chunk.subarray(0, remaining));
     }
     catch {
         logError = true;
@@ -75,9 +75,9 @@ try {
     let job = patch({ leaseUntil: Date.now() + 60000, workerPid: process.pid });
     externalPossible = !!(job.startRequested || job.containerId || job.recoveryCount);
     incomplete = job.recoveryCount > 0;
-    mkdirSync(job.controlDir, { recursive: true, mode: 0o700 });
+    mkdirSync(store.paths.physical(job.controlDir), { recursive: true, mode: 0o700 });
     for (const name of ['stdout.log', 'stderr.log']) {
-        const path = join(job.controlDir, name);
+        const path = join(store.paths.physical(job.controlDir), name);
         if (existsSync(path))
             bytes += lstatSync(path).size;
         else
@@ -96,11 +96,11 @@ try {
         job = current();
         if (job.cancelRequested)
             throw Error('DOCUMENT_CANCELLED');
-        stageInputs(job);
+        stageInputs(physicalDockerJob(job, store.paths));
         app.documentParsing.assertCurrent(current());
         externalPossible = true;
         try {
-            await checked(() => docker(job.manifest.dockerContext, createArgs(job)));
+            await checked(() => docker(job.manifest.dockerContext, createArgs(physicalDockerJob(job, store.paths))));
         }
         catch (error) {
             container = await inspect();

@@ -5,7 +5,7 @@ import {join, resolve} from 'node:path';
 import {setTimeout as pause} from 'node:timers/promises';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {USER} from '../../dist/packages/domain/types.js';
-import {docker, preflight, inspect} from '../../dist/packages/execution/docker.js';
+import {docker, preflight, inspect, physicalDockerJob} from '../../dist/packages/execution/docker.js';
 import {formalDockerJob} from '../../dist/packages/runners/docker.js';
 
 const image = process.env.PI_DEVELOPMENT_IMAGE, context = process.env.PI_DEVELOPMENT_CONTEXT || 'desktop-linux';
@@ -30,6 +30,7 @@ print('measured-ols',mse,flush=True)
 test('real formal Run: approved Python measurement, independent supervisor, archives and safe recovery', {skip, timeout:240000}, async t => {
  const validation = resolve('.validation'); mkdirSync(validation, {recursive:true}); const dir = mkdtempSync(join(validation, 'formal-run-live-'));
  let app = new ResearchApp(dir, process.cwd());
+ const physical=reference=>app.store.paths.physical(reference),dockerJob=run=>physicalDockerJob(formalDockerJob(run),app.store.paths);
  const evidence = {dataDir:dir,image,context,checks:[],passed:false};
  const save = () => writeFileSync(join(dir,'evidence.json'), JSON.stringify(evidence,null,2));
  const project = app.projects.create(USER,{name:'Formal Docker real flow acceptance',template:'curve-fit'});
@@ -58,7 +59,7 @@ test('real formal Run: approved Python measurement, independent supervisor, arch
   });
   await check('approved non-whitelisted Python measures and archives after app close/reopen',async()=>{
    const run=submit(prepare('measured OLS after app disconnect',"from pathlib import Path\nimport time\nPath('/output/started.txt').write_text('started')\ntime.sleep(4)\n"+measured));
-   app.runs.launchPending();const running=await wait(run.id,r=>r.state==='running'&&existsSync(join(r.outputDir,'started.txt'))||terminal(r));
+   app.runs.launchPending();const running=await wait(run.id,r=>r.state==='running'&&existsSync(join(physical(r.outputDir),'started.txt'))||terminal(r));
    assert.equal(running.state,'running');assert.ok(running.supervisorPid&&running.supervisorPid!==process.pid);
    const containerId=running.execution.containerId;app.close();await pause(700);app=new ResearchApp(dir,process.cwd());
    const done=await wait(run.id);record('approved-python-disconnect',done);
@@ -66,7 +67,7 @@ test('real formal Run: approved Python measurement, independent supervisor, arch
    const archive=artifacts(done);for(const name of ['metrics.json','predictions.csv','stdout.log','stderr.log','execution.json'])assert.ok(archive.some(a=>a.row.title===name),name);
    const metric=JSON.parse(archive.find(a=>a.row.title==='metrics.json').bytes.toString());assert.deepEqual(metric,{mse:0,slope:3,intercept:2});
    assert.match(archive.find(a=>a.row.title==='predictions.csv').bytes.toString(),/2,8,8/);assert.match(app.runs.logs(USER,done.id).content,/measured-ols/);
-   assert.equal(existsSync(join(done.outputDir,'stdout.log')),false);assert.equal(app.experiments.get(USER,done.experimentId).lifecycle,'frozen');
+   assert.equal(existsSync(join(physical(done.outputDir),'stdout.log')),false);assert.equal(app.experiments.get(USER,done.experimentId).lifecycle,'frozen');
   });
   await check('exit zero with missing expected artifact stays incomplete and real stderr is retained',async()=>{
    const run=submit(prepare('missing predictions',"import pathlib,sys\npathlib.Path('/output/metrics.json').write_text('{\"mse\":0}')\nprint('missing-predictions-marker',file=sys.stderr)\n"));
@@ -79,29 +80,29 @@ test('real formal Run: approved Python measurement, independent supervisor, arch
    const run=submit(prepare(mode,sleeping+`\n# ${mode}\n`,{timeoutSeconds:mode==='timeout'?2:30}));
    if(mode==='cancel'){const running=await wait(run.id,r=>r.state==='running'||terminal(r));assert.equal(running.state,'running');app.runs.cancel(USER,run.id);}
    const done=await wait(run.id);record(mode,done);assert.equal(done.state,mode==='cancel'?'cancelled':'failed');if(mode==='timeout')assert.match(done.error,/timeout/);
-   const container=await inspect(formalDockerJob(done));assert.equal(container.State.Running,false);assert.equal(container.State.Status,'exited');
+   const container=await inspect(dockerJob(done));assert.equal(container.State.Running,false);assert.equal(container.State.Status,'exited');
   });
   await check('killed supervisor recovers the same container without restarting measured code',async()=>{
    const source="from pathlib import Path\nimport time\nwith Path('/output/once.txt').open('a') as f: f.write('once\\n')\nprint('before-supervisor-crash',flush=True)\ntime.sleep(9)\n"+measured;
    const run=submit(prepare('supervisor crash recovery',source));
-   const running=await wait(run.id,r=>r.state==='running'&&existsSync(join(r.outputDir,'once.txt'))||terminal(r));assert.equal(running.state,'running');
-   const before=await inspect(formalDockerJob(running));assert.equal(before.State.Running,true);assert.ok(Number.isInteger(running.supervisorPid)&&running.supervisorPid>0&&running.supervisorPid!==process.pid);
+   const running=await wait(run.id,r=>r.state==='running'&&existsSync(join(physical(r.outputDir),'once.txt'))||terminal(r));assert.equal(running.state,'running');
+   const before=await inspect(dockerJob(running));assert.equal(before.State.Running,true);assert.ok(Number.isInteger(running.supervisorPid)&&running.supervisorPid>0&&running.supervisorPid!==process.pid);
    process.kill(running.supervisorPid,'SIGKILL');await pause(300);
    app.store.transaction(()=>{const r=app.store.get('run',run.id);app.store.update('run',r.id,r.version,{heartbeat:Date.now()-61000,execution:{...r.execution,leaseUntil:0}});});
    app.close();app=new ResearchApp(dir,process.cwd());app.runs.reconcile();app.runs.launchPending();
    const done=await wait(run.id);record('same-container-recovery',done,{previousSupervisorPid:running.supervisorPid,previousContainerId:running.execution.containerId});
    assert.equal(done.execution.containerId,running.execution.containerId);assert.ok(done.execution.generation>running.execution.generation);assert.ok(done.execution.recoveryCount>0);assert.equal(done.execution.logsIncomplete,true);assert.notEqual(done.integrity,'complete');assert.equal(done.state,'failed');
-   assert.equal(readFileSync(join(done.outputDir,'once.txt'),'utf8'),'once\n');assert.equal(done.metrics.mse,0);assert.ok(artifacts(done).some(a=>a.row.title==='execution.json'));
+   assert.equal(readFileSync(join(physical(done.outputDir),'once.txt'),'utf8'),'once\n');assert.equal(done.metrics.mse,0);assert.ok(artifacts(done).some(a=>a.row.title==='execution.json'));
   });
   await check('tampered approved source cannot create or start a container',async()=>{
    const run=submit(prepare('tampered before launch',measured+'\n# unique tampered snapshot\n'));
-   const path=join(run.manifest.snapshotPath,'formal.py');chmodSync(path,0o600);writeFileSync(path,'raise RuntimeError("tampered source must never execute")\n');
-   const done=await wait(run.id);record('tampered-source-blocked',done);assert.notEqual(done.state,'succeeded');assert.notEqual(done.integrity,'complete');assert.equal(done.execution.startRequested,false);assert.equal(done.execution.containerId,undefined);assert.equal(await inspect(formalDockerJob(done)),null);
+   const path=join(physical(run.manifest.snapshotPath),'formal.py');chmodSync(path,0o600);writeFileSync(path,'raise RuntimeError("tampered source must never execute")\n');
+   const done=await wait(run.id);record('tampered-source-blocked',done);assert.notEqual(done.state,'succeeded');assert.notEqual(done.integrity,'complete');assert.equal(done.execution.startRequested,false);assert.equal(done.execution.containerId,undefined);assert.equal(await inspect(dockerJob(done)),null);
   });
   evidence.passed=failures===0;save();t.diagnostic(`Retained formal Run evidence: ${dir}`);
  } finally {
   for(const run of app.store.list('run').filter(r=>r.execution)) {
-   try {const container=await inspect(formalDockerJob(run));if(container?.State.Running)await docker(context,['kill',container.Id]);}catch(error){evidence.cleanupError=String(error);}
+   try {const container=await inspect(dockerJob(run));if(container?.State.Running)await docker(context,['kill',container.Id]);}catch(error){evidence.cleanupError=String(error);}
   }
   save();app.close();
  }

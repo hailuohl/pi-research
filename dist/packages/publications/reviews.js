@@ -21,7 +21,7 @@ export class PublicationReviewService {
         this.app = app;
     }
     artifact(pid, id) {
-        const a = this.app.store.get('artifact', id, pid), bytes = readStableFile(dirname(a.path), basename(a.path), 32 * 1024 * 1024);
+        const a = this.app.store.get('artifact', id, pid), bytes = readStableFile(dirname(this.app.store.paths.physical(a.path)), basename(this.app.store.paths.physical(a.path)), 32 * 1024 * 1024);
         ensure(bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '审查原始产物已改变');
         return clean({ id: a.id, digest: a.digest, size: a.size, title: a.title, mediaType: a.mediaType, taskId: a.taskId, runId: a.runId });
     }
@@ -41,7 +41,7 @@ export class PublicationReviewService {
             verifyRunRecord(run, this.app.evidence);
             this.app.approvals.assert(intent.approvalId, pid, intent.id, run.manifestDigest, 'run.submit');
             assertExperimentSourceCurrent(this.app.store, this.app.store.get('experiment', run.experimentId, pid));
-            verifySnapshot(run.manifest.snapshotPath, run.manifest.sourceFiles);
+            verifySnapshot(this.app.store.paths.physical(run.manifest.snapshotPath), run.manifest.sourceFiles);
             sourceBindings.push({ kind: 'run', id: intent.id, approvalId: intent.approvalId, manifestDigest: run.manifestDigest, sourceDigest: run.manifest.snapshotDigest });
         }
         return clean({ id: e.id, type: e.type, artifactId: e.artifactId, digest: e.digest, locator: e.locator, quote: e.quote, description: e.description, runId: e.runId, document: e.document, sourceBindings });

@@ -31,6 +31,7 @@ export class WorkingGrantService {
         return s;
     }
     path(workspace, value) {
+        workspace = this.app.store.paths.physical(workspace);
         const path = text(value, 'path', 1000);
         ensure(path.split('/').every(p => p && p !== '.' && p !== '..' && !p.includes(':') && !/[. ]$/.test(p)), 'PATH_DENIED', '授权路径必须是规范精确相对文件路径', 403);
         safePath(workspace, path);
@@ -38,9 +39,9 @@ export class WorkingGrantService {
     }
     origin(g) {
         validateSourceRevision(this.app.context, g.projectId, g.sourceRevisionId);
-        verifySnapshot(g.baselineSnapshot.path, g.baselineSnapshot.files);
+        verifySnapshot(this.app.store.paths.physical(g.baselineSnapshot.path), g.baselineSnapshot.files);
         for (const a of g.dataArtifacts) {
-            const actual = this.app.store.get('artifact', a.id, g.projectId), bytes = readStableFile(dirname(a.path), basename(a.path), 32 * 1024 * 1024);
+            const actual = this.app.store.get('artifact', a.id, g.projectId), bytes = readStableFile(dirname(this.app.store.paths.physical(a.path)), basename(this.app.store.paths.physical(a.path)), 32 * 1024 * 1024);
             assertRunGrantArtifact(this.app.store, g.projectId, actual);
             assertDiscoveryArtifact(this.app.store, g.projectId, actual);
             ensure(actual.path === a.path && actual.digest === a.digest && actual.size === a.size && bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '授权数据内容或来源已改变');
@@ -83,8 +84,8 @@ export class WorkingGrantService {
             ensure(s.state !== 'archived' && m.sessionId === s.id && m.sourceRevisionId === s.sourceRevisionId && !m.scopeTaskId && !m.scopeAttemptId && m.scopeGeneration === undefined, 'WORKING_GRANT_TEMPLATE_STALE', '模板会话或固定来源已经变化');
             ensure(digest(m) === template.manifestDigest && m.inputSnapshot.digest === template.sourceDigest && digest(m.inputSnapshot.files) === m.inputSnapshot.digest, 'MANIFEST_CORRUPTED', '测试模板摘要不一致');
             validateSourceRevision(this.app.context, pid, s.sourceRevisionId);
-            verifySnapshot(m.inputSnapshot.path, m.inputSnapshot.files);
-            const current = snapshotDirectory(s.workspace, join(this.app.context.dataDir, 'snapshots'), { legacy: m.inputSnapshot.files.every(f => f.mode === undefined) });
+            verifySnapshot(this.app.store.paths.physical(m.inputSnapshot.path), m.inputSnapshot.files);
+            const current = snapshotDirectory(this.app.store.paths.physical(s.workspace), join(this.app.context.dataDir, 'snapshots'), { legacy: m.inputSnapshot.files.every(f => f.mode === undefined) });
             ensure(current.digest === m.inputSnapshot.digest, 'WORKING_GRANT_TEMPLATE_STALE', '私有工作区已偏离测试模板，请先重新准备');
             const paths = strings(x.editablePaths, 'editablePaths', 32).map(p => this.path(s.workspace, p));
             ensure(paths.length > 0 && new Set(paths.map(p => process.platform === 'win32' ? p.toLowerCase() : p)).size === paths.length, 'INVALID_INPUT', '需要不重复的精确可编辑路径', 400);
@@ -117,7 +118,7 @@ export class WorkingGrantService {
             assertWorkspaceReady(this.app.context, s.id);
             ensure(Date.parse(g.expiresAt) > Date.now(), 'WORKING_GRANT_EXPIRED', '授权已到期');
             this.origin(g);
-            ensure(snapshotDirectory(s.workspace, join(this.app.context.dataDir, 'snapshots'), { legacy: g.baselineSnapshot.files.every(f => f.mode === undefined) }).digest === g.baselineSnapshot.digest, 'WORKING_GRANT_TEMPLATE_STALE', '批准后私有源码已改变，请重新准备授权');
+            ensure(snapshotDirectory(this.app.store.paths.physical(s.workspace), join(this.app.context.dataDir, 'snapshots'), { legacy: g.baselineSnapshot.files.every(f => f.mode === undefined) }).digest === g.baselineSnapshot.digest, 'WORKING_GRANT_TEMPLATE_STALE', '批准后私有源码已改变，请重新准备授权');
             this.app.approvals.assert(g.approvalId, pid, g.id, g.digest, 'working-grant.activate');
             this.app.store.update('session', s.id, s.version, { workingGrantId: g.id });
             this.app.store.update('working-grant', g.id, g.version, { state: 'active', activatedAt: now() });
@@ -147,7 +148,7 @@ export class WorkingGrantService {
     assertSourcePreparation(actor, pid, sessionId) { const g = this.forPreparation(actor, pid, sessionId); ensure(!g, 'WORKING_GRANT_SOURCE_LOCKED', '已授权的私有会话不能重新准备或替换来源'); }
     workspaceFiles(s, g) {
         let total = 0;
-        return listFiles(s.workspace).map(f => { const bytes = readStableFile(s.workspace, f.path, 64 * 1024 * 1024); total += bytes.length; ensure(total <= 64 * 1024 * 1024, 'SNAPSHOT_TOO_LARGE', '私有源码超过64MiB'); return { path: f.path, size: bytes.length, digest: digest(bytes), ...(g.baselineSnapshot.files.every(b => b.mode === undefined) ? {} : { mode: readSourceMode(s.workspace, f.path) }) }; });
+        return listFiles(this.app.store.paths.physical(s.workspace)).map(f => { const bytes = readStableFile(this.app.store.paths.physical(s.workspace), f.path, 64 * 1024 * 1024); total += bytes.length; ensure(total <= 64 * 1024 * 1024, 'SNAPSHOT_TOO_LARGE', '私有源码超过64MiB'); return { path: f.path, size: bytes.length, digest: digest(bytes), ...(g.baselineSnapshot.files.every(b => b.mode === undefined) ? {} : { mode: readSourceMode(this.app.store.paths.physical(s.workspace), f.path) }) }; });
     }
     assertWrite(actor, pid, sessionId, path, content, mode) {
         const g = this.forPreparation(actor, pid, sessionId);

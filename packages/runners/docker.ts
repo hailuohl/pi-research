@@ -2,9 +2,10 @@ import {spawn} from 'node:child_process';
 import {chmodSync, mkdirSync, lstatSync, readdirSync} from 'node:fs';
 import {join} from 'node:path';
 import type {Manifest, ResearchContract} from '../domain/types.js';
-import {createArgs, docker, dockerEnv, inspect, preflight, retireUncertainStart, stageInputs, type Container, type DockerJob} from '../execution/docker.js';
+import {createArgs, physicalDockerJob, docker, dockerEnv, inspect, preflight, retireUncertainStart, stageInputs, type Container, type DockerJob} from '../execution/docker.js';
 import {safePath} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
+import type {DataPaths} from '../storage/data-paths.js';
 import type {DockerRun, RunnerAdapter, RunnerCapabilities, RunnerLogSink, RunnerProcess} from './adapter.js';
 
 type DockerContract = ResearchContract & {dockerContext?: string; pids?: number; workMb?: number; logBytes?: number; outputBytes?: number};
@@ -19,7 +20,7 @@ export class DockerAdapter implements RunnerAdapter {
     readonly capabilities: RunnerCapabilities = {backend: 'docker', isolated: true, recoverable: true};
     readonly job: DockerJob;
     imageId?: string;
-    constructor(readonly run: DockerRun, private readonly fence: () => void,private readonly verifyTarget?:()=>Promise<void>) {this.job = formalDockerJob(run); this.imageId = run.execution.imageId;}
+    constructor(readonly run: DockerRun, private readonly fence: () => void,private readonly verifyTarget?:()=>Promise<void>,paths?:DataPaths) {const job=formalDockerJob(run);this.job = paths?physicalDockerJob(job,paths):job; this.imageId = run.execution.imageId;}
     private async guarded<T>(fn:()=>Promise<T>):Promise<T>{await this.verifyTarget?.();this.fence();const result=await fn();await this.verifyTarget?.();this.fence();return result;}
     async preflight(): Promise<void> {this.imageId = await this.guarded(()=>preflight(this.job.manifest.dockerContext, this.job.manifest.environmentImageDigest));}
     async stage(): Promise<void> {

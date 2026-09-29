@@ -23,7 +23,7 @@ test('document upload retains exact bytes, immutable versions, bounded list and 
  assert.throws(()=>s.d.import({type:'agent'},s.project.id,input,'agent'));
  const p=s.app.projects.create(USER,{name:'other'});assert.throws(()=>s.d.get(USER,p.id,d.id));
  for(const contentBase64 of ['bad','@@@=',Buffer.from('<html/>').toString('base64')])assert.throws(()=>s.d.import(USER,s.project.id,{...input,contentBase64},contentBase64));
- const artifactPath=s.app.store.get('artifact',d.original.artifactId).path;chmodSync(artifactPath,0o600);writeFileSync(artifactPath,'corrupted');assert.throws(()=>s.d.inspect(USER,s.project.id,d.id),{code:'ARTIFACT_CORRUPTED'});
+ const artifactPath=s.app.store.paths.physical(s.app.store.get('artifact',d.original.artifactId).path);chmodSync(artifactPath,0o600);writeFileSync(artifactPath,'corrupted');assert.throws(()=>s.d.inspect(USER,s.project.id,d.id),{code:'ARTIFACT_CORRUPTED'});
 }finally{s.close();}});
 test('provider raw response preserves UTF8 BOM; provider text is not a PDF or verified version',async()=>{let calls=0;const body=Buffer.from('\ufeff# Source paper\n中文');const s=fixture(async()=>{calls++;return new Response(body,{headers:{'Content-Type':'text/markdown'}});});try{
  const d=await s.d.acquire(USER,s.project.id,{source:'alphaxiv',id:'1706.03762v1',format:'provider-text'},'text');

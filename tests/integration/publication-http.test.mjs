@@ -17,8 +17,8 @@ test('publication owner HTTP/CLI contracts preserve immutable revisions, diagnos
   assert.equal((await call('publication_build_list',{revisionId:rev.id})).value.items[0].id,job.id);
   const grant=app.store.get('approval',job.approvalId);app.approvals.decide(USER,grant.id,grant.version,true);
   // Diagnostic fixture only: no container or model execution is claimed by this transport test.
-  const saved=app.store.get('publication-build-job',job.id),log=Buffer.from('./main.tex:2: Undefined control sequence.\n');writeFileSync(join(saved.outputDir,'build.log'),log);
-  writeFileSync(join(saved.outputDir,'build.json'),JSON.stringify({formatVersion:1,profileId:profile.profileId,sourceDigest:rev.sourceDigest,engine:'xelatex',bibliography:'none',engineVersion:'UNIT fixture',status:'failed',hadErrors:true,converged:false,passes:1,diagnostics:[{severity:'error',code:'TEX_ERROR',message:'Undefined control sequence.',file:'main.tex',line:2,pass:1}],pdf:null,previews:[],logs:[{file:'build.log',digest:digest(log),bytes:log.length}]}));
+  const saved=app.store.get('publication-build-job',job.id),outputDir=app.store.paths.physical(saved.outputDir),log=Buffer.from('./main.tex:2: Undefined control sequence.\n');writeFileSync(join(outputDir,'build.log'),log);
+  writeFileSync(join(outputDir,'build.json'),JSON.stringify({formatVersion:1,profileId:profile.profileId,sourceDigest:rev.sourceDigest,engine:'xelatex',bibliography:'none',engineVersion:'UNIT fixture',status:'failed',hadErrors:true,converged:false,passes:1,diagnostics:[{severity:'error',code:'TEX_ERROR',message:'Undefined control sequence.',file:'main.tex',line:2,pass:1}],pdf:null,previews:[],logs:[{file:'build.log',digest:digest(log),bytes:log.length}]}));
   app.publicationBuilds.finalize(job.id,{state:'failed',exitCode:1});
   const inspected=await call('publication_inspect',{jobId:job.id});assert.equal(inspected.status,200);assert.equal(inspected.value.state,'failed');
   const result=await call('publication_result',{resultId:inspected.value.resultId});assert.equal(result.status,200,JSON.stringify(result.value));assert.equal(result.value.pdf,null);assert.equal(result.value.diagnostics[0].line,2);

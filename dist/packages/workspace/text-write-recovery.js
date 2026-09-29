@@ -56,12 +56,14 @@ function durable(path, bytes, mode = 0o600) {
 export class TextWriteRecovery {
     db;
     directory;
+    dataRoot;
     key;
     current;
     conflicts = [];
     constructor(db, path) {
         this.db = db;
         this.directory = resolve(path) + '.text-writes';
+        this.dataRoot = resolve(dirname(path));
         db.exec('CREATE TABLE IF NOT EXISTS text_write_receipts(id TEXT PRIMARY KEY); CREATE TABLE IF NOT EXISTS text_write_key(key TEXT NOT NULL);');
         if (!db.prepare('SELECT key FROM text_write_key').get())
             db.prepare('INSERT INTO text_write_key VALUES(?)').run(randomBytes(32).toString('hex'));
@@ -193,6 +195,7 @@ export class TextWriteRecovery {
                 ensure(typeof data === 'string' && createHmac('sha256', this.key).update(data).digest('hex') === mac, 'TEXT_WRITE_RECOVERY_CONFLICT', '恢复记录校验失败', 409);
                 const journal = JSON.parse(data);
                 ensure(name === journal.id + '.json', 'TEXT_WRITE_RECOVERY_CONFLICT', '恢复记录标识无效', 409);
+                ensure(journal.roots.every(root => { const parent = this.dataRoot + sep; return process.platform === 'win32' ? root.toLowerCase().startsWith(parent.toLowerCase()) : root.startsWith(parent); }), 'TEXT_WRITE_RECOVERY_CONFLICT', '恢复记录不属于当前数据目录，不能触碰旧目录', 409);
                 this.finish(journal, !!this.db.prepare('SELECT 1 FROM text_write_receipts WHERE id=?').get(journal.id));
             }
             catch {

@@ -62,7 +62,7 @@ export class DevelopmentService {
             ensure(t.execution==='output_submitted'&&t.acceptance==='accepted'&&t.result?.artifactIds.includes(a.id),'CHANGE_SOURCE_STALE','数据任务成果未被当前采纳');
             sourceAcceptanceId=captureAcceptance(this.app.store,pid,t.id).id;
         }
-        const bytes=readStableFile(dirname(a.path),basename(a.path),32*MiB);
+        const bytes=readStableFile(dirname(this.app.store.paths.physical(a.path)),basename(this.app.store.paths.physical(a.path)),32*MiB);
         ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','数据产物校验失败');
         return {id:a.id,digest:a.digest,size:a.size,path:a.path,...(sourceAcceptanceId?{sourceAcceptanceId}:{})};
     }
@@ -80,12 +80,12 @@ export class DevelopmentService {
             const deadline=text(x.deadline??new Date(Math.min(Date.now()+30*60*1000,working?Date.parse(working.expiresAt):Infinity)).toISOString(),'deadline',50);
             ensure(Number.isFinite(Date.parse(deadline))&&Date.parse(deadline)>Date.now()&&Date.parse(deadline)<=Date.now()+24*60*60*1000,'INVALID_INPUT','deadline 必须在未来 24 小时内',400);
             const expectedArtifacts=strings(x.expectedArtifacts??working?.expectedArtifacts??[],'expectedArtifacts',32);
-            for(const p of expectedArtifacts){safePath(s.workspace,p);ensure(p.split('/').every(Boolean),'PATH_DENIED','产物必须是规范相对路径',400);}
+            for(const p of expectedArtifacts){safePath(this.app.store.paths.physical(s.workspace),p);ensure(p.split('/').every(Boolean),'PATH_DENIED','产物必须是规范相对路径',400);}
             ensure(new Set(expectedArtifacts).size===expectedArtifacts.length,'INVALID_INPUT','预期产物重复',400);
             const ids=strings(x.dataArtifactIds??working?.dataArtifacts.map(a=>a.id)??[],'dataArtifactIds',10);ensure(new Set(ids).size===ids.length,'INVALID_INPUT','数据产物重复',400);
             const dataArtifacts=ids.map(id=>this.data({...actor,taskId:s.taskId},pid,id));ensure(dataArtifacts.reduce((n,a)=>n+a.size,0)<=128*MiB,'ARTIFACT_TOO_LARGE','输入数据超过 128 MiB',413);
             if(s.sourceRevisionId)validateSourceRevision(this.app.context,pid,s.sourceRevisionId);
-            const inputSnapshot=snapshotDirectory(s.workspace,join(this.app.context.dataDir,'snapshots'));
+            const inputSnapshot=this.app.store.paths.referenceSnapshot(snapshotDirectory(this.app.store.paths.physical(s.workspace),join(this.app.context.dataDir,'snapshots')));
             const manifest:SandboxManifest={purpose:'development-test',sessionId:s.id,inputSnapshot,command,environmentImageDigest:image,dockerContext,resources,networkPolicy:'none',deadline,expectedArtifacts,dataArtifacts,
                 ...(s.sourceRevisionId?{sourceRevisionId:s.sourceRevisionId}:{}),...(s.taskId?{scopeTaskId:s.taskId,scopeAttemptId:actor.attemptId,scopeGeneration:actor.generation}:{sessionGeneration:s.generation})};
             // A user may approve an assistant workspace, but cannot invent its attempt identity.
@@ -114,7 +114,7 @@ export class DevelopmentService {
             if(verifyFiles)validateSourceRevision(this.app.context,pid,m.sourceRevisionId);
             else {const revision=this.app.store.get<SourceRevision>('source-revision',m.sourceRevisionId,pid);assertExperimentSourceCurrent(this.app.store,this.app.store.get<Experiment>('experiment',revision.experimentId,pid));}
         }
-        if(verifyFiles)verifySnapshot(m.inputSnapshot.path,m.inputSnapshot.files);
+        if(verifyFiles)verifySnapshot(this.app.store.paths.physical(m.inputSnapshot.path),m.inputSnapshot.files);
         if(m.scopeTaskId) {
             const task=this.app.store.get<Task>('task',m.scopeTaskId,pid),attempt=this.app.store.get<TaskAttempt>('task-attempt',m.scopeAttemptId!,pid);
             ensure(task.attemptId===attempt.id&&task.generation===m.scopeGeneration&&attempt.generation===m.scopeGeneration&&attempt.sessionId===s.id&&!['cancelled','superseded','failed'].includes(task.execution),'TASK_INPUT_STALE','任务来源授权已失效');
@@ -124,7 +124,7 @@ export class DevelopmentService {
         for(const a of m.dataArtifacts) {
             const actual=this.app.store.get<Artifact>('artifact',a.id,pid);assertRunGrantArtifact(this.app.store,pid,actual);assertDiscoveryArtifact(this.app.store,pid,actual);
             ensure(actual.path===a.path&&actual.digest===a.digest&&actual.size===a.size,'ARTIFACT_CORRUPTED','批准的数据已改变');
-            if(verifyFiles){const bytes=readStableFile(dirname(actual.path),basename(actual.path),32*MiB);ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','批准的数据字节已改变');}
+            if(verifyFiles){const bytes=readStableFile(dirname(this.app.store.paths.physical(actual.path)),basename(this.app.store.paths.physical(actual.path)),32*MiB);ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','批准的数据字节已改变');}
             if(actual.taskId&&actual.taskId!==m.scopeTaskId) {const task=this.app.store.get<Task>('task',actual.taskId,pid);ensure(task.execution==='output_submitted'&&task.acceptance==='accepted'&&task.result?.artifactIds.includes(a.id),'CHANGE_SOURCE_STALE','输入数据采纳已撤销');}
             if('sourceAcceptanceId' in a)assertAcceptanceCurrent(this.app.store,pid,text(a.sourceAcceptanceId,'sourceAcceptanceId',100));
         }
@@ -135,13 +135,13 @@ export class DevelopmentService {
             const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);
             if(t.jobId)return this.inspect(actor,pid,t.jobId);
             const s=this.access(actor,pid,t.sessionId,true);this.current(t,pid,true,true);
-            ensure(snapshotDirectory(s.workspace,join(this.app.context.dataDir,'snapshots'),{legacy:t.manifest.inputSnapshot.files.every(f=>f.mode===undefined)}).digest===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备并批准测试');
+            ensure(snapshotDirectory(this.app.store.paths.physical(s.workspace),join(this.app.context.dataDir,'snapshots'),{legacy:t.manifest.inputSnapshot.files.every(f=>f.mode===undefined)}).digest===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备并批准测试');
             this.app.compute.assertEnqueue('development',pid,t.manifest.dockerContext);
             const jobId=randomUUID(),root=join(this.app.context.dataDir,'sandbox-jobs',jobId),outputDir=join(root,'output'),controlDir=join(root,'control');
             this.app.workingGrants.consume(pid,t,jobId);
             mkdirSync(outputDir,{recursive:true,mode:0o777});chmodSync(outputDir,0o777);mkdirSync(controlDir,{recursive:true,mode:0o700});
             this.app.store.onRollback(()=>{rmdirSync(controlDir);rmdirSync(outputDir);rmdirSync(root);});
-            this.app.store.create<SandboxJob>('sandbox-job',pid,{developmentTaskId:t.id,sessionId:t.sessionId,sourceDigest:t.sourceDigest,manifest:t.manifest,manifestDigest:t.manifestDigest,grantId:t.grantId,state:'queued',integrity:'pending',containerName:`pi-development-${jobId}`,outputDir,controlDir,generation:0,leaseUntil:0,startRequested:false,cancelRequested:false,artifactIds:[],recoveryCount:0},jobId);
+            this.app.store.create<SandboxJob>('sandbox-job',pid,{developmentTaskId:t.id,sessionId:t.sessionId,sourceDigest:t.sourceDigest,manifest:t.manifest,manifestDigest:t.manifestDigest,grantId:t.grantId,state:'queued',integrity:'pending',containerName:`pi-development-${jobId}`,outputDir:this.app.store.paths.reference(outputDir),controlDir:this.app.store.paths.reference(controlDir),generation:0,leaseUntil:0,startRequested:false,cancelRequested:false,artifactIds:[],recoveryCount:0},jobId);
             this.app.store.update<DevelopmentTask>('development-task',t.id,t.version,{state:'submitted',jobId});
             this.app.store.event(pid,'development.submitted',{developmentTaskId:t.id,jobId});return this.inspect(actor,pid,jobId);
         });
@@ -152,7 +152,7 @@ export class DevelopmentService {
     }
     logs(actor:Actor,pid:string,id:string,stream:unknown,cursor:unknown=0,identity?:string|null) {
         this.inspect(actor,pid,id);ensure(stream==='stdout'||stream==='stderr','INVALID_INPUT','日志流必须是 stdout 或 stderr',400);
-        const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);return {jobId:id,stream,...readLogPage(j.controlDir,`${stream}.log`,cursor,{terminal:SANDBOX_TERMINAL.includes(j.state),identity})};
+        const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);return {jobId:id,stream,...readLogPage(this.app.store.paths.physical(j.controlDir),`${stream}.log`,cursor,{terminal:SANDBOX_TERMINAL.includes(j.state),identity})};
     }
     cancel(actor:Actor,pid:string,id:string) {
         return this.app.store.transaction(()=>{const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);this.access(actor,pid,j.sessionId);ensure(actor.type==='user'||actor.sessionId===j.sessionId,'TASK_SCOPE_DENIED','助手只能取消自己会话的测试',403);if(!SANDBOX_TERMINAL.includes(j.state)) {this.app.store.update<SandboxJob>('sandbox-job',id,j.version,{cancelRequested:true});this.app.store.event(pid,'development.cancel_requested',{jobId:id});if(j.state==='queued'&&!j.startRequested&&!j.containerId)this.finalize(id,{state:'cancelled',exitCode:null,error:'Cancelled before execution',incomplete:true});}return this.inspect(actor,pid,id);});
@@ -165,16 +165,16 @@ export class DevelopmentService {
             ensure(SANDBOX_TERMINAL.includes(result.state),'INVALID_INPUT','只允许归档已确认结束的任务');
             let integrity:SandboxJob['integrity']='complete',state=result.state;const errors:string[]=[],artifactIds:string[]=[],extra=j.manifest.scopeTaskId?{taskId:j.manifest.scopeTaskId}:{};
             const archive=(root:string,path:string,limit:number,media='application/octet-stream',emptyIfAbsent=false,title=path)=>{try{const bytes=emptyIfAbsent&&!existsSync(safePath(root,path))?Buffer.alloc(0):readStableFile(root,path,Math.min(limit,32*MiB)),a=this.app.evidence.put(pid,title,bytes,media,`development:${id}`,extra);artifactIds.push(a.id);return a;}catch {integrity='incomplete';errors.push(`archive failed: ${title}`);return undefined;}};
-            const stdout=archive(j.controlDir,'stdout.log',j.manifest.resources.logBytes,'text/plain',!j.startRequested),stderr=archive(j.controlDir,'stderr.log',j.manifest.resources.logBytes,'text/plain',!j.startRequested);
-            if(existsSync(join(j.controlDir,'diagnostic.log')))archive(j.controlDir,'diagnostic.log',j.manifest.resources.logBytes,'text/plain');
+            const stdout=archive(this.app.store.paths.physical(j.controlDir),'stdout.log',j.manifest.resources.logBytes,'text/plain',!j.startRequested),stderr=archive(this.app.store.paths.physical(j.controlDir),'stderr.log',j.manifest.resources.logBytes,'text/plain',!j.startRequested);
+            if(existsSync(join(this.app.store.paths.physical(j.controlDir),'diagnostic.log')))archive(this.app.store.paths.physical(j.controlDir),'diagnostic.log',j.manifest.resources.logBytes,'text/plain');
             let size=0,count=0;const collected=new Set<string>();
             const collect=(relative='')=>{
-                for(const entry of readdirSync(safePath(j.outputDir,relative,true),{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))) {
+                for(const entry of readdirSync(safePath(this.app.store.paths.physical(j.outputDir),relative,true),{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))) {
                     ensure(++count<=5000,'OUTPUT_LIMIT','输出文件数量超过上限');
                     const path=relative?`${relative}/${entry.name}`:entry.name;
                     ensure(!entry.isSymbolicLink()&&(entry.isFile()||entry.isDirectory()),'OUTPUT_UNSAFE','输出只能包含普通文件和目录');
                     if(entry.isDirectory())collect(path);
-                    else {const a=archive(j.outputDir,path,j.manifest.resources.outputBytes-size,'application/octet-stream',false,`output/${path}`);if(a){size+=a.size;collected.add(path);}}
+                    else {const a=archive(this.app.store.paths.physical(j.outputDir),path,j.manifest.resources.outputBytes-size,'application/octet-stream',false,`output/${path}`);if(a){size+=a.size;collected.add(path);}}
                 }
             };
             try{collect();}catch{integrity='incomplete';errors.push('archive failed: unsafe or excessive output');}
@@ -195,7 +195,7 @@ export class DevelopmentService {
         this.inspect(actor,pid,id);const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);
         ensure(j.state==='succeeded'&&j.integrity==='complete'&&j.exitCode===0,'DEVELOPMENT_TEST_FAILED','需要成功且完整的开发测试');
         ensure(j.sourceDigest===candidateDigest,'DEVELOPMENT_SOURCE_STALE','测试结果不属于候选源码');this.current(j,pid,false,false);
-        for(const id of j.artifactIds){const a=this.app.store.get<Artifact>('artifact',id,pid),bytes=readStableFile(dirname(a.path),basename(a.path),32*MiB);ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','测试归档产物已改变');}
+        for(const id of j.artifactIds){const a=this.app.store.get<Artifact>('artifact',id,pid),bytes=readStableFile(dirname(this.app.store.paths.physical(a.path)),basename(this.app.store.paths.physical(a.path)),32*MiB);ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','测试归档产物已改变');}
         return this.inspect(actor,pid,id);
     }
 }

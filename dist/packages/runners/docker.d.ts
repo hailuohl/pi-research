@@ -1,4 +1,5 @@
 import { type Container, type DockerJob } from '../execution/docker.js';
+import type { DataPaths } from '../storage/data-paths.js';
 import type { DockerRun, RunnerAdapter, RunnerCapabilities, RunnerLogSink, RunnerProcess } from './adapter.js';
 export declare function formalDockerJob(run: DockerRun): DockerJob;
 export declare class DockerAdapter implements RunnerAdapter {
@@ -8,7 +9,7 @@ export declare class DockerAdapter implements RunnerAdapter {
     readonly capabilities: RunnerCapabilities;
     readonly job: DockerJob;
     imageId?: string;
-    constructor(run: DockerRun, fence: () => void, verifyTarget?: (() => Promise<void>) | undefined);
+    constructor(run: DockerRun, fence: () => void, verifyTarget?: (() => Promise<void>) | undefined, paths?: DataPaths);
     private guarded;
     preflight(): Promise<void>;
     stage(): Promise<void>;

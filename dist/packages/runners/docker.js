@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { chmodSync, mkdirSync, lstatSync, readdirSync } from 'node:fs';
-import { createArgs, docker, dockerEnv, inspect, preflight, retireUncertainStart, stageInputs } from '../execution/docker.js';
+import { createArgs, physicalDockerJob, docker, dockerEnv, inspect, preflight, retireUncertainStart, stageInputs } from '../execution/docker.js';
 import { safePath } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
 export function formalDockerJob(run) {
@@ -18,11 +18,12 @@ export class DockerAdapter {
     capabilities = { backend: 'docker', isolated: true, recoverable: true };
     job;
     imageId;
-    constructor(run, fence, verifyTarget) {
+    constructor(run, fence, verifyTarget, paths) {
         this.run = run;
         this.fence = fence;
         this.verifyTarget = verifyTarget;
-        this.job = formalDockerJob(run);
+        const job = formalDockerJob(run);
+        this.job = paths ? physicalDockerJob(job, paths) : job;
         this.imageId = run.execution.imageId;
     }
     async guarded(fn) { await this.verifyTarget?.(); this.fence(); const result = await fn(); await this.verifyTarget?.(); this.fence(); return result; }

@@ -3,7 +3,7 @@ import { digest } from '../storage/store.js';
 import { readFileSync } from 'node:fs';
 /** Verify the entire provenance chain; a matching quote alone cannot establish a PDF page. */
 export function verifyDocumentLink(c, pid, link, artifactId) {
-    const read = (id, hash) => { const a = c.store.get('artifact', id, pid), bytes = readFileSync(a.path); ensure(a.digest === hash && digest(bytes) === hash && a.size === bytes.length, 'EVIDENCE_INVALID', '文档产物内容或关联已失效'); return bytes; };
+    const read = (id, hash) => { const a = c.store.get('artifact', id, pid), bytes = readFileSync(c.store.paths.physical(a.path)); ensure(a.digest === hash && digest(bytes) === hash && a.size === bytes.length, 'EVIDENCE_INVALID', '文档产物内容或关联已失效'); return bytes; };
     const d = c.store.get('document-version', link.documentVersionId, pid);
     ensure(d.original.digest === link.rawDigest && d.contentKind === 'original-pdf', 'EVIDENCE_INVALID', '证据必须绑定该原始 PDF');
     read(d.original.artifactId, link.rawDigest);

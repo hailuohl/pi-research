@@ -22,11 +22,11 @@ export function assertDevelopmentReviewTarget(store, pid, r) {
         const source = store.get('source-revision', r.baseSourceRevisionId, pid);
         ensure(source.sourceDigest === source.snapshot.digest && digest(source.snapshot.files) === source.sourceDigest, 'SNAPSHOT_CORRUPTED', '基础源码摘要已改变');
         assertExperimentSourceCurrent(store, store.get('experiment', source.experimentId, pid));
-        verifySnapshot(source.snapshot.path, source.snapshot.files);
+        verifySnapshot(store.paths.physical(source.snapshot.path), source.snapshot.files);
     }
-    verifySnapshot(job.manifest.inputSnapshot.path, job.manifest.inputSnapshot.files);
+    verifySnapshot(store.paths.physical(job.manifest.inputSnapshot.path), job.manifest.inputSnapshot.files);
     for (const a of job.manifest.dataArtifacts) {
-        const actual = store.get('artifact', a.id, pid), bytes = readStableFile(dirname(actual.path), basename(actual.path), 32 * 1024 * 1024);
+        const actual = store.get('artifact', a.id, pid), bytes = readStableFile(dirname(store.paths.physical(actual.path)), basename(store.paths.physical(actual.path)), 32 * 1024 * 1024);
         assertRunGrantArtifact(store, pid, actual);
         assertDiscoveryArtifact(store, pid, actual);
         ensure(actual.path === a.path && actual.digest === a.digest && actual.size === a.size && bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '测试输入数据已改变');
@@ -34,11 +34,11 @@ export function assertDevelopmentReviewTarget(store, pid, r) {
             assertAcceptanceCurrent(store, pid, a.sourceAcceptanceId);
     }
     for (const id of job.artifactIds) {
-        const a = store.get('artifact', id, pid), bytes = readStableFile(dirname(a.path), basename(a.path), 32 * 1024 * 1024);
+        const a = store.get('artifact', id, pid), bytes = readStableFile(dirname(store.paths.physical(a.path)), basename(store.paths.physical(a.path)), 32 * 1024 * 1024);
         ensure(bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '测试归档已改变');
     }
     for (const id of r.requiredEvidenceIds) {
-        const e = store.get('evidence', id, pid), a = store.get('artifact', e.artifactId, pid), bytes = readStableFile(dirname(a.path), basename(a.path), 2 * 1024 * 1024);
+        const e = store.get('evidence', id, pid), a = store.get('artifact', e.artifactId, pid), bytes = readStableFile(dirname(store.paths.physical(a.path)), basename(store.paths.physical(a.path)), 2 * 1024 * 1024);
         ensure(digest(bytes) === a.digest && a.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '审查输入证据已改变');
     }
     const task = store.get('task', r.taskId, pid), team = store.get('team', r.teamId, pid);

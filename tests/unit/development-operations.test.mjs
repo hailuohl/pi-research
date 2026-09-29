@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {setup,USER,approve} from '../support/research.mjs';
+const physical=(app,reference)=>app.store.paths.physical(reference);
 import {startTeam,spec,actor} from '../support/collaboration.mjs';
 import {ToolDispatcher} from '../../dist/packages/research-tools/dispatcher.js';
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/development-schemas.js';
@@ -11,7 +12,7 @@ import {validateSchema} from '../../dist/packages/contracts/operations/schema.js
 const input={command:['python','main.py',''],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`};
 const options=(s,key,sessionId=s.session.id)=>({projectId:s.project.id,sessionId,idempotencyKey:key});
 function check(name,value){validateSchema(DEVELOPMENT_OUTPUT_SCHEMAS[name],value,'output');assert.equal(value.manifest?.inputSnapshot.path,undefined);assert.equal(value.outputDir,undefined);assert.equal(value.controlDir,undefined);return value;}
-function source(s,session=s.session){writeFileSync(join(session.workspace,'main.py'),'assert 2 + 2 == 4\n');}
+function source(s,session=s.session){writeFileSync(join(physical(s.app,session.workspace),'main.py'),'assert 2 + 2 == 4\n');}
 function prepare(s,key='prepare',session=s.session){source(s,session);return check('development_prepare',s.app.operations.execute(USER,'development_prepare',input,options(s,key,session.id)));}
 function submit(s,t,key='submit'){approve(s.app,t.grantId);return check('development_submit',s.app.operations.execute(USER,'development_submit',{developmentTaskId:t.id},options(s,key)));}
 
@@ -59,7 +60,7 @@ test('development_inspect task and job alternatives share Registry and ToolDispa
 test('development_logs and cancel outputs validate for queued, partial-page and terminal service records',async()=>{
  const s=setup();try{const t=prepare(s),j=submit(s,t),row=s.app.store.get('sandbox-job',j.id);
   let empty=check('development_logs',s.app.operations.execute(USER,'development_logs',{jobId:j.id},options(s,'logs-empty')));assert.equal(empty.content,'');assert.equal(empty.complete,false);
-  writeFileSync(join(row.controlDir,'stdout.log'),'x'.repeat(70000));writeFileSync(join(row.controlDir,'stderr.log'),'fixture stderr');
+  const controlDir=physical(s.app,row.controlDir);writeFileSync(join(controlDir,'stdout.log'),'x'.repeat(70000));writeFileSync(join(controlDir,'stderr.log'),'fixture stderr');
   const first=check('development_logs',s.app.operations.execute(USER,'development_logs',{jobId:j.id,stream:'stdout'},options(s,'logs-first')));assert.equal(first.cursor,65536);assert.equal(first.complete,false);
   const cancelled=check('development_cancel',s.app.operations.execute(USER,'development_cancel',{jobId:j.id},options(s,'cancel')));assert.equal(cancelled.cancelRequested,true);
   assert.deepEqual(s.app.operations.execute(USER,'development_cancel',{jobId:j.id},options(s,'cancel')),cancelled);

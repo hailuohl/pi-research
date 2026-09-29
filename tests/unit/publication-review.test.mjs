@@ -51,7 +51,7 @@ test('accept, reject and disputed remain distinct current review records; manual
 test('review validity binds build, artifacts, required evidence, approval, exact context, attempt and archived result',()=>{
  const mutations={
   build:(s,r,c)=>change(s,'publication-build-result',s.result.id,{passes:999}),
-  source:(s,r,c)=>{const path=s.app.store.get('artifact',s.revision.files[0].artifactId).path;chmodSync(path,0o600);writeFileSync(path,'altered source');},
+  source:(s,r,c)=>{const path=s.app.store.paths.physical(s.app.store.get('artifact',s.revision.files[0].artifactId).path);chmodSync(path,0o600);writeFileSync(path,'altered source');},
   evidence:(s,r,c)=>change(s,'evidence',r.requiredEvidenceIds[0],{description:'altered meaning'}),
   buildApproval:(s,r,c)=>s.app.approvals.stale(s.job.id),
   reviewApproval:(s,r,c)=>s.app.approvals.stale(r.teamId),
@@ -92,7 +92,7 @@ test('review team does not inherit an unrelated root source or expand fixed run 
   s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});assert.ok(s.app.store.get('session',s.session.id).sourceRevisionId);
   const intent=s.app.runs.prepare(USER,s.baseline.id);approve(s.app,intent.approvalId);const run=s.app.runs.submit(USER,intent.id);fixtureFinish(s,run);
   const eid=s.app.store.get('run',run.id).evidenceIds[0],r=prepare(s,{inputEvidenceIds:[eid]}),c=claim(s,r),who=actor(c);
-  assert.equal(s.app.store.get('team',r.teamId).sourceRevisionId,undefined);assert.equal(s.app.store.get('session',c.attempt.sessionId).sourceRevisionId,undefined);assert.equal(c.context.source,undefined);assert.deepEqual(readdirSync(c.attempt.workspace),['task-context.json']);
+  assert.equal(s.app.store.get('team',r.teamId).sourceRevisionId,undefined);assert.equal(s.app.store.get('session',c.attempt.sessionId).sourceRevisionId,undefined);assert.equal(c.context.source,undefined);assert.deepEqual(readdirSync(s.app.store.paths.physical(c.attempt.workspace)),['task-context.json']);
   assert.doesNotThrow(()=>s.app.teams.assertResource(who,'evidence',eid));assert.doesNotThrow(()=>s.app.teams.assertResource(who,'artifact',s.app.store.get('evidence',eid).artifactId));assert.throws(()=>s.app.teams.assertResource(who,'run',run.id),{code:'TASK_SCOPE_DENIED'});
   assert.throws(()=>s.app.operations.execute(who,'run_source_list',{runId:run.id},{projectId:s.project.id,idempotencyKey:'read-run-list'}),{code:'TASK_SCOPE_DENIED'});
   assert.throws(()=>s.app.operations.execute(who,'run_source_read',{runId:run.id,path:run.manifest.sourceFiles[0].path},{projectId:s.project.id,idempotencyKey:'read-run-source'}),{code:'TASK_SCOPE_DENIED'});
@@ -106,7 +106,7 @@ test('revoked document parse approval invalidates selected page evidence before 
   const profile=parserProfile(process.cwd()),imageId='sha256:'+'a'.repeat(64);s.app.store.create('document-parser-settings',null,{...profile,dockerContext:'default',imageDigest:imageId,imageId},'global');
   const prepared=s.app.documentParsing.prepare(USER,pid,{documentVersionId:document.id});approve(s.app,prepared.approvalId);change(s,'document-parse-job',prepared.id,{imageId});const job=s.app.store.get('document-parse-job',prepared.id),text='UNIT quoted scientific evidence';
   const page={pageNumber:1,pageLabel:'1',width:400,height:200,imageWidth:1,imageHeight:1,textFile:'page-0001.txt',textDigest:digest(Buffer.from(text)),textBytes:Buffer.byteLength(text),imageFile:'page-0001.png',imageDigest:digest(publicationPng),imageBytes:publicationPng.length,paragraphs:[{index:1,start:0,end:text.length}],textStatus:'text-extracted'};
-  writeFileSync(join(job.outputDir,page.textFile),text);writeFileSync(join(job.outputDir,page.imageFile),publicationPng);writeFileSync(join(job.outputDir,'manifest.json'),JSON.stringify({formatVersion:1,profileId:profile.profileId,rawDigest:document.original.digest,pageCount:1,quality:{readingOrder:'unverified',paragraphs:'heuristic',tables:'unknown',figures:'unknown',ocr:false,score:null},pages:[page]}));
+  const outputDir=s.app.store.paths.physical(job.outputDir);writeFileSync(join(outputDir,page.textFile),text);writeFileSync(join(outputDir,page.imageFile),publicationPng);writeFileSync(join(outputDir,'manifest.json'),JSON.stringify({formatVersion:1,profileId:profile.profileId,rawDigest:document.original.digest,pageCount:1,quality:{readingOrder:'unverified',paragraphs:'heuristic',tables:'unknown',figures:'unknown',ocr:false,score:null},pages:[page]}));
   const done=s.app.documentParsing.finalize(job.id,{state:'succeeded',exitCode:0});assert.equal(done.integrity,'complete');const evidence=s.app.evidence.registerDocument(USER,pid,{documentVersionId:document.id,parseResultId:done.resultId,pageNumber:1,start:0,end:4,description:'UNIT page quote'});
   const r=prepare(s,{inputEvidenceIds:[evidence.id]}),c=claim(s,r);assert.equal(s.app.publicationReviews.inspect(USER,pid,r.id).validity,'current');s.app.approvals.stale(job.id);
   assert.equal(s.app.publicationReviews.inspect(USER,pid,r.id).validity,'stale');assert.throws(()=>submit(s,r,c),{code:'APPROVAL_STALE'});assert.throws(()=>s.app.publicationReviews.snapshot(USER,pid,r.id),{code:'APPROVAL_STALE'});

@@ -39,7 +39,7 @@ export class ResearchPlanService {
         const i=this.app.store.get<RunIntent>('run-intent',b.intentId,pid);assertRunGrantIntent(this.app.store,i);ensure(i.approvalId===b.approvalId&&i.manifestDigest===b.manifestDigest&&i.manifest.snapshotDigest===b.sourceDigest&&digest(i.manifest)===b.manifestDigest,'PLAN_RUN_STALE','固定运行清单或原批准身份改变');
         const grant=this.app.store.get<Approval>('approval',b.approvalId,pid);ensure(grant.subjectKind==='run-intent'&&grant.subjectId===i.id&&grant.digest===b.manifestDigest&&grant.scope==='run.submit'&&!['stale','rejected'].includes(grant.status),'APPROVAL_STALE','固定运行审批失效');
         if(runId){const r=this.app.store.get<Run>('run',runId,pid);assertRunGrantRun(this.app.store,r);ensure(i.status==='submitted'&&i.runId===r.id&&r.intentId===i.id&&r.manifestDigest===b.manifestDigest,'PLAN_RUN_STALE','固定Run与批准清单不一致');this.app.approvals.assert(b.approvalId,pid,i.id,b.manifestDigest,'run.submit');}
-        verifySnapshot(i.manifest.snapshotPath,i.manifest.sourceFiles);
+        verifySnapshot(this.app.store.paths.physical(i.manifest.snapshotPath),i.manifest.sourceFiles);
     }
     private sourceForRun(pid:string,run:Row<Run>) {
         const id=run.manifest.sourceRevisionId??digest({projectId:pid,experimentId:run.experimentId,revision:run.manifest.experimentRevision});

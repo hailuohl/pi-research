@@ -8,10 +8,11 @@ import {verifySnapshot} from '../workspace/files.js';
 import type {SourceSnapshot,Row,Team,Task} from '../domain/types.js';
 import {teamWakeupSource,wakeupId} from '../scheduler/wakeups.js';
 import {GitCommand} from '../workspace/git-command.js';
+import {DataPaths,readDataLocation,setDataLocation} from './data-paths.js';
 
 type Entry={path:string;type:'directory';mode:number}|{path:string;type:'file';mode:number;size:number;digest:string};
-interface Manifest {format:'pi-research-backup-v1';sourceRoot:string;platform:string;createdAt:string;schema:number[];entries:Entry[];excluded:string[];manifestDigest:string;}
-export interface BackupSummary {backupDir:string;sourceRoot:string;files:number;bytes:number;manifestDigest:string;schema:number[];excluded:string[];restoredTo?:string;}
+interface Manifest {format:'pi-research-backup-v1'|'pi-research-backup-v2';sourceRoot:string;legacyRoots?:string[];platform:string;createdAt:string;schema:number[];entries:Entry[];excluded:string[];manifestDigest:string;}
+export interface BackupSummary {backupDir:string;sourceRoot:string;files:number;bytes:number;manifestDigest:string;schema:number[];excluded:string[];restoredTo?:string;relocated?:boolean;}
 const ROOTS=new Set(['projects','experiments','workspaces','sessions','snapshots','artifacts','skill-blobs','jobs','sandbox-jobs','document-jobs','publication-jobs','git-worktrees','git-operations','exports','integration-staging','state.db.text-writes']);
 const EXCLUDED=new Set(['access.token','models.json','models-store.json','state.db-wal','state.db-shm','state.db-journal']);
 const TERMINAL=new Set(['succeeded','failed','cancelled','timed_out']);
@@ -64,7 +65,7 @@ function managedTree(root:string,destination?:string) {
 function table(db:DatabaseSync,name:string) {return !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name);}
 function stateCheck(db:DatabaseSync) {
  ensure(table(db,'records')&&table(db,'schema_migrations'),'BACKUP_DATABASE_INVALID','缺少研究数据库结构',400);
- const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=8),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
+ const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=9),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
  ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check==='ok','BACKUP_DATABASE_INVALID','数据库完整性检查失败',409);
  if(table(db,'text_write_receipts'))ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(),'BACKUP_RECOVERY_PENDING','文本写入回执尚未清理',409);
  if(table(db,'compute_queue'))ensure(!db.prepare("SELECT 1 FROM compute_queue WHERE held<>0 OR phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(),'BACKUP_BUSY','还有计算等待、运行或未知结果',409);
@@ -93,10 +94,12 @@ function stateCheck(db:DatabaseSync) {
  }
  return {schema,rows};
 }
-async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entries:Entry[]) {
+async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entries:Entry[],legacyRoots:string[]=[]) {
  const {rows,schema}=stateCheck(db),index=new Map(entries.map(e=>[e.path,e])),verified=new Set<string>(),git=new Map<string,string[]>();
+ const location=readDataLocation(db);ensure(!location||location.activeRoot===sourceRoot&&digest(location.legacyRoots)===digest(legacyRoots),'BACKUP_LOCATION_MISMATCH','备份的数据位置与数据库不一致',409);
+ const logical=new DataPaths(sourceRoot,legacyRoots);
  function ref(value:unknown,type:'file'|'directory',expectedPrefix?:string) {
-  ensure(typeof value==='string','BACKUP_REFERENCE_INVALID','必需引用缺少路径',409);const name=inside(sourceRoot,value),entry=index.get(name);
+  ensure(typeof value==='string','BACKUP_REFERENCE_INVALID','必需引用缺少路径',409);let name:string;try{name=logical.key(value);}catch(e){ensure((e as {code?:string}).code!=='STORAGE_REFERENCE_OUTSIDE','BACKUP_EXTERNAL_REFERENCE','必需文件引用不在数据集的已登记位置',409);throw e;}const entry=index.get(name);
   ensure(entry?.type===type&&(!expectedPrefix||name.startsWith(expectedPrefix)),'BACKUP_REFERENCE_MISSING','备份缺少必需引用：'+name,409);return {name,entry,path:join(dataRoot,name)};
  }
  function blob(value:Record<string,unknown>) {const found=ref(value.path,'file');if(value.digest!==undefined)ensure(found.entry.type==='file'&&found.entry.digest===value.digest&&found.entry.size===value.size,'BACKUP_CONTENT_MISMATCH','固定产物内容不符：'+found.name,409);}
@@ -121,10 +124,10 @@ async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entr
    const commits=git.get(pid)??[];for(const key of ['gitCommit','head','expectedHead'])if(typeof r[key]==='string')commits.push(r[key]);git.set(pid,commits);
   }
   if(kind==='git-workspace') {
-   ref(r.path,'directory','git-worktrees/');const original=String(r.path),repository=join(sourceRoot,'projects',String(r.projectId),'git','repository.git');
+   ref(r.path,'directory','git-worktrees/');const original=join(sourceRoot,logical.key(String(r.path))),repository=join(sourceRoot,'projects',String(r.projectId),'git','repository.git');
    const pointer=(originalFile:string)=>{const item=ref(originalFile,'file');ensure(item.entry.type==='file'&&item.entry.size<=16384,'BACKUP_GIT_INVALID','Git 指向文件无效',409);return readFileSync(item.path,'utf8').trim();};
    const line=pointer(join(original,'.git'));ensure(line.startsWith('gitdir: '),'BACKUP_GIT_INVALID','Git 工作副本缺少受管指向',409);
-   const admin=resolve(original,line.slice(8));ref(admin,'directory',inside(sourceRoot,repository)+'/worktrees/');
+   const admin=resolve(original,line.slice(8));inside(sourceRoot,admin);ref(admin,'directory',inside(sourceRoot,repository)+'/worktrees/');
    ensure(resolve(admin,pointer(join(admin,'commondir')))===repository&&resolve(admin,pointer(join(admin,'gitdir')))===join(original,'.git'),'BACKUP_GIT_INVALID','Git 工作副本指向不属于固定项目',409);
   }
   if(kind==='git-operation')for(const name of ['workspace','previousWorkspace'])if(r[name])ref(r[name],'directory');
@@ -139,7 +142,8 @@ async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entr
 }
 function manifestAt(backupDir:string):Manifest {
  const file=join(backupDir,'manifest.json'),info=present(file);ensure(info?.isFile()&&!info.isSymbolicLink()&&info.size<=32*1024*1024,'BACKUP_INVALID','缺少或无效的备份清单',400);
- const m:unknown=JSON.parse(readFileSync(file,'utf8'));ensure(plain(m)&&m.format==='pi-research-backup-v1'&&typeof m.sourceRoot==='string'&&isAbsolute(m.sourceRoot)&&resolve(m.sourceRoot)===m.sourceRoot&&typeof m.platform==='string'&&Array.isArray(m.schema)&&Array.isArray(m.entries)&&m.entries.length<=100000&&Array.isArray(m.excluded)&&m.excluded.every(x=>typeof x==='string')&&typeof m.manifestDigest==='string','BACKUP_INVALID','备份格式无效',400);
+ const m:unknown=JSON.parse(readFileSync(file,'utf8'));ensure(plain(m)&&['pi-research-backup-v1','pi-research-backup-v2'].includes(String(m.format))&&typeof m.sourceRoot==='string'&&isAbsolute(m.sourceRoot)&&resolve(m.sourceRoot)===m.sourceRoot&&typeof m.platform==='string'&&Array.isArray(m.schema)&&Array.isArray(m.entries)&&m.entries.length<=100000&&Array.isArray(m.excluded)&&m.excluded.every(x=>typeof x==='string')&&typeof m.manifestDigest==='string','BACKUP_INVALID','备份格式无效',400);
+ ensure(m.format==='pi-research-backup-v1'?m.legacyRoots===undefined:Array.isArray(m.legacyRoots),'BACKUP_INVALID','备份位置清单无效',400);new DataPaths(m.sourceRoot,(m.legacyRoots??[]) as string[]);
  const {manifestDigest,...body}=m;ensure(digest(body)===manifestDigest,'BACKUP_CONTENT_MISMATCH','备份清单摘要不符',409);
  const names=new Set<string>();let roots=0;
  for(const raw of m.entries){ensure(plain(raw)&&typeof raw.path==='string'&&(raw.type==='file'||raw.type==='directory')&&Number.isInteger(raw.mode)&&Number(raw.mode)>=0&&Number(raw.mode)<=0o777,'BACKUP_INVALID','备份条目无效',400);const name=relativeName(raw.path,true),fold=name.toLowerCase(),parts=name.split('/');ensure(!names.has(fold),'BACKUP_INVALID','备份有重复或大小写冲突条目',400);names.add(fold);ensure(name===''||name==='state.db'||ROOTS.has(parts[0]),'BACKUP_INVALID','备份包含未知管理树',400);ensure(!EXCLUDED.has(name)&&!(parts[0]==='sessions'&&parts[2]==='agent')&&!/\.text-write-(pending|stage-|backup-)/.test(name)&&!name.startsWith('state.db.text-writes/'),'BACKUP_INVALID','备份包含认证文件或未解决恢复',400);if(name===''){ensure(raw.type==='directory','BACKUP_INVALID','数据根无效',400);roots++;}if(raw.type==='file')ensure(name!==''&&Number.isSafeInteger(raw.size)&&Number(raw.size)>=0&&typeof raw.digest==='string'&&/^[a-f0-9]{64}$/.test(raw.digest),'BACKUP_INVALID','文件摘要或大小无效',400);}
@@ -151,7 +155,7 @@ async function verifyTree(dataRoot:string,m:Manifest) {
  const expected=new Map(m.entries.map(x=>[x.path,x])),seen=new Set<string>();
  function walk(path:string){const entry=expected.get(path),actual=join(dataRoot,path),info=lstatSync(actual);ensure(entry&&!info.isSymbolicLink()&&(entry.type==='directory'?info.isDirectory():info.isFile()),'BACKUP_CONTENT_MISMATCH','备份条目缺失、额外或类型不符：'+path,409);seen.add(path);if(entry.type==='directory'){for(const child of readdirSync(actual))walk(path?path+'/'+child:child);}else {const bytes=fileBytes(actual);ensure(bytes.size===entry.size&&bytes.digest===entry.digest,'BACKUP_CONTENT_MISMATCH','备份内容摘要不符：'+path,409);}}
  walk('');ensure(seen.size===expected.size,'BACKUP_CONTENT_MISMATCH','备份有遗漏文件',409);
- const db=new DatabaseSync(join(dataRoot,'state.db'),{readOnly:true});try{const schema=await references(db,m.sourceRoot,dataRoot,m.entries);ensure(digest(schema)===digest(m.schema),'BACKUP_SCHEMA_UNSUPPORTED','数据库版本与清单不符',409);}finally{db.close();}
+ const db=new DatabaseSync(join(dataRoot,'state.db'),{readOnly:true});try{const schema=await references(db,m.sourceRoot,dataRoot,m.entries,m.legacyRoots??[]);ensure(digest(schema)===digest(m.schema),'BACKUP_SCHEMA_UNSUPPORTED','数据库版本与清单不符',409);}finally{db.close();}
 }
 export async function verifyDataBackup(path:string):Promise<BackupSummary> {
  const root=noLinks(path);ensure(present(root)?.isDirectory(),'BACKUP_INVALID','备份目录不存在',404);
@@ -172,23 +176,53 @@ export async function createDataBackup(source:string,path:string,options:{offlin
   const copy=new DatabaseSync(join(stage,'data','state.db'));try{copy.exec('PRAGMA journal_mode=DELETE');}finally{copy.close();}chmodSync(join(stage,'data','state.db'),0o600);
   const dbEntry:Entry={path:'state.db',type:'file',mode:lstatSync(join(root,'state.db')).mode&0o777,...fileBytes(join(stage,'data','state.db'))};
   const entries=[...tree.entries,dbEntry].sort((a,b)=>a.path.localeCompare(b.path));
-  const schema=await references(db,root,join(stage,'data'),entries);
+  const location=readDataLocation(db),legacyRoots=location?.legacyRoots??[];ensure(!location||location.activeRoot===root,'BACKUP_LOCATION_MISMATCH','数据目录需要受控迁移，不能直接复制后备份',409);
+  const schema=await references(db,root,join(stage,'data'),entries,legacyRoots);
   ensure(digest(managedTree(root))===digest(tree),'BACKUP_SOURCE_CHANGED','复制期间管理文件发生变化，备份未发布',409);
-  const body={format:'pi-research-backup-v1' as const,sourceRoot:root,platform:process.platform,createdAt:new Date().toISOString(),schema,entries,excluded:tree.excluded},m={...body,manifestDigest:digest(body)};
+  const body={format:'pi-research-backup-v2' as const,sourceRoot:root,legacyRoots,platform:process.platform,createdAt:new Date().toISOString(),schema,entries,excluded:tree.excluded},m={...body,manifestDigest:digest(body)};
   writeFileSync(join(stage,'manifest.json'),JSON.stringify(m,null,2)+'\n',{mode:0o600,flag:'wx'});await verifyDataBackup(stage);
   destination(target);renameSync(stage,target);return summary(target,m);
  }finally{if(db){if(db.isTransaction)db.exec('ROLLBACK');db.close();}removeOwnStage(stage,owner);}
 }
-export async function restoreDataBackup(path:string,targetPath:string,options:{offline:boolean}):Promise<BackupSummary> {
+function relocateCopy(stage:string,target:string,m:Manifest) {
+ const dbFile=join(stage,'state.db'),dbMode=lstatSync(dbFile).mode&0o777;chmodSync(dbFile,0o600);
+ const db=new DatabaseSync(dbFile),changed=new Set<string>(['state.db']),sourcePaths=new DataPaths(m.sourceRoot,m.legacyRoots??[]);
+ try {
+  const rows=db.prepare("SELECT data FROM records WHERE kind='git-workspace'").all().map(r=>JSON.parse(String(r.data)) as {path:string;projectId:string});
+  const replace=(name:string,value:string)=>{const file=join(stage,name),mode=lstatSync(file).mode&0o777;chmodSync(file,0o600);writeFileSync(file,value,{flag:'w'});chmodSync(file,mode);changed.add(name);};
+  for(const row of rows) {
+   const workspace=sourcePaths.key(row.path),gitFile=join(stage,workspace,'.git'),line=readFileSync(gitFile,'utf8').trim();ensure(line.startsWith('gitdir: '),'BACKUP_GIT_INVALID','工作副本指向无效',409);
+   const admin=inside(m.sourceRoot,resolve(join(m.sourceRoot,workspace),line.slice(8))),repository=`projects/${row.projectId}/git/repository.git`;
+   ensure(admin.startsWith(repository+'/worktrees/'),'BACKUP_GIT_INVALID','工作副本指向其他项目',409);
+   const relativePointer=(from:string,to:string)=>relative(join(stage,from),join(stage,to)).split(sep).join('/');
+   replace(workspace+'/.git','gitdir: '+relativePointer(workspace,admin)+'\n');
+   replace(admin+'/gitdir',relativePointer(admin,workspace+'/.git')+'\n');
+   replace(admin+'/commondir',relativePointer(admin,repository)+'\n');
+  }
+  const roots=[...(m.legacyRoots??[]),m.sourceRoot].filter(r=>r!==target);
+  setDataLocation(db,target,roots);db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(9,datetime('now'))");
+  const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(r=>Number(r.version));
+  return {roots,schema,changed};
+ }finally{db.close();chmodSync(dbFile,dbMode);}
+}
+export async function restoreDataBackup(path:string,targetPath:string,options:{offline:boolean;relocate?:boolean}):Promise<BackupSummary> {
  ensure(options.offline,'BACKUP_OFFLINE_REQUIRED','恢复前必须停止控制器和其他CLI，并显式使用 --offline',409);
- const result=await verifyDataBackup(path),target=destination(targetPath),root=noLinks(path),m=manifestAt(root);disjoint(root,target);
- ensure(target===m.sourceRoot,'BACKUP_RELOCATION_UNSUPPORTED','本批只恢复到原绝对数据目录；异址迁移需保留冻结路径身份',409);
+ const result=await verifyDataBackup(path),target=destination(targetPath),root=noLinks(path),m=manifestAt(root);disjoint(root,target);ensure(result.manifestDigest===m.manifestDigest,'BACKUP_CONTENT_MISMATCH','校验期间备份清单已改变',409);
+ const relocating=target!==m.sourceRoot;
+ ensure(!relocating||options.relocate,'BACKUP_RELOCATION_UNSUPPORTED','异址恢复需要显式 --relocate；原副本必须继续离线',409);
+ const targetRoots=[...(m.legacyRoots??[]),m.sourceRoot].filter(r=>r!==target);new DataPaths(target,targetRoots);
  const stage=mkdtempSync(join(dirname(target),'.pi-restore-')),owner=lstatSync(stage);chmodSync(stage,0o700);
  try {
   for(const entry of m.entries.filter(x=>x.type==='directory').sort((a,b)=>a.path.length-b.path.length))if(entry.path)mkdirSync(join(stage,entry.path),{mode:0o700});
   for(const entry of m.entries)if(entry.type==='file'){const copied=fileBytes(join(root,'data',entry.path),join(stage,entry.path));ensure(copied.size===entry.size&&copied.digest===entry.digest,'BACKUP_CONTENT_MISMATCH','恢复期间备份发生变化',409);chmodSync(join(stage,entry.path),entry.mode);}
   await verifyTree(stage,m);
+  if(relocating) {
+   const {roots,schema,changed}=relocateCopy(stage,target,m);
+   const entries=m.entries.map(entry=>entry.type==='file'&&changed.has(entry.path)?{...entry,...fileBytes(join(stage,entry.path))}:entry);
+   const relocated:Manifest={...m,format:'pi-research-backup-v2',sourceRoot:target,legacyRoots:roots,schema,entries};
+   await verifyTree(stage,relocated);
+  }
   for(const entry of m.entries.filter(x=>x.type==='directory').sort((a,b)=>b.path.length-a.path.length))chmodSync(join(stage,entry.path),entry.mode);
-  destination(target);renameSync(stage,target);return {...result,restoredTo:target};
+  destination(target);renameSync(stage,target);return {...result,restoredTo:target,...(relocating?{relocated:true}:{})};
  }finally{removeOwnStage(stage,owner);}
 }

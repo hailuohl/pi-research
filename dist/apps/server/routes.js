@@ -72,7 +72,7 @@ export function readRoute(app, host, path, url) {
         if (action === 'files') {
             ensure([...url.searchParams.keys()].every(key => key === 'path') && url.searchParams.getAll('path').length <= 1, 'INVALID_INPUT', '当前实验文件接口只接受 path；指定版本请使用 experiment_source_read', 400);
             const path = url.searchParams.get('path');
-            return path ? app.experiments.readFile(USER, id, path) : listFiles(app.experiments.get(USER, id).workspace);
+            return path ? app.experiments.readFile(USER, id, path) : listFiles(app.store.paths.physical(app.experiments.get(USER, id).workspace));
         }
         return app.experiments.get(USER, id);
     }

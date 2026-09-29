@@ -11,12 +11,12 @@ function help() {
                                   离线完整备份：数据库、审批、快照、原生 Pi 数据与 Git 历史
   backup verify --from <备份目录> [--json]
                                   校验现有备份的完整性；不读取、不修改数据目录
-  backup restore --data <原路径> --from <备份目录> --offline [--json]
-                                  只恢复到创建备份时的原始路径；目标已存在时拒绝，不覆盖
+  backup restore --data <目标目录> --from <备份目录> --offline [--relocate] [--json]
+                                  原址恢复；异址迁移须加 --relocate，目标已存在时拒绝
 
 执行前请停止控制器及其他CLI，然后显式提供 --offline。备份保存在本机，不上传数据、不调用模型。
 这是包含私有研究历史的本地备份，不能当作公开成果包。数据目录由 --data 指定；省略时使用
-PI_DATA_DIR 或默认目录。恢复只接受原位置，且目标必须不存在。`);
+PI_DATA_DIR 或默认目录。异址迁移后仅使用新副本，原副本保持离线；目标必须不存在。`);
 }
 
 /** Strict flag parsing: only known flags, one value each; positional text, duplicates and unknown flags are rejected. */
@@ -31,7 +31,7 @@ function parseFlags(tokens: readonly string[], flags: Record<string, 'value' | '
             const value = tokens[++i];
             ensure(value !== undefined && value !== '' && !value.startsWith('--'), 'BACKUP_USAGE', `${usage}；<${token}> 需要一个值`, 400);
             values[token] = value;
-        }
+        } else values[token]='true';
     }
     for (const flag of required)
         ensure(seen.has(flag), 'BACKUP_USAGE', `${usage}；缺少必需参数：<${flag}>`, 400);
@@ -61,9 +61,9 @@ export async function backupCli(args: string[], dataDir: string): Promise<boolea
             return true;
         }
         case 'restore': {
-            const usage = '用法：backup restore --data <原路径> --from <备份目录> --offline [--json]';
-            const values = parseFlags(rest, { '--data': 'value', '--from': 'value', '--offline': 'bool', '--json': 'bool' }, ['--from', '--offline'], usage);
-            print(await restoreDataBackup(values['--from']!, dataDir, { offline: true }));
+            const usage = '用法：backup restore --data <目标目录> --from <备份目录> --offline [--relocate] [--json]';
+            const values = parseFlags(rest, { '--data': 'value', '--from': 'value', '--offline': 'bool', '--relocate':'bool', '--json': 'bool' }, ['--from', '--offline'], usage);
+            print(await restoreDataBackup(values['--from']!, dataDir, { offline: true,relocate:values['--relocate']==='true' }));
             return true;
         }
         default:

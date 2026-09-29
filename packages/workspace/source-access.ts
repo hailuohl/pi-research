@@ -12,6 +12,7 @@ import {digest} from '../storage/store.js';
 import {safePath, snapshotDirectory, verifySnapshot, listFiles, setSourceModes} from './files.js';
 import {queueSourceHistory,queueWorkspaceHistory} from './git-service.js';
 import {readStableFile} from './stable-file.js';
+import type {DataPaths} from '../storage/data-paths.js';
 
 export type SourceSelector = {experimentId: string; revision: number} | {snapshotId: string};
 export const sourceMetadata = (r: Row<SourceRevision>) => ({snapshotId:r.id, experimentId:r.experimentId, revision:r.revision, sourceDigest:r.sourceDigest});
@@ -20,7 +21,7 @@ export function validateSourceRevision(c: AppContext, projectId: string, id: str
     const r=c.store.get<SourceRevision>('source-revision',id,projectId);
     assertExperimentSourceCurrent(c.store,c.store.get<Experiment>('experiment',r.experimentId,projectId));
     ensure(r.sourceDigest===r.snapshot.digest&&digest(r.snapshot.files)===r.sourceDigest,'SNAPSHOT_CORRUPTED','源码清单校验失败');
-    verifySnapshot(r.snapshot.path,r.snapshot.files);
+    verifySnapshot(c.store.paths.physical(r.snapshot.path),r.snapshot.files);
     return r;
 }
 
@@ -30,10 +31,10 @@ export function captureSourceRevision(c: AppContext, e: Row<Experiment>, observe
     const id=digest({projectId:e.projectId,experimentId:e.id,revision:e.revision});
     const existing=c.store.maybe<SourceRevision>('source-revision',id);
     if(existing) return validateSourceRevision(c,e.projectId!,existing.id);
-    const snapshot=listFiles(e.workspace).length?snapshotDirectory(e.workspace,join(c.dataDir,'snapshots')):
+    const workspace=c.store.paths.physical(e.workspace),snapshot=listFiles(workspace).length?snapshotDirectory(workspace,join(c.dataDir,'snapshots')):
         {digest:digest([]),path:join(c.dataDir,'snapshots',digest([])),files:[]};
     mkdirSync(snapshot.path,{recursive:true,mode:0o700});
-    const r=c.store.create<SourceRevision>('source-revision',e.projectId,{experimentId:e.id,revision:e.revision,sourceDigest:snapshot.digest,snapshot,...(observedNow?{captureKind:'observed-now' as const}:{})},id);
+    const r=c.store.create<SourceRevision>('source-revision',e.projectId,{experimentId:e.id,revision:e.revision,sourceDigest:snapshot.digest,snapshot:c.store.paths.referenceSnapshot(snapshot),...(observedNow?{captureKind:'observed-now' as const}:{})},id);
     if(c.store.get<Project>('project',e.projectId!).gitHistoryEnabled){
         const parent=e.revision>1?c.store.maybe<SourceRevision>('source-revision',digest({projectId:e.projectId,experimentId:e.id,revision:e.revision-1})):e.parentId?c.store.list<SourceRevision>('source-revision',e.projectId!).filter(x=>x.experimentId===e.parentId).sort((a,b)=>b.revision-a.revision)[0]:undefined;
         queueSourceHistory(c,r,parent?.id,observedNow);
@@ -42,11 +43,12 @@ export function captureSourceRevision(c: AppContext, e: Row<Experiment>, observe
 }
 
 /** Copy verified bytes, never filesystem links or caller-selected roots. */
-export function copySourceRevision(r: Row<SourceRevision>, workspace: string, copyModes=true) {
+export function copySourceRevision(r: Row<SourceRevision>, workspace: string, copyModes=true, paths?:DataPaths) {
     ensure(readdirSync(workspace).length===0,'WORKSPACE_NOT_EMPTY','工作区非空，不能覆盖本地修改');
-    verifySnapshot(r.snapshot.path,r.snapshot.files);
+    const source=paths?paths.physical(r.snapshot.path):r.snapshot.path;
+    verifySnapshot(source,r.snapshot.files);
     for(const f of r.snapshot.files) {
-        const bytes=readStableFile(r.snapshot.path,f.path,64*1024*1024);
+        const bytes=readStableFile(source,f.path,64*1024*1024);
         ensure(bytes.length===f.size&&digest(bytes)===f.digest,'SNAPSHOT_CORRUPTED','源码快照字节校验失败');
         const target=safePath(workspace,f.path);mkdirSync(dirname(target),{recursive:true});writeFileSync(target,bytes,{mode:0o600,flag:'wx'});
     }
@@ -77,15 +79,15 @@ export class SourceAccessService {
             }
         }
         ensure(r.sourceDigest===r.snapshot.digest&&digest(r.snapshot.files)===r.sourceDigest,'SNAPSHOT_CORRUPTED','源码清单校验失败');
-        verifySnapshot(r.snapshot.path,r.snapshot.files);
+        verifySnapshot(this.app.store.paths.physical(r.snapshot.path),r.snapshot.files);
         return r;
     }
     list(actor: Actor, projectId: string, value: unknown) {const r=this.resolve(actor,projectId,value);return {...sourceMetadata(r),files:r.snapshot.files};}
     read(actor: Actor, projectId: string, value: unknown) {
         const {path:rawPath,cursor:rawCursor,limit:rawLimit,...selector}=object(value),r=this.resolve(actor,projectId,selector);
-        const path=text(rawPath,'path',1000);safePath(r.snapshot.path,path);
+        const path=text(rawPath,'path',1000),source=this.app.store.paths.physical(r.snapshot.path);safePath(source,path);
         const f=r.snapshot.files.find(f=>f.path===path);ensure(f,'NOT_FOUND','源码文件不存在',404);
-        const bytes=readStableFile(r.snapshot.path,path,64*1024*1024);
+        const bytes=readStableFile(source,path,64*1024*1024);
         ensure(bytes.length===f.size&&digest(bytes)===f.digest,'SNAPSHOT_CORRUPTED','源码文件校验失败');
         ensure(!bytes.includes(0),'BINARY_FILE','不能作为文本读取二进制文件',415);
         let content:string;try {content=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch {ensure(false,'BINARY_FILE','源码不是 UTF-8 文本',415);}
@@ -118,14 +120,15 @@ export class SourceAccessService {
             ensure(!this.app.store.list<TaskAttempt>('task-attempt',projectId).some(a=>a.sessionId===s.id&&a.state==='running'&&a.id!==actor.attemptId),'SESSION_BUSY','另一个任务 Worker 正在使用工作区');
             const gitEnabled=this.app.store.get<Project>('project',projectId).gitHistoryEnabled;
             if(s.sourceRevisionId===r.id) {const w=gitEnabled?queueWorkspaceHistory(this.app.context,s,r):undefined;return {...sourceMetadata(r),sessionId:s.id,sessionVersion:s.version,prepared:false,...(w?{gitState:w.state,gitOperationId:w.operationId}:{})};}
-            ensure(!s.sourceRevisionId&&readdirSync(s.workspace).length===0,'WORKSPACE_NOT_EMPTY','工作区非空或已经绑定来源，不能覆盖本地修改');
-            const staged=join(dirname(s.workspace),'source-'+randomUUID());mkdirSync(staged,{mode:0o700});copySourceRevision(r,staged,false);
+            const workspace=this.app.store.paths.physical(s.workspace);
+            ensure(!s.sourceRevisionId&&readdirSync(workspace).length===0,'WORKSPACE_NOT_EMPTY','工作区非空或已经绑定来源，不能覆盖本地修改');
+            const staged=join(dirname(workspace),'source-'+randomUUID());mkdirSync(staged,{mode:0o700});copySourceRevision(r,staged,false,this.app.store.paths);
             // Rename a complete directory into place, retaining the empty prior directory on failure.
-            const backup=s.workspace+'-empty-'+randomUUID();renameSync(s.workspace,backup);
-            try {renameSync(staged,s.workspace);}catch(error) {renameSync(backup,s.workspace);throw error;}
-            const modesFile=s.workspace+'.source-modes.json',priorModes=existsSync(modesFile)?readFileSync(modesFile):null;
-            this.app.store.onRollback(()=>{renameSync(s.workspace,staged);renameSync(backup,s.workspace);if(priorModes)writeFileSync(modesFile,priorModes);else if(existsSync(modesFile))unlinkSync(modesFile);});
-            setSourceModes(s.workspace,r.snapshot.files);
+            const backup=workspace+'-empty-'+randomUUID();renameSync(workspace,backup);
+            try {renameSync(staged,workspace);}catch(error) {renameSync(backup,workspace);throw error;}
+            const modesFile=workspace+'.source-modes.json',priorModes=existsSync(modesFile)?readFileSync(modesFile):null;
+            this.app.store.onRollback(()=>{renameSync(workspace,staged);renameSync(backup,workspace);if(priorModes)writeFileSync(modesFile,priorModes);else if(existsSync(modesFile))unlinkSync(modesFile);});
+            setSourceModes(workspace,r.snapshot.files);
             this.app.store.afterCommit(()=>{try {rmdirSync(backup);}catch { /* An empty backup is safe to retain after commit. */ }});
             const next=this.app.store.update<Session>('session',s.id,s.version,{sourceRevisionId:r.id,sourceDigest:r.sourceDigest});
             const git=gitEnabled?queueWorkspaceHistory(this.app.context,next,r):undefined;

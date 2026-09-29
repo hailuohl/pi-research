@@ -18,8 +18,8 @@ test('Git project import records original provenance and executable modes withou
  const s=setup();try{const commit=repository(s),marker=join(s.dir,'unsafe-executed'),payload=join(s.dir,'unsafe.cjs'),hooks=join(s.dir,'hooks');mkdirSync(hooks);writeFileSync(payload,`require('node:fs').writeFileSync(${JSON.stringify(marker)},'unsafe')`);writeFileSync(join(hooks,'post-checkout'),`#!/bin/sh\nnode '${payload.replaceAll('\\','/')}'\n`);
   git(s.source,'config','core.hooksPath',hooks);git(s.source,'config','core.fsmonitor',`node "${payload}"`);git(s.source,'config','filter.untrusted.clean',`node "${payload}"`);git(s.source,'config','filter.untrusted.smudge',`node "${payload}"`);git(s.source,'config','filter.untrusted.required','true');git(s.source,'config','remote.origin.url','https://username:secret@example.invalid/research.git?token=secret');
   const before=readFileSync(join(s.source,'.git','config')),input={name:'Imported Git',sourcePath:s.source},plan=await s.app.projects.prepareImport(USER,input),p=s.app.projects.importDirectory(USER,input,plan),record=s.app.store.list('project-import',p.id)[0];
-  assert.equal(record.commit,commit);assert.equal(record.remote,'https://example.invalid/research.git');assert.equal(record.dirty,process.platform==='win32'?false:readSourceMode(s.source,'main.py')!=='100755');assert.equal(readSourceMode(p.workspace,'main.py'),process.platform==='win32'?'100755':readSourceMode(s.source,'main.py'));
-  assert.equal(snapshotDirectory(p.workspace,join(s.dir,'check')).digest,record.sourceDigest);assert.ok(record.excluded.includes('.git'));assert.equal(existsSync(join(p.workspace,'.git')),false);assert.equal(existsSync(marker),false);
+  const workspace=s.app.store.paths.physical(p.workspace);assert.equal(record.commit,commit);assert.equal(record.remote,'https://example.invalid/research.git');assert.equal(record.dirty,process.platform==='win32'?false:readSourceMode(s.source,'main.py')!=='100755');assert.equal(readSourceMode(workspace,'main.py'),process.platform==='win32'?'100755':readSourceMode(s.source,'main.py'));
+  assert.equal(snapshotDirectory(workspace,join(s.dir,'check')).digest,record.sourceDigest);assert.ok(record.excluded.includes('.git'));assert.equal(existsSync(join(workspace,'.git')),false);assert.equal(existsSync(marker),false);
   assert.deepEqual(readFileSync(join(s.source,'.git','config')),before);assert.equal(existsSync(s.source+'.source-modes.json'),false);assert.equal(s.app.store.list('experiment').length,0);
  }finally{s.close();}
 });
@@ -27,8 +27,8 @@ test('Git project import records original provenance and executable modes withou
 test('preflight imports the exact frozen dirty bytes including untracked files even if the source later disappears',{skip:!hasGit},async()=>{
  const s=setup();try{const commit=repository(s);writeFileSync(join(s.source,'main.py'),'print("dirty snapshot")\n');writeFileSync(join(s.source,'extra.txt'),'untracked');writeFileSync(join(s.source,'.env'),'NEVER IMPORT');
   const input={name:'Dirty snapshot',sourcePath:s.source},prepared=await s.app.projects.prepareImport(USER,input);renameSync(s.source,join(s.dir,'moved-source'));
-  const p=s.app.projects.importDirectory(USER,input,prepared),record=s.app.store.list('project-import',p.id)[0];assert.equal(record.commit,commit);assert.equal(record.dirty,true);assert.equal(record.sourceDigest,prepared.sourceDigest);
-  assert.equal(readFileSync(join(p.workspace,'main.py'),'utf8'),'print("dirty snapshot")\n');assert.equal(readFileSync(join(p.workspace,'extra.txt'),'utf8'),'untracked');assert.equal(existsSync(join(p.workspace,'.env')),false);
+  const p=s.app.projects.importDirectory(USER,input,prepared),record=s.app.store.list('project-import',p.id)[0],workspace=s.app.store.paths.physical(p.workspace);assert.equal(record.commit,commit);assert.equal(record.dirty,true);assert.equal(record.sourceDigest,prepared.sourceDigest);
+  assert.equal(readFileSync(join(workspace,'main.py'),'utf8'),'print("dirty snapshot")\n');assert.equal(readFileSync(join(workspace,'extra.txt'),'utf8'),'untracked');assert.equal(existsSync(join(workspace,'.env')),false);
  }finally{s.close();}
 });
 

@@ -18,7 +18,7 @@ export async function superviseDockerRun(initial, callbacks) {
         throw error;
     } };
     const current = () => { fence(); return callbacks.read(); };
-    const adapter = new DockerAdapter(initial, fence, callbacks.verifyTarget);
+    const adapter = new DockerAdapter(initial, fence, callbacks.verifyTarget, callbacks.paths);
     const update = (execution, other = {}) => {
         const run = current();
         const next = callbacks.patch({ ...other, execution: { ...run.execution, ...execution } });
@@ -27,9 +27,9 @@ export async function superviseDockerRun(initial, callbacks) {
         return next;
     };
     const initializeLogs = () => {
-        mkdirSync(initial.execution.controlDir, { recursive: true, mode: 0o700 });
+        mkdirSync(adapter.job.controlDir, { recursive: true, mode: 0o700 });
         for (const name of ['stdout.log', 'stderr.log']) {
-            const path = join(initial.execution.controlDir, name);
+            const path = join(adapter.job.controlDir, name);
             if (!existsSync(path))
                 writeFileSync(path, '', { flag: 'wx', mode: 0o600 });
             bytes += lstatSync(path).size;
@@ -42,18 +42,18 @@ export async function superviseDockerRun(initial, callbacks) {
             logTruncated = true;
         bytes += chunk.length;
         if (remaining)
-            appendFileSync(join(initial.execution.controlDir, `${name}.log`), chunk.subarray(0, remaining));
+            appendFileSync(join(adapter.job.controlDir, `${name}.log`), chunk.subarray(0, remaining));
     };
     const diagnostic = (error) => {
         fence();
         const text = error instanceof Error ? error.stack ?? error.message : String(error);
-        writeFileSync(join(initial.execution.controlDir, 'diagnostic.log'), Buffer.from(text).subarray(0, 65536), { mode: 0o600 });
+        writeFileSync(join(adapter.job.controlDir, 'diagnostic.log'), Buffer.from(text).subarray(0, 65536), { mode: 0o600 });
         log('stderr', Buffer.from('FORMAL_RUN_EXECUTION_FAILED\n'));
     };
     const outputOverLimit = () => {
         const limit = initial.manifest.contract.outputBytes ?? 128 * 1024 * 1024;
         let total = 0, count = 0;
-        const pending = [initial.outputDir];
+        const pending = [adapter.job.outputDir];
         try {
             while (pending.length) {
                 const dir = pending.pop();

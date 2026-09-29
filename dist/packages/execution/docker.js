@@ -5,6 +5,10 @@ import { randomUUID } from 'node:crypto';
 import { readStableFile } from '../workspace/stable-file.js';
 import { safePath } from '../workspace/files.js';
 import { digest } from '../storage/store.js';
+/** Short-lived execution paths; the original approved manifest and its digest remain untouched. */
+export function physicalDockerJob(job, paths) {
+    return { ...job, controlDir: paths.physical(job.controlDir), outputDir: paths.physical(job.outputDir), manifest: { ...job.manifest, inputSnapshot: paths.physicalSnapshot(job.manifest.inputSnapshot), dataArtifacts: job.manifest.dataArtifacts.map(a => ({ ...a, path: paths.physical(a.path) })) } };
+}
 export const JOB_LABEL = 'pi-research.sandbox-job';
 export const MANIFEST_LABEL = 'pi-research.manifest';
 // Legacy snapshots without modes default to ordinary, non-executable files.

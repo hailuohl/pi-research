@@ -34,7 +34,7 @@ test('publication review streaming uses cheap fences while tools and heartbeats 
    if(stale){
     await h.tools.execute(active.actor,'task_context_read',{},'cached-context');
     const artifact=s.app.store.get('artifact',fixture.result.pdf.artifactId);
-    chmodSync(artifact.path,0o600);writeFileSync(artifact.path,'UNIT changed fixed PDF');
+    const artifactPath=s.app.store.paths.physical(artifact.path);chmodSync(artifactPath,0o600);writeFileSync(artifactPath,'UNIT changed fixed PDF');
     const replay=new Promise(resolve=>{const receive=m=>{if(m.type==='fixture_context_result'){active.child.off('message',receive);resolve(m);}};active.child.on('message',receive);});
     active.child.send({type:'fixture_context'});
     const replayed=await replay;assert.equal(replayed.hasResult,false,'cached reads must not bypass the Host input check');assert.equal(replayed.errorCode,'ARTIFACT_CORRUPTED');

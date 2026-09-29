@@ -47,7 +47,7 @@ export function buildSessionOptions(sdk: Pick<typeof import('@earendil-works/pi-
             if (!header || header.type !== 'session' || header.version !== sdk.CURRENT_SESSION_VERSION || typeof header.id !== 'string' || !header.id.trim() || typeof header.cwd !== 'string' || typeof header.timestamp !== 'string') throw new Error('invalid or unsupported header');
             if (entries.slice(1).some(entry => !entry || typeof entry.type !== 'string' || entry.type === 'session' || typeof entry.id !== 'string')) throw new Error('invalid entry');
         } catch { throw new Error('PI_SESSION_INVALID: 原生会话文件为空、损坏或版本不受支持，拒绝修改或新建替代'); }
-        sessionManager = sdk.SessionManager.open(setup.sessionFile);
+        sessionManager = sdk.SessionManager.open(setup.sessionFile,setup.sessionDir,setup.cwd);
         if (sessionManager.getSessionId() !== header.id) throw new Error('PI_SESSION_INVALID: 恢复后的原生会话 ID 与文件头不一致');
     } else sessionManager = sdk.SessionManager.create(setup.cwd, setup.sessionDir);
     return {

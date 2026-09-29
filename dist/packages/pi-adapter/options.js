@@ -47,7 +47,7 @@ export function buildSessionOptions(sdk, setup, customTools, modelRuntime, model
         catch {
             throw new Error('PI_SESSION_INVALID: 原生会话文件为空、损坏或版本不受支持，拒绝修改或新建替代');
         }
-        sessionManager = sdk.SessionManager.open(setup.sessionFile);
+        sessionManager = sdk.SessionManager.open(setup.sessionFile, setup.sessionDir, setup.cwd);
         if (sessionManager.getSessionId() !== header.id)
             throw new Error('PI_SESSION_INVALID: 恢复后的原生会话 ID 与文件头不一致');
     }

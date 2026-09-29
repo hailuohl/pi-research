@@ -22,6 +22,7 @@ function supervisor(s, run) {
 }
 function cancelledWithoutExecution(s, original, reason) {
     const run = s.app.runs.get(USER, original.id);
+    const outputDir = s.app.store.paths.physical(run.outputDir);
     assert.equal(run.state, 'cancelled');
     assert.equal(run.cancelRequested, true);
     assert.equal(run.integrity, 'incomplete');
@@ -32,7 +33,7 @@ function cancelledWithoutExecution(s, original, reason) {
     assert.equal(run.childPid, undefined);
     assert.deepEqual(run.manifest, original.manifest);
     assert.equal(run.manifestDigest, original.manifestDigest);
-    assert.deepEqual(readdirSync(run.outputDir), [], 'no stdout, metrics or process-produced artifacts');
+    assert.deepEqual(readdirSync(outputDir), [], 'no stdout, metrics or process-produced artifacts');
     assert.equal(existsSync(join(s.dir, 'jobs', run.id, 'control')), false, 'execution never reached supervisor control-file creation');
     assert.equal(s.app.store.events(0, s.project.id).filter(e => e.type === 'run.cancelled_before_launch').length, 1);
     return run;
@@ -67,13 +68,13 @@ test('source revocation preserves a completed real Run and its immutable outputs
         const completed = s.app.runs.get(USER, run.id);
         assert.equal(completed.state, 'succeeded', completed.error);
         assert.equal(completed.integrity, 'complete');
-        const outputs = new Map(readdirSync(run.outputDir).map(file => [file, readFileSync(join(run.outputDir, file))]));
+        const outputDir = s.app.store.paths.physical(run.outputDir), outputs = new Map(readdirSync(outputDir).map(file => [file, readFileSync(join(outputDir, file))]));
         assert.ok(outputs.has('metrics.json'));
         revoke(s, source);
         s.app.runs.launchPending();
         supervisor(s, run);
         assert.deepEqual(s.app.runs.get(USER, run.id), completed);
-        for (const [file, bytes] of outputs) assert.deepEqual(readFileSync(join(run.outputDir, file)), bytes);
+        for (const [file, bytes] of outputs) assert.deepEqual(readFileSync(join(outputDir, file)), bytes);
     } finally { s.close(); }
 });
 
