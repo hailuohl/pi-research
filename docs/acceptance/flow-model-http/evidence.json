@@ -1,0 +1,241 @@
+{
+  "capturedAt": "2026-09-29T02:23:53.892Z",
+  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+  "model": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "thinking": "off"
+  },
+  "configuration": {
+    "httpMaxRequests": 1,
+    "workerMax": 2,
+    "pauseAtZeroObserved": true
+  },
+  "sessions": [
+    {
+      "id": "37254500-3e48-476b-a198-af6fcb6a329e",
+      "state": "idle",
+      "generation": 1,
+      "model": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3",
+        "thinking": "off"
+      }
+    },
+    {
+      "id": "d4f6b7f3-09af-4afc-bcfc-a20e2af2b23f",
+      "state": "idle",
+      "generation": 1,
+      "model": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3",
+        "thinking": "off"
+      }
+    }
+  ],
+  "requests": [
+    {
+      "id": "69452fd6836fd90ec96e4fa0a0743ffda44556b22d5b06ac1b4897018ea5eaf4",
+      "sessionId": "37254500-3e48-476b-a198-af6fcb6a329e",
+      "provider": "zai-coding-cn",
+      "model": "glm-5.3",
+      "state": "succeeded",
+      "queuedAt": "2026-09-29T02:18:49.979Z",
+      "startedAt": "2026-09-29T02:19:22.192Z",
+      "endedAt": "2026-09-29T02:19:34.756Z",
+      "httpStatus": 200,
+      "receivedBytes": 77017,
+      "outcome": "body-complete",
+      "queueWaitMs": 32213,
+      "transportSlotMs": 12564
+    },
+    {
+      "id": "ea387f62aec720900982224328c1153d4f1c21074d387150bdb52a8e80b0fdda",
+      "sessionId": "d4f6b7f3-09af-4afc-bcfc-a20e2af2b23f",
+      "provider": "zai-coding-cn",
+      "model": "glm-5.3",
+      "state": "succeeded",
+      "queuedAt": "2026-09-29T02:19:02.835Z",
+      "startedAt": "2026-09-29T02:19:34.846Z",
+      "endedAt": "2026-09-29T02:19:42.441Z",
+      "httpStatus": 200,
+      "receivedBytes": 23541,
+      "outcome": "body-complete",
+      "queueWaitMs": 32011,
+      "transportSlotMs": 7595
+    }
+  ],
+  "events": [
+    {
+      "sequence": 5602,
+      "type": "model-http.queued",
+      "requestId": "69452fd6836fd90ec96e4fa0a0743ffda44556b22d5b06ac1b4897018ea5eaf4",
+      "sessionId": "37254500-3e48-476b-a198-af6fcb6a329e",
+      "at": "2026-09-29T02:18:49.979Z"
+    },
+    {
+      "sequence": 5606,
+      "type": "model-http.queued",
+      "requestId": "ea387f62aec720900982224328c1153d4f1c21074d387150bdb52a8e80b0fdda",
+      "sessionId": "d4f6b7f3-09af-4afc-bcfc-a20e2af2b23f",
+      "at": "2026-09-29T02:19:02.836Z"
+    },
+    {
+      "sequence": 5608,
+      "type": "model-http.started",
+      "requestId": "69452fd6836fd90ec96e4fa0a0743ffda44556b22d5b06ac1b4897018ea5eaf4",
+      "sessionId": "37254500-3e48-476b-a198-af6fcb6a329e",
+      "at": "2026-09-29T02:19:22.193Z"
+    },
+    {
+      "sequence": 6013,
+      "type": "model-http.finished",
+      "requestId": "69452fd6836fd90ec96e4fa0a0743ffda44556b22d5b06ac1b4897018ea5eaf4",
+      "sessionId": "37254500-3e48-476b-a198-af6fcb6a329e",
+      "state": "succeeded",
+      "at": "2026-09-29T02:19:34.756Z"
+    },
+    {
+      "sequence": 6016,
+      "type": "model-http.started",
+      "requestId": "ea387f62aec720900982224328c1153d4f1c21074d387150bdb52a8e80b0fdda",
+      "sessionId": "d4f6b7f3-09af-4afc-bcfc-a20e2af2b23f",
+      "at": "2026-09-29T02:19:34.847Z"
+    },
+    {
+      "sequence": 6139,
+      "type": "model-http.finished",
+      "requestId": "ea387f62aec720900982224328c1153d4f1c21074d387150bdb52a8e80b0fdda",
+      "sessionId": "d4f6b7f3-09af-4afc-bcfc-a20e2af2b23f",
+      "state": "succeeded",
+      "at": "2026-09-29T02:19:42.442Z"
+    }
+  ],
+  "concurrency": {
+    "peakManagedHttp": 1,
+    "overlapMs": 0,
+    "gapBetweenRequestsMs": 90,
+    "intervalMeaning": "Host dispatch permission through confirmed response body completion; includes IPC overhead. These intervals enclose the actual fetch."
+  },
+  "native": [
+    {
+      "sessionId": "37254500-3e48-476b-a198-af6fcb6a329e",
+      "fileDigest": "ccb135450fe045d5063f166fc3839143c746572063fc66060ac81e468c01d280",
+      "fileBytes": 73250,
+      "assistantMessages": 1,
+      "toolReceipts": 0,
+      "stopReason": "stop",
+      "contentDigest": "18ed927754db42fb3ab8114c975a42a50d6565989b0070dd28d76b8f635913e9"
+    },
+    {
+      "sessionId": "d4f6b7f3-09af-4afc-bcfc-a20e2af2b23f",
+      "fileDigest": "fe344ba449e98b2e3ab1afc7256e9b040dd642be1aae63c9e766ea908429499d",
+      "fileBytes": 71956,
+      "assistantMessages": 1,
+      "toolReceipts": 0,
+      "stopReason": "stop",
+      "contentDigest": "d487cb4a1d73e7c409077d403d52a5651dc9f74aa85fda3ca360d41ec4d5b52e"
+    }
+  ],
+  "modelUsage": {
+    "observations": 2,
+    "meaning": "SDK observations tracked separately from HTTP dispatch records and billing."
+  },
+  "browser": {
+    "sharedWorkerCountWhileQueued": 2,
+    "httpAtPause": {
+      "queued": 2,
+      "active": 0,
+      "unknown": 0
+    },
+    "afterOpeningOneSlot": {
+      "queued": 1,
+      "active": 1,
+      "unknown": 0
+    },
+    "bothHttp200": true,
+    "finalAvailable": 1,
+    "reloadKeptConfigurationAndRecords": true,
+    "desktop": {
+      "width": 1280,
+      "scrollWidth": 1280
+    },
+    "narrow": {
+      "width": 390,
+      "scrollWidth": 375,
+      "httpLimitInputReachable": true
+    },
+    "screenshotsCopied": false
+  },
+  "compatibility": {
+    "baselineRecords": 688,
+    "oldNativeFiles": 15,
+    "changedCopy": [
+      {
+        "kind": "workspace-lease",
+        "id": "ad28800ecc53fc3b292e4542f61d7298e2f3a28969727a35591365e4ff9c6480"
+      },
+      {
+        "kind": "workspace-lease",
+        "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57"
+      }
+    ],
+    "changedSource": [
+      {
+        "kind": "workspace-lease",
+        "id": "ad28800ecc53fc3b292e4542f61d7298e2f3a28969727a35591365e4ff9c6480"
+      },
+      {
+        "kind": "workspace-lease",
+        "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57"
+      }
+    ],
+    "oldBusinessRecordsUnchanged": true,
+    "oldNativeFilesUnchanged": true,
+    "extraModelTurns": 0,
+    "newComputeJobs": 0,
+    "newConnectorCalls": 0
+  },
+  "validation": {
+    "fullRegression": {
+      "total": 734,
+      "passed": 712,
+      "failed": 0,
+      "skipped": 22
+    },
+    "cleanBuild": {
+      "node": "24.19.0",
+      "files": 430,
+      "identical": true,
+      "manifestDigest": "1d2eca8bbc12b8d011f4081e5e0d10c359e772bc091b0a35d560b7bc5949524f",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ]
+    },
+    "independentReview": {
+      "remainingBlockers": 0,
+      "fixed": [
+        "Abort while body read is pending rejects truncated content and persists cancelled",
+        "Task authorization and HTTP admission share a writer transaction"
+      ]
+    }
+  },
+  "limitations": [
+    "The live provider is zai-coding-cn / glm-5.3 using the pinned SDK fetch transport. This does not establish live support for every provider.",
+    "Supported adapter families accept custom fetch; other transports fail explicitly rather than bypassing the limit.",
+    "Concurrency controls client HTTP lifetimes, not remote provider job completion or token/billing limits. Confirmed worker exit closes local transport but provider outcome stays unknown.",
+    "No request or response bodies, headers, URLs or credentials are stored in the HTTP ledger. Native Pi history remains in its original location.",
+    "Remote backends and remaining PR01–14 requirements remain open."
+  ]
+}

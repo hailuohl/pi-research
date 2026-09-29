@@ -1,3 +1,4 @@
+import { ModelHttpService } from './scheduler/model-http.js';
 import { PublicationBuildService } from './publications/build-service.js';
 import { DiscoveryGrantService } from './policy/discovery-grants.js';
 import { WorkingGrantService } from './policy/working-grants.js';
@@ -45,6 +46,7 @@ export declare class ResearchApp {
     readonly literatureTasks: LiteratureTaskService;
     readonly compute: ComputeQueue;
     readonly agentAdmission: AgentAdmissionService;
+    readonly modelHttp: ModelHttpService;
     readonly exports: ExportService;
     readonly git: GitService;
     readonly development: DevelopmentService;

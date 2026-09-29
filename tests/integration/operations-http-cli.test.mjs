@@ -28,6 +28,19 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
         const specs = await request('/operations');
         assert.equal(specs.status, 200);
         assert.deepEqual(specs.value.map(s => s.id).sort(), Object.keys(TOOL_DEFINITIONS).sort());
+        const httpBefore = await request('/operations/model_http_inspect', {projectId:project.id,input:{limit:10}}, null);
+        assert.equal(httpBefore.status,200,JSON.stringify(httpBefore.value));
+        assert.equal(httpBefore.value.unit,'pi-http-request');
+        assert.equal(httpBefore.value.configuration.maxRequests,2);
+        assert.equal(httpBefore.value.items.length,0);
+        const httpConfig = await request('/operations/model_http_configure', {projectId:project.id,input:{expectedVersion:httpBefore.value.configuration.version,maxRequests:1}});
+        assert.equal(httpConfig.status,200,JSON.stringify(httpConfig.value));
+        assert.equal(httpConfig.value.configuration.maxRequests,1);
+        const httpCli = cli('operation','model_http_inspect','--project',project.id,'--input','{}');
+        assert.equal(httpCli.status,0,httpCli.stderr);
+        assert.equal(JSON.parse(httpCli.stdout).configuration.maxRequests,1);
+        const httpNoKey = await request('/operations/model_http_configure',{projectId:project.id,input:{expectedVersion:httpConfig.value.configuration.version,maxRequests:2}},null);
+        assert.equal(httpNoKey.value.error.code,'OPERATION_ID_REQUIRED');
         const session = app.sessions.create(USER, project.id, {});
         app.store.update('session', session.id, session.version, {state: 'running', generation: 1, leaseUntil: Date.now() + 60000});
         const tools = new ToolDispatcher(app), agent = {type: 'agent', projectId: project.id, sessionId: session.id, role: 'coordinator', generation: 1};
@@ -40,7 +53,7 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
             assert.equal(command.status, 1);
             assert.deepEqual(JSON.parse(command.stderr).error, http.value.error, spec.id);
             // Owner-only operations reject Agents before validating inputs; other tools retain HTTP/CLI schema parity.
-            if(/^(discovery_grant_|run_grant_|working_grant_|report_|compute_|agent_capacity_|document_|literature_task_|skill_|publication_|manuscript_)/.test(spec.id)||['campaign_plan_inspect','campaign_candidate_prepare','campaign_candidate_attach','campaign_comparison'].includes(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
+            if(/^(discovery_grant_|run_grant_|working_grant_|report_|compute_|agent_capacity_|model_http_|document_|literature_task_|skill_|publication_|manuscript_)/.test(spec.id)||['campaign_plan_inspect','campaign_candidate_prepare','campaign_candidate_attach','campaign_comparison'].includes(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
             else assert.deepEqual(toolError, http.value.error, spec.id);
         }
         const key = randomUUID(), input = { source: 'project', path: 'operation.txt', content: 'shared', expectedDigest: null };
@@ -90,6 +103,13 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
         assert.equal(intentReplay.value.id, oldIntent.id);
         assert.equal(app.store.list('run-intent', project.id).length, 1);
         const other = app.projects.create(USER, { name: 'Other' });
+        const queuedAt = '2026-09-29T00:00:00.000Z';
+        app.store.create('model-http-request', other.id, {sessionId:'foreign-session',provider:'openai',model:'foreign-model',state:'succeeded',queuedAt}, 'foreign-http');
+        app.store.create('model-http-request', project.id, {sessionId:session.id,provider:'openai',model:'local-model',state:'succeeded',queuedAt}, 'local-http');
+        const scopedHttp = await request('/operations/model_http_inspect', {projectId:project.id,input:{limit:1}}, null);
+        assert.equal(scopedHttp.status,200,JSON.stringify(scopedHttp.value));
+        assert.deepEqual(scopedHttp.value.items.map(item=>item.id),['local-http']);
+        assert.equal(scopedHttp.value.nextCursor,null);
         const denied = await request('/operations/run_prepare', { projectId: other.id, input: prepareBody });
         assert.equal(denied.value.error.code, 'SCOPE_DENIED');
     } finally {

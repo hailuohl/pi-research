@@ -9,7 +9,8 @@ const usage={jobs:2,runs:1,development:1,documents:0,cpus:2,memoryMb:512,unknown
 const available={jobs:2,runs:1,development:1,documents:0,cpus:null,memoryMb:null};
 const capacity={version:1,maxWorkers:2,available:0,unit:'pi-worker',httpConcurrencyMeasured:false,counts:{held:2,reserved:0,running:1,stopping:0,unknown:1},queued:[{sessionId:'session',role:'coordinator',reasons:[{code:'global-capacity',message:'等待共享 Worker 容量'}]}]};
 const compute={scope:'shared-data-directory',configuration:{version:1,targetId:'global',limits},usage,available,queued:1,targets:[{targetId:'engine',backend:'docker',contexts:['default','desktop-linux'],configuration:{version:0,targetId:'engine',limits},usage,available}],items:[{kind:'run',id:'run',projectId:'project',sequence:1,state:'unknown',held:true,backend:'docker',targetId:'engine',requested:{cpus:1,memoryMb:256},generation:2,leaseUntil:0,nextAttemptAt:0,reason:'recovery_due'}],nextCursor:50};
-function view(){const v=new SchedulerView({data:{project:{id:'project'},compute:structuredClone(compute),agentCapacity:structuredClone(capacity)},perform:async f=>{try{return await f();}catch{return undefined;}}});v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};return v;}
+const http={configuration:{version:1,maxRequests:1},scope:'shared-data-directory',unit:'pi-http-request',counts:{queued:1,active:1,unknown:0},available:0,coverage:'managed-fetch',legacyWorkerCount:0,supportedApis:['openai-responses'],items:[{id:'http-request',sessionId:'session',provider:'openai',model:'gpt',state:'active',queuedAt:'2026-09-29T00:00:00Z',startedAt:'2026-09-29T00:00:01Z'}],nextCursor:12};
+function view(){const v=new SchedulerView({data:{project:{id:'project'},compute:structuredClone(compute),agentCapacity:structuredClone(capacity),modelHttp:structuredClone(http)},perform:async f=>{try{return await f();}catch{return undefined;}}});v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};return v;}
 function nodes(node,result=[]){if(!node||typeof node!=='object')return result;if(Array.isArray(node)){node.forEach(n=>nodes(n,result));return result;}assert.ok(typeof node.type==='string'||typeof node.type==='function','React16 element type must be valid');result.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)nodes(node.type(node.props),result);else nodes(node.props.children,result);return result;}
 const flatten=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(flatten).join(' '):typeof node!=='object'?String(node):typeof node.type==='function'&&!node.type.prototype?.render?flatten(node.type(node.props)):flatten(node.props.children);
 
@@ -17,7 +18,7 @@ test('real React16 scheduler explains shared budgets, alias identity, unknown su
  assert.equal(React.Fragment,undefined);const tree=view().render();nodes(tree);const content=flatten(tree);
  assert.match(content,/2 \/ 4 个；可用 2/);assert.match(content,/未设预算；已预留 2 核/);
  assert.match(content,/已包含在上述作业占用中，不重复扣减/);assert.match(content,/default、desktop-linux/);
- assert.equal(computeReasonLabels.manual_recovery_required,'旧宿主作业需要人工核对，保留占用');assert.match(content,/HTTP 并发未测量/);assert.match(content,/等待共享 Worker 容量/);assert.match(content,/待核对原作业并恢复监管/);
+ assert.equal(computeReasonLabels.manual_recovery_required,'旧宿主作业需要人工核对，保留占用');assert.match(content,/共享上限\s+1\s+个实际 HTTP 请求/);assert.match(content,/排队\s+1/);assert.doesNotMatch(content,/HTTP 并发未测量/);assert.match(content,/等待共享 Worker 容量/);assert.match(content,/待核对原作业并恢复监管/);
  assert.equal(Object.keys(computeReasonLabels).length,13);
 });
 
@@ -27,7 +28,7 @@ test('missing first-page queue item never claims ready and missing DTO has expli
  const text=flatten(ComputeWait({data:{compute},kind:'run',id:'not-on-first-page',onScheduler(){}}));
  assert.match(text,/不在当前队列页/);assert.ok(!text.includes('容量检查通过'));
  const v=view();delete v.props.data.compute;delete v.props.data.agentCapacity;
- assert.match(flatten(v.render()),/Worker 容量待加载/);assert.match(flatten(v.render()),/计算容量与队列待加载/);
+ delete v.props.data.modelHttp;assert.match(flatten(v.render()),/Worker 容量待加载/);assert.match(flatten(v.render()),/模型 HTTP 请求状态待加载/);assert.match(flatten(v.render()),/计算容量与队列待加载/);
 });
 
 test('capacity conflict keeps the edited full draft and submits blank budgets as null',async t=>{
@@ -44,11 +45,21 @@ test('capacity conflict keeps the edited full draft and submits blank budgets as
 test('queue pages use server cursors and a late refresh cannot replace a newer page',async t=>{
  const original=globalThis.fetch;t.after(()=>globalThis.fetch=original);const requests=[];
  globalThis.fetch=(url,options)=>new Promise(resolve=>requests.push({url,body:JSON.parse(options.body),resolve}));
- const v=view(),first=v.refresh(0),second=v.refresh(50);assert.equal(requests[2].body.input.cursor,50);
+ const v=view(),first=v.refresh(0),second=v.refresh(50,12);assert.equal(requests[3].body.input.cursor,50);assert.equal(requests[5].body.input.cursor,12);
  const reply=(request,value)=>request.resolve({ok:true,json:async()=>value});
- reply(requests[2],{...compute,items:[],nextCursor:null});reply(requests[3],capacity);await second;
- reply(requests[0],compute);reply(requests[1],capacity);await first;
+ reply(requests[3],{...compute,items:[],nextCursor:null});reply(requests[4],capacity);reply(requests[5],{...http,items:[],nextCursor:null});await second;
+ reply(requests[0],compute);reply(requests[1],capacity);reply(requests[2],http);await first;
  assert.equal(v.state.cursor,50);assert.deepEqual(v.state.compute.items,[]);assert.equal(v.state.compute.nextCursor,null);
+ assert.equal(v.state.httpCursor,12);assert.deepEqual(v.state.http.items,[]);
+});
+
+test('HTTP limit saves independently of Worker capacity and retains a conflicted draft',async t=>{
+ const original=globalThis.fetch;t.after(()=>globalThis.fetch=original);let request;
+ globalThis.fetch=async(_url,options)=>{request=JSON.parse(options.body);return {ok:false,status:409,json:async()=>({error:{code:'VERSION_CONFLICT',message:'配置版本冲突'}})};};
+ const element=nodes(view().render()).find(n=>n.type?.name==='ModelHttpForm'),form=new element.type(element.props);
+ form.setState=(patch,callback)=>{Object.assign(form.state,patch);callback?.();};form.state.value='0';form.state.dirty=true;
+ await form.save();assert.deepEqual(request.input,{expectedVersion:1,maxRequests:0});assert.equal(form.state.value,'0');assert.equal(form.state.dirty,true);assert.match(form.state.error,/冲突/);
+ const old=form.props;form.props={...old,capacity:{...http,configuration:{version:2,maxRequests:2}}};form.componentDidUpdate(old);assert.equal(form.state.value,'0');
 });
 
 test('target probe sends only explicit context, refreshes after success and safely retains errors',async t=>{

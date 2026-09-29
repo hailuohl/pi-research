@@ -2,6 +2,7 @@ import type { AppContext } from '../domain/context.js';
 import type { Actor, Role, Row, Session } from '../domain/types.js';
 export type AdmissionState = 'reserved' | 'running' | 'stopping' | 'unknown' | 'released';
 export interface AgentAdmission {
+    httpManagedVersion?: 1;
     sessionId: string;
     generation: number;
     ownerHost: string;

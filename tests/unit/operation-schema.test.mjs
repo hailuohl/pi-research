@@ -5,7 +5,7 @@ import { s, validateSchema } from '../../dist/packages/contracts/operations/sche
 import { TOOL_DEFINITIONS } from '../../dist/packages/research-tools/definitions.js';
 
 test('every advertised tool example satisfies its exact input contract', () => {
-    assert.equal(Object.keys(INPUT_SCHEMAS).length, 120);
+    assert.equal(Object.keys(INPUT_SCHEMAS).length, 122);
     assert.deepEqual(Object.keys(INPUT_SCHEMAS).sort(), Object.keys(TOOL_DEFINITIONS).sort());
     for (const [name, definition] of Object.entries(TOOL_DEFINITIONS))
         assert.doesNotThrow(() => validateSchema(INPUT_SCHEMAS[name], definition.example), name);
@@ -21,6 +21,10 @@ test('operation schemas reject missing/unknown fields and invalid primitive valu
         ['run_logs', { runId: 'r', cursor: 1.5 }],
         ['experiment_plan_submit', { title: 'x', config: { bad: NaN } }],
         ['experiment_plan_submit', { title: 'x', config: { bad: undefined } }],
+        ['model_http_configure', { maxRequests: 33 }],
+        ['model_http_configure', { maxRequests: -1 }],
+        ['model_http_configure', { maxRequests: 1 }],
+        ['model_http_inspect', { limit: 101 }],
     ];
     for (const [name, input] of invalid)
         assert.throws(() => validateSchema(INPUT_SCHEMAS[name], input), { code: 'INVALID_INPUT', status: 400 }, name);

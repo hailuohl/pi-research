@@ -2401,6 +2401,40 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["expectedVersion", "maxWorkers"];
         readonly additionalProperties: false;
     };
+    readonly model_http_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ("limit" | "cursor")[];
+        readonly additionalProperties: false;
+    };
+    readonly model_http_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly maxRequests: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["expectedVersion", "maxRequests"];
+        readonly additionalProperties: false;
+    };
     readonly report_create: {
         readonly type: "object";
         readonly properties: {

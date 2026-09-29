@@ -15,8 +15,10 @@ export type PublicationBuildResultDTO=ReturnType<PublicationBuildService['result
 import type { Wakeup } from '../../../dist/packages/scheduler/wakeups.js';
 import type {ComputeQueueInspection} from '../../../dist/packages/scheduler/compute-types.js';
 import type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
+import type {ModelHttpDTO} from '../../../dist/packages/scheduler/model-http.js';
 export type {ComputeQueueInspection,ComputeLimits,ComputeConfiguration,ComputeQueueItem,ComputeWaitReason,ComputeUsage,ComputeAvailable} from '../../../dist/packages/scheduler/compute-types.js';
 export type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
+export type {ModelHttpDTO} from '../../../dist/packages/scheduler/model-http.js';
 import type {DocumentVersion,DocumentEvidenceLink} from '../../../dist/packages/documents/types.js';
 export type {DocumentVersion,DocumentEvidenceLink} from '../../../dist/packages/documents/types.js';
 import type {DocumentParsingService} from '../../../dist/packages/documents/parse-service.js';
@@ -63,6 +65,7 @@ export interface ProjectState {
     documentParseJobs?:DocumentParseJobDTO[];
     compute?:ComputeQueueInspection;
     agentCapacity?:AgentCapacityDTO;
+    modelHttp?:ModelHttpDTO;
     developmentTasks?:DevelopmentTaskDTO[];
     sandboxJobs?:SandboxJobDTO[];
     reviews?:DevelopmentReviewDTO[];

@@ -1,3 +1,5 @@
+import { managedModelFetch } from '../../packages/pi-adapter/model-fetch.js';
+import { MANAGED_HTTP_APIS } from '../../packages/scheduler/model-http.js';
 import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -7,16 +9,18 @@ import { locatePi, inspectPi, piFailure } from '../../packages/pi-adapter/runtim
 let session;
 let providerFailure;
 let started = false, stopping = false, taskSubmitted = false, turns = 0;
+const httpStop = new AbortController();
 let seq = 0;
 const pending = new Map();
 function send(value) {
     if (process.connected)
         process.send?.(value);
 }
+function httpRpc(type, key, result) { return new Promise((resolve, reject) => { const requestId = ++seq, timer = setTimeout(() => { pending.delete(requestId); reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type, requestId, key, result }); }); }
 function rpc(tool, input, toolCallId) { return new Promise((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('受控工具请求超时')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 process.on('message', async (message) => {
     const raw = message;
-    if (raw?.type === 'tool_response') {
+    if (raw?.type === 'tool_response' || raw?.type === 'model_http_response') {
         const p = pending.get(raw.requestId);
         if (!p)
             return;
@@ -27,6 +31,7 @@ process.on('message', async (message) => {
     }
     if (raw?.type === 'abort') {
         stopping = true;
+        httpStop.abort();
         await session?.abort();
         return;
     }
@@ -77,6 +82,16 @@ process.on('message', async (message) => {
         });
         const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
+        if (raw.managedHttp) {
+            if (!MANAGED_HTTP_APIS.includes(model.api))
+                throw new Error('MODEL_HTTP_UNSUPPORTED: 所选SDK传输尚未接入受管HTTP，不会绕过限流');
+            const fetcher = managedModelFetch(globalThis.fetch, key => httpRpc('model_http_acquire', key), (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal), stream = session.agent.streamFunction;
+            session.agent.streamFunction = (chosen, context, options) => {
+                if (chosen.provider !== raw.model.provider || chosen.id !== raw.model.model || chosen.api !== model.api)
+                    throw new Error('MODEL_FALLBACK_REFUSED: 请求模型或传输已改变');
+                return stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher });
+            };
+        }
         const finishTurn = session.agent.finishTurn;
         session.agent.finishTurn = async (turn, signal) => {
             const decision = await finishTurn?.(turn, signal);
@@ -101,6 +116,7 @@ process.on('message', async (message) => {
             }
             if (e.type === 'turn_start' && ++turns > 12) {
                 stopping = true;
+                httpStop.abort();
                 void session?.abort();
             }
             if (e.type === 'agent_settled')
@@ -128,5 +144,5 @@ process.on('message', async (message) => {
         setTimeout(() => process.exit(0), 50);
     }
 });
-process.on('disconnect', () => { stopping = true; void session?.abort(); setTimeout(() => process.exit(1), 500).unref(); });
+process.on('disconnect', () => { stopping = true; httpStop.abort(); void session?.abort(); setTimeout(() => process.exit(1), 500).unref(); });
 //# sourceMappingURL=index.js.map

@@ -121,6 +121,40 @@ class AgentForm extends React.Component {
             React.createElement("button", { className: "primary", disabled: this.state.busy || !this.state.dirty }, "\u663E\u5F0F\u4FDD\u5B58 Worker \u5BB9\u91CF"),
             React.createElement("button", { type: "button", className: "secondary", disabled: this.state.busy, onClick: () => this.reset() }, "\u8BFB\u53D6\u6700\u65B0\u914D\u7F6E\uFF08\u653E\u5F03\u8349\u7A3F\uFF09"))); }
 }
+class ModelHttpForm extends React.Component {
+    constructor() {
+        super(...arguments);
+        this.state = { value: String(this.props.capacity.configuration.maxRequests), version: this.props.capacity.configuration.version, dirty: false, error: '', busy: false };
+    }
+    componentDidUpdate(prev) { if (prev.capacity.configuration.version !== this.props.capacity.configuration.version && !this.state.dirty)
+        this.reset(); }
+    reset() { this.setState({ value: String(this.props.capacity.configuration.maxRequests), version: this.props.capacity.configuration.version, dirty: false, error: '' }); }
+    async save() { if (this.state.busy)
+        return; this.setState({ busy: true, error: '' }); try {
+        await this.props.perform(async () => { try {
+            const saved = await call(this.props.projectId, 'model_http_configure', { expectedVersion: this.state.version, maxRequests: Number(this.state.value) });
+            this.setState({ value: String(saved.configuration.maxRequests), version: saved.configuration.version, dirty: false });
+            await this.props.onSaved();
+        }
+        catch (error) {
+            this.setState({ error: error instanceof Error ? error.message : String(error) });
+            throw error;
+        } }, '共享 Pi 模型 HTTP 请求上限已保存');
+    }
+    finally {
+        this.setState({ busy: false });
+    } }
+    render() { return React.createElement("form", { onSubmit: (e) => { e.preventDefault(); void this.save(); } },
+        React.createElement("label", null,
+            "\u5171\u4EAB\u6A21\u578B HTTP \u8BF7\u6C42\u4E0A\u9650",
+            React.createElement("input", { "aria-label": "\u5171\u4EAB\u6A21\u578B HTTP \u8BF7\u6C42\u4E0A\u9650", type: "number", min: 0, max: 32, step: 1, required: true, disabled: this.state.busy, value: this.state.value, onChange: (e) => this.setState({ value: e.target.value, dirty: true }) })),
+        React.createElement("p", { className: "small muted" }, "\u8BBE\u4E3A 0 \u6682\u505C\u6D3E\u53D1\u65B0\u8BF7\u6C42\uFF1B\u6B63\u5728\u6267\u884C\u7684\u8BF7\u6C42\u7EE7\u7EED\u5B8C\u6210\u3002"),
+        this.state.version !== this.props.capacity.configuration.version ? React.createElement("p", { role: "alert", className: "inline-warning" }, "\u914D\u7F6E\u5DF2\u66F4\u65B0\uFF1B\u5F53\u524D\u8349\u7A3F\u4FDD\u7559\uFF0C\u4FDD\u5B58\u65F6\u670D\u52A1\u7AEF\u4F1A\u68C0\u67E5\u7248\u672C\u3002") : null,
+        this.state.error ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.error) : null,
+        React.createElement("div", { className: "actions wrap" },
+            React.createElement("button", { className: "primary", disabled: this.state.busy || !this.state.dirty }, "\u663E\u5F0F\u4FDD\u5B58 HTTP \u4E0A\u9650"),
+            React.createElement("button", { type: "button", className: "secondary", disabled: this.state.busy, onClick: () => this.reset() }, "\u8BFB\u53D6\u6700\u65B0\u914D\u7F6E\uFF08\u653E\u5F03\u8349\u7A3F\uFF09"))); }
+}
 class TargetProbe extends React.Component {
     constructor() {
         super(...arguments);
@@ -168,17 +202,17 @@ class TargetProbe extends React.Component {
 export class SchedulerView extends React.Component {
     constructor() {
         super(...arguments);
-        this.state = { compute: null, agents: null, cursor: 0, loading: false, error: '' };
+        this.state = { compute: null, agents: null, http: null, cursor: 0, httpCursor: 0, loading: false, error: '' };
         this.epoch = 0;
     }
     componentDidMount() { void this.refresh(); }
     componentWillUnmount() { this.epoch++; }
-    componentDidUpdate(prev) { if (prev.data !== this.props.data && this.state.cursor === 0)
-        this.setState({ compute: this.props.data.compute ?? this.state.compute, agents: this.props.data.agentCapacity ?? this.state.agents }); }
-    async refresh(cursor = this.state.cursor) { const epoch = ++this.epoch; this.setState({ loading: true, error: '' }); try {
-        const [compute, agents] = await Promise.all([call(this.props.data.project.id, 'compute_queue_inspect', { cursor, limit: 50 }), call(this.props.data.project.id, 'agent_capacity_inspect')]);
+    componentDidUpdate(prev) { if (prev.data !== this.props.data && this.state.cursor === 0 && this.state.httpCursor === 0)
+        this.setState({ compute: this.props.data.compute ?? this.state.compute, agents: this.props.data.agentCapacity ?? this.state.agents, http: this.props.data.modelHttp ?? this.state.http }); }
+    async refresh(cursor = this.state.cursor, httpCursor = this.state.httpCursor) { const epoch = ++this.epoch; this.setState({ loading: true, error: '' }); try {
+        const [compute, agents, http] = await Promise.all([call(this.props.data.project.id, 'compute_queue_inspect', { cursor, limit: 50 }), call(this.props.data.project.id, 'agent_capacity_inspect'), call(this.props.data.project.id, 'model_http_inspect', { cursor: httpCursor, limit: 50 })]);
         if (epoch === this.epoch)
-            this.setState({ compute, agents, cursor });
+            this.setState({ compute, agents, http, cursor, httpCursor });
     }
     catch (error) {
         if (epoch === this.epoch)
@@ -189,7 +223,7 @@ export class SchedulerView extends React.Component {
             this.setState({ loading: false });
     } }
     render() {
-        const c = this.state.compute ?? this.props.data.compute, a = this.state.agents ?? this.props.data.agentCapacity;
+        const c = this.state.compute ?? this.props.data.compute, a = this.state.agents ?? this.props.data.agentCapacity, h = this.state.http ?? this.props.data.modelHttp;
         return React.createElement("div", { className: "page-scroll" },
             React.createElement(SectionTitle, { title: "\u8D44\u6E90\u4E0E\u8C03\u5EA6", sub: "\u5171\u4EAB\u5BB9\u91CF\u3001\u5F53\u524D\u9879\u76EE\u961F\u5217\u548C\u4FDD\u7559\u4E2D\u7684\u672A\u77E5\u5360\u7528\u3002" },
                 React.createElement("button", { className: "secondary", disabled: this.state.loading, onClick: () => void this.refresh() }, "\u5237\u65B0\u8C03\u5EA6\u72B6\u6001")),
@@ -230,7 +264,7 @@ export class SchedulerView extends React.Component {
                                 a.project.available,
                                 "\uFF0C\u52A9\u624B\u53EF\u7528 ",
                                 a.project.assistantAvailable)) : null),
-                    React.createElement("p", { className: "small muted" }, "HTTP \u5E76\u53D1\u672A\u6D4B\u91CF\uFF08httpConcurrencyMeasured=false\uFF09\u3002Worker \u672A\u77E5\u5360\u7528\u9700\u6838\u5BF9\uFF0C\u4E0D\u56E0\u79DF\u7EA6\u8FC7\u671F\u81EA\u52A8\u5F53\u4F5C\u7A7A\u95F2\u3002"),
+                    React.createElement("p", { className: "small muted" }, "Worker \u69FD\u4F4D\u4E0D\u7B49\u4E8E\u6A21\u578B HTTP \u8BF7\u6C42\u6570\u3002Worker \u672A\u77E5\u5360\u7528\u9700\u6838\u5BF9\uFF0C\u4E0D\u56E0\u79DF\u7EA6\u8FC7\u671F\u81EA\u52A8\u5F53\u4F5C\u7A7A\u95F2\u3002"),
                     React.createElement("div", null,
                         React.createElement("h3", null, "\u5F53\u524D\u9879\u76EE\u5F85\u542F\u52A8\u4F1A\u8BDD\uFF08\u6709\u754C\u5217\u8868\uFF09"),
                         a.queued?.length ? React.createElement("ul", null, a.queued.map(item => React.createElement("li", { key: item.sessionId },
@@ -247,6 +281,74 @@ export class SchedulerView extends React.Component {
                     React.createElement("details", null,
                         React.createElement("summary", null, "\u4FEE\u6539\u5171\u4EAB Worker \u5BB9\u91CF"),
                         React.createElement(AgentForm, { projectId: this.props.data.project.id, capacity: a, perform: this.props.perform, onSaved: () => this.refresh() }))) : React.createElement("p", { role: "status" }, "Worker \u5BB9\u91CF\u5F85\u52A0\u8F7D\u3002")),
+            React.createElement("section", { className: "surface report-builder" },
+                React.createElement("h2", null, "Pi \u6A21\u578B HTTP \u8BF7\u6C42"),
+                h ? React.createElement("div", null,
+                    React.createElement("dl", { className: "details" },
+                        React.createElement("dt", null, "\u5171\u4EAB\u4E0A\u9650"),
+                        React.createElement("dd", null,
+                            h.configuration.maxRequests,
+                            " \u4E2A\u5B9E\u9645 HTTP \u8BF7\u6C42 \u00B7 \u53EF\u6D3E\u53D1 ",
+                            h.available),
+                        React.createElement("dt", null, "\u5171\u4EAB\u72B6\u6001"),
+                        React.createElement("dd", null,
+                            "\u6392\u961F ",
+                            h.counts.queued,
+                            " \u00B7 \u6267\u884C ",
+                            h.counts.active,
+                            " \u00B7 \u672A\u77E5\u4FDD\u7559 ",
+                            h.counts.unknown),
+                        React.createElement("dt", null, "\u7BA1\u7406\u8303\u56F4"),
+                        React.createElement("dd", null, h.coverage === 'legacy-workers-present' ? `仍有 ${h.legacyWorkerCount} 个旧 Worker；新请求暂不派发` : '受管 HTTP 请求')),
+                    React.createElement("p", { className: "small muted" },
+                        "\u6B64\u5904\u8BA1\u91CF\u53D7\u7BA1\u7684 Pi \u6A21\u578B HTTP \u8BF7\u6C42\uFF0C\u4E0E\u4E0A\u9762\u7684 Worker \u69FD\u4F4D\u5206\u522B\u8BA1\u7B97\u3002\u652F\u6301 ",
+                        h.supportedApis.join('、'),
+                        "\uFF1B\u4E0D\u4EE3\u8868 Token \u6216\u4F9B\u5E94\u5546\u8D26\u5355\u9650\u989D\u3002"),
+                    React.createElement("details", null,
+                        React.createElement("summary", null, "\u4FEE\u6539\u5171\u4EAB\u6A21\u578B HTTP \u8BF7\u6C42\u4E0A\u9650"),
+                        React.createElement(ModelHttpForm, { projectId: this.props.data.project.id, capacity: h, perform: this.props.perform, onSaved: () => this.refresh() })),
+                    React.createElement("h3", null, "\u5F53\u524D\u9879\u76EE HTTP \u8BF7\u6C42\u8BB0\u5F55"),
+                    h.items.length ? React.createElement("div", { className: "table-wrap" },
+                        React.createElement("table", null,
+                            React.createElement("thead", null,
+                                React.createElement("tr", null,
+                                    React.createElement("th", null, "\u8BF7\u6C42"),
+                                    React.createElement("th", null, "\u6A21\u578B"),
+                                    React.createElement("th", null, "\u72B6\u6001"),
+                                    React.createElement("th", null, "\u65F6\u95F4\u4E0E\u56DE\u6267"))),
+                            React.createElement("tbody", null, h.items.map(item => React.createElement("tr", { key: item.id },
+                                React.createElement("td", null,
+                                    React.createElement("code", null, short(item.id)),
+                                    React.createElement("small", null,
+                                        "\u4F1A\u8BDD ",
+                                        short(item.sessionId))),
+                                React.createElement("td", null,
+                                    item.provider,
+                                    " / ",
+                                    item.model),
+                                React.createElement("td", null,
+                                    React.createElement(Badge, { value: item.state })),
+                                React.createElement("td", null,
+                                    "\u6392\u961F ",
+                                    item.queuedAt,
+                                    item.startedAt ? React.createElement("p", null,
+                                        "\u5F00\u59CB ",
+                                        item.startedAt) : null,
+                                    item.endedAt ? React.createElement("p", null,
+                                        "\u7ED3\u675F ",
+                                        item.endedAt) : null,
+                                    item.httpStatus !== undefined ? React.createElement("p", null,
+                                        "HTTP ",
+                                        item.httpStatus) : null,
+                                    item.receivedBytes !== undefined ? React.createElement("p", null,
+                                        "\u63A5\u6536 ",
+                                        item.receivedBytes,
+                                        " \u5B57\u8282") : null,
+                                    item.outcome ? React.createElement("p", null, item.outcome) : null)))))) : React.createElement("p", { className: "inline-empty" }, "\u5F53\u524D\u9875\u6CA1\u6709 HTTP \u8BF7\u6C42\u8BB0\u5F55\u3002"),
+                    React.createElement("div", { className: "actions wrap" },
+                        React.createElement("button", { className: "secondary", disabled: this.state.loading || this.state.httpCursor === 0, onClick: () => void this.refresh(this.state.cursor, 0) }, "HTTP \u9996\u9875"),
+                        React.createElement("button", { className: "secondary", disabled: this.state.loading || h.nextCursor === null, onClick: () => { if (h.nextCursor !== null)
+                                void this.refresh(this.state.cursor, h.nextCursor); } }, "HTTP \u4E0B\u4E00\u9875"))) : React.createElement("p", { role: "status" }, "\u6A21\u578B HTTP \u8BF7\u6C42\u72B6\u6001\u5F85\u52A0\u8F7D\u3002")),
             React.createElement(TargetProbe, { projectId: this.props.data.project.id, perform: this.props.perform, onConfirmed: () => this.refresh() }),
             c ? React.createElement("div", null,
                 React.createElement("section", { className: "surface report-builder" },

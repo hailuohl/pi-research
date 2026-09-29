@@ -1821,7 +1821,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             }];
                         };
                     };
-                    readonly required: ("file" | "code" | "severity" | "message" | "line" | "pass")[];
+                    readonly required: ("file" | "code" | "message" | "severity" | "line" | "pass")[];
                     readonly additionalProperties: false;
                 };
             };

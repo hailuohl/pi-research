@@ -78,6 +78,7 @@ export class AgentHost {
             this.app.publicationBuilds.tick();
             this.app.literatureTasks.tick();
             this.admission.recover();
+            this.app.modelHttp.recover();
             this.app.teams.recover();
             this.app.campaigns.observe();
             this.app.wakeups.reconcile();
@@ -210,7 +211,7 @@ export class AgentHost {
         const child = store.transaction(()=>{
             // Serialize the final revocation check with process creation across controllers.
             this.app.skills.ensureBundleStartAllowed(claimed.projectId!,bundleId);
-            this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);requested=true;
+            const marked=this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);store.update('agent-admission',marked.id,marked.version,{httpManagedVersion:1});requested=true;
             return (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: claimed.workspace, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
         });
         const worker: Active = {admissionId:slot.id, child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };active=worker;
@@ -226,7 +227,7 @@ export class AgentHost {
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
         worker.contextMessageIds = hostMessages.map(m => m.id);
         const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
-        child.send({ type: 'start', skillBundle, repoRoot: this.app.context.repoRoot, workspace: claimed.workspace, agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
+        child.send({ type: 'start', managedHttp:true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: claimed.workspace, agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             const failure=asError(error),startError=`${failure.code} — ${failure.message}`;
@@ -235,7 +236,7 @@ export class AgentHost {
         }
     }
     private exited(a:Active,code:number|null) {
-        try{if(!a.ended)this.finish(a,`Worker 退出（${code}）；请求或工具用量可能需要对账`);this.admission.release(a.admissionId,this.ownerHost,a.generation,'confirmed-exit');}finally{if(this.active.get(a.sessionId)===a)this.active.delete(a.sessionId);}
+        try{if(!a.ended)this.finish(a,`Worker 退出（${code}）；请求或工具用量可能需要对账`);this.app.modelHttp.workerExited(a.admissionId,this.ownerHost,a.generation);this.admission.release(a.admissionId,this.ownerHost,a.generation,'confirmed-exit');}finally{if(this.active.get(a.sessionId)===a)this.active.delete(a.sessionId);}
     }
     private valid(a: Active) {
         if(a.admissionId){try{this.admission.assertOwned(a.admissionId,this.ownerHost,a.generation);}catch{return false;}}
@@ -253,6 +254,21 @@ export class AgentHost {
         return true;
     }
     private async onMessage(a: Active, m: any, sessionDir: string) {
+        if(m?.type==='model_http_acquire'||m?.type==='model_http_finish'){
+            const identity={admissionId:a.admissionId,ownerHost:this.ownerHost,sessionId:a.sessionId,generation:a.generation};
+            try{
+                let result:unknown;
+                if(m.type==='model_http_acquire'){
+                    result=this.app.store.transaction(()=>{
+                        ensure(!a.ended&&!a.exitObserved&&!a.stopError&&this.valid(a),'MODEL_HTTP_SCOPE_EXPIRED','会话已停止，不能外发模型请求');
+                        if(a.actor.taskId)this.app.teams.active(a.actor);
+                        return this.app.modelHttp.acquire(identity,m.key);
+                    });
+                }else result=this.app.modelHttp.finish(identity,m.key,m.result);
+                if(!a.exitObserved&&a.child.connected)a.child.send({type:'model_http_response',requestId:m.requestId,result:result??null});
+            }catch(error){if(!a.exitObserved&&a.child.connected){const e=asError(error);a.child.send({type:'model_http_response',requestId:m.requestId,error:{code:e.code,message:clean(e.message)}});}}
+            return;
+        }
         if (a.ended)
             return;
         if (m?.type === 'tool') {

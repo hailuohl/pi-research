@@ -122,6 +122,40 @@ export declare const SCHEDULER_INPUT_SCHEMAS: {
         readonly required: readonly ["expectedVersion", "maxWorkers"];
         readonly additionalProperties: false;
     };
+    readonly model_http_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ("limit" | "cursor")[];
+        readonly additionalProperties: false;
+    };
+    readonly model_http_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly maxRequests: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["expectedVersion", "maxRequests"];
+        readonly additionalProperties: false;
+    };
 };
 export declare const SCHEDULER_OUTPUT_SCHEMAS: {
     readonly compute_target_probe: {
@@ -428,7 +462,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("targetId" | "configuration" | "usage" | "backend" | "available" | "contexts")[];
+                    readonly required: ("available" | "targetId" | "configuration" | "usage" | "backend" | "contexts")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -491,7 +525,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "targetId" | "leaseUntil" | "reason" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "leaseUntil" | "targetId" | "reason" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -503,7 +537,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("queued" | "targets" | "configuration" | "usage" | "scope" | "items" | "nextCursor" | "available")[];
+        readonly required: ("queued" | "targets" | "available" | "configuration" | "usage" | "scope" | "items" | "nextCursor")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {
@@ -702,11 +736,11 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("projectId" | "byRole" | "blockedBy" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "counts" | "assistantHeld" | "available" | "assistantAvailable")[];
+                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "effectiveMaxAgents" | "counts" | "assistantAvailable")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "unit" | "httpConcurrencyMeasured" | "counts" | "available" | "maxWorkers")[];
+        readonly required: ("version" | "available" | "maxWorkers" | "unit" | "httpConcurrencyMeasured" | "counts")[];
         readonly additionalProperties: false;
     };
     readonly agent_capacity_configure: {
@@ -843,11 +877,225 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("projectId" | "byRole" | "blockedBy" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "counts" | "assistantHeld" | "available" | "assistantAvailable")[];
+                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "effectiveMaxAgents" | "counts" | "assistantAvailable")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "unit" | "httpConcurrencyMeasured" | "counts" | "available" | "maxWorkers")[];
+        readonly required: ("version" | "available" | "maxWorkers" | "unit" | "httpConcurrencyMeasured" | "counts")[];
+        readonly additionalProperties: false;
+    };
+    readonly model_http_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly configuration: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly version: {
+                        readonly type: "integer";
+                    };
+                    readonly maxRequests: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("version" | "maxRequests")[];
+                readonly additionalProperties: false;
+            };
+            readonly scope: {
+                readonly const: "shared-data-directory";
+            };
+            readonly unit: {
+                readonly const: "pi-http-request";
+            };
+            readonly counts: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly queued: {
+                        readonly type: "integer";
+                    };
+                    readonly active: {
+                        readonly type: "integer";
+                    };
+                    readonly unknown: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("active" | "queued" | "unknown")[];
+                readonly additionalProperties: false;
+            };
+            readonly available: {
+                readonly type: "integer";
+            };
+            readonly coverage: {
+                readonly enum: readonly ["managed-fetch", "legacy-workers-present"];
+            };
+            readonly legacyWorkerCount: {
+                readonly type: "integer";
+            };
+            readonly supportedApis: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly sessionId: {
+                            readonly type: "string";
+                        };
+                        readonly provider: {
+                            readonly type: "string";
+                        };
+                        readonly model: {
+                            readonly type: "string";
+                        };
+                        readonly state: {
+                            readonly enum: readonly ["queued", "active", "unknown", "succeeded", "failed", "cancelled", "interrupted"];
+                        };
+                        readonly queuedAt: {
+                            readonly type: "string";
+                        };
+                        readonly startedAt: {
+                            readonly type: "string";
+                        };
+                        readonly endedAt: {
+                            readonly type: "string";
+                        };
+                        readonly httpStatus: {
+                            readonly type: "integer";
+                        };
+                        readonly receivedBytes: {
+                            readonly type: "integer";
+                        };
+                        readonly outcome: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly required: ("sessionId" | "model" | "id" | "state" | "provider" | "queuedAt")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly nextCursor: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+        };
+        readonly required: ("available" | "configuration" | "scope" | "items" | "nextCursor" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
+        readonly additionalProperties: false;
+    };
+    readonly model_http_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly configuration: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly version: {
+                        readonly type: "integer";
+                    };
+                    readonly maxRequests: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("version" | "maxRequests")[];
+                readonly additionalProperties: false;
+            };
+            readonly scope: {
+                readonly const: "shared-data-directory";
+            };
+            readonly unit: {
+                readonly const: "pi-http-request";
+            };
+            readonly counts: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly queued: {
+                        readonly type: "integer";
+                    };
+                    readonly active: {
+                        readonly type: "integer";
+                    };
+                    readonly unknown: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("active" | "queued" | "unknown")[];
+                readonly additionalProperties: false;
+            };
+            readonly available: {
+                readonly type: "integer";
+            };
+            readonly coverage: {
+                readonly enum: readonly ["managed-fetch", "legacy-workers-present"];
+            };
+            readonly legacyWorkerCount: {
+                readonly type: "integer";
+            };
+            readonly supportedApis: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly sessionId: {
+                            readonly type: "string";
+                        };
+                        readonly provider: {
+                            readonly type: "string";
+                        };
+                        readonly model: {
+                            readonly type: "string";
+                        };
+                        readonly state: {
+                            readonly enum: readonly ["queued", "active", "unknown", "succeeded", "failed", "cancelled", "interrupted"];
+                        };
+                        readonly queuedAt: {
+                            readonly type: "string";
+                        };
+                        readonly startedAt: {
+                            readonly type: "string";
+                        };
+                        readonly endedAt: {
+                            readonly type: "string";
+                        };
+                        readonly httpStatus: {
+                            readonly type: "integer";
+                        };
+                        readonly receivedBytes: {
+                            readonly type: "integer";
+                        };
+                        readonly outcome: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly required: ("sessionId" | "model" | "id" | "state" | "provider" | "queuedAt")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly nextCursor: {
+                readonly anyOf: readonly [{
+                    readonly type: "integer";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+        };
+        readonly required: ("available" | "configuration" | "scope" | "items" | "nextCursor" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
 };

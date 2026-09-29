@@ -7,7 +7,7 @@ import {integer,object} from '../contracts/validation.js';
 import {assertWorkspaceReady} from '../workspace/git-service.js';
 import {inspectPi} from '../pi-adapter/runtime.js';
 export type AdmissionState='reserved'|'running'|'stopping'|'unknown'|'released';
-export interface AgentAdmission {sessionId:string;generation:number;ownerHost:string;role:Role;teamId?:string;state:AdmissionState;leaseUntil:number;spawnRequested:boolean;workerPid?:number;}
+export interface AgentAdmission {httpManagedVersion?:1;sessionId:string;generation:number;ownerHost:string;role:Role;teamId?:string;state:AdmissionState;leaseUntil:number;spawnRequested:boolean;workerPid?:number;}
 export interface AgentCounts {reserved:number;running:number;stopping:number;unknown:number;held:number;}
 export interface AgentCapacityDTO {version:number;maxWorkers:number;available:number;unit:'pi-worker';httpConcurrencyMeasured:false;counts:AgentCounts;queued?:Array<{sessionId:string;role:Role;reasons:Array<{code:string;message:string}>}>;project?:{projectId:string;maxActiveAgents:number;maxConcurrentAssistants:number;effectiveMaxAgents:number;counts:AgentCounts;assistantHeld:number;available:number;assistantAvailable:number;byRole:Record<string,number>;blockedBy:string[]};}
 const held=(slot:Row<AgentAdmission>)=>slot.state!=='released';

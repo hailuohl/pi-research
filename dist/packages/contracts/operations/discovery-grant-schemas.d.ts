@@ -376,7 +376,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "discoveryGrant" | "status" | "error" | "httpStatus" | "retryAfter" | "host" | "startedAt" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest")[];
+                readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter" | "error")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -620,7 +620,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "settingsVersion" | "items" | "request" | "coverage")[];
+                readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request" | "coverage")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -1382,7 +1382,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "discoveryGrant" | "status" | "error" | "httpStatus" | "retryAfter" | "host" | "startedAt" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest")[];
+                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter" | "error")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1626,7 +1626,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "settingsVersion" | "items" | "request" | "coverage")[];
+                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request" | "coverage")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2189,7 +2189,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "discoveryGrant" | "status" | "error" | "httpStatus" | "retryAfter" | "host" | "startedAt" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest")[];
+                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter" | "error")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2433,7 +2433,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "settingsVersion" | "items" | "request" | "coverage")[];
+                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request" | "coverage")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2996,7 +2996,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "discoveryGrant" | "status" | "error" | "httpStatus" | "retryAfter" | "host" | "startedAt" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest")[];
+                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter" | "error")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3240,7 +3240,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "settingsVersion" | "items" | "request" | "coverage")[];
+                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request" | "coverage")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3803,7 +3803,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "discoveryGrant" | "status" | "error" | "httpStatus" | "retryAfter" | "host" | "startedAt" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest")[];
+                    readonly required: ("source" | "bytes" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter" | "error")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -4047,7 +4047,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "settingsVersion" | "items" | "request" | "coverage")[];
+                    readonly required: ("sources" | "query" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request" | "coverage")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
