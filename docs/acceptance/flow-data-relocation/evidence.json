@@ -1,13 +1,13 @@
 {
-  "capturedAt": "2026-09-29T08:50:50.384Z",
+  "capturedAt": "2026-09-29T09:45:25.232Z",
   "baselineCommit": "f99334f66539fc8fc6ea28929f8726df1ce7f2be",
-  "status": "implemented; live Pi and Docker acceptance blocked by local environment",
+  "status": "implemented and real migrated Pi/Docker critical path verified",
   "scope": "Offline same-platform A to B to C relocation; one active copy; frontend layout deferred; distribution and hosted services outside this batch",
   "acceptance": {
     "preserveFrozenIdentity": "passed",
     "currentRootReadWriteAndQuota": "passed via historical data plus bounded-grant integration fixture",
     "invalidBoundaries": "passed",
-    "realPiAndDocker": "not completed",
+    "realPiAndDocker": "passed",
     "secondMoveAndHistory": "passed"
   },
   "historicalData": {
@@ -74,24 +74,81 @@
       "legacyRootsCount": 2,
       "sourcePreserved": true,
       "sessionMessages": 16
+    },
+    "afterContinuation": {
+      "records": 74,
+      "originalBusinessRowsUnchanged": 52,
+      "originalSessionUpdatedByAuthorizedResume": true,
+      "oldADataFilesUnchanged": 48,
+      "oldBDataFilesUnchanged": 49,
+      "activeCopy": "C only",
+      "originalBBackupRows": 56,
+      "oldBBackupRowsUnchangedAtC": 54,
+      "changedOldBRecordKinds": [
+        "session",
+        "message"
+      ]
     }
   },
   "liveExecution": {
     "pi": {
-      "status": "blocked-before-worker",
-      "reason": "SKILL_CAPABILITY_MISSING — acceptance-figure backend:docker — 默认 Docker 目标未核验或核验已过期；请先核对计算目标",
-      "workersStarted": 0,
-      "providerRequests": 0,
-      "sdkOfflineInspectionOnly": true
+      "initialAttempt": {
+        "status": "blocked-before-worker",
+        "reason": "SKILL_CAPABILITY_MISSING — acceptance-figure backend:docker — 默认 Docker 目标未核验或核验已过期；请先核对计算目标",
+        "workersStarted": 0,
+        "providerRequests": 0,
+        "sdkOfflineInspectionOnly": true
+      },
+      "continuation": {
+        "state": "idle",
+        "nativeId": "01a0e7dd-74d3-7142-8aef-5542c2ed4546",
+        "originalNativeBytesPreserved": 98774,
+        "nativeBytesAfter": 111497,
+        "sameStoredLegacyPath": true,
+        "physicalWorkerAtC": true,
+        "originalUndispatchedMessage": "cancelled",
+        "retryMessage": "completed",
+        "modelHttpRequests": 2,
+        "contextReceiptCount": 1
+      }
     },
     "docker": {
-      "status": "startup-failed",
-      "reason": "initializing Ingest server: sailor-ingest.sock rename failed; The file cannot be accessed by the system.",
-      "observedAt": "2026-09-29T08:25:21.671426700Z",
-      "newJobsSubmitted": 0,
-      "similarIssue": "https://github.com/docker/desktop-feedback/issues/675"
+      "initialEnvironment": {
+        "status": "startup-failed",
+        "reason": "initializing Ingest server: sailor-ingest.sock rename failed; The file cannot be accessed by the system.",
+        "observedAt": "2026-09-29T08:25:21.671426700Z",
+        "newJobsSubmitted": 0,
+        "similarIssue": "https://github.com/docker/desktop-feedback/issues/675"
+      },
+      "continuation": {
+        "jobId": "bf5d30e3-645f-46a8-994c-aaf98d51048c",
+        "state": "succeeded",
+        "integrity": "complete",
+        "approvalId": "3a626cf9-6fb2-4ba4-aee3-47f10821c90e",
+        "manifestDigest": "f7a930bdd9786159ba288aeda6948d89ae45a86920308929950a0b6e6532d2f4",
+        "imageId": "sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+        "containerBindMountsAtC": true,
+        "artifactCount": 6,
+        "outputs": [
+          {
+            "title": "output/figure-check.json",
+            "digest": "4b695b08d5d3b5cbc21900b3470c05596e6b9480a9db5d939fb2226f0f2179de",
+            "size": 264
+          },
+          {
+            "title": "output/figure.png",
+            "digest": "9248c17b78443dbb151f1a391fadc5eb2bd79b5684b79015342bdb3963b11918",
+            "size": 2021
+          },
+          {
+            "title": "output/points.csv",
+            "digest": "fc11f2b521ca4e063055defd13b92516155d6266a93348811bafb8841d249d06",
+            "size": 221
+          }
+        ]
+      }
     },
-    "remaining": "Once Docker is available, resume the preserved native session and separately approve one fixed Docker test on the active C copy. Do not replay old completed jobs."
+    "remaining": "None for the fixed same-platform A→B→C critical path; other PR items remain governed by the revised plan."
   },
   "browser": {
     "recordedAt": "2026-09-29T08:33:54.653Z",
@@ -199,6 +256,18 @@
       "pass": 219,
       "fail": 0,
       "skipped": 0
+    },
+    "liveContinuation": {
+      "independentReview": {
+        "model": "gpt-6-astra",
+        "scope": "new real C evidence only",
+        "remainingBlockers": 0,
+        "conclusion": "real Pi and Docker close acceptance condition 4; prior code review not repeated"
+      },
+      "codeChanged": false,
+      "fullRegressionRepeated": false,
+      "cleanBuildRepeated": false,
+      "reason": "The continuation used the already reviewed relocation implementation; only real Pi, Docker and browser acceptance was newly run."
     }
   },
   "limits": [
@@ -208,6 +277,18 @@
     "The actual migrated data has no WorkingGrant; bounded authority is verified by an explicit integration fixture.",
     "Real Pi and Docker execution remain unverified for this batch.",
     "Artifact selection resets on refresh; records and previews remain available.",
-    "Five pre-existing frontend layout files remain outside this commit."
-  ]
+    "Five pre-existing frontend layout files remain outside this commit.",
+    "The actual legacy source had no WorkingGrant; finite grant retention and exhaustion were checked with the explicit A→B→C integration fixture, not a paid live job."
+  ],
+  "browserAfterContinuation": {
+    "capturedAt": "2026-09-29T09:40:58.929Z",
+    "oldAndNewSessionMessagesVisible": true,
+    "originalUndispatchedMessageCancelled": true,
+    "retryResultVisible": true,
+    "relocatedDockerJobVisible": true,
+    "jobComplete": true,
+    "refreshRetainedJobAndProject": true,
+    "layoutEvaluated": false,
+    "screenshotsCopied": false
+  }
 }
