@@ -125,10 +125,22 @@ const searchSource = object({ ...chunkSource.properties, sourceKind: enumeration
 const searchHit = object({ ...chunkSource.properties, chunkId: string, quote: string, alternativeSources: array(searchSource), score: number,
     evidenceId: string, sourceKind: enumeration('user_imported_text', 'document_page'), offsetUnit: { const: 'utf16-code-unit' },
     page: nullablePage, document: nullableDocumentLink }, ['sourceKind', 'offsetUnit', 'page', 'document']);
+const textCorpusGrantReference = object({ id: string, digest: string, approvalId: string });
+const textEvidenceSearch = row('text-evidence-search', {
+    query: string, limit: integer, mmrLambda: number, deduplicateExact: boolean, artifactIds: strings, documents: array(documentPair), corpusId: string, configurationVersion: integer, method: string, status: enumeration('matches', 'no_lexical_match'), textCorpusGrant: textCorpusGrantReference,
+    hits: array(searchHit), coverage: object({ sourceCount: integer, totalChunks: integer, matchingChunks: integer, exactDuplicatesGrouped: integer, uniqueChunks: integer, candidatesConsidered: integer, candidateLimitReached: boolean, resultsTruncated: boolean }), usage: object({ modelCalls: { const: 0 }, networkCalls: { const: 0 } }), limitations: strings
+}, ['documents', 'textCorpusGrant']);
+const textCorpusGrant = row('text-corpus-grant', {
+    sessionId: string, model: object({ provider: string, model: string, thinking: enumeration('off', 'minimal', 'low', 'medium', 'high', 'xhigh') }), corpusId: string, configurationVersion: integer,
+    documents: array(object({ documentVersionId: string, parseResultId: string, sourceDigest: string })), maxSearches: integer, expiresAt: string, approvalId: string, digest: string, state: enumeration('draft', 'active', 'revoked'), activatedAt: string, revokedAt: string,
+    effectiveState: enumeration('draft', 'active', 'revoked', 'stale', 'expired', 'exhausted'), validity: enumeration('current', 'stale'), reasons: strings, usage: object({ limit: integer, used: integer, remaining: integer, unit: { const: 'search' } }),
+    uses: array(row('text-corpus-grant-use', { grantId: string, grantDigest: string, sessionId: string, requestDigest: string, searchId: string })), searchResults: array(textEvidenceSearch)
+}, ['activatedAt', 'revokedAt']);
 const contextTask = object({ id: string, key: string, result: taskResult }, ['result']);
 const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string, discoveryGrant: DISCOVERY_GRANT_REFERENCE_SCHEMA }, ['wakeupId', 'runId', 'taskId', 'discoveryGrant']);
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    text_corpus_grant_prepare: textCorpusGrant, text_corpus_grant_inspect: textCorpusGrant, text_corpus_grant_activate: textCorpusGrant, text_corpus_grant_revoke: textCorpusGrant,
     ...RESEARCH_PLAN_OUTPUT_SCHEMAS,
     ...SKILL_OUTPUT_SCHEMAS,
     ...PUBLICATION_OUTPUT_SCHEMAS,
@@ -174,12 +186,7 @@ export const OUTPUT_SCHEMAS = {
         project: object({ id: string, name: string }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
         runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings
     }),
-    text_evidence_search: row('text-evidence-search', {
-        query: string, limit: integer, mmrLambda: number, deduplicateExact: boolean, artifactIds: strings, documents: array(documentPair), corpusId: string, configurationVersion: integer, method: string, status: enumeration('matches', 'no_lexical_match'),
-        hits: array(searchHit),
-        coverage: object({ sourceCount: integer, totalChunks: integer, matchingChunks: integer, exactDuplicatesGrouped: integer, uniqueChunks: integer, candidatesConsidered: integer, candidateLimitReached: boolean, resultsTruncated: boolean }),
-        usage: object({ modelCalls: { const: 0 }, networkCalls: { const: 0 } }), limitations: strings
-    }, ['documents']),
+    text_evidence_search: textEvidenceSearch,
     campaign_enroll: member,
     campaign_decision_submit: decision,
     campaign_inspect: object({

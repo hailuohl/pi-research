@@ -59,6 +59,7 @@ function paperReplay(c: OperationContext, x: Record<string, unknown>) {
 }
 
 function authorizeRegistered(c: OperationContext, name: string, x: Record<string, unknown>) {
+    c.app.textCorpusGrants.authorizeContent(c.actor,c.projectId,name,x);
     if (name === 'workspace_list') workspaceScope(c, x);
     if (name === 'text_evidence_search') {
         if (c.actor.type === 'agent') c.app.operations.authorizeAgent(c.actor, name);
@@ -165,6 +166,10 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('text_corpus_grant_prepare',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.textCorpusGrants.prepare(c.actor,c.projectId,x)}),
+    make('text_corpus_grant_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.textCorpusGrants.inspect(c.actor,c.projectId,x.grantId as string)}),
+    make('text_corpus_grant_activate',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.textCorpusGrants.activate(c.actor,c.projectId,x)}),
+    make('text_corpus_grant_revoke',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.textCorpusGrants.revoke(c.actor,c.projectId,x)}),
     make('campaign_plan_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.researchPlans.inspect(c.actor,c.projectId,x.planRevisionId as string)}),
     make('campaign_candidate_prepare',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.researchPlans.prepareCandidate(c.actor,c.projectId,x)}),
     make('campaign_candidate_attach',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.researchPlans.attachCandidate(c.actor,c.projectId,x)}),
@@ -452,8 +457,13 @@ export class OperationRegistry {
         if (!cached) return output(invoke());
         // Recheck under the write lock before invoking: other HTTP/CLI processes share this DB.
         return this.app.store.transaction(() => {
+            // PDF authority must be current under the same writer lock as cached receipt return.
+            if(['text_evidence_search','artifact_read','evidence_register','evidence_read'].includes(id))spec.authorize(context,input);
             const previous = lookup();
-            if (previous) return save(previous.value);
+            if (previous) {
+                if(id==='text_evidence_search')this.app.textEvidence.verifyReplay(actor,pid,input);
+                return save(previous.value);
+            }
             const pending = this.app.store.maybe<{hash: string}>('operation-pending', digest({scope: operationScope, key}));
             if (pending) {
                 ensure(pending.hash === digest(request), 'IDEMPOTENCY_CONFLICT', '相同幂等键不能用于不同请求');

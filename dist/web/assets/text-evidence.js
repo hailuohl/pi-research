@@ -133,10 +133,163 @@ class TextEvidencePanel extends React.Component {
       this.state.sourcePreview ? /* @__PURE__ */ jsxs("details", { open: true, children: [
         /* @__PURE__ */ jsx("summary", { children: "\u539F\u6587\u4EF6\u6587\u672C\uFF08\u4E0D\u662F\u6A21\u578B\u6458\u8981\uFF09" }),
         /* @__PURE__ */ jsx("pre", { className: "file-preview", children: this.state.sourcePreview })
+      ] }) : null,
+      /* @__PURE__ */ jsx(TextCorpusGrantPanel, { data, perform, onSession: this.props.onSession })
+    ] });
+  }
+}
+const grantExpiry = () => {
+  const d = new Date(Date.now() + 36e5);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+};
+class TextCorpusGrantPanel extends React.Component {
+  constructor() {
+    super(...arguments);
+    this.state = { sessionId: "", documents: [], maxSearches: 2, expiresAt: grantExpiry(), selectedId: "", error: "" };
+  }
+  componentDidUpdate(previous) {
+    if (previous.data.project.id !== this.props.data.project.id) this.setState({ sessionId: "", documents: [], maxSearches: 2, expiresAt: grantExpiry(), selectedId: "", error: "" });
+    else if (previous.data.textEvidence?.corpusId !== this.props.data.textEvidence?.corpusId) this.setState({ documents: [] });
+  }
+  call(name, input) {
+    return api(`/operations/${name}`, { projectId: this.props.data.project.id, input });
+  }
+  prepare() {
+    const { data, perform } = this.props, s = this.state, config = data.textEvidence;
+    try {
+      if (!config?.enabled || !config.corpusId || !s.sessionId || !s.documents.length) throw Error("\u8BF7\u5148\u542F\u7528\u56FA\u5B9A PDF \u8BED\u6599\uFF0C\u518D\u9009\u62E9\u6587\u6863\u548C\u4E3B\u4F1A\u8BDD");
+      const date = new Date(s.expiresAt), remaining = date.getTime() - Date.now();
+      if (!Number.isFinite(remaining) || remaining <= 0 || remaining > 864e5) throw Error("\u622A\u6B62\u65F6\u95F4\u987B\u5728\u672A\u676524\u5C0F\u65F6\u5185");
+      this.setState({ error: "" });
+      void perform(async () => {
+        const grant = await this.call("text_corpus_grant_prepare", { sessionId: s.sessionId, documents: s.documents, corpusId: config.corpusId, configurationVersion: config.version, maxSearches: s.maxSearches, expiresAt: date.toISOString() });
+        this.setState({ selectedId: grant.id });
+      }, "\u56FA\u5B9A PDF \u4F1A\u8BDD\u6388\u6743\u8349\u6848\u5DF2\u4FDD\u5B58\uFF0C\u7B49\u5F85\u5355\u72EC\u6279\u51C6");
+    } catch (error) {
+      this.setState({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+  render() {
+    const { data, perform } = this.props, s = this.state, config = data.textEvidence, available = config?.documents ?? [], grants = data.textCorpusGrants ?? [], selectedId = s.selectedId || grants[grants.length - 1]?.id || "", g = grants.find((row) => row.id === selectedId), approval = data.approvals.find((row) => row.id === g?.approvalId);
+    return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+      /* @__PURE__ */ jsx("h3", { children: "\u6307\u5B9A Pi \u4F1A\u8BDD\u68C0\u7D22\u56FA\u5B9A PDF" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53EA\u6388\u6743\u9009\u5B9A\u539F PDF \u7684\u5DF2\u6279\u51C6\u89E3\u6790\u9875\u3001\u6307\u5B9A\u4E3B\u4F1A\u8BDD\u548C\u6709\u9650\u6B21\u672C\u5730\u8BCD\u9879\u68C0\u7D22\uFF1B\u4E0D\u6388\u6743\u5168\u6587\u4E0B\u8F7D\u3001\u8054\u7F51\u3001\u8BA1\u7B97\u6216\u79D1\u5B66\u7ED3\u8BBA\u3002\u51C6\u5907\u3001\u6279\u51C6\u548C\u6FC0\u6D3B\u4E0D\u8C03\u7528\u6A21\u578B\u3002" }),
+      /* @__PURE__ */ jsxs("details", { children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u51C6\u5907\u56FA\u5B9A PDF \u68C0\u7D22\u6388\u6743" }),
+        /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
+          e.preventDefault();
+          this.prepare();
+        }, children: [
+          /* @__PURE__ */ jsxs("label", { children: [
+            "\u6307\u5B9A\u4E3B\u534F\u8C03\u4F1A\u8BDD",
+            /* @__PURE__ */ jsxs("select", { "aria-label": "PDF \u68C0\u7D22\u6388\u6743\u4E3B\u4F1A\u8BDD", required: true, value: s.sessionId, onChange: (e) => this.setState({ sessionId: e.target.value }), children: [
+              /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u5C1A\u672A\u7ED1\u5B9A PDF \u6388\u6743\u7684\u4F1A\u8BDD" }),
+              data.sessions.filter((row) => row.role === "coordinator" && !row.taskId && row.state !== "archived" && !row.textCorpusGrantId).map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
+                row.title,
+                " \xB7 ",
+                short(row.id)
+              ] }, row.id))
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs("fieldset", { children: [
+            /* @__PURE__ */ jsx("legend", { children: "\u56FA\u5B9A PDF \u53CA\u89E3\u6790\u7248\u672C" }),
+            available.map((item) => /* @__PURE__ */ jsxs("label", { className: "check-label", children: [
+              /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.documents.some((value) => pair(value) === pair(item)), onChange: (e) => this.setState({ documents: e.target.checked ? [...s.documents, { documentVersionId: item.documentVersionId, parseResultId: item.parseResultId }] : s.documents.filter((value) => pair(value) !== pair(item)) }) }),
+              item.title,
+              " \xB7 ",
+              short(item.documentVersionId),
+              " / ",
+              short(item.parseResultId)
+            ] }, pair(item))),
+            !available.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u8BF7\u5148\u9009\u62E9\u5E76\u542F\u7528\u5DF2\u6279\u51C6\u89E3\u6790\u7684\u56FA\u5B9A PDF\u3002" }) : null
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
+            /* @__PURE__ */ jsxs("label", { children: [
+              "\u6700\u591A\u65B0\u68C0\u7D22\u6B21\u6570",
+              /* @__PURE__ */ jsxs("select", { "aria-label": "PDF \u6388\u6743\u68C0\u7D22\u6B21\u6570", value: s.maxSearches, onChange: (e) => this.setState({ maxSearches: Number(e.target.value) }), children: [
+                /* @__PURE__ */ jsx("option", { value: 1, children: "1 \u6B21" }),
+                /* @__PURE__ */ jsx("option", { value: 2, children: "2 \u6B21" })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxs("label", { children: [
+              "\u622A\u6B62\uFF08\u672C\u5730\u65F6\u95F4\uFF0C24\u5C0F\u65F6\u5185\uFF09",
+              /* @__PURE__ */ jsx("input", { "aria-label": "PDF \u6388\u6743\u622A\u6B62", type: "datetime-local", required: true, value: s.expiresAt, onChange: (e) => this.setState({ expiresAt: e.target.value }) })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !config?.enabled || !s.sessionId || !s.documents.length, children: "\u4FDD\u5B58\u56FA\u5B9A\u6388\u6743\u8349\u6848" })
+        ] })
+      ] }),
+      grants.length ? /* @__PURE__ */ jsxs("label", { children: [
+        "\u67E5\u770B\u56FA\u5B9A PDF \u6388\u6743",
+        /* @__PURE__ */ jsx("select", { "aria-label": "\u67E5\u770B\u56FA\u5B9A PDF \u6388\u6743", value: selectedId, onChange: (e) => this.setState({ selectedId: e.target.value }), children: grants.map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
+          short(row.id),
+          " \xB7 ",
+          row.state
+        ] }, row.id)) })
+      ] }) : /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u6682\u65E0\u56FA\u5B9A PDF \u4F1A\u8BDD\u6388\u6743\u3002" }),
+      s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
+      g ? /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u72B6\u6001\uFF1A",
+          g.effectiveState,
+          " \xB7 ",
+          g.validity,
+          " \xB7 \u5DF2\u7528 ",
+          g.usage.used,
+          "/",
+          g.usage.limit,
+          " \u6B21\u65B0\u68C0\u7D22\uFF0C\u5269\u4F59 ",
+          g.usage.remaining,
+          " \u6B21\u3002"
+        ] }),
+        g.reasons?.map((reason, i) => /* @__PURE__ */ jsx("p", { role: "status", children: reason }, i)),
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u4E3B\u4F1A\u8BDD ",
+          short(g.sessionId),
+          " \xB7 \u6A21\u578B ",
+          g.model.provider,
+          "/",
+          g.model.model,
+          " ",
+          this.props.onSession ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.props.onSession?.(g.sessionId), children: "\u6253\u5F00\u4F1A\u8BDD" }) : null
+        ] }),
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u8BED\u6599 ",
+          short(g.corpusId),
+          " / \u914D\u7F6E\u7248\u672C ",
+          g.configurationVersion,
+          " \xB7 \u622A\u6B62 ",
+          g.expiresAt
+        ] }),
+        g.documents.map((item) => /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+          "\u56FA\u5B9A PDF ",
+          short(item.documentVersionId),
+          " \xB7 \u89E3\u6790 ",
+          short(item.parseResultId),
+          " \xB7 \u6765\u6E90\u6458\u8981 ",
+          short(item.sourceDigest)
+        ] }, pair(item))),
+        /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
+          g.state === "draft" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: g.validity !== "current", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), "\u56FA\u5B9A PDF \u68C0\u7D22\u6388\u6743\u5DF2\u6279\u51C6\uFF0C\u5C1A\u672A\u6FC0\u6D3B"), children: "\u6279\u51C6\u56FA\u5B9A PDF \u8303\u56F4" }) : null,
+          g.state === "draft" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: g.validity !== "current", onClick: () => perform(() => this.call("text_corpus_grant_activate", { grantId: g.id, expectedVersion: g.version }), "\u6307\u5B9A\u4F1A\u8BDD\u7684\u56FA\u5B9A PDF \u68C0\u7D22\u6388\u6743\u5DF2\u6FC0\u6D3B"), children: "\u6FC0\u6D3B\u5DF2\u6279\u51C6\u6388\u6743" }) : null,
+          g.state !== "revoked" ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => this.call("text_corpus_grant_revoke", { grantId: g.id, expectedVersion: g.version }), "\u56FA\u5B9A PDF \u68C0\u7D22\u6388\u6743\u5DF2\u64A4\u9500\uFF0C\u5386\u53F2\u4FDD\u7559"), children: "\u64A4\u9500\u6388\u6743" }) : null
+        ] }),
+        /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+          "\u6279\u51C6\u8BB0\u5F55 ",
+          short(g.approvalId),
+          " \xB7 \u56FA\u5B9A\u6458\u8981 ",
+          /* @__PURE__ */ jsx("code", { children: short(g.digest) })
+        ] }),
+        /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+          "\u5DF2\u5B8C\u6210\u68C0\u7D22 ",
+          g.searchResults?.length ?? 0,
+          " \u6761\uFF1B\u539F\u9875\u8BC1\u636E\u53EF\u4ECE\u4E0A\u65B9\u5386\u53F2\u68C0\u7D22\u56DE\u67E5\u3002\u989D\u5EA6\u4EC5\u8BA1\u5DF2\u63D0\u4EA4\u7684\u65B0\u672C\u5730\u68C0\u7D22\uFF0C\u4E0D\u8BA1 HTTP\u3002"
+        ] })
       ] }) : null
     ] });
   }
 }
 export {
+  TextCorpusGrantPanel,
   TextEvidencePanel
 };

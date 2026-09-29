@@ -276,7 +276,7 @@ class LiteratureView extends React.Component {
         !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u56FA\u5B9A DocumentVersion\u3002" }) : null
       ] }),
       s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { document: s.document, data, perform, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: "\u539F\u59CB\u6587\u4EF6\u53D6\u5F97\u3001\u6587\u672C\u63D0\u53D6\u548C\u79D1\u5B66\u6838\u9A8C\u662F\u4E0D\u540C\u9636\u6BB5\u3002" }) }),
-      /* @__PURE__ */ jsx(TextEvidencePanel, { data, perform, onDocument: (target) => this.selectDocument(target, true) })
+      /* @__PURE__ */ jsx(TextEvidencePanel, { data, perform, onDocument: (target) => this.selectDocument(target, true), onSession: this.props.onSession })
     ] });
   }
 }

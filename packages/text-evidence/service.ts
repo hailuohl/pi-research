@@ -7,6 +7,7 @@ import { ensure, DomainError } from '../domain/errors.js';
 import { object, text, integer, bool, strings } from '../contracts/validation.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { assertDiscoveryDocument } from '../policy/discovery-grant-validation.js';
+import {assertCorpusDocument,assertTextCorpusGrantActor,textCorpusGrantReference,type TextCorpusGrantUse} from '../policy/text-corpus-grants.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { digest } from '../storage/store.js';
 import { verifyDocumentLink } from '../evidence/document-link.js';
@@ -14,7 +15,7 @@ import { splitText, rankChunks, PARSER_VERSION, METHOD_VERSION, type Chunk } fro
 
 type SourceRef = { artifactId: string; digest: string; title: string; size: number };
 type DocumentPair = { documentVersionId: string; parseResultId: string };
-type DocumentSourceRef = DocumentPair & {
+export type DocumentSourceRef = DocumentPair & {
     title: string;
     pageCount: number;
     documentDigest: string;
@@ -24,8 +25,8 @@ type DocumentSourceRef = DocumentPair & {
     manifestDigest: string;
     pages: DocumentParseResult['pages'];
 };
-type Corpus = { sources: SourceRef[]; documents?: DocumentSourceRef[]; parserVersion: string };
-type Configuration = { enabled: boolean; corpusId: string | null };
+export type Corpus = { sources: SourceRef[]; documents?: DocumentSourceRef[]; parserVersion: string };
+export type Configuration = { enabled: boolean; corpusId: string | null };
 type DocumentChunk = Chunk & { sourceKind: 'document_page'; page: number; document: DocumentEvidenceLink };
 type SearchChunk = Chunk & { sourceKind: 'user_imported_text'; page: null; document: null } | DocumentChunk;
 type VerifiedDocument = {
@@ -121,6 +122,7 @@ export class TextEvidenceService {
             const grant = actor.taskId ? this.app.teams.resources(actor) : actor.wakeupId ? this.app.wakeups.resources(actor) : null;
             if (grant) sources = sources.filter(s => grant.artifactIds.has(s.artifactId));
             documents = [];
+            if(!actor.taskId&&!actor.wakeupId){try{const fixed=assertTextCorpusGrantActor(this.app.store,actor,projectId);documents=(corpus?.documents??[]).filter(ref=>fixed.documents.some(p=>pairKey(p)===pairKey(ref)));}catch{/* Unavailable grants disclose no PDF sources. */}}
         }
         return { enabled: config?.enabled ?? false, version: config?.version ?? 0, corpusId: config?.corpusId ?? null,
             sources, documents: documents.map(({ documentVersionId, parseResultId, title, pageCount }) => ({ documentVersionId, parseResultId, title, pageCount })),
@@ -169,26 +171,30 @@ export class TextEvidenceService {
         const pairs = this.documentPairs(x.documents);
         ensure(ids.length + pairs.length > 0, 'TEXT_SOURCE_REQUIRED', '必须明确指定本次检索的文本或 PDF 文档 ID', 400);
         ensure(ids.length + pairs.length <= LIMITS.files, 'TEXT_CORPUS_LIMIT', '本次检索的文本与 PDF 文档合计最多 30 项', 413);
-        if (pairs.length) userOnly(actor);
+        const grant = pairs.length && actor.type === 'agent' ? assertTextCorpusGrantActor(this.app.store, actor, projectId) : undefined;
+        if (pairs.length && !grant) userOnly(actor);
+        if(grant)ensure(ids.length===0,'TEXT_GRANT_SOURCE_DENIED','PDF 授权检索不能混入其他文本来源',403);
         const hasCorpusId = x.corpusId !== undefined, hasVersion = x.configurationVersion !== undefined;
         ensure(hasCorpusId === hasVersion && (!pairs.length || hasCorpusId), 'TEXT_CONFIGURATION_REQUIRED', 'PDF 检索必须提供当前 corpusId 和 configurationVersion', 400);
         if (hasCorpusId) ensure(text(x.corpusId, 'corpusId', 100) === config.corpusId &&
             integer(x.configurationVersion, 'configurationVersion', 0) === config.version,
         'TEXT_EVIDENCE_CONFIGURATION_CHANGED', '文献集合已变化，请刷新并重新选择来源', 409);
-        const loaded = ids.map(id => {
+        const documentRefs = pairs.map(pair=>{
+            if(grant)ensure(grant.documents.some(p=>pairKey(p)===pairKey(pair)),'TEXT_GRANT_SOURCE_DENIED','PDF 文档与解析版本未在此会话授权内',403);
+            const ref=corpus.documents?.find(p=>pairKey(p)===pairKey(pair));
+            ensure(ref,'TEXT_SOURCE_NOT_APPROVED','PDF 文档与解析版本未在当前所有者批准的集合内',403);return ref;
+        });
+        documentRefs.forEach(ref=>assertCorpusDocument(this.app.store,projectId,ref));
+        ids.forEach(id=>{
             ensure(corpus.sources.some(source => source.artifactId === id), 'TEXT_SOURCE_NOT_APPROVED', '文档未在当前用户批准的集合内', 403);
-            const source = this.load(actor, projectId, id), saved = corpus.sources.find(item => item.artifactId === id)!;
-            ensure(source.artifact.digest === saved.digest, 'TEXT_SOURCE_STALE', '原文版本与批准集合不一致');
-            return source;
+            this.allowed(actor,id);
         });
-        const allDocuments = pairs.length ? (corpus.documents ?? []).map(ref => this.verifyDocument(projectId, ref, ref)) : [];
-        const byPair = new Map(allDocuments.map(document => [pairKey(document.ref), document]));
-        const selectedDocuments = pairs.map(pair => {
-            const document = byPair.get(pairKey(pair));
-            ensure(document, 'TEXT_SOURCE_NOT_APPROVED', 'PDF 文档与解析版本未在当前所有者批准的集合内', 403);
-            return document;
-        });
-        return { config, corpus, ids, pairs, loaded, selectedDocuments };
+        return { config, corpus, ids, pairs, documentRefs, grant };
+    }
+    verifyReplay(actor:Actor,projectId:string,value:unknown){
+        const {corpus,ids,documentRefs}=this.authorizeSearch(actor,projectId,value);
+        ids.forEach(id=>{const source=this.load(actor,projectId,id);ensure(source.artifact.digest===corpus.sources.find(s=>s.artifactId===id)!.digest,'TEXT_SOURCE_STALE','原文版本与批准集合不一致');});
+        documentRefs.forEach(ref=>this.verifyDocument(projectId,ref,ref));
     }
     search(actor: Actor, projectId: string, value: unknown) {
         return this.app.store.transaction(() => {
@@ -196,11 +202,20 @@ export class TextEvidenceService {
             const lambda = x.mmrLambda === undefined ? 1 : x.mmrLambda;
             const deduplicateExact = bool(x.deduplicateExact ?? true, 'deduplicateExact');
             ensure(typeof lambda === 'number' && Number.isFinite(lambda) && lambda >= 0 && lambda <= 1, 'INVALID_INPUT', 'mmrLambda 是 0–1 的相关性权重，1关闭MMR选择', 400);
-            const { config, ids, pairs, loaded, selectedDocuments } = this.authorizeSearch(actor, projectId, x);
+            const { config, corpus, ids, pairs, documentRefs, grant } = this.authorizeSearch(actor, projectId, x);
             const documents = pairs.map(({ documentVersionId, parseResultId }) => ({ documentVersionId, parseResultId }));
             const request = { query, limit, mmrLambda: lambda, deduplicateExact, artifactIds: ids, documents,
-                corpusId: config.corpusId, configurationVersion: config.version, method: METHOD_VERSION };
+                corpusId: config.corpusId, configurationVersion: config.version, method: METHOD_VERSION,
+                ...(grant?{textCorpusGrant:textCorpusGrantReference(grant)}:{}) };
             const id = digest({ projectId, ...request }), previous = this.app.store.maybe<any>('text-evidence-search', id);
+            const requestDigest=digest(request),useId=grant?digest({grantId:grant.id,requestDigest}):undefined;
+            if(grant){
+                const used=this.app.store.list<TextCorpusGrantUse>('text-corpus-grant-use',projectId).filter(u=>u.grantId===grant.id),use=this.app.store.maybe<TextCorpusGrantUse>('text-corpus-grant-use',useId!);
+                if(previous)ensure(use&&use.searchId===id&&use.grantDigest===grant.digest,'TEXT_GRANT_USE_INVALID','固定检索缺少原授权计次');
+                else ensure(!use&&used.length<grant.maxSearches,'TEXT_GRANT_EXHAUSTED','原文授权检索额度已用尽');
+            }
+            const loaded=ids.map(id=>{const source=this.load(actor,projectId,id),saved=corpus.sources.find(item=>item.artifactId===id)!;ensure(source.artifact.digest===saved.digest,'TEXT_SOURCE_STALE','原文版本与批准集合不一致');return source;});
+            const selectedDocuments=documentRefs.map(ref=>this.verifyDocument(projectId,ref,ref));
             if (previous) {
                 previous.hits.forEach((hit: { evidenceId: string; alternativeSources?: Array<{ evidenceId?: string | null }> }) => {
                     this.app.evidence.verify(projectId, hit.evidenceId);
@@ -221,9 +236,9 @@ export class TextEvidenceService {
                 const group = groups.get(key)!;
                 const source = group.find(chunk => chunk.chunkId === selected.chunkId)!;
                 const register = (chunk: SearchChunk) => chunk.sourceKind === 'document_page'
-                    ? this.app.evidence.registerDocument(actor, projectId, { documentVersionId: chunk.document.documentVersionId,
+                    ? this.app.evidence[grant?'registerGrantedDocument':'registerDocument'](actor, projectId, { documentVersionId: chunk.document.documentVersionId,
                         parseResultId: chunk.document.parseResultId, pageNumber: chunk.page, start: chunk.locator.start, end: chunk.locator.end,
-                        description: `固定 PDF 原文：${chunk.title}，物理第 ${chunk.page} 页；${PARSER_VERSION}` })
+                        description: `固定 PDF 原文：${chunk.title}，物理第 ${chunk.page} 页；${PARSER_VERSION}` }, grant?textCorpusGrantReference(grant):undefined)
                     : (() => {
                         const link = this.app.store.maybe<{ evidenceId: string }>('text-chunk-link', chunk.chunkId);
                         if (link) return this.app.evidence.verify(projectId, link.evidenceId);
@@ -252,7 +267,8 @@ export class TextEvidenceService {
                     '未匹配不证明文献中没有答案；相关性分数不是正确性或独立证据评分。',
                     'PDF 使用已批准解析结果中的原页文本，不执行 OCR；存在相反结果时应逐条读原文。',
                 ] }, id);
-            this.app.store.event(projectId, 'text-evidence.searched', { searchId: result.id, sourceCount: ids.length + pairs.length, hitCount: hits.length });
+            if(grant)this.app.store.create<TextCorpusGrantUse>('text-corpus-grant-use',projectId,{grantId:grant.id,grantDigest:grant.digest,sessionId:grant.sessionId,requestDigest,searchId:result.id},useId);
+            this.app.store.event(projectId, 'text-evidence.searched', { searchId: result.id, sourceCount: ids.length + pairs.length, hitCount: hits.length,...(grant?{grantId:grant.id}:{}) });
             return result;
         });
     }

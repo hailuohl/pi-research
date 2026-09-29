@@ -1,0 +1,42 @@
+{
+  "batch": "flow-pdf-agent-corpus",
+  "date": "2026-09-30",
+  "baseCommit": "65953c1c470f511224da9bdf46cb03f35c825a6a",
+  "scope": "Approved main Pi session searches one fixed PDF parse result with at most two new local searches",
+  "realAcceptance": {
+    "projectId": "c4379c14-57e3-447e-9d93-c9e553597afb",
+    "documentVersionId": "8f8d0f7d-781f-4bf3-9f92-f59b6d3647d6",
+    "parseJobId": "88a68bcc-122d-4515-b87b-6b0cd2bfa2d2",
+    "parseResultId": "4266c390f7b3b96523046c59e018554d27e770bf091fb3bb5bff5d772d272d95",
+    "parser": {"state": "succeeded", "integrity": "complete", "pageCount": 3, "dockerContext": "desktop-linux"},
+    "sessionId": "5dd54bf0-60f4-4787-bc53-8ff8704e8773",
+    "model": {"provider": "zai-coding-cn", "id": "glm-5.3", "usageRows": 4, "finalState": "idle"},
+    "grantId": "ca8d64ee-2679-4abf-a2b6-41effa2d4391",
+    "searchId": "05c1f62c8c605fea38b23a977e208a1955ddc38ece8f67fb37a9813cdd4d6406",
+    "newSearchesUsed": 1,
+    "newSearchLimit": 2,
+    "hitCount": 2,
+    "physicalPages": [2],
+    "evidenceIds": ["70ad02d8-1bc6-44e1-ada0-53424e503139", "ce377ca0-d11c-43e5-99f7-8fe93e8fbc1f"],
+    "pageJumpVerifiedInBrowser": true,
+    "connectorHttpRequests": 0,
+    "newRuns": 0,
+    "afterRevoke": {"grantState": "revoked", "approvalStatus": "stale", "usageUsed": 1, "oldSearchAndEvidenceReadable": true, "browserRefreshRetainedHistory": true},
+    "localEvidenceSha256": {
+      "parseSetup": "8becc4003f67c9a0e86f7c0987f02dd1fdf13d8b4e22e338f698b73140ad7e08",
+      "parseOutcome": "ce7621053bcaf39cdb219485b0e321518123577ea5e015c49340022f0c4d0e55",
+      "beforeRevoke": "4c5bd5730e0d3150dc8919c63a8319095cb0315dc550c09bf9ec5dbbe18556fd",
+      "afterRevoke": "9be89881d969dd08ca4d7551c77820156ffcce0939691a97a4d081829956de76",
+      "browserScreenshot": "3024ea1d28d95bb2b3e96ada87bbb58bf8395ce3c4f7ee97e6bbc81bb51ea06e"
+    }
+  },
+  "validation": {
+    "backendFocusedGroups": [43, 40, 6],
+    "httpAndUiFocused": {"tests": 16, "passed": 16},
+    "fullRegressionInitial": {"tests": 804, "passed": 781, "failed": 1, "skipped": 22, "localLogSha256": "78e35ac3a069088c671c41c00c1d9c73d47e83e320381cb8a8ca8a36e62921ab"},
+    "resolvedInventoryFixture": {"test": "tests/integration/operations-http-cli.test.mjs", "rerunPassed": 1, "productCodeChanged": false},
+    "cleanBuild": {"files": 453, "identical": true, "npmCi": 0, "build": 0, "typecheck": 0, "manifestSha256": "71d300981a4910df25934845c1e30e01dac50a0f17930c32028cc153b18f27d9"},
+    "independentReview": {"model": "gpt-6-astra", "remainingBlockers": 0},
+    "protectedConcurrentWorkUnchanged": true
+  }
+}

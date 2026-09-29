@@ -675,6 +675,122 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["query"];
         readonly additionalProperties: false;
     };
+    readonly text_corpus_grant_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly sessionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly documents: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly documentVersionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly parseResultId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                    };
+                    readonly required: readonly ["documentVersionId", "parseResultId"];
+                    readonly additionalProperties: false;
+                };
+                readonly minItems: number;
+            };
+            readonly corpusId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly configurationVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly maxSearches: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly expiresAt: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["sessionId", "documents", "corpusId", "configurationVersion", "maxSearches", "expiresAt"];
+        readonly additionalProperties: false;
+    };
+    readonly text_corpus_grant_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly grantId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["grantId"];
+        readonly additionalProperties: false;
+    };
+    readonly text_corpus_grant_activate: {
+        readonly type: "object";
+        readonly properties: {
+            readonly grantId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["grantId", "expectedVersion"];
+        readonly additionalProperties: false;
+    };
+    readonly text_corpus_grant_revoke: {
+        readonly type: "object";
+        readonly properties: {
+            readonly grantId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["grantId", "expectedVersion"];
+        readonly additionalProperties: false;
+    };
     readonly workspace_read: {
         readonly type: "object";
         readonly properties: {

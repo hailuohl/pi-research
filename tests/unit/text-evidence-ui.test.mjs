@@ -21,3 +21,15 @@ test('fixed PDF hit returns to the exact archived page, and old results survive 
  find(tree,n=>n.type==='button'&&flatten(n.props.children).includes('返回固定 PDF 原页')).props.onClick();
  assert.deepEqual(target,{documentVersionId:'doc-1',parseResultId:'parse-1',pageNumber:5,start:223,end:236});
 });
+
+test('fixed PDF session grant form submits only the selected corpus version and session, without activating it',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const calls=[];
+ globalThis.fetch=async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return {ok:true,json:async()=>({id:'grant-1'})};};
+ const {TextCorpusGrantPanel}=await import('../../dist/web/assets/text-evidence.js');
+ const data={project:{id:'project'},sessions:[{id:'session-1',title:'Research',role:'coordinator',state:'idle'}],approvals:[],textEvidence:{enabled:true,version:3,corpusId:'frozen-corpus',documents:[{documentVersionId:'pdf-1',parseResultId:'parse-1',title:'Wine paper',pageCount:17}]},textCorpusGrants:[]};
+ const panel=synchronousState(new TextCorpusGrantPanel({data,perform:async f=>f()}));let tree=panel.render();
+ find(tree,n=>n.type==='select'&&n.props['aria-label']==='PDF 检索授权主会话').props.onChange({target:{value:'session-1'}});
+ find(tree,n=>n.type==='input'&&n.props.type==='checkbox').props.onChange({target:{checked:true}});
+ tree=panel.render();find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/operations/text_corpus_grant_prepare');assert.deepEqual(calls[0].body.input.sessionId,'session-1');assert.deepEqual(calls[0].body.input.documents,[{documentVersionId:'pdf-1',parseResultId:'parse-1'}]);assert.equal(calls[0].body.input.corpusId,'frozen-corpus');assert.equal(calls[0].body.input.configurationVersion,3);assert.equal(calls[0].body.input.maxSearches,2);assert.equal(panel.state.selectedId,'grant-1');
+});

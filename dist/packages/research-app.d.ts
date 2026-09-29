@@ -1,6 +1,7 @@
 import { ModelHttpService } from './scheduler/model-http.js';
 import { PublicationBuildService } from './publications/build-service.js';
 import { DiscoveryGrantService } from './policy/discovery-grants.js';
+import { TextCorpusGrantService } from './policy/text-corpus-grants.js';
 import { WorkingGrantService } from './policy/working-grants.js';
 import { RunGrantService } from './policy/run-grants.js';
 import { PublicationReviewService } from './publications/reviews.js';
@@ -37,6 +38,7 @@ import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
     readonly discoveryGrants: DiscoveryGrantService;
+    readonly textCorpusGrants: TextCorpusGrantService;
     readonly workingGrants: WorkingGrantService;
     readonly runGrants: RunGrantService;
     readonly publicationBuilds: PublicationBuildService;

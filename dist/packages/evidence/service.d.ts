@@ -1,3 +1,4 @@
+import { type TextCorpusGrantReference } from '../policy/text-corpus-grants.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Artifact, Evidence, Claim, Row } from '../domain/types.js';
 export declare class EvidenceService {
@@ -22,6 +23,9 @@ export declare class EvidenceService {
         end: number;
         description: string;
     }): Row<Evidence>;
+    /** Host search path only; no tool exposes this method or accepts an authority flag. */
+    registerGrantedDocument(actor: Actor, projectId: string, input: Parameters<EvidenceService['registerDocument']>[2], reference?: TextCorpusGrantReference): Row<Evidence>;
+    private registerDocumentCore;
     proposeClaim(actor: Actor, projectId: string, statement: string, evidenceIds: string[], limitations?: string[], taskId?: string): Row<Claim>;
     /** File hashes establish integrity; acceptance bindings establish applicability. */
     assertClaimCurrent(claim: Row<Claim>): Row<Claim>;

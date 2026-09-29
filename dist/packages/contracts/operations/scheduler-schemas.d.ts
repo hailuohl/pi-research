@@ -273,7 +273,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("unknown" | "cpus" | "memoryMb" | "development" | "documents" | "runs" | "publications" | "jobs")[];
+                readonly required: ("unknown" | "cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -309,7 +309,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: ("cpus" | "memoryMb" | "development" | "documents" | "runs" | "publications" | "jobs")[];
+                readonly required: ("cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -422,7 +422,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                 };
                             };
-                            readonly required: ("unknown" | "cpus" | "memoryMb" | "development" | "documents" | "runs" | "publications" | "jobs")[];
+                            readonly required: ("unknown" | "cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
                             readonly additionalProperties: false;
                         };
                         readonly available: {
@@ -458,11 +458,11 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("cpus" | "memoryMb" | "development" | "documents" | "runs" | "publications" | "jobs")[];
+                            readonly required: ("cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("available" | "targetId" | "configuration" | "usage" | "backend" | "contexts")[];
+                    readonly required: ("usage" | "available" | "targetId" | "configuration" | "backend" | "contexts")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -525,7 +525,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "leaseUntil" | "targetId" | "reason" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "reason" | "leaseUntil" | "targetId" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -537,7 +537,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("queued" | "targets" | "nextCursor" | "available" | "configuration" | "usage" | "scope" | "items")[];
+        readonly required: ("queued" | "targets" | "nextCursor" | "usage" | "scope" | "available" | "configuration" | "items")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {
@@ -988,7 +988,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("nextCursor" | "available" | "configuration" | "scope" | "items" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
+        readonly required: ("nextCursor" | "coverage" | "scope" | "available" | "configuration" | "items" | "unit" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
     readonly model_http_configure: {
@@ -1095,7 +1095,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("nextCursor" | "available" | "configuration" | "scope" | "items" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
+        readonly required: ("nextCursor" | "coverage" | "scope" | "available" | "configuration" | "items" | "unit" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
 };

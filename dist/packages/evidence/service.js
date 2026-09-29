@@ -1,4 +1,5 @@
 import { assertDiscoveryArtifact, assertDiscoveryDocument } from '../policy/discovery-grant-validation.js';
+import { assertPdfArtifactRead, assertTextCorpusGrantActor } from '../policy/text-corpus-grants.js';
 import { verifyDocumentLink } from './document-link.js';
 import { captureAcceptance, assertAcceptanceCurrent } from './acceptance.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
@@ -30,7 +31,7 @@ export class EvidenceService {
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId, prepared) { this.c.store.get('project', projectId); return this.c.store.create('artifact', projectId, prepared); }
     put(projectId, title, bytes, mediaType = 'text/plain', origin = 'user', extra = {}) { return this.publishPrepared(projectId, this.prepareArtifact(projectId, title, bytes, mediaType, origin, extra)); }
-    read(actor, id) { const a = this.c.store.get('artifact', id); scope(actor, a.projectId); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    read(actor, id) { const a = this.c.store.get('artifact', id); scope(actor, a.projectId); assertPdfArtifactRead(this.c.store, actor, a.projectId, id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
     register(actor, projectId, artifactId, start, end, description, type = 'artifact', runId) {
         scope(actor, projectId);
         const a = this.c.store.get('artifact', artifactId, projectId);
@@ -54,6 +55,18 @@ export class EvidenceService {
         userOnly(actor);
         scope(actor, projectId);
         assertProjectWritable(this.c.store, projectId);
+        return this.registerDocumentCore(actor, projectId, input);
+    }
+    /** Host search path only; no tool exposes this method or accepts an authority flag. */
+    registerGrantedDocument(actor, projectId, input, reference) {
+        return this.c.store.transaction(() => {
+            ensure(reference, 'TEXT_GRANT_REQUIRED', '缺少固定检索授权');
+            const grant = assertTextCorpusGrantActor(this.c.store, actor, projectId, reference);
+            ensure(grant.documents.some(p => p.documentVersionId === input.documentVersionId && p.parseResultId === input.parseResultId), 'TEXT_GRANT_SOURCE_DENIED', '证据来源不在授权内', 403);
+            return this.registerDocumentCore({ type: 'system' }, projectId, input);
+        });
+    }
+    registerDocumentCore(actor, projectId, input) {
         return this.c.store.transaction(() => {
             const result = this.c.store.get('document-parse-result', input.parseResultId, projectId);
             const page = result.pages.find(p => p.pageNumber === integer(input.pageNumber, 'pageNumber', 1, 10000));

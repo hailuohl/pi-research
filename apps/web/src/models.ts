@@ -28,6 +28,8 @@ export type DocumentParseJobDTO=ReturnType<DocumentParsingService['inspect']>;
 export type DocumentPageReadDTO=ReturnType<DocumentParsingService['readPage']>;
 import type {LiteratureTaskDTO} from '../../../dist/packages/literature/tasks.js';
 export type {LiteratureTaskDTO} from '../../../dist/packages/literature/tasks.js';
+import type {TextCorpusGrantDTO} from '../../../dist/packages/policy/text-corpus-grants.js';
+export type {TextCorpusGrantDTO} from '../../../dist/packages/policy/text-corpus-grants.js';
 export interface DocumentLocation {documentVersionId:string;parseResultId?:string;pageNumber?:number;start?:number;end?:number;}
 export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision,ExperimentPlanRevision,ResearchCandidate, Wakeup };
 import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig } from '../../../dist/packages/domain/types.js';
@@ -56,6 +58,7 @@ export interface DevelopmentReviewDTO {
 export type {ReportReference,ReportInspection} from '../../../dist/packages/publications/report-types.js';
 export interface ReportRecord {id:string;artifactId:string;runIds:string[];claimIds:string[];evidenceIds?:string[];publicationResultIds?:string[];}
 export interface ProjectState {
+    textCorpusGrants?:TextCorpusGrantDTO[];
     discoveryGrants?:DiscoveryGrantDTO[];
     runGrants?:RunGrantDTO[];
     workingGrants?:WorkingGrantDTO[];

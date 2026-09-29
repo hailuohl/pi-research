@@ -46,6 +46,7 @@ export interface ModelConfig {
     thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 }
 export interface Session {
+    textCorpusGrantId?: string;
     discoveryGrantId?: string;
     runGrantId?: string;
     workingGrantId?: string;

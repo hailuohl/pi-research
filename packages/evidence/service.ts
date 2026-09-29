@@ -1,4 +1,5 @@
 import {assertDiscoveryArtifact,assertDiscoveryDocument} from '../policy/discovery-grant-validation.js';
+import {assertPdfArtifactRead,assertTextCorpusGrantActor,type TextCorpusGrantReference} from '../policy/text-corpus-grants.js';
 import {verifyDocumentLink} from './document-link.js';
 import type {DocumentParseResult} from '../documents/parse-types.js';
 import {captureAcceptance,assertAcceptanceCurrent} from './acceptance.js';
@@ -30,7 +31,7 @@ export class EvidenceService {
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId:string,prepared:Artifact){this.c.store.get('project',projectId);return this.c.store.create<Artifact>('artifact',projectId,prepared);}
     put(projectId:string,title:string,bytes:Buffer,mediaType='text/plain',origin='user',extra:Partial<Artifact>={}){return this.publishPrepared(projectId,this.prepareArtifact(projectId,title,bytes,mediaType,origin,extra));}
-    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
     register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type: Evidence['type'] = 'artifact', runId?: string) {
         scope(actor, projectId);
         const a = this.c.store.get<Artifact>('artifact', artifactId, projectId);
@@ -47,6 +48,18 @@ export class EvidenceService {
     verify(projectId: string, evidenceId: string, current=true) { const e = this.c.store.get<Evidence>('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); if(current)assertDiscoveryArtifact(this.c.store,projectId,artifact); if(e.document){const link=verifyDocumentLink(this.c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(this.c.store,projectId,link.document);} return e; }
     registerDocument(actor:Actor,projectId:string,input:{documentVersionId:string;parseResultId:string;pageNumber:number;start:number;end:number;description:string}) {
         userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
+        return this.registerDocumentCore(actor,projectId,input);
+    }
+    /** Host search path only; no tool exposes this method or accepts an authority flag. */
+    registerGrantedDocument(actor:Actor,projectId:string,input:Parameters<EvidenceService['registerDocument']>[2],reference?:TextCorpusGrantReference){
+        return this.c.store.transaction(()=>{
+            ensure(reference,'TEXT_GRANT_REQUIRED','缺少固定检索授权');
+            const grant=assertTextCorpusGrantActor(this.c.store,actor,projectId,reference);
+            ensure(grant.documents.some(p=>p.documentVersionId===input.documentVersionId&&p.parseResultId===input.parseResultId),'TEXT_GRANT_SOURCE_DENIED','证据来源不在授权内',403);
+            return this.registerDocumentCore({type:'system'},projectId,input);
+        });
+    }
+    private registerDocumentCore(actor:Actor,projectId:string,input:Parameters<EvidenceService['registerDocument']>[2]) {
         return this.c.store.transaction(()=>{
             const result=this.c.store.get<DocumentParseResult>('document-parse-result',input.parseResultId,projectId);
             const page=result.pages.find(p=>p.pageNumber===integer(input.pageNumber,'pageNumber',1,10000));ensure(page,'DOCUMENT_PAGE_NOT_FOUND','原文没有该页',404);

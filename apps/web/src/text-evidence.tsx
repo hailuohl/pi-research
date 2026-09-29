@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { api, artifactText } from './api.js';
-import type { DocumentLocation, ProjectState } from './models.js';
+import type { DocumentLocation, ProjectState, TextCorpusGrantDTO } from './models.js';
 import { short } from './models.js';
 import type { Perform } from './workbench.js';
 /** Optional local retrieval; nothing runs until the owner selects and enables a corpus. */
 type DocumentChoice = {documentVersionId:string;parseResultId:string};
 const pair = (value:DocumentChoice) => `${value.documentVersionId}:${value.parseResultId}`;
-export class TextEvidencePanel extends React.Component<{data: ProjectState; perform: Perform; onDocument?:(target:DocumentLocation)=>void}, {
+export class TextEvidencePanel extends React.Component<{data: ProjectState; perform: Perform; onDocument?:(target:DocumentLocation)=>void; onSession?:(id:string)=>void}, {
     selected: string[] | null; selectedDocuments:DocumentChoice[] | null; query: string; mmrLambda: number; result: any; loading: boolean; sourcePreview: string;
 }> {
     state = {selected: null as string[] | null, selectedDocuments:null as DocumentChoice[]|null, query: '', mmrLambda: 1, result: null as any, loading: false, sourcePreview: ''};
@@ -65,6 +65,30 @@ export class TextEvidencePanel extends React.Component<{data: ProjectState; perf
                 <p className="small muted">{result.limitations.join(' ')}</p>
             </div> : null}
             {this.state.sourcePreview ? <details open><summary>原文件文本（不是模型摘要）</summary><pre className="file-preview">{this.state.sourcePreview}</pre></details> : null}
+            <TextCorpusGrantPanel data={data} perform={perform} onSession={this.props.onSession}/>
         </section>;
     }
+}
+
+const grantExpiry=()=>{const d=new Date(Date.now()+3600000);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
+export class TextCorpusGrantPanel extends React.Component<{data:ProjectState;perform:Perform;onSession?:(id:string)=>void},{sessionId:string;documents:DocumentChoice[];maxSearches:number;expiresAt:string;selectedId:string;error:string}>{
+    state={sessionId:'',documents:[] as DocumentChoice[],maxSearches:2,expiresAt:grantExpiry(),selectedId:'',error:''};
+    componentDidUpdate(previous:Readonly<TextCorpusGrantPanel['props']>){if(previous.data.project.id!==this.props.data.project.id)this.setState({sessionId:'',documents:[],maxSearches:2,expiresAt:grantExpiry(),selectedId:'',error:''});else if(previous.data.textEvidence?.corpusId!==this.props.data.textEvidence?.corpusId)this.setState({documents:[]});}
+    private call(name:string,input:unknown){return api<TextCorpusGrantDTO>(`/operations/${name}`,{projectId:this.props.data.project.id,input});}
+    private prepare(){const {data,perform}=this.props,s=this.state,config=data.textEvidence;try{
+        if(!config?.enabled||!config.corpusId||!s.sessionId||!s.documents.length)throw Error('请先启用固定 PDF 语料，再选择文档和主会话');
+        const date=new Date(s.expiresAt),remaining=date.getTime()-Date.now();if(!Number.isFinite(remaining)||remaining<=0||remaining>86400000)throw Error('截止时间须在未来24小时内');
+        this.setState({error:''});void perform(async()=>{const grant=await this.call('text_corpus_grant_prepare',{sessionId:s.sessionId,documents:s.documents,corpusId:config.corpusId,configurationVersion:config.version,maxSearches:s.maxSearches,expiresAt:date.toISOString()});this.setState({selectedId:grant.id});},'固定 PDF 会话授权草案已保存，等待单独批准');
+    }catch(error){this.setState({error:error instanceof Error?error.message:String(error)});}}
+    render(){const {data,perform}=this.props,s=this.state,config=data.textEvidence,available=config?.documents??[],grants=data.textCorpusGrants??[],selectedId=s.selectedId||grants[grants.length-1]?.id||'',g=grants.find(row=>row.id===selectedId),approval=data.approvals.find(row=>row.id===g?.approvalId);return <div className="inspector-section">
+        <h3>指定 Pi 会话检索固定 PDF</h3><p className="small muted">只授权选定原 PDF 的已批准解析页、指定主会话和有限次本地词项检索；不授权全文下载、联网、计算或科学结论。准备、批准和激活不调用模型。</p>
+        <details><summary>准备固定 PDF 检索授权</summary><form onSubmit={(e:any)=>{e.preventDefault();this.prepare();}}><label>指定主协调会话<select aria-label="PDF 检索授权主会话" required value={s.sessionId} onChange={(e:any)=>this.setState({sessionId:e.target.value})}><option value="">选择尚未绑定 PDF 授权的会话</option>{data.sessions.filter(row=>row.role==='coordinator'&&!row.taskId&&row.state!=='archived'&&!row.textCorpusGrantId).map(row=><option key={row.id} value={row.id}>{row.title} · {short(row.id)}</option>)}</select></label>
+            <fieldset><legend>固定 PDF 及解析版本</legend>{available.map(item=><label className="check-label" key={pair(item)}><input type="checkbox" checked={s.documents.some(value=>pair(value)===pair(item))} onChange={(e:any)=>this.setState({documents:e.target.checked?[...s.documents,{documentVersionId:item.documentVersionId,parseResultId:item.parseResultId}]:s.documents.filter(value=>pair(value)!==pair(item))})}/>{item.title} · {short(item.documentVersionId)} / {short(item.parseResultId)}</label>)}{!available.length?<p className="inline-empty">请先选择并启用已批准解析的固定 PDF。</p>:null}</fieldset>
+            <div className="form-columns"><label>最多新检索次数<select aria-label="PDF 授权检索次数" value={s.maxSearches} onChange={(e:any)=>this.setState({maxSearches:Number(e.target.value)})}><option value={1}>1 次</option><option value={2}>2 次</option></select></label><label>截止（本地时间，24小时内）<input aria-label="PDF 授权截止" type="datetime-local" required value={s.expiresAt} onChange={(e:any)=>this.setState({expiresAt:e.target.value})}/></label></div><button className="secondary" disabled={!config?.enabled||!s.sessionId||!s.documents.length}>保存固定授权草案</button></form></details>
+        {grants.length?<label>查看固定 PDF 授权<select aria-label="查看固定 PDF 授权" value={selectedId} onChange={(e:any)=>this.setState({selectedId:e.target.value})}>{grants.map(row=><option key={row.id} value={row.id}>{short(row.id)} · {row.state}</option>)}</select></label>:<p className="inline-empty">暂无固定 PDF 会话授权。</p>}
+        {s.error?<p role="alert" className="error-text">{s.error}</p>:null}
+        {g?<div><p>状态：{g.effectiveState} · {g.validity} · 已用 {g.usage.used}/{g.usage.limit} 次新检索，剩余 {g.usage.remaining} 次。</p>{g.reasons?.map((reason,i)=><p role="status" key={i}>{reason}</p>)}<p>主会话 {short(g.sessionId)} · 模型 {g.model.provider}/{g.model.model} {this.props.onSession?<button className="text-button" onClick={()=>this.props.onSession?.(g.sessionId)}>打开会话</button>:null}</p><p>语料 {short(g.corpusId)} / 配置版本 {g.configurationVersion} · 截止 {g.expiresAt}</p>{g.documents.map(item=><p className="small muted" key={pair(item)}>固定 PDF {short(item.documentVersionId)} · 解析 {short(item.parseResultId)} · 来源摘要 {short(item.sourceDigest)}</p>)}
+            <div className="actions wrap">{g.state==='draft'&&approval?.status==='pending'?<button className="primary" disabled={g.validity!=='current'} onClick={()=>perform(()=>api(`/approvals/${approval.id}/decide`,{expectedVersion:approval.version,approved:true}),'固定 PDF 检索授权已批准，尚未激活')}>批准固定 PDF 范围</button>:null}{g.state==='draft'&&approval?.status==='approved'?<button className="primary" disabled={g.validity!=='current'} onClick={()=>perform(()=>this.call('text_corpus_grant_activate',{grantId:g.id,expectedVersion:g.version}),'指定会话的固定 PDF 检索授权已激活')}>激活已批准授权</button>:null}{g.state!=='revoked'?<button className="secondary" onClick={()=>perform(()=>this.call('text_corpus_grant_revoke',{grantId:g.id,expectedVersion:g.version}),'固定 PDF 检索授权已撤销，历史保留')}>撤销授权</button>:null}</div>
+            <p className="small muted">批准记录 {short(g.approvalId)} · 固定摘要 <code>{short(g.digest)}</code></p><p className="small muted">已完成检索 {g.searchResults?.length??0} 条；原页证据可从上方历史检索回查。额度仅计已提交的新本地检索，不计 HTTP。</p></div>:null}
+    </div>;}
 }

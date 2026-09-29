@@ -1,8 +1,6 @@
 import type { ResearchApp } from '../research-app.js';
-import type { Actor, Artifact } from '../domain/types.js';
-import type { DocumentEvidenceLink } from '../documents/types.js';
+import type { Actor } from '../domain/types.js';
 import type { DocumentParseResult } from '../documents/parse-types.js';
-import { type Chunk } from './text.js';
 type SourceRef = {
     artifactId: string;
     digest: string;
@@ -13,7 +11,7 @@ type DocumentPair = {
     documentVersionId: string;
     parseResultId: string;
 };
-type DocumentSourceRef = DocumentPair & {
+export type DocumentSourceRef = DocumentPair & {
     title: string;
     pageCount: number;
     documentDigest: string;
@@ -23,30 +21,14 @@ type DocumentSourceRef = DocumentPair & {
     manifestDigest: string;
     pages: DocumentParseResult['pages'];
 };
-type Corpus = {
+export type Corpus = {
     sources: SourceRef[];
     documents?: DocumentSourceRef[];
     parserVersion: string;
 };
-type Configuration = {
+export type Configuration = {
     enabled: boolean;
     corpusId: string | null;
-};
-type DocumentChunk = Chunk & {
-    sourceKind: 'document_page';
-    page: number;
-    document: DocumentEvidenceLink;
-};
-type VerifiedDocument = {
-    ref: DocumentSourceRef;
-    pages: Array<{
-        page: DocumentParseResult['pages'][number];
-        link: DocumentEvidenceLink;
-        chunks: DocumentChunk[];
-        textBytes: number;
-    }>;
-    chunks: DocumentChunk[];
-    textBytes: number;
 };
 export declare class TextEvidenceService {
     private app;
@@ -106,12 +88,10 @@ export declare class TextEvidenceService {
         corpus: import("../domain/types.js").Row<Corpus>;
         ids: string[];
         pairs: DocumentPair[];
-        loaded: {
-            artifact: import("../domain/types.js").Row<Artifact>;
-            chunks: Chunk[];
-        }[];
-        selectedDocuments: VerifiedDocument[];
+        documentRefs: DocumentSourceRef[];
+        grant: import("../domain/types.js").Row<import("../policy/text-corpus-grants.js").TextCorpusGrant> | undefined;
     };
+    verifyReplay(actor: Actor, projectId: string, value: unknown): void;
     search(actor: Actor, projectId: string, value: unknown): any;
 }
 export {};
