@@ -601,7 +601,6 @@ export declare const INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
             readonly artifactIds: {
-                readonly minItems: 1;
                 readonly maxItems?: number | undefined;
                 readonly type: "array";
                 readonly items: {
@@ -611,6 +610,45 @@ export declare const INPUT_SCHEMAS: {
                     readonly minLength: number;
                     readonly maxLength: number;
                 };
+                readonly minItems: number;
+            };
+            readonly documents: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly documentVersionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly parseResultId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                    };
+                    readonly required: readonly ["documentVersionId", "parseResultId"];
+                    readonly additionalProperties: false;
+                };
+                readonly minItems: number;
+            };
+            readonly corpusId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly configurationVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
             };
             readonly limit: {
                 readonly anyOf: readonly [{
@@ -634,7 +672,7 @@ export declare const INPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: readonly ["query", "artifactIds"];
+        readonly required: readonly ["query"];
         readonly additionalProperties: false;
     };
     readonly workspace_read: {

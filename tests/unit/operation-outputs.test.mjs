@@ -27,6 +27,14 @@ test('every input and advertised tool has a matching output contract',()=>{
  for(const name of Object.keys(TOOL_DEFINITIONS)) assert.ok(OUTPUT_SCHEMAS[name],name);
 });
 
+test('persisted text-only searches remain valid without PDF metadata fields',()=>{
+ const record={id:'old-search',kind:'text-evidence-search',projectId:'project',version:1,createdAt:'2026-09-29T00:00:00.000Z',updatedAt:'2026-09-29T00:00:00.000Z',
+  query:'adsorption',limit:5,mmrLambda:1,deduplicateExact:true,artifactIds:['text-1'],corpusId:'corpus-1',configurationVersion:1,method:'local-tfidf-exact-dedup-mmr-v1',status:'matches',
+  hits:[{chunkId:'chunk-1',artifactId:'text-1',digest:'d',title:'paper.txt',locator:{start:0,end:10},lineStart:1,lineEnd:1,quote:'adsorption',alternativeSources:[{artifactId:'text-2',digest:'d',title:'copy.txt',locator:{start:0,end:10},lineStart:1,lineEnd:1}],score:0.5,evidenceId:'evidence-1',sourceKind:'user_imported_text',offsetUnit:'utf16-code-unit',page:null}],
+  coverage:{sourceCount:1,totalChunks:1,matchingChunks:1,exactDuplicatesGrouped:0,uniqueChunks:1,candidatesConsidered:1,candidateLimitReached:false,resultsTruncated:false},usage:{modelCalls:0,networkCalls:0},limitations:[]};
+ assert.doesNotThrow(()=>validateSchema(OUTPUT_SCHEMAS.text_evidence_search,record,'output'));
+});
+
 // Exercise real service output, using deterministic provider/runner fixtures only.
 test('all existing public tools have closed, literal success contracts exercised with service records', async () => {
  const s=setup(), savedFetch=globalThis.fetch, seen=new Set();

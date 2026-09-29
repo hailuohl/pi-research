@@ -120,7 +120,16 @@ const decision = row('campaign-decision', {
     effects: object({ experimentIds: strings, intentIds: strings, roundId: string, stopped: boolean,candidateIds:strings },['candidateIds']),planRevisionId:string,planDigest:string
 }, ['selectedRunId', 'appliedAt', 'effects','planRevisionId','planDigest']);
 const corpusSource = object({ artifactId: string, digest: string, title: string, size: integer });
+const documentPair = object({ documentVersionId: string, parseResultId: string });
+const corpusDocument = object({ documentVersionId: string, parseResultId: string, title: string, pageCount: integer });
 const chunkSource = object({ artifactId: string, digest: string, title: string, locator, lineStart: integer, lineEnd: integer });
+const nullableDocumentLink = { anyOf: [DOCUMENT_EVIDENCE_LINK_SCHEMA, { type: 'null' }] } as const;
+const nullablePage = { anyOf: [integer, { type: 'null' }] } as const;
+const searchSource = object({ ...chunkSource.properties, sourceKind: enumeration('user_imported_text', 'document_page'),
+    page: nullablePage, document: nullableDocumentLink, evidenceId: nullableString }, ['sourceKind', 'page', 'document', 'evidenceId']);
+const searchHit = object({ ...chunkSource.properties, chunkId: string, quote: string, alternativeSources: array(searchSource), score: number,
+    evidenceId: string, sourceKind: enumeration('user_imported_text', 'document_page'), offsetUnit: { const: 'utf16-code-unit' },
+    page: nullablePage, document: nullableDocumentLink }, ['sourceKind', 'offsetUnit', 'page', 'document']);
 const contextTask = object({ id: string, key: string, result: taskResult }, ['result']);
 const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string,discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA }, ['wakeupId', 'runId', 'taskId','discoveryGrant']);
 
@@ -167,16 +176,16 @@ export const OUTPUT_SCHEMAS = {
     literature_search: row('literature-search', { query: string, source: { const: 'crossref' }, retrievedAt: string, coverage: { const: 'metadata-only' }, items: array(object({ doi: string, title: string, authors: strings, date: array(integer), journal: string, url: string, fullTextRead: { const: false }, source: { const: 'crossref' } })),discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA,discoveryCallIds:strings,discoveryRequestDigest:string },['discoveryGrant','discoveryCallIds','discoveryRequestDigest']),
     literature_discover: DISCOVERY_OUTPUT_SCHEMA,
     project_inspect: object({
-        textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }),
+        textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents']),
         project: object({ id: string, name: string }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
         runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings
     }),
     text_evidence_search: row('text-evidence-search', {
-        query: string, limit: integer, mmrLambda: number, deduplicateExact: boolean, artifactIds: strings, corpusId: string, configurationVersion: integer, method: string, status: enumeration('matches', 'no_lexical_match'),
-        hits: array(object({ ...chunkSource.properties, chunkId: string, quote: string, alternativeSources: array(chunkSource), score: number, evidenceId: string, sourceKind: { const: 'user_imported_text' }, offsetUnit: { const: 'utf16-code-unit' }, page: { type: 'null' } })),
+        query: string, limit: integer, mmrLambda: number, deduplicateExact: boolean, artifactIds: strings, documents: array(documentPair), corpusId: string, configurationVersion: integer, method: string, status: enumeration('matches', 'no_lexical_match'),
+        hits: array(searchHit),
         coverage: object({ sourceCount: integer, totalChunks: integer, matchingChunks: integer, exactDuplicatesGrouped: integer, uniqueChunks: integer, candidatesConsidered: integer, candidateLimitReached: boolean, resultsTruncated: boolean }),
         usage: object({ modelCalls: { const: 0 }, networkCalls: { const: 0 } }), limitations: strings
-    }),
+    }, ['documents']),
     campaign_enroll: member,
     campaign_decision_submit: decision,
     campaign_inspect: object({

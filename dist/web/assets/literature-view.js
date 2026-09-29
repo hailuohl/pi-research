@@ -64,6 +64,14 @@ class LiteratureView extends React.Component {
         this.setState({ document: null });
       }
     }
+    const target = this.pendingEvidenceScroll;
+    if (target && this.state.document?.id === target.documentVersionId && this.props.selectedDocument?.parseResultId === target.parseResultId) {
+      const page = document.getElementById("fixed-document-page");
+      if (page) {
+        page.scrollIntoView({ block: "start" });
+        this.pendingEvidenceScroll = void 0;
+      }
+    }
   }
   async loadConfig() {
     try {
@@ -77,15 +85,16 @@ class LiteratureView extends React.Component {
     const epoch = ++this.documentEpoch;
     this.setState({ loading: true, error: "", document: null });
     try {
-      const document = await call(this.props.data.project.id, "document_inspect", { documentVersionId: id });
-      if (this.mounted && epoch === this.documentEpoch) this.setState({ document });
+      const document2 = await call(this.props.data.project.id, "document_inspect", { documentVersionId: id });
+      if (this.mounted && epoch === this.documentEpoch) this.setState({ document: document2 });
     } catch (error) {
       if (this.mounted && epoch === this.documentEpoch) this.setState({ error: error instanceof Error ? error.message : String(error) });
     } finally {
       if (this.mounted && epoch === this.documentEpoch) this.setState({ loading: false });
     }
   }
-  selectDocument(target) {
+  selectDocument(target, fromEvidence = false) {
+    this.pendingEvidenceScroll = fromEvidence ? target : void 0;
     if (this.props.onDocument) this.props.onDocument(target);
     else void this.loadDocument(target.documentVersionId);
   }
@@ -213,8 +222,8 @@ class LiteratureView extends React.Component {
             const file = e.target.files?.[0];
             e.target.value = "";
             if (file) void perform(async () => {
-              const mediaType = /\.pdf$/i.test(file.name) ? "application/pdf" : "text/plain", document = await call(data.project.id, "document_import", { title: file.name, mediaType, contentBase64: await fileBase64(file), ...s.importLicense.trim() ? { license: s.importLicense.trim() } : {} });
-              this.selectDocument({ documentVersionId: document.id });
+              const mediaType = /\.pdf$/i.test(file.name) ? "application/pdf" : "text/plain", document2 = await call(data.project.id, "document_import", { title: file.name, mediaType, contentBase64: await fileBase64(file), ...s.importLicense.trim() ? { license: s.importLicense.trim() } : {} });
+              this.selectDocument({ documentVersionId: document2.id });
             }, "\u539F\u59CB\u6587\u6863\u5B57\u8282\u5DF2\u56FA\u5B9A\u4FDD\u5B58");
           } })
         ] }),
@@ -225,20 +234,20 @@ class LiteratureView extends React.Component {
           /* @__PURE__ */ jsx("h2", { children: "\u56FA\u5B9A\u6587\u6863\u7248\u672C" }),
           /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u6700\u8FD130\u4EFD\uFF1B\u5386\u53F2\u6307\u5B9A\u7248\u672C\u53EF\u76F4\u63A5\u56DE\u67E5" })
         ] }),
-        (data.documents ?? []).slice().reverse().map((document) => /* @__PURE__ */ jsx("button", { className: "artifact-item", onClick: () => this.selectDocument({ documentVersionId: document.id }), children: /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("strong", { children: document.title }),
+        (data.documents ?? []).slice().reverse().map((document2) => /* @__PURE__ */ jsx("button", { className: "artifact-item", onClick: () => this.selectDocument({ documentVersionId: document2.id }), children: /* @__PURE__ */ jsxs("div", { children: [
+          /* @__PURE__ */ jsx("strong", { children: document2.title }),
           /* @__PURE__ */ jsxs("small", { children: [
-            contentNames[document.contentKind],
+            contentNames[document2.contentKind],
             " \xB7 ",
-            short(document.id),
+            short(document2.id),
             " \xB7 ",
-            short(document.original.digest)
+            short(document2.original.digest)
           ] })
-        ] }) }, document.id)),
+        ] }) }, document2.id)),
         !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u56FA\u5B9A DocumentVersion\u3002" }) : null
       ] }),
       s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { document: s.document, data, perform, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: "\u539F\u59CB\u6587\u4EF6\u53D6\u5F97\u3001\u6587\u672C\u63D0\u53D6\u548C\u79D1\u5B66\u6838\u9A8C\u662F\u4E0D\u540C\u9636\u6BB5\u3002" }) }),
-      /* @__PURE__ */ jsx(TextEvidencePanel, { data, perform })
+      /* @__PURE__ */ jsx(TextEvidencePanel, { data, perform, onDocument: (target) => this.selectDocument(target, true) })
     ] });
   }
 }
@@ -466,7 +475,7 @@ class DocumentPages extends React.Component {
   }
   render() {
     const s = this.state, p = s.page, list = s.list;
-    return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+    return /* @__PURE__ */ jsxs("div", { id: "fixed-document-page", className: "inspector-section", children: [
       /* @__PURE__ */ jsxs("h3", { children: [
         "\u56FA\u5B9A\u89E3\u6790\u7248\u672C ",
         short(this.props.resultId)

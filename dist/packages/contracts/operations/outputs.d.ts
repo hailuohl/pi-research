@@ -3012,6 +3012,28 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
+                    readonly documents: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly documentVersionId: {
+                                    readonly type: "string";
+                                };
+                                readonly parseResultId: {
+                                    readonly type: "string";
+                                };
+                                readonly title: {
+                                    readonly type: "string";
+                                };
+                                readonly pageCount: {
+                                    readonly type: "integer";
+                                };
+                            };
+                            readonly required: ("title" | "documentVersionId" | "parseResultId" | "pageCount")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
                     readonly method: {
                         readonly type: "string";
                     };
@@ -3044,7 +3066,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: 0;
                     };
                 };
-                readonly required: ("sources" | "version" | "enabled" | "limits" | "networkCalls" | "modelCalls" | "corpusId" | "method" | "parserVersion")[];
+                readonly required: ("sources" | "version" | "enabled" | "limits" | "corpusId" | "networkCalls" | "modelCalls" | "method" | "parserVersion")[];
                 readonly additionalProperties: false;
             };
             readonly project: {
@@ -3164,6 +3186,22 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly type: "string";
                 };
             };
+            readonly documents: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly documentVersionId: {
+                            readonly type: "string";
+                        };
+                        readonly parseResultId: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly required: ("documentVersionId" | "parseResultId")[];
+                    readonly additionalProperties: false;
+                };
+            };
             readonly corpusId: {
                 readonly type: "string";
             };
@@ -3193,6 +3231,50 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly items: {
                                 readonly type: "object";
                                 readonly properties: {
+                                    readonly sourceKind: {
+                                        readonly type: "string";
+                                        readonly enum: ["user_imported_text", "document_page"];
+                                    };
+                                    readonly page: {
+                                        readonly anyOf: readonly [{
+                                            readonly type: "integer";
+                                        }, {
+                                            readonly type: "null";
+                                        }];
+                                    };
+                                    readonly document: {
+                                        readonly anyOf: readonly [{
+                                            readonly type: "object";
+                                            readonly properties: {
+                                                readonly documentVersionId: {
+                                                    readonly type: "string";
+                                                };
+                                                readonly rawDigest: {
+                                                    readonly type: "string";
+                                                };
+                                                readonly parseResultId: {
+                                                    readonly type: "string";
+                                                };
+                                                readonly pageNumber: {
+                                                    readonly type: "integer";
+                                                };
+                                                readonly textArtifactDigest: {
+                                                    readonly type: "string";
+                                                };
+                                            };
+                                            readonly required: ("textArtifactDigest" | "pageNumber" | "documentVersionId" | "rawDigest" | "parseResultId")[];
+                                            readonly additionalProperties: false;
+                                        }, {
+                                            readonly type: "null";
+                                        }];
+                                    };
+                                    readonly evidenceId: {
+                                        readonly anyOf: readonly [{
+                                            readonly type: "string";
+                                        }, {
+                                            readonly type: "null";
+                                        }];
+                                    };
                                     readonly artifactId: {
                                         readonly type: "string";
                                     };
@@ -3233,13 +3315,44 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly sourceKind: {
-                            readonly const: "user_imported_text";
+                            readonly type: "string";
+                            readonly enum: ["user_imported_text", "document_page"];
                         };
                         readonly offsetUnit: {
                             readonly const: "utf16-code-unit";
                         };
                         readonly page: {
-                            readonly type: "null";
+                            readonly anyOf: readonly [{
+                                readonly type: "integer";
+                            }, {
+                                readonly type: "null";
+                            }];
+                        };
+                        readonly document: {
+                            readonly anyOf: readonly [{
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly documentVersionId: {
+                                        readonly type: "string";
+                                    };
+                                    readonly rawDigest: {
+                                        readonly type: "string";
+                                    };
+                                    readonly parseResultId: {
+                                        readonly type: "string";
+                                    };
+                                    readonly pageNumber: {
+                                        readonly type: "integer";
+                                    };
+                                    readonly textArtifactDigest: {
+                                        readonly type: "string";
+                                    };
+                                };
+                                readonly required: ("textArtifactDigest" | "pageNumber" | "documentVersionId" | "rawDigest" | "parseResultId")[];
+                                readonly additionalProperties: false;
+                            }, {
+                                readonly type: "null";
+                            }];
                         };
                         readonly artifactId: {
                             readonly type: "string";
@@ -3270,7 +3383,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("digest" | "title" | "artifactId" | "locator" | "quote" | "score" | "evidenceId" | "lineStart" | "lineEnd" | "alternativeSources" | "sourceKind" | "offsetUnit" | "page" | "chunkId")[];
+                    readonly required: ("digest" | "title" | "artifactId" | "locator" | "quote" | "score" | "evidenceId" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3325,7 +3438,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("query" | "limit" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "limitations" | "hits" | "artifactIds" | "usage" | "coverage" | "deduplicateExact" | "mmrLambda" | "corpusId" | "method" | "configurationVersion")[];
+        readonly required: ("query" | "limit" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "limitations" | "hits" | "artifactIds" | "usage" | "coverage" | "deduplicateExact" | "corpusId" | "configurationVersion" | "mmrLambda" | "method")[];
         readonly additionalProperties: false;
     };
     readonly campaign_enroll: {

@@ -11,5 +11,6 @@ test('HTTP opt-in corpus -> exact evidence -> disable retains files but blocks n
   const state=(await req(`/projects/${p.id}/state`)).data;assert.equal(state.textEvidence.enabled,true);assert.equal(state.claims.length,0);assert.equal(state.runs.length,0);
   await req(`/projects/${p.id}/text-evidence`,{enabled:false,expectedVersion:config.data.version});assert.equal((await req('/text-evidence-search',{projectId:p.id,artifactIds:[a.id],query:'coefficient'})).data.error.code,'TEXT_EVIDENCE_DISABLED');
   assert.equal((await req(`/evidence/${e.data.id}`)).status,200);
+  const history=(await req(`/projects/${p.id}/state`)).data.textEvidenceSearches;assert.deepEqual(history.map(item=>item.id),[r.data.id]);
  } finally {await server.close();rmSync(dir,{recursive:true,force:true});}
 });

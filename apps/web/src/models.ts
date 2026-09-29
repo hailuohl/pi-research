@@ -70,7 +70,8 @@ export interface ProjectState {
     developmentTasks?:DevelopmentTaskDTO[];
     sandboxJobs?:SandboxJobDTO[];
     reviews?:DevelopmentReviewDTO[];
-    textEvidence?: {enabled:boolean;version:number;corpusId?:string|null;sources:Array<{artifactId:string;title:string;digest:string}>};
+    textEvidence?: {enabled:boolean;version:number;corpusId?:string|null;sources:Array<{artifactId:string;title:string;digest:string}>;documents?:Array<{documentVersionId:string;parseResultId:string;title:string;pageCount:number}>};
+    textEvidenceSearches?:Array<{id:string;query:string;configurationVersion:number;hits:any[];limitations:string[];status:string}>;
     project: Row<Project>;
     sessions: Row<Session>[];
     experiments: Row<Experiment>[];

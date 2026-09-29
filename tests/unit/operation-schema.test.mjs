@@ -56,6 +56,12 @@ test('explicit null preserves only service-supported nullish defaults', () => {
     ]) assert.throws(() => validateSchema(INPUT_SCHEMAS[name], input), { code: 'INVALID_INPUT' });
 });
 
+test('text retrieval accepts either legacy text IDs or exact PDF version/result pairs', () => {
+    validateSchema(INPUT_SCHEMAS.text_evidence_search, { query: 'fixed acidity alcohol', documents: [{ documentVersionId: 'v1', parseResultId: 'p1' }], corpusId: 'c1', configurationVersion: 2 });
+    validateSchema(INPUT_SCHEMAS.text_evidence_search, { query: 'adsorption', artifactIds: ['text-1'] });
+    assert.throws(() => validateSchema(INPUT_SCHEMAS.text_evidence_search, { query: 'q', documents: [{ documentVersionId: 'v1', parseResultId: 'p1', pageNumber: 5 }] }), { code: 'INVALID_INPUT' });
+});
+
 test('JSON Schema string length counts Unicode code points', () => {
     validateSchema(s.string(1), '😀');
     assert.throws(() => validateSchema(s.string(1), '😀a'), { code: 'INVALID_INPUT' });
