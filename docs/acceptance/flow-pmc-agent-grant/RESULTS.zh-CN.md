@@ -7,3 +7,5 @@
 边界：未批准/未激活、越界、额外来源、Task/Wakeup、完整 XML/文本读取及非返回证据均拒绝；撤销后旧检索和证据回执也不能由该 Agent 重放。所有者重开仍能回查原片段；旧 55 条非语料设置记录摘要不变，新增 HTTP、模型、计算调用均为 0。独立复核无本批阻断。
 
 验证：干净构建通过；集中回归 837 通过、0 失败、22 跳过；后端相关及界面相关检查通过。机器摘要见 [evidence.json](evidence.json)。原始日志和验收数据库留在本地 `.validation/pmc-agent-grant/`，不提交私有研究原文。
+
+代码提交：[c51f07227fee2f9da4766b77754e6082868411f7](https://github.com/hailuohl/pi-research/commit/c51f07227fee2f9da4766b77754e6082868411f7)，分支 `implementation/pr01-reproducible-baseline`；私有远端已核对包含该提交。
