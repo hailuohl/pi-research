@@ -1,16 +1,16 @@
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Row } from '../domain/types.js';
 import type { DocumentVersion } from './types.js';
-import { DOCUMENT_PARSER_PROFILE, type DocumentParseJob, type DocumentParseResult, type ParserOutput, type DocumentPage } from './parse-types.js';
+import { DOCUMENT_PARSER_PROFILE, type DocumentParserProfile, type DocumentParseManifest, type DocumentParseJob, type DocumentParseResult, type ParserOutput, type DocumentPage } from './parse-types.js';
 export declare function parserProfile(repoRoot: string): {
     profileId: typeof DOCUMENT_PARSER_PROFILE;
     lockDigest: string;
     scriptDigest: string;
     profileDigest: string;
 };
-export declare function verifyParserImage(context: string, image: string, profile: ReturnType<typeof parserProfile>): Promise<string>;
+export declare function verifyParserImage(context: string, image: string, profile: Pick<DocumentParseManifest, 'profileId' | 'lockDigest' | 'scriptDigest' | 'profileDigest'>): Promise<string>;
 /** Validate parser-controlled files before any result gains evidence authority. */
-export declare function validateParserOutput(root: string, rawDigest: string): {
+export declare function validateParserOutput(root: string, rawDigest: string, expectedProfileId?: DocumentParserProfile): {
     manifest: ParserOutput;
     manifestBytes: Buffer<ArrayBufferLike>;
     files: Map<string, Buffer<ArrayBufferLike>>;
@@ -29,7 +29,7 @@ export declare class DocumentParsingService {
             dockerContext: string;
             imageDigest: string;
             imageId: string;
-            profileId: "pdfium-text-pages-v1";
+            profileId: DocumentParserProfile;
             lockDigest: string;
             scriptDigest: string;
             profileDigest: string;
@@ -55,7 +55,7 @@ export declare class DocumentParsingService {
             dockerContext: string;
             imageDigest: string;
             imageId: string;
-            profileId: "pdfium-text-pages-v1";
+            profileId: DocumentParserProfile;
             lockDigest: string;
             scriptDigest: string;
             profileDigest: string;
@@ -91,7 +91,7 @@ export declare class DocumentParsingService {
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
-        profileId: "pdfium-text-pages-v1";
+        profileId: DocumentParserProfile;
         profileDigest: string;
         imageDigest: string;
         dockerContext: string;
@@ -125,7 +125,7 @@ export declare class DocumentParsingService {
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
-        profileId: "pdfium-text-pages-v1";
+        profileId: DocumentParserProfile;
         profileDigest: string;
         imageDigest: string;
         dockerContext: string;
@@ -158,7 +158,7 @@ export declare class DocumentParsingService {
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
-        profileId: "pdfium-text-pages-v1";
+        profileId: DocumentParserProfile;
         profileDigest: string;
         imageDigest: string;
         dockerContext: string;
@@ -191,7 +191,7 @@ export declare class DocumentParsingService {
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
-        profileId: "pdfium-text-pages-v1";
+        profileId: DocumentParserProfile;
         profileDigest: string;
         imageDigest: string;
         dockerContext: string;
@@ -249,6 +249,7 @@ export declare class DocumentParsingService {
         imageArtifactDigest: string;
         paragraphs: import("./parse-types.js").DocumentParagraph[];
         textStatus: "text-extracted" | "no-text-layer";
+        imageCandidates?: import("./parse-types.js").DocumentImageCandidate[];
         resultId: string;
         documentVersionId: string;
         rawDigest: string;

@@ -7,6 +7,7 @@ import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/
 import { verifyRunRecord } from '../evidence/run-verifier.js';
 import { verifyDocumentLink } from '../evidence/document-link.js';
 import { checkDocumentVersion } from '../documents/parse-service.js';
+import { DOCUMENT_PARSER_LEGACY_PROFILE } from '../documents/parse-types.js';
 import { assertAcceptanceCurrent } from '../evidence/acceptance.js';
 import { assertWorkingGrantJob } from '../policy/working-grants.js';
 import { scope, userOnly } from '../policy/permissions.js';
@@ -202,10 +203,10 @@ export class ReportService {
         if (!checked.has(r.id)) {
             const original = this.c.store.get('artifact', d.original.artifactId, pid), output = this.c.store.get('artifact', r.manifestArtifactId, pid);
             ensure(original.size === d.original.size && original.mediaType === d.original.mediaType && original.mediaType === 'application/pdf' && output.mediaType === 'application/json', 'REPORT_DOCUMENT_CHANGED', '文档产物固定类型或长度已改变');
-            ensure(manifest.formatVersion === 1 && manifest.profileId === r.profileId && r.profileId === job.manifest.profileId && r.profileDigest === job.manifest.profileDigest && r.imageId === job.imageId && r.pageCount === manifest.pageCount && r.pages.length === manifest.pages.length && digest(r.quality) === digest(manifest.quality), 'REPORT_DOCUMENT_CHANGED', '解析身份或提取质量已改变');
+            ensure(manifest.formatVersion === (r.profileId === DOCUMENT_PARSER_LEGACY_PROFILE ? 1 : 2) && manifest.profileId === r.profileId && r.profileId === job.manifest.profileId && r.profileDigest === job.manifest.profileDigest && r.imageId === job.imageId && r.pageCount === manifest.pageCount && r.pages.length === manifest.pages.length && digest(r.quality) === digest(manifest.quality), 'REPORT_DOCUMENT_CHANGED', '解析身份或提取质量已改变');
             for (const [index, page] of r.pages.entries()) {
                 const fixed = manifest.pages[index], t = this.c.store.get('artifact', page.textArtifactId, pid), i = this.c.store.get('artifact', page.imageArtifactId, pid);
-                ensure(fixed && page.pageNumber === fixed.pageNumber && page.textArtifactDigest === fixed.textDigest && page.imageArtifactDigest === fixed.imageDigest && t.digest === fixed.textDigest && i.digest === fixed.imageDigest && t.size === fixed.textBytes && i.size === fixed.imageBytes && t.mediaType === 'text/plain' && i.mediaType === 'image/png' && digest(page.paragraphs) === digest(fixed.paragraphs) && page.textStatus === fixed.textStatus && page.pageLabel === fixed.pageLabel && page.width === fixed.width && page.height === fixed.height && page.imageWidth === fixed.imageWidth && page.imageHeight === fixed.imageHeight, 'REPORT_DOCUMENT_CHANGED', '固定页元数据已改变');
+                ensure(fixed && page.pageNumber === fixed.pageNumber && page.textArtifactDigest === fixed.textDigest && page.imageArtifactDigest === fixed.imageDigest && t.digest === fixed.textDigest && i.digest === fixed.imageDigest && t.size === fixed.textBytes && i.size === fixed.imageBytes && t.mediaType === 'text/plain' && i.mediaType === 'image/png' && digest(page.paragraphs) === digest(fixed.paragraphs) && page.textStatus === fixed.textStatus && page.pageLabel === fixed.pageLabel && page.width === fixed.width && page.height === fixed.height && page.imageWidth === fixed.imageWidth && page.imageHeight === fixed.imageHeight && Object.hasOwn(fixed, 'imageCandidates') === Object.hasOwn(page, 'imageCandidates') && digest(page.imageCandidates ?? []) === digest(fixed.imageCandidates ?? []), 'REPORT_DOCUMENT_CHANGED', '固定页元数据已改变');
             }
             // Version markers may occur on an unquoted page; check its text without exporting it.
             const texts = d.source.provider === 'alphaxiv' ? r.pages.map(p => this.bytes(pid, p.textArtifactId, { digest: p.textArtifactDigest }).bytes.toString('utf8')) : [];

@@ -1,5 +1,7 @@
 import type { SourceSnapshot } from '../domain/types.js';
-export declare const DOCUMENT_PARSER_PROFILE = "pdfium-text-pages-v1";
+export declare const DOCUMENT_PARSER_PROFILE = "pdfium-text-images-v2";
+export declare const DOCUMENT_PARSER_LEGACY_PROFILE = "pdfium-text-pages-v1";
+export type DocumentParserProfile = typeof DOCUMENT_PARSER_PROFILE | typeof DOCUMENT_PARSER_LEGACY_PROFILE;
 export declare const DOCUMENT_PARSE_RESOURCES: {
     cpus: number;
     memoryMb: number;
@@ -15,7 +17,7 @@ export interface DocumentParserConfiguration {
     dockerContext: string;
     imageDigest: string;
     imageId: string;
-    profileId: typeof DOCUMENT_PARSER_PROFILE;
+    profileId: DocumentParserProfile;
     lockDigest: string;
     scriptDigest: string;
     profileDigest: string;
@@ -27,7 +29,7 @@ export interface DocumentParseManifest {
     rawArtifactId: string;
     rawDigest: string;
     rawSize: number;
-    profileId: typeof DOCUMENT_PARSER_PROFILE;
+    profileId: DocumentParserProfile;
     profileDigest: string;
     lockDigest: string;
     scriptDigest: string;
@@ -74,6 +76,16 @@ export interface DocumentParagraph {
     start: number;
     end: number;
 }
+export interface DocumentImageCandidate {
+    index: number;
+    method: 'embedded-raster-object';
+    pixelBounds: {
+        left: number;
+        top: number;
+        right: number;
+        bottom: number;
+    };
+}
 export interface DocumentPage {
     pageNumber: number;
     pageLabel: string | null;
@@ -87,13 +99,14 @@ export interface DocumentPage {
     imageArtifactDigest: string;
     paragraphs: DocumentParagraph[];
     textStatus: 'text-extracted' | 'no-text-layer';
+    imageCandidates?: DocumentImageCandidate[];
 }
 export interface DocumentParseResult {
     documentVersionId: string;
     jobId: string;
     rawDigest: string;
     manifestDigest: string;
-    profileId: typeof DOCUMENT_PARSER_PROFILE;
+    profileId: DocumentParserProfile;
     profileDigest: string;
     imageId: string;
     pageCount: number;
@@ -113,8 +126,8 @@ export interface DocumentParseResult {
     };
 }
 export interface ParserOutput {
-    formatVersion: 1;
-    profileId: typeof DOCUMENT_PARSER_PROFILE;
+    formatVersion: 1 | 2;
+    profileId: DocumentParserProfile;
     rawDigest: string;
     pageCount: number;
     quality: DocumentParseResult['quality'];
@@ -133,5 +146,6 @@ export interface ParserOutput {
         imageBytes: number;
         paragraphs: DocumentParagraph[];
         textStatus: 'text-extracted' | 'no-text-layer';
+        imageCandidates?: DocumentImageCandidate[];
     }>;
 }

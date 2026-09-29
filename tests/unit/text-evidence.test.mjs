@@ -28,8 +28,8 @@ function parsedPdf(s,pageTexts,key='pdf-fixture-import'){
  const row=s.app.store.get('document-parse-job',job.id);s.app.store.update('document-parse-job',job.id,row.version,{imageId:'sha256:'+'a'.repeat(64)});
  const root=s.app.store.paths.physical(row.outputDir),quality={readingOrder:'unverified',paragraphs:'heuristic',tables:'unknown',figures:'unknown',ocr:false,score:null};
  const pages=pageTexts.map((content,index)=>{const bytes=Buffer.from(content),number=index+1,textFile=`page-${String(number).padStart(4,'0')}.txt`,imageFile=`page-${String(number).padStart(4,'0')}.png`;
-  writeFileSync(join(root,textFile),bytes);writeFileSync(join(root,imageFile),png);return {pageNumber:number,pageLabel:null,width:400,height:200,imageWidth:1,imageHeight:1,textFile,textDigest:digest(bytes),textBytes:bytes.length,imageFile,imageDigest:digest(png),imageBytes:png.length,paragraphs:content.trim()?[{index:1,start:0,end:content.length}]:[],textStatus:content.trim()?'text-extracted':'no-text-layer'};});
- writeFileSync(join(root,'manifest.json'),JSON.stringify({formatVersion:1,profileId:DOCUMENT_PARSER_PROFILE,rawDigest:document.original.digest,pageCount:pages.length,quality,pages}));
+  writeFileSync(join(root,textFile),bytes);writeFileSync(join(root,imageFile),png);return {pageNumber:number,pageLabel:null,width:400,height:200,imageWidth:1,imageHeight:1,textFile,textDigest:digest(bytes),textBytes:bytes.length,imageFile,imageDigest:digest(png),imageBytes:png.length,paragraphs:content.trim()?[{index:1,start:0,end:content.length}]:[],textStatus:content.trim()?'text-extracted':'no-text-layer',imageCandidates:[]};});
+ writeFileSync(join(root,'manifest.json'),JSON.stringify({formatVersion:2,profileId:DOCUMENT_PARSER_PROFILE,rawDigest:document.original.digest,pageCount:pages.length,quality,pages}));
  const done=s.app.documentParsing.finalize(job.id,{state:'succeeded',exitCode:0});return {document,result:s.app.documentParsing.result(USER,s.project.id,done.resultId)};
 }
 test('retrieval is disabled by default and does not create corpus on read',()=>{const s=setup();try{

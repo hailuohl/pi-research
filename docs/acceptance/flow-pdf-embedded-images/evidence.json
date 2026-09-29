@@ -1,0 +1,28 @@
+{
+  "batch": "pdf-direct-raster-candidates",
+  "parser": {
+    "profileId": "pdfium-text-images-v2",
+    "imageDigest": "sha256:1699010003f0d5b921134ad297e5056f0dbfe7414efb90cdf18cbb86efe2ba78",
+    "scriptDigest": "8d786d43d1b97de1cd03778b3cb3530d64a5952cd0583dac67a845606a6fe045"
+  },
+  "approvedOwnerFlow": {
+    "rawDigest": "d9b48807d0011c3c23dbab04d7bd6ef780a20ce2cc6e98d134f7ef6de6f5c56e",
+    "resultId": "b0f3dc3b93340c6e3d5d5ba174169bd77b120fe501e2f88595605a5fa11e1a6f",
+    "state": "succeeded",
+    "integrity": "complete",
+    "candidateCountsByPhysicalPage": [0, 1],
+    "page2PixelBounds": {"left": 174, "top": 164, "right": 719, "bottom": 527},
+    "unapprovedSubmitDenied": true,
+    "crossProjectReadDenied": true,
+    "reopenedAfterRevocation": true
+  },
+  "negativeSamples": {
+    "noImagePdfDigest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+    "candidateCountsByPhysicalPage": [0, 0, 0],
+    "nestedFormPdfDigest": "3c6dd514da462f52415c1429f42448f7f190cb4b6ed8a9142472d3edfd9461af",
+    "nestedFormVisibleDarkPixels": 6268,
+    "nestedFormCandidateCounts": [0, 0]
+  },
+  "browser": {"page2CandidateVisible": true, "verifiedPageCropOpened": true, "refreshReopenPreserved": true},
+  "checks": {"cleanBuild": "passed", "fullRegression": {"passed": 808, "failed": 0, "skipped": 22}, "afterRepairFocused": {"passed": 18, "failed": 0}, "independentReview": "blocker_closed"}
+}

@@ -8,7 +8,7 @@ from pathlib import Path
 from contextlib import closing
 from array import array
 
-PROFILE = "pdfium-text-pages-v1"
+PROFILE = "pdfium-text-images-v2"
 QUALITY = {"readingOrder": "unverified", "paragraphs": "heuristic", "tables": "unknown", "figures": "unknown", "ocr": False, "score": None}
 
 def paragraphs(text):
@@ -26,7 +26,7 @@ def parse(source, destination):
     if len(raw) > 32 * 1024 * 1024 or not raw.startswith(b"%PDF-"):
         raise ValueError("PDF_INPUT_INVALID")
     destination.mkdir(parents=True, exist_ok=True)
-    output = {"formatVersion": 1, "profileId": PROFILE, "rawDigest": hashlib.sha256(raw).hexdigest(), "pageCount": 0, "quality": QUALITY, "pages": []}
+    output = {"formatVersion": 2, "profileId": PROFILE, "rawDigest": hashlib.sha256(raw).hexdigest(), "pageCount": 0, "quality": QUALITY, "pages": []}
     text_bytes = output_bytes = 0
     with pdfium.PdfDocument(raw) as document:
         if not 1 <= len(document) <= 100:
@@ -52,6 +52,21 @@ def parse(source, destination):
                         image_width, image_height = image.size
                     finally:
                         image.close()
+                    coordinates = bitmap.get_posconv(page)
+                    candidates = []
+                    # Nested Form objects need ancestor transforms; keep this profile to direct page objects.
+                    for object_number, item in enumerate(page.get_objects(filter=[pdfium.raw.FPDF_PAGEOBJ_IMAGE], max_depth=0)):
+                        if object_number >= 100:
+                            raise ValueError("PDF_IMAGE_LIMIT")
+                        left, bottom, right, top = item.get_bounds()
+                        if not all(math.isfinite(x) and abs(x) <= 1_000_000 for x in (left, bottom, right, top)) or right <= left or top <= bottom:
+                            raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+                        corners = [coordinates.to_bitmap(x, y) for x in (left, right) for y in (bottom, top)]
+                        x0, x1 = max(0, min(x for x, _ in corners)), min(image_width, max(x for x, _ in corners))
+                        y0, y1 = max(0, min(y for _, y in corners)), min(image_height, max(y for _, y in corners))
+                        if x1 <= x0 or y1 <= y0:
+                            continue
+                        candidates.append({"index": len(candidates) + 1, "method": "embedded-raster-object", "pixelBounds": {"left": x0, "top": y0, "right": x1, "bottom": y1}})
                 image_bytes = (destination / image_file).read_bytes()
                 output_bytes += len(encoded) + len(image_bytes)
                 if output_bytes > 127 * 1024 * 1024:
@@ -59,7 +74,7 @@ def parse(source, destination):
                 label = document.get_page_label(number - 1) or None
                 if label is not None and len(label) > 200:
                     raise ValueError("PDF_PAGE_LABEL_LIMIT")
-                output["pages"].append({"pageNumber": number, "pageLabel": label, "width": width, "height": height, "imageWidth": image_width, "imageHeight": image_height, "textFile": text_file, "textDigest": hashlib.sha256(encoded).hexdigest(), "textBytes": len(encoded), "imageFile": image_file, "imageDigest": hashlib.sha256(image_bytes).hexdigest(), "imageBytes": len(image_bytes), "paragraphs": paragraphs(text), "textStatus": "text-extracted" if text.strip() else "no-text-layer"})
+                output["pages"].append({"pageNumber": number, "pageLabel": label, "width": width, "height": height, "imageWidth": image_width, "imageHeight": image_height, "textFile": text_file, "textDigest": hashlib.sha256(encoded).hexdigest(), "textBytes": len(encoded), "imageFile": image_file, "imageDigest": hashlib.sha256(image_bytes).hexdigest(), "imageBytes": len(image_bytes), "paragraphs": paragraphs(text), "textStatus": "text-extracted" if text.strip() else "no-text-layer", "imageCandidates": candidates})
     manifest = json.dumps(output, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(manifest) > 1024 * 1024:
         raise ValueError("PDF_STRUCTURE_LIMIT")

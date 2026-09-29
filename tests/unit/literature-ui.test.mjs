@@ -65,6 +65,15 @@ test('page images require both PNG magic and the bound digest before producing a
  await assert.rejects(verifiedPageImage(new Blob(['<script>PDF is not a page image</script>']),hash),/PNG/);
 });
 
+test('a fixed page shows raster regions from the verified page image and distinguishes old or empty detection',()=>{
+ const v=pages(),candidate={index:1,method:'embedded-raster-object',pixelBounds:{left:10,top:20,right:60,bottom:80}};
+ Object.assign(v.state,{page:{pageNumber:2,pageLabel:'ii',textArtifactDigest:'b'.repeat(64),paragraphs:[],textStatus:'text-extracted',imageWidth:100,imageHeight:100,imageCandidates:[candidate]},imageURL:'blob:fixed-page',loading:false});
+ let tree=v.render(),parts=nodes(tree);assert.match(flatten(tree).replace(/\s+/g,' '),/候选 1 · 页图像素 \[ 10 , 20 , 60 , 80 \]/);
+ assert.equal(parts.filter(n=>n.type==='img').length,2);assert.equal(parts.find(n=>n.type==='span'&&n.props['aria-hidden']==='true').props.style.left,'10%');
+ v.state.page={...v.state.page,imageCandidates:[]};assert.match(flatten(v.render()),/此页未发现可定位的页面直接栅格对象/);
+ delete v.state.page.imageCandidates;assert.match(flatten(v.render()),/此历史解析版本未检测嵌入图像/);v.componentWillUnmount();
+});
+
 test('page reads reject a different raw version and page evidence includes exact version/result/UTF16 positions',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const v=pages();
  globalThis.fetch=async()=>({ok:true,json:async()=>({resultId:'parse-v2',documentVersionId:'doc-v2',rawDigest:'wrong',pageNumber:2})});

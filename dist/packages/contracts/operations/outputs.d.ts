@@ -3152,7 +3152,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: 0;
                     };
                 };
-                readonly required: ("sources" | "version" | "corpusId" | "enabled" | "limits" | "modelCalls" | "networkCalls" | "method" | "parserVersion")[];
+                readonly required: ("sources" | "version" | "corpusId" | "enabled" | "limits" | "method" | "modelCalls" | "networkCalls" | "parserVersion")[];
                 readonly additionalProperties: false;
             };
             readonly project: {
@@ -7248,7 +7248,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
             readonly profileId: {
-                readonly const: "pdfium-text-pages-v1";
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
             };
             readonly limits: {
                 readonly type: "object";
@@ -7291,7 +7291,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "object";
                 readonly properties: {
                     readonly profileId: {
-                        readonly const: "pdfium-text-pages-v1";
+                        readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
                     };
                     readonly profileDigest: {
                         readonly type: "string";
@@ -7329,7 +7329,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
             readonly profileId: {
-                readonly const: "pdfium-text-pages-v1";
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
             };
             readonly limits: {
                 readonly type: "object";
@@ -7372,7 +7372,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "object";
                 readonly properties: {
                     readonly profileId: {
-                        readonly const: "pdfium-text-pages-v1";
+                        readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
                     };
                     readonly profileDigest: {
                         readonly type: "string";
@@ -7428,7 +7428,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly const: "pdfium-text-pages-v1";
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
             };
             readonly profileDigest: {
                 readonly type: "string";
@@ -7536,7 +7536,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly const: "pdfium-text-pages-v1";
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
             };
             readonly profileDigest: {
                 readonly type: "string";
@@ -7644,7 +7644,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly const: "pdfium-text-pages-v1";
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
             };
             readonly profileDigest: {
                 readonly type: "string";
@@ -7752,7 +7752,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly const: "pdfium-text-pages-v1";
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
             };
             readonly profileDigest: {
                 readonly type: "string";
@@ -7950,6 +7950,41 @@ export declare const OUTPUT_SCHEMAS: {
                         textStatus: {
                             readonly enum: readonly ["text-extracted", "no-text-layer"];
                         };
+                        imageCandidates: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly index: {
+                                        readonly type: "integer";
+                                    };
+                                    readonly method: {
+                                        readonly const: "embedded-raster-object";
+                                    };
+                                    readonly pixelBounds: {
+                                        readonly type: "object";
+                                        readonly properties: {
+                                            readonly left: {
+                                                readonly type: "integer";
+                                            };
+                                            readonly top: {
+                                                readonly type: "integer";
+                                            };
+                                            readonly right: {
+                                                readonly type: "integer";
+                                            };
+                                            readonly bottom: {
+                                                readonly type: "integer";
+                                            };
+                                        };
+                                        readonly required: ("left" | "top" | "right" | "bottom")[];
+                                        readonly additionalProperties: false;
+                                    };
+                                };
+                                readonly required: ("index" | "method" | "pixelBounds")[];
+                                readonly additionalProperties: false;
+                            };
+                        };
                     };
                     readonly required: ("textArtifactDigest" | "textArtifactId" | "imageArtifactDigest" | "textStatus" | "pageNumber" | "width" | "height" | "paragraphs" | "pageLabel" | "imageWidth" | "imageHeight" | "imageArtifactId")[];
                     readonly additionalProperties: false;
@@ -8038,6 +8073,41 @@ export declare const OUTPUT_SCHEMAS: {
             };
             readonly textStatus: {
                 readonly enum: readonly ["text-extracted", "no-text-layer"];
+            };
+            readonly imageCandidates: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly index: {
+                            readonly type: "integer";
+                        };
+                        readonly method: {
+                            readonly const: "embedded-raster-object";
+                        };
+                        readonly pixelBounds: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly left: {
+                                    readonly type: "integer";
+                                };
+                                readonly top: {
+                                    readonly type: "integer";
+                                };
+                                readonly right: {
+                                    readonly type: "integer";
+                                };
+                                readonly bottom: {
+                                    readonly type: "integer";
+                                };
+                            };
+                            readonly required: ("left" | "top" | "right" | "bottom")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly required: ("index" | "method" | "pixelBounds")[];
+                    readonly additionalProperties: false;
+                };
             };
             readonly resultId: {
                 readonly type: "string";

@@ -428,6 +428,40 @@ class DocumentPane extends React.Component {
     ] });
   }
 }
+function PageImageCandidates({ page, imageURL, loading, onError }) {
+  const candidates = page.imageCandidates;
+  return /* @__PURE__ */ jsxs("div", { children: [
+    imageURL ? /* @__PURE__ */ jsxs("div", { style: { position: "relative", display: "inline-block", maxWidth: "100%" }, children: [
+      /* @__PURE__ */ jsx("img", { src: imageURL, alt: `\u56FA\u5B9A\u539F\u6587\u7269\u7406\u9875 ${page.pageNumber}`, style: { display: "block", maxWidth: "100%", height: "auto" }, onError }),
+      candidates?.map((item) => {
+        const b = item.pixelBounds;
+        return /* @__PURE__ */ jsx("span", { "aria-hidden": "true", style: { position: "absolute", boxSizing: "border-box", border: "2px solid #a74132", left: `${100 * b.left / page.imageWidth}%`, top: `${100 * b.top / page.imageHeight}%`, width: `${100 * (b.right - b.left) / page.imageWidth}%`, height: `${100 * (b.bottom - b.top) / page.imageHeight}%`, pointerEvents: "none" } }, item.index);
+      })
+    ] }) : /* @__PURE__ */ jsx("p", { role: "status", children: loading ? "\u6B63\u5728\u8BFB\u53D6\u5E76\u6838\u5BF9\u56FA\u5B9A PNG \u9875\u56FE\u2026" : "\u9875\u56FE\u5C1A\u4E0D\u53EF\u7528\u3002" }),
+    candidates === void 0 ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6B64\u5386\u53F2\u89E3\u6790\u7248\u672C\u672A\u68C0\u6D4B\u5D4C\u5165\u56FE\u50CF\u3002" }) : candidates.length === 0 ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6B64\u9875\u672A\u53D1\u73B0\u53EF\u5B9A\u4F4D\u7684\u9875\u9762\u76F4\u63A5\u6805\u683C\u5BF9\u8C61\uFF1B\u5D4C\u5957\u5BF9\u8C61\u3001\u77E2\u91CF\u56FE\u4E0E\u56FE\u7ED3\u6784\u4ECD\u672A\u77E5\u3002" }) : /* @__PURE__ */ jsxs("section", { "aria-label": "\u5D4C\u5165\u56FE\u50CF\u5019\u9009", children: [
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u5B9A\u4F4D\u9875\u9762\u76F4\u63A5\u6805\u683C\u5BF9\u8C61\uFF0C\u4E0D\u5224\u5B9A\u79D1\u5B66 Figure\u3001\u56FE\u6CE8\u6216\u56FE\u4E2D\u6570\u503C\u3002" }),
+      /* @__PURE__ */ jsx("ol", { children: candidates.map((item) => {
+        const b = item.pixelBounds;
+        return /* @__PURE__ */ jsx("li", { children: /* @__PURE__ */ jsxs("details", { children: [
+          /* @__PURE__ */ jsxs("summary", { children: [
+            "\u5019\u9009 ",
+            item.index,
+            " \xB7 \u9875\u56FE\u50CF\u7D20 [",
+            b.left,
+            ", ",
+            b.top,
+            ", ",
+            b.right,
+            ", ",
+            b.bottom,
+            "]"
+          ] }),
+          imageURL ? /* @__PURE__ */ jsx("div", { style: { maxWidth: "100%", overflowX: "auto" }, children: /* @__PURE__ */ jsx("div", { style: { position: "relative", width: b.right - b.left, height: b.bottom - b.top, overflow: "hidden" }, children: /* @__PURE__ */ jsx("img", { src: imageURL, alt: `\u7269\u7406\u9875 ${page.pageNumber} \u5D4C\u5165\u56FE\u50CF\u5019\u9009 ${item.index} \u7684\u9875\u56FE\u88C1\u526A`, style: { position: "absolute", left: -b.left, top: -b.top, width: page.imageWidth, height: page.imageHeight, maxWidth: "none" }, onError }) }) }) : /* @__PURE__ */ jsx("p", { children: "\u9875\u56FE\u8F7D\u5165\u540E\u53EF\u56DE\u770B\u6B64\u533A\u57DF\u3002" })
+        ] }) }, item.index);
+      }) })
+    ] })
+  ] });
+}
 class DocumentPages extends React.Component {
   constructor() {
     super(...arguments);
@@ -565,7 +599,7 @@ class DocumentPages extends React.Component {
         /* @__PURE__ */ jsx("code", { className: "digest", children: this.props.document.original.digest }),
         /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9875\u6587\u672C\u6458\u8981" }),
         /* @__PURE__ */ jsx("code", { className: "digest", children: p.textArtifactDigest }),
-        s.imageURL ? /* @__PURE__ */ jsx("img", { src: s.imageURL, alt: `\u56FA\u5B9A\u539F\u6587\u7269\u7406\u9875 ${p.pageNumber}`, style: { maxWidth: "100%", height: "auto" }, onError: () => this.setState({ error: "\u6D4F\u89C8\u5668\u65E0\u6CD5\u89E3\u7801\u5DF2\u56FA\u5B9A\u9875\u56FE\uFF0C\u8BF7\u91CD\u65B0\u8BFB\u53D6\u6216\u4E0B\u8F7D\u539F\u59CB PDF \u6838\u5BF9\u3002" }) }) : /* @__PURE__ */ jsx("p", { role: "status", children: s.loading ? "\u6B63\u5728\u8BFB\u53D6\u5E76\u6838\u5BF9\u56FA\u5B9A PNG \u9875\u56FE\u2026" : "\u9875\u56FE\u5C1A\u4E0D\u53EF\u7528\u3002" }),
+        /* @__PURE__ */ jsx(PageImageCandidates, { page: p, imageURL: s.imageURL, loading: s.loading, onError: () => this.setState({ error: "\u6D4F\u89C8\u5668\u65E0\u6CD5\u89E3\u7801\u5DF2\u56FA\u5B9A\u9875\u56FE\uFF0C\u8BF7\u91CD\u65B0\u8BFB\u53D6\u6216\u4E0B\u8F7D\u539F\u59CB PDF \u6838\u5BF9\u3002" }) }),
         p.textStatus === "no-text-layer" ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u6B64\u9875\u6CA1\u6709\u53EF\u63D0\u53D6\u6587\u5B57\u5C42\uFF1B\u672A\u542F\u52A8 OCR\uFF0C\u4E0D\u80FD\u51ED\u9875\u56FE\u4F2A\u9020\u6587\u672C\u5B9A\u4F4D\u3002" }) : null,
         /* @__PURE__ */ jsx("pre", { className: "document-preview", children: s.content || "\uFF08\u6B64\u9875\u65E0\u63D0\u53D6\u6587\u672C\uFF09" }),
         /* @__PURE__ */ jsxs("p", { className: "small muted", children: [

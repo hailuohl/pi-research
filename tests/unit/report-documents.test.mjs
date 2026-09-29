@@ -20,10 +20,10 @@ function prepared(raw=Buffer.from('%PDF-1.7\nUNIT fixture, not a scientific pape
  const old=s.app.store.get('document-parse-job',prepared.id),job=s.app.store.update('document-parse-job',old.id,old.version,{imageId}),outputDir=s.app.store.paths.physical(old.outputDir);
  const quality={readingOrder:'unverified',paragraphs:'heuristic',tables:'unknown',figures:'unknown',ocr:false,score:null};
  const pages=['中😀 引用文字，保留UTF-16区间。','未引用页，不能自动加入包。'].map((content,index)=>{
-  const prefix=`page-000${index+1}`,bytes=Buffer.from(content),page={pageNumber:index+1,pageLabel:index===0?'i':'ii',width:400,height:200,imageWidth:1,imageHeight:1,textFile:prefix+'.txt',textDigest:digest(bytes),textBytes:bytes.length,imageFile:prefix+'.png',imageDigest:digest(png),imageBytes:png.length,paragraphs:[{index:1,start:0,end:content.length}],textStatus:'text-extracted'};
+  const prefix=`page-000${index+1}`,bytes=Buffer.from(content),page={pageNumber:index+1,pageLabel:index===0?'i':'ii',width:400,height:200,imageWidth:1,imageHeight:1,textFile:prefix+'.txt',textDigest:digest(bytes),textBytes:bytes.length,imageFile:prefix+'.png',imageDigest:digest(png),imageBytes:png.length,paragraphs:[{index:1,start:0,end:content.length}],textStatus:'text-extracted',imageCandidates:[]};
   writeFileSync(join(outputDir,page.textFile),bytes);writeFileSync(join(outputDir,page.imageFile),png);return page;
  });
- writeFileSync(join(outputDir,'manifest.json'),JSON.stringify({formatVersion:1,profileId:profile.profileId,rawDigest:document.original.digest,pageCount:2,quality,pages}));
+ writeFileSync(join(outputDir,'manifest.json'),JSON.stringify({formatVersion:2,profileId:profile.profileId,rawDigest:document.original.digest,pageCount:2,quality,pages}));
  const done=s.app.documentParsing.finalize(job.id,{state:'succeeded',exitCode:0});assert.equal(done.integrity,'complete');
  const result=s.app.documentParsing.result(USER,pid,done.resultId);
  const evidence=[0,4].map(start=>s.app.evidence.registerDocument(USER,pid,{documentVersionId:document.id,parseResultId:result.id,pageNumber:1,start,end:start+1,description:`UNIT 中文页段 ${start}`}));

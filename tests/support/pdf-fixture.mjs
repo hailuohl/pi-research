@@ -1,5 +1,5 @@
 // Original fixture PDFs built from literal objects; no model, download or parser result is fabricated.
-export function pdfFixture({pages=3,marker='Fixture measured source',unicode=true,noise=false}={}) {
+export function pdfFixture({pages=3,marker='Fixture measured source',unicode=true,noise=false,nestedImage=false}={}) {
  const objects=[null,null],add=value=>(objects.push(Buffer.isBuffer(value)?value:Buffer.from(value,'ascii')),objects.length),stream=(dictionary,bytes)=>Buffer.concat([Buffer.from(`<< ${dictionary} /Length ${bytes.length} >>\nstream\n`),bytes,Buffer.from('\nendstream')]);
  const font=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
  // Self-contained Type3 outlines: actual 中 and a simple smiling face, not missing CID fonts.
@@ -19,10 +19,12 @@ export function pdfFixture({pages=3,marker='Fixture measured source',unicode=tru
   }
  }
  const image=add(stream(`/Type /XObject /Subtype /Image /Width ${imageWidth} /Height ${imageHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8`,data));
+ const form=nestedImage?add(stream(`/Type /XObject /Subtype /Form /BBox [0 0 1 1] /Resources << /XObject << /Im1 ${image} 0 R >> >>`,Buffer.from('q 1 0 0 1 0 0 cm /Im1 Do Q','ascii'))):null;
  const kids=[];
  for(let index=0;index<pages;index++){
-  const content=add(stream('',Buffer.from(index===0?`BT /F1 18 Tf 20 180 Td (${marker.replace(/[()\\]/g,'')}) Tj ET\n${unicode?'BT /F2 48 Tf 20 80 Td <0102> Tj ET':''}`:noise?'q 1000 0 0 1000 0 0 cm /Im1 Do Q':'q 320 0 0 120 40 50 cm /Im1 Do Q','ascii')));
-  kids.push(add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${noise?1000:400} ${noise?1000:220}] /Resources << /Font << /F1 ${font} 0 R /F2 ${unicodeFont} 0 R >> /XObject << /Im1 ${image} 0 R >> >> /Contents ${content} 0 R >>`));
+  const drawing=nestedImage?'q 280 0 0 100 80 60 cm /Fm1 Do Q':noise?'q 1000 0 0 1000 0 0 cm /Im1 Do Q':'q 320 0 0 120 40 50 cm /Im1 Do Q';
+  const content=add(stream('',Buffer.from(index===0?`BT /F1 18 Tf 20 180 Td (${marker.replace(/[()\\]/g,'')}) Tj ET\n${unicode?'BT /F2 48 Tf 20 80 Td <0102> Tj ET':''}`:drawing,'ascii')));
+  kids.push(add(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${noise?1000:400} ${noise?1000:220}] /Resources << /Font << /F1 ${font} 0 R /F2 ${unicodeFont} 0 R >> /XObject << /Im1 ${image} 0 R ${form?`/Fm1 ${form} 0 R`:''} >> >> /Contents ${content} 0 R >>`));
  }
  objects[0]=Buffer.from('<< /Type /Catalog /Pages 2 0 R /OpenAction << /S /JavaScript /JS (app.alert("must-not-run")) >> /PageLabels << /Nums [0 << /S /r >>] >> >>');
  objects[1]=Buffer.from(`<< /Type /Pages /Count ${pages} /Kids [${kids.map(id=>id+' 0 R').join(' ')}] >>`);
