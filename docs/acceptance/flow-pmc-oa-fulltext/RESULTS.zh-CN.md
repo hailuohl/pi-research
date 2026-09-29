@@ -7,3 +7,5 @@
 验收：非 OA、身份/版本/许可/XML 异常和来源关闭均拒绝发布；旧摘要与检索/失败历史、关闭来源后的新全文可重开回查，跨项目读取拒绝。浏览器已回看全文、派生文本与历史；未重复提交真实任务。原有 20 条非设置记录逐条摘要未变。独立复核提出的 XML 序言/属性阻断已用先失败后通过的回归修复。
 
 验证：干净构建通过；全量回归 815 通过、22 跳过、0 失败；XML/OA 定向 4 通过，文献界面定向 13 通过。Pi、Docker 与外部 SSH 不在本批关键路径；缺少外部环境的实测按用户要求跳过。机器摘要见 [evidence.json](evidence.json)，原始日志留在本地 `.validation/pmc-full-text/`。
+
+代码提交：[204a8d02ac02512d8477b4f3c097721c56fd2750](https://github.com/hailuohl/pi-research/commit/204a8d02ac02512d8477b4f3c097721c56fd2750)，分支 `implementation/pr01-reproducible-baseline`；私有远端已核对包含该提交。
