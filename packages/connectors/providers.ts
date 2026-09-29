@@ -7,7 +7,7 @@ import {normalizeDate,reconstructAbstract,rank,routePaperId,type Hit,type Source
 import {parsePubmed} from './pubmed.js';
 import type {Credentials} from './transport.js';
 export type Request=(url:URL,headers?:Record<string,string>)=>Promise<{text:string;bytes:number;contentType:string}>;
-export interface ProviderPage {hits:Hit[];rawItemCount:number;nextCursor:string|null;}
+export interface ProviderPage {hits:Hit[];rawItemCount:number;nextCursor:string|null;coverage?:string;}
 /** Exact official routes only; never follow a provider-supplied publisher URL. */
 export function pdfTarget(source:SourceId,rawId:string,requestedVersion:string|undefined,credentials:Credentials) {
  const {id}=routePaperId(rawId,source);
@@ -59,8 +59,25 @@ export async function searchProvider(source:SourceId,q:SearchInput,request:Reque
  }
  const url=new URL('https://api.crossref.org/works');url.searchParams.set('query',q.query);url.searchParams.set('rows',String(pool));url.searchParams.set('select','DOI,title,published,is-referenced-by-count');const filters=[];if(q.publishedAfter)filters.push(`from-pub-date:${q.publishedAfter}`);if(q.publishedBefore)filters.push(`until-pub-date:${q.publishedBefore}`);if(filters.length)url.searchParams.set('filter',filters.join(','));const data=json((await request(url)).text);ensure(Array.isArray(data.message?.items),'PROVIDER_SCHEMA_INVALID','Crossref 缺少 items',502);return rank(data.message.items.map(crHit),q);
 }
-export async function searchOpenAlexPage(q:SearchInput,cursor:string,request:Request,credentials:Credentials):Promise<ProviderPage>{
- const url=openAlexSearchUrl(q,q.limit,'openalex',cursor),data=json((await request(url,oaAuth(credentials))).text);ensure(data&&typeof data==='object'&&!Array.isArray(data)&&Array.isArray(data.results),'PROVIDER_SCHEMA_INVALID','OpenAlex 缺少 results',502);const meta=data.meta;ensure(meta&&typeof meta==='object'&&!Array.isArray(meta)&&Object.hasOwn(meta,'next_cursor'),'PROVIDER_SCHEMA_INVALID','OpenAlex 缺少 meta.next_cursor',502);const nextCursor=meta.next_cursor;ensure(nextCursor===null||typeof nextCursor==='string'&&nextCursor.trim().length>0&&nextCursor.trim()!=='*'&&nextCursor.length<=5000,'PROVIDER_SCHEMA_INVALID','OpenAlex next_cursor 类型或长度无效',502);const rawItemCount=data.results.length;ensure(rawItemCount<=q.limit&&(rawItemCount>0||nextCursor===null),'PROVIDER_SCHEMA_INVALID','OpenAlex 返回条数或空页游标无效',502);return {hits:rank(data.results.map((x:unknown)=>oaHit(x,'openalex')),q),rawItemCount,nextCursor};
+export async function searchOpenAlexPage(q:SearchInput,cursor:string,request:Request,credentials:Credentials,source:'openalex'|'biorxiv'='openalex'):Promise<ProviderPage>{
+ const url=openAlexSearchUrl(q,q.limit,source,cursor),data=json((await request(url,oaAuth(credentials))).text);ensure(data&&typeof data==='object'&&!Array.isArray(data)&&Array.isArray(data.results),'PROVIDER_SCHEMA_INVALID','OpenAlex 缺少 results',502);const meta=data.meta;ensure(meta&&typeof meta==='object'&&!Array.isArray(meta)&&Object.hasOwn(meta,'next_cursor'),'PROVIDER_SCHEMA_INVALID','OpenAlex 缺少 meta.next_cursor',502);const nextCursor=meta.next_cursor;ensure(nextCursor===null||typeof nextCursor==='string'&&nextCursor.trim().length>0&&nextCursor.trim()!=='*'&&nextCursor.length<=5000,'PROVIDER_SCHEMA_INVALID','OpenAlex next_cursor 类型或长度无效',502);const rawItemCount=data.results.length;ensure(rawItemCount<=q.limit&&(rawItemCount>0||nextCursor===null),'PROVIDER_SCHEMA_INVALID','OpenAlex 返回条数或空页游标无效',502);return {hits:rank(data.results.map((x:unknown)=>oaHit(x,source)),q),rawItemCount,nextCursor};
+}
+export function pubmedOffset(cursor:string):number {
+ if(cursor==='*')return 0;
+ ensure(/^pubmed-offset:[1-9]\d{0,3}$/.test(cursor)&&cursor.trim()===cursor,'LITERATURE_PAGE_SOURCE_INVALID','PubMed 分页偏移必须在 1–9999 内');return Number(cursor.slice('pubmed-offset:'.length));
+}
+export async function searchPubmedPage(q:SearchInput,cursor:string,searchRequest:Request,fetchRequest:Request,credentials:Credentials):Promise<ProviderPage>{
+ const offset=pubmedOffset(cursor),retmax=Math.min(q.limit,10000-offset),url=new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi');ncbiParams(url,credentials);url.searchParams.set('term',q.query);url.searchParams.set('retmode','json');url.searchParams.set('retstart',String(offset));url.searchParams.set('retmax',String(retmax));url.searchParams.set('sort','relevance');
+ if(q.publishedAfter||q.publishedBefore){url.searchParams.set('datetype','pdat');url.searchParams.set('mindate',(q.publishedAfter??'1000-01-01').replaceAll('-','/'));url.searchParams.set('maxdate',(q.publishedBefore??'3000-12-31').replaceAll('-','/'));}
+ const data=json((await searchRequest(url)).text),result=data?.esearchresult;
+ ensure(result&&Array.isArray(result.idlist)&&!result.ERROR&&!data.error&&(!result.errorlist||Object.keys(result.errorlist).length===0),'PROVIDER_SCHEMA_INVALID','PubMed ESearch 响应无效',502);
+ const count=Number(result.count);ensure(typeof result.count==='string'&&/^(0|[1-9]\d*)$/.test(result.count)&&Number.isSafeInteger(count)&&result.retstart===String(offset),'PROVIDER_SCHEMA_INVALID','PubMed ESearch 总量或偏移无效',502);
+ const ids:string[]=result.idlist;ensure(ids.every(id=>typeof id==='string'&&/^\d{1,12}$/.test(id))&&new Set(ids).size===ids.length&&ids.length===Math.min(retmax,Math.max(0,count-offset)),'PROVIDER_SCHEMA_INVALID','PubMed ESearch PMID 数量或标识无效，不能冒充空页',502);
+ const end=offset+ids.length,nextCursor=end<Math.min(count,10000)?`pubmed-offset:${end}`:null;
+ const coverage=`PubMed ESearch 报告匹配 ${count} 条；本页偏移窗口 [${offset}, ${end})，最多访问前 10000 条。${end>=10000&&count>10000?'已达到 10000 条窗口上限，仍有未覆盖匹配；请缩小查询或日期范围。':nextCursor?'可显式继续下一页。':'已到本次 ESearch 查询窗口末尾。'}偏移分页不冻结来源索引；摘要和元数据不代表原 PDF 或科学结论。`;
+ if(!ids.length)return {hits:[],rawItemCount:0,nextCursor,coverage};
+ const fetchUrl=new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');ncbiParams(fetchUrl,credentials);fetchUrl.searchParams.set('id',ids.join(','));fetchUrl.searchParams.set('retmode','xml');const papers=parsePubmed((await fetchRequest(fetchUrl)).text),by=new Map(papers.map(p=>[p.id,p]));
+ ensure(papers.length===ids.length&&by.size===ids.length&&ids.every(id=>by.has(id)),'PROVIDER_SCHEMA_INVALID','PubMed EFetch PMID 集合与本页不符，不能声称完整检索',502);return {hits:rank(ids.map(id=>by.get(id)!),q),rawItemCount:ids.length,nextCursor,coverage};
 }
 export async function searchCrossrefPage(q:SearchInput,cursor:string,request:Request):Promise<ProviderPage>{
  const url=new URL('https://api.crossref.org/works');url.searchParams.set('query',q.query);url.searchParams.set('rows',String(q.limit));url.searchParams.set('select','DOI,title,published,is-referenced-by-count');url.searchParams.set('cursor',cursor);const filters=[];if(q.publishedAfter)filters.push(`from-pub-date:${q.publishedAfter}`);if(q.publishedBefore)filters.push(`until-pub-date:${q.publishedBefore}`);if(filters.length)url.searchParams.set('filter',filters.join(','));

@@ -417,7 +417,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly const: "text-only";
             };
         };
-        readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "license" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+        readonly required: ("files" | "id" | "license" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_list: {
@@ -549,7 +549,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                     readonly const: "text-only";
                                 };
                             };
-                            readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "license" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                            readonly required: ("files" | "id" | "license" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                             readonly additionalProperties: false;
                         };
                         readonly reviews: {
@@ -769,7 +769,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly const: "text-only";
                     };
                 };
-                readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "license" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("files" | "id" | "license" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly reviews: {
@@ -879,7 +879,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("digest" | "content" | "revisionId" | "resource")[];
+        readonly required: ("content" | "digest" | "revisionId" | "resource")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_review: {

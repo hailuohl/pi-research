@@ -49,6 +49,15 @@ test('OpenAlex page control follows its own source setting and identifies the st
  v.state.config.enabled.openalex=false;assert.equal(nodes(v.render()).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页').props.disabled,true);
 });
 
+test('bioRxiv and PubMed pages use their own switches while alphaXiv keeps an explicit bounded-window notice',()=>{
+ for(const [source,name] of [['biorxiv','bioRxiv'],['pubmed','PubMed']]){
+  const v=view();v.state.config={enabled:{[source]:true}};v.state.result={id:source+'-page-1',query:'cancer',status:'complete',sources:[{source,status:'succeeded',count:2}],items:[],page:{number:1,previousSearchId:null,nextCursor:'saved-next',nextCursorExpiresAt:new Date(Date.now()+60000).toISOString(),rawItemCount:2},...(source==='pubmed'?{coverage:'PubMed 前 10000 条窗口'}:{})};
+  const tree=v.render(),next=nodes(tree).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页');assert.match(flatten(tree).replace(/\s+/g,' '),new RegExp(name+' 元数据第 1 页'));assert.equal(next.props.disabled,false);if(source==='pubmed')assert.match(flatten(tree),/PubMed 前 10000 条窗口/);
+  v.state.config.enabled[source]=false;assert.equal(nodes(v.render()).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页').props.disabled,true);
+ }
+ const v=view();v.state.result={id:'alpha-window',query:'cancer',status:'complete',sources:[{source:'alphaxiv',status:'succeeded',count:2}],items:[]};const tree=v.render();assert.match(flatten(tree),/alphaXiv 当前检索仅为有限候选窗口/);assert.equal(nodes(tree).some(n=>n.type==='button'&&flatten(n)==='显式获取下一页'),false);
+});
+
 test('page images require both PNG magic and the bound digest before producing a display blob',async()=>{
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5ZcAAAAASUVORK5CYII=','base64'),hash=createHash('sha256').update(png).digest('hex');
  assert.equal((await verifiedPageImage(new Blob([png]),hash)).type,'image/png');

@@ -9,6 +9,7 @@ export interface ProviderPage {
     hits: Hit[];
     rawItemCount: number;
     nextCursor: string | null;
+    coverage?: string;
 }
 /** Exact official routes only; never follow a provider-supplied publisher URL. */
 export declare function pdfTarget(source: SourceId, rawId: string, requestedVersion: string | undefined, credentials: Credentials): {
@@ -23,6 +24,8 @@ export declare function pdfTarget(source: SourceId, rawId: string, requestedVers
     versionAssurance: string;
 };
 export declare function searchProvider(source: SourceId, q: SearchInput, request: Request, credentials: Credentials): Promise<Hit[]>;
-export declare function searchOpenAlexPage(q: SearchInput, cursor: string, request: Request, credentials: Credentials): Promise<ProviderPage>;
+export declare function searchOpenAlexPage(q: SearchInput, cursor: string, request: Request, credentials: Credentials, source?: 'openalex' | 'biorxiv'): Promise<ProviderPage>;
+export declare function pubmedOffset(cursor: string): number;
+export declare function searchPubmedPage(q: SearchInput, cursor: string, searchRequest: Request, fetchRequest: Request, credentials: Credentials): Promise<ProviderPage>;
 export declare function searchCrossrefPage(q: SearchInput, cursor: string, request: Request): Promise<ProviderPage>;
 export declare function readProvider(source: SourceId, id: string, request: Request, credentials: Credentials): Promise<PaperContent>;

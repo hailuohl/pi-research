@@ -537,7 +537,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("queued" | "targets" | "nextCursor" | "usage" | "scope" | "available" | "configuration" | "items")[];
+        readonly required: ("queued" | "nextCursor" | "targets" | "usage" | "scope" | "available" | "configuration" | "items")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {

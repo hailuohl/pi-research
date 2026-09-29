@@ -5,6 +5,7 @@ import type {DiscoveryGrant,DiscoveryGrantReference,DiscoveryContext,DiscoveryOp
 import {ensure} from '../domain/errors.js';
 import {connectorSettings,assertSourceEnabled} from '../connectors/settings.js';
 import {parseSearch,routePaperId,type SearchInput,type SourceId} from '../connectors/contracts.js';
+import {pubmedOffset} from '../connectors/providers.js';
 import type {SearchPageRequest,SearchRecord} from '../connectors/service.js';
 import type {DocumentVersion} from '../documents/types.js';
 import type {DocumentParseJob} from '../documents/parse-types.js';
@@ -58,12 +59,13 @@ export function ownerSearchNextPage(store:Store,pid:string,previousSearchId:stri
  const previous=store.get<SearchRecord>('connector-search',previousSearchId,pid),search=parseSearch(previous.request),page=previous.page,source=search.sources[0];
  ensure(!previous.discoveryGrant&&previous.scopeSessionId==null&&previous.scopeTaskId==null&&previous.scopeAttemptId==null,'LITERATURE_PAGE_OWNER_ONLY','只有 owner 的普通搜索结果可以继续',403);
  ensure(previous.settingsVersion===connectorSettings(store,pid).version,'CONNECTOR_SETTINGS_CHANGED','文献来源设置已改变；请重新提交第一页');
- ensure(digest(search)===digest(previous.request)&&previous.query===search.query&&search.sources.length===1&&(source==='crossref'||source==='openalex')&&search.strategy==='keyword'&&search.prioritize==='default'&&previous.status==='complete'&&previous.sources.length===1&&previous.sources[0].source===source&&previous.sources[0].status==='succeeded'&&previous.items.every(hit=>hit.source===source),'LITERATURE_PAGE_SOURCE_INVALID','前页不是可继续的单来源默认排序成功结果');
+ ensure(digest(search)===digest(previous.request)&&previous.query===search.query&&search.sources.length===1&&(source==='crossref'||source==='openalex'||source==='biorxiv'||source==='pubmed')&&search.strategy==='keyword'&&search.prioritize==='default'&&previous.status==='complete'&&previous.sources.length===1&&previous.sources[0].source===source&&previous.sources[0].status==='succeeded'&&previous.items.every(hit=>hit.source===source),'LITERATURE_PAGE_SOURCE_INVALID','前页不是可继续的单来源默认排序成功结果');
  assertSourceEnabled(store,pid,source);
- ensure(page&&Number.isSafeInteger(page.number)&&page.number>=1&&typeof page.cursor==='string'&&page.cursor.length>0&&page.cursor.length<=5000&&Number.isSafeInteger(page.rawItemCount)&&page.rawItemCount>=0&&page.rawItemCount<=search.limit&&(source==='openalex'||page.rawItemCount>=search.limit),'LITERATURE_PAGE_SOURCE_INVALID','前页没有有效的分页记录');
+ ensure(page&&Number.isSafeInteger(page.number)&&page.number>=1&&typeof page.cursor==='string'&&page.cursor.length>0&&page.cursor.length<=5000&&Number.isSafeInteger(page.rawItemCount)&&page.rawItemCount>=0&&page.rawItemCount<=search.limit&&(source!=='crossref'||page.rawItemCount>=search.limit),'LITERATURE_PAGE_SOURCE_INVALID','前页没有有效的分页记录');
  ensure(page.number===1?page.previousSearchId===null&&page.cursor==='*'&&page.expiresAt===null:typeof page.previousSearchId==='string'&&page.cursor!=='*'&&typeof page.expiresAt==='string'&&Number.isFinite(Date.parse(page.expiresAt)),'LITERATURE_PAGE_SOURCE_INVALID','前页分页链不完整');
  ensure(typeof page.nextCursor==='string'&&page.nextCursor.length>0&&typeof page.nextCursorExpiresAt==='string'&&Number.isFinite(Date.parse(page.nextCursorExpiresAt)),'LITERATURE_PAGE_TERMINAL','前页没有可继续的下一游标');
  ensure(page.nextCursor.length<=5000,'LITERATURE_PAGE_SOURCE_INVALID','前页下一游标长度无效');
+ if(source==='pubmed')ensure(page.rawItemCount>0&&pubmedOffset(page.nextCursor)===pubmedOffset(page.cursor)+page.rawItemCount,'LITERATURE_PAGE_SOURCE_INVALID','PubMed 下一偏移与前页原始数量不符');
  ensure(Date.now()<Date.parse(page.nextCursorExpiresAt),'LITERATURE_PAGE_EXPIRED','下一游标已过期，请从第一页重新检索');
  ensure(Number.isSafeInteger(page.number+1),'LITERATURE_PAGE_SOURCE_INVALID','分页页号超出安全范围');return {search,pageRequest:{number:page.number+1,previousSearchId:previous.id,cursor:page.nextCursor,expiresAt:page.nextCursorExpiresAt}};
 }

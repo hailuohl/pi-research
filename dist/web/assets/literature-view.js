@@ -109,7 +109,7 @@ class LiteratureView extends React.Component {
     });
   }
   render() {
-    const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt), pageSource = s.result?.sources.length === 1 ? s.result.sources[0].source : null, pageName = pageSource === "openalex" ? "OpenAlex" : pageSource === "crossref" ? "Crossref" : "\u672A\u77E5\u6765\u6E90";
+    const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt), pageSource = s.result?.sources.length === 1 ? s.result.sources[0].source : null, pageName = pageSource === "openalex" ? "OpenAlex" : pageSource === "crossref" ? "Crossref" : pageSource === "biorxiv" ? "bioRxiv" : pageSource === "pubmed" ? "PubMed" : "\u672A\u77E5\u6765\u6E90";
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
       /* @__PURE__ */ jsxs(SectionTitle, { title: "\u6587\u732E\u4EFB\u52A1\u4E0E\u539F\u6587", sub: "\u663E\u5F0F\u63D0\u4EA4\u3001\u56FA\u5B9A\u53D6\u5F97\u7684\u5B57\u8282\uFF0C\u518D\u6309\u9875\u6BB5\u56DE\u67E5\uFF1B\u6458\u8981\u548C\u4F9B\u5E94\u5546\u6587\u672C\u4E0D\u5192\u5145\u539F PDF\u3002", children: [
         this.props.onSources ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: this.props.onSources, children: "\u7BA1\u7406\u6765\u6E90\u6388\u6743" }) : null,
@@ -201,7 +201,8 @@ class LiteratureView extends React.Component {
             short(nextTask.id),
             " \u5DF2\u8BB0\u5F55\uFF0C\u8BF7\u5728\u4E0A\u65B9\u56DE\u67E5\u3002"
           ] }) : null
-        ] }) : null,
+        ] }) : s.result.sources.some((source) => source.source === "alphaxiv") ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "alphaXiv \u5F53\u524D\u68C0\u7D22\u4EC5\u4E3A\u6709\u9650\u5019\u9009\u7A97\u53E3\uFF1B\u5C1A\u65E0\u5DF2\u9A8C\u8BC1\u7684\u7EED\u9875\u5951\u7EA6\uFF0C\u4E0D\u4EE3\u8868\u7ED3\u679C\u5DF2\u7A77\u5C3D\u3002" }) : null,
+        pageSource === "pubmed" && s.result.coverage ? /* @__PURE__ */ jsx("p", { className: "small muted", children: s.result.coverage }) : null,
         /* @__PURE__ */ jsx("p", { className: "small muted", children: s.result.discoveryGrant ? `DiscoveryGrant ${short(s.result.discoveryGrant.id)} \xB7 \u6388\u6743\u5185\u547D\u4E2D` : "\u672A\u7ED1\u5B9A\u6388\u6743\u7684\u68C0\u7D22" }),
         s.result.sources.map((source) => /* @__PURE__ */ jsxs("p", { children: [
           source.source,

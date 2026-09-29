@@ -6,7 +6,7 @@ import { object, integer, text, bool } from '../contracts/validation.js';
 import { digest } from '../storage/store.js';
 import { SOURCES, parseSearch, routePaperId, deduplicate } from './contracts.js';
 import { ConnectorTransport } from './transport.js';
-import { searchProvider, searchOpenAlexPage, searchCrossrefPage, readProvider, pdfTarget } from './providers.js';
+import { searchProvider, searchOpenAlexPage, searchPubmedPage, searchCrossrefPage, readProvider, pdfTarget } from './providers.js';
 import { connectorSettings, assertSourceEnabled } from './settings.js';
 import { CONNECTOR_CAPABILITIES } from './catalog.js';
 const envCredentials = () => ({ openalexKey: process.env.OPENALEX_API_KEY, ncbiKey: process.env.NCBI_API_KEY, email: process.env.NCBI_EMAIL });
@@ -94,7 +94,7 @@ export class ConnectorService {
         this.assertAuthorized(actor, pid);
         ensure(actor.type === 'user' && !actor.sessionId && !actor.taskId && !actor.attemptId && !actor.wakeupId, 'LITERATURE_PAGE_OWNER_ONLY', '分页只支持没有会话授权的 owner 检索', 403);
         const q = parseSearch(searchValue), pageRequest = parsePageRequest(pageValue), source = q.sources[0];
-        ensure(q.sources.length === 1 && (source === 'crossref' || source === 'openalex') && q.strategy === 'keyword' && q.prioritize === 'default', 'LITERATURE_PAGE_SOURCE_INVALID', '分页仅支持 Crossref 或 OpenAlex 默认关键词排序');
+        ensure(q.sources.length === 1 && (source === 'crossref' || source === 'openalex' || source === 'biorxiv' || source === 'pubmed') && q.strategy === 'keyword' && q.prioritize === 'default', 'LITERATURE_PAGE_SOURCE_INVALID', '分页仅支持 Crossref、OpenAlex、bioRxiv 或 PubMed 默认关键词排序');
         const input = { search: q, pageRequest }, operationScope = `connector-search:${pid}:user:root`;
         const result = await this.once(operationScope, key, input, async () => {
             if (pageRequest.number === 1)
@@ -109,10 +109,13 @@ export class ConnectorService {
             assertSourceEnabled(this.c.store, pid, source);
             const validate = this.bound(actor, pid, cfg.version, () => { ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时；不登记未完成结果', 409); callback(); });
             validate();
-            const ownerCall = { id: digest({ operationScope, key }), requestDigest: digest(input), expiresAt: pageRequest.expiresAt }, request = this.request(pid, source, validate, signal, undefined, undefined, ownerCall), page = source === 'openalex' ? await searchOpenAlexPage(q, pageRequest.cursor, request, this.credentials()) : await searchCrossrefPage(q, pageRequest.cursor, request);
+            if (source === 'pubmed')
+                ensure(cfg.requestLimit - this.c.store.list('connector-call', pid).length >= 2, 'CONNECTOR_BUDGET_EXCEEDED', 'PubMed 一页开始前至少需要 2 次 HTTP 额度；空页实际计 1 次');
+            const ownerCall = { id: digest({ operationScope, key }), requestDigest: digest(input), expiresAt: pageRequest.expiresAt }, request = this.request(pid, source, validate, signal, undefined, undefined, ownerCall);
+            const page = source === 'pubmed' ? await searchPubmedPage(q, pageRequest.cursor, this.request(pid, source, validate, signal, undefined, undefined, { ...ownerCall, id: digest({ operationScope, key, step: 'esearch' }) }), this.request(pid, source, validate, signal, undefined, undefined, { ...ownerCall, id: digest({ operationScope, key, step: 'efetch' }) }), this.credentials()) : source === 'openalex' || source === 'biorxiv' ? await searchOpenAlexPage(q, pageRequest.cursor, request, this.credentials(), source) : await searchCrossrefPage(q, pageRequest.cursor, request);
             validate();
             const nextCursorExpiresAt = page.nextCursor ? new Date(Date.now() + PAGE_CURSOR_TTL_MS).toISOString() : null, recordPage = { ...pageRequest, nextCursor: page.nextCursor, nextCursorExpiresAt, rawItemCount: page.rawItemCount }, items = deduplicate(page.hits);
-            return this.c.store.transaction(() => { validate(); return this.c.store.operation(operationScope, key, input, () => { const row = this.c.store.create('connector-search', pid, { query: q.query, request: q, page: recordPage, settingsVersion: cfg.version, scopeSessionId: null, scopeTaskId: null, scopeAttemptId: null, items, sources: [{ source, status: 'succeeded', count: page.hits.length }], status: 'complete', retrievedAt: new Date().toISOString(), coverage: `${source === 'openalex' ? 'OpenAlex' : 'Crossref'} keyword metadata page; cursor lifetime is a local four-minute limit, not a provider guarantee` }); this.c.store.event(pid, 'connectors.searched', { searchId: row.id, sources: [{ source, status: 'succeeded' }], count: items.length, pageNumber: recordPage.number }); return row; }); });
+            return this.c.store.transaction(() => { validate(); return this.c.store.operation(operationScope, key, input, () => { const row = this.c.store.create('connector-search', pid, { query: q.query, request: q, page: recordPage, settingsVersion: cfg.version, scopeSessionId: null, scopeTaskId: null, scopeAttemptId: null, items, sources: [{ source, status: 'succeeded', count: page.hits.length }], status: 'complete', retrievedAt: new Date().toISOString(), coverage: page.coverage ?? `${source === 'openalex' ? 'OpenAlex' : source === 'biorxiv' ? 'bioRxiv via OpenAlex' : 'Crossref'} keyword metadata page; cursor lifetime is a local four-minute limit, not a provider guarantee` }); this.c.store.event(pid, 'connectors.searched', { searchId: row.id, sources: [{ source, status: 'succeeded' }], count: items.length, pageNumber: recordPage.number }); return row; }); });
         });
         const receipt = this.c.store.operationResult(operationScope, key, input);
         ensure(result && typeof result.id === 'string' && receipt.found && result.id === receipt.value.id, 'LITERATURE_RECEIPT_INVALID', '分页回执没有有效记录');

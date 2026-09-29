@@ -688,7 +688,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("path" | "content")[];
+                        readonly required: ("content" | "path")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -795,7 +795,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("files" | "id" | "sourceDigest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("files" | "id" | "title" | "sourceDigest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_inspect: {
@@ -896,7 +896,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("files" | "id" | "sourceDigest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("files" | "id" | "title" | "sourceDigest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_list: {
@@ -1002,7 +1002,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("files" | "id" | "sourceDigest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "title" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+                    readonly required: ("files" | "id" | "title" | "sourceDigest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1042,7 +1042,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "path" | "digest" | "cursor" | "mediaType" | "end" | "content")[];
+        readonly required: ("complete" | "cursor" | "content" | "path" | "digest" | "mediaType" | "end")[];
         readonly additionalProperties: false;
     };
     readonly publication_status: {

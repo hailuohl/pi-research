@@ -35,7 +35,7 @@ export class LiteratureTaskService {
             parsed = this.parse(value);
         const owner = continuationId ? actor : input.discoveryGrantId ? this.app.discoveryGrants.owner(actor, pid, text(input.discoveryGrantId, 'discoveryGrantId', 100)) : actor, ctx = continuationId ? undefined : discoveryContext(this.app.store, pid, owner, parsed, 'prepare');
         let request = ctx?.operation ?? parsed;
-        if (!continuationId && !ctx && !owner.sessionId && !owner.taskId && !owner.attemptId && request.kind === 'search' && request.search.sources.length === 1 && (request.search.sources[0] === 'crossref' || request.search.sources[0] === 'openalex') && request.search.strategy === 'keyword' && request.search.prioritize === 'default')
+        if (!continuationId && !ctx && !owner.sessionId && !owner.taskId && !owner.attemptId && request.kind === 'search' && request.search.sources.length === 1 && (request.search.sources[0] === 'crossref' || request.search.sources[0] === 'openalex' || request.search.sources[0] === 'biorxiv' || request.search.sources[0] === 'pubmed') && request.search.strategy === 'keyword' && request.search.prioritize === 'default')
             request = { ...request, pageRequest: { number: 1, previousSearchId: null, cursor: '*', expiresAt: null } };
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
@@ -63,7 +63,7 @@ export class LiteratureTaskService {
         this.app.store.update('literature-task', id, row.version, { cancelRequested: true, ...(row.state === 'queued' ? { state: 'cancelled', phase: 'done', endedAt: new Date().toISOString() } : {}) });
         this.app.store.event(pid, 'literature.task_cancel_requested', { taskId: id });
     } return this.inspect(actor, pid, id); }); }
-    retry(actor, pid, id, expectedVersion) { userOnly(actor); return this.app.store.transaction(() => { const row = this.app.store.get('literature-task', id, pid); ensure(row.version === expectedVersion, 'VERSION_CONFLICT', '文献任务已更新'); ensure(['failed', 'cancelled', 'interrupted'].includes(row.state), 'LITERATURE_NOT_RETRYABLE', '只可显式重试失败、取消或中断任务'); if (row.request.kind === 'search' && row.request.pageRequest && row.request.pageRequest.number > 1) {
+    retry(actor, pid, id, expectedVersion) { userOnly(actor); return this.app.store.transaction(() => { const row = this.app.store.get('literature-task', id, pid); ensure(row.version === expectedVersion, 'VERSION_CONFLICT', '文献任务已更新'); ensure(['failed', 'cancelled', 'interrupted'].includes(row.state), 'LITERATURE_NOT_RETRYABLE', '只可显式重试失败、取消或中断任务'); if (row.request.kind === 'search' && row.request.pageRequest) {
         const prior = this.app.store.db.prepare("SELECT id FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.previousTaskId')=? LIMIT 1").get(pid, id);
         if (prior)
             throw new DomainError('LITERATURE_RETRY_ALREADY_REQUESTED', '该分页任务已重试；请查看已有尝试', 409, { taskId: String(prior.id) });
