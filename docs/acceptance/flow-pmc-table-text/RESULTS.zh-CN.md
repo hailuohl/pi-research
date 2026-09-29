@@ -7,3 +7,5 @@
 剩余工作：本批只覆盖可读的行/单元格文字，不还原 `rowspan`、`colspan`、嵌套表格语义或 PDF/图结构。其他 PR01–14 缺口继续按一条用户流程分批推进；前端布局仍暂缓。
 
 验证：真实获取两次 HTTP；浏览器完成新旧身份选择、表格词项检索、精确回跳与刷新。集成全量回归 837 通过、0 失败、22 跳过；必要兼容修复后最终干净构建及受影响的 50 项通过，独立复核无阻断。机器摘要见 [evidence.json](evidence.json)，原始响应和日志留在本地 `.validation/pmc-table-text/`。
+
+代码提交：[c95b7746e92cc3733e9bbbdb65df4853addf145c](https://github.com/hailuohl/pi-research/commit/c95b7746e92cc3733e9bbbdb65df4853addf145c)，分支 `implementation/pr01-reproducible-baseline`；私有远端已核对包含该提交。
