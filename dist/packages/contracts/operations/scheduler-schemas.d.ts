@@ -174,7 +174,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("context" | "targetId" | "backend" | "observedAt")[];
+        readonly required: ("targetId" | "context" | "backend" | "observedAt")[];
         readonly additionalProperties: false;
     };
     readonly compute_queue_inspect: {
@@ -324,7 +324,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly backend: {
-                            readonly enum: readonly ["docker", "trusted-example"];
+                            readonly enum: readonly ["docker", "trusted-example", "ssh"];
                         };
                         readonly contexts: {
                             readonly type: "array";
@@ -462,7 +462,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("usage" | "available" | "targetId" | "configuration" | "backend" | "contexts")[];
+                    readonly required: ("usage" | "targetId" | "available" | "configuration" | "backend" | "contexts")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -490,7 +490,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "boolean";
                         };
                         readonly backend: {
-                            readonly enum: readonly ["docker", "trusted-example"];
+                            readonly enum: readonly ["docker", "trusted-example", "ssh"];
                         };
                         readonly targetId: {
                             readonly anyOf: readonly [{

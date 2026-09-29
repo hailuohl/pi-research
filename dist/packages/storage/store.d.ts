@@ -33,6 +33,7 @@ export declare class Store {
     private commitCallbacks;
     textWrites?: TextWriteRecovery;
     constructor(path: string);
+    private migrateSshQueue;
     private migratePublicationQueue;
     private migrateDocumentQueue;
     private migrateComputeQueue;

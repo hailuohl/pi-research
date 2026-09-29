@@ -1,7 +1,7 @@
 import type {Row, Run} from '../domain/types.js';
 import type {DataPaths} from '../storage/data-paths.js';
 
-export interface RunnerCapabilities {backend: 'docker' | 'trusted-example'; isolated: boolean; recoverable: boolean;}
+export interface RunnerCapabilities {backend: 'docker' | 'trusted-example' | 'ssh'; isolated: boolean; recoverable: boolean;}
 export type RunnerLogSink = (stream: 'stdout' | 'stderr', chunk: Buffer) => void;
 export interface RunnerProcess {
     pid?: number;
@@ -18,7 +18,8 @@ export interface RunnerAdapter {
     start(onLog: RunnerLogSink): Promise<RunnerProcess>;
 }
 export interface RunExecution {
-    backend: 'docker';
+    backend: 'docker' | 'ssh';
+    sshHandle?: string;
     dockerContext: string;
     containerName: string;
     containerId?: string;

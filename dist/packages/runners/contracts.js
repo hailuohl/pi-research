@@ -7,12 +7,16 @@ import { safePath } from '../workspace/files.js';
 export const EXAMPLE_CONTRACT = { command: ['node', 'experiment.mjs'], environment: {}, datasetVersion: 'synthetic-quadratic-v1', evaluationProtocolVersion: 'deterministic-split-180-60-v1', metrics: { mse: { unit: 'squared-target', direction: 'min' }, r2: { unit: 'dimensionless', direction: 'max' }, train_mse: { unit: 'squared-target', direction: 'min' } }, expectedArtifacts: ['metrics.json', 'predictions.csv', 'model.json'], timeoutSeconds: 30, runner: 'trusted-example', cpus: 1, memoryMb: 256 };
 export function validateContract(value) {
     const x = object(value);
-    const runner = oneOf(x.runner, ['trusted-example', 'docker'], 'runner');
+    const runner = oneOf(x.runner, ['trusted-example', 'docker', 'ssh'], 'runner');
     if (runner === 'trusted-example') {
         ensure(digest(x) === digest(EXAMPLE_CONTRACT), 'CONTRACT_INVALID', '可信示例使用固定运行契约', 400);
         return structuredClone(EXAMPLE_CONTRACT);
     }
-    ensure(Object.keys(x).every(k => ['runner', 'image', 'command', 'environment', 'datasetVersion', 'evaluationProtocolVersion', 'metrics', 'expectedArtifacts', 'timeoutSeconds', 'cpus', 'memoryMb', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy'].includes(k)), 'CONTRACT_INVALID', '运行契约包含未知字段', 400);
+    ensure(Object.keys(x).every(k => ['runner', 'image', 'command', 'environment', 'datasetVersion', 'evaluationProtocolVersion', 'metrics', 'expectedArtifacts', 'timeoutSeconds', 'cpus', 'memoryMb', 'dockerContext', 'sshTargetId', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy'].includes(k)), 'CONTRACT_INVALID', '运行契约包含未知字段', 400);
+    ensure(runner === 'ssh' ? x.dockerContext === undefined : x.sshTargetId === undefined, 'CONTRACT_INVALID', '运行目标字段与后端不符', 400);
+    const sshTargetId = runner === 'ssh' ? text(x.sshTargetId, 'sshTargetId', 80) : undefined;
+    if (sshTargetId)
+        ensure(/^[a-zA-Z0-9][a-zA-Z0-9_-]*$/.test(sshTargetId), 'CONTRACT_INVALID', 'SSH 目标标识无效', 400);
     ensure(x.environment === undefined || Object.keys(object(x.environment)).length === 0, 'CONTRACT_INVALID', '本批不允许把宿主环境或密钥传入容器', 400);
     ensure(x.networkPolicy === undefined || x.networkPolicy === 'none', 'CONTRACT_INVALID', '正式容器运行必须禁网', 400);
     const image = text(x.image, 'image', 250);
@@ -33,11 +37,11 @@ export function validateContract(value) {
     ensure(expectedArtifacts.includes('metrics.json') && new Set(expectedArtifacts).size === expectedArtifacts.length, 'CONTRACT_INVALID', '必需产物应包含 metrics.json 且不重复', 400);
     for (const path of expectedArtifacts) {
         safePath(process.cwd(), path);
-        ensure(path.split('/').every(Boolean) && !['stdout.log', 'stderr.log', 'execution.json'].includes(path), 'CONTRACT_INVALID', '产物路径必须规范且不能占用宿主日志名称', 400);
+        ensure(path.split('/').every(p => !!p && !/[\x00-\x1f:]/.test(p) && !/[. ]$/.test(p)) && !['stdout.log', 'stderr.log', 'execution.json'].includes(path), 'CONTRACT_INVALID', '产物路径必须规范且不能占用宿主日志名称', 400);
     }
     const dockerContext = text(x.dockerContext ?? 'default', 'dockerContext', 100);
     ensure(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(dockerContext), 'CONTRACT_INVALID', 'Docker context 无效', 400);
-    return { runner, image, command, environment: {}, datasetVersion: text(x.datasetVersion, 'datasetVersion', 200), evaluationProtocolVersion: text(x.evaluationProtocolVersion, 'evaluationProtocolVersion', 200), metrics: parsed, expectedArtifacts, timeoutSeconds: integer(x.timeoutSeconds ?? 300, 'timeoutSeconds', 1, 86400), cpus: integer(x.cpus ?? 1, 'cpus', 1, 64), memoryMb: integer(x.memoryMb ?? 1024, 'memoryMb', 64, 65536), dockerContext, networkPolicy: 'none', pids: integer(x.pids ?? 128, 'pids', 16, 512), workMb: integer(x.workMb ?? 256, 'workMb', 16, 1024), logBytes: integer(x.logBytes ?? 16 * 1024 * 1024, 'logBytes', 1, 16 * 1024 * 1024), outputBytes: integer(x.outputBytes ?? 128 * 1024 * 1024, 'outputBytes', 1, 128 * 1024 * 1024) };
+    return { runner, image, command, environment: {}, datasetVersion: text(x.datasetVersion, 'datasetVersion', 200), evaluationProtocolVersion: text(x.evaluationProtocolVersion, 'evaluationProtocolVersion', 200), metrics: parsed, expectedArtifacts, timeoutSeconds: integer(x.timeoutSeconds ?? 300, 'timeoutSeconds', 1, 86400), cpus: integer(x.cpus ?? 1, 'cpus', 1, 64), memoryMb: integer(x.memoryMb ?? 1024, 'memoryMb', 64, 65536), ...(runner === 'ssh' ? { sshTargetId } : { dockerContext }), networkPolicy: 'none', pids: integer(x.pids ?? 128, 'pids', 16, 512), workMb: integer(x.workMb ?? 256, 'workMb', 16, 1024), logBytes: integer(x.logBytes ?? 16 * 1024 * 1024, 'logBytes', 1, 16 * 1024 * 1024), outputBytes: integer(x.outputBytes ?? 128 * 1024 * 1024, 'outputBytes', 1, 128 * 1024 * 1024) };
 }
 export function verifyTrustedExample(manifest, repoRoot, paths) {
     if (manifest.contract.runner !== 'trusted-example')

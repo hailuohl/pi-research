@@ -34,7 +34,7 @@ export interface ComputeQueueItem {
     sequence: number;
     state: string;
     held: boolean;
-    backend: 'docker' | 'trusted-example';
+    backend: 'docker' | 'trusted-example' | 'ssh';
     targetId: string | null;
     requested: {
         cpus: number;
@@ -64,7 +64,7 @@ export interface ComputeQueueInspection {
     queued: number;
     targets: Array<{
         targetId: string;
-        backend: 'docker' | 'trusted-example';
+        backend: 'docker' | 'trusted-example' | 'ssh';
         contexts: string[];
         configuration: ComputeConfiguration;
         usage: ComputeUsage;

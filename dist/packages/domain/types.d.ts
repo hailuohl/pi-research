@@ -101,7 +101,8 @@ export interface ResearchContract {
     }>;
     expectedArtifacts: string[];
     timeoutSeconds: number;
-    runner: 'trusted-example' | 'docker';
+    runner: 'trusted-example' | 'docker' | 'ssh';
+    sshTargetId?: string;
     image?: string;
     cpus: number;
     memoryMb: number;
@@ -125,6 +126,7 @@ export interface Experiment {
     revision: number;
 }
 export interface Manifest {
+    sshTarget?: import('../runners/ssh-targets.js').SshTarget;
     experimentId: string;
     experimentVersion: number;
     experimentRevision: number;

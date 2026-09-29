@@ -14,7 +14,7 @@ type Entry={path:string;type:'directory';mode:number}|{path:string;type:'file';m
 interface Manifest {format:'pi-research-backup-v1'|'pi-research-backup-v2';sourceRoot:string;legacyRoots?:string[];platform:string;createdAt:string;schema:number[];entries:Entry[];excluded:string[];manifestDigest:string;}
 export interface BackupSummary {backupDir:string;sourceRoot:string;files:number;bytes:number;manifestDigest:string;schema:number[];excluded:string[];restoredTo?:string;relocated?:boolean;}
 const ROOTS=new Set(['projects','experiments','workspaces','sessions','snapshots','artifacts','skill-blobs','jobs','sandbox-jobs','document-jobs','publication-jobs','git-worktrees','git-operations','exports','integration-staging','state.db.text-writes']);
-const EXCLUDED=new Set(['access.token','models.json','models-store.json','state.db-wal','state.db-shm','state.db-journal']);
+const EXCLUDED=new Set(['access.token','models.json','models-store.json','ssh-targets.json','ssh-targets.json.tmp','state.db-wal','state.db-shm','state.db-journal']);
 const TERMINAL=new Set(['succeeded','failed','cancelled','timed_out']);
 const plain=(v:unknown):v is Record<string,unknown>=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 function present(path:string) {try{return lstatSync(path);}catch(e){if((e as NodeJS.ErrnoException).code==='ENOENT')return;throw e;}}
@@ -65,7 +65,7 @@ function managedTree(root:string,destination?:string) {
 function table(db:DatabaseSync,name:string) {return !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name);}
 function stateCheck(db:DatabaseSync) {
  ensure(table(db,'records')&&table(db,'schema_migrations'),'BACKUP_DATABASE_INVALID','缺少研究数据库结构',400);
- const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=9),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
+ const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=10),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
  ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check==='ok','BACKUP_DATABASE_INVALID','数据库完整性检查失败',409);
  if(table(db,'text_write_receipts'))ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(),'BACKUP_RECOVERY_PENDING','文本写入回执尚未清理',409);
  if(table(db,'compute_queue'))ensure(!db.prepare("SELECT 1 FROM compute_queue WHERE held<>0 OR phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(),'BACKUP_BUSY','还有计算等待、运行或未知结果',409);

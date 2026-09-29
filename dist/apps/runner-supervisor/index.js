@@ -1,3 +1,4 @@
+import { superviseSshRun } from '../../packages/runners/ssh-supervisor.js';
 import { appendFileSync, mkdirSync, writeFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { now } from '../../packages/storage/store.js';
@@ -24,7 +25,7 @@ const run = compute.withAdmission('run', runId, () => {
     const r = store.get('run', runId);
     if (TERMINAL.includes(r.state))
         return null;
-    const docker = r.manifest.contract.runner === 'docker';
+    const docker = r.manifest.contract.runner !== 'trusted-example';
     if (r.state === 'queued') {
         try {
             service.assertLaunchable(r);
@@ -58,7 +59,7 @@ try {
     if (run.execution) {
         const generation = run.execution.generation;
         const fence = () => { const r = store.get('run', runId); ensure(!TERMINAL.includes(r.state) && r.execution?.generation === generation && r.execution.leaseUntil > Date.now(), 'LEASE_EXPIRED', '监管器已失去作业租约'); };
-        await superviseDockerRun(run, {
+        const callbacks = {
             paths: store.paths, read: () => store.get('run', runId), fence, verifyTarget: () => compute.verifyTarget('run', runId),
             assertGrant: r => service.assertExecutionGrant(r),
             patch: value => store.transaction(() => { fence(); const r = store.get('run', runId); if (value.execution?.startRequested && !r.execution.startRequested) {
@@ -66,7 +67,11 @@ try {
                 service.assertExecutionGrant(r);
             } return store.update('run', runId, r.version, value); }),
             finalize: facts => { fence(); receipt(facts.exitCode, facts.state, facts.error, facts); },
-        });
+        };
+        if (run.execution.backend === 'ssh')
+            await superviseSshRun(run, app.context, callbacks);
+        else
+            await superviseDockerRun(run, callbacks);
     }
     else {
         const adapter = new TrustedExampleAdapter(run, repoRoot, store.paths);

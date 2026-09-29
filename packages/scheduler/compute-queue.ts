@@ -1,3 +1,4 @@
+import {SshTargetService} from '../runners/ssh-targets.js';
 import type {AppContext} from '../domain/context.js';
 import type {Actor} from '../domain/types.js';
 import {userOnly,scope} from '../policy/permissions.js';
@@ -6,7 +7,7 @@ import {ensure,DomainError} from '../domain/errors.js';
 import {docker,probeDockerTarget,JOB_LABEL,MANIFEST_LABEL} from '../execution/docker.js';
 import type {ComputeKind,ComputeLimits,ComputeUsage,ComputeAvailable,ComputeConfiguration,ComputeQueueInspection,ComputeWaitReason,ComputeTargetProbe} from './compute-types.js';
 
-interface QueueRow {sequence:number;kind:ComputeKind;id:string;project_id:string;backend:'docker'|'trusted-example';context_name:string|null;phase:string;held:number;cpu_millis:number;memory_mb:number;target_id:string|null;engine_id:string|null;endpoint:string|null;bound:number;generation:number;lease_until:number;next_attempt_at:number;last_error:string|null;source_version:number;}
+interface QueueRow {sequence:number;kind:ComputeKind;id:string;project_id:string;backend:'docker'|'trusted-example'|'ssh';context_name:string|null;phase:string;held:number;cpu_millis:number;memory_mb:number;target_id:string|null;engine_id:string|null;endpoint:string|null;bound:number;generation:number;lease_until:number;next_attempt_at:number;last_error:string|null;source_version:number;}
 interface ContextRow {context:string;target_id:string|null;engine_id:string|null;endpoint:string|null;status:string;next_probe_at:number;probe_until:number;failures:number;}
 type Identity=Awaited<ReturnType<typeof probeDockerTarget>>;
 interface Dependencies {probe?:typeof probeDockerTarget;inspect?:(context:string,id:string)=>Promise<{Id:string;Config:{Labels?:Record<string,string>}}|null>;}
@@ -22,7 +23,7 @@ export class ComputeQueue {
     private readonly probe:typeof probeDockerTarget;
     private readonly inspectContainer:NonNullable<Dependencies['inspect']>;
     constructor(private c:AppContext,dependencies:Dependencies={}) {
-        this.probe=dependencies.probe??probeDockerTarget;
+        this.probe=dependencies.probe??(async context=>{if(!context.startsWith('ssh:'))return probeDockerTarget(context);const t=await new SshTargetService(this.c).verify(context.slice(4));return {targetId:t.targetId,engineId:t.engineId,endpoint:t.configDigest+':'+t.protocolDigest};});
         this.inspectContainer=dependencies.inspect??(async(context,id)=>{try{return JSON.parse(await docker(context,['inspect','--type','container',id]))[0];}catch(error){if(/No such (object|container)/i.test((error as Error).message))return null;throw error;}});
     }
     private row(kind:ComputeKind,id:string) {const r=this.c.store.db.prepare('SELECT * FROM compute_queue WHERE kind=? AND id=?').get(kind,id) as unknown as QueueRow|undefined;ensure(r,'COMPUTE_JOB_NOT_FOUND','计算队列记录不存在',404);return r;}
@@ -32,7 +33,7 @@ export class ComputeQueue {
         return {targetId,version:Number(row?.version??0),limits:{...DEFAULTS,...JSON.parse(host.data as string),...(targetId!=='host'&&row?JSON.parse(row.data as string):{})}};
     }
     private usage(targetId='host'):ComputeUsage {
-        const where=targetId==='host'?'held=1':"held=1 AND (target_id=? OR (?<>'host-example' AND backend='docker' AND bound=0))",params=targetId==='host'?[]:[targetId,targetId];
+        const where=targetId==='host'?'held=1':"held=1 AND (target_id=? OR (?<>'host-example' AND backend IN ('docker','ssh') AND bound=0))",params=targetId==='host'?[]:[targetId,targetId];
         const r=this.c.store.db.prepare(`SELECT count(*) jobs,COALESCE(sum(kind='run'),0) runs,COALESCE(sum(kind='development'),0) development,COALESCE(sum(kind='document'),0) documents,COALESCE(sum(kind='publication'),0) publications,COALESCE(sum(cpu_millis),0) cpu,COALESCE(sum(memory_mb),0) memory,COALESCE(sum(phase='unknown'),0) unknown FROM compute_queue WHERE ${where}`).get(...params)!;
         return {jobs:Number(r.jobs),runs:Number(r.runs),development:Number(r.development),documents:Number(r.documents),publications:Number(r.publications),cpus:Number(r.cpu)/1000,memoryMb:Number(r.memory),unknown:Number(r.unknown)};
     }
@@ -64,7 +65,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
     private next() {return this.heads().find(r=>!this.capacity(r));}
     candidates(kind:ComputeKind,limit=8):string[] {
         integer(limit,'limit',1,256);this.bindCachedQueued();
-        const recovered=this.c.store.db.prepare("SELECT * FROM compute_queue WHERE kind=? AND held=1 AND backend='docker' AND lease_until<=? AND next_attempt_at<=? ORDER BY sequence LIMIT ?").all(kind,Date.now(),Date.now(),limit) as unknown as QueueRow[];
+        const recovered=this.c.store.db.prepare("SELECT * FROM compute_queue WHERE kind=? AND held=1 AND backend IN ('docker','ssh') AND lease_until<=? AND next_attempt_at<=? ORDER BY sequence LIMIT ?").all(kind,Date.now(),Date.now(),limit) as unknown as QueueRow[];
         const ids=recovered.filter(r=>this.targetReady(r)).map(r=>r.id),next=this.next();if(ids.length<limit&&next?.kind===kind)ids.push(next.id);return ids;
     }
     private page(kind:ComputeKind,active:boolean,limit:number) {
@@ -76,7 +77,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
     withAdmission<T>(kind:ComputeKind,id:string,fn:()=>T):T|null {
         return this.c.store.transaction(()=>{
             this.bindCachedQueued();const q=this.row(kind,id);
-            if(q.held){if(q.backend!=='docker'||q.lease_until>Date.now()||q.next_attempt_at>Date.now()||!this.targetReady(q))return null;}
+            if(q.held){if(q.backend==='trusted-example'||q.lease_until>Date.now()||q.next_attempt_at>Date.now()||!this.targetReady(q))return null;}
             else {if(q.phase!=='queued')return null;const next=this.next();if(next?.kind!==kind||next.id!==id)return null;}
             this.c.store.db.prepare('UPDATE compute_queue SET next_attempt_at=?,last_error=NULL WHERE kind=? AND id=?').run(Date.now()+10000,kind,id);
             const result=fn(),after=this.row(kind,id);
@@ -90,7 +91,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         if(name){const capped=this.c.store.db.prepare("SELECT 1 FROM compute_limits WHERE target_id NOT IN ('host','host-example') AND json_extract(data,'$.maxQueued') IS NOT NULL LIMIT 1").get();ensure(!capped||ctx?.status==='ready'&&ctx.next_probe_at>Date.now()&&ctx.target_id,'COMPUTE_TARGET_PROBE_REQUIRED','存在目标队列配额；请先核对 Docker context 的当前引擎身份',409);}
         const target=name?ctx?.target_id:'host-example';if(!target)return;
         const targetLimit=this.config(target).limits.maxQueued;if(targetLimit===null)return;
-        const used=Number(this.c.store.db.prepare("SELECT count(*) n FROM compute_queue WHERE phase='queued' AND (target_id=? OR (?<>'host-example' AND backend='docker' AND bound=0))").get(target,target)!.n);
+        const used=Number(this.c.store.db.prepare("SELECT count(*) n FROM compute_queue WHERE phase='queued' AND (target_id=? OR (?<>'host-example' AND backend IN ('docker','ssh') AND bound=0))").get(target,target)!.n);
         ensure(used<targetLimit,'COMPUTE_TARGET_QUEUE_FULL','目标等待队列已满；若 context 已更换引擎，请先重新核对目标',409);
     }
     /** Owner-only identity discovery; does not create a job, bind old jobs or grant execution. */
@@ -140,8 +141,8 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
     private reason(r:QueueRow,heads:QueueRow[],next?:QueueRow):ComputeWaitReason {
         if(r.held&&r.lease_until>Date.now())return 'worker_active';
         if(r.held&&r.next_attempt_at>Date.now())return 'recovery_backoff';
-        if(r.backend==='docker'){if(!r.bound)return r.held?'legacy_target_unknown':'target_unresolved';const context=this.context(r.context_name!);if(context?.status==='unavailable')return 'target_unavailable';if(context?.engine_id!==r.engine_id||context?.endpoint!==r.endpoint)return 'target_changed';if(!this.targetReady(r,!r.held))return 'target_unresolved';}
-        if(r.held)return r.backend==='docker'?'recovery_due':'manual_recovery_required';
+        if(r.backend!=='trusted-example'){if(!r.bound)return r.held?'legacy_target_unknown':'target_unresolved';const context=this.context(r.context_name!);if(context?.status==='unavailable')return 'target_unavailable';if(context?.engine_id!==r.engine_id||context?.endpoint!==r.endpoint)return 'target_changed';if(!this.targetReady(r,!r.held))return 'target_unresolved';}
+        if(r.held)return r.backend!=='trusted-example'?'recovery_due':'manual_recovery_required';
         if(this.tooLarge(r))return 'request_too_large';const capacity=this.capacity(r);if(capacity)return capacity;
         return heads.some(h=>h.target_id===r.target_id&&h.sequence<r.sequence)||next&&next.sequence<r.sequence?'earlier_job':'ready';
     }
@@ -150,6 +151,6 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         const rows=this.c.store.db.prepare(`SELECT * FROM compute_queue WHERE phase NOT IN ('succeeded','failed','cancelled','timed_out') AND sequence>? ${pid?'AND project_id=?':''} ORDER BY sequence LIMIT ?`).all(...(pid?[cursor,pid,limit+1]:[cursor,limit+1])) as unknown as QueueRow[];
         const targets=this.c.store.db.prepare("SELECT target_id FROM compute_contexts WHERE target_id IS NOT NULL UNION SELECT target_id FROM compute_queue WHERE held=1 AND target_id IS NOT NULL UNION SELECT target_id FROM compute_queue WHERE phase='queued' AND target_id IS NOT NULL UNION SELECT 'host-example' target_id ORDER BY target_id LIMIT 256").all(),heads=this.heads(),next=heads.find(r=>!this.capacity(r));
         const configuration=this.config(),usage=this.usage(),available=this.available(configuration.limits,usage);
-        return {scope:'shared-data-directory',configuration,usage,available,queued:Number(this.c.store.db.prepare("SELECT count(*) n FROM compute_queue WHERE phase='queued'").get()!.n),targets:targets.map(t=>{const id=String(t.target_id),configuration=this.config(id),usage=this.usage(id);return {targetId:id,backend:id==='host-example'?'trusted-example' as const:'docker' as const,contexts:this.c.store.db.prepare('SELECT context FROM compute_contexts WHERE target_id=? ORDER BY context').all(id).map(c=>String(c.context)),configuration,usage,available:this.effectiveAvailable(available,this.available(configuration.limits,usage))};}),items:rows.slice(0,limit).map(r=>({kind:r.kind,id:r.id,projectId:r.project_id,sequence:r.sequence,state:r.phase,held:!!r.held,backend:r.backend,targetId:r.bound?r.target_id:null,requested:{cpus:r.cpu_millis/1000,memoryMb:r.memory_mb},generation:r.generation,leaseUntil:r.lease_until,nextAttemptAt:r.next_attempt_at,reason:this.reason(r,heads,next)})),nextCursor:rows.length>limit?rows[limit-1].sequence:null};
+        return {scope:'shared-data-directory',configuration,usage,available,queued:Number(this.c.store.db.prepare("SELECT count(*) n FROM compute_queue WHERE phase='queued'").get()!.n),targets:targets.map(t=>{const id=String(t.target_id),configuration=this.config(id),usage=this.usage(id);return {targetId:id,backend:id==='host-example'?'trusted-example' as const:id.startsWith('ssh-')?'ssh' as const:'docker' as const,contexts:this.c.store.db.prepare('SELECT context FROM compute_contexts WHERE target_id=? ORDER BY context').all(id).map(c=>String(c.context)),configuration,usage,available:this.effectiveAvailable(available,this.available(configuration.limits,usage))};}),items:rows.slice(0,limit).map(r=>({kind:r.kind,id:r.id,projectId:r.project_id,sequence:r.sequence,state:r.phase,held:!!r.held,backend:r.backend,targetId:r.bound?r.target_id:null,requested:{cpus:r.cpu_millis/1000,memoryMb:r.memory_mb},generation:r.generation,leaseUntil:r.lease_until,nextAttemptAt:r.next_attempt_at,reason:this.reason(r,heads,next)})),nextCursor:rows.length>limit?rows[limit-1].sequence:null};
     }
 }

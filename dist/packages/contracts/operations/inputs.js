@@ -18,7 +18,7 @@ const strings = (max = 100) => s.array(s.string(1000), max);
 const sources = s.enum(['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref']);
 const config = { type: 'object', additionalProperties: s.json('Experiment-specific configuration values; arbitrary keys and nested JSON are intentional because each runner owns its configuration contract.'), description: 'Runner-specific experiment configuration; schema validation does not apply defaults or coerce values.' };
 const contract = s.object({
-    runner: s.enum(['trusted-example', 'docker']), image: s.string(250), command: s.array({ ...s.string(1000, 0), pattern: '^[^\u0000]*$' }, 30, 1),
+    runner: s.enum(['trusted-example', 'docker', 'ssh']), sshTargetId: id, image: s.string(250), command: s.array({ ...s.string(1000, 0), pattern: '^[^\u0000]*$' }, 30, 1),
     environment: s.object({}),
     datasetVersion: s.string(200), evaluationProtocolVersion: s.string(200),
     metrics: { type: 'object', minProperties: 1, propertyNames: s.string(80), additionalProperties: s.object({ unit: s.string(100), direction: s.enum(['min', 'max']) }, ['unit', 'direction']) },

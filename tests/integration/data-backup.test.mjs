@@ -29,6 +29,12 @@ function figureReportFixture(s){
  return {input,report};
 }
 
+test('offline backup excludes SSH private target configuration and retains supported migration history',async()=>{
+ const s=fixture();try{writeFileSync(join(s.data,'ssh-targets.json'),JSON.stringify({fixture:{identityFile:'private-identity-path',knownHostsFile:'private-hostkeys-path',remoteRoot:'/private/remote/root'}}));s.app.close();
+  const created=await createDataBackup(s.data,s.backup,{offline:true});assert.ok(created.excluded.includes('ssh-targets.json'));assert.equal(existsSync(join(s.backup,'data','ssh-targets.json')),false);assert.ok(created.schema.includes(10));assert.equal((await verifyDataBackup(s.backup)).manifestDigest,created.manifestDigest);
+ }finally{s.close();}
+});
+
 test('offline backup resolves report figure inputs from their fixed artifact IDs',async()=>{
  const s=fixture();try{figureReportFixture(s);s.app.close();const created=await createDataBackup(s.data,s.backup,{offline:true});assert.equal((await verifyDataBackup(s.backup)).manifestDigest,created.manifestDigest);}finally{s.close();}
 });

@@ -28,13 +28,13 @@ class ExperimentModal extends React.Component {
     this.nextMetric = 1;
   }
   render() {
-    const { parent, busy, onClose, perform, onSave } = this.props, docker = !parent && this.state.runner === "docker";
+    const { parent, busy, onClose, perform, onSave } = this.props, isolated = !parent && this.state.runner !== "trusted-example", ssh = this.state.runner === "ssh";
     return /* @__PURE__ */ jsxs(Modal, { busy, onClose, wide: true, title: parent ? "\u6D3E\u751F\u5B50\u5B9E\u9A8C" : "\u5EFA\u7ACB\u5B9E\u9A8C\u8349\u6848", submitLabel: "\u4FDD\u5B58\u5B9E\u9A8C\u8349\u6848", onSubmit: (fd) => perform(async () => {
       this.setState({ error: "" });
       try {
         const config = String(fd.get("config") ?? "").trim();
         const input = { title: fd.get("title"), hypothesis: fd.get("hypothesis"), ...parent ? { parentId: parent.id } : {}, ...config ? { config: JSON.parse(config) } : {} };
-        if (docker) {
+        if (isolated) {
           const metrics = /* @__PURE__ */ Object.create(null);
           for (const id of this.state.metrics) {
             const name = String(fd.get(`metric-${id}`)).trim();
@@ -43,7 +43,7 @@ class ExperimentModal extends React.Component {
           }
           const outputs = String(fd.get("outputs")).split(/\r?\n/).map((p) => p.trim()).filter(Boolean);
           const args = String(fd.get("args") ?? "");
-          input.contract = { runner: "docker", image: String(fd.get("image")).trim(), dockerContext: String(fd.get("context")).trim(), command: [String(fd.get("executable")).trim(), ...args ? args.split(/\r?\n/) : []], environment: {}, datasetVersion: String(fd.get("dataset")).trim(), evaluationProtocolVersion: String(fd.get("protocol")).trim(), metrics, expectedArtifacts: [.../* @__PURE__ */ new Set(["metrics.json", ...outputs])], cpus: Number(fd.get("cpus")), memoryMb: Number(fd.get("memory")), timeoutSeconds: Number(fd.get("timeout")) };
+          input.contract = { runner: ssh ? "ssh" : "docker", image: String(fd.get("image")).trim(), ...ssh ? { sshTargetId: String(fd.get("sshTargetId")).trim() } : { dockerContext: String(fd.get("context")).trim() }, command: [String(fd.get("executable")).trim(), ...args ? args.split(/\r?\n/) : []], environment: {}, datasetVersion: String(fd.get("dataset")).trim(), evaluationProtocolVersion: String(fd.get("protocol")).trim(), metrics, expectedArtifacts: [.../* @__PURE__ */ new Set(["metrics.json", ...outputs])], cpus: Number(fd.get("cpus")), memoryMb: Number(fd.get("memory")), timeoutSeconds: Number(fd.get("timeout")) };
         }
         await onSave(input);
       } catch (error) {
@@ -62,7 +62,7 @@ class ExperimentModal extends React.Component {
       ] }),
       parent ? /* @__PURE__ */ jsxs("p", { className: "notice", children: [
         "\u7EE7\u627F\u7236\u5B9E\u9A8C\u8FD0\u884C\u534F\u8BAE\uFF1A",
-        parent.contract.runner === "docker" ? "Docker" : "\u53D7\u4FE1\u6570\u503C\u793A\u4F8B",
+        parent.contract.runner === "docker" ? "Docker" : parent.contract.runner === "ssh" ? "SSH" : "\u53D7\u4FE1\u6570\u503C\u793A\u4F8B",
         "\uFF0C\u5165\u53E3 ",
         parent.contract.command.join(" "),
         "\u3002\u6B64\u5904\u4E0D\u4FEE\u6539\u955C\u50CF\u3001\u6307\u6807\u6216\u8D44\u6E90\u5951\u7EA6\u3002"
@@ -70,19 +70,23 @@ class ExperimentModal extends React.Component {
         "\u8FD0\u884C\u65B9\u5F0F",
         /* @__PURE__ */ jsxs("select", { name: "runner", "aria-label": "\u8FD0\u884C\u65B9\u5F0F", value: this.state.runner, onChange: (e) => this.setState({ runner: e.target.value }), children: [
           /* @__PURE__ */ jsx("option", { value: "trusted-example", children: "\u53D7\u4FE1\u66F2\u7EBF\u62DF\u5408\u793A\u4F8B" }),
-          /* @__PURE__ */ jsx("option", { value: "docker", children: "Docker \xB7 \u81EA\u6709\u7814\u7A76\u7A0B\u5E8F" })
+          /* @__PURE__ */ jsx("option", { value: "docker", children: "Docker \xB7 \u81EA\u6709\u7814\u7A76\u7A0B\u5E8F" }),
+          /* @__PURE__ */ jsx("option", { value: "ssh", children: "SSH \xB7 \u5DF2\u9A8C\u8BC1\u7684\u81EA\u6709 Linux \u76EE\u6807" })
         ] })
       ] }),
-      docker ? /* @__PURE__ */ jsxs("div", { children: [
+      isolated ? /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsxs("label", { children: [
           "\u56FA\u5B9A\u955C\u50CF\u6458\u8981",
           /* @__PURE__ */ jsx("input", { name: "image", "aria-label": "\u56FA\u5B9A\u955C\u50CF\u6458\u8981", required: true, placeholder: "python@sha256:\u2026", pattern: ".+@sha256:[a-f0-9]{64}", maxLength: 250 })
         ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
+        ssh ? /* @__PURE__ */ jsxs("label", { children: [
+          "\u5DF2\u9A8C\u8BC1 SSH \u76EE\u6807 ID",
+          /* @__PURE__ */ jsx("input", { name: "sshTargetId", "aria-label": "SSH \u76EE\u6807 ID", required: true, maxLength: 80, pattern: "[A-Za-z0-9][A-Za-z0-9_-]*" })
+        ] }) : /* @__PURE__ */ jsxs("label", { children: [
           "\u672C\u5730 Docker context",
           /* @__PURE__ */ jsx("input", { name: "context", "aria-label": "Docker context", defaultValue: "desktop-linux", required: true, maxLength: 100 })
         ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u586B\u5199\u672C\u673A\u5DF2\u914D\u7F6E\u7684 Linux Docker context \u548C\u5DF2\u5B58\u5728\u7684\u56FA\u5B9A\u955C\u50CF\uFF1B\u4FDD\u5B58\u4E0D\u4F1A\u4E0B\u8F7D\u955C\u50CF\uFF0C\u4E5F\u4E0D\u4EE3\u8868\u5F15\u64CE\u9A8C\u8BC1\u901A\u8FC7\u3002" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: ssh ? "\u5148\u7528\u672C\u673A ssh-target configure/probe \u56FA\u5B9A\u76EE\u6807\u8EAB\u4EFD\uFF1B\u4FDD\u5B58\u5B9E\u9A8C\u4E0D\u4F1A\u53D1\u9001\u6E90\u7801\uFF0C\u6B63\u5F0F\u8FD0\u884C\u4ECD\u9700\u5355\u72EC\u6279\u51C6\u3002" : "\u586B\u5199\u672C\u673A\u5DF2\u914D\u7F6E\u7684 Linux Docker context \u548C\u5DF2\u5B58\u5728\u7684\u56FA\u5B9A\u955C\u50CF\uFF1B\u4FDD\u5B58\u4E0D\u4F1A\u4E0B\u8F7D\u955C\u50CF\uFF0C\u4E5F\u4E0D\u4EE3\u8868\u5F15\u64CE\u9A8C\u8BC1\u901A\u8FC7\u3002" }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u53EF\u6267\u884C\u7A0B\u5E8F",
           /* @__PURE__ */ jsx("input", { name: "executable", "aria-label": "\u53EF\u6267\u884C\u7A0B\u5E8F", defaultValue: "python", required: true })
@@ -133,7 +137,7 @@ class ExperimentModal extends React.Component {
           "\u5FC5\u9700\u4EA7\u7269\uFF08\u6BCF\u884C\u4E00\u4E2A\u76F8\u5BF9\u8DEF\u5F84\uFF09",
           /* @__PURE__ */ jsx("textarea", { name: "outputs", "aria-label": "\u5FC5\u9700\u4EA7\u7269", defaultValue: "metrics.json", rows: 3 })
         ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "metrics.json \u59CB\u7EC8\u5FC5\u9700\uFF1B\u7A0B\u5E8F\u5C06\u6307\u6807\u53CA\u6587\u4EF6\u5199\u5165 PI_OUTPUT_DIR \u6307\u5B9A\u7684\u8F93\u51FA\u76EE\u5F55\u3002" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "metrics.json \u59CB\u7EC8\u5FC5\u9700\uFF1B\u7A0B\u5E8F\u5C06\u6307\u6807\u53CA\u6587\u4EF6\u5199\u5165 /output\u3002" }),
         /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
           /* @__PURE__ */ jsxs("label", { children: [
             "CPU \u6838\u6570",

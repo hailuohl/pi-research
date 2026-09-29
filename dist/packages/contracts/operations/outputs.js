@@ -35,15 +35,16 @@ const contract = object({
     environment: { type: 'object', additionalProperties: string },
     datasetVersion: string, evaluationProtocolVersion: string,
     metrics: { type: 'object', additionalProperties: object({ unit: string, direction: enumeration('min', 'max') }) },
-    expectedArtifacts: strings, timeoutSeconds: integer, runner: enumeration('trusted-example', 'docker'),
-    image: string, cpus: integer, memoryMb: integer, dockerContext: string, pids: integer, workMb: integer, logBytes: integer, outputBytes: integer, networkPolicy: { const: 'none' }
-}, ['image', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy']);
+    expectedArtifacts: strings, timeoutSeconds: integer, runner: enumeration('trusted-example', 'docker', 'ssh'),
+    sshTargetId: string, image: string, cpus: integer, memoryMb: integer, dockerContext: string, pids: integer, workMb: integer, logBytes: integer, outputBytes: integer, networkPolicy: { const: 'none' }
+}, ['sshTargetId', 'image', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy']);
+const sshTarget = object({ id: string, version: integer, hostKeyDigest: string, configDigest: string, engineId: string, protocolDigest: string, targetId: string });
 const manifest = object({
     experimentId: string, experimentVersion: integer, experimentRevision: integer,
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
-    sourceFiles: array(sourceFile), createdAt: string, sourceRevisionId: string, gitCommit: string
-}, ['sourceRevisionId', 'gitCommit']);
-const runnerExecution = object({ backend: { const: 'docker' }, dockerContext: string, containerName: string, containerId: string, imageId: string, controlDir: string, generation: integer, leaseUntil: number, startRequested: boolean, recoveryCount: integer, logTruncated: boolean, logsIncomplete: boolean, outputExceeded: boolean }, ['containerId', 'imageId', 'logTruncated', 'logsIncomplete', 'outputExceeded']);
+    sourceFiles: array(sourceFile), createdAt: string, sourceRevisionId: string, gitCommit: string, sshTarget
+}, ['sourceRevisionId', 'gitCommit', 'sshTarget']);
+const runnerExecution = object({ backend: enumeration('docker', 'ssh'), sshHandle: string, dockerContext: string, containerName: string, containerId: string, imageId: string, controlDir: string, generation: integer, leaseUntil: number, startRequested: boolean, recoveryCount: integer, logTruncated: boolean, logsIncomplete: boolean, outputExceeded: boolean }, ['sshHandle', 'containerId', 'imageId', 'logTruncated', 'logsIncomplete', 'outputExceeded']);
 const taskResult = object({
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,
     claims: array(object({ statement: string, evidenceIds: strings, limitations: strings })),

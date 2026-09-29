@@ -1,3 +1,4 @@
+import { SshTargetService } from './runners/ssh-targets.js';
 import { ModelHttpService } from './scheduler/model-http.js';
 import { PublicationBuildService } from './publications/build-service.js';
 import { DiscoveryGrantService } from './policy/discovery-grants.js';
@@ -74,6 +75,7 @@ export declare class ResearchApp {
     readonly approvals: ApprovalService;
     readonly evidence: EvidenceService;
     readonly runs: RunService;
+    readonly sshTargets: SshTargetService;
     readonly budget: BudgetService;
     readonly context: {
         store: Store;

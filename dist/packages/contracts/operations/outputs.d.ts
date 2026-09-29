@@ -167,7 +167,10 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                             readonly runner: {
                                 readonly type: "string";
-                                readonly enum: ["trusted-example", "docker"];
+                                readonly enum: ["trusted-example", "docker", "ssh"];
+                            };
+                            readonly sshTargetId: {
+                                readonly type: "string";
                             };
                             readonly image: {
                                 readonly type: "string";
@@ -240,6 +243,34 @@ export declare const OUTPUT_SCHEMAS: {
                     };
                     readonly gitCommit: {
                         readonly type: "string";
+                    };
+                    readonly sshTarget: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly version: {
+                                readonly type: "integer";
+                            };
+                            readonly hostKeyDigest: {
+                                readonly type: "string";
+                            };
+                            readonly configDigest: {
+                                readonly type: "string";
+                            };
+                            readonly engineId: {
+                                readonly type: "string";
+                            };
+                            readonly protocolDigest: {
+                                readonly type: "string";
+                            };
+                            readonly targetId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("id" | "version" | "hostKeyDigest" | "configDigest" | "protocolDigest" | "engineId" | "targetId")[];
+                        readonly additionalProperties: false;
                     };
                 };
                 readonly required: ("experimentId" | "experimentRevision" | "contractDigest" | "createdAt" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
@@ -320,7 +351,11 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "object";
                 readonly properties: {
                     readonly backend: {
-                        readonly const: "docker";
+                        readonly type: "string";
+                        readonly enum: ["docker", "ssh"];
+                    };
+                    readonly sshHandle: {
+                        readonly type: "string";
                     };
                     readonly dockerContext: {
                         readonly type: "string";
@@ -1417,7 +1452,10 @@ export declare const OUTPUT_SCHEMAS: {
                     };
                     readonly runner: {
                         readonly type: "string";
-                        readonly enum: ["trusted-example", "docker"];
+                        readonly enum: ["trusted-example", "docker", "ssh"];
+                    };
+                    readonly sshTargetId: {
+                        readonly type: "string";
                     };
                     readonly image: {
                         readonly type: "string";
@@ -8515,7 +8553,10 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                             readonly runner: {
                                 readonly type: "string";
-                                readonly enum: ["trusted-example", "docker"];
+                                readonly enum: ["trusted-example", "docker", "ssh"];
+                            };
+                            readonly sshTargetId: {
+                                readonly type: "string";
                             };
                             readonly image: {
                                 readonly type: "string";
@@ -8588,6 +8629,34 @@ export declare const OUTPUT_SCHEMAS: {
                     };
                     readonly gitCommit: {
                         readonly type: "string";
+                    };
+                    readonly sshTarget: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly version: {
+                                readonly type: "integer";
+                            };
+                            readonly hostKeyDigest: {
+                                readonly type: "string";
+                            };
+                            readonly configDigest: {
+                                readonly type: "string";
+                            };
+                            readonly engineId: {
+                                readonly type: "string";
+                            };
+                            readonly protocolDigest: {
+                                readonly type: "string";
+                            };
+                            readonly targetId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("id" | "version" | "hostKeyDigest" | "configDigest" | "protocolDigest" | "engineId" | "targetId")[];
+                        readonly additionalProperties: false;
                     };
                 };
                 readonly required: ("experimentId" | "experimentRevision" | "contractDigest" | "createdAt" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
@@ -8731,7 +8800,10 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                             readonly runner: {
                                 readonly type: "string";
-                                readonly enum: ["trusted-example", "docker"];
+                                readonly enum: ["trusted-example", "docker", "ssh"];
+                            };
+                            readonly sshTargetId: {
+                                readonly type: "string";
                             };
                             readonly image: {
                                 readonly type: "string";
@@ -8804,6 +8876,34 @@ export declare const OUTPUT_SCHEMAS: {
                     };
                     readonly gitCommit: {
                         readonly type: "string";
+                    };
+                    readonly sshTarget: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly version: {
+                                readonly type: "integer";
+                            };
+                            readonly hostKeyDigest: {
+                                readonly type: "string";
+                            };
+                            readonly configDigest: {
+                                readonly type: "string";
+                            };
+                            readonly engineId: {
+                                readonly type: "string";
+                            };
+                            readonly protocolDigest: {
+                                readonly type: "string";
+                            };
+                            readonly targetId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("id" | "version" | "hostKeyDigest" | "configDigest" | "protocolDigest" | "engineId" | "targetId")[];
+                        readonly additionalProperties: false;
                     };
                 };
                 readonly required: ("experimentId" | "experimentRevision" | "contractDigest" | "createdAt" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
@@ -8884,7 +8984,11 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "object";
                 readonly properties: {
                     readonly backend: {
-                        readonly const: "docker";
+                        readonly type: "string";
+                        readonly enum: ["docker", "ssh"];
+                    };
+                    readonly sshHandle: {
+                        readonly type: "string";
                     };
                     readonly dockerContext: {
                         readonly type: "string";
@@ -10062,7 +10166,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("context" | "targetId" | "backend" | "observedAt")[];
+        readonly required: ("targetId" | "context" | "backend" | "observedAt")[];
         readonly additionalProperties: false;
     };
     readonly compute_queue_inspect: {
@@ -10212,7 +10316,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly backend: {
-                            readonly enum: readonly ["docker", "trusted-example"];
+                            readonly enum: readonly ["docker", "trusted-example", "ssh"];
                         };
                         readonly contexts: {
                             readonly type: "array";
@@ -10350,7 +10454,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("usage" | "available" | "targetId" | "configuration" | "backend" | "contexts")[];
+                    readonly required: ("usage" | "targetId" | "available" | "configuration" | "backend" | "contexts")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -10378,7 +10482,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "boolean";
                         };
                         readonly backend: {
-                            readonly enum: readonly ["docker", "trusted-example"];
+                            readonly enum: readonly ["docker", "trusted-example", "ssh"];
                         };
                         readonly targetId: {
                             readonly anyOf: readonly [{
@@ -15868,7 +15972,14 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;
@@ -16407,7 +16518,14 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;
@@ -16946,7 +17064,14 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;
@@ -17485,7 +17610,14 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;

@@ -51,10 +51,26 @@ CREATE INDEX IF NOT EXISTS records_kind_session ON records(kind,json_extract(dat
 INSERT INTO schema_migrations VALUES(4,datetime('now'));`);});
         this.migrateDocumentQueue();
         this.migratePublicationQueue();
+        this.migrateSshQueue();
         this.transaction(()=>{if(this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=7').get())return;this.db.exec("CREATE INDEX records_session_catalog ON records(kind,project_id,json_extract(data,'$.role')) WHERE kind='session'; INSERT INTO schema_migrations VALUES(7,datetime('now'));");});
         this.transaction(()=>{if(!readDataLocation(this.db))setDataLocation(this.db,dirname(path));this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(9,datetime('now'));");});
         this.transaction(()=>{this.textWrites=new TextWriteRecovery(this.db,path);this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(8,datetime('now'));");});
         this.transaction(()=>{});
+    }
+    private migrateSshQueue() {
+        this.transaction(()=>{
+            if(this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=10').get())return;
+            for(const name of ['compute_queue_insert_gate','compute_queue_update_gate','compute_queue_insert','compute_queue_update']) {
+                const row=this.db.prepare("SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?").get(name)!;
+                const sql=String(row.sql).replaceAll("THEN 'docker' ELSE 'trusted-example' END","THEN 'docker' WHEN json_extract(r.data,'$.manifest.contract.runner')='ssh' THEN 'ssh' ELSE 'trusted-example' END")
+                    .replaceAll("CASE WHEN r.kind='sandbox-job' THEN COALESCE", "CASE WHEN json_extract(r.data,'$.manifest.contract.runner')='ssh' THEN 'ssh:'||json_extract(r.data,'$.manifest.contract.sshTargetId') WHEN r.kind='sandbox-job' THEN COALESCE")
+                    .replaceAll("CASE WHEN NEW.kind='sandbox-job' THEN COALESCE", "CASE WHEN json_extract(NEW.data,'$.manifest.contract.runner')='ssh' THEN 'ssh:'||json_extract(NEW.data,'$.manifest.contract.sshTargetId') WHEN NEW.kind='sandbox-job' THEN COALESCE");
+                // Gate triggers use NEW instead of the SELECT alias r.
+                const rewritten=name.endsWith('_gate')?sql.replaceAll("json_extract(r.data,'$.manifest.contract.runner')='ssh'", "json_extract(NEW.data,'$.manifest.contract.runner')='ssh'"):sql;
+                this.db.exec(`DROP TRIGGER ${name}`);this.db.exec(rewritten.replaceAll("END)='docker'", "END) IN ('docker','ssh')").replaceAll("q.backend='docker'", "q.backend IN ('docker','ssh')"));
+            }
+            this.db.exec("INSERT INTO schema_migrations VALUES(10,datetime('now'))");
+        });
     }
     private migratePublicationQueue() {
         this.transaction(()=>{

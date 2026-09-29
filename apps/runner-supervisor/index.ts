@@ -1,3 +1,4 @@
+import {superviseSshRun} from '../../packages/runners/ssh-supervisor.js';
 import {appendFileSync, mkdirSync, writeFileSync, renameSync} from 'node:fs';
 import {join} from 'node:path';
 import {now} from '../../packages/storage/store.js';
@@ -16,7 +17,7 @@ const controlDir=join(dataDir,'jobs',runId,'control');
 if(store.get<Run>('run',runId).state==='queued')try{await compute.verifyTarget('run',runId);}catch{await compute.stop();store.close();process.exit(0);}
 const run=compute.withAdmission('run',runId,()=>{
     const r=store.get<Run>('run',runId);if(TERMINAL.includes(r.state))return null;
-    const docker=r.manifest.contract.runner==='docker';
+    const docker=r.manifest.contract.runner!=='trusted-example';
     if(r.state==='queued'){try{service.assertLaunchable(r);}catch(error){service.cancelBeforeLaunch(r,error);return null;}}
     else if(!docker||!r.execution||r.execution.leaseUntil>Date.now())return null;
     if(docker){
@@ -36,12 +37,13 @@ try {
     if(run.execution){
         const generation=run.execution.generation;
         const fence=()=>{const r=store.get<Run>('run',runId);ensure(!TERMINAL.includes(r.state)&&r.execution?.generation===generation&&r.execution.leaseUntil>Date.now(),'LEASE_EXPIRED','监管器已失去作业租约');};
-        await superviseDockerRun(run as DockerRun,{
+        const callbacks:import('../../packages/runners/adapter.js').DockerSupervisorCallbacks={
             paths:store.paths,read:()=>store.get<Run>('run',runId) as DockerRun,fence,verifyTarget:()=>compute.verifyTarget('run',runId),
             assertGrant:r=>service.assertExecutionGrant(r),
             patch:value=>store.transaction(()=>{fence();const r=store.get<Run>('run',runId);if(value.execution?.startRequested&&!r.execution!.startRequested){ensure(!r.cancelRequested,'RUN_CANCELLED','作业已请求取消');service.assertExecutionGrant(r);}return store.update<Run>('run',runId,r.version,value) as DockerRun;}),
             finalize:facts=>{fence();receipt(facts.exitCode,facts.state,facts.error,facts);},
-        });
+        };
+        if(run.execution.backend==='ssh')await superviseSshRun(run as DockerRun,app.context,callbacks);else await superviseDockerRun(run as DockerRun,callbacks);
     } else {
         const adapter=new TrustedExampleAdapter(run,repoRoot,store.paths);
         let processHandle:RunnerProcess|undefined,timer:NodeJS.Timeout|undefined,timeout:NodeJS.Timeout|undefined,observedCancel=false,timedOut=false,truncated=false,bytes=0,authorityError:string|undefined;

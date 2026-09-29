@@ -56,18 +56,18 @@ class ExperimentModal extends React.Component<{
     state={runner:'trusted-example',metrics:[0],error:''};
     private nextMetric=1;
     render() {
-        const {parent,busy,onClose,perform,onSave}=this.props,docker=!parent&&this.state.runner==='docker';
+        const {parent,busy,onClose,perform,onSave}=this.props,isolated=!parent&&this.state.runner!=='trusted-example',ssh=this.state.runner==='ssh';
         return <Modal busy={busy} onClose={onClose} wide title={parent?'派生子实验':'建立实验草案'} submitLabel="保存实验草案" onSubmit={fd=>perform(async()=>{
             this.setState({error:''});
             try {
             const config=String(fd.get('config')??'').trim();
             const input:any={title:fd.get('title'),hypothesis:fd.get('hypothesis'),...(parent?{parentId:parent.id}:{}),...(config?{config:JSON.parse(config)}:{})};
-            if(docker){
+            if(isolated){
                 const metrics:Record<string,{unit:string;direction:string}>=Object.create(null);
                 for(const id of this.state.metrics){const name=String(fd.get(`metric-${id}`)).trim();if(Object.prototype.hasOwnProperty.call(metrics,name))throw Error('指标名称不能重复');metrics[name]={unit:String(fd.get(`unit-${id}`)).trim(),direction:String(fd.get(`direction-${id}`))};}
                 const outputs=String(fd.get('outputs')).split(/\r?\n/).map(p=>p.trim()).filter(Boolean);
                 const args=String(fd.get('args')??'');
-                input.contract={runner:'docker',image:String(fd.get('image')).trim(),dockerContext:String(fd.get('context')).trim(),command:[String(fd.get('executable')).trim(),...(args?args.split(/\r?\n/):[])],environment:{},datasetVersion:String(fd.get('dataset')).trim(),evaluationProtocolVersion:String(fd.get('protocol')).trim(),metrics,expectedArtifacts:[...new Set(['metrics.json',...outputs])],cpus:Number(fd.get('cpus')),memoryMb:Number(fd.get('memory')),timeoutSeconds:Number(fd.get('timeout'))};
+                input.contract={runner:ssh?'ssh':'docker',image:String(fd.get('image')).trim(),...(ssh?{sshTargetId:String(fd.get('sshTargetId')).trim()}:{dockerContext:String(fd.get('context')).trim()}),command:[String(fd.get('executable')).trim(),...(args?args.split(/\r?\n/):[])],environment:{},datasetVersion:String(fd.get('dataset')).trim(),evaluationProtocolVersion:String(fd.get('protocol')).trim(),metrics,expectedArtifacts:[...new Set(['metrics.json',...outputs])],cpus:Number(fd.get('cpus')),memoryMb:Number(fd.get('memory')),timeoutSeconds:Number(fd.get('timeout'))};
             }
             await onSave(input);
             } catch(error){this.setState({error:error instanceof Error?error.message:String(error)});throw error;}
@@ -75,16 +75,16 @@ class ExperimentModal extends React.Component<{
             {this.state.error?<p role="alert" className="error-text">{this.state.error}</p>:null}
             <label>实验名称<input name="title" aria-label="实验名称" defaultValue={parent?'新候选实验':'基线实验'} required maxLength={200}/></label>
             <label>研究假设<textarea name="hypothesis" aria-label="研究假设" required placeholder="要检验的假设、对照条件和预期结果"/></label>
-            {parent?<p className="notice">继承父实验运行协议：{parent.contract.runner==='docker'?'Docker':'受信数值示例'}，入口 {parent.contract.command.join(' ')}。此处不修改镜像、指标或资源契约。</p>:<label>运行方式<select name="runner" aria-label="运行方式" value={this.state.runner} onChange={(e:any)=>this.setState({runner:e.target.value})}><option value="trusted-example">受信曲线拟合示例</option><option value="docker">Docker · 自有研究程序</option></select></label>}
-            {docker?<div>
+            {parent?<p className="notice">继承父实验运行协议：{parent.contract.runner==='docker'?'Docker':parent.contract.runner==='ssh'?'SSH':'受信数值示例'}，入口 {parent.contract.command.join(' ')}。此处不修改镜像、指标或资源契约。</p>:<label>运行方式<select name="runner" aria-label="运行方式" value={this.state.runner} onChange={(e:any)=>this.setState({runner:e.target.value})}><option value="trusted-example">受信曲线拟合示例</option><option value="docker">Docker · 自有研究程序</option><option value="ssh">SSH · 已验证的自有 Linux 目标</option></select></label>}
+            {isolated?<div>
                 <label>固定镜像摘要<input name="image" aria-label="固定镜像摘要" required placeholder="python@sha256:…" pattern=".+@sha256:[a-f0-9]{64}" maxLength={250}/></label>
-                <label>本地 Docker context<input name="context" aria-label="Docker context" defaultValue="desktop-linux" required maxLength={100}/></label>
-                <p className="small muted">填写本机已配置的 Linux Docker context 和已存在的固定镜像；保存不会下载镜像，也不代表引擎验证通过。</p>
+                {ssh?<label>已验证 SSH 目标 ID<input name="sshTargetId" aria-label="SSH 目标 ID" required maxLength={80} pattern="[A-Za-z0-9][A-Za-z0-9_-]*"/></label>:<label>本地 Docker context<input name="context" aria-label="Docker context" defaultValue="desktop-linux" required maxLength={100}/></label>}
+                <p className="small muted">{ssh?'先用本机 ssh-target configure/probe 固定目标身份；保存实验不会发送源码，正式运行仍需单独批准。':'填写本机已配置的 Linux Docker context 和已存在的固定镜像；保存不会下载镜像，也不代表引擎验证通过。'}</p>
                 <label>可执行程序<input name="executable" aria-label="可执行程序" defaultValue="python" required/></label>
                 <label>参数（每行一个，保留空格）<textarea name="args" aria-label="程序参数" defaultValue="main.py" rows={3}/></label>
                 <div className="form-columns"><label>数据版本<input name="dataset" aria-label="数据版本" required placeholder="例如 dataset-v1" maxLength={200}/></label><label>评估协议版本<input name="protocol" aria-label="评估协议版本" required placeholder="例如 holdout-v1" maxLength={200}/></label></div>
                 <fieldset><legend>实测指标</legend>{this.state.metrics.map((id,index)=><div className="form-columns" key={id}><label>指标名称 {index+1}<input name={`metric-${id}`} required maxLength={80} defaultValue={index===0?'mse':''}/></label><label>单位 {index+1}<input name={`unit-${id}`} required maxLength={100} placeholder="例如 dimensionless"/></label><label>方向 {index+1}<select name={`direction-${id}`}><option value="min">越低越好</option><option value="max">越高越好</option></select></label><button type="button" className="text-button" disabled={this.state.metrics.length===1} onClick={()=>this.setState({metrics:this.state.metrics.filter(n=>n!==id)})}>移除指标 {index+1}</button></div>)}<button type="button" className="secondary compact" onClick={()=>this.setState({metrics:[...this.state.metrics,this.nextMetric++]})}>添加指标</button></fieldset>
-                <label>必需产物（每行一个相对路径）<textarea name="outputs" aria-label="必需产物" defaultValue="metrics.json" rows={3}/></label><p className="small muted">metrics.json 始终必需；程序将指标及文件写入 PI_OUTPUT_DIR 指定的输出目录。</p>
+                <label>必需产物（每行一个相对路径）<textarea name="outputs" aria-label="必需产物" defaultValue="metrics.json" rows={3}/></label><p className="small muted">metrics.json 始终必需；程序将指标及文件写入 /output。</p>
                 <div className="form-columns"><label>CPU 核数<input name="cpus" type="number" min={1} max={64} defaultValue={1} required/></label><label>内存 MiB<input name="memory" type="number" min={64} max={65536} defaultValue={256} required/></label><label>超时秒数<input name="timeout" type="number" min={1} max={86400} defaultValue={60} required/></label></div>
             </div>:null}
             <label>版本化配置 JSON（可选）<textarea key={parent?.id??this.state.runner} name="config" aria-label="版本化配置 JSON" className="code-input" defaultValue={(parent?.contract.runner??this.state.runner)==='trusted-example'?JSON.stringify({polynomialDegree:parent?2:1,ridge:0.000001},null,2):''} rows={5}/></label>

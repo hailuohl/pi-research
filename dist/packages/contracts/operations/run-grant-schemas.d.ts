@@ -388,7 +388,14 @@ export declare const RUN_GRANT_SCHEMA: {
                                 readonly maximum: number;
                             };
                             readonly runner: {
-                                readonly enum: readonly ["trusted-example", "docker"];
+                                readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                            };
+                            readonly sshTargetId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
                             };
                             readonly image: {
                                 readonly pattern?: string | undefined;
@@ -1020,7 +1027,14 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;
@@ -1559,7 +1573,14 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;
@@ -2098,7 +2119,14 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;
@@ -2637,7 +2665,14 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker"];
+                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                };
+                                readonly sshTargetId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                                 readonly image: {
                                     readonly pattern?: string | undefined;
