@@ -1,15 +1,48 @@
 /** Restricted XML reader for PubMed EFetch. No DTD/entity expansion or external resources. */
 import { ensure } from '../domain/errors.js';
 import { normalizeDate } from './contracts.js';
+function validXmlCodePoint(n) { return n === 9 || n === 10 || n === 13 || n >= 0x20 && n <= 0xd7ff || n >= 0xe000 && n <= 0xfffd || n >= 0x10000 && n <= 0x10ffff; }
 function decode(s) { ensure(!/&(?!(?:amp|lt|gt|quot|apos|#x[0-9a-f]+|#[0-9]+);)/i.test(s), 'PROVIDER_XML_INVALID', 'XML 实体未正确转义', 502); return s.replace(/&([^;\s]+);/g, (_, a) => { if (a === 'amp')
     return '&'; if (a === 'lt')
     return '<'; if (a === 'gt')
     return '>'; if (a === 'quot')
     return '"'; if (a === 'apos')
-    return "'"; const n = /^#x[\da-f]+$/i.test(a) ? parseInt(a.slice(2), 16) : /^#\d+$/.test(a) ? +a.slice(1) : NaN; ensure(Number.isSafeInteger(n) && n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff), 'PROVIDER_XML_INVALID', 'XML 含未知实体', 502); return String.fromCodePoint(n); }); }
-function parse(xml) {
-    ensure(xml.length <= 2 * 1024 * 1024 && !/<!ENTITY|<!DOCTYPE[^>]*\[/i.test(xml), 'PROVIDER_XML_INVALID', '拒绝 XML 实体或内部 DTD', 502);
-    const input = xml.replace(/<!DOCTYPE\s+[^>]*>/gi, '').replace(/<!--[^]*?-->/g, '').replace(/<\?[^]*?\?>/g, '');
+    return "'"; const n = /^#x[\da-f]+$/i.test(a) ? parseInt(a.slice(2), 16) : /^#\d+$/.test(a) ? +a.slice(1) : NaN; ensure(Number.isSafeInteger(n) && validXmlCodePoint(n), 'PROVIDER_XML_INVALID', 'XML 含未知实体', 502); return String.fromCodePoint(n); }); }
+function externalDoctype(xml) {
+    const starts = [...xml.matchAll(/<!DOCTYPE\b/gi)];
+    ensure(starts.length <= 1, 'PROVIDER_XML_INVALID', 'XML DOCTYPE 重复', 502);
+    if (!starts.length)
+        return '';
+    const start = starts[0].index, prolog = xml.slice(0, start).replace(/^\uFEFF/, '').replace(/<!--[^]*?-->/g, '').replace(/<\?[^]*?\?>/g, '');
+    ensure(!prolog.trim(), 'PROVIDER_XML_INVALID', 'XML DOCTYPE 必须位于根元素前', 502);
+    const tail = xml.slice(start);
+    let quote = '', end = -1;
+    for (let i = 0; i < tail.length; i++) {
+        const c = tail[i];
+        if (quote) {
+            if (c === quote)
+                quote = '';
+            continue;
+        }
+        if (c === '"' || c === "'") {
+            quote = c;
+            continue;
+        }
+        ensure(c !== '[', 'PROVIDER_XML_INVALID', '拒绝 XML 内部 DTD', 502);
+        if (c === '>') {
+            end = i + 1;
+            break;
+        }
+    }
+    ensure(end > 0, 'PROVIDER_XML_INVALID', 'XML DOCTYPE 无效', 502);
+    const value = tail.slice(0, end);
+    ensure(/^<!DOCTYPE\s+[\w:.-]+\s+(?:SYSTEM\s+(?:"[^"]*"|'[^']*')|PUBLIC\s+(?:"[^"]*"|'[^']*')\s+(?:"[^"]*"|'[^']*'))\s*>$/i.test(value), 'PROVIDER_XML_INVALID', '只允许外部 XML DOCTYPE 声明', 502);
+    return value;
+}
+export function parseRestrictedXml(xml) {
+    ensure(Buffer.byteLength(xml, 'utf8') <= 2 * 1024 * 1024 && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/.test(xml), 'PROVIDER_XML_INVALID', 'XML 超限或含无效控制字符', 502);
+    ensure(!/<!ENTITY\b/i.test(xml), 'PROVIDER_XML_INVALID', '拒绝 XML 实体声明', 502);
+    const doctype = externalDoctype(xml), input = xml.replace(doctype, '').replace(/^\uFEFF/, '').replace(/<!--[^]*?-->/g, '').replace(/<\?[^]*?\?>/g, '');
     const root = { name: '#root', attrs: {}, children: [] }, stack = [root];
     let count = 0;
     const re = /<!\[CDATA\[([\s\S]*?)\]\]>|<([^>]+)>|([^<]+)/g;
@@ -42,7 +75,9 @@ function parse(xml) {
         while ((a = ar.exec(rest))) {
             ensure(rest.slice(consumed, a.index).trim() === '', 'PROVIDER_XML_INVALID', 'XML 属性无效', 502);
             ensure(!Object.hasOwn(attrs, a[1]), 'PROVIDER_XML_INVALID', 'XML 属性重复', 502);
-            attrs[a[1]] = decode(a[2] ?? a[3]);
+            const raw = a[2] ?? a[3];
+            ensure(!raw.includes('<'), 'PROVIDER_XML_INVALID', 'XML 属性包含未转义的小于号', 502);
+            attrs[a[1]] = decode(raw);
             consumed = ar.lastIndex;
         }
         ensure(rest.slice(consumed).trim() === '', 'PROVIDER_XML_INVALID', 'XML 属性未闭合', 502);
@@ -52,15 +87,20 @@ function parse(xml) {
             stack.push(node);
     }
     ensure(end === input.length && stack.length === 1, 'PROVIDER_XML_INVALID', 'XML 文档未闭合', 502);
+    const elements = root.children.filter((c) => typeof c !== 'string');
+    ensure(elements.length === 1 && root.children.every(c => typeof c !== 'string' || !c.trim()), 'PROVIDER_XML_INVALID', 'XML 必须只有一个根元素', 502);
+    if (doctype)
+        ensure(/^<!DOCTYPE\s+([\w:.-]+)/i.exec(doctype)?.[1] === elements[0].name, 'PROVIDER_XML_INVALID', 'XML DOCTYPE 根名称不匹配', 502);
     return root;
 }
-function nodes(n, name) { return n.children.flatMap(c => typeof c === 'string' ? [] : [...(c.name === name ? [c] : []), ...nodes(c, name)]); }
-function txt(n) { return n ? n.children.map(c => typeof c === 'string' ? c : txt(c)).join('').replace(/\s+/g, ' ').trim() : ''; }
-function first(n, name) { return nodes(n, name)[0]; }
+export function xmlNodes(n, name) { return n.children.flatMap(c => typeof c === 'string' ? [] : [...(c.name === name ? [c] : []), ...xmlNodes(c, name)]); }
+export function xmlChildren(n, name) { return n.children.filter((c) => typeof c !== 'string' && c.name === name); }
+export function xmlText(n) { return n ? n.children.map(c => typeof c === 'string' ? c : xmlText(c)).join('').replace(/\s+/g, ' ').trim() : ''; }
+const first = (n, name) => xmlNodes(n, name)[0];
 function dateText(n) { if (!n)
-    return null; let year = txt(first(n, 'Year')); if (!year)
-    year = txt(first(n, 'MedlineDate')).slice(0, 4); if (!/^\d{4}$/.test(year))
-    return null; const raw = txt(first(n, 'Month')), num = Number(raw) || ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(raw.toLowerCase().slice(0, 3)) + 1; if (!num)
-    return year; const month = String(num).padStart(2, '0'), d = txt(first(n, 'Day')); return normalizeDate(d ? `${year}-${month}-${d.padStart(2, '0')}` : `${year}-${month}`); }
-export function parsePubmed(xml) { const root = parse(xml); ensure(root.children.filter(c => typeof c !== 'string').length === 1 && root.children.every(c => typeof c !== 'string' || !c.trim()) && root.children.some(c => typeof c !== 'string' && c.name === 'PubmedArticleSet') && nodes(root, 'PubmedArticleSet').length === 1, 'PROVIDER_XML_INVALID', '缺少 PubmedArticleSet', 502); return [...nodes(root, 'PubmedArticle'), ...nodes(root, 'PubmedBookArticle')].map(n => { const id = txt(first(n, 'PMID')); ensure(/^\d{1,12}$/.test(id), 'PROVIDER_SCHEMA_INVALID', 'PubMed PMID 无效', 502); const title = txt(first(n, 'ArticleTitle')) || txt(first(n, 'BookTitle')); ensure(title, 'PROVIDER_SCHEMA_INVALID', 'PubMed 缺少题名', 502); const doi = nodes(n, 'ArticleId').find(v => v.attrs.IdType === 'doi'); return { source: 'pubmed', id, title, abstract: nodes(n, 'AbstractText').map(v => `${v.attrs.Label ? `${v.attrs.Label}: ` : ''}${txt(v)}`).join('\n'), publicationDate: dateText(first(n, 'ArticleDate')) ?? dateText(first(n, 'PubDate')), url: `https://pubmed.ncbi.nlm.nih.gov/${id}/`, ...(doi ? { doi: txt(doi).toLowerCase() } : {}), contentKind: 'metadata', fullTextRead: false }; }); }
+    return null; let year = xmlText(first(n, 'Year')); if (!year)
+    year = xmlText(first(n, 'MedlineDate')).slice(0, 4); if (!/^\d{4}$/.test(year))
+    return null; const raw = xmlText(first(n, 'Month')), num = Number(raw) || ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(raw.toLowerCase().slice(0, 3)) + 1; if (!num)
+    return year; const month = String(num).padStart(2, '0'), d = xmlText(first(n, 'Day')); return normalizeDate(d ? `${year}-${month}-${d.padStart(2, '0')}` : `${year}-${month}`); }
+export function parsePubmed(xml) { const root = parseRestrictedXml(xml); ensure(xmlNodes(root, 'PubmedArticleSet').length === 1 && root.children.some(c => typeof c !== 'string' && c.name === 'PubmedArticleSet'), 'PROVIDER_XML_INVALID', '缺少 PubmedArticleSet', 502); return [...xmlNodes(root, 'PubmedArticle'), ...xmlNodes(root, 'PubmedBookArticle')].map(n => { const id = xmlText(first(n, 'PMID')); ensure(/^\d{1,12}$/.test(id), 'PROVIDER_SCHEMA_INVALID', 'PubMed PMID 无效', 502); const title = xmlText(first(n, 'ArticleTitle')) || xmlText(first(n, 'BookTitle')); ensure(title, 'PROVIDER_SCHEMA_INVALID', 'PubMed 缺少题名', 502); const doi = xmlNodes(n, 'ArticleId').find(v => v.attrs.IdType === 'doi'); return { source: 'pubmed', id, title, abstract: xmlNodes(n, 'AbstractText').map(v => `${v.attrs.Label ? `${v.attrs.Label}: ` : ''}${xmlText(v)}`).join('\n'), publicationDate: dateText(first(n, 'ArticleDate')) ?? dateText(first(n, 'PubDate')), url: `https://pubmed.ncbi.nlm.nih.gov/${id}/`, ...(doi ? { doi: xmlText(doi).toLowerCase() } : {}), contentKind: 'metadata', fullTextRead: false }; }); }
 //# sourceMappingURL=pubmed.js.map

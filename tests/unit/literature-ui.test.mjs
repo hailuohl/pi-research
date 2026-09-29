@@ -58,6 +58,22 @@ test('bioRxiv and PubMed pages use their own switches while alphaXiv keeps an ex
  const v=view();v.state.result={id:'alpha-window',query:'cancer',status:'complete',sources:[{source:'alphaxiv',status:'succeeded',count:2}],items:[]};const tree=v.render();assert.match(flatten(tree),/alphaXiv 当前检索仅为有限候选窗口/);assert.equal(nodes(tree).some(n=>n.type==='button'&&flatten(n)==='显式获取下一页'),false);
 });
 
+test('explicit PMC OA text is owner-only in the result UI, clears a PDF version and disables other sources',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=view();
+ v.state.config={enabled:{pubmed:true,crossref:true}};v.state.requestedVersion='v2';
+ v.state.result={id:'pubmed-search',query:'open access article',status:'complete',sources:[{source:'pubmed',status:'succeeded',count:1}],items:[{source:'pubmed',id:'34285670',title:'OA fixture',abstract:'metadata only'},{source:'crossref',id:'10.1234/other',title:'Other source',abstract:'metadata only'}]};
+ const select=nodes(v.render()).find(n=>n.type==='select'&&n.props['aria-label']==='获取内容类型');select.props.onChange({target:{value:'oa-full-text'}});
+ assert.equal(v.state.format,'oa-full-text');assert.equal(v.state.requestedVersion,'');
+ let tree=v.render(),items=nodes(tree),buttons=items.filter(n=>n.type==='button'&&flatten(n)==='提交此文献获取任务');
+ assert.equal(items.find(n=>n.type==='input'&&n.props['aria-label']==='请求原文版本').props.disabled,true);
+ assert.equal(buttons[0].props.disabled,false);assert.equal(buttons[1].props.disabled,true);
+ globalThis.fetch=async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});return {ok:true,json:async()=>({id:'oa-task'})};};
+ buttons[0].props.onClick();await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(requests[0].body,{projectId:'project',input:{kind:'retrieve',target:{source:'pubmed',id:'34285670',format:'oa-full-text'}}});
+ v.state.result={...v.state.result,discoveryGrant:{id:'old-text-grant'}};
+ tree=v.render();assert.equal(nodes(tree).find(n=>n.type==='button'&&flatten(n)==='以原检索授权获取此命中').props.disabled,true);
+});
+
 test('page images require both PNG magic and the bound digest before producing a display blob',async()=>{
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5ZcAAAAASUVORK5CYII=','base64'),hash=createHash('sha256').update(png).digest('hex');
  assert.equal((await verifiedPageImage(new Blob([png]),hash)).type,'image/png');

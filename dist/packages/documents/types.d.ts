@@ -32,6 +32,7 @@ export interface DocumentVersion {
         assurance: 'provider-reported' | 'user-declared' | 'unknown';
     };
     rawResponseArtifactIds?: string[];
+    pageMapping?: 'unavailable';
     scopeSessionId?: string | null;
     scopeTaskId?: string | null;
     limitations: string[];
@@ -40,6 +41,12 @@ export interface DocumentAcquireInput {
     source: SourceId;
     id: string;
     format: 'provider-text' | 'original-pdf';
+    requestedVersion?: string;
+}
+export interface LiteratureDocumentAcquireInput {
+    source: SourceId;
+    id: string;
+    format: 'provider-text' | 'original-pdf' | 'oa-full-text';
     requestedVersion?: string;
 }
 export interface DocumentEvidenceLink {

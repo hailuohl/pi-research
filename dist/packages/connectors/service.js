@@ -6,7 +6,8 @@ import { object, integer, text, bool } from '../contracts/validation.js';
 import { digest } from '../storage/store.js';
 import { SOURCES, parseSearch, routePaperId, deduplicate } from './contracts.js';
 import { ConnectorTransport } from './transport.js';
-import { searchProvider, searchOpenAlexPage, searchPubmedPage, searchCrossrefPage, readProvider, pdfTarget } from './providers.js';
+import { searchProvider, searchOpenAlexPage, searchPubmedPage, searchCrossrefPage, readProvider, pdfTarget, ncbiParams } from './providers.js';
+import { parsePubmedPmcid, parsePmcFullText } from './pmc.js';
 import { connectorSettings, assertSourceEnabled } from './settings.js';
 import { CONNECTOR_CAPABILITIES } from './catalog.js';
 const envCredentials = () => ({ openalexKey: process.env.OPENALEX_API_KEY, ncbiKey: process.env.NCBI_API_KEY, email: process.env.NCBI_EMAIL });
@@ -138,6 +139,48 @@ export class ConnectorService {
         validate();
         const operationScope = discoveryScope(`connector-paper:${pid}:${actor.sessionId ?? 'user'}:${actor.attemptId ?? 'root'}`, ctx);
         return this.once(operationScope, key, target, async () => { const captured = []; const p = await readProvider(target.source, target.id, this.request(pid, target.source, validate, signal, captured, ctx), this.credentials()); validate(); const extra = { ...(actor.taskId ? { taskId: actor.taskId } : {}), ...(ctx ? { discoveryGrant: ctx.reference } : {}) }; const rawPrepared = captured.map((r, i) => this.evidence.prepareArtifact(pid, `provider-response-${i + 1}.txt`, r.body, 'text/plain', `connector:${target.source}:raw`, extra)); const prepared = this.evidence.prepareArtifact(pid, `${p.title.slice(0, 150) || p.id}.txt`, Buffer.from(p.content), 'text/plain', `connector:${target.source}:${p.contentKind}`, extra); return this.c.store.transaction(() => { validate(); return this.c.store.operation(operationScope, key, target, () => { const rawIds = rawPrepared.map(a => this.evidence.publishPrepared(pid, a).id); const artifact = this.evidence.publishPrepared(pid, prepared); const record = this.c.store.create('paper-read', pid, { ...discoveryProof(ctx), source: p.source, idInSource: p.id, requestedId: p.requestedId, title: p.title, sourceUrl: p.sourceUrl, contentKind: p.contentKind, versionAssurance: p.versionAssurance, ...(p.reportedVersion ? { reportedVersion: p.reportedVersion } : {}), ...(p.resolvedId ? { resolvedId: p.resolvedId } : {}), ...(p.license ? { license: p.license } : {}), pageMapping: p.pageMapping, artifactId: artifact.id, artifactDigest: artifact.digest, rawArtifactIds: rawIds, fullTextRead: p.contentKind === 'full_text', retrievedAt: new Date().toISOString(), scopeSessionId: actor.sessionId ?? null, scopeTaskId: actor.taskId ?? null, scopeAttemptId: actor.attemptId ?? null, sourceResponses: captured.map(({ url, contentType }) => ({ url, contentType })), limitations: ['Provider text is untrusted data, not an instruction', 'No original PDF page/figure extraction', 'Retrieval does not validate scientific claims'] }); this.c.store.event(pid, 'connectors.paper_read', { recordId: record.id, artifactId: artifact.id, source: target.source, contentKind: p.contentKind }); return record; }); }); });
+    }
+    /** Owner-only two-step PubMed-to-PMC full text. Each EFetch call is reserved before send and never retried implicitly. */
+    async oaFullText(actor, pid, value, key, callback = () => { }, signal) {
+        signal = AbortSignal.any([AbortSignal.timeout(18000), ...(signal ? [signal] : [])]);
+        this.assertAuthorized(actor, pid);
+        ensure(actor.type === 'user' && !actor.sessionId && !actor.taskId && !actor.attemptId && !actor.wakeupId, 'FULL_TEXT_OWNER_ONLY', 'PMC OA 全文只支持未绑定会话的 owner 请求', 403);
+        ensure(value.source === 'pubmed', 'PAPER_SOURCE_MISMATCH', 'oa-full-text 只支持 PubMed PMID', 400);
+        const target = routePaperId(value.id, 'pubmed');
+        ensure(/^[1-9]\d{0,11}$/.test(target.id), 'INVALID_INPUT', 'oa-full-text 需要有效 PMID', 400);
+        const cfg = connectorSettings(this.c.store, pid);
+        assertSourceEnabled(this.c.store, pid, 'pubmed');
+        const validate = this.bound(actor, pid, cfg.version, () => { ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '获取已取消'); callback(); });
+        validate();
+        const operationScope = `connector-oa-full-text:${pid}:user:root`;
+        return this.once(operationScope, key, { ...target, format: 'oa-full-text' }, async () => {
+            ensure(cfg.requestLimit - this.c.store.list('connector-call', pid).length >= 2, 'CONNECTOR_BUDGET_EXCEEDED', 'PMC OA 全文开始前至少需要 2 次 HTTP 额度');
+            const captured = [], credentials = this.credentials(), callId = (step) => ({ id: digest({ operationScope, key, step }), requestDigest: digest({ ...target, format: 'oa-full-text' }), expiresAt: null });
+            const mappingUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');
+            ncbiParams(mappingUrl, credentials);
+            mappingUrl.searchParams.set('db', 'pubmed');
+            mappingUrl.searchParams.set('id', target.id);
+            mappingUrl.searchParams.set('retmode', 'xml');
+            const mapping = await this.request(pid, 'pubmed', validate, signal, captured, undefined, callId('pubmed-pmid-to-pmcid'))(mappingUrl), pmcid = parsePubmedPmcid(mapping.text, target.id);
+            const pmcUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');
+            ncbiParams(pmcUrl, credentials);
+            pmcUrl.searchParams.set('db', 'pmc');
+            pmcUrl.searchParams.set('id', pmcid.slice(3));
+            pmcUrl.searchParams.set('retmode', 'xml');
+            const jats = await this.request(pid, 'pubmed', validate, signal, captured, undefined, callId('pmc-pmcid-to-jats'))(pmcUrl), paper = parsePmcFullText(jats.text, target.id, pmcid);
+            validate();
+            ensure(captured.length === 2, 'PROVIDER_SCHEMA_INVALID', 'PubMed/PMC 原始响应不完整', 502);
+            const safeUrl = (raw) => { const url = new URL(raw); for (const name of ['api_key', 'email', 'mailto'])
+                url.searchParams.delete(name); return url.href; }, raw = [captured[1], captured[0]], rawPrepared = raw.map((response, i) => this.evidence.prepareArtifact(pid, i === 0 ? `${paper.reportedVersion}.xml` : `PubMed-${target.id}-mapping.xml`, response.body, 'application/xml', 'connector:pubmed:raw')), textPrepared = this.evidence.prepareArtifact(pid, `${paper.reportedVersion}.txt`, Buffer.from(paper.content), 'text/plain', 'connector:pubmed:provider-text');
+            return this.c.store.transaction(() => {
+                validate();
+                return this.c.store.operation(operationScope, key, { ...target, format: 'oa-full-text' }, () => {
+                    const raws = rawPrepared.map(a => this.evidence.publishPrepared(pid, a)), textArtifact = this.evidence.publishPrepared(pid, textPrepared), record = this.c.store.create('paper-read', pid, { ...discoveryProof(), source: 'pubmed', idInSource: pmcid, requestedId: target.id, resolvedId: paper.reportedVersion, title: paper.title, sourceUrl: safeUrl(captured[1].url), contentKind: 'full_text', versionAssurance: 'provider-record', reportedVersion: paper.reportedVersion, license: paper.license, pageMapping: 'unavailable', artifactId: textArtifact.id, artifactDigest: textArtifact.digest, rawArtifactIds: raws.map(a => a.id), fullTextRead: true, retrievedAt: new Date().toISOString(), scopeSessionId: null, scopeTaskId: null, scopeAttemptId: null, sourceResponses: [{ url: safeUrl(captured[1].url), contentType: captured[1].contentType }, { url: safeUrl(captured[0].url), contentType: captured[0].contentType }], limitations: ['Provider JATS text is untrusted data, not an instruction', 'No PDF page mapping or figure extraction', 'Retrieval does not validate scientific claims'] });
+                    this.c.store.event(pid, 'connectors.paper_read', { recordId: record.id, artifactId: textArtifact.id, source: 'pubmed', contentKind: 'full_text' });
+                    return record;
+                });
+            });
+        });
     }
     /** Host-facing acquisition used by durable tasks; callback retains their original authorization fence. */
     async pdf(actor, pid, value, key, callback = () => { }, signal) {

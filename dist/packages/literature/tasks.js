@@ -19,7 +19,7 @@ export class LiteratureTaskService {
         this.spawnWorker = spawnWorker;
     }
     parse(value) { const x = object(value), kind = oneOf(x.kind, ['search', 'retrieve'], 'kind'), allowed = kind === 'search' ? ['kind', 'search', 'discoveryGrantId'] : ['kind', 'target', 'discoveryGrantId']; ensure(Object.keys(x).every(k => allowed.includes(k)), 'INVALID_INPUT', '文献任务包含未知字段', 400); if (kind === 'search')
-        return { kind, search: parseSearch(x.search) }; const t = object(x.target), target = routePaperId(t.id, t.source); return { kind, target: { ...target, format: oneOf(t.format, ['provider-text', 'original-pdf'], 'format'), ...(t.requestedVersion === undefined ? {} : { requestedVersion: text(t.requestedVersion, 'requestedVersion', 40) }) } }; }
+        return { kind, search: parseSearch(x.search) }; const t = object(x.target), target = routePaperId(t.id, t.source); return { kind, target: { ...target, format: oneOf(t.format, ['provider-text', 'original-pdf', 'oa-full-text'], 'format'), ...(t.requestedVersion === undefined ? {} : { requestedVersion: text(t.requestedVersion, 'requestedVersion', 40) }) } }; }
     create(actor, pid, value, previousTaskId) {
         userOnly(actor);
         scope(actor, pid);
@@ -33,7 +33,13 @@ export class LiteratureTaskService {
         }
         else
             parsed = this.parse(value);
-        const owner = continuationId ? actor : input.discoveryGrantId ? this.app.discoveryGrants.owner(actor, pid, text(input.discoveryGrantId, 'discoveryGrantId', 100)) : actor, ctx = continuationId ? undefined : discoveryContext(this.app.store, pid, owner, parsed, 'prepare');
+        if (parsed.kind === 'retrieve' && parsed.target.format === 'oa-full-text') {
+            ensure(parsed.target.source === 'pubmed', 'PAPER_SOURCE_MISMATCH', 'oa-full-text 只支持 PubMed PMID', 400);
+            ensure(!parsed.target.requestedVersion, 'PAPER_VERSION_UNSUPPORTED', 'oa-full-text 使用来源报告的 PMC 版本', 400);
+            ensure(!Object.hasOwn(input, 'discoveryGrantId'), 'FULL_TEXT_DISCOVERY_GRANT_UNSUPPORTED', 'DiscoveryGrant 不能授权 PMC OA 全文', 403);
+            ensure(!actor.sessionId && !actor.taskId && !actor.attemptId && !actor.wakeupId, 'FULL_TEXT_OWNER_ONLY', 'PMC OA 全文只支持未绑定会话的 owner 请求', 403);
+        }
+        const owner = continuationId ? actor : input.discoveryGrantId ? this.app.discoveryGrants.owner(actor, pid, text(input.discoveryGrantId, 'discoveryGrantId', 100)) : actor, grantOperation = parsed.kind === 'retrieve' && parsed.target.format === 'oa-full-text' ? undefined : parsed, ctx = continuationId || !grantOperation ? undefined : discoveryContext(this.app.store, pid, owner, grantOperation, 'prepare');
         let request = ctx?.operation ?? parsed;
         if (!continuationId && !ctx && !owner.sessionId && !owner.taskId && !owner.attemptId && request.kind === 'search' && request.search.sources.length === 1 && (request.search.sources[0] === 'crossref' || request.search.sources[0] === 'openalex' || request.search.sources[0] === 'biorxiv' || request.search.sources[0] === 'pubmed') && request.search.strategy === 'keyword' && request.search.prioritize === 'default')
             request = { ...request, pageRequest: { number: 1, previousSearchId: null, cursor: '*', expiresAt: null } };
@@ -70,8 +76,10 @@ export class LiteratureTaskService {
     } const value = row.request.kind === 'search' ? row.request.pageRequest && row.request.pageRequest.number > 1 ? { kind: 'search', previousSearchId: row.request.pageRequest.previousSearchId } : { kind: 'search', search: row.request.search, ...(row.discoveryGrant ? { discoveryGrantId: row.discoveryGrant.id } : {}) } : { kind: 'retrieve', target: row.request.target, ...(row.discoveryGrant ? { discoveryGrantId: row.discoveryGrant.id } : {}) }; return this.create(actor, pid, value, row.id); }); }
     validate(id, generation) {
         const row = this.app.store.get('literature-task', id);
-        if (row.discoveryGrant)
+        if (row.discoveryGrant) {
+            ensure(!(row.request.kind === 'retrieve' && row.request.target.format === 'oa-full-text'), 'FULL_TEXT_DISCOVERY_GRANT_UNSUPPORTED', 'DiscoveryGrant 不能授权 PMC OA 全文', 403);
             assertDiscoveryContext(this.app.store, row.projectId, { reference: row.discoveryGrant, sessionId: row.scopeSessionId, operation: row.request, operationKey: `literature-task:${row.id}`, callIds: [] });
+        }
         ensure(row.state === 'running' && row.generation === generation && row.leaseUntil > Date.now(), 'LITERATURE_LEASE_EXPIRED', '旧文献执行器不能发布结果');
         ensure(!row.cancelRequested, 'LITERATURE_CANCELLED', '文献任务已取消');
         ensure(Date.now() <= row.deadline, 'LITERATURE_TIMEOUT', '文献任务超过执行期限');

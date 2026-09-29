@@ -79,7 +79,7 @@ export class DocumentService {
         const a = artifacts.find(a => a.id === id);
         ensure(artifacts.find(a => a.id === p.artifactId).digest === p.artifactDigest, 'DOCUMENT_INVALID', '论文读取内容绑定失效');
         const contentKind = p.contentKind === 'full_text' ? 'provider-text' : oneOf(p.contentKind, ['metadata', 'abstract', 'original-pdf'], 'contentKind');
-        const doc = { ...(p.discoveryGrant ? { discoveryGrant: p.discoveryGrant } : {}), title: String(p.title).slice(0, 200), original: this.descriptor(a), ...(id !== p.artifactId ? { derivedText: this.descriptor(artifacts.find(a => a.id === p.artifactId)) } : {}), source: { kind: 'connector', provider: p.source, requestedId: p.requestedId, resolvedId: p.resolvedId ?? p.idInSource, requestedVersion: p.requestedVersion ?? p.requestedId?.match(/v([1-9]\d*)$/)?.[1] ?? null, reportedVersion: p.reportedVersion ?? null, versionAssurance: p.versionAssurance, sourceUrl: p.sourceUrl }, contentKind, acquiredAt: p.retrievedAt, license: { value: p.license ?? null, assurance: p.license ? 'provider-reported' : 'unknown' }, rawResponseArtifactIds: rawIds, scopeSessionId: p.scopeSessionId ?? null, scopeTaskId: p.scopeTaskId ?? null, limitations: [...(p.limitations ?? []), ...(!rawIds.length ? ['Legacy paper record has no original response bytes; retained artifact is derived/provider text, not verified original network bytes'] : [])] };
+        const doc = { ...(p.discoveryGrant ? { discoveryGrant: p.discoveryGrant } : {}), title: String(p.title).slice(0, 200), original: this.descriptor(a), ...(id !== p.artifactId ? { derivedText: this.descriptor(artifacts.find(a => a.id === p.artifactId)) } : {}), source: { kind: 'connector', provider: p.source, requestedId: p.requestedId, resolvedId: p.resolvedId ?? p.idInSource, requestedVersion: p.requestedVersion ?? p.requestedId?.match(/v([1-9]\d*)$/)?.[1] ?? null, reportedVersion: p.reportedVersion ?? null, versionAssurance: p.versionAssurance, sourceUrl: p.sourceUrl }, contentKind, acquiredAt: p.retrievedAt, license: { value: p.license ?? null, assurance: p.license ? 'provider-reported' : 'unknown' }, rawResponseArtifactIds: rawIds, ...(p.pageMapping ? { pageMapping: p.pageMapping } : {}), scopeSessionId: p.scopeSessionId ?? null, scopeTaskId: p.scopeTaskId ?? null, limitations: [...(p.limitations ?? []), ...(!rawIds.length ? ['Legacy paper record has no original response bytes; retained artifact is derived/provider text, not verified original network bytes'] : [])] };
         const hash = digest(p), artifactHashes = artifacts.map(a => ({ id: a.id, hash: digest(a) }));
         return { doc, validate: () => { artifacts.forEach(a => assertDiscoveryArtifact(this.c.store, pid, a)); scope(actor, pid); assertProjectWritable(this.c.store, pid); ensure(digest(this.c.store.get('paper-read', paperReadId, pid)) === hash && artifactHashes.every(a => digest(this.c.store.get('artifact', a.id, pid)) === a.hash), 'DOCUMENT_INVALID', '已暂存的原件记录已改变'); } };
     }
@@ -93,9 +93,14 @@ export class DocumentService {
         const originalValidate = validate;
         validate = () => { originalValidate(); this.connectors.assertAuthorized(actor, pid); assertSourceEnabled(this.c.store, pid, input.source); ensure(connectorSettings(this.c.store, pid).version === settingsVersion, 'CONNECTOR_SETTINGS_CHANGED', '来源设置已改变'); ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '获取已取消'); };
         validate();
-        const target = routePaperId(input.id, input.source), format = oneOf(input.format, ['provider-text', 'original-pdf'], 'format');
+        const target = routePaperId(input.id, input.source), format = oneOf(input.format, ['provider-text', 'original-pdf', 'oa-full-text'], 'format');
+        if (format === 'oa-full-text') {
+            ensure(target.source === 'pubmed', 'PAPER_SOURCE_MISMATCH', 'oa-full-text 只支持 PubMed PMID', 400);
+            ensure(!input.requestedVersion, 'PAPER_VERSION_UNSUPPORTED', 'oa-full-text 使用来源报告的 PMC 版本', 400);
+            ensure(!actor.sessionId && !actor.taskId && !actor.attemptId && !actor.wakeupId, 'FULL_TEXT_OWNER_ONLY', 'PMC OA 全文只支持未绑定会话的 owner 请求', 403);
+        }
         const normalized = { ...target, format, ...(input.requestedVersion ? { requestedVersion: text(input.requestedVersion, 'requestedVersion', 10) } : {}) };
-        const ctx = discoveryContext(this.c.store, pid, actor, { kind: 'retrieve', target: normalized }, key);
+        const ctx = format === 'oa-full-text' ? undefined : discoveryContext(this.c.store, pid, actor, { kind: 'retrieve', target: { ...normalized, format: format } }, key);
         const op = discoveryScope(`document-acquire:${pid}`, ctx), old = this.c.store.operationResult(op, key, normalized);
         if (old.found) {
             this.verify(old.value);
@@ -105,6 +110,8 @@ export class DocumentService {
         let p;
         if (format === 'original-pdf')
             p = await this.connectors.pdf(actor, pid, normalized, `document:${key}`, validate, signal);
+        else if (format === 'oa-full-text')
+            p = await this.connectors.oaFullText(actor, pid, target, `document:${key}`, validate, signal);
         else {
             ensure(!normalized.requestedVersion || target.source === 'alphaxiv', 'PAPER_VERSION_UNSUPPORTED', '该来源文本接口不支持指定版本', 400);
             if (normalized.requestedVersion) {

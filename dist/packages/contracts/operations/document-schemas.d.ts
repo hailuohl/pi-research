@@ -519,7 +519,7 @@ export declare const DOCUMENT_INPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                         readonly format: {
-                            readonly enum: readonly ["provider-text", "original-pdf"];
+                            readonly enum: readonly ["provider-text", "original-pdf", "oa-full-text"];
                         };
                         readonly requestedVersion: {
                             readonly pattern?: string | undefined;
@@ -958,7 +958,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                                 readonly format: {
-                                    readonly enum: readonly ["provider-text", "original-pdf"];
+                                    readonly enum: readonly ["provider-text", "original-pdf", "oa-full-text"];
                                 };
                                 readonly requestedVersion: {
                                     readonly pattern?: string | undefined;
@@ -1464,7 +1464,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                                 readonly format: {
-                                    readonly enum: readonly ["provider-text", "original-pdf"];
+                                    readonly enum: readonly ["provider-text", "original-pdf", "oa-full-text"];
                                 };
                                 readonly requestedVersion: {
                                     readonly pattern?: string | undefined;
@@ -1970,7 +1970,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                                 readonly format: {
-                                    readonly enum: readonly ["provider-text", "original-pdf"];
+                                    readonly enum: readonly ["provider-text", "original-pdf", "oa-full-text"];
                                 };
                                 readonly requestedVersion: {
                                     readonly pattern?: string | undefined;
@@ -2476,7 +2476,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                                 readonly format: {
-                                    readonly enum: readonly ["provider-text", "original-pdf"];
+                                    readonly enum: readonly ["provider-text", "original-pdf", "oa-full-text"];
                                 };
                                 readonly requestedVersion: {
                                     readonly pattern?: string | undefined;
@@ -2998,6 +2998,9 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                     readonly type: "string";
                 };
             };
+            readonly pageMapping: {
+                readonly enum: readonly ["unavailable"];
+            };
             readonly scopeSessionId: {
                 readonly anyOf: readonly [{
                     readonly type: "string";
@@ -3184,6 +3187,9 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "string";
                 };
+            };
+            readonly pageMapping: {
+                readonly enum: readonly ["unavailable"];
             };
             readonly scopeSessionId: {
                 readonly anyOf: readonly [{
@@ -3376,6 +3382,9 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly items: {
                                 readonly type: "string";
                             };
+                        };
+                        readonly pageMapping: {
+                            readonly enum: readonly ["unavailable"];
                         };
                         readonly scopeSessionId: {
                             readonly anyOf: readonly [{

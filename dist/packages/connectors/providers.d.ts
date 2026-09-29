@@ -23,6 +23,7 @@ export declare function pdfTarget(source: SourceId, rawId: string, requestedVers
     requestedVersion: null;
     versionAssurance: string;
 };
+export declare function ncbiParams(url: URL, c: Credentials): void;
 export declare function searchProvider(source: SourceId, q: SearchInput, request: Request, credentials: Credentials): Promise<Hit[]>;
 export declare function searchOpenAlexPage(q: SearchInput, cursor: string, request: Request, credentials: Credentials, source?: 'openalex' | 'biorxiv'): Promise<ProviderPage>;
 export declare function pubmedOffset(cursor: string): number;

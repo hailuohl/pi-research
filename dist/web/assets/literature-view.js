@@ -6,7 +6,7 @@ import { SectionTitle, Badge, Empty } from "./ui.js";
 import { TextEvidencePanel } from "./text-evidence.js";
 import { DiscoveryGrants } from "./discovery-grants.js";
 const sources = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
-const contentNames = { metadata: "\u4EC5\u5143\u6570\u636E", abstract: "\u4EC5\u6458\u8981", "provider-text": "\u4F9B\u5E94\u5546\u63D0\u53D6\u6587\u672C\uFF08\u975E\u539F PDF\uFF09", "original-pdf": "\u5DF2\u56FA\u5B9A\u539F\u59CB PDF \u5B57\u8282", "user-text": "\u7528\u6237\u5BFC\u5165\u6587\u672C" };
+const contentNames = { metadata: "\u4EC5\u5143\u6570\u636E", abstract: "\u4EC5\u6458\u8981", "provider-text": "\u6765\u6E90\u5168\u6587\u6587\u672C\uFF08\u65E0 PDF \u9875\u6620\u5C04\uFF09", "original-pdf": "\u5DF2\u56FA\u5B9A\u539F\u59CB PDF \u5B57\u8282", "user-text": "\u7528\u6237\u5BFC\u5165\u6587\u672C" };
 const call = (projectId, name, input = {}) => api(`/operations/${name}`, { projectId, input });
 function literatureRequestedVersion(target) {
   if (target.requestedVersion) return `\u8BF7\u6C42\u7248\u672C ${target.requestedVersion}`;
@@ -217,14 +217,15 @@ class LiteratureView extends React.Component {
         /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
           /* @__PURE__ */ jsxs("label", { children: [
             "\u83B7\u53D6\u5185\u5BB9",
-            /* @__PURE__ */ jsxs("select", { "aria-label": "\u83B7\u53D6\u5185\u5BB9\u7C7B\u578B", value: s.format, onChange: (e) => this.setState({ format: e.target.value }), children: [
+            /* @__PURE__ */ jsxs("select", { "aria-label": "\u83B7\u53D6\u5185\u5BB9\u7C7B\u578B", value: s.format, onChange: (e) => this.setState({ format: e.target.value, requestedVersion: e.target.value === "oa-full-text" ? "" : this.state.requestedVersion }), children: [
               /* @__PURE__ */ jsx("option", { value: "provider-text", children: "\u6765\u6E90\u63D0\u4F9B\u7684\u6587\u672C / \u6458\u8981 / \u5143\u6570\u636E" }),
-              /* @__PURE__ */ jsx("option", { value: "original-pdf", children: "\u539F\u59CB PDF\uFF08\u4E0D\u53EF\u53D6\u5F97\u65F6\u660E\u786E\u5931\u8D25\uFF09" })
+              /* @__PURE__ */ jsx("option", { value: "original-pdf", children: "\u539F\u59CB PDF\uFF08\u4E0D\u53EF\u53D6\u5F97\u65F6\u660E\u786E\u5931\u8D25\uFF09" }),
+              /* @__PURE__ */ jsx("option", { value: "oa-full-text", children: "PMC \u5F00\u653E\u83B7\u53D6\u5168\u6587\uFF08\u4EC5 PubMed\uFF1B\u65E0 PDF \u9875\u6620\u5C04\uFF09" })
             ] })
           ] }),
           /* @__PURE__ */ jsxs("label", { children: [
             "\u8BF7\u6C42\u7248\u672C\uFF08\u53EF\u9009\uFF09",
-            /* @__PURE__ */ jsx("input", { "aria-label": "\u8BF7\u6C42\u539F\u6587\u7248\u672C", value: s.requestedVersion, onChange: (e) => this.setState({ requestedVersion: e.target.value }), placeholder: "\u4F8B\u5982 v2\uFF1B\u7559\u7A7A\u4E0D\u4FDD\u8BC1\u6307\u5B9A\u7248\u672C" })
+            /* @__PURE__ */ jsx("input", { "aria-label": "\u8BF7\u6C42\u539F\u6587\u7248\u672C", disabled: s.format === "oa-full-text", value: s.requestedVersion, onChange: (e) => this.setState({ requestedVersion: e.target.value }), placeholder: "\u4F8B\u5982 v2\uFF1B\u7559\u7A7A\u4E0D\u4FDD\u8BC1\u6307\u5B9A\u7248\u672C" })
           ] })
         ] }),
         s.result.items.map((hit) => /* @__PURE__ */ jsxs("article", { className: "inspector-section", children: [
@@ -237,7 +238,7 @@ class LiteratureView extends React.Component {
           ] }),
           /* @__PURE__ */ jsx("p", { className: "prose-text", children: hit.abstract ?? "\u672A\u63D0\u4F9B\u6458\u8981" }),
           literatureSourceURL(hit.url) ? /* @__PURE__ */ jsx("a", { href: literatureSourceURL(hit.url), target: "_blank", rel: "noopener noreferrer", children: "\u6253\u5F00\u6765\u6E90\u9875\u9762" }) : null,
-          s.result.discoveryGrant ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !resultGrant || resultGrant.effectiveState !== "active" || resultGrant.validity !== "current" || !resultGrant.allowSearchResults || !resultGrant.formats.includes(s.format) || resultGrant.usage.remaining < 1, onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} }, discoveryGrantId: s.result.discoveryGrant.id }), "\u6388\u6743\u5185\u547D\u4E2D\u8D44\u6599\u83B7\u53D6\u5DF2\u63D0\u4EA4"), children: "\u4EE5\u539F\u68C0\u7D22\u6388\u6743\u83B7\u53D6\u6B64\u547D\u4E2D" }) : /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !s.config?.enabled[hit.source], onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} } }), "\u539F\u6587\u83B7\u53D6\u4EFB\u52A1\u5DF2\u63D0\u4EA4"), children: "\u63D0\u4EA4\u6B64\u6587\u732E\u83B7\u53D6\u4EFB\u52A1" })
+          s.result.discoveryGrant ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !resultGrant || resultGrant.effectiveState !== "active" || resultGrant.validity !== "current" || !resultGrant.allowSearchResults || (s.format === "oa-full-text" || !resultGrant.formats.includes(s.format)) || resultGrant.usage.remaining < 1, onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} }, discoveryGrantId: s.result.discoveryGrant.id }), "\u6388\u6743\u5185\u547D\u4E2D\u8D44\u6599\u83B7\u53D6\u5DF2\u63D0\u4EA4"), children: "\u4EE5\u539F\u68C0\u7D22\u6388\u6743\u83B7\u53D6\u6B64\u547D\u4E2D" }) : /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !s.config?.enabled[hit.source] || s.format === "oa-full-text" && hit.source !== "pubmed", onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} } }), "\u539F\u6587\u83B7\u53D6\u4EFB\u52A1\u5DF2\u63D0\u4EA4"), children: "\u63D0\u4EA4\u6B64\u6587\u732E\u83B7\u53D6\u4EFB\u52A1" })
         ] }, hit.source + ":" + hit.id))
       ] }) : null,
       /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
@@ -333,7 +334,7 @@ class DocumentPane extends React.Component {
       literatureSourceURL(d.source.sourceUrl) ? /* @__PURE__ */ jsx("a", { href: literatureSourceURL(d.source.sourceUrl), target: "_blank", rel: "noopener noreferrer", children: "\u67E5\u770B\u6765\u6E90\u5730\u5740" }) : null,
       /* @__PURE__ */ jsx("ul", { children: d.limitations.map((value, i) => /* @__PURE__ */ jsx("li", { children: value }, i)) }),
       /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => downloadArtifact(d.original.artifactId, d.contentKind === "original-pdf" && !/\.pdf$/i.test(d.title) ? d.title + ".pdf" : d.title)), children: "\u4E0B\u8F7D\u56FA\u5B9A\u539F\u59CB\u6587\u4EF6" }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53D6\u5F97 PDF \u5B57\u8282\u4E0D\u7B49\u4E8E\u5DF2\u9605\u8BFB\u6216\u901A\u8FC7\u79D1\u5B66\u6838\u9A8C\uFF1B\u4E0D\u4F1A\u5728\u9875\u9762\u6267\u884C PDF \u811A\u672C\u6216\u5D4C\u5165\u5185\u5BB9\u3002" }),
+      d.contentKind === "original-pdf" ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53D6\u5F97 PDF \u5B57\u8282\u4E0D\u7B49\u4E8E\u5DF2\u9605\u8BFB\u6216\u901A\u8FC7\u79D1\u5B66\u6838\u9A8C\uFF1B\u4E0D\u4F1A\u5728\u9875\u9762\u6267\u884C PDF \u811A\u672C\u6216\u5D4C\u5165\u5185\u5BB9\u3002" }) : null,
       this.state.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.error }) : null,
       d.contentKind !== "original-pdf" ? /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsxs("button", { className: "secondary", onClick: () => perform(async () => {

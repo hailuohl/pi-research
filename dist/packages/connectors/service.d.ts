@@ -203,6 +203,67 @@ export declare class ConnectorService {
         discoveryCallIds?: undefined;
         discoveryRequestDigest?: undefined;
     }>>;
+    /** Owner-only two-step PubMed-to-PMC full text. Each EFetch call is reserved before send and never retried implicitly. */
+    oaFullText(actor: Actor, pid: string, value: {
+        source: 'pubmed';
+        id: string;
+    }, key: string, callback?: () => void, signal?: AbortSignal): Promise<Row<{
+        source: string;
+        idInSource: string;
+        requestedId: string;
+        resolvedId: string;
+        title: string;
+        sourceUrl: string;
+        contentKind: string;
+        versionAssurance: string;
+        reportedVersion: string;
+        license: string;
+        pageMapping: string;
+        artifactId: string;
+        artifactDigest: string;
+        rawArtifactIds: string[];
+        fullTextRead: boolean;
+        retrievedAt: string;
+        scopeSessionId: null;
+        scopeTaskId: null;
+        scopeAttemptId: null;
+        sourceResponses: {
+            url: string;
+            contentType: string;
+        }[];
+        limitations: string[];
+        discoveryGrant: DiscoveryGrantReference;
+        discoveryCallIds: string[];
+        discoveryRequestDigest: string;
+    } | {
+        source: string;
+        idInSource: string;
+        requestedId: string;
+        resolvedId: string;
+        title: string;
+        sourceUrl: string;
+        contentKind: string;
+        versionAssurance: string;
+        reportedVersion: string;
+        license: string;
+        pageMapping: string;
+        artifactId: string;
+        artifactDigest: string;
+        rawArtifactIds: string[];
+        fullTextRead: boolean;
+        retrievedAt: string;
+        scopeSessionId: null;
+        scopeTaskId: null;
+        scopeAttemptId: null;
+        sourceResponses: {
+            url: string;
+            contentType: string;
+        }[];
+        limitations: string[];
+        discoveryGrant?: undefined;
+        discoveryCallIds?: undefined;
+        discoveryRequestDigest?: undefined;
+    }>>;
     /** Host-facing acquisition used by durable tasks; callback retains their original authorization fence. */
     pdf(actor: Actor, pid: string, value: {
         source: SourceId;

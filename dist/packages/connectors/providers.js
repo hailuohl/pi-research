@@ -48,7 +48,7 @@ function openAlexSearchUrl(q, perPage, source, cursor) { const url = new URL('ht
     filters.push(`to_publication_date:${q.publishedBefore}`); if (filters.length)
     url.searchParams.set('filter', filters.join(',')); if (cursor !== undefined)
     url.searchParams.set('cursor', cursor); return url; }
-function ncbiParams(url, c) { url.searchParams.set('db', 'pubmed'); url.searchParams.set('tool', 'PiResearch'); if (c.email)
+export function ncbiParams(url, c) { url.searchParams.set('db', 'pubmed'); url.searchParams.set('tool', 'PiResearch'); if (c.email)
     url.searchParams.set('email', c.email); if (c.ncbiKey)
     url.searchParams.set('api_key', c.ncbiKey); }
 export async function searchProvider(source, q, request, credentials) {
