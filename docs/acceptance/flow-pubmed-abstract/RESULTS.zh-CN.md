@@ -6,4 +6,6 @@
 
 剩余：PubMed/PMC 原文 PDF 的许可与来源链尚未接通；bioRxiv PDF 仍受来源限流，PR10 其他结构定位及 PR13 Slurm/外部主机范围继续按原计划推进。当前摘要页还显示一条通用“取得 PDF 字节”提示，虽有明确“仅摘要”标签，文案精确化记入后续待办。前端布局和 PR14 桌面/团队部分暂缓。精简身份与边界见[机器证据](evidence.json)，原始响应和日志留本机。
 
+交付分支：`implementation/pr01-reproducible-baseline`；记录提交：[0c3090e1b49bb6c9d45f70dca97d901c5730173c](https://github.com/hailuohl/pi-research/commit/0c3090e1b49bb6c9d45f70dca97d901c5730173c)。
+
 本批无产品代码改动，因此没有重复全量回归或干净构建；只进行一次真实 PubMed HTTP 获取和本批浏览器路径验收。独立 Astra 只读复核未发现阻断。
