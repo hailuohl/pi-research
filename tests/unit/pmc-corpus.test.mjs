@@ -23,7 +23,7 @@ test('PMC corpus is explicit, bound, offline, page-free, and retains history acr
   assert.equal(h.quote,pmcContent.slice(h.locator.start,h.locator.end));assert.equal(op(s,'text_evidence_search',x).id,r.id);
   assert.deepEqual(r.usage,{modelCalls:0,networkCalls:0});for(const kind of ['connector-call','model-usage','sandbox-job','run'])assert.equal(s.app.store.list(kind).length,0);
   const claim=s.app.evidence.proposeClaim(USER,s.project.id,'Synthetic only',[e.id]);s.app.evidence.decideClaim(USER,claim.id,claim.version,'accepted');
-  assert.throws(()=>s.app.reports.create(USER,s.project.id,{title:'unsupported',claimIds:[claim.id]}),{code:'REPORT_PROVIDER_TEXT_UNSUPPORTED'});
+  const reportArtifact=s.app.reports.create(USER,s.project.id,{title:'Fixed PMC evidence',claimIds:[claim.id]});const report=s.app.store.list('report',s.project.id).find(r=>r.artifactId===reportArtifact.id);assert.equal(report.references.find(r=>r.providerText).providerText.documentVersionId,d.id);
   s.app.textEvidence.configure(USER,s.project.id,{enabled:false,expectedVersion:c.version});assert.throws(()=>op(s,'text_evidence_search',x),{code:'TEXT_EVIDENCE_DISABLED'});assert.equal(op(s,'evidence_read',{evidenceId:e.id}).id,e.id);
   reopened=new ResearchApp(s.dir,process.cwd());assert.equal(reopened.textEvidence.status(USER,s.project.id).enabled,false);assert.deepEqual(reopened.store.get('text-evidence-search',r.id),r);assert.deepEqual(reopened.evidence.verify(s.project.id,e.id,false),e);
  }finally{reopened?.close();globalThis.fetch=fetch;s.close();}

@@ -219,6 +219,40 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly required: ("textArtifactDigest" | "documentVersionId" | "parseResultId" | "rawDigest" | "pageNumber" | "start" | "end" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
+                        readonly providerText: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly documentVersionId: {
+                                    readonly type: "string";
+                                };
+                                readonly documentDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly rawDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly textArtifactDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly reportedVersion: {
+                                    readonly type: "string";
+                                };
+                                readonly start: {
+                                    readonly type: "integer";
+                                };
+                                readonly end: {
+                                    readonly type: "integer";
+                                };
+                                readonly rawArtifactId: {
+                                    readonly type: "string";
+                                };
+                                readonly textArtifactId: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly required: ("reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentVersionId" | "documentDigest" | "rawDigest" | "start" | "end" | "rawArtifactId")[];
+                            readonly additionalProperties: false;
+                        };
                     };
                     readonly required: ("id" | "label" | "type" | "targetId")[];
                     readonly additionalProperties: false;
@@ -541,6 +575,40 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             };
                         };
                         readonly required: ("textArtifactDigest" | "documentVersionId" | "parseResultId" | "rawDigest" | "pageNumber" | "start" | "end" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly providerText: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly documentVersionId: {
+                                readonly type: "string";
+                            };
+                            readonly documentDigest: {
+                                readonly type: "string";
+                            };
+                            readonly rawDigest: {
+                                readonly type: "string";
+                            };
+                            readonly textArtifactDigest: {
+                                readonly type: "string";
+                            };
+                            readonly reportedVersion: {
+                                readonly type: "string";
+                            };
+                            readonly start: {
+                                readonly type: "integer";
+                            };
+                            readonly end: {
+                                readonly type: "integer";
+                            };
+                            readonly rawArtifactId: {
+                                readonly type: "string";
+                            };
+                            readonly textArtifactId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentVersionId" | "documentDigest" | "rawDigest" | "start" | "end" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                 };

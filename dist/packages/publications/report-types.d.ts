@@ -1,8 +1,8 @@
 import type { ResearchPlanService } from '../research-workflows/plans.js';
 import type { PublicationReviewInspection, PublicationReviewSnapshot } from './reviews-types.js';
 import type { ManuscriptRevision, PublicationBuildResult, PublicationManifest } from './build-types.js';
-import type { Run, SourceSnapshot } from '../domain/types.js';
-import type { DocumentVersion, DocumentEvidenceLink } from '../documents/types.js';
+import type { Run, SourceSnapshot, Row } from '../domain/types.js';
+import type { DocumentVersion, DocumentEvidenceLink, ProviderTextEvidenceLink } from '../documents/types.js';
 import type { DocumentParseResult, DocumentParseManifest } from '../documents/parse-types.js';
 export interface ReportReference {
     id: string;
@@ -19,6 +19,12 @@ export interface ReportReference {
         pageLabel: string | null;
         rawArtifactId: string;
         imageArtifactId: string;
+    };
+    providerText?: ProviderTextEvidenceLink & {
+        start: number;
+        end: number;
+        rawArtifactId: string;
+        textArtifactId: string;
     };
 }
 export interface ReportRun {
@@ -81,6 +87,11 @@ export interface ReportInspection {
     runs: ReportRun[];
 }
 export interface ReportBindings {
+    providerTexts?: Array<{
+        documentVersionId: string;
+        documentDigest: string;
+        document: Row<DocumentVersion>;
+    }>;
     researchCampaigns?: Array<{
         campaignId: string;
         snapshot: ReturnType<ResearchPlanService['reportSnapshot']>;

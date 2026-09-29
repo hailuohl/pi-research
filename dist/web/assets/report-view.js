@@ -43,11 +43,16 @@ function provenanceSignature(data, reportId) {
 function sameReference(a, b) {
   const keys = ["id", "type", "targetId", "digest", "runId", "path", "relation"];
   const documentKeys = ["documentVersionId", "rawDigest", "parseResultId", "pageNumber", "textArtifactDigest", "start", "end", "pageLabel", "rawArtifactId", "imageArtifactId"];
-  return keys.every((key) => a[key] === b[key]) && (!a.document && !b.document || !!a.document && !!b.document && documentKeys.every((key) => a.document[key] === b.document[key]));
+  const providerTextKeys = ["documentVersionId", "documentDigest", "rawDigest", "textArtifactDigest", "reportedVersion", "start", "end", "rawArtifactId", "textArtifactId"];
+  return keys.every((key) => a[key] === b[key]) && (!a.document && !b.document || !!a.document && !!b.document && documentKeys.every((key) => a.document[key] === b.document[key])) && (!a.providerText && !b.providerText || !!a.providerText && !!b.providerText && providerTextKeys.every((key) => a.providerText[key] === b.providerText[key]));
 }
 function validDocument(ref) {
   const d = ref.document;
   return ref.type === "evidence" && d && ["documentVersionId", "rawDigest", "parseResultId", "textArtifactDigest", "rawArtifactId", "imageArtifactId"].every((key) => typeof d[key] === "string" && !!d[key]) && Number.isSafeInteger(d.pageNumber) && d.pageNumber > 0 && Number.isSafeInteger(d.start) && d.start >= 0 && Number.isSafeInteger(d.end) && d.end > d.start;
+}
+function validProviderText(ref) {
+  const p = ref.providerText;
+  return ref.type === "evidence" && !ref.document && p && ["documentVersionId", "documentDigest", "rawDigest", "textArtifactDigest", "reportedVersion", "rawArtifactId", "textArtifactId"].every((key) => typeof p[key] === "string" && !!p[key]) && Number.isSafeInteger(p.start) && p.start >= 0 && Number.isSafeInteger(p.end) && p.end > p.start;
 }
 class ReportsView extends React.Component {
   constructor() {
@@ -135,7 +140,7 @@ class ReportsView extends React.Component {
     this.setState((previous) => ({ ...previous, reference, verifiedReference: null, reading: true, referenceError: "", ...!append ? { content: "", cursor: 0, complete: false } : {} }));
     try {
       const result = await this.call("report_reference_read", { reportId: report.id, referenceId, cursor, limit: 16e3 });
-      if (!sameReference(result.reference, reference) || reference.document && !validDocument(result.reference)) throw Error("\u8FD4\u56DE\u7684\u8BC1\u636E\u4E0D\u5C5E\u4E8E\u6240\u9009\u5F15\u7528\u3002");
+      if (!sameReference(result.reference, reference) || reference.document && !validDocument(result.reference) || reference.providerText && !validProviderText(result.reference)) throw Error("\u8FD4\u56DE\u7684\u8BC1\u636E\u4E0D\u5C5E\u4E8E\u6240\u9009\u5F15\u7528\u3002");
       if (this.mounted && epoch === this.referenceEpoch && reportEpoch === this.reportEpoch) this.setState({ verifiedReference: result.reference, content: (append ? this.state.content : "") + result.content, cursor: result.end, complete: result.complete });
     } catch (error) {
       if (this.mounted && epoch === this.referenceEpoch && reportEpoch === this.reportEpoch) this.setState({ referenceError: error instanceof Error ? error.message : String(error) });
@@ -150,6 +155,14 @@ class ReportsView extends React.Component {
   openDocument() {
     const d = this.documentReference();
     if (d) this.props.onDocument?.({ documentVersionId: d.documentVersionId, parseResultId: d.parseResultId, pageNumber: d.pageNumber, start: d.start, end: d.end });
+  }
+  providerTextReference() {
+    const s = this.state, ref = s.verifiedReference;
+    return this.mounted && !s.reading && !s.referenceError && !s.checking && !s.verificationError && s.report?.integrity === "verified" && ref && ref.id === s.reference?.id && s.report.references.some((r) => sameReference(r, ref)) && validProviderText(ref) ? ref.providerText : null;
+  }
+  openProviderText() {
+    const p = this.providerTextReference();
+    if (p) this.props.onDocument?.({ documentVersionId: p.documentVersionId });
   }
   async downloadDocument(kind) {
     const d = this.documentReference();
@@ -203,7 +216,7 @@ class ReportsView extends React.Component {
     this.props.onRun?.(runId, experimentId);
   }
   render() {
-    const { data, perform } = this.props, s = this.state, report = s.report, eligible = data.runs.filter((r) => ["succeeded", "failed", "cancelled"].includes(r.state)), claims = data.claims.filter((c) => c.status === "accepted" && c.validity !== "stale");
+    const { data, perform } = this.props, s = this.state, report = s.report, providerText = this.providerTextReference(), eligible = data.runs.filter((r) => ["succeeded", "failed", "cancelled"].includes(r.state)), claims = data.claims.filter((c) => c.status === "accepted" && c.validity !== "stale");
     const selectedRuns = data.runs.filter((r) => s.selected.includes(r.id)), mixed = new Set(selectedRuns.map((r) => r.manifest.contractDigest)).size > 1;
     const available = s.selectedCampaigns.every((id) => (data.campaigns ?? []).some((c) => c.id === id) && (data.experimentPlans ?? []).some((p) => p.campaignId === id)) && s.selected.every((id) => eligible.some((r) => r.id === id)) && s.selectedClaims.every((id) => claims.some((c) => c.id === id));
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
@@ -496,6 +509,19 @@ class ReportsView extends React.Component {
               ] }) : null,
               /* @__PURE__ */ jsx("pre", { className: "document-preview", children: s.content || (s.reading ? "\u8BFB\u53D6\u56FA\u5B9A\u5185\u5BB9\u2026" : "\uFF08\u7A7A\u5185\u5BB9\uFF09") }),
               /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: s.reading || s.complete, onClick: () => void this.readReference(s.reference.id, true), children: s.reading ? "\u8BFB\u53D6\u4E2D\u2026" : s.complete ? "\u5DF2\u5B8C\u6574\u8BFB\u53D6" : "\u8BFB\u53D6\u540E\u7EED\u5185\u5BB9" })
+            ] }) : null,
+            providerText ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+              /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+                "\u56FA\u5B9A PMC OA \u5168\u6587 ",
+                providerText.reportedVersion,
+                " \xB7 \u65E0 PDF \u9875\u7801 \xB7 UTF-16 [",
+                providerText.start,
+                ", ",
+                providerText.end,
+                ")"
+              ] }),
+              /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !this.props.onDocument, onClick: () => this.openProviderText(), children: "\u56DE\u5230\u56FA\u5B9A PMC \u6587\u6863" }),
+              /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8BB8\u53EF\u4E0E XML/\u6587\u672C\u6458\u8981\u4FDD\u7559\u5728\u56FA\u5B9A\u5F15\u7528\u548C\u6587\u6863\u8BB0\u5F55\u4E2D\uFF1B\u672C\u5730\u6253\u5305\u4E0D\u6388\u4E88\u518D\u5206\u53D1\u8BB8\u53EF\u3002" })
             ] }) : null,
             /* @__PURE__ */ jsxs("details", { children: [
               /* @__PURE__ */ jsx("summary", { children: "\u539F\u59CB Markdown\uFF08\u7EAF\u6587\u672C\uFF09" }),

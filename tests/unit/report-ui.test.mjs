@@ -145,3 +145,20 @@ test('document and parse result changes reverify report provenance without reset
  }
  assert.equal(pending.length,3);
 });
+const pmcReference=()=>({...ref('pmc'),type:'evidence',providerText:{documentVersionId:'pmc-v1',documentDigest:'document-digest',rawDigest:'raw-digest',textArtifactDigest:'text-digest',reportedVersion:'PMC8270360.1',start:14,end:551,rawArtifactId:'raw-xml',textArtifactId:'derived-text'}});
+test('PMC report reference returns to the exact fixed document only after a matching read',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const v=view(),reference=pmcReference();v.state.report.references=[reference];let target;
+ v.props.onDocument=value=>{target=value;};
+ assert.equal(v.providerTextReference(),null);v.openProviderText();assert.equal(target,undefined);
+ const content='{"license":"CC BY 4.0","pageMapping":"unavailable"}';
+ globalThis.fetch=async()=>response({reference,content,mediaType:'application/json',cursor:0,end:content.length,complete:true});
+ await v.readReference(reference.id);assert.deepEqual(v.providerTextReference(),reference.providerText);
+ assert.ok(elements(v.render()).some(n=>n.type==='p'&&String(n.props.children).includes('固定 PMC OA 全文')));
+ const button=elements(v.render()).find(n=>n.type==='button'&&n.props.children==='回到固定 PMC 文档');assert.equal(button.props.disabled,false);button.props.onClick();
+ assert.deepEqual(target,{documentVersionId:'pmc-v1'});
+ for(const key of Object.keys(reference.providerText)){
+  target=undefined;const wrong=structuredClone(reference);wrong.providerText[key]=typeof wrong.providerText[key]==='number'?wrong.providerText[key]+1:'wrong';
+  globalThis.fetch=async()=>response({reference:wrong,content,mediaType:'application/json',cursor:0,end:content.length,complete:true});
+  await v.readReference(reference.id);assert.match(v.state.referenceError,/不属于/,key);assert.equal(v.providerTextReference(),null);v.openProviderText();assert.equal(target,undefined,key);
+ }
+});

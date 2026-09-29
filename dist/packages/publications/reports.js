@@ -7,7 +7,7 @@ import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/
 import { verifyRunRecord } from '../evidence/run-verifier.js';
 import { verifyDocumentLink } from '../evidence/document-link.js';
 import { checkDocumentVersion } from '../documents/parse-service.js';
-import { isPmcArtifact } from '../documents/pmc-text.js';
+import { isPmcArtifact, pmcOwner, verifyPmcText } from '../documents/pmc-text.js';
 import { DOCUMENT_PARSER_LEGACY_PROFILE } from '../documents/parse-types.js';
 import { assertAcceptanceCurrent } from '../evidence/acceptance.js';
 import { assertWorkingGrantJob } from '../policy/working-grants.js';
@@ -281,11 +281,24 @@ export class ReportService {
                 const prior = references.find(ref => ref.type === 'evidence' && ref.targetId === id);
                 if (prior)
                     return prior.id;
-                const e = this.c.store.get('evidence', id, pid);
-                ensure(!e.providerText && !isPmcArtifact(this.c.store, pid, e.artifactId), 'REPORT_PROVIDER_TEXT_UNSUPPORTED', '报告尚不支持固定 PMC XML 与派生文本证据绑定，请在工作台回查原文');
+                const e = this.c.store.get('evidence', id, pid), pmc = isPmcArtifact(this.c.store, pid, e.artifactId);
+                ensure(e.providerText ? pmc && !e.document : !pmc, 'REPORT_PROVIDER_TEXT_UNSUPPORTED', 'PMC 证据需要完整的固定 XML 与派生文本绑定');
                 if (!e.document)
                     this.evidence.verify(pid, id);
                 ensure(artifact(e.artifactId, e.runId), 'REPORT_UNSAFE_REFERENCE', '证据指向不适合交付的凭据或宿主诊断文件');
+                let providerText;
+                if (e.providerText) {
+                    pmcOwner(actor);
+                    const { document: d, link, content } = verifyPmcText(this.c, pid, e.providerText.documentVersionId, e.providerText, e.artifactId);
+                    integer(e.locator.start, 'start', 0, content.length);
+                    integer(e.locator.end, 'end', e.locator.start + 1, content.length);
+                    ensure(e.digest === link.textArtifactDigest && content.slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '报告 PMC 引用区间或内容已失效');
+                    ensure(artifact(d.original.artifactId), 'REPORT_UNSAFE_REFERENCE', 'PMC 原件不适合交付');
+                    const fixed = clean({ documentVersionId: d.id, documentDigest: link.documentDigest, document: d });
+                    if (!(bindings.providerTexts ??= []).some(b => b.documentVersionId === d.id))
+                        bindings.providerTexts.push(fixed);
+                    providerText = { ...link, ...e.locator, rawArtifactId: d.original.artifactId, textArtifactId: d.derivedText.artifactId };
+                }
                 let document, provenance;
                 if (e.document) {
                     const { document: d, result: r, page, job } = this.document(pid, e, checkedDocuments);
@@ -305,7 +318,7 @@ export class ReportService {
                     document = { ...e.document, ...e.locator, pageLabel: page.pageLabel, rawArtifactId: d.original.artifactId, imageArtifactId: page.imageArtifactId };
                     provenance = [clean({ ...binding, result: { ...binding.result, pages: [page] } })];
                 }
-                return add({ type: 'evidence', targetId: id, label: e.description, digest: e.digest, ...(e.runId ? { runId: e.runId } : {}), ...(document ? { document } : {}) }, { evidenceId: e.id, artifactId: e.artifactId, digest: e.digest, locator: e.locator, quote: e.quote, description: e.description, type: e.type, runId: e.runId, ...(document ? { document, provenance, locatorUnit: 'UTF-16 code units', licenseNotice: 'License statements are retained as supplied; local export does not grant redistribution permission.' } : {}) });
+                return add({ type: 'evidence', targetId: id, label: e.description, digest: e.digest, ...(e.runId ? { runId: e.runId } : {}), ...(document ? { document } : {}), ...(providerText ? { providerText } : {}) }, { evidenceId: e.id, artifactId: e.artifactId, digest: e.digest, locator: e.locator, quote: e.quote, description: e.description, type: e.type, runId: e.runId, ...(document ? { document, provenance, locatorUnit: 'UTF-16 code units', licenseNotice: 'License statements are retained as supplied; local export does not grant redistribution permission.' } : {}), ...(providerText ? { providerText, provenance: bindings.providerTexts.filter(b => b.documentVersionId === providerText.documentVersionId), pageMapping: 'unavailable', locatorUnit: 'UTF-16 code units', licenseNotice: 'License statements are retained as supplied; local export does not grant redistribution permission.' } : {}) });
             };
             for (const snapshot of research) {
                 const referenceId = add({ type: 'research-comparison', targetId: snapshot.campaignId, label: `固定研究比较 ${snapshot.campaignId}`, digest: digest(snapshot) }, snapshot);
@@ -505,6 +518,26 @@ export class ReportService {
                 fail(error);
             }
         const checkedDocuments = new Set();
+        for (const b of bound.bindings.providerTexts ?? [])
+            try {
+                const { document: d } = verifyPmcText(this.c, pid, b.documentVersionId);
+                ensure(digest(d) === b.documentDigest && digest(b.document) === b.documentDigest, 'REPORT_DOCUMENT_CHANGED', '报告固定 PMC 文档已改变');
+            }
+            catch (error) {
+                fail(error, true);
+            }
+        for (const ref of bound.references.filter(ref => ref.providerText))
+            try {
+                const e = this.c.store.get('evidence', ref.targetId, pid), p = ref.providerText, frozen = JSON.parse(bound.bindings.objects.find(o => o.referenceId === ref.id).content);
+                ensure(e.providerText && !e.document && isPmcArtifact(this.c.store, pid, e.artifactId) && digest({ ...e.providerText, ...e.locator, rawArtifactId: p.rawArtifactId, textArtifactId: p.textArtifactId }) === digest(p) && digest(frozen.providerText) === digest(p) && e.artifactId === p.textArtifactId && e.artifactId === frozen.artifactId && e.digest === frozen.digest && e.quote === frozen.quote && digest(e.locator) === digest(frozen.locator) && e.description === frozen.description && e.type === frozen.type && e.runId === frozen.runId, 'REPORT_DOCUMENT_CHANGED', '报告 PMC 证据已改变');
+                const { document: d, content, link } = verifyPmcText(this.c, pid, p.documentVersionId, e.providerText, e.artifactId);
+                integer(e.locator.start, 'start', 0, content.length);
+                integer(e.locator.end, 'end', e.locator.start + 1, content.length);
+                ensure(e.digest === link.textArtifactDigest && content.slice(e.locator.start, e.locator.end) === e.quote && p.rawArtifactId === d.original.artifactId && bound.bindings.providerTexts?.some(b => b.documentVersionId === d.id && b.documentDigest === link.documentDigest), 'REPORT_DOCUMENT_CHANGED', '报告 PMC 原件或引文绑定已改变');
+            }
+            catch (error) {
+                fail(error, true);
+            }
         for (const ref of bound.references.filter(ref => ref.document))
             try {
                 const e = this.c.store.get('evidence', ref.targetId, pid), frozen = JSON.parse(bound.bindings.objects.find(o => o.referenceId === ref.id).content);
