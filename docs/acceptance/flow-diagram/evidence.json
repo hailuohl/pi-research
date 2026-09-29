@@ -1,0 +1,94 @@
+{
+  "capturedAt": "2026-09-29T17:02:58.729Z",
+  "scope": "one isolated diagram flow; schematic, not a scientific result",
+  "projectId": "77cd50cc-dcfc-4543-8e71-115733fe6fa8",
+  "session": {
+    "id": "297d54c6-9cbc-45b7-81e8-7eedb661b36b",
+    "state": "idle",
+    "generation": 1,
+    "model": {
+      "provider": "zai-coding-cn",
+      "model": "glm-5.3",
+      "thinking": "off"
+    },
+    "skillBundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+    "nativeDigest": "d1104575eeed5895b34a32a8c7cc9e05f4f9d783a8a079807d3f215967ca1fed",
+    "skillReads": [
+      {
+        "id": "pi-research-figures",
+        "resource": "SKILL.md"
+      },
+      {
+        "id": "pi-research-figures",
+        "resource": "references/diagram.md"
+      },
+      {
+        "id": "pi-research-figures",
+        "resource": null
+      }
+    ],
+    "workspaceWritePaths": [
+      "diagram.py"
+    ],
+    "modelUsageRows": 4
+  },
+  "boundary": {
+    "unapprovedSubmitCode": "APPROVAL_REQUIRED",
+    "jobsBeforeApproval": 0,
+    "jobsAfterApproval": 1,
+    "formalRuns": 0,
+    "outOfBoundsArtifactCode": "PATH_DENIED",
+    "noNewTaskApprovalOrJob": true
+  },
+  "job": {
+    "id": "d6a32330-4e2b-4c15-839d-532a5197cb81",
+    "state": "succeeded",
+    "integrity": "complete",
+    "exitCode": 0,
+    "containerId": "9f52d5edffd46f5682897187f41fd05dccb264479c042c94d567fe4fb65d5760",
+    "sourceDigest": "49c122be063faf8ca5e594c1a96a904bb7c74f54a286a9fabbb5403cbd4d4100",
+    "manifestDigest": "66c1ad5b19101ff3fe8c969788e15ed3157eab3afd698faee3868a9168036159",
+    "approvalId": "cee79b96-dcbc-4a62-8133-a3090d124f38",
+    "networkPolicy": "none",
+    "command": [
+      "python",
+      "-u",
+      "diagram.py"
+    ],
+    "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f"
+  },
+  "outputs": [
+    {
+      "id": "56610dff-1cc7-47df-8119-f1133669b124",
+      "title": "output/flow-diagram.svg",
+      "digest": "9b8f20fcaa80285c451445c13903752891d228b93b9217a925811f636cb609a6",
+      "size": 2460
+    },
+    {
+      "id": "d3da3d40-f2bd-4521-8ac0-23fae856cee5",
+      "title": "output/diagram-check.json",
+      "digest": "4e9cfacc404cca4c5a102d859b88874131052bc9e7e7548112a44385c92b1baf",
+      "size": 776
+    }
+  ],
+  "diagram": {
+    "canvas": {
+      "height": 420,
+      "width": 960
+    },
+    "nodeCount": 5,
+    "edgeCount": 4,
+    "sha256": "9b8f20fcaa80285c451445c13903752891d228b93b9217a925811f636cb609a6",
+    "staticSvgChecked": true,
+    "xmlParsed": true,
+    "scientificResult": false
+  },
+  "browser": {
+    "projectAndSessionVisible": true,
+    "jobSucceededAndCompleteVisible": true,
+    "fixedSvgListedAfterRefreshAndServiceReopen": true,
+    "svgDownloadActionInvoked": true,
+    "inlinePreview": "escaped text",
+    "renderedAppearanceVerified": false
+  }
+}
