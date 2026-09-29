@@ -1,5 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
 import type { Row } from '../domain/types.js';
+import { TextWriteRecovery } from '../workspace/text-write-recovery.js';
 export declare function stable(value: unknown): string;
 export declare const digest: (value: unknown) => string;
 export declare const now: () => string;
@@ -28,6 +29,7 @@ export declare class Store {
     private reading;
     private rollbackCallbacks;
     private commitCallbacks;
+    textWrites?: TextWriteRecovery;
     constructor(path: string);
     private migratePublicationQueue;
     private migrateDocumentQueue;

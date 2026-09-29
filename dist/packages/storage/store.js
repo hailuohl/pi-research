@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { DomainError, ensure } from '../domain/errors.js';
+import { TextWriteRecovery } from '../workspace/text-write-recovery.js';
 export function stable(value) {
     if (Array.isArray(value))
         return '[' + value.map(stable).join(',') + ']';
@@ -27,6 +28,7 @@ export class Store {
     reading = false;
     rollbackCallbacks = [];
     commitCallbacks = [];
+    textWrites;
     constructor(path) {
         this.path = path;
         mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
@@ -52,6 +54,8 @@ INSERT INTO schema_migrations VALUES(4,datetime('now'));`);
         this.migratePublicationQueue();
         this.transaction(() => { if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=7').get())
             return; this.db.exec("CREATE INDEX records_session_catalog ON records(kind,project_id,json_extract(data,'$.role')) WHERE kind='session'; INSERT INTO schema_migrations VALUES(7,datetime('now'));"); });
+        this.transaction(() => { this.textWrites = new TextWriteRecovery(this.db, path); this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(8,datetime('now'));"); });
+        this.transaction(() => { });
     }
     migratePublicationQueue() {
         this.transaction(() => {
@@ -164,6 +168,7 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
         this.depth++;
         let committed = false;
         try {
+            this.textWrites?.recover();
             const result = fn();
             ensure(!(result instanceof Promise), 'ASYNC_TRANSACTION', '事务回调必须同步', 500);
             this.db.exec('COMMIT');
@@ -187,6 +192,7 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
             throw e;
         }
         finally {
+            this.textWrites?.release();
             this.depth--;
             const afterCommit = this.commitCallbacks;
             this.rollbackCallbacks = [];

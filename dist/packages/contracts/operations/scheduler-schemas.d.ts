@@ -976,7 +976,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sessionId" | "model" | "id" | "state" | "provider" | "queuedAt")[];
+                    readonly required: ("id" | "sessionId" | "model" | "state" | "provider" | "queuedAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1083,7 +1083,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sessionId" | "model" | "id" | "state" | "provider" | "queuedAt")[];
+                    readonly required: ("id" | "sessionId" | "model" | "state" | "provider" | "queuedAt")[];
                     readonly additionalProperties: false;
                 };
             };

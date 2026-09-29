@@ -1,0 +1,171 @@
+{
+  "batch": "flow-text-write-recovery",
+  "recordedAt": "2026-09-29T04:42:12.192Z",
+  "baseCommit": "a4d4bae2933b34e6a8a6a89d7123e5ff67f6ba5d",
+  "scope": "Existing Store-backed controlled text writes only; schema 8",
+  "sourceSha256": {
+    "packages/storage/store.ts": "82615cb275d0b51604fa54bfd687aa17176b279e075c21849626290f13acdff8",
+    "packages/workspace/files.ts": "5a73fba673492a5574c7d428e15747a3ea0a3e82f452898a88726e56844878c1",
+    "packages/workspace/text-write-recovery.ts": "292d6852d8a55d1b34a4dd43201c126da1531ca160d96f1271c1148808e7252f",
+    "tests/integration/text-write-recovery.test.mjs": "33748706e1b1f1384b4be5de86804a58156050f91f9e56059e83e5c15fc97666"
+  },
+  "runtime": {
+    "timestamp": "2026-09-29T04:38:55.815Z",
+    "fixture": "real Windows child termination and owner CLI; no model, Docker or browser run",
+    "dataDir": "text-write-recovery-flow/data-FP4nj4",
+    "results": [
+      {
+        "name": "owner CLI write, exact replay, changed-input refusal",
+        "passed": true,
+        "digest": "e5cd444a39c2c2cc64968aa6cab54565761bffb727e5c6ea12439113c21f4d1f"
+      },
+      {
+        "phase": "uncommitted",
+        "termination": {
+          "pid": 172756,
+          "code": null,
+          "signal": "SIGKILL",
+          "terminatedAfterBoundary": true
+        },
+        "recoveredDigest": "241fa1bcb009cc0d12db9d51b8bce6b0ad59cc424abb15dd60bbab7f0803ad5f",
+        "frozenSnapshotDigest": "eb00ce68a43e27ce8b0c3b1d60744795b30fd90ea70082ad1df51d9a4dfe3865",
+        "approvalUnchanged": true
+      },
+      {
+        "phase": "committed",
+        "termination": {
+          "pid": 115152,
+          "code": null,
+          "signal": "SIGKILL",
+          "terminatedAfterBoundary": true
+        },
+        "recoveredDigest": "5b40ad12b3e4b2ca24a5b2ba0634960cfc330a5693a443d6f9b69d411d1cb7f8",
+        "frozenSnapshotDigest": "eb00ce68a43e27ce8b0c3b1d60744795b30fd90ea70082ad1df51d9a4dfe3865",
+        "approvalUnchanged": true
+      },
+      {
+        "phase": "external-conflict",
+        "termination": {
+          "pid": 206352,
+          "code": null,
+          "signal": "SIGKILL",
+          "terminatedAfterBoundary": true
+        },
+        "refusal": "TEXT_WRITE_RECOVERY_CONFLICT",
+        "externalBytesPreserved": true,
+        "historyAndUnrelatedWorkspaceReadable": true,
+        "ownerRestoredOriginalThenRecoverySucceeded": true
+      }
+    ],
+    "repeatOpenRecordsUnchanged": true,
+    "historicalFixtureRecords": 2,
+    "existingHistoryMigration": {
+      "rows": 709,
+      "unchanged": true,
+      "schema": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "existingLiveServiceRestarted": false,
+    "evidenceLocation": ".validation/text-write-recovery-flow/latest.json",
+    "initialPassedBeforeReviewFix": true,
+    "rerunReason": "Independent review fixed preimage binding for file bytes and Windows mode metadata"
+  },
+  "validation": {
+    "fullRegression": {
+      "tests": 755,
+      "pass": 733,
+      "fail": 0,
+      "skip": 22,
+      "stage": "Integrated build before review fix"
+    },
+    "finalRelated": {
+      "tests": 14,
+      "pass": 13,
+      "fail": 0,
+      "skip": 1,
+      "covers": "Hard exits, repeated-path undo, external identity/mode edits, deterministic preimage races, project/private writes, source selection, WorkingGrant"
+    },
+    "review": {
+      "independent": true,
+      "blockingFindings": 1,
+      "closed": 1,
+      "remainingBlockers": 0,
+      "focusedFixRechecked": true
+    },
+    "cleanBuild": {
+      "directory": ".validation/clean-build-7NyHOp",
+      "node": "24.19.0",
+      "platform": "win32",
+      "files": 441,
+      "identical": true,
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "manifestSha256": "02892e4196fc931663280b0ece5f6e9eed65a3659f281a4a03c2721451b52369",
+      "necessaryRepeatAfterReviewFix": true
+    },
+    "logs": [
+      {
+        "path": ".validation/text-write-recovery-flow/regression.log",
+        "sha256": "56f48499d8a8c0db4140c31c220ed2df6ff5fcec5cad31d533de79d8399b4e56"
+      },
+      {
+        "path": ".validation/text-write-recovery-flow/final-related.log",
+        "sha256": "f75f354da6dbe1bb5b10d24bb78e4175bd6e9f50513d979d8ca7e1d8f549388e"
+      },
+      {
+        "path": ".validation/text-write-recovery-flow/final-acceptance.log",
+        "sha256": "caf74264fa28e638c5983aa5950dba77cc5c764c0b443bd3c4f670a37477a1e4"
+      },
+      {
+        "path": ".validation/text-write-recovery-flow/final-clean-build.log",
+        "sha256": "94a33e0718f543c367054d8fe00a4a12cd8544028aefbfc739f1dd1d59946e78"
+      }
+    ]
+  },
+  "preservation": {
+    "oldDatabaseOpenedReadOnly": true,
+    "migrationOnIndependentBackup": true,
+    "existingBusinessRecordsUnchanged": 709,
+    "existingServiceModelAndJobsNotRestarted": true,
+    "deferredLayoutFiles": {
+      "apps/web/public/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+      "apps/web/src/workbench.tsx": "17716da060efe644fcf4ba8eecfc20df6b2edad45d69b14086b94190de8a724d",
+      "dist/web/assets/main.js": "507961c8f579c820f932511487eeeedce374f049648b05dd3352a8957625f527",
+      "dist/web/assets/workbench.js": "3a2c42193bd4b7bdcb562f8096c2e034324a38798d75828371159a0a1bdc5b37",
+      "dist/web/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2"
+    },
+    "deferredLayoutBuildFilesExcludedFromCommit": [
+      "dist/web/assets/main.js",
+      "dist/web/assets/workbench.js",
+      "dist/web/styles.css"
+    ]
+  },
+  "limits": [
+    "Text writes with Store only; directory replacement and other filesystem transactions remain pending",
+    "Same-filesystem hard-link support required; tested on this Windows workspace",
+    "Process termination verified; power-loss durability not claimed",
+    "Existing controller process not hot-updated; avoid mixing old controllers when using recovery",
+    "No new Pi, Docker or browser path needed for this backend-only batch",
+    "Complete PR01–14 goal remains active"
+  ]
+}

@@ -4,6 +4,7 @@ import { isAbsolute, join, relative, resolve, dirname, basename, sep } from 'nod
 import { digest, stable } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { readStableFile } from './stable-file.js';
+import { assertTextWriteSettled, captureWritePreimage } from './text-write-recovery.js';
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024;
 const EXCLUDED = new Set(['.git', 'node_modules', '.pi', '.env', '.DS_Store', '.pi-research', '.pi-runtime', '.npmrc', '.pypirc']);
 const excluded = (name) => EXCLUDED.has(name) || name.startsWith('.env.');
@@ -17,6 +18,7 @@ function assertNotSymlink(path) {
     }
 }
 export function safePath(root, path, allowRoot = false) {
+    assertTextWriteSettled(root);
     ensure(typeof path === 'string' && !path.includes('\0') && !path.includes('\\') && !isAbsolute(path) && !path.split('/').some(p => p === '..' || p === '.' || excluded(p)) && (allowRoot || path.length > 0), 'PATH_DENIED', '路径不在授权工作区内', 403);
     const base = resolve(root), target = resolve(base, path);
     ensure(target === base || target.startsWith(base + sep), 'PATH_DENIED', '路径越界', 403);
@@ -34,12 +36,13 @@ function modeKey(root, path) {
     ensure(relative(resolve(root), safePath(root, path)).split(sep).join('/') === path && !(process.platform === 'win32' && path.split('/').some(p => p.includes(':') || /[. ]$/.test(p))), 'PATH_DENIED', '模式路径必须是规范相对路径', 403);
     return process.platform === 'win32' ? path.toLowerCase() : path;
 }
-function readModes(root) {
+function readModes(root, captured) {
     const file = modesPath(root);
     assertNotSymlink(file);
-    if (!existsSync(file))
+    if (captured === null || (captured === undefined && !existsSync(file)))
         return new Map();
-    const value = JSON.parse(readStableFile(dirname(file), basename(file), 8 * 1024 * 1024).toString('utf8'));
+    ensure(captured === undefined || captured.length <= 8 * 1024 * 1024, 'SOURCE_MODES_INVALID', '源码模式元数据过大');
+    const value = JSON.parse((captured ?? readStableFile(dirname(file), basename(file), 8 * 1024 * 1024)).toString('utf8'));
     ensure(value !== null && typeof value === 'object' && !Array.isArray(value), 'SOURCE_MODES_INVALID', '源码模式元数据无效');
     const entries = Object.entries(value);
     ensure(entries.length <= 5000, 'SOURCE_MODES_INVALID', '源码模式元数据过多');
@@ -103,11 +106,28 @@ export function writeText(root, path, content, expectedDigest, store) {
         const file = safePath(root, path), bytes = Buffer.from(content);
         modeKey(root, path);
         ensure(bytes.length <= MAX_TEXT_BYTES, 'FILE_TOO_LARGE', '文件过大', 413);
-        const before = existsSync(file) ? readFileSync(file) : null;
-        const beforePermissions = before === null ? 0o600 : lstatSync(file).mode & 0o777;
-        const beforeMode = before === null ? '100644' : readSourceMode(root, path);
+        const preimage = captureWritePreimage(root, path), before = preimage.bytes, beforePermissions = preimage.mode;
+        const modePreimage = process.platform === 'win32' ? captureWritePreimage(root, '', true) : undefined;
+        const modes = modePreimage ? readModes(root, modePreimage.bytes) : undefined;
+        const beforeMode = before === null ? '100644' : modes ? (modes.get(modeKey(root, path)) ?? '100644') : (beforePermissions & 0o111 ? '100755' : '100644');
         ensure((before === null ? null : digest(before)) === expectedDigest, 'FILE_VERSION_CONFLICT', '文件已被其他操作修改，请刷新并比较差异');
         mkdirSync(dirname(file), { recursive: true, mode: 0o700 });
+        if (store?.textWrites) {
+            const recovery = store.textWrites;
+            store.onRollback(() => recovery.rollback());
+            store.afterCommit(() => store.transaction(() => { }));
+            recovery.write(root, path, bytes, beforePermissions, false, preimage);
+            if (modes && modePreimage) {
+                const key = modeKey(root, path);
+                if (beforeMode === '100755')
+                    modes.set(key, beforeMode);
+                else
+                    modes.delete(key);
+                const value = Buffer.from(JSON.stringify(Object.fromEntries([...modes].sort(([a], [b]) => a.localeCompare(b)))));
+                recovery.write(root, '', value, 0o600, true, modePreimage);
+            }
+            return { path, digest: digest(bytes), size: bytes.length };
+        }
         const temporary = file + '.tmp-' + randomUUID();
         try {
             writeFileSync(temporary, bytes, { mode: 0o600, flag: 'wx' });
