@@ -7,6 +7,7 @@ import { REPORT_OUTPUT_SCHEMAS } from './report-schemas.js';
 import { SCHEDULER_OUTPUT_SCHEMAS } from './scheduler-schemas.js';
 import { REVIEW_OUTPUT_SCHEMAS } from './review-schemas.js';
 import { DEVELOPMENT_OUTPUT_SCHEMAS } from './development-schemas.js';
+import { WORKING_GRANT_OUTPUT_SCHEMAS, WORKING_GRANT_REFERENCE_SCHEMA } from './working-grant-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
 const string = { type: 'string' };
 const number = { type: 'number' };
@@ -117,7 +118,7 @@ export const OUTPUT_SCHEMAS = {
     ...RESEARCH_PLAN_OUTPUT_SCHEMAS,
     ...SKILL_OUTPUT_SCHEMAS,
     ...PUBLICATION_OUTPUT_SCHEMAS,
-    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS, ...SCHEDULER_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS, ...SCHEDULER_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS, ...DOCUMENT_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,
@@ -133,7 +134,7 @@ export const OUTPUT_SCHEMAS = {
     run_logs: object({ content: string, cursor: integer, complete: boolean, start: integer, size: integer, identity: nullableString }),
     run_source_list: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, files: array(sourceFile) }, ['gitCommit']),
     run_source_read: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, path: string, size: integer, digest: string, mode: enumeration('100644', '100755'), cursor: integer, end: integer, complete: boolean, content: string }, ['gitCommit', 'mode']),
-    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string }, ['decidedAt'])),
+    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string, workingGrant: WORKING_GRANT_REFERENCE_SCHEMA }, ['decidedAt', 'workingGrant'])),
     experiment_plan_submit: row('experiment', { title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId']),
     collaboration_plan_submit: team,
     agent_delegate: team,

@@ -1,3 +1,5 @@
+import type {WorkingGrantDTO} from '../../../dist/packages/policy/working-grant-types.js';
+export type {WorkingGrantDTO} from '../../../dist/packages/policy/working-grant-types.js';
 import type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision,ExperimentPlanRevision,ResearchCandidate } from '../../../dist/packages/research-workflows/types.js';
 export type {ManuscriptRevision,PublicationBuildResult,PublicationEngine,BibliographyMode} from '../../../dist/packages/publications/build-types.js';
 import type {MANUSCRIPT_TEMPLATES} from '../../../dist/packages/publications/templates.js';
@@ -25,6 +27,8 @@ export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignD
 import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig } from '../../../dist/packages/domain/types.js';
 export type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig };
 export interface DevelopmentManifestDTO {
+    workingGrant?:{id:string;digest:string;approvalId:string};
+    dataArtifacts?:Array<{id:string;digest:string;size:number;sourceAcceptanceId?:string}>;
     command:string[]; environmentImageDigest:string; dockerContext:string; deadline:string;
     resources:Record<string,number>; expectedArtifacts:string[]; sourceRevisionId?:string;
 }
@@ -45,6 +49,7 @@ export interface DevelopmentReviewDTO {
 export type {ReportReference,ReportInspection} from '../../../dist/packages/publications/report-types.js';
 export interface ReportRecord {id:string;artifactId:string;runIds:string[];claimIds:string[];evidenceIds?:string[];publicationResultIds?:string[];}
 export interface ProjectState {
+    workingGrants?:WorkingGrantDTO[];
     experimentPlans?:Row<ExperimentPlanRevision>[];
     researchCandidates?:Row<ResearchCandidate>[];
     literatureTasks?:LiteratureTaskDTO[];

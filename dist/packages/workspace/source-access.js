@@ -113,6 +113,7 @@ export class SourceAccessService {
     prepare(actor, projectId, sessionId, value) {
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, projectId);
+            this.app.workingGrants.assertSourcePreparation(actor, projectId, sessionId);
             const s = this.app.store.get('session', sessionId, projectId);
             ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
             if (actor.type === 'agent')

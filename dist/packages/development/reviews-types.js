@@ -5,11 +5,13 @@ import { assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { verifySnapshot } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { assertAcceptanceCurrent } from '../evidence/acceptance.js';
+import { assertWorkingGrantJob } from '../policy/working-grant-validation.js';
 export function reviewPayload(r) { const { jobId, sourceDigest, producerSessionId, baseSourceRevisionId, teamId, taskId, approvalId, manifestEvidenceId, testEvidenceIds, requiredEvidenceIds } = r; return { jobId, sourceDigest, producerSessionId, ...(baseSourceRevisionId ? { baseSourceRevisionId } : {}), teamId, taskId, approvalId, manifestEvidenceId, testEvidenceIds, requiredEvidenceIds }; }
 /** Shared by dispatch and acceptance: historical records cannot silently acquire a new test target. */
 export function assertDevelopmentReviewTarget(store, pid, r) {
     ensure(digest(reviewPayload(r)) === r.digest, 'DEVELOPMENT_REVIEW_CORRUPTED', '审查绑定摘要已改变');
     const job = store.get('sandbox-job', r.jobId, pid), s = store.get('session', r.producerSessionId, pid);
+    assertWorkingGrantJob(store, job, false);
     ensure(s.role === 'coordinator' && !s.taskId && job.sessionId === s.id && job.manifest.sessionId === s.id && !job.manifest.scopeTaskId && s.sourceRevisionId === r.baseSourceRevisionId && job.manifest.sourceRevisionId === r.baseSourceRevisionId, 'DEVELOPMENT_REVIEW_STALE', '审查生产者或源码来源已改变');
     ensure(job.state === 'succeeded' && job.integrity === 'complete' && job.exitCode === 0 && job.sourceDigest === r.sourceDigest && job.manifest.inputSnapshot.digest === r.sourceDigest && digest(job.manifest.inputSnapshot.files) === r.sourceDigest && digest(job.manifest) === job.manifestDigest, 'DEVELOPMENT_REVIEW_STALE', '审查测试不是当前成功且完整的固定源码结果');
     const grant = store.get('approval', job.grantId, pid);

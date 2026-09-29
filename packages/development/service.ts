@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {mkdirSync, readdirSync, chmodSync, rmdirSync, existsSync} from 'node:fs';
 import {join, dirname, basename} from 'node:path';
 import type {ResearchApp} from '../research-app.js';
-import type {Actor, Artifact, Row, Session, Task, TaskAttempt, Team, SourceRevision, Experiment} from '../domain/types.js';
+import type {Actor, Approval, Artifact, Row, Session, Task, TaskAttempt, Team, SourceRevision, Experiment} from '../domain/types.js';
 import type {DevelopmentTask, SandboxJob, SandboxManifest, SandboxResources, SandboxState} from '../execution/contracts.js';
 import {SANDBOX_TERMINAL} from '../execution/contracts.js';
 import {ensure} from '../domain/errors.js';
@@ -16,6 +16,7 @@ import {validateSourceRevision} from '../workspace/source-access.js';
 import {captureAcceptance,assertAcceptanceCurrent} from '../evidence/acceptance.js';
 import {assertWorkspaceReady} from '../workspace/git-service.js';
 import {readLogPage} from '../execution/log-page.js';
+import {assertWorkingGrantReference,assertWorkingGrantManifest,assertWorkingGrantJob} from '../policy/working-grant-validation.js';
 
 const MiB=1024*1024;
 const DEFAULTS: SandboxResources={cpus:1,memoryMb:256,pids:64,timeoutSeconds:60,workMb:128,outputBytes:32*MiB,logBytes:2*MiB};
@@ -66,19 +67,20 @@ export class DevelopmentService {
     prepare(actor:Actor,pid:string,sessionId:string,value:unknown) {
         return this.app.store.transaction(()=>{
             const s=this.access(actor,pid,sessionId,true),x=object(value);
+            const working=this.app.workingGrants.forPreparation(actor,pid,sessionId);
             ensure(Object.keys(x).every(k=>['title','command','environmentImageDigest','dockerContext','resources','deadline','expectedArtifacts','dataArtifactIds'].includes(k)),'INVALID_INPUT','开发测试参数包含未授权字段',400);
             ensure(Array.isArray(x.command)&&x.command.length>0&&x.command.length<=64,'INVALID_INPUT','需要 1–64 个 argv',400);
             const command=x.command.map((a,i)=>text(a,'command',1000,i>0));ensure(command.every(a=>!a.includes('\0')),'INVALID_INPUT','argv 不能含 NUL',400);
             const image=text(x.environmentImageDigest,'environmentImageDigest',300);ensure(/^[a-zA-Z0-9][a-zA-Z0-9._/:\-]*@sha256:[a-f0-9]{64}$/.test(image),'IMAGE_NOT_PINNED','镜像必须固定为 image@sha256:digest',400);
-            const dockerContext=text(x.dockerContext??'default','dockerContext',100);ensure(/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(dockerContext),'INVALID_INPUT','Docker context 无效',400);
+            const dockerContext=text(x.dockerContext??working?.dockerContext??'default','dockerContext',100);ensure(/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(dockerContext),'INVALID_INPUT','Docker context 无效',400);
             const raw=object(x.resources??{});ensure(Object.keys(raw).every(k=>k in DEFAULTS),'INVALID_INPUT','资源字段无效',400);
-            const resources={...DEFAULTS};for(const k of Object.keys(DEFAULTS) as Array<keyof SandboxResources>)resources[k]=integer(raw[k]??DEFAULTS[k],k,MINIMUMS[k],LIMITS[k]);
-            const deadline=text(x.deadline??new Date(Date.now()+30*60*1000).toISOString(),'deadline',50);
+            const resources={...DEFAULTS};for(const k of Object.keys(DEFAULTS) as Array<keyof SandboxResources>)resources[k]=integer(raw[k]??working?.resources[k]??DEFAULTS[k],k,MINIMUMS[k],LIMITS[k]);
+            const deadline=text(x.deadline??new Date(Math.min(Date.now()+30*60*1000,working?Date.parse(working.expiresAt):Infinity)).toISOString(),'deadline',50);
             ensure(Number.isFinite(Date.parse(deadline))&&Date.parse(deadline)>Date.now()&&Date.parse(deadline)<=Date.now()+24*60*60*1000,'INVALID_INPUT','deadline 必须在未来 24 小时内',400);
-            const expectedArtifacts=strings(x.expectedArtifacts??[],'expectedArtifacts',32);
+            const expectedArtifacts=strings(x.expectedArtifacts??working?.expectedArtifacts??[],'expectedArtifacts',32);
             for(const p of expectedArtifacts){safePath(s.workspace,p);ensure(p.split('/').every(Boolean),'PATH_DENIED','产物必须是规范相对路径',400);}
             ensure(new Set(expectedArtifacts).size===expectedArtifacts.length,'INVALID_INPUT','预期产物重复',400);
-            const ids=strings(x.dataArtifactIds??[],'dataArtifactIds',10);ensure(new Set(ids).size===ids.length,'INVALID_INPUT','数据产物重复',400);
+            const ids=strings(x.dataArtifactIds??working?.dataArtifacts.map(a=>a.id)??[],'dataArtifactIds',10);ensure(new Set(ids).size===ids.length,'INVALID_INPUT','数据产物重复',400);
             const dataArtifacts=ids.map(id=>this.data({...actor,taskId:s.taskId},pid,id));ensure(dataArtifacts.reduce((n,a)=>n+a.size,0)<=128*MiB,'ARTIFACT_TOO_LARGE','输入数据超过 128 MiB',413);
             if(s.sourceRevisionId)validateSourceRevision(this.app.context,pid,s.sourceRevisionId);
             const inputSnapshot=snapshotDirectory(s.workspace,join(this.app.context.dataDir,'snapshots'));
@@ -86,7 +88,9 @@ export class DevelopmentService {
                 ...(s.sourceRevisionId?{sourceRevisionId:s.sourceRevisionId}:{}),...(s.taskId?{scopeTaskId:s.taskId,scopeAttemptId:actor.attemptId,scopeGeneration:actor.generation}:{sessionGeneration:s.generation})};
             // A user may approve an assistant workspace, but cannot invent its attempt identity.
             if(s.taskId&&actor.type==='user') {const t=this.app.store.get<Task>('task',s.taskId,pid);const a=this.app.store.get<TaskAttempt>('task-attempt',text(t.attemptId,'attemptId',100),pid);ensure(a.sessionId===s.id&&a.state==='running'&&t.execution==='running','LEASE_EXPIRED','任务不在执行');manifest.scopeAttemptId=a.id;manifest.scopeGeneration=a.generation;}
+            if(working)manifest.workingGrant=this.app.workingGrants.authorizeManifest(working,manifest);
             const id=randomUUID(),manifestDigest=digest(manifest),approval=this.app.approvals.request(pid,'development-task',id,manifestDigest,'development.test','只批准本次固定源码、argv、镜像、数据与资源限制的开发测试');
+            if(working)this.app.store.update<Approval>('approval',approval.id,approval.version,{status:'approved',workingGrant:manifest.workingGrant,decidedAt:now(),reason:'由固定私有实现授权派生的单次测试批准；提交时原子计次，不批准正式Run'});
             this.app.store.create<DevelopmentTask>('development-task',pid,{title:text(x.title??'开发测试','title',200),sessionId:s.id,sourceDigest:inputSnapshot.digest,manifest,manifestDigest,grantId:approval.id,state:'prepared'},id);
             this.app.store.event(pid,'development.prepared',{developmentTaskId:id,sourceDigest:inputSnapshot.digest,grantId:approval.id});
             return this.get(actor,pid,id);
@@ -98,6 +102,9 @@ export class DevelopmentService {
         const id='developmentTaskId' in t?t.developmentTaskId:(t as Row<DevelopmentTask>).id;
         const approval=this.app.approvals.assert(t.grantId,pid,id,t.manifestDigest,'development.test');ensure(approval.subjectKind==='development-task','APPROVAL_STALE','审批类型不匹配');
         const m=t.manifest,s=this.app.store.get<Session>('session',t.sessionId,pid);
+        if(deadline&&s.workingGrantId)ensure(m.workingGrant?.id===s.workingGrantId,'WORKING_GRANT_REQUIRED','会话已绑定授权；旧单次清单不能绕过范围或计次，请重新准备');
+        if(m.workingGrant){const g=assertWorkingGrantReference(this.app.store,pid,m.workingGrant,deadline);ensure(digest(approval.workingGrant)===digest(m.workingGrant),'APPROVAL_STALE','单次派生批准依据不符');assertWorkingGrantManifest(g,m);if('developmentTaskId' in t)assertWorkingGrantJob(this.app.store,t as Row<SandboxJob>,deadline);}
+        else ensure(!approval.workingGrant,'WORKING_GRANT_STALE','测试清单丢失派生授权依据');
         ensure(m.sessionId===s.id&&s.taskId===m.scopeTaskId&&s.sourceRevisionId===m.sourceRevisionId,'DEVELOPMENT_SOURCE_STALE','会话来源绑定已改变');
         if(active){assertProjectWritable(this.app.store,pid);ensure(s.state!=='archived','SESSION_ARCHIVED','会话已归档');}
         if(deadline)ensure(Date.parse(m.deadline)>Date.now(),'DEVELOPMENT_EXPIRED','开发测试授权已过期');
@@ -120,7 +127,7 @@ export class DevelopmentService {
             if('sourceAcceptanceId' in a)assertAcceptanceCurrent(this.app.store,pid,text(a.sourceAcceptanceId,'sourceAcceptanceId',100));
         }
     }
-    assertCurrent(job:Row<SandboxJob>,verifyFiles=true) {this.current(job,job.projectId!,true,job.state==='queued'||job.state==='starting',verifyFiles);}
+    assertCurrent(job:Row<SandboxJob>,verifyFiles=true) {this.current(job,job.projectId!,true,(job.state==='queued'||job.state==='starting')&&!job.startRequested,verifyFiles);}
     submit(actor:Actor,pid:string,id:string) {
         return this.app.store.transaction(()=>{
             const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);
@@ -129,6 +136,7 @@ export class DevelopmentService {
             ensure(snapshotDirectory(s.workspace,join(this.app.context.dataDir,'snapshots'),{legacy:t.manifest.inputSnapshot.files.every(f=>f.mode===undefined)}).digest===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备并批准测试');
             this.app.compute.assertEnqueue('development',pid,t.manifest.dockerContext);
             const jobId=randomUUID(),root=join(this.app.context.dataDir,'sandbox-jobs',jobId),outputDir=join(root,'output'),controlDir=join(root,'control');
+            this.app.workingGrants.consume(pid,t,jobId);
             mkdirSync(outputDir,{recursive:true,mode:0o777});chmodSync(outputDir,0o777);mkdirSync(controlDir,{recursive:true,mode:0o700});
             this.app.store.onRollback(()=>{rmdirSync(controlDir);rmdirSync(outputDir);rmdirSync(root);});
             this.app.store.create<SandboxJob>('sandbox-job',pid,{developmentTaskId:t.id,sessionId:t.sessionId,sourceDigest:t.sourceDigest,manifest:t.manifest,manifestDigest:t.manifestDigest,grantId:t.grantId,state:'queued',integrity:'pending',containerName:`pi-development-${jobId}`,outputDir,controlDir,generation:0,leaseUntil:0,startRequested:false,cancelRequested:false,artifactIds:[],recoveryCount:0},jobId);

@@ -28,7 +28,7 @@ export declare class GitService {
         sourceDigest?: undefined;
     } | {
         sessionId: string;
-        state: "failed" | "pending" | "ready" | "conflict";
+        state: "failed" | "pending" | "conflict" | "ready";
         sourceRevisionId: string;
         branch: string;
         head: string | undefined;
@@ -39,7 +39,7 @@ export declare class GitService {
     };
     operation(actor: Actor, pid: string, id: string): {
         operationId: string;
-        action: "source" | "checkout" | "commit";
+        action: "source" | "commit" | "checkout";
         state: "failed" | "queued" | "running" | "complete" | "conflict";
         sourceRevisionId: string;
         sessionId: string | undefined;
@@ -53,7 +53,7 @@ export declare class GitService {
         sourceDigest: string;
         files: {
             path: string;
-            status: "added" | "modified" | "deleted";
+            status: "added" | "deleted" | "modified";
             beforeDigest: string | null;
             afterDigest: string | null;
             beforeMode: "100644" | "100755" | null;
@@ -62,7 +62,7 @@ export declare class GitService {
     };
     commit(actor: Actor, pid: string, sessionId: string, value: unknown): {
         operationId: string;
-        action: "source" | "checkout" | "commit";
+        action: "source" | "commit" | "checkout";
         state: "failed" | "queued" | "running" | "complete" | "conflict";
         sourceRevisionId: string;
         sessionId: string | undefined;
@@ -85,7 +85,7 @@ export declare class GitService {
     processNext(projectId?: string): Promise<boolean>;
     retry(actor: Actor, pid: string, id: string): {
         operationId: string;
-        action: "source" | "checkout" | "commit";
+        action: "source" | "commit" | "checkout";
         state: "failed" | "queued" | "running" | "complete" | "conflict";
         sourceRevisionId: string;
         sessionId: string | undefined;

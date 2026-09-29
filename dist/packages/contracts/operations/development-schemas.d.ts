@@ -340,6 +340,34 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         readonly minLength: number;
                         readonly maxLength: number;
                     };
+                    readonly workingGrant: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly digest: {
+                                minLength: number;
+                                pattern: string;
+                                type: "string";
+                                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                maxLength: number;
+                            };
+                            readonly approvalId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                        };
+                        readonly required: readonly ["id", "digest", "approvalId"];
+                        readonly additionalProperties: false;
+                    };
                     readonly command: {
                         readonly maxItems?: number | undefined;
                         readonly type: "array";
@@ -641,6 +669,34 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                         readonly minLength: number;
                         readonly maxLength: number;
+                    };
+                    readonly workingGrant: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly digest: {
+                                minLength: number;
+                                pattern: string;
+                                type: "string";
+                                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                maxLength: number;
+                            };
+                            readonly approvalId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                        };
+                        readonly required: readonly ["id", "digest", "approvalId"];
+                        readonly additionalProperties: false;
                     };
                     readonly command: {
                         readonly maxItems?: number | undefined;
@@ -1028,6 +1084,34 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        readonly workingGrant: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly id: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly digest: {
+                                    minLength: number;
+                                    pattern: string;
+                                    type: "string";
+                                    description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    maxLength: number;
+                                };
+                                readonly approvalId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                            };
+                            readonly required: readonly ["id", "digest", "approvalId"];
+                            readonly additionalProperties: false;
+                        };
                         readonly command: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
@@ -1328,6 +1412,34 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                             readonly minLength: number;
                             readonly maxLength: number;
+                        };
+                        readonly workingGrant: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly id: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly digest: {
+                                    minLength: number;
+                                    pattern: string;
+                                    type: "string";
+                                    description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    maxLength: number;
+                                };
+                                readonly approvalId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                            };
+                            readonly required: readonly ["id", "digest", "approvalId"];
+                            readonly additionalProperties: false;
                         };
                         readonly command: {
                             readonly maxItems?: number | undefined;
@@ -1696,6 +1808,34 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                         readonly minLength: number;
                         readonly maxLength: number;
+                    };
+                    readonly workingGrant: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly digest: {
+                                minLength: number;
+                                pattern: string;
+                                type: "string";
+                                description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                maxLength: number;
+                            };
+                            readonly approvalId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                        };
+                        readonly required: readonly ["id", "digest", "approvalId"];
+                        readonly additionalProperties: false;
                     };
                     readonly command: {
                         readonly maxItems?: number | undefined;

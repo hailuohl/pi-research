@@ -1,4 +1,5 @@
 import { PublicationBuildService } from './publications/build-service.js';
+import { WorkingGrantService } from './policy/working-grants.js';
 import { PublicationReviewService } from './publications/reviews.js';
 import { DevelopmentReviewService } from './development/reviews.js';
 import { DocumentService } from './documents/service.js';
@@ -32,6 +33,7 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly workingGrants: WorkingGrantService;
     readonly publicationBuilds: PublicationBuildService;
     readonly publicationReviews: PublicationReviewService;
     readonly documents: DocumentService;

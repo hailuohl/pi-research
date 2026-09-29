@@ -8,6 +8,7 @@ import {assertExperimentSourceCurrent} from '../policy/lifecycle.js';
 import {verifySnapshot} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
 import {assertAcceptanceCurrent} from '../evidence/acceptance.js';
+import {assertWorkingGrantJob} from '../policy/working-grant-validation.js';
 
 export interface DevelopmentReview {
     jobId:string;sourceDigest:string;producerSessionId:string;baseSourceRevisionId?:string;
@@ -19,6 +20,7 @@ export function reviewPayload(r:DevelopmentReview) {const {jobId,sourceDigest,pr
 export function assertDevelopmentReviewTarget(store:Store,pid:string,r:Row<DevelopmentReview>) {
     ensure(digest(reviewPayload(r))===r.digest,'DEVELOPMENT_REVIEW_CORRUPTED','审查绑定摘要已改变');
     const job=store.get<SandboxJob>('sandbox-job',r.jobId,pid),s=store.get<Session>('session',r.producerSessionId,pid);
+    assertWorkingGrantJob(store,job,false);
     ensure(s.role==='coordinator'&&!s.taskId&&job.sessionId===s.id&&job.manifest.sessionId===s.id&&!job.manifest.scopeTaskId&&s.sourceRevisionId===r.baseSourceRevisionId&&job.manifest.sourceRevisionId===r.baseSourceRevisionId,'DEVELOPMENT_REVIEW_STALE','审查生产者或源码来源已改变');
     ensure(job.state==='succeeded'&&job.integrity==='complete'&&job.exitCode===0&&job.sourceDigest===r.sourceDigest&&job.manifest.inputSnapshot.digest===r.sourceDigest&&digest(job.manifest.inputSnapshot.files)===r.sourceDigest&&digest(job.manifest)===job.manifestDigest,'DEVELOPMENT_REVIEW_STALE','审查测试不是当前成功且完整的固定源码结果');
     const grant=store.get<Approval>('approval',job.grantId,pid);ensure(grant.status==='approved'&&grant.scope==='development.test'&&grant.subjectKind==='development-task'&&grant.subjectId===job.developmentTaskId&&grant.digest===job.manifestDigest,'APPROVAL_STALE','开发测试审批已失效');

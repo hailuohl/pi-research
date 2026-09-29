@@ -1,4 +1,5 @@
 import type {SourceSnapshot} from '../domain/types.js';
+export interface WorkingGrantReference {id:string;digest:string;approvalId:string;}
 
 export interface SandboxResources {
     cpus: number;
@@ -10,6 +11,7 @@ export interface SandboxResources {
     logBytes: number;
 }
 export interface SandboxManifest {
+    workingGrant?: WorkingGrantReference;
     purpose: 'development-test';
     sessionId: string;
     inputSnapshot: SourceSnapshot;

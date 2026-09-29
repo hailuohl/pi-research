@@ -25,6 +25,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
             sourceRevisionId?: string;
@@ -72,6 +73,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
             sourceRevisionId?: string;
@@ -127,6 +129,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
             sourceRevisionId?: string;
@@ -181,6 +184,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
             sourceRevisionId?: string;
@@ -245,6 +249,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
             sourceRevisionId?: string;
@@ -308,6 +313,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
             sourceRevisionId?: string;

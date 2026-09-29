@@ -46,6 +46,7 @@ export interface ModelConfig {
     thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 }
 export interface Session {
+    workingGrantId?: string;
     skillIds?: string[];
     skillBundleId?: string;
     sourceRevisionId?: string;
@@ -76,6 +77,7 @@ export interface Message {
     usage?: unknown;
 }
 export interface Approval {
+    workingGrant?: import('../execution/contracts.js').WorkingGrantReference;
     subjectKind: string;
     subjectId: string;
     digest: string;

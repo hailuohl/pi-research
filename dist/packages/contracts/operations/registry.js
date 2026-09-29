@@ -207,6 +207,10 @@ const SPECS = [
     make('workspace_history_commit', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c) => { c.app.git.inspect(c.actor, c.projectId, c.session.id); }, preconditions: noPrecondition, execute: (c, x) => c.app.git.commit(c.actor, c.projectId, c.session.id, x) }),
     make('workspace_history_set_mode', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c) => { c.app.git.inspect(c.actor, c.projectId, c.session.id); }, preconditions: noPrecondition, execute: (c, x) => c.app.git.setMode(c.actor, c.projectId, c.session.id, x) }),
     make('workspace_history_operation', { idempotencyPolicy: 'read-only', authorize: (c, x) => { c.app.git.operation(c.actor, c.projectId, x.operationId); }, preconditions: noPrecondition, execute: (c, x) => c.app.git.operation(c.actor, c.projectId, x.operationId) }),
+    make('working_grant_prepare', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.workingGrants.prepare(c.actor, c.projectId, x) }),
+    make('working_grant_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.workingGrants.inspect(c.actor, c.projectId, x.grantId) }),
+    make('working_grant_activate', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.workingGrants.activate(c.actor, c.projectId, x) }),
+    make('working_grant_revoke', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.workingGrants.revoke(c.actor, c.projectId, x) }),
     make('development_prepare', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: noPrecondition, preconditions: noPrecondition, execute: (c, x) => c.app.development.prepare(c.actor, c.projectId, c.session.id, x) }),
     make('development_submit', { idempotencyPolicy: 'key-required', authorize: (c, x) => { c.app.development.get(c.actor, c.projectId, x.developmentTaskId); }, preconditions: noPrecondition, execute: (c, x) => c.app.development.submit(c.actor, c.projectId, x.developmentTaskId) }),
     make('development_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { x.jobId ? c.app.development.inspect(c.actor, c.projectId, x.jobId) : c.app.development.get(c.actor, c.projectId, x.developmentTaskId); }, preconditions: noPrecondition, execute: (c, x) => x.jobId ? c.app.development.inspect(c.actor, c.projectId, x.jobId) : c.app.development.get(c.actor, c.projectId, x.developmentTaskId) }),
@@ -259,6 +263,7 @@ const SPECS = [
             if (x.source !== 'project') {
                 ensure(c.session.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
                 assertWorkspaceReady(c.app.context, c.session.id);
+                c.app.workingGrants.assertWrite(c.actor, c.projectId, c.session.id, x.path, x.content);
             }
         }, execute: (c, x) => x.source === 'project'
             ? c.app.projects.writeFile(c.actor, c.projectId, x.path, x.content, x.expectedDigest)

@@ -276,7 +276,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("sourceDigest" | "experimentId" | "revision" | "integrity" | "state" | "runId" | "metrics" | "judgment")[];
+                    readonly required: ("state" | "sourceDigest" | "experimentId" | "revision" | "integrity" | "runId" | "metrics" | "judgment")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -414,7 +414,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: readonly [...("id" | "digest" | "jobId" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "requiredEvidenceIds" | "validity" | "status" | "revisionId" | "artifactIds" | "rootSessionId" | "publicationResultId" | "pdfDigest")[], "referenceId"];
+                                readonly required: readonly [...("id" | "digest" | "approvalId" | "jobId" | "sourceDigest" | "teamId" | "taskId" | "requiredEvidenceIds" | "validity" | "status" | "revisionId" | "artifactIds" | "rootSessionId" | "publicationResultId" | "pdfDigest")[], "referenceId"];
                                 readonly type: "object";
                                 readonly additionalProperties: false;
                             };

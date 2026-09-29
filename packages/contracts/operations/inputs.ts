@@ -7,6 +7,7 @@ import {REPORT_INPUT_SCHEMAS} from './report-schemas.js';
 import {SCHEDULER_INPUT_SCHEMAS} from './scheduler-schemas.js';
 import {REVIEW_INPUT_SCHEMAS} from './review-schemas.js';
 import {DEVELOPMENT_INPUT_SCHEMAS} from './development-schemas.js';
+import {WORKING_GRANT_INPUT_SCHEMAS} from './working-grant-schemas.js';
 import {SOURCE_INPUT_SCHEMAS} from './source-schemas.js';
 import { s, type JsonSchema, type InferSchema } from './schema.js';
 
@@ -42,7 +43,7 @@ export const INPUT_SCHEMAS = {
     ...RESEARCH_PLAN_INPUT_SCHEMAS,
     ...SKILL_INPUT_SCHEMAS,
     ...PUBLICATION_INPUT_SCHEMAS,
-    ...DEVELOPMENT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS,...SCHEDULER_INPUT_SCHEMAS,
+    ...DEVELOPMENT_INPUT_SCHEMAS, ...WORKING_GRANT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS,...SCHEDULER_INPUT_SCHEMAS,
     ...SOURCE_INPUT_SCHEMAS,...DOCUMENT_INPUT_SCHEMAS,
     research_skill_list: s.object({}),
     research_skill_read: s.object({ skillId: id, resource: s.string(200) }, ['skillId']),

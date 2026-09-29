@@ -64,7 +64,7 @@ export declare class SourceAccessService {
         };
         files: {
             path: string;
-            status: "added" | "modified" | "deleted";
+            status: "added" | "deleted" | "modified";
             beforeDigest: string | null;
             afterDigest: string | null;
             beforeMode: "100644" | "100755" | null;
@@ -72,7 +72,7 @@ export declare class SourceAccessService {
         }[];
     };
     prepare(actor: Actor, projectId: string, sessionId: string, value: unknown): {
-        gitState?: "failed" | "pending" | "ready" | "conflict" | undefined;
+        gitState?: "failed" | "pending" | "conflict" | "ready" | undefined;
         gitOperationId?: string | undefined;
         sessionId: string;
         sessionVersion: number;

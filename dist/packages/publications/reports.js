@@ -5,6 +5,7 @@ import { verifyRunRecord } from '../evidence/run-verifier.js';
 import { verifyDocumentLink } from '../evidence/document-link.js';
 import { checkDocumentVersion } from '../documents/parse-service.js';
 import { assertAcceptanceCurrent } from '../evidence/acceptance.js';
+import { assertWorkingGrantJob } from '../policy/working-grants.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { object, text, strings, integer } from '../contracts/validation.js';
 import { ensure, asError } from '../domain/errors.js';
@@ -85,6 +86,7 @@ export class ReportService {
         ensure(approval.status === 'approved' && approval.subjectId === p.id && approval.scope === 'change.integrate' && approval.digest === p.digest, 'APPROVAL_STALE', '整合审批已失效');
         if (p.testJobId) {
             const j = this.c.store.get('sandbox-job', p.testJobId, pid), grant = this.c.store.get('approval', j.grantId, pid);
+            assertWorkingGrantJob(this.c.store, j);
             ensure(j.state === 'succeeded' && j.integrity === 'complete' && j.exitCode === 0 && j.sourceDigest === candidateSnapshot.digest && j.manifest.inputSnapshot.digest === j.sourceDigest && digest(j.manifest.inputSnapshot.files) === j.sourceDigest && digest(j.manifest) === j.manifestDigest, 'REPORT_TEST_BINDING_INVALID', '测试结果不属于该整合候选');
             ensure(grant.status === 'approved' && grant.scope === 'development.test' && grant.subjectKind === 'development-task' && grant.subjectId === j.developmentTaskId && grant.digest === j.manifestDigest, 'APPROVAL_STALE', '开发测试审批已失效');
             verifySnapshot(j.manifest.inputSnapshot.path, j.manifest.inputSnapshot.files);
@@ -246,7 +248,7 @@ export class ReportService {
                                 add({ type: 'figure-source-code', targetId: figure.id, path: f.path, digest: f.digest, label: f.path, relation: 'exact' });
                             }
                         }
-                        source = { jobId: figure.id, sourceDigest: figure.sourceDigest, manifestDigest: figure.manifestDigest, command: figure.manifest.command, image: figure.manifest.environmentImageDigest, imageId: figure.imageId, approvalId: figure.grantId, dataArtifacts, artifactIds: figure.artifactIds, notice: '已声明输入与同作业产物；未证明每项输入均被使用，未验证图形逐点科学数值映射。' };
+                        source = { jobId: figure.id, sourceDigest: figure.sourceDigest, manifestDigest: figure.manifestDigest, command: figure.manifest.command, image: figure.manifest.environmentImageDigest, imageId: figure.imageId, approvalId: figure.grantId, ...(figure.manifest.workingGrant ? { workingGrant: this.app.workingGrants.inspect({ type: 'user' }, pid, figure.manifest.workingGrant.id) } : {}), dataArtifacts, artifactIds: figure.artifactIds, notice: '已声明输入与同作业产物；未证明每项输入均被使用，未验证图形逐点科学数值映射。' };
                     }
                     add({ type: 'figure-source', targetId: revision.id, path: file.path, label: `文稿文件来源：${file.path}`, digest: file.digest }, { revisionId: revision.id, file, source });
                 }
@@ -291,7 +293,7 @@ export class ReportService {
                         if (p.testJobId) {
                             const job = this.c.store.get('sandbox-job', p.testJobId, pid);
                             ensure(relation !== 'exact' || job.sourceDigest === r.manifest.snapshotDigest, 'REPORT_TEST_BINDING_INVALID', '该测试未覆盖当前运行源码');
-                            add({ type: 'development-job', targetId: job.id, runId: r.id, digest: job.manifestDigest, relation, label: relation === 'exact' ? '该源码版本的开发测试' : '祖先版本的开发测试' }, { jobId: job.id, sourceDigest: job.sourceDigest, manifestDigest: job.manifestDigest, state: job.state, integrity: job.integrity, exitCode: job.exitCode, command: job.manifest.command, image: job.manifest.environmentImageDigest, imageId: job.imageId, artifactIds: job.artifactIds, relation });
+                            add({ type: 'development-job', targetId: job.id, runId: r.id, digest: job.manifestDigest, relation, label: relation === 'exact' ? '该源码版本的开发测试' : '祖先版本的开发测试' }, { jobId: job.id, sourceDigest: job.sourceDigest, manifestDigest: job.manifestDigest, state: job.state, integrity: job.integrity, exitCode: job.exitCode, command: job.manifest.command, image: job.manifest.environmentImageDigest, imageId: job.imageId, artifactIds: job.artifactIds, ...(job.manifest.workingGrant ? { workingGrant: this.app.workingGrants.inspect({ type: 'user' }, pid, job.manifest.workingGrant.id) } : {}), relation });
                             job.artifactIds.forEach(id => artifact(id));
                         }
                         if (p.reviewId) {
@@ -496,7 +498,7 @@ export class ReportService {
     }
     stateDigest(pid) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor, pid, id, expectedBindingsDigest, expectedStateDigest) {
         const r = this.record(actor, pid, id);

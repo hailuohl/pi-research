@@ -1,3 +1,4 @@
+import { WorkingGrants } from './working-grants.js';
 import { LogView } from './log-view.js';
 import { ComputeWait } from './scheduler-view.js';
 import { api, artifactText, downloadArtifact } from './api.js';
@@ -41,7 +42,7 @@ class PrivateWorkspace extends React.Component {
         this.props.onDirty(false);
     } }); }
     render() {
-        const { git, diff } = this.state, ready = git?.state === 'ready', { session, perform, busy } = this.props;
+        const { git, diff } = this.state, ready = git?.state === 'ready', { session, perform, busy, blocked, editablePaths } = this.props, writable = ready && !blocked && (!editablePaths || editablePaths.includes(this.state.path));
         return React.createElement("section", { className: "surface" },
             React.createElement("div", { className: "surface-heading" },
                 React.createElement("h2", null, "\u79C1\u6709\u6E90\u7801\u4E0E Git"),
@@ -58,6 +59,7 @@ class PrivateWorkspace extends React.Component {
             this.state.error ? React.createElement("p", { role: "alert", className: "error-text" }, this.state.error) : null,
             git?.error ? React.createElement("p", { role: "alert", className: "error-text" }, git.error) : null,
             ['failed', 'conflict'].includes(git?.state) ? React.createElement("button", { className: "secondary", disabled: busy, onClick: () => perform(async () => { await api(`/projects/${this.props.projectId}/git-retry`, { operationId: git.operationId }); await this.poll(); }) }, "\u6062\u590D\u6B64 Git \u64CD\u4F5C") : null,
+            blocked ? React.createElement("p", { className: "notice-inline" }, "\u5F53\u524D WorkingGrant \u4E0D\u5141\u8BB8\u65B0\u589E\u7F16\u8F91\u6216\u6D4B\u8BD5\uFF1B\u56FA\u5B9A\u5386\u53F2\u3001\u65E5\u5FD7\u4E0E\u53D6\u6D88\u5165\u53E3\u4ECD\u53EF\u4F7F\u7528\u3002") : null,
             !ready ? React.createElement("p", { className: "notice" }, "Git \u5C31\u7EEA\u540E\u624D\u80FD\u7F16\u8F91\u3001\u63D0\u4EA4\u548C\u51C6\u5907\u6D4B\u8BD5\u3002\u5931\u8D25\u6216\u51B2\u7A81\u65F6\u4FDD\u7559\u539F\u5DE5\u4F5C\u533A\uFF0C\u8BF7\u67E5\u770B\u9519\u8BEF\u540E\u663E\u5F0F\u6062\u590D\u3002") : null,
             React.createElement("label", null,
                 "\u79C1\u6709\u6E90\u7801\u6587\u4EF6",
@@ -69,21 +71,26 @@ class PrivateWorkspace extends React.Component {
                         " \u00B7 ",
                         f.size,
                         " \u5B57\u8282")))),
-            React.createElement("button", { className: "secondary compact", disabled: !ready || busy, onClick: () => { if (this.state.dirty && !confirm('放弃未保存内容并新建文件？'))
+            React.createElement("button", { className: "secondary compact", disabled: !ready || busy || blocked, onClick: () => { if (this.state.dirty && !confirm('放弃未保存内容并新建文件？'))
                     return; const path = prompt('私有文件相对路径，例如 main.py'); if (path) {
+                    if (editablePaths && !editablePaths.includes(path)) {
+                        this.setState({ error: '此路径不在固定授权范围内，请选择已批准的精确路径。' });
+                        return;
+                    }
                     this.reading++;
                     this.setState({ path, content: '', digest: null, dirty: true });
                     this.props.onDirty(true);
                 } } }, "\u65B0\u5EFA\u79C1\u6709\u6587\u4EF6"),
             this.state.path ? React.createElement("div", null,
+                editablePaths && !editablePaths.includes(this.state.path) ? React.createElement("p", { className: "small muted" }, "\u6B64\u6587\u4EF6\u53EF\u8BFB\u53D6\uFF0C\u4F46\u4E0D\u5728\u6388\u6743\u53EF\u7F16\u8F91\u8DEF\u5F84\u4E2D\u3002") : null,
                 React.createElement("p", null,
                     React.createElement("code", null, this.state.path),
                     this.state.dirty ? ' · 未保存' : ''),
                 React.createElement("label", null,
                     "\u79C1\u6709\u6E90\u7801\u5185\u5BB9",
-                    React.createElement("textarea", { "aria-label": "\u79C1\u6709\u6E90\u7801\u5185\u5BB9", className: "code-input", rows: 14, spellCheck: false, readOnly: !ready || busy, value: this.state.content, onChange: (e) => { this.setState({ content: e.target.value, dirty: true }); this.props.onDirty(true); } })),
+                    React.createElement("textarea", { "aria-label": "\u79C1\u6709\u6E90\u7801\u5185\u5BB9", className: "code-input", rows: 14, spellCheck: false, readOnly: !writable || busy, value: this.state.content, onChange: (e) => { this.setState({ content: e.target.value, dirty: true }); this.props.onDirty(true); } })),
                 React.createElement("div", { className: "actions" },
-                    React.createElement("button", { className: "primary compact", disabled: !ready || busy || !this.state.dirty, onClick: () => perform(async () => { const file = await this.call('workspace_write', { source: 'session', path: this.state.path, content: this.state.content, expectedDigest: this.state.digest }); if (this.mounted) {
+                    React.createElement("button", { className: "primary compact", disabled: !writable || busy || !this.state.dirty, onClick: () => perform(async () => { const file = await this.call('workspace_write', { source: 'session', path: this.state.path, content: this.state.content, expectedDigest: this.state.digest }); if (this.mounted) {
                             this.setState({ digest: file.digest, dirty: false });
                             this.props.onDirty(false);
                             await this.poll();
@@ -103,7 +110,7 @@ class PrivateWorkspace extends React.Component {
                     React.createElement("label", null,
                         "\u63D0\u4EA4\u8BF4\u660E",
                         React.createElement("input", { name: "message", "aria-label": "Git \u63D0\u4EA4\u8BF4\u660E", required: true, maxLength: 1000, defaultValue: "\u4FDD\u5B58\u672C\u6B21\u7814\u7A76\u5B9E\u73B0" })),
-                    React.createElement("button", { className: "secondary", disabled: busy || this.state.dirty || !diff.files.length }, "\u4FDD\u5B58 Git \u7248\u672C"))) : null);
+                    React.createElement("button", { className: "secondary", disabled: busy || blocked || this.state.dirty || !diff.files.length }, "\u4FDD\u5B58 Git \u7248\u672C"))) : null);
     }
 }
 class DevelopmentJob extends React.Component {
@@ -125,7 +132,13 @@ class DevelopmentJob extends React.Component {
                 React.createElement("span", null,
                     "\u9000\u51FA\u7801 ",
                     job.exitCode ?? '—')),
-            React.createElement("code", { className: "digest" }, job.sourceDigest),
+            React.createElement("code", { className: "digest code-wrap", style: { display: 'block' } }, job.sourceDigest),
+            job.manifest.workingGrant ? React.createElement("p", { className: "small muted" },
+                "\u6D3E\u751F\u6388\u6743 WorkingGrant ",
+                short(job.manifest.workingGrant.id),
+                " \u00B7 \u539F\u6279\u51C6 ",
+                short(job.manifest.workingGrant.approvalId),
+                "\uFF1B\u6B64\u63D0\u4EA4\u5DF2\u8BA1\u6B21\u3002") : null,
             !terminal ? React.createElement(ComputeWait, { data: data, kind: "development", id: job.id, onScheduler: this.props.onScheduler }) : null,
             job.error ? React.createElement("p", { className: "error-text" }, job.error) : null,
             React.createElement("details", { open: this.state.expanded, onToggle: (e) => { const expanded = e.currentTarget.open; if (expanded !== this.state.expanded)
@@ -150,7 +163,7 @@ export class ImplementationView extends React.Component {
     call(name, input = {}) { return op(this.props.data.project.id, this.props.sessionId, name, input); }
     async preview(id) { await this.props.perform(async () => this.setState({ preview: await api(`/change-proposals/${id}/diff`) })); }
     render() {
-        const { data, busy, perform } = this.props, session = this.session(), tasks = (data.developmentTasks ?? []).filter(t => t.sessionId === session?.id), jobs = (data.sandboxJobs ?? []).filter(j => j.sessionId === session?.id), reviews = (data.reviews ?? []).filter(r => r.producerSessionId === session?.id), selected = data.experiments.find(e => e.id === this.state.experimentId), proposals = data.changeProposals.filter(p => reviews.some(r => r.id === p.reviewId));
+        const { data, busy, perform } = this.props, session = this.session(), workingGrant = (data.workingGrants ?? []).find(g => g.id === session?.workingGrantId), grantWritable = !!workingGrant && workingGrant.validity === 'current' && ['active', 'exhausted'].includes(workingGrant.effectiveState) && Date.parse(workingGrant.expiresAt) > Date.now(), grantOpen = grantWritable && workingGrant?.effectiveState === 'active', tasks = (data.developmentTasks ?? []).filter(t => t.sessionId === session?.id), jobs = (data.sandboxJobs ?? []).filter(j => j.sessionId === session?.id), reviews = (data.reviews ?? []).filter(r => r.producerSessionId === session?.id), selected = data.experiments.find(e => e.id === this.state.experimentId), proposals = data.changeProposals.filter(p => reviews.some(r => r.id === p.reviewId));
         return React.createElement("div", { className: "page-scroll" },
             React.createElement(SectionTitle, { title: "\u5B9E\u73B0\u4E0E\u5BA1\u67E5", sub: "\u79C1\u6709\u5B9E\u73B0\u3001\u5F00\u53D1\u6D4B\u8BD5\u3001\u72EC\u7ACB\u5BA1\u67E5\u548C\u6574\u5408\u5206\u522B\u7559\u8BC1\u3001\u5206\u522B\u6279\u51C6\u3002" }, session ? React.createElement("button", { className: "primary", disabled: busy || this.state.dirty, onClick: () => this.props.onChat(session.id) }, "\u56DE\u5230\u6B64\u4F1A\u8BDD\u53D1\u9001\u5B9E\u73B0\u6216\u53CD\u9988\u6307\u4EE4") : null),
             React.createElement("section", { className: "surface" },
@@ -178,16 +191,20 @@ export class ImplementationView extends React.Component {
                         "\u56FA\u5B9A\u4FEE\u8BA2",
                         React.createElement("input", { "aria-label": "\u5B9E\u73B0\u6765\u6E90\u4FEE\u8BA2", type: "number", min: 1, max: selected?.revision ?? 1, value: this.state.revision, onChange: (e) => this.setState({ revision: Number(e.target.value) }) }))),
                 !data.project.gitHistoryEnabled ? React.createElement("button", { className: "secondary", disabled: busy, onClick: () => perform(() => api(`/projects/${data.project.id}/git-enable`, {}), '受管 Git 已显式启用') }, "\u542F\u7528\u6B64\u9879\u76EE\u53D7\u7BA1 Git") : React.createElement("p", { className: "small muted" }, "\u53D7\u7BA1 Git \u5DF2\u542F\u7528\uFF1B\u53EA\u4FDD\u5B58\u672C\u5730\u5386\u53F2\uFF0C\u4E0D\u63A8\u9001\u3002"),
-                React.createElement("button", { className: "primary", disabled: busy || !session || session.state === 'running' || !selected || !Number.isInteger(this.state.revision) || this.state.revision < 1 || this.state.revision > selected.revision || !data.project.gitHistoryEnabled || this.state.dirty, onClick: () => perform(() => this.call('workspace_prepare_from_revision', { experimentId: this.state.experimentId, revision: this.state.revision }), '已请求准备固定私有源码') }, "\u51C6\u5907\u9009\u5B9A\u7248\u672C\u7684\u79C1\u6709\u5DE5\u4F5C\u533A"),
+                React.createElement("button", { className: "primary", disabled: busy || !session || !!session.workingGrantId || session.state === 'running' || !selected || !Number.isInteger(this.state.revision) || this.state.revision < 1 || this.state.revision > selected.revision || !data.project.gitHistoryEnabled || this.state.dirty, onClick: () => perform(() => this.call('workspace_prepare_from_revision', { experimentId: this.state.experimentId, revision: this.state.revision }), '已请求准备固定私有源码') }, "\u51C6\u5907\u9009\u5B9A\u7248\u672C\u7684\u79C1\u6709\u5DE5\u4F5C\u533A"),
                 React.createElement("p", { className: "small muted" }, "\u5DF2\u6709\u6765\u6E90\u6216\u672C\u5730\u6587\u4EF6\u4E0D\u4F1A\u88AB\u8986\u76D6\u3002\u6539\u9009\u6765\u6E90\u65F6\u8BF7\u4F7F\u7528\u65B0\u7684\u4E3B\u4F1A\u8BDD\uFF1B\u51C6\u5907\u8FC7\u7A0B\u4E2D\u53EF\u7B49\u5F85\uFF0C\u4E0D\u9700\u8981\u4FDD\u6301\u6A21\u578B\u8FD0\u884C\u3002")),
-            session ? React.createElement(PrivateWorkspace, { key: session.id, projectId: data.project.id, session: session, perform: perform, busy: busy, onDirty: dirty => this.setState({ dirty }), onReady: gitReady => { if (gitReady !== this.state.gitReady)
+            session ? React.createElement(PrivateWorkspace, { key: session.id, projectId: data.project.id, session: session, perform: perform, busy: busy, blocked: !!session.workingGrantId && !grantWritable, editablePaths: session.workingGrantId ? workingGrant?.editablePaths ?? [] : undefined, onDirty: dirty => this.setState({ dirty }), onReady: gitReady => { if (gitReady !== this.state.gitReady)
                     this.setState({ gitReady }); } }) : React.createElement(Empty, { title: "\u5148\u9009\u62E9\u4E3B\u4F1A\u8BDD" },
                 React.createElement("p", null, "\u53EF\u5728\u4FA7\u680F\u65B0\u5EFA\u4F1A\u8BDD\uFF0C\u7136\u540E\u56DE\u5230\u6B64\u9875\u9009\u62E9\u3002")),
+            session ? React.createElement(WorkingGrants, { key: session.id, data: data, session: session, perform: perform, busy: busy, dirty: this.state.dirty }) : null,
             session ? React.createElement("section", { className: "surface" },
                 React.createElement("div", { className: "surface-heading" },
                     React.createElement("h2", null, "\u5F00\u53D1\u6D4B\u8BD5\u4E0E\u7528\u6237\u6279\u51C6")),
                 React.createElement("p", { className: "small muted" }, "Pi \u53EF\u81EA\u884C\u8BF7\u6C42\u6D4B\u8BD5\u3002\u4E0B\u9762\u4E5F\u53EF\u624B\u52A8\u51C6\u5907\uFF1B\u6279\u51C6\u53EA\u9002\u7528\u4E8E\u663E\u793A\u7684\u6E90\u7801\u3001\u547D\u4EE4\u3001\u955C\u50CF\u4E0E\u8D44\u6E90\uFF0C\u4E0D\u7B49\u4E8E\u6279\u51C6\u6B63\u5F0F Run\u3002"),
-                React.createElement("details", null,
+                session.workingGrantId ? React.createElement("div", null,
+                    React.createElement("p", { className: "notice-inline" }, "\u6309\u5DF2\u7ED1\u5B9A\u6388\u6743\u91CD\u65B0\u51C6\u5907\u5F53\u524D\u6E90\u7801\u6D4B\u8BD5\uFF1B\u539F\u6A21\u677F\u4E0D\u80FD\u63D0\u4EA4\uFF0C\u6D3E\u751F\u6279\u51C6\u4E0D\u9700\u8981\u518D\u9010\u6B21\u624B\u52A8\u6279\u51C6\u3002"),
+                    React.createElement("button", { className: "secondary", disabled: busy || this.state.dirty || !this.state.gitReady || !grantWritable, onClick: () => { if (!workingGrant)
+                            return; void perform(() => this.call('development_prepare', { title: 'WorkingGrant 范围内的当前实现测试', command: workingGrant.command, environmentImageDigest: workingGrant.environmentImageDigest, dockerContext: workingGrant.dockerContext, resources: workingGrant.resources, expectedArtifacts: workingGrant.expectedArtifacts, dataArtifactIds: workingGrant.dataArtifacts.map(a => a.id), deadline: new Date(Math.min(Date.now() + 1800000, Date.parse(workingGrant.expiresAt))).toISOString() }), '已冻结当前源码并派生测试批准；尚未提交'); } }, "\u6309\u56FA\u5B9A\u6388\u6743\u51C6\u5907\u5F53\u524D\u6E90\u7801\u6D4B\u8BD5")) : React.createElement("details", null,
                     React.createElement("summary", null, "\u624B\u52A8\u51C6\u5907\u5F00\u53D1\u6D4B\u8BD5"),
                     React.createElement("form", { className: "form-body", onSubmit: (e) => { e.preventDefault(); const fd = new FormData(e.currentTarget), args = String(fd.get('args') ?? ''); void perform(() => this.call('development_prepare', { title: fd.get('title'), command: [String(fd.get('program')), ...(args ? args.split(/\r?\n/) : [])], environmentImageDigest: fd.get('image'), dockerContext: fd.get('context'), resources: { timeoutSeconds: Number(fd.get('timeout')) }, expectedArtifacts: String(fd.get('outputs') ?? '').split(/\r?\n/).map(p => p.trim()).filter(Boolean) }), '开发测试已准备，等待批准'); } },
                         React.createElement("label", null,
@@ -212,12 +229,18 @@ export class ImplementationView extends React.Component {
                             "\u5FC5\u9700\u6D4B\u8BD5\u4EA7\u7269\uFF08\u53EF\u7A7A\uFF0C\u6BCF\u884C\u4E00\u4E2A\uFF09",
                             React.createElement("textarea", { name: "outputs", rows: 2 })),
                         React.createElement("button", { className: "secondary", disabled: busy || this.state.dirty || !session.sourceRevisionId || !this.state.gitReady }, "\u51C6\u5907\u5F00\u53D1\u6D4B\u8BD5"))),
-                tasks.length ? tasks.slice().reverse().map(t => { const approval = data.approvals.find(a => a.id === t.grantId); return React.createElement("div", { className: "inspector-section", key: t.id },
+                tasks.length ? tasks.slice().reverse().map(t => { const approval = data.approvals.find(a => a.id === t.grantId), derived = t.manifest.workingGrant, oldTemplate = !!session.workingGrantId && !derived, canSubmit = !session.workingGrantId || derived?.id === session.workingGrantId && grantOpen; return React.createElement("div", { className: "inspector-section", key: t.id },
                     React.createElement("h3", null,
                         t.title,
                         " \u00B7 ",
                         short(t.id)),
                     React.createElement(Badge, { value: approval?.status ?? t.state }),
+                    derived ? React.createElement("p", { className: "notice-inline" },
+                        "\u4F9D\u636E WorkingGrant ",
+                        short(derived.id),
+                        " \u6D3E\u751F\u6279\u51C6 \u00B7 ",
+                        short(derived.digest),
+                        "\uFF1B\u663E\u5F0F\u63D0\u4EA4\u624D\u8BA1\u4E00\u6B21\uFF0C\u5931\u8D25/\u53D6\u6D88/\u672A\u77E5\u4E5F\u4E0D\u9000\u8FD8\u3002") : oldTemplate && !t.jobId ? React.createElement("p", { className: "notice-inline" }, "\u6B64\u65E7\u5355\u6B21\u6A21\u677F\u4E0D\u80FD\u5728\u5DF2\u7ED1\u5B9A\u6388\u6743\u7684\u4F1A\u8BDD\u63D0\u4EA4\uFF0C\u8BF7\u6309\u4E0A\u65B9\u56FA\u5B9A\u6388\u6743\u91CD\u65B0\u51C6\u5907\u3002") : null,
                     React.createElement("dl", { className: "details" },
                         React.createElement("dt", null, "\u6E90\u7801\u6458\u8981"),
                         React.createElement("dd", null,
@@ -236,10 +259,10 @@ export class ImplementationView extends React.Component {
                         React.createElement("dd", null, t.manifest.deadline),
                         React.createElement("dt", null, "\u5FC5\u9700\u4EA7\u7269"),
                         React.createElement("dd", null, t.manifest.expectedArtifacts.join('、') || '无声明文件')),
-                    !t.jobId && approval?.status === 'pending' ? React.createElement("div", { className: "actions" },
+                    !t.jobId && !derived && !oldTemplate && approval?.status === 'pending' ? React.createElement("div", { className: "actions" },
                         React.createElement("button", { className: "primary", disabled: busy, onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), '已批准固定开发测试，尚未提交') }, "\u6279\u51C6\u6B64\u5F00\u53D1\u6D4B\u8BD5"),
                         React.createElement("button", { className: "secondary", disabled: busy, onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false })) }, "\u62D2\u7EDD")) : null,
-                    !t.jobId && approval?.status === 'approved' ? React.createElement("button", { className: "primary", disabled: busy || this.state.dirty, onClick: () => perform(() => this.call('development_submit', { developmentTaskId: t.id }), '已提交独立开发测试') }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u5F00\u53D1\u6D4B\u8BD5") : null); }) : React.createElement("p", { className: "inline-empty" }, "\u6B64\u4F1A\u8BDD\u5C1A\u672A\u8BF7\u6C42\u5F00\u53D1\u6D4B\u8BD5\u3002\u53EF\u56DE\u5230\u804A\u5929\u8BA9 Pi \u5B8C\u6210\u5B9E\u73B0\u5E76\u8BF7\u6C42\u6D4B\u8BD5\u3002"),
+                    !t.jobId && !oldTemplate && approval?.status === 'approved' ? React.createElement("button", { className: "primary", disabled: busy || this.state.dirty || !canSubmit, onClick: () => perform(() => this.call('development_submit', { developmentTaskId: t.id }), '已提交独立开发测试') }, derived ? '提交授权内固定测试（计一次）' : '提交已批准开发测试') : null); }) : React.createElement("p", { className: "inline-empty" }, "\u6B64\u4F1A\u8BDD\u5C1A\u672A\u8BF7\u6C42\u5F00\u53D1\u6D4B\u8BD5\u3002\u53EF\u56DE\u5230\u804A\u5929\u8BA9 Pi \u5B8C\u6210\u5B9E\u73B0\u5E76\u8BF7\u6C42\u6D4B\u8BD5\u3002"),
                 jobs.slice().reverse().map(j => React.createElement(DevelopmentJob, { onScheduler: this.props.onScheduler, key: j.id, job: j, data: data, sessionId: session.id, perform: perform }))) : null,
             session ? React.createElement("section", { className: "surface" },
                 React.createElement("div", { className: "surface-heading" },

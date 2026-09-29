@@ -91,6 +91,7 @@ export class GitService {
     commit(actor:Actor,pid:string,sessionId:string,value:unknown) {
         return this.app.store.transaction(()=>{
             const s=this.access(actor,pid,sessionId,true),w=this.app.store.get<GitWorkspace>('git-workspace',sessionId,pid),x=object(value);
+            this.app.workingGrants.assertWorkspace(actor,pid,sessionId);
             ensure(w.head===text(x.expectedHead,'expectedHead',64),'GIT_HEAD_CONFLICT','Git HEAD 已变化，请重新查看差异');
             const input=snapshot(this.app.context,s.workspace);ensure(input.digest!==w.snapshot.digest,'CHANGE_EMPTY','工作区没有源码变化');
             const id=randomUUID();this.app.store.create<GitOperation>('git-operation',pid,{action:'commit',state:'queued',sourceRevisionId:w.sourceRevisionId,sessionId,branch:w.branch,workspace:w.path,expectedHead:w.head,snapshot:input,message:text(x.message,'message',1000),commitDate:now(),generation:0,leaseUntil:0},id);
@@ -101,6 +102,7 @@ export class GitService {
     setMode(actor:Actor,pid:string,sessionId:string,value:unknown) {
         return this.app.store.transaction(()=>{const s=this.access(actor,pid,sessionId,true),x=object(value),path=text(x.path,'path',1000),mode=x.mode;
             ensure(mode==='100644'||mode==='100755','INVALID_INPUT','只支持普通文件及可执行文件模式',400);
+            this.app.workingGrants.assertWrite(actor,pid,sessionId,path,undefined,mode);
             const current=snapshot(this.app.context,s.workspace);ensure(current.digest===text(x.expectedSourceDigest,'expectedSourceDigest',64),'FILE_VERSION_CONFLICT','源码已变化');
             const before=current.files.find(f=>f.path===path);ensure(before,'NOT_FOUND','文件不存在',404);
             setSourceMode(s.workspace,path,mode);this.app.store.onRollback(()=>setSourceMode(s.workspace,path,before.mode??'100644'));

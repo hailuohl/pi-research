@@ -101,6 +101,7 @@ export class SourceAccessService {
     prepare(actor: Actor, projectId: string, sessionId: string, value: unknown) {
         return this.app.store.transaction(()=>{
             assertProjectWritable(this.app.store,projectId);
+            this.app.workingGrants.assertSourcePreparation(actor,projectId,sessionId);
             const s=this.app.store.get<Session>('session',sessionId,projectId);
             ensure(s.state!=='archived','SESSION_ARCHIVED','会话已归档');
             if(actor.type==='agent') ensure(actor.sessionId===s.id&&ROLE_TOOLS[s.role].includes('workspace_write')&&!actor.wakeupId,'TOOL_DENIED','只能准备当前有写权限的会话',403);
