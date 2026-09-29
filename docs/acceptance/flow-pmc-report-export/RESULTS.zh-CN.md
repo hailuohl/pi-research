@@ -7,3 +7,5 @@
 验收：普通无 `providerText` 绑定的 PMC 证据、跨项目引用及来源/引文失配不能进入新报告或包；既有 PDF 和用户文本报告保持可用。关闭本地语料后，报告与先前检索仍可重开回查。真实流程新增 HTTP、模型和计算调用均为 0，隔离副本的旧 48 条记录摘要未变。独立复核无本批阻断。
 
 验证：干净构建通过；集中回归 829 通过、0 失败、22 跳过；后端相关 18 项和界面相关 10 项通过。机器摘要见 [evidence.json](evidence.json)。原始日志和实际 tar.gz 留在本地 `.validation/pmc-report-export/`，不提交私有研究原文。
+
+代码提交：[39041936e6fa8539b36822ab2a4d2719f926b0cb](https://github.com/hailuohl/pi-research/commit/39041936e6fa8539b36822ab2a4d2719f926b0cb)，分支 `implementation/pr01-reproducible-baseline`；私有远端已核对包含该提交。
