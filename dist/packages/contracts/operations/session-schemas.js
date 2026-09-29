@@ -1,0 +1,22 @@
+import { s } from './schema.js';
+const id = s.string(100), str = s.string(10000, 0), time = s.string(50), int = s.integer(0, Number.MAX_SAFE_INTEGER), bool = s.boolean(), role = s.enum(['coordinator', 'literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer']);
+const metadata = { id, kind: s.string(80), projectId: id, version: s.integer(1), createdAt: time, updatedAt: time };
+const model = s.object({ provider: s.string(100, 0), model: s.string(160, 0), thinking: s.enum(['off', 'minimal', 'low', 'medium', 'high', 'xhigh']) }, ['provider', 'model', 'thinking']);
+const catalogFields = { ...metadata, kind: { const: 'session' }, title: s.string(160), role, state: s.enum(['idle', 'queued', 'running', 'interrupted', 'failed', 'waiting', 'archived']), model, teamId: id, taskId: id };
+const catalogRequired = ['id', 'kind', 'projectId', 'version', 'createdAt', 'updatedAt', 'title', 'role', 'state', 'model'];
+const catalog = s.object(catalogFields, catalogRequired);
+const sessionFields = { ...catalogFields, workspace: str, piSessionPath: s.nullable(str), generation: int, leaseUntil: int, lastError: s.string(32000, 0), parentSessionId: id, sourceRevisionId: id, sourceDigest: s.string(64), skillIds: s.array(id), skillBundleId: id, workingGrantId: id, runGrantId: id, discoveryGrantId: id };
+const session = s.object(sessionFields, [...catalogRequired, 'workspace', 'piSessionPath', 'generation', 'leaseUntil']);
+const messageFields = { ...metadata, kind: { const: 'message' }, sessionId: id, role: s.enum(['user', 'assistant', 'system']), content: s.string(4000, 0), mode: s.enum(['prompt', 'steer', 'follow_up']), status: s.enum(['queued', 'running', 'completed', 'failed', 'cancelled']), contentTruncated: bool, previewTruncated: bool, contentBytes: int, error: str, origin: s.enum(['user', 'automation']), wakeupId: id };
+const message = s.object(messageFields, ['id', 'kind', 'projectId', 'version', 'createdAt', 'updatedAt', 'sessionId', 'role', 'content', 'mode', 'status', 'contentTruncated', 'previewTruncated', 'contentBytes']);
+export const SESSION_HISTORY_INPUT_SCHEMAS = {
+    session_list: s.object({ query: s.string(160, 0), beforeSessionId: id, role: s.enum(['all', 'coordinator', 'literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer']), limit: s.integer(1, 50) }),
+    session_view: s.object({ sessionId: id, beforeMessageId: id, afterMessageId: id, limit: s.integer(1, 50) }, ['sessionId']),
+    session_message_read: s.object({ sessionId: id, messageId: id, cursor: int, limit: s.integer(4, 64000), expectedVersion: s.integer(1) }, ['sessionId', 'messageId']),
+};
+export const SESSION_HISTORY_OUTPUT_SCHEMAS = {
+    session_list: s.object({ items: s.array(catalog, 50), nextCursor: s.nullable(id), query: s.string(160, 0), role: s.enum(['all', 'coordinator', 'literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer']), limit: s.integer(1, 50) }, ['items', 'nextCursor', 'query', 'role', 'limit']),
+    session_view: s.object({ session, messages: s.array(message, 50), history: s.object({ beforeMessageId: s.nullable(id), afterMessageId: s.nullable(id), atLatest: bool, previewCharacters: { const: 4000 }, byteLimit: { const: 262144 }, returnedBytes: s.integer(0, 262144) }, ['beforeMessageId', 'afterMessageId', 'atLatest', 'previewCharacters', 'byteLimit', 'returnedBytes']), progress: s.object({ generation: int, active: bool, content: s.string(32000, 0), truncated: bool, cursor: int }, ['generation', 'active', 'content', 'truncated', 'cursor']) }, ['session', 'messages', 'history', 'progress']),
+    session_message_read: s.object({ sessionId: id, messageId: id, version: s.integer(1), content: s.string(64000, 0), cursor: int, end: int, total: int, complete: bool, cursorUnit: { const: 'utf8-byte' }, sourceTruncated: bool }, ['sessionId', 'messageId', 'version', 'content', 'cursor', 'end', 'total', 'complete', 'cursorUnit', 'sourceTruncated']),
+};
+//# sourceMappingURL=session-schemas.js.map

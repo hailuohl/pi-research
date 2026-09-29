@@ -45,6 +45,7 @@ CREATE INDEX IF NOT EXISTS records_kind_session ON records(kind,json_extract(dat
 INSERT INTO schema_migrations VALUES(4,datetime('now'));`);});
         this.migrateDocumentQueue();
         this.migratePublicationQueue();
+        this.transaction(()=>{if(this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=7').get())return;this.db.exec("CREATE INDEX records_session_catalog ON records(kind,project_id,json_extract(data,'$.role')) WHERE kind='session'; INSERT INTO schema_migrations VALUES(7,datetime('now'));");});
     }
     private migratePublicationQueue() {
         this.transaction(()=>{

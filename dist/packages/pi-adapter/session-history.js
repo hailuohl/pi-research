@@ -1,0 +1,78 @@
+import { ensure, DomainError } from '../domain/errors.js';
+import { integer, object, oneOf, text } from '../contracts/validation.js';
+export const MESSAGE_PREVIEW_CHARACTERS = 4000, MESSAGE_PAGE_BYTES = 262144;
+const roles = ['all', 'coordinator', 'literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer'];
+const closed = (value, keys) => { const x = object(value); ensure(Object.keys(x).every(k => keys.includes(k)), 'INVALID_INPUT', '历史读取包含未知字段'); return x; };
+function prefix(bytes, complete) { try {
+    const d = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+    return d.decode(bytes, { stream: !complete });
+}
+catch {
+    throw new DomainError('MESSAGE_ENCODING_INVALID', '保存的消息不是完整有效的UTF-8；原始记录未改写');
+} }
+function bodyBytes(value, total) { if (value === null && total === 0)
+    return Buffer.alloc(0); ensure(value instanceof Uint8Array, 'MESSAGE_ENCODING_INVALID', '保存的消息正文缺失；原始记录未改写'); return value; }
+export function sessionCatalog(store, pid, value = {}) {
+    const x = closed(value, ['query', 'beforeSessionId', 'role', 'limit']), query = text(x.query ?? '', 'query', 160, true).trim(), role = oneOf(x.role ?? 'coordinator', roles, 'role'), limit = integer(x.limit ?? 10, 'limit', 1, 50);
+    let where = "kind='session' AND project_id=?", params = [pid];
+    if (role !== 'all') {
+        where += " AND json_extract(data,'$.role')=?";
+        params.push(role);
+    }
+    if (query) {
+        where += " AND (instr(lower(json_extract(data,'$.title')),lower(?))>0 OR instr(lower(id),lower(?))>0)";
+        params.push(query, query);
+    }
+    if (x.beforeSessionId !== undefined) {
+        const id = text(x.beforeSessionId, 'beforeSessionId', 100);
+        store.get('session', id, pid);
+        const cursor = store.db.prepare("SELECT rowid FROM records WHERE kind='session' AND id=? AND project_id=?").get(id, pid);
+        where += ' AND rowid<?';
+        params.push(Number(cursor.rowid));
+    }
+    const rows = store.db.prepare(`SELECT id,project_id,version,json_extract(data,'$.createdAt') createdAt,json_extract(data,'$.updatedAt') updatedAt,json_extract(data,'$.title') title,json_extract(data,'$.role') role,json_extract(data,'$.state') state,json_extract(data,'$.model') model,json_extract(data,'$.teamId') teamId,json_extract(data,'$.taskId') taskId FROM records WHERE ${where} ORDER BY rowid DESC LIMIT ?`).all(...params, limit + 1);
+    const items = rows.slice(0, limit).map(r => ({ id: String(r.id), kind: 'session', projectId: pid, version: Number(r.version), createdAt: String(r.createdAt), updatedAt: String(r.updatedAt), title: String(r.title), role: r.role, state: r.state, model: JSON.parse(r.model), ...(r.teamId ? { teamId: String(r.teamId) } : {}), ...(r.taskId ? { taskId: String(r.taskId) } : {}) }));
+    return { items, nextCursor: rows.length > limit ? items.at(-1).id : null, query, role, limit };
+}
+function messageMeta(store, session, id) { const r = store.db.prepare("SELECT rowid,version,project_id,json_extract(data,'$.sessionId') sessionId,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes,COALESCE(json_extract(data,'$.contentTruncated'),0) truncated FROM records WHERE kind='message' AND id=?").get(text(id, 'messageId', 100)); ensure(r, 'NOT_FOUND', '历史消息不存在', 404); ensure(r.project_id === session.projectId && r.sessionId === session.id, 'SCOPE_DENIED', '消息游标不属于所选会话', 403); return r; }
+export function sessionMessagePage(store, session, value = {}) {
+    const x = closed(value, ['beforeMessageId', 'afterMessageId', 'limit']), limit = integer(x.limit ?? 10, 'limit', 1, 50);
+    ensure(!(x.beforeMessageId !== undefined && x.afterMessageId !== undefined), 'INVALID_INPUT', '只能选择一个消息方向');
+    const after = x.afterMessageId !== undefined, cursor = x.beforeMessageId ?? x.afterMessageId, anchor = cursor === undefined ? undefined : messageMeta(store, session, text(cursor, 'messageCursor', 100));
+    const where = "kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=?", params = [session.projectId, session.id];
+    if (anchor)
+        params.push(Number(anchor.rowid));
+    const rows = store.db.prepare(`SELECT rowid,id,version,json_extract(data,'$.createdAt') createdAt,json_extract(data,'$.updatedAt') updatedAt,json_extract(data,'$.role') role,json_extract(data,'$.mode') mode,json_extract(data,'$.status') status,json_extract(data,'$.origin') origin,json_extract(data,'$.wakeupId') wakeupId,substr(json_extract(data,'$.error'),1,1000) error,length(json_extract(data,'$.error')) errorLength,COALESCE(json_extract(data,'$.contentTruncated'),0) truncated,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes,substr(CAST(json_extract(data,'$.content') AS BLOB),1,16000) content FROM records WHERE ${where}${anchor ? ` AND rowid${after ? '>' : '<'}?` : ''} ORDER BY rowid ${after ? 'ASC' : 'DESC'} LIMIT ?`).all(...params, limit);
+    const kept = [];
+    let returnedBytes = 2;
+    for (const r of rows) {
+        ensure(typeof r.bytes === 'number', 'MESSAGE_ENCODING_INVALID', '保存的消息正文缺失');
+        const raw = bodyBytes(r.content, r.bytes), content = Array.from(prefix(raw, raw.byteLength === r.bytes)).slice(0, MESSAGE_PREVIEW_CHARACTERS).join('');
+        const message = { id: String(r.id), kind: 'message', projectId: session.projectId, version: Number(r.version), createdAt: String(r.createdAt), updatedAt: String(r.updatedAt), sessionId: session.id, role: r.role, mode: r.mode, status: r.status, content, contentTruncated: !!r.truncated, previewTruncated: Buffer.byteLength(content, 'utf8') < Number(r.bytes), contentBytes: Number(r.bytes), ...(r.origin ? { origin: r.origin } : {}), ...(r.wakeupId ? { wakeupId: String(r.wakeupId) } : {}), ...(r.error ? { error: String(r.error) + (Number(r.errorLength) > 1000 ? '…（诊断过长，原始记录保留）' : '') } : {}) };
+        const bytes = Buffer.byteLength(JSON.stringify(message), 'utf8') + (kept.length ? 1 : 0);
+        if (returnedBytes + bytes > MESSAGE_PAGE_BYTES)
+            break;
+        kept.push({ sequence: Number(r.rowid), message });
+        returnedBytes += bytes;
+    }
+    if (!after)
+        kept.reverse();
+    const first = kept[0], last = kept.at(-1), exists = (op, n) => !!store.db.prepare(`SELECT 1 FROM records WHERE ${where} AND rowid${op}? LIMIT 1`).get(session.projectId, session.id, n);
+    const beforeMessageId = first && exists('<', first.sequence) ? first.message.id : null, afterMessageId = last && exists('>', last.sequence) ? last.message.id : null;
+    return { messages: kept.map(r => r.message), history: { beforeMessageId, afterMessageId, atLatest: !afterMessageId && (!anchor || kept.length > 0), previewCharacters: MESSAGE_PREVIEW_CHARACTERS, byteLimit: MESSAGE_PAGE_BYTES, returnedBytes } };
+}
+export function sessionMessageContent(store, session, value) {
+    const x = closed(value, ['messageId', 'cursor', 'limit', 'expectedVersion']), messageId = text(x.messageId, 'messageId', 100), r = messageMeta(store, session, messageId), requested = integer(x.cursor ?? 0, 'cursor', 0, Number(r.bytes)), limit = integer(x.limit ?? 16000, 'limit', 4, 64000);
+    if (x.expectedVersion !== undefined)
+        ensure(Number(r.version) === integer(x.expectedVersion, 'expectedVersion', 1), 'VERSION_CONFLICT', '消息版本已变化，请刷新历史页后重读');
+    // Like log reads, decode only a bounded byte window. Look back at most three bytes for a requested mid-character cursor.
+    ensure(typeof r.bytes === 'number', 'MESSAGE_ENCODING_INVALID', '保存的消息正文缺失');
+    const base = Math.max(0, requested - 3), row = store.db.prepare("SELECT substr(CAST(json_extract(data,'$.content') AS BLOB),?,?) bytes FROM records WHERE kind='message' AND id=? AND version=?").get(base + 1, limit + 3, messageId, r.version);
+    const bytes = Buffer.from(bodyBytes(row.bytes, r.bytes));
+    let offset = requested - base;
+    while (offset > 0 && offset < bytes.length && (bytes[offset] & 0xc0) === 0x80)
+        offset--;
+    const cursor = base + offset, window = bytes.subarray(offset, offset + limit), content = prefix(window, cursor + window.length === Number(r.bytes)), end = cursor + Buffer.byteLength(content, 'utf8');
+    return { sessionId: session.id, messageId, version: Number(r.version), content, cursor, end, total: Number(r.bytes), complete: end === Number(r.bytes), cursorUnit: 'utf8-byte', sourceTruncated: !!r.truncated };
+}
+//# sourceMappingURL=session-history.js.map

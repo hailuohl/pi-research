@@ -68,7 +68,7 @@ test('session display replaces partial output from the authoritative generation 
  const {App}=await import('../../dist/web/assets/app.js');
  const app=synchronousState(new App({}));synchronousState(app);app.feed={projectId:'p',stop(){}};app.state.projectId='p';app.state.sessionId='s';app.state.stream='old partial';
  const session={id:'s',role:'coordinator',state:'running',generation:8};let active=true;
- globalThis.fetch=async url=>({ok:true,json:async()=>url.endsWith('/bootstrap')?{projects:[{id:'p'}]}:url.endsWith('/state')?{sessions:[session],experiments:[]}: {session,messages:[{id:'m',content:'complete previous message'}],progress:{generation:8,active,content:'snapshot tail',truncated:true,cursor:123}}});
+ globalThis.fetch=async url=>({ok:true,json:async()=>url.endsWith('/bootstrap')?{projects:[{id:'p'}]}:url.includes('/state')?{sessions:[session],experiments:[]}: {session,messages:[{id:'m',content:'complete previous message'}],progress:{generation:8,active,content:'snapshot tail',truncated:true,cursor:123}}});
  assert.equal(await app.refresh(),true);assert.equal(app.state.stream,'snapshot tail');assert.equal(app.state.streamTruncated,true);
  active=false;await app.refresh();assert.equal(app.state.stream,'');assert.equal(app.state.messages[0].id,'m');
  let rejectOld,signal;globalThis.fetch=(_url,options)=>{signal=options.signal;return new Promise((_resolve,reject)=>{rejectOld=reject;});};const request=app.refresh();app.invalidateRead();app.state.connected=true;rejectOld(Error('stale offline'));await request;assert.equal(signal.aborted,true);assert.equal(app.state.connected,true);app.componentWillUnmount();

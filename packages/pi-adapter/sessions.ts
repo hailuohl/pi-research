@@ -1,3 +1,4 @@
+import {sessionCatalog,sessionMessagePage,sessionMessageContent,type SessionView} from './session-history.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -71,23 +72,26 @@ export class SessionService {
         });
     }
     messages(actor: Actor, id: string) { const s = this.get(actor, id); return this.c.store.db.prepare("SELECT data FROM records WHERE kind='message' AND json_extract(data,'$.sessionId')=? AND project_id=? ORDER BY rowid").all(id,s.projectId!).map(r=>JSON.parse(r.data as string) as Row<Message>); }
+    list(actor:Actor,pid:string,input:unknown={}){userOnly(actor);scope(actor,pid);this.c.store.get('project',pid);return this.c.store.readSnapshot(()=>sessionCatalog(this.c.store,pid,input));}
+    recent(actor:Actor,pid:string,selectedId?:string){userOnly(actor);scope(actor,pid);const rows=this.c.store.db.prepare("SELECT data FROM records WHERE kind='session' AND project_id=? ORDER BY rowid DESC LIMIT 30").all(pid).map(r=>JSON.parse(r.data as string) as Row<Session>);const selected=selectedId?this.c.store.get<Session>('session',selectedId,pid):(()=>{const row=this.c.store.db.prepare("SELECT data FROM records WHERE kind='session' AND project_id=? AND json_extract(data,'$.role')='coordinator' AND json_extract(data,'$.state')<>'archived' ORDER BY rowid DESC LIMIT 1").get(pid);return row?JSON.parse(row.data as string) as Row<Session>:undefined;})();if(selected&&!rows.some(s=>s.id===selected.id))rows.unshift(selected);return rows;}
+    messageRead(actor:Actor,id:string,input:unknown){userOnly(actor);return this.c.store.readSnapshot(()=>sessionMessageContent(this.c.store,this.get(actor,id),input));}
     /** Durable messages and the current generation's bounded preview share one read snapshot. */
-    view(actor:Actor,id:string) {
+    view(actor:Actor,id:string,input:unknown={}):SessionView {
         userOnly(actor);
         return this.c.store.readSnapshot(()=>{
-            const session=this.get(actor,id),pid=session.projectId!,messages=this.messages(actor,id),cursor=this.c.store.eventCursor(pid);
+            const session=this.get(actor,id),pid=session.projectId!,page=sessionMessagePage(this.c.store,session,input),cursor=this.c.store.eventCursor(pid);
             const progress={generation:session.generation,active:session.state==='running',content:'',truncated:false,cursor};
-            if(!progress.active)return {session,messages,progress};
+            if(!progress.active)return {session,...page,progress};
             const start=this.c.store.db.prepare("SELECT seq,json_extract(payload,'$.generation') generation FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='agent.started' ORDER BY seq DESC LIMIT 1").get(pid,id);
             // Legacy events did not identify an execution generation; never replay them into a new turn.
-            if(!start||start.generation!==session.generation)return {session,messages,progress};
+            if(!start||start.generation!==session.generation)return {session,...page,progress};
             const completed=this.c.store.db.prepare("SELECT seq FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.message_completed' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid,id,start.seq,session.generation);
             const rows=this.c.store.db.prepare("SELECT seq,substr(json_extract(payload,'$.text'),1,4000) text,COALESCE(json_extract(payload,'$.truncated'),0) truncated FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.delta' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 257").all(pid,id,completed?.seq??start.seq,session.generation);
             const visible=rows.slice(0,256).reverse(),content=visible.map(r=>typeof r.text==='string'?r.text:'').join('');
             progress.content=content.slice(-32000);progress.truncated=rows.length>256||content.length>32000||visible.some(r=>!!r.truncated);
             // Avoid starting the preview in the middle of a UTF-16 surrogate pair.
             if(progress.content.length&&/[\uDC00-\uDFFF]/.test(progress.content[0])){progress.content=progress.content.slice(1);progress.truncated=true;}
-            return {session,messages,progress};
+            return {session,...page,progress};
         });
     }
     /** Host-only persisted input; never masquerades as a user-authored message. */

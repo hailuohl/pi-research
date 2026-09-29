@@ -1,11 +1,12 @@
 import * as React from 'react';
 import {RunGrants,runGrantUsable} from './run-grants.js';
 import {LogView,type LogPage} from './log-view.js';
+import {SessionHistory} from './session-history.js';
 import {ComputeWait} from './scheduler-view.js';
 import { WakeupPanel } from './campaigns.js';
 import { comparableRuns, comparisonMetric } from './models.js';
 import { api, artifactText, downloadArtifact } from './api.js';
-import type { Bootstrap, ProjectState, Row, Session, Message, Experiment, Run } from './models.js';
+import type { Bootstrap, ProjectState, Row, Session, Experiment, Run, SessionView, SessionHistoryPage } from './models.js';
 import { short, number, date, label } from './models.js';
 import { Icon, Badge, Empty, SectionTitle } from './ui.js';
 export type Perform = (fn: () => Promise<any>, success?: string) => Promise<any>;
@@ -13,7 +14,10 @@ export class Chat extends React.Component<{
     data: ProjectState;
     boot: Bootstrap;
     session: Row<Session> | undefined;
-    messages: Row<Message>[];
+    messages: SessionView['messages'];
+    history:SessionHistoryPage|null;
+    historyAnchor:{direction:'before'|'after';id:string}|null;
+    onHistory:(anchor:{direction:'before'|'after';id:string}|null)=>void;
     stream: string;
     streamTruncated?:boolean;
     perform: Perform;
@@ -28,26 +32,27 @@ export class Chat extends React.Component<{
     state = { draft: '', mode: 'prompt' };
     render() {
         const { data, boot, session, messages } = this.props;
-        const canSend = boot.runtime.ready && !!session?.model.provider && !!session?.model.model;
+        const canSend = boot.runtime.ready && !!session && !!session.model.provider && !!session.model.model && !session.taskId && session.state!=='archived' && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
         return <div className="chat-page"><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions"><Badge value={session.state}/><button className="icon-button" title="重命名会话" aria-label="重命名会话" onClick={() => {
                     const title = prompt('会话名称', session.title);
                     if (title)
                         this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));
                 }}><Icon name="evidence"/></button></div> : null}</div>
- {!canSend ? <div className="notice runtime-notice"><span className="status-dot amber"/><div><strong>Pi 尚未就绪</strong><p>{boot.runtime.message} 项目、快照、真实数值实验和证据管理仍可使用。</p></div></div> : null}
- <div className="conversation" aria-live="polite">{messages.length === 0 ? <div className="welcome"><div className="welcome-mark">π</div><h2>让研究过程，<br />有迹可循。</h2><p>从问题到实验，再到可信证据。<br />每一次运行都有自己的快照，每一步决定都保留依据。</p><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>建立一个可复现的实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目代码与配置</span><Icon name="arrow"/></button></div><p className="small muted">这是工作台的引导界面，不是模型生成的研究结果。</p></div> : messages.map(m => <article className={'message message-' + m.role} key={m.id}><div className="message-avatar">{m.role === 'user' ? '我' : m.role === 'assistant' ? 'π' : '·'}</div><div className="message-body"><div className="message-meta"><strong>{m.role === 'user' ? '你' : m.role === 'assistant' ? (m.wakeupId ? 'Pi · 结果分析' : 'Pi') : (m.wakeupId ? '持久化结果通知' : '工作台状态通知')}</strong><span>{date(m.createdAt)}</span>{m.status === 'failed' || m.status === 'cancelled' ? <Badge value={m.status}/> : null}</div><div className="prose-text">{m.content || '（本次响应没有可展示的文本）'}</div>{(m as Message & {contentTruncated?:boolean}).contentTruncated?<p className="small muted">此消息展示内容达到上限；原生会话记录保留，当前展示不代表完整消息。</p>:null}{m.error ? <p className="error-text">{m.error}</p> : null}<div className="message-tools"><button onClick={() => this.props.perform(async () => { const fork = await api(`/sessions/${session!.id}/branch`, { messageId: m.id }); return fork; }, '已创建对话分支；实验记录保持不变')}>从此处分支</button>{m.role === 'user' && ['failed', 'cancelled'].includes(m.status) ? <button onClick={() => this.props.perform(() => api(`/sessions/${session!.id}/retry`, { messageId: m.id }))}>重试此消息</button> : null}</div></div></article>)}<WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/>{this.props.stream ? <article className="message"><div className="message-avatar">π</div><div className="message-body"><div className="message-meta">Pi · 流式输出，等待最终消息</div><div className="prose-text">{this.props.stream}</div>{this.props.streamTruncated?<p className="small muted">仅显示当前输出尾部，前文已省略；完整内容以原生会话记录为准。</p>:null}</div></article> : null}</div>
+ {!boot.runtime.ready ? <div className="notice runtime-notice"><span className="status-dot amber"/><div><strong>Pi 尚未就绪</strong><p>{boot.runtime.message} 项目、快照、真实数值实验和证据管理仍可使用。</p></div></div> : null}
+ {session?.taskId?<p className="notice runtime-notice">这是团队任务会话。请通过团队任务控件发送指令或管理任务。</p>:session?.state==='archived'?<p className="notice runtime-notice">此会话已归档，不能发送消息。</p>:null}
+ <div className="conversation" aria-live="polite">{messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <div className="welcome"><div className="welcome-mark">π</div><h2>让研究过程，<br />有迹可循。</h2><p>从问题到实验，再到可信证据。<br />每一次运行都有自己的快照，每一步决定都保留依据。</p><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>建立一个可复现的实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目代码与配置</span><Icon name="arrow"/></button></div><p className="small muted">这是工作台的引导界面，不是模型生成的研究结果。</p></div> : <SessionHistory projectId={data.project.id} sessionId={session?.id??''} messages={messages} history={this.props.history} historyAnchor={this.props.historyAnchor} onNavigate={this.props.onHistory} perform={this.props.perform}/>}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/> : null}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) && this.props.stream ? <article className="message"><div className="message-avatar">π</div><div className="message-body"><div className="message-meta">Pi · 流式输出，等待最终消息</div><div className="prose-text">{this.props.stream}</div>{this.props.streamTruncated?<p className="small muted">仅显示当前输出尾部，前文已省略；完整内容以原生会话记录为准。</p>:null}</div></article> : null}</div>
  <div className="composer-wrap"><form className="composer" onSubmit={(e: any) => {
                 e.preventDefault();
-                if (!session || !this.state.draft.trim())
+                if (!session || !canSend || !this.state.draft.trim())
                     return;
                 const content = this.state.draft;
                 this.props.perform(async () => { await api(`/sessions/${session.id}/messages`, { content, mode: this.state.mode }); this.setState({ draft: '' }); });
-            }}><textarea aria-label="研究问题" placeholder={canSend ? '描述研究问题，或发消息引导当前任务…' : '配置 Pi 供应商和模型后，在这里开始研究…'} value={this.state.draft} onChange={(e: any) => this.setState({ draft: e.target.value })} onKeyDown={(e: any) => {
+            }}><textarea aria-label="研究问题" placeholder={session?.taskId ? '请通过团队任务控件操作' : session?.state==='archived' ? '已归档会话不可发送' : this.props.historyAnchor||this.props.history&&!this.props.history.atLatest ? '返回最新消息后可发送' : canSend ? '描述研究问题，或发消息引导当前任务…' : '配置 Pi 供应商和模型后，在这里开始研究…'} value={this.state.draft} disabled={!!session?.taskId||session?.state==='archived'} onChange={(e: any) => this.setState({ draft: e.target.value })} onKeyDown={(e: any) => {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
                     e.currentTarget.form.requestSubmit();
                 }
-            }}/><div className="composer-toolbar"><select aria-label="消息方式" value={this.state.mode} onChange={(e: any) => this.setState({ mode: e.target.value })}><option value="prompt">普通消息</option><option value="steer">引导当前任务</option><option value="follow_up">当前结束后执行</option></select><span className="small muted">{data.project.settings.enabled ? '按需协作已开启' : '单智能体模式'}</span><div className="grow"/>{session?.state === 'running' ? <button type="button" className="secondary compact" onClick={() => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), '已停止 Agent；正式实验未取消')}><Icon name="stop" size={14}/>停止 Agent</button> : null}<button className="primary compact" disabled={!canSend || !this.state.draft.trim() || !session}><Icon name="arrow" size={16}/>发送</button></div></form><div className="composer-caption">固定快照 · 显式审批 · 可追溯证据 <span>Ctrl + Enter 发送</span></div></div></div>;
+            }}/><div className="composer-toolbar"><select aria-label="消息方式" value={this.state.mode} onChange={(e: any) => this.setState({ mode: e.target.value })}><option value="prompt">普通消息</option><option value="steer">引导当前任务</option><option value="follow_up">当前结束后执行</option></select><span className="small muted">{data.project.settings.enabled ? '按需协作已开启' : '单智能体模式'}</span><div className="grow"/>{session?.state === 'running' && !session.taskId ? <button type="button" className="secondary compact" onClick={() => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), '已停止 Agent；正式实验未取消')}><Icon name="stop" size={14}/>停止 Agent</button> : null}<button className="primary compact" disabled={!canSend || !this.state.draft.trim() || !session}><Icon name="arrow" size={16}/>发送</button></div></form><div className="composer-caption">固定快照 · 显式审批 · 可追溯证据 <span>Ctrl + Enter 发送</span></div></div></div>;
     }
 }
 export function Experiments({ data, selected, onSelect, onCreate, onChild, onRun, perform, busy, onSession, selectedRunGrant, onSelectRunGrant }: {

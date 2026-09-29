@@ -53,7 +53,7 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
             assert.equal(command.status, 1);
             assert.deepEqual(JSON.parse(command.stderr).error, http.value.error, spec.id);
             // Owner-only operations reject Agents before validating inputs; other tools retain HTTP/CLI schema parity.
-            if(/^(discovery_grant_|run_grant_|working_grant_|report_|compute_|agent_capacity_|model_http_|document_|literature_task_|skill_|publication_|manuscript_)/.test(spec.id)||['campaign_plan_inspect','campaign_candidate_prepare','campaign_candidate_attach','campaign_comparison'].includes(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
+            if(/^(discovery_grant_|run_grant_|working_grant_|report_|compute_|agent_capacity_|session_(list|view|message_read)$|model_http_|document_|literature_task_|skill_|publication_|manuscript_)/.test(spec.id)||['campaign_plan_inspect','campaign_candidate_prepare','campaign_candidate_attach','campaign_comparison'].includes(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
             else assert.deepEqual(toolError, http.value.error, spec.id);
         }
         const key = randomUUID(), input = { source: 'project', path: 'operation.txt', content: 'shared', expectedDigest: null };

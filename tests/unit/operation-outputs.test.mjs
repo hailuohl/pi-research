@@ -10,6 +10,7 @@ import {REPORT_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/rep
 import {SCHEDULER_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/scheduler-schemas.js';
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/development-schemas.js';
 import {GIT_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/git-schemas.js';
+import {SESSION_HISTORY_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/session-schemas.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setup, USER, approve, campaign, fixtureFinish} from '../support/research.mjs';
@@ -107,11 +108,10 @@ test('all existing public tools have closed, literal success contracts exercised
   const changeArtifact=s.app.evidence.put(s.project.id,'change.txt',Buffer.from('new source'),'text/plain',`agent:${root.sessionId}`);
   await call('change_proposal_prepare',{baseExperimentId:s.baseline.id,expectedRevision:1,title:'patch',hypothesis:'fixture',changes:[{path:'new.txt',expectedDigest:null,artifactId:changeArtifact.id}]});
   // Four source-access operations are covered by their own feature tests.
-  const expected=Object.keys(TOOL_DEFINITIONS).filter(name=>!Object.hasOwn(RUN_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(WORKING_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(DISCOVERY_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(RESEARCH_PLAN_INPUT_SCHEMAS,name)&&!Object.hasOwn(SOURCE_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(DEVELOPMENT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(GIT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REVIEW_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REPORT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SCHEDULER_INPUT_SCHEMAS,name)&&!Object.hasOwn(DOCUMENT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SKILL_INPUT_SCHEMAS,name)&&!Object.hasOwn(PUBLICATION_INPUT_SCHEMAS,name)&&name!=='reviewed_change_prepare');
+  const expected=Object.keys(TOOL_DEFINITIONS).filter(name=>!Object.hasOwn(SESSION_HISTORY_INPUT_SCHEMAS,name)&&!Object.hasOwn(RUN_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(WORKING_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(DISCOVERY_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(RESEARCH_PLAN_INPUT_SCHEMAS,name)&&!Object.hasOwn(SOURCE_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(DEVELOPMENT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(GIT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REVIEW_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REPORT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SCHEDULER_INPUT_SCHEMAS,name)&&!Object.hasOwn(DOCUMENT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SKILL_INPUT_SCHEMAS,name)&&!Object.hasOwn(PUBLICATION_INPUT_SCHEMAS,name)&&name!=='reviewed_change_prepare');
   assert.deepEqual([...seen].sort(),expected.sort());
   const corrupt=structuredClone(evidence);corrupt.locator.typo=1;
   assert.throws(()=>validateSchema(OUTPUT_SCHEMAS.evidence_read,corrupt,'output'),{code:'INVALID_OUTPUT'});
   assert.throws(()=>validateSchema(OUTPUT_SCHEMAS.task_context_read,{taskId:'incomplete'},'output'),{code:'INVALID_OUTPUT'});
  } finally {globalThis.fetch=savedFetch;s.close();}
 });
-

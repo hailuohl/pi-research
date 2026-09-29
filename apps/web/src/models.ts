@@ -32,6 +32,7 @@ export interface DocumentLocation {documentVersionId:string;parseResultId?:strin
 export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision,ExperimentPlanRevision,ResearchCandidate, Wakeup };
 import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig } from '../../../dist/packages/domain/types.js';
 export type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig };
+export type {SessionCatalogItem,SessionCatalogPage,SessionHistoryPage,SessionView,SessionMessageContent} from '../../../dist/packages/pi-adapter/session-history.js';
 export interface DevelopmentManifestDTO {
     workingGrant?:{id:string;digest:string;approvalId:string};
     dataArtifacts?:Array<{id:string;digest:string;size:number;sourceAcceptanceId?:string}>;

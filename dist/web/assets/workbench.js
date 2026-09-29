@@ -2,6 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { RunGrants, runGrantUsable } from "./run-grants.js";
 import { LogView } from "./log-view.js";
+import { SessionHistory } from "./session-history.js";
 import { ComputeWait } from "./scheduler-view.js";
 import { WakeupPanel } from "./campaigns.js";
 import { comparableRuns, comparisonMetric } from "./models.js";
@@ -15,7 +16,7 @@ class Chat extends React.Component {
   }
   render() {
     const { data, boot, session, messages } = this.props;
-    const canSend = boot.runtime.ready && !!session?.model.provider && !!session?.model.model;
+    const canSend = boot.runtime.ready && !!session && !!session.model.provider && !!session.model.model && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
     return /* @__PURE__ */ jsxs("div", { className: "chat-page", children: [
       /* @__PURE__ */ jsxs("div", { className: "chat-heading", children: [
         /* @__PURE__ */ jsxs("div", { children: [
@@ -31,7 +32,7 @@ class Chat extends React.Component {
           }, children: /* @__PURE__ */ jsx(Icon, { name: "evidence" }) })
         ] }) : null
       ] }),
-      !canSend ? /* @__PURE__ */ jsxs("div", { className: "notice runtime-notice", children: [
+      !boot.runtime.ready ? /* @__PURE__ */ jsxs("div", { className: "notice runtime-notice", children: [
         /* @__PURE__ */ jsx("span", { className: "status-dot amber" }),
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("strong", { children: "Pi \u5C1A\u672A\u5C31\u7EEA" }),
@@ -41,8 +42,9 @@ class Chat extends React.Component {
           ] })
         ] })
       ] }) : null,
+      session?.taskId ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u8FD9\u662F\u56E2\u961F\u4EFB\u52A1\u4F1A\u8BDD\u3002\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u53D1\u9001\u6307\u4EE4\u6216\u7BA1\u7406\u4EFB\u52A1\u3002" }) : session?.state === "archived" ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u6B64\u4F1A\u8BDD\u5DF2\u5F52\u6863\uFF0C\u4E0D\u80FD\u53D1\u9001\u6D88\u606F\u3002" }) : null,
       /* @__PURE__ */ jsxs("div", { className: "conversation", "aria-live": "polite", children: [
-        messages.length === 0 ? /* @__PURE__ */ jsxs("div", { className: "welcome", children: [
+        messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsxs("div", { className: "welcome", children: [
           /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
           /* @__PURE__ */ jsxs("h2", { children: [
             "\u8BA9\u7814\u7A76\u8FC7\u7A0B\uFF0C",
@@ -67,28 +69,9 @@ class Chat extends React.Component {
             ] })
           ] }),
           /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8FD9\u662F\u5DE5\u4F5C\u53F0\u7684\u5F15\u5BFC\u754C\u9762\uFF0C\u4E0D\u662F\u6A21\u578B\u751F\u6210\u7684\u7814\u7A76\u7ED3\u679C\u3002" })
-        ] }) : messages.map((m) => /* @__PURE__ */ jsxs("article", { className: "message message-" + m.role, children: [
-          /* @__PURE__ */ jsx("div", { className: "message-avatar", children: m.role === "user" ? "\u6211" : m.role === "assistant" ? "\u03C0" : "\xB7" }),
-          /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
-            /* @__PURE__ */ jsxs("div", { className: "message-meta", children: [
-              /* @__PURE__ */ jsx("strong", { children: m.role === "user" ? "\u4F60" : m.role === "assistant" ? m.wakeupId ? "Pi \xB7 \u7ED3\u679C\u5206\u6790" : "Pi" : m.wakeupId ? "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5" : "\u5DE5\u4F5C\u53F0\u72B6\u6001\u901A\u77E5" }),
-              /* @__PURE__ */ jsx("span", { children: date(m.createdAt) }),
-              m.status === "failed" || m.status === "cancelled" ? /* @__PURE__ */ jsx(Badge, { value: m.status }) : null
-            ] }),
-            /* @__PURE__ */ jsx("div", { className: "prose-text", children: m.content || "\uFF08\u672C\u6B21\u54CD\u5E94\u6CA1\u6709\u53EF\u5C55\u793A\u7684\u6587\u672C\uFF09" }),
-            m.contentTruncated ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6B64\u6D88\u606F\u5C55\u793A\u5185\u5BB9\u8FBE\u5230\u4E0A\u9650\uFF1B\u539F\u751F\u4F1A\u8BDD\u8BB0\u5F55\u4FDD\u7559\uFF0C\u5F53\u524D\u5C55\u793A\u4E0D\u4EE3\u8868\u5B8C\u6574\u6D88\u606F\u3002" }) : null,
-            m.error ? /* @__PURE__ */ jsx("p", { className: "error-text", children: m.error }) : null,
-            /* @__PURE__ */ jsxs("div", { className: "message-tools", children: [
-              /* @__PURE__ */ jsx("button", { onClick: () => this.props.perform(async () => {
-                const fork = await api(`/sessions/${session.id}/branch`, { messageId: m.id });
-                return fork;
-              }, "\u5DF2\u521B\u5EFA\u5BF9\u8BDD\u5206\u652F\uFF1B\u5B9E\u9A8C\u8BB0\u5F55\u4FDD\u6301\u4E0D\u53D8"), children: "\u4ECE\u6B64\u5904\u5206\u652F" }),
-              m.role === "user" && ["failed", "cancelled"].includes(m.status) ? /* @__PURE__ */ jsx("button", { onClick: () => this.props.perform(() => api(`/sessions/${session.id}/retry`, { messageId: m.id })), children: "\u91CD\u8BD5\u6B64\u6D88\u606F" }) : null
-            ] })
-          ] })
-        ] }, m.id)),
-        /* @__PURE__ */ jsx(WakeupPanel, { data, busy: false, sessionId: session?.id, perform: this.props.perform, onSession: this.props.onSession }),
-        this.props.stream ? /* @__PURE__ */ jsxs("article", { className: "message", children: [
+        ] }) : /* @__PURE__ */ jsx(SessionHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform }),
+        !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(WakeupPanel, { data, busy: false, sessionId: session?.id, perform: this.props.perform, onSession: this.props.onSession }) : null,
+        !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) && this.props.stream ? /* @__PURE__ */ jsxs("article", { className: "message", children: [
           /* @__PURE__ */ jsx("div", { className: "message-avatar", children: "\u03C0" }),
           /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
             /* @__PURE__ */ jsx("div", { className: "message-meta", children: "Pi \xB7 \u6D41\u5F0F\u8F93\u51FA\uFF0C\u7B49\u5F85\u6700\u7EC8\u6D88\u606F" }),
@@ -100,7 +83,7 @@ class Chat extends React.Component {
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
         /* @__PURE__ */ jsxs("form", { className: "composer", onSubmit: (e) => {
           e.preventDefault();
-          if (!session || !this.state.draft.trim())
+          if (!session || !canSend || !this.state.draft.trim())
             return;
           const content = this.state.draft;
           this.props.perform(async () => {
@@ -108,7 +91,7 @@ class Chat extends React.Component {
             this.setState({ draft: "" });
           });
         }, children: [
-          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\uFF0C\u6216\u53D1\u6D88\u606F\u5F15\u5BFC\u5F53\u524D\u4EFB\u52A1\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, onChange: (e) => this.setState({ draft: e.target.value }), onKeyDown: (e) => {
+          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\uFF0C\u6216\u53D1\u6D88\u606F\u5F15\u5BFC\u5F53\u524D\u4EFB\u52A1\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState({ draft: e.target.value }), onKeyDown: (e) => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
               e.preventDefault();
               e.currentTarget.form.requestSubmit();
@@ -122,7 +105,7 @@ class Chat extends React.Component {
             ] }),
             /* @__PURE__ */ jsx("span", { className: "small muted", children: data.project.settings.enabled ? "\u6309\u9700\u534F\u4F5C\u5DF2\u5F00\u542F" : "\u5355\u667A\u80FD\u4F53\u6A21\u5F0F" }),
             /* @__PURE__ */ jsx("div", { className: "grow" }),
-            session?.state === "running" ? /* @__PURE__ */ jsxs("button", { type: "button", className: "secondary compact", onClick: () => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), "\u5DF2\u505C\u6B62 Agent\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88"), children: [
+            session?.state === "running" && !session.taskId ? /* @__PURE__ */ jsxs("button", { type: "button", className: "secondary compact", onClick: () => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), "\u5DF2\u505C\u6B62 Agent\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88"), children: [
               /* @__PURE__ */ jsx(Icon, { name: "stop", size: 14 }),
               "\u505C\u6B62 Agent"
             ] }) : null,

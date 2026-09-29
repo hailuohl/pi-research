@@ -1,3 +1,4 @@
+import { type SessionView } from './session-history.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Session, Message, ModelConfig, Role, Row } from '../domain/types.js';
 export declare class SessionService {
@@ -19,18 +20,11 @@ export declare class SessionService {
     archive(actor: Actor, id: string, expectedVersion: number): Row<Session>;
     interrupt(actor: Actor, id: string): Row<Session>;
     messages(actor: Actor, id: string): Row<Message>[];
+    list(actor: Actor, pid: string, input?: unknown): import("./session-history.js").SessionCatalogPage;
+    recent(actor: Actor, pid: string, selectedId?: string): Row<Session>[];
+    messageRead(actor: Actor, id: string, input: unknown): import("./session-history.js").SessionMessageContent;
     /** Durable messages and the current generation's bounded preview share one read snapshot. */
-    view(actor: Actor, id: string): {
-        session: Row<Session>;
-        messages: Row<Message>[];
-        progress: {
-            generation: number;
-            active: boolean;
-            content: string;
-            truncated: boolean;
-            cursor: number;
-        };
-    };
+    view(actor: Actor, id: string, input?: unknown): SessionView;
     /** Host-only persisted input; never masquerades as a user-authored message. */
     automation(id: string, wakeupId: string, content: string): Row<Message>;
     system(id: string, content: string): Row<Message>;
