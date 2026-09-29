@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api} from './api.js';
 import type {ProjectState,ComputeLimits,ComputeConfiguration,ComputeQueueInspection,ComputeQueueItem,ComputeWaitReason,ComputeUsage,ComputeAvailable,AgentCapacityDTO,ModelHttpDTO} from './models.js';
 import {short,label} from './models.js';

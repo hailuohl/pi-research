@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {ProjectEventFeed} from './event-feed.js';
 import {SchedulerView} from './scheduler-view.js';
 import {IntegrationsView} from './integrations.js';
@@ -88,7 +89,7 @@ class ExperimentModal extends React.Component<{
         </Modal>;
     }
 }
-class App extends React.Component<{}, State> {
+export class App extends React.Component<{}, State> {
     state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedRunGrant:saved().selectedRunGrant??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [], stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
     private timer?: number;
     private refreshing?:Promise<boolean>;
@@ -134,7 +135,7 @@ class App extends React.Component<{}, State> {
         }catch(error){
             if(!this.mounted||epoch!==this.refreshEpoch||controller.signal.aborted)return false;
             if(error instanceof ApiError&&error.status===401)this.setState({loggedIn:false,error:error.message});
-            else this.setState({connected:false,...(!quiet?{error:error instanceof Error?error.message:String(error)}:{})});
+            else this.setState(previous=>({...previous,connected:false,...(!quiet?{error:error instanceof Error?error.message:String(error)}:{})}));
             return false;
         }finally{if(this.readController===controller)this.readController=undefined;}
     }
@@ -240,4 +241,3 @@ class App extends React.Component<{}, State> {
                 }} onDirective={teamId => this.open('directive', teamId)}/> : null}</div></div>{this.modalView()}</div>;
     }
 }
-ReactDOM.render(<App />, document.getElementById('root'));

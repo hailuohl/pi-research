@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {RunGrants,runGrantUsable} from './run-grants.js';
 import {LogView,type LogPage} from './log-view.js';
 import {ComputeWait} from './scheduler-view.js';
@@ -102,7 +103,7 @@ class RunFiles extends React.Component<{run:Row<Run>;data:ProjectState;perform:P
     async readSource(path:string,append=false){
         if(append&&this.state.sourceLoading)return;
         const epoch=++this.sourceEpoch,cursor=append?this.state.sourceCursor:0;
-        this.setState({sourceLoading:true,sourceError:'',sourcePath:path,...(!append?{sourceContent:'',sourceCursor:0,sourceComplete:false}:{})});
+        this.setState(previous=>({...previous,sourceLoading:true,sourceError:'',sourcePath:path,...(!append?{sourceContent:'',sourceCursor:0,sourceComplete:false}:{})}));
         try {const result=await this.sourceOperation('run_source_read',{path,cursor,limit:16000});if(result.sourceDigest!==this.props.run.manifest.snapshotDigest)throw Error('源码摘要与所选运行不一致。');if(epoch===this.sourceEpoch)this.setState({sourceContent:(append?this.state.sourceContent:'')+result.content,sourceCursor:result.end,sourceComplete:result.complete});}
         catch(error){if(epoch===this.sourceEpoch)this.setState({sourceError:error instanceof Error?error.message:String(error)});}
         finally{if(epoch===this.sourceEpoch)this.setState({sourceLoading:false});}

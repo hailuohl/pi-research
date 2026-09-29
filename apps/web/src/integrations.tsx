@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {literatureSourceURL} from './literature-view.js';
 import {api,artifactText,downloadArtifact} from './api.js';
 import {SectionTitle,Empty} from './ui.js';

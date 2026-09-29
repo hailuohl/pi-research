@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {ResearchPlanFields,ResearchPlanPanel,readResearchPlan,readPlanCandidates} from './research-plan.js';
 import { api } from './api.js';
 import type { ProjectState, Campaign, Row, CampaignDecision } from './models.js';

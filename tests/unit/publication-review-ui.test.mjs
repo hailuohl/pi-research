@@ -1,8 +1,7 @@
+import {synchronousState} from '../support/ui.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);globalThis.React=vendor.React;
 const {PublicationReviewPanel}=await import('../../dist/web/assets/publication-review-view.js');
 const {ReportsView}=await import('../../dist/web/assets/report-view.js');
 const {PublicationView}=await import('../../dist/web/assets/publication-view.js');
@@ -10,7 +9,7 @@ const sync=v=>{v.setState=(patch,done)=>{Object.assign(v.state,typeof patch==='f
 const result={id:'result',revisionId:'revision',jobId:'job',sourceDigest:'source',pdf:{digest:'pdf'}};
 const review={id:'review',publicationResultId:'result',revisionId:'revision',jobId:'job',sourceDigest:'source',pdfDigest:'pdf',rootSessionId:'root',teamId:'team',taskId:'task',approvalId:'approval',digest:'binding',status:'awaiting_approval',validity:'current',requiredEvidenceIds:['source-evidence'],artifactIds:[]};
 const data={project:{id:'project'},sessions:[{id:'root',title:'Root',role:'coordinator',state:'idle'}],evidence:[{id:'evidence',description:'Fixed evidence'}],tasks:[],reports:[],runs:[],experiments:[],claims:[],artifacts:[]};
-function view(){const v=sync(new PublicationReviewPanel({data,result,ready:true,perform:async f=>f()}));v.state.rootSessionId='root';return v;}
+function view(){const v=sync(synchronousState(new PublicationReviewPanel({data,result,ready:true,perform:async f=>f()})));v.state.rootSessionId='root';return v;}
 const flatten=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(flatten).join(' '):typeof node!=='object'?String(node):flatten(node.props.children);
 test('paper review preparation sends the exact result and explicit evidence, never approves or invokes a model',async()=>{
  const v=view(),calls=[];v.state.inputEvidenceIds=['evidence'];v.call=async(name,input)=>{calls.push({name,input});return review;};await v.prepare();
@@ -40,12 +39,12 @@ test('a list requested during preparation cannot erase the newly prepared review
  assert.deepEqual(v.state.reviews,[review]);assert.equal(v.state.loading,false);assert.equal(v.state.busy,false);v.componentWillUnmount();
 });
 test('late same-build navigation cannot replace a newer selected review',async()=>{
- const v=sync(new PublicationView({data,perform:async f=>f()})),pending=[];v.openRevision=()=>{v.selectionEpoch++;return new Promise(resolve=>pending.push(resolve));};
+ const v=sync(synchronousState(new PublicationView({data,perform:async f=>f()}))),pending=[];v.openRevision=()=>{v.selectionEpoch++;return new Promise(resolve=>pending.push(resolve));};
  const older=v.openFixed('revision','job','review-a'),newer=v.openFixed('revision','job','review-b');v.state.revision={id:'revision'};v.state.job={id:'job'};
  pending[1]();await newer;assert.equal(v.state.selectedReviewId,'review-b');pending[0]();await older;assert.equal(v.state.selectedReviewId,'review-b');v.componentWillUnmount();
 });
 test('report review references are frozen and exact-build navigation rejects unbound IDs',async()=>{
- const v=sync(new ReportsView({data,perform:async f=>f()})),reference={id:'review-ref',type:'publication-review',targetId:'review',digest:'binding',label:'Fixed review'};
+ const v=sync(synchronousState(new ReportsView({data,perform:async f=>f()}))),reference={id:'review-ref',type:'publication-review',targetId:'review',digest:'binding',label:'Fixed review'};
  v.state.report={id:'report',artifactId:'body',title:'Report',formatVersion:6,integrity:'verified',validity:'current',runs:[],reasons:[],references:[reference],publicationReviews:[{resultId:'result',reviewIds:['review'],reviews:[{...review,referenceId:reference.id}]}]};
  let opened;v.publicationView={openFixed:(...args)=>{opened=args;}};v.openPublicationReview('result','other');assert.equal(opened,undefined);v.openPublicationReview('result','review');assert.deepEqual(opened,['revision','job','review']);
  v.call=async(name,input)=>{assert.equal(name,'report_reference_read');assert.equal(input.referenceId,'review-ref');return {reference,content:'frozen snapshot',cursor:0,end:15,complete:true};};await v.readReference('review-ref');assert.equal(v.state.content,'frozen snapshot');assert.match(flatten(v.render()),/报告生成时/);v.componentWillUnmount();

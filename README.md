@@ -15,6 +15,8 @@ node dist/apps/cli/index.js doctor
 node dist/apps/server/index.js
 ```
 
+前端由锁定的 React/ReactDOM 19.3.0 和真实类型声明构建，发布目录中的本地 main.js 已包含运行时，无CDN依赖；开发时使用 `npm ci` 与 `npm run build`。旧vendor仅保留为字节固定的参考基线，不再发布或加载。见[工作台迁移验收](docs/acceptance/flow-react-workbench/RESULTS.zh-CN.md)。
+
 已在本地 `.env` 配置 Pi 供应商、模型和密钥时，用 `node --env-file=.env dist/apps/server/index.js` 启动以加载配置；不要提交 `.env`。
 
 打开终端显示的本地地址，不要泄露访问令牌。左侧新增 **技能与连接器**：可以查看/读取技能、启用文献来源、检索、读取论文内容与查看获取历史。启用来源不等于自动检索；打开页面仅访问本地服务。
@@ -24,7 +26,7 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 116 个操作（包含固定源码、开发测试、有限私有实现/冻结运行授权、Git、独立审查、报告、容量、文献、技能管理、文稿构建、固定论文审查与研究方案）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、文稿构建、报告交付、技能管理与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
+- 122 个操作（包含固定源码、开发测试、有限私有实现/冻结运行授权、Git、独立审查、报告、容量、文献、技能管理、文稿构建、固定论文审查与研究方案）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、文稿构建、报告交付、技能管理与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 

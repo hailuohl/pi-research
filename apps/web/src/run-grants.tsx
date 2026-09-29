@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api} from './api.js';
 import type {ProjectState,RunGrantDTO} from './models.js';
 import {short,label} from './models.js';

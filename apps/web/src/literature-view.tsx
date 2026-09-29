@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api,artifactBlob,artifactText,downloadArtifact} from './api.js';
 import type {ProjectState,Row,DocumentVersion,DocumentLocation,LiteratureTaskDTO,DocumentParserStatus,DocumentPageReadDTO,DocumentPage} from './models.js';
 import {short,label} from './models.js';
@@ -76,7 +77,7 @@ class DocumentPages extends React.Component<{document:Row<DocumentVersion>;proje
         if(!append){this.revokeImage();this.setState({page:null,content:'',base:this.props.start??0,cursor:this.props.start??0,complete:false,imageURL:'',start:this.props.start??0,end:this.props.end??0,description:''});}
         const cursor=append?this.state.cursor:this.props.start??0;this.setState({loading:true,error:''});
         try{if((this.props.start!==undefined||this.props.end!==undefined)&&(!Number.isSafeInteger(this.props.start)||!Number.isSafeInteger(this.props.end)||this.props.start!<0||this.props.end!<=this.props.start!))throw Error('证据引用区间无效，未替换为页首。');const page=await api<DocumentPageReadDTO>('/operations/document_page_read',{projectId:this.props.projectId,input:{parseResultId:this.props.resultId,pageNumber:this.props.pageNumber,cursor,limit:16000}},'POST',controller.signal);this.verify(page);if(page.pageNumber!==this.props.pageNumber)throw Error('返回物理页号与选择不一致。');if(page.cursor!==cursor||page.end-page.cursor!==page.content.length)throw Error('页文本窗口与请求区间不一致。');
-            if(!this.mounted||epoch!==this.epoch)return;this.setState({page,content:(append?this.state.content:'')+page.content,cursor:page.end,complete:page.complete,...(!append?{base:page.cursor,start:this.props.start??page.cursor,end:this.props.end??Math.min(page.end,page.cursor+2000)}:{})});
+            if(!this.mounted||epoch!==this.epoch)return;this.setState(previous=>({...previous,page,content:(append?previous.content:'')+page.content,cursor:page.end,complete:page.complete,...(!append?{base:page.cursor,start:this.props.start??page.cursor,end:this.props.end??Math.min(page.end,page.cursor+2000)}:{})}));
             if(!append){const png=await verifiedPageImage(await artifactBlob(page.imageArtifactId,controller.signal),page.imageArtifactDigest);if(!this.mounted||epoch!==this.epoch)return;this.imageURL=URL.createObjectURL(png);this.setState({imageURL:this.imageURL});}
         }catch(error){if(this.mounted&&epoch===this.epoch&&!controller.signal.aborted)this.setState({error:error instanceof Error?error.message:String(error)});}
         finally{if(this.mounted&&epoch===this.epoch)this.setState({loading:false});}

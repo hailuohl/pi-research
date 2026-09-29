@@ -28,7 +28,7 @@ test('baseline matrix preserves the fixed upstream, all capabilities and five in
 test('runtime, compiler and bundled browser assets are pinned', () => {
   const pkg = json('package.json'), lock = json('package-lock.json');
   assert.equal(readFileSync(join(root, '.node-version'), 'utf8').trim(), '24.19.0');
-  for (const [name, version] of Object.entries(pkg.devDependencies)) {
+  for (const [name, version] of Object.entries({...pkg.devDependencies,...pkg.dependencies})) {
     assert.match(version, /^\d+\.\d+\.\d+$/);
     assert.equal(lock.packages[`node_modules/${name}`].version, version);
     assert.ok(lock.packages[`node_modules/${name}`].integrity);

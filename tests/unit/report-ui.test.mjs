@@ -1,23 +1,22 @@
+import * as React from 'react';
+import {synchronousState} from '../support/ui.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import vm from 'node:vm';
-const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);
-globalThis.React=vendor.React;
 const {ReportsView}=await import('../../dist/web/assets/report-view.js');
 const {Inspector}=await import('../../dist/web/assets/workbench.js');
 const ref=id=>({id,type:'artifact',targetId:`artifact-${id}`,label:`<img src=x onerror=alert(1)> ${id}`,relation:'exact'});
 function view(){
  const props={data:{project:{id:'project'},reports:[{id:'report',artifactId:'body'}],runs:[],experiments:[],claims:[],artifacts:[]},perform:async f=>f(),onRun(){}};
- const v=new ReportsView(props);v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};
+ const v=synchronousState(new ReportsView(props));synchronousState(v);
  v.state.report={id:'report',artifactId:'body',title:'Fixed report',formatVersion:1,integrity:'verified',validity:'current',reasons:[],references:[ref('a'),ref('b')],runs:[]};
  return v;
 }
-function elements(node,out=[]){if(Array.isArray(node)){node.forEach(n=>elements(n,out));return out;}if(!node||typeof node!=='object')return out;assert.ok(typeof node.type==='string'||typeof node.type==='function','actual React16 must receive valid element types');out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)elements(node.type(node.props),out);else elements(node.props.children,out);return out;}
+function elements(node,out=[]){if(Array.isArray(node)){node.forEach(n=>elements(n,out));return out;}if(!node||typeof node!=='object')return out;assert.ok(typeof node.type==='string'||typeof node.type==='function','actual React must receive valid element types');out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)elements(node.type(node.props),out);else elements(node.props.children,out);return out;}
 const response=value=>({ok:true,json:async()=>value});
 
-test('actual React16 report UI treats markup as text and disables legacy/invalid exports',()=>{
- assert.equal(React.version,'16.0.0');assert.equal(React.Fragment,undefined);
+test('actual React report UI treats markup as text and disables legacy/invalid exports',()=>{
+ assert.equal(React.version,JSON.parse(readFileSync('package.json','utf8')).dependencies.react);assert.equal(React.Fragment,Symbol.for('react.fragment'));
  const v=view();v.state.body='<script>alert(1)</script> javascript:alert(1)';
  for(const status of ['legacy','stale','current']){
   v.state.report.validity=status;v.state.report.integrity=status==='current'?'invalid':'verified';
@@ -56,7 +55,7 @@ test('new report resolves from refreshed project records and precise Run navigat
  await v.create();assert.equal(v.state.pendingArtifactId,'new-body');
  v.props.data.reports.push({id:'new-report',artifactId:'new-body'});v.componentDidUpdate(v.props);assert.equal(selected,'new-report');assert.equal(v.state.pendingArtifactId,'');
  v.openRun('missing','experiment');assert.equal(navigated,false);assert.match(v.state.error,/未跳转/);
- const inspector=new Inspector({data:{runs:[{id:'latest',experimentId:'experiment'}]},experiment:{id:'experiment'},selectedRun:'missing'});
+ const inspector=synchronousState(new Inspector({data:{runs:[{id:'latest',experimentId:'experiment'}]},experiment:{id:'experiment'},selectedRun:'missing'}));
  assert.equal(inspector.currentRun(),undefined);
 });
 

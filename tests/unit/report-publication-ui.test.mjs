@@ -1,14 +1,13 @@
+import {synchronousState} from '../support/ui.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import vm from 'node:vm';
-const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);globalThis.React=vendor.React;
 const {ReportsView}=await import('../../dist/web/assets/report-view.js');
 const {PublicationView}=await import('../../dist/web/assets/publication-view.js');
 const sync=v=>{v.setState=(patch,done)=>{Object.assign(v.state,typeof patch==='function'?patch(v.state,v.props):patch);done?.();};return v;};
 const result={id:'result-v1',jobId:'job-v1',revisionId:'revision-v1',sourceDigest:'fixed-source',manifestDigest:'fixed-manifest',status:'succeeded',converged:true,hadErrors:false,sourceValidity:'current',pdf:{artifactId:'fixed-pdf'},previews:[],logs:[],diagnostics:[]};
-function reports(){return sync(new ReportsView({data:{project:{id:'project'},reports:[],runs:[],experiments:[],claims:[],artifacts:[]},perform:async f=>f()}));}
-function publication(){const v=sync(new PublicationView({data:{project:{id:'project'},approvals:[],artifacts:[]},perform:async f=>f()}));v.state.revision={id:result.revisionId,title:'Historical paper',sourceDigest:result.sourceDigest};v.state.job={id:result.jobId,revisionId:result.revisionId,resultId:result.id,state:'succeeded',integrity:'complete'};v.state.result={...result};return v;}
+function reports(){return sync(synchronousState(new ReportsView({data:{project:{id:'project'},reports:[],runs:[],experiments:[],claims:[],artifacts:[]},perform:async f=>f()})));}
+function publication(){const v=sync(synchronousState(new PublicationView({data:{project:{id:'project'},approvals:[],artifacts:[]},perform:async f=>f()})));v.state.revision={id:result.revisionId,title:'Historical paper',sourceDigest:result.sourceDigest};v.state.job={id:result.jobId,revisionId:result.revisionId,resultId:result.id,state:'succeeded',integrity:'complete'};v.state.result={...result};return v;}
 function nodes(node,out=[]){if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}if(!node||typeof node!=='object')return out;assert.ok(typeof node.type==='string'||typeof node.type==='function');out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)nodes(node.type(node.props),out);else nodes(node.props.children,out);return out;}
 const reference={id:'figure',type:'artifact',targetId:'fixed-figure',path:'figures/plot.png',digest:'fixed-digest',label:'Original plot'};
 const report={id:'report',artifactId:'body',title:'Paper report',integrity:'verified',validity:'stale',reasons:[],references:[reference],runs:[],publications:[{resultId:result.id,jobId:result.jobId,revisionId:result.revisionId,title:'Fixed paper',sourceDigest:result.sourceDigest,pdfArtifactId:'fixed-pdf',pdfDigest:'pdf-digest',pages:1,referenceId:'publication'}]};

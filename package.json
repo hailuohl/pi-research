@@ -26,9 +26,12 @@
     "test:upgrade": "node scripts/verify-legacy-upgrade.mjs"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "0.87.1",
     "@earendil-works/pi-ai": "0.87.1",
+    "@earendil-works/pi-coding-agent": "0.87.1",
     "@types/node": "24.0.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
     "typescript": "5.8.3"
   },
   "overrides": {
@@ -36,5 +39,9 @@
     "@earendil-works/pi-tui": "0.87.1",
     "@earendil-works/pi-telemetry": "0.87.1",
     "@earendil-works/chord": "0.87.1"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   }
 }

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api,artifactText,downloadArtifact} from './api.js';
 import type {ProjectState,DiscoveryGrantDTO} from './models.js';
 import {short} from './models.js';

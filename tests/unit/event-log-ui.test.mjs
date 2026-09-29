@@ -1,13 +1,12 @@
+import {synchronousState} from '../support/ui.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);globalThis.React=vendor.React;
 const {ProjectEventFeed}=await import('../../dist/web/assets/event-feed.js');
 const {LogView,LOG_PAGE_BYTES}=await import('../../dist/web/assets/log-view.js');
 const {ApiError,eventStream,setToken}=await import('../../dist/web/assets/api.js');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-function view(read){const v=new LogView({read,streamLabel:'日志流'});v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};return v;}
+function view(read){const v=synchronousState(new LogView({read,streamLabel:'日志流'}));synchronousState(v);return v;}
 const page=(start,content,extra={})=>({start,content,cursor:start+Buffer.byteLength(content),size:start+Buffer.byteLength(content),identity:'stream-1',complete:false,...extra});
 
 test('event acknowledgements are project-scoped and wait for successful snapshots including reset',async t=>{
@@ -63,11 +62,11 @@ test('a partial event catch-up failure does not self-poll and the notice clears 
 });
 
 test('session display replaces partial output from the authoritative generation and cancels stale selection errors',async t=>{
- const oldFetch=globalThis.fetch,oldDocument=globalThis.document,oldDOM=globalThis.ReactDOM,oldStorage=globalThis.localStorage;
- t.after(()=>{globalThis.fetch=oldFetch;globalThis.document=oldDocument;globalThis.ReactDOM=oldDOM;globalThis.localStorage=oldStorage;});
- globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.document={getElementById:()=>({})};let App;
- globalThis.ReactDOM={render(element){App=element.type;}};await import('../../dist/web/assets/app.js');
- const app=new App({});app.setState=(patch,callback)=>{Object.assign(app.state,patch);callback?.();};app.feed={projectId:'p',stop(){}};app.state.projectId='p';app.state.sessionId='s';app.state.stream='old partial';
+ const oldFetch=globalThis.fetch,oldStorage=globalThis.localStorage;
+ t.after(()=>{globalThis.fetch=oldFetch;globalThis.localStorage=oldStorage;});
+ globalThis.localStorage={getItem:()=>null,setItem(){}};
+ const {App}=await import('../../dist/web/assets/app.js');
+ const app=synchronousState(new App({}));synchronousState(app);app.feed={projectId:'p',stop(){}};app.state.projectId='p';app.state.sessionId='s';app.state.stream='old partial';
  const session={id:'s',role:'coordinator',state:'running',generation:8};let active=true;
  globalThis.fetch=async url=>({ok:true,json:async()=>url.endsWith('/bootstrap')?{projects:[{id:'p'}]}:url.endsWith('/state')?{sessions:[session],experiments:[]}: {session,messages:[{id:'m',content:'complete previous message'}],progress:{generation:8,active,content:'snapshot tail',truncated:true,cursor:123}}});
  assert.equal(await app.refresh(),true);assert.equal(app.state.stream,'snapshot tail');assert.equal(app.state.streamTruncated,true);

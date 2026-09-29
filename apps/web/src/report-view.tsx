@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api,artifactText,downloadArtifact} from './api.js';
 import type {ProjectState,ReportInspection,ReportReference,Artifact,Row,DocumentLocation,PublicationBuildResultDTO} from './models.js';
 import {short,label} from './models.js';
@@ -70,7 +71,7 @@ export class ReportsView extends React.Component<{
         if(!report||!reference||!Object.prototype.hasOwnProperty.call(referenceTypes,reference.type))return;
         if(append&&(this.state.reading||this.state.reference?.id!==referenceId||this.state.complete))return;
         const epoch=++this.referenceEpoch,reportEpoch=this.reportEpoch,cursor=append?this.state.cursor:0;
-        this.setState({reference,verifiedReference:null,reading:true,referenceError:'',...(!append?{content:'',cursor:0,complete:false}:{})});
+        this.setState(previous=>({...previous,reference,verifiedReference:null,reading:true,referenceError:'',...(!append?{content:'',cursor:0,complete:false}:{})}));
         try{
             const result=await this.call<{reference:ReportReference;content:string;mediaType:string;cursor:number;end:number;complete:boolean}>('report_reference_read',{reportId:report.id,referenceId,cursor,limit:16000});
             if(!sameReference(result.reference,reference)||(reference.document&&!validDocument(result.reference)))throw Error('返回的证据不属于所选引用。');

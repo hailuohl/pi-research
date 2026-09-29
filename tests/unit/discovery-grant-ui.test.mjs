@@ -1,12 +1,11 @@
+import {synchronousState} from '../support/ui.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 
-const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);globalThis.React=vendor.React;
 const {DiscoveryGrants,discoveryDraft}=await import('../../dist/web/assets/discovery-grants.js');
 const {LiteratureView}=await import('../../dist/web/assets/literature-view.js');
-const sync=v=>{v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};return v;};
+const sync=v=>{synchronousState(v);return v;};
 function nodes(node,out=[]){if(node==null||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)nodes(node.type(node.props),out);else nodes(node.props.children,out);return out;}
 const flatten=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(flatten).join(' '):typeof node!=='object'?String(node):typeof node.type==='function'&&!node.type.prototype?.render?flatten(node.type(node.props)):flatten(node.props.children);
 const data={project:{id:'p'},sessions:[{id:'s',role:'coordinator',title:'Main',state:'active'}],approvals:[],discoveryGrants:[],literatureTasks:[],documents:[],documentParseJobs:[],artifacts:[],evidence:[],claims:[]};
@@ -22,14 +21,14 @@ test('draft freezes a bounded native form and rejects unsafe limits',()=>{
 
 test('grant inspection is project checked and shows actual calls and archived records',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);globalThis.fetch=async()=>({ok:true,json:async()=>grant});
- const view=sync(new DiscoveryGrants({data:{...data,discoveryGrants:[grant]},perform:async fn=>fn()}));await view.inspect('g');
+ const view=sync(synchronousState(new DiscoveryGrants({data:{...data,discoveryGrants:[grant]},perform:async fn=>fn()})));await view.inspect('g');
  assert.match(flatten(view.render()),/api.crossref.org/);assert.match(flatten(view.render()),/Archived title/);
  globalThis.fetch=async()=>({ok:true,json:async()=>({...grant,projectId:'other'})});await view.inspect('g');assert.match(view.state.error,/不属于所选项目/);
 });
 
 test('only search results carrying the same grant reference offer bound hit retrieval',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[];globalThis.fetch=async(url,options)=>{requests.push(JSON.parse(options.body));return {ok:true,json:async()=>({id:'task'})};};
- const props={data:{...data,discoveryGrants:[grant]},perform:async fn=>fn()};const view=sync(new LiteratureView(props));view.state.config={enabled:{crossref:true}};
+ const props={data:{...data,discoveryGrants:[grant]},perform:async fn=>fn()};const view=sync(synchronousState(new LiteratureView(props)));view.state.config={enabled:{crossref:true}};
  view.state.result={id:'search',query:'exact',sources:[],items:[{source:'crossref',id:'doi',title:'Hit'}],discoveryGrant:{id:'g',digest:'d',approvalId:'a'}};
  let tree=view.render();assert.match(flatten(tree),/以原检索授权获取此命中/);assert.doesNotMatch(flatten(tree),/提交此文献获取任务/);
  await nodes(tree).find(n=>n.type==='button'&&flatten(n).includes('以原检索授权获取此命中')).props.onClick();

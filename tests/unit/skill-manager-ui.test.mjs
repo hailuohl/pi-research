@@ -1,11 +1,10 @@
+import {synchronousState} from '../support/ui.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
-const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);globalThis.React=vendor.React;
 const {SkillManager,skillFileBase64}=await import('../../dist/web/assets/skill-manager.js');
-const sync=v=>{v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};return v;};
-const view=()=>sync(new SkillManager({projectId:'project',sessionId:'session'}));
+const sync=v=>{synchronousState(v);return v;};
+const view=()=>sync(synchronousState(new SkillManager({projectId:'project',sessionId:'session'})));
 function nodes(node,out=[]){if(!node||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}assert.ok(typeof node.type==='string'||typeof node.type==='function');out.push(node);nodes(node.props.children,out);return out;}
 const text=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(text).join(' '):typeof node!=='object'?String(node):text(node.props.children);
 const revision=id=>({revision:{id,packageId:'figure',revisionTag:id,description:'plot',roles:['coordinator'],license:null,requirements:{tools:['plot'],backends:['latex'],artifactIds:[]},files:[{path:'SKILL.md',size:20,digest:'hash'}],contentDigest:'hash',authorization:'text-only'},reviews:[],revocations:[]});

@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {WorkingGrants} from './working-grants.js';
 import {LogView,type LogPage} from './log-view.js';
 import {ComputeWait} from './scheduler-view.js';

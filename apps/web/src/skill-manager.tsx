@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api} from './api.js';
 import type {Row} from './models.js';
 import type {SkillPackageRevision,ReviewRecord,SkillRevocation,SkillConfiguration} from '../../../dist/packages/skills/types.js';

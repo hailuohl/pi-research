@@ -1,19 +1,19 @@
+import * as React from 'react';
+import {synchronousState} from '../support/ui.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-const vendor={};vm.runInNewContext(readFileSync('apps/web/public/vendor/react.production.min.js','utf8'),vendor);globalThis.React=vendor.React;
 const {LiteratureView,literatureSourceURL,literatureRequestedVersion,verifiedPageImage}=await import('../../dist/web/assets/literature-view.js');
 const raw='a'.repeat(64),document={id:'doc-v2',title:'Fixed PDF',contentKind:'original-pdf',acquiredAt:'2026-09-28T00:00:00Z',original:{artifactId:'raw-pdf',digest:raw,size:100,mediaType:'application/pdf'},source:{kind:'connector',provider:'alphaxiv',requestedId:'2401.00001v2',requestedVersion:'2',reportedVersion:null,versionAssurance:'requested-address-unverified'},license:{value:null,assurance:'unknown'},limitations:['Not a scientific validation']};
-const sync=v=>{v.setState=(patch,callback)=>{Object.assign(v.state,patch);callback?.();};return v;};
-function view(){return sync(new LiteratureView({data:{project:{id:'project'},literatureTasks:[],documents:[],documentParseJobs:[],artifacts:[],evidence:[],claims:[],approvals:[]},perform:async f=>f(),selectedDocument:{documentVersionId:'doc-v2',parseResultId:'parse-v2',pageNumber:2},onDocument(){}}));}
-function nodes(node,out=[]){if(node==null||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}assert.ok(typeof node.type==='string'||typeof node.type==='function','React16 element type must be valid');out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)nodes(node.type(node.props),out);else nodes(node.props.children,out);return out;}
+const sync=v=>{synchronousState(v);return v;};
+function view(){return sync(synchronousState(new LiteratureView({data:{project:{id:'project'},literatureTasks:[],documents:[],documentParseJobs:[],artifacts:[],evidence:[],claims:[],approvals:[]},perform:async f=>f(),selectedDocument:{documentVersionId:'doc-v2',parseResultId:'parse-v2',pageNumber:2},onDocument(){}})));}
+function nodes(node,out=[]){if(node==null||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}assert.ok(typeof node.type==='string'||typeof node.type==='function','React element type must be valid');out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)nodes(node.type(node.props),out);else nodes(node.props.children,out);return out;}
 const flatten=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(flatten).join(' '):typeof node!=='object'?String(node):typeof node.type==='function'&&!node.type.prototype?.render?flatten(node.type(node.props)):flatten(node.props.children);
 function pages(){const v=view();v.state.document=document;const paneNode=nodes(v.render()).find(n=>n.type?.name==='DocumentPane'),pane=sync(new paneNode.type(paneNode.props)),pageNode=nodes(pane.render()).find(n=>n.type?.name==='DocumentPages');return sync(new pageNode.type(pageNode.props));}
 
-test('React16 literature UI shows source errors distinctly and never links unsafe provider URLs',()=>{
- assert.equal(React.Fragment,undefined);assert.equal(literatureSourceURL('javascript:alert(1)'),undefined);assert.equal(literatureSourceURL('https://u:p@example.com'),undefined);
+test('React literature UI shows source errors distinctly and never links unsafe provider URLs',()=>{
+ assert.equal(React.Fragment,Symbol.for('react.fragment'));assert.equal(literatureSourceURL('javascript:alert(1)'),undefined);assert.equal(literatureSourceURL('https://u:p@example.com'),undefined);
  const v=view();v.props.data.literatureTasks=[{id:'task',kindOfTask:'search',request:{kind:'search',search:{query:'paper'}},state:'failed',phase:'done',error:{code:'CONNECTOR_FAILED',message:'PubMed unreachable'}}];
  const tree=v.render();nodes(tree);assert.match(flatten(tree),/PubMed unreachable/);assert.match(flatten(tree),/失败不会写成零结果/);
  v.state.result={query:'fixed',sources:[{source:'pubmed',status:'failed',count:0,error:'NETWORK_UNAVAILABLE'}],items:[{source:'crossref',id:'doi',title:'<script>title</script>',url:'javascript:alert(1)'}]};
@@ -70,7 +70,7 @@ test('evidence jumps preserve UTF16 range and page 25 restores the containing li
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);
  const {EvidenceView}=await import('../../dist/web/assets/data-views.js');let location;
  const evidence={id:'ev',type:'document',description:'Quoted span',quote:'引用🙂段落',artifactId:'text',locator:{start:17020,end:17026},document:{documentVersionId:'doc-v2',parseResultId:'parse-v2',pageNumber:25,rawDigest:raw,textArtifactDigest:'b'.repeat(64)}};
- const e=new EvidenceView({data:{project:{id:'project'},artifacts:[],claims:[],evidence:[evidence]},perform:async f=>f(),onDocument:value=>{location=value;}});
+ const e=synchronousState(new EvidenceView({data:{project:{id:'project'},artifacts:[],claims:[],evidence:[evidence]},perform:async f=>f(),onDocument:value=>{location=value;}}));
  nodes(e.render()).find(n=>n.type==='button'&&flatten(n).includes('回查固定文档页')).props.onClick();
  assert.deepEqual(location,{documentVersionId:'doc-v2',parseResultId:'parse-v2',pageNumber:25,start:17020,end:17026});
  const v=pages();v.props={...v.props,pageNumber:25,start:location.start,end:location.end};

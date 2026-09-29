@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api} from './api.js';
 import type {ProjectState} from './models.js';
 import {short} from './models.js';

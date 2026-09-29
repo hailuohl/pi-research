@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { api, artifactText, downloadArtifact } from './api.js';
 import type { ProjectState, Bootstrap, Row, Session, DocumentLocation, DocumentEvidenceLink } from './models.js';
 import { short, date, label } from './models.js';

@@ -1,10 +1,18 @@
 # Third-party notices
 
-## Offline React browser bundles
+## Current local React browser bundle
+
+React and ReactDOM 19.3.0, and their locked scheduler dependency, are bundled into
+`dist/web/assets/main.js`. Copyright (c) Meta Platforms, Inc. and affiliates.
+They use the MIT license; its full text is included in `dist/web/LICENSE.react.txt`.
+There is no CDN runtime dependency. esbuild 0.28.2 (MIT, Copyright (c) 2020 Evan
+Wallace) and the locked React type packages are development tools only.
+
+## Historical React browser baseline
 
 - `apps/web/public/vendor/react.production.min.js` — React 16.0.0.
 - `apps/web/public/vendor/react-dom.production.min.js` — ReactDOM 16.0.1.
-- Copies also appear under `dist/web/vendor/`.
+- These files remain byte-pinned reference inputs and are excluded from `dist`.
 - Copyright (c) 2013-present, Facebook, Inc.
 - ReactDOM bundle also identifies Modernizr 3.0.0pre (Custom Build), MIT.
 

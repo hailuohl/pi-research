@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {ApiError} from './api.js';
 export interface LogPage {content:string;cursor:number;complete:boolean;start:number;size:number;identity:string|null;}
 export interface LogRequest {stream:'stdout'|'stderr';cursor:number;identity?:string;}
@@ -24,7 +25,7 @@ export class LogView extends React.Component<{
                 const visible=!page.content&&prior&&prior.cursor===page.start&&prior.identity===page.identity?{...prior,size:page.size,complete:page.complete}:page;
                 await new Promise<void>(resolve=>this.setState({page:visible,reset:false},resolve));return page;
             }
-        }catch(error){if(epoch===this.epoch&&!controller.signal.aborted){const reset=error instanceof ApiError&&error.code==='LOG_RESET',encoding=error instanceof ApiError&&error.code==='LOG_ENCODING_INVALID';this.setState({error:reset?'日志身份或长度已变化。当前页为上次读取；请显式从头重新读取。':encoding?'日志包含无效 UTF-8，已暂停跟随；请使用原始归档下载核对。':error instanceof Error?error.message:String(error),reset,...(reset||encoding?{following:false}:{})});}}
+        }catch(error){if(epoch===this.epoch&&!controller.signal.aborted){const reset=error instanceof ApiError&&error.code==='LOG_RESET',encoding=error instanceof ApiError&&error.code==='LOG_ENCODING_INVALID';this.setState(previous=>({...previous,error:reset?'日志身份或长度已变化。当前页为上次读取；请显式从头重新读取。':encoding?'日志包含无效 UTF-8，已暂停跟随；请使用原始归档下载核对。':error instanceof Error?error.message:String(error),reset,...(reset||encoding?{following:false}:{})}));}}
         finally{if(epoch===this.epoch){this.pending=false;this.setState({loading:false});}}
     }
     async follow(){if(this.pending)return;clearTimeout(this.catchup);const epoch=this.epoch;

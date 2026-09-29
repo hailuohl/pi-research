@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {api,artifactBlob,downloadArtifact} from './api.js';
 import {verifiedPageImage} from './literature-view.js';
 import type {ProjectState,Row,ManuscriptRevision,PublicationBuildJobDTO,PublicationBuildResultDTO,PublicationEngine,BibliographyMode,ManuscriptTemplate,PublicationCompilerStatus} from './models.js';
@@ -52,7 +53,7 @@ class ManuscriptEditor extends React.Component<{templates:ManuscriptTemplate[];d
     private epoch=0;private mounted=true;
     componentDidMount(){if(this.props.seed)this.setState({...this.props.seed,templateId:this.props.seed.templateId??'',selected:this.props.seed.mainFile});}
     componentWillUnmount(){this.mounted=false;this.epoch++;}
-    changeAsset(patch:{assetId?:string;assetPath?:string}){this.epoch++;this.setState({...patch,checking:false,preview:'',previewComplete:false,error:''});}
+    changeAsset(patch:{assetId?:string;assetPath?:string}){this.epoch++;this.setState(previous=>({...previous,...patch,checking:false,preview:'',previewComplete:false,error:''}));}
     template(id:string){this.changeAsset({});const t=this.props.templates.find(t=>t.id===id);if(!t)return;if(t.files.some(f=>!publicationPathAvailable(f.path,this.state.assets))){this.setState({error:'模板与固定文件路径冲突；请先移除冲突引用，现有草稿未改变。'});return;}this.setState({templateId:t.id,engine:t.engine,mainFile:t.mainFile,bibliography:t.bibliography,files:t.files.map(f=>({...f})),selected:t.mainFile,error:''});}
     addFile(){const path=this.state.newPath.trim();if(!publicationSourcePath(path)||!publicationPathAvailable(path,[...this.state.files,...this.state.assets])){this.setState({error:'请输入唯一的相对文本文件路径，例如 sections/method.tex。'});return;}this.setState({files:[...this.state.files,{path,content:''}],selected:path,error:''});}
     readArtifact(artifactId:string){return api<{artifactId:string;digest:string;content:string;cursor:number;complete:boolean}>('/operations/artifact_read',{projectId:this.props.data.project.id,input:{artifactId,cursor:0}});}
