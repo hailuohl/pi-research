@@ -1,20 +1,17 @@
 import {appendFileSync, mkdirSync, writeFileSync, renameSync} from 'node:fs';
 import {join} from 'node:path';
-import {Store,now} from '../../packages/storage/store.js';
-import {RunService,TERMINAL} from '../../packages/runners/service.js';
-import {EvidenceService} from '../../packages/evidence/service.js';
-import {ApprovalService} from '../../packages/policy/approvals.js';
+import {now} from '../../packages/storage/store.js';
+import {TERMINAL} from '../../packages/runners/service.js';
+import {ResearchApp} from '../../packages/research-app.js';
 import {TrustedExampleAdapter} from '../../packages/runners/trusted-example.js';
 import {superviseDockerRun} from '../../packages/runners/docker-supervisor.js';
 import type {DockerRun,DockerRunResult,RunExecution,RunnerProcess} from '../../packages/runners/adapter.js';
 import type {Run} from '../../packages/domain/types.js';
 import {ensure} from '../../packages/domain/errors.js';
-import {ComputeQueue} from '../../packages/scheduler/compute-queue.js';
 
 const [dataDir,repoRoot,runId]=process.argv.slice(2);
 if(!dataDir||!repoRoot||!runId)throw new Error('Usage: supervisor DATA REPO RUN');
-const store=new Store(join(dataDir,'state.db')),ctx={dataDir,repoRoot,store};
-const compute=new ComputeQueue(ctx),service=new RunService(ctx,new ApprovalService(ctx),new EvidenceService(ctx),compute);
+const app=new ResearchApp(dataDir,repoRoot),{store,compute}=app,service=app.runs;
 const controlDir=join(dataDir,'jobs',runId,'control');
 if(store.get<Run>('run',runId).state==='queued')try{await compute.verifyTarget('run',runId);}catch{await compute.stop();store.close();process.exit(0);}
 const run=compute.withAdmission('run',runId,()=>{
@@ -26,7 +23,7 @@ const run=compute.withAdmission('run',runId,()=>{
         const before:RunExecution=r.execution??{backend:'docker',dockerContext:r.manifest.contract.dockerContext??'default',containerName:`pi-research-${r.id}`,controlDir,generation:0,leaseUntil:0,startRequested:false,recoveryCount:0};
         return store.update<Run>('run',r.id,r.version,{state:r.state==='queued'?'submitting':r.state,supervisorPid:process.pid,heartbeat:Date.now(),execution:{...before,generation:before.generation+1,leaseUntil:Date.now()+60000,recoveryCount:before.recoveryCount+(before.generation>0?1:0)}});
     }
-    return store.update<Run>('run',r.id,r.version,{state:'submitting',supervisorPid:process.pid,heartbeat:Date.now(),startedAt:now()});
+    return store.update<Run>('run',r.id,r.version,{state:'submitting',supervisorPid:process.pid,heartbeat:Date.now()});
 });
 if(!run){await compute.stop();store.close();process.exit(0);}
 mkdirSync(controlDir,{recursive:true,mode:0o700});
@@ -47,16 +44,17 @@ try {
         });
     } else {
         const adapter=new TrustedExampleAdapter(run,repoRoot);
-        let processHandle:RunnerProcess|undefined,timer:NodeJS.Timeout|undefined,timeout:NodeJS.Timeout|undefined,observedCancel=false,timedOut=false,truncated=false,bytes=0;
+        let processHandle:RunnerProcess|undefined,timer:NodeJS.Timeout|undefined,timeout:NodeJS.Timeout|undefined,observedCancel=false,timedOut=false,truncated=false,bytes=0,authorityError:string|undefined;
         try {
             await adapter.preflight();await adapter.stage();
             const log=join(run.outputDir,'stdout.log');writeFileSync(log,'',{mode:0o600});
+            store.transaction(()=>{const current=store.get<Run>('run',runId);ensure(current.state==='submitting'&&current.supervisorPid===process.pid&&!current.startRequested&&!current.childPid&&!current.cancelRequested,'RUN_NOT_LAUNCHABLE','运行不再允许启动');service.assertExecutionGrant(current,true);store.update<Run>('run',current.id,current.version,{startRequested:true,startedAt:now()});});
             processHandle=await adapter.start((_stream,chunk)=>{const remaining=Math.max(0,16*1024*1024-bytes);bytes+=chunk.length;if(remaining)appendFileSync(log,chunk.subarray(0,remaining));if(chunk.length>remaining){truncated=true;void processHandle?.cancel();}});
             store.transaction(()=>{const r=store.get<Run>('run',runId);store.update<Run>('run',r.id,r.version,{state:r.cancelRequested?'cancelling':'running',childPid:processHandle!.pid,heartbeat:Date.now()});});
-            timer=setInterval(()=>{const r=service.heartbeat(runId);if(r.cancelRequested&&!observedCancel){observedCancel=true;void processHandle!.cancel();}},100);
+            timer=setInterval(()=>{const r=service.heartbeat(runId);if(r.cancelRequested&&!observedCancel){observedCancel=true;void processHandle!.cancel();}else if(r.runGrant&&!authorityError){try{service.assertExecutionGrant(r,false);}catch(error){authorityError=(error as Error).message;void processHandle!.cancel();}}},100);
             timeout=setTimeout(()=>{timedOut=true;void processHandle!.cancel();},run.manifest.contract.timeoutSeconds*1000);
             const result=await processHandle.completion;
-            const error=result.error??(timedOut?'执行超时':truncated?'日志达到上限':result.exitCode===0?undefined:`进程退出：${result.exitCode??result.signal}`);
+            const error=result.error??authorityError??(timedOut?'执行超时':truncated?'日志达到上限':result.exitCode===0?undefined:`进程退出：${result.exitCode??result.signal}`);
             receipt(result.exitCode,observedCancel?'cancelled':error?'failed':result.exitCode===0?'succeeded':'failed',error);
         }catch(error){receipt(null,'failed',(error as Error).message);}
         finally{if(timer)clearInterval(timer);if(timeout)clearTimeout(timeout);}

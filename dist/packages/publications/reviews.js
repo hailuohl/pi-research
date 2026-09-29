@@ -1,3 +1,4 @@
+import { assertRunGrantRun } from '../policy/run-grant-validation.js';
 import { basename, dirname } from 'node:path';
 import { readStableFile } from '../workspace/stable-file.js';
 import { scope, userOnly } from '../policy/permissions.js';
@@ -35,6 +36,7 @@ export class PublicationReviewService {
         }
         for (const runId of new Set([e.runId, a.runId].filter((id) => !!id))) {
             const run = this.app.store.get('run', runId, pid), intent = this.app.store.get('run-intent', run.intentId, pid);
+            assertRunGrantRun(this.app.store, run);
             ensure(run.artifactIds.includes(a.id) && intent.runId === run.id && intent.status === 'submitted' && intent.manifestDigest === run.manifestDigest && digest(intent.manifest) === run.manifestDigest, 'PUBLICATION_REVIEW_STALE', '审查输入运行来源改变');
             verifyRunRecord(run, this.app.evidence);
             this.app.approvals.assert(intent.approvalId, pid, intent.id, run.manifestDigest, 'run.submit');

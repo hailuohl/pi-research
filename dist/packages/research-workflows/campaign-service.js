@@ -1,3 +1,4 @@
+import { assertRunGrantRun } from '../policy/run-grant-validation.js';
 import { randomUUID } from 'node:crypto';
 import { SYSTEM } from '../domain/types.js';
 import { bool, integer, object, text } from '../contracts/validation.js';
@@ -227,6 +228,7 @@ export class CampaignService {
         const o = this.app.store.get('run-observation', observationId, c.projectId);
         ensure(o.campaignId === c.id && o.roundId === c.currentRoundId, 'OBSERVATION_SCOPE_DENIED', '证据不属于活动当前轮次', 403);
         const run = this.app.store.get('run', o.runId, c.projectId);
+        assertRunGrantRun(this.app.store, run);
         assertExperimentSourceCurrent(this.app.store, this.app.store.get('experiment', run.experimentId, c.projectId));
         this.app.researchPlans.assertRunSource(run.experimentId, 'execute', run.intentId);
         ensure(runContentDigest(run) === o.contentDigest && run.manifestDigest === o.manifestDigest, 'OBSERVATION_STALE', '观测记录与真实运行不一致');

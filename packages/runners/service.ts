@@ -21,6 +21,7 @@ import { finiteMetrics } from '../contracts/validation.js';
 import {readStableFile} from '../workspace/stable-file.js';
 import {readLogPage} from '../execution/log-page.js';
 import {ComputeQueue} from '../scheduler/compute-queue.js';
+import {assertRunGrantActor,assertRunGrantIntent,assertRunGrantRun,consumeRunGrant} from '../policy/run-grant-validation.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
     researchSourceGuard?: (experimentId:string,stage:'prepare'|'submit'|'execute',intentId?:string)=>void;
@@ -48,9 +49,11 @@ export class RunService {
         return this.c.store.transaction(() => {
             const intent = this.c.store.get<RunIntent>('run-intent', id);
             scope(actor, intent.projectId!);
+            assertRunGrantActor(this.c.store,actor,intent);
             if (intent.runId)
                 return this.c.store.get<Run>('run', intent.runId);
             assertProjectWritable(this.c.store,intent.projectId!);
+            assertRunGrantIntent(this.c.store,intent,true);
             this.researchSourceGuard?.(intent.experimentId,'submit',intent.id);
             const e = this.c.store.get<Experiment>('experiment', intent.experimentId, intent.projectId!);
             assertExperimentSourceCurrent(this.c.store,e);
@@ -61,10 +64,11 @@ export class RunService {
             verifyTrustedExample(intent.manifest, this.c.repoRoot);
             this.compute.assertEnqueue('run',intent.projectId!,intent.manifest.contract.runner==='docker'?intent.manifest.contract.dockerContext??'default':undefined);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
+            consumeRunGrant(this.c.store,intent,runId);
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir,0o777);
             const execution:RunExecution|undefined=intent.manifest.contract.runner==='docker'?{backend:'docker',dockerContext:intent.manifest.contract.dockerContext??'default',containerName:`pi-research-${runId}`,controlDir:join(this.c.dataDir,'jobs',runId,'control'),generation:0,leaseUntil:0,startRequested:false,recoveryCount:0}:undefined;
-            const run = this.c.store.create<Run>('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir, cancelRequested: false, artifactIds: [], evidenceIds: [],...(execution?{execution}:{}) }, runId);
+            const run = this.c.store.create<Run>('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir, cancelRequested: false, artifactIds: [], evidenceIds: [],...(execution?{execution}:{}),...(intent.runGrant?{runGrant:intent.runGrant}:{}) }, runId);
             this.c.store.update<RunIntent>('run-intent', id, intent.version, { status: 'submitted', runId });
             this.c.store.event(intent.projectId, 'run.queued', { runId, intentId: id });
             return run;
@@ -85,7 +89,8 @@ export class RunService {
         this.assertExecutionGrant(run);
     }
     /** Also used just before Docker start and while supervising a running immutable job. */
-    assertExecutionGrant(run: Row<Run>) {
+    assertExecutionGrant(run: Row<Run>,admission=!TERMINAL.includes(run.state)&&(run.execution?!run.execution.startRequested:!run.startRequested)) {
+        assertRunGrantRun(this.c.store,run,admission);
         this.researchSourceGuard?.(run.experimentId,'execute',run.intentId);
         assertProjectWritable(this.c.store, run.projectId!);
         const e = this.c.store.get<Experiment>('experiment', run.experimentId, run.projectId!);
@@ -169,7 +174,7 @@ export class RunService {
             if(facts)ensure(r.execution?.generation===facts.generation&&r.execution.leaseUntil>Date.now(),'LEASE_EXPIRED','旧监管器不能归档当前作业');
             const collected=collectRunArtifacts(r,this.evidence),{metrics,artifactIds,evidenceIds,errors}=collected;let integrity=collected.integrity;
             if(facts?.incomplete&&integrity!=='invalid')integrity='incomplete';
-            if(r.execution){try{this.assertExecutionGrant(r);}catch{integrity='invalid';errors.push('运行来源或批准已失效');}}
+            if(r.execution||r.runGrant){try{this.assertExecutionGrant(r,false);}catch{integrity='invalid';errors.push('运行来源或批准已失效');}}
             if (errors.length) error = [error, ...errors].filter(Boolean).join('; ').slice(0, 8000);
             if(r.execution){const report={runId:r.id,manifestDigest:r.manifestDigest,sourceDigest:r.manifest.snapshotDigest,gitCommit:r.manifest.gitCommit,command:r.manifest.contract.command,image:r.manifest.contract.image,imageId:r.execution.imageId,containerId:r.execution.containerId,exitCode,state,integrity,error,artifactIds:[...artifactIds],scientificConclusion:false},a=this.evidence.put(r.projectId!,'execution.json',Buffer.from(JSON.stringify(report,null,2)),'application/json','run',{runId:r.id});artifactIds.push(a.id);}
             r = this.c.store.update<Run>('run', id, r.version, { state, integrity, judgment: 'pending', answerDisposition: metrics && evidenceIds.length ? 'answered' : 'needs_review', exitCode, endedAt: now(), heartbeat: Date.now(), metrics, artifactIds, evidenceIds, ...(error ? { error } : {}),...(r.execution?{execution:{...r.execution,leaseUntil:0,logTruncated:facts?.logTruncated??r.execution.logTruncated,outputExceeded:facts?.outputExceeded??r.execution.outputExceeded}}:{}) });

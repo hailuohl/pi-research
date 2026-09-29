@@ -24,6 +24,7 @@ interface Active {
     lastHeartbeat: number;
     sent: Set<string>;
     ended: boolean;
+    exitObserved?: boolean;
     providerError?: string;
     stopError?: string;
     assistantOutput?: boolean;
@@ -81,7 +82,7 @@ export class AgentHost {
             this.app.campaigns.observe();
             this.app.wakeups.reconcile();
             for (const active of this.active.values()) {
-                if(active.ended || active.stopError)continue;
+                if(active.ended || active.exitObserved || active.stopError)continue;
                 const s = this.app.store.get<Session>('session', active.sessionId);
                 const a = active.attemptId ? this.app.store.get<TaskAttempt>('task-attempt', active.attemptId) : null;
                 if (!this.valid(active)) {
@@ -218,7 +219,8 @@ export class AgentHost {
         child.stderr?.on('data', () => { });
         child.on('message', raw => { void this.onMessage(worker, raw as any, sessionDir).catch(e => this.finish(worker, clean(asError(e).message))); });
         child.on('error', e => this.finish(worker, clean(e.message)));
-        child.once('exit', code => this.exited(worker,code));
+        // exit can precede buffered IPC messages; close confirms those messages have drained.
+        child.once('exit', code => {worker.exitObserved = true;if(worker.ended)this.exited(worker,code);});
         child.once('close', code => {if(this.active.get(worker.sessionId)===worker)this.exited(worker,code);});
         this.admission.markRunning(slot.id,this.ownerHost,claimed.generation,child.pid);
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
@@ -254,17 +256,18 @@ export class AgentHost {
         if (a.ended)
             return;
         if (m?.type === 'tool') {
+            if (a.exitObserved) return;
             try {
                 ensure(!a.stopError && this.valid(a), 'LEASE_EXPIRED', '会话已中止');
                 // Cached reads also require current inputs while a task is running; finished submit receipts may drain.
                 if (a.attemptId && this.app.store.get<TaskAttempt>('task-attempt', a.attemptId).state === 'running') this.app.teams.active(a.actor);
                 const result = await this.tools.execute(a.actor, String(m.tool), m.input, String(m.toolCallId));
-                if (a.child.connected)
+                if (!a.exitObserved && a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, result });
             }
             catch (e) {
                 const error = asError(e);
-                if (a.child.connected)
+                if (!a.exitObserved && a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, error: { code: error.code, message: clean(error.message) } });
             }
             return;
@@ -359,9 +362,10 @@ export class AgentHost {
             }
             store.event(s.projectId, 'agent.finished', { sessionId: s.id, generation:a.generation,error: error ?? null, attemptId: a.attemptId ?? null });
         });
-        if (a.child.connected)
-            a.child.disconnect();
-        a.child.kill('SIGTERM');
+        if (!a.exitObserved) {
+            if (a.child.connected) a.child.disconnect();
+            a.child.kill('SIGTERM');
+        }
     }
     async stop() {
         this.stopped = true;

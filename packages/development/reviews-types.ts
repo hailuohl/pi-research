@@ -1,3 +1,4 @@
+import {assertRunGrantArtifact} from '../policy/run-grant-validation.js';
 import {dirname,basename} from 'node:path';
 import type {Store} from '../storage/store.js';
 import {digest} from '../storage/store.js';
@@ -26,7 +27,7 @@ export function assertDevelopmentReviewTarget(store:Store,pid:string,r:Row<Devel
     const grant=store.get<Approval>('approval',job.grantId,pid);ensure(grant.status==='approved'&&grant.scope==='development.test'&&grant.subjectKind==='development-task'&&grant.subjectId===job.developmentTaskId&&grant.digest===job.manifestDigest,'APPROVAL_STALE','开发测试审批已失效');
     if(r.baseSourceRevisionId){const source=store.get<SourceRevision>('source-revision',r.baseSourceRevisionId,pid);ensure(source.sourceDigest===source.snapshot.digest&&digest(source.snapshot.files)===source.sourceDigest,'SNAPSHOT_CORRUPTED','基础源码摘要已改变');assertExperimentSourceCurrent(store,store.get<Experiment>('experiment',source.experimentId,pid));verifySnapshot(source.snapshot.path,source.snapshot.files);}
     verifySnapshot(job.manifest.inputSnapshot.path,job.manifest.inputSnapshot.files);
-    for(const a of job.manifest.dataArtifacts){const actual=store.get<Artifact>('artifact',a.id,pid),bytes=readStableFile(dirname(actual.path),basename(actual.path),32*1024*1024);ensure(actual.path===a.path&&actual.digest===a.digest&&actual.size===a.size&&bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','测试输入数据已改变');if(a.sourceAcceptanceId)assertAcceptanceCurrent(store,pid,a.sourceAcceptanceId);}
+    for(const a of job.manifest.dataArtifacts){const actual=store.get<Artifact>('artifact',a.id,pid),bytes=readStableFile(dirname(actual.path),basename(actual.path),32*1024*1024);assertRunGrantArtifact(store,pid,actual);ensure(actual.path===a.path&&actual.digest===a.digest&&actual.size===a.size&&bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','测试输入数据已改变');if(a.sourceAcceptanceId)assertAcceptanceCurrent(store,pid,a.sourceAcceptanceId);}
     for(const id of job.artifactIds){const a=store.get<Artifact>('artifact',id,pid),bytes=readStableFile(dirname(a.path),basename(a.path),32*1024*1024);ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','测试归档已改变');}
     for(const id of r.requiredEvidenceIds){const e=store.get<Evidence>('evidence',id,pid),a=store.get<Artifact>('artifact',e.artifactId,pid),bytes=readStableFile(dirname(a.path),basename(a.path),2*1024*1024);ensure(digest(bytes)===a.digest&&a.digest===e.digest&&bytes.toString('utf8').slice(e.locator.start,e.locator.end)===e.quote,'EVIDENCE_INVALID','审查输入证据已改变');}
     const task=store.get<Task>('task',r.taskId,pid),team=store.get<Team>('team',r.teamId,pid);

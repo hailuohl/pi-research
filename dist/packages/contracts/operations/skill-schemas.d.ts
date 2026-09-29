@@ -417,7 +417,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly const: "text-only";
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "description" | "contentDigest" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+        readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_list: {
@@ -549,7 +549,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                     readonly const: "text-only";
                                 };
                             };
-                            readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "description" | "contentDigest" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                            readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                             readonly additionalProperties: false;
                         };
                         readonly reviews: {
@@ -769,7 +769,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly const: "text-only";
                     };
                 };
-                readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "description" | "contentDigest" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "license" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly reviews: {

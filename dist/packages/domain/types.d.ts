@@ -46,6 +46,7 @@ export interface ModelConfig {
     thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 }
 export interface Session {
+    runGrantId?: string;
     workingGrantId?: string;
     skillIds?: string[];
     skillBundleId?: string;
@@ -77,6 +78,7 @@ export interface Message {
     usage?: unknown;
 }
 export interface Approval {
+    runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
     workingGrant?: import('../execution/contracts.js').WorkingGrantReference;
     subjectKind: string;
     subjectId: string;
@@ -139,6 +141,7 @@ export interface Manifest {
     gitCommit?: string;
 }
 export interface RunIntent {
+    runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
     experimentId: string;
     manifest: Manifest;
     manifestDigest: string;
@@ -147,6 +150,8 @@ export interface RunIntent {
     runId?: string;
 }
 export interface Run {
+    runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
+    startRequested?: boolean;
     experimentId: string;
     intentId: string;
     manifest: Manifest;

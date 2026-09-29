@@ -1,3 +1,4 @@
+import { assertRunGrantRun } from '../policy/run-grant-validation.js';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync, readFileSync, chmodSync, readdirSync, existsSync } from 'node:fs';
@@ -103,6 +104,7 @@ export class PublicationBuildService {
     } }
     provenance(pid, artifact) { if (artifact.runId) {
         const r = this.app.store.get('run', artifact.runId, pid);
+        assertRunGrantRun(this.app.store, r);
         ensure(r.artifactIds.includes(artifact.id), 'PUBLICATION_SOURCE_INVALID', 'Run未归档此产物');
         const intent = this.app.store.get('run-intent', r.intentId, pid);
         return { kind: 'run', id: r.id, sourceDigest: r.manifest.snapshotDigest, manifestDigest: r.manifestDigest, approvalId: intent.approvalId };
@@ -115,6 +117,7 @@ export class PublicationBuildService {
         ensure(bytes.length === file.size, 'PUBLICATION_SOURCE_CORRUPTED', '资产长度改变');
     } const p = file.provenance; if (p.kind === 'run') {
         const r = this.app.store.get('run', p.id, pid), intent = this.app.store.get('run-intent', r.intentId, pid);
+        assertRunGrantRun(this.app.store, r);
         ensure(r.artifactIds.includes(a.id) && digest(r.manifest) === p.manifestDigest && r.manifest.snapshotDigest === p.sourceDigest && intent.approvalId === p.approvalId, 'PUBLICATION_SOURCE_STALE', 'Run绑定改变');
         ensure(intent.runId === r.id && intent.status === 'submitted' && intent.manifestDigest === p.manifestDigest && digest(intent.manifest) === p.manifestDigest && digest(r.manifest.sourceFiles) === p.sourceDigest, 'PUBLICATION_SOURCE_STALE', 'Run来源清单改变');
         this.app.approvals.assert(p.approvalId, pid, intent.id, p.manifestDigest, 'run.submit');

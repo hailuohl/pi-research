@@ -20,6 +20,7 @@ interface State {
     selectedRun: string;
     selectedReport:string;
     selectedCampaign:string;
+    selectedRunGrant:string;
     selectedDocument:DocumentLocation|null;
     messages: Row<Message>[];
     stream: string;
@@ -87,7 +88,7 @@ class ExperimentModal extends React.Component<{
     }
 }
 class App extends React.Component<{}, State> {
-    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedDocument:saved().selectedDocument??null, messages: [], stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
+    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedRunGrant:saved().selectedRunGrant??'',selectedDocument:saved().selectedDocument??null, messages: [], stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken() };
     private timer?: number;
     private refreshing?:Promise<boolean>;
     private refreshEpoch = 0;
@@ -101,8 +102,8 @@ class App extends React.Component<{}, State> {
     }
     componentWillUnmount(){this.mounted=false;this.invalidateRead();this.feed?.stop();clearInterval(this.timer);clearTimeout(this.noticeTimer);}
     componentDidUpdate(_:any,prev:State){
-        if(['projectId','sessionId','tab','selectedExp','selectedRun','selectedReport','selectedCampaign','selectedDocument'].some(k=>(prev as any)[k] !==(this.state as any)[k]))
-            localStorage.setItem('pi-research-ui-v1',JSON.stringify({projectId:this.state.projectId,sessionId:this.state.sessionId,tab:this.state.tab,selectedExp:this.state.selectedExp,selectedRun:this.state.selectedRun,selectedReport:this.state.selectedReport,selectedCampaign:this.state.selectedCampaign,selectedDocument:this.state.selectedDocument}));
+        if(['projectId','sessionId','tab','selectedExp','selectedRun','selectedReport','selectedCampaign','selectedRunGrant','selectedDocument'].some(k=>(prev as any)[k] !==(this.state as any)[k]))
+            localStorage.setItem('pi-research-ui-v1',JSON.stringify({projectId:this.state.projectId,sessionId:this.state.sessionId,tab:this.state.tab,selectedExp:this.state.selectedExp,selectedRun:this.state.selectedRun,selectedReport:this.state.selectedReport,selectedCampaign:this.state.selectedCampaign,selectedRunGrant:this.state.selectedRunGrant,selectedDocument:this.state.selectedDocument}));
         if(!this.state.loggedIn&&prev.loggedIn){this.feed?.stop();this.feed=undefined;this.invalidateRead();}
     }
     private invalidateRead(){this.refreshEpoch++;this.readController?.abort();this.refreshing=undefined;}
@@ -159,7 +160,7 @@ class App extends React.Component<{}, State> {
             this.setState({ busy: false });
         }
     };
-    switchProject(id: string) { this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ projectId: id, sessionId: '', selectedExp: '', selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDocument:null, stream: '',streamTruncated:false,eventNotice:'', data: null }, () => { void this.refresh(); }); }
+    switchProject(id: string) { this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ projectId: id, sessionId: '', selectedExp: '', selectedRun:'',selectedReport:'',selectedCampaign:'',selectedRunGrant:'',selectedDocument:null, stream: '',streamTruncated:false,eventNotice:'', data: null }, () => { void this.refresh(); }); }
     selectSession(id: string) { this.invalidateRead(); this.setState({ sessionId: id, tab: 'chat', stream: '',streamTruncated:false }, () => { void this.refresh(); }); }
     open(modal: string, data: any = null) { this.setState({ modal, modalData: data, error: '' }); }
     close = () => {
@@ -179,7 +180,7 @@ class App extends React.Component<{}, State> {
         const base = { onClose: this.close, busy };
         const done = () => this.setState({ modal: '', modalData: null });
         if (modal === 'project')
-            return <Modal {...base} title="新建本地项目" submitLabel="创建项目" onSubmit={fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); this.setState({ projectId: p.id, sessionId: s.id, selectedExp: '',selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDocument:null, tab: 'chat' }); done(); })}><label>项目名称<input aria-label="项目名称" name="name" required maxLength={120} placeholder="例如：材料筛选研究"/></label><label>项目说明<textarea name="description" placeholder="研究目标、范围或输入资料"/></label><label>项目模板<select aria-label="项目模板" name="template" defaultValue="curve-fit"><option value="curve-fit">真实曲线拟合示例 · 可直接运行</option><option value="empty">空项目 · 自行准备文件</option></select></label><div className="notice"><p>曲线拟合使用固定合成数据，真实执行数值计算。它用于验证系统，不是材料研究或 LLM 模拟。</p></div></Modal>;
+            return <Modal {...base} title="新建本地项目" submitLabel="创建项目" onSubmit={fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); this.setState({ projectId: p.id, sessionId: s.id, selectedExp: '',selectedRun:'',selectedReport:'',selectedCampaign:'',selectedRunGrant:'',selectedDocument:null, tab: 'chat' }); done(); })}><label>项目名称<input aria-label="项目名称" name="name" required maxLength={120} placeholder="例如：材料筛选研究"/></label><label>项目说明<textarea name="description" placeholder="研究目标、范围或输入资料"/></label><label>项目模板<select aria-label="项目模板" name="template" defaultValue="curve-fit"><option value="curve-fit">真实曲线拟合示例 · 可直接运行</option><option value="empty">空项目 · 自行准备文件</option></select></label><div className="notice"><p>曲线拟合使用固定合成数据，真实执行数值计算。它用于验证系统，不是材料研究或 LLM 模拟。</p></div></Modal>;
         if (modal === 'experiment')
             return <ExperimentModal {...base} parent={data!.experiments.find(e=>e.id===modalData?.parentId)} perform={this.perform} onSave={async input=>{const e=await api('/experiments',{projectId:data!.project.id,...input});this.setState({selectedExp:e.id,tab:'experiments'});done();}}/>;
         if (modal === 'config')
@@ -222,7 +223,7 @@ class App extends React.Component<{}, State> {
                     tab === 'scheduler' ? <SchedulerView key={data.project.id} data={data} perform={this.perform}/> :
                     tab === 'implementation' ? <ImplementationView onScheduler={()=>this.setState({tab:'scheduler'})} key={data.project.id} data={data} sessionId={this.state.sessionId} busy={this.state.busy} perform={this.perform} onSession={sessionId=>{this.invalidateRead();this.setState({sessionId,stream:'',streamTruncated:false},()=>void this.refresh());}} onChat={id=>this.selectSession(id)} onExperiment={selectedExp=>this.setState({selectedExp,selectedRun:'',tab:'experiments'})}/> :
                     tab === 'campaigns' ? <CampaignView onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定活动 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp,tab:'experiments'});}} selectedCampaign={this.state.selectedCampaign} onSelect={selectedCampaign=>this.setState({selectedCampaign})} onImplementation={sessionId=>{if(!data.sessions.some(s=>s.id===sessionId&&s.role==='coordinator'&&!s.taskId)){this.setState({error:'指定实现会话不在当前项目中。'});return;}this.invalidateRead();this.setState({sessionId,stream:'',streamTruncated:false,tab:'implementation'},()=>void this.refresh());}} key={data.project.id} data={data} busy={this.state.busy} perform={this.perform} onSession={id => this.selectSession(id)} onExperiment={id => this.setState({selectedExp:id,selectedRun:'',tab:'experiments'})}/> :
-                    tab === 'experiments' ? <Experiments data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.invalidateRead(); this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>this.setState({selectedRun,selectedExp})} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
+                    tab === 'experiments' ? <Experiments perform={this.perform} busy={this.state.busy} selectedRunGrant={this.state.selectedRunGrant} onSelectRunGrant={selectedRunGrant=>this.setState({selectedRunGrant})} onSession={id=>{if(!data.sessions.some(s=>s.id===id&&s.role==='coordinator'&&!s.taskId)){this.setState({error:'指定运行主会话不在当前项目中。'});return;}this.selectSession(id);}} data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.invalidateRead(); this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp});}} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
                         tab === 'changes' ? <ChangesView key={data.project.id} data={data} perform={this.perform}/> :
                         tab === 'workspace' ? <WorkspaceView key={data.project.id} data={data} perform={this.perform}/> :
                             tab === 'integrations' ? <IntegrationsView key={data.project.id} projectId={data.project.id} sessionId={this.state.sessionId} onLiterature={()=>this.setState({tab:'literature'})}/> :

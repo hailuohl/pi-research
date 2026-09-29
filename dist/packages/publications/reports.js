@@ -1,3 +1,4 @@
+import { assertRunGrantRun, assertRunGrantArtifact } from '../policy/run-grant-validation.js';
 import { randomUUID } from 'node:crypto';
 import { basename, dirname, isAbsolute } from 'node:path';
 import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
@@ -92,7 +93,7 @@ export class ReportService {
             verifySnapshot(j.manifest.inputSnapshot.path, j.manifest.inputSnapshot.files);
             j.artifactIds.forEach(id => this.bytes(pid, id));
             for (const data of j.manifest.dataArtifacts) {
-                this.bytes(pid, data.id, data);
+                assertRunGrantArtifact(this.c.store, pid, this.bytes(pid, data.id, data).artifact);
                 if (data.sourceAcceptanceId)
                     assertAcceptanceCurrent(this.c.store, pid, data.sourceAcceptanceId);
             }
@@ -160,11 +161,13 @@ export class ReportService {
                     }
                 }
             const runs = runIds.map(id => this.c.store.get('run', id, pid));
+            ensure(!runs.some(r => r.runGrant) || this.app, 'RUN_GRANT_UNAVAILABLE', '有限运行来源服务不可用');
             ensure(runs.length + claims.length + publications.length > 0, 'REPORT_EMPTY', '请选择真实运行、已采纳结论或完整文稿结果', 400);
             ensure(runs.every(r => ['succeeded', 'failed', 'cancelled'].includes(r.state)), 'RUN_NOT_TERMINAL', '未终态运行不能列为最终结果');
             ensure(new Set(runs.map(r => r.manifest.contractDigest)).size <= 1, 'INCOMPARABLE_CONTRACTS', '不同运行契约不能直接合并比较');
             claims.forEach(c => { ensure(c.status === 'accepted', 'CLAIM_NOT_ACCEPTED', '报告确定性结论只允许已采纳 Claim'); this.evidence.assertClaimCurrent(c); });
             for (const r of runs) {
+                assertRunGrantRun(this.c.store, r);
                 verifyRunRecord(r, this.evidence);
                 assertExperimentSourceCurrent(this.c.store, this.c.store.get('experiment', r.experimentId, pid));
                 verifySnapshot(r.manifest.snapshotPath, r.manifest.sourceFiles);
@@ -272,7 +275,7 @@ export class ReportService {
                 bindings.runs.push({ runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, contractDigest: r.manifest.contractDigest, artifactIds: [...r.artifactIds], evidenceIds: [...r.evidenceIds] });
                 bindings.sources.push({ runId: r.id, sourceDigest: r.manifest.snapshotDigest, files: structuredClone(r.manifest.sourceFiles) });
                 const binding = r.manifest.sourceRevisionId ? this.c.store.maybe('git-source-binding', r.manifest.sourceRevisionId) : undefined, gitCommit = r.manifest.gitCommit ?? (binding?.sourceDigest === r.manifest.snapshotDigest ? binding.gitCommit : undefined);
-                add({ type: 'run', targetId: r.id, label: `Run ${r.id}`, runId: r.id, digest: r.manifestDigest }, { runId: r.id, experimentId: r.experimentId, revision: r.manifest.experimentRevision, state: r.state, integrity: r.integrity, judgment: r.judgment, exitCode: r.exitCode, metrics: r.metrics, startedAt: r.startedAt, endedAt: r.endedAt, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, gitCommit, contract: r.manifest.contract });
+                add({ type: 'run', targetId: r.id, label: `Run ${r.id}`, runId: r.id, digest: r.manifestDigest }, { runId: r.id, experimentId: r.experimentId, revision: r.manifest.experimentRevision, state: r.state, integrity: r.integrity, judgment: r.judgment, exitCode: r.exitCode, metrics: r.metrics, startedAt: r.startedAt, endedAt: r.endedAt, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, gitCommit, contract: r.manifest.contract, ...(r.runGrant ? { runGrant: this.app.runGrants.inspect({ type: 'user' }, pid, r.runGrant.id) } : {}) });
                 r.artifactIds.forEach(id => artifact(id, r.id));
                 const refs = new Map(r.evidenceIds.map(id => [id, evidence(id)]));
                 const metricEvidence = r.evidenceIds.find(id => { const e = this.c.store.get('evidence', id, pid); return this.c.store.get('artifact', e.artifactId, pid).title === 'metrics.json'; });
@@ -426,6 +429,7 @@ export class ReportService {
         for (const b of bound.bindings.runs)
             try {
                 const run = this.c.store.get('run', b.runId, pid);
+                assertRunGrantRun(this.c.store, run);
                 assertExperimentSourceCurrent(this.c.store, this.c.store.get('experiment', run.experimentId, pid));
             }
             catch (error) {
@@ -498,7 +502,7 @@ export class ReportService {
     }
     stateDigest(pid) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','run-grant','run-grant-use','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor, pid, id, expectedBindingsDigest, expectedStateDigest) {
         const r = this.record(actor, pid, id);

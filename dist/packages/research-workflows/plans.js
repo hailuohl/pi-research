@@ -8,6 +8,7 @@ import { digest } from '../storage/store.js';
 import { captureSourceRevision, sourceMetadata, validateSourceRevision } from '../workspace/source-access.js';
 import { verifySnapshot } from '../workspace/files.js';
 import { runContentDigest, inspectObservation } from './observations.js';
+import { assertRunGrantIntent, assertRunGrantRun } from '../policy/run-grant-validation.js';
 /** Plans fix research intent. Tests, integration and formal compute retain their existing approvals. */
 export class ResearchPlanService {
     app;
@@ -42,11 +43,13 @@ export class ResearchPlanService {
     runBinding(pid, intentId) { const i = this.app.store.get('run-intent', intentId, pid); return { intentId: i.id, approvalId: i.approvalId, manifestDigest: i.manifestDigest, sourceDigest: i.manifest.snapshotDigest }; }
     assertRunBinding(pid, b, runId) {
         const i = this.app.store.get('run-intent', b.intentId, pid);
+        assertRunGrantIntent(this.app.store, i);
         ensure(i.approvalId === b.approvalId && i.manifestDigest === b.manifestDigest && i.manifest.snapshotDigest === b.sourceDigest && digest(i.manifest) === b.manifestDigest, 'PLAN_RUN_STALE', '固定运行清单或原批准身份改变');
         const grant = this.app.store.get('approval', b.approvalId, pid);
         ensure(grant.subjectKind === 'run-intent' && grant.subjectId === i.id && grant.digest === b.manifestDigest && grant.scope === 'run.submit' && !['stale', 'rejected'].includes(grant.status), 'APPROVAL_STALE', '固定运行审批失效');
         if (runId) {
             const r = this.app.store.get('run', runId, pid);
+            assertRunGrantRun(this.app.store, r);
             ensure(i.status === 'submitted' && i.runId === r.id && r.intentId === i.id && r.manifestDigest === b.manifestDigest, 'PLAN_RUN_STALE', '固定Run与批准清单不一致');
             this.app.approvals.assert(b.approvalId, pid, i.id, b.manifestDigest, 'run.submit');
         }
@@ -314,6 +317,7 @@ export class ResearchPlanService {
         if (c.stopReason)
             blockers.push(c.stopReason);
         const results = this.app.campaigns.observations(actor, c.id).map(o => { const member = this.app.store.get('campaign-member', o.memberId, pid), bound = candidates.find(v => v.id === member.candidateId), run = this.app.store.get('run', o.runId, pid); let validation = o.validation; try {
+            assertRunGrantRun(this.app.store, run);
             ensure(runContentDigest(run) === o.contentDigest, 'OBSERVATION_STALE', '运行结果已改变');
             assertExperimentSourceCurrent(this.app.store, this.app.store.get('experiment', run.experimentId, pid));
             this.assertRunSource(run.experimentId, 'execute', run.intentId);

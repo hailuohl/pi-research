@@ -693,7 +693,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                     };
                 };
             };
-            readonly required: ("id" | "files" | "engine" | "bibliography" | "title" | "mainFile")[];
+            readonly required: ("files" | "id" | "engine" | "bibliography" | "title" | "mainFile")[];
             readonly additionalProperties: false;
         };
     };
@@ -795,7 +795,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "sourceDigest" | "engine" | "bibliography" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "sourceDigest" | "engine" | "bibliography" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_inspect: {
@@ -896,7 +896,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "sourceDigest" | "engine" | "bibliography" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "sourceDigest" | "engine" | "bibliography" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_list: {
@@ -1002,7 +1002,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "files" | "sourceDigest" | "engine" | "bibliography" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+                    readonly required: ("files" | "id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "sourceDigest" | "engine" | "bibliography" | "title" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1336,7 +1336,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_submit: {
@@ -1462,7 +1462,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_inspect: {
@@ -1588,7 +1588,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_cancel: {
@@ -1714,7 +1714,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_result: {
@@ -1920,7 +1920,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly const: 1;
             };
         };
-        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "jobId" | "sourceDigest" | "pdf" | "previews" | "logs" | "formatVersion" | "profileId" | "engine" | "bibliography" | "engineVersion" | "status" | "hadErrors" | "converged" | "passes" | "diagnostics" | "imageId" | "revisionId" | "profileDigest" | "manifestDigest" | "manifestArtifactId" | "manifestArtifactDigest" | "sourceValidity")[];
+        readonly required: ("id" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "jobId" | "sourceDigest" | "manifestDigest" | "pdf" | "previews" | "logs" | "formatVersion" | "profileId" | "engine" | "bibliography" | "engineVersion" | "status" | "hadErrors" | "converged" | "passes" | "diagnostics" | "imageId" | "revisionId" | "profileDigest" | "manifestArtifactId" | "manifestArtifactDigest" | "sourceValidity")[];
         readonly additionalProperties: false;
     };
     readonly publication_build_list: {
@@ -2051,7 +2051,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "manifestDigest" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+                    readonly required: ("id" | "dockerContext" | "resources" | "approvalId" | "state" | "jobId" | "sourceDigest" | "generation" | "manifestDigest" | "profileId" | "engine" | "bibliography" | "mainFile" | "imageDigest" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "exitCode" | "artifactIds" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
                     readonly additionalProperties: false;
                 };
             };

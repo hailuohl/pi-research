@@ -21,7 +21,7 @@ export declare class RunService {
     /** Recheck the durable execution grant inside the transaction that claims a queued Run. */
     assertLaunchable(run: Row<Run>): void;
     /** Also used just before Docker start and while supervising a running immutable job. */
-    assertExecutionGrant(run: Row<Run>): void;
+    assertExecutionGrant(run: Row<Run>, admission?: boolean): void;
     /** Both launch callers hold the same write transaction as their authorization check. */
     cancelBeforeLaunch(run: Row<Run>, error: unknown): void;
     launchPending(): void;

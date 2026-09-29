@@ -1,3 +1,4 @@
+import {assertRunGrantRun} from '../policy/run-grant-validation.js';
 import { randomUUID } from 'node:crypto';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Experiment, Project, Row, Run, RunIntent, Session } from '../domain/types.js';
@@ -207,7 +208,7 @@ export class CampaignService {
     verifyObservation(c: Row<Campaign>, observationId: string) {
         const o = this.app.store.get<RunObservation>('run-observation', observationId, c.projectId!);
         ensure(o.campaignId === c.id && o.roundId === c.currentRoundId, 'OBSERVATION_SCOPE_DENIED', '证据不属于活动当前轮次', 403);
-        const run = this.app.store.get<Run>('run', o.runId, c.projectId!);
+        const run = this.app.store.get<Run>('run', o.runId, c.projectId!);assertRunGrantRun(this.app.store,run);
         assertExperimentSourceCurrent(this.app.store,this.app.store.get<Experiment>('experiment',run.experimentId,c.projectId!));
         this.app.researchPlans.assertRunSource(run.experimentId,'execute',run.intentId);
         ensure(runContentDigest(run) === o.contentDigest && run.manifestDigest === o.manifestDigest,

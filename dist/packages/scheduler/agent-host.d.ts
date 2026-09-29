@@ -14,6 +14,7 @@ interface Active {
     lastHeartbeat: number;
     sent: Set<string>;
     ended: boolean;
+    exitObserved?: boolean;
     providerError?: string;
     stopError?: string;
     assistantOutput?: boolean;

@@ -14,6 +14,7 @@ import { verifyTrustedExample, validateContract } from './contracts.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { readLogPage } from '../execution/log-page.js';
 import { ComputeQueue } from '../scheduler/compute-queue.js';
+import { assertRunGrantActor, assertRunGrantIntent, assertRunGrantRun, consumeRunGrant } from '../policy/run-grant-validation.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
     c;
@@ -57,9 +58,11 @@ export class RunService {
         return this.c.store.transaction(() => {
             const intent = this.c.store.get('run-intent', id);
             scope(actor, intent.projectId);
+            assertRunGrantActor(this.c.store, actor, intent);
             if (intent.runId)
                 return this.c.store.get('run', intent.runId);
             assertProjectWritable(this.c.store, intent.projectId);
+            assertRunGrantIntent(this.c.store, intent, true);
             this.researchSourceGuard?.(intent.experimentId, 'submit', intent.id);
             const e = this.c.store.get('experiment', intent.experimentId, intent.projectId);
             assertExperimentSourceCurrent(this.c.store, e);
@@ -70,10 +73,11 @@ export class RunService {
             verifyTrustedExample(intent.manifest, this.c.repoRoot);
             this.compute.assertEnqueue('run', intent.projectId, intent.manifest.contract.runner === 'docker' ? intent.manifest.contract.dockerContext ?? 'default' : undefined);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
+            consumeRunGrant(this.c.store, intent, runId);
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
             const execution = intent.manifest.contract.runner === 'docker' ? { backend: 'docker', dockerContext: intent.manifest.contract.dockerContext ?? 'default', containerName: `pi-research-${runId}`, controlDir: join(this.c.dataDir, 'jobs', runId, 'control'), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
-            const run = this.c.store.create('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir, cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}) }, runId);
+            const run = this.c.store.create('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir, cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}), ...(intent.runGrant ? { runGrant: intent.runGrant } : {}) }, runId);
             this.c.store.update('run-intent', id, intent.version, { status: 'submitted', runId });
             this.c.store.event(intent.projectId, 'run.queued', { runId, intentId: id });
             return run;
@@ -94,7 +98,8 @@ export class RunService {
         this.assertExecutionGrant(run);
     }
     /** Also used just before Docker start and while supervising a running immutable job. */
-    assertExecutionGrant(run) {
+    assertExecutionGrant(run, admission = !TERMINAL.includes(run.state) && (run.execution ? !run.execution.startRequested : !run.startRequested)) {
+        assertRunGrantRun(this.c.store, run, admission);
         this.researchSourceGuard?.(run.experimentId, 'execute', run.intentId);
         assertProjectWritable(this.c.store, run.projectId);
         const e = this.c.store.get('experiment', run.experimentId, run.projectId);
@@ -199,9 +204,9 @@ export class RunService {
             let integrity = collected.integrity;
             if (facts?.incomplete && integrity !== 'invalid')
                 integrity = 'incomplete';
-            if (r.execution) {
+            if (r.execution || r.runGrant) {
                 try {
-                    this.assertExecutionGrant(r);
+                    this.assertExecutionGrant(r, false);
                 }
                 catch {
                     integrity = 'invalid';

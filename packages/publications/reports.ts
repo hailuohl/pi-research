@@ -1,3 +1,4 @@
+import {assertRunGrantRun,assertRunGrantArtifact} from '../policy/run-grant-validation.js';
 import type {ResearchApp} from '../research-app.js';
 import type {PublicationBuildResult,ManuscriptRevision} from './build-types.js';
 import {randomUUID} from 'node:crypto';
@@ -82,7 +83,7 @@ export class ReportService {
             ensure(j.state==='succeeded'&&j.integrity==='complete'&&j.exitCode===0&&j.sourceDigest===candidateSnapshot.digest&&j.manifest.inputSnapshot.digest===j.sourceDigest&&digest(j.manifest.inputSnapshot.files)===j.sourceDigest&&digest(j.manifest)===j.manifestDigest,'REPORT_TEST_BINDING_INVALID','测试结果不属于该整合候选');
             ensure(grant.status==='approved'&&grant.scope==='development.test'&&grant.subjectKind==='development-task'&&grant.subjectId===j.developmentTaskId&&grant.digest===j.manifestDigest,'APPROVAL_STALE','开发测试审批已失效');
             verifySnapshot(j.manifest.inputSnapshot.path,j.manifest.inputSnapshot.files);j.artifactIds.forEach(id=>this.bytes(pid,id));
-            for(const data of j.manifest.dataArtifacts){this.bytes(pid,data.id,data);if(data.sourceAcceptanceId)assertAcceptanceCurrent(this.c.store,pid,data.sourceAcceptanceId);}
+            for(const data of j.manifest.dataArtifacts){assertRunGrantArtifact(this.c.store,pid,this.bytes(pid,data.id,data).artifact);if(data.sourceAcceptanceId)assertAcceptanceCurrent(this.c.store,pid,data.sourceAcceptanceId);}
         }
         if(p.flow==='reviewed-development'||p.reviewId||p.reviewAcceptanceId){ensure(p.reviewId&&p.reviewAcceptanceId&&p.testJobId,'REPORT_REVIEW_BINDING_INVALID','缺少受审整合绑定');const review=this.c.store.get<DevelopmentReview>('development-review',p.reviewId,pid),acceptance=assertAcceptanceCurrent(this.c.store,pid,p.reviewAcceptanceId);ensure(review.jobId===p.testJobId&&review.sourceDigest===candidateSnapshot.digest&&acceptance.taskId===review.taskId,'REPORT_REVIEW_BINDING_INVALID','独立审查不属于该测试和候选源码');}
     }
@@ -120,11 +121,11 @@ export class ReportService {
             const claims=claimIds.map(id=>this.c.store.get<Claim>('claim',id,pid));
             for(const claim of claims)for(const id of claim.evidenceIds){const e=this.c.store.get<Evidence>('evidence',id,pid);
                 const artifact=this.c.store.get<Artifact>('artifact',e.artifactId,pid),runId=e.runId??artifact.runId;if(runId&&!runIds.includes(runId)){ensure(runIds.length<100,'REPORT_TOO_LARGE','报告关联运行超过上限',413);runIds.push(runId);}}
-            const runs=runIds.map(id=>this.c.store.get<Run>('run',id,pid));
+            const runs=runIds.map(id=>this.c.store.get<Run>('run',id,pid));ensure(!runs.some(r=>r.runGrant)||this.app,'RUN_GRANT_UNAVAILABLE','有限运行来源服务不可用');
             ensure(runs.length+claims.length+publications.length>0,'REPORT_EMPTY','请选择真实运行、已采纳结论或完整文稿结果',400);ensure(runs.every(r=>['succeeded','failed','cancelled'].includes(r.state)),'RUN_NOT_TERMINAL','未终态运行不能列为最终结果');
             ensure(new Set(runs.map(r=>r.manifest.contractDigest)).size<=1,'INCOMPARABLE_CONTRACTS','不同运行契约不能直接合并比较');
             claims.forEach(c=>{ensure(c.status==='accepted','CLAIM_NOT_ACCEPTED','报告确定性结论只允许已采纳 Claim');this.evidence.assertClaimCurrent(c);});
-            for(const r of runs){verifyRunRecord(r,this.evidence);assertExperimentSourceCurrent(this.c.store,this.c.store.get<Experiment>('experiment',r.experimentId,pid));verifySnapshot(r.manifest.snapshotPath,r.manifest.sourceFiles);}
+            for(const r of runs){assertRunGrantRun(this.c.store,r);verifyRunRecord(r,this.evidence);assertExperimentSourceCurrent(this.c.store,this.c.store.get<Experiment>('experiment',r.experimentId,pid));verifySnapshot(r.manifest.snapshotPath,r.manifest.sourceFiles);}
             const bindings:ReportBindings={runs:[],sources:[],artifacts:[],claims:[],proposals:[],objects:[]},references:ReportReference[]=[],summaries:ReportRun[]=[];
             const add=(ref:Omit<ReportReference,'id'>,data?:unknown)=>{
                 const id=digest({type:ref.type,targetId:ref.targetId,runId:ref.runId??null,path:ref.path??null,relation:ref.relation??null});
@@ -201,7 +202,7 @@ export class ReportService {
             for(const r of runs){
                 bindings.runs.push({runId:r.id,manifestDigest:r.manifestDigest,sourceDigest:r.manifest.snapshotDigest,contractDigest:r.manifest.contractDigest,artifactIds:[...r.artifactIds],evidenceIds:[...r.evidenceIds]});bindings.sources.push({runId:r.id,sourceDigest:r.manifest.snapshotDigest,files:structuredClone(r.manifest.sourceFiles)});
                 const binding=r.manifest.sourceRevisionId?this.c.store.maybe<GitSourceBinding>('git-source-binding',r.manifest.sourceRevisionId):undefined,gitCommit=r.manifest.gitCommit??(binding?.sourceDigest===r.manifest.snapshotDigest?binding.gitCommit:undefined);
-                add({type:'run',targetId:r.id,label:`Run ${r.id}`,runId:r.id,digest:r.manifestDigest},{runId:r.id,experimentId:r.experimentId,revision:r.manifest.experimentRevision,state:r.state,integrity:r.integrity,judgment:r.judgment,exitCode:r.exitCode,metrics:r.metrics,startedAt:r.startedAt,endedAt:r.endedAt,manifestDigest:r.manifestDigest,sourceDigest:r.manifest.snapshotDigest,gitCommit,contract:r.manifest.contract});
+                add({type:'run',targetId:r.id,label:`Run ${r.id}`,runId:r.id,digest:r.manifestDigest},{runId:r.id,experimentId:r.experimentId,revision:r.manifest.experimentRevision,state:r.state,integrity:r.integrity,judgment:r.judgment,exitCode:r.exitCode,metrics:r.metrics,startedAt:r.startedAt,endedAt:r.endedAt,manifestDigest:r.manifestDigest,sourceDigest:r.manifest.snapshotDigest,gitCommit,contract:r.manifest.contract,...(r.runGrant?{runGrant:this.app!.runGrants.inspect({type:'user'},pid,r.runGrant.id)}:{})});
                 r.artifactIds.forEach(id=>artifact(id,r.id));const refs=new Map(r.evidenceIds.map(id=>[id,evidence(id)]));
                 const metricEvidence=r.evidenceIds.find(id=>{const e=this.c.store.get<Evidence>('evidence',id,pid);return this.c.store.get<Artifact>('artifact',e.artifactId,pid).title==='metrics.json';});
                 summaries.push(clean({runId:r.id,experimentId:r.experimentId,revision:r.manifest.experimentRevision,state:r.state,integrity:r.integrity,judgment:r.judgment,sourceDigest:r.manifest.snapshotDigest,gitCommit,metrics:Object.entries(r.metrics??{}).map(([name,value])=>({name,value,unit:r.manifest.contract.metrics[name]?.unit??'未定义',referenceId:refs.get(metricEvidence!)!}))}));
@@ -257,7 +258,7 @@ export class ReportService {
             this.document(pid,e,checkedDocuments);
         }catch(error){fail(error,asError(error).code!=='APPROVAL_STALE');}
         for(const b of bound.bindings.runs)try{const run=this.c.store.get<Run>('run',b.runId,pid);ensure(run.manifestDigest===b.manifestDigest&&run.manifest.snapshotDigest===b.sourceDigest,'REPORT_SOURCE_CHANGED','报告运行绑定已变化');verifyRunRecord(run,this.evidence);verifySnapshot(run.manifest.snapshotPath,run.manifest.sourceFiles);}catch(error){fail(error,true);}
-        for(const b of bound.bindings.runs)try{const run=this.c.store.get<Run>('run',b.runId,pid);assertExperimentSourceCurrent(this.c.store,this.c.store.get<Experiment>('experiment',run.experimentId,pid));}catch(error){fail(error);}
+        for(const b of bound.bindings.runs)try{const run=this.c.store.get<Run>('run',b.runId,pid);assertRunGrantRun(this.c.store,run);assertExperimentSourceCurrent(this.c.store,this.c.store.get<Experiment>('experiment',run.experimentId,pid));}catch(error){fail(error);}
         for(const b of bound.bindings.claims)try{const claim=this.c.store.get<Claim>('claim',b.id,pid);ensure(claim.status==='accepted'&&digest(claimContent(claim))===b.contentDigest,'CLAIM_STALE','报告结论采纳或内容已变化');this.evidence.assertClaimCurrent(claim);b.acceptanceIds.forEach(id=>assertAcceptanceCurrent(this.c.store,pid,id));}catch(error){fail(error);}
         for(const b of bound.bindings.proposals)try{const p=this.c.store.get<ChangeProposal>('change-proposal',b.id,pid);ensure(p.digest===b.digest&&p.testJobId===b.jobId&&p.reviewId===b.reviewId&&p.reviewAcceptanceId===b.reviewAcceptanceId,'CHANGE_SOURCE_STALE','报告来源整合已改变');this.checkProposal(pid,p);}catch(error){fail(error);}
         result.reasons=[...new Set(result.reasons)].sort();return result;
@@ -274,7 +275,7 @@ export class ReportService {
     }
     private stateDigest(pid:string) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','run-grant','run-grant-use','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor:Actor,pid:string,id:string,expectedBindingsDigest:string,expectedStateDigest:string) {
         const r=this.record(actor,pid,id);assertProjectWritable(this.c.store,pid);ensure(r.formatVersion===1&&r.bindingsDigest===expectedBindingsDigest&&digest(payload(r))===expectedBindingsDigest&&this.stateDigest(pid)===expectedStateDigest,'REPORT_EXPORT_STALE','打包期间报告或关联状态已变化，请重新导出');

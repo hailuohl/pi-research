@@ -1,3 +1,4 @@
+import { RunGrants, runGrantUsable } from './run-grants.js';
 import { LogView } from './log-view.js';
 import { ComputeWait } from './scheduler-view.js';
 import { WakeupPanel } from './campaigns.js';
@@ -105,7 +106,7 @@ export class Chat extends React.Component {
                     React.createElement("span", null, "Ctrl + Enter \u53D1\u9001"))));
     }
 }
-export function Experiments({ data, selected, onSelect, onCreate, onChild, onRun }) {
+export function Experiments({ data, selected, onSelect, onCreate, onChild, onRun, perform, busy, onSession, selectedRunGrant, onSelectRunGrant }) {
     const roots = data.experiments.filter(e => !e.parentId);
     const tree = (e, depth = 0) => React.createElement("div", { className: "experiment-branch", key: e.id },
         React.createElement("button", { className: 'experiment-node ' + (selected === e.id ? 'selected' : ''), style: { marginLeft: Math.min(depth, 6) * 20 }, onClick: () => onSelect(e.id) },
@@ -129,6 +130,7 @@ export function Experiments({ data, selected, onSelect, onCreate, onChild, onRun
             React.createElement("button", { className: "primary", onClick: onCreate },
                 React.createElement(Icon, { name: "plus", size: 16 }),
                 "\u65B0\u5EFA\u5B9E\u9A8C")),
+        perform ? React.createElement(RunGrants, { key: data.project.id, data: data, perform: perform, busy: !!busy, selectedGrant: selectedRunGrant, onSelect: onSelectRunGrant, onSession: onSession, onRun: onRun }) : null,
         React.createElement("div", { className: "section-kpis" },
             React.createElement("div", null,
                 React.createElement("strong", null, data.experiments.length.toString().padStart(2, '0')),
@@ -343,6 +345,7 @@ export class Inspector extends React.Component {
         const budget = data.budgets.find(b => b.teamId === team?.id);
         const run = this.currentRun();
         const intents = data.intents.filter(i => i.experimentId === e?.id), intent = intents[intents.length - 1], approval = data.approvals.find(a => a.id === intent?.approvalId);
+        const runGrantRef = intent?.runGrant ?? approval?.runGrant, runGrant = (data.runGrants ?? []).find(g => g.id === runGrantRef?.id);
         const pendingTeams = data.approvals.filter(a => a.subjectKind === 'team' && a.status === 'pending');
         return React.createElement("aside", { className: "inspector" },
             React.createElement("div", { className: "inspector-title" },
@@ -383,6 +386,12 @@ export class Inspector extends React.Component {
                     React.createElement("div", { className: "small-label" }, "\u6B63\u5F0F\u8FD0\u884C\u5BA1\u6279"),
                     React.createElement(Badge, { value: approval.status }),
                     React.createElement("p", null, "\u6B64\u6279\u51C6\u53EA\u6388\u6743\u5F53\u524D\u56FA\u5B9A\u5FEB\u7167\u4E0E\u8BA1\u7B97\u5951\u7EA6\u3002"),
+                    runGrantRef ? React.createElement("p", { className: "notice-inline" },
+                        "\u7ED1\u5B9A RunGrant ",
+                        short(runGrantRef.id),
+                        " \u00B7 ",
+                        runGrant?.effectiveState ?? '等待核验',
+                        "\uFF1B\u4E0D\u80FD\u6539\u7528\u72EC\u7ACB\u5355\u6B21\u6279\u51C6\u3002") : null,
                     React.createElement("code", { className: "digest" },
                         intent.manifest.snapshotDigest.slice(0, 20),
                         "\u2026"),
@@ -403,9 +412,9 @@ export class Inspector extends React.Component {
                             " \u79D2"),
                         React.createElement("dt", null, "\u5FC5\u9700\u4EA7\u7269"),
                         React.createElement("dd", null, intent.manifest.contract.expectedArtifacts.join('、'))),
-                    approval.status === 'pending' ? React.createElement("div", { className: "stack-actions" },
+                    approval.status === 'pending' && !runGrantRef ? React.createElement("div", { className: "stack-actions" },
                         React.createElement("button", { className: "primary", onClick: () => perform(async () => { await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }); const submitted = await api(`/run-intents/${intent.id}/submit`, {}); this.props.onRun?.(submitted.id); }, '已提交真实运行') }, "\u6279\u51C6\u5E76\u63D0\u4EA4"),
-                        React.createElement("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false }), '已拒绝运行') }, "\u62D2\u7EDD")) : approval.status === 'approved' ? React.createElement("button", { className: "primary", onClick: () => perform(async () => { const submitted = await api(`/run-intents/${intent.id}/submit`, {}); this.props.onRun?.(submitted.id); }) }, "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C") : null) : null,
+                        React.createElement("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false }), '已拒绝运行') }, "\u62D2\u7EDD")) : approval.status === 'approved' ? React.createElement("button", { className: "primary", disabled: !!runGrantRef && !runGrantUsable(runGrant), onClick: () => perform(async () => { const submitted = await api(`/run-intents/${intent.id}/submit`, {}); this.props.onRun?.(submitted.id); }) }, runGrantRef ? '提交授权内固定运行（计一次）' : '提交已批准运行') : null) : null,
                 this.props.selectedRun && !run ? React.createElement("p", { role: "alert", className: "error-text" }, "\u6307\u5B9A Run \u4E0D\u5C5E\u4E8E\u5F53\u524D\u5B9E\u9A8C\u6216\u5DF2\u4E0D\u53EF\u7528\uFF0C\u672A\u663E\u793A\u5176\u4ED6\u8FD0\u884C\u3002") : null,
                 run ? React.createElement("div", { className: "run-detail" },
                     React.createElement("label", null,

@@ -8,6 +8,7 @@ import {SCHEDULER_OUTPUT_SCHEMAS} from './scheduler-schemas.js';
 import {REVIEW_OUTPUT_SCHEMAS} from './review-schemas.js';
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from './development-schemas.js';
 import {WORKING_GRANT_OUTPUT_SCHEMAS,WORKING_GRANT_REFERENCE_SCHEMA} from './working-grant-schemas.js';
+import {RUN_GRANT_OUTPUT_SCHEMAS,RUN_GRANT_REFERENCE_SCHEMA} from './run-grant-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
 import type { InferSchema, JsonSchema } from './schema.js';
 
@@ -53,8 +54,8 @@ const taskResult = object({
 const CORE_OUTPUT_SCHEMAS = {
     run_prepare: row('run-intent', {
         experimentId: string, manifest, manifestDigest: string, approvalId: string,
-        status: enumeration('prepared', 'submitted'), runId: string
-    }, ['runId']),
+        status: enumeration('prepared', 'submitted'), runId: string,runGrant:RUN_GRANT_REFERENCE_SCHEMA
+    }, ['runId','runGrant']),
     run_submit: row('run', {
         experimentId: string, intentId: string, manifest, manifestDigest: string,
         state: enumeration('queued', 'submitting', 'running', 'cancelling', 'succeeded', 'failed', 'cancelled', 'unknown'),
@@ -63,8 +64,8 @@ const CORE_OUTPUT_SCHEMAS = {
         answerDisposition: enumeration('answered', 'unanswered', 'needs_review'), answerReviewId: string,
         outputDir: string, supervisorPid: integer, childPid: integer, heartbeat: number, startedAt: string, endedAt: string,
         exitCode: { anyOf: [integer, { type: 'null' }] }, cancelRequested: boolean,
-        metrics: { type: 'object', additionalProperties: number }, error: string, artifactIds: strings, evidenceIds: strings,execution:runnerExecution
-    }, ['answerDisposition', 'answerReviewId', 'supervisorPid', 'childPid', 'heartbeat', 'startedAt', 'endedAt', 'exitCode', 'metrics', 'error','execution']),
+        metrics: { type: 'object', additionalProperties: number }, error: string, artifactIds: strings, evidenceIds: strings,execution:runnerExecution,runGrant:RUN_GRANT_REFERENCE_SCHEMA,startRequested:boolean
+    }, ['answerDisposition', 'answerReviewId', 'supervisorPid', 'childPid', 'heartbeat', 'startedAt', 'endedAt', 'exitCode', 'metrics', 'error','execution','runGrant','startRequested']),
     workspace_read: object({ path: string, content: string, digest: string, size: integer }),
     workspace_write: object({ path: string, digest: string, size: integer }),
     change_proposal_prepare: row('change-proposal', {
@@ -124,7 +125,7 @@ export const OUTPUT_SCHEMAS = {
     ...RESEARCH_PLAN_OUTPUT_SCHEMAS,
     ...SKILL_OUTPUT_SCHEMAS,
     ...PUBLICATION_OUTPUT_SCHEMAS,
-    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,...SCHEDULER_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...RUN_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,...SCHEDULER_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,...DOCUMENT_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,
@@ -140,7 +141,7 @@ export const OUTPUT_SCHEMAS = {
     run_logs: object({ content: string, cursor: integer, complete: boolean,start:integer,size:integer,identity:nullableString }),
     run_source_list:object({runId:string,experimentId:string,revision:integer,sourceDigest:string,gitCommit:string,files:array(sourceFile)},['gitCommit']),
     run_source_read:object({runId:string,experimentId:string,revision:integer,sourceDigest:string,gitCommit:string,path:string,size:integer,digest:string,mode:enumeration('100644','100755'),cursor:integer,end:integer,complete:boolean,content:string},['gitCommit','mode']),
-    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string,workingGrant:WORKING_GRANT_REFERENCE_SCHEMA }, ['decidedAt','workingGrant'])),
+    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string,workingGrant:WORKING_GRANT_REFERENCE_SCHEMA,runGrant:RUN_GRANT_REFERENCE_SCHEMA }, ['decidedAt','workingGrant','runGrant'])),
     experiment_plan_submit: row('experiment', { title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId']),
     collaboration_plan_submit: team,
     agent_delegate: team,

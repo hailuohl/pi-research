@@ -1,7 +1,8 @@
 import {randomUUID} from 'node:crypto';
 import {join,dirname,basename} from 'node:path';
 import type {ResearchApp} from '../research-app.js';
-import type {Actor,Approval,Row,Session,SourceSnapshot} from '../domain/types.js';
+import type {Actor,Approval,Artifact,Row,Session,SourceSnapshot} from '../domain/types.js';
+import {assertRunGrantArtifact} from './run-grant-validation.js';
 import type {DevelopmentTask,SandboxJob,SandboxManifest,WorkingGrantReference} from '../execution/contracts.js';
 import {object,integer,strings,text} from '../contracts/validation.js';
 import {ensure,asError} from '../domain/errors.js';
@@ -34,7 +35,7 @@ export class WorkingGrantService {
     }
     private origin(g:Row<WorkingGrant>) {
         validateSourceRevision(this.app.context,g.projectId!,g.sourceRevisionId);verifySnapshot(g.baselineSnapshot.path,g.baselineSnapshot.files);
-        for(const a of g.dataArtifacts){const actual=this.app.store.get('artifact',a.id,g.projectId!),bytes=readStableFile(dirname(a.path),basename(a.path),32*1024*1024);ensure(actual.path===a.path&&actual.digest===a.digest&&actual.size===a.size&&bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','授权数据内容或来源已改变');if(a.sourceAcceptanceId)assertAcceptanceCurrent(this.app.store,g.projectId!,a.sourceAcceptanceId);}
+        for(const a of g.dataArtifacts){const actual=this.app.store.get<Artifact>('artifact',a.id,g.projectId!),bytes=readStableFile(dirname(a.path),basename(a.path),32*1024*1024);assertRunGrantArtifact(this.app.store,g.projectId!,actual);ensure(actual.path===a.path&&actual.digest===a.digest&&actual.size===a.size&&bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','授权数据内容或来源已改变');if(a.sourceAcceptanceId)assertAcceptanceCurrent(this.app.store,g.projectId!,a.sourceAcceptanceId);}
     }
     private uses(pid:string,id:string){return this.app.store.list<WorkingGrantUse>('working-grant-use',pid).filter(u=>u.grantId===id);}
     inspect(actor:Actor,pid:string,id:string):WorkingGrantDTO {
