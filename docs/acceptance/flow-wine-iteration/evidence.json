@@ -1,0 +1,142 @@
+{
+  "capturedAt": "2026-09-29T10:06:55.667Z",
+  "repositoryCommit": "2774e0e80d1b9ffeb8257b14e7522f44d83014a7",
+  "scope": "One real-data comparison on one fixed UCI red-wine split: train mean, one Pi alcohol-OLS candidate, two independently approved Docker Runs, verified Stop and local report",
+  "inputs": {
+    "datasetSha256": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+    "splitSha256": "944b56e99ae5c40c9114731df8158f2e204a06992e6f595dc2a6e0acdce2298f",
+    "trainRows": 1279,
+    "testRows": 320,
+    "algorithm": "SHA-256(seed + colon + zero-based index), ranked once before both runs",
+    "paperVersion": "Separate Table 1 descriptive-statistics flow; no paper-SVM replication",
+    "duplicateMatchingTestRows": 91,
+    "duplicateDefinition": "Identical complete 12-column CSV text row present at a different index in training data"
+  },
+  "nativePi": {
+    "sessionId": "24c0a2b7-0699-4dfe-b693-eea7a78d1ee5",
+    "nativeId": "01a0ec95-5e0e-7775-87b1-1c336fe3cfba",
+    "generation": 1,
+    "toolCalls": [
+      "artifact_read",
+      "run_source_list",
+      "workspace_read",
+      "run_source_read",
+      "workspace_write"
+    ],
+    "workingGrantId": "0e7dc88e-80f9-4e1a-a17b-ebf6596c4fbb",
+    "grantDigest": "b6e3ff96a4122006551e7fa303684fad405faa8582245c40600b3f3932c4a7f7",
+    "grantApprovalId": "ebe380fa-b77e-4c1f-8b7b-999a458b17cd",
+    "editablePaths": [
+      "mean_baseline.py"
+    ],
+    "maxTests": 2,
+    "usedTests": 1,
+    "remainingTests": 1,
+    "expiresAt": "2026-09-29T10:52:23.946Z",
+    "readScope": "Actual baseline metrics and full workspace baseline code read; fixed split was read only through its first 300 bytes. Both Docker programs read the complete frozen split."
+  },
+  "implementation": {
+    "candidateDevelopmentJobId": "915727d2-2f50-43c5-99ab-48345a5a3d4f",
+    "candidateDevelopmentState": "succeeded",
+    "candidateDevelopmentIntegrity": "complete",
+    "proposalId": "8faa6a28-c726-4f02-9909-44e9134a18bb",
+    "integrationApprovalId": "9f440ba5-4837-4032-af26-8bb40bf6135a",
+    "changedFiles": [
+      "mean_baseline.py"
+    ],
+    "baselineCodeSha256": "8593859e0279b01999cf7dbb97bc007d4690d1cffce09efe89bf2d1e66427047",
+    "candidateCodeSha256": "66c444c411f49491f23b1d18ccd11d8390e86398cb420d51ecc411c98553af3e"
+  },
+  "runs": [
+    {
+      "runId": "f1fe021d-fed0-4803-849b-3137d665ae5f",
+      "sourceDigest": "c2febe4467850db8e8ab873145d151eb6f801da943d6198824e34a20804f3519",
+      "mse": 0.5328090375225953,
+      "mae": 0.6294761532447224,
+      "model": {
+        "qualityMean": 5.63721657544957
+      },
+      "predictionsIndependentlyChecked": 320,
+      "approvalId": "a867c437-51b6-4be4-b488-f3fea3bd0f4b"
+    },
+    {
+      "runId": "3b323a7c-da15-4cd8-835a-9a922e054453",
+      "sourceDigest": "68700c7342bdbdc60a31a5d313d45dcdeeb0b71e2f4b66f38b603ff823eba83d",
+      "mse": 0.40096622117677105,
+      "mae": 0.5116891108449304,
+      "model": {
+        "intercept": 1.8646786270907918,
+        "slope": 0.36173374836104416
+      },
+      "predictionsIndependentlyChecked": 320,
+      "approvalId": "af66483c-069f-488d-84ea-e9e037c13521"
+    }
+  ],
+  "comparison": {
+    "sameContractDigest": "5e05700522ff3114d631285014b33533fdfc554e694a7210e0b4d709479bdcb3",
+    "mseReduction": 0.1318428163458223,
+    "maeReduction": 0.11778704239979154,
+    "verifiedObservations": 2,
+    "campaignId": "621b2d40-44b3-4095-8643-241ead12fbfd",
+    "campaignState": "stopped",
+    "decisionId": "238d79f7-c307-412f-af82-2df447b9da6e",
+    "decisionApprovalId": "bd82d881-6087-46eb-8abd-d11ecc433f0d",
+    "decisionAction": "stop",
+    "planRevisionId": "70fabc77-8981-4e6d-9870-fe7b0babbf9b",
+    "planRecordedAfterBothRuns": true,
+    "automaticAnalysisAttemptsLimit": 0,
+    "stopReason": "One precommitted candidate improved held-out MSE by 0.1318428163458243 and MAE by 0.11778704239979199 on one fixed split. Stop at the approved one-candidate scope; this does not prove statistical robustness, causality or reproduction of Cortez et al. SVM."
+  },
+  "report": {
+    "reportId": "e6ed90ea-fb4b-4173-8d95-fc0781ff166a",
+    "runIds": [
+      "f1fe021d-fed0-4803-849b-3137d665ae5f",
+      "3b323a7c-da15-4cd8-835a-9a922e054453"
+    ],
+    "integrity": "verified",
+    "validity": "current",
+    "oldTable1RunId": "3fab1756-f6f7-4d8b-9aa6-0b8b97e952f7",
+    "oldTable1ReportRetained": true
+  },
+  "browser": {
+    "capturedAt": "2026-09-29T10:00:54.640Z",
+    "realBaselineVisible": true,
+    "realCandidateVisible": true,
+    "sameMetricComparisonVisible": true,
+    "verifiedObservations": 2,
+    "stopDecisionAppliedVisible": true,
+    "planAndSplitVisible": true,
+    "reportCurrentAndVerified": true,
+    "runSourceAndTestLinksVisible": true,
+    "oldTable1ReportRetained": true,
+    "refreshRetainedComparisonReport": true,
+    "layoutEvaluated": false,
+    "screenshotsCopied": false
+  },
+  "validation": {
+    "repositoryCodeChanged": false,
+    "fullRegressionRepeated": false,
+    "cleanBuildRepeated": false,
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "mode": "read-only",
+      "remainingBlockers": 0,
+      "scope": "source, independent statistics, approval chain and retention",
+      "limitationsVerified": [
+        "91/320 test rows duplicate complete training rows",
+        "campaign plan recorded after both Runs",
+        "live rejection and crash paths not rerun"
+      ]
+    },
+    "reason": "Existing reviewed product code and fixed approvals were used; scientific outputs were independently recomputed from raw frozen CSV and all 640 archived prediction rows."
+  },
+  "limitations": [
+    "One held-out split and one candidate do not establish statistical robustness, causal effect, generalization, or reproduction of the Cortez et al. SVM.",
+    "The product campaign plan revision was recorded with the Stop decision after seeing both Runs; the batch acceptance scope was fixed earlier, but the product plan is not a preregistration.",
+    "Campaign Stop prevents further campaign effects; a separate WorkingGrant still has one unused development submission until its fixed expiry. Revoking it would invalidate completed bindings.",
+    "The previous Table 1 descriptive-statistics Run has a different contract and is excluded from this predictive comparison.",
+    "No product code, frontend layout, or public export was changed in this batch.",
+    "Although train/test indices are disjoint, 91 of 320 test rows duplicate complete training rows. This fixed split is not duplicate-group-disjoint and cannot support a claim of independent-sample generalization.",
+    "Pi read only the first 300 bytes of split.json; the fixed Docker source snapshots and independent audit cover all indices."
+  ]
+}
