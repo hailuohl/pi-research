@@ -7,6 +7,7 @@ import {setup, USER, approve, fixtureFinish} from '../support/research.mjs';
 import {ExportService} from '../../dist/packages/publications/export.js';
 import {digest} from '../../dist/packages/storage/store.js';
 import {setSourceMode} from '../../dist/packages/workspace/files.js';
+import {crc32,deflateSync} from 'node:zlib';
 const tar=process.platform==='win32'?'C:/WINDOWS/system32/tar.exe':'tar';
 const physical=(s,reference)=>s.app.store.paths.physical(reference);
 function prepared(extraOutput,title='Unit report ../../ title stays text') {
@@ -20,6 +21,16 @@ function prepared(extraOutput,title='Unit report ../../ title stays text') {
  return {...s,run,report,service};
 }
 const exportsFor=s=>s.app.store.list('artifact',s.project.id).filter(a=>a.origin==='report-export');
+const pngChunk=(name,data)=>{const type=Buffer.from(name),length=Buffer.alloc(4),crc=Buffer.alloc(4);length.writeUInt32BE(data.length);crc.writeUInt32BE(crc32(Buffer.concat([type,data]))>>>0);return Buffer.concat([length,type,data,crc]);};
+const pngWithIdat=(idat,metadata=false)=>{const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(8,0);ihdr.writeUInt32BE(1,4);ihdr[8]=8;ihdr[9]=2;return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',ihdr),...(metadata?[pngChunk('tEXt',Buffer.from('Comment\0C:\\private\\report.pdf'))]:[]),pngChunk('IDAT',idat),pngChunk('IEND',Buffer.alloc(0))]);};
+const pngWithPathLikePixels=(metadata)=>{const row=Buffer.alloc(25,32);row[0]=0;Buffer.from(' //host/share/file ').copy(row,1);return pngWithIdat(deflateSync(row,{level:0}),metadata);};
+test('plain PNG pixel bytes do not trigger host-path false positives, while metadata and damaged PNGs keep the guard',async()=>{
+ const plain=pngWithPathLikePixels(false);assert.ok(plain.includes(Buffer.from(' //host/share/file ')));
+ const payload=Buffer.from(' C:\\private\\report.pdf '),row=Buffer.alloc(25,32),badFilter=Buffer.alloc(25,32),badLength=Buffer.alloc(26,32);row[0]=0;badFilter[0]=5;badLength[0]=0;payload.copy(badFilter,1);payload.copy(badLength,1);const stream=deflateSync(row,{level:0});
+ const variants=[['plain',plain,null],['metadata',pngWithPathLikePixels(true),'EXPORT_HOST_PATH_DETECTED'],['trailing',Buffer.concat([plain,Buffer.from('x')]),'EXPORT_HOST_PATH_DETECTED'],['invalid-idat',pngWithIdat(payload),'EXPORT_HOST_PATH_DETECTED'],['extra-idat-payload',pngWithIdat(Buffer.concat([stream,payload])),'EXPORT_HOST_PATH_DETECTED'],['bad-filter',pngWithIdat(deflateSync(badFilter,{level:0})),'EXPORT_HOST_PATH_DETECTED'],['bad-row-length',pngWithIdat(deflateSync(badLength,{level:0})),'EXPORT_HOST_PATH_DETECTED']];
+ const damaged=Buffer.from(plain),idatAt=damaged.indexOf(Buffer.from('IDAT'));damaged[idatAt+4]^=1;variants.push(['bad-crc',damaged,'EXPORT_HOST_PATH_DETECTED']);
+ for(const [label,bytes,code] of variants){const s=prepared((s,r)=>writeFileSync(join(physical(s,r.outputDir),'page.png'),bytes));try{if(code){await assert.rejects(s.service.create(USER,s.project.id,{reportId:s.report.id},label),{code});assert.equal(exportsFor(s).length,0);}else{const collected=s.app.reports.collectExport(USER,s.project.id,s.report.id);assert.ok(collected.files.some(f=>f.bytes.equals(bytes)));assert.ok((await s.service.create(USER,s.project.id,{reportId:s.report.id},label)).digest);}}finally{s.close();}}
+});
 test('binary noise is not treated as a host path, while readable paths and secrets still block export',async()=>{
  for(const [label,content,code] of [
   ['compressed noise','A:/',null],

@@ -1,0 +1,117 @@
+{
+  "capturedAt": "2026-09-29T10:55:43.891Z",
+  "repositoryBaseCommit": "a34c5010282473c426b235c9a1e731ae1495930a",
+  "source": {
+    "projectId": "dae9576e-7489-47dc-96d7-8855a3530ad1",
+    "sessionId": "28d71bef-9910-48e7-b8fc-46e43919fce1",
+    "sourceRevisionId": "5f8a38990909eed16c658842bc6798fd22b0c92c2440f850e7edbeb8bef67592",
+    "predictionsArtifactId": "d7f15dd4-1893-413c-89f3-9b94c5f9d457",
+    "predictionsSha256": "2f3257719c7ba1b6fd5cf119cfafcdcb243f6387c7d0db075272340c4c256cb6",
+    "predictionsRows": 320,
+    "piReadAndWroteOnlyGrantedFiles": true,
+    "piMainTexArtifactId": "ae7931d3-0a86-45ca-8f7e-00b6beda6238",
+    "piMainTexSha256": "6c78120ba28a6805e33f64f1766ab789e84fcdd4d37f97b51e60a352084336cb",
+    "workingGrantId": "f0c8bcfc-af0e-45fc-84b2-d9891b918d48",
+    "workingGrantApprovalId": "5a334675-6261-442b-8959-4b9342b5a759",
+    "editablePaths": [
+      "chart.py",
+      "main.tex"
+    ],
+    "maxTests": 2,
+    "usedTests": 2
+  },
+  "figure": {
+    "originalJobId": "5979d114-fd66-41d8-b0f4-fa1e560c886f",
+    "correctedJobId": "835e0e00-8591-4c73-870b-2ea485dd9063",
+    "correctedApprovalId": "babef49b-ecc0-4513-946f-0b502ca6a08e",
+    "correctedSourceDigest": "68a0d12aeb5b51ed9a003371a685ad47b2965ea6f7ccfd2dea4cfb7f2f56ba44",
+    "correctedChartSha256": "16b37763941a786ab8fbdcf82309429a0909c39fb5517147128a5c02b801f978",
+    "correctedPngArtifactId": "73032d3f-e9ba-4332-bc58-b6e702a8c796",
+    "correctedPngSha256": "2856fd7f236d38f1d729b04f94cff98e662692197d26a8605a38a9bf9ffc5453",
+    "sourceSha256": "2f3257719c7ba1b6fd5cf119cfafcdcb243f6387c7d0db075272340c4c256cb6",
+    "rawPredictionRows": 320,
+    "oldBluePixelsOutsideRawMarkers": 3119,
+    "newBluePixelsOutsideRawMarkers": 0,
+    "visualCheck": true
+  },
+  "publication": {
+    "originalRevisionId": "4a1f44c8-ae82-4610-be8d-1ae0c9ab7085",
+    "originalResultId": "73190f6b5aa399ac94013dc778a3543992e82e9b2040fac29222fbf9b4e4f624",
+    "correctedRevisionId": "01ef63f7-cdaf-4475-b10d-350b1dd56f75",
+    "correctedSourceDigest": "a9e9537fa1a96cd14f20329e86a3d7716e4099360126b61f1a0c893ddb774ba8",
+    "correctedBuildJobId": "f7a3927f-66c3-4d87-b285-61ab646f7329",
+    "correctedBuildApprovalId": "a3f7c84b-41cf-4ec0-aaa8-46af4f501dfb",
+    "correctedManifestDigest": "7692920a6e280410351dae5d9528919f47a04b4b2a7b4524951b37ace3596429",
+    "imageId": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+    "resultId": "e8138d2efdd3882689528d89c84f1ff31efca0d843b73417efc20c56cc3774ab",
+    "resultState": "succeeded",
+    "resultIntegrity": "complete",
+    "pdfArtifactId": "9a21e3e7-b9fb-4b07-9113-48baf4d0a8e4",
+    "pdfSha256": "dd25012f9fda601ea35f1f13d9e8dd1790d54c5cbf4dd47238f0201922587fc8",
+    "pages": 2,
+    "sourceValidity": "current",
+    "productPaperReview": "unreviewed"
+  },
+  "delivery": {
+    "supersededReportId": "02f0f652-ff4c-4f7b-9945-34ee0cec3825",
+    "finalReportId": "07e936d4-5150-4910-90e8-9a457358eafb",
+    "integrity": "verified",
+    "validity": "current",
+    "runIds": [
+      "f1fe021d-fed0-4803-849b-3137d665ae5f",
+      "3b323a7c-da15-4cd8-835a-9a922e054453"
+    ],
+    "campaignId": "621b2d40-44b3-4095-8643-241ead12fbfd",
+    "campaignState": "stopped",
+    "exportArtifactId": "70ea6c82-14a0-4a4d-80ea-ce9ad243a896",
+    "exportSha256": "1301e5b8190b8ffbb445ccf2eb49a72e1026ff7acb397f3350102e882c96ac5e",
+    "exportBytes": 681767,
+    "archiveFiles": 47,
+    "manifestFiles": 45,
+    "originalPaperPdfIncluded": false,
+    "secretFileIncluded": false
+  },
+  "boundary": {
+    "invalidFigureRejectedWith": "PUBLICATION_FILE_TYPE",
+    "originalError": "EXPORT_HOST_PATH_DETECTED on compressed PNG preview",
+    "finalCodeCollectedRealPreview": true,
+    "plainPngMetadataAndMalformedRejected": true,
+    "textMetadataPathAndCredentialChecksRetained": true
+  },
+  "browser": {
+    "capturedAt": "2026-09-29T10:54:11.953Z",
+    "correctedReportCurrentVerified": true,
+    "figurePdfRunLinks": true,
+    "refreshRetainedOldAndNewReports": true
+  },
+  "validation": {
+    "fullRegression": {
+      "command": "npm run test:core",
+      "tests": 773,
+      "passed": 751,
+      "failed": 0,
+      "skipped": 22
+    },
+    "cleanBuild": {
+      "summary": ".validation/clean-build-99yC3e/summary.json",
+      "npmCi": 0,
+      "build": 0,
+      "typecheck": 0,
+      "identicalFiles": 450,
+      "manifestSha256": "bea6dd7bd8995c98371af41f8e44bc534189f4207bfbafd077f1e67ec40387fc"
+    },
+    "independentReadOnlyReview": {
+      "model": "gpt-6-astra",
+      "blockingFindingsClosed": 2,
+      "remainingBlockers": 0
+    },
+    "productCodeChanged": true,
+    "frontendLayoutChangedByThisBatch": false
+  },
+  "limitations": [
+    "Single fixed split; 91 of 320 test rows duplicate complete training records.",
+    "Campaign plan recorded after both Runs; not preregistered.",
+    "Product paper review remains unreviewed; independent code/provenance review is separate.",
+    "Earlier jittered publication/report remain immutable historical records and are superseded by the final IDs above."
+  ]
+}

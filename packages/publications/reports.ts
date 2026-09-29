@@ -3,6 +3,7 @@ import {assertRunGrantRun,assertRunGrantArtifact} from '../policy/run-grant-vali
 import type {ResearchApp} from '../research-app.js';
 import type {PublicationBuildResult,ManuscriptRevision} from './build-types.js';
 import {randomUUID} from 'node:crypto';
+import {crc32,inflateSync} from 'node:zlib';
 import {basename,dirname,isAbsolute} from 'node:path';
 import {assertProjectWritable,assertExperimentSourceCurrent} from '../policy/lifecycle.js';
 import {verifyRunRecord} from '../evidence/run-verifier.js';
@@ -31,6 +32,28 @@ const escaped=(value:string)=>value.replace(/([\\`*_{}\[\]()<>#!|])/g,'\\$1').re
 const excluded=(path:string)=>path.split(/[\\/]/).some(p=>/^(\.git|\.git-credentials|\.ssh|\.aws|\.kube|\.docker|\.pi|\.pi-research|\.pi-runtime|\.npmrc|\.pypirc|\.env(?:\..*)?|access\.token|auth\.json|id_rsa|id_ed25519|credentials(?:\..*)?|diagnostic\.log|supervisor\.log)$/i.test(p));
 const claimContent=(c:Claim)=>clean({statement:c.statement,evidenceIds:c.evidenceIds,limitations:c.limitations,taskId:c.taskId,sourceAttemptId:c.sourceAttemptId,sourceResultDigest:c.sourceResultDigest,sourceAcceptanceId:c.sourceAcceptanceId,sourceAcceptanceIds:c.sourceAcceptanceIds});
 const payload=(r:ReportRecord)=>clean({artifactId:r.artifactId,artifactDigest:r.artifactDigest,title:r.title,formatVersion:r.formatVersion,runIds:r.runIds,claimIds:r.claimIds,evidenceIds:r.evidenceIds,references:r.references,runs:r.runs,bindings:r.bindings});
+function plainPng(bytes:Buffer) {
+    if(bytes.length<57||!bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))return false;
+    let at=8,stage=0,physical=false,rowBytes=0,rows=0;
+    const idat:Buffer[]=[];
+    while(at+12<=bytes.length){
+        const length=bytes.readUInt32BE(at),end=at+12+length;
+        if(end>bytes.length)return false;
+        const type=bytes.toString('ascii',at+4,at+8),data=bytes.subarray(at+8,at+8+length);
+        if(bytes.readUInt32BE(at+8+length)!==(crc32(bytes.subarray(at+4,at+8+length))>>>0))return false;
+        at=end;
+        if(stage===0){if(type!=='IHDR'||length!==13||!data.readUInt32BE(0)||!data.readUInt32BE(4)||data[8]!==8||![2,6].includes(data[9])||data[10]||data[11]||data[12])return false;rowBytes=1+data.readUInt32BE(0)*(data[9]===2?3:4);rows=data.readUInt32BE(4);if(!Number.isSafeInteger(rowBytes*rows)||rowBytes*rows>32*1024*1024)return false;stage=1;}
+        else if(stage===1&&type==='pHYs'&&!physical&&length===9)physical=true;
+        else if((stage===1||stage===2)&&type==='IDAT'&&length>0){idat.push(data);stage=2;}
+        else if(stage===2&&type==='IEND'&&length===0){
+            if(at!==bytes.length)return false;
+            try{const compressed=Buffer.concat(idat),{buffer,engine}=inflateSync(compressed,{info:true,maxOutputLength:rowBytes*rows}) as unknown as {buffer:Buffer;engine:{bytesWritten:number}};if(engine.bytesWritten!==compressed.length||buffer.length!==rowBytes*rows)return false;for(let i=0;i<rows;i++)if(buffer[i*rowBytes]>4)return false;return true;}
+            catch{return false;}
+        }
+        else return false;
+    }
+    return false;
+}
 function safeExportBytes(bytes:Buffer,context:Pick<AppContext,'dataDir'|'repoRoot'|'store'>) {
     const value=bytes.toString('utf8');
     const roots=[context.dataDir,context.repoRoot,...context.store.paths.legacyRoots].map(path=>path.replaceAll('\\','/').replace(/\/+$/,'').toLowerCase());
@@ -40,7 +63,8 @@ function safeExportBytes(bytes:Buffer,context:Pick<AppContext,'dataDir'|'repoRoo
         // ponytail: binary path heuristics cover readable ASCII runs of 8+ bytes; a format-aware metadata audit is needed for encoded payloads.
         decoded=(bytes.toString('latin1').match(/[\x09\x0a\x0d\x20-\x7e]{8,}/g)??[]).join('\n');
     }
-    for(let layer=0;layer<5;layer++) {
+    const scanPaths=!plainPng(bytes);
+    for(let layer=0;layer<5&&scanPaths;layer++) {
         const normalized=decoded.replaceAll('\\','/'),lower=normalized.toLowerCase();
         const hostPath=roots.some(root=>root.length>1&&lower.includes(root))||/(?:^|[^A-Za-z0-9_])[A-Za-z]:\//.test(normalized)||/(?:^|[\s"'(=,])\/{2,}[^\s/"']+\/+[^\s/"']+/.test(normalized)||/\b(?:host[_ -]?(?:path|directory)|(?:bind(?: mount)?|mount) source(?: path)?|snapshotPath|controlDir)\b[^\r\n/]{0,96}\/[^\s"'<>]+/i.test(normalized)||/--mount[^\r\n]{0,300}[,\s]src=\/[^\s"'<>]+/i.test(normalized);
         ensure(!hostPath,'EXPORT_HOST_PATH_DETECTED','导出内容包含宿主路径；请检查原始运行记录，文件不会被自动改写',400);
