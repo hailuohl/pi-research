@@ -72,24 +72,60 @@ function plainPng(bytes) {
 function safeExportBytes(bytes, context) {
     const value = bytes.toString('utf8');
     const roots = [context.dataDir, context.repoRoot, ...context.store.paths.legacyRoots].map(path => path.replaceAll('\\', '/').replace(/\/+$/, '').toLowerCase());
-    let decoded = value;
     ensure(!roots.some(root => root.length > 1 && value.replaceAll('\\', '/').toLowerCase().includes(root)), 'EXPORT_HOST_PATH_DETECTED', '导出内容包含宿主路径；请检查原始运行记录，文件不会被自动改写', 400);
-    try {
-        new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    }
-    catch {
-        // ponytail: binary path heuristics cover readable ASCII runs of 8+ bytes; a format-aware metadata audit is needed for encoded payloads.
-        decoded = (bytes.toString('latin1').match(/[\x09\x0a\x0d\x20-\x7e]{8,}/g) ?? []).join('\n');
-    }
-    const scanPaths = !plainPng(bytes);
-    for (let layer = 0; layer < 5 && scanPaths; layer++) {
-        const normalized = decoded.replaceAll('\\', '/'), lower = normalized.toLowerCase();
-        const hostPath = roots.some(root => root.length > 1 && lower.includes(root)) || /(?:^|[^A-Za-z0-9_])[A-Za-z]:\//.test(normalized) || /(?:^|[\s"'(=,])\/{2,}[^\s/"']+\/+[^\s/"']+/.test(normalized) || /\b(?:host[_ -]?(?:path|directory)|(?:bind(?: mount)?|mount) source(?: path)?|snapshotPath|controlDir)\b[^\r\n/]{0,96}\/[^\s"'<>]+/i.test(normalized) || /--mount[^\r\n]{0,300}[,\s]src=\/[^\s"'<>]+/i.test(normalized);
-        ensure(!hostPath, 'EXPORT_HOST_PATH_DETECTED', '导出内容包含宿主路径；请检查原始运行记录，文件不会被自动改写', 400);
-        const next = decoded.replace(/\\u([a-f0-9]{4})|\\(["\\/])/gi, (_match, unicode, literal) => unicode ? String.fromCharCode(parseInt(unicode, 16)) : literal);
-        if (next === decoded)
-            break;
-        decoded = next;
+    const marker = /\b(?:host[_ -]?(?:path|directory)|(?:bind(?: mount)?|mount) source(?: path)?|snapshotPath|controlDir)\b[^\r\n/]{0,96}\/[^\s"'<>]+/i;
+    const markerName = /\b(?:host[_ -]?(?:path|directory)|(?:bind(?: mount)?|mount) source(?: path)?|snapshotPath|controlDir)\b/i;
+    const safe = (ok) => ensure(ok, 'EXPORT_HOST_PATH_DETECTED', '导出内容包含宿主路径；请检查原始运行记录，文件不会被自动改写', 400);
+    const scanPlain = (initial) => {
+        let decoded = initial;
+        for (let layer = 0; layer < 5; layer++) {
+            const normalized = decoded.replaceAll('\\', '/'), lower = normalized.toLowerCase();
+            safe(!roots.some(root => root.length > 1 && lower.includes(root)) && !/(?:^|[^A-Za-z0-9_])[A-Za-z]:\//.test(normalized) && !/(?:^|[\s"'(=,])\/{2,}[^\s/"']+\/+[^\s/"']+/.test(normalized) && !marker.test(normalized) && !/--mount[^\r\n]{0,300}[,\s]src=\/[^\s"'<>]+/i.test(normalized));
+            const next = decoded.replace(/\\u([a-f0-9]{4})|\\(["\\/])/gi, (_match, unicode, literal) => unicode ? String.fromCharCode(parseInt(unicode, 16)) : literal);
+            if (next === decoded)
+                break;
+            decoded = next;
+        }
+    };
+    const scan = (input, depth) => {
+        let json = false;
+        if (/^[\s]*[\[{\"]/.test(input))
+            try {
+                JSON.parse(input);
+                json = true;
+            }
+            catch { }
+        if (!json) {
+            scanPlain(input);
+            return;
+        }
+        safe(depth < 16);
+        let previous;
+        for (const token of input.matchAll(/"(?:\\.|[^"\\])*"/gs)) {
+            const start = token.index, end = start + token[0].length, decoded = JSON.parse(token[0]);
+            if (previous && markerName.test(previous.value) && /^\s*:\s*$/.test(input.slice(previous.end, start)))
+                safe(!marker.test(`${previous.value}: ${decoded}`.replaceAll('\\', '/')));
+            const after = input.slice(end).trimStart();
+            if (after.startsWith(':') && markerName.test(decoded))
+                safe(after.slice(1).trimStart().startsWith('"'));
+            scan(decoded, depth + 1);
+            previous = { end, value: decoded };
+        }
+    };
+    if (!plainPng(bytes)) {
+        let utf8 = true;
+        try {
+            new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        }
+        catch {
+            utf8 = false;
+        }
+        if (utf8)
+            scan(value, 0);
+        else {
+            // ponytail: opaque binary remains conservatively scanned for printable path runs.
+            scanPlain((bytes.toString('latin1').match(/[\x09\x0a\x0d\x20-\x7e]{8,}/g) ?? []).join('\n'));
+        }
     }
     ensure(!/-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----|\b(?:sk-[A-Za-z0-9_-]{16,}|(?:AKIA|ASIA)[A-Z0-9]{16}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b|\bBearer\s+[A-Za-z0-9._~-]{12,}|https?:\/\/[^\s\/:]+:[^\s@]+@|["']?(?:api[_-]?key|access[_-]?token|password|client[_-]?secret)["']?\s*[:=]\s*["']?[^\s"',;}]{8,}/i.test(value), 'EXPORT_SENSITIVE_CONTENT', '导出内容疑似包含凭据；请检查所选固定源码或产物，原始字节不会被自动改写', 400);
 }

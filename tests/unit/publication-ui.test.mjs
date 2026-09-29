@@ -7,6 +7,12 @@ const digest='a'.repeat(64),revision={id:'revision',title:'Fixed manuscript',eng
 const job={id:'build',revisionId:'revision',sourceDigest:digest,manifestDigest:digest,approvalId:'approval',state:'prepared',integrity:'pending',resources:{cpus:1},engine:'pdflatex',mainFile:'main.tex',bibliography:'none'};
 const sync=v=>{synchronousState(v);return v;};
 function view(){return sync(synchronousState(new PublicationView({data:{project:{id:'project'},artifacts:[],approvals:[]},perform:async f=>f()})));}
+test('fixed report return survives deferred React revision and build commits',async()=>{
+ const v=view(),commit=v.setState.bind(v),result={id:'result',jobId:'build',revisionId:'revision',sourceDigest:digest,manifestDigest:digest,status:'succeeded',converged:true,hadErrors:false,pdf:{artifactId:'pdf'},previews:[],logs:[],diagnostics:[],sourceValidity:'current'};
+ v.setState=(update,callback)=>{const patch=typeof update==='function'?update(v.state,v.props):update;if(patch?.revision?.id||patch?.job?.id)setImmediate(()=>commit(patch,callback));else commit(patch,callback);};
+ v.call=async(name)=>name==='manuscript_inspect'?revision:name==='publication_build_list'?{items:[job],nextCursor:null}:name==='manuscript_source_read'?{path:'main.tex',digest,cursor:0,end:3,content:'tex',complete:true}:name==='publication_inspect'?{...job,state:'succeeded',integrity:'complete',resultId:'result'}:name==='publication_result'?result:assert.fail(name);
+ try{await v.openFixed('revision','build','review');assert.equal(v.state.revision?.id,'revision');assert.equal(v.state.job?.id,'build');assert.equal(v.state.result?.id,'result');assert.equal(v.state.selectedReviewId,'review');assert.equal(v.state.source,'tex');}finally{v.componentWillUnmount();}
+});
 const flatten=node=>node==null||typeof node==='boolean'?'':Array.isArray(node)?node.map(flatten).join(' '):typeof node!=='object'?String(node):typeof node.type==='function'&&!node.type.prototype?.render?flatten(node.type(node.props)):flatten(node.props.children);
 function nodes(node,out=[]){if(node==null||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}assert.ok(typeof node.type==='string'||typeof node.type==='function');out.push(node);if(typeof node.type==='function'&&!node.type.prototype?.render)nodes(node.type(node.props),out);else nodes(node.props.children,out);return out;}
 test('publication paths and source line selection reject traversal and preserve unicode bytes',()=>{

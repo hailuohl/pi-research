@@ -7,6 +7,15 @@ import {acceptedSource,actor,result} from '../support/collaboration.mjs';
 import {digest} from '../../dist/packages/storage/store.js';
 const physical=(s,reference)=>s.app.store.paths.physical(reference);
 
+test('nested JSON TeX escapes do not fabricate UNC paths while host markers and duplicate keys remain blocked',()=>{
+ const cases=[
+  ['tex',JSON.stringify({content:JSON.stringify({tex:String.raw`\mathrm{x}\beta`})}),false],
+  ['host-marker',JSON.stringify({content:JSON.stringify({hostPath:'/private/source'})}),true],
+  ['duplicate-key',JSON.stringify({content:'{"hostPath":"/private/source","hostPath":"safe"}'}),true]
+ ];
+ for(const [label,content,blocked] of cases){const s=setup();try{const run=finished(s),bytes=Buffer.from(content),a=s.app.evidence.put(s.project.id,'nested.json',bytes,'application/json','run',{runId:run.id}),row=s.app.store.get('run',run.id);s.app.store.update('run',run.id,row.version,{artifactIds:[...row.artifactIds,a.id]});const {record}=report(s,{runIds:[run.id]});if(blocked)assert.throws(()=>s.app.reports.collectExport(USER,s.project.id,record.id),{code:'EXPORT_HOST_PATH_DETECTED'},label);else{const exported=s.app.reports.collectExport(USER,s.project.id,record.id);assert.ok(exported.files.some(f=>f.path===`artifacts/${a.digest}`&&f.bytes.equals(bytes)));}assert.ok(readFileSync(physical(s,a.path)).equals(bytes));}finally{s.close();}}
+});
+
 function finished(s,experiment=s.baseline){const i=s.app.runs.prepare(USER,experiment.id);approve(s.app,i.approvalId);return fixtureFinish(s,s.app.runs.submit(USER,i.id));}
 function report(s,input){const artifact=s.app.reports.create(USER,s.project.id,input),record=s.app.store.list('report',s.project.id).find(r=>r.artifactId===artifact.id);return {artifact,record};}
 function reviewedChild(s){

@@ -128,7 +128,8 @@ class PublicationView extends React.Component {
       const [revision, list] = await Promise.all([this.call("manuscript_inspect", { revisionId: id }), this.call("publication_build_list", { revisionId: id, cursor: 0, limit: 30 })]);
       if (revision.id !== id) throw Error("\u8FD4\u56DE\u7684\u6587\u7A3F\u4E0D\u662F\u6240\u9009\u4FEE\u8BA2\u3002");
       if (!this.mounted || epoch !== this.selectionEpoch) return;
-      this.setState({ revision, jobs: list.items, nextJob: list.nextCursor });
+      await new Promise((resolve) => this.setState({ revision, jobs: list.items, nextJob: list.nextCursor }, resolve));
+      if (!this.mounted || epoch !== this.selectionEpoch) return;
       await this.readSource(revision.mainFile);
       if (jobId && this.mounted && epoch === this.selectionEpoch) await this.openJob(jobId);
     } catch (error) {
@@ -203,7 +204,8 @@ class PublicationView extends React.Component {
       if (!this.mounted || epoch !== this.jobEpoch || selection !== this.selectionEpoch || request !== this.refreshEpoch) return;
       const revision = this.state.revision;
       if (job.id !== id || !revision || job.revisionId !== revision.id || job.sourceDigest !== revision.sourceDigest) throw Error("\u6784\u5EFA\u4EFB\u52A1\u4E0D\u5C5E\u4E8E\u5F53\u524D\u56FA\u5B9A\u6587\u7A3F\u3002");
-      this.setState({ job, jobs: [job, ...this.state.jobs.filter((j) => j.id !== id)] });
+      await new Promise((resolve) => this.setState({ job, jobs: [job, ...this.state.jobs.filter((j) => j.id !== id)] }, resolve));
+      if (!this.mounted || epoch !== this.jobEpoch || selection !== this.selectionEpoch || request !== this.refreshEpoch) return;
       if (job.resultId) {
         const result = await this.call("publication_result", { resultId: job.resultId });
         if (result.id !== job.resultId || result.jobId !== id || result.revisionId !== revision.id || result.sourceDigest !== revision.sourceDigest || result.manifestDigest !== job.manifestDigest) throw Error("\u6784\u5EFA\u7ED3\u679C\u7ED1\u5B9A\u4E0E\u6240\u9009\u4EFB\u52A1\u4E0D\u4E00\u81F4\u3002");
