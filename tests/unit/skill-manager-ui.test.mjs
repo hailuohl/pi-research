@@ -17,7 +17,7 @@ test('native controls show unknown license and unavailable declarations without 
  const v=view();v.state.catalog=catalog;v.state.selected=catalog.revisions[0];const tree=v.render(),all=nodes(tree);
  assert.match(text(tree),/许可证：\s*未知/);assert.match(text(tree),/latex/);assert.match(text(tree),/目录展示不代表执行器已实现/);
  assert.equal(all.find(n=>n.type==='input'&&n.props.type==='checkbox').props.disabled,true);
- assert.equal(all.find(n=>n.type==='button'&&text(n)==='批准此固定文本版本').props.disabled,true);
+ assert.equal(all.find(n=>n.type==='button'&&text(n)==='批准此固定版本').props.disabled,true);
  assert.ok(all.every(n=>!n.props.dangerouslySetInnerHTML));
  const element=all.find(n=>n.type?.name==='SkillImport'),form=sync(new element.type(element.props));
  assert.ok(nodes(form.render()).some(n=>n.type==='form'&&n.props.onSubmit));
@@ -51,7 +51,7 @@ test('configuration uses expected version and only explicitly checked fixed revi
 test('review and revocation controls bind the selected revision and retain the written reason',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=view();v.state.catalog=catalog;v.state.selected=catalog.revisions[0];v.state.note='Checked exact text';
  globalThis.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return reply(url.endsWith('skill_package_list')?catalog:{});};
- await nodes(v.render()).find(n=>n.type==='button'&&text(n)==='批准此固定文本版本').props.onClick();
+ await nodes(v.render()).find(n=>n.type==='button'&&text(n)==='批准此固定版本').props.onClick();
  assert.deepEqual(requests[0].input,{revisionId:'r1',decision:'approved',note:'Checked exact text'});
  await nodes(v.render()).find(n=>n.type==='button'&&text(n)==='撤销此版本').props.onClick();
  assert.deepEqual(requests[2].input,{revisionId:'r1',note:'Checked exact text'});assert.ok(requests[2].url.endsWith('skill_package_revoke'));

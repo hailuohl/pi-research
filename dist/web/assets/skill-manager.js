@@ -28,7 +28,7 @@ class SkillImport extends React.Component {
     this.setState({ error: "" });
     try {
       const s = this.state;
-      if (!s.files.length || s.files.length > 64) throw Error("\u8BF7\u9009\u62E9 1\u201364 \u4E2A\u6587\u672C\u6587\u4EF6\uFF0C\u6216\u5355\u4E2A ZIP");
+      if (!s.files.length || s.files.length > 64) throw Error("\u8BF7\u9009\u62E9 1\u201364 \u4E2A\u6587\u672C\u6587\u4EF6\uFF0C\u6216\u5355\u4E2A\u542B\u9759\u6001 PNG \u7684 ZIP");
       if (s.files.reduce((n, f) => n + f.size, 0) > 2 * 1024 * 1024) throw Error("\u4E0A\u4F20\u603B\u91CF\u4E0D\u80FD\u8D85\u8FC7 2 MiB");
       const zip = s.files.some((f) => /\.zip$/i.test(f.name));
       if (zip && s.files.length !== 1) throw Error("ZIP \u5FC5\u987B\u5355\u72EC\u4E0A\u4F20");
@@ -88,10 +88,10 @@ class SkillImport extends React.Component {
           ] })
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
-          "\u9009\u62E9 SKILL.md \u548C\u6587\u672C\u8D44\u6E90\uFF0C\u6216\u53D7\u9650 ZIP",
+          "\u9009\u62E9 SKILL.md \u548C\u6587\u672C\u8D44\u6E90\uFF0C\u6216\u542B assets/*.png \u7684\u53D7\u9650 ZIP",
           /* @__PURE__ */ jsx("input", { type: "file", multiple: true, disabled: this.props.busy, onChange: (e) => this.setState({ files: Array.from(e.target.files ?? []) }) })
         ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6700\u591A64\u4E2A\u6587\u4EF6\uFF0C\u6BCF\u4E2A\u6587\u672C128 KiB\uFF0C\u603B\u91CF\u53CA ZIP \u6700\u591A2 MiB\u3002\u666E\u901A\u591A\u9009\u4FDD\u7559\u6587\u4EF6\u540D\uFF1B\u5D4C\u5957\u8D44\u6E90\u8BF7\u7528 ZIP\u3002\u811A\u672C\u4EC5\u4FDD\u5B58\u4E3A\u6587\u672C\uFF0C\u4E0D\u8FD0\u884C\u3002" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6700\u591A64\u4E2A\u6587\u4EF6\uFF0C\u6BCF\u4EFD\u6587\u672C\u6216\u9759\u6001 PNG \u6700\u591A128 KiB\uFF0C\u603B\u91CF\u53CA ZIP \u6700\u591A2 MiB\u3002\u666E\u901A\u591A\u9009\u4FDD\u7559\u6587\u4EF6\u540D\uFF1B\u5D4C\u5957\u8D44\u6E90\u8BF7\u7528 ZIP\u3002\u8D44\u6E90\u53EA\u4FDD\u5B58\u548C\u4E0B\u8F7D\uFF0C\u4E0D\u8FD0\u884C\u811A\u672C\u3002" }),
         s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
         /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.busy || !s.files.length || !s.roles.length, children: "\u5BFC\u5165\u4E3A\u5F85\u5BA1\u7248\u672C" })
       ] })
@@ -253,6 +253,26 @@ class SkillManager extends React.Component {
       if (this.current(epoch) && request === this.readEpoch) this.setState({ reading: false });
     }
   }
+  async downloadBinary() {
+    const content = this.state.content, selected = this.state.selected, epoch = this.epoch, request = this.readEpoch;
+    if (!content || !("contentBase64" in content) || !selected) return;
+    try {
+      const raw = atob(content.contentBase64), bytes = Uint8Array.from(raw, (c) => c.charCodeAt(0)), file = selected.revision.files.find((f) => f.path === content.resource);
+      if (!file || bytes.length !== file.size) throw Error("\u56FA\u5B9A\u8D44\u6E90\u957F\u5EA6\u4E0D\u5339\u914D");
+      const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))).map((n) => n.toString(16).padStart(2, "0")).join("");
+      if (hash !== content.digest || hash !== file.digest) throw Error("\u56FA\u5B9A\u8D44\u6E90\u6458\u8981\u4E0D\u5339\u914D");
+      if (!this.current(epoch) || request !== this.readEpoch) return;
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" })), a = document.createElement("a");
+      a.href = url;
+      a.download = content.resource.split("/").pop() ?? "resource.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1e3);
+    } catch (error) {
+      if (this.current(epoch) && request === this.readEpoch) this.setState({ error: error instanceof Error ? error.message : String(error) });
+    }
+  }
   async mutate(name, input, notice) {
     await this.run(async (epoch) => {
       const projectId = this.props.projectId;
@@ -271,7 +291,7 @@ class SkillManager extends React.Component {
         /* @__PURE__ */ jsx("h2", { children: "\u6280\u80FD\u7248\u672C\u4E0E\u542F\u52A8\u9884\u68C0" }),
         /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => this.refresh(), children: "\u5237\u65B0\u6280\u80FD\u72B6\u6001" })
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BA1\u9605\u53EA\u6279\u51C6\u6587\u672C\u52A0\u8F7D\uFF1B\u58F0\u660E\u9700\u6C42\u4E0D\u4F1A\u6388\u4E88\u5DE5\u5177\u3001\u6570\u636E\u6216\u8BA1\u7B97\u6743\u9650\u3002\u672A\u77E5\u8BB8\u53EF\u8BC1\u4E0D\u4EE3\u8868\u83B7\u5F97\u518D\u5206\u53D1\u8BB8\u53EF\u3002\u56FE\u5F62\u4E0E\u8BBA\u6587\u6267\u884C\u80FD\u529B\u987B\u5206\u522B\u9884\u68C0\uFF0C\u76EE\u5F55\u5C55\u793A\u4E0D\u4EE3\u8868\u6267\u884C\u5668\u5DF2\u5B9E\u73B0\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BA1\u9605\u53EA\u6279\u51C6\u6587\u672C\u52A0\u8F7D\u53CA\u9759\u6001\u8D44\u6E90\u4FDD\u5B58\uFF1B\u58F0\u660E\u9700\u6C42\u4E0D\u4F1A\u6388\u4E88\u5DE5\u5177\u3001\u6570\u636E\u3001\u811A\u672C\u6267\u884C\u6216\u8BA1\u7B97\u6743\u9650\u3002\u672A\u77E5\u8BB8\u53EF\u8BC1\u4E0D\u4EE3\u8868\u83B7\u5F97\u518D\u5206\u53D1\u8BB8\u53EF\u3002\u56FE\u5F62\u4E0E\u8BBA\u6587\u6267\u884C\u80FD\u529B\u987B\u5206\u522B\u9884\u68C0\uFF0C\u76EE\u5F55\u5C55\u793A\u4E0D\u4EE3\u8868\u6267\u884C\u5668\u5DF2\u5B9E\u73B0\u3002" }),
       s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
       s.notice ? /* @__PURE__ */ jsx("p", { role: "status", children: s.notice }) : null,
       s.busy ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u4FDD\u5B58\u6216\u8BFB\u53D6\u6743\u5A01\u72B6\u6001\u2026" }) : null,
@@ -358,7 +378,8 @@ class SkillManager extends React.Component {
           file.path,
           " \xB7 ",
           file.size,
-          " B"
+          " B",
+          file.mediaType === "image/png" ? " \xB7 \u9759\u6001 PNG" : ""
         ] }, file.path)) }),
         s.content ? /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
@@ -366,14 +387,17 @@ class SkillManager extends React.Component {
             " \xB7 SHA-256 ",
             s.content.digest
           ] }),
-          /* @__PURE__ */ jsx("pre", { className: "integration-content", children: s.content.content })
+          "contentBase64" in s.content ? /* @__PURE__ */ jsxs("div", { children: [
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u56FA\u5B9A PNG \u4EC5\u6309\u539F\u5B57\u8282\u4E0B\u8F7D\uFF1B\u4E0D\u4F1A\u52A0\u8F7D\u5230\u6A21\u578B\u4E0A\u4E0B\u6587\u6216\u5728\u6B64\u6267\u884C\u3002" }),
+            /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => void this.downloadBinary(), children: "\u4E0B\u8F7D\u56FA\u5B9A PNG" })
+          ] }) : /* @__PURE__ */ jsx("pre", { className: "integration-content", children: s.content.content })
         ] }) : null,
         /* @__PURE__ */ jsxs("label", { children: [
           "\u5BA1\u9605 / \u64A4\u9500\u7406\u7531",
           /* @__PURE__ */ jsx("textarea", { value: s.note, maxLength: 4e3, onChange: (e) => this.setState({ note: e.target.value }) })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-          /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.busy || !s.note.trim() || !!selected.revocations.length, onClick: () => this.mutate("skill_package_review", { revisionId: r.id, decision: "approved", note: s.note }, "\u5BA1\u9605\u51B3\u5B9A\u5DF2\u4FDD\u5B58\uFF1B\u4ECD\u9700\u663E\u5F0F\u542F\u7528\u3002"), children: "\u6279\u51C6\u6B64\u56FA\u5B9A\u6587\u672C\u7248\u672C" }),
+          /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.busy || !s.note.trim() || !!selected.revocations.length, onClick: () => this.mutate("skill_package_review", { revisionId: r.id, decision: "approved", note: s.note }, "\u5BA1\u9605\u51B3\u5B9A\u5DF2\u4FDD\u5B58\uFF1B\u4ECD\u9700\u663E\u5F0F\u542F\u7528\u3002"), children: "\u6279\u51C6\u6B64\u56FA\u5B9A\u7248\u672C" }),
           /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy || !s.note.trim() || !!selected.revocations.length, onClick: () => this.mutate("skill_package_review", { revisionId: r.id, decision: "rejected", note: s.note }, "\u62D2\u7EDD\u51B3\u5B9A\u5DF2\u4FDD\u5B58\u3002"), children: "\u62D2\u7EDD" }),
           /* @__PURE__ */ jsx("button", { className: "danger-outline", disabled: s.busy || !s.note.trim() || !!selected.revocations.length, onClick: () => this.mutate("skill_package_revoke", { revisionId: r.id, note: s.note }, "\u7248\u672C\u5DF2\u64A4\u9500\uFF1B\u5386\u53F2\u539F\u6587\u4E0E\u51B3\u5B9A\u4FDD\u7559\u3002"), children: "\u64A4\u9500\u6B64\u7248\u672C" })
         ] }),

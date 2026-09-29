@@ -15,9 +15,10 @@ export interface SkillPackageRevision {
         path: string;
         digest: string;
         size: number;
+        mediaType?: 'image/png';
     }>;
     contentDigest: string;
-    authorization: 'text-only';
+    authorization: 'text-only' | 'text-with-static-assets';
 }
 export interface ReviewRecord {
     revisionId: string;

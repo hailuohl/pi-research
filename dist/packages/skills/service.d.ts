@@ -25,6 +25,7 @@ export declare class SkillService {
     private builtin;
     private builtinReleases;
     list(role: Role, builtinBundleId?: string): CatalogEntry[];
+    private verifiedBytes;
     private verified;
     read(role: Role, id: string, resource?: string, builtinBundleId?: string): {
         id: string;
@@ -301,11 +302,21 @@ export declare class SkillService {
         }[];
     };
     readRevision(actor: Actor, pid: string, revisionId: string, resource?: string): {
+        revisionId: string;
+        resource: string;
+        digest: string;
+        mediaType: "image/png";
+        contentBase64: string;
+        content?: undefined;
+    } | {
+        revisionId: string;
         resource: string;
         content: string;
         digest: string;
-        revisionId: string;
+        mediaType?: undefined;
+        contentBase64?: undefined;
     };
+    private revisionBytes;
     private revisionText;
     private entry;
     bundleCatalog(pid: string, role: Role, bundleId: string): {

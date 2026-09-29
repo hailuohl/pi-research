@@ -4,7 +4,8 @@ const obj=<const P extends Record<string,JsonSchema>>(properties:P)=>({type:'obj
 const row=<const K extends string,const P extends Record<string,JsonSchema>>(kind:K,p:P)=>obj({id:str,kind:{const:kind},projectId:s.nullable(str),version:num,createdAt:str,updatedAt:str,...p});
 export const SKILL_REQUIREMENTS_SCHEMA=obj({tools:arr(str),backends:arr(str),artifactIds:arr(str)});
 const roles=s.enum(['coordinator','literature','designer','implementer','analyst','reviewer','writer']);
-const revision=row('skill-package-revision',{packageId:str,revisionTag:str,description:str,roles:arr(roles),license:s.nullable(str),requirements:SKILL_REQUIREMENTS_SCHEMA,files:arr(obj({path:str,digest:str,size:num})),contentDigest:str,authorization:{const:'text-only'}});
+const file=s.object({path:str,digest:str,size:num,mediaType:{const:'image/png'}},['path','digest','size']);
+const revision=row('skill-package-revision',{packageId:str,revisionTag:str,description:str,roles:arr(roles),license:s.nullable(str),requirements:SKILL_REQUIREMENTS_SCHEMA,files:arr(file),contentDigest:str,authorization:s.enum(['text-only','text-with-static-assets'])});
 const review=row('skill-review',{revisionId:str,contentDigest:str,decision:s.enum(['approved','rejected']),note:str});
 const revocation=row('skill-revocation',{revisionId:str,contentDigest:str,note:str});
 const configuration=obj({version:num,bundleId:str,builtinBundleId:str,revisionIds:arr(str)}),inspection=obj({revision,reviews:arr(review),revocations:arr(revocation)});
@@ -20,4 +21,6 @@ export const SKILL_INPUT_SCHEMAS={
  skill_bundle_configure:s.object({expectedVersion:s.integer(0),revisionIds:s.array(id,64),bundleId:id,builtinBundleId:id},['expectedVersion']),
  skill_session_select:s.object({sessionId:id,expectedVersion:s.integer(1),skillIds:s.array(id,32)},['sessionId','expectedVersion','skillIds']),skill_preflight:s.object({sessionId:id},['sessionId']),
 } as const satisfies Record<string,JsonSchema>;
-export const SKILL_OUTPUT_SCHEMAS={skill_package_import:revision,skill_package_list:obj({configuration,revisions:arr(inspection),builtinReleases:arr(builtinRelease)}),skill_package_inspect:inspection,skill_package_read:obj({revisionId:str,resource:str,content:str,digest:str}),skill_package_review:review,skill_package_revoke:revocation,skill_bundle_configure:configurationReply,skill_session_select:preflight,skill_preflight:preflight} as const satisfies Record<string,JsonSchema>;
+const textResource=s.object({revisionId:str,resource:str,content:str,digest:str},['revisionId','resource','content','digest']);
+const imageResource=s.object({revisionId:str,resource:str,digest:str,mediaType:{const:'image/png'},contentBase64:str},['revisionId','resource','digest','mediaType','contentBase64']);
+export const SKILL_OUTPUT_SCHEMAS={skill_package_import:revision,skill_package_list:obj({configuration,revisions:arr(inspection),builtinReleases:arr(builtinRelease)}),skill_package_inspect:inspection,skill_package_read:{anyOf:[textResource,imageResource]},skill_package_review:review,skill_package_revoke:revocation,skill_bundle_configure:configurationReply,skill_session_select:preflight,skill_preflight:preflight} as const satisfies Record<string,JsonSchema>;
