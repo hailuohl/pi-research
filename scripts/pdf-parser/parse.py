@@ -1,4 +1,4 @@
-"""Fixed isolated PDF text/page renderer. No forms, JavaScript, attachments or OCR."""
+"""Fixed isolated PDF text/page renderer. No JavaScript, attachments or OCR."""
 import hashlib
 import json
 import math
@@ -8,8 +8,13 @@ from pathlib import Path
 from contextlib import closing
 from array import array
 
-PROFILE = "pdfium-text-images-v2"
+PROFILE = "pdfium-text-form-images-v3"
 QUALITY = {"readingOrder": "unverified", "paragraphs": "heuristic", "tables": "unknown", "figures": "unknown", "ocr": False, "score": None}
+MAX_FORM_DEPTH = 8
+MAX_OBJECTS_PER_PAGE = 10000
+MAX_OBJECTS = 100000
+MAX_IMAGES = 100
+COORDINATE_LIMIT = 1_000_000
 
 def paragraphs(text):
     # Offsets are UTF-16 code units into the exact saved page text (including CRLF).
@@ -17,6 +22,63 @@ def paragraphs(text):
     for character in text:
         offsets.append(offsets[-1] + len(character.encode("utf-16-le")) // 2)
     return [{"index": i + 1, "start": offsets[m.start()], "end": offsets[m.end()]} for i, m in enumerate(re.finditer(r"\S[^\r\n]*(?:\r?\n(?!\s*\r?\n)[^\r\n]+)*", text))]
+
+def validate_quad(points):
+    if any(not math.isfinite(value) or abs(value) > COORDINATE_LIMIT for point in points for value in point):
+        raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+    area = abs(sum(points[i][0] * points[(i + 1) % 4][1] - points[(i + 1) % 4][0] * points[i][1] for i in range(4)))
+    if not math.isfinite(area) or area == 0:
+        raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+
+def image_candidates(objects, pdfium, coordinates, image_width, image_height, total_objects=0):
+    candidates = []
+    image_count = page_objects = 0
+    for item in objects:
+        page_objects += 1
+        if page_objects > MAX_OBJECTS_PER_PAGE:
+            raise ValueError("PDF_PAGE_OBJECT_LIMIT")
+        total_objects += 1
+        if total_objects > MAX_OBJECTS:
+            raise ValueError("PDF_OBJECT_LIMIT")
+        if item.type == pdfium.raw.FPDF_PAGEOBJ_FORM and item.level >= MAX_FORM_DEPTH:
+            raise ValueError("PDF_FORM_DEPTH_LIMIT")
+        if item.type != pdfium.raw.FPDF_PAGEOBJ_IMAGE:
+            continue
+        image_count += 1
+        if image_count > MAX_IMAGES:
+            raise ValueError("PDF_IMAGE_LIMIT")
+
+        # Quad points already include the image matrix; only ancestor Form matrices remain.
+        points = [tuple(point) for point in item.get_quad_points()]
+        if len(points) != 4 or any(len(point) != 2 for point in points):
+            raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+        validate_quad(points)
+        if any(not math.isfinite(value) or abs(value) > COORDINATE_LIMIT for value in item.get_matrix().get()):
+            raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+
+        container, depth = item.container, 0
+        while container is not None:
+            depth += 1
+            if depth > MAX_FORM_DEPTH:
+                raise ValueError("PDF_FORM_DEPTH_LIMIT")
+            matrix = container.get_matrix()
+            if any(not math.isfinite(value) or abs(value) > COORDINATE_LIMIT for value in matrix.get()):
+                raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+            points = [matrix.on_point(x, y) for x, y in points]
+            validate_quad(points)
+            container = container.container
+        if depth != item.level:
+            raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+
+        pixels = [coordinates.to_bitmap(x, y) for x, y in points]
+        if any(not math.isfinite(value) or abs(value) > COORDINATE_LIMIT for point in pixels for value in point):
+            raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
+        # to_bitmap rounds coordinates; one pixel of outward safety covers its edge pixels.
+        x0, x1 = max(0, min(x for x, _ in pixels) - 1), min(image_width, max(x for x, _ in pixels) + 1)
+        y0, y1 = max(0, min(y for _, y in pixels) - 1), min(image_height, max(y for _, y in pixels) + 1)
+        if x1 > x0 and y1 > y0:
+            candidates.append({"index": len(candidates) + 1, "method": "embedded-raster-object", "pixelBounds": {"left": x0, "top": y0, "right": x1, "bottom": y1}})
+    return candidates, total_objects
 
 def parse(source, destination):
     import pypdfium2 as pdfium
@@ -32,6 +94,7 @@ def parse(source, destination):
         if not 1 <= len(document) <= 100:
             raise ValueError("PDF_PAGE_LIMIT")
         output["pageCount"] = len(document)
+        total_objects = 0
         for number in range(1, len(document) + 1):
             with closing(document[number - 1]) as page:
                 width, height = page.get_size()
@@ -53,20 +116,7 @@ def parse(source, destination):
                     finally:
                         image.close()
                     coordinates = bitmap.get_posconv(page)
-                    candidates = []
-                    # Nested Form objects need ancestor transforms; keep this profile to direct page objects.
-                    for object_number, item in enumerate(page.get_objects(filter=[pdfium.raw.FPDF_PAGEOBJ_IMAGE], max_depth=0)):
-                        if object_number >= 100:
-                            raise ValueError("PDF_IMAGE_LIMIT")
-                        left, bottom, right, top = item.get_bounds()
-                        if not all(math.isfinite(x) and abs(x) <= 1_000_000 for x in (left, bottom, right, top)) or right <= left or top <= bottom:
-                            raise ValueError("PDF_IMAGE_GEOMETRY_INVALID")
-                        corners = [coordinates.to_bitmap(x, y) for x in (left, right) for y in (bottom, top)]
-                        x0, x1 = max(0, min(x for x, _ in corners)), min(image_width, max(x for x, _ in corners))
-                        y0, y1 = max(0, min(y for _, y in corners)), min(image_height, max(y for _, y in corners))
-                        if x1 <= x0 or y1 <= y0:
-                            continue
-                        candidates.append({"index": len(candidates) + 1, "method": "embedded-raster-object", "pixelBounds": {"left": x0, "top": y0, "right": x1, "bottom": y1}})
+                    candidates, total_objects = image_candidates(page.get_objects(max_depth=MAX_FORM_DEPTH + 1), pdfium, coordinates, image_width, image_height, total_objects)
                 image_bytes = (destination / image_file).read_bytes()
                 output_bytes += len(encoded) + len(image_bytes)
                 if output_bytes > 127 * 1024 * 1024:

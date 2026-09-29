@@ -3450,7 +3450,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
             readonly profileId: {
-                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
             };
             readonly limits: {
                 readonly type: "object";
@@ -3493,7 +3493,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "object";
                 readonly properties: {
                     readonly profileId: {
-                        readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                        readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
                     };
                     readonly profileDigest: {
                         readonly type: "string";
@@ -3531,7 +3531,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
             readonly profileId: {
-                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
             };
             readonly limits: {
                 readonly type: "object";
@@ -3574,7 +3574,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "object";
                 readonly properties: {
                     readonly profileId: {
-                        readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                        readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
                     };
                     readonly profileDigest: {
                         readonly type: "string";
@@ -3630,7 +3630,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
             };
             readonly profileDigest: {
                 readonly type: "string";
@@ -3738,7 +3738,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
             };
             readonly profileDigest: {
                 readonly type: "string";
@@ -3846,7 +3846,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
             };
             readonly profileDigest: {
                 readonly type: "string";
@@ -3954,7 +3954,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly profileId: {
-                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2"];
+                readonly enum: readonly ["pdfium-text-pages-v1", "pdfium-text-images-v2", "pdfium-text-form-images-v3"];
             };
             readonly profileDigest: {
                 readonly type: "string";

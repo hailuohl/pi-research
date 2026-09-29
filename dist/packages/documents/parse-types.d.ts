@@ -1,7 +1,8 @@
 import type { SourceSnapshot } from '../domain/types.js';
-export declare const DOCUMENT_PARSER_PROFILE = "pdfium-text-images-v2";
+export declare const DOCUMENT_PARSER_PROFILE = "pdfium-text-form-images-v3";
+export declare const DOCUMENT_PARSER_PREVIOUS_PROFILE = "pdfium-text-images-v2";
 export declare const DOCUMENT_PARSER_LEGACY_PROFILE = "pdfium-text-pages-v1";
-export type DocumentParserProfile = typeof DOCUMENT_PARSER_PROFILE | typeof DOCUMENT_PARSER_LEGACY_PROFILE;
+export type DocumentParserProfile = typeof DOCUMENT_PARSER_PROFILE | typeof DOCUMENT_PARSER_PREVIOUS_PROFILE | typeof DOCUMENT_PARSER_LEGACY_PROFILE;
 export declare const DOCUMENT_PARSE_RESOURCES: {
     cpus: number;
     memoryMb: number;

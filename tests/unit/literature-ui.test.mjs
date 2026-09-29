@@ -70,7 +70,7 @@ test('a fixed page shows raster regions from the verified page image and disting
  Object.assign(v.state,{page:{pageNumber:2,pageLabel:'ii',textArtifactDigest:'b'.repeat(64),paragraphs:[],textStatus:'text-extracted',imageWidth:100,imageHeight:100,imageCandidates:[candidate]},imageURL:'blob:fixed-page',loading:false});
  let tree=v.render(),parts=nodes(tree);assert.match(flatten(tree).replace(/\s+/g,' '),/候选 1 · 页图像素 \[ 10 , 20 , 60 , 80 \]/);
  assert.equal(parts.filter(n=>n.type==='img').length,2);assert.equal(parts.find(n=>n.type==='span'&&n.props['aria-hidden']==='true').props.style.left,'10%');
- v.state.page={...v.state.page,imageCandidates:[]};assert.match(flatten(v.render()),/此页未发现可定位的页面直接栅格对象/);
+ v.state.page={...v.state.page,imageCandidates:[]};assert.match(flatten(v.render()),/此固定解析版本未发现可定位的嵌入栅格对象/);
  delete v.state.page.imageCandidates;assert.match(flatten(v.render()),/此历史解析版本未检测嵌入图像/);v.componentWillUnmount();
 });
 
