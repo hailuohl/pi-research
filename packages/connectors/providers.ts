@@ -7,6 +7,7 @@ import {normalizeDate,reconstructAbstract,rank,routePaperId,type Hit,type Source
 import {parsePubmed} from './pubmed.js';
 import type {Credentials} from './transport.js';
 export type Request=(url:URL,headers?:Record<string,string>)=>Promise<{text:string;bytes:number;contentType:string}>;
+export interface CrossrefPage {hits:Hit[];rawItemCount:number;nextCursor:string|null;}
 /** Exact official routes only; never follow a provider-supplied publisher URL. */
 export function pdfTarget(source:SourceId,rawId:string,requestedVersion:string|undefined,credentials:Credentials) {
  const {id}=routePaperId(rawId,source);
@@ -57,6 +58,11 @@ export async function searchProvider(source:SourceId,q:SearchInput,request:Reque
   const fetchUrl=new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');ncbiParams(fetchUrl,credentials);fetchUrl.searchParams.set('id',ids.join(','));fetchUrl.searchParams.set('retmode','xml');const papers=parsePubmed((await request(fetchUrl)).text);const by=new Map(papers.map(p=>[p.id,p]));ensure(ids.every(id=>by.has(id)),'PROVIDER_SCHEMA_INVALID','PubMed EFetch 缺失已选记录，不能声称完整检索',502);return rank(ids.map(id=>by.get(id)!),q);
  }
  const url=new URL('https://api.crossref.org/works');url.searchParams.set('query',q.query);url.searchParams.set('rows',String(pool));url.searchParams.set('select','DOI,title,published,is-referenced-by-count');const filters=[];if(q.publishedAfter)filters.push(`from-pub-date:${q.publishedAfter}`);if(q.publishedBefore)filters.push(`until-pub-date:${q.publishedBefore}`);if(filters.length)url.searchParams.set('filter',filters.join(','));const data=json((await request(url)).text);ensure(Array.isArray(data.message?.items),'PROVIDER_SCHEMA_INVALID','Crossref 缺少 items',502);return rank(data.message.items.map(crHit),q);
+}
+export async function searchCrossrefPage(q:SearchInput,cursor:string,request:Request):Promise<CrossrefPage>{
+ const url=new URL('https://api.crossref.org/works');url.searchParams.set('query',q.query);url.searchParams.set('rows',String(q.limit));url.searchParams.set('select','DOI,title,published,is-referenced-by-count');url.searchParams.set('cursor',cursor);const filters=[];if(q.publishedAfter)filters.push(`from-pub-date:${q.publishedAfter}`);if(q.publishedBefore)filters.push(`until-pub-date:${q.publishedBefore}`);if(filters.length)url.searchParams.set('filter',filters.join(','));
+ const data=json((await request(url)).text),message=data?.message;ensure(message&&typeof message==='object'&&!Array.isArray(message)&&Array.isArray(message.items),'PROVIDER_SCHEMA_INVALID','Crossref 缺少 items',502);const rawItemCount=message.items.length;ensure(rawItemCount<=q.limit,'PROVIDER_SCHEMA_INVALID','Crossref 返回条数超过请求上限',502);const hasNext=Object.hasOwn(message,'next-cursor');if(hasNext)ensure(typeof message['next-cursor']==='string'&&message['next-cursor'].length>0&&message['next-cursor'].length<=5000,'PROVIDER_SCHEMA_INVALID','Crossref next-cursor 类型或长度无效',502);
+ return {hits:rank(message.items.map(crHit),q),rawItemCount,nextCursor:rawItemCount<q.limit||!hasNext?null:message['next-cursor'] as string};
 }
 export async function readProvider(source:SourceId,id:string,request:Request,credentials:Credentials):Promise<PaperContent>{
  const common={source,id,requestedId:id,pageMapping:'unavailable' as const};

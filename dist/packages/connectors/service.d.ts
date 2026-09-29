@@ -1,10 +1,21 @@
 import type { DiscoveryGrantReference } from '../policy/discovery-grant-types.js';
 /** Bounded, host-owned literature adapters. No ORX CLI, hosted account or model calls. */
 import type { AppContext } from '../domain/context.js';
-import type { Actor } from '../domain/types.js';
+import type { Actor, Row } from '../domain/types.js';
 import type { EvidenceService } from '../evidence/service.js';
-import { deduplicate, type SourceId } from './contracts.js';
+import { deduplicate, type SearchInput, type SourceId } from './contracts.js';
 import { ConnectorTransport, type Credentials } from './transport.js';
+export interface CrossrefPageRequest {
+    number: number;
+    previousSearchId: string | null;
+    cursor: string;
+    expiresAt: string | null;
+}
+export interface SearchPageRecord extends CrossrefPageRequest {
+    nextCursor: string | null;
+    nextCursorExpiresAt: string | null;
+    rawItemCount: number;
+}
 export interface SearchRecord {
     discoveryGrant?: DiscoveryGrantReference;
     discoveryCallIds?: string[];
@@ -22,7 +33,8 @@ export interface SearchRecord {
     scopeTaskId: string | null;
     scopeAttemptId: string | null;
     settingsVersion: number;
-    request: unknown;
+    request: SearchInput;
+    page?: SearchPageRecord;
     retrievedAt: string;
     coverage: string;
 }
@@ -132,8 +144,9 @@ export declare class ConnectorService {
     private bound;
     private request;
     private once;
-    discover(actor: Actor, pid: string, value: unknown, key: string, callback?: () => void, signal?: AbortSignal): Promise<import("../domain/types.js").Row<SearchRecord>>;
-    paper(actor: Actor, pid: string, value: unknown, key: string, callback?: () => void, signal?: AbortSignal): Promise<import("../domain/types.js").Row<{
+    discover(actor: Actor, pid: string, value: unknown, key: string, callback?: () => void, signal?: AbortSignal): Promise<Row<SearchRecord>>;
+    discoverPage(actor: Actor, pid: string, searchValue: unknown, pageValue: unknown, key: string, callback?: () => void, signal?: AbortSignal): Promise<Row<SearchRecord>>;
+    paper(actor: Actor, pid: string, value: unknown, key: string, callback?: () => void, signal?: AbortSignal): Promise<Row<{
         pageMapping: "unavailable";
         artifactId: string;
         artifactDigest: string;
@@ -195,7 +208,7 @@ export declare class ConnectorService {
         source: SourceId;
         id: string;
         requestedVersion?: string;
-    }, key: string, callback?: () => void, signal?: AbortSignal): Promise<import("../domain/types.js").Row<{
+    }, key: string, callback?: () => void, signal?: AbortSignal): Promise<Row<{
         source: "alphaxiv" | "openalex" | "biorxiv" | "pubmed" | "crossref";
         idInSource: string;
         requestedId: string;

@@ -31,6 +31,16 @@ test('operation schemas reject missing/unknown fields and invalid primitive valu
     assert.throws(() => validateSchema(s.string(), 3, 'output'), { code: 'INVALID_OUTPUT', status: 500 });
 });
 
+test('literature page creation accepts only a saved search id as its continuation input',()=>{
+    validateSchema(INPUT_SCHEMAS.literature_task_create,{kind:'search',previousSearchId:'saved-search-id'});
+    for(const input of [
+        {kind:'search',previousSearchId:'saved-search-id',search:{query:'q'}},
+        {kind:'search',previousSearchId:'saved-search-id',discoveryGrantId:'grant'},
+        {kind:'search',previousSearchId:'saved-search-id',cursor:'arbitrary'},
+        {kind:'search',previousSearchId:''},
+    ]) assert.throws(()=>validateSchema(INPUT_SCHEMAS.literature_task_create,input),{code:'INVALID_INPUT'});
+});
+
 test('open configuration accepts nested JSON and validation neither defaults nor coerces', () => {
     const input = { title: 'x', config: { experimentSpecific: [null, false, 2, { x: 'ok' }] } };
     const original = structuredClone(input);

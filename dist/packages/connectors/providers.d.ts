@@ -5,6 +5,11 @@ export type Request = (url: URL, headers?: Record<string, string>) => Promise<{
     bytes: number;
     contentType: string;
 }>;
+export interface CrossrefPage {
+    hits: Hit[];
+    rawItemCount: number;
+    nextCursor: string | null;
+}
 /** Exact official routes only; never follow a provider-supplied publisher URL. */
 export declare function pdfTarget(source: SourceId, rawId: string, requestedVersion: string | undefined, credentials: Credentials): {
     url: URL;
@@ -18,4 +23,5 @@ export declare function pdfTarget(source: SourceId, rawId: string, requestedVers
     versionAssurance: string;
 };
 export declare function searchProvider(source: SourceId, q: SearchInput, request: Request, credentials: Credentials): Promise<Hit[]>;
+export declare function searchCrossrefPage(q: SearchInput, cursor: string, request: Request): Promise<CrossrefPage>;
 export declare function readProvider(source: SourceId, id: string, request: Request, credentials: Credentials): Promise<PaperContent>;

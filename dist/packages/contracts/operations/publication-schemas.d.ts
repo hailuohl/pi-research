@@ -1014,7 +1014,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("items" | "nextCursor")[];
+        readonly required: ("nextCursor" | "items")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_source_read: {
@@ -1042,7 +1042,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "path" | "digest" | "mediaType" | "end" | "content" | "cursor")[];
+        readonly required: ("complete" | "path" | "digest" | "cursor" | "mediaType" | "end" | "content")[];
         readonly additionalProperties: false;
     };
     readonly publication_status: {
@@ -2063,7 +2063,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("items" | "nextCursor")[];
+        readonly required: ("nextCursor" | "items")[];
         readonly additionalProperties: false;
     };
 };

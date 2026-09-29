@@ -175,6 +175,54 @@ export declare const DISCOVERY_OUTPUT_SCHEMA: {
             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
             readonly additionalProperties: false;
         };
+        readonly page: {
+            readonly type: "object";
+            readonly properties: {
+                readonly nextCursor: {
+                    readonly anyOf: readonly [{
+                        readonly type: "string";
+                    }, {
+                        readonly type: "null";
+                    }];
+                };
+                readonly nextCursorExpiresAt: {
+                    readonly anyOf: readonly [{
+                        readonly type: "string";
+                    }, {
+                        readonly type: "null";
+                    }];
+                };
+                readonly rawItemCount: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+                readonly number: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+                readonly previousSearchId: {
+                    readonly anyOf: readonly [{
+                        readonly type: "string";
+                    }, {
+                        readonly type: "null";
+                    }];
+                };
+                readonly cursor: {
+                    readonly type: "string";
+                };
+                readonly expiresAt: {
+                    readonly anyOf: readonly [{
+                        readonly type: "string";
+                    }, {
+                        readonly type: "null";
+                    }];
+                };
+            };
+            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+            readonly additionalProperties: false;
+        };
         readonly items: {
             readonly type: "array";
             readonly items: {
@@ -434,6 +482,22 @@ export declare const DOCUMENT_INPUT_SCHEMAS: {
                 };
             };
             readonly required: readonly ["kind", "search"];
+            readonly additionalProperties: false;
+        }, {
+            readonly type: "object";
+            readonly properties: {
+                readonly kind: {
+                    readonly const: "search";
+                };
+                readonly previousSearchId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+            };
+            readonly required: readonly ["kind", "previousSearchId"];
             readonly additionalProperties: false;
         }, {
             readonly type: "object";
@@ -842,6 +906,35 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
+                        readonly pageRequest: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId")[];
+                            readonly additionalProperties: false;
+                        };
                     };
                     readonly required: ("search" | "kind")[];
                     readonly additionalProperties: false;
@@ -1009,6 +1102,54 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                 };
                             };
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -1271,6 +1412,35 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
+                        readonly pageRequest: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId")[];
+                            readonly additionalProperties: false;
+                        };
                     };
                     readonly required: ("search" | "kind")[];
                     readonly additionalProperties: false;
@@ -1438,6 +1608,54 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                 };
                             };
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -1700,6 +1918,35 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
+                        readonly pageRequest: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId")[];
+                            readonly additionalProperties: false;
+                        };
                     };
                     readonly required: ("search" | "kind")[];
                     readonly additionalProperties: false;
@@ -1867,6 +2114,54 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                 };
                             };
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -2129,6 +2424,35 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
+                        readonly pageRequest: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId")[];
+                            readonly additionalProperties: false;
+                        };
                     };
                     readonly required: ("search" | "kind")[];
                     readonly additionalProperties: false;
@@ -2296,6 +2620,54 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                                 };
                             };
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -3795,7 +4167,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "quality" | "end" | "versionAssurance" | "requestedVersion" | "cursor" | "resultId" | "items" | "documentVersionId" | "rawDigest" | "observedVersion" | "pageCount")[];
+        readonly required: ("complete" | "quality" | "cursor" | "end" | "versionAssurance" | "requestedVersion" | "resultId" | "items" | "documentVersionId" | "rawDigest" | "observedVersion" | "pageCount")[];
         readonly additionalProperties: false;
     };
     readonly document_page_read: {
@@ -3879,7 +4251,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("complete" | "textArtifactDigest" | "textArtifactId" | "imageArtifactDigest" | "textStatus" | "end" | "pageNumber" | "content" | "cursor" | "width" | "height" | "resultId" | "documentVersionId" | "rawDigest" | "paragraphs" | "pageLabel" | "imageWidth" | "imageHeight" | "imageArtifactId")[];
+        readonly required: ("complete" | "cursor" | "textArtifactDigest" | "textArtifactId" | "imageArtifactDigest" | "textStatus" | "end" | "pageNumber" | "content" | "width" | "height" | "resultId" | "documentVersionId" | "rawDigest" | "paragraphs" | "pageLabel" | "imageWidth" | "imageHeight" | "imageArtifactId")[];
         readonly additionalProperties: false;
     };
     readonly document_evidence_register: {

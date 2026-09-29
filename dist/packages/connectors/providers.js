@@ -119,6 +119,28 @@ export async function searchProvider(source, q, request, credentials) {
     ensure(Array.isArray(data.message?.items), 'PROVIDER_SCHEMA_INVALID', 'Crossref 缺少 items', 502);
     return rank(data.message.items.map(crHit), q);
 }
+export async function searchCrossrefPage(q, cursor, request) {
+    const url = new URL('https://api.crossref.org/works');
+    url.searchParams.set('query', q.query);
+    url.searchParams.set('rows', String(q.limit));
+    url.searchParams.set('select', 'DOI,title,published,is-referenced-by-count');
+    url.searchParams.set('cursor', cursor);
+    const filters = [];
+    if (q.publishedAfter)
+        filters.push(`from-pub-date:${q.publishedAfter}`);
+    if (q.publishedBefore)
+        filters.push(`until-pub-date:${q.publishedBefore}`);
+    if (filters.length)
+        url.searchParams.set('filter', filters.join(','));
+    const data = json((await request(url)).text), message = data?.message;
+    ensure(message && typeof message === 'object' && !Array.isArray(message) && Array.isArray(message.items), 'PROVIDER_SCHEMA_INVALID', 'Crossref 缺少 items', 502);
+    const rawItemCount = message.items.length;
+    ensure(rawItemCount <= q.limit, 'PROVIDER_SCHEMA_INVALID', 'Crossref 返回条数超过请求上限', 502);
+    const hasNext = Object.hasOwn(message, 'next-cursor');
+    if (hasNext)
+        ensure(typeof message['next-cursor'] === 'string' && message['next-cursor'].length > 0 && message['next-cursor'].length <= 5000, 'PROVIDER_SCHEMA_INVALID', 'Crossref next-cursor 类型或长度无效', 502);
+    return { hits: rank(message.items.map(crHit), q), rawItemCount, nextCursor: rawItemCount < q.limit || !hasNext ? null : message['next-cursor'] };
+}
 export async function readProvider(source, id, request, credentials) {
     const common = { source, id, requestedId: id, pageMapping: 'unavailable' };
     if (source === 'alphaxiv') {

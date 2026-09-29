@@ -1764,6 +1764,22 @@ export declare const INPUT_SCHEMAS: {
             readonly type: "object";
             readonly properties: {
                 readonly kind: {
+                    readonly const: "search";
+                };
+                readonly previousSearchId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+            };
+            readonly required: readonly ["kind", "previousSearchId"];
+            readonly additionalProperties: false;
+        }, {
+            readonly type: "object";
+            readonly properties: {
+                readonly kind: {
                     readonly const: "retrieve";
                 };
                 readonly target: {

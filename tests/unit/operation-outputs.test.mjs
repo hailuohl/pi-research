@@ -35,6 +35,12 @@ test('persisted text-only searches remain valid without PDF metadata fields',()=
  assert.doesNotThrow(()=>validateSchema(OUTPUT_SCHEMAS.text_evidence_search,record,'output'));
 });
 
+test('legacy search records and frozen Crossref page metadata both satisfy the output contract',()=>{
+ const search={id:'s',kind:'connector-search',projectId:'project',version:1,createdAt:'2026-09-29T00:00:00.000Z',updatedAt:'2026-09-29T00:00:00.000Z',query:'q',settingsVersion:1,scopeSessionId:null,scopeTaskId:null,scopeAttemptId:null,request:{query:'q',sources:['crossref'],limit:1,strategy:'keyword',prioritize:'default'},items:[],sources:[{source:'crossref',status:'succeeded',count:0}],status:'complete',retrievedAt:'2026-09-29T00:00:00.000Z',coverage:'fixture'};
+ assert.doesNotThrow(()=>validateSchema(OUTPUT_SCHEMAS.literature_discover,search,'output'));
+ assert.doesNotThrow(()=>validateSchema(OUTPUT_SCHEMAS.literature_discover,{...search,page:{number:1,previousSearchId:null,cursor:'*',expiresAt:null,nextCursor:'cursor-2',nextCursorExpiresAt:'2026-09-29T00:04:00.000Z',rawItemCount:1}},'output'));
+});
+
 // Exercise real service output, using deterministic provider/runner fixtures only.
 test('all existing public tools have closed, literal success contracts exercised with service records', async () => {
  const s=setup(), savedFetch=globalThis.fetch, seen=new Set();

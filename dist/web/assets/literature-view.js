@@ -42,7 +42,7 @@ async function fileBase64(file) {
 class LiteratureView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { query: "", sources: ["crossref"], config: null, error: "", format: "provider-text", requestedVersion: "", result: null, document: null, loading: false, importLicense: "" };
+    this.state = { query: "", sources: ["crossref"], config: null, error: "", format: "provider-text", requestedVersion: "", result: null, document: null, loading: false, importLicense: "", paging: false };
     this.mounted = true;
     this.documentEpoch = 0;
     this.taskEpoch = 0;
@@ -109,7 +109,7 @@ class LiteratureView extends React.Component {
     });
   }
   render() {
-    const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest);
+    const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt);
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
       /* @__PURE__ */ jsxs(SectionTitle, { title: "\u6587\u732E\u4EFB\u52A1\u4E0E\u539F\u6587", sub: "\u663E\u5F0F\u63D0\u4EA4\u3001\u56FA\u5B9A\u53D6\u5F97\u7684\u5B57\u8282\uFF0C\u518D\u6309\u9875\u6BB5\u56DE\u67E5\uFF1B\u6458\u8981\u548C\u4F9B\u5E94\u5546\u6587\u672C\u4E0D\u5192\u5145\u539F PDF\u3002", children: [
         this.props.onSources ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: this.props.onSources, children: "\u7BA1\u7406\u6765\u6E90\u6388\u6743" }) : null,
@@ -146,7 +146,8 @@ class LiteratureView extends React.Component {
           /* @__PURE__ */ jsxs("h3", { children: [
             task.kindOfTask === "search" ? "\u68C0\u7D22" : "\u83B7\u53D6\u539F\u6587",
             " \xB7 ",
-            short(task.id)
+            short(task.id),
+            task.request.pageRequest ? " \xB7 \u7B2C " + task.request.pageRequest.number + " \u9875" : ""
           ] }),
           /* @__PURE__ */ jsx(Badge, { value: task.state }),
           /* @__PURE__ */ jsx("p", { className: "small muted", children: task.request.kind === "search" ? task.request.search.query : `${task.request.target.source} \xB7 ${task.request.target.id} \xB7 ${literatureRequestedVersion(task.request.target)}` }),
@@ -173,6 +174,33 @@ class LiteratureView extends React.Component {
           "\u56FA\u5B9A\u68C0\u7D22\u7ED3\u679C\uFF1A",
           s.result.query
         ] }),
+        page ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
+          /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
+            "Crossref \u5143\u6570\u636E\u7B2C ",
+            page.number,
+            " \u9875 \xB7 \u6765\u6E90\u539F\u59CB\u8FD4\u56DE ",
+            page.rawItemCount,
+            " \u6761\uFF1B\u4EC5\u6B64\u9875\uFF0C\u4E0D\u4EE3\u8868\u5B8C\u6574\u8986\u76D6\u3002"
+          ] }),
+          page.previousSearchId ? /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
+            "\u524D\u9875 ",
+            short(page.previousSearchId),
+            " \u53EF\u4ECE\u6301\u4E45\u4EFB\u52A1\u56DE\u67E5\u3002"
+          ] }) : null,
+          page.nextCursor ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.paging || !!nextTask || pageExpired || !s.config?.enabled.crossref, onClick: () => {
+            if (s.paging) return;
+            this.setState({ paging: true });
+            void perform(() => call(data.project.id, "literature_task_create", { kind: "search", previousSearchId: s.result.id }), "\u4E0B\u4E00\u9875\u6301\u4E45\u4EFB\u52A1\u5DF2\u63D0\u4EA4").finally(() => {
+              if (this.mounted) this.setState({ paging: false });
+            });
+          }, children: "\u663E\u5F0F\u83B7\u53D6\u4E0B\u4E00\u9875" }) : /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u6B64\u9875\u5DF2\u65E0\u4E0B\u4E00\u6E38\u6807\u3002" }),
+          pageExpired ? /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u6E38\u6807\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u63D0\u4EA4\u68C0\u7D22\u3002" }) : null,
+          nextTask ? /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
+            "\u4E0B\u4E00\u9875\u4EFB\u52A1 ",
+            short(nextTask.id),
+            " \u5DF2\u8BB0\u5F55\uFF0C\u8BF7\u5728\u4E0A\u65B9\u56DE\u67E5\u3002"
+          ] }) : null
+        ] }) : null,
         /* @__PURE__ */ jsx("p", { className: "small muted", children: s.result.discoveryGrant ? `DiscoveryGrant ${short(s.result.discoveryGrant.id)} \xB7 \u6388\u6743\u5185\u547D\u4E2D` : "\u672A\u7ED1\u5B9A\u6388\u6743\u7684\u68C0\u7D22" }),
         s.result.sources.map((source) => /* @__PURE__ */ jsxs("p", { children: [
           source.source,

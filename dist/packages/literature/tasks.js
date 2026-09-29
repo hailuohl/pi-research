@@ -1,4 +1,4 @@
-import { discoveryContext, assertDiscoveryContext, discoveryScope } from '../policy/discovery-grant-validation.js';
+import { discoveryContext, assertDiscoveryContext, discoveryScope, ownerCrossrefNextPage } from '../policy/discovery-grant-validation.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { USER } from '../domain/types.js';
@@ -18,14 +18,36 @@ export class LiteratureTaskService {
         this.app = app;
         this.spawnWorker = spawnWorker;
     }
-    parse(value) { const x = object(value), kind = oneOf(x.kind, ['search', 'retrieve'], 'kind'); if (kind === 'search')
+    parse(value) { const x = object(value), kind = oneOf(x.kind, ['search', 'retrieve'], 'kind'), allowed = kind === 'search' ? ['kind', 'search', 'discoveryGrantId'] : ['kind', 'target', 'discoveryGrantId']; ensure(Object.keys(x).every(k => allowed.includes(k)), 'INVALID_INPUT', '文献任务包含未知字段', 400); if (kind === 'search')
         return { kind, search: parseSearch(x.search) }; const t = object(x.target), target = routePaperId(t.id, t.source); return { kind, target: { ...target, format: oneOf(t.format, ['provider-text', 'original-pdf'], 'format'), ...(t.requestedVersion === undefined ? {} : { requestedVersion: text(t.requestedVersion, 'requestedVersion', 40) }) } }; }
     create(actor, pid, value, previousTaskId) {
         userOnly(actor);
         scope(actor, pid);
-        const input = object(value), parsed = this.parse(value), owner = input.discoveryGrantId ? this.app.discoveryGrants.owner(actor, pid, text(input.discoveryGrantId, 'discoveryGrantId', 100)) : actor, ctx = discoveryContext(this.app.store, pid, owner, parsed, 'prepare'), request = ctx?.operation ?? parsed;
+        const input = object(value);
+        let continuationId, parsed;
+        if (input.kind === 'search' && Object.hasOwn(input, 'previousSearchId')) {
+            ensure(Object.keys(input).length === 2 && Object.hasOwn(input, 'kind'), 'INVALID_INPUT', '下一页请求只能包含 kind 和 previousSearchId', 400);
+            continuationId = text(input.previousSearchId, 'previousSearchId', 100);
+            const next = ownerCrossrefNextPage(this.app.store, pid, continuationId);
+            parsed = { kind: 'search', ...next };
+        }
+        else
+            parsed = this.parse(value);
+        const owner = continuationId ? actor : input.discoveryGrantId ? this.app.discoveryGrants.owner(actor, pid, text(input.discoveryGrantId, 'discoveryGrantId', 100)) : actor, ctx = continuationId ? undefined : discoveryContext(this.app.store, pid, owner, parsed, 'prepare');
+        let request = ctx?.operation ?? parsed;
+        if (!continuationId && !ctx && !owner.sessionId && !owner.taskId && !owner.attemptId && request.kind === 'search' && request.search.sources.length === 1 && request.search.sources[0] === 'crossref' && request.search.strategy === 'keyword' && request.search.prioritize === 'default')
+            request = { ...request, pageRequest: { number: 1, previousSearchId: null, cursor: '*', expiresAt: null } };
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
+            if (continuationId) {
+                const current = ownerCrossrefNextPage(this.app.store, pid, continuationId);
+                ensure(request.kind === 'search' && digest(current) === digest({ search: request.search, pageRequest: request.pageRequest }), 'LITERATURE_PAGE_STALE', '前页查询或游标已改变');
+                if (!previousTaskId) {
+                    const prior = this.app.store.db.prepare("SELECT id FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.request.pageRequest.previousSearchId')=? AND json_extract(data,'$.previousTaskId') IS NULL AND json_extract(data,'$.discoveryGrant.id') IS NULL LIMIT 1").get(pid, continuationId);
+                    if (prior)
+                        throw new DomainError('LITERATURE_PAGE_ALREADY_REQUESTED', '该前页已有下页任务；请查看既有任务或显式重试', 409, { taskId: String(prior.id) });
+                }
+            }
             const cfg = connectorSettings(this.app.store, pid), sources = request.kind === 'search' ? request.search.sources : [request.target.source];
             ensure(sources.some(s => cfg.enabled[s]), 'SOURCE_DISABLED', '需要用户先启用所选文献来源', 403);
             const queued = Number(this.app.store.db.prepare("SELECT count(*) n FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.state') IN ('queued','running')").get(pid).n);
@@ -41,7 +63,11 @@ export class LiteratureTaskService {
         this.app.store.update('literature-task', id, row.version, { cancelRequested: true, ...(row.state === 'queued' ? { state: 'cancelled', phase: 'done', endedAt: new Date().toISOString() } : {}) });
         this.app.store.event(pid, 'literature.task_cancel_requested', { taskId: id });
     } return this.inspect(actor, pid, id); }); }
-    retry(actor, pid, id, expectedVersion) { userOnly(actor); return this.app.store.transaction(() => { const row = this.app.store.get('literature-task', id, pid); ensure(row.version === expectedVersion, 'VERSION_CONFLICT', '文献任务已更新'); ensure(['failed', 'cancelled', 'interrupted'].includes(row.state), 'LITERATURE_NOT_RETRYABLE', '只可显式重试失败、取消或中断任务'); return this.create(actor, pid, { ...row.request, ...(row.discoveryGrant ? { discoveryGrantId: row.discoveryGrant.id } : {}) }, row.id); }); }
+    retry(actor, pid, id, expectedVersion) { userOnly(actor); return this.app.store.transaction(() => { const row = this.app.store.get('literature-task', id, pid); ensure(row.version === expectedVersion, 'VERSION_CONFLICT', '文献任务已更新'); ensure(['failed', 'cancelled', 'interrupted'].includes(row.state), 'LITERATURE_NOT_RETRYABLE', '只可显式重试失败、取消或中断任务'); if (row.request.kind === 'search' && row.request.pageRequest && row.request.pageRequest.number > 1) {
+        const prior = this.app.store.db.prepare("SELECT id FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.previousTaskId')=? LIMIT 1").get(pid, id);
+        if (prior)
+            throw new DomainError('LITERATURE_RETRY_ALREADY_REQUESTED', '该分页任务已重试；请查看已有尝试', 409, { taskId: String(prior.id) });
+    } const value = row.request.kind === 'search' ? row.request.pageRequest && row.request.pageRequest.number > 1 ? { kind: 'search', previousSearchId: row.request.pageRequest.previousSearchId } : { kind: 'search', search: row.request.search, ...(row.discoveryGrant ? { discoveryGrantId: row.discoveryGrant.id } : {}) } : { kind: 'retrieve', target: row.request.target, ...(row.discoveryGrant ? { discoveryGrantId: row.discoveryGrant.id } : {}) }; return this.create(actor, pid, value, row.id); }); }
     validate(id, generation) {
         const row = this.app.store.get('literature-task', id);
         if (row.discoveryGrant)
@@ -54,7 +80,7 @@ export class LiteratureTaskService {
         return row;
     }
     recoverPublished(row, fence = false) {
-        const search = row.request.kind === 'search', scope = discoveryScope(search ? `connector-search:${row.projectId}:${row.scopeSessionId ?? 'user'}:root` : `document-acquire:${row.projectId}`, row.discoveryGrant), input = row.request.kind === 'search' ? row.request.search : row.request.target;
+        const search = row.request.kind === 'search', scope = discoveryScope(search ? `connector-search:${row.projectId}:${row.scopeSessionId ?? 'user'}:root` : `document-acquire:${row.projectId}`, row.discoveryGrant), input = row.request.kind === 'search' ? row.request.pageRequest ? { search: row.request.search, pageRequest: row.request.pageRequest } : row.request.search : row.request.target;
         const receipt = this.app.store.operationResult(scope, `literature-task:${row.id}`, input);
         if (!receipt.found)
             return false;
@@ -130,7 +156,7 @@ export class LiteratureTaskService {
         timer.unref();
         try {
             const row = this.validate(id, generation), validate = () => { this.validate(id, generation); }, owner = row.discoveryGrant ? this.app.discoveryGrants.owner(USER, row.projectId, row.discoveryGrant.id) : USER;
-            const result = row.request.kind === 'search' ? await this.app.connectors.discover(owner, row.projectId, row.request.search, `literature-task:${id}`, validate, controller.signal) : await this.app.documents.acquire(owner, row.projectId, row.request.target, `literature-task:${id}`, validate, controller.signal);
+            const result = row.request.kind === 'search' ? row.request.pageRequest ? await this.app.connectors.discoverPage(owner, row.projectId, row.request.search, row.request.pageRequest, `literature-task:${id}`, validate, controller.signal) : await this.app.connectors.discover(owner, row.projectId, row.request.search, `literature-task:${id}`, validate, controller.signal) : await this.app.documents.acquire(owner, row.projectId, row.request.target, `literature-task:${id}`, validate, controller.signal);
             store.transaction(() => {
                 const current = store.get('literature-task', id);
                 ensure(current.state === 'running' && current.generation === generation, 'LITERATURE_LEASE_EXPIRED', '旧执行器不能完成任务');

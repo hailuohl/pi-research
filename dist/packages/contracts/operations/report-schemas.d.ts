@@ -563,7 +563,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "reference" | "mediaType" | "end" | "content" | "cursor")[];
+        readonly required: ("complete" | "cursor" | "reference" | "mediaType" | "end" | "content")[];
         readonly additionalProperties: false;
     };
 };

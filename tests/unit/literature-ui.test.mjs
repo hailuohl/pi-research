@@ -26,6 +26,22 @@ test('a completed search task reads its durable result without depending on last
  await v.inspectTask({id:'task'});assert.equal(requests.length,1);assert.ok(requests[0].url.endsWith('/literature_task_inspect'));assert.equal(v.state.result.id,'old-search');
 });
 
+test('Crossref next-page control submits only the fixed previous result ID and avoids duplicate tasks',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=view();
+ v.state.config={enabled:{crossref:true}};
+ v.state.result={id:'page-1',query:'wine quality',status:'complete',sources:[{source:'crossref',status:'succeeded',count:5}],items:[],
+  page:{number:1,previousSearchId:null,nextCursor:'opaque-from-server',nextCursorExpiresAt:new Date(Date.now()+60000).toISOString(),rawItemCount:5}};
+ globalThis.fetch=async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});return {ok:true,json:async()=>({id:'task-2'})};};
+ let tree=v.render(),next=nodes(tree).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页');
+ assert.equal(next.props.disabled,false);next.props.onClick();await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(requests[0].body,{projectId:'project',input:{kind:'search',previousSearchId:'page-1'}});
+ v.props.data.literatureTasks=[{id:'task-2',kindOfTask:'search',request:{kind:'search',search:{query:'wine quality'},pageRequest:{number:2,previousSearchId:'page-1'}},state:'queued',phase:'queued'}];
+ tree=v.render();next=nodes(tree).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页');
+ assert.equal(next.props.disabled,true);assert.match(flatten(tree),/第 2 页/);
+ v.props.data.literatureTasks=[];v.state.config.enabled.crossref=false;
+ assert.equal(nodes(v.render()).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页').props.disabled,true);
+});
+
 test('page images require both PNG magic and the bound digest before producing a display blob',async()=>{
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5ZcAAAAASUVORK5CYII=','base64'),hash=createHash('sha256').update(png).digest('hex');
  assert.equal((await verifiedPageImage(new Blob([png]),hash)).type,'image/png');

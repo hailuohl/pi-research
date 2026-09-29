@@ -468,6 +468,54 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
                         readonly additionalProperties: false;
                     };
+                    readonly page: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly nextCursor: {
+                                readonly anyOf: readonly [{
+                                    readonly type: "string";
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                            readonly nextCursorExpiresAt: {
+                                readonly anyOf: readonly [{
+                                    readonly type: "string";
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                            readonly rawItemCount: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            readonly number: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            readonly previousSearchId: {
+                                readonly anyOf: readonly [{
+                                    readonly type: "string";
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                            readonly cursor: {
+                                readonly type: "string";
+                            };
+                            readonly expiresAt: {
+                                readonly anyOf: readonly [{
+                                    readonly type: "string";
+                                }, {
+                                    readonly type: "null";
+                                }];
+                            };
+                        };
+                        readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly items: {
                         readonly type: "array";
                         readonly items: {
@@ -1474,6 +1522,54 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                            readonly additionalProperties: false;
+                        };
                         readonly items: {
                             readonly type: "array";
                             readonly items: {
@@ -2279,6 +2375,54 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                 };
                             };
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -3088,6 +3232,54 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                            readonly additionalProperties: false;
+                        };
                         readonly items: {
                             readonly type: "array";
                             readonly items: {
@@ -3893,6 +4085,54 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                 };
                             };
                             readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly page: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly nextCursor: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly nextCursorExpiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly rawItemCount: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly number: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly previousSearchId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly cursor: {
+                                    readonly type: "string";
+                                };
+                                readonly expiresAt: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                            };
+                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {

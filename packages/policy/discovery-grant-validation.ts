@@ -4,8 +4,8 @@ import type {Actor,Approval,Artifact,Row,Session} from '../domain/types.js';
 import type {DiscoveryGrant,DiscoveryGrantReference,DiscoveryContext,DiscoveryOperation,DiscoveryCall} from './discovery-grant-types.js';
 import {ensure} from '../domain/errors.js';
 import {connectorSettings,assertSourceEnabled} from '../connectors/settings.js';
-import {parseSearch,routePaperId,type SourceId} from '../connectors/contracts.js';
-import type {SearchRecord} from '../connectors/service.js';
+import {parseSearch,routePaperId,type SearchInput,type SourceId} from '../connectors/contracts.js';
+import type {CrossrefPageRequest,SearchRecord} from '../connectors/service.js';
 import type {DocumentVersion} from '../documents/types.js';
 import type {DocumentParseJob} from '../documents/parse-types.js';
 import {assertProjectWritable} from './lifecycle.js';
@@ -37,8 +37,9 @@ export function discoveryContext(store:Store,pid:string,actor:Actor,operation:Di
  return ctx;
 }
 export const discoveryScope=(scope:string,ctx?:DiscoveryContext|DiscoveryGrantReference)=>ctx?`${scope}:grant:${'reference'in ctx?ctx.reference.id:ctx.id}`:scope;
-export function reserveConnectorCall(store:Store,pid:string,source:SourceId,url:URL,ctx?:DiscoveryContext):Row<DiscoveryCall>{return store.transaction(()=>{assertProjectWritable(store,pid);assertSourceEnabled(store,pid,source);const cfg=connectorSettings(store,pid),calls=store.list<DiscoveryCall>('connector-call',pid);ensure(calls.length<cfg.requestLimit,'CONNECTOR_BUDGET_EXCEEDED','已达到项目网络请求次数上限');let fields:Partial<DiscoveryCall>={},id:string|undefined;
+export function reserveConnectorCall(store:Store,pid:string,source:SourceId,url:URL,ctx?:DiscoveryContext,ownerPage?:{id:string;requestDigest:string}):Row<DiscoveryCall>{return store.transaction(()=>{assertProjectWritable(store,pid);assertSourceEnabled(store,pid,source);const cfg=connectorSettings(store,pid),calls=store.list<DiscoveryCall>('connector-call',pid);ensure(calls.length<cfg.requestLimit,'CONNECTOR_BUDGET_EXCEEDED','已达到项目网络请求次数上限');let fields:Partial<DiscoveryCall>={},id:string|undefined;
  if(ctx){const g=assertDiscoveryContext(store,pid,ctx,true);ensure(g.sources.includes(source),'DISCOVERY_SOURCE_DENIED','请求来源未获批准');const safe=new URL(url);for(const name of ['api_key','email','mailto'])safe.searchParams.delete(name);const operationKeyDigest=digest(ctx.operationKey),requestDigest=digest(ctx.operation),requestUrlDigest=digest(safe.toString());id=digest({grantId:g.id,operationKeyDigest,source,requestUrlDigest});ensure(!store.maybe('connector-call',id),'DISCOVERY_REQUEST_ALREADY_SENT','该请求已保留外发记录；无最终回执时须核对后显式重试');ensure(calls.filter(c=>c.discoveryGrant?.id===g.id).length<g.maxRequests,'DISCOVERY_GRANT_EXHAUSTED','发现授权的HTTP请求额度已用完');fields={discoveryGrant:ctx.reference,operationKeyDigest,requestDigest,requestUrlDigest};}
+ else if(ownerPage){const safe=new URL(url);for(const name of ['api_key','email','mailto'])safe.searchParams.delete(name);const requestUrlDigest=digest(safe.toString()),requestDigest=digest({operation:ownerPage.requestDigest,requestUrlDigest}),existing=store.maybe<DiscoveryCall>('connector-call',ownerPage.id);if(existing){ensure(existing.source===source&&existing.host===url.hostname&&existing.requestDigest===requestDigest&&existing.requestUrlDigest===requestUrlDigest,'CONNECTOR_REQUEST_ID_CONFLICT','分页请求标识已用于不同外发内容');ensure(false,'DISCOVERY_REQUEST_ALREADY_SENT','该分页请求已有外发记录；无最终回执时须核对后显式重试');}id=ownerPage.id;fields={requestDigest,requestUrlDigest};}
  const call=store.create<DiscoveryCall>('connector-call',pid,{source,host:url.hostname,status:'reserved',startedAt:new Date().toISOString(),...fields},id);ctx?.callIds.push(call.id);return call;});}
 export function assertDiscoveryArtifact(store:Store,pid:string,a:Row<Artifact>){
  // Parsed pages retain their source through the existing fixed parser manifest.
@@ -53,3 +54,14 @@ export function assertDiscoveryDocument(store:Store,pid:string,d:Row<DocumentVer
  for(const item of [d.original,...(d.derivedText?[d.derivedText]:[])]){const a=store.get<Artifact>('artifact',item.artifactId,pid);ensure(digest(d.discoveryGrant)===digest(a.discoveryGrant),'DISCOVERY_SOURCE_STALE','文档与原件的发现授权绑定改变');assertDiscoveryArtifact(store,pid,a);}
 }
 export const discoveryProof=(ctx?:DiscoveryContext)=>ctx?{discoveryGrant:ctx.reference,discoveryCallIds:[...ctx.callIds],discoveryRequestDigest:digest(ctx.operation)}:{};
+export function ownerCrossrefNextPage(store:Store,pid:string,previousSearchId:string):{search:SearchInput;pageRequest:CrossrefPageRequest}{
+ const previous=store.get<SearchRecord>('connector-search',previousSearchId,pid),search=parseSearch(previous.request),page=previous.page;
+ ensure(!previous.discoveryGrant&&previous.scopeSessionId==null&&previous.scopeTaskId==null&&previous.scopeAttemptId==null,'LITERATURE_PAGE_OWNER_ONLY','只有 owner 的普通搜索结果可以继续',403);
+ ensure(previous.settingsVersion===connectorSettings(store,pid).version,'CONNECTOR_SETTINGS_CHANGED','文献来源设置已改变；请重新提交第一页');
+ ensure(digest(search)===digest(previous.request)&&previous.query===search.query&&search.sources.length===1&&search.sources[0]==='crossref'&&search.strategy==='keyword'&&search.prioritize==='default'&&previous.status==='complete'&&previous.sources.length===1&&previous.sources[0].source==='crossref'&&previous.sources[0].status==='succeeded'&&previous.items.every(hit=>hit.source==='crossref'),'LITERATURE_PAGE_SOURCE_INVALID','前页不是可继续的 Crossref 默认排序成功结果');
+ ensure(page&&Number.isSafeInteger(page.number)&&page.number>=1&&typeof page.cursor==='string'&&typeof page.rawItemCount==='number'&&page.rawItemCount>=search.limit,'LITERATURE_PAGE_SOURCE_INVALID','前页没有有效的 Crossref 分页记录');
+ ensure(page.number===1?page.previousSearchId===null&&page.cursor==='*'&&page.expiresAt===null:typeof page.previousSearchId==='string'&&page.cursor!=='*'&&typeof page.expiresAt==='string'&&Number.isFinite(Date.parse(page.expiresAt)),'LITERATURE_PAGE_SOURCE_INVALID','前页分页链不完整');
+ ensure(typeof page.nextCursor==='string'&&page.nextCursor.length>0&&typeof page.nextCursorExpiresAt==='string'&&Number.isFinite(Date.parse(page.nextCursorExpiresAt)),'LITERATURE_PAGE_TERMINAL','前页没有可继续的下一游标');
+ ensure(Date.now()<Date.parse(page.nextCursorExpiresAt),'LITERATURE_PAGE_EXPIRED','Crossref 下一游标已过期，请从第一页重新检索');
+ ensure(Number.isSafeInteger(page.number+1),'LITERATURE_PAGE_SOURCE_INVALID','Crossref 页号超出安全范围');return {search,pageRequest:{number:page.number+1,previousSearchId:previous.id,cursor:page.nextCursor,expiresAt:page.nextCursorExpiresAt}};
+}

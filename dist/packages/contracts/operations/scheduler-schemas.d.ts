@@ -537,7 +537,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("queued" | "targets" | "available" | "configuration" | "usage" | "scope" | "items" | "nextCursor")[];
+        readonly required: ("queued" | "targets" | "nextCursor" | "available" | "configuration" | "usage" | "scope" | "items")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {
@@ -988,7 +988,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("available" | "configuration" | "scope" | "items" | "nextCursor" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
+        readonly required: ("nextCursor" | "available" | "configuration" | "scope" | "items" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
     readonly model_http_configure: {
@@ -1095,7 +1095,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("available" | "configuration" | "scope" | "items" | "nextCursor" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
+        readonly required: ("nextCursor" | "available" | "configuration" | "scope" | "items" | "unit" | "coverage" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
 };
