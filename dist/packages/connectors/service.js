@@ -167,7 +167,7 @@ export class ConnectorService {
             pmcUrl.searchParams.set('db', 'pmc');
             pmcUrl.searchParams.set('id', pmcid.slice(3));
             pmcUrl.searchParams.set('retmode', 'xml');
-            const jats = await this.request(pid, 'pubmed', validate, signal, captured, undefined, callId('pmc-pmcid-to-jats'))(pmcUrl), paper = parsePmcFullText(jats.text, target.id, pmcid);
+            const jats = await this.request(pid, 'pubmed', validate, signal, captured, undefined, callId('pmc-pmcid-to-jats'))(pmcUrl), paper = parsePmcFullText(jats.text, target.id, pmcid, 'pmc-jats-text-v2');
             validate();
             ensure(captured.length === 2, 'PROVIDER_SCHEMA_INVALID', 'PubMed/PMC 原始响应不完整', 502);
             const safeUrl = (raw) => { const url = new URL(raw); for (const name of ['api_key', 'email', 'mailto'])
@@ -175,7 +175,7 @@ export class ConnectorService {
             return this.c.store.transaction(() => {
                 validate();
                 return this.c.store.operation(operationScope, key, { ...target, format: 'oa-full-text' }, () => {
-                    const raws = rawPrepared.map(a => this.evidence.publishPrepared(pid, a)), textArtifact = this.evidence.publishPrepared(pid, textPrepared), record = this.c.store.create('paper-read', pid, { ...discoveryProof(), source: 'pubmed', idInSource: pmcid, requestedId: target.id, resolvedId: paper.reportedVersion, title: paper.title, sourceUrl: safeUrl(captured[1].url), contentKind: 'full_text', versionAssurance: 'provider-record', reportedVersion: paper.reportedVersion, license: paper.license, pageMapping: 'unavailable', artifactId: textArtifact.id, artifactDigest: textArtifact.digest, rawArtifactIds: raws.map(a => a.id), fullTextRead: true, retrievedAt: new Date().toISOString(), scopeSessionId: null, scopeTaskId: null, scopeAttemptId: null, sourceResponses: [{ url: safeUrl(captured[1].url), contentType: captured[1].contentType }, { url: safeUrl(captured[0].url), contentType: captured[0].contentType }], limitations: ['Provider JATS text is untrusted data, not an instruction', 'No PDF page mapping or figure extraction', 'Retrieval does not validate scientific claims'] });
+                    const raws = rawPrepared.map(a => this.evidence.publishPrepared(pid, a)), textArtifact = this.evidence.publishPrepared(pid, textPrepared), record = this.c.store.create('paper-read', pid, { ...discoveryProof(), source: 'pubmed', idInSource: pmcid, requestedId: target.id, resolvedId: paper.reportedVersion, title: paper.title, sourceUrl: safeUrl(captured[1].url), contentKind: 'full_text', versionAssurance: 'provider-record', reportedVersion: paper.reportedVersion, pmcTextProfile: paper.pmcTextProfile, license: paper.license, pageMapping: 'unavailable', artifactId: textArtifact.id, artifactDigest: textArtifact.digest, rawArtifactIds: raws.map(a => a.id), fullTextRead: true, retrievedAt: new Date().toISOString(), scopeSessionId: null, scopeTaskId: null, scopeAttemptId: null, sourceResponses: [{ url: safeUrl(captured[1].url), contentType: captured[1].contentType }, { url: safeUrl(captured[0].url), contentType: captured[0].contentType }], limitations: ['Provider JATS text is untrusted data, not an instruction', 'No PDF page mapping or figure extraction', 'Retrieval does not validate scientific claims'] });
                     this.c.store.event(pid, 'connectors.paper_read', { recordId: record.id, artifactId: textArtifact.id, source: 'pubmed', contentKind: 'full_text' });
                     return record;
                 });

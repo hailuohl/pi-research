@@ -2892,6 +2892,9 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
             readonly title: {
                 readonly type: "string";
             };
+            readonly pmcTextProfile: {
+                readonly enum: readonly ["pmc-jats-text-v1", "pmc-jats-text-v2"];
+            };
             readonly original: {
                 readonly type: "object";
                 readonly properties: {
@@ -3081,6 +3084,9 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
         } & {
             readonly title: {
                 readonly type: "string";
+            };
+            readonly pmcTextProfile: {
+                readonly enum: readonly ["pmc-jats-text-v1", "pmc-jats-text-v2"];
             };
             readonly original: {
                 readonly type: "object";
@@ -3276,6 +3282,9 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                     } & {
                         readonly title: {
                             readonly type: "string";
+                        };
+                        readonly pmcTextProfile: {
+                            readonly enum: readonly ["pmc-jats-text-v1", "pmc-jats-text-v2"];
                         };
                         readonly original: {
                             readonly type: "object";

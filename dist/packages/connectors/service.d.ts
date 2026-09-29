@@ -217,6 +217,7 @@ export declare class ConnectorService {
         contentKind: string;
         versionAssurance: string;
         reportedVersion: string;
+        pmcTextProfile: import("./pmc.js").PmcTextProfile;
         license: string;
         pageMapping: string;
         artifactId: string;
@@ -245,6 +246,7 @@ export declare class ConnectorService {
         contentKind: string;
         versionAssurance: string;
         reportedVersion: string;
+        pmcTextProfile: import("./pmc.js").PmcTextProfile;
         license: string;
         pageMapping: string;
         artifactId: string;

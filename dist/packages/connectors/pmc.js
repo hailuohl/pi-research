@@ -14,7 +14,8 @@ export function parsePubmedPmcid(xml, requestedPmid) {
     ensure(/^PMC[1-9]\d*$/.test(pmcid), 'PROVIDER_SCHEMA_INVALID', 'PubMed EFetch PMCID 无效', 502);
     return pmcid;
 }
-export function parsePmcFullText(xml, requestedPmid, requestedPmcid) {
+export function parsePmcFullText(xml, requestedPmid, requestedPmcid, pmcTextProfile = 'pmc-jats-text-v1') {
+    ensure(pmcTextProfile === 'pmc-jats-text-v1' || pmcTextProfile === 'pmc-jats-text-v2', 'PMC_SOURCE_INVALID', '未知 PMC 文本派生规则');
     const root = parseRestrictedXml(xml), container = only(root.children.filter((item) => typeof item !== 'string'), '根元素'), articles = container.name === 'article' ? [container] : container.name === 'pmc-articleset' ? xmlChildren(container, 'article') : (() => { ensure(false, 'PROVIDER_SCHEMA_INVALID', 'PMC EFetch 根元素无效', 502); return []; })(), article = only(articles, '目标文章');
     ensure(articles.length === 1, 'PROVIDER_SCHEMA_INVALID', 'PMC EFetch 必须只返回一篇文章', 502);
     const front = only(xmlChildren(article, 'front'), 'front'), meta = only(xmlChildren(front, 'article-meta'), 'article-meta');
@@ -29,9 +30,15 @@ export function parsePmcFullText(xml, requestedPmid, requestedPmcid) {
     const title = xmlText(only(xmlNodes(meta, 'article-title'), '题名'));
     ensure(title.length > 0 && title.length <= 2000, 'PROVIDER_SCHEMA_INVALID', 'PMC 全文缺少有效题名', 502);
     const body = only(xmlNodes(article, 'body'), 'body'), blocks = [];
+    // Unmarked historical records retain the exact v1 paragraph traversal and byte layout.
     const collect = (node) => { for (const child of node.children)
         if (typeof child !== 'string') {
-            if (['title', 'label', 'p', 'caption'].includes(child.name)) {
+            if (pmcTextProfile === 'pmc-jats-text-v2' && child.name === 'tr') {
+                const row = child.children.filter((cell) => typeof cell !== 'string' && (cell.name === 'th' || cell.name === 'td')).map(xmlText).filter(Boolean).join('\t');
+                if (row)
+                    blocks.push(row);
+            }
+            else if (['title', 'label', 'p', 'caption'].includes(child.name)) {
                 const text = xmlText(child);
                 if (text)
                     blocks.push(text);
@@ -42,6 +49,6 @@ export function parsePmcFullText(xml, requestedPmid, requestedPmcid) {
     collect(body);
     const content = blocks.join('\n\n') || xmlText(body);
     ensure(content.length > 0, 'PROVIDER_SCHEMA_INVALID', 'PMC 全文正文为空', 502);
-    return { pmid, pmcid, reportedVersion, title, license, content };
+    return { pmid, pmcid, reportedVersion, title, license, content, pmcTextProfile };
 }
 //# sourceMappingURL=pmc.js.map

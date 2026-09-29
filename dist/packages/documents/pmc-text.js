@@ -27,7 +27,7 @@ export function verifyPmcText(c, pid, id, expected, artifactId) {
     catch {
         ensure(false, 'PMC_SOURCE_INVALID', 'PMC XML 不是 UTF-8');
     }
-    const parsed = parsePmcFullText(xml, d.source.requestedId, v.split('.')[0]);
+    const parsed = parsePmcFullText(xml, d.source.requestedId, v.split('.')[0], d.pmcTextProfile);
     ensure(parsed.reportedVersion === v && parsed.license === d.license.value && digest(Buffer.from(parsed.content)) === d.derivedText.digest && (!artifactId || artifactId === d.derivedText.artifactId), 'PMC_SOURCE_INVALID', 'PMC XML 身份、许可或派生文本绑定不一致');
     const link = { documentVersionId: d.id, documentDigest: digest(d), rawDigest: d.original.digest, textArtifactDigest: d.derivedText.digest, reportedVersion: v };
     if (expected)

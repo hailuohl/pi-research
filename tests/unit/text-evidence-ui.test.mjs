@@ -15,15 +15,16 @@ test('owner explicitly selects fixed PMC OA text and a lexical hit returns to th
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const calls=[];
  globalThis.fetch=async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return {ok:true,json:async()=>({enabled:true,version:1})};};
  const {TextEvidencePanel}=await import('../../dist/web/assets/text-evidence.js');let target;
- const data={project:{id:'project'},artifacts:[],documents:[{id:'oa-1',title:'OA source',contentKind:'provider-text',source:{provider:'pubmed',reportedVersion:'PMC8270360.1'},original:{mediaType:'application/xml'},derivedText:{artifactId:'text-1'},license:{value:'CC BY 4.0',assurance:'provider-reported'}}],documentParseJobs:[],textEvidence:{enabled:false,version:0,sources:[],documents:[]},textEvidenceSearches:[]};
+ const document=id=>({id,title:'OA source',contentKind:'provider-text',source:{provider:'pubmed',reportedVersion:'PMC8270360.1'},original:{mediaType:'application/xml'},derivedText:{artifactId:`text-${id}`},license:{value:'CC BY 4.0',assurance:'provider-reported'}});
+ const data={project:{id:'project'},artifacts:[],documents:['oa-1','oa-2'].map(document),documentParseJobs:[],textEvidence:{enabled:false,version:0,sources:[],documents:[]},textEvidenceSearches:[]};
  const view=synchronousState(new TextEvidencePanel({data,perform:async f=>f(),onDocument:value=>{target=value;}}));let tree=view.render();
- assert.match(flatten(tree),/PMC OA ·\s+PMC8270360\.1\s+· 无 PDF 页码/);assert.match(flatten(tree),/默认关闭/);
- find(tree,n=>n.type==='label'&&flatten(n.props.children).includes('PMC OA')&&flatten(n.props.children).includes('PMC8270360.1')).props.children[0].props.onChange({target:{checked:true}});
+ assert.match(flatten(tree),/PMC OA ·\s+PMC8270360\.1\s+· 文档\s+oa-1\s+· 无 PDF 页码/);assert.match(flatten(tree),/文档\s+oa-2\s+· 无 PDF 页码/);assert.match(flatten(tree),/默认关闭/);
+ find(tree,n=>n.type==='label'&&flatten(n.props.children).includes('PMC OA')&&flatten(n.props.children).includes('oa-2')).props.children[0].props.onChange({target:{checked:true}});
  tree=view.render();find(tree,n=>n.type==='button'&&flatten(n.props.children)==='保存范围并启用').props.onClick();await new Promise(resolve=>setImmediate(resolve));
- assert.equal(calls.length,1);assert.deepEqual(calls[0].body,{enabled:true,artifactIds:[],documents:[],pmcDocuments:[{documentVersionId:'oa-1'}],expectedVersion:0});
- view.state.result={id:'search-1',query:'methods',configurationVersion:1,status:'matches',coverage:{sourceCount:1,totalChunks:5,matchingChunks:1,exactDuplicatesGrouped:0,resultsTruncated:false},hits:[{chunkId:'chunk-1',title:'OA source',sourceKind:'pmc_oa_text',providerText:{documentVersionId:'oa-1',reportedVersion:'PMC8270360.1'},page:null,locator:{start:0,end:7},quote:'methods',evidenceId:'e1',digest:'text-1'}],limitations:[]};
+ assert.equal(calls.length,1);assert.deepEqual(calls[0].body,{enabled:true,artifactIds:[],documents:[],pmcDocuments:[{documentVersionId:'oa-2'}],expectedVersion:0});
+ view.state.result={id:'search-1',query:'methods',configurationVersion:1,status:'matches',coverage:{sourceCount:1,totalChunks:5,matchingChunks:1,exactDuplicatesGrouped:0,resultsTruncated:false},hits:[{chunkId:'chunk-1',title:'OA source',sourceKind:'pmc_oa_text',providerText:{documentVersionId:'oa-2',reportedVersion:'PMC8270360.1'},page:null,locator:{start:0,end:7},quote:'methods',evidenceId:'e1',digest:'text-oa-2'}],limitations:[]};
  tree=view.render();assert.match(flatten(tree),/固定 PMC OA 全文 PMC8270360\.1 · 无 PDF 页码/);assert.ok(!flatten(tree).includes('固定 PDF 物理第'));
- find(tree,n=>n.type==='button'&&flatten(n.props.children)==='返回固定 PMC 文档').props.onClick();assert.deepEqual(target,{documentVersionId:'oa-1'});
+ find(tree,n=>n.type==='button'&&flatten(n.props.children)==='返回固定 PMC 文档').props.onClick();assert.deepEqual(target,{documentVersionId:'oa-2'});
 });
 test('fixed PDF hit returns to the exact archived page, and old results survive a closed corpus view',async()=>{
  const {TextEvidencePanel}=await import('../../dist/web/assets/text-evidence.js');let target;

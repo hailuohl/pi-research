@@ -57,6 +57,8 @@ class TextEvidencePanel extends React.Component {
               /* @__PURE__ */ jsxs("small", { children: [
                 "PMC OA \xB7 ",
                 d.reportedVersion,
+                " \xB7 \u6587\u6863 ",
+                short(d.documentVersionId),
                 " \xB7 \u65E0 PDF \u9875\u7801"
               ] })
             ] })

@@ -26,7 +26,7 @@ export function verifyPmcText(c:AppContext,pid:string,id:string,expected?:Provid
  const read=(ref:DocumentVersion['original'],origin:string)=>{const a=c.store.get<Artifact>('artifact',ref.artifactId,pid),bytes=readFileSync(c.store.paths.physical(a.path));ensure(a.origin===origin&&!a.taskId&&!a.runId&&!a.wakeupId&&!a.discoveryGrant&&a.digest===ref.digest&&a.size===ref.size&&a.mediaType===ref.mediaType&&bytes.length===ref.size&&digest(bytes)===ref.digest,'PMC_SOURCE_INVALID','PMC 来源产物描述或字节已改变');return bytes;};
  const raw=read(d.original,'connector:pubmed:raw'),bytes=read(d.derivedText!,'connector:pubmed:provider-text');
  let xml:string;try{xml=new TextDecoder('utf-8',{fatal:true}).decode(raw);}catch{ensure(false,'PMC_SOURCE_INVALID','PMC XML 不是 UTF-8');}
- const parsed=parsePmcFullText(xml!,d.source.requestedId!,v!.split('.')[0]!);
+ const parsed=parsePmcFullText(xml!,d.source.requestedId!,v!.split('.')[0]!,d.pmcTextProfile);
  ensure(parsed.reportedVersion===v&&parsed.license===d.license.value&&digest(Buffer.from(parsed.content))===d.derivedText!.digest&&(!artifactId||artifactId===d.derivedText!.artifactId),'PMC_SOURCE_INVALID','PMC XML 身份、许可或派生文本绑定不一致');
  const link:ProviderTextEvidenceLink={documentVersionId:d.id,documentDigest:digest(d),rawDigest:d.original.digest,textArtifactDigest:d.derivedText!.digest,reportedVersion:v!};
  if(expected)ensure(digest(expected)===digest(link),'PMC_SOURCE_STALE','固定 PMC 文档版本已改变');

@@ -15,6 +15,7 @@ export interface DocumentVersion {
         size: number;
         mediaType: string;
     };
+    pmcTextProfile?: import('../connectors/pmc.js').PmcTextProfile;
     source: {
         kind: 'connector' | 'upload';
         provider?: SourceId;
