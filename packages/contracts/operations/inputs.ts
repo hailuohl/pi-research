@@ -67,7 +67,7 @@ export const INPUT_SCHEMAS = {
         documents: s.array(s.object({ documentVersionId: id, parseResultId: id }, ['documentVersionId', 'parseResultId']), 30),
         corpusId: id, configurationVersion: s.integer(0), limit: s.nullable(s.integer(1, 10)),
         mmrLambda: s.number(0, 1), deduplicateExact: s.nullable(s.boolean()) }, ['query']),
-    text_corpus_grant_prepare:s.object({sessionId:id,documents:s.array(s.object({documentVersionId:id,parseResultId:id},['documentVersionId','parseResultId']),30),corpusId:id,configurationVersion:s.integer(0),maxSearches:s.integer(1,2),expiresAt:s.string(50)},['sessionId','documents','corpusId','configurationVersion','maxSearches','expiresAt']),
+    text_corpus_grant_prepare:s.object({sessionId:id,documents:s.array(s.object({documentVersionId:id,parseResultId:id},['documentVersionId','parseResultId']),30),pmcDocuments:s.array(s.object({documentVersionId:id},['documentVersionId']),1),corpusId:id,configurationVersion:s.integer(0),maxSearches:s.integer(1,2),expiresAt:s.string(50)},['sessionId','documents','corpusId','configurationVersion','maxSearches','expiresAt']),
     text_corpus_grant_inspect:s.object({grantId:id},['grantId']),
     text_corpus_grant_activate:s.object({grantId:id,expectedVersion:s.integer(1)},['grantId','expectedVersion']),
     text_corpus_grant_revoke:s.object({grantId:id,expectedVersion:s.integer(1)},['grantId','expectedVersion']),

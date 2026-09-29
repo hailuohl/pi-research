@@ -114,23 +114,26 @@ export class TextEvidenceService {
         scope(actor, projectId);
         this.app.store.get('project', projectId);
         const config = this.config(projectId), corpus = config?.corpusId ? this.app.store.get('text-corpus', config.corpusId, projectId) : null;
-        let sources = corpus?.sources ?? [], documents = corpus?.documents ?? [];
+        let sources = corpus?.sources ?? [], documents = corpus?.documents ?? [], pmcDocuments = corpus?.pmcDocuments;
         if (actor.type === 'agent') {
             const grant = actor.taskId ? this.app.teams.resources(actor) : actor.wakeupId ? this.app.wakeups.resources(actor) : null;
             if (grant)
                 sources = sources.filter(s => grant.artifactIds.has(s.artifactId));
             documents = [];
+            pmcDocuments = undefined;
             if (!actor.taskId && !actor.wakeupId) {
                 try {
                     const fixed = assertTextCorpusGrantActor(this.app.store, actor, projectId);
                     documents = (corpus?.documents ?? []).filter(ref => fixed.documents.some(p => pairKey(p) === pairKey(ref)));
+                    if (fixed.pmcDocuments)
+                        pmcDocuments = corpus?.pmcDocuments?.filter(ref => fixed.pmcDocuments.some(p => p.documentVersionId === ref.documentVersionId));
                 }
-                catch { /* Unavailable grants disclose no PDF sources. */ }
+                catch { /* Unavailable grants disclose no fixed document sources. */ }
             }
         }
         return { enabled: config?.enabled ?? false, version: config?.version ?? 0, corpusId: config?.corpusId ?? null,
             sources, documents: documents.map(({ documentVersionId, parseResultId, title, pageCount }) => ({ documentVersionId, parseResultId, title, pageCount })),
-            ...(corpus?.pmcDocuments && actor.type !== 'agent' ? { pmcDocuments: corpus.pmcDocuments.map(({ documentVersionId, title, reportedVersion }) => ({ documentVersionId, title, reportedVersion })) } : {}),
+            ...(pmcDocuments ? { pmcDocuments: pmcDocuments.map(({ documentVersionId, title, reportedVersion }) => ({ documentVersionId, title, reportedVersion })) } : {}),
             method: METHOD_VERSION, parserVersion: PARSER_VERSION, limits: LIMITS, networkCalls: 0, modelCalls: 0 };
     }
     configure(actor, projectId, value) {
@@ -184,15 +187,21 @@ export class TextEvidenceService {
         const corpus = this.app.store.get('text-corpus', config.corpusId, projectId);
         const ids = [...new Set(x.artifactIds === undefined ? [] : strings(x.artifactIds, 'artifactIds', LIMITS.files))].sort();
         const pairs = this.documentPairs(x.documents), pmcPairs = this.pmcPairs(x.pmcDocuments);
-        if (pmcPairs.length)
+        if (pmcPairs.length && actor.type !== 'agent')
             pmcOwner(actor);
         ensure(ids.length + pairs.length + pmcPairs.length > 0, 'TEXT_SOURCE_REQUIRED', '必须明确指定本次检索的原文 ID', 400);
         ensure(ids.length + pairs.length + pmcPairs.length <= LIMITS.files, 'TEXT_CORPUS_LIMIT', '本次检索的原文合计最多 30 项', 413);
-        const grant = pairs.length && actor.type === 'agent' ? assertTextCorpusGrantActor(this.app.store, actor, projectId) : undefined;
+        const grant = (pairs.length || pmcPairs.length) && actor.type === 'agent' ? assertTextCorpusGrantActor(this.app.store, actor, projectId) : undefined;
+        if (pmcPairs.length && grant)
+            ensure(grant.pmcDocuments && pairs.length === 0, 'PERMISSION_DENIED', '此授权不允许 PMC 与 PDF 混合检索', 403);
         if (pairs.length && !grant)
             userOnly(actor);
         if (grant)
             ensure(ids.length === 0, 'TEXT_GRANT_SOURCE_DENIED', 'PDF 授权检索不能混入其他文本来源', 403);
+        if (grant?.pmcDocuments) {
+            ensure(pairs.length === 0 && pmcPairs.length === 1 && grant.pmcDocuments[0].documentVersionId === pmcPairs[0].documentVersionId, 'TEXT_GRANT_SOURCE_DENIED', '只能检索此授权唯一的 PMC 文档', 403);
+            ensure(this.app.store.list('text-corpus-grant-use', projectId).filter(u => u.grantId === grant.id).length < grant.maxSearches, 'TEXT_GRANT_EXHAUSTED', 'PMC 检索额度已用尽，不能重放检索');
+        }
         const hasCorpusId = x.corpusId !== undefined, hasVersion = x.configurationVersion !== undefined;
         ensure(hasCorpusId === hasVersion && (!(pairs.length + pmcPairs.length) || hasCorpusId), 'TEXT_CONFIGURATION_REQUIRED', '固定文档检索必须提供当前 corpusId 和 configurationVersion', 400);
         if (hasCorpusId)
@@ -273,7 +282,7 @@ export class TextEvidenceService {
                         if (link)
                             return this.app.evidence.verify(projectId, link.evidenceId);
                         const evidence = chunk.sourceKind === 'pmc_oa_text'
-                            ? this.app.evidence.registerProviderText(actor, projectId, chunk.providerText, chunk.locator.start, chunk.locator.end, `固定 PMC OA 原文：${chunk.title}，${chunk.providerText.reportedVersion}，无 PDF 页码；${PARSER_VERSION}`)
+                            ? this.app.evidence[grant ? 'registerGrantedProviderText' : 'registerProviderText'](actor, projectId, chunk.providerText, chunk.locator.start, chunk.locator.end, `固定 PMC OA 原文：${chunk.title}，${chunk.providerText.reportedVersion}，无 PDF 页码；${PARSER_VERSION}`, grant ? textCorpusGrantReference(grant) : undefined)
                             : this.app.evidence.register(actor, projectId, chunk.artifactId, chunk.locator.start, chunk.locator.end, `用户导入文本原文：${chunk.title}，行 ${chunk.lineStart}–${chunk.lineEnd}；${PARSER_VERSION}`);
                         this.app.store.create('text-chunk-link', projectId, { evidenceId: evidence.id }, chunk.chunkId);
                         return evidence;

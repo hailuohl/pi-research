@@ -51,6 +51,18 @@ export class EvidenceService {
     /** Host local search only; no caller-supplied authority flag or new agent tool. */
     registerProviderText(actor:Actor,projectId:string,providerText:ProviderTextEvidenceLink,start:number,end:number,description:string){
         pmcOwner(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
+        return this.registerProviderTextCore(actor,projectId,providerText,start,end,description);
+    }
+    /** Host search path only; never exposed as a tool or a caller-supplied authority flag. */
+    registerGrantedProviderText(actor:Actor,projectId:string,providerText:ProviderTextEvidenceLink,start:number,end:number,description:string,reference?:TextCorpusGrantReference){
+        return this.c.store.transaction(()=>{
+            ensure(reference,'TEXT_GRANT_REQUIRED','缺少固定检索授权');
+            const grant=assertTextCorpusGrantActor(this.c.store,actor,projectId,reference);
+            ensure(grant.pmcDocuments?.some(p=>p.documentVersionId===providerText.documentVersionId),'TEXT_GRANT_SOURCE_DENIED','PMC 证据来源不在授权内',403);
+            return this.registerProviderTextCore({type:'system'},projectId,providerText,start,end,description);
+        });
+    }
+    private registerProviderTextCore(actor:Actor,projectId:string,providerText:ProviderTextEvidenceLink,start:number,end:number,description:string){
         return this.c.store.transaction(()=>{const {document}=verifyPmcText(this.c,projectId,providerText.documentVersionId,providerText);const e=this.register(actor,projectId,document.derivedText!.artifactId,start,end,description,'paper');return this.c.store.update<Evidence>('evidence',e.id,e.version,{providerText});});
     }
     registerDocument(actor:Actor,projectId:string,input:{documentVersionId:string;parseResultId:string;pageNumber:number;start:number;end:number;description:string}) {

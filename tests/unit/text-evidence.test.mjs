@@ -163,6 +163,7 @@ test('existing PDF grant cannot search or read newly saved PMC owner text',()=>{
  }finally{s.close();}});
 test('a PDF-only grant remains usable in a mixed owner PMC and PDF corpus',()=>{const s=setup();try{
  const f=grantFixture(s),d=pmcDocument(s),config=s.app.textEvidence.configure(USER,s.project.id,{enabled:true,documents:[f.pair],pmcDocuments:[{documentVersionId:d.id}],expectedVersion:f.config.version});
+ assert.throws(()=>grantOp(s,USER,'text_corpus_grant_prepare',{sessionId:s.session.id,documents:[f.pair],pmcDocuments:[{documentVersionId:d.id}],corpusId:config.corpusId,configurationVersion:config.version,maxSearches:1,expiresAt:new Date(Date.now()+60000).toISOString()},'mixed-scope'),{code:'TEXT_SOURCE_REQUIRED'});
  const draft=grantOp(s,USER,'text_corpus_grant_prepare',{sessionId:s.session.id,documents:[f.pair],corpusId:config.corpusId,configurationVersion:config.version,maxSearches:1,expiresAt:new Date(Date.now()+60000).toISOString()},'mixed-grant');
  const {who}=grantAgent(s,draft),input={...f.input,corpusId:config.corpusId,configurationVersion:config.version};
  assert.equal(s.app.textEvidence.status(who,s.project.id).pmcDocuments,undefined);
@@ -185,6 +186,8 @@ function grantAgent(s,draft){
 
 test('TextCorpusGrant Registry lifecycle preserves exact PDF evidence, quota, receipts and reopened history',()=>{const s=setup();let reopened;try{
  const f=grantFixture(s);assert.throws(()=>grantOp(s,USER,'text_corpus_grant_activate',{grantId:f.draft.id,expectedVersion:1},'not-approved'),{code:'APPROVAL_REQUIRED'});
+ const {sessionId,model,corpusId,configurationVersion,documents,maxSearches,expiresAt,approvalId}=f.draft;
+ assert.equal(Object.hasOwn(f.draft,'pmcDocuments'),false);assert.equal(f.draft.digest,digest({sessionId,model,corpusId,configurationVersion,documents,maxSearches,expiresAt,approvalId}));
  const {grant,who}=grantAgent(s,f.draft);for(const kind of ['connector-call','model-usage','run','sandbox-job','text-corpus-grant-use'])assert.equal(s.app.store.list(kind).length,0);
  const first=grantOp(s,who,'text_evidence_search',f.input,'pdf-query'),hit=first.hits[0];assert.equal(hit.page,5);assert.equal(hit.document.parseResultId,f.result.id);assert.equal(first.textCorpusGrant.id,grant.id);assert.equal(s.app.evidence.verify(s.project.id,hit.evidenceId).quote,hit.quote);
  assert.equal(grantOp(s,who,'text_evidence_search',f.input,'pdf-query').id,first.id);assert.equal(grantOp(s,who,'text_evidence_search',f.input,'same-request-new-key').id,first.id);

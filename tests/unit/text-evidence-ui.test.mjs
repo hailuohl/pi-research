@@ -42,8 +42,20 @@ test('fixed PDF session grant form submits only the selected corpus version and 
  const {TextCorpusGrantPanel}=await import('../../dist/web/assets/text-evidence.js');
  const data={project:{id:'project'},sessions:[{id:'session-1',title:'Research',role:'coordinator',state:'idle'}],approvals:[],textEvidence:{enabled:true,version:3,corpusId:'frozen-corpus',documents:[{documentVersionId:'pdf-1',parseResultId:'parse-1',title:'Wine paper',pageCount:17}]},textCorpusGrants:[]};
  const panel=synchronousState(new TextCorpusGrantPanel({data,perform:async f=>f()}));let tree=panel.render();
- find(tree,n=>n.type==='select'&&n.props['aria-label']==='PDF 检索授权主会话').props.onChange({target:{value:'session-1'}});
+ find(tree,n=>n.type==='select'&&n.props['aria-label']==='原文检索授权主会话').props.onChange({target:{value:'session-1'}});
  find(tree,n=>n.type==='input'&&n.props.type==='checkbox').props.onChange({target:{checked:true}});
  tree=panel.render();find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));
- assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/operations/text_corpus_grant_prepare');assert.deepEqual(calls[0].body.input.sessionId,'session-1');assert.deepEqual(calls[0].body.input.documents,[{documentVersionId:'pdf-1',parseResultId:'parse-1'}]);assert.equal(calls[0].body.input.corpusId,'frozen-corpus');assert.equal(calls[0].body.input.configurationVersion,3);assert.equal(calls[0].body.input.maxSearches,2);assert.equal(panel.state.selectedId,'grant-1');
+ assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/operations/text_corpus_grant_prepare');assert.deepEqual(calls[0].body.input.sessionId,'session-1');assert.deepEqual(calls[0].body.input.documents,[{documentVersionId:'pdf-1',parseResultId:'parse-1'}]);assert.equal('pmcDocuments' in calls[0].body.input,false);assert.equal(calls[0].body.input.corpusId,'frozen-corpus');assert.equal(calls[0].body.input.configurationVersion,3);assert.equal(calls[0].body.input.maxSearches,2);assert.equal(panel.state.selectedId,'grant-1');
+});
+test('PMC grant form selects one fixed document and preserves the PDF-only request shape',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const calls=[];
+ globalThis.fetch=async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return {ok:true,json:async()=>({id:'pmc-grant'})};};
+ const {TextCorpusGrantPanel}=await import('../../dist/web/assets/text-evidence.js');
+ const data={project:{id:'project'},sessions:[{id:'session-1',title:'Research',role:'coordinator',state:'idle'}],approvals:[],textEvidence:{enabled:true,version:4,corpusId:'fixed-corpus',sources:[],documents:[],pmcDocuments:[{documentVersionId:'pmc-1',title:'Fixed PMC',reportedVersion:'PMC8270360.1'}]},textCorpusGrants:[]};
+ const panel=synchronousState(new TextCorpusGrantPanel({data,perform:async f=>f()}));let tree=panel.render();
+ find(tree,n=>n.type==='select'&&n.props['aria-label']==='原文检索授权主会话').props.onChange({target:{value:'session-1'}});
+ find(tree,n=>n.type==='input'&&n.props['aria-label']==='PMC 授权文档 pmc-1').props.onChange({target:{checked:true}});
+ tree=panel.render();find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/operations/text_corpus_grant_prepare');
+ assert.deepEqual(calls[0].body.input.documents,[]);assert.deepEqual(calls[0].body.input.pmcDocuments,[{documentVersionId:'pmc-1'}]);assert.equal(calls[0].body.input.corpusId,'fixed-corpus');assert.equal(calls[0].body.input.configurationVersion,4);assert.equal(panel.state.selectedId,'pmc-grant');
 });

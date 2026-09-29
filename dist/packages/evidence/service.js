@@ -58,6 +58,18 @@ export class EvidenceService {
         pmcOwner(actor);
         scope(actor, projectId);
         assertProjectWritable(this.c.store, projectId);
+        return this.registerProviderTextCore(actor, projectId, providerText, start, end, description);
+    }
+    /** Host search path only; never exposed as a tool or a caller-supplied authority flag. */
+    registerGrantedProviderText(actor, projectId, providerText, start, end, description, reference) {
+        return this.c.store.transaction(() => {
+            ensure(reference, 'TEXT_GRANT_REQUIRED', '缺少固定检索授权');
+            const grant = assertTextCorpusGrantActor(this.c.store, actor, projectId, reference);
+            ensure(grant.pmcDocuments?.some(p => p.documentVersionId === providerText.documentVersionId), 'TEXT_GRANT_SOURCE_DENIED', 'PMC 证据来源不在授权内', 403);
+            return this.registerProviderTextCore({ type: 'system' }, projectId, providerText, start, end, description);
+        });
+    }
+    registerProviderTextCore(actor, projectId, providerText, start, end, description) {
         return this.c.store.transaction(() => { const { document } = verifyPmcText(this.c, projectId, providerText.documentVersionId, providerText); const e = this.register(actor, projectId, document.derivedText.artifactId, start, end, description, 'paper'); return this.c.store.update('evidence', e.id, e.version, { providerText }); });
     }
     registerDocument(actor, projectId, input) {

@@ -136,10 +136,10 @@ const textEvidenceSearch = row('text-evidence-search', {
 }, ['documents', 'textCorpusGrant', 'pmcDocuments']);
 const textCorpusGrant = row('text-corpus-grant', {
     sessionId: string, model: object({ provider: string, model: string, thinking: enumeration('off', 'minimal', 'low', 'medium', 'high', 'xhigh') }), corpusId: string, configurationVersion: integer,
-    documents: array(object({ documentVersionId: string, parseResultId: string, sourceDigest: string })), maxSearches: integer, expiresAt: string, approvalId: string, digest: string, state: enumeration('draft', 'active', 'revoked'), activatedAt: string, revokedAt: string,
+    documents: array(object({ documentVersionId: string, parseResultId: string, sourceDigest: string })), pmcDocuments: array(object({ documentVersionId: string, sourceDigest: string })), maxSearches: integer, expiresAt: string, approvalId: string, digest: string, state: enumeration('draft', 'active', 'revoked'), activatedAt: string, revokedAt: string,
     effectiveState: enumeration('draft', 'active', 'revoked', 'stale', 'expired', 'exhausted'), validity: enumeration('current', 'stale'), reasons: strings, usage: object({ limit: integer, used: integer, remaining: integer, unit: { const: 'search' } }),
     uses: array(row('text-corpus-grant-use', { grantId: string, grantDigest: string, sessionId: string, requestDigest: string, searchId: string })), searchResults: array(textEvidenceSearch)
-}, ['activatedAt', 'revokedAt']);
+}, ['activatedAt', 'revokedAt', 'pmcDocuments']);
 const contextTask = object({ id: string, key: string, result: taskResult }, ['result']);
 const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string, discoveryGrant: DISCOVERY_GRANT_REFERENCE_SCHEMA }, ['wakeupId', 'runId', 'taskId', 'discoveryGrant']);
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */

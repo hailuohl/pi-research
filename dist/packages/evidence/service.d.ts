@@ -18,6 +18,9 @@ export declare class EvidenceService {
     verify(projectId: string, evidenceId: string, current?: boolean): Row<Evidence>;
     /** Host local search only; no caller-supplied authority flag or new agent tool. */
     registerProviderText(actor: Actor, projectId: string, providerText: ProviderTextEvidenceLink, start: number, end: number, description: string): Row<Evidence>;
+    /** Host search path only; never exposed as a tool or a caller-supplied authority flag. */
+    registerGrantedProviderText(actor: Actor, projectId: string, providerText: ProviderTextEvidenceLink, start: number, end: number, description: string, reference?: TextCorpusGrantReference): Row<Evidence>;
+    private registerProviderTextCore;
     registerDocument(actor: Actor, projectId: string, input: {
         documentVersionId: string;
         parseResultId: string;

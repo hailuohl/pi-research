@@ -17,6 +17,10 @@ export interface TextCorpusGrant {
         parseResultId: string;
         sourceDigest: string;
     }>;
+    pmcDocuments?: Array<{
+        documentVersionId: string;
+        sourceDigest: string;
+    }>;
     maxSearches: number;
     expiresAt: string;
     approvalId: string;
