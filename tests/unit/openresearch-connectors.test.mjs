@@ -9,10 +9,10 @@ import {ConnectorService} from '../../dist/packages/connectors/service.js';
 import {ConnectorTransport} from '../../dist/packages/connectors/transport.js';
 import {routePaperId,parseSearch,normalizeDate,inWindow} from '../../dist/packages/connectors/contracts.js';
 import {parsePubmed} from '../../dist/packages/connectors/pubmed.js';
-function setup(fetcher=async()=>new Response('{}',{headers:{'Content-Type':'application/json'}})){
+function setup(fetcher=async()=>new Response('{}',{headers:{'Content-Type':'application/json'}}),credentials=()=>({})){
  const dir=mkdtempSync(join(tmpdir(),'pi-connectors-'));const app=new ResearchApp(dir,resolve('.'));
  const p=app.projects.create(USER,{name:'connector-test'});
- const c=new ConnectorService(app.context,app.evidence,{transport:new ConnectorTransport({fetcher,minIntervalMs:0}),credentials:()=>({})});
+ const c=new ConnectorService(app.context,app.evidence,{transport:new ConnectorTransport({fetcher,minIntervalMs:0}),credentials});
  return {app,p,c,cleanup(){app.close();rmSync(dir,{recursive:true,force:true});}};
 }
 function enable(s,sources){const a=s.c.settings(USER,s.p.id);return s.c.configure(USER,s.p.id,{expectedVersion:a.version,enabled:Object.fromEntries(sources.map(x=>[x,true]))});}
@@ -38,6 +38,21 @@ test('Crossref owner pages freeze exact cursors, filters, rows, and raw item cou
  const seen=[],make=(doi,year)=>({DOI:doi,title:[doi],published:{'date-parts':[[year,1,1]]}}),s=setup(async raw=>{const url=new URL(raw);seen.push(url);return Response.json({message:{items:url.searchParams.get('cursor')==='*'?[make('10.1234/old-page',2024),make('10.1234/page-one',2025)]:[make('10.1234/page-two',2025)],'next-cursor':url.searchParams.get('cursor')==='*'?'opaque/next ?&':'ignored-short-page-cursor'}});});
  try{const search={query:'cursor fixture',sources:['crossref'],limit:2,publishedAfter:'2025-01-01'},first=await s.c.discoverPage(USER,s.p.id,search,{number:1,previousSearchId:null,cursor:'*',expiresAt:null},'page-one');assert.equal(seen[0].hostname,'api.crossref.org');assert.equal(seen[0].pathname,'/works');assert.equal(seen[0].searchParams.get('rows'),'2');assert.equal(seen[0].searchParams.get('filter'),'from-pub-date:2025-01-01');assert.equal(seen[0].searchParams.get('cursor'),'*');assert.equal(first.page.rawItemCount,2);assert.equal(first.items.length,1,'raw count, not post-filter hits, determines whether a cursor continues');assert.equal(first.page.nextCursor,'opaque/next ?&');const ttl=Date.parse(first.page.nextCursorExpiresAt)-Date.parse(first.retrievedAt);assert.ok(ttl>=239000&&ttl<=240000);
   const second=await s.c.discoverPage(USER,s.p.id,first.request,{number:2,previousSearchId:first.id,cursor:first.page.nextCursor,expiresAt:first.page.nextCursorExpiresAt},'page-two');assert.equal(seen[1].searchParams.get('cursor'),'opaque/next ?&');assert.equal(second.page.rawItemCount,1);assert.equal(second.page.nextCursor,null);assert.equal(second.page.nextCursorExpiresAt,null);assert.equal(second.items[0].doi,'10.1234/page-two');assert.equal(s.c.settings(USER,s.p.id).requestsUsed,2);
+ }finally{s.cleanup();}
+});
+
+test('OpenAlex owner pages freeze the query and continue with meta.next_cursor',async()=>{
+ const seen=[],work=(id,doi,title)=>({id:`https://openalex.org/${id}`,doi,title,publication_date:'2025-01-10',cited_by_count:2}),s=setup(async(raw,options)=>{const url=new URL(raw);seen.push({url,headers:options.headers});return Response.json({results:url.searchParams.get('cursor')==='*'?[work('W101','https://doi.org/10.1234/oa-one','Page one'),work('W102',null,'Page one W ID')]:[work('W202',null,'Page two W ID')],meta:{next_cursor:url.searchParams.get('cursor')==='*'?'opaque/next ?&':null}});},()=>({openalexKey:'openalex-fixture-key'}));
+ try{enable(s,['openalex']);const search={query:'gas sensing',sources:['openalex'],limit:2,publishedAfter:'2025-01-01',publishedBefore:'2025-12-31'},first=await s.c.discoverPage(USER,s.p.id,search,{number:1,previousSearchId:null,cursor:'*',expiresAt:null},'oa-page-one');
+  for(const {url,headers} of seen){assert.equal(url.hostname,'api.openalex.org');assert.equal(url.pathname,'/works');assert.equal(url.searchParams.get('search'),'gas sensing');assert.equal(url.searchParams.get('per_page'),'2');assert.equal(url.searchParams.get('select'),'id,doi,title,publication_date,cited_by_count,abstract_inverted_index');assert.equal(url.searchParams.get('filter'),'from_publication_date:2025-01-01,to_publication_date:2025-12-31');assert.equal(headers.Authorization,'Bearer openalex-fixture-key');}
+  assert.equal(seen[0].url.searchParams.get('cursor'),'*');assert.equal(first.page.rawItemCount,2);assert.equal(first.page.nextCursor,'opaque/next ?&');assert.equal(first.items[0].contentKind,'metadata');assert.equal(first.items[0].fullTextRead,false);
+  const second=await s.c.discoverPage(USER,s.p.id,first.request,{number:2,previousSearchId:first.id,cursor:first.page.nextCursor,expiresAt:first.page.nextCursorExpiresAt},'oa-page-two');assert.equal(seen[1].url.searchParams.get('cursor'),'opaque/next ?&');assert.equal(second.page.rawItemCount,1);assert.equal(second.page.nextCursor,null);assert.equal(second.page.nextCursorExpiresAt,null);assert.equal(second.items[0].id,'W202');assert.equal(s.c.settings(USER,s.p.id).requestsUsed,2);
+ }finally{s.cleanup();}
+});
+
+test('OpenAlex owner pages reject missing, malformed, oversized cursors, excess results, and empty continuations',async()=>{
+ const work={id:'https://openalex.org/W303',title:'Fixture'},bad={missing:{results:[],meta:{}},type:{results:[],meta:{next_cursor:7}},long:{results:[],meta:{next_cursor:'x'.repeat(5001)}},blank:{results:[work],meta:{next_cursor:' '}},initial:{results:[work],meta:{next_cursor:'*'}},many:{results:[work,work],meta:{next_cursor:null}},emptyContinuation:{results:[],meta:{next_cursor:'would-loop'}}},s=setup(async raw=>{const query=new URL(raw).searchParams.get('search');return Response.json(bad[query]);});
+ try{enable(s,['openalex']);for(const query of Object.keys(bad)){await assert.rejects(s.c.discoverPage(USER,s.p.id,{query,sources:['openalex'],limit:1},{number:1,previousSearchId:null,cursor:'*',expiresAt:null},`oa-bad-${query}`),{code:'PROVIDER_SCHEMA_INVALID'});assert.equal(s.app.store.list('connector-search',s.p.id).length,0,`${query} must not publish a page`);}assert.equal(s.app.connectors.observations(USER,s.p.id).length,7);
  }finally{s.cleanup();}
 });
 

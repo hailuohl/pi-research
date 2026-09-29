@@ -3,12 +3,12 @@ import { spawn } from 'node:child_process';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Row } from '../domain/types.js';
 import type { SearchInput } from '../connectors/contracts.js';
-import type { CrossrefPageRequest, SearchRecord } from '../connectors/service.js';
+import type { SearchPageRequest, SearchRecord } from '../connectors/service.js';
 import type { DocumentAcquireInput } from '../documents/types.js';
 export type LiteratureRequest = {
     kind: 'search';
     search: SearchInput;
-    pageRequest?: CrossrefPageRequest;
+    pageRequest?: SearchPageRequest;
 } | {
     kind: 'retrieve';
     target: DocumentAcquireInput;

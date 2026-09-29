@@ -5,7 +5,7 @@ export type Request = (url: URL, headers?: Record<string, string>) => Promise<{
     bytes: number;
     contentType: string;
 }>;
-export interface CrossrefPage {
+export interface ProviderPage {
     hits: Hit[];
     rawItemCount: number;
     nextCursor: string | null;
@@ -23,5 +23,6 @@ export declare function pdfTarget(source: SourceId, rawId: string, requestedVers
     versionAssurance: string;
 };
 export declare function searchProvider(source: SourceId, q: SearchInput, request: Request, credentials: Credentials): Promise<Hit[]>;
-export declare function searchCrossrefPage(q: SearchInput, cursor: string, request: Request): Promise<CrossrefPage>;
+export declare function searchOpenAlexPage(q: SearchInput, cursor: string, request: Request, credentials: Credentials): Promise<ProviderPage>;
+export declare function searchCrossrefPage(q: SearchInput, cursor: string, request: Request): Promise<ProviderPage>;
 export declare function readProvider(source: SourceId, id: string, request: Request, credentials: Credentials): Promise<PaperContent>;

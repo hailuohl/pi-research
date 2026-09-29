@@ -42,6 +42,12 @@ catch {
 function oaHit(raw, source) { const x = object(raw); const doi = str(x.doi).replace(/^https?:\/\/(dx\.)?doi\.org\//i, '').toLowerCase(); const id = doi || str(x.id).replace(/^https:\/\/openalex.org\//, ''); routePaperId(id, source); ensure(str(x.title), 'PROVIDER_SCHEMA_INVALID', '文献记录缺少题名', 502); return { source, id, title: str(x.title), abstract: reconstructAbstract(x.abstract_inverted_index), publicationDate: normalizeDate(x.publication_date), ...(doi ? { doi } : {}), url: doi ? `https://doi.org/${encodeURI(doi)}` : `https://openalex.org/${id}`, citations: typeof x.cited_by_count === 'number' ? x.cited_by_count : undefined, contentKind: 'metadata', fullTextRead: false }; }
 function crHit(x) { ensure(typeof x?.DOI === 'string' && Array.isArray(x.title) && x.title.length > 0, 'PROVIDER_SCHEMA_INVALID', 'Crossref 缺少 DOI 或题名', 502); const { id } = routePaperId(x.DOI, 'crossref'); const parts = x.published?.['date-parts']?.[0]; const d = Array.isArray(parts) ? parts.map((v, i) => i === 0 ? String(v) : String(v).padStart(2, '0')).join('-') : null; return { source: 'crossref', id, doi: id, title: String(x.title[0]), abstract: '', publicationDate: normalizeDate(d), url: `https://doi.org/${encodeURI(id)}`, citations: typeof x['is-referenced-by-count'] === 'number' ? x['is-referenced-by-count'] : undefined, contentKind: 'metadata', fullTextRead: false }; }
 function oaAuth(c) { return c.openalexKey ? { Authorization: `Bearer ${c.openalexKey}` } : {}; }
+function openAlexSearchUrl(q, perPage, source, cursor) { const url = new URL('https://api.openalex.org/works'); url.searchParams.set('search', q.query); url.searchParams.set('per_page', String(perPage)); url.searchParams.set('select', 'id,doi,title,publication_date,cited_by_count,abstract_inverted_index'); const filters = []; if (source === 'biorxiv')
+    filters.push('primary_location.source.id:S4306402567'); if (q.publishedAfter)
+    filters.push(`from_publication_date:${q.publishedAfter}`); if (q.publishedBefore)
+    filters.push(`to_publication_date:${q.publishedBefore}`); if (filters.length)
+    url.searchParams.set('filter', filters.join(',')); if (cursor !== undefined)
+    url.searchParams.set('cursor', cursor); return url; }
 function ncbiParams(url, c) { url.searchParams.set('db', 'pubmed'); url.searchParams.set('tool', 'PiResearch'); if (c.email)
     url.searchParams.set('email', c.email); if (c.ncbiKey)
     url.searchParams.set('api_key', c.ncbiKey); }
@@ -60,19 +66,7 @@ export async function searchProvider(source, q, request, credentials) {
         return data.map((x) => { const p = routePaperId(x.paperId, 'alphaxiv'); ensure(str(x.title), 'PROVIDER_SCHEMA_INVALID', 'alphaXiv 缺少题名', 502); return { ...p, title: x.title, abstract: str(x.abstract), publicationDate: normalizeDate(x.publicationDate), votes: typeof x.votes === 'number' ? x.votes : undefined, url: `https://www.alphaxiv.org/abs/${p.id}`, snippets: Array.isArray(x.snippets) ? x.snippets.slice(0, 8).map((s) => ({ text: str(s.snippet).slice(0, 4000), reportedPage: Number.isSafeInteger(s.pageNumber) && s.pageNumber > 0 ? s.pageNumber : null })) : [], contentKind: 'metadata', fullTextRead: false }; }).filter((h) => inWindow(h.publicationDate, q)).slice(0, q.limit);
     }
     if (source === 'openalex' || source === 'biorxiv') {
-        const url = new URL('https://api.openalex.org/works');
-        url.searchParams.set('search', q.query);
-        url.searchParams.set('per_page', String(pool));
-        url.searchParams.set('select', 'id,doi,title,publication_date,cited_by_count,abstract_inverted_index');
-        const filters = [];
-        if (source === 'biorxiv')
-            filters.push('primary_location.source.id:S4306402567');
-        if (q.publishedAfter)
-            filters.push(`from_publication_date:${q.publishedAfter}`);
-        if (q.publishedBefore)
-            filters.push(`to_publication_date:${q.publishedBefore}`);
-        if (filters.length)
-            url.searchParams.set('filter', filters.join(','));
+        const url = openAlexSearchUrl(q, pool, source);
         const data = json((await request(url, oaAuth(credentials))).text);
         ensure(Array.isArray(data.results), 'PROVIDER_SCHEMA_INVALID', 'OpenAlex 缺少 results', 502);
         return rank(data.results.map((x) => oaHit(x, source)), q);
@@ -118,6 +112,17 @@ export async function searchProvider(source, q, request, credentials) {
     const data = json((await request(url)).text);
     ensure(Array.isArray(data.message?.items), 'PROVIDER_SCHEMA_INVALID', 'Crossref 缺少 items', 502);
     return rank(data.message.items.map(crHit), q);
+}
+export async function searchOpenAlexPage(q, cursor, request, credentials) {
+    const url = openAlexSearchUrl(q, q.limit, 'openalex', cursor), data = json((await request(url, oaAuth(credentials))).text);
+    ensure(data && typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.results), 'PROVIDER_SCHEMA_INVALID', 'OpenAlex 缺少 results', 502);
+    const meta = data.meta;
+    ensure(meta && typeof meta === 'object' && !Array.isArray(meta) && Object.hasOwn(meta, 'next_cursor'), 'PROVIDER_SCHEMA_INVALID', 'OpenAlex 缺少 meta.next_cursor', 502);
+    const nextCursor = meta.next_cursor;
+    ensure(nextCursor === null || typeof nextCursor === 'string' && nextCursor.trim().length > 0 && nextCursor.trim() !== '*' && nextCursor.length <= 5000, 'PROVIDER_SCHEMA_INVALID', 'OpenAlex next_cursor 类型或长度无效', 502);
+    const rawItemCount = data.results.length;
+    ensure(rawItemCount <= q.limit && (rawItemCount > 0 || nextCursor === null), 'PROVIDER_SCHEMA_INVALID', 'OpenAlex 返回条数或空页游标无效', 502);
+    return { hits: rank(data.results.map((x) => oaHit(x, 'openalex')), q), rawItemCount, nextCursor };
 }
 export async function searchCrossrefPage(q, cursor, request) {
     const url = new URL('https://api.crossref.org/works');

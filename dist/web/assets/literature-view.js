@@ -109,7 +109,7 @@ class LiteratureView extends React.Component {
     });
   }
   render() {
-    const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt);
+    const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt), pageSource = s.result?.sources.length === 1 ? s.result.sources[0].source : null, pageName = pageSource === "openalex" ? "OpenAlex" : pageSource === "crossref" ? "Crossref" : "\u672A\u77E5\u6765\u6E90";
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
       /* @__PURE__ */ jsxs(SectionTitle, { title: "\u6587\u732E\u4EFB\u52A1\u4E0E\u539F\u6587", sub: "\u663E\u5F0F\u63D0\u4EA4\u3001\u56FA\u5B9A\u53D6\u5F97\u7684\u5B57\u8282\uFF0C\u518D\u6309\u9875\u6BB5\u56DE\u67E5\uFF1B\u6458\u8981\u548C\u4F9B\u5E94\u5546\u6587\u672C\u4E0D\u5192\u5145\u539F PDF\u3002", children: [
         this.props.onSources ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: this.props.onSources, children: "\u7BA1\u7406\u6765\u6E90\u6388\u6743" }) : null,
@@ -176,7 +176,8 @@ class LiteratureView extends React.Component {
         ] }),
         page ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
           /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
-            "Crossref \u5143\u6570\u636E\u7B2C ",
+            pageName,
+            " \u5143\u6570\u636E\u7B2C ",
             page.number,
             " \u9875 \xB7 \u6765\u6E90\u539F\u59CB\u8FD4\u56DE ",
             page.rawItemCount,
@@ -187,7 +188,7 @@ class LiteratureView extends React.Component {
             short(page.previousSearchId),
             " \u53EF\u4ECE\u6301\u4E45\u4EFB\u52A1\u56DE\u67E5\u3002"
           ] }) : null,
-          page.nextCursor ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.paging || !!nextTask || pageExpired || !s.config?.enabled.crossref, onClick: () => {
+          page.nextCursor ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.paging || !!nextTask || pageExpired || !pageSource || !s.config?.enabled[pageSource], onClick: () => {
             if (s.paging) return;
             this.setState({ paging: true });
             void perform(() => call(data.project.id, "literature_task_create", { kind: "search", previousSearchId: s.result.id }), "\u4E0B\u4E00\u9875\u6301\u4E45\u4EFB\u52A1\u5DF2\u63D0\u4EA4").finally(() => {

@@ -1,4 +1,4 @@
-import { discoveryContext, assertDiscoveryContext, discoveryScope, ownerCrossrefNextPage } from '../policy/discovery-grant-validation.js';
+import { discoveryContext, assertDiscoveryContext, discoveryScope, ownerSearchNextPage } from '../policy/discovery-grant-validation.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { USER } from '../domain/types.js';
@@ -28,19 +28,19 @@ export class LiteratureTaskService {
         if (input.kind === 'search' && Object.hasOwn(input, 'previousSearchId')) {
             ensure(Object.keys(input).length === 2 && Object.hasOwn(input, 'kind'), 'INVALID_INPUT', '下一页请求只能包含 kind 和 previousSearchId', 400);
             continuationId = text(input.previousSearchId, 'previousSearchId', 100);
-            const next = ownerCrossrefNextPage(this.app.store, pid, continuationId);
+            const next = ownerSearchNextPage(this.app.store, pid, continuationId);
             parsed = { kind: 'search', ...next };
         }
         else
             parsed = this.parse(value);
         const owner = continuationId ? actor : input.discoveryGrantId ? this.app.discoveryGrants.owner(actor, pid, text(input.discoveryGrantId, 'discoveryGrantId', 100)) : actor, ctx = continuationId ? undefined : discoveryContext(this.app.store, pid, owner, parsed, 'prepare');
         let request = ctx?.operation ?? parsed;
-        if (!continuationId && !ctx && !owner.sessionId && !owner.taskId && !owner.attemptId && request.kind === 'search' && request.search.sources.length === 1 && request.search.sources[0] === 'crossref' && request.search.strategy === 'keyword' && request.search.prioritize === 'default')
+        if (!continuationId && !ctx && !owner.sessionId && !owner.taskId && !owner.attemptId && request.kind === 'search' && request.search.sources.length === 1 && (request.search.sources[0] === 'crossref' || request.search.sources[0] === 'openalex') && request.search.strategy === 'keyword' && request.search.prioritize === 'default')
             request = { ...request, pageRequest: { number: 1, previousSearchId: null, cursor: '*', expiresAt: null } };
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
             if (continuationId) {
-                const current = ownerCrossrefNextPage(this.app.store, pid, continuationId);
+                const current = ownerSearchNextPage(this.app.store, pid, continuationId);
                 ensure(request.kind === 'search' && digest(current) === digest({ search: request.search, pageRequest: request.pageRequest }), 'LITERATURE_PAGE_STALE', '前页查询或游标已改变');
                 if (!previousTaskId) {
                     const prior = this.app.store.db.prepare("SELECT id FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.request.pageRequest.previousSearchId')=? AND json_extract(data,'$.previousTaskId') IS NULL AND json_extract(data,'$.discoveryGrant.id') IS NULL LIMIT 1").get(pid, continuationId);

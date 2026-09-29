@@ -1,5 +1,5 @@
 import type {DiscoveryGrantReference} from '../policy/discovery-grant-types.js';
-import {discoveryContext,assertDiscoveryContext,discoveryScope,ownerCrossrefNextPage} from '../policy/discovery-grant-validation.js';
+import {discoveryContext,assertDiscoveryContext,discoveryScope,ownerSearchNextPage} from '../policy/discovery-grant-validation.js';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import type {ResearchApp} from '../research-app.js';
@@ -8,7 +8,7 @@ import {USER} from '../domain/types.js';
 import type {SearchInput} from '../connectors/contracts.js';
 import {parseSearch,routePaperId} from '../connectors/contracts.js';
 import {connectorSettings} from '../connectors/settings.js';
-import type {CrossrefPageRequest,SearchRecord} from '../connectors/service.js';
+import type {SearchPageRequest,SearchRecord} from '../connectors/service.js';
 import type {DocumentAcquireInput} from '../documents/types.js';
 import {ensure,DomainError} from '../domain/errors.js';
 import {object,oneOf,text,integer} from '../contracts/validation.js';
@@ -16,7 +16,7 @@ import {userOnly,scope} from '../policy/permissions.js';
 import {assertProjectWritable} from '../policy/lifecycle.js';
 import {digest} from '../storage/store.js';
 
-export type LiteratureRequest={kind:'search';search:SearchInput;pageRequest?:CrossrefPageRequest}|{kind:'retrieve';target:DocumentAcquireInput};
+export type LiteratureRequest={kind:'search';search:SearchInput;pageRequest?:SearchPageRequest}|{kind:'retrieve';target:DocumentAcquireInput};
 export interface LiteratureTask {
  discoveryGrant?:DiscoveryGrantReference;scopeSessionId?:string;kindOfTask:'search'|'retrieve';request:LiteratureRequest;state:'queued'|'running'|'succeeded'|'partial'|'failed'|'cancelled'|'interrupted';
  phase:'queued'|'requesting'|'publishing'|'done';settingsVersion:number;generation:number;leaseUntil:number;deadline:number;cancelRequested:boolean;workerPid?:number;
@@ -30,11 +30,11 @@ export class LiteratureTaskService {
  private parse(value:unknown):LiteratureRequest {const x=object(value),kind=oneOf(x.kind,['search','retrieve'] as const,'kind'),allowed=kind==='search'?['kind','search','discoveryGrantId']:['kind','target','discoveryGrantId'];ensure(Object.keys(x).every(k=>allowed.includes(k)),'INVALID_INPUT','文献任务包含未知字段',400);if(kind==='search')return {kind,search:parseSearch(x.search)};const t=object(x.target),target=routePaperId(t.id,t.source);return {kind,target:{...target,format:oneOf(t.format,['provider-text','original-pdf'] as const,'format'),...(t.requestedVersion===undefined?{}:{requestedVersion:text(t.requestedVersion,'requestedVersion',40)})}};}
  create(actor:Actor,pid:string,value:unknown,previousTaskId?:string):LiteratureTaskDTO {
   userOnly(actor);scope(actor,pid);const input=object(value);let continuationId:string|undefined,parsed:LiteratureRequest;
-  if(input.kind==='search'&&Object.hasOwn(input,'previousSearchId')){ensure(Object.keys(input).length===2&&Object.hasOwn(input,'kind'),'INVALID_INPUT','下一页请求只能包含 kind 和 previousSearchId',400);continuationId=text(input.previousSearchId,'previousSearchId',100);const next=ownerCrossrefNextPage(this.app.store,pid,continuationId);parsed={kind:'search',...next};}
+  if(input.kind==='search'&&Object.hasOwn(input,'previousSearchId')){ensure(Object.keys(input).length===2&&Object.hasOwn(input,'kind'),'INVALID_INPUT','下一页请求只能包含 kind 和 previousSearchId',400);continuationId=text(input.previousSearchId,'previousSearchId',100);const next=ownerSearchNextPage(this.app.store,pid,continuationId);parsed={kind:'search',...next};}
   else parsed=this.parse(value);
   const owner=continuationId?actor:input.discoveryGrantId?this.app.discoveryGrants.owner(actor,pid,text(input.discoveryGrantId,'discoveryGrantId',100)):actor,ctx=continuationId?undefined:discoveryContext(this.app.store,pid,owner,parsed,'prepare');let request:LiteratureRequest=ctx?.operation??parsed;
-  if(!continuationId&&!ctx&&!owner.sessionId&&!owner.taskId&&!owner.attemptId&&request.kind==='search'&&request.search.sources.length===1&&request.search.sources[0]==='crossref'&&request.search.strategy==='keyword'&&request.search.prioritize==='default')request={...request,pageRequest:{number:1,previousSearchId:null,cursor:'*',expiresAt:null}};
-  return this.app.store.transaction(()=>{assertProjectWritable(this.app.store,pid);if(continuationId){const current=ownerCrossrefNextPage(this.app.store,pid,continuationId);ensure(request.kind==='search'&&digest(current)===digest({search:request.search,pageRequest:request.pageRequest}),'LITERATURE_PAGE_STALE','前页查询或游标已改变');if(!previousTaskId){const prior=this.app.store.db.prepare("SELECT id FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.request.pageRequest.previousSearchId')=? AND json_extract(data,'$.previousTaskId') IS NULL AND json_extract(data,'$.discoveryGrant.id') IS NULL LIMIT 1").get(pid,continuationId);if(prior)throw new DomainError('LITERATURE_PAGE_ALREADY_REQUESTED','该前页已有下页任务；请查看既有任务或显式重试',409,{taskId:String(prior.id)});}}
+  if(!continuationId&&!ctx&&!owner.sessionId&&!owner.taskId&&!owner.attemptId&&request.kind==='search'&&request.search.sources.length===1&&(request.search.sources[0]==='crossref'||request.search.sources[0]==='openalex')&&request.search.strategy==='keyword'&&request.search.prioritize==='default')request={...request,pageRequest:{number:1,previousSearchId:null,cursor:'*',expiresAt:null}};
+  return this.app.store.transaction(()=>{assertProjectWritable(this.app.store,pid);if(continuationId){const current=ownerSearchNextPage(this.app.store,pid,continuationId);ensure(request.kind==='search'&&digest(current)===digest({search:request.search,pageRequest:request.pageRequest}),'LITERATURE_PAGE_STALE','前页查询或游标已改变');if(!previousTaskId){const prior=this.app.store.db.prepare("SELECT id FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.request.pageRequest.previousSearchId')=? AND json_extract(data,'$.previousTaskId') IS NULL AND json_extract(data,'$.discoveryGrant.id') IS NULL LIMIT 1").get(pid,continuationId);if(prior)throw new DomainError('LITERATURE_PAGE_ALREADY_REQUESTED','该前页已有下页任务；请查看既有任务或显式重试',409,{taskId:String(prior.id)});}}
    const cfg=connectorSettings(this.app.store,pid),sources=request.kind==='search'?request.search.sources:[request.target.source];ensure(sources.some(s=>cfg.enabled[s]),'SOURCE_DISABLED','需要用户先启用所选文献来源',403);
    const queued=Number(this.app.store.db.prepare("SELECT count(*) n FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.state') IN ('queued','running')").get(pid)!.n);ensure(queued<30,'LITERATURE_QUEUE_FULL','本项目文献任务等待与运行数量已达30',409);
    const row=this.app.store.create<LiteratureTask>('literature-task',pid,{...(ctx?{discoveryGrant:ctx.reference,scopeSessionId:ctx.sessionId}:{}),kindOfTask:request.kind,request,state:'queued',phase:'queued',settingsVersion:cfg.version,generation:0,leaseUntil:0,deadline:0,cancelRequested:false,...(previousTaskId?{previousTaskId}:{})});this.app.store.event(pid,'literature.task_queued',{taskId:row.id,kind:request.kind});return this.inspect(actor,pid,row.id);

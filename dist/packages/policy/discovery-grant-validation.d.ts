@@ -2,7 +2,7 @@ import type { Store } from '../storage/store.js';
 import type { Actor, Approval, Artifact, Row } from '../domain/types.js';
 import type { DiscoveryGrant, DiscoveryGrantReference, DiscoveryContext, DiscoveryOperation, DiscoveryCall } from './discovery-grant-types.js';
 import { type SearchInput, type SourceId } from '../connectors/contracts.js';
-import type { CrossrefPageRequest } from '../connectors/service.js';
+import type { SearchPageRequest } from '../connectors/service.js';
 import type { DocumentVersion } from '../documents/types.js';
 export declare function discoveryGrantPayload(g: DiscoveryGrant): {
     sessionId: string;
@@ -43,7 +43,7 @@ export declare const discoveryProof: (ctx?: DiscoveryContext) => {
     discoveryCallIds?: undefined;
     discoveryRequestDigest?: undefined;
 };
-export declare function ownerCrossrefNextPage(store: Store, pid: string, previousSearchId: string): {
+export declare function ownerSearchNextPage(store: Store, pid: string, previousSearchId: string): {
     search: SearchInput;
-    pageRequest: CrossrefPageRequest;
+    pageRequest: SearchPageRequest;
 };

@@ -118,16 +118,18 @@ export function assertDiscoveryDocument(store, pid, d) {
     }
 }
 export const discoveryProof = (ctx) => ctx ? { discoveryGrant: ctx.reference, discoveryCallIds: [...ctx.callIds], discoveryRequestDigest: digest(ctx.operation) } : {};
-export function ownerCrossrefNextPage(store, pid, previousSearchId) {
-    const previous = store.get('connector-search', previousSearchId, pid), search = parseSearch(previous.request), page = previous.page;
+export function ownerSearchNextPage(store, pid, previousSearchId) {
+    const previous = store.get('connector-search', previousSearchId, pid), search = parseSearch(previous.request), page = previous.page, source = search.sources[0];
     ensure(!previous.discoveryGrant && previous.scopeSessionId == null && previous.scopeTaskId == null && previous.scopeAttemptId == null, 'LITERATURE_PAGE_OWNER_ONLY', '只有 owner 的普通搜索结果可以继续', 403);
     ensure(previous.settingsVersion === connectorSettings(store, pid).version, 'CONNECTOR_SETTINGS_CHANGED', '文献来源设置已改变；请重新提交第一页');
-    ensure(digest(search) === digest(previous.request) && previous.query === search.query && search.sources.length === 1 && search.sources[0] === 'crossref' && search.strategy === 'keyword' && search.prioritize === 'default' && previous.status === 'complete' && previous.sources.length === 1 && previous.sources[0].source === 'crossref' && previous.sources[0].status === 'succeeded' && previous.items.every(hit => hit.source === 'crossref'), 'LITERATURE_PAGE_SOURCE_INVALID', '前页不是可继续的 Crossref 默认排序成功结果');
-    ensure(page && Number.isSafeInteger(page.number) && page.number >= 1 && typeof page.cursor === 'string' && typeof page.rawItemCount === 'number' && page.rawItemCount >= search.limit, 'LITERATURE_PAGE_SOURCE_INVALID', '前页没有有效的 Crossref 分页记录');
+    ensure(digest(search) === digest(previous.request) && previous.query === search.query && search.sources.length === 1 && (source === 'crossref' || source === 'openalex') && search.strategy === 'keyword' && search.prioritize === 'default' && previous.status === 'complete' && previous.sources.length === 1 && previous.sources[0].source === source && previous.sources[0].status === 'succeeded' && previous.items.every(hit => hit.source === source), 'LITERATURE_PAGE_SOURCE_INVALID', '前页不是可继续的单来源默认排序成功结果');
+    assertSourceEnabled(store, pid, source);
+    ensure(page && Number.isSafeInteger(page.number) && page.number >= 1 && typeof page.cursor === 'string' && page.cursor.length > 0 && page.cursor.length <= 5000 && Number.isSafeInteger(page.rawItemCount) && page.rawItemCount >= 0 && page.rawItemCount <= search.limit && (source === 'openalex' || page.rawItemCount >= search.limit), 'LITERATURE_PAGE_SOURCE_INVALID', '前页没有有效的分页记录');
     ensure(page.number === 1 ? page.previousSearchId === null && page.cursor === '*' && page.expiresAt === null : typeof page.previousSearchId === 'string' && page.cursor !== '*' && typeof page.expiresAt === 'string' && Number.isFinite(Date.parse(page.expiresAt)), 'LITERATURE_PAGE_SOURCE_INVALID', '前页分页链不完整');
     ensure(typeof page.nextCursor === 'string' && page.nextCursor.length > 0 && typeof page.nextCursorExpiresAt === 'string' && Number.isFinite(Date.parse(page.nextCursorExpiresAt)), 'LITERATURE_PAGE_TERMINAL', '前页没有可继续的下一游标');
-    ensure(Date.now() < Date.parse(page.nextCursorExpiresAt), 'LITERATURE_PAGE_EXPIRED', 'Crossref 下一游标已过期，请从第一页重新检索');
-    ensure(Number.isSafeInteger(page.number + 1), 'LITERATURE_PAGE_SOURCE_INVALID', 'Crossref 页号超出安全范围');
+    ensure(page.nextCursor.length <= 5000, 'LITERATURE_PAGE_SOURCE_INVALID', '前页下一游标长度无效');
+    ensure(Date.now() < Date.parse(page.nextCursorExpiresAt), 'LITERATURE_PAGE_EXPIRED', '下一游标已过期，请从第一页重新检索');
+    ensure(Number.isSafeInteger(page.number + 1), 'LITERATURE_PAGE_SOURCE_INVALID', '分页页号超出安全范围');
     return { search, pageRequest: { number: page.number + 1, previousSearchId: previous.id, cursor: page.nextCursor, expiresAt: page.nextCursorExpiresAt } };
 }
 //# sourceMappingURL=discovery-grant-validation.js.map

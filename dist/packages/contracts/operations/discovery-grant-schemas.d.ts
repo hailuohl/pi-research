@@ -513,7 +513,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                                 }];
                             };
                         };
-                        readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                        readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt" | "rawItemCount")[];
                         readonly additionalProperties: false;
                     };
                     readonly items: {
@@ -1567,7 +1567,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt" | "rawItemCount")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -2422,7 +2422,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt" | "rawItemCount")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -3277,7 +3277,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt" | "rawItemCount")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {
@@ -4132,7 +4132,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("number" | "expiresAt" | "cursor" | "rawItemCount" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt")[];
+                            readonly required: ("number" | "expiresAt" | "cursor" | "previousSearchId" | "nextCursor" | "nextCursorExpiresAt" | "rawItemCount")[];
                             readonly additionalProperties: false;
                         };
                         readonly items: {

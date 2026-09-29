@@ -5,13 +5,13 @@ import type { Actor, Row } from '../domain/types.js';
 import type { EvidenceService } from '../evidence/service.js';
 import { deduplicate, type SearchInput, type SourceId } from './contracts.js';
 import { ConnectorTransport, type Credentials } from './transport.js';
-export interface CrossrefPageRequest {
+export interface SearchPageRequest {
     number: number;
     previousSearchId: string | null;
     cursor: string;
     expiresAt: string | null;
 }
-export interface SearchPageRecord extends CrossrefPageRequest {
+export interface SearchPageRecord extends SearchPageRequest {
     nextCursor: string | null;
     nextCursorExpiresAt: string | null;
     rawItemCount: number;

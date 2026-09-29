@@ -42,6 +42,13 @@ test('Crossref next-page control submits only the fixed previous result ID and a
  assert.equal(nodes(v.render()).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页').props.disabled,true);
 });
 
+test('OpenAlex page control follows its own source setting and identifies the stored page',()=>{
+ const v=view();v.state.config={enabled:{crossref:false,openalex:true}};
+ v.state.result={id:'openalex-page-1',query:'wine quality',status:'complete',sources:[{source:'openalex',status:'succeeded',count:8}],items:[],page:{number:1,previousSearchId:null,nextCursor:'saved-openalex-cursor',nextCursorExpiresAt:new Date(Date.now()+60000).toISOString(),rawItemCount:8}};
+ const current=v.render(),button=nodes(current).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页');assert.match(flatten(current).replace(/\s+/g,' '),/OpenAlex 元数据第 1 页/);assert.equal(button.props.disabled,false);
+ v.state.config.enabled.openalex=false;assert.equal(nodes(v.render()).find(n=>n.type==='button'&&flatten(n)==='显式获取下一页').props.disabled,true);
+});
+
 test('page images require both PNG magic and the bound digest before producing a display blob',async()=>{
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5ZcAAAAASUVORK5CYII=','base64'),hash=createHash('sha256').update(png).digest('hex');
  assert.equal((await verifiedPageImage(new Blob([png]),hash)).type,'image/png');
