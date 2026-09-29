@@ -7,3 +7,5 @@
 边界：非规范 PNG 导入被 `SKILL_IMAGE_INVALID` 拒绝；Agent 文本技能读取 PNG 返回 `SKILL_RESOURCE_BINARY`，已撤销 Bundle 的新启动返回 `SKILL_REVOKED`。旧 58 条业务记录逐条摘要不变，新增 HTTP、模型与计算调用均为 0。
 
 验证：本批无产品源码改动，复用此前已完成的干净构建和全量回归，不重复跑无关检查；原字节、历史与拒绝路径在隔离副本直接核对。机器摘要见 [evidence.json](evidence.json)，原 ZIP 和日志留在本地 `.validation/skill-static-png/`。
+
+记录提交：[93ccf6854e8627d393c53fafe4a2b4ee82b6c1c5](https://github.com/hailuohl/pi-research/commit/93ccf6854e8627d393c53fafe4a2b4ee82b6c1c5)，分支 `implementation/pr01-reproducible-baseline`；私有远端已核对包含该提交。
