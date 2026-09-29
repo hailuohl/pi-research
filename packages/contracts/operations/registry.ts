@@ -12,6 +12,7 @@ import {INPUT_SCHEMAS} from './inputs.js';
 import {OUTPUT_SCHEMAS} from './outputs.js';
 import {validateSchema, type JsonSchema} from './schema.js';
 import {assertWorkspaceReady} from '../../workspace/git-service.js';
+import {discoveryContext,discoveryScope} from '../../policy/discovery-grant-validation.js';
 
 export interface OperationScope {
     projectId: string;
@@ -49,8 +50,9 @@ const make = (id: string, definition: Omit<OperationSpec, 'id' | 'inputSchema' |
 function paperReplay(c: OperationContext, x: Record<string, unknown>) {
     const target = routePaperId(x.id, x.source), serviceScope = `connector-paper:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}`;
     const preferred = c.actor.type === 'agent' ? `${c.session!.id}:${c.idempotencyKey}` : c.idempotencyKey!;
+    const grant=discoveryContext(c.app.store,c.projectId,c.actor,{kind:'retrieve',target:{...target,format:'provider-text'}},preferred);
     const keys = [...new Set([preferred, ...(c.actor.type === 'user' ? [`http:${c.idempotencyKey}`] : [])])];
-    const cached = keys.map(key => ({key, result: c.app.store.operationResult<unknown>(serviceScope, key, target)})).filter(entry => entry.result.found);
+    const cached = keys.map(key => ({key, result: c.app.store.operationResult<unknown>(discoveryScope(serviceScope,grant), key, target)})).filter(entry => entry.result.found);
     ensure(new Set(cached.map(entry => entry.result.found && digest(entry.result.value))).size <= 1, 'LEGACY_OPERATION_AMBIGUOUS', '旧版本已有不同论文读取结果，需人工核对');
 
     return {key: cached[0]?.key ?? preferred, completed: cached.length > 0};
@@ -88,8 +90,9 @@ function externalReplay(c: OperationContext, name: string, x: Record<string, unk
     const serviceScope = discover ? `connector-search:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}` : `literature:${c.projectId}`;
     const request = discover ? parseSearch(x) : {projectId: c.projectId, query: x.query, limit: x.limit ?? 8};
     const preferred = c.actor.type === 'agent' ? `${c.session!.id}:${c.idempotencyKey}` : c.idempotencyKey!;
+    const grant=discoveryContext(c.app.store,c.projectId,c.actor,{kind:'search',search:discover?request as ReturnType<typeof parseSearch>:parseSearch({query:x.query,sources:['crossref'],limit:x.limit??8})},preferred);
     const keys = [...new Set([preferred, ...(c.actor.type === 'user' ? [`${discover ? 'http' : 'user'}:${c.idempotencyKey}`] : [])])];
-    const cached = keys.map(key => ({key, result: c.app.store.operationResult<unknown>(serviceScope, key, request)})).filter(entry => entry.result.found);
+    const cached = keys.map(key => ({key, result: c.app.store.operationResult<unknown>(discoveryScope(serviceScope,grant), key, request)})).filter(entry => entry.result.found);
     ensure(new Set(cached.map(entry => entry.result.found && digest(entry.result.value))).size <= 1, 'LEGACY_OPERATION_AMBIGUOUS', '旧版本存在不同检索结果，需人工核对');
     return {key: cached[0]?.key ?? preferred, completed: cached.length > 0};
 }
@@ -134,7 +137,7 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
             }
             case 'artifact_create': return app.evidence.put(pid, text(x.title, 'title', 200), Buffer.from(text(x.content, 'content', 2 * 1024 * 1024, true)), text(x.mediaType ?? 'text/plain', 'mediaType', 100), actor.type === 'user' ? 'user' : `agent:${session!.id}`, actor.taskId ? { taskId: actor.taskId } : actor.wakeupId ? { wakeupId: actor.wakeupId } : {});
             case 'evidence_register': return app.evidence.register(actor, pid, text(x.artifactId, 'artifactId', 100), integer(x.start, 'start', 0), integer(x.end, 'end', 1), text(x.description, 'description', 2000));
-            case 'evidence_read': return app.evidence.verify(pid, text(x.evidenceId, 'evidenceId', 100));
+            case 'evidence_read': return app.evidence.verify(pid, text(x.evidenceId, 'evidenceId', 100), false);
             case 'experiment_plan_submit': return app.experiments.create(actor, pid, x);
             case 'run_inspect': return app.store.get('run', text(x.runId, 'runId', 100), pid);
             case 'run_logs':
@@ -232,6 +235,10 @@ const SPECS: OperationSpec[] = [
     make('working_grant_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.workingGrants.inspect(c.actor,c.projectId,x.grantId as string)}),
     make('working_grant_activate',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.workingGrants.activate(c.actor,c.projectId,x)}),
     make('working_grant_revoke',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.workingGrants.revoke(c.actor,c.projectId,x)}),
+    make('discovery_grant_prepare',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.discoveryGrants.prepare(c.actor,c.projectId,x)}),
+    make('discovery_grant_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.discoveryGrants.inspect(c.actor,c.projectId,x.grantId as string)}),
+    make('discovery_grant_activate',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.discoveryGrants.activate(c.actor,c.projectId,x)}),
+    make('discovery_grant_revoke',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.discoveryGrants.revoke(c.actor,c.projectId,x)}),
     make('development_prepare', {idempotencyPolicy:'key-required',requiresSession:true,authorize:noPrecondition,preconditions:noPrecondition,execute:(c,x)=>c.app.development.prepare(c.actor,c.projectId,c.session!.id,x)}),
     make('development_submit', {idempotencyPolicy:'key-required',authorize:(c,x)=>{c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.development.submit(c.actor,c.projectId,x.developmentTaskId as string)}),
     make('development_inspect', {idempotencyPolicy:'read-only',authorize:(c,x)=>{x.jobId?c.app.development.inspect(c.actor,c.projectId,x.jobId as string):c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string);},preconditions:noPrecondition,execute:(c,x)=>x.jobId?c.app.development.inspect(c.actor,c.projectId,x.jobId as string):c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string)}),
@@ -265,8 +272,8 @@ const SPECS: OperationSpec[] = [
     make('campaign_inspect', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'campaign_inspect', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'campaign_inspect', x)}),
     make('campaign_enroll', {idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'campaign_enroll', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'campaign_enroll', x)}),
     make('campaign_decision_submit', {idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'campaign_decision_submit', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'campaign_decision_submit', x)}),
-    make('literature_discover', {idempotencyPolicy: 'key-required', asynchronous: true, authorize: noPrecondition, preconditions: noPrecondition, execute: (c, x) => c.app.connectors.discover(c.actor, c.projectId, x, externalReplay(c, 'literature_discover', x).key, c.validate, c.signal)}),
-    make('literature_search', {idempotencyPolicy: 'key-required', asynchronous: true, authorize: noPrecondition, preconditions: noPrecondition, execute: (c, x) => c.app.literature.search(c.projectId, text(x.query, 'query', 500), integer(x.limit ?? 8, 'limit', 1, 20), externalReplay(c, 'literature_search', x).key, c.validate)}),
+    make('literature_discover', {idempotencyPolicy: 'key-required', asynchronous: true, authorize:(c,x)=>{externalReplay(c,'literature_discover',x);}, preconditions:noPrecondition, execute: (c, x) => c.app.connectors.discover(c.actor, c.projectId, x, externalReplay(c, 'literature_discover', x).key, c.validate, c.signal)}),
+    make('literature_search', {idempotencyPolicy: 'key-required', asynchronous: true, authorize:(c,x)=>{externalReplay(c,'literature_search',x);}, preconditions:noPrecondition, execute: (c, x) => c.app.literature.search(c.projectId, text(x.query, 'query', 500), integer(x.limit ?? 8, 'limit', 1, 20), externalReplay(c, 'literature_search', x).key, c.validate,c.actor)}),
     make('run_grant_prepare',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.runGrants.prepare(c.actor,c.projectId,x)}),
     make('run_grant_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.runGrants.inspect(c.actor,c.projectId,x.grantId as string)}),
     make('run_grant_activate',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.runGrants.activate(c.actor,c.projectId,x)}),
@@ -291,7 +298,7 @@ const SPECS: OperationSpec[] = [
     make('task_result_submit', {idempotencyPolicy: 'key-required', authorize: c => {
         ensure(c.actor.type === 'agent' && c.actor.taskId && c.actor.attemptId, 'PERMISSION_DENIED', '需要宿主派发的任务身份', 403);
     }, preconditions: noPrecondition, execute: (c, x) => c.app.teams.submit(c.actor, x)}),
-    make('paper_read', {idempotencyPolicy: 'key-required', asynchronous: true, authorize: noPrecondition, preconditions: noPrecondition,
+    make('paper_read', {idempotencyPolicy: 'key-required', asynchronous: true, authorize:(c,x)=>{paperReplay(c,x);}, preconditions:noPrecondition,
         execute: (c, x) => {
             return c.app.connectors.paper(c.actor, c.projectId, x, paperReplay(c, x).key, c.validate, c.signal);
         }}),

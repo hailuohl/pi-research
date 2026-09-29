@@ -1,3 +1,4 @@
+import {assertDiscoveryArtifact} from '../policy/discovery-grant-validation.js';
 import {assertRunGrantArtifact} from '../policy/run-grant-validation.js';
 import {randomUUID} from 'node:crypto';
 import {mkdirSync, readdirSync, chmodSync, rmdirSync, existsSync} from 'node:fs';
@@ -50,7 +51,7 @@ export class DevelopmentService {
         return s;
     }
     private data(actor:Actor,pid:string,id:string) {
-        const a=this.app.store.get<Artifact>('artifact',id,pid);assertRunGrantArtifact(this.app.store,pid,a);
+        const a=this.app.store.get<Artifact>('artifact',id,pid);assertRunGrantArtifact(this.app.store,pid,a);assertDiscoveryArtifact(this.app.store,pid,a);
         if(actor.type==='agent') {
             if(actor.taskId)this.app.teams.assertResource(actor,'artifact',id);
             else ensure(a.origin==='user'||a.origin===`agent:${actor.sessionId}`||!!a.taskId,'TASK_SCOPE_DENIED','数据不属于当前会话',403);
@@ -121,7 +122,7 @@ export class DevelopmentService {
             this.app.approvals.assert(team.approvalId,pid,team.id,team.planDigest,'collaboration');
         }
         for(const a of m.dataArtifacts) {
-            const actual=this.app.store.get<Artifact>('artifact',a.id,pid);assertRunGrantArtifact(this.app.store,pid,actual);
+            const actual=this.app.store.get<Artifact>('artifact',a.id,pid);assertRunGrantArtifact(this.app.store,pid,actual);assertDiscoveryArtifact(this.app.store,pid,actual);
             ensure(actual.path===a.path&&actual.digest===a.digest&&actual.size===a.size,'ARTIFACT_CORRUPTED','批准的数据已改变');
             if(verifyFiles){const bytes=readStableFile(dirname(actual.path),basename(actual.path),32*MiB);ensure(bytes.length===a.size&&digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','批准的数据字节已改变');}
             if(actual.taskId&&actual.taskId!==m.scopeTaskId) {const task=this.app.store.get<Task>('task',actual.taskId,pid);ensure(task.execution==='output_submitted'&&task.acceptance==='accepted'&&task.result?.artifactIds.includes(a.id),'CHANGE_SOURCE_STALE','输入数据采纳已撤销');}

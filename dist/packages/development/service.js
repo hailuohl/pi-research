@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
 import { assertRunGrantArtifact } from '../policy/run-grant-validation.js';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readdirSync, chmodSync, rmdirSync, existsSync } from 'node:fs';
@@ -59,6 +60,7 @@ export class DevelopmentService {
     data(actor, pid, id) {
         const a = this.app.store.get('artifact', id, pid);
         assertRunGrantArtifact(this.app.store, pid, a);
+        assertDiscoveryArtifact(this.app.store, pid, a);
         if (actor.type === 'agent') {
             if (actor.taskId)
                 this.app.teams.assertResource(actor, 'artifact', id);
@@ -171,6 +173,7 @@ export class DevelopmentService {
         for (const a of m.dataArtifacts) {
             const actual = this.app.store.get('artifact', a.id, pid);
             assertRunGrantArtifact(this.app.store, pid, actual);
+            assertDiscoveryArtifact(this.app.store, pid, actual);
             ensure(actual.path === a.path && actual.digest === a.digest && actual.size === a.size, 'ARTIFACT_CORRUPTED', '批准的数据已改变');
             if (verifyFiles) {
                 const bytes = readStableFile(dirname(actual.path), basename(actual.path), 32 * MiB);

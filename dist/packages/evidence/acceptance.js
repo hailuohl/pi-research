@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { assertExperimentSourceCurrent } from '../policy/lifecycle.js';
@@ -57,6 +58,7 @@ export function taskAcceptanceBasis(store, projectId, taskId) {
             visit(store.get('acceptance-record', acceptanceId, projectId).taskId);
         for (const eid of [...(t.inputEvidenceIds ?? []), ...t.result.evidenceIds]) {
             const e = store.get('evidence', eid, projectId), artifact = store.get('artifact', e.artifactId, projectId);
+            assertDiscoveryArtifact(store, projectId, artifact);
             if (artifact.taskId && artifact.taskId !== id) {
                 const producer = byId.get(artifact.taskId);
                 // Reviewer legitimately reads its target before acceptance. Its result binding is

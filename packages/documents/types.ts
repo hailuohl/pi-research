@@ -1,6 +1,7 @@
 import type {SourceId} from '../connectors/contracts.js';
 /** Immutable acquisition record. A provider's version claim is not PDF content verification. */
 export interface DocumentVersion {
+ discoveryGrant?:import('../policy/discovery-grant-types.js').DiscoveryGrantReference;
  title:string;
  original:{artifactId:string;digest:string;size:number;mediaType:string};
  derivedText?:{artifactId:string;digest:string;size:number;mediaType:string};

@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
 import { assertRunGrantRun, assertRunGrantArtifact } from '../policy/run-grant-validation.js';
 import { randomUUID } from 'node:crypto';
 import { basename, dirname, isAbsolute } from 'node:path';
@@ -183,7 +184,7 @@ export class ReportService {
                 }
                 return id;
             };
-            const artifact = (id, runId) => { const a = bindings.artifacts.find(b => b.id === id) ?? this.bytes(pid, id).artifact; if (excluded(a.title))
+            const artifact = (id, runId) => { assertDiscoveryArtifact(this.c.store, pid, this.c.store.get('artifact', id, pid)); const a = bindings.artifacts.find(b => b.id === id) ?? this.bytes(pid, id).artifact; if (excluded(a.title))
                 return undefined; if (!bindings.artifacts.some(b => b.id === id))
                 bindings.artifacts.push({ id, digest: a.digest, size: a.size, title: a.title, mediaType: a.mediaType }); return add({ type: 'artifact', targetId: id, label: a.title, digest: a.digest, ...(runId ? { runId } : {}) }); };
             const checkedDocuments = new Set();
@@ -368,6 +369,13 @@ export class ReportService {
             catch (error) {
                 fail(error, true);
             }
+        for (const a of bound.bindings.artifacts)
+            try {
+                assertDiscoveryArtifact(this.c.store, pid, this.c.store.get('artifact', a.id, pid));
+            }
+            catch (error) {
+                fail(error);
+            }
         for (const b of bound.bindings.documents ?? [])
             try {
                 ensure(digest(this.c.store.get('document-version', b.documentVersionId, pid)) === b.documentDigest && digest(this.c.store.get('document-parse-result', b.parseResultId, pid)) === b.resultDigest, 'REPORT_DOCUMENT_CHANGED', '报告固定文档或解析记录已改变');
@@ -502,7 +510,7 @@ export class ReportService {
     }
     stateDigest(pid) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','run-grant','run-grant-use','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','run-grant','run-grant-use','discovery-grant','connector-call','paper-read','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor, pid, id, expectedBindingsDigest, expectedStateDigest) {
         const r = this.record(actor, pid, id);

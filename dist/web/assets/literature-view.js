@@ -2,6 +2,7 @@ import { api, artifactBlob, artifactText, downloadArtifact } from './api.js';
 import { short } from './models.js';
 import { SectionTitle, Badge, Empty } from './ui.js';
 import { TextEvidencePanel } from './text-evidence.js';
+import { DiscoveryGrants } from './discovery-grants.js';
 const sources = ['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref'];
 const contentNames = { metadata: '仅元数据', abstract: '仅摘要', 'provider-text': '供应商提取文本（非原 PDF）', 'original-pdf': '已固定原始 PDF 字节', 'user-text': '用户导入文本' };
 const call = (projectId, name, input = {}) => api(`/operations/${name}`, { projectId, input });
@@ -38,10 +39,11 @@ export class LiteratureView extends React.Component {
         this.state = { query: '', sources: ['crossref'], config: null, error: '', format: 'provider-text', requestedVersion: '', result: null, document: null, loading: false, importLicense: '' };
         this.mounted = true;
         this.documentEpoch = 0;
+        this.taskEpoch = 0;
     }
     componentDidMount() { void this.loadConfig(); if (this.props.selectedDocument)
         void this.loadDocument(this.props.selectedDocument.documentVersionId); }
-    componentWillUnmount() { this.mounted = false; this.documentEpoch++; }
+    componentWillUnmount() { this.mounted = false; this.documentEpoch++; this.taskEpoch++; }
     componentDidUpdate(prev) { if (prev.selectedDocument?.documentVersionId !== this.props.selectedDocument?.documentVersionId) {
         if (this.props.selectedDocument)
             void this.loadDocument(this.props.selectedDocument.documentVersionId);
@@ -76,22 +78,23 @@ export class LiteratureView extends React.Component {
         this.props.onDocument(target);
     else
         void this.loadDocument(target.documentVersionId); }
-    async inspectTask(task) { await this.props.perform(async () => { const result = await call(this.props.data.project.id, 'literature_task_inspect', { taskId: task.id }); if (!this.mounted)
+    async inspectTask(task) { const epoch = ++this.taskEpoch, projectId = this.props.data.project.id; await this.props.perform(async () => { const result = await call(projectId, 'literature_task_inspect', { taskId: task.id }); if (!this.mounted || epoch !== this.taskEpoch || projectId !== this.props.data.project.id)
         return; if (result.documentVersionId)
         this.selectDocument({ documentVersionId: result.documentVersionId }); if (result.searchResult)
         this.setState({ result: result.searchResult, error: '' });
     else if (result.resultSearchId)
         this.setState({ error: '固定检索结果尚不可读，未显示其他查询结果。' }); }); }
     render() {
-        const { data, perform } = this.props, s = this.state;
+        const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find(g => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest);
         return React.createElement("div", { className: "page-scroll" },
             React.createElement(SectionTitle, { title: "\u6587\u732E\u4EFB\u52A1\u4E0E\u539F\u6587", sub: "\u663E\u5F0F\u63D0\u4EA4\u3001\u56FA\u5B9A\u53D6\u5F97\u7684\u5B57\u8282\uFF0C\u518D\u6309\u9875\u6BB5\u56DE\u67E5\uFF1B\u6458\u8981\u548C\u4F9B\u5E94\u5546\u6587\u672C\u4E0D\u5192\u5145\u539F PDF\u3002" },
                 this.props.onSources ? React.createElement("button", { className: "secondary", onClick: this.props.onSources }, "\u7BA1\u7406\u6765\u6E90\u6388\u6743") : null,
                 React.createElement("button", { className: "secondary", onClick: () => void this.loadConfig() }, "\u5237\u65B0\u6765\u6E90\u72B6\u6001")),
             s.error ? React.createElement("p", { role: "alert", className: "error-text" }, s.error) : null,
+            React.createElement(DiscoveryGrants, { data: data, perform: perform, selectedGrant: this.props.selectedDiscoveryGrant, onSelect: this.props.onSelectDiscoveryGrant, onSession: this.props.onSession, onSearch: (search, discoveryGrantId) => void perform(() => call(data.project.id, 'literature_task_create', { kind: 'search', search, discoveryGrantId }), '授权内固定检索已提交'), onTarget: (target, discoveryGrantId) => void perform(() => call(data.project.id, 'literature_task_create', { kind: 'retrieve', target, discoveryGrantId }), '授权内明确资料获取已提交') }),
             React.createElement("section", { className: "surface report-builder" },
-                React.createElement("h2", null, "\u63D0\u4EA4\u6301\u4E45\u68C0\u7D22\u4EFB\u52A1"),
-                React.createElement("p", { className: "small muted" }, "\u542F\u7528\u4EE3\u8868\u5141\u8BB8\u53D1\u9001\u67E5\u8BE2\uFF0C\u4E0D\u7B49\u4E8E\u6765\u6E90\u5065\u5EB7\u3002\u5931\u8D25\u4E0D\u4F1A\u5199\u6210\u96F6\u7ED3\u679C\uFF1B\u5173\u95ED\u9875\u9762\u4E0D\u53D6\u6D88\u5DF2\u63D0\u4EA4\u540E\u53F0\u4EFB\u52A1\u3002"),
+                React.createElement("h2", null, "\u63D0\u4EA4\u672A\u7ED1\u5B9A\u7684\u6301\u4E45\u68C0\u7D22\u4EFB\u52A1"),
+                React.createElement("p", { className: "small muted" }, "\u542F\u7528\u4EE3\u8868\u5141\u8BB8\u53D1\u9001\u67E5\u8BE2\uFF0C\u4E0D\u7B49\u4E8E\u6765\u6E90\u5065\u5EB7\u3002\u5931\u8D25\u4E0D\u4F1A\u5199\u6210\u96F6\u7ED3\u679C\uFF1B\u5173\u95ED\u9875\u9762\u4E0D\u53D6\u6D88\u5DF2\u63D0\u4EA4\u540E\u53F0\u4EFB\u52A1\u3002\u5DF2\u7ED1\u5B9A DiscoveryGrant \u7684\u4E3B\u4F1A\u8BDD\u8BF7\u4ECE\u4E0A\u65B9\u56FA\u5B9A\u8303\u56F4\u63D0\u4EA4\u3002"),
                 React.createElement("form", { onSubmit: (e) => { e.preventDefault(); void perform(() => call(data.project.id, 'literature_task_create', { kind: 'search', search: { query: s.query, sources: s.sources, limit: 8, strategy: 'keyword', prioritize: 'default' } }), '文献检索任务已提交'); } },
                     React.createElement("label", null,
                         "\u6587\u732E\u68C0\u7D22\u8BCD",
@@ -130,6 +133,7 @@ export class LiteratureView extends React.Component {
                 React.createElement("h2", null,
                     "\u56FA\u5B9A\u68C0\u7D22\u7ED3\u679C\uFF1A",
                     s.result.query),
+                React.createElement("p", { className: "small muted" }, s.result.discoveryGrant ? `DiscoveryGrant ${short(s.result.discoveryGrant.id)} · 授权内命中` : '未绑定授权的检索'),
                 s.result.sources.map(source => React.createElement("p", { key: source.source },
                     source.source,
                     " \u00B7 ",
@@ -157,7 +161,7 @@ export class LiteratureView extends React.Component {
                         " \u00B7 \u5C1A\u672A\u6838\u9A8C\u539F PDF"),
                     React.createElement("p", { className: "prose-text" }, hit.abstract ?? '未提供摘要'),
                     literatureSourceURL(hit.url) ? React.createElement("a", { href: literatureSourceURL(hit.url), target: "_blank", rel: "noopener noreferrer" }, "\u6253\u5F00\u6765\u6E90\u9875\u9762") : null,
-                    React.createElement("button", { className: "secondary compact", disabled: !s.config?.enabled[hit.source], onClick: () => perform(() => call(data.project.id, 'literature_task_create', { kind: 'retrieve', target: { source: hit.source, id: hit.id, format: s.format, ...(s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {}) } }), '原文获取任务已提交') }, "\u63D0\u4EA4\u6B64\u6587\u732E\u83B7\u53D6\u4EFB\u52A1")))) : null,
+                    s.result.discoveryGrant ? React.createElement("button", { className: "secondary compact", disabled: !resultGrant || resultGrant.effectiveState !== 'active' || resultGrant.validity !== 'current' || !resultGrant.allowSearchResults || !resultGrant.formats.includes(s.format) || resultGrant.usage.remaining < 1, onClick: () => perform(() => call(data.project.id, 'literature_task_create', { kind: 'retrieve', target: { source: hit.source, id: hit.id, format: s.format, ...(s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {}) }, discoveryGrantId: s.result.discoveryGrant.id }), '授权内命中资料获取已提交') }, "\u4EE5\u539F\u68C0\u7D22\u6388\u6743\u83B7\u53D6\u6B64\u547D\u4E2D") : React.createElement("button", { className: "secondary compact", disabled: !s.config?.enabled[hit.source], onClick: () => perform(() => call(data.project.id, 'literature_task_create', { kind: 'retrieve', target: { source: hit.source, id: hit.id, format: s.format, ...(s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {}) } }), '原文获取任务已提交') }, "\u63D0\u4EA4\u6B64\u6587\u732E\u83B7\u53D6\u4EFB\u52A1")))) : null,
             React.createElement("section", { className: "surface report-builder" },
                 React.createElement("h2", null, "\u5BFC\u5165\u672C\u5730\u56FA\u5B9A\u6587\u6863"),
                 React.createElement("label", null,

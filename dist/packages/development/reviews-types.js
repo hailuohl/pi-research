@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
 import { assertRunGrantArtifact } from '../policy/run-grant-validation.js';
 import { dirname, basename } from 'node:path';
 import { digest } from '../storage/store.js';
@@ -27,6 +28,7 @@ export function assertDevelopmentReviewTarget(store, pid, r) {
     for (const a of job.manifest.dataArtifacts) {
         const actual = store.get('artifact', a.id, pid), bytes = readStableFile(dirname(actual.path), basename(actual.path), 32 * 1024 * 1024);
         assertRunGrantArtifact(store, pid, actual);
+        assertDiscoveryArtifact(store, pid, actual);
         ensure(actual.path === a.path && actual.digest === a.digest && actual.size === a.size && bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '测试输入数据已改变');
         if (a.sourceAcceptanceId)
             assertAcceptanceCurrent(store, pid, a.sourceAcceptanceId);

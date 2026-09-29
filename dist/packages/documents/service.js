@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact, discoveryContext, discoveryScope } from '../policy/discovery-grant-validation.js';
 import { digest } from '../storage/store.js';
 import { connectorSettings, assertSourceEnabled } from '../connectors/settings.js';
 import { userOnly, scope } from '../policy/permissions.js';
@@ -74,13 +75,13 @@ export class DocumentService {
         const p = this.c.store.get('paper-read', paperReadId, pid), rawIds = p.rawArtifactIds ?? [];
         const id = rawIds.length ? rawIds[0] : p.artifactId;
         const artifacts = [...new Set([id, p.artifactId, ...rawIds])].map(id => this.evidence.read(actor, id).artifact);
-        artifacts.forEach(a => ensure(a.projectId === pid, 'SCOPE_DENIED', '原件属于其他项目', 403));
+        artifacts.forEach(a => { ensure(a.projectId === pid, 'SCOPE_DENIED', '原件属于其他项目', 403); assertDiscoveryArtifact(this.c.store, pid, a); });
         const a = artifacts.find(a => a.id === id);
         ensure(artifacts.find(a => a.id === p.artifactId).digest === p.artifactDigest, 'DOCUMENT_INVALID', '论文读取内容绑定失效');
         const contentKind = p.contentKind === 'full_text' ? 'provider-text' : oneOf(p.contentKind, ['metadata', 'abstract', 'original-pdf'], 'contentKind');
-        const doc = { title: String(p.title).slice(0, 200), original: this.descriptor(a), ...(id !== p.artifactId ? { derivedText: this.descriptor(artifacts.find(a => a.id === p.artifactId)) } : {}), source: { kind: 'connector', provider: p.source, requestedId: p.requestedId, resolvedId: p.resolvedId ?? p.idInSource, requestedVersion: p.requestedVersion ?? p.requestedId?.match(/v([1-9]\d*)$/)?.[1] ?? null, reportedVersion: p.reportedVersion ?? null, versionAssurance: p.versionAssurance, sourceUrl: p.sourceUrl }, contentKind, acquiredAt: p.retrievedAt, license: { value: p.license ?? null, assurance: p.license ? 'provider-reported' : 'unknown' }, rawResponseArtifactIds: rawIds, scopeSessionId: p.scopeSessionId ?? null, scopeTaskId: p.scopeTaskId ?? null, limitations: [...(p.limitations ?? []), ...(!rawIds.length ? ['Legacy paper record has no original response bytes; retained artifact is derived/provider text, not verified original network bytes'] : [])] };
+        const doc = { ...(p.discoveryGrant ? { discoveryGrant: p.discoveryGrant } : {}), title: String(p.title).slice(0, 200), original: this.descriptor(a), ...(id !== p.artifactId ? { derivedText: this.descriptor(artifacts.find(a => a.id === p.artifactId)) } : {}), source: { kind: 'connector', provider: p.source, requestedId: p.requestedId, resolvedId: p.resolvedId ?? p.idInSource, requestedVersion: p.requestedVersion ?? p.requestedId?.match(/v([1-9]\d*)$/)?.[1] ?? null, reportedVersion: p.reportedVersion ?? null, versionAssurance: p.versionAssurance, sourceUrl: p.sourceUrl }, contentKind, acquiredAt: p.retrievedAt, license: { value: p.license ?? null, assurance: p.license ? 'provider-reported' : 'unknown' }, rawResponseArtifactIds: rawIds, scopeSessionId: p.scopeSessionId ?? null, scopeTaskId: p.scopeTaskId ?? null, limitations: [...(p.limitations ?? []), ...(!rawIds.length ? ['Legacy paper record has no original response bytes; retained artifact is derived/provider text, not verified original network bytes'] : [])] };
         const hash = digest(p), artifactHashes = artifacts.map(a => ({ id: a.id, hash: digest(a) }));
-        return { doc, validate: () => { scope(actor, pid); assertProjectWritable(this.c.store, pid); ensure(digest(this.c.store.get('paper-read', paperReadId, pid)) === hash && artifactHashes.every(a => digest(this.c.store.get('artifact', a.id, pid)) === a.hash), 'DOCUMENT_INVALID', '已暂存的原件记录已改变'); } };
+        return { doc, validate: () => { artifacts.forEach(a => assertDiscoveryArtifact(this.c.store, pid, a)); scope(actor, pid); assertProjectWritable(this.c.store, pid); ensure(digest(this.c.store.get('paper-read', paperReadId, pid)) === hash && artifactHashes.every(a => digest(this.c.store.get('artifact', a.id, pid)) === a.hash), 'DOCUMENT_INVALID', '已暂存的原件记录已改变'); } };
     }
     async acquire(actor, pid, input, key, validate = () => { }, signal) {
         userOnly(actor);
@@ -94,7 +95,8 @@ export class DocumentService {
         validate();
         const target = routePaperId(input.id, input.source), format = oneOf(input.format, ['provider-text', 'original-pdf'], 'format');
         const normalized = { ...target, format, ...(input.requestedVersion ? { requestedVersion: text(input.requestedVersion, 'requestedVersion', 10) } : {}) };
-        const op = `document-acquire:${pid}`, old = this.c.store.operationResult(op, key, normalized);
+        const ctx = discoveryContext(this.c.store, pid, actor, { kind: 'retrieve', target: normalized }, key);
+        const op = discoveryScope(`document-acquire:${pid}`, ctx), old = this.c.store.operationResult(op, key, normalized);
         if (old.found) {
             this.verify(old.value);
             return old.value;

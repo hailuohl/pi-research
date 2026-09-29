@@ -13,7 +13,7 @@ export declare class EvidenceService {
         bytes: NonSharedBuffer;
     };
     register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type?: Evidence['type'], runId?: string): Row<Evidence>;
-    verify(projectId: string, evidenceId: string): Row<Evidence>;
+    verify(projectId: string, evidenceId: string, current?: boolean): Row<Evidence>;
     registerDocument(actor: Actor, projectId: string, input: {
         documentVersionId: string;
         parseResultId: string;

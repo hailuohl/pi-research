@@ -7,7 +7,7 @@ export interface TransportOptions {fetcher?:typeof fetch;minIntervalMs?:number;}
 export class ConnectorTransport {
  private fetcher:typeof fetch;private active=0;private ncbiNext=0;private interval:number;
  constructor(options:TransportOptions={}){this.fetcher=options.fetcher??((...args)=>fetch(...args));this.interval=options.minIntervalMs??350;}
- async bytes(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void) {
+ async bytes(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void,beforeSend?:()=>void) {
   ensure(url.protocol==='https:'&&HOSTS.has(url.hostname)&&!url.port&&!url.username&&!url.password&&!url.hash,'CONNECTOR_HOST_DENIED','只允许固定文献来源 HTTPS 地址',403);
   const controller=new AbortController();const deadline=setTimeout(()=>controller.abort(),12000);const abort=()=>controller.abort();signal?.addEventListener('abort',abort,{once:true});let acquired=false;let checkError:unknown;
   const poll=setInterval(()=>{try{validate();}catch(e){checkError=e;controller.abort();}},150);
@@ -16,7 +16,7 @@ export class ConnectorTransport {
    while(this.active>=3){await delay(30,undefined,{signal:controller.signal});validate();}
    this.active++;acquired=true;
    if(url.hostname==='eutils.ncbi.nlm.nih.gov'){const wait=Math.max(0,this.ncbiNext-Date.now());this.ncbiNext=Date.now()+wait+this.interval;if(wait)await delay(wait,undefined,{signal:controller.signal});}
-   validate();const response=await this.fetcher(url,{headers:{'User-Agent':'PiResearch-Connectors/1.0','Accept':'application/json, application/xml, text/markdown, text/plain',...headers},redirect:'error',signal:controller.signal});
+   validate();beforeSend?.();const response=await this.fetcher(url,{headers:{'User-Agent':'PiResearch-Connectors/1.0','Accept':'application/json, application/xml, text/markdown, text/plain',...headers},redirect:'error',signal:controller.signal});
    const retry=response.headers.get('retry-after');
    const retryAfter=retry&&/^\d{1,10}$/.test(retry)?retry:retry&&/^[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(retry)&&!Number.isNaN(Date.parse(retry))?new Date(retry).toUTCString():null;
    observe?.({httpStatus:response.status,retryAfter});
@@ -29,8 +29,8 @@ export class ConnectorTransport {
   }catch(e){if(checkError)throw checkError;if(e instanceof DomainError)throw e;throw new DomainError(controller.signal.aborted?'CONNECTOR_CANCELLED':'CONNECTOR_UNAVAILABLE',controller.signal.aborted?'连接器请求超时或已取消':'无法取得文献来源响应；这不代表没有相关论文',503);}
   finally{clearTimeout(deadline);clearInterval(poll);signal?.removeEventListener('abort',abort);if(acquired)this.active--;}
  }
- async text(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void) {
-  const r=await this.bytes(url,headers,validate,maxBytes,signal,observe);
+ async text(url:URL,headers:Record<string,string>,validate:()=>void,maxBytes=2*1024*1024,signal?:AbortSignal,observe?:(value:{httpStatus:number;retryAfter:string|null})=>void,beforeSend?:()=>void) {
+  const r=await this.bytes(url,headers,validate,maxBytes,signal,observe,beforeSend);
   try{return {...r,text:new TextDecoder('utf-8',{fatal:true}).decode(r.body)};}catch{throw new DomainError('PROVIDER_SCHEMA_INVALID','来源没有返回有效 UTF-8 文本',502);}
  }
 }

@@ -1,3 +1,4 @@
+import type { DiscoveryGrantReference } from '../policy/discovery-grant-types.js';
 import { spawn } from 'node:child_process';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Row } from '../domain/types.js';
@@ -12,6 +13,8 @@ export type LiteratureRequest = {
     target: DocumentAcquireInput;
 };
 export interface LiteratureTask {
+    discoveryGrant?: DiscoveryGrantReference;
+    scopeSessionId?: string;
     kindOfTask: 'search' | 'retrieve';
     request: LiteratureRequest;
     state: 'queued' | 'running' | 'succeeded' | 'partial' | 'failed' | 'cancelled' | 'interrupted';

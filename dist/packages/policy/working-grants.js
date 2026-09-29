@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact } from './discovery-grant-validation.js';
 import { randomUUID } from 'node:crypto';
 import { join, dirname, basename } from 'node:path';
 import { assertRunGrantArtifact } from './run-grant-validation.js';
@@ -41,6 +42,7 @@ export class WorkingGrantService {
         for (const a of g.dataArtifacts) {
             const actual = this.app.store.get('artifact', a.id, g.projectId), bytes = readStableFile(dirname(a.path), basename(a.path), 32 * 1024 * 1024);
             assertRunGrantArtifact(this.app.store, g.projectId, actual);
+            assertDiscoveryArtifact(this.app.store, g.projectId, actual);
             ensure(actual.path === a.path && actual.digest === a.digest && actual.size === a.size && bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '授权数据内容或来源已改变');
             if (a.sourceAcceptanceId)
                 assertAcceptanceCurrent(this.app.store, g.projectId, a.sourceAcceptanceId);

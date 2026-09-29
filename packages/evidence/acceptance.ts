@@ -1,3 +1,4 @@
+import {assertDiscoveryArtifact} from '../policy/discovery-grant-validation.js';
 import type { Store } from '../storage/store.js';
 import { digest } from '../storage/store.js';
 import type { Task, TaskAttempt, TaskResult, Evidence, Artifact, AcceptanceRecord, Team, SourceRevision, Experiment } from '../domain/types.js';
@@ -61,6 +62,7 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
         for(const acceptanceId of developmentReview?.inputAcceptanceIds??[])visit(store.get<AcceptanceRecord>('acceptance-record',acceptanceId,projectId).taskId);
         for (const eid of [...(t.inputEvidenceIds ?? []),...t.result.evidenceIds]) {
             const e = store.get<Evidence>('evidence',eid,projectId), artifact = store.get<Artifact>('artifact',e.artifactId,projectId);
+            assertDiscoveryArtifact(store,projectId,artifact);
             if (artifact.taskId && artifact.taskId !== id) {
                 const producer = byId.get(artifact.taskId);
                 // Reviewer legitimately reads its target before acceptance. Its result binding is

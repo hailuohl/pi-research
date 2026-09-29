@@ -17,7 +17,7 @@ export declare class ConnectorTransport {
     bytes(url: URL, headers: Record<string, string>, validate: () => void, maxBytes?: number, signal?: AbortSignal, observe?: (value: {
         httpStatus: number;
         retryAfter: string | null;
-    }) => void): Promise<{
+    }) => void, beforeSend?: () => void): Promise<{
         body: Buffer<ArrayBuffer>;
         bytes: number;
         contentType: string;
@@ -27,7 +27,7 @@ export declare class ConnectorTransport {
     text(url: URL, headers: Record<string, string>, validate: () => void, maxBytes?: number, signal?: AbortSignal, observe?: (value: {
         httpStatus: number;
         retryAfter: string | null;
-    }) => void): Promise<{
+    }) => void, beforeSend?: () => void): Promise<{
         text: string;
         body: Buffer<ArrayBuffer>;
         bytes: number;

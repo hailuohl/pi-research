@@ -12,7 +12,7 @@ export function verifyRunRecord(run: Row<Run>, evidence: EvidenceService): Recor
     const artifacts = run.artifactIds.map(id => evidence.read(SYSTEM, id));
     ensure(artifacts.every(a => a.artifact.projectId === run.projectId && a.artifact.runId === run.id && a.bytes.length === a.artifact.size),
         'RUN_ARTIFACT_INVALID', '产物大小或运行归属无效');
-    const refs = run.evidenceIds.map(id => evidence.verify(run.projectId!, id));
+    const refs = run.evidenceIds.map(id => evidence.verify(run.projectId!, id, false));
     ensure(refs.every(e => e.runId === run.id && run.artifactIds.includes(e.artifactId)), 'EVIDENCE_INVALID', '证据归属或产物清单无效');
     if (run.integrity === 'complete') {
         ensure(run.manifest.contract.expectedArtifacts.every(path => artifacts.some(a => a.artifact.title === path)),

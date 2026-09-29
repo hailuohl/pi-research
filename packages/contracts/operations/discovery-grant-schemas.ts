@@ -1,0 +1,21 @@
+import {s,type JsonSchema} from './schema.js';
+import {DISCOVERY_INPUT_SCHEMA,DISCOVERY_OUTPUT_SCHEMA,DISCOVERY_GRANT_REFERENCE_SCHEMA} from './document-schemas.js';
+
+const id=s.string(100),hash={...s.string(64),minLength:64,pattern:'^[a-f0-9]{64}$'},time=s.string(50),integer=s.integer(0,Number.MAX_SAFE_INTEGER);
+const source=s.enum(['alphaxiv','openalex','biorxiv','pubmed','crossref']);
+const format=s.enum(['provider-text','original-pdf']);
+const metadata={id,kind:s.string(80),projectId:id,version:s.integer(1),createdAt:time,updatedAt:time};
+const search=s.object({query:s.string(500),sources:s.array(source,5,1),limit:s.integer(1,20),strategy:s.enum(['keyword','embedding']),prioritize:s.enum(['default','recency','historical','popular']),publishedAfter:{...s.string(10),format:'date'},publishedBefore:{...s.string(10),format:'date'}},['query','sources','limit','strategy','prioritize']);
+const target=s.object({source,id:s.string(300),format,requestedVersion:s.string(40,0)},['source','id','format']);
+const callFields={...metadata,kind:{const:'connector-call'},source,host:s.string(300),status:s.enum(['reserved','succeeded','failed-or-unknown']),startedAt:time,discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA,requestDigest:hash,operationKeyDigest:hash,requestUrlDigest:hash,bytes:integer,httpStatus:integer,retryAfter:s.nullable(s.string(1000)),error:s.string(1000)} as const;
+const call=s.object(callFields,(Object.keys(callFields) as Array<keyof typeof callFields>).filter(k=>!['bytes','httpStatus','retryAfter','error'].includes(k)));
+const paperFields={...metadata,kind:{const:'paper-read'},source,idInSource:s.string(300),requestedId:s.string(300),title:s.string(1000),artifactId:id,artifactDigest:hash,rawArtifactIds:s.array(id),contentKind:s.string(100),fullTextRead:s.boolean(),retrievedAt:time,discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA} as const;
+const paper=s.object(paperFields,(Object.keys(paperFields) as Array<keyof typeof paperFields>).filter(k=>k!=='requestedId'));
+const fields={...metadata,kind:{const:'discovery-grant'},sessionId:id,model:s.object({provider:s.string(100,0),model:s.string(160,0),thinking:s.enum(['off','minimal','low','medium','high','xhigh'])},['provider','model','thinking']),settingsVersion:integer,sources:s.array(source,5,1),searches:s.array(search,8),targets:s.array(target,20),allowSearchResults:s.boolean(),formats:s.array(format,2,1),maxRequests:s.integer(1,100),maxResponseBytes:s.integer(1024,32*1024*1024),expiresAt:time,approvalId:id,digest:hash,state:s.enum(['draft','active','revoked']),activatedAt:time,revokedAt:time,effectiveState:s.enum(['draft','active','expired','exhausted','revoked','stale']),validity:s.enum(['current','stale']),reasons:s.array(s.string(1000),100),usage:s.object({limit:integer,used:integer,remaining:integer,unit:{const:'http-request-attempt'}},['limit','used','remaining','unit']),calls:s.array(call,100),searchResults:s.array(DISCOVERY_OUTPUT_SCHEMA,100),papers:s.array(paper,100)} as const;
+export const DISCOVERY_GRANT_SCHEMA=s.object(fields,(Object.keys(fields) as Array<keyof typeof fields>).filter(k=>k!=='activatedAt'&&k!=='revokedAt'));
+const transition=s.object({grantId:id,expectedVersion:s.integer(1)},['grantId','expectedVersion']);
+export const DISCOVERY_GRANT_INPUT_SCHEMAS={
+ discovery_grant_prepare:s.object({sessionId:id,searches:s.array(DISCOVERY_INPUT_SCHEMA,8),targets:s.array(target,20),allowSearchResults:s.boolean(),formats:s.array(format,2,1),maxRequests:s.integer(1,100),maxResponseBytes:s.integer(1024,32*1024*1024),expiresAt:time},['sessionId','searches','targets','allowSearchResults','formats','maxRequests','maxResponseBytes','expiresAt']),
+ discovery_grant_inspect:s.object({grantId:id},['grantId']),discovery_grant_activate:transition,discovery_grant_revoke:transition,
+} as const satisfies Record<string,JsonSchema>;
+export const DISCOVERY_GRANT_OUTPUT_SCHEMAS={discovery_grant_prepare:DISCOVERY_GRANT_SCHEMA,discovery_grant_inspect:DISCOVERY_GRANT_SCHEMA,discovery_grant_activate:DISCOVERY_GRANT_SCHEMA,discovery_grant_revoke:DISCOVERY_GRANT_SCHEMA} as const satisfies Record<string,JsonSchema>;

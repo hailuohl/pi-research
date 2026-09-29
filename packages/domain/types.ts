@@ -46,6 +46,7 @@ export interface ModelConfig {
     thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 }
 export interface Session {
+    discoveryGrantId?: string;
     runGrantId?: string;
     workingGrantId?: string;
     skillIds?: string[];
@@ -176,6 +177,7 @@ export interface Run {
     execution?: RunExecution;
 }
 export interface Artifact {
+    discoveryGrant?: import('../policy/discovery-grant-types.js').DiscoveryGrantReference;
     title: string;
     digest: string;
     size: number;

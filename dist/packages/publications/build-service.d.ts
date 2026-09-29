@@ -343,16 +343,16 @@ export declare class PublicationBuildService {
             bytes: number;
         }>;
         sourceDigest: string;
+        status: "succeeded" | "failed" | "timed_out" | "non_convergent";
+        diagnostics: import("./build-types.js").BuildDiagnostic[];
         formatVersion: 1;
         profileId: typeof PUBLICATION_PROFILE;
         engine: PublicationEngine;
         bibliography: BibliographyMode;
         engineVersion: string;
-        status: "succeeded" | "failed" | "timed_out" | "non_convergent";
         hadErrors: boolean;
         converged: boolean;
         passes: number;
-        diagnostics: import("./build-types.js").BuildDiagnostic[];
     };
     finalize(id: string, outcome: {
         state: 'succeeded' | 'failed' | 'cancelled' | 'timed_out';

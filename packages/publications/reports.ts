@@ -1,3 +1,4 @@
+import {assertDiscoveryArtifact} from '../policy/discovery-grant-validation.js';
 import {assertRunGrantRun,assertRunGrantArtifact} from '../policy/run-grant-validation.js';
 import type {ResearchApp} from '../research-app.js';
 import type {PublicationBuildResult,ManuscriptRevision} from './build-types.js';
@@ -131,7 +132,7 @@ export class ReportService {
                 const id=digest({type:ref.type,targetId:ref.targetId,runId:ref.runId??null,path:ref.path??null,relation:ref.relation??null});
                 if(!references.some(r=>r.id===id)){ensure(references.length<12000,'REPORT_TOO_LARGE','报告引用数量超过上限',413);references.push(clean({...ref,id}));if(data!==undefined)bindings.objects.push({referenceId:id,mediaType:'application/json',content:JSON.stringify(clean(data),null,2)});}return id;
             };
-            const artifact=(id:string,runId?:string)=>{const a=bindings.artifacts.find(b=>b.id===id)??this.bytes(pid,id).artifact;if(excluded(a.title))return undefined;if(!bindings.artifacts.some(b=>b.id===id))bindings.artifacts.push({id,digest:a.digest,size:a.size,title:a.title,mediaType:a.mediaType});return add({type:'artifact',targetId:id,label:a.title,digest:a.digest,...(runId?{runId}:{})});};
+            const artifact=(id:string,runId?:string)=>{assertDiscoveryArtifact(this.c.store,pid,this.c.store.get<Artifact>('artifact',id,pid));const a=bindings.artifacts.find(b=>b.id===id)??this.bytes(pid,id).artifact;if(excluded(a.title))return undefined;if(!bindings.artifacts.some(b=>b.id===id))bindings.artifacts.push({id,digest:a.digest,size:a.size,title:a.title,mediaType:a.mediaType});return add({type:'artifact',targetId:id,label:a.title,digest:a.digest,...(runId?{runId}:{})});};
             const checkedDocuments=new Set<string>();
             const evidence=(id:string)=>{
                 const prior=references.find(ref=>ref.type==='evidence'&&ref.targetId===id);if(prior)return prior.id;
@@ -235,6 +236,7 @@ export class ReportService {
             ensure(digest(this.app.researchPlans.reportSnapshot(actor,pid,b.campaignId))===b.snapshotDigest,'REPORT_RESEARCH_CHANGED','研究方案、观测或研究状态已改变，请重新生成报告');
         }catch(error){fail(error);}
         for(const a of bound.bindings.artifacts)try{const current=this.bytes(pid,a.id,a).artifact;ensure(current.title===a.title&&current.mediaType===a.mediaType,'REPORT_SOURCE_CHANGED','报告产物元数据已改变');}catch(error){fail(error,true);}
+        for(const a of bound.bindings.artifacts)try{assertDiscoveryArtifact(this.c.store,pid,this.c.store.get<Artifact>('artifact',a.id,pid));}catch(error){fail(error);}
         for(const b of bound.bindings.documents??[])try{
             ensure(digest(this.c.store.get<DocumentVersion>('document-version',b.documentVersionId,pid))===b.documentDigest&&digest(this.c.store.get<DocumentParseResult>('document-parse-result',b.parseResultId,pid))===b.resultDigest,'REPORT_DOCUMENT_CHANGED','报告固定文档或解析记录已改变');
             ensure(this.c.store.get<DocumentParseJob>('document-parse-job',b.result.jobId,pid).approvalId===b.parser.approvalId,'REPORT_DOCUMENT_CHANGED','报告固定解析批准已改变');
@@ -275,7 +277,7 @@ export class ReportService {
     }
     private stateDigest(pid:string) {
         // Conservative metadata fence: unrelated edits may require retry, never permit a stale export.
-        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','run-grant','run-grant-use','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
+        return digest(this.c.store.db.prepare("SELECT kind,id,version FROM records WHERE project_id=? AND kind IN ('project','report','run','run-intent','experiment','source-revision','claim','artifact','evidence','acceptance-record','change-proposal','development-review','development-task','sandbox-job','approval','task','task-attempt','team','session','document-version','document-parse-result','document-parse-job','manuscript-revision','publication-build-job','publication-build-result','publication-review','task-result','context-snapshot','campaign','research-round','campaign-member','run-observation','campaign-decision','experiment-plan-revision','research-candidate','working-grant','working-grant-use','run-grant','run-grant-use','discovery-grant','connector-call','paper-read','budget','reservation','wakeup') ORDER BY kind,id").all(pid));
     }
     assertExportCurrent(actor:Actor,pid:string,id:string,expectedBindingsDigest:string,expectedStateDigest:string) {
         const r=this.record(actor,pid,id);assertProjectWritable(this.c.store,pid);ensure(r.formatVersion===1&&r.bindingsDigest===expectedBindingsDigest&&digest(payload(r))===expectedBindingsDigest&&this.stateDigest(pid)===expectedStateDigest,'REPORT_EXPORT_STALE','打包期间报告或关联状态已变化，请重新导出');

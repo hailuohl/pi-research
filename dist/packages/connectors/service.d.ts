@@ -1,3 +1,4 @@
+import type { DiscoveryGrantReference } from '../policy/discovery-grant-types.js';
 /** Bounded, host-owned literature adapters. No ORX CLI, hosted account or model calls. */
 import type { AppContext } from '../domain/context.js';
 import type { Actor } from '../domain/types.js';
@@ -5,6 +6,9 @@ import type { EvidenceService } from '../evidence/service.js';
 import { deduplicate, type SourceId } from './contracts.js';
 import { ConnectorTransport, type Credentials } from './transport.js';
 export interface SearchRecord {
+    discoveryGrant?: DiscoveryGrantReference;
+    discoveryCallIds?: string[];
+    discoveryRequestDigest?: string;
     query: string;
     items: ReturnType<typeof deduplicate>;
     sources: {
@@ -154,6 +158,37 @@ export declare class ConnectorService {
         sourceUrl: string;
         contentKind: "metadata" | "abstract" | "full_text";
         versionAssurance: "requested-address-unverified" | "provider-record";
+        discoveryGrant: DiscoveryGrantReference;
+        discoveryCallIds: string[];
+        discoveryRequestDigest: string;
+    } | {
+        pageMapping: "unavailable";
+        artifactId: string;
+        artifactDigest: string;
+        rawArtifactIds: string[];
+        fullTextRead: boolean;
+        retrievedAt: string;
+        scopeSessionId: string | null;
+        scopeTaskId: string | null;
+        scopeAttemptId: string | null;
+        sourceResponses: {
+            url: string;
+            contentType: string;
+        }[];
+        limitations: string[];
+        license?: string | undefined;
+        resolvedId?: string | undefined;
+        reportedVersion?: string | undefined;
+        source: "alphaxiv" | "openalex" | "biorxiv" | "pubmed" | "crossref";
+        idInSource: string;
+        requestedId: string;
+        title: string;
+        sourceUrl: string;
+        contentKind: "metadata" | "abstract" | "full_text";
+        versionAssurance: "requested-address-unverified" | "provider-record";
+        discoveryGrant?: undefined;
+        discoveryCallIds?: undefined;
+        discoveryRequestDigest?: undefined;
     }>>;
     /** Host-facing acquisition used by durable tasks; callback retains their original authorization fence. */
     pdf(actor: Actor, pid: string, value: {
@@ -179,5 +214,30 @@ export declare class ConnectorService {
         scopeSessionId: string | null;
         scopeTaskId: string | null;
         limitations: string[];
+        discoveryGrant: DiscoveryGrantReference;
+        discoveryCallIds: string[];
+        discoveryRequestDigest: string;
+    } | {
+        source: "alphaxiv" | "openalex" | "biorxiv" | "pubmed" | "crossref";
+        idInSource: string;
+        requestedId: string;
+        resolvedId: string;
+        requestedVersion: string | null;
+        title: string;
+        sourceUrl: string;
+        contentKind: string;
+        versionAssurance: string;
+        pageMapping: string;
+        artifactId: string;
+        artifactDigest: string;
+        rawArtifactIds: string[];
+        fullTextRead: boolean;
+        retrievedAt: string;
+        scopeSessionId: string | null;
+        scopeTaskId: string | null;
+        limitations: string[];
+        discoveryGrant?: undefined;
+        discoveryCallIds?: undefined;
+        discoveryRequestDigest?: undefined;
     }>>;
 }

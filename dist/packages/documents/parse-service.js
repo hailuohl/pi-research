@@ -1,3 +1,4 @@
+import { assertDiscoveryDocument } from '../policy/discovery-grant-validation.js';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync, readFileSync, chmodSync, readdirSync, existsSync } from 'node:fs';
@@ -94,6 +95,7 @@ export class DocumentParsingService {
         const x = closed(value, ['documentVersionId']);
         assertProjectWritable(this.app.store, pid);
         const document = this.app.documents.get(actor, pid, text(x.documentVersionId, 'documentVersionId', 100)), original = document.original;
+        assertDiscoveryDocument(this.app.store, pid, document);
         ensure(document.contentKind === 'original-pdf' && original.mediaType === 'application/pdf', 'DOCUMENT_NOT_PDF', '仅原始PDF可进入此解析配置');
         const { artifact, bytes } = this.app.evidence.read(actor, original.artifactId);
         ensure(artifact.projectId === pid && artifact.digest === original.digest && bytes.length === original.size && bytes.subarray(0, 5).toString() === '%PDF-', 'DOCUMENT_CORRUPTED', '原PDF摘要或头部不符');
@@ -120,7 +122,7 @@ export class DocumentParsingService {
             return key ? this.app.store.operation('document-parse-prepare:' + pid, key, value, publish) : publish();
         });
     }
-    assertCurrent(job, verifyBytes = true) { assertProjectWritable(this.app.store, job.projectId); ensure(digest(job.manifest) === job.manifestDigest, 'DOCUMENT_JOB_CORRUPTED', '解析清单已改变'); const document = this.app.documents.get({ type: 'user' }, job.projectId, job.documentVersionId); ensure(digest(document) === job.manifest.documentDigest && document.original.digest === job.manifest.rawDigest, 'DOCUMENT_CORRUPTED', '原件版本记录已改变'); this.app.approvals.assert(job.approvalId, job.projectId, job.id, job.manifestDigest, 'document.parse'); if (verifyBytes) {
+    assertCurrent(job, verifyBytes = true) { assertProjectWritable(this.app.store, job.projectId); ensure(digest(job.manifest) === job.manifestDigest, 'DOCUMENT_JOB_CORRUPTED', '解析清单已改变'); const document = this.app.documents.get({ type: 'user' }, job.projectId, job.documentVersionId); assertDiscoveryDocument(this.app.store, job.projectId, document); ensure(digest(document) === job.manifest.documentDigest && document.original.digest === job.manifest.rawDigest, 'DOCUMENT_CORRUPTED', '原件版本记录已改变'); this.app.approvals.assert(job.approvalId, job.projectId, job.id, job.manifestDigest, 'document.parse'); if (verifyBytes) {
         verifySnapshot(job.manifest.inputSnapshot.path, job.manifest.inputSnapshot.files);
         const raw = this.app.evidence.read({ type: 'user' }, job.manifest.rawArtifactId);
         ensure(raw.artifact.projectId === job.projectId && raw.artifact.digest === job.manifest.rawDigest && raw.bytes.length === job.manifest.rawSize, 'DOCUMENT_CORRUPTED', '原件已改变');

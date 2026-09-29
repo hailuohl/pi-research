@@ -1,3 +1,4 @@
+import {assertDiscoveryArtifact,assertDiscoveryDocument} from '../policy/discovery-grant-validation.js';
 import {verifyDocumentLink} from './document-link.js';
 import type {DocumentParseResult} from '../documents/parse-types.js';
 import {captureAcceptance,assertAcceptanceCurrent} from './acceptance.js';
@@ -33,6 +34,7 @@ export class EvidenceService {
     register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type: Evidence['type'] = 'artifact', runId?: string) {
         scope(actor, projectId);
         const a = this.c.store.get<Artifact>('artifact', artifactId, projectId);
+        assertDiscoveryArtifact(this.c.store,projectId,a);
         const { bytes } = this.read(actor, a.id);
         ensure(bytes.length <= 2 * 1024 * 1024 && !bytes.includes(0), 'EVIDENCE_TEXT_REQUIRED', '需要可定位的文本产物', 400);
         const content = bytes.toString('utf8');
@@ -42,14 +44,14 @@ export class EvidenceService {
             this.c.store.get('run', runId, projectId);
         return this.c.store.create<Evidence>('evidence', projectId, { type, artifactId: a.id, digest: a.digest, locator: { start, end }, quote: content.slice(start, end), description: text(description, 'description', 2000), ...(runId ? { runId } : {}) });
     }
-    verify(projectId: string, evidenceId: string) { const e = this.c.store.get<Evidence>('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); if(e.document)verifyDocumentLink(this.c,projectId,e.document,e.artifactId); return e; }
+    verify(projectId: string, evidenceId: string, current=true) { const e = this.c.store.get<Evidence>('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); if(current)assertDiscoveryArtifact(this.c.store,projectId,artifact); if(e.document){const link=verifyDocumentLink(this.c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(this.c.store,projectId,link.document);} return e; }
     registerDocument(actor:Actor,projectId:string,input:{documentVersionId:string;parseResultId:string;pageNumber:number;start:number;end:number;description:string}) {
         userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
         return this.c.store.transaction(()=>{
             const result=this.c.store.get<DocumentParseResult>('document-parse-result',input.parseResultId,projectId);
             const page=result.pages.find(p=>p.pageNumber===integer(input.pageNumber,'pageNumber',1,10000));ensure(page,'DOCUMENT_PAGE_NOT_FOUND','原文没有该页',404);
             const document={documentVersionId:input.documentVersionId,rawDigest:result.rawDigest,parseResultId:result.id,pageNumber:page.pageNumber,textArtifactDigest:page.textArtifactDigest};
-            verifyDocumentLink(this.c,projectId,document,page.textArtifactId);
+            assertDiscoveryDocument(this.c.store,projectId,verifyDocumentLink(this.c,projectId,document,page.textArtifactId).document);
             const e=this.register(actor,projectId,page.textArtifactId,input.start,input.end,input.description,'paper');
             return this.c.store.update<Evidence>('evidence',e.id,e.version,{document});
         });
@@ -78,7 +80,7 @@ export class EvidenceService {
             const c=this.c.store.get<Claim>('claim',id);scope(actor,c.projectId!);assertProjectWritable(this.c.store,c.projectId!);
             ensure(['accepted','rejected','disputed'].includes(status),'INVALID_INPUT','结论状态无效',400);
             const taskIds=new Set(c.taskId?[c.taskId]:[]);
-            c.evidenceIds.forEach(id=>{const e=this.verify(c.projectId!,id);const a=this.c.store.get<Artifact>('artifact',e.artifactId,c.projectId!);if(a.taskId)taskIds.add(a.taskId);});
+            c.evidenceIds.forEach(id=>{const e=this.verify(c.projectId!,id,status==='accepted');const a=this.c.store.get<Artifact>('artifact',e.artifactId,c.projectId!);if(a.taskId)taskIds.add(a.taskId);});
             const refs:string[]=[];
             if(status==='accepted') {
                 ensure(c.validity!=='stale','CLAIM_STALE','旧前提已撤销，需要新任务结果或显式重新研究，不能直接重置历史结论');

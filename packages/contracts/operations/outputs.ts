@@ -9,6 +9,8 @@ import {REVIEW_OUTPUT_SCHEMAS} from './review-schemas.js';
 import {DEVELOPMENT_OUTPUT_SCHEMAS} from './development-schemas.js';
 import {WORKING_GRANT_OUTPUT_SCHEMAS,WORKING_GRANT_REFERENCE_SCHEMA} from './working-grant-schemas.js';
 import {RUN_GRANT_OUTPUT_SCHEMAS,RUN_GRANT_REFERENCE_SCHEMA} from './run-grant-schemas.js';
+import {DISCOVERY_GRANT_OUTPUT_SCHEMAS} from './discovery-grant-schemas.js';
+import {DISCOVERY_GRANT_REFERENCE_SCHEMA} from './document-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
 import type { InferSchema, JsonSchema } from './schema.js';
 
@@ -89,8 +91,9 @@ const CORE_OUTPUT_SCHEMAS = {
         versionAssurance: enumeration('requested-address-unverified', 'provider-record'), pageMapping: { const: 'unavailable' },
         artifactId: string, artifactDigest: string, rawArtifactIds: strings, fullTextRead: boolean, retrievedAt: string,
         scopeSessionId: nullableString, scopeAttemptId: nullableString,scopeTaskId:nullableString,reportedVersion:nullableString,resolvedId:string,license:nullableString,
-        sourceResponses: array(object({ url: string, contentType: string })), limitations: strings
-    },['scopeTaskId','reportedVersion','resolvedId','license'])
+        sourceResponses: array(object({ url: string, contentType: string })), limitations: strings,
+        discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA,discoveryCallIds:strings,discoveryRequestDigest:string
+    },['scopeTaskId','reportedVersion','resolvedId','license','discoveryGrant','discoveryCallIds','discoveryRequestDigest'])
 } as const satisfies Record<string, JsonSchema>;
 
 const nullable = <const S extends JsonSchema>(schema: S) => ({ anyOf: [schema, { type: 'null' }] } as const);
@@ -118,14 +121,14 @@ const decision = row('campaign-decision', {
 const corpusSource = object({ artifactId: string, digest: string, title: string, size: integer });
 const chunkSource = object({ artifactId: string, digest: string, title: string, locator, lineStart: integer, lineEnd: integer });
 const contextTask = object({ id: string, key: string, result: taskResult }, ['result']);
-const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string }, ['wakeupId', 'runId', 'taskId']);
+const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string,discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA }, ['wakeupId', 'runId', 'taskId','discoveryGrant']);
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
     ...RESEARCH_PLAN_OUTPUT_SCHEMAS,
     ...SKILL_OUTPUT_SCHEMAS,
     ...PUBLICATION_OUTPUT_SCHEMAS,
-    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...RUN_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,...SCHEDULER_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...RUN_GRANT_OUTPUT_SCHEMAS, ...DISCOVERY_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS,...SCHEDULER_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS,...DOCUMENT_OUTPUT_SCHEMAS,
     run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,
@@ -160,7 +163,7 @@ export const OUTPUT_SCHEMAS = {
         capabilities: array(object({ id: string, category: enumeration('literature', 'compute', 'collaboration', 'publication'), operations: strings, implementation: enumeration('http-adapter', 'existing-runner', 'not-implemented', 'existing-service'), verification: enumeration('fixture-only', 'local-example-tested', 'not-live-tested', 'unavailable', 'local-tests'), credential: string, content: string, limitation: string }, ['credential', 'content', 'limitation'])),
         budgetUnit: string, defaults: string,observations:array(object({id:string,source,host:string,status:string,startedAt:string,httpStatus:nullable(integer),retryAfter:nullable(string),error:nullable(string)}))
     }),
-    literature_search: row('literature-search', { query: string, source: { const: 'crossref' }, retrievedAt: string, coverage: { const: 'metadata-only' }, items: array(object({ doi: string, title: string, authors: strings, date: array(integer), journal: string, url: string, fullTextRead: { const: false }, source: { const: 'crossref' } })) }),
+    literature_search: row('literature-search', { query: string, source: { const: 'crossref' }, retrievedAt: string, coverage: { const: 'metadata-only' }, items: array(object({ doi: string, title: string, authors: strings, date: array(integer), journal: string, url: string, fullTextRead: { const: false }, source: { const: 'crossref' } })),discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA,discoveryCallIds:strings,discoveryRequestDigest:string },['discoveryGrant','discoveryCallIds','discoveryRequestDigest']),
     literature_discover: DISCOVERY_OUTPUT_SCHEMA,
     project_inspect: object({
         textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }),

@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
 import { SYSTEM } from '../domain/types.js';
 import { ensure, asError } from '../domain/errors.js';
 import { integer, object, strings, text } from '../contracts/validation.js';
@@ -83,7 +84,7 @@ export class ResearchPlanService {
         }
         ensure(controlRunIds.length > 0 && changedFactors.length > 0 && new Set(controlRunIds).size === controlRunIds.length && new Set(dataArtifactIds).size === dataArtifactIds.length, 'INVALID_INPUT', '需要明确且不重复的对照、数据和变化因素', 400);
         const controlBindings = controlRunIds.map(runId => { const r = this.app.store.get('run', runId, pid); ensure(r.manifest.contractDigest === c.contractDigest && inspectObservation(r, this.app.evidence).validation === 'verified', 'PLAN_CONTROL_INVALID', '对照必须是相同契约的真实完整结果'); assertExperimentSourceCurrent(this.app.store, this.app.store.get('experiment', r.experimentId, pid)); const binding = this.runBinding(pid, r.intentId); this.assertRunBinding(pid, binding, r.id); this.assertRunSource(r.experimentId, 'execute', r.intentId); return { runId, contentDigest: runContentDigest(r), ...binding }; });
-        const dataBindings = dataArtifactIds.map(artifactId => { const { artifact } = this.app.evidence.read(actor, artifactId); ensure(artifact.projectId === pid, 'SCOPE_DENIED', '数据属于其他项目', 403); if (artifact.taskId)
+        const dataBindings = dataArtifactIds.map(artifactId => { const { artifact } = this.app.evidence.read(actor, artifactId); assertDiscoveryArtifact(this.app.store, pid, artifact); ensure(artifact.projectId === pid, 'SCOPE_DENIED', '数据属于其他项目', 403); if (artifact.taskId)
             ensure(this.app.store.get('task', artifact.taskId, pid).result?.artifactIds.includes(artifactId), 'PLAN_DATA_STALE', '数据不是来源任务明确交付的产物'); const run = artifact.runId ? this.app.store.get('run', artifact.runId, pid) : undefined; if (run)
             ensure(run.artifactIds.includes(artifact.id), 'PLAN_DATA_STALE', '数据不在来源Run产物中'); const documents = this.app.store.list('document-version', pid).filter(d => d.original.artifactId === artifactId || d.derivedText?.artifactId === artifactId).map(d => ({ id: d.id, digest: digest(this.app.documents.inspect({ type: 'user' }, pid, d.id)) })), parses = this.app.store.list('document-parse-job', pid).filter(j => j.artifactIds.includes(artifactId)).map(j => { this.app.documentParsing.assertCurrent(j); return { jobId: j.id, manifestDigest: j.manifestDigest, approvalId: j.approvalId }; }); return { artifactId, digest: artifact.digest, size: artifact.size, ...(artifact.taskId ? this.taskDataBinding(pid, artifact.taskId) : {}), ...(run ? { run: { runId: run.id, contentDigest: runContentDigest(run), ...this.runBinding(pid, run.intentId) } } : {}), ...(documents.length ? { documents } : {}), ...(parses.length ? { parses } : {}) }; });
         const reps = object(x.repetitions);
@@ -133,6 +134,7 @@ export class ResearchPlanService {
         }
         for (const b of p.dataBindings) {
             const { artifact } = this.app.evidence.read(SYSTEM, b.artifactId);
+            assertDiscoveryArtifact(this.app.store, projectId, artifact);
             ensure(artifact.projectId === projectId && artifact.digest === b.digest && artifact.size === b.size, 'PLAN_DATA_STALE', '数据证据已变化');
             if (b.sourceAcceptanceId) {
                 const acceptance = assertAcceptanceCurrent(this.app.store, projectId, b.sourceAcceptanceId);

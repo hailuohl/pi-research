@@ -1,3 +1,4 @@
+import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
 import { assertRunGrantRun } from '../policy/run-grant-validation.js';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -102,7 +103,7 @@ export class PublicationBuildService {
         const bytes = this.app.evidence.read({ type: 'user' }, archived.id).bytes, fixed = JSON.parse(bytes.toString('utf8'));
         ensure(digest(fixed) === digest({ formatVersion: 1, title: r.title, engine: r.engine, mainFile: r.mainFile, bibliography: r.bibliography, templateId: r.templateId ?? null, sourceDigest: r.sourceDigest, files: r.files.map(({ artifactId, ...f }) => f) }), 'PUBLICATION_SOURCE_CORRUPTED', '文稿原始清单改变');
     } }
-    provenance(pid, artifact) { if (artifact.runId) {
+    provenance(pid, artifact) { assertDiscoveryArtifact(this.app.store, pid, artifact); if (artifact.runId) {
         const r = this.app.store.get('run', artifact.runId, pid);
         assertRunGrantRun(this.app.store, r);
         ensure(r.artifactIds.includes(artifact.id), 'PUBLICATION_SOURCE_INVALID', 'Run未归档此产物');
@@ -112,7 +113,7 @@ export class PublicationBuildService {
         const j = JSON.parse(found[0].data);
         return { kind: 'sandbox-job', id: j.id, sourceDigest: j.sourceDigest, manifestDigest: j.manifestDigest, approvalId: j.grantId };
     } return { kind: 'unknown' }; }
-    assertSource(pid, file, verifyBytes) { const a = this.app.store.get('artifact', file.artifactId, pid); ensure(a.digest === file.digest && a.size === file.size, 'PUBLICATION_SOURCE_CORRUPTED', '文稿资产记录改变'); if (verifyBytes) {
+    assertSource(pid, file, verifyBytes) { const a = this.app.store.get('artifact', file.artifactId, pid); assertDiscoveryArtifact(this.app.store, pid, a); ensure(a.digest === file.digest && a.size === file.size, 'PUBLICATION_SOURCE_CORRUPTED', '文稿资产记录改变'); if (verifyBytes) {
         const { bytes } = this.app.evidence.read({ type: 'user' }, a.id);
         ensure(bytes.length === file.size, 'PUBLICATION_SOURCE_CORRUPTED', '资产长度改变');
     } const p = file.provenance; if (p.kind === 'run') {

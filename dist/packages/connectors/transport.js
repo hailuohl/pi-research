@@ -8,7 +8,7 @@ export class ConnectorTransport {
     ncbiNext = 0;
     interval;
     constructor(options = {}) { this.fetcher = options.fetcher ?? ((...args) => fetch(...args)); this.interval = options.minIntervalMs ?? 350; }
-    async bytes(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe) {
+    async bytes(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe, beforeSend) {
         ensure(url.protocol === 'https:' && HOSTS.has(url.hostname) && !url.port && !url.username && !url.password && !url.hash, 'CONNECTOR_HOST_DENIED', '只允许固定文献来源 HTTPS 地址', 403);
         const controller = new AbortController();
         const deadline = setTimeout(() => controller.abort(), 12000);
@@ -39,6 +39,7 @@ export class ConnectorTransport {
                     await delay(wait, undefined, { signal: controller.signal });
             }
             validate();
+            beforeSend?.();
             const response = await this.fetcher(url, { headers: { 'User-Agent': 'PiResearch-Connectors/1.0', 'Accept': 'application/json, application/xml, text/markdown, text/plain', ...headers }, redirect: 'error', signal: controller.signal });
             const retry = response.headers.get('retry-after');
             const retryAfter = retry && /^\d{1,10}$/.test(retry) ? retry : retry && /^[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(retry) && !Number.isNaN(Date.parse(retry)) ? new Date(retry).toUTCString() : null;
@@ -91,8 +92,8 @@ export class ConnectorTransport {
                 this.active--;
         }
     }
-    async text(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe) {
-        const r = await this.bytes(url, headers, validate, maxBytes, signal, observe);
+    async text(url, headers, validate, maxBytes = 2 * 1024 * 1024, signal, observe, beforeSend) {
+        const r = await this.bytes(url, headers, validate, maxBytes, signal, observe, beforeSend);
         try {
             return { ...r, text: new TextDecoder('utf-8', { fatal: true }).decode(r.body) };
         }

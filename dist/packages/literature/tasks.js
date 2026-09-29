@@ -1,3 +1,4 @@
+import { discoveryContext, assertDiscoveryContext, discoveryScope } from '../policy/discovery-grant-validation.js';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { USER } from '../domain/types.js';
@@ -22,14 +23,14 @@ export class LiteratureTaskService {
     create(actor, pid, value, previousTaskId) {
         userOnly(actor);
         scope(actor, pid);
-        const request = this.parse(value);
+        const input = object(value), parsed = this.parse(value), owner = input.discoveryGrantId ? this.app.discoveryGrants.owner(actor, pid, text(input.discoveryGrantId, 'discoveryGrantId', 100)) : actor, ctx = discoveryContext(this.app.store, pid, owner, parsed, 'prepare'), request = ctx?.operation ?? parsed;
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
             const cfg = connectorSettings(this.app.store, pid), sources = request.kind === 'search' ? request.search.sources : [request.target.source];
             ensure(sources.some(s => cfg.enabled[s]), 'SOURCE_DISABLED', '需要用户先启用所选文献来源', 403);
             const queued = Number(this.app.store.db.prepare("SELECT count(*) n FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.state') IN ('queued','running')").get(pid).n);
             ensure(queued < 30, 'LITERATURE_QUEUE_FULL', '本项目文献任务等待与运行数量已达30', 409);
-            const row = this.app.store.create('literature-task', pid, { kindOfTask: request.kind, request, state: 'queued', phase: 'queued', settingsVersion: cfg.version, generation: 0, leaseUntil: 0, deadline: 0, cancelRequested: false, ...(previousTaskId ? { previousTaskId } : {}) });
+            const row = this.app.store.create('literature-task', pid, { ...(ctx ? { discoveryGrant: ctx.reference, scopeSessionId: ctx.sessionId } : {}), kindOfTask: request.kind, request, state: 'queued', phase: 'queued', settingsVersion: cfg.version, generation: 0, leaseUntil: 0, deadline: 0, cancelRequested: false, ...(previousTaskId ? { previousTaskId } : {}) });
             this.app.store.event(pid, 'literature.task_queued', { taskId: row.id, kind: request.kind });
             return this.inspect(actor, pid, row.id);
         });
@@ -40,9 +41,11 @@ export class LiteratureTaskService {
         this.app.store.update('literature-task', id, row.version, { cancelRequested: true, ...(row.state === 'queued' ? { state: 'cancelled', phase: 'done', endedAt: new Date().toISOString() } : {}) });
         this.app.store.event(pid, 'literature.task_cancel_requested', { taskId: id });
     } return this.inspect(actor, pid, id); }); }
-    retry(actor, pid, id, expectedVersion) { userOnly(actor); return this.app.store.transaction(() => { const row = this.app.store.get('literature-task', id, pid); ensure(row.version === expectedVersion, 'VERSION_CONFLICT', '文献任务已更新'); ensure(['failed', 'cancelled', 'interrupted'].includes(row.state), 'LITERATURE_NOT_RETRYABLE', '只可显式重试失败、取消或中断任务'); return this.create(actor, pid, row.request, row.id); }); }
+    retry(actor, pid, id, expectedVersion) { userOnly(actor); return this.app.store.transaction(() => { const row = this.app.store.get('literature-task', id, pid); ensure(row.version === expectedVersion, 'VERSION_CONFLICT', '文献任务已更新'); ensure(['failed', 'cancelled', 'interrupted'].includes(row.state), 'LITERATURE_NOT_RETRYABLE', '只可显式重试失败、取消或中断任务'); return this.create(actor, pid, { ...row.request, ...(row.discoveryGrant ? { discoveryGrantId: row.discoveryGrant.id } : {}) }, row.id); }); }
     validate(id, generation) {
         const row = this.app.store.get('literature-task', id);
+        if (row.discoveryGrant)
+            assertDiscoveryContext(this.app.store, row.projectId, { reference: row.discoveryGrant, sessionId: row.scopeSessionId, operation: row.request, operationKey: `literature-task:${row.id}`, callIds: [] });
         ensure(row.state === 'running' && row.generation === generation && row.leaseUntil > Date.now(), 'LITERATURE_LEASE_EXPIRED', '旧文献执行器不能发布结果');
         ensure(!row.cancelRequested, 'LITERATURE_CANCELLED', '文献任务已取消');
         ensure(Date.now() <= row.deadline, 'LITERATURE_TIMEOUT', '文献任务超过执行期限');
@@ -51,11 +54,13 @@ export class LiteratureTaskService {
         return row;
     }
     recoverPublished(row, fence = false) {
-        const search = row.request.kind === 'search', scope = search ? `connector-search:${row.projectId}:user:root` : `document-acquire:${row.projectId}`, input = row.request.kind === 'search' ? row.request.search : row.request.target;
+        const search = row.request.kind === 'search', scope = discoveryScope(search ? `connector-search:${row.projectId}:${row.scopeSessionId ?? 'user'}:root` : `document-acquire:${row.projectId}`, row.discoveryGrant), input = row.request.kind === 'search' ? row.request.search : row.request.target;
         const receipt = this.app.store.operationResult(scope, `literature-task:${row.id}`, input);
         if (!receipt.found)
             return false;
         const value = receipt.value;
+        if (row.discoveryGrant)
+            ensure(digest(value.discoveryGrant) === digest(row.discoveryGrant), 'DISCOVERY_SOURCE_STALE', '后台回执的原发现授权不符');
         ensure(typeof value.id === 'string', 'LITERATURE_RECEIPT_INVALID', '文献结果回执没有有效记录');
         const actual = this.app.store.get(search ? 'connector-search' : 'document-version', value.id, row.projectId);
         ensure(digest(actual) === digest(value), 'LITERATURE_RECEIPT_INVALID', '文献结果回执与固定记录不符');
@@ -124,8 +129,8 @@ export class LiteratureTaskService {
         } }, 2000);
         timer.unref();
         try {
-            const row = this.validate(id, generation), validate = () => { this.validate(id, generation); };
-            const result = row.request.kind === 'search' ? await this.app.connectors.discover(USER, row.projectId, row.request.search, `literature-task:${id}`, validate, controller.signal) : await this.app.documents.acquire(USER, row.projectId, row.request.target, `literature-task:${id}`, validate, controller.signal);
+            const row = this.validate(id, generation), validate = () => { this.validate(id, generation); }, owner = row.discoveryGrant ? this.app.discoveryGrants.owner(USER, row.projectId, row.discoveryGrant.id) : USER;
+            const result = row.request.kind === 'search' ? await this.app.connectors.discover(owner, row.projectId, row.request.search, `literature-task:${id}`, validate, controller.signal) : await this.app.documents.acquire(owner, row.projectId, row.request.target, `literature-task:${id}`, validate, controller.signal);
             store.transaction(() => {
                 const current = store.get('literature-task', id);
                 ensure(current.state === 'running' && current.generation === generation, 'LITERATURE_LEASE_EXPIRED', '旧执行器不能完成任务');

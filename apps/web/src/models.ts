@@ -1,5 +1,7 @@
 import type {WorkingGrantDTO} from '../../../dist/packages/policy/working-grant-types.js';
 import type {RunGrantDTO} from '../../../dist/packages/policy/run-grant-types.js';
+import type {DiscoveryGrantDTO} from '../../../dist/packages/policy/discovery-grant-types.js';
+export type {DiscoveryGrantDTO} from '../../../dist/packages/policy/discovery-grant-types.js';
 export type {RunGrantDTO} from '../../../dist/packages/policy/run-grant-types.js';
 export type {WorkingGrantDTO} from '../../../dist/packages/policy/working-grant-types.js';
 import type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision,ExperimentPlanRevision,ResearchCandidate } from '../../../dist/packages/research-workflows/types.js';
@@ -51,6 +53,7 @@ export interface DevelopmentReviewDTO {
 export type {ReportReference,ReportInspection} from '../../../dist/packages/publications/report-types.js';
 export interface ReportRecord {id:string;artifactId:string;runIds:string[];claimIds:string[];evidenceIds?:string[];publicationResultIds?:string[];}
 export interface ProjectState {
+    discoveryGrants?:DiscoveryGrantDTO[];
     runGrants?:RunGrantDTO[];
     workingGrants?:WorkingGrantDTO[];
     experimentPlans?:Row<ExperimentPlanRevision>[];
