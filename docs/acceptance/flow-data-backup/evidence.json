@@ -1,0 +1,223 @@
+{
+  "batch": "flow-data-backup",
+  "recordedAt": "2026-09-29T06:54:46.170Z",
+  "baseCommit": "b97bceeaec7db96c0d9a23e6cbb67e55a9c993a9",
+  "scope": "Offline complete managed data backup, integrity verification and restore to an absent original absolute path; no relocation or history rewrite",
+  "sourceSha256": {
+    "packages/storage/backup.ts": "39da6f8bf1f681ecd18eec7dd3d9c2a939bbbf405aa2e6525e3e437ff7e406a5",
+    "packages/workspace/git-command.ts": "5c993db577c64d614ea3b4b0b768771eb8ba9dbcf320a7b44f86bbdc4400ed1e",
+    "packages/scheduler/wakeups.ts": "9effd7556898077d51e2492fd0022191c245e743915a4ad4da690a1b917de613",
+    "apps/cli/backup.ts": "b72e56f99b9ab8db93316d7312bbbae45e1acabb655a30a2f7fcc9b348201b19",
+    "apps/cli/index.ts": "4cf4b63926e67afae5e9080a7d4937890a4973d89d1546879e5832f58e6b2834",
+    "tests/integration/data-backup.test.mjs": "81193c33572159add9b2a3901fd9eb2c76415c810c8829ff0c53167f94aaa5b1",
+    "tests/integration/data-backup-cli.test.mjs": "6ad7ff6b04f7cc084dd6b3cb02b2267ec422c76e9d8e77ef1eec12a927ffef8c"
+  },
+  "implementation": {
+    "owner": "root",
+    "external": {
+      "sessionId": "sess_b8203012-bd28-4034-b275-bca1230f3aed",
+      "model": {
+        "providerId": "account:bigmodel-individual-coding-plan",
+        "modelId": "GLM-5.3"
+      },
+      "permissionMode": "edit",
+      "cwd": ".validation/data-backup-flow/glm-cli",
+      "cli": "zcode-app-cli 3.14.3-28 / runtime 0.16.9",
+      "assignedFiles": [
+        "apps/cli/backup.ts",
+        "tests/integration/data-backup-cli.test.mjs"
+      ],
+      "receivedOnlyAssignedFiles": true,
+      "copiedContextUnchanged": true,
+      "disallowedTools": [
+        "Bash",
+        "Task"
+      ],
+      "rootIntegrationFixes": [
+        "Reject inherited object properties as CLI flags",
+        "Clarify operator-facing help"
+      ],
+      "testsRunBy": "root"
+    },
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "originalBlockingFindings": 1,
+      "closed": 1,
+      "additionalGitClosureReviewed": true,
+      "remainingBlockers": 0
+    }
+  },
+  "runtime": {
+    "backupDirectory": ".validation/data-backup-flow/historical-backup",
+    "retainedOriginal": ".validation/data-backup-flow/retained-original",
+    "originalRoot": ".validation/skill-flow-live-FCIWYW",
+    "sourceVerifiedOffline": true,
+    "files": 48,
+    "bytes": 432078,
+    "manifestDigest": "748667ae8d93e19bfad17a67d95994a36d38ec019259931239fcf34ef8fa5099",
+    "sqlTables": 9,
+    "tableDataDigests": {
+      "compute_contexts": "90efab8d71ef82173535cab57d025805669a6e89963b5c7cf87d74c3905a902c",
+      "compute_limits": "f5f1640dddcfb9485b92cc879050960be38b2f0d2b1bf376aa77f1b38d2c6d3e",
+      "compute_queue": "964a2247898cfd7ad6a4e614147c02830b40d158e578bce577e6d53c1b704e77",
+      "events": "553b93cf718addaa6edb56e2669583fd34097a3bdc7188c85facbf5a2a5c4161",
+      "inbox": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "operations": "d5a84e684a5066de962b5b6a1a6fc4964486970299adcdf20052abb214104cfe",
+      "records": "42597d3eb4b476f87cfcff8009b69e00ada888d98f84e5fc877901a5ac7a101a",
+      "schema_migrations": "e4d5213cabfedbe0cff53e4e883235373c4aeb9fe13ee03276b6cd910ca697b4",
+      "sqlite_sequence": "774bff220c9dd5cfc75eb08d7f6af2d0ceefada1d73e854d866c29baba2f20a9"
+    },
+    "recordsBefore": 52,
+    "natives": [
+      {
+        "sessionId": "d8372752-c5a4-4c9d-99dd-7c4612c0a911",
+        "sha256": "57640f432c287d88adfef254d2ec4e1ebd621dc41dc485c54af3cecdc35cac15",
+        "bytes": 98774
+      }
+    ],
+    "originalFilesVerified": 47,
+    "allSqlTablesUnchangedBeforeReopen": true,
+    "afterReopen": {
+      "oldRecordsUnchanged": 52,
+      "addedRecordKinds": [
+        "model-http-capacity"
+      ],
+      "schema": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "piRequestRows": 0,
+      "newRunRows": 0,
+      "accessTokenRegenerated": true,
+      "nativeFilesUnchanged": true
+    },
+    "browser": {
+      "project": "技能固定版本与图形验收",
+      "session": "固定技能真实产物",
+      "latestMessages": 10,
+      "olderMessages": 4,
+      "reloadedMessages": 4,
+      "refreshPreserved": true,
+      "olderPageSha256": "aa05524037b96243eae8c490f20336d5336f8fa04e09419347b412786dd5e234",
+      "restoredFailedStateRetained": true,
+      "consoleErrors": 0,
+      "layoutChecked": false,
+      "newModelRequests": 0
+    },
+    "oldSessionHistoryServerUntouched": true,
+    "productPiCallsAdded": 0,
+    "productDockerJobsAdded": 0
+  },
+  "validation": {
+    "relatedBeforeClosureFix": {
+      "tests": 26,
+      "pass": 26
+    },
+    "finalCoreRelated": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0
+    },
+    "fullRegression": {
+      "tests": 764,
+      "pass": 742,
+      "fail": 0,
+      "skip": 22
+    },
+    "cleanBuild": {
+      "directory": ".validation/clean-build-ub583A",
+      "files": 447,
+      "identical": true,
+      "node": "24.19.0",
+      "platform": "win32",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "manifestSha256": "e7501a95576b122e550b62b7c3201255466dacb96aa059fbaba2167a92ffa634"
+    },
+    "logs": [
+      {
+        "path": ".validation/data-backup-flow/regression.log",
+        "sha256": "200690576db1134485d9ea2956005f75f50e56094f448eb17efc5a959d6fd58f"
+      },
+      {
+        "path": ".validation/data-backup-flow/core-final-related-3.log",
+        "sha256": "d1f99401ea29e715356cb8b9b5832de831d2ee887abda0167829cc6f10853bed"
+      },
+      {
+        "path": ".validation/data-backup-flow/historical-create-final.log",
+        "sha256": "28df8b69f705cb5346147021976839afecf78b9e5f2accdb6345737303479890"
+      },
+      {
+        "path": ".validation/data-backup-flow/historical-verify.log",
+        "sha256": "28df8b69f705cb5346147021976839afecf78b9e5f2accdb6345737303479890"
+      },
+      {
+        "path": ".validation/data-backup-flow/historical-restore.log",
+        "sha256": "7bf0b91167eb20f11c1726bc475191b3a4ad72d9abd9e567283bbda8187681e4"
+      },
+      {
+        "path": ".validation/data-backup-flow/clean-build.log",
+        "sha256": "f776049ed664e50ded769789b472f0a1d538eb298605c9dbe13cf1a71c865f40"
+      }
+    ],
+    "initialFailuresRetained": {
+      "logs": [
+        "core-related.log",
+        "related-2.log",
+        "related-5.log",
+        "core-final-related.log",
+        "core-final-related-2.log",
+        "historical-create.log"
+      ],
+      "causes": [
+        "Fixture wrong example filename and incomplete injected queue cleanup",
+        "Fixture Git lease still live",
+        "Legacy failed-session queued message initially treated as dispatchable; corrected against real scheduler and tested with model-ready fork trap",
+        "Review-discovered skill CAS closure and root-discovered Git object/pointer closure",
+        "Fixture missing skill idempotency key, short-path Git namespace mismatch, Windows hidden .git write mode"
+      ]
+    }
+  },
+  "preservation": {
+    "deferredLayoutFiles": {
+      "apps/web/public/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+      "apps/web/src/workbench.tsx": "17716da060efe644fcf4ba8eecfc20df6b2edad45d69b14086b94190de8a724d",
+      "dist/web/assets/main.js": "507961c8f579c820f932511487eeeedce374f049648b05dd3352a8957625f527",
+      "dist/web/assets/workbench.js": "3a2c42193bd4b7bdcb562f8096c2e034324a38798d75828371159a0a1bdc5b37",
+      "dist/web/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2"
+    },
+    "deferredLayoutBuildFilesExcludedFromCommit": [
+      "dist/web/assets/main.js",
+      "dist/web/assets/workbench.js",
+      "dist/web/styles.css"
+    ],
+    "protectedPlanAndDependenciesUnchanged": true
+  },
+  "limits": [
+    "Offline acknowledgment required; DB locking does not make filesystem-only writers safe online",
+    "Same platform and exact original absolute data root only; existing targets and namespace alias mismatches refused",
+    "Unknown top-level content, external required references and unsettled recovery refused",
+    "Known application authentication files excluded; research text/log content retained verbatim",
+    "Application data backup, not an OS disk image or ACL/alternate-stream backup",
+    "No Pi or Docker acceptance rerun; real native history reused, Git and bundled numerical fixture verified by relevant tests",
+    "Frontend layout remains deferred; full PR01–14 goal remains active"
+  ]
+}

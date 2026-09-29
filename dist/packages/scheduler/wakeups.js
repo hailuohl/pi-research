@@ -2,6 +2,14 @@ import { SYSTEM } from '../domain/types.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { scope, userOnly } from '../policy/permissions.js';
+export function teamWakeupSource(t, tasks) {
+    return { sourceKind: 'team', sourceId: t.id, ownerId: t.id, rootSessionId: t.rootSessionId,
+        automatic: t.autoSummarize === true,
+        sourceDigest: digest({ id: t.id, goal: t.goal, state: t.state, planVersion: t.planVersion,
+            directiveVersion: t.directiveVersion, tasks: tasks.map(task => ({ id: task.id,
+                generation: task.generation, execution: task.execution, acceptance: task.acceptance, result: task.result ?? null })) }) };
+}
+export const wakeupId = (source) => digest({ kind: source.sourceKind, id: source.sourceId, digest: source.sourceDigest });
 const DONE_TEAMS = ['completed', 'partial', 'failed', 'cancelled'];
 const LIVE = ['pending', 'queued', 'running'];
 /** A durable inbox. One pending signal is not the full result set: prompts reread authoritative records. */
@@ -14,11 +22,7 @@ export class WakeupService {
     list(actor, projectId) { scope(actor, projectId); return this.app.store.list('wakeup', projectId); }
     teamSource(t) {
         const tasks = this.app.teams.tasks(SYSTEM, t.id);
-        return { sourceKind: 'team', sourceId: t.id, ownerId: t.id, rootSessionId: t.rootSessionId,
-            automatic: t.autoSummarize === true,
-            sourceDigest: digest({ id: t.id, goal: t.goal, state: t.state, planVersion: t.planVersion,
-                directiveVersion: t.directiveVersion, tasks: tasks.map(task => ({ id: task.id,
-                    generation: task.generation, execution: task.execution, acceptance: task.acceptance, result: task.result ?? null })) }) };
+        return teamWakeupSource(t, tasks);
     }
     campaignSource(c, o) {
         return { sourceKind: 'campaign-result', sourceId: o.id, ownerId: c.id, rootSessionId: c.rootSessionId,
@@ -26,7 +30,7 @@ export class WakeupService {
                 goal: c.goal, roundId: c.currentRoundId, contractDigest: c.contractDigest }) };
     }
     enqueue(projectId, source) {
-        const id = digest({ kind: source.sourceKind, id: source.sourceId, digest: source.sourceDigest });
+        const id = wakeupId(source);
         if (this.app.store.maybe('wakeup', id))
             return;
         this.app.store.create('wakeup', projectId, { ...source, requested: false, state: 'pending', attempts: 0, maxAttempts: 2 }, id);

@@ -25,6 +25,14 @@ export interface Wakeup {
     error?: string;
 }
 type Source = Pick<Wakeup, 'sourceKind' | 'sourceId' | 'ownerId' | 'rootSessionId' | 'sourceDigest' | 'automatic'>;
+export function teamWakeupSource(t: Row<Team>, tasks: Row<Task>[]): Source {
+    return { sourceKind: 'team', sourceId: t.id, ownerId: t.id, rootSessionId: t.rootSessionId,
+        automatic: t.autoSummarize === true,
+        sourceDigest: digest({ id: t.id, goal: t.goal, state: t.state, planVersion: t.planVersion,
+            directiveVersion: t.directiveVersion, tasks: tasks.map(task => ({ id: task.id,
+                generation: task.generation, execution: task.execution, acceptance: task.acceptance, result: task.result ?? null })) }) };
+}
+export const wakeupId=(source:Source)=>digest({kind:source.sourceKind,id:source.sourceId,digest:source.sourceDigest});
 const DONE_TEAMS = ['completed', 'partial', 'failed', 'cancelled'];
 const LIVE = ['pending', 'queued', 'running'];
 
@@ -36,11 +44,7 @@ export class WakeupService {
 
     private teamSource(t: Row<Team>): Source {
         const tasks = this.app.teams.tasks(SYSTEM, t.id);
-        return { sourceKind: 'team', sourceId: t.id, ownerId: t.id, rootSessionId: t.rootSessionId,
-            automatic: t.autoSummarize === true,
-            sourceDigest: digest({ id: t.id, goal: t.goal, state: t.state, planVersion: t.planVersion,
-                directiveVersion: t.directiveVersion, tasks: tasks.map(task => ({ id: task.id,
-                    generation: task.generation, execution: task.execution, acceptance: task.acceptance, result: task.result ?? null })) }) };
+        return teamWakeupSource(t,tasks);
     }
     private campaignSource(c: Row<Campaign>, o: Row<RunObservation>): Source {
         return { sourceKind: 'campaign-result', sourceId: o.id, ownerId: c.id, rootSessionId: c.rootSessionId,
@@ -48,7 +52,7 @@ export class WakeupService {
                 goal: c.goal, roundId: c.currentRoundId, contractDigest: c.contractDigest }) };
     }
     private enqueue(projectId: string, source: Source) {
-        const id = digest({ kind: source.sourceKind, id: source.sourceId, digest: source.sourceDigest });
+        const id = wakeupId(source);
         if (this.app.store.maybe('wakeup', id)) return;
         this.app.store.create<Wakeup>('wakeup', projectId, { ...source, requested: false, state: 'pending', attempts: 0, maxAttempts: 2 }, id);
         this.app.store.event(projectId, 'wakeup.pending', { wakeupId: id, sourceKind: source.sourceKind, sourceId: source.sourceId });

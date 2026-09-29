@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** Local CLI uses the same ResearchApp services as HTTP and Pi tools. No Agent fallback. */
 import { integrationCli } from './integration.js';
+import { backupCli } from './backup.js';
 import { campaignDemo } from './campaign-demo.js';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve, join } from 'node:path';
@@ -76,6 +77,8 @@ async function demo() {
     }
 }
 async function main() {
+    if (await backupCli(args, dataDir))
+        return;
     if (await integrationCli(args, root, dataDir))
         return;
     switch (command) {
@@ -172,7 +175,7 @@ async function main() {
                 process.exitCode = 1;
             return;
         }
-        default: console.log(`Pi Research 0.3.1-experimental\n\n  doctor [--json]                    检查运行环境（不调用模型）\n  demo-campaign [--json]             真实4次运行 + 持久化活动/轮次/决定（不调用模型）\n  demo [--data <目录>] [--json]       真实运行4个随包受信数值实验\n  import <目录> --name <名称>          复制导入本地源码，不修改原目录\n  history-enable --project <id>        显式启用项目本地 Git 历史\n  history-sync --project <id>          处理已排队 Git 操作\n  history-retry --project <id> --operation <id>  恢复已停止的 Git 操作\n  operation <id> --project <id> --input <JSON> [--session <id>] [--key <id>]\n  request GET /projects              访问正在运行的同一控制服务\n  request POST /projects --body '{"name":"研究"}'\n\n  skills [skill-id] [--resource <path>]  只读受管技能\n  connectors --project <id>             查看来源授权与能力\n  connector-config --project <id> --enable openalex,pubmed  显式启用来源\n  discover --project <id> --query <问题> --sources openalex  发出文献查询\n  paper <论文ID> --project <id>          保存论文文本或摘要\n\n启动工作台：node dist/apps/server/index.js\n数据目录：PI_DATA_DIR 或 --data；模型凭据：仅 .env / 受控环境变量。`);
+        default: console.log(`Pi Research 0.3.1-experimental\n\n  backup help                      离线完整备份、校验与原址恢复\n  doctor [--json]                    检查运行环境（不调用模型）\n  demo-campaign [--json]             真实4次运行 + 持久化活动/轮次/决定（不调用模型）\n  demo [--data <目录>] [--json]       真实运行4个随包受信数值实验\n  import <目录> --name <名称>          复制导入本地源码，不修改原目录\n  history-enable --project <id>        显式启用项目本地 Git 历史\n  history-sync --project <id>          处理已排队 Git 操作\n  history-retry --project <id> --operation <id>  恢复已停止的 Git 操作\n  operation <id> --project <id> --input <JSON> [--session <id>] [--key <id>]\n  request GET /projects              访问正在运行的同一控制服务\n  request POST /projects --body '{"name":"研究"}'\n\n  skills [skill-id] [--resource <path>]  只读受管技能\n  connectors --project <id>             查看来源授权与能力\n  connector-config --project <id> --enable openalex,pubmed  显式启用来源\n  discover --project <id> --query <问题> --sources openalex  发出文献查询\n  paper <论文ID> --project <id>          保存论文文本或摘要\n\n启动工作台：node dist/apps/server/index.js\n数据目录：PI_DATA_DIR 或 --data；模型凭据：仅 .env / 受控环境变量。`);
     }
 }
 main().catch(e => { console.error(JSON.stringify({ error: { code: e.code ?? 'CLI_FAILED', message: e instanceof Error ? e.message : String(e) } })); process.exitCode = 1; });

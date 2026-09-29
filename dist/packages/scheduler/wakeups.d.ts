@@ -1,5 +1,5 @@
 import type { ResearchApp } from '../research-app.js';
-import type { Actor, Message, Row } from '../domain/types.js';
+import type { Actor, Message, Row, Task, Team } from '../domain/types.js';
 import type { RunObservation } from '../research-workflows/types.js';
 export interface Wakeup {
     sourceKind: 'team' | 'campaign-result';
@@ -19,6 +19,9 @@ export interface Wakeup {
     generation?: number;
     error?: string;
 }
+type Source = Pick<Wakeup, 'sourceKind' | 'sourceId' | 'ownerId' | 'rootSessionId' | 'sourceDigest' | 'automatic'>;
+export declare function teamWakeupSource(t: Row<Team>, tasks: Row<Task>[]): Source;
+export declare const wakeupId: (source: Source) => string;
 /** A durable inbox. One pending signal is not the full result set: prompts reread authoritative records. */
 export declare class WakeupService {
     private app;
@@ -85,3 +88,4 @@ export declare class WakeupService {
     };
     assertResource(actor: Actor, kind: 'artifact' | 'evidence' | 'run' | 'task', id: string): void;
 }
+export {};

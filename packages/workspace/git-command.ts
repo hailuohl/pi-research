@@ -1,5 +1,5 @@
 import {spawn} from 'node:child_process';
-import {chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, realpathSync, unlinkSync, writeFileSync} from 'node:fs';
+import {chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, unlinkSync, writeFileSync} from 'node:fs';
 import {dirname, join, relative, resolve, sep} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {digest} from '../storage/store.js';
@@ -119,6 +119,16 @@ export class GitCommand {
     }
     async tree(commit: string): Promise<GitTreeEntry[]> {
         return parseTree((await this.bare(['ls-tree', '-rz', '--full-tree', oid(commit)])).stdout);
+    }
+    /** Read-only check on a copied bare repository; never follow worktree paths into the live source. */
+    async verifyHistory(commits:string[]) {
+        for(const name of ['objects/info/alternates','objects/info/http-alternates','commondir'])
+            if(existsSync(join(this.repoPath,name))&&readFileSync(join(this.repoPath,name),'utf8').trim())throw Error('Managed Git backup must be self-contained');
+        const config=join(this.repoPath,'config');
+        if(existsSync(config)&&/^\s*\[\s*include(?:if)?(?:\s|\])/im.test(readFileSync(config,'utf8')))throw Error('Managed Git backup cannot include external configuration');
+        await this.bare(['fsck','--full']);
+        const ids=[...new Set(commits.map(oid))];
+        if(ids.length){const output=(await this.bare(['cat-file','--batch-check=%(objectname) %(objecttype)'],{input:Buffer.from(ids.join('\n')+'\n')})).stdout.toString().trim().split(/\r?\n/);if(output.length!==ids.length||output.some((line,i)=>line!==ids[i]+' commit'))throw Error('Recorded Git commit is missing');}
     }
     async readBlob(objectId: string): Promise<Buffer> {return (await this.bare(['cat-file', 'blob', oid(objectId)])).stdout;}
     async inspectWorktree(path: string): Promise<{head: string; branch: string; dirty: boolean; repoPath: string}> {
