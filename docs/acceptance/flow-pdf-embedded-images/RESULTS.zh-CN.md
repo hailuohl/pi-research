@@ -6,4 +6,6 @@
 
 后续仍需处理嵌套 Form 的父级变换、矢量图、图注、表格与 OCR；PR10 其他原文来源及 PR13 外部 Linux/SSH 主机验收按原计划推进。前端布局和 PR14 桌面/团队部分继续暂缓。本批不调用真实 Pi。精简机器记录见 [evidence.json](evidence.json)；原始 PDF、运行库和详细日志保留本机。
 
+交付分支：`implementation/pr01-reproducible-baseline`；代码提交：[e045892ca081a2e476893650ca86cc6abb716c02](https://github.com/hailuohl/pi-research/commit/e045892ca081a2e476893650ca86cc6abb716c02)。
+
 验证：隔离干净构建通过；集成全量回归 808 通过、0 失败、22 跳过，修复后相关测试 18 通过。真实 Docker 关键路径与浏览器页 2 裁剪、刷新重开通过；独立 Astra 复核的唯一阻断已关闭。
