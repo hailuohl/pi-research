@@ -1,6 +1,8 @@
 import {assertDiscoveryArtifact,assertDiscoveryDocument} from '../policy/discovery-grant-validation.js';
 import {assertPdfArtifactRead,assertTextCorpusGrantActor,type TextCorpusGrantReference} from '../policy/text-corpus-grants.js';
 import {verifyDocumentLink} from './document-link.js';
+import {assertPmcArtifactRead,pmcOwner,verifyPmcText} from '../documents/pmc-text.js';
+import type {ProviderTextEvidenceLink} from '../documents/types.js';
 import type {DocumentParseResult} from '../documents/parse-types.js';
 import {captureAcceptance,assertAcceptanceCurrent} from './acceptance.js';
 import {assertProjectWritable} from '../policy/lifecycle.js';
@@ -31,7 +33,7 @@ export class EvidenceService {
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId:string,prepared:Artifact){this.c.store.get('project',projectId);return this.c.store.create<Artifact>('artifact',projectId,prepared);}
     put(projectId:string,title:string,bytes:Buffer,mediaType='text/plain',origin='user',extra:Partial<Artifact>={}){return this.publishPrepared(projectId,this.prepareArtifact(projectId,title,bytes,mediaType,origin,extra));}
-    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); assertPmcArtifactRead(this.c.store,actor,a.projectId!,id); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
     register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type: Evidence['type'] = 'artifact', runId?: string) {
         scope(actor, projectId);
         const a = this.c.store.get<Artifact>('artifact', artifactId, projectId);
@@ -45,7 +47,12 @@ export class EvidenceService {
             this.c.store.get('run', runId, projectId);
         return this.c.store.create<Evidence>('evidence', projectId, { type, artifactId: a.id, digest: a.digest, locator: { start, end }, quote: content.slice(start, end), description: text(description, 'description', 2000), ...(runId ? { runId } : {}) });
     }
-    verify(projectId: string, evidenceId: string, current=true) { const e = this.c.store.get<Evidence>('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); if(current)assertDiscoveryArtifact(this.c.store,projectId,artifact); if(e.document){const link=verifyDocumentLink(this.c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(this.c.store,projectId,link.document);} return e; }
+    verify(projectId: string, evidenceId: string, current=true) { const e = this.c.store.get<Evidence>('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); if(current)assertDiscoveryArtifact(this.c.store,projectId,artifact); if(e.providerText)verifyPmcText(this.c,projectId,e.providerText.documentVersionId,e.providerText,e.artifactId); if(e.document){const link=verifyDocumentLink(this.c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(this.c.store,projectId,link.document);} return e; }
+    /** Host local search only; no caller-supplied authority flag or new agent tool. */
+    registerProviderText(actor:Actor,projectId:string,providerText:ProviderTextEvidenceLink,start:number,end:number,description:string){
+        pmcOwner(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
+        return this.c.store.transaction(()=>{const {document}=verifyPmcText(this.c,projectId,providerText.documentVersionId,providerText);const e=this.register(actor,projectId,document.derivedText!.artifactId,start,end,description,'paper');return this.c.store.update<Evidence>('evidence',e.id,e.version,{providerText});});
+    }
     registerDocument(actor:Actor,projectId:string,input:{documentVersionId:string;parseResultId:string;pageNumber:number;start:number;end:number;description:string}) {
         userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
         return this.registerDocumentCore(actor,projectId,input);

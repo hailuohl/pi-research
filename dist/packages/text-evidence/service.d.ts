@@ -1,5 +1,6 @@
 import type { ResearchApp } from '../research-app.js';
 import type { Actor } from '../domain/types.js';
+import type { ProviderTextEvidenceLink } from '../documents/types.js';
 import type { DocumentParseResult } from '../documents/parse-types.js';
 type SourceRef = {
     artifactId: string;
@@ -21,9 +22,13 @@ export type DocumentSourceRef = DocumentPair & {
     manifestDigest: string;
     pages: DocumentParseResult['pages'];
 };
+type PmcSourceRef = ProviderTextEvidenceLink & {
+    title: string;
+};
 export type Corpus = {
     sources: SourceRef[];
     documents?: DocumentSourceRef[];
+    pmcDocuments?: PmcSourceRef[];
     parserVersion: string;
 };
 export type Configuration = {
@@ -37,18 +42,10 @@ export declare class TextEvidenceService {
     private allowed;
     private load;
     private documentPairs;
+    private pmcPairs;
+    private verifyPmc;
     private verifyDocument;
     status(actor: Actor, projectId: string): {
-        enabled: boolean;
-        version: number;
-        corpusId: string | null;
-        sources: SourceRef[];
-        documents: {
-            documentVersionId: string;
-            parseResultId: string;
-            title: string;
-            pageCount: number;
-        }[];
         method: string;
         parserVersion: string;
         limits: {
@@ -59,18 +56,23 @@ export declare class TextEvidenceService {
         };
         networkCalls: number;
         modelCalls: number;
+        pmcDocuments?: {
+            documentVersionId: string;
+            title: string;
+            reportedVersion: string;
+        }[] | undefined;
+        enabled: boolean;
+        version: number;
+        corpusId: string | null;
+        sources: SourceRef[];
+        documents: {
+            documentVersionId: string;
+            parseResultId: string;
+            title: string;
+            pageCount: number;
+        }[];
     };
     configure(actor: Actor, projectId: string, value: unknown): {
-        enabled: boolean;
-        version: number;
-        corpusId: string | null;
-        sources: SourceRef[];
-        documents: {
-            documentVersionId: string;
-            parseResultId: string;
-            title: string;
-            pageCount: number;
-        }[];
         method: string;
         parserVersion: string;
         limits: {
@@ -81,6 +83,21 @@ export declare class TextEvidenceService {
         };
         networkCalls: number;
         modelCalls: number;
+        pmcDocuments?: {
+            documentVersionId: string;
+            title: string;
+            reportedVersion: string;
+        }[] | undefined;
+        enabled: boolean;
+        version: number;
+        corpusId: string | null;
+        sources: SourceRef[];
+        documents: {
+            documentVersionId: string;
+            parseResultId: string;
+            title: string;
+            pageCount: number;
+        }[];
     };
     /** Executed before cached tool replays too: disabling/removing a source must take effect. */
     authorizeSearch(actor: Actor, projectId: string, value: unknown): {
@@ -89,6 +106,10 @@ export declare class TextEvidenceService {
         ids: string[];
         pairs: DocumentPair[];
         documentRefs: DocumentSourceRef[];
+        pmcPairs: {
+            documentVersionId: string;
+        }[];
+        pmcRefs: PmcSourceRef[];
         grant: import("../domain/types.js").Row<import("../policy/text-corpus-grants.js").TextCorpusGrant> | undefined;
     };
     verifyReplay(actor: Actor, projectId: string, value: unknown): void;

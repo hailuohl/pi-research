@@ -1,4 +1,5 @@
 import { USER } from '../domain/types.js';
+import { pmcOwner, verifyPmcText } from '../documents/pmc-text.js';
 import { ensure, DomainError } from '../domain/errors.js';
 import { object, text, integer, bool, strings } from '../contracts/validation.js';
 import { scope, userOnly } from '../policy/permissions.js';
@@ -53,6 +54,21 @@ export class TextEvidenceService {
         });
         return [...new Map(pairs.map(pair => [pairKey(pair), pair])).values()]
             .sort((a, b) => a.documentVersionId.localeCompare(b.documentVersionId) || a.parseResultId.localeCompare(b.parseResultId));
+    }
+    pmcPairs(value) {
+        if (value === undefined)
+            return [];
+        ensure(Array.isArray(value) && value.length <= LIMITS.files, 'INVALID_INPUT', 'pmcDocuments 必须是最多 30 项的固定文档列表', 400);
+        const ids = value.map(item => { const x = object(item); ensure(Object.keys(x).length === 1 && Object.hasOwn(x, 'documentVersionId'), 'INVALID_INPUT', 'PMC 来源只接受 documentVersionId', 400); return text(x.documentVersionId, 'documentVersionId', 100); });
+        return [...new Set(ids)].sort().map(documentVersionId => ({ documentVersionId }));
+    }
+    verifyPmc(projectId, pair, expected) {
+        const { title, ...link } = expected ?? {};
+        const verified = verifyPmcText(this.app.context, projectId, pair.documentVersionId, expected ? link : undefined);
+        ensure(!expected || title === verified.document.title, 'PMC_SOURCE_STALE', '固定 PMC 文档题名已改变');
+        ensure(verified.bytes.length <= LIMITS.fileBytes, 'TEXT_CORPUS_LIMIT', '单份 PMC 派生文本最多 1 MiB', 413);
+        const chunks = splitText(verified.document.derivedText.artifactId, verified.link.textArtifactDigest, verified.document.title, verified.content).map(chunk => ({ ...chunk, chunkId: digest({ providerText: verified.link, chunkId: chunk.chunkId }), sourceKind: 'pmc_oa_text', page: null, document: null, providerText: verified.link }));
+        return { ref: { ...verified.link, title: verified.document.title }, chunks, textBytes: verified.bytes.length };
     }
     verifyDocument(projectId, pair, expected) {
         const document = this.app.documents.get(USER, projectId, pair.documentVersionId);
@@ -114,31 +130,38 @@ export class TextEvidenceService {
         }
         return { enabled: config?.enabled ?? false, version: config?.version ?? 0, corpusId: config?.corpusId ?? null,
             sources, documents: documents.map(({ documentVersionId, parseResultId, title, pageCount }) => ({ documentVersionId, parseResultId, title, pageCount })),
+            ...(corpus?.pmcDocuments && actor.type !== 'agent' ? { pmcDocuments: corpus.pmcDocuments.map(({ documentVersionId, title, reportedVersion }) => ({ documentVersionId, title, reportedVersion })) } : {}),
             method: METHOD_VERSION, parserVersion: PARSER_VERSION, limits: LIMITS, networkCalls: 0, modelCalls: 0 };
     }
     configure(actor, projectId, value) {
         userOnly(actor);
         scope(actor, projectId);
         const x = object(value), enabled = bool(x.enabled, 'enabled'), expectedVersion = integer(x.expectedVersion, 'expectedVersion', 0);
+        if (x.pmcDocuments !== undefined)
+            pmcOwner(actor);
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, projectId);
             const old = this.config(projectId);
+            if (old?.corpusId && this.app.store.get('text-corpus', old.corpusId, projectId).pmcDocuments?.length)
+                pmcOwner(actor);
             ensure(expectedVersion === (old?.version ?? 0), 'VERSION_CONFLICT', '文献集合已变化，请刷新后确认');
             let corpusId = old?.corpusId ?? null;
             if (enabled) {
                 const ids = [...new Set(x.artifactIds === undefined ? [] : strings(x.artifactIds, 'artifactIds', LIMITS.files))].sort();
-                const pairs = this.documentPairs(x.documents);
-                ensure(ids.length + pairs.length > 0, 'TEXT_SOURCE_REQUIRED', '请明确选择至少一份文本或完整 PDF 文档', 400);
-                ensure(ids.length + pairs.length <= LIMITS.files, 'TEXT_CORPUS_LIMIT', '文本与 PDF 文档合计最多 30 项', 413);
+                const pairs = this.documentPairs(x.documents), pmcPairs = this.pmcPairs(x.pmcDocuments);
+                ensure(ids.length + pairs.length + pmcPairs.length > 0, 'TEXT_SOURCE_REQUIRED', '请明确选择至少一份文本、完整 PDF 或 PMC OA 文档', 400);
+                ensure(ids.length + pairs.length + pmcPairs.length <= LIMITS.files, 'TEXT_CORPUS_LIMIT', '原文来源合计最多 30 项', 413);
                 const loaded = ids.map(id => this.load(actor, projectId, id));
                 ensure(loaded.every(source => source.chunks.length > 0), 'TEXT_SOURCE_EMPTY', '不能把空白文本加入集合', 400);
                 const documents = pairs.map(pair => this.verifyDocument(projectId, pair));
+                const pmcDocuments = pmcPairs.map(pair => this.verifyPmc(projectId, pair));
                 ensure(documents.every(document => document.textBytes <= LIMITS.fileBytes), 'TEXT_CORPUS_LIMIT', '单份文本或 PDF 解析文本最多 1 MiB', 413);
-                const totalBytes = loaded.reduce((n, source) => n + source.artifact.size, 0) + documents.reduce((n, document) => n + document.textBytes, 0);
-                const totalChunks = loaded.reduce((n, source) => n + source.chunks.length, 0) + documents.reduce((n, document) => n + document.chunks.length, 0);
+                const totalBytes = loaded.reduce((n, source) => n + source.artifact.size, 0) + [...documents, ...pmcDocuments].reduce((n, document) => n + document.textBytes, 0);
+                const totalChunks = loaded.reduce((n, source) => n + source.chunks.length, 0) + [...documents, ...pmcDocuments].reduce((n, document) => n + document.chunks.length, 0);
                 ensure(totalBytes <= LIMITS.totalBytes && totalChunks <= LIMITS.chunks, 'TEXT_CORPUS_LIMIT', '超出文本集合字节或分块上限，请选择较小的资料集合', 413);
                 const data = { sources: loaded.map(({ artifact: a }) => ({ artifactId: a.id, digest: a.digest, title: a.title, size: a.size })),
-                    documents: documents.map(document => document.ref), parserVersion: PARSER_VERSION };
+                    documents: documents.map(document => document.ref), parserVersion: PARSER_VERSION,
+                    ...(pmcDocuments.length ? { pmcDocuments: pmcDocuments.map(document => document.ref) } : {}) };
                 corpusId = digest({ projectId, ...data });
                 if (!this.app.store.maybe('text-corpus', corpusId))
                     this.app.store.create('text-corpus', projectId, data, corpusId);
@@ -160,16 +183,18 @@ export class TextEvidenceService {
         ensure(config?.enabled && config.corpusId, 'TEXT_EVIDENCE_DISABLED', '本地原文检索默认关闭，请用户选择文本并明确启用');
         const corpus = this.app.store.get('text-corpus', config.corpusId, projectId);
         const ids = [...new Set(x.artifactIds === undefined ? [] : strings(x.artifactIds, 'artifactIds', LIMITS.files))].sort();
-        const pairs = this.documentPairs(x.documents);
-        ensure(ids.length + pairs.length > 0, 'TEXT_SOURCE_REQUIRED', '必须明确指定本次检索的文本或 PDF 文档 ID', 400);
-        ensure(ids.length + pairs.length <= LIMITS.files, 'TEXT_CORPUS_LIMIT', '本次检索的文本与 PDF 文档合计最多 30 项', 413);
+        const pairs = this.documentPairs(x.documents), pmcPairs = this.pmcPairs(x.pmcDocuments);
+        if (pmcPairs.length)
+            pmcOwner(actor);
+        ensure(ids.length + pairs.length + pmcPairs.length > 0, 'TEXT_SOURCE_REQUIRED', '必须明确指定本次检索的原文 ID', 400);
+        ensure(ids.length + pairs.length + pmcPairs.length <= LIMITS.files, 'TEXT_CORPUS_LIMIT', '本次检索的原文合计最多 30 项', 413);
         const grant = pairs.length && actor.type === 'agent' ? assertTextCorpusGrantActor(this.app.store, actor, projectId) : undefined;
         if (pairs.length && !grant)
             userOnly(actor);
         if (grant)
             ensure(ids.length === 0, 'TEXT_GRANT_SOURCE_DENIED', 'PDF 授权检索不能混入其他文本来源', 403);
         const hasCorpusId = x.corpusId !== undefined, hasVersion = x.configurationVersion !== undefined;
-        ensure(hasCorpusId === hasVersion && (!pairs.length || hasCorpusId), 'TEXT_CONFIGURATION_REQUIRED', 'PDF 检索必须提供当前 corpusId 和 configurationVersion', 400);
+        ensure(hasCorpusId === hasVersion && (!(pairs.length + pmcPairs.length) || hasCorpusId), 'TEXT_CONFIGURATION_REQUIRED', '固定文档检索必须提供当前 corpusId 和 configurationVersion', 400);
         if (hasCorpusId)
             ensure(text(x.corpusId, 'corpusId', 100) === config.corpusId &&
                 integer(x.configurationVersion, 'configurationVersion', 0) === config.version, 'TEXT_EVIDENCE_CONFIGURATION_CHANGED', '文献集合已变化，请刷新并重新选择来源', 409);
@@ -181,16 +206,18 @@ export class TextEvidenceService {
             return ref;
         });
         documentRefs.forEach(ref => assertCorpusDocument(this.app.store, projectId, ref));
+        const pmcRefs = pmcPairs.map(pair => { const ref = corpus.pmcDocuments?.find(p => p.documentVersionId === pair.documentVersionId); ensure(ref, 'TEXT_SOURCE_NOT_APPROVED', 'PMC 文档不在当前所有者批准的集合内', 403); return ref; });
         ids.forEach(id => {
             ensure(corpus.sources.some(source => source.artifactId === id), 'TEXT_SOURCE_NOT_APPROVED', '文档未在当前用户批准的集合内', 403);
             this.allowed(actor, id);
         });
-        return { config, corpus, ids, pairs, documentRefs, grant };
+        return { config, corpus, ids, pairs, documentRefs, pmcPairs, pmcRefs, grant };
     }
     verifyReplay(actor, projectId, value) {
-        const { corpus, ids, documentRefs } = this.authorizeSearch(actor, projectId, value);
+        const { corpus, ids, documentRefs, pmcRefs } = this.authorizeSearch(actor, projectId, value);
         ids.forEach(id => { const source = this.load(actor, projectId, id); ensure(source.artifact.digest === corpus.sources.find(s => s.artifactId === id).digest, 'TEXT_SOURCE_STALE', '原文版本与批准集合不一致'); });
         documentRefs.forEach(ref => this.verifyDocument(projectId, ref, ref));
+        pmcRefs.forEach(ref => this.verifyPmc(projectId, ref, ref));
     }
     search(actor, projectId, value) {
         return this.app.store.transaction(() => {
@@ -198,10 +225,11 @@ export class TextEvidenceService {
             const lambda = x.mmrLambda === undefined ? 1 : x.mmrLambda;
             const deduplicateExact = bool(x.deduplicateExact ?? true, 'deduplicateExact');
             ensure(typeof lambda === 'number' && Number.isFinite(lambda) && lambda >= 0 && lambda <= 1, 'INVALID_INPUT', 'mmrLambda 是 0–1 的相关性权重，1关闭MMR选择', 400);
-            const { config, corpus, ids, pairs, documentRefs, grant } = this.authorizeSearch(actor, projectId, x);
+            const { config, corpus, ids, pairs, documentRefs, pmcPairs, pmcRefs, grant } = this.authorizeSearch(actor, projectId, x);
             const documents = pairs.map(({ documentVersionId, parseResultId }) => ({ documentVersionId, parseResultId }));
             const request = { query, limit, mmrLambda: lambda, deduplicateExact, artifactIds: ids, documents,
                 corpusId: config.corpusId, configurationVersion: config.version, method: METHOD_VERSION,
+                ...(pmcPairs.length ? { pmcDocuments: pmcPairs } : {}),
                 ...(grant ? { textCorpusGrant: textCorpusGrantReference(grant) } : {}) };
             const id = digest({ projectId, ...request }), previous = this.app.store.maybe('text-evidence-search', id);
             const requestDigest = digest(request), useId = grant ? digest({ grantId: grant.id, requestDigest }) : undefined;
@@ -214,6 +242,7 @@ export class TextEvidenceService {
             }
             const loaded = ids.map(id => { const source = this.load(actor, projectId, id), saved = corpus.sources.find(item => item.artifactId === id); ensure(source.artifact.digest === saved.digest, 'TEXT_SOURCE_STALE', '原文版本与批准集合不一致'); return source; });
             const selectedDocuments = documentRefs.map(ref => this.verifyDocument(projectId, ref, ref));
+            const selectedPmc = pmcRefs.map(ref => this.verifyPmc(projectId, ref, ref));
             if (previous) {
                 previous.hits.forEach((hit) => {
                     this.app.evidence.verify(projectId, hit.evidenceId);
@@ -224,7 +253,7 @@ export class TextEvidenceService {
                 return previous;
             }
             const chunks = [...loaded.flatMap(source => source.chunks.map(chunk => ({ ...chunk,
-                    sourceKind: 'user_imported_text', page: null, document: null }))), ...selectedDocuments.flatMap(document => document.chunks)];
+                    sourceKind: 'user_imported_text', page: null, document: null }))), ...selectedDocuments.flatMap(document => document.chunks), ...selectedPmc.flatMap(document => document.chunks)];
             const groups = new Map();
             for (const chunk of chunks) {
                 const key = deduplicateExact ? digest(chunk.quote) : chunk.chunkId;
@@ -243,33 +272,36 @@ export class TextEvidenceService {
                         const link = this.app.store.maybe('text-chunk-link', chunk.chunkId);
                         if (link)
                             return this.app.evidence.verify(projectId, link.evidenceId);
-                        const evidence = this.app.evidence.register(actor, projectId, chunk.artifactId, chunk.locator.start, chunk.locator.end, `用户导入文本原文：${chunk.title}，行 ${chunk.lineStart}–${chunk.lineEnd}；${PARSER_VERSION}`);
+                        const evidence = chunk.sourceKind === 'pmc_oa_text'
+                            ? this.app.evidence.registerProviderText(actor, projectId, chunk.providerText, chunk.locator.start, chunk.locator.end, `固定 PMC OA 原文：${chunk.title}，${chunk.providerText.reportedVersion}，无 PDF 页码；${PARSER_VERSION}`)
+                            : this.app.evidence.register(actor, projectId, chunk.artifactId, chunk.locator.start, chunk.locator.end, `用户导入文本原文：${chunk.title}，行 ${chunk.lineStart}–${chunk.lineEnd}；${PARSER_VERSION}`);
                         this.app.store.create('text-chunk-link', projectId, { evidenceId: evidence.id }, chunk.chunkId);
                         return evidence;
                     })();
                 const evidence = register(source);
                 const alternativeSources = group.filter(chunk => chunk.chunkId !== source.chunkId).map(chunk => {
-                    const altEvidence = chunk.sourceKind === 'document_page' ? register(chunk) : null;
+                    const altEvidence = chunk.sourceKind !== 'user_imported_text' ? register(chunk) : null;
                     return { artifactId: chunk.artifactId, digest: chunk.digest, title: chunk.title, locator: chunk.locator,
                         lineStart: chunk.lineStart, lineEnd: chunk.lineEnd, sourceKind: chunk.sourceKind, page: chunk.page,
-                        document: chunk.document, evidenceId: altEvidence?.id ?? null };
+                        document: chunk.document, evidenceId: altEvidence?.id ?? null, ...(chunk.sourceKind === 'pmc_oa_text' ? { providerText: chunk.providerText } : {}) };
                 });
                 return { ...source, score: selected.score, evidenceId: evidence.id, alternativeSources, offsetUnit: 'utf16-code-unit' };
             });
             const result = this.app.store.create('text-evidence-search', projectId, { ...request,
                 status: hits.length ? 'matches' : 'no_lexical_match', hits,
-                coverage: { sourceCount: ids.length + pairs.length, totalChunks: chunks.length, matchingChunks: ranked.matchingChunks,
+                coverage: { sourceCount: ids.length + pairs.length + pmcPairs.length, totalChunks: chunks.length, matchingChunks: ranked.matchingChunks,
                     exactDuplicatesGrouped: ranked.exactDuplicatesGrouped, uniqueChunks: ranked.uniqueChunks,
                     candidatesConsidered: ranked.candidatesConsidered, candidateLimitReached: ranked.candidateLimitReached,
                     resultsTruncated: ranked.matchingChunks > hits.length },
                 usage: { modelCalls: 0, networkCalls: 0 }, limitations: [
-                    '仅对显式选定的用户文本和固定 PDF 页文本进行词项检索，不是语义检索或自动回答。',
+                    ...(pmcPairs.length ? ['PMC OA 原文来自固定 XML 派生文本，无 PDF 页码；不重新获取来源。'] : []),
+                    pmcPairs.length ? '仅对显式选定的用户文本、固定 PDF 页文本和 PMC OA 全文进行词项检索，不是语义检索或自动回答。' : '仅对显式选定的用户文本和固定 PDF 页文本进行词项检索，不是语义检索或自动回答。',
                     '未匹配不证明文献中没有答案；相关性分数不是正确性或独立证据评分。',
                     'PDF 使用已批准解析结果中的原页文本，不执行 OCR；存在相反结果时应逐条读原文。',
                 ] }, id);
             if (grant)
                 this.app.store.create('text-corpus-grant-use', projectId, { grantId: grant.id, grantDigest: grant.digest, sessionId: grant.sessionId, requestDigest, searchId: result.id }, useId);
-            this.app.store.event(projectId, 'text-evidence.searched', { searchId: result.id, sourceCount: ids.length + pairs.length, hitCount: hits.length, ...(grant ? { grantId: grant.id } : {}) });
+            this.app.store.event(projectId, 'text-evidence.searched', { searchId: result.id, sourceCount: ids.length + pairs.length + pmcPairs.length, hitCount: hits.length, ...(grant ? { grantId: grant.id } : {}) });
             return result;
         });
     }

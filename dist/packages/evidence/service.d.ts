@@ -1,4 +1,5 @@
 import { type TextCorpusGrantReference } from '../policy/text-corpus-grants.js';
+import type { ProviderTextEvidenceLink } from '../documents/types.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Artifact, Evidence, Claim, Row } from '../domain/types.js';
 export declare class EvidenceService {
@@ -15,6 +16,8 @@ export declare class EvidenceService {
     };
     register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type?: Evidence['type'], runId?: string): Row<Evidence>;
     verify(projectId: string, evidenceId: string, current?: boolean): Row<Evidence>;
+    /** Host local search only; no caller-supplied authority flag or new agent tool. */
+    registerProviderText(actor: Actor, projectId: string, providerText: ProviderTextEvidenceLink, start: number, end: number, description: string): Row<Evidence>;
     registerDocument(actor: Actor, projectId: string, input: {
         documentVersionId: string;
         parseResultId: string;

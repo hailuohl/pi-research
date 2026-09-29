@@ -63,6 +63,7 @@ export const INPUT_SCHEMAS = {
     project_inspect: s.object({}),
     workspace_list: s.object({ source }),
     text_evidence_search: s.object({ query: s.string(1000), artifactIds: strings(30),
+        pmcDocuments:s.array(s.object({documentVersionId:id},['documentVersionId']),30),
         documents: s.array(s.object({ documentVersionId: id, parseResultId: id }, ['documentVersionId', 'parseResultId']), 30),
         corpusId: id, configurationVersion: s.integer(0), limit: s.nullable(s.integer(1, 10)),
         mmrLambda: s.number(0, 1), deduplicateExact: s.nullable(s.boolean()) }, ['query']),

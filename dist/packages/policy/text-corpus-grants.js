@@ -5,6 +5,7 @@ import { object, text, integer } from '../contracts/validation.js';
 import { scope, userOnly } from './permissions.js';
 import { assertProjectWritable } from './lifecycle.js';
 import { assertDiscoveryDocument } from './discovery-grant-validation.js';
+import { assertPmcArtifactRead } from '../documents/pmc-text.js';
 export const textCorpusGrantReference = (g) => ({ id: g.id, digest: g.digest, approvalId: g.approvalId });
 const payload = (g) => { const { sessionId, model, corpusId, configurationVersion, documents, maxSearches, expiresAt, approvalId } = g; return { sessionId, model, corpusId, configurationVersion, documents, maxSearches, expiresAt, approvalId }; };
 const pairKey = (p) => `${p.documentVersionId}\0${p.parseResultId}`;
@@ -27,7 +28,7 @@ function sources(store, pid, g) {
     ensure(config.enabled, 'TEXT_EVIDENCE_DISABLED', '本地原文检索已关闭');
     ensure(config.corpusId === g.corpusId && config.version === g.configurationVersion, 'TEXT_EVIDENCE_CONFIGURATION_CHANGED', '文献集合已改变');
     const corpus = store.get('text-corpus', g.corpusId, pid);
-    ensure(digest({ projectId: pid, sources: corpus.sources, documents: corpus.documents, parserVersion: corpus.parserVersion }) === g.corpusId, 'TEXT_DOCUMENT_STALE', '固定语料内容与标识不符');
+    ensure(digest({ projectId: pid, sources: corpus.sources, documents: corpus.documents, parserVersion: corpus.parserVersion, ...(corpus.pmcDocuments ? { pmcDocuments: corpus.pmcDocuments } : {}) }) === g.corpusId, 'TEXT_DOCUMENT_STALE', '固定语料内容与标识不符');
     const refs = g.documents.map(p => { const ref = corpus.documents?.find(r => pairKey(r) === pairKey(p)); ensure(ref && digest(ref) === p.sourceDigest, 'TEXT_DOCUMENT_STALE', '固定授权来源已改变'); return ref; });
     refs.forEach(ref => assertCorpusDocument(store, pid, ref));
     return refs;
@@ -127,6 +128,15 @@ export class TextCorpusGrantService {
             return this.inspect(actor, pid, g.id); this.app.store.update('text-corpus-grant', g.id, integer(x.expectedVersion, 'expectedVersion', 1), { state: 'revoked', revokedAt: now() }); this.app.approvals.stale(g.id); this.app.store.event(pid, 'text-corpus-grant.revoked', { grantId: g.id }); return this.inspect(actor, pid, g.id); });
     }
     authorizeContent(actor, pid, name, x) {
+        if (actor.type === 'agent') {
+            if (name === 'artifact_read' || name === 'evidence_register')
+                assertPmcArtifactRead(this.app.store, actor, pid, x.artifactId);
+            if (name === 'evidence_read') {
+                const e = this.app.store.get('evidence', x.evidenceId, pid);
+                ensure(!e.providerText, 'PMC_OWNER_ONLY', 'PMC 原文证据未授权给 Agent', 403);
+                assertPmcArtifactRead(this.app.store, actor, pid, e.artifactId);
+            }
+        }
         if (actor.type !== 'agent' || actor.taskId || actor.wakeupId)
             return;
         if (name === 'artifact_read' || name === 'evidence_register') {

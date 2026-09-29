@@ -105,7 +105,8 @@ const team = row('team', {
     rootSessionId: string, goal: string, state: enumeration('awaiting_approval', 'active', 'paused', 'draining', 'completed', 'partial', 'failed', 'cancelled'), settings,
     delegationEnabled: boolean, planVersion: integer, directiveVersion: integer, planDigest: string, approvalId: string, summarySent: boolean, autoSummarize: boolean, blockReason: string, sourceRevisionId: string
 }, ['autoSummarize', 'blockReason', 'sourceRevisionId']);
-const evidence = row('evidence', { type: enumeration('artifact', 'run', 'paper', 'code'), artifactId: string, digest: string, locator, quote: string, description: string, runId: string, document: DOCUMENT_EVIDENCE_LINK_SCHEMA }, ['runId', 'document']);
+const providerTextLink = object({ documentVersionId: string, documentDigest: string, rawDigest: string, textArtifactDigest: string, reportedVersion: string });
+const evidence = row('evidence', { type: enumeration('artifact', 'run', 'paper', 'code'), artifactId: string, digest: string, locator, quote: string, description: string, runId: string, document: DOCUMENT_EVIDENCE_LINK_SCHEMA, providerText: providerTextLink }, ['runId', 'document', 'providerText']);
 const skillSource = object({ repository: string, commit: string, path: string, blob: string });
 const member = row('campaign-member', { campaignId: string, roundId: string, experimentId: string, intentId: string, required: boolean, repairDecisionId: string, candidateId: string, repairOfMemberId: string, repairRootMemberId: string }, ['repairDecisionId', 'candidateId', 'repairOfMemberId', 'repairRootMemberId']);
 const decision = row('campaign-decision', {
@@ -118,19 +119,21 @@ const decision = row('campaign-decision', {
 const corpusSource = object({ artifactId: string, digest: string, title: string, size: integer });
 const documentPair = object({ documentVersionId: string, parseResultId: string });
 const corpusDocument = object({ documentVersionId: string, parseResultId: string, title: string, pageCount: integer });
+const pmcDocument = object({ documentVersionId: string, title: string, reportedVersion: string });
+const pmcPair = object({ documentVersionId: string });
 const chunkSource = object({ artifactId: string, digest: string, title: string, locator, lineStart: integer, lineEnd: integer });
 const nullableDocumentLink = { anyOf: [DOCUMENT_EVIDENCE_LINK_SCHEMA, { type: 'null' }] };
 const nullablePage = { anyOf: [integer, { type: 'null' }] };
-const searchSource = object({ ...chunkSource.properties, sourceKind: enumeration('user_imported_text', 'document_page'),
-    page: nullablePage, document: nullableDocumentLink, evidenceId: nullableString }, ['sourceKind', 'page', 'document', 'evidenceId']);
+const searchSource = object({ ...chunkSource.properties, sourceKind: enumeration('user_imported_text', 'document_page', 'pmc_oa_text'),
+    page: nullablePage, document: nullableDocumentLink, evidenceId: nullableString, providerText: providerTextLink }, ['sourceKind', 'page', 'document', 'evidenceId', 'providerText']);
 const searchHit = object({ ...chunkSource.properties, chunkId: string, quote: string, alternativeSources: array(searchSource), score: number,
-    evidenceId: string, sourceKind: enumeration('user_imported_text', 'document_page'), offsetUnit: { const: 'utf16-code-unit' },
-    page: nullablePage, document: nullableDocumentLink }, ['sourceKind', 'offsetUnit', 'page', 'document']);
+    evidenceId: string, sourceKind: enumeration('user_imported_text', 'document_page', 'pmc_oa_text'), offsetUnit: { const: 'utf16-code-unit' },
+    page: nullablePage, document: nullableDocumentLink, providerText: providerTextLink }, ['sourceKind', 'offsetUnit', 'page', 'document', 'providerText']);
 const textCorpusGrantReference = object({ id: string, digest: string, approvalId: string });
 const textEvidenceSearch = row('text-evidence-search', {
-    query: string, limit: integer, mmrLambda: number, deduplicateExact: boolean, artifactIds: strings, documents: array(documentPair), corpusId: string, configurationVersion: integer, method: string, status: enumeration('matches', 'no_lexical_match'), textCorpusGrant: textCorpusGrantReference,
+    query: string, limit: integer, mmrLambda: number, deduplicateExact: boolean, artifactIds: strings, documents: array(documentPair), pmcDocuments: array(pmcPair), corpusId: string, configurationVersion: integer, method: string, status: enumeration('matches', 'no_lexical_match'), textCorpusGrant: textCorpusGrantReference,
     hits: array(searchHit), coverage: object({ sourceCount: integer, totalChunks: integer, matchingChunks: integer, exactDuplicatesGrouped: integer, uniqueChunks: integer, candidatesConsidered: integer, candidateLimitReached: boolean, resultsTruncated: boolean }), usage: object({ modelCalls: { const: 0 }, networkCalls: { const: 0 } }), limitations: strings
-}, ['documents', 'textCorpusGrant']);
+}, ['documents', 'textCorpusGrant', 'pmcDocuments']);
 const textCorpusGrant = row('text-corpus-grant', {
     sessionId: string, model: object({ provider: string, model: string, thinking: enumeration('off', 'minimal', 'low', 'medium', 'high', 'xhigh') }), corpusId: string, configurationVersion: integer,
     documents: array(object({ documentVersionId: string, parseResultId: string, sourceDigest: string })), maxSearches: integer, expiresAt: string, approvalId: string, digest: string, state: enumeration('draft', 'active', 'revoked'), activatedAt: string, revokedAt: string,
@@ -183,7 +186,7 @@ export const OUTPUT_SCHEMAS = {
     literature_search: row('literature-search', { query: string, source: { const: 'crossref' }, retrievedAt: string, coverage: { const: 'metadata-only' }, items: array(object({ doi: string, title: string, authors: strings, date: array(integer), journal: string, url: string, fullTextRead: { const: false }, source: { const: 'crossref' } })), discoveryGrant: DISCOVERY_GRANT_REFERENCE_SCHEMA, discoveryCallIds: strings, discoveryRequestDigest: string }, ['discoveryGrant', 'discoveryCallIds', 'discoveryRequestDigest']),
     literature_discover: DISCOVERY_OUTPUT_SCHEMA,
     project_inspect: object({
-        textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents']),
+        textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument), pmcDocuments: array(pmcDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents', 'pmcDocuments']),
         project: object({ id: string, name: string }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
         runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings
     }),

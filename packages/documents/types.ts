@@ -18,3 +18,5 @@ export interface DocumentVersion {
 export interface DocumentAcquireInput {source:SourceId;id:string;format:'provider-text'|'original-pdf';requestedVersion?:string;}
 export interface LiteratureDocumentAcquireInput {source:SourceId;id:string;format:'provider-text'|'original-pdf'|'oa-full-text';requestedVersion?:string;}
 export interface DocumentEvidenceLink {documentVersionId:string;rawDigest:string;parseResultId:string;pageNumber:number;textArtifactDigest:string;}
+/** PMC provider text has a fixed XML source, never a PDF page. */
+export interface ProviderTextEvidenceLink {documentVersionId:string;documentDigest:string;rawDigest:string;textArtifactDigest:string;reportedVersion:string;}

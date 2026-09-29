@@ -56,3 +56,11 @@ export interface DocumentEvidenceLink {
     pageNumber: number;
     textArtifactDigest: string;
 }
+/** PMC provider text has a fixed XML source, never a PDF page. */
+export interface ProviderTextEvidenceLink {
+    documentVersionId: string;
+    documentDigest: string;
+    rawDigest: string;
+    textArtifactDigest: string;
+    reportedVersion: string;
+}

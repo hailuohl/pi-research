@@ -203,6 +203,7 @@ export interface Evidence {
     description: string;
     runId?: string;
     document?: import('../documents/types.js').DocumentEvidenceLink;
+    providerText?: import('../documents/types.js').ProviderTextEvidenceLink;
 }
 export interface Claim {
     statement: string;

@@ -790,7 +790,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("path" | "size" | "digest" | "artifactId" | "mediaType" | "provenance")[];
+                    readonly required: ("path" | "size" | "digest" | "mediaType" | "artifactId" | "provenance")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -891,7 +891,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("path" | "size" | "digest" | "artifactId" | "mediaType" | "provenance")[];
+                    readonly required: ("path" | "size" | "digest" | "mediaType" | "artifactId" | "provenance")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -997,7 +997,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                                         readonly additionalProperties: false;
                                     };
                                 };
-                                readonly required: ("path" | "size" | "digest" | "artifactId" | "mediaType" | "provenance")[];
+                                readonly required: ("path" | "size" | "digest" | "mediaType" | "artifactId" | "provenance")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -1842,7 +1842,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("bytes" | "digest" | "pages" | "artifactId")[];
+                    readonly required: ("bytes" | "digest" | "artifactId" | "pages")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";

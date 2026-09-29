@@ -612,6 +612,25 @@ export declare const INPUT_SCHEMAS: {
                 };
                 readonly minItems: number;
             };
+            readonly pmcDocuments: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly documentVersionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                    };
+                    readonly required: readonly ["documentVersionId"];
+                    readonly additionalProperties: false;
+                };
+                readonly minItems: number;
+            };
             readonly documents: {
                 readonly maxItems?: number | undefined;
                 readonly type: "array";
@@ -1919,7 +1938,7 @@ export declare const INPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                         readonly format: {
-                            readonly enum: readonly ["provider-text", "original-pdf"];
+                            readonly enum: readonly ["provider-text", "original-pdf", "oa-full-text"];
                         };
                         readonly requestedVersion: {
                             readonly pattern?: string | undefined;

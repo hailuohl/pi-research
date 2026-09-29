@@ -10,6 +10,7 @@ import {object,text,integer} from '../contracts/validation.js';
 import {scope,userOnly} from './permissions.js';
 import {assertProjectWritable} from './lifecycle.js';
 import {assertDiscoveryDocument} from './discovery-grant-validation.js';
+import {assertPmcArtifactRead} from '../documents/pmc-text.js';
 
 export interface TextCorpusGrantReference {id:string;digest:string;approvalId:string;}
 export interface TextCorpusGrant {
@@ -43,7 +44,7 @@ function sources(store:Store,pid:string,g:TextCorpusGrant){
     ensure(config.enabled,'TEXT_EVIDENCE_DISABLED','本地原文检索已关闭');
     ensure(config.corpusId===g.corpusId&&config.version===g.configurationVersion,'TEXT_EVIDENCE_CONFIGURATION_CHANGED','文献集合已改变');
     const corpus=store.get<Corpus>('text-corpus',g.corpusId,pid);
-    ensure(digest({projectId:pid,sources:corpus.sources,documents:corpus.documents,parserVersion:corpus.parserVersion})===g.corpusId,'TEXT_DOCUMENT_STALE','固定语料内容与标识不符');
+    ensure(digest({projectId:pid,sources:corpus.sources,documents:corpus.documents,parserVersion:corpus.parserVersion,...(corpus.pmcDocuments?{pmcDocuments:corpus.pmcDocuments}:{})})===g.corpusId,'TEXT_DOCUMENT_STALE','固定语料内容与标识不符');
     const refs=g.documents.map(p=>{const ref=corpus.documents?.find(r=>pairKey(r)===pairKey(p));ensure(ref&&digest(ref)===p.sourceDigest,'TEXT_DOCUMENT_STALE','固定授权来源已改变');return ref;});
     refs.forEach(ref=>assertCorpusDocument(store,pid,ref));return refs;
 }
@@ -105,6 +106,10 @@ export class TextCorpusGrantService {
         userOnly(actor);scope(actor,pid);const x=object(value);return this.app.store.transaction(()=>{const g=this.app.store.get<TextCorpusGrant>('text-corpus-grant',text(x.grantId,'grantId',100),pid);if(g.state==='revoked')return this.inspect(actor,pid,g.id);this.app.store.update<TextCorpusGrant>('text-corpus-grant',g.id,integer(x.expectedVersion,'expectedVersion',1),{state:'revoked',revokedAt:now()});this.app.approvals.stale(g.id);this.app.store.event(pid,'text-corpus-grant.revoked',{grantId:g.id});return this.inspect(actor,pid,g.id);});
     }
     authorizeContent(actor:Actor,pid:string,name:string,x:Record<string,unknown>){
+        if(actor.type==='agent'){
+            if(name==='artifact_read'||name==='evidence_register')assertPmcArtifactRead(this.app.store,actor,pid,x.artifactId as string);
+            if(name==='evidence_read'){const e=this.app.store.get<Evidence>('evidence',x.evidenceId as string,pid);ensure(!e.providerText,'PMC_OWNER_ONLY','PMC 原文证据未授权给 Agent',403);assertPmcArtifactRead(this.app.store,actor,pid,e.artifactId);}
+        }
         if(actor.type!=='agent'||actor.taskId||actor.wakeupId)return;
         if(name==='artifact_read'||name==='evidence_register'){assertPdfArtifactRead(this.app.store,actor,pid,x.artifactId as string);return;}
         if(name!=='evidence_read')return;

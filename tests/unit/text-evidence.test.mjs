@@ -6,6 +6,7 @@ import {Worker} from 'node:worker_threads';
 import {pathToFileURL} from 'node:url';
 import {resolve} from 'node:path';
 import {setup,USER,approve} from '../support/research.mjs';
+import {pmcDocument} from '../support/pmc-corpus.mjs';
 import {startTeam,spec,actor} from '../support/collaboration.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {ToolDispatcher} from '../../dist/packages/research-tools/dispatcher.js';
@@ -152,6 +153,22 @@ test('UTF8 BOM remains part of original offset space and registered evidence mat
 }finally{s.close();}});
 
 const grantOp=(s,who,name,input,key)=>s.app.operations.execute(who,name,input,{projectId:s.project.id,idempotencyKey:key});
+test('existing PDF grant cannot search or read newly saved PMC owner text',()=>{const s=setup();try{
+ const f=grantFixture(s),{who}=grantAgent(s,f.draft),d=pmcDocument(s);
+ assert.ok(grantOp(s,who,'text_evidence_search',f.input,'pdf-still-works').hits.length);
+ assert.throws(()=>grantOp(s,who,'text_evidence_search',{...f.input,pmcDocuments:[{documentVersionId:d.id}]},'pmc-bypass'),{code:'PERMISSION_DENIED'});
+ for(const artifactId of [d.original.artifactId,d.derivedText.artifactId])assert.throws(()=>grantOp(s,who,'artifact_read',{artifactId},'pmc-read-'+artifactId),{code:'PMC_OWNER_ONLY'});
+ const legacy=s.app.evidence.register(USER,s.project.id,d.derivedText.artifactId,0,10,'generic PMC');assert.throws(()=>grantOp(s,who,'evidence_read',{evidenceId:legacy.id},'pmc-evidence'),{code:'PMC_OWNER_ONLY'});
+ assert.deepEqual(s.app.textEvidence.status(who,s.project.id).pmcDocuments??[],[]);
+ }finally{s.close();}});
+test('a PDF-only grant remains usable in a mixed owner PMC and PDF corpus',()=>{const s=setup();try{
+ const f=grantFixture(s),d=pmcDocument(s),config=s.app.textEvidence.configure(USER,s.project.id,{enabled:true,documents:[f.pair],pmcDocuments:[{documentVersionId:d.id}],expectedVersion:f.config.version});
+ const draft=grantOp(s,USER,'text_corpus_grant_prepare',{sessionId:s.session.id,documents:[f.pair],corpusId:config.corpusId,configurationVersion:config.version,maxSearches:1,expiresAt:new Date(Date.now()+60000).toISOString()},'mixed-grant');
+ const {who}=grantAgent(s,draft),input={...f.input,corpusId:config.corpusId,configurationVersion:config.version};
+ assert.equal(s.app.textEvidence.status(who,s.project.id).pmcDocuments,undefined);
+ assert.ok(grantOp(s,who,'text_evidence_search',input,'mixed-pdf').hits.every(h=>h.sourceKind==='document_page'));
+ assert.throws(()=>grantOp(s,who,'text_evidence_search',{...input,pmcDocuments:[{documentVersionId:d.id}]},'mixed-denied'),{code:'PERMISSION_DENIED'});
+ }finally{s.close();}});
 function grantFixture(s,{maxSearches=2,extraPdf=false}={}){
  const pages=Array(17).fill('');pages[4]='fixed acidity alcohol 😀 measured';const parsed=parsedPdf(s,pages),pair={documentVersionId:parsed.document.id,parseResultId:parsed.result.id};
  const other=extraPdf?parsedPdf(s,['secret alcohol result'],'other-pdf'):null,otherPair=other?{documentVersionId:other.document.id,parseResultId:other.result.id}:null;

@@ -9,6 +9,7 @@ import {assertProjectWritable,assertExperimentSourceCurrent} from '../policy/lif
 import {verifyRunRecord} from '../evidence/run-verifier.js';
 import {verifyDocumentLink} from '../evidence/document-link.js';
 import {checkDocumentVersion} from '../documents/parse-service.js';
+import {isPmcArtifact} from '../documents/pmc-text.js';
 import type {DocumentVersion} from '../documents/types.js';
 import {DOCUMENT_PARSER_LEGACY_PROFILE,type DocumentParseResult,type DocumentParseJob} from '../documents/parse-types.js';
 import {assertAcceptanceCurrent} from '../evidence/acceptance.js';
@@ -180,7 +181,7 @@ export class ReportService {
             const checkedDocuments=new Set<string>();
             const evidence=(id:string)=>{
                 const prior=references.find(ref=>ref.type==='evidence'&&ref.targetId===id);if(prior)return prior.id;
-                const e=this.c.store.get<Evidence>('evidence',id,pid);if(!e.document)this.evidence.verify(pid,id);ensure(artifact(e.artifactId,e.runId),'REPORT_UNSAFE_REFERENCE','证据指向不适合交付的凭据或宿主诊断文件');
+                const e=this.c.store.get<Evidence>('evidence',id,pid);ensure(!e.providerText&&!isPmcArtifact(this.c.store,pid,e.artifactId),'REPORT_PROVIDER_TEXT_UNSUPPORTED','报告尚不支持固定 PMC XML 与派生文本证据绑定，请在工作台回查原文');if(!e.document)this.evidence.verify(pid,id);ensure(artifact(e.artifactId,e.runId),'REPORT_UNSAFE_REFERENCE','证据指向不适合交付的凭据或宿主诊断文件');
                 let document:ReportReference['document'],provenance:ReportBindings['documents'];
                 if(e.document) {
                     const {document:d,result:r,page,job}=this.document(pid,e,checkedDocuments);
