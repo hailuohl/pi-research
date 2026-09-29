@@ -7,3 +7,5 @@
 失败路径和历史保留已核对：任务错误为 `CONNECTOR_RATE_LIMITED`、来源响应 429，未自动重试或生成半成品；关闭来源并重开后，原 PMC 文档、检索和报告仍可读，旧 55 条非设置记录摘要未变。官方 bioRxiv [版本地址格式](https://www.biorxiv.org/about-biorxiv)与既有固定地址一致，但本次没有取得 PDF 字节。
 
 验证：无产品源码变更，因此未重复全量回归或构建；浏览器、Pi、Docker 和 PDF 解析因无可用 PDF 跳过。必要机器摘要见 [evidence.json](evidence.json)，原始请求和任务记录留在本地 `.validation/biorxiv-original-pdf/`。
+
+记录提交：[139a628370e899eca0ffcfb82f61ee389dc0ba5c](https://github.com/hailuohl/pi-research/commit/139a628370e899eca0ffcfb82f61ee389dc0ba5c)，分支 `implementation/pr01-reproducible-baseline`；私有远端已核对包含该提交。
