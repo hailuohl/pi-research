@@ -31,6 +31,14 @@ test('operation schemas reject missing/unknown fields and invalid primitive valu
     assert.throws(() => validateSchema(s.string(), 3, 'output'), { code: 'INVALID_OUTPUT', status: 500 });
 });
 
+test('RunGrant prepare fixes exactly one coordinator session or analyst Task scope',()=>{
+    const common={intentIds:['intent'],maxRuns:1,expiresAt:'2099-01-01T00:00:00.000Z'};
+    validateSchema(INPUT_SCHEMAS.run_grant_prepare,{...common,sessionId:'session'});
+    validateSchema(INPUT_SCHEMAS.run_grant_prepare,{...common,taskId:'task'});
+    for(const input of [common,{...common,sessionId:'session',taskId:'task'},{...common,taskId:'task',extra:true}])
+        assert.throws(()=>validateSchema(INPUT_SCHEMAS.run_grant_prepare,input),{code:'INVALID_INPUT'});
+});
+
 test('literature page creation accepts only a saved search id as its continuation input',()=>{
     validateSchema(INPUT_SCHEMAS.literature_task_create,{kind:'search',previousSearchId:'saved-search-id'});
     for(const input of [

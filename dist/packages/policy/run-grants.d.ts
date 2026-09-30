@@ -1,7 +1,7 @@
 import type { ResearchApp } from '../research-app.js';
 import type { Actor } from '../domain/types.js';
 import type { RunGrantDTO } from './run-grant-types.js';
-export type { RunGrant, RunGrantDTO, RunGrantEntry, RunGrantReference, RunGrantUse } from './run-grant-types.js';
+export type { RunGrant, RunGrantDTO, RunGrantEntry, RunGrantReference, RunGrantTaskBinding, RunGrantUse } from './run-grant-types.js';
 export { assertRunGrantRun, assertRunGrantIntent } from './run-grant-validation.js';
 export declare class RunGrantService {
     private app;

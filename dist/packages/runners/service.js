@@ -107,7 +107,7 @@ export class RunService {
             }
             this.compute.assertEnqueue('run', intent.projectId, intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.runner === 'docker' ? intent.manifest.contract.dockerContext ?? 'default' : undefined);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
-            consumeRunGrant(this.c.store, intent, runId);
+            consumeRunGrant(this.c.store, intent, runId, actor);
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
             const execution = intent.manifest.contract.runner !== 'trusted-example' ? { backend: intent.manifest.contract.runner, dockerContext: intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.dockerContext ?? 'default', ...(intent.manifest.contract.runner === 'ssh' ? { sshHandle: `pi-ssh-${runId}` } : {}), containerName: `pi-research-${runId}`, controlDir: this.c.store.paths.reference(join(this.c.dataDir, 'jobs', runId, 'control')), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;

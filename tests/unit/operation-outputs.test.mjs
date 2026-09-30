@@ -22,6 +22,10 @@ import {SOURCE_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/so
 import {INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/inputs.js';
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
 
+test('Task context output carries the fixed RunGrant reference and intent IDs',()=>{
+  validateSchema(OUTPUT_SCHEMAS.task_context_read,{schemaVersion:1,taskId:'task',teamId:'team',goal:'goal',objective:'objective',role:'analyst',planVersion:1,directiveVersion:1,inputEvidenceIds:[],expectedOutputs:[],acceptanceRuleIds:[],upstream:[],reviewOf:null,restrictions:[],stopConditions:[],skillBundleId:'bundle',skillIds:[],runGrant:{id:'grant',digest:'a'.repeat(64),approvalId:'approval'},runIntentIds:['intent']},'output');
+});
+
 test('every input and advertised tool has a matching output contract',()=>{
  assert.deepEqual(Object.keys(OUTPUT_SCHEMAS).sort(),Object.keys(INPUT_SCHEMAS).sort());
  for(const name of Object.keys(TOOL_DEFINITIONS)) assert.ok(OUTPUT_SCHEMAS[name],name);

@@ -5,7 +5,7 @@ export declare class DevelopmentReviewService {
     constructor(app: ResearchApp);
     private access;
     prepare(actor: Actor, pid: string, value: unknown): {
-        verdict?: "accept" | "reject" | "disputed" | undefined;
+        verdict?: "disputed" | "accept" | "reject" | undefined;
         reviewerSessionId?: string | undefined;
         digest: string;
         status: "failed" | "stale" | "running" | "pending" | "rejected" | "disputed" | "awaiting_approval" | "passed";
@@ -23,7 +23,7 @@ export declare class DevelopmentReviewService {
         reviewId: string;
     };
     inspect(actor: Actor, pid: string, id: string): {
-        verdict?: "accept" | "reject" | "disputed" | undefined;
+        verdict?: "disputed" | "accept" | "reject" | undefined;
         reviewerSessionId?: string | undefined;
         digest: string;
         status: "failed" | "stale" | "running" | "pending" | "rejected" | "disputed" | "awaiting_approval" | "passed";

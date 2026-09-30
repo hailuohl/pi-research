@@ -11,6 +11,7 @@ import { OUTPUT_SCHEMAS } from './outputs.js';
 import { validateSchema } from './schema.js';
 import { assertWorkspaceReady } from '../../workspace/git-service.js';
 import { discoveryContext, discoveryScope } from '../../policy/discovery-grant-validation.js';
+import { assertRunGrantActor, assertRunGrantTaskSubmission } from '../../policy/run-grant-validation.js';
 const recordScope = (kind, field) => (c, x) => { c.app.store.get(kind, x[field], c.projectId); };
 const workspaceScope = (c, x) => {
     if (x.source === 'project') {
@@ -276,7 +277,16 @@ const SPECS = [
     make('run_grant_revoke', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.runGrants.revoke(c.actor, c.projectId, x) }),
     make('run_prepare', { idempotencyPolicy: 'key-required', authorize: recordScope('experiment', 'experimentId'), preconditions: noPrecondition,
         execute: (c, x) => c.app.runs.prepare(c.actor, x.experimentId) }),
-    make('run_submit', { idempotencyPolicy: 'key-required', authorize: recordScope('run-intent', 'intentId'), preconditions: noPrecondition,
+    make('run_submit', { idempotencyPolicy: 'key-required', authorize: (c, x) => {
+            const intent = c.app.store.get('run-intent', x.intentId, c.projectId);
+            if (c.actor.type === 'agent' && c.actor.taskId)
+                assertRunGrantTaskSubmission(c.app.store, c.actor, intent, !intent.runId);
+            else if (intent.runGrant) {
+                const grant = c.app.store.get('run-grant', intent.runGrant.id, c.projectId);
+                if (grant.taskBinding)
+                    assertRunGrantActor(c.app.store, c.actor, intent);
+            }
+        }, preconditions: noPrecondition,
         execute: (c, x) => c.app.runs.submit(c.actor, x.intentId) }),
     make('workspace_read', { idempotencyPolicy: 'read-only', authorize: workspaceScope, preconditions: noPrecondition,
         execute: (c, x) => x.source === 'project' ? c.app.projects.readFile(c.actor, c.projectId, x.path) : readText(c.app.store.paths.physical(c.session.workspace), x.path) }),
@@ -498,7 +508,7 @@ export class OperationRegistry {
         // Recheck under the write lock before invoking: other HTTP/CLI processes share this DB.
         return this.app.store.transaction(() => {
             // PDF authority must be current under the same writer lock as cached receipt return.
-            if (['text_evidence_search', 'artifact_read', 'evidence_register', 'evidence_read'].includes(id))
+            if (['text_evidence_search', 'artifact_read', 'evidence_register', 'evidence_read', 'run_submit'].includes(id))
                 spec.authorize(context, input);
             const previous = lookup();
             if (previous) {

@@ -13,8 +13,22 @@ export interface RunGrantEntry {
     contractDigest: string;
     approvalId: string;
 }
+export interface RunGrantTaskBinding {
+    taskId: string;
+    teamId: string;
+    teamApprovalId: string;
+    planDigest: string;
+    planVersion: number;
+    directiveVersion: number;
+    taskSpecDigest: string;
+    teamPlanId: string;
+    teamPlanVersion: number;
+    teamPlanDigest: string;
+    role: 'analyst';
+}
 export interface RunGrant {
     sessionId: string;
+    taskBinding?: RunGrantTaskBinding;
     model: ModelConfig;
     entries: RunGrantEntry[];
     maxRuns: number;
@@ -33,6 +47,11 @@ export interface RunGrantUse {
     manifestDigest: string;
     approvalId: string;
     runId: string;
+    taskId?: string;
+    teamId?: string;
+    sessionId?: string;
+    attemptId?: string;
+    generation?: number;
 }
 export type RunGrantDTO = Row<RunGrant> & {
     effectiveState: 'draft' | 'active' | 'expired' | 'exhausted' | 'revoked' | 'stale';
