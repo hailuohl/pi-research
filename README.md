@@ -4,6 +4,10 @@
 
 本开发副本基于 v0.3.1 按 [优化实施计划](docs/IMPLEMENTATION-PLAN.zh-CN.md) 持续推进。原 ZIP 保持冻结；版本号沿用源包身份，不代表新发布。当前进度见 [实施状态](docs/IMPLEMENTATION-STATUS.md)，证据见 [PR01](docs/acceptance/pr01/RESULTS.zh-CN.md)、[PR02 首批](docs/acceptance/pr02/RESULTS.zh-CN.md) 与 [能力矩阵](docs/reference-baseline/PR01.md)。
 
+2026-09-30当前阶段：按[项目目标](docs/PROJECT-GOAL.zh-CN.md)先完成后端收口，再试用用户指定的真实科研任务，只补实际阻断。[后端试用清单](docs/BACKEND-READINESS.zh-CN.md)列明入口、证据与限制。前端布局/完整重构和PR14桌面/团队协作暂缓；更多授权、远端、GPU与成果发布/同步按需求和环境触发，PR01–14长期范围保留。
+
+历史目标（2026-09-29）：曾要求对齐OpenResearch前端，并把桌面分发及自建托管范围移出当时排期。该排期由上面的当前阶段目标取代；已有成果与在途改动继续保留。
+
 由 0.3.0-experimental 独立派生。保留既有实验、审批、快照、协作、Campaign 与有效性修复；新增受管技能目录和五源文献接口。不是完整 OpenResearch 替代品，也不是所有后端已连接的生产系统。
 
 ## 启动
@@ -26,7 +30,7 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 125 个操作（包含固定源码、开发测试、有限私有实现/冻结运行授权、Git、独立审查、报告、容量、文献、技能管理、文稿构建、固定论文审查与研究方案）通过 OperationRegistry 统一验证、权限与幂等处理，具有精确输入/输出 Schema。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。文档解析、文稿构建、报告交付、技能管理与容量配置保留用户权限，不因统一接口扩大 Agent 权限。
+- 当前 132 个操作通过 OperationRegistry 统一验证输入/输出、权限与幂等；包括固定源码、测试/审查、有限授权、文献/文档、文稿/报告、历史分页和资源配置。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。owner HTTP 的 sessionId 不授予Agent身份，现有批准边界保持。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 
@@ -52,9 +56,9 @@ node dist/apps/server/index.js
 
 长任务日志按 **64 KiB 有界窗口**回查，字节游标支持大日志和跨页中文/emoji；文件身份变化时显式重新读取。开发日志仅在展开时读取。工作台用带鉴权的 SSE 唤醒、按项目事件补拉和 20 秒权威状态兜底恢复连接；刷新及切会话从一致快照恢复当前输出，不重放旧回答或自动重试作业。截断/省略明确标示，完整历史分页仍在后续范围。详见[日志与断线恢复验收](docs/acceptance/flow-events/RESULTS.zh-CN.md)。
 
-**文献任务与原文** 页支持持久检索/获取、32 MiB 内原始 PDF/文本导入、不可变 DocumentVersion、原始响应与派生摘要分离，以及固定解析器的单独批准。PDF 在隔离 Docker 中生成页图/文本，文档作业共享计算预算；证据按固定版本、物理页和 UTF-16 区间回查，刷新后保留位置。解析镜像需显式运行[setup 指引](scripts/pdf-parser/README.md)后配置，不自动安装或开启来源。PubMed 本机网络、其他原件来源实网、完整表图/OCR、跨源分页和显式文档语料授权仍有未完成项。见[文献与文档验收](docs/acceptance/flow-documents/RESULTS.zh-CN.md)。
+**文献任务与原文** 页支持持久检索/获取、32 MiB 内原始 PDF/文本导入、不可变 DocumentVersion、原始响应与派生摘要分离，以及固定解析器的单独批准。PDF 在隔离 Docker 中生成页图/文本，文档作业共享计算预算；证据按固定版本、物理页和 UTF-16 区间回查，刷新后保留位置。解析镜像需显式运行[setup 指引](scripts/pdf-parser/README.md)后配置，不自动安装或开启来源。[PubMed摘要](docs/acceptance/flow-pubmed-abstract/RESULTS.zh-CN.md)、[PubMed续页](docs/acceptance/flow-remaining-source-pagination/RESULTS.zh-CN.md)、[PMC原文](docs/acceptance/flow-pmc-oa-fulltext/RESULTS.zh-CN.md)与[显式文档语料](docs/acceptance/flow-document-corpus/RESULTS.zh-CN.md)已有证据；bioRxiv成功续页/原PDF、OpenAlex原件与完整表图/OCR仍受限或待验。见[文献与文档验收](docs/acceptance/flow-documents/RESULTS.zh-CN.md)和[当前后端边界](docs/BACKEND-READINESS.zh-CN.md)。
 
-**技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。内置发行可在原生选择器中显式升级或回滚，修改自定义修订默认保留原内置基线；完整 bundleId 回滚恢复原组合。未配置项目的新绑定默认当前发行，已有会话/TaskAttempt 不随配置变化，重试不自动升级。旧发行的目录/角色/正文/资源按原字节归档，启动前验证全包，未知或损坏版本拒绝加载；原生 SDK `/skill:` 文件展开继续关闭。只对显式选用技能检查实际工具、数据和后端；Docker 需资源页核对 `default` 目标，latex 需固定编译器及对应目标。已启动会话缺少唯一版本依据时保留原生文件并阻塞恢复。新版 paper/reports 指导匹配现有隔离构建和成果包，仍保留用户批准边界。见[内置升级与旧会话验收](docs/acceptance/flow-builtin-skills/RESULTS.zh-CN.md)和[技能图形产物](docs/acceptance/flow-skills/RESULTS.zh-CN.md)；核心论文写作、新任务正常结束及固定论文审查绑定已验收，原生 UI 上传提交和 diagram 等仍在后续计划中。
+**技能版本与启动预检** 支持用户导入 UTF-8 技能/资源或受限 ZIP、固定摘要审阅、启用/回滚和撤销。最多 64 文件，文本每个 128 KiB，展开/压缩各 2 MiB，每项目 128 修订；ZIP64、加密、链接和项目配置路径拒绝。文本授权不允许执行脚本。内置发行可显式升级或回滚，已有会话/TaskAttempt 不随配置变化，重试不自动升级。旧版本按原字节归档，未知/损坏版本拒绝加载；原生 SDK `/skill:` 展开继续关闭。启动检查实际工具、数据与固定后端；缺少唯一版本依据时保留原生文件并阻塞恢复。见[内置升级](docs/acceptance/flow-builtin-skills/RESULTS.zh-CN.md)、[原生ZIP上传](docs/acceptance/flow-skill-native-upload/RESULTS.zh-CN.md)、[二进制资源](docs/acceptance/flow-skill-binary/RESULTS.zh-CN.md)和[diagram产物](docs/acceptance/flow-diagram/RESULTS.zh-CN.md)。核心写作/审查已有证据，新领域模板或执行能力仅由实际任务触发；页面重构仍暂缓。
 
 **研究活动** 页可填写不可变研究方案，明确实际对照、变化因素、数据切分、指标、重复依据与停止条件。参数候选从固定父源码派生，下一轮使用所选实测 Run 的来源；无结果修复先经私有实现、开发测试、独立审查和批准整合，保留失败 Run 并共用修复次数上限。决定批准只准备候选，正式 Run 另行批准。活动比较与方案可冻结进报告及离线包，来源撤销后阻止新运行/新交付；旧方案与包保留。数据与成功条件是待验证声明，不自动证明实验实际使用了每份数据或科研假设成立。见[有界研究验收](docs/acceptance/flow-bounded-research/RESULTS.zh-CN.md)。
 
@@ -101,4 +105,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-各阶段测试记录单独留存，不把历史发布包结果当作当前验收。本机智谱 Pi、Linux CPU Docker、首条浏览器科研闭环、四源文献检索/读取、arXiv 指定版本 PDF、固定文稿隔离编译、核心论文写作、审查绑定和有界两轮研究已实测；PubMed 本机网络、其他原文来源、模型供应商/GPU/远程环境仍需各自验收。完整 WorkingGrant/RunGrant/DiscoveryGrant、单/多 Agent 收益对照、远程计算、Git 发布、Overleaf、diagram 与实例申请保留在后续计划中，完整实施计划尚未完成。
+各阶段证据按实际范围保留：智谱Pi、本机CPU Docker、有限授权、PubMed摘要/PMC原文、固定文档/文稿、Wine与Anscombe比较及备份迁移已有记录；其他原PDF来源、自动root唤醒、GPU/外部远端仍受限或待验。当前任务尚待用户给定论文/代码/数据、协议和交付物；不循环创建示例。完整前端、桌面/团队暂缓；自建托管范围长期独立保留，不能称本阶段已实现。准确入口与科学/环境限制以[后端清单](docs/BACKEND-READINESS.zh-CN.md)为准。
