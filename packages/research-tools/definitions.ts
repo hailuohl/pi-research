@@ -66,6 +66,7 @@ const TOOL_METADATA: Record<string, {
     model_http_inspect:{description:'用户入口：读取共享的受管 Pi 模型 HTTP 请求占用及当前项目有界历史；旧 Worker 单列且不计入受管请求槽位。',example:{cursor:0,limit:50}},
     model_http_configure:{description:'用户入口：配置共享模型 HTTP 请求上限；0 暂停新请求派发，不中断正在执行的请求。',example:{expectedVersion:1,maxRequests:2}},
     report_create:{description:'用户入口：从所选真实终态运行、已采纳结论或成功完整的固定文稿构建生成报告，冻结来源与产物；不授予 Agent 生成最终用户报告的权限。',example:{title:'研究结果记录',runIds:['run-id'],claimIds:[],publicationResultIds:[]}},
+    report_list:{description:'用户入口：按项目、游标和页大小读取已保存报告的有界历史摘要；所选报告的当前有效性由 report_inspect 回查。',example:{cursor:0,limit:20}},
     report_inspect:{description:'用户入口：读取固定报告引用及当前来源有效性，保留历史原文。',example:{reportId:'report-id'}},
     report_reference_read:{description:'用户入口：按报告内类型化引用读取原始证据或固定源码，不解析任意 URL。',example:{reportId:'report-id',referenceId:'reference-id',cursor:0,limit:16000}},
     report_export:{description:'用户入口：显式生成仅含固定报告、源码与归档证据的本地成果包，不发布到外部。',example:{reportId:'report-id'}},

@@ -9,6 +9,21 @@ export declare class ReportService {
     private app?;
     constructor(c: AppContext, evidence: EvidenceService, app?: ResearchApp | undefined);
     private record;
+    list(actor: Actor, pid: string, cursor?: number, limit?: number): {
+        items: {
+            id: string;
+            projectId: string;
+            artifactId: string;
+            title: string;
+            formatVersion: number;
+            createdAt: string;
+            updatedAt: string;
+            runCount: number;
+            claimCount: number;
+        }[];
+        cursor: number;
+        hasMore: boolean;
+    };
     private bytes;
     private checkRecord;
     private publication;

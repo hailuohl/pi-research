@@ -11599,6 +11599,56 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: ("nextCursor" | "coverage" | "scope" | "available" | "configuration" | "items" | "unit" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
+    readonly report_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly projectId: {
+                            readonly type: "string";
+                        };
+                        readonly artifactId: {
+                            readonly type: "string";
+                        };
+                        readonly title: {
+                            readonly type: "string";
+                        };
+                        readonly formatVersion: {
+                            readonly enum: readonly [0, 1];
+                        };
+                        readonly createdAt: {
+                            readonly type: "string";
+                        };
+                        readonly updatedAt: {
+                            readonly type: "string";
+                        };
+                        readonly runCount: {
+                            readonly type: "integer";
+                        };
+                        readonly claimCount: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly required: ("id" | "title" | "projectId" | "createdAt" | "updatedAt" | "artifactId" | "formatVersion" | "runCount" | "claimCount")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly cursor: {
+                readonly type: "integer";
+            };
+            readonly hasMore: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: ("cursor" | "items" | "hasMore")[];
+        readonly additionalProperties: false;
+    };
     readonly report_inspect: {
         readonly type: "object";
         readonly properties: {

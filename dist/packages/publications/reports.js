@@ -141,6 +141,22 @@ export class ReportService {
         this.app = app;
     }
     record(actor, pid, id) { userOnly(actor); scope(actor, pid); return this.c.store.get('report', id, pid); }
+    list(actor, pid, cursor = 0, limit = 20) {
+        userOnly(actor);
+        scope(actor, pid);
+        integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER);
+        integer(limit, 'limit', 1, 100);
+        return this.c.store.readSnapshot(() => {
+            const rows = this.c.store.db.prepare('SELECT rowid,data FROM records WHERE kind=? AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?').all('report', pid, cursor, limit + 1), page = rows.slice(0, limit);
+            const nextCursor = page.length ? Number(page.at(-1).rowid) : cursor;
+            ensure(Number.isSafeInteger(nextCursor), 'REPORT_CURSOR_UNSAFE', '报告游标超出安全范围', 500);
+            return { items: page.map(row => {
+                    const report = JSON.parse(String(row.data));
+                    return { id: report.id, projectId: report.projectId, artifactId: report.artifactId, title: report.title ?? this.c.store.get('artifact', report.artifactId, pid).title,
+                        formatVersion: report.formatVersion === 1 ? 1 : 0, createdAt: report.createdAt, updatedAt: report.updatedAt, runCount: report.runIds?.length ?? 0, claimCount: report.claimIds?.length ?? 0 };
+                }), cursor: nextCursor, hasMore: rows.length > limit };
+        });
+    }
     bytes(pid, id, expected) {
         const a = this.c.store.get('artifact', id, pid), bytes = readStableFile(dirname(this.c.store.paths.physical(a.path)), basename(this.c.store.paths.physical(a.path)), 32 * 1024 * 1024);
         ensure(bytes.length === a.size && digest(bytes) === a.digest && (!expected || a.digest === expected.digest && (expected.size === undefined || a.size === expected.size)), 'ARTIFACT_CORRUPTED', '报告引用的不可变文件已改变');

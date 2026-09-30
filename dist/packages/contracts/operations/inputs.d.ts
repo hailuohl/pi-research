@@ -2841,6 +2841,23 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ("title" | "runIds" | "claimIds" | "publicationResultIds" | "campaignIds")[];
         readonly additionalProperties: false;
     };
+    readonly report_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly [];
+        readonly additionalProperties: false;
+    };
     readonly report_inspect: {
         readonly type: "object";
         readonly properties: {

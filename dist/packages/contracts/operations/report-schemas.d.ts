@@ -61,6 +61,23 @@ export declare const REPORT_INPUT_SCHEMAS: {
         readonly required: readonly ("title" | "runIds" | "claimIds" | "publicationResultIds" | "campaignIds")[];
         readonly additionalProperties: false;
     };
+    readonly report_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly [];
+        readonly additionalProperties: false;
+    };
     readonly report_inspect: {
         readonly type: "object";
         readonly properties: {
@@ -122,6 +139,56 @@ export declare const REPORT_INPUT_SCHEMAS: {
     };
 };
 export declare const REPORT_OUTPUT_SCHEMAS: {
+    readonly report_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly projectId: {
+                            readonly type: "string";
+                        };
+                        readonly artifactId: {
+                            readonly type: "string";
+                        };
+                        readonly title: {
+                            readonly type: "string";
+                        };
+                        readonly formatVersion: {
+                            readonly enum: readonly [0, 1];
+                        };
+                        readonly createdAt: {
+                            readonly type: "string";
+                        };
+                        readonly updatedAt: {
+                            readonly type: "string";
+                        };
+                        readonly runCount: {
+                            readonly type: "integer";
+                        };
+                        readonly claimCount: {
+                            readonly type: "integer";
+                        };
+                    };
+                    readonly required: ("id" | "title" | "projectId" | "createdAt" | "updatedAt" | "artifactId" | "formatVersion" | "runCount" | "claimCount")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly cursor: {
+                readonly type: "integer";
+            };
+            readonly hasMore: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: ("cursor" | "items" | "hasMore")[];
+        readonly additionalProperties: false;
+    };
     readonly report_inspect: {
         readonly type: "object";
         readonly properties: {
