@@ -70,6 +70,7 @@ function externalReplay(c, name, x) {
     const request = discover ? parseSearch(x) : { projectId: c.projectId, query: x.query, limit: x.limit ?? 8 };
     const preferred = c.actor.type === 'agent' ? `${c.session.id}:${c.idempotencyKey}` : c.idempotencyKey;
     const grant = discoveryContext(c.app.store, c.projectId, c.actor, { kind: 'search', search: discover ? request : parseSearch({ query: x.query, sources: ['crossref'], limit: x.limit ?? 8 }) }, preferred);
+    ensure(discover || !grant?.taskId, 'DISCOVERY_TASK_OPERATION_DENIED', '任务级发现授权只允许固定 Connector 检索入口');
     const keys = [...new Set([preferred, ...(c.actor.type === 'user' ? [`${discover ? 'http' : 'user'}:${c.idempotencyKey}`] : [])])];
     const cached = keys.map(key => ({ key, result: c.app.store.operationResult(discoveryScope(serviceScope, grant), key, request) })).filter(entry => entry.result.found);
     ensure(new Set(cached.map(entry => entry.result.found && digest(entry.result.value))).size <= 1, 'LEGACY_OPERATION_AMBIGUOUS', '旧版本存在不同检索结果，需人工核对');

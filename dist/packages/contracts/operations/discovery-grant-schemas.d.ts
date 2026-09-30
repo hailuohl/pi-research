@@ -11,6 +11,80 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
             readonly minLength: number;
             readonly maxLength: number;
         };
+        readonly taskBinding: {
+            readonly type: "object";
+            readonly properties: {
+                readonly taskId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly teamId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly teamApprovalId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly planDigest: {
+                    minLength: number;
+                    pattern: string;
+                    type: "string";
+                    description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    maxLength: number;
+                };
+                readonly planVersion: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+                readonly directiveVersion: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+                readonly taskSpecDigest: {
+                    minLength: number;
+                    pattern: string;
+                    type: "string";
+                    description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    maxLength: number;
+                };
+                readonly teamPlanId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly teamPlanVersion: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+                readonly teamPlanDigest: {
+                    minLength: number;
+                    pattern: string;
+                    type: "string";
+                    description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    maxLength: number;
+                };
+                readonly role: {
+                    readonly const: "literature";
+                };
+            };
+            readonly required: readonly [];
+            readonly additionalProperties: false;
+        };
         readonly model: {
             readonly type: "object";
             readonly properties: {
@@ -293,6 +367,32 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly required: readonly ["id", "digest", "approvalId"];
                         readonly additionalProperties: false;
                     };
+                    readonly scopeSessionId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly scopeTaskId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly scopeAttemptId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly scopeGeneration: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
                     readonly requestDigest: {
                         minLength: number;
                         pattern: string;
@@ -376,7 +476,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -668,7 +768,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request")[];
+                readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -864,6 +964,13 @@ export declare const DISCOVERY_GRANT_INPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly taskId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
             readonly searches: {
                 readonly maxItems?: number | undefined;
                 readonly type: "array";
@@ -995,7 +1102,7 @@ export declare const DISCOVERY_GRANT_INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: readonly ["sessionId", "searches", "targets", "allowSearchResults", "formats", "maxRequests", "maxResponseBytes", "expiresAt"];
+        readonly required: readonly ["searches", "targets", "allowSearchResults", "formats", "maxRequests", "maxResponseBytes", "expiresAt"];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_inspect: {
@@ -1065,6 +1172,80 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly taskBinding: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly taskId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamApprovalId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly planDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly planVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly directiveVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly taskSpecDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly teamPlanId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamPlanVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly teamPlanDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly role: {
+                        readonly const: "literature";
+                    };
+                };
+                readonly required: readonly [];
+                readonly additionalProperties: false;
+            };
             readonly model: {
                 readonly type: "object";
                 readonly properties: {
@@ -1347,6 +1528,32 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly required: readonly ["id", "digest", "approvalId"];
                             readonly additionalProperties: false;
                         };
+                        readonly scopeSessionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeTaskId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeAttemptId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeGeneration: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly requestDigest: {
                             minLength: number;
                             pattern: string;
@@ -1430,7 +1637,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1722,7 +1929,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request")[];
+                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1920,6 +2127,80 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly taskBinding: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly taskId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamApprovalId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly planDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly planVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly directiveVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly taskSpecDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly teamPlanId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamPlanVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly teamPlanDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly role: {
+                        readonly const: "literature";
+                    };
+                };
+                readonly required: readonly [];
+                readonly additionalProperties: false;
+            };
             readonly model: {
                 readonly type: "object";
                 readonly properties: {
@@ -2202,6 +2483,32 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly required: readonly ["id", "digest", "approvalId"];
                             readonly additionalProperties: false;
                         };
+                        readonly scopeSessionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeTaskId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeAttemptId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeGeneration: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly requestDigest: {
                             minLength: number;
                             pattern: string;
@@ -2285,7 +2592,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2577,7 +2884,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request")[];
+                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2775,6 +3082,80 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly taskBinding: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly taskId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamApprovalId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly planDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly planVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly directiveVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly taskSpecDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly teamPlanId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamPlanVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly teamPlanDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly role: {
+                        readonly const: "literature";
+                    };
+                };
+                readonly required: readonly [];
+                readonly additionalProperties: false;
+            };
             readonly model: {
                 readonly type: "object";
                 readonly properties: {
@@ -3057,6 +3438,32 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly required: readonly ["id", "digest", "approvalId"];
                             readonly additionalProperties: false;
                         };
+                        readonly scopeSessionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeTaskId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeAttemptId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeGeneration: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly requestDigest: {
                             minLength: number;
                             pattern: string;
@@ -3140,7 +3547,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3432,7 +3839,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request")[];
+                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3630,6 +4037,80 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly taskBinding: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly taskId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamApprovalId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly planDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly planVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly directiveVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly taskSpecDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly teamPlanId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly teamPlanVersion: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly teamPlanDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly role: {
+                        readonly const: "literature";
+                    };
+                };
+                readonly required: readonly [];
+                readonly additionalProperties: false;
+            };
             readonly model: {
                 readonly type: "object";
                 readonly properties: {
@@ -3912,6 +4393,32 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly required: readonly ["id", "digest", "approvalId"];
                             readonly additionalProperties: false;
                         };
+                        readonly scopeSessionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeTaskId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeAttemptId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly scopeGeneration: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly requestDigest: {
                             minLength: number;
                             pattern: string;
@@ -3995,7 +4502,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("source" | "error" | "id" | "bytes" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "host" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -4287,7 +4794,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "retrievedAt" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "items" | "request")[];
+                    readonly required: ("sources" | "query" | "id" | "coverage" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;

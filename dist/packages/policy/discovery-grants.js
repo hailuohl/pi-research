@@ -6,7 +6,7 @@ import { digest, now } from '../storage/store.js';
 import { randomUUID } from 'node:crypto';
 import { connectorSettings, assertSourceEnabled } from '../connectors/settings.js';
 import { parseSearch } from '../connectors/contracts.js';
-import { discoveryReference, assertDiscoveryGrantRecord, assertDiscoveryGrantReference, normalizedDiscoveryOperation } from './discovery-grant-validation.js';
+import { discoveryGrantPayload, discoveryReference, assertDiscoveryGrantRecord, assertDiscoveryGrantReference, assertTaskDiscoveryBinding, buildDiscoveryTaskBinding, normalizedDiscoveryOperation } from './discovery-grant-validation.js';
 export class DiscoveryGrantService {
     app;
     constructor(app) {
@@ -23,8 +23,15 @@ export class DiscoveryGrantService {
         catch (e) {
             reasons.push(asError(e).code);
         }
-        const calls = this.app.store.list('connector-call', pid).filter(c => c.discoveryGrant?.id === id), remaining = Math.max(0, g.maxRequests - calls.length), s = this.app.store.get('session', g.sessionId, pid);
-        const scopeChanged = g.state === 'active' && (s.discoveryGrantId !== g.id || s.state === 'archived' || digest(s.model) !== digest(g.model) || connectorSettings(this.app.store, pid).version !== g.settingsVersion);
+        const calls = this.app.store.list('connector-call', pid).filter(c => c.discoveryGrant?.id === id), remaining = Math.max(0, g.maxRequests - calls.length), s = g.sessionId ? this.app.store.get('session', g.sessionId, pid) : undefined;
+        const taskScopeChanged = g.taskBinding ? (() => { try {
+            assertTaskDiscoveryBinding(this.app.store, pid, g);
+            return connectorSettings(this.app.store, pid).version !== g.settingsVersion;
+        }
+        catch {
+            return true;
+        } })() : false;
+        const scopeChanged = g.taskBinding ? taskScopeChanged : g.state === 'active' && (!s || s.discoveryGrantId !== g.id || s.state === 'archived' || digest(s.model) !== digest(g.model) || connectorSettings(this.app.store, pid).version !== g.settingsVersion);
         if (scopeChanged)
             reasons.push('DISCOVERY_SCOPE_CHANGED');
         const effectiveState = g.state === 'revoked' ? 'revoked' : reasons.length ? 'stale' : Date.now() >= Date.parse(g.expiresAt) ? 'expired' : g.state === 'draft' ? 'draft' : remaining === 0 ? 'exhausted' : 'active';
@@ -35,11 +42,15 @@ export class DiscoveryGrantService {
         userOnly(actor);
         scope(actor, pid);
         const x = object(value);
-        ensure(Object.keys(x).every(k => ['sessionId', 'searches', 'targets', 'allowSearchResults', 'formats', 'maxRequests', 'maxResponseBytes', 'expiresAt'].includes(k)), 'INVALID_INPUT', '发现授权包含未知字段');
+        ensure(Object.keys(x).every(k => ['sessionId', 'taskId', 'searches', 'targets', 'allowSearchResults', 'formats', 'maxRequests', 'maxResponseBytes', 'expiresAt'].includes(k)), 'INVALID_INPUT', '发现授权包含未知字段');
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
-            const s = this.app.store.get('session', text(x.sessionId, 'sessionId', 100), pid);
-            ensure(s.role === 'coordinator' && !s.taskId && s.state !== 'archived' && !s.discoveryGrantId, 'DISCOVERY_SESSION_REQUIRED', '请使用尚未绑定发现授权的专用主协调会话');
+            const taskId = x.taskId === undefined ? undefined : text(x.taskId, 'taskId', 100), task = taskId ? this.app.store.get('task', taskId, pid) : undefined, s = task ? undefined : this.app.store.get('session', text(x.sessionId, 'sessionId', 100), pid);
+            ensure(!(task && x.sessionId !== undefined) && (!task || !Object.hasOwn(x, 'sessionId')), 'INVALID_INPUT', 'sessionId 与 taskId 不能同时指定');
+            if (task)
+                ensure(task.role === 'literature' && task.execution === 'pending' && task.attemptCount === 0 && !task.attemptId && !task.sessionId && !task.discoveryGrantId, 'DISCOVERY_TASK_REQUIRED', '只能授权尚未派发且未绑定授权的 literature 任务');
+            else
+                ensure(s.role === 'coordinator' && !s.taskId && s.state !== 'archived' && !s.discoveryGrantId, 'DISCOVERY_SESSION_REQUIRED', '请使用尚未绑定发现授权的专用主协调会话');
             ensure(Array.isArray(x.searches) && x.searches.length <= 8 && Array.isArray(x.targets) && x.targets.length <= 20, 'INVALID_INPUT', '最多8项检索和20项目标');
             const searches = x.searches.map(v => { const q = object(v); ensure(Object.keys(q).every(k => ['query', 'sources', 'limit', 'strategy', 'prioritize', 'publishedAfter', 'publishedBefore'].includes(k)), 'INVALID_INPUT', '检索条件包含未知字段'); const parsed = parseSearch(q); return { ...parsed, sources: [...parsed.sources].sort() }; });
             const targets = x.targets.map(v => { const t = object(v); ensure(Object.keys(t).every(k => ['source', 'id', 'format', 'requestedVersion'].includes(k)), 'INVALID_INPUT', '资料目标包含未知字段'); const normalized = normalizedDiscoveryOperation({ kind: 'retrieve', target: { source: t.source, id: text(t.id, 'id', 300), format: oneOf(t.format, ['provider-text', 'original-pdf'], 'format'), ...(t.requestedVersion ? { requestedVersion: text(t.requestedVersion, 'requestedVersion', 40) } : {}) } }); ensure(normalized.kind === 'retrieve', 'INVALID_INPUT', '资料目标无效'); return normalized.target; });
@@ -53,19 +64,35 @@ export class DiscoveryGrantService {
             ensure(Date.parse(expiresAt) > Date.now() && Date.parse(expiresAt) <= Date.now() + 86400000, 'INVALID_INPUT', '期限必须在未来24小时内');
             const allowSearchResults = bool(x.allowSearchResults, 'allowSearchResults');
             ensure(!allowSearchResults || searches.length > 0, 'INVALID_INPUT', '允许命中资料时需要已固定检索');
-            const fixed = { sessionId: s.id, model: s.model, settingsVersion: connectorSettings(this.app.store, pid).version, sources, searches, targets, allowSearchResults, formats, maxRequests: integer(x.maxRequests, 'maxRequests', 1, 100), maxResponseBytes: integer(x.maxResponseBytes, 'maxResponseBytes', 1024, 32 * 1024 * 1024), expiresAt: new Date(expiresAt).toISOString() }, id = randomUUID(), a = this.app.approvals.request(pid, 'discovery-grant', id, '', 'discovery-grant.activate', '仅批准固定来源与请求范围内的有限HTTP请求；不批准模型、计算或发布'), hash = digest({ ...fixed, approvalId: a.id });
+            const taskDetails = task ? buildDiscoveryTaskBinding(this.app.store, pid, task) : undefined, taskBinding = taskDetails?.binding;
+            if (task)
+                ensure(searches.length === 1 && searches[0].sources.length === 1 && searches[0].sources[0] === 'crossref' && searches[0].strategy === 'keyword' && searches[0].prioritize === 'default' && targets.length === 0 && !allowSearchResults && formats.length === 1 && formats[0] === 'provider-text' && integer(x.maxRequests, 'maxRequests', 1, 100) === 1, 'DISCOVERY_TASK_SCOPE_INVALID', 'literature 任务只允许一次固定 Crossref 默认关键词检索');
+            const fixed = { sessionId: s?.id ?? taskDetails.team.rootSessionId, ...(taskBinding ? { taskBinding } : {}), model: taskDetails?.model ?? s.model, settingsVersion: connectorSettings(this.app.store, pid).version, sources, searches, targets, allowSearchResults, formats, maxRequests: integer(x.maxRequests, 'maxRequests', 1, 100), maxResponseBytes: integer(x.maxResponseBytes, 'maxResponseBytes', 1024, 32 * 1024 * 1024), expiresAt: new Date(expiresAt).toISOString() }, id = randomUUID(), a = this.app.approvals.request(pid, 'discovery-grant', id, '', 'discovery-grant.activate', '仅批准固定来源与请求范围内的有限HTTP请求；不批准模型、计算或发布'), hash = digest(discoveryGrantPayload({ ...fixed, approvalId: a.id }));
             this.app.store.update('approval', a.id, a.version, { digest: hash });
             this.app.store.create('discovery-grant', pid, { ...fixed, approvalId: a.id, digest: hash, state: 'draft' }, id);
-            this.app.store.event(pid, 'discovery-grant.prepared', { grantId: id, sessionId: s.id });
+            if (task)
+                this.app.store.update('task', task.id, task.version, { discoveryGrantId: id });
+            this.app.store.event(pid, 'discovery-grant.prepared', { grantId: id, ...(task ? { taskId: task.id, teamId: task.teamId } : { sessionId: s.id }) });
             return this.inspect(actor, pid, id);
         });
     }
-    activate(actor, pid, value) { userOnly(actor); scope(actor, pid); const x = object(value); return this.app.store.transaction(() => { assertProjectWritable(this.app.store, pid); const { grant: g } = assertDiscoveryGrantRecord(this.app.store, pid, text(x.grantId, 'grantId', 100)), s = this.app.store.get('session', g.sessionId, pid); if (g.state === 'active') {
-        ensure(s.discoveryGrantId === g.id, 'DISCOVERY_SCOPE_CHANGED', '会话绑定改变');
+    activate(actor, pid, value) { userOnly(actor); scope(actor, pid); const x = object(value); return this.app.store.transaction(() => { assertProjectWritable(this.app.store, pid); const { grant: g } = assertDiscoveryGrantRecord(this.app.store, pid, text(x.grantId, 'grantId', 100)); if (g.state === 'active') {
+        if (g.taskBinding)
+            assertTaskDiscoveryBinding(this.app.store, pid, g);
+        else
+            ensure(this.app.store.get('session', g.sessionId, pid).discoveryGrantId === g.id, 'DISCOVERY_SCOPE_CHANGED', '会话绑定改变');
         return this.inspect(actor, pid, g.id);
-    } ensure(g.state === 'draft' && g.version === integer(x.expectedVersion, 'expectedVersion', 1), 'VERSION_CONFLICT', '草案已变化或撤销'); ensure(!s.discoveryGrantId && s.role === 'coordinator' && !s.taskId && s.state !== 'archived' && digest(s.model) === digest(g.model), 'DISCOVERY_SCOPE_CHANGED', '指定会话或模型改变'); ensure(Date.now() < Date.parse(g.expiresAt) && connectorSettings(this.app.store, pid).version === g.settingsVersion, 'DISCOVERY_SETTINGS_CHANGED', '期限或来源设置已变化'); g.sources.forEach(source => assertSourceEnabled(this.app.store, pid, source)); this.app.approvals.assert(g.approvalId, pid, g.id, g.digest, 'discovery-grant.activate'); this.app.store.update('session', s.id, s.version, { discoveryGrantId: g.id }); this.app.store.update('discovery-grant', g.id, g.version, { state: 'active', activatedAt: now() }); this.app.store.event(pid, 'discovery-grant.activated', { grantId: g.id, sessionId: s.id }); return this.inspect(actor, pid, g.id); }); }
+    } ensure(g.state === 'draft' && g.version === integer(x.expectedVersion, 'expectedVersion', 1), 'VERSION_CONFLICT', '草案已变化或撤销'); if (g.taskBinding)
+        assertTaskDiscoveryBinding(this.app.store, pid, g, { requireUnclaimed: true });
+    else {
+        const s = this.app.store.get('session', g.sessionId, pid);
+        ensure(!s.discoveryGrantId && s.role === 'coordinator' && !s.taskId && s.state !== 'archived' && digest(s.model) === digest(g.model), 'DISCOVERY_SCOPE_CHANGED', '指定会话或模型改变');
+    } ensure(Date.now() < Date.parse(g.expiresAt) && connectorSettings(this.app.store, pid).version === g.settingsVersion, 'DISCOVERY_SETTINGS_CHANGED', '期限或来源设置已变化'); g.sources.forEach(source => assertSourceEnabled(this.app.store, pid, source)); this.app.approvals.assert(g.approvalId, pid, g.id, g.digest, 'discovery-grant.activate'); if (!g.taskBinding) {
+        const s = this.app.store.get('session', g.sessionId, pid);
+        this.app.store.update('session', s.id, s.version, { discoveryGrantId: g.id });
+    } this.app.store.update('discovery-grant', g.id, g.version, { state: 'active', activatedAt: now() }); this.app.store.event(pid, 'discovery-grant.activated', { grantId: g.id, ...(g.taskBinding ? { taskId: g.taskBinding.taskId } : { sessionId: g.sessionId }) }); return this.inspect(actor, pid, g.id); }); }
     revoke(actor, pid, value) { userOnly(actor); scope(actor, pid); const x = object(value); return this.app.store.transaction(() => { const g = this.app.store.get('discovery-grant', text(x.grantId, 'grantId', 100), pid); if (g.state === 'revoked')
         return this.inspect(actor, pid, g.id); this.app.store.update('discovery-grant', g.id, integer(x.expectedVersion, 'expectedVersion', 1), { state: 'revoked', revokedAt: now() }); this.app.approvals.stale(g.id); this.app.store.event(pid, 'discovery-grant.revoked', { grantId: g.id }); return this.inspect(actor, pid, g.id); }); }
-    owner(actor, pid, id) { userOnly(actor); scope(actor, pid); const g = this.app.store.get('discovery-grant', id, pid); assertDiscoveryGrantReference(this.app.store, pid, discoveryReference(g)); return { type: 'user', sessionId: g.sessionId }; }
+    owner(actor, pid, id) { userOnly(actor); scope(actor, pid); const g = this.app.store.get('discovery-grant', id, pid); ensure(!g.taskBinding, 'DISCOVERY_TASK_GRANT_OWNER_DENIED', '任务发现授权只能由宿主绑定的任务尝试使用'); assertDiscoveryGrantReference(this.app.store, pid, discoveryReference(g)); return { type: 'user', sessionId: g.sessionId }; }
 }
 //# sourceMappingURL=discovery-grants.js.map

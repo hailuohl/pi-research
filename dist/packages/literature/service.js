@@ -14,6 +14,7 @@ export class LiteratureService {
     /** Metadata-only Crossref search. A search hit is never full-text evidence. */
     async search(projectId, query, limit = 8, key = randomUUID(), validate = () => { }, actor = { type: 'user' }) {
         const ctx = discoveryContext(this.c.store, projectId, actor, { kind: 'search', search: parseSearch({ query, sources: ['crossref'], limit }) }, key);
+        ensure(!ctx?.taskId, 'DISCOVERY_TASK_OPERATION_DENIED', '任务级发现授权只允许固定 Connector 检索入口');
         const settingsVersion = connectorSettings(this.c.store, projectId).version;
         const previousValidate = validate;
         validate = () => { if (ctx)
@@ -23,6 +24,8 @@ export class LiteratureService {
         const previous = this.c.store.operationResult(scope, key, request);
         if (previous.found)
             return previous.value;
+        if (ctx)
+            assertDiscoveryContext(this.c.store, projectId, ctx, true);
         this.c.store.get('project', projectId);
         text(query, 'query', 500);
         integer(limit, 'limit', 1, 20);

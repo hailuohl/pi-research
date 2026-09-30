@@ -263,6 +263,7 @@ export interface Team {
     blockReason?: string;
 }
 export interface Task extends TaskSpec {
+    discoveryGrantId?: string;
     /** Host-created binding for an independent review of one fixed manuscript build. */
     publicationReviewId?: string;
     /** Host-created binding for an independent review of a fixed development result. */
@@ -280,6 +281,7 @@ export interface Task extends TaskSpec {
     result?: TaskResult;
 }
 export interface TaskAttempt {
+    discoveryGrant?: import('../policy/discovery-grant-types.js').DiscoveryGrantReference;
     skillBundleId?: string;
     teamId: string;
     taskId: string;

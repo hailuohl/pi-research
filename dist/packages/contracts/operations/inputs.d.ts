@@ -3023,6 +3023,13 @@ export declare const INPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly taskId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
             readonly searches: {
                 readonly maxItems?: number | undefined;
                 readonly type: "array";
@@ -3154,7 +3161,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: readonly ["sessionId", "searches", "targets", "allowSearchResults", "formats", "maxRequests", "maxResponseBytes", "expiresAt"];
+        readonly required: readonly ["searches", "targets", "allowSearchResults", "formats", "maxRequests", "maxResponseBytes", "expiresAt"];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_inspect: {

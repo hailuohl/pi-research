@@ -7,8 +7,22 @@ export interface DiscoveryGrantReference {
     digest: string;
     approvalId: string;
 }
+export interface DiscoveryTaskBinding {
+    taskId: string;
+    teamId: string;
+    teamApprovalId: string;
+    planDigest: string;
+    planVersion: number;
+    directiveVersion: number;
+    taskSpecDigest: string;
+    teamPlanId: string;
+    teamPlanVersion: number;
+    teamPlanDigest: string;
+    role: 'literature';
+}
 export interface DiscoveryGrant {
     sessionId: string;
+    taskBinding?: DiscoveryTaskBinding;
     model: ModelConfig;
     settingsVersion: number;
     sources: SourceId[];
@@ -31,6 +45,10 @@ export interface DiscoveryCall {
     status: 'reserved' | 'succeeded' | 'failed-or-unknown';
     startedAt: string;
     discoveryGrant?: DiscoveryGrantReference;
+    scopeSessionId?: string;
+    scopeTaskId?: string;
+    scopeAttemptId?: string;
+    scopeGeneration?: number;
     requestDigest?: string;
     operationKeyDigest?: string;
     requestUrlDigest?: string;
@@ -76,6 +94,9 @@ export type DiscoveryOperation = {
 export interface DiscoveryContext {
     reference: DiscoveryGrantReference;
     sessionId: string;
+    taskId?: string;
+    attemptId?: string;
+    generation?: number;
     operation: DiscoveryOperation;
     operationKey: string;
     callIds: string[];

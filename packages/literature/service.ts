@@ -12,7 +12,7 @@ export class LiteratureService {
     constructor(private c: AppContext) { }
     /** Metadata-only Crossref search. A search hit is never full-text evidence. */
     async search(projectId: string, query: string, limit = 8, key: string = randomUUID(), validate: () => void = () => { }, actor:Actor={type:'user'}) {
-        const ctx=discoveryContext(this.c.store,projectId,actor,{kind:'search',search:parseSearch({query,sources:['crossref'],limit})},key);const settingsVersion=connectorSettings(this.c.store,projectId).version;
+        const ctx=discoveryContext(this.c.store,projectId,actor,{kind:'search',search:parseSearch({query,sources:['crossref'],limit})},key);ensure(!ctx?.taskId,'DISCOVERY_TASK_OPERATION_DENIED','任务级发现授权只允许固定 Connector 检索入口');const settingsVersion=connectorSettings(this.c.store,projectId).version;
         const previousValidate=validate;
         validate=()=>{if(ctx)assertDiscoveryContext(this.c.store,projectId,ctx);assertProjectWritable(this.c.store,projectId);ensure(connectorSettings(this.c.store,projectId).version===settingsVersion,'CONNECTOR_SETTINGS_CHANGED','来源设置已改变');assertSourceEnabled(this.c.store,projectId,'crossref');previousValidate();};
         validate();
@@ -20,6 +20,7 @@ export class LiteratureService {
         const previous = this.c.store.operationResult<any>(scope, key, request);
         if (previous.found)
             return previous.value;
+        if(ctx)assertDiscoveryContext(this.c.store,projectId,ctx,true);
         this.c.store.get('project', projectId);
         text(query, 'query', 500);
         integer(limit, 'limit', 1, 20);
