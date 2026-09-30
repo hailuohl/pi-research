@@ -39,6 +39,7 @@ const TOOL_METADATA = {
     literature_task_cancel: { description: '用户入口：取消尚未完成的文献任务；已经保存的原件和结果保持历史记录。', example: { taskId: 'literature-task-id' } },
     literature_task_retry: { description: '用户入口：显式创建失败或中断文献任务的新尝试，保留旧请求的未知记录。', example: { taskId: 'literature-task-id', expectedVersion: 1 } },
     document_import: { description: '用户入口：导入明确选择的原始 PDF 或 UTF-8 文本，记录精确字节摘要；不会解析或自动加入语料。', example: { title: 'notes.txt', mediaType: 'text/plain', contentBase64: 'SGVsbG8=' } },
+    document_from_paper: { description: '用户入口：将已保存的 PaperRead 转成固定文档版本，不重新联网或调用模型。', example: { paperReadId: 'paper-read-id' } },
     document_list: { description: '用户入口：按游标列出固定文档版本，来源与许可证未知时不补造。', example: { cursor: 0, limit: 20 } },
     document_inspect: { description: '用户入口：核对固定文档版本和原始产物摘要，不下载供应商最新版本。', example: { documentVersionId: 'document-version-id' } },
     document_parser_status: { description: '用户入口：读取固定 PDF 解析器配置；未配置不自动安装或拉取镜像。', example: {} },

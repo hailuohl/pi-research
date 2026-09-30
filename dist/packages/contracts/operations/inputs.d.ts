@@ -2060,6 +2060,20 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["title", "mediaType", "contentBase64"];
         readonly additionalProperties: false;
     };
+    readonly document_from_paper: {
+        readonly type: "object";
+        readonly properties: {
+            readonly paperReadId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["paperReadId"];
+        readonly additionalProperties: false;
+    };
     readonly document_list: {
         readonly type: "object";
         readonly properties: {

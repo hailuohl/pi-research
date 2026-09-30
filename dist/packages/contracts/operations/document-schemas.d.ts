@@ -622,6 +622,20 @@ export declare const DOCUMENT_INPUT_SCHEMAS: {
         readonly required: readonly ["title", "mediaType", "contentBase64"];
         readonly additionalProperties: false;
     };
+    readonly document_from_paper: {
+        readonly type: "object";
+        readonly properties: {
+            readonly paperReadId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["paperReadId"];
+        readonly additionalProperties: false;
+    };
     readonly document_list: {
         readonly type: "object";
         readonly properties: {
@@ -2864,6 +2878,199 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
         readonly additionalProperties: false;
     };
     readonly document_import: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly kind: {
+                readonly const: "document-version";
+            };
+            readonly projectId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly createdAt: {
+                readonly type: "string";
+            };
+            readonly updatedAt: {
+                readonly type: "string";
+            };
+        } & {
+            readonly title: {
+                readonly type: "string";
+            };
+            readonly pmcTextProfile: {
+                readonly enum: readonly ["pmc-jats-text-v1", "pmc-jats-text-v2"];
+            };
+            readonly original: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly artifactId: {
+                        readonly type: "string";
+                    };
+                    readonly digest: {
+                        readonly type: "string";
+                    };
+                    readonly size: {
+                        readonly type: "integer";
+                    };
+                    readonly mediaType: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("size" | "digest" | "mediaType" | "artifactId")[];
+                readonly additionalProperties: false;
+            };
+            readonly derivedText: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly artifactId: {
+                        readonly type: "string";
+                    };
+                    readonly digest: {
+                        readonly type: "string";
+                    };
+                    readonly size: {
+                        readonly type: "integer";
+                    };
+                    readonly mediaType: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("size" | "digest" | "mediaType" | "artifactId")[];
+                readonly additionalProperties: false;
+            };
+            readonly source: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly kind: {
+                        readonly enum: readonly ["connector", "upload"];
+                    };
+                    readonly provider: {
+                        readonly enum: readonly ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
+                    };
+                    readonly requestedId: {
+                        readonly type: "string";
+                    };
+                    readonly resolvedId: {
+                        readonly type: "string";
+                    };
+                    readonly requestedVersion: {
+                        readonly anyOf: readonly [{
+                            readonly type: "string";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly reportedVersion: {
+                        readonly anyOf: readonly [{
+                            readonly type: "string";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly versionAssurance: {
+                        readonly type: "string";
+                    };
+                    readonly sourceUrl: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("versionAssurance" | "reportedVersion" | "kind" | "requestedVersion")[];
+                readonly additionalProperties: false;
+            };
+            readonly contentKind: {
+                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+            };
+            readonly acquiredAt: {
+                readonly type: "string";
+            };
+            readonly license: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly value: {
+                        readonly anyOf: readonly [{
+                            readonly type: "string";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly assurance: {
+                        readonly enum: readonly ["provider-reported", "user-declared", "unknown"];
+                    };
+                };
+                readonly required: ("value" | "assurance")[];
+                readonly additionalProperties: false;
+            };
+            readonly rawResponseArtifactIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly pageMapping: {
+                readonly enum: readonly ["unavailable"];
+            };
+            readonly scopeSessionId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly scopeTaskId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly limitations: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly discoveryGrant: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly id: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly digest: {
+                        readonly minLength: 64;
+                        readonly pattern: "^[a-f0-9]{64}$";
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly maxLength: number;
+                    };
+                    readonly approvalId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                };
+                readonly required: readonly ["id", "digest", "approvalId"];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("source" | "id" | "title" | "contentKind" | "license" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
+        readonly additionalProperties: false;
+    };
+    readonly document_from_paper: {
         readonly type: "object";
         readonly properties: {
             readonly id: {

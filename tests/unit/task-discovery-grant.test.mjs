@@ -138,6 +138,65 @@ test('approved Task paper_read sends one exact Crossref request and preserves ar
   const inspected=s.app.operations.execute(USER,'discovery_grant_inspect',{grantId:grant.id},{projectId:s.project.id}),history=inspected.papers.find(p=>p.id===paper.id);
   assert.equal(history.scopeSessionId,claim.attempt.sessionId);assert.equal(history.scopeTaskId,task.id);assert.equal(history.scopeAttemptId,claim.attempt.id);assert.deepEqual(history.discoveryCallIds,[call.id]);assert.equal(history.discoveryRequestDigest,paper.discoveryRequestDigest);
   assert.equal(s.app.store.get('session',claim.attempt.sessionId).id,claim.attempt.sessionId);
+  assert.equal(s.app.store.get('task',task.id).execution,'output_submitted');
+  assert.equal(s.app.operations.has('document_from_paper'),true);
+  assert.throws(()=>taskCall(s,who,'document_from_paper',{paperReadId:paper.id},'agent-document'),{code:'TOOL_DENIED'});
+  assert.throws(()=>taskCall(s,USER,'document_from_paper',{paperReadId:paper.id,source:'crossref'},'extra-document-input'),{code:'INVALID_INPUT'});
+  const before={http:fetch.count(),models:s.app.store.list('model-usage',s.project.id).length,runs:s.app.store.list('run',s.project.id).length};
+  const document=taskCall(s,USER,'document_from_paper',{paperReadId:paper.id},'task-doi-document');
+  const original=s.app.evidence.read(USER,paper.rawArtifactIds[0]),derived=s.app.evidence.read(USER,paper.artifactId);
+  assert.equal(document.kind,'document-version');assert.equal(document.contentKind,'metadata');assert.equal(document.source.provider,'crossref');
+  assert.equal(document.source.requestedId,'10.1000/task-bound');assert.equal(document.source.resolvedId,'10.1000/task-bound');
+  assert.equal(document.original.artifactId,paper.rawArtifactIds[0]);assert.equal(document.original.digest,original.artifact.digest);
+  assert.equal(document.derivedText.artifactId,paper.artifactId);assert.equal(document.derivedText.digest,derived.artifact.digest);
+  assert.deepEqual(document.rawResponseArtifactIds,paper.rawArtifactIds);assert.deepEqual(document.discoveryGrant,paper.discoveryGrant);
+  assert.equal(document.scopeTaskId,task.id);assert.equal(document.scopeSessionId,claim.attempt.sessionId);assert.equal(document.scopeAttemptId,undefined);
+  assert.deepEqual(original.bytes,raw);assert.deepEqual(derived.bytes,metadata);assert.equal(document.pageMapping,'unavailable');
+  assert.equal(s.app.store.list('document-version',s.project.id).length,1);
+  assert.deepEqual({http:fetch.count(),models:s.app.store.list('model-usage',s.project.id).length,runs:s.app.store.list('run',s.project.id).length},before);
+  assert.equal(taskCall(s,USER,'document_from_paper',{paperReadId:paper.id},'task-doi-document').id,document.id);
+  assert.throws(()=>taskCall(s,USER,'document_from_paper',{paperReadId:`${paper.id}-other`},'task-doi-document'),{code:'IDEMPOTENCY_CONFLICT'});
+  s.app.close();s.app=new ResearchApp(s.dir,process.cwd());
+  assert.equal(s.app.operations.execute(USER,'document_from_paper',{paperReadId:paper.id},{projectId:s.project.id,idempotencyKey:'task-doi-document'}).id,document.id);
+  assert.deepEqual(s.app.evidence.read(USER,paper.rawArtifactIds[0]).bytes,raw);assert.deepEqual(s.app.evidence.read(USER,paper.artifactId).bytes,metadata);
+  assert.equal(s.app.documents.inspect(USER,s.project.id,document.id).id,document.id);
+  assert.equal(s.app.store.get('paper-read',paper.id,s.project.id).id,paper.id);
+  const reopenedTask=s.app.store.get('task',task.id,s.project.id),reopenedAttempt=s.app.store.get('task-attempt',claim.attempt.id,s.project.id);
+  assert.equal(reopenedTask.execution,'output_submitted');assert.equal(reopenedTask.discoveryGrantId,grant.id);
+  assert.equal(reopenedAttempt.state,'finished');assert.equal(reopenedAttempt.discoveryGrant.id,grant.id);
+  assert.equal(s.app.store.get('discovery-grant',grant.id,s.project.id).state,'active');
+  assert.equal(s.app.store.get('session',claim.attempt.sessionId,s.project.id).id,claim.attempt.sessionId);
+}finally{fetch.restore();s.close();}
+});
+
+test('document_from_paper rejects out-of-scope and damaged sources, then preserves revoked-grant history',async()=>{
+ const s=setup(),fetch=installFetch(()=>metadataResponse());try{
+  const {team,task,grant}=prepareDoiTask(s);activateTaskGrant(s,grant);const claim=s.app.teams.claim(team.id);assert.ok(claim);const who=runIdentity(s,claim),paper=await doiRead(s,who,'task-document-guards');
+  s.app.operations.execute(who,'task_result_submit',{summary:'Crossref metadata retrieved.',outcome:'completed',evidenceIds:[],artifactIds:[paper.artifactId],claims:[],unresolvedQuestions:['No full text was read.']},{projectId:s.project.id,idempotencyKey:'task-document-guards-result'});
+  const raw=s.app.evidence.read(USER,paper.rawArtifactIds[0]).bytes,metadata=s.app.evidence.read(USER,paper.artifactId).bytes;
+  const otherProject=s.app.projects.create(USER,{name:'Other project',template:'curve-fit'});
+  assert.throws(()=>s.app.operations.execute(USER,'document_from_paper',{paperReadId:paper.id},{projectId:otherProject.id,idempotencyKey:'foreign-project-document'}),{code:'SCOPE_DENIED'});
+  assert.throws(()=>taskCall(s,who,'document_from_paper',{paperReadId:paper.id},'non-owner-document'),{code:'TOOL_DENIED'});
+  assert.equal(s.app.store.list('document-version',s.project.id).length,0);assert.equal(s.app.store.list('document-version',otherProject.id).length,0);
+  for(const artifactId of [paper.rawArtifactIds[0],paper.artifactId]){
+   const artifact=s.app.store.get('artifact',artifactId,s.project.id),damaged=s.app.store.update('artifact',artifact.id,artifact.version,{digest:artifact.digest==='0'.repeat(64)?'1'.repeat(64):'0'.repeat(64)});
+   try{assert.throws(()=>taskCall(s,USER,'document_from_paper',{paperReadId:paper.id},`damaged-${artifactId}`),{code:'ARTIFACT_CORRUPTED'});}
+   finally{s.app.store.update('artifact',damaged.id,damaged.version,{digest:artifact.digest});}
+   assert.equal(s.app.store.list('document-version',s.project.id).length,0);
+  }
+  const document=taskCall(s,USER,'document_from_paper',{paperReadId:paper.id},'document-before-revoke');
+  const activeGrant=s.app.store.get('discovery-grant',grant.id,s.project.id);
+  s.app.discoveryGrants.revoke(USER,s.project.id,{grantId:grant.id,expectedVersion:activeGrant.version});
+  assert.throws(()=>taskCall(s,USER,'document_from_paper',{paperReadId:paper.id},'document-after-revoke'),{code:'DISCOVERY_GRANT_REVOKED'});
+  assert.equal(taskCall(s,USER,'document_from_paper',{paperReadId:paper.id},'document-before-revoke').id,document.id);
+  assert.equal(s.app.documents.inspect(USER,s.project.id,document.id).id,document.id);
+  assert.deepEqual(s.app.evidence.read(USER,paper.rawArtifactIds[0]).bytes,raw);assert.deepEqual(s.app.evidence.read(USER,paper.artifactId).bytes,metadata);
+  s.app.close();s.app=new ResearchApp(s.dir,process.cwd());
+  assert.equal(s.app.operations.execute(USER,'document_from_paper',{paperReadId:paper.id},{projectId:s.project.id,idempotencyKey:'document-before-revoke'}).id,document.id);
+  assert.equal(s.app.documents.inspect(USER,s.project.id,document.id).id,document.id);
+  assert.deepEqual(s.app.evidence.read(USER,paper.rawArtifactIds[0]).bytes,raw);assert.deepEqual(s.app.evidence.read(USER,paper.artifactId).bytes,metadata);
+  assert.equal(s.app.store.get('discovery-grant',grant.id,s.project.id).state,'revoked');
+  assert.equal(fetch.count(),1);assert.equal(s.app.store.list('document-version',s.project.id).length,1);
  }finally{fetch.restore();s.close();}
 });
 
