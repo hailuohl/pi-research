@@ -271,22 +271,46 @@ def request(q):
     require(q.get("protocol") == 1, "PROTOCOL_INVALID"); root = root_path(q.get("root")); info = identity()
     if q.get("op") == "probe":
         return info
-    require(q.get("engineId") == info["engineId"] and q.get("protocolDigest") == info["protocolDigest"], "TARGET_IDENTITY_CHANGED")
+    require(q.get("engineId") == info["engineId"], "TARGET_IDENTITY_CHANGED")
+    op = q.get("op")
+    current_protocol = q.get("protocolDigest") == info["protocolDigest"]
+    require(current_protocol or op in ("status", "result"), "TARGET_IDENTITY_CHANGED")
     handle = q.get("handle"); require(isinstance(handle, str) and re.fullmatch(r"pi-ssh-[a-f0-9-]{36}", handle), "HANDLE_INVALID")
     require(re.fullmatch(r"[a-f0-9]{64}", q.get("manifestDigest", "")), "MANIFEST_INVALID")
     job = root / handle
     with locked(job):
         require(identity() == info, "TARGET_IDENTITY_CHANGED")
         r = record(job)
-        if r:
+        if not current_protocol:
+            protocol_digest = q.get("protocolDigest")
+            require(
+                isinstance(r, dict)
+                and r.get("state") in ("succeeded", "failed", "cancelled")
+                and r.get("handle") == handle
+                and r.get("manifestDigest") == q["manifestDigest"]
+                and r.get("engineId") == q["engineId"]
+                and r.get("protocolDigest") == protocol_digest
+                and isinstance(protocol_digest, str)
+                and re.fullmatch(r"[a-f0-9]{64}", protocol_digest),
+                "TARGET_IDENTITY_CHANGED",
+            )
+        elif r:
             require(r["manifestDigest"] == q["manifestDigest"], "HANDLE_IDENTITY_MISMATCH")
-        op = q.get("op")
         if op == "start" and not r:
             decoded = validate_start(q)
             for name in ("source", "output"):
                 (job / name).mkdir(mode=0o755 if name == "source" else 0o777); os.chmod(job / name, 0o755 if name == "source" else 0o777)
             for meta, data in decoded:
-                path = job / "source" / meta["path"]; path.parent.mkdir(mode=0o755, parents=True, exist_ok=True); path.write_bytes(data); path.chmod(0o555 if meta.get("mode") == "100755" else 0o444)
+                parts = meta["path"].split("/")
+                path = job / "source"
+                for part in parts[:-1]:
+                    path = path / part
+                    path.mkdir(mode=0o755, exist_ok=True)
+                    require(not path.is_symlink() and path.is_dir(), "SOURCE_PATH_INVALID")
+                    os.chmod(path, 0o755)
+                path = path / parts[-1]
+                path.write_bytes(data)
+                path.chmod(0o555 if meta.get("mode") == "100755" else 0o444)
             for name in ("stdout", "stderr"):
                 (job / (name + ".log")).touch(mode=0o600)
             r = {"handle": handle, "manifestDigest": q["manifestDigest"], "engineId": q["engineId"], "protocolDigest": q["protocolDigest"], "contract": q["contract"], "state": "submitting", "startRequested": False}; atomic(job / "record.json", r)

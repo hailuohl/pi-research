@@ -69,6 +69,99 @@ print('ssh-protocol-ok')
  const result=spawnSync('python',['-c',script],{encoding:'utf8',windowsHide:true,timeout:15000});assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/ssh-protocol-ok/);
 });
 
+test('SSH start keeps nested source directories traversable under umask 077',{skip:process.platform==='win32'?'POSIX permission modes are unavailable on Windows':false},()=>{
+ const script=String.raw`
+import base64, importlib.util, json, os, tempfile
+from pathlib import Path
+spec=importlib.util.spec_from_file_location('ssh_endpoint','scripts/ssh-runner.py')
+m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+started=[];m.identity=lambda:{'engineId':'engine','protocolDigest':'protocol'}
+m.subprocess.Popen=lambda *a,**k:started.append((a,k))
+m.inspect=lambda r:{'State':{'Status':'running'}}
+with tempfile.TemporaryDirectory() as d:
+    previous=os.umask(0o077)
+    try:
+        root=Path(d)/'private';root.mkdir(mode=0o700);m.root_path=lambda _:root
+        files=[];payload=[]
+        for name,content,mode in [('pkg/deep/main.py',b'print(1)','100644'),('.hidden/child/data.bin',b'bytes','100644'),('tools/run.sh',b'#!/bin/sh\n','100755')]:
+            files.append({'path':name,'size':len(content),'digest':m.sha(content),'mode':mode});payload.append(base64.b64encode(content).decode())
+        contract={'runner':'ssh','sshTargetId':'unit','image':'python@sha256:'+'a'*64,'command':['python','main.py'],'environment':{},'networkPolicy':'none','cpus':1,'memoryMb':128,'pids':32,'workMb':16,'timeoutSeconds':10,'logBytes':1024,'outputBytes':1024,'expectedArtifacts':['metrics.json']}
+        q={'protocol':1,'root':'/fixture/root','op':'start','handle':'pi-ssh-'+'a'*8+'-'+'a'*4+'-'+'a'*4+'-'+'a'*4+'-'+'a'*12,'manifestDigest':'a'*64,'engineId':'engine','protocolDigest':'protocol','contract':contract,'sourceFiles':files,'sourceDigest':m.sha(m.stable(files)),'files':payload}
+        assert m.request(q)['state']=='submitting'
+        assert len(started)==1
+        job=root/q['handle'];source=job/'source'
+        assert job.stat().st_mode&0o777==0o700
+        assert source.stat().st_mode&0o777==0o755
+        directories={source}
+        for item,encoded in zip(files,payload):
+            path=source
+            parts=item['path'].split('/')
+            for part in parts[:-1]:
+                path=path/part;directories.add(path)
+            output=source/item['path']
+            assert output.read_bytes()==base64.b64decode(encoded)
+            assert output.stat().st_mode&0o777==(0o555 if item['mode']=='100755' else 0o444)
+        for directory in directories:assert directory.stat().st_mode&0o777==0o755,directory
+        for name in ('record.json','stdout.log','stderr.log'):assert (job/name).stat().st_mode&0o777==0o600,name
+    finally:os.umask(previous)
+print('ssh-umask-ok')
+`;
+ const result=spawnSync('python',['-c',script],{encoding:'utf8',windowsHide:true,timeout:15000});assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/ssh-umask-ok/);
+});
+
+test('SSH old protocol can query frozen terminal handles only',()=>{
+ const script=String.raw`
+import contextlib, importlib.util, json, sys, tempfile, types
+from pathlib import Path
+if sys.platform=='win32':sys.modules['fcntl']=types.SimpleNamespace(LOCK_EX=2,flock=lambda *a:None)
+spec=importlib.util.spec_from_file_location('ssh_endpoint','scripts/ssh-runner.py')
+m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+if sys.platform=='win32':m.os.O_NOFOLLOW=0;m.os.O_NONBLOCK=0
+current={'engineId':'engine','protocolDigest':'c'*64};old='b'*64;handle='pi-ssh-'+'a'*8+'-'+'a'*4+'-'+'a'*4+'-'+'a'*4+'-'+'a'*12;manifest='a'*64
+m.identity=lambda:current
+@contextlib.contextmanager
+def locked(job):job.mkdir(mode=0o700,exist_ok=True);yield
+m.locked=locked;m.atomic=lambda p,v:p.write_text(json.dumps(v))
+def rejected(q):
+    try:m.request(q)
+    except ValueError:return
+    raise AssertionError('stale or forged SSH request accepted: '+str(q.get('op')))
+with tempfile.TemporaryDirectory() as d:
+    root=Path(d);m.root_path=lambda _:root
+    def save(row):
+        job=root/handle;job.mkdir(mode=0o700,exist_ok=True);(job/'record.json').write_text(json.dumps(row))
+        out=job/'output';out.mkdir(exist_ok=True);(out/'metrics.json').write_text('{"score":1}')
+    frozen={'handle':handle,'manifestDigest':manifest,'engineId':'engine','protocolDigest':old,'contract':{'expectedArtifacts':['metrics.json'],'outputBytes':1024},'containerId':'d'*64}
+    base={'protocol':1,'root':'/fixture/root','handle':handle,'manifestDigest':manifest,'engineId':'engine','protocolDigest':old}
+    assert m.request({'protocol':1,'root':'/fixture/root','op':'probe'})==current
+    for state in ('succeeded','failed','cancelled'):
+        row={**frozen,'state':state};save(row);record_path=root/handle/'record.json';original=record_path.read_text()
+        for op in ('status','result'):
+            answer=m.request({**base,'op':op})
+            assert answer['state']==state,(state,op,answer)
+            assert answer['handle']==handle
+            if op=='result':assert answer['files'][0]['data']=='eyJzY29yZSI6MX0=',answer
+        assert record_path.read_text()==original
+    for op in ('start','cancel'):save({**frozen,'state':'succeeded'});rejected({**base,'op':op})
+    for state in ('submitting','running','unknown'):
+        save({**frozen,'state':state});rejected({**base,'op':'status'})
+    for field,value in [('handle','pi-ssh-'+'f'*36),('manifestDigest','e'*64),('engineId','other'),('protocolDigest','f'*64)]:
+        save({**frozen,'state':'succeeded',field:value});rejected({**base,'op':'status'})
+    for field in ('handle','manifestDigest','engineId','protocolDigest'):
+        tombstone={**frozen,'state':'cancelled'};del tombstone[field];save(tombstone);rejected({**base,'op':'status'})
+    (root/handle/'record.json').unlink();rejected({**base,'op':'result'})
+    save({**frozen,'state':'succeeded'})
+    rejected({**base,'engineId':'other','op':'status'})
+    rejected({**base,'manifestDigest':'e'*64,'op':'status'})
+    rejected({**base,'handle':'pi-ssh-'+'f'*36,'op':'status'})
+    rejected({**base,'protocolDigest':'f'*64,'op':'status'})
+    identities=iter([current,{'engineId':'engine','protocolDigest':'f'*64}]);m.identity=lambda:next(identities)
+    save({**frozen,'state':'succeeded'});rejected({**base,'op':'status'})
+print('ssh-old-protocol-ok')
+`;
+ const result=spawnSync('python',['-c',script],{encoding:'utf8',windowsHide:true,timeout:15000});assert.equal(result.status,0,result.stderr);assert.match(result.stdout,/ssh-old-protocol-ok/);
+});
+
 test('SSH worker seals a failed docker start without hanging, preserves diagnostics, and never restarts the handle',()=>{
  const script=String.raw`
 import contextlib, importlib.util, io, json, sys, tempfile, types
