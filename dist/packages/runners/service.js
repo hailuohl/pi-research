@@ -31,6 +31,33 @@ export class RunService {
         this.compute = compute;
     }
     get(actor, id) { const run = this.c.store.get('run', id); scope(actor, run.projectId); return run; }
+    list(actor, projectId, cursor = 0, limit = 20) {
+        userOnly(actor);
+        scope(actor, projectId);
+        integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER);
+        integer(limit, 'limit', 1, 100);
+        return this.c.store.readSnapshot(() => {
+            const rows = this.c.store.db.prepare('SELECT rowid, data FROM records WHERE kind=? AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?').all('run', projectId, cursor, limit + 1);
+            const page = rows.slice(0, limit);
+            const nextCursor = page.length ? Number(page.at(-1).rowid) : cursor;
+            ensure(Number.isSafeInteger(nextCursor), 'RUN_CURSOR_UNSAFE', '运行游标超出安全范围', 500);
+            return {
+                items: page.map(row => {
+                    const run = JSON.parse(String(row.data));
+                    return {
+                        id: run.id, projectId: run.projectId, experimentId: run.experimentId, intentId: run.intentId,
+                        state: run.state, integrity: run.integrity, judgment: run.judgment, manifestDigest: run.manifestDigest,
+                        createdAt: run.createdAt, updatedAt: run.updatedAt,
+                        ...(run.startedAt === undefined ? {} : { startedAt: run.startedAt }),
+                        ...(run.endedAt === undefined ? {} : { endedAt: run.endedAt }),
+                        ...(run.metrics === undefined ? {} : { metrics: run.metrics })
+                    };
+                }),
+                cursor: nextCursor,
+                hasMore: rows.length > limit
+            };
+        });
+    }
     prepare(actor, experimentId) {
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_prepare');

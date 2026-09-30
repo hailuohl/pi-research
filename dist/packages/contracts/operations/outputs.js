@@ -66,6 +66,17 @@ const CORE_OUTPUT_SCHEMAS = {
         exitCode: { anyOf: [integer, { type: 'null' }] }, cancelRequested: boolean,
         metrics: { type: 'object', additionalProperties: number }, error: string, artifactIds: strings, evidenceIds: strings, execution: runnerExecution, runGrant: RUN_GRANT_REFERENCE_SCHEMA, startRequested: boolean
     }, ['answerDisposition', 'answerReviewId', 'supervisorPid', 'childPid', 'heartbeat', 'startedAt', 'endedAt', 'exitCode', 'metrics', 'error', 'execution', 'runGrant', 'startRequested']),
+    run_list: object({
+        items: array(object({
+            id: string, projectId: string, experimentId: string, intentId: string,
+            state: enumeration('queued', 'submitting', 'running', 'cancelling', 'succeeded', 'failed', 'cancelled', 'unknown'),
+            integrity: enumeration('pending', 'complete', 'incomplete', 'invalid'),
+            judgment: enumeration('pending', 'supported', 'not_supported', 'inconclusive'),
+            manifestDigest: string, createdAt: string, updatedAt: string, startedAt: string, endedAt: string,
+            metrics: { type: 'object', additionalProperties: number }
+        }, ['startedAt', 'endedAt', 'metrics'])),
+        cursor: integer, hasMore: boolean
+    }),
     workspace_read: object({ path: string, content: string, digest: string, size: integer }),
     workspace_write: object({ path: string, digest: string, size: integer }),
     change_proposal_prepare: row('change-proposal', {

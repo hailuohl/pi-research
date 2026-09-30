@@ -126,6 +126,7 @@ const TOOL_METADATA: Record<string, {
     experiment_plan_submit: { description: '提出实验草案（不运行），继承父实验固定契约；可提供配置对象。正式运行另需人工批准。注意此工具只继承父/项目源码；新编写代码必须通过 change_proposal_prepare 整合。', example: { title: '二阶候选', hypothesis: '测试二阶模型', parentId: 'experiment-id', config: { polynomialDegree: 2, ridge: 0.000001 } } },
     run_prepare: { description: '固定实验快照并生成独立审批请求，不执行计算。', example: { experimentId: 'record-id' } },
     run_submit: { description: '只提交已获用户批准且仍有效的固定 RunIntent；未批准必定拒绝。', example: { intentId: 'record-id' } },
+    run_list: { description: '按稳定游标分页读取当前项目 Run 摘要；完整结果继续用 run_inspect 读取。', example: { cursor: 0, limit: 20 } },
     run_inspect: { description: '读取真实 Run 的状态、指标和证据；结束 Agent 不能当作实验完成。', example: { runId: 'record-id' } },
     run_logs: { description: '读取真实运行日志。cursor 为字节位置。', example: { runId: 'record-id', cursor: 0 } },
     approval_request: { description: '列出当前项目待用户审批事项，不允许 Agent 自己批准。', example: {} },

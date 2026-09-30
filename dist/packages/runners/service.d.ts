@@ -14,6 +14,25 @@ export declare class RunService {
     private launching;
     constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue);
     get(actor: Actor, id: string): Row<Run>;
+    list(actor: Actor, projectId: string, cursor?: number, limit?: number): {
+        items: {
+            metrics?: Record<string, number> | undefined;
+            endedAt?: string | undefined;
+            startedAt?: string | undefined;
+            id: string;
+            projectId: string;
+            experimentId: string;
+            intentId: string;
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
+            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            judgment: "pending" | "supported" | "not_supported" | "inconclusive";
+            manifestDigest: string;
+            createdAt: string;
+            updatedAt: string;
+        }[];
+        cursor: number;
+        hasMore: boolean;
+    };
     prepare(actor: Actor, experimentId: string): Row<RunIntent>;
     submit(actor: Actor, id: string): Row<Run>;
     /** Keep the version read and heartbeat write in one inter-process SQLite transaction. */

@@ -1232,6 +1232,23 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["runId"];
         readonly additionalProperties: false;
     };
+    readonly run_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ("limit" | "cursor")[];
+        readonly additionalProperties: false;
+    };
     readonly run_logs: {
         readonly type: "object";
         readonly properties: {

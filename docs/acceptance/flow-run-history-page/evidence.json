@@ -1,0 +1,53 @@
+{
+  "batch": "owner-run-history-cursor",
+  "projectId": "35657bab-7724-4612-8f9d-be838288f51a",
+  "runIds": [
+    "01982d5c-5696-45b8-b9ad-f0d0da384ebe",
+    "73ccf6f6-7993-43ae-bacf-147113aa66ff"
+  ],
+  "pages": [
+    {
+      "cursor": 78,
+      "hasMore": true,
+      "runId": "01982d5c-5696-45b8-b9ad-f0d0da384ebe"
+    },
+    {
+      "cursor": 101,
+      "hasMore": false,
+      "runId": "73ccf6f6-7993-43ae-bacf-147113aa66ff"
+    }
+  ],
+  "selectedRunId": "73ccf6f6-7993-43ae-bacf-147113aa66ff",
+  "selectedManifestDigest": "4a7e2c01ae48d491ab24ef0e68bd0249ff468af11dc9246879b60bd27c5da87b",
+  "foreignProjectIsolation": true,
+  "invalidCursorRejected": true,
+  "oversizedPageRejected": true,
+  "reopenedSameCursor": true,
+  "oldRunRowsUnchanged": 2,
+  "oldArtifactsUnchanged": 10,
+  "newRuns": 0,
+  "newModelUsage": 0,
+  "newConnectorCalls": 0,
+  "validation": {
+    "initialRegression": {
+      "tests": 876,
+      "passed": 852,
+      "failed": 1,
+      "skipped": 23,
+      "onlyFailure": "owner-only test classification omitted run_list"
+    },
+    "targetedRepair": {
+      "test": "tests/integration/operations-http-cli.test.mjs",
+      "passed": 1,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "unresolvedFailures": 0,
+    "cleanBuild": {
+      "identical": true,
+      "files": 471,
+      "distManifestSha256": "4f8aea1ff6c9716d5ce296ddf7f21a9147082fb3cfa30aa143d50adb2efafa72"
+    },
+    "independentReview": "Sol: initial review and focused classification recheck clear"
+  }
+}

@@ -9506,6 +9506,74 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: ("id" | "experimentId" | "manifestDigest" | "state" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "artifactIds" | "evidenceIds" | "manifest" | "integrity" | "cancelRequested" | "outputDir" | "intentId" | "judgment")[];
         readonly additionalProperties: false;
     };
+    readonly run_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly items: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly projectId: {
+                            readonly type: "string";
+                        };
+                        readonly experimentId: {
+                            readonly type: "string";
+                        };
+                        readonly intentId: {
+                            readonly type: "string";
+                        };
+                        readonly state: {
+                            readonly type: "string";
+                            readonly enum: ["queued", "submitting", "running", "cancelling", "succeeded", "failed", "cancelled", "unknown"];
+                        };
+                        readonly integrity: {
+                            readonly type: "string";
+                            readonly enum: ["pending", "complete", "incomplete", "invalid"];
+                        };
+                        readonly judgment: {
+                            readonly type: "string";
+                            readonly enum: ["pending", "supported", "not_supported", "inconclusive"];
+                        };
+                        readonly manifestDigest: {
+                            readonly type: "string";
+                        };
+                        readonly createdAt: {
+                            readonly type: "string";
+                        };
+                        readonly updatedAt: {
+                            readonly type: "string";
+                        };
+                        readonly startedAt: {
+                            readonly type: "string";
+                        };
+                        readonly endedAt: {
+                            readonly type: "string";
+                        };
+                        readonly metrics: {
+                            readonly type: "object";
+                            readonly additionalProperties: {
+                                readonly type: "number";
+                            };
+                        };
+                    };
+                    readonly required: ("id" | "experimentId" | "manifestDigest" | "state" | "projectId" | "createdAt" | "updatedAt" | "integrity" | "intentId" | "judgment")[];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly cursor: {
+                readonly type: "integer";
+            };
+            readonly hasMore: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: ("cursor" | "items" | "hasMore")[];
+        readonly additionalProperties: false;
+    };
     readonly workspace_read: {
         readonly type: "object";
         readonly properties: {
