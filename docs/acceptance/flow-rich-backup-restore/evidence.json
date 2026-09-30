@@ -1,0 +1,41 @@
+{
+  "batch": "rich-offline-backup-relocation",
+  "codeBase": "4f7940d63bab14f710a07b9b61377d52abf3b577",
+  "codeChanged": false,
+  "backup": {
+    "format": "pi-research-backup-v2",
+    "manifestDigest": "152b588ac3d1e81b9bc2d43d2b0dc4f657169f7ba0f6cc698ab111bc098029dc",
+    "files": 11,
+    "bytes": 434169,
+    "excluded": [
+      "access.token",
+      "models-store.json"
+    ]
+  },
+  "restore": {
+    "relocated": true,
+    "records": 63,
+    "recordSetSha256": "4a57713609158cc651457a9941a606f9747daab6f9419f4395fecddf7c588bc1",
+    "artifacts": 4,
+    "nativeSessions": 2,
+    "grantUsage": [
+      1,
+      1
+    ],
+    "reportValidity": "current",
+    "reportId": "8eda4fb0-f34a-47c7-8365-08156c6c3dbd",
+    "documentVersionId": "79ddac00-bcd3-43eb-9f98-73d5e27b39dd",
+    "claimId": "f01990c9-b529-4c7e-a631-51dd201fb29c",
+    "exportArtifactId": "24150d0c-bc80-43c1-9d45-460ffa827e2d",
+    "exportSha256": "791e2c594884257ef6f29c80a5308161a1a04055cb28516b962f11bb6fbde407"
+  },
+  "failure": {
+    "occupiedTargetCode": "BACKUP_TARGET_EXISTS"
+  },
+  "sourceUnchanged": true,
+  "restoredBytesEqual": true,
+  "idempotentReplayAfterRestore": true,
+  "newExternalCalls": 0,
+  "newModelUsage": 0,
+  "newRuns": 0
+}
