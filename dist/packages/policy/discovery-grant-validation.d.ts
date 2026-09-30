@@ -52,6 +52,7 @@ export declare function assertTaskDiscoveryBinding(store: Store, pid: string, g:
     plan: Row<TeamPlan>;
     approval: Row<Approval>;
 };
+export declare function isTaskDiscoveryScope(g: Pick<DiscoveryGrant, 'sources' | 'searches' | 'targets' | 'allowSearchResults' | 'formats' | 'maxRequests'>): boolean;
 export declare function assertDiscoveryContext(store: Store, pid: string, ctx: DiscoveryContext, newRequest?: boolean): Row<DiscoveryGrant>;
 export declare function normalizedDiscoveryOperation(operation: DiscoveryOperation): DiscoveryOperation;
 export declare function discoveryContext(store: Store, pid: string, actor: Actor, operation: DiscoveryOperation, key: string, ref?: DiscoveryGrantReference): DiscoveryContext | undefined;

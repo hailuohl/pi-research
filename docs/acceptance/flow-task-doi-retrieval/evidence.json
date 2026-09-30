@@ -1,0 +1,63 @@
+{
+  "batch": "task-exact-doi-retrieval",
+  "grant": {
+    "id": "11dfec5d-3450-4f5b-8aa8-18e82780a9a8",
+    "digest": "b99034873a311e0081b23b05d9db8ae925551072b5dae413adfc5683d807b34b",
+    "approvalId": "e29c066f-2812-4e57-9a59-e34747214caf",
+    "effectiveState": "exhausted",
+    "doi": "10.1080/00031305.1973.10478966"
+  },
+  "team": {
+    "id": "b6800aad-3ff7-42fa-a9d5-afeb07cb8abd",
+    "approvalId": "95e559b9-5800-4f39-833e-d0e45be83b21",
+    "state": "completed",
+    "taskId": "725a9c24-62d3-40ed-aa0a-b3cbc1192e59",
+    "attemptId": "47c4b659-0011-41ad-a072-cef42b3f458c",
+    "sessionId": "c7909cf9-ba88-4b67-8f8d-f624d0923cd8",
+    "execution": "output_submitted",
+    "acceptance": "accepted",
+    "outcome": "completed"
+  },
+  "externalRequest": {
+    "id": "1db499e25cc567e83a1d33c79153b098a0af53e26fb1a25e08723d3b638e785a",
+    "status": "succeeded",
+    "httpStatus": 200,
+    "source": "crossref",
+    "scopeTaskId": "725a9c24-62d3-40ed-aa0a-b3cbc1192e59",
+    "scopeAttemptId": "47c4b659-0011-41ad-a072-cef42b3f458c"
+  },
+  "paper": {
+    "id": "3b9dae58-0427-45bb-8ce2-a953fd2cfd8c",
+    "doi": "10.1080/00031305.1973.10478966",
+    "title": "Graphs in Statistical Analysis",
+    "contentKind": "metadata",
+    "fullTextRead": false,
+    "rawArtifactSha256": "74a9a6c879bc5259ac216289a489fc2acfc4228f1058b61b25139ec23e1930af",
+    "metadataArtifactSha256": "e45595b02c13e4257fbf16570ba8a8a69add16860f82d4e9b90cdc42b7ca3661",
+    "metadataArtifactId": "da05ca7e-6774-4941-be9b-6967cedf74f5",
+    "rawArtifactId": "da5bced6-e6ca-415e-a230-3e0b8591f378"
+  },
+  "newModelUsageObservations": 2,
+  "nativeSession": {
+    "sha256": "4c3625fa7a279fa04bb4964032bbd3a2b963867873180530d0872ba370237126",
+    "bytes": 42986
+  },
+  "retainedHistory": {
+    "unchangedRows": 7,
+    "oldNativeSessionSha256": "d0c33ef6f3c8c4507854d905bb3bffa9088d7ff9f554b9d8338b59b11d1677eb"
+  },
+  "validation": {
+    "regression": {
+      "tests": 872,
+      "passed": 850,
+      "failed": 0,
+      "skipped": 22
+    },
+    "cleanBuild": {
+      "identical": true,
+      "files": 471,
+      "distManifestSha256": "b74927e6f9ff7caaef5f7acb4d1d0ec47fb737cecea709a7508fb1aed14a05b1"
+    },
+    "independentReview": "Astra: no confirmed blocker"
+  }
+}

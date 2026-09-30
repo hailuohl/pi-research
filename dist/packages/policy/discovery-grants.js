@@ -6,7 +6,7 @@ import { digest, now } from '../storage/store.js';
 import { randomUUID } from 'node:crypto';
 import { connectorSettings, assertSourceEnabled } from '../connectors/settings.js';
 import { parseSearch } from '../connectors/contracts.js';
-import { discoveryGrantPayload, discoveryReference, assertDiscoveryGrantRecord, assertDiscoveryGrantReference, assertTaskDiscoveryBinding, buildDiscoveryTaskBinding, normalizedDiscoveryOperation } from './discovery-grant-validation.js';
+import { discoveryGrantPayload, discoveryReference, assertDiscoveryGrantRecord, assertDiscoveryGrantReference, assertTaskDiscoveryBinding, buildDiscoveryTaskBinding, normalizedDiscoveryOperation, isTaskDiscoveryScope } from './discovery-grant-validation.js';
 export class DiscoveryGrantService {
     app;
     constructor(app) {
@@ -35,7 +35,7 @@ export class DiscoveryGrantService {
         if (scopeChanged)
             reasons.push('DISCOVERY_SCOPE_CHANGED');
         const effectiveState = g.state === 'revoked' ? 'revoked' : reasons.length ? 'stale' : Date.now() >= Date.parse(g.expiresAt) ? 'expired' : g.state === 'draft' ? 'draft' : remaining === 0 ? 'exhausted' : 'active';
-        const papers = this.app.store.list('paper-read', pid).filter(p => p.discoveryGrant?.id === id).map(p => { const { id, kind, projectId, version, createdAt, updatedAt, source, idInSource, requestedId, title, artifactId, artifactDigest, rawArtifactIds, contentKind, fullTextRead, retrievedAt, discoveryGrant } = p; return { id, kind, projectId, version, createdAt, updatedAt, source, idInSource, requestedId, title, artifactId, artifactDigest, rawArtifactIds, contentKind, fullTextRead, retrievedAt, discoveryGrant }; });
+        const papers = this.app.store.list('paper-read', pid).filter(p => p.discoveryGrant?.id === id).map(p => { const { id, kind, projectId, version, createdAt, updatedAt, source, idInSource, requestedId, title, artifactId, artifactDigest, rawArtifactIds, contentKind, fullTextRead, retrievedAt, discoveryGrant, scopeSessionId, scopeTaskId, scopeAttemptId, discoveryCallIds, discoveryRequestDigest } = p; return { id, kind, projectId, version, createdAt, updatedAt, source, idInSource, requestedId, title, artifactId, artifactDigest, rawArtifactIds, contentKind, fullTextRead, retrievedAt, discoveryGrant, scopeSessionId, scopeTaskId, scopeAttemptId, discoveryCallIds, discoveryRequestDigest }; });
         return { ...g, effectiveState, validity: reasons.length ? 'stale' : 'current', reasons, usage: { limit: g.maxRequests, used: calls.length, remaining, unit: 'http-request-attempt' }, calls, searchResults: this.app.store.list('connector-search', pid).filter(s => s.discoveryGrant?.id === id), papers };
     }
     prepare(actor, pid, value) {
@@ -64,10 +64,10 @@ export class DiscoveryGrantService {
             ensure(Date.parse(expiresAt) > Date.now() && Date.parse(expiresAt) <= Date.now() + 86400000, 'INVALID_INPUT', '期限必须在未来24小时内');
             const allowSearchResults = bool(x.allowSearchResults, 'allowSearchResults');
             ensure(!allowSearchResults || searches.length > 0, 'INVALID_INPUT', '允许命中资料时需要已固定检索');
-            const taskDetails = task ? buildDiscoveryTaskBinding(this.app.store, pid, task) : undefined, taskBinding = taskDetails?.binding;
+            const taskDetails = task ? buildDiscoveryTaskBinding(this.app.store, pid, task) : undefined, taskBinding = taskDetails?.binding, maxRequests = integer(x.maxRequests, 'maxRequests', 1, 100);
             if (task)
-                ensure(searches.length === 1 && searches[0].sources.length === 1 && searches[0].sources[0] === 'crossref' && searches[0].strategy === 'keyword' && searches[0].prioritize === 'default' && targets.length === 0 && !allowSearchResults && formats.length === 1 && formats[0] === 'provider-text' && integer(x.maxRequests, 'maxRequests', 1, 100) === 1, 'DISCOVERY_TASK_SCOPE_INVALID', 'literature 任务只允许一次固定 Crossref 默认关键词检索');
-            const fixed = { sessionId: s?.id ?? taskDetails.team.rootSessionId, ...(taskBinding ? { taskBinding } : {}), model: taskDetails?.model ?? s.model, settingsVersion: connectorSettings(this.app.store, pid).version, sources, searches, targets, allowSearchResults, formats, maxRequests: integer(x.maxRequests, 'maxRequests', 1, 100), maxResponseBytes: integer(x.maxResponseBytes, 'maxResponseBytes', 1024, 32 * 1024 * 1024), expiresAt: new Date(expiresAt).toISOString() }, id = randomUUID(), a = this.app.approvals.request(pid, 'discovery-grant', id, '', 'discovery-grant.activate', '仅批准固定来源与请求范围内的有限HTTP请求；不批准模型、计算或发布'), hash = digest(discoveryGrantPayload({ ...fixed, approvalId: a.id }));
+                ensure(isTaskDiscoveryScope({ sources, searches, targets, allowSearchResults, formats, maxRequests }), 'DISCOVERY_TASK_SCOPE_INVALID', 'literature 任务只允许一次固定 Crossref 关键词检索或 DOI 元数据读取');
+            const fixed = { sessionId: s?.id ?? taskDetails.team.rootSessionId, ...(taskBinding ? { taskBinding } : {}), model: taskDetails?.model ?? s.model, settingsVersion: connectorSettings(this.app.store, pid).version, sources, searches, targets, allowSearchResults, formats, maxRequests, maxResponseBytes: integer(x.maxResponseBytes, 'maxResponseBytes', 1024, 32 * 1024 * 1024), expiresAt: new Date(expiresAt).toISOString() }, id = randomUUID(), a = this.app.approvals.request(pid, 'discovery-grant', id, '', 'discovery-grant.activate', '仅批准固定来源与请求范围内的有限HTTP请求；不批准模型、计算或发布'), hash = digest(discoveryGrantPayload({ ...fixed, approvalId: a.id }));
             this.app.store.update('approval', a.id, a.version, { digest: hash });
             this.app.store.create('discovery-grant', pid, { ...fixed, approvalId: a.id, digest: hash, state: 'draft' }, id);
             if (task)

@@ -69,6 +69,11 @@ export interface DiscoveryPaper {
     fullTextRead: boolean;
     retrievedAt: string;
     discoveryGrant?: DiscoveryGrantReference;
+    scopeSessionId?: string | null;
+    scopeTaskId?: string | null;
+    scopeAttemptId?: string | null;
+    discoveryCallIds?: string[];
+    discoveryRequestDigest?: string;
 }
 export type DiscoveryGrantDTO = Row<DiscoveryGrant> & {
     effectiveState: 'draft' | 'active' | 'expired' | 'exhausted' | 'revoked' | 'stale';

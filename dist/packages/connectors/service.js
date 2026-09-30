@@ -132,9 +132,10 @@ export class ConnectorService {
         this.assertAuthorized(actor, pid);
         const x = object(value), target = routePaperId(x.id, x.source), ctx = discoveryContext(this.c.store, pid, actor, { kind: 'retrieve', target: { ...target, format: 'provider-text' } }, key), cfg = connectorSettings(this.c.store, pid);
         assertSourceEnabled(this.c.store, pid, target.source);
-        if (actor.taskId) {
+        const taskGrantTarget = !!actor.taskId && !!ctx && ctx.taskId === actor.taskId && ctx.operation.kind === 'retrieve' && digest(ctx.operation.target) === digest({ ...target, format: 'provider-text' });
+        if (actor.taskId && !taskGrantTarget) {
             const authorized = this.c.store.list('connector-search', pid).filter(r => r.scopeSessionId === actor.sessionId && r.scopeAttemptId === actor.attemptId).some(r => r.items.some(h => h.source === target.source && h.id === target.id || h.duplicates.some(d => d.source === target.source && d.id === target.id)));
-            ensure(authorized, 'TASK_SCOPE_DENIED', '助手只可读取本次任务成功检索返回的论文标识', 403);
+            ensure(authorized, 'TASK_SCOPE_DENIED', '助手只可读取本次任务成功检索命中的论文或已批准的精确任务 DOI', 403);
         }
         const validate = this.bound(actor, pid, cfg.version, () => { ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时；不登记未完成结果', 409); callback(); }, ctx);
         validate();

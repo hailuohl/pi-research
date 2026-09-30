@@ -36,10 +36,24 @@ export function assertTaskDiscoveryBinding(store, pid, g, options = {}) {
     ensure(plan.id === b.teamPlanId && plan.version === b.teamPlanVersion && plan.teamId === team.id && plan.planVersion === b.planVersion && plan.directiveVersion === b.directiveVersion && plan.digest === b.planDigest && discoveryTeamPlanDigest(plan) === b.teamPlanDigest && digest(plan.model) === digest(g.model), 'DISCOVERY_TASK_PLAN_STALE', '原团队计划记录或模型已改变');
     const specDigest = digest(discoveryTaskSpec(task));
     ensure(specDigest === b.taskSpecDigest && plan.tasks.some(x => digest(x) === specDigest), 'DISCOVERY_TASK_SPEC_STALE', '文献任务规范已改变');
-    ensure(g.searches.length === 1 && g.searches[0].sources.length === 1 && g.searches[0].sources[0] === 'crossref' && g.searches[0].strategy === 'keyword' && g.searches[0].prioritize === 'default' && g.sources.length === 1 && g.sources[0] === 'crossref' && g.maxRequests === 1 && g.targets.length === 0 && !g.allowSearchResults && g.formats.length === 1 && g.formats[0] === 'provider-text', 'DISCOVERY_TASK_SCOPE_INVALID', '任务发现授权超出固定 Crossref 范围');
+    ensure(isTaskDiscoveryScope(g), 'DISCOVERY_TASK_SCOPE_INVALID', '任务发现授权超出固定 Crossref 范围');
     if (options.requireUnclaimed)
         ensure(task.execution === 'pending' && task.attemptCount === 0 && !task.attemptId && !task.sessionId, 'DISCOVERY_TASK_ALREADY_DISPATCHED', '只能为尚未派发的文献任务授权');
     return { task, team, plan, approval };
+}
+export function isTaskDiscoveryScope(g) {
+    const fixed = g.sources.length === 1 && g.sources[0] === 'crossref' && g.maxRequests === 1 && !g.allowSearchResults && g.formats.length === 1 && g.formats[0] === 'provider-text';
+    const search = g.searches.length === 1 && g.searches[0].sources.length === 1 && g.searches[0].sources[0] === 'crossref' && g.searches[0].strategy === 'keyword' && g.searches[0].prioritize === 'default' && g.targets.length === 0;
+    const target = g.targets[0];
+    let doi = false;
+    if (g.searches.length === 0 && g.targets.length === 1 && target?.source === 'crossref' && target.format === 'provider-text' && !target.requestedVersion) {
+        try {
+            const routed = routePaperId(target.id, target.source);
+            doi = routed.source === 'crossref' && routed.id === target.id && /^10\.\d{4,9}\//.test(target.id);
+        }
+        catch { /* Invalid stored/input DOI is outside Task scope. */ }
+    }
+    return fixed && (search || doi);
 }
 export function assertDiscoveryContext(store, pid, ctx, newRequest = false) { const g = assertDiscoveryGrantReference(store, pid, ctx.reference); if (g.taskBinding) {
     const { task } = assertTaskDiscoveryBinding(store, pid, g, { requireApproved: true }), s = store.get('session', ctx.sessionId, pid), a = ctx.attemptId ? store.get('task-attempt', ctx.attemptId, pid) : undefined;

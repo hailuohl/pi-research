@@ -105,7 +105,7 @@ const TOOL_METADATA: Record<string, {
     research_skill_read: {description:'按受管清单读取有来源、版本和内容摘要的技能文本；拒绝任意路径和二进制资源（包括 PNG）。',example:{skillId:'pi-research-lit-review'}},
     connector_status: {description:'读取来源开关、请求次数与实际能力；已编码不等于已通过真实外部接口验收。',example:{}},
     literature_discover: {description:'从用户已启用的 alphaXiv/OpenAlex/bioRxiv/PubMed/Crossref 做有界检索。各来源失败单列，不把元数据当已读全文。',example:{query:'gas sensing',sources:['openalex'],limit:8,strategy:'keyword',prioritize:'default'}},
-    paper_read: {description:'获取合法 arXiv/DOI/OpenAlex/PMID 的原文提取或摘要，保存来源与不可变产物；返回后用 artifact_read 阅读。助手只能读取本次任务检索命中的论文。',example:{id:'2401.01234v2'}},
+    paper_read: {description:'获取合法 arXiv/DOI/OpenAlex/PMID 的可用文本或来源元数据并保存不可变产物；Crossref 只返回元数据。任务只能读取本次检索命中的论文，或已批准的唯一 Crossref DOI。',example:{id:'2401.01234v2'}},
 
     campaign_inspect: { description: '读取指定研究活动及全部当前观测；每次决定前重新核对版本和证据。', example: { campaignId: 'record-id' } },
     campaign_enroll: { description: '把已准备的 RunIntent 登记为当前轮候选，不批准或启动运行。', example: { campaignId: 'record-id', intentId: 'record-id', expectedVersion: 1 } },

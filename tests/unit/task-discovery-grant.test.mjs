@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {ResearchApp} from '../../dist/packages/research-app.js';
 import {setup,USER,approve} from '../support/research.mjs';
 import {actor,spec,startTeam} from '../support/collaboration.mjs';
 
@@ -18,10 +19,21 @@ function runIdentity(s,claim){
  s.app.store.update('task-attempt',attempt.id,attempt.version,{leaseUntil:Date.now()+600000});
  return actor(claim);
 }
-function installFetch(){
- const original=globalThis.fetch;let count=0;
- globalThis.fetch=async()=>{count++;return Response.json({message:{items:[item]}});};
- return {count:()=>count,hit:()=>{count++;},restore:()=>{globalThis.fetch=original;}};
+function installFetch(respond=()=>Response.json({message:{items:[item]}})){
+ const original=globalThis.fetch;let count=0;const urls=[];
+ globalThis.fetch=async(url,...args)=>{count++;urls.push(String(url));return respond(url,...args);};
+ return {count:()=>count,urls,hit:()=>{count++;},restore:()=>{globalThis.fetch=original;}};
+}
+function prepareDoiTask(s,{team,task,target={source:'crossref',id:'https://doi.org/10.1000/TASK-BOUND',format:'provider-text'}}={}){
+ team??=startTeam(s,[spec('doi-read',{role:'literature'})]);task??=s.app.teams.tasks(USER,team.id)[0];
+ const grant=s.app.operations.execute(USER,'discovery_grant_prepare',{taskId:task.id,searches:[],targets:[target],allowSearchResults:false,formats:['provider-text'],maxRequests:1,maxResponseBytes:16384,expiresAt:new Date(Date.now()+60000).toISOString()},{projectId:s.project.id,idempotencyKey:`prepare-doi-${task.id}`});
+ return {team,task,grant};
+}
+function activateTaskGrant(s,grant){approve(s.app,grant.approvalId);return s.app.discoveryGrants.activate(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version});}
+function taskCall(s,who,name,input,key){return s.app.operations.execute(who,name,input,{projectId:s.project.id,idempotencyKey:key});}
+function doiRead(s,who,key,id='10.1000/task-bound',source='crossref'){return taskCall(s,who,'paper_read',{id,source},key);}
+function metadataResponse(DOI='10.1000/task-bound'){
+ return new Response(JSON.stringify({message:{DOI,title:['Task-bound DOI paper'],published:{'date-parts':[[2025,1,1]]}}}),{headers:{'content-type':'application/json'}});
 }
 
 test('prepare operation accepts exactly one Task or coordinator identity',()=>{
@@ -82,7 +94,7 @@ test('task discovery grant cannot be omitted from the real Task, Session, or Tas
  }finally{fetch.restore();s.close();}
 });
 
-test('task discovery grant cannot widen its Crossref-only scope at preparation',()=>{
+test('task search-only Grant rejects a mixed DOI target at preparation',()=>{
  const s=setup();try{
   const team=startTeam(s,[spec('literature',{role:'literature'})]),task=s.app.teams.tasks(USER,team.id)[0],base={taskId:task.id,searches:[query],targets:[],allowSearchResults:false,formats:['provider-text'],maxRequests:1,maxResponseBytes:16384,expiresAt:new Date(Date.now()+60000).toISOString()};
   for(const change of [
@@ -96,6 +108,65 @@ test('task discovery grant cannot widen its Crossref-only scope at preparation',
   assert.equal(s.app.store.get('task',task.id).discoveryGrantId,undefined);
   assert.equal(s.app.store.list('discovery-grant',s.project.id).length,0);
  }finally{s.close();}
+});
+
+test('formal prepare accepts one normalized Crossref DOI and rejects mixed or multiple Task targets',()=>{
+ const s=setup();try{
+  const team=startTeam(s,[spec('valid',{role:'literature'}),spec('mixed',{role:'literature'}),spec('multiple',{role:'literature'})]),[valid,mixed,multiple]=s.app.teams.tasks(USER,team.id),base={searches:[],targets:[{source:'crossref',id:'https://doi.org/10.1000/TASK-BOUND',format:'provider-text'}],allowSearchResults:false,formats:['provider-text'],maxRequests:1,maxResponseBytes:16384,expiresAt:new Date(Date.now()+60000).toISOString()};
+  const grant=s.app.operations.execute(USER,'discovery_grant_prepare',{...base,taskId:valid.id},{projectId:s.project.id,idempotencyKey:'prepare-valid-doi'});
+  assert.equal(grant.searches.length,0);assert.deepEqual(grant.targets,[{source:'crossref',id:'10.1000/task-bound',format:'provider-text'}]);
+  assert.throws(()=>s.app.operations.execute(USER,'discovery_grant_prepare',{...base,taskId:mixed.id,searches:[query]},{projectId:s.project.id,idempotencyKey:'prepare-mixed-doi'}),{code:'DISCOVERY_TASK_SCOPE_INVALID'});
+  assert.throws(()=>s.app.operations.execute(USER,'discovery_grant_prepare',{...base,taskId:multiple.id,targets:[...base.targets,{source:'crossref',id:'10.1000/other',format:'provider-text'}]},{projectId:s.project.id,idempotencyKey:'prepare-multiple-doi'}),{code:'DISCOVERY_TASK_SCOPE_INVALID'});
+  assert.equal(s.app.store.get('task',mixed.id).discoveryGrantId,undefined);assert.equal(s.app.store.get('task',multiple.id).discoveryGrantId,undefined);assert.equal(s.app.store.list('discovery-grant',s.project.id).length,1);
+ }finally{s.close();}
+});
+
+test('approved Task paper_read sends one exact Crossref request and preserves artifacts, result, and provenance across replay and reopen',async()=>{
+ const s=setup(),fetch=installFetch(()=>metadataResponse());try{
+  const {team,task,grant}=prepareDoiTask(s);assert.equal(s.app.teams.claim(team.id),null);assert.equal(s.app.store.list('model-usage',s.project.id).length,0);
+  activateTaskGrant(s,grant);const claim=s.app.teams.claim(team.id);assert.ok(claim);const who=runIdentity(s,claim),paper=await doiRead(s,who,'task-doi-read');
+  assert.equal(paper.idInSource,'10.1000/task-bound');assert.equal(paper.requestedId,'10.1000/task-bound');assert.equal(paper.contentKind,'metadata');assert.equal(paper.fullTextRead,false);
+  assert.equal(fetch.count(),1);assert.equal(new URL(fetch.urls[0]).origin,'https://api.crossref.org');assert.equal(new URL(fetch.urls[0]).pathname,'/works/10.1000%2Ftask-bound');
+  const call=s.app.store.list('connector-call',s.project.id)[0];assert.equal(call.discoveryGrant.id,grant.id);assert.equal(call.scopeTaskId,task.id);assert.equal(call.scopeAttemptId,claim.attempt.id);assert.equal(call.scopeSessionId,claim.attempt.sessionId);
+  assert.equal(paper.discoveryGrant.id,grant.id);assert.deepEqual(paper.discoveryCallIds,[call.id]);assert.equal(paper.scopeTaskId,task.id);assert.equal(paper.scopeAttemptId,claim.attempt.id);
+  const metadata=s.app.evidence.read(USER,paper.artifactId).bytes,raw=s.app.evidence.read(USER,paper.rawArtifactIds[0]).bytes;assert.match(metadata.toString(),/Task-bound DOI paper/);assert.equal(JSON.parse(raw.toString()).message.DOI,'10.1000/task-bound');
+  assert.equal((await doiRead(s,who,'task-doi-read')).id,paper.id);assert.equal(fetch.count(),1);
+  s.app.close();s.app=new ResearchApp(s.dir,process.cwd());
+  const replay=await doiRead(s,who,'task-doi-read');assert.equal(replay.id,paper.id);assert.equal(fetch.count(),1);assert.deepEqual(s.app.evidence.read(USER,paper.artifactId).bytes,metadata);assert.deepEqual(s.app.evidence.read(USER,paper.rawArtifactIds[0]).bytes,raw);
+  const submission=s.app.operations.execute(who,'task_result_submit',{summary:'Crossref metadata was retrieved; no full text or scientific claim was verified.',outcome:'completed',evidenceIds:[],artifactIds:[paper.artifactId],claims:[],unresolvedQuestions:['No full text or scientific evidence was read.']},{projectId:s.project.id,idempotencyKey:'task-doi-result'});
+  assert.equal(submission.taskId,task.id);assert.equal(submission.attemptId,claim.attempt.id);assert.deepEqual(submission.result.artifactIds,[paper.artifactId]);assert.equal(s.app.store.get('task-attempt',claim.attempt.id).discoveryGrant.id,grant.id);
+  const inspected=s.app.operations.execute(USER,'discovery_grant_inspect',{grantId:grant.id},{projectId:s.project.id}),history=inspected.papers.find(p=>p.id===paper.id);
+  assert.equal(history.scopeSessionId,claim.attempt.sessionId);assert.equal(history.scopeTaskId,task.id);assert.equal(history.scopeAttemptId,claim.attempt.id);assert.deepEqual(history.discoveryCallIds,[call.id]);assert.equal(history.discoveryRequestDigest,paper.discoveryRequestDigest);
+  assert.equal(s.app.store.get('session',claim.attempt.sessionId).id,claim.attempt.sessionId);
+ }finally{fetch.restore();s.close();}
+});
+
+test('Task DOI reads reject a different DOI, source, search entry, and Task identity before HTTP',async()=>{
+ const s=setup(),fetch=installFetch();try{
+  const team=startTeam(s,[spec('doi-read',{role:'literature'}),spec('other-task',{role:'literature'})]),task=s.app.teams.tasks(USER,team.id)[0],{grant}=prepareDoiTask(s,{team,task});activateTaskGrant(s,grant);const claim=s.app.teams.claim(team.id);assert.ok(claim);const who=runIdentity(s,claim);
+  assert.throws(()=>doiRead(s,who,'wrong-doi','10.1000/other'),{code:'DISCOVERY_TARGET_DENIED'});
+  assert.throws(()=>doiRead(s,who,'wrong-source','10.1000/task-bound','openalex'),{code:'DISCOVERY_TARGET_DENIED'});
+  assert.throws(()=>taskCall(s,who,'literature_discover',query,'search-in-doi-grant'),{code:'DISCOVERY_REQUEST_DENIED'});
+  const other=s.app.teams.claim(team.id);assert.ok(other);await assert.rejects(doiRead(s,runIdentity(s,other),'other-task-read'),{code:'TASK_SCOPE_DENIED'});
+  assert.equal(fetch.count(),0);assert.equal(s.app.store.list('connector-call',s.project.id).length,0);
+ }finally{fetch.restore();s.close();}
+});
+
+test('stale Team or Grant approval rejects the DOI request before HTTP',async()=>{
+ for(const stale of ['team','grant']){const s=setup(),fetch=installFetch();try{
+  const {team,grant}=prepareDoiTask(s);activateTaskGrant(s,grant);const claim=s.app.teams.claim(team.id);assert.ok(claim);const who=runIdentity(s,claim);s.app.approvals.stale(stale==='team'?team.id:grant.id);
+  assert.throws(()=>doiRead(s,who,`stale-${stale}`));assert.equal(fetch.count(),0);assert.equal(s.app.store.list('connector-call',s.project.id).length,0);
+ }finally{fetch.restore();s.close();}}
+});
+
+test('failed HTTP and mismatched Crossref DOI responses spend the one request and same-key replay never resends',async()=>{
+ for(const mode of ['http-failure','doi-mismatch']){const s=setup(),fetch=installFetch(()=>mode==='http-failure'?new Response('unavailable',{status:503}):metadataResponse('10.1000/different'));try{
+  const {team,grant}=prepareDoiTask(s);activateTaskGrant(s,grant);const claim=s.app.teams.claim(team.id);assert.ok(claim);const who=runIdentity(s,claim);
+  await assert.rejects(doiRead(s,who,`failed-${mode}`),{code:mode==='http-failure'?'CONNECTOR_HTTP_ERROR':'PAPER_ID_MISMATCH'});
+  assert.equal(s.app.discoveryGrants.inspect(USER,s.project.id,grant.id).usage.used,1);assert.equal(s.app.store.list('paper-read',s.project.id).length,0);
+  await assert.rejects(doiRead(s,who,`failed-${mode}`),{code:'DISCOVERY_REQUEST_ALREADY_SENT'});assert.equal(fetch.count(),1);assert.equal(s.app.discoveryGrants.inspect(USER,s.project.id,grant.id).usage.used,1);
+  assert.equal(s.app.discoveryGrants.inspect(USER,s.project.id,grant.id).calls[0].status,mode==='http-failure'?'failed-or-unknown':'succeeded');
+ }finally{fetch.restore();s.close();}}
 });
 
 test('failed HTTP attempt remains charged when the same task is explicitly retried',async()=>{

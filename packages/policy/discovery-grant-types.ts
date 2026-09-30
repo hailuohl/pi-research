@@ -17,7 +17,7 @@ export interface DiscoveryCall {
 }
 export interface DiscoveryPaper {
  source:SourceId;idInSource:string;requestedId?:string;title:string;artifactId:string;artifactDigest:string;rawArtifactIds:string[];
- contentKind:string;fullTextRead:boolean;retrievedAt:string;discoveryGrant?:DiscoveryGrantReference;
+ contentKind:string;fullTextRead:boolean;retrievedAt:string;discoveryGrant?:DiscoveryGrantReference;scopeSessionId?:string|null;scopeTaskId?:string|null;scopeAttemptId?:string|null;discoveryCallIds?:string[];discoveryRequestDigest?:string;
 }
 export type DiscoveryGrantDTO=Row<DiscoveryGrant>&{
  effectiveState:'draft'|'active'|'expired'|'exhausted'|'revoked'|'stale';validity:'current'|'stale';reasons:string[];
