@@ -105,4 +105,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-各阶段证据按实际范围保留：智谱Pi、本机CPU Docker、有限授权、PubMed摘要/PMC原文、固定文档/文稿、Wine与Anscombe比较及备份迁移已有记录；其他原PDF来源、自动root唤醒、GPU/外部远端仍受限或待验。当前任务尚待用户给定论文/代码/数据、协议和交付物；不循环创建示例。完整前端、桌面/团队暂缓；自建托管范围长期独立保留，不能称本阶段已实现。准确入口与科学/环境限制以[后端清单](docs/BACKEND-READINESS.zh-CN.md)为准。
+各阶段证据按实际范围保留：智谱Pi、本机CPU Docker、有限授权、PubMed摘要/PMC原文、固定文档/文稿、Wine与Anscombe比较及备份迁移已有记录；其他原PDF来源、自动root唤醒、GPU/外部远端仍受限或待验。用户授权主代理拟定的[分组红酒任务](docs/acceptance/flow-wine-grouped-trial/RESULT.md)已完成真实后端试用，当前转入按需维护，不循环追加示例。完整前端、桌面/团队暂缓；自建托管范围长期独立保留，不能称本阶段已实现。准确入口与科学/环境限制以[后端清单](docs/BACKEND-READINESS.zh-CN.md)为准。
