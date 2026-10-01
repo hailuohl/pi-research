@@ -446,7 +446,10 @@ class SchedulerView extends React.Component {
           ] })
         ] }) : /* @__PURE__ */ jsx("p", { role: "status", children: "\u6A21\u578B HTTP \u8BF7\u6C42\u72B6\u6001\u5F85\u52A0\u8F7D\u3002" })
       ] }),
-      /* @__PURE__ */ jsx(TargetProbe, { projectId: this.props.data.project.id, perform: this.props.perform, onConfirmed: () => this.refresh() }),
+      /* @__PURE__ */ jsxs("details", { className: "secondary-section", children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u6838\u5BF9 Docker \u76EE\u6807" }),
+        /* @__PURE__ */ jsx(TargetProbe, { projectId: this.props.data.project.id, perform: this.props.perform, onConfirmed: () => this.refresh() })
+      ] }),
       c ? /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
           /* @__PURE__ */ jsx("h2", { children: "\u5171\u4EAB\u8BA1\u7B97\u9884\u7B97" }),

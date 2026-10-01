@@ -289,7 +289,10 @@ class ImplementationView extends React.Component {
       session ? /* @__PURE__ */ jsx(PrivateWorkspace, { projectId: data.project.id, session, perform, busy, blocked: !!session.workingGrantId && !grantWritable, editablePaths: session.workingGrantId ? workingGrant?.editablePaths ?? [] : void 0, onDirty: (dirty) => this.setState({ dirty }), onReady: (gitReady) => {
         if (gitReady !== this.state.gitReady) this.setState({ gitReady });
       } }, session.id) : /* @__PURE__ */ jsx(Empty, { title: "\u5148\u9009\u62E9\u4E3B\u4F1A\u8BDD", children: /* @__PURE__ */ jsx("p", { children: "\u53EF\u5728\u4FA7\u680F\u65B0\u5EFA\u4F1A\u8BDD\uFF0C\u7136\u540E\u56DE\u5230\u6B64\u9875\u9009\u62E9\u3002" }) }),
-      session ? /* @__PURE__ */ jsx(WorkingGrants, { data, session, perform, busy, dirty: this.state.dirty }, session.id) : null,
+      session ? /* @__PURE__ */ jsxs("details", { className: "secondary-section", children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u6709\u9650\u5B9E\u73B0\u4E0E\u6D4B\u8BD5\u6388\u6743" }),
+        /* @__PURE__ */ jsx(WorkingGrants, { data, session, perform, busy, dirty: this.state.dirty }, session.id)
+      ] }) : null,
       session ? /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsx("div", { className: "surface-heading", children: /* @__PURE__ */ jsx("h2", { children: "\u5F00\u53D1\u6D4B\u8BD5\u4E0E\u7528\u6237\u6279\u51C6" }) }),
         /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u53EF\u81EA\u884C\u8BF7\u6C42\u6D4B\u8BD5\u3002\u4E0B\u9762\u4E5F\u53EF\u624B\u52A8\u51C6\u5907\uFF1B\u6279\u51C6\u53EA\u9002\u7528\u4E8E\u663E\u793A\u7684\u6E90\u7801\u3001\u547D\u4EE4\u3001\u955C\u50CF\u4E0E\u8D44\u6E90\uFF0C\u4E0D\u7B49\u4E8E\u6279\u51C6\u6B63\u5F0F Run\u3002" }),

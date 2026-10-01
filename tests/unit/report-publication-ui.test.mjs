@@ -26,7 +26,7 @@ test('publication-only creation sends fixed IDs and a late create cannot select 
 });
 
 test('historical report navigation opens exact revision and job, never latest or an unbound ID',()=>{
- const v=reports();v.state.report=report;const calls=[];v.publicationView={openFixed:(...args)=>calls.push(args)};v.openPublication('unknown');assert.deepEqual(calls,[]);v.openPublication(result.id);assert.deepEqual(calls,[[result.revisionId,result.jobId]]);
+ const v=reports();v.state.report=report;const calls=[];v.publicationView={openFixed:(...args)=>calls.push(args)};v.openPublication('unknown');assert.deepEqual(calls,[]);assert.equal(v.state.publicationOpen,false);v.openPublication(result.id);assert.deepEqual(calls,[[result.revisionId,result.jobId]]);assert.equal(v.state.publicationOpen,true);
  v.state.report={...report,integrity:'invalid'};v.openPublication(result.id);assert.equal(calls.length,1);v.componentWillUnmount();
 });
 

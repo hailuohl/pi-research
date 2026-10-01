@@ -57,7 +57,7 @@ function validProviderText(ref) {
 class ReportsView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { publications: [], title: "\u7814\u7A76\u7ED3\u679C\u8BB0\u5F55", selected: [], selectedClaims: [], selectedCampaigns: [], pendingArtifactId: "", report: null, body: "", loading: false, error: "", checking: false, verificationError: "", reference: null, verifiedReference: null, content: "", cursor: 0, complete: false, reading: false, referenceError: "", exported: null };
+    this.state = { publicationOpen: false, publications: [], title: "\u7814\u7A76\u7ED3\u679C\u8BB0\u5F55", selected: [], selectedClaims: [], selectedCampaigns: [], pendingArtifactId: "", report: null, body: "", loading: false, error: "", checking: false, verificationError: "", reference: null, verifiedReference: null, content: "", cursor: 0, complete: false, reading: false, referenceError: "", exported: null };
     this.publicationView = null;
     this.reportEpoch = 0;
     this.referenceEpoch = 0;
@@ -176,12 +176,16 @@ class ReportsView extends React.Component {
   openPublication(resultId) {
     const publication = this.state.report?.publications?.find((p) => p.resultId === resultId);
     if (!publication || this.state.report?.integrity !== "verified" || !this.publicationView) return;
-    void this.publicationView.openFixed(publication.revisionId, publication.jobId);
+    this.setState({ publicationOpen: true }, () => {
+      void this.publicationView?.openFixed(publication.revisionId, publication.jobId);
+    });
   }
   openPublicationReview(resultId, reviewId) {
     const report = this.state.report, review = report?.publicationReviews?.find((p) => p.resultId === resultId)?.reviews.find((r) => r.id === reviewId);
     if (!review || review.publicationResultId !== resultId || report?.integrity !== "verified" || this.state.checking || this.state.verificationError) return;
-    void this.publicationView?.openFixed(review.revisionId, review.jobId, review.id);
+    this.setState({ publicationOpen: true }, () => {
+      void this.publicationView?.openFixed(review.revisionId, review.jobId, review.id);
+    });
   }
   async downloadReference() {
     const report = this.state.report, ref = this.state.reference;
@@ -221,81 +225,89 @@ class ReportsView extends React.Component {
     const available = s.selectedCampaigns.every((id) => (data.campaigns ?? []).some((c) => c.id === id) && (data.experimentPlans ?? []).some((p) => p.campaignId === id)) && s.selected.every((id) => eligible.some((r) => r.id === id)) && s.selectedClaims.every((id) => claims.some((c) => c.id === id));
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
       /* @__PURE__ */ jsx(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
-      /* @__PURE__ */ jsx(PublicationView, { ref: (view) => {
-        this.publicationView = view;
-      }, data, perform, onSession: this.props.onSession, selectedResultIds: s.publications.map((p) => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }, data.project.id),
-      /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
-        /* @__PURE__ */ jsx("h2", { children: "\u751F\u6210\u53EF\u8FFD\u6EAF\u7ED3\u679C\u8BB0\u5F55" }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u62A5\u544A\u540D\u79F0",
-          /* @__PURE__ */ jsx("input", { "aria-label": "\u62A5\u544A\u540D\u79F0", required: true, maxLength: 200, value: s.title, onChange: (e) => this.setState({ title: e.target.value }) })
-        ] }),
-        /* @__PURE__ */ jsxs("fieldset", { children: [
-          /* @__PURE__ */ jsxs("legend", { children: [
-            "\u7EB3\u5165\u7684\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\uFF08",
-            s.publications.length,
-            "/20\uFF09"
+      /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: s.publicationOpen, onToggle: (event) => {
+        const publicationOpen = event.currentTarget.open;
+        if (publicationOpen !== this.state.publicationOpen) this.setState({ publicationOpen });
+      }, children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u6587\u7A3F\u3001\u7F16\u8BD1\u4E0E\u8BBA\u6587\u5BA1\u67E5" }),
+        /* @__PURE__ */ jsx(PublicationView, { ref: (view) => {
+          this.publicationView = view;
+        }, data, perform, onSession: this.props.onSession, selectedResultIds: s.publications.map((p) => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }, data.project.id)
+      ] }),
+      /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: !s.report, children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u65B0\u5EFA\u53EF\u8FFD\u6EAF\u62A5\u544A" }),
+        /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
+          /* @__PURE__ */ jsxs("label", { children: [
+            "\u62A5\u544A\u540D\u79F0",
+            /* @__PURE__ */ jsx("input", { "aria-label": "\u62A5\u544A\u540D\u79F0", required: true, maxLength: 200, value: s.title, onChange: (e) => this.setState({ title: e.target.value }) })
           ] }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u4E0A\u65B9\u9009\u62E9\u6210\u529F\u4E14\u6765\u6E90\u6709\u6548\u7684\u6784\u5EFA\uFF0C\u70B9\u51FB\u201C\u7EB3\u5165\u6B64\u56FA\u5B9A\u6784\u5EFA\u201D\u3002\u4EC5\u6709\u6587\u7A3F\u4E5F\u53EF\u751F\u6210\u62A5\u544A\u3002" }),
-          s.publications.map((p) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-            /* @__PURE__ */ jsx("strong", { children: p.title }),
-            /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-              "\u4FEE\u8BA2 ",
-              short(p.result.revisionId),
-              " \xB7 \u6784\u5EFA ",
-              short(p.result.jobId)
+          /* @__PURE__ */ jsxs("fieldset", { children: [
+            /* @__PURE__ */ jsxs("legend", { children: [
+              "\u7EB3\u5165\u7684\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\uFF08",
+              s.publications.length,
+              "/20\uFF09"
             ] }),
-            /* @__PURE__ */ jsx("code", { className: "digest", children: p.result.sourceDigest }),
-            /* @__PURE__ */ jsxs("button", { className: "text-button danger", onClick: () => this.setState({ publications: s.publications.filter((row) => row.result.id !== p.result.id) }), children: [
-              "\u79FB\u9664\u6784\u5EFA ",
-              short(p.result.jobId)
-            ] })
-          ] }, p.result.id))
-        ] }),
-        /* @__PURE__ */ jsxs("fieldset", { children: [
-          /* @__PURE__ */ jsxs("legend", { children: [
-            "\u7EB3\u5165\u56FA\u5B9A\u7814\u7A76\u6D3B\u52A8\uFF08",
-            s.selectedCampaigns.length,
-            "/5\uFF09"
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u4E0A\u65B9\u9009\u62E9\u6210\u529F\u4E14\u6765\u6E90\u6709\u6548\u7684\u6784\u5EFA\uFF0C\u70B9\u51FB\u201C\u7EB3\u5165\u6B64\u56FA\u5B9A\u6784\u5EFA\u201D\u3002\u4EC5\u6709\u6587\u7A3F\u4E5F\u53EF\u751F\u6210\u62A5\u544A\u3002" }),
+            s.publications.map((p) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+              /* @__PURE__ */ jsx("strong", { children: p.title }),
+              /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+                "\u4FEE\u8BA2 ",
+                short(p.result.revisionId),
+                " \xB7 \u6784\u5EFA ",
+                short(p.result.jobId)
+              ] }),
+              /* @__PURE__ */ jsx("code", { className: "digest", children: p.result.sourceDigest }),
+              /* @__PURE__ */ jsxs("button", { className: "text-button danger", onClick: () => this.setState({ publications: s.publications.filter((row) => row.result.id !== p.result.id) }), children: [
+                "\u79FB\u9664\u6784\u5EFA ",
+                short(p.result.jobId)
+              ] })
+            ] }, p.result.id))
           ] }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u81EA\u52A8\u7EB3\u5165\u8BE5\u6D3B\u52A8\u7684\u771F\u5B9E\u89C2\u6D4B\u548C\u5BF9\u7167 Run\uFF0C\u4FDD\u7559\u5931\u8D25\u3001\u65E0\u7ED3\u8BBA\u4E0E\u505C\u6B62\u539F\u56E0\uFF1B\u65B9\u6848\u58F0\u660E\u4E0D\u7B49\u4E8E\u79D1\u5B66\u7ED3\u8BBA\u3002" }),
-          (data.campaigns ?? []).filter((c) => (data.experimentPlans ?? []).some((p) => p.campaignId === c.id)).map((c) => /* @__PURE__ */ jsxs("label", { className: "checkbox-label", children: [
-            /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.selectedCampaigns.includes(c.id), disabled: !s.selectedCampaigns.includes(c.id) && s.selectedCampaigns.length >= 5, onChange: (e) => this.setState({ selectedCampaigns: e.target.checked ? [...s.selectedCampaigns, c.id] : s.selectedCampaigns.filter((id) => id !== c.id) }) }),
-            c.goal,
-            " \xB7 ",
-            label(c.state)
-          ] }, c.id))
-        ] }),
-        /* @__PURE__ */ jsx("div", { className: "run-selection", children: eligible.map((r) => /* @__PURE__ */ jsxs("label", { children: [
-          /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.selected.includes(r.id), onChange: (e) => this.setState({ selected: e.target.checked ? [...s.selected, r.id] : s.selected.filter((id) => id !== r.id) }) }),
-          /* @__PURE__ */ jsxs("span", { children: [
-            data.experiments.find((e) => e.id === r.experimentId)?.title ?? "\u5386\u53F2\u5B9E\u9A8C",
-            /* @__PURE__ */ jsxs("small", { children: [
-              "Run ",
-              short(r.id),
-              " \xB7 \u4FEE\u8BA2 ",
-              r.manifest.experimentRevision
-            ] })
+          /* @__PURE__ */ jsxs("fieldset", { children: [
+            /* @__PURE__ */ jsxs("legend", { children: [
+              "\u7EB3\u5165\u56FA\u5B9A\u7814\u7A76\u6D3B\u52A8\uFF08",
+              s.selectedCampaigns.length,
+              "/5\uFF09"
+            ] }),
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u81EA\u52A8\u7EB3\u5165\u8BE5\u6D3B\u52A8\u7684\u771F\u5B9E\u89C2\u6D4B\u548C\u5BF9\u7167 Run\uFF0C\u4FDD\u7559\u5931\u8D25\u3001\u65E0\u7ED3\u8BBA\u4E0E\u505C\u6B62\u539F\u56E0\uFF1B\u65B9\u6848\u58F0\u660E\u4E0D\u7B49\u4E8E\u79D1\u5B66\u7ED3\u8BBA\u3002" }),
+            (data.campaigns ?? []).filter((c) => (data.experimentPlans ?? []).some((p) => p.campaignId === c.id)).map((c) => /* @__PURE__ */ jsxs("label", { className: "checkbox-label", children: [
+              /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.selectedCampaigns.includes(c.id), disabled: !s.selectedCampaigns.includes(c.id) && s.selectedCampaigns.length >= 5, onChange: (e) => this.setState({ selectedCampaigns: e.target.checked ? [...s.selectedCampaigns, c.id] : s.selectedCampaigns.filter((id) => id !== c.id) }) }),
+              c.goal,
+              " \xB7 ",
+              label(c.state)
+            ] }, c.id))
           ] }),
-          /* @__PURE__ */ jsx(Badge, { value: r.state }),
-          /* @__PURE__ */ jsx(Badge, { value: r.integrity })
-        ] }, r.id)) }),
-        claims.length ? /* @__PURE__ */ jsxs("fieldset", { children: [
-          /* @__PURE__ */ jsx("legend", { children: "\u7EB3\u5165\u7684\u5DF2\u91C7\u7EB3\u7ED3\u8BBA" }),
-          claims.map((c) => /* @__PURE__ */ jsxs("label", { className: "checkbox-label", children: [
-            /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.selectedClaims.includes(c.id), onChange: (e) => this.setState({ selectedClaims: e.target.checked ? [...s.selectedClaims, c.id] : s.selectedClaims.filter((id) => id !== c.id) }) }),
-            c.statement
-          ] }, c.id))
-        ] }) : null,
-        mixed ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: "\u6240\u9009 Run \u7684\u8FD0\u884C\u5951\u7EA6\u4E0D\u540C\uFF0C\u8BF7\u5206\u5F00\u751F\u6210\u62A5\u544A\u3002" }) : null,
-        !available ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: "\u90E8\u5206\u6240\u9009\u8BB0\u5F55\u5DF2\u4E0D\u53EF\u7528\u6216\u5931\u6548\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002" }) : null,
-        /* @__PURE__ */ jsx("button", { className: "primary", disabled: !s.title.trim() || !(s.selected.length + s.selectedClaims.length + s.publications.length + s.selectedCampaigns.length) || mixed || !available || !!s.pendingArtifactId, onClick: () => void this.create(), children: "\u751F\u6210\u56FA\u5B9A\u7ED3\u679C\u62A5\u544A" }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u670D\u52A1\u7AEF\u91CD\u65B0\u6838\u9A8C\u6765\u6E90\u4E0E\u539F\u59CB\u6307\u6807\u3002\u5931\u8D25\u6216\u4E0D\u5B8C\u6574\u7684 Run \u4F1A\u4FDD\u7559\u5176\u771F\u5B9E\u72B6\u6001\uFF0C\u4E0D\u8865\u5199\u7ED3\u679C\u3002" }),
-        s.pendingArtifactId ? /* @__PURE__ */ jsxs("p", { role: "status", children: [
-          "\u62A5\u544A\u4EA7\u7269\u5DF2\u4FDD\u5B58\uFF0C\u7B49\u5F85\u9879\u76EE\u8BB0\u5F55\u5237\u65B0\u3002",
-          /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(async () => {
-          }), children: "\u5237\u65B0\u8BB0\u5F55" })
-        ] }) : null
+          /* @__PURE__ */ jsx("div", { className: "run-selection", children: eligible.map((r) => /* @__PURE__ */ jsxs("label", { children: [
+            /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.selected.includes(r.id), onChange: (e) => this.setState({ selected: e.target.checked ? [...s.selected, r.id] : s.selected.filter((id) => id !== r.id) }) }),
+            /* @__PURE__ */ jsxs("span", { children: [
+              data.experiments.find((e) => e.id === r.experimentId)?.title ?? "\u5386\u53F2\u5B9E\u9A8C",
+              /* @__PURE__ */ jsxs("small", { children: [
+                "Run ",
+                short(r.id),
+                " \xB7 \u4FEE\u8BA2 ",
+                r.manifest.experimentRevision
+              ] })
+            ] }),
+            /* @__PURE__ */ jsx(Badge, { value: r.state }),
+            /* @__PURE__ */ jsx(Badge, { value: r.integrity })
+          ] }, r.id)) }),
+          claims.length ? /* @__PURE__ */ jsxs("fieldset", { children: [
+            /* @__PURE__ */ jsx("legend", { children: "\u7EB3\u5165\u7684\u5DF2\u91C7\u7EB3\u7ED3\u8BBA" }),
+            claims.map((c) => /* @__PURE__ */ jsxs("label", { className: "checkbox-label", children: [
+              /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.selectedClaims.includes(c.id), onChange: (e) => this.setState({ selectedClaims: e.target.checked ? [...s.selectedClaims, c.id] : s.selectedClaims.filter((id) => id !== c.id) }) }),
+              c.statement
+            ] }, c.id))
+          ] }) : null,
+          mixed ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: "\u6240\u9009 Run \u7684\u8FD0\u884C\u5951\u7EA6\u4E0D\u540C\uFF0C\u8BF7\u5206\u5F00\u751F\u6210\u62A5\u544A\u3002" }) : null,
+          !available ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: "\u90E8\u5206\u6240\u9009\u8BB0\u5F55\u5DF2\u4E0D\u53EF\u7528\u6216\u5931\u6548\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9\u3002" }) : null,
+          /* @__PURE__ */ jsx("button", { className: "primary", disabled: !s.title.trim() || !(s.selected.length + s.selectedClaims.length + s.publications.length + s.selectedCampaigns.length) || mixed || !available || !!s.pendingArtifactId, onClick: () => void this.create(), children: "\u751F\u6210\u56FA\u5B9A\u7ED3\u679C\u62A5\u544A" }),
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u670D\u52A1\u7AEF\u91CD\u65B0\u6838\u9A8C\u6765\u6E90\u4E0E\u539F\u59CB\u6307\u6807\u3002\u5931\u8D25\u6216\u4E0D\u5B8C\u6574\u7684 Run \u4F1A\u4FDD\u7559\u5176\u771F\u5B9E\u72B6\u6001\uFF0C\u4E0D\u8865\u5199\u7ED3\u679C\u3002" }),
+          s.pendingArtifactId ? /* @__PURE__ */ jsxs("p", { role: "status", children: [
+            "\u62A5\u544A\u4EA7\u7269\u5DF2\u4FDD\u5B58\uFF0C\u7B49\u5F85\u9879\u76EE\u8BB0\u5F55\u5237\u65B0\u3002",
+            /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(async () => {
+            }), children: "\u5237\u65B0\u8BB0\u5F55" })
+          ] }) : null
+        ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "evidence-grid", children: [
         /* @__PURE__ */ jsxs("section", { className: "surface artifact-list", children: [

@@ -116,7 +116,10 @@ class LiteratureView extends React.Component {
         /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => void this.loadConfig(), children: "\u5237\u65B0\u6765\u6E90\u72B6\u6001" })
       ] }),
       s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
-      /* @__PURE__ */ jsx(DiscoveryGrants, { data, perform, selectedGrant: this.props.selectedDiscoveryGrant, onSelect: this.props.onSelectDiscoveryGrant, onSession: this.props.onSession, onSearch: (search, discoveryGrantId) => void perform(() => call(data.project.id, "literature_task_create", { kind: "search", search, discoveryGrantId }), "\u6388\u6743\u5185\u56FA\u5B9A\u68C0\u7D22\u5DF2\u63D0\u4EA4"), onTarget: (target, discoveryGrantId) => void perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target, discoveryGrantId }), "\u6388\u6743\u5185\u660E\u786E\u8D44\u6599\u83B7\u53D6\u5DF2\u63D0\u4EA4") }),
+      /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: !!this.props.selectedDiscoveryGrant, children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u68C0\u7D22\u6388\u6743\u4E0E\u8BF7\u6C42\u8303\u56F4" }),
+        /* @__PURE__ */ jsx(DiscoveryGrants, { data, perform, selectedGrant: this.props.selectedDiscoveryGrant, onSelect: this.props.onSelectDiscoveryGrant, onSession: this.props.onSession, onSearch: (search, discoveryGrantId) => void perform(() => call(data.project.id, "literature_task_create", { kind: "search", search, discoveryGrantId }), "\u6388\u6743\u5185\u56FA\u5B9A\u68C0\u7D22\u5DF2\u63D0\u4EA4"), onTarget: (target, discoveryGrantId) => void perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target, discoveryGrantId }), "\u6388\u6743\u5185\u660E\u786E\u8D44\u6599\u83B7\u53D6\u5DF2\u63D0\u4EA4") })
+      ] }),
       /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
         /* @__PURE__ */ jsx("h2", { children: "\u63D0\u4EA4\u672A\u7ED1\u5B9A\u7684\u6301\u4E45\u68C0\u7D22\u4EFB\u52A1" }),
         /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u542F\u7528\u4EE3\u8868\u5141\u8BB8\u53D1\u9001\u67E5\u8BE2\uFF0C\u4E0D\u7B49\u4E8E\u6765\u6E90\u5065\u5EB7\u3002\u5931\u8D25\u4E0D\u4F1A\u5199\u6210\u96F6\u7ED3\u679C\uFF1B\u5173\u95ED\u9875\u9762\u4E0D\u53D6\u6D88\u5DF2\u63D0\u4EA4\u540E\u53F0\u4EFB\u52A1\u3002\u5DF2\u7ED1\u5B9A DiscoveryGrant \u7684\u4E3B\u4F1A\u8BDD\u8BF7\u4ECE\u4E0A\u65B9\u56FA\u5B9A\u8303\u56F4\u63D0\u4EA4\u3002" }),
@@ -241,24 +244,26 @@ class LiteratureView extends React.Component {
           s.result.discoveryGrant ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !resultGrant || resultGrant.effectiveState !== "active" || resultGrant.validity !== "current" || !resultGrant.allowSearchResults || (s.format === "oa-full-text" || !resultGrant.formats.includes(s.format)) || resultGrant.usage.remaining < 1, onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} }, discoveryGrantId: s.result.discoveryGrant.id }), "\u6388\u6743\u5185\u547D\u4E2D\u8D44\u6599\u83B7\u53D6\u5DF2\u63D0\u4EA4"), children: "\u4EE5\u539F\u68C0\u7D22\u6388\u6743\u83B7\u53D6\u6B64\u547D\u4E2D" }) : /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !s.config?.enabled[hit.source] || s.format === "oa-full-text" && hit.source !== "pubmed", onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} } }), "\u539F\u6587\u83B7\u53D6\u4EFB\u52A1\u5DF2\u63D0\u4EA4"), children: "\u63D0\u4EA4\u6B64\u6587\u732E\u83B7\u53D6\u4EFB\u52A1" })
         ] }, hit.source + ":" + hit.id))
       ] }) : null,
-      /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
-        /* @__PURE__ */ jsx("h2", { children: "\u5BFC\u5165\u672C\u5730\u56FA\u5B9A\u6587\u6863" }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u8BB8\u53EF\u8BC1\u8BF4\u660E\uFF08\u672A\u77E5\u53EF\u7559\u7A7A\uFF09",
-          /* @__PURE__ */ jsx("input", { "aria-label": "\u5BFC\u5165\u6587\u6863\u8BB8\u53EF\u8BC1", value: s.importLicense, onChange: (e) => this.setState({ importLicense: e.target.value }) })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { className: "secondary file-upload", children: [
-          "\u9009\u62E9 PDF \u6216 UTF-8 \u6587\u672C\uFF08\u6700\u591A32 MiB\uFF09",
-          /* @__PURE__ */ jsx("input", { type: "file", accept: ".pdf,.txt,.md,application/pdf,text/plain", onChange: (e) => {
-            const file = e.target.files?.[0];
-            e.target.value = "";
-            if (file) void perform(async () => {
-              const mediaType = /\.pdf$/i.test(file.name) ? "application/pdf" : "text/plain", document2 = await call(data.project.id, "document_import", { title: file.name, mediaType, contentBase64: await fileBase64(file), ...s.importLicense.trim() ? { license: s.importLicense.trim() } : {} });
-              this.selectDocument({ documentVersionId: document2.id });
-            }, "\u539F\u59CB\u6587\u6863\u5B57\u8282\u5DF2\u56FA\u5B9A\u4FDD\u5B58");
-          } })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u5904\u7406\u7528\u6237\u9009\u62E9\u7684\u6587\u4EF6\uFF1B\u4E0D\u81EA\u52A8\u8BFB\u53D6\u5BBF\u4E3B\u76EE\u5F55\uFF0C\u4E5F\u4E0D\u52A0\u5165\u672C\u5730\u68C0\u7D22\u8BED\u6599\u3002" })
+      /* @__PURE__ */ jsxs("details", { className: "secondary-section", children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u5BFC\u5165\u672C\u5730\u6587\u6863" }),
+        /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
+          /* @__PURE__ */ jsxs("label", { children: [
+            "\u8BB8\u53EF\u8BC1\u8BF4\u660E\uFF08\u672A\u77E5\u53EF\u7559\u7A7A\uFF09",
+            /* @__PURE__ */ jsx("input", { "aria-label": "\u5BFC\u5165\u6587\u6863\u8BB8\u53EF\u8BC1", value: s.importLicense, onChange: (e) => this.setState({ importLicense: e.target.value }) })
+          ] }),
+          /* @__PURE__ */ jsxs("label", { className: "secondary file-upload", children: [
+            "\u9009\u62E9 PDF \u6216 UTF-8 \u6587\u672C\uFF08\u6700\u591A32 MiB\uFF09",
+            /* @__PURE__ */ jsx("input", { type: "file", accept: ".pdf,.txt,.md,application/pdf,text/plain", onChange: (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) void perform(async () => {
+                const mediaType = /\.pdf$/i.test(file.name) ? "application/pdf" : "text/plain", document2 = await call(data.project.id, "document_import", { title: file.name, mediaType, contentBase64: await fileBase64(file), ...s.importLicense.trim() ? { license: s.importLicense.trim() } : {} });
+                this.selectDocument({ documentVersionId: document2.id });
+              }, "\u539F\u59CB\u6587\u6863\u5B57\u8282\u5DF2\u56FA\u5B9A\u4FDD\u5B58");
+            } })
+          ] }),
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u5904\u7406\u7528\u6237\u9009\u62E9\u7684\u6587\u4EF6\uFF1B\u4E0D\u81EA\u52A8\u8BFB\u53D6\u5BBF\u4E3B\u76EE\u5F55\uFF0C\u4E5F\u4E0D\u52A0\u5165\u672C\u5730\u68C0\u7D22\u8BED\u6599\u3002" })
+        ] })
       ] }),
       /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [

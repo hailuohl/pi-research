@@ -32,8 +32,8 @@ export class SessionList extends React.Component<Props,State> {
         const selectedOutside=selected&&selectedId&&!items.some(item=>item.id===selectedId);
         const row=(item:{id:string;state:string;title:string})=><button key={item.id} className={item.id===selectedId?'selected-session':''} onClick={()=>onSelect(item.id)}><span className={'session-dot '+(item.state==='running'?'live':'')}/><span>{item.title}</span></button>;
         return <div className="sidebar-sessions"><div className="sidebar-caption">会话<button aria-label="新建会话" title="新建会话" className="icon-button" disabled={!this.props.projectId} onClick={onNew}>＋</button></div>
-            <form className="session-search" onSubmit={this.search}><input aria-label="搜索会话" placeholder="搜索会话" value={this.state.draft} onChange={event=>this.setState({draft:event.target.value})}/><button type="submit" disabled={busy}>搜索</button></form>
-            <select className="session-role" aria-label="会话角色" value={this.state.role} onChange={event=>this.changeRole(event.target.value as Role)}>{Object.entries(roles).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select>
+            <details className="session-filters"><summary>查找与筛选{this.state.query?' · 已筛选':''}</summary><form className="session-search" onSubmit={this.search}><input aria-label="搜索会话" placeholder="搜索会话" value={this.state.draft} onChange={event=>this.setState({draft:event.target.value})}/><button type="submit" disabled={busy}>搜索</button></form>
+            <select className="session-role" aria-label="会话角色" value={this.state.role} onChange={event=>this.changeRole(event.target.value as Role)}>{Object.entries(roles).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></details>
             {selectedOutside?row(selected):null}
             {items.map(row)}
             {error?<p role="alert" className="small error-text">{error}</p>:null}

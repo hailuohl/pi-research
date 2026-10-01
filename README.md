@@ -4,7 +4,7 @@
 
 本开发副本基于 v0.3.1 按 [优化实施计划](docs/IMPLEMENTATION-PLAN.zh-CN.md) 持续推进。原 ZIP 保持冻结；版本号沿用源包身份，不代表新发布。当前进度见 [实施状态](docs/IMPLEMENTATION-STATUS.md)，证据见 [PR01](docs/acceptance/pr01/RESULTS.zh-CN.md)、[PR02 首批](docs/acceptance/pr02/RESULTS.zh-CN.md) 与 [能力矩阵](docs/reference-baseline/PR01.md)。
 
-当前状态（2026-10-01文档核对）：[后端收口](docs/acceptance/flow-backend-readiness/RESULT.md)与用户授权拟定的[分组红酒试用](docs/acceptance/flow-wine-grouped-trial/RESULT.md)均已交付，本地后端阶段已完成，转入按需维护。[试用清单](docs/BACKEND-READINESS.zh-CN.md)列明入口、证据与限制。前端布局/完整重构和PR14桌面/团队协作暂缓；更多授权、远端、GPU与成果发布/同步按需求和环境触发，PR01–14长期范围保留。
+当前状态（2026-10-01文档核对）：[后端收口](docs/acceptance/flow-backend-readiness/RESULT.md)与用户授权拟定的[分组红酒试用](docs/acceptance/flow-wine-grouped-trial/RESULT.md)均已交付，本地后端阶段已完成，转入按需维护。[试用清单](docs/BACKEND-READINESS.zh-CN.md)列明入口、证据与限制。2026-10-02按用户新指示完成[前端布局重设计](docs/acceptance/flow-frontend-redesign/RESULT.md)：会话为主入口，辅助资料与成果从工作区工具打开，实验支持节点树图与列表。固定文稿、编译批准及最终报告仍沿用户操作；PR14桌面/团队协作暂缓；更多授权、远端、GPU与成果发布/同步按需求和环境触发，PR01–14长期范围保留。
 
 历史目标（2026-09-29）：曾要求对齐OpenResearch前端，并把桌面分发及自建托管范围移出当时排期。该排期由上面的当前阶段目标取代；已有成果与在途改动继续保留。
 

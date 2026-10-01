@@ -13,6 +13,10 @@ import { Chat, Experiments, Inspector } from "./workbench.js";
 import { SessionList } from "./session-list.js";
 import { WorkspaceView, EvidenceView, ReportsView, LiteratureView, SettingsView } from "./data-views.js";
 const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["scheduler", "\u8D44\u6E90\u4E0E\u8C03\u5EA6", "settings"], ["implementation", "\u5B9E\u73B0\u4E0E\u5BA1\u67E5", "branch"], ["campaigns", "\u7814\u7A76\u6D3B\u52A8", "branch"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["changes", "\u53D8\u66F4\u63D0\u6848", "branch"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "settings"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u8BBE\u7F6E\u4E0E\u80FD\u529B", "settings"]];
+const navigationGroups = [
+  { name: "\u7814\u7A76", ids: ["chat", "experiments", "campaigns", "implementation", "changes"] },
+  { name: "\u7BA1\u7406", ids: ["integrations", "scheduler", "settings"] }
+];
 const manualTasks = [{ key: "sources", role: "literature", objective: "\u6574\u7406\u7528\u6237\u5DF2\u63D0\u4F9B\u8D44\u6599\u53CA\u5019\u9009\u6587\u732E\uFF1B\u68C0\u7D22\u7B56\u7565\u4E0E\u6700\u7EC8\u6392\u5E8F\u7531\u4E3B\u534F\u8C03\u8005\u8D1F\u8D23\u3002\u660E\u786E\u672A\u9605\u8BFB\u7684\u5168\u6587\u3002", dependencies: [] }, { key: "analysis", role: "analyst", objective: "\u6838\u67E5\u5DF2\u6709\u8FD0\u884C\u6307\u6807\u53CA\u5176\u8BC1\u636E\uFF1B\u7F3A\u5C11\u5FC5\u8981\u8F93\u5165\u5219\u963B\u585E\uFF0C\u4E0D\u7F16\u9020\u7ED3\u679C\u3002", dependencies: [], critical: true }, { key: "review", role: "reviewer", objective: "\u72EC\u7ACB\u6838\u67E5\u5206\u6790\u7ED3\u8BBA\u4E0E\u771F\u5B9E\u8BC1\u636E\u3002", dependencies: ["sources"], reviewOf: "analysis" }, { key: "report", role: "writer", objective: "\u6839\u636E\u5DF2\u9A8C\u6536\u7684\u8F93\u5165\u5F62\u6210\u5B9E\u9645\u62A5\u544A\u4EA7\u7269\uFF0C\u8BF4\u660E\u9650\u5236\u3002", dependencies: ["analysis", "review"], expectedOutputs: [{ kind: "report", schemaId: "report", required: true }], acceptanceRuleIds: ["artifact-required"] }];
 function saved() {
   try {
@@ -164,7 +168,12 @@ class ExperimentModal extends React.Component {
 class App extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: saved().tab ?? "chat", selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedRunGrant: saved().selectedRunGrant ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, tokenDraft: "", loggedIn: hasToken() };
+    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: saved().tab ?? "chat", selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedRunGrant: saved().selectedRunGrant ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, tokenDraft: "", loggedIn: hasToken(), navigationOpen: false };
+    this.experimentSelections = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([, value]) => typeof value === "string"));
+    this.closeNavigationOnResize = () => {
+      if (window.innerWidth > 760 && this.state.navigationOpen) this.setState({ navigationOpen: false });
+    };
+    this.navigationToggle = null;
     this.refreshEpoch = 0;
     this.mounted = true;
     this.perform = async (fn, success) => {
@@ -196,8 +205,19 @@ class App extends React.Component {
       if (!this.state.busy)
         this.setState({ modal: "", modalData: null });
     };
+    this.selectTab = (tab) => {
+      const returnFocus = this.state.navigationOpen;
+      this.setState({ tab, navigationOpen: false }, () => {
+        if (returnFocus) this.navigationToggle?.focus();
+      });
+    };
+    this.toggleNavigation = () => {
+      const navigationOpen = !this.state.navigationOpen;
+      this.setState({ navigationOpen }, () => document.getElementById(navigationOpen ? "navigation-close" : "navigation-toggle")?.focus());
+    };
   }
   componentDidMount() {
+    window.addEventListener("resize", this.closeNavigationOnResize);
     if (this.state.loggedIn) void this.refresh();
     this.timer = window.setInterval(() => {
       if (this.state.loggedIn) {
@@ -207,6 +227,7 @@ class App extends React.Component {
     }, 2e4);
   }
   componentWillUnmount() {
+    if (typeof window !== "undefined") window.removeEventListener?.("resize", this.closeNavigationOnResize);
     this.mounted = false;
     this.invalidateRead();
     this.feed?.stop();
@@ -214,8 +235,12 @@ class App extends React.Component {
     clearTimeout(this.noticeTimer);
   }
   componentDidUpdate(_, prev) {
-    if (["projectId", "sessionId", "tab", "selectedExp", "selectedRun", "selectedReport", "selectedCampaign", "selectedRunGrant", "selectedDiscoveryGrant", "selectedDocument", "historyAnchor"].some((k) => prev[k] !== this.state[k]))
-      localStorage.setItem("pi-research-ui-v1", JSON.stringify({ projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport, selectedCampaign: this.state.selectedCampaign, selectedRunGrant: this.state.selectedRunGrant, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, selectedDocument: this.state.selectedDocument, historyAnchor: { projectId: this.state.projectId, sessionId: this.state.sessionId, anchor: this.state.historyAnchor } }));
+    if (this.state.data?.project.id === this.state.projectId && this.state.data.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[this.state.projectId] = this.state.selectedExp;
+    try {
+      if (["projectId", "sessionId", "tab", "selectedExp", "selectedRun", "selectedReport", "selectedCampaign", "selectedRunGrant", "selectedDiscoveryGrant", "selectedDocument", "historyAnchor"].some((k) => prev[k] !== this.state[k]))
+        localStorage.setItem("pi-research-ui-v1", JSON.stringify({ experimentSelections: this.experimentSelections, projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport, selectedCampaign: this.state.selectedCampaign, selectedRunGrant: this.state.selectedRunGrant, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, selectedDocument: this.state.selectedDocument, historyAnchor: { projectId: this.state.projectId, sessionId: this.state.sessionId, anchor: this.state.historyAnchor } }));
+    } catch {
+    }
     if (!this.state.loggedIn && prev.loggedIn) {
       this.feed?.stop();
       this.feed = void 0;
@@ -252,7 +277,8 @@ class App extends React.Component {
       if (view && view.session.id !== sessionId) throw Error("\u4F1A\u8BDD\u5FEB\u7167\u4E0E\u5F53\u524D\u9009\u62E9\u4E0D\u4E00\u81F4");
       if (data && view) data = { ...data, sessions: data.sessions.some((s) => s.id === sessionId) ? data.sessions.map((s) => s.id === sessionId ? view.session : s) : [...data.sessions, view.session] };
       const active = !!view?.progress.active && view.progress.generation === view.session.generation;
-      const selectedExp = data?.experiments.some((e) => e.id === this.state.selectedExp) ? this.state.selectedExp : data?.experiments[0]?.id ?? "";
+      const requestedExp = projectId === this.state.projectId ? this.state.selectedExp : this.experimentSelections[projectId] ?? "";
+      const selectedExp = data?.experiments.some((e) => e.id === requestedExp) ? requestedExp : data?.experiments[0]?.id ?? "";
       await new Promise((resolve) => this.setState({ boot, data, projectId, sessionId, messages: view?.messages ?? [], history: view?.history ?? null, historyAnchor: anchor, selectedExp, stream: !anchor && active ? view.progress.content : "", streamTruncated: !anchor && active && !!view?.progress.truncated, connected: true }, resolve));
       if (!this.mounted || epoch !== this.refreshEpoch) return false;
       if (this.feed?.projectId !== projectId) {
@@ -280,10 +306,11 @@ class App extends React.Component {
     return { sessionId: id, tab, messages: [], history: null, historyAnchor: null, stream: "", streamTruncated: false, error: "" };
   }
   switchProject(id) {
+    if (this.state.data?.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[this.state.projectId] = this.state.selectedExp;
     this.invalidateRead();
     this.feed?.stop();
     this.feed = void 0;
-    this.setState({ ...this.sessionSelection(""), projectId: id, selectedExp: "", selectedRun: "", selectedReport: "", selectedCampaign: "", selectedRunGrant: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", data: null }, () => {
+    this.setState({ ...this.sessionSelection(""), projectId: id, selectedExp: this.experimentSelections[id] ?? "", navigationOpen: false, selectedRun: "", selectedReport: "", selectedCampaign: "", selectedRunGrant: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", data: null }, () => {
       void this.refresh();
     });
   }
@@ -477,29 +504,51 @@ class App extends React.Component {
         /* @__PURE__ */ jsx("small", { children: "\u53EA\u7ED1\u5B9A 127.0.0.1\u3002\u4EE4\u724C\u4FDD\u5B58\u5728\u5F53\u524D\u6D4F\u89C8\u5668\u4F1A\u8BDD\u4E2D\uFF0C\u4E0D\u653E\u5165\u8BF7\u6C42 URL\u3002" })
       ] });
     const currentSession = data?.sessions.find((s) => s.id === this.state.sessionId), experiment = data?.experiments.find((e) => e.id === this.state.selectedExp);
-    return /* @__PURE__ */ jsxs("div", { className: "app-shell", children: [
-      /* @__PURE__ */ jsxs("nav", { className: "sidebar", "aria-label": "\u4E3B\u5BFC\u822A", children: [
-        /* @__PURE__ */ jsxs("a", { className: "brand", href: "#", onClick: (e) => {
-          e.preventDefault();
-          this.setState({ tab: "chat" });
-        }, children: [
-          /* @__PURE__ */ jsx("span", { children: "\u03C0" }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            "Pi Research",
-            /* @__PURE__ */ jsx("small", { children: "RESEARCH WORKSPACE" })
-          ] })
+    return /* @__PURE__ */ jsxs("div", { className: "app-shell" + (this.state.navigationOpen ? " navigation-open" : ""), onKeyDown: (event) => {
+      if (event.key === "Escape" && this.state.navigationOpen) this.toggleNavigation();
+    }, children: [
+      /* @__PURE__ */ jsxs("nav", { id: "main-navigation", className: "sidebar", "aria-label": "\u4E3B\u5BFC\u822A", children: [
+        /* @__PURE__ */ jsxs("div", { className: "sidebar-brand", children: [
+          /* @__PURE__ */ jsxs("a", { className: "brand", href: "#", onClick: (e) => {
+            e.preventDefault();
+            this.setState({ tab: "chat", navigationOpen: false });
+          }, children: [
+            /* @__PURE__ */ jsx("span", { children: "\u03C0" }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              "Pi Research",
+              /* @__PURE__ */ jsx("small", { children: "\u79D1\u7814\u5DE5\u4F5C\u53F0" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsx("button", { id: "navigation-close", className: "icon-button mobile-navigation", "aria-label": "\u5173\u95ED\u5BFC\u822A", onClick: this.toggleNavigation, children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
         ] }),
-        /* @__PURE__ */ jsxs("button", { className: "new-project", onClick: () => this.open("project"), children: [
+        /* @__PURE__ */ jsxs("label", { className: "sidebar-project", children: [
+          "\u9879\u76EE",
+          /* @__PURE__ */ jsx("select", { "aria-label": "\u5F53\u524D\u9879\u76EE", value: this.state.projectId, onChange: (e) => this.switchProject(e.target.value), children: !boot?.projects.length ? /* @__PURE__ */ jsx("option", { value: "", children: "\u5C1A\u672A\u521B\u5EFA\u9879\u76EE" }) : boot.projects.map((p) => /* @__PURE__ */ jsx("option", { value: p.id, children: p.name }, p.id)) })
+        ] }),
+        /* @__PURE__ */ jsxs("button", { className: "new-project", onClick: () => this.setState({ navigationOpen: false }, () => this.open("project")), children: [
           /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
           "\u65B0\u5EFA\u9879\u76EE"
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "sidebar-caption", children: "WORKSPACE" }),
-        /* @__PURE__ */ jsx("div", { className: "nav-list", children: navigation.map(([id, name, icon]) => /* @__PURE__ */ jsxs("button", { className: tab === id ? "active" : "", onClick: () => this.setState({ tab: id }), children: [
-          /* @__PURE__ */ jsx(Icon, { name: icon, size: 18 }),
-          /* @__PURE__ */ jsx("span", { children: name }),
-          id === "experiments" && data?.experiments.length ? /* @__PURE__ */ jsx("em", { children: data.experiments.length }) : null
-        ] }, id)) }),
-        /* @__PURE__ */ jsx(SessionList, { projectId: this.state.projectId, selectedId: this.state.sessionId, selected: currentSession, onSelect: (id) => this.selectSession(id), onNew: () => this.newSession() }),
+        /* @__PURE__ */ jsxs("div", { className: "sidebar-body", children: [
+          /* @__PURE__ */ jsx("div", { className: "nav-groups", children: navigationGroups.map((group) => /* @__PURE__ */ jsxs("details", { open: group.name === "\u7814\u7A76" || group.ids.includes(tab), children: [
+            /* @__PURE__ */ jsx("summary", { children: group.name }),
+            /* @__PURE__ */ jsx("div", { className: "nav-list", children: group.ids.map((id) => {
+              const entry = navigation.find((item) => item[0] === id);
+              return /* @__PURE__ */ jsxs("button", { "aria-current": tab === id ? "page" : void 0, className: tab === id ? "active" : "", onClick: () => this.selectTab(id), children: [
+                /* @__PURE__ */ jsx(Icon, { name: entry[2], size: 18 }),
+                /* @__PURE__ */ jsx("span", { children: entry[1] }),
+                id === "experiments" && data?.experiments.length ? /* @__PURE__ */ jsx("em", { children: data.experiments.length }) : null
+              ] }, id);
+            }) })
+          ] }, group.name)) }),
+          /* @__PURE__ */ jsx(SessionList, { projectId: this.state.projectId, selectedId: this.state.sessionId, selected: currentSession, onSelect: (id) => {
+            this.setState({ navigationOpen: false });
+            this.selectSession(id);
+          }, onNew: () => {
+            this.setState({ navigationOpen: false });
+            void this.newSession();
+          } })
+        ] }),
         /* @__PURE__ */ jsxs("div", { className: "sidebar-footer", children: [
           /* @__PURE__ */ jsx("div", { className: "local-avatar", children: /* @__PURE__ */ jsx(Icon, { name: "folder" }) }),
           /* @__PURE__ */ jsxs("div", { children: [
@@ -509,19 +558,37 @@ class App extends React.Component {
           /* @__PURE__ */ jsx("span", { className: "status-dot " + (this.state.connected ? "" : "amber") })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "workspace-shell", children: [
+      this.state.navigationOpen ? /* @__PURE__ */ jsx("button", { className: "navigation-backdrop", "aria-label": "\u6536\u8D77\u5BFC\u822A", onClick: this.toggleNavigation }) : null,
+      /* @__PURE__ */ jsxs("div", { className: "workspace-shell", inert: this.state.navigationOpen ? true : void 0, children: [
         /* @__PURE__ */ jsxs("header", { className: "topbar", children: [
+          /* @__PURE__ */ jsx("button", { id: "navigation-toggle", ref: (node) => {
+            this.navigationToggle = node;
+          }, className: "icon-button mobile-navigation", "aria-label": "\u6253\u5F00\u5BFC\u822A", "aria-expanded": this.state.navigationOpen, "aria-controls": "main-navigation", onClick: this.toggleNavigation, children: /* @__PURE__ */ jsx(Icon, { name: "folder" }) }),
           /* @__PURE__ */ jsxs("div", { className: "breadcrumb", children: [
-            /* @__PURE__ */ jsx("span", { children: "\u9879\u76EE" }),
+            /* @__PURE__ */ jsx("span", { children: data?.project.name ?? "\u9879\u76EE" }),
             /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 12 }),
-            /* @__PURE__ */ jsx("select", { "aria-label": "\u5F53\u524D\u9879\u76EE", value: this.state.projectId, onChange: (e) => this.switchProject(e.target.value), children: !boot?.projects.length ? /* @__PURE__ */ jsx("option", { value: "", children: "\u5C1A\u672A\u521B\u5EFA\u9879\u76EE" }) : boot.projects.map((p) => /* @__PURE__ */ jsx("option", { value: p.id, children: p.name }, p.id)) })
+            /* @__PURE__ */ jsx("strong", { children: navigation.find((item) => item[0] === tab)?.[1] ?? "\u7814\u7A76\u4F1A\u8BDD" })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "topbar-right", children: [
+            /* @__PURE__ */ jsxs("details", { id: "workspace-tool-menu", className: "workspace-tool-menu", children: [
+              /* @__PURE__ */ jsxs("summary", { "aria-label": "\u5DE5\u4F5C\u533A\u5DE5\u5177", title: "\u67E5\u770B\u6587\u4EF6\u3001\u6587\u732E\u3001\u8BC1\u636E\u4E0E\u6210\u679C", children: [
+                /* @__PURE__ */ jsx(Icon, { name: "folder", size: 18 }),
+                /* @__PURE__ */ jsx("span", { children: "\u5DE5\u4F5C\u533A" })
+              ] }),
+              /* @__PURE__ */ jsx("div", { className: "workspace-tool-items", children: navigation.filter((item) => ["workspace", "literature", "evidence", "reports"].includes(item[0])).map(([id, name, icon]) => /* @__PURE__ */ jsxs("button", { "aria-current": tab === id ? "page" : void 0, className: tab === id ? "active" : "", onClick: (event) => {
+                const menu = event.currentTarget.closest("details");
+                menu?.removeAttribute("open");
+                menu?.querySelector("summary")?.focus();
+                this.selectTab(id);
+              }, children: [
+                /* @__PURE__ */ jsx(Icon, { name: icon, size: 17 }),
+                /* @__PURE__ */ jsx("span", { children: name })
+              ] }, id)) })
+            ] }),
             /* @__PURE__ */ jsxs("span", { className: "connection-state " + (this.state.connected ? "ready" : ""), children: [
               /* @__PURE__ */ jsx("span", { className: "status-dot " + (this.state.connected ? "" : "amber") }),
               this.state.connected ? "\u672C\u5730\u670D\u52A1\u5728\u7EBF" : "\u6B63\u5728\u91CD\u8FDE"
-            ] }),
-            /* @__PURE__ */ jsx("span", { className: "version-label", children: "v0.2 \xB7 \u5F00\u53D1\u7248" })
+            ] })
           ] })
         ] }),
         this.state.eventNotice ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: this.state.eventNotice }) : null,
@@ -535,54 +602,57 @@ class App extends React.Component {
           this.state.notice
         ] }) : null,
         /* @__PURE__ */ jsxs("div", { className: "workbench-content " + (["chat", "experiments"].includes(tab) && data ? "with-inspector" : ""), children: [
-          /* @__PURE__ */ jsx("main", { className: "main-pane " + (tab === "chat" ? "chat-pane" : ""), children: !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, session: currentSession, perform: this.perform }) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
-            /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
-            /* @__PURE__ */ jsxs("h1", { children: [
-              "\u6BCF\u4E00\u4E2A\u7814\u7A76\uFF0C",
-              /* @__PURE__ */ jsx("br", {}),
-              "\u4ECE\u6E05\u6670\u7684\u8D77\u70B9\u5F00\u59CB\u3002"
-            ] }),
-            /* @__PURE__ */ jsxs("p", { children: [
-              "\u5EFA\u7ACB\u672C\u5730\u9879\u76EE\uFF0C\u4FDD\u5B58\u6E90\u4EE3\u7801\u3001\u5B9E\u9A8C\u5FEB\u7167\u548C\u8BC1\u636E\u3002",
-              /* @__PURE__ */ jsx("br", {}),
-              "\u4E5F\u53EF\u4EE5\u5148\u8FD0\u884C\u968F\u5305\u7684\u771F\u5B9E\u6570\u503C\u793A\u4F8B\uFF0C\u68C0\u67E5\u5B8C\u6574\u6D41\u7A0B\u3002"
-            ] }),
-            /* @__PURE__ */ jsxs("button", { className: "primary", onClick: () => this.open("project"), children: [
-              "\u521B\u5EFA\u7B2C\u4E00\u4E2A\u9879\u76EE ",
-              /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
-            ] }),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002" })
-          ] }) : tab === "chat" ? /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, messages: this.state.messages, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, perform: this.perform, onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id) }) : tab === "scheduler" ? /* @__PURE__ */ jsx(SchedulerView, { data, perform: this.perform }, data.project.id) : tab === "implementation" ? /* @__PURE__ */ jsx(ImplementationView, { onScheduler: () => this.setState({ tab: "scheduler" }), data, sessionId: this.state.sessionId, busy: this.state.busy, perform: this.perform, onSession: (sessionId) => this.selectSession(sessionId, "implementation"), onChat: (id) => this.selectSession(id), onExperiment: (selectedExp) => this.setState({ selectedExp, selectedRun: "", tab: "experiments" }) }, data.project.id) : tab === "campaigns" ? /* @__PURE__ */ jsx(CampaignView, { onRun: (selectedRun, selectedExp) => {
-            if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
-              this.setState({ error: "\u6307\u5B9A\u6D3B\u52A8 Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
-              return;
-            }
-            this.invalidateRead();
-            this.setState({ selectedRun, selectedExp, tab: "experiments" });
-          }, selectedCampaign: this.state.selectedCampaign, onSelect: (selectedCampaign) => this.setState({ selectedCampaign }), onImplementation: (sessionId) => this.selectSession(sessionId, "implementation"), data, busy: this.state.busy, perform: this.perform, onSession: (id) => this.selectSession(id), onExperiment: (id) => this.setState({ selectedExp: id, selectedRun: "", tab: "experiments" }) }, data.project.id) : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { perform: this.perform, busy: this.state.busy, selectedRunGrant: this.state.selectedRunGrant, onSelectRunGrant: (selectedRunGrant) => this.setState({ selectedRunGrant }), onSession: (id) => this.selectSession(id), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
-            this.invalidateRead();
-            this.setState({ selectedExp, selectedRun: "" });
-          }, onRun: (selectedRun, selectedExp) => {
-            if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
-              this.setState({ error: "\u6307\u5B9A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
-              return;
-            }
-            this.invalidateRead();
-            this.setState({ selectedRun, selectedExp });
-          }, onCreate: () => this.open("experiment"), onChild: () => this.open("experiment", { parentId: experiment?.id }) }) : tab === "changes" ? /* @__PURE__ */ jsx(ChangesView, { data, perform: this.perform }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
-            if (!data.campaigns.some((c) => c.id === selectedCampaign)) {
-              this.setState({ error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u6D3B\u52A8\u3002" });
-              return;
-            }
-            this.setState({ selectedCampaign, tab: "campaigns" });
-          }, onSession: (id) => this.selectSession(id), onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, selectedReport: this.state.selectedReport, onSelect: (selectedReport) => this.setState({ selectedReport }), onRun: (selectedRun, selectedExp) => {
-            if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
-              this.setState({ error: "\u6307\u5B9A\u62A5\u544A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
-              return;
-            }
-            this.invalidateRead();
-            this.setState({ selectedRun, selectedExp, tab: "experiments" });
-          } }, data.project.id) : null }),
+          /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
+            boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, messages: this.state.messages, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, perform: this.perform, onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
+            !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, session: currentSession, perform: this.perform }) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
+              /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
+              /* @__PURE__ */ jsxs("h1", { children: [
+                "\u6BCF\u4E00\u4E2A\u7814\u7A76\uFF0C",
+                /* @__PURE__ */ jsx("br", {}),
+                "\u4ECE\u6E05\u6670\u7684\u8D77\u70B9\u5F00\u59CB\u3002"
+              ] }),
+              /* @__PURE__ */ jsxs("p", { children: [
+                "\u5EFA\u7ACB\u672C\u5730\u9879\u76EE\uFF0C\u4FDD\u5B58\u6E90\u4EE3\u7801\u3001\u5B9E\u9A8C\u5FEB\u7167\u548C\u8BC1\u636E\u3002",
+                /* @__PURE__ */ jsx("br", {}),
+                "\u4E5F\u53EF\u4EE5\u5148\u8FD0\u884C\u968F\u5305\u7684\u771F\u5B9E\u6570\u503C\u793A\u4F8B\uFF0C\u68C0\u67E5\u5B8C\u6574\u6D41\u7A0B\u3002"
+              ] }),
+              /* @__PURE__ */ jsxs("button", { className: "primary", onClick: () => this.open("project"), children: [
+                "\u521B\u5EFA\u7B2C\u4E00\u4E2A\u9879\u76EE ",
+                /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
+              ] }),
+              /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002" })
+            ] }) : tab === "chat" ? null : tab === "scheduler" ? /* @__PURE__ */ jsx(SchedulerView, { data, perform: this.perform }, data.project.id) : tab === "implementation" ? /* @__PURE__ */ jsx(ImplementationView, { onScheduler: () => this.setState({ tab: "scheduler" }), data, sessionId: this.state.sessionId, busy: this.state.busy, perform: this.perform, onSession: (sessionId) => this.selectSession(sessionId, "implementation"), onChat: (id) => this.selectSession(id), onExperiment: (selectedExp) => this.setState({ selectedExp, selectedRun: "", tab: "experiments" }) }, data.project.id) : tab === "campaigns" ? /* @__PURE__ */ jsx(CampaignView, { onRun: (selectedRun, selectedExp) => {
+              if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
+                this.setState({ error: "\u6307\u5B9A\u6D3B\u52A8 Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
+                return;
+              }
+              this.invalidateRead();
+              this.setState({ selectedRun, selectedExp, tab: "experiments" });
+            }, selectedCampaign: this.state.selectedCampaign, onSelect: (selectedCampaign) => this.setState({ selectedCampaign }), onImplementation: (sessionId) => this.selectSession(sessionId, "implementation"), data, busy: this.state.busy, perform: this.perform, onSession: (id) => this.selectSession(id), onExperiment: (id) => this.setState({ selectedExp: id, selectedRun: "", tab: "experiments" }) }, data.project.id) : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { perform: this.perform, busy: this.state.busy, selectedRunGrant: this.state.selectedRunGrant, onSelectRunGrant: (selectedRunGrant) => this.setState({ selectedRunGrant }), onSession: (id) => this.selectSession(id), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
+              this.invalidateRead();
+              this.setState({ selectedExp, selectedRun: "" });
+            }, onRun: (selectedRun, selectedExp) => {
+              if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
+                this.setState({ error: "\u6307\u5B9A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
+                return;
+              }
+              this.invalidateRead();
+              this.setState({ selectedRun, selectedExp });
+            }, onCreate: () => this.open("experiment"), onChild: () => this.open("experiment", { parentId: experiment?.id }) }, data.project.id) : tab === "changes" ? /* @__PURE__ */ jsx(ChangesView, { data, perform: this.perform }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
+              if (!data.campaigns.some((c) => c.id === selectedCampaign)) {
+                this.setState({ error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u6D3B\u52A8\u3002" });
+                return;
+              }
+              this.setState({ selectedCampaign, tab: "campaigns" });
+            }, onSession: (id) => this.selectSession(id), onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, selectedReport: this.state.selectedReport, onSelect: (selectedReport) => this.setState({ selectedReport }), onRun: (selectedRun, selectedExp) => {
+              if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
+                this.setState({ error: "\u6307\u5B9A\u62A5\u544A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
+                return;
+              }
+              this.invalidateRead();
+              this.setState({ selectedRun, selectedExp, tab: "experiments" });
+            } }, data.project.id) : null
+          ] }),
           data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { onScheduler: () => this.setState({ tab: "scheduler" }), data, boot, tab, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onToggle: () => this.toggle(), onTeam: () => this.open("team"), onPrepare: () => {
             if (experiment)
               this.perform(() => api("/run-intents", { experimentId: experiment.id }), "\u5DF2\u51C6\u5907\u4E0D\u53EF\u53D8\u5FEB\u7167\uFF0C\u7B49\u5F85\u4EBA\u5DE5\u6279\u51C6");

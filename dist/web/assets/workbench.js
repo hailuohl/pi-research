@@ -6,6 +6,7 @@ import { SessionHistory } from "./session-history.js";
 import { ComputeWait } from "./scheduler-view.js";
 import { WakeupPanel } from "./campaigns.js";
 import { comparableRuns, comparisonMetric } from "./models.js";
+import { ExperimentGraph } from "./experiment-graph.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
 import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
@@ -46,25 +47,17 @@ class Chat extends React.Component {
       /* @__PURE__ */ jsxs("div", { className: "conversation", "aria-live": "polite", children: [
         messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsxs("div", { className: "welcome", children: [
           /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
-          /* @__PURE__ */ jsxs("h2", { children: [
-            "\u8BA9\u7814\u7A76\u8FC7\u7A0B\uFF0C",
-            /* @__PURE__ */ jsx("br", {}),
-            "\u6709\u8FF9\u53EF\u5FAA\u3002"
-          ] }),
-          /* @__PURE__ */ jsxs("p", { children: [
-            "\u4ECE\u95EE\u9898\u5230\u5B9E\u9A8C\uFF0C\u518D\u5230\u53EF\u4FE1\u8BC1\u636E\u3002",
-            /* @__PURE__ */ jsx("br", {}),
-            "\u6BCF\u4E00\u6B21\u8FD0\u884C\u90FD\u6709\u81EA\u5DF1\u7684\u5FEB\u7167\uFF0C\u6BCF\u4E00\u6B65\u51B3\u5B9A\u90FD\u4FDD\u7559\u4F9D\u636E\u3002"
-          ] }),
+          /* @__PURE__ */ jsx("h2", { children: "\u4ECA\u5929\u60F3\u7814\u7A76\u4EC0\u4E48\uFF1F" }),
+          /* @__PURE__ */ jsx("p", { children: "\u4ECE\u4E00\u4E2A\u95EE\u9898\u5F00\u59CB\uFF0C\u9010\u6B65\u5F62\u6210\u5B9E\u9A8C\u4E0E\u7ED3\u679C\u3002" }),
           /* @__PURE__ */ jsxs("div", { className: "welcome-actions", children: [
             /* @__PURE__ */ jsxs("button", { onClick: this.props.onExperiments, children: [
               /* @__PURE__ */ jsx(Icon, { name: "experiment" }),
-              /* @__PURE__ */ jsx("span", { children: "\u5EFA\u7ACB\u4E00\u4E2A\u53EF\u590D\u73B0\u7684\u5B9E\u9A8C" }),
+              /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u5B9E\u9A8C" }),
               /* @__PURE__ */ jsx(Icon, { name: "arrow" })
             ] }),
             /* @__PURE__ */ jsxs("button", { onClick: this.props.onWorkspace, children: [
               /* @__PURE__ */ jsx(Icon, { name: "folder" }),
-              /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u9879\u76EE\u4EE3\u7801\u4E0E\u914D\u7F6E" }),
+              /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u9879\u76EE\u6587\u4EF6" }),
               /* @__PURE__ */ jsx(Icon, { name: "arrow" })
             ] })
           ] }),
@@ -124,24 +117,6 @@ class Chat extends React.Component {
   }
 }
 function Experiments({ data, selected, onSelect, onCreate, onChild, onRun, perform, busy, onSession, selectedRunGrant, onSelectRunGrant }) {
-  const roots = data.experiments.filter((e) => !e.parentId);
-  const tree = (e, depth = 0) => /* @__PURE__ */ jsxs("div", { className: "experiment-branch", children: [
-    /* @__PURE__ */ jsxs("button", { className: "experiment-node " + (selected === e.id ? "selected" : ""), style: { marginLeft: Math.min(depth, 6) * 20 }, onClick: () => onSelect(e.id), children: [
-      /* @__PURE__ */ jsx("span", { className: "node-symbol", children: /* @__PURE__ */ jsx(Icon, { name: e.parentId ? "branch" : "experiment" }) }),
-      /* @__PURE__ */ jsxs("span", { className: "node-content", children: [
-        /* @__PURE__ */ jsx("strong", { children: e.title }),
-        /* @__PURE__ */ jsxs("span", { children: [
-          short(e.id),
-          " ",
-          /* @__PURE__ */ jsx("i", { children: "\xB7" }),
-          " ",
-          e.parentId ? "\u6D3E\u751F\u81EA " + short(e.parentId) : "\u56FA\u5B9A\u534F\u8BAE\u7684\u57FA\u7EBF\u5B9E\u9A8C"
-        ] })
-      ] }),
-      /* @__PURE__ */ jsx(Badge, { value: e.lifecycle })
-    ] }),
-    data.experiments.filter((c) => c.parentId === e.id).map((c) => tree(c, depth + 1))
-  ] }, e.id);
   const measured = comparableRuns(data, selected);
   const metric = comparisonMetric(data, selected);
   const max = Math.max(...measured.map((r) => Math.abs(r.metrics[metric.key])), 1e-6);
@@ -150,7 +125,17 @@ function Experiments({ data, selected, onSelect, onCreate, onChild, onRun, perfo
       /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
       "\u65B0\u5EFA\u5B9E\u9A8C"
     ] }) }),
-    perform ? /* @__PURE__ */ jsx(RunGrants, { data, perform, busy: !!busy, selectedGrant: selectedRunGrant, onSelect: onSelectRunGrant, onSession, onRun }, data.project.id) : null,
+    data.experiments.length ? /* @__PURE__ */ jsx(ExperimentGraph, { data, selected, onSelect }, data.project.id) : /* @__PURE__ */ jsxs("section", { className: "surface", children: [
+      /* @__PURE__ */ jsx("div", { className: "surface-heading", children: /* @__PURE__ */ jsx("h2", { children: "\u5B9E\u9A8C\u8840\u7F18" }) }),
+      /* @__PURE__ */ jsxs(Empty, { title: "\u8FD8\u6CA1\u6709\u5B9E\u9A8C\u8282\u70B9", children: [
+        /* @__PURE__ */ jsx("p", { children: "\u4ECE\u9879\u76EE\u6E90\u7801\u5EFA\u7ACB\u57FA\u7EBF\u3002\u65B9\u6848\u53D8\u5316\u540E\uFF0C\u53EF\u4ECE\u9009\u4E2D\u7684\u8282\u70B9\u6D3E\u751F\u3002" }),
+        /* @__PURE__ */ jsx("button", { className: "secondary", onClick: onCreate, children: "\u521B\u5EFA\u57FA\u7EBF\u5B9E\u9A8C" })
+      ] })
+    ] }),
+    perform ? /* @__PURE__ */ jsxs("details", { className: "experiment-run-grants", open: !!selectedRunGrant, children: [
+      /* @__PURE__ */ jsx("summary", { children: "\u6709\u754C\u8FD0\u884C\u6388\u6743" }),
+      /* @__PURE__ */ jsx(RunGrants, { data, perform, busy: !!busy, selectedGrant: selectedRunGrant, onSelect: onSelectRunGrant, onSession, onRun }, data.project.id)
+    ] }) : null,
     /* @__PURE__ */ jsxs("div", { className: "section-kpis", children: [
       /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsx("strong", { children: data.experiments.length.toString().padStart(2, "0") }),
@@ -167,16 +152,6 @@ function Experiments({ data, selected, onSelect, onCreate, onChild, onRun, perfo
       /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsx("strong", { children: data.evidence.length.toString().padStart(2, "0") }),
         /* @__PURE__ */ jsx("span", { children: "\u8BC1\u636E\u8BB0\u5F55" })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs("section", { className: "surface", children: [
-      /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-        /* @__PURE__ */ jsx("h2", { children: "\u5B9E\u9A8C\u8840\u7F18" }),
-        /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u5206\u652F\u4FDD\u5B58\u7814\u7A76\u53D8\u5316\uFF0C\u4E0D\u81EA\u52A8\u5408\u5E76\u5019\u9009" })
-      ] }),
-      roots.length ? /* @__PURE__ */ jsx("div", { className: "experiment-tree", children: roots.map((e) => tree(e)) }) : /* @__PURE__ */ jsxs(Empty, { title: "\u8FD8\u6CA1\u6709\u5B9E\u9A8C\u8282\u70B9", children: [
-        /* @__PURE__ */ jsx("p", { children: "\u4ECE\u9879\u76EE\u6E90\u7801\u5EFA\u7ACB\u57FA\u7EBF\u3002\u65B9\u6848\u53D8\u5316\u540E\uFF0C\u53EF\u4ECE\u9009\u4E2D\u7684\u8282\u70B9\u6D3E\u751F\u3002" }),
-        /* @__PURE__ */ jsx("button", { className: "secondary", onClick: onCreate, children: "\u521B\u5EFA\u57FA\u7EBF\u5B9E\u9A8C" })
       ] })
     ] }),
     /* @__PURE__ */ jsxs("section", { className: "surface", children: [
@@ -515,142 +490,148 @@ class Inspector extends React.Component {
           /* @__PURE__ */ jsx(RunFiles, { run, data, perform }, run.id)
         ] }) : null
       ] }) : null,
-      /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-        /* @__PURE__ */ jsxs("div", { className: "toggle-heading", children: [
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h3", { children: "\u591A\u667A\u80FD\u4F53\u534F\u4F5C" }),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6309\u9700\u5206\u5DE5\uFF0C\u72EC\u7ACB\u9A8C\u6536" })
-          ] }),
-          /* @__PURE__ */ jsx("button", { role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u534F\u4F5C", "aria-checked": data.project.settings.enabled ? "true" : "false", className: "switch " + (data.project.settings.enabled ? "on" : ""), onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) })
+      /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: data.project.settings.enabled || team?.state === "active", children: [
+        /* @__PURE__ */ jsxs("summary", { children: [
+          "\u534F\u4F5C\u4E0E\u8D44\u6E90",
+          /* @__PURE__ */ jsx("span", { children: data.project.settings.enabled ? "\u5DF2\u5F00\u542F" : "\u6309\u9700\u5C55\u5F00" })
         ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5F00\u542F\u53EA\u5141\u8BB8\u59D4\u6D3E\uFF0C\u4E0D\u6269\u5927\u8BA1\u7B97\u3001\u5408\u5E76\u6216\u53D1\u5E03\u6743\u9650\u3002" }),
-        /* @__PURE__ */ jsxs("div", { className: "limits", children: [
-          /* @__PURE__ */ jsxs("span", { children: [
-            "\u9879\u76EE\u52A9\u624B\u4E0A\u9650 ",
-            /* @__PURE__ */ jsx("b", { children: data.project.settings.maxConcurrentAssistants })
+        /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+          /* @__PURE__ */ jsxs("div", { className: "toggle-heading", children: [
+            /* @__PURE__ */ jsxs("div", { children: [
+              /* @__PURE__ */ jsx("h3", { children: "\u591A\u667A\u80FD\u4F53\u534F\u4F5C" }),
+              /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6309\u9700\u5206\u5DE5\uFF0C\u72EC\u7ACB\u9A8C\u6536" })
+            ] }),
+            /* @__PURE__ */ jsx("button", { role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u534F\u4F5C", "aria-checked": data.project.settings.enabled ? "true" : "false", className: "switch " + (data.project.settings.enabled ? "on" : ""), onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) })
           ] }),
-          /* @__PURE__ */ jsxs("span", { children: [
-            "\u5171\u4EAB\u6B63\u5F0F Run \u4E0A\u9650 ",
-            /* @__PURE__ */ jsx("b", { children: data.compute?.configuration.limits.maxRuns ?? "\u5F85\u52A0\u8F7D" })
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5F00\u542F\u53EA\u5141\u8BB8\u59D4\u6D3E\uFF0C\u4E0D\u6269\u5927\u8BA1\u7B97\u3001\u5408\u5E76\u6216\u53D1\u5E03\u6743\u9650\u3002" }),
+          /* @__PURE__ */ jsxs("div", { className: "limits", children: [
+            /* @__PURE__ */ jsxs("span", { children: [
+              "\u9879\u76EE\u52A9\u624B\u4E0A\u9650 ",
+              /* @__PURE__ */ jsx("b", { children: data.project.settings.maxConcurrentAssistants })
+            ] }),
+            /* @__PURE__ */ jsxs("span", { children: [
+              "\u5171\u4EAB\u6B63\u5F0F Run \u4E0A\u9650 ",
+              /* @__PURE__ */ jsx("b", { children: data.compute?.configuration.limits.maxRuns ?? "\u5F85\u52A0\u8F7D" })
+            ] })
+          ] }),
+          data.agentCapacity ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+            "\u5BBF\u4E3B Worker ",
+            data.agentCapacity.counts.held,
+            "/",
+            data.agentCapacity.maxWorkers,
+            " \xB7 \u5BBF\u4E3B\u53EF\u7528 ",
+            data.agentCapacity.available,
+            " \xB7 \u672A\u77E5\u4FDD\u7559 ",
+            data.agentCapacity.counts.unknown,
+            " \xB7 \u672C\u9879\u76EE\u53EF\u7528 ",
+            data.agentCapacity.project?.available ?? "\u5F85\u6838\u5BF9",
+            "\u3002"
+          ] }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BBF\u4E3B Worker \u5BB9\u91CF\u5F85\u52A0\u8F7D\u3002" }),
+          data.modelHttp ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+            "\u6A21\u578B HTTP \u8BF7\u6C42 ",
+            data.modelHttp.counts.active,
+            "/",
+            data.modelHttp.configuration.maxRequests,
+            " \xB7 \u6392\u961F ",
+            data.modelHttp.counts.queued,
+            " \xB7 \u672A\u77E5\u4FDD\u7559 ",
+            data.modelHttp.counts.unknown,
+            " \xB7 \u53EF\u6D3E\u53D1 ",
+            data.modelHttp.available,
+            "\u3002Worker \u4E0E\u8BF7\u6C42\u5206\u522B\u8BA1\u91CF\u3002"
+          ] }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6A21\u578B HTTP \u8BF7\u6C42\u72B6\u6001\u5F85\u52A0\u8F7D\u3002" }),
+          this.props.onScheduler ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: this.props.onScheduler, children: "\u67E5\u770B\u8D44\u6E90\u4E0E\u8C03\u5EA6" }) : null,
+          /* @__PURE__ */ jsxs("button", { className: "secondary full", onClick: this.props.onTeam, disabled: !data.project.settings.enabled, children: [
+            /* @__PURE__ */ jsx(Icon, { name: "plus", size: 15 }),
+            "\u521B\u5EFA\u534F\u4F5C\u8BA1\u5212"
           ] })
         ] }),
-        data.agentCapacity ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-          "\u5BBF\u4E3B Worker ",
-          data.agentCapacity.counts.held,
-          "/",
-          data.agentCapacity.maxWorkers,
-          " \xB7 \u5BBF\u4E3B\u53EF\u7528 ",
-          data.agentCapacity.available,
-          " \xB7 \u672A\u77E5\u4FDD\u7559 ",
-          data.agentCapacity.counts.unknown,
-          " \xB7 \u672C\u9879\u76EE\u53EF\u7528 ",
-          data.agentCapacity.project?.available ?? "\u5F85\u6838\u5BF9",
-          "\u3002"
-        ] }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BBF\u4E3B Worker \u5BB9\u91CF\u5F85\u52A0\u8F7D\u3002" }),
-        data.modelHttp ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-          "\u6A21\u578B HTTP \u8BF7\u6C42 ",
-          data.modelHttp.counts.active,
-          "/",
-          data.modelHttp.configuration.maxRequests,
-          " \xB7 \u6392\u961F ",
-          data.modelHttp.counts.queued,
-          " \xB7 \u672A\u77E5\u4FDD\u7559 ",
-          data.modelHttp.counts.unknown,
-          " \xB7 \u53EF\u6D3E\u53D1 ",
-          data.modelHttp.available,
-          "\u3002Worker \u4E0E\u8BF7\u6C42\u5206\u522B\u8BA1\u91CF\u3002"
-        ] }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6A21\u578B HTTP \u8BF7\u6C42\u72B6\u6001\u5F85\u52A0\u8F7D\u3002" }),
-        this.props.onScheduler ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: this.props.onScheduler, children: "\u67E5\u770B\u8D44\u6E90\u4E0E\u8C03\u5EA6" }) : null,
-        /* @__PURE__ */ jsxs("button", { className: "secondary full", onClick: this.props.onTeam, disabled: !data.project.settings.enabled, children: [
-          /* @__PURE__ */ jsx(Icon, { name: "plus", size: 15 }),
-          "\u521B\u5EFA\u534F\u4F5C\u8BA1\u5212"
-        ] })
-      ] }),
-      pendingTeams.map((a) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-        /* @__PURE__ */ jsx("div", { className: "small-label", children: "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" }),
-        /* @__PURE__ */ jsx("h3", { children: data.teams.find((t) => t.id === a.subjectId)?.goal }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: a.reason }),
-        /* @__PURE__ */ jsx("button", { className: "primary full", onClick: () => perform(async () => {
-          await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
-          await api(`/teams/${a.subjectId}/activate`, {});
-        }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u6279\u51C6"), children: "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
-        /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false })), children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" })
-      ] }, a.id)),
-      team ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-        /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-          /* @__PURE__ */ jsx("h3", { children: "\u5F53\u524D\u56E2\u961F" }),
-          /* @__PURE__ */ jsx(Badge, { value: team.state })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "team-goal", children: team.goal }),
-        team.blockReason ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: team.blockReason }) : null,
-        team.state === "active" && !boot.runtime.ready ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u5C1A\u672A\u542F\u52A8\u52A9\u624B\uFF1APi \u672A\u5C31\u7EEA\u3002\u4EFB\u52A1\u4ECD\u4FDD\u5B58\u5728\u961F\u5217\u4E2D\uFF0C\u6CA1\u6709\u6A21\u62DF\u6267\u884C\u3002" }) : null,
-        /* @__PURE__ */ jsxs("div", { className: "team-progress", children: [
-          /* @__PURE__ */ jsxs("strong", { children: [
-            tasks.filter((t) => t.acceptance === "accepted").length,
-            /* @__PURE__ */ jsxs("span", { children: [
-              " / ",
-              tasks.length
-            ] })
+        pendingTeams.map((a) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+          /* @__PURE__ */ jsx("div", { className: "small-label", children: "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" }),
+          /* @__PURE__ */ jsx("h3", { children: data.teams.find((t) => t.id === a.subjectId)?.goal }),
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: a.reason }),
+          /* @__PURE__ */ jsx("button", { className: "primary full", onClick: () => perform(async () => {
+            await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
+            await api(`/teams/${a.subjectId}/activate`, {});
+          }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u6279\u51C6"), children: "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
+          /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false })), children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" })
+        ] }, a.id)),
+        team ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+          /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
+            /* @__PURE__ */ jsx("h3", { children: "\u5F53\u524D\u56E2\u961F" }),
+            /* @__PURE__ */ jsx(Badge, { value: team.state })
           ] }),
-          /* @__PURE__ */ jsx("span", { children: "\u4EFB\u52A1\u5DF2\u9A8C\u6536" })
-        ] }),
-        tasks.map((t) => /* @__PURE__ */ jsxs("div", { className: "task-card", children: [
-          /* @__PURE__ */ jsxs("div", { className: "task-top", children: [
-            /* @__PURE__ */ jsx("div", { className: "role-mark role-" + t.role, children: label(t.role).slice(0, 1) }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsxs("strong", { children: [
-                label(t.role),
-                " ",
-                /* @__PURE__ */ jsx("code", { children: t.key })
-              ] }),
-              /* @__PURE__ */ jsx("span", { children: label(t.execution) })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx("p", { children: t.objective }),
-          /* @__PURE__ */ jsxs("div", { className: "task-footer", children: [
-            /* @__PURE__ */ jsxs("span", { children: [
-              "\u9A8C\u6536\uFF1A",
-              label(t.acceptance)
+          /* @__PURE__ */ jsx("p", { className: "team-goal", children: team.goal }),
+          team.blockReason ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: team.blockReason }) : null,
+          team.state === "active" && !boot.runtime.ready ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u5C1A\u672A\u542F\u52A8\u52A9\u624B\uFF1APi \u672A\u5C31\u7EEA\u3002\u4EFB\u52A1\u4ECD\u4FDD\u5B58\u5728\u961F\u5217\u4E2D\uFF0C\u6CA1\u6709\u6A21\u62DF\u6267\u884C\u3002" }) : null,
+          /* @__PURE__ */ jsxs("div", { className: "team-progress", children: [
+            /* @__PURE__ */ jsxs("strong", { children: [
+              tasks.filter((t) => t.acceptance === "accepted").length,
+              /* @__PURE__ */ jsxs("span", { children: [
+                " / ",
+                tasks.length
+              ] })
             ] }),
-            /* @__PURE__ */ jsx("span", { children: t.reviewOf ? "\u5BA1\u67E5 " + t.reviewOf : t.dependencies.length ? "\u4F9D\u8D56 " + t.dependencies.join(", ") : "\u65E0\u524D\u7F6E\u4F9D\u8D56" })
+            /* @__PURE__ */ jsx("span", { children: "\u4EFB\u52A1\u5DF2\u9A8C\u6536" })
           ] }),
-          t.blockReason ? /* @__PURE__ */ jsx("p", { className: "small error-text", children: t.blockReason }) : null,
-          ["running", "pending"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => api(`/tasks/${t.id}/cancel`, {})), children: "\u505C\u6B62\u6B64\u52A9\u624B" }) : null,
-          ["failed", "cancelled", "blocked"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/tasks/${t.id}/retry`, {})), children: "\u65B0\u5C1D\u8BD5\u91CD\u8BD5" }) : null,
-          t.result ? /* @__PURE__ */ jsxs("details", { children: [
-            /* @__PURE__ */ jsx("summary", { children: "\u7ED3\u679C\u4E0E\u9650\u5236" }),
-            t.role === "reviewer" ? /* @__PURE__ */ jsxs("p", { className: "small", role: "status", children: [
-              "\u5BA1\u67E5\u610F\u89C1\uFF1A",
-              t.result.verdict === "accept" ? "\u63A5\u53D7" : t.result.verdict === "reject" ? "\u62D2\u7EDD" : t.result.verdict === "disputed" ? "\u5B58\u5728\u4E89\u8BAE" : "\u672A\u63D0\u4F9B\uFF1B\u4E0D\u80FD\u89C6\u4E3A\u901A\u8FC7",
-              "\uFF08\u72EC\u7ACB\u4E8E\u4EFB\u52A1\u9A8C\u6536\u72B6\u6001\uFF09"
+          tasks.map((t) => /* @__PURE__ */ jsxs("div", { className: "task-card", children: [
+            /* @__PURE__ */ jsxs("div", { className: "task-top", children: [
+              /* @__PURE__ */ jsx("div", { className: "role-mark role-" + t.role, children: label(t.role).slice(0, 1) }),
+              /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsxs("strong", { children: [
+                  label(t.role),
+                  " ",
+                  /* @__PURE__ */ jsx("code", { children: t.key })
+                ] }),
+                /* @__PURE__ */ jsx("span", { children: label(t.execution) })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsx("p", { children: t.objective }),
+            /* @__PURE__ */ jsxs("div", { className: "task-footer", children: [
+              /* @__PURE__ */ jsxs("span", { children: [
+                "\u9A8C\u6536\uFF1A",
+                label(t.acceptance)
+              ] }),
+              /* @__PURE__ */ jsx("span", { children: t.reviewOf ? "\u5BA1\u67E5 " + t.reviewOf : t.dependencies.length ? "\u4F9D\u8D56 " + t.dependencies.join(", ") : "\u65E0\u524D\u7F6E\u4F9D\u8D56" })
+            ] }),
+            t.blockReason ? /* @__PURE__ */ jsx("p", { className: "small error-text", children: t.blockReason }) : null,
+            ["running", "pending"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => api(`/tasks/${t.id}/cancel`, {})), children: "\u505C\u6B62\u6B64\u52A9\u624B" }) : null,
+            ["failed", "cancelled", "blocked"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/tasks/${t.id}/retry`, {})), children: "\u65B0\u5C1D\u8BD5\u91CD\u8BD5" }) : null,
+            t.result ? /* @__PURE__ */ jsxs("details", { children: [
+              /* @__PURE__ */ jsx("summary", { children: "\u7ED3\u679C\u4E0E\u9650\u5236" }),
+              t.role === "reviewer" ? /* @__PURE__ */ jsxs("p", { className: "small", role: "status", children: [
+                "\u5BA1\u67E5\u610F\u89C1\uFF1A",
+                t.result.verdict === "accept" ? "\u63A5\u53D7" : t.result.verdict === "reject" ? "\u62D2\u7EDD" : t.result.verdict === "disputed" ? "\u5B58\u5728\u4E89\u8BAE" : "\u672A\u63D0\u4F9B\uFF1B\u4E0D\u80FD\u89C6\u4E3A\u901A\u8FC7",
+                "\uFF08\u72EC\u7ACB\u4E8E\u4EFB\u52A1\u9A8C\u6536\u72B6\u6001\uFF09"
+              ] }) : null,
+              /* @__PURE__ */ jsx("p", { className: "small prose-text", children: t.result.summary })
             ] }) : null,
-            /* @__PURE__ */ jsx("p", { className: "small prose-text", children: t.result.summary })
+            t.execution === "output_submitted" && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => {
+              const reason = prompt("\u4EBA\u5DE5\u5BA1\u67E5\u4F9D\u636E\uFF08\u5C06\u4FDD\u7559\u8BB0\u5F55\uFF09");
+              if (reason)
+                perform(() => api(`/tasks/${t.id}/manual-review`, { verdict: "accepted", reason }));
+            }, children: "\u4EBA\u5DE5\u786E\u8BA4\u9A8C\u6536" }) : null
+          ] }, t.id)),
+          budget ? /* @__PURE__ */ jsxs("div", { className: "budget-note", children: [
+            "\u5C1D\u8BD5\u989D\u5EA6\uFF1A",
+            budget.used,
+            " \u5DF2\u7ED3\u7B97 / ",
+            budget.reserved,
+            " \u5DF2\u9884\u7559 / ",
+            budget.unknown,
+            " \u5F85\u5BF9\u8D26",
+            /* @__PURE__ */ jsx("br", {}),
+            "\u603B\u989D\u5EA6 ",
+            budget.limit,
+            " \u6B21\u3002\u6B64\u989D\u5EA6\u4E0D\u662F\u4F9B\u5E94\u5546\u8D26\u5355\u4E0A\u9650\u3002"
           ] }) : null,
-          t.execution === "output_submitted" && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => {
-            const reason = prompt("\u4EBA\u5DE5\u5BA1\u67E5\u4F9D\u636E\uFF08\u5C06\u4FDD\u7559\u8BB0\u5F55\uFF09");
-            if (reason)
-              perform(() => api(`/tasks/${t.id}/manual-review`, { verdict: "accepted", reason }));
-          }, children: "\u4EBA\u5DE5\u786E\u8BA4\u9A8C\u6536" }) : null
-        ] }, t.id)),
-        budget ? /* @__PURE__ */ jsxs("div", { className: "budget-note", children: [
-          "\u5C1D\u8BD5\u989D\u5EA6\uFF1A",
-          budget.used,
-          " \u5DF2\u7ED3\u7B97 / ",
-          budget.reserved,
-          " \u5DF2\u9884\u7559 / ",
-          budget.unknown,
-          " \u5F85\u5BF9\u8D26",
-          /* @__PURE__ */ jsx("br", {}),
-          "\u603B\u989D\u5EA6 ",
-          budget.limit,
-          " \u6B21\u3002\u6B64\u989D\u5EA6\u4E0D\u662F\u4F9B\u5E94\u5546\u8D26\u5355\u4E0A\u9650\u3002"
-        ] }) : null,
-        /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-          team.state === "active" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/teams/${team.id}/pause`, {})), children: "\u6682\u505C\u5206\u914D" }) : null,
-          team.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/teams/${team.id}/resume`, {})), children: "\u6062\u590D" }) : null,
-          /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
-        ] })
-      ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: "\u534F\u4F5C\u8BA1\u5212\u3001\u52A9\u624B\u72B6\u6001\u4E0E\u5BA1\u67E5\u7ED3\u679C\u4F1A\u51FA\u73B0\u5728\u8FD9\u91CC\u3002\u4E0D\u4F1A\u4E3A\u5C55\u793A\u6548\u679C\u81EA\u52A8\u521B\u5EFA Agent\u3002" }),
+          /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
+            team.state === "active" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/teams/${team.id}/pause`, {})), children: "\u6682\u505C\u5206\u914D" }) : null,
+            team.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/teams/${team.id}/resume`, {})), children: "\u6062\u590D" }) : null,
+            /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
+          ] })
+        ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: "\u534F\u4F5C\u8BA1\u5212\u3001\u52A9\u624B\u72B6\u6001\u4E0E\u5BA1\u67E5\u7ED3\u679C\u4F1A\u51FA\u73B0\u5728\u8FD9\u91CC\u3002\u4E0D\u4F1A\u4E3A\u5C55\u793A\u6548\u679C\u81EA\u52A8\u521B\u5EFA Agent\u3002" })
+      ] }),
       /* @__PURE__ */ jsxs("div", { className: "inspector-footer", children: [
         /* @__PURE__ */ jsx("span", { className: "status-dot" }),
         "\u6240\u6709\u7ED3\u679C\u5199\u5165\u672C\u5730\u6570\u636E\u5E93"

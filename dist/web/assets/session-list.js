@@ -59,11 +59,17 @@ class SessionList extends React.Component {
         "\u4F1A\u8BDD",
         /* @__PURE__ */ jsx("button", { "aria-label": "\u65B0\u5EFA\u4F1A\u8BDD", title: "\u65B0\u5EFA\u4F1A\u8BDD", className: "icon-button", disabled: !this.props.projectId, onClick: onNew, children: "\uFF0B" })
       ] }),
-      /* @__PURE__ */ jsxs("form", { className: "session-search", onSubmit: this.search, children: [
-        /* @__PURE__ */ jsx("input", { "aria-label": "\u641C\u7D22\u4F1A\u8BDD", placeholder: "\u641C\u7D22\u4F1A\u8BDD", value: this.state.draft, onChange: (event) => this.setState({ draft: event.target.value }) }),
-        /* @__PURE__ */ jsx("button", { type: "submit", disabled: busy, children: "\u641C\u7D22" })
+      /* @__PURE__ */ jsxs("details", { className: "session-filters", children: [
+        /* @__PURE__ */ jsxs("summary", { children: [
+          "\u67E5\u627E\u4E0E\u7B5B\u9009",
+          this.state.query ? " \xB7 \u5DF2\u7B5B\u9009" : ""
+        ] }),
+        /* @__PURE__ */ jsxs("form", { className: "session-search", onSubmit: this.search, children: [
+          /* @__PURE__ */ jsx("input", { "aria-label": "\u641C\u7D22\u4F1A\u8BDD", placeholder: "\u641C\u7D22\u4F1A\u8BDD", value: this.state.draft, onChange: (event) => this.setState({ draft: event.target.value }) }),
+          /* @__PURE__ */ jsx("button", { type: "submit", disabled: busy, children: "\u641C\u7D22" })
+        ] }),
+        /* @__PURE__ */ jsx("select", { className: "session-role", "aria-label": "\u4F1A\u8BDD\u89D2\u8272", value: this.state.role, onChange: (event) => this.changeRole(event.target.value), children: Object.entries(roles).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value)) })
       ] }),
-      /* @__PURE__ */ jsx("select", { className: "session-role", "aria-label": "\u4F1A\u8BDD\u89D2\u8272", value: this.state.role, onChange: (event) => this.changeRole(event.target.value), children: Object.entries(roles).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value)) }),
       selectedOutside ? row(selected) : null,
       items.map(row),
       error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "small error-text", children: error }) : null,
