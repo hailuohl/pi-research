@@ -1,10 +1,10 @@
 # Pi Research 0.3.1-experimental
 
-**增强试验派生版 · OpenResearch 技能与文献连接器适配**
+**可试用本地科研后端 · Pi 唯一 Agent 执行内核**
 
 本开发副本基于 v0.3.1 按 [优化实施计划](docs/IMPLEMENTATION-PLAN.zh-CN.md) 持续推进。原 ZIP 保持冻结；版本号沿用源包身份，不代表新发布。当前进度见 [实施状态](docs/IMPLEMENTATION-STATUS.md)，证据见 [PR01](docs/acceptance/pr01/RESULTS.zh-CN.md)、[PR02 首批](docs/acceptance/pr02/RESULTS.zh-CN.md) 与 [能力矩阵](docs/reference-baseline/PR01.md)。
 
-2026-09-30当前阶段：按[项目目标](docs/PROJECT-GOAL.zh-CN.md)先完成后端收口，再试用用户指定的真实科研任务，只补实际阻断。[后端试用清单](docs/BACKEND-READINESS.zh-CN.md)列明入口、证据与限制。前端布局/完整重构和PR14桌面/团队协作暂缓；更多授权、远端、GPU与成果发布/同步按需求和环境触发，PR01–14长期范围保留。
+当前状态（2026-10-01文档核对）：[后端收口](docs/acceptance/flow-backend-readiness/RESULT.md)与用户授权拟定的[分组红酒试用](docs/acceptance/flow-wine-grouped-trial/RESULT.md)均已交付，本地后端阶段已完成，转入按需维护。[试用清单](docs/BACKEND-READINESS.zh-CN.md)列明入口、证据与限制。前端布局/完整重构和PR14桌面/团队协作暂缓；更多授权、远端、GPU与成果发布/同步按需求和环境触发，PR01–14长期范围保留。
 
 历史目标（2026-09-29）：曾要求对齐OpenResearch前端，并把桌面分发及自建托管范围移出当时排期。该排期由上面的当前阶段目标取代；已有成果与在途改动继续保留。
 
@@ -98,6 +98,9 @@ npm run test:live
 
 ## 说明与验证
 
+- [当前阶段目标与完成状态](docs/PROJECT-GOAL.zh-CN.md)
+- [后端入口、可用范围与环境限制](docs/BACKEND-READINESS.zh-CN.md)
+- [实际任务结果、人工步骤及CLI回查](docs/acceptance/flow-wine-grouped-trial/RESULT.md) · [机器证据](docs/acceptance/flow-wine-grouped-trial/evidence.json)
 - [适配细节、技能及连接器映射](docs/openresearch/ADAPTATION.md)
 - [验证记录与未验收项](docs/openresearch/VALIDATION.md)
 - [升级与双版本并排对比](docs/openresearch/UPGRADE.md)
