@@ -38,6 +38,76 @@ class ChatWorkflows extends React.Component {
     const { data, session } = this.props;
     return this.mounted && !data.project.archived && data.project.id === projectId && session.id === sessionId && session.role === "coordinator" && !session.taskId && session.state !== "archived";
   }
+  async continueResearchBrief() {
+    const { data, session } = this.props, view = data.researchBrief, brief = view?.brief;
+    if (!brief || view?.latestId !== brief.id || brief.rootSessionId !== session.id) throw Error("\u7814\u7A76\u8BA1\u5212\u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8BDD\u7684\u6700\u65B0\u4FEE\u8BA2");
+    const projectId = data.project.id, sessionId = session.id, id = brief.id, digest = brief.digest;
+    const matches = () => this.dialogueMatches(projectId, sessionId) && this.props.data.researchBrief?.latestId === id && this.props.data.researchBrief?.brief?.digest === digest;
+    if (!matches() || view.evidenceChecks.some((e) => !e.current)) throw Error("\u7814\u7A76\u8BA1\u5212\u6216\u8BC1\u636E\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5148\u5237\u65B0\u6838\u5BF9");
+    if (brief.status === "ready") await this.call("research_brief_confirm", { briefId: id, expectedVersion: brief.version });
+    else if (brief.status !== "confirmed") throw Error("\u8BF7\u5148\u5728\u5BF9\u8BDD\u4E2D\u8865\u9F50\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212");
+    if (!matches()) throw Error("\u5DF2\u786E\u8BA4\u8BA1\u5212\uFF0C\u5F53\u524D\u5BF9\u8BDD\u5DF2\u5207\u6362\uFF1B\u8BF7\u56DE\u539F\u4F1A\u8BDD\u7EE7\u7EED");
+    await api(`/sessions/${sessionId}/messages`, { content: `\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212\u5DF2\u7531\u7528\u6237\u786E\u8BA4\u3002\u5148\u8C03\u7528research_brief_inspect({briefId:"${id}"})\u6838\u5BF9latestId\u4ECD\u4E3A\u8BE5ID\u3001digest\u4E3A"${digest}"\u3001status\u4E3Aconfirmed\u4E14\u6765\u6E90\u5F53\u524D\u6709\u6548\uFF0C\u518D\u6309\u6B65\u9AA4\u7EE7\u7EED\u5F53\u524D\u7814\u7A76\u4EFB\u52A1\u3002\u53EA\u5728\u5DF2\u6709\u5DE5\u5177\u4E0E\u6388\u6743\u8303\u56F4\u5185\u63A8\u8FDB\uFF0C\u8BA1\u7B97\u3001\u4EE3\u7801\u6574\u5408\u548C\u53D1\u5E03\u4ECD\u4F7F\u7528\u5404\u81EA\u56FA\u5B9A\u6279\u51C6\uFF1B\u82E5\u8BA1\u5212\u6216\u6765\u6E90\u5931\u6548\uFF0C\u8BF4\u660E\u539F\u56E0\uFF0C\u4E0D\u7528\u65E7\u7248\u672C\u66FF\u4EE3\u3002` }, "POST", void 0, `research-brief-continue:${id}:${digest}`);
+  }
+  researchBriefCard(disabled) {
+    const { data, session, perform } = this.props, view = data.researchBrief, brief = view?.brief;
+    if (!view || !brief || brief.rootSessionId !== session.id) return null;
+    const current = view.latestId === brief.id, valid = view.evidenceChecks.every((e) => e.current), confirmed = brief.status === "confirmed";
+    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: brief.status !== "confirmed", children: [
+      /* @__PURE__ */ jsxs("summary", { children: [
+        "\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212 \xB7 \u7B2C ",
+        brief.revision,
+        " \u7248",
+        /* @__PURE__ */ jsx(Badge, { value: confirmed ? "approved" : brief.status === "ready" ? "pending" : "draft" })
+      ] }),
+      /* @__PURE__ */ jsx("p", { children: /* @__PURE__ */ jsx("strong", { children: brief.question }) }),
+      /* @__PURE__ */ jsx("p", { children: brief.scope }),
+      brief.clarificationQuestions.length ? /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("strong", { children: "\u5F85\u660E\u786E\u7684\u95EE\u9898" }),
+        /* @__PURE__ */ jsx("ul", { children: brief.clarificationQuestions.map((q, i) => /* @__PURE__ */ jsx("li", { children: q }, i)) })
+      ] }) : null,
+      brief.successCriteria.length ? /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("strong", { children: "\u5224\u65AD\u6807\u51C6" }),
+        /* @__PURE__ */ jsx("ul", { children: brief.successCriteria.map((q, i) => /* @__PURE__ */ jsx("li", { children: q }, i)) })
+      ] }) : null,
+      brief.steps.length ? /* @__PURE__ */ jsx("ol", { children: brief.steps.map((step, i) => /* @__PURE__ */ jsxs("li", { children: [
+        /* @__PURE__ */ jsx("strong", { children: step.title }),
+        " \xB7 ",
+        step.description
+      ] }, i)) }) : null,
+      /* @__PURE__ */ jsxs("details", { children: [
+        /* @__PURE__ */ jsxs("summary", { children: [
+          "\u6587\u732E\u3001\u5047\u8BBE\u4E0E\u7EA6\u675F \xB7 ",
+          brief.evidenceIds.length,
+          " \u9879\u8BC1\u636E"
+        ] }),
+        /* @__PURE__ */ jsx("p", { children: brief.literatureSummary }),
+        brief.hypotheses.map((h, i) => /* @__PURE__ */ jsxs("p", { children: [
+          h.statement,
+          " \xB7 \u8BC1\u636E ",
+          h.evidenceIds.length
+        ] }, i)),
+        brief.constraints.map((c, i) => /* @__PURE__ */ jsx("p", { children: c }, i))
+      ] }),
+      !valid ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u90E8\u5206\u6765\u6E90\u5DF2\u5931\u6548\uFF0C\u5386\u53F2\u5185\u5BB9\u4FDD\u7559\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u6838\u5BF9\u8D44\u6599\u3002" }) : null,
+      current && brief.status !== "clarifying" ? /* @__PURE__ */ jsx("div", { className: "actions", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !valid, onClick: () => perform(() => this.continueResearchBrief(), "\u7814\u7A76\u8BA1\u5212\u5DF2\u786E\u8BA4\uFF0C\u7EE7\u7EED\u5F53\u524D\u5BF9\u8BDD"), children: confirmed ? "\u7EE7\u7EED\u5DF2\u786E\u8BA4\u8BA1\u5212" : "\u786E\u8BA4\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212" }) }) : null,
+      view.history.length > 1 ? /* @__PURE__ */ jsxs("details", { children: [
+        /* @__PURE__ */ jsxs("summary", { children: [
+          "\u5386\u53F2\u4FEE\u8BA2\uFF08",
+          view.history.length,
+          "\uFF09"
+        ] }),
+        view.history.map((h) => /* @__PURE__ */ jsxs("p", { children: [
+          "\u7B2C ",
+          h.revision,
+          " \u7248 \xB7 ",
+          h.status === "confirmed" ? "\u5DF2\u786E\u8BA4" : h.status === "ready" ? "\u5F85\u786E\u8BA4" : "\u5F85\u6F84\u6E05",
+          " \xB7 ",
+          short(h.digest)
+        ] }, h.id))
+      ] }) : null
+    ] });
+  }
   runIntentInScope(projectId, sessionId, intentId, manifestDigest, campaignId) {
     const { data } = this.props;
     if (!this.dialogueMatches(projectId, sessionId)) return false;
@@ -287,9 +357,10 @@ class ChatWorkflows extends React.Component {
     const { data, session, perform, busy, onExperiment } = this.props;
     if (session.taskId || session.role !== "coordinator") return null;
     const disabled = busy || data.project.archived || session.state === "archived", campaigns = (data.campaigns ?? []).filter((c) => c.rootSessionId === session.id), tasks = (data.developmentTasks ?? []).filter((t) => t.sessionId === session.id), jobs = (data.sandboxJobs ?? []).filter((j) => j.sessionId === session.id), reviews = (data.reviews ?? []).filter((r) => r.producerSessionId === session.id), proposals = (data.changeProposals ?? []).filter((p) => proposalSession(data, p) === session.id), unbound = (data.changeProposals ?? []).filter((p) => !proposalSession(data, p)), campaignIntentIds = new Set(campaigns.flatMap((c) => [...data.members.filter((m) => m.campaignId === c.id).map((m) => m.intentId), ...(data.researchCandidates ?? []).filter((v) => v.campaignId === c.id).flatMap((v) => v.intentId ? [v.intentId] : [])])), runIntents = data.intents.filter((i) => i.rootSessionId === session.id && !campaignIntentIds.has(i.id));
-    if (!campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId) return null;
+    if (!data.researchBrief?.brief && !campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId) return null;
     return /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EFB\u52A1\u7531\u5BF9\u8BDD\u4E2D\u7684 Pi \u51C6\u5907\uFF1B\u9700\u8981\u786E\u8BA4\u7684\u56FA\u5B9A\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002\u72B6\u6001\u4F1A\u66F4\u65B0\uFF0C\u540E\u7EED\u8981\u6C42\u7EE7\u7EED\u5728\u8F93\u5165\u6846\u8BF4\u660E\u3002" }),
+      this.researchBriefCard(disabled),
       campaigns.slice().reverse().map((c) => this.campaignCard(c, disabled)),
       runIntents.map((i) => this.runIntentCard(i, disabled)),
       session.sourceRevisionId ? /* @__PURE__ */ jsxs("details", { className: "workflow-card", children: [

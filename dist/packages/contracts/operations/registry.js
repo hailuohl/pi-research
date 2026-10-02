@@ -159,6 +159,9 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('research_brief_save', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => { c.app.researchBriefs.inspect(c.actor, c.projectId, c.session.id); }, preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.researchBriefs.save(c.actor, c.projectId, c.session.id, x) }),
+    make('research_brief_inspect', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: noPrecondition, preconditions: noPrecondition, execute: (c, x) => c.app.researchBriefs.inspect(c.actor, c.projectId, c.session.id, x.briefId) }),
+    make('research_brief_confirm', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c, x) => { userOnly(c.actor); c.app.researchBriefs.inspect(c.actor, c.projectId, c.session.id, x.briefId); }, preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.researchBriefs.confirm(c.actor, c.projectId, c.session.id, x) }),
     make('text_corpus_grant_prepare', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.textCorpusGrants.prepare(c.actor, c.projectId, x) }),
     make('text_corpus_grant_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.textCorpusGrants.inspect(c.actor, c.projectId, x.grantId) }),
     make('text_corpus_grant_activate', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.textCorpusGrants.activate(c.actor, c.projectId, x) }),
@@ -386,7 +389,7 @@ export class OperationRegistry {
             session = selected;
         }
         const key = options.idempotencyKey;
-        const cached = actor.type === 'agent' || spec.idempotencyPolicy === 'key-required';
+        const cached = id !== 'research_brief_inspect' && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
         if (cached)
             ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         const context = { ...options, app: this.app, actor, session, validate: () => {
@@ -524,8 +527,12 @@ export class OperationRegistry {
             this.pending.set(pendingId, { hash, promise });
             return promise;
         }
-        if (!cached)
-            return output(invoke());
+        if (!cached) {
+            const result = output(invoke());
+            if (actor.type === 'agent' && id === 'research_brief_inspect')
+                this.app.store.event(pid, 'tool.executed', { sessionId: session.id, tool: id, callId: key });
+            return result;
+        }
         // Recheck under the write lock before invoking: other HTTP/CLI processes share this DB.
         return this.app.store.transaction(() => {
             // PDF authority must be current under the same writer lock as cached receipt return.
@@ -533,6 +540,11 @@ export class OperationRegistry {
                 spec.authorize(context, input);
             const previous = lookup();
             if (previous) {
+                if (id === 'research_brief_save') {
+                    const receipt = previous.value, view = this.app.researchBriefs.inspect(actor, pid, session.id, receipt.id);
+                    ensure(view.brief, 'BRIEF_EVIDENCE_UNAVAILABLE', '该研究计划修订当前不可读取，请重新核对来源', 403);
+                    return output(view.brief);
+                }
                 if (id === 'text_evidence_search')
                     this.app.textEvidence.verifyReplay(actor, pid, input);
                 return save(previous.value);

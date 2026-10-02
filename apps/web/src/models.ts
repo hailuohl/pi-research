@@ -57,7 +57,10 @@ export interface DevelopmentReviewDTO {
 }
 export type {ReportReference,ReportInspection} from '../../../dist/packages/publications/report-types.js';
 export interface ReportRecord {id:string;artifactId:string;runIds:string[];claimIds:string[];evidenceIds?:string[];publicationResultIds?:string[];}
+import type {ResearchBriefService} from '../../../dist/packages/research-workflows/briefs.js';
+export type ResearchBriefView=ReturnType<ResearchBriefService['inspect']>;
 export interface ProjectState {
+    researchBrief?:ResearchBriefView|null;
     textCorpusGrants?:TextCorpusGrantDTO[];
     discoveryGrants?:DiscoveryGrantDTO[];
     runGrants?:RunGrantDTO[];

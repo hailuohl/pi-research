@@ -274,6 +274,13 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
             readonly session: {
                 readonly type: "object";
                 readonly properties: {
+                    researchBriefId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
                     workspace: {
                         readonly pattern?: string | undefined;
                         readonly type: "string";

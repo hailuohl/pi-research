@@ -1,3 +1,4 @@
+import {RESEARCH_BRIEF_INPUT_SCHEMAS} from './research-brief-schemas.js';
 import {SESSION_HISTORY_INPUT_SCHEMAS} from './session-schemas.js';
 import {PUBLICATION_INPUT_SCHEMAS} from './publication-schemas.js';
 import {RESEARCH_PLAN_INPUT_SCHEMAS,EXPERIMENT_PLAN_INPUT_SCHEMA,RESEARCH_CANDIDATE_INPUT_SCHEMA} from './research-plan-schemas.js';
@@ -44,6 +45,7 @@ const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...RESEARCH_BRIEF_INPUT_SCHEMAS,
     ...RESEARCH_PLAN_INPUT_SCHEMAS,
     ...SKILL_INPUT_SCHEMAS,
     ...PUBLICATION_INPUT_SCHEMAS,

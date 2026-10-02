@@ -69,6 +69,9 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('artifact_read',{artifactId:artifact.id});
   const evidence=await call('evidence_register',{artifactId:artifact.id,start:0,end:8,description:'fixture quotation'});
   await call('evidence_read',{evidenceId:evidence.id});
+  const brief=await call('research_brief_save',{expectedRevisionId:null,question:'A fixed research question',scope:'Controlled comparison',constraints:[],successCriteria:['Check real metrics'],clarificationQuestions:[],literatureSummary:'Original source fixture',hypotheses:[{statement:'A hypothesis for later testing',evidenceIds:[evidence.id]}],evidenceIds:[evidence.id],steps:[{title:'Baseline',description:'Separate run approval required'}],status:'ready'});
+  await call('research_brief_inspect');
+  check('research_brief_confirm',s.app.operations.execute(USER,'research_brief_confirm',{briefId:brief.id,expectedVersion:brief.version},{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:'schema-brief-confirm'}));
   const notice=s.app.sessions.system(s.session.id,'host notice');
   await call('session_notice_read',{messageId:notice.id});
   await call('experiment_plan_submit',{title:'Candidate',parentId:s.baseline.id,config:{polynomialDegree:2}});

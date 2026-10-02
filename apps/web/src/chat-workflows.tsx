@@ -27,6 +27,32 @@ export class ChatWorkflows extends React.Component<{
         if(approval.status==='pending')await this.decide(approval,true);
     }
     private dialogueMatches(projectId:string,sessionId:string){const {data,session}=this.props;return this.mounted&&!data.project.archived&&data.project.id===projectId&&session.id===sessionId&&session.role==='coordinator'&&!session.taskId&&session.state!=='archived';}
+    async continueResearchBrief(){
+        const {data,session}=this.props,view=data.researchBrief,brief=view?.brief;
+        if(!brief||view?.latestId!==brief.id||brief.rootSessionId!==session.id)throw Error('研究计划不属于当前对话的最新修订');
+        const projectId=data.project.id,sessionId=session.id,id=brief.id,digest=brief.digest;
+        const matches=()=>this.dialogueMatches(projectId,sessionId)&&this.props.data.researchBrief?.latestId===id&&this.props.data.researchBrief?.brief?.digest===digest;
+        if(!matches()||view.evidenceChecks.some(e=>!e.current))throw Error('研究计划或证据已变化，请先刷新核对');
+        if(brief.status==='ready')await this.call('research_brief_confirm',{briefId:id,expectedVersion:brief.version});
+        else if(brief.status!=='confirmed')throw Error('请先在对话中补齐研究问题与计划');
+        if(!matches())throw Error('已确认计划，当前对话已切换；请回原会话继续');
+        await api(`/sessions/${sessionId}/messages`,{content:`研究问题与计划已由用户确认。先调用research_brief_inspect({briefId:"${id}"})核对latestId仍为该ID、digest为"${digest}"、status为confirmed且来源当前有效，再按步骤继续当前研究任务。只在已有工具与授权范围内推进，计算、代码整合和发布仍使用各自固定批准；若计划或来源失效，说明原因，不用旧版本替代。`},'POST',undefined,`research-brief-continue:${id}:${digest}`);
+    }
+    researchBriefCard(disabled:boolean){
+        const {data,session,perform}=this.props,view=data.researchBrief,brief=view?.brief;
+        if(!view||!brief||brief.rootSessionId!==session.id)return null;
+        const current=view.latestId===brief.id,valid=view.evidenceChecks.every(e=>e.current),confirmed=brief.status==='confirmed';
+        return <details className="workflow-card" open={brief.status!=='confirmed'}><summary>研究问题与计划 · 第 {brief.revision} 版<Badge value={confirmed?'approved':brief.status==='ready'?'pending':'draft'}/></summary>
+            <p><strong>{brief.question}</strong></p><p>{brief.scope}</p>
+            {brief.clarificationQuestions.length?<div><strong>待明确的问题</strong><ul>{brief.clarificationQuestions.map((q,i)=><li key={i}>{q}</li>)}</ul></div>:null}
+            {brief.successCriteria.length?<div><strong>判断标准</strong><ul>{brief.successCriteria.map((q,i)=><li key={i}>{q}</li>)}</ul></div>:null}
+            {brief.steps.length?<ol>{brief.steps.map((step,i)=><li key={i}><strong>{step.title}</strong> · {step.description}</li>)}</ol>:null}
+            <details><summary>文献、假设与约束 · {brief.evidenceIds.length} 项证据</summary><p>{brief.literatureSummary}</p>{brief.hypotheses.map((h,i)=><p key={i}>{h.statement} · 证据 {h.evidenceIds.length}</p>)}{brief.constraints.map((c,i)=><p key={i}>{c}</p>)}</details>
+            {!valid?<p role="status">部分来源已失效，历史内容保留；请在对话中重新核对资料。</p>:null}
+            {current&&brief.status!=='clarifying'?<div className="actions"><button className="primary compact" disabled={disabled||!valid} onClick={()=>perform(()=>this.continueResearchBrief(),'研究计划已确认，继续当前对话')}>{confirmed?'继续已确认计划':'确认研究问题与计划'}</button></div>:null}
+            {view.history.length>1?<details><summary>历史修订（{view.history.length}）</summary>{view.history.map(h=><p key={h.id}>第 {h.revision} 版 · {h.status==='confirmed'?'已确认':h.status==='ready'?'待确认':'待澄清'} · {short(h.digest)}</p>)}</details>:null}
+        </details>;
+    }
     private runIntentInScope(projectId:string,sessionId:string,intentId:string,manifestDigest:string,campaignId?:string){
         const {data}=this.props;
         if(!this.dialogueMatches(projectId,sessionId))return false;
@@ -109,8 +135,9 @@ export class ChatWorkflows extends React.Component<{
         const {data,session,perform,busy,onExperiment}=this.props;
         if(session.taskId||session.role!=='coordinator')return null;
         const disabled=busy||data.project.archived||session.state==='archived',campaigns=(data.campaigns??[]).filter(c=>c.rootSessionId===session.id),tasks=(data.developmentTasks??[]).filter(t=>t.sessionId===session.id),jobs=(data.sandboxJobs??[]).filter(j=>j.sessionId===session.id),reviews=(data.reviews??[]).filter(r=>r.producerSessionId===session.id),proposals=(data.changeProposals??[]).filter(p=>proposalSession(data,p)===session.id),unbound=(data.changeProposals??[]).filter(p=>!proposalSession(data,p)),campaignIntentIds=new Set(campaigns.flatMap(c=>[...data.members.filter(m=>m.campaignId===c.id).map(m=>m.intentId),...(data.researchCandidates??[]).filter(v=>v.campaignId===c.id).flatMap(v=>v.intentId?[v.intentId]:[])])),runIntents=data.intents.filter(i=>i.rootSessionId===session.id&&!campaignIntentIds.has(i.id));
-        if(!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId)return null;
+        if(!data.researchBrief?.brief&&!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId)return null;
         return <section className="chat-workflows" aria-label="当前对话任务"><p className="small muted">任务由对话中的 Pi 准备；需要确认的固定事项显示在这里。状态会更新，后续要求继续在输入框说明。</p>
+            {this.researchBriefCard(disabled)}
             {campaigns.slice().reverse().map(c=>this.campaignCard(c,disabled))}
             {runIntents.map(i=>this.runIntentCard(i,disabled))}
             {session.sourceRevisionId?<details className="workflow-card"><summary>私有实现来源与有限授权</summary><p>固定来源 {short(session.sourceRevisionId)}。可在对话中要求 Pi 编写代码、测试或修复。</p><WorkingGrants data={data} session={session} busy={disabled} perform={perform} dirty={false}/></details>:null}
