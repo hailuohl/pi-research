@@ -165,7 +165,7 @@ class ExperimentModal extends React.Component {
 class App extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: normalizeView(saved().tab ?? "chat"), selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedRunGrant: saved().selectedRunGrant ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, navigationOpen: false };
+    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: normalizeView(saved().tab ?? "chat"), selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedRunGrant: saved().selectedRunGrant ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, navigationOpen: false, sessionCreationSignal: 0 };
     this.experimentSelections = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([, value]) => typeof value === "string"));
     this.closeNavigationOnResize = () => {
       if (window.innerWidth > 760 && this.state.navigationOpen) this.setState({ navigationOpen: false });
@@ -322,11 +322,17 @@ class App extends React.Component {
     this.setState({ modal, modalData: data, error: "" });
   }
   async newSession() {
-    if (!this.state.projectId)
+    const projectId = this.state.projectId;
+    if (!projectId || this.state.busy)
       return;
     await this.perform(async () => {
-      const s = await api("/sessions", { projectId: this.state.projectId, title: "\u65B0\u7684\u7814\u7A76\u4F1A\u8BDD" });
-      await new Promise((resolve) => this.setState(this.sessionSelection(s.id, "chat"), resolve));
+      const s = await api("/sessions", { projectId, title: "\u65B0\u7684\u7814\u7A76\u4F1A\u8BDD" });
+      if (!this.mounted || this.state.projectId !== projectId) return;
+      const closeNavigation = this.state.navigationOpen;
+      await new Promise((resolve) => this.setState({ ...this.sessionSelection(s.id, "chat"), navigationOpen: false, sessionCreationSignal: this.state.sessionCreationSignal + 1 }, () => {
+        if (closeNavigation) this.navigationToggle?.focus();
+        resolve();
+      }));
     });
   }
   async toggle() {
@@ -479,19 +485,16 @@ class App extends React.Component {
             /* @__PURE__ */ jsx("summary", { children: group.name }),
             /* @__PURE__ */ jsx("div", { className: "nav-list", children: group.ids.map((id) => {
               const entry = navigation.find((item) => item[0] === id);
-              return /* @__PURE__ */ jsxs("button", { "aria-current": tab === id ? "page" : void 0, className: tab === id ? "active" : "", onClick: () => this.selectTab(id), children: [
+              return /* @__PURE__ */ jsxs("button", { "aria-current": id !== "chat" && tab === id ? "page" : void 0, className: id !== "chat" && tab === id ? "active" : "", disabled: id === "chat" && (!this.state.projectId || this.state.busy), onClick: () => id === "chat" ? this.newSession() : this.selectTab(id), children: [
                 /* @__PURE__ */ jsx(Icon, { name: entry[2], size: 18 }),
-                /* @__PURE__ */ jsx("span", { children: entry[1] }),
+                /* @__PURE__ */ jsx("span", { children: id === "chat" ? "\u65B0\u5EFA\u4F1A\u8BDD" : entry[1] }),
                 id === "experiments" && data?.experiments.length ? /* @__PURE__ */ jsx("em", { children: data.experiments.length }) : null
               ] }, id);
             }) })
           ] }, group.name)) }),
-          /* @__PURE__ */ jsx(SessionList, { projectId: this.state.projectId, selectedId: this.state.sessionId, selected: currentSession, onSelect: (id) => {
+          /* @__PURE__ */ jsx(SessionList, { projectId: this.state.projectId, selectedId: this.state.sessionId, selected: currentSession, creationSignal: this.state.sessionCreationSignal, busy: this.state.busy, onSelect: (id) => {
             this.setState({ navigationOpen: false });
             this.selectSession(id);
-          }, onNew: () => {
-            this.setState({ navigationOpen: false });
-            void this.newSession();
           } })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "sidebar-footer", children: [

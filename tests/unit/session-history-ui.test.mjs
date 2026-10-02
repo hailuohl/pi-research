@@ -13,14 +13,54 @@ function component(element,name){
     return element.type?.name===name?element:component(element.props?.children,name);
 }
 
-test('session catalog requests bounded stable pages and keeps the selected row visible',async t=>{
+test('session catalog requests bounded stable pages and keeps an active selected row visible',async t=>{
     const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
     const requests=[];
     globalThis.fetch=async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body.input);return response({items:[{id:'recent',title:'Recent',state:'open'}],nextCursor:body.input.beforeSessionId?'': 'cursor-10'});};
-    const list=synchronousState(new SessionList({projectId:'p',selectedId:'old',selected:{id:'old',title:'Older selected',state:'open'},onSelect(){},onNew(){}}));
-    await list.load();assert.deepEqual(requests[0],{query:'',role:'coordinator',limit:10});
+    const list=synchronousState(new SessionList({projectId:'p',selectedId:'old',selected:{id:'old',title:'Older selected',state:'open'},onSelect(){},creationSignal:0,busy:false}));
+    await list.load();assert.deepEqual(requests[0],{query:'',role:'coordinator',stateFilter:'active',limit:10});
     const markup=JSON.stringify(list.render());assert.match(markup,/Older selected/);
     list.next();await new Promise(resolve=>setImmediate(resolve));assert.equal(requests[1].beforeSessionId,'cursor-10');
+    list.componentWillUnmount();
+});
+
+test('session classification is server-paged, hides selected sessions from other states, and resets after creation',async t=>{
+    const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+    const requests=[],selected=[];
+    globalThis.fetch=async(_url,options)=>{const input=JSON.parse(options.body).input;requests.push(input);return response({items:input.stateFilter==='archived'?[{id:'archived',title:'Archived session',state:'archived'}]:[{id:'active',title:'Active session',state:'open'}],nextCursor:input.stateFilter==='active'&&!input.beforeSessionId?'active-10':null});};
+    const list=synchronousState(new SessionList({projectId:'p',selectedId:'old',selected:{id:'old',title:'Opened active session',state:'open'},onSelect:id=>selected.push(id),creationSignal:0,busy:false}));
+    await list.load();
+    list.next();await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(list.state.index,1);assert.equal(requests[1].beforeSessionId,'active-10');
+    list.changeStateFilter('archived');await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(requests.at(-1).stateFilter,'archived');assert.equal(requests.at(-1).beforeSessionId,undefined);assert.equal(list.state.index,0);assert.deepEqual(list.state.cursors,[undefined]);
+    assert.match(JSON.stringify(list.render()),/Archived session/);assert.doesNotMatch(JSON.stringify(list.render()),/Opened active session/);assert.deepEqual(selected,[]);
+
+    const beforeSwitch={...list.props};list.props={...list.props,selectedId:'archived',selected:{id:'archived',title:'Archived session',state:'archived'}};list.componentDidUpdate(beforeSwitch);await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(list.state.stateFilter,'archived');
+    const beforeCreate={...list.props};list.props={...list.props,selectedId:'new-session',selected:{id:'new-session',title:'New session',state:'open'},creationSignal:1};list.componentDidUpdate(beforeCreate);await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(list.state.stateFilter,'active');assert.equal(list.state.index,0);assert.deepEqual(list.state.cursors,[undefined]);assert.equal(requests.at(-1).stateFilter,'active');assert.equal(requests.at(-1).beforeSessionId,undefined);
+    list.setState({page:{items:[],nextCursor:null,query:'',role:'coordinator',stateFilter:'archived',limit:10},stateFilter:'archived',query:''});
+    assert.match(JSON.stringify(list.render()),/暂无已归档会话/);
+    list.setState({stateFilter:'active'});assert.match(JSON.stringify(list.render()),/暂无活跃会话/);
+    list.componentWillUnmount();
+});
+
+test('late session-list responses cannot restore an old category or project',async t=>{
+    const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+    const pending=[];globalThis.fetch=(_url,options)=>new Promise(resolve=>pending.push({body:JSON.parse(options.body),resolve}));
+    const list=synchronousState(new SessionList({projectId:'p',selectedId:'s',onSelect(){},creationSignal:0,busy:false}));
+    const activeRequest=list.load();list.changeStateFilter('archived');await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(pending[0].body.input.stateFilter,'active');assert.equal(pending[1].body.input.stateFilter,'archived');
+    pending[1].resolve(response({items:[{id:'archive-current',title:'Archive current',state:'archived'}],nextCursor:null,stateFilter:'archived'}));await new Promise(resolve=>setImmediate(resolve));
+    pending[0].resolve(response({items:[{id:'stale-active',title:'Stale active',state:'open'}],nextCursor:null,stateFilter:'active'}));await activeRequest;
+    assert.equal(list.state.page.items[0].id,'archive-current');
+
+    const previousProjectRequest=list.load(),previousProps={...list.props};list.props={...list.props,projectId:'q'};list.componentDidUpdate(previousProps);await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(pending[2].body.projectId,'p');assert.equal(pending[3].body.projectId,'q');assert.equal(pending[3].body.input.stateFilter,'active');
+    pending[3].resolve(response({items:[{id:'new-project-active',title:'New project active',state:'open'}],nextCursor:null,stateFilter:'active'}));await new Promise(resolve=>setImmediate(resolve));
+    pending[2].resolve(response({items:[{id:'stale-archive',title:'Stale archive',state:'archived'}],nextCursor:null,stateFilter:'archived'}));await previousProjectRequest;
+    assert.equal(list.state.stateFilter,'active');assert.equal(list.state.page.items[0].id,'new-project-active');
     list.componentWillUnmount();
 });
 

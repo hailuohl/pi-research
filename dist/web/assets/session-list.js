@@ -1,17 +1,28 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
+import { Icon } from "./ui.js";
 const roles = { all: "\u5168\u90E8\u89D2\u8272", coordinator: "\u4E3B\u534F\u8C03\u8005", literature: "\u6587\u732E", designer: "\u8BBE\u8BA1", implementer: "\u5B9E\u73B0", analyst: "\u5206\u6790", reviewer: "\u5BA1\u67E5", writer: "\u5199\u4F5C" };
+const filters = { active: "\u6D3B\u8DC3", archived: "\u5DF2\u5F52\u6863", all: "\u5168\u90E8" };
 class SessionList extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { draft: "", query: "", role: "coordinator", page: null, cursors: [void 0], index: 0, busy: false, error: "" };
+    this.state = { draft: "", query: "", role: "coordinator", stateFilter: "active", page: null, cursors: [void 0], index: 0, busy: false, error: "" };
     this.generation = 0;
     this.search = (event) => {
       event.preventDefault();
+      this.generation++;
       this.setState({ query: this.state.draft.trim(), cursors: [void 0], index: 0, page: null }, () => void this.load());
     };
-    this.changeRole = (role) => this.setState({ role, cursors: [void 0], index: 0, page: null }, () => void this.load());
+    this.changeRole = (role) => {
+      this.generation++;
+      this.setState({ role, cursors: [void 0], index: 0, page: null }, () => void this.load());
+    };
+    this.changeStateFilter = (stateFilter) => {
+      if (stateFilter === this.state.stateFilter) return;
+      this.generation++;
+      this.setState({ stateFilter, cursors: [void 0], index: 0, page: null }, () => void this.load(void 0, this.state.query, this.state.role, stateFilter));
+    };
     this.next = () => {
       const cursor = this.state.page?.nextCursor;
       if (!cursor) return;
@@ -29,35 +40,42 @@ class SessionList extends React.Component {
   componentDidUpdate(previous) {
     if (previous.projectId !== this.props.projectId) {
       this.generation++;
-      this.setState({ draft: "", query: "", role: "coordinator", page: null, cursors: [void 0], index: 0, error: "" }, () => void this.load());
+      this.setState({ draft: "", query: "", role: "coordinator", stateFilter: "active", page: null, cursors: [void 0], index: 0, error: "" }, () => void this.load());
+    } else if (previous.creationSignal !== this.props.creationSignal) {
+      this.generation++;
+      this.setState({ stateFilter: "active", page: null, cursors: [void 0], index: 0 }, () => void this.load(void 0, this.state.query, this.state.role, "active"));
     } else if (previous.selectedId !== this.props.selectedId && this.state.index === 0 && !this.state.query) void this.load();
   }
   componentWillUnmount() {
     this.generation++;
   }
-  async load(cursor = this.state.cursors[this.state.index], query = this.state.query, role = this.state.role) {
+  async load(cursor = this.state.cursors[this.state.index], query = this.state.query, role = this.state.role, stateFilter = this.state.stateFilter) {
     if (!this.props.projectId) return;
     const generation = ++this.generation, projectId = this.props.projectId;
     this.setState({ busy: true, error: "" });
     try {
-      const page = await api("/operations/session_list", { projectId, input: { query, role, limit: 10, ...cursor ? { beforeSessionId: cursor } : {} } });
+      const page = await api("/operations/session_list", { projectId, input: { query, role, stateFilter, limit: 10, ...cursor ? { beforeSessionId: cursor } : {} } });
       if (generation === this.generation && projectId === this.props.projectId) this.setState({ page, busy: false });
     } catch (error) {
       if (generation === this.generation) this.setState({ busy: false, error: error instanceof Error ? error.message : String(error) });
     }
   }
   render() {
-    const { selectedId, selected, onSelect, onNew } = this.props, { page, busy, error, index } = this.state;
+    const { selectedId, selected, onSelect } = this.props, { page, busy, error, index, stateFilter } = this.state;
     const items = page?.items ?? [];
-    const selectedOutside = selected && selectedId && !items.some((item) => item.id === selectedId);
+    const selectedMatchesFilter = selected && (stateFilter === "all" || (stateFilter === "archived" ? selected.state === "archived" : selected.state !== "archived"));
+    const selectedOutside = selectedMatchesFilter && selectedId && !items.some((item) => item.id === selectedId);
     const row = (item) => /* @__PURE__ */ jsxs("button", { className: item.id === selectedId ? "selected-session" : "", onClick: () => onSelect(item.id), children: [
       /* @__PURE__ */ jsx("span", { className: "session-dot " + (item.state === "running" ? "live" : "") }),
       /* @__PURE__ */ jsx("span", { children: item.title })
     ] }, item.id);
     return /* @__PURE__ */ jsxs("div", { className: "sidebar-sessions", children: [
       /* @__PURE__ */ jsxs("div", { className: "sidebar-caption", children: [
-        "\u4F1A\u8BDD",
-        /* @__PURE__ */ jsx("button", { "aria-label": "\u65B0\u5EFA\u4F1A\u8BDD", title: "\u65B0\u5EFA\u4F1A\u8BDD", className: "icon-button", disabled: !this.props.projectId, onClick: onNew, children: "\uFF0B" })
+        /* @__PURE__ */ jsx("span", { children: "\u4F1A\u8BDD" }),
+        /* @__PURE__ */ jsxs("label", { className: "session-state-filter", children: [
+          /* @__PURE__ */ jsx(Icon, { name: "settings", size: 14 }),
+          /* @__PURE__ */ jsx("select", { "aria-label": "\u4F1A\u8BDD\u5206\u7C7B", value: stateFilter, disabled: !this.props.projectId || this.props.busy, onChange: (event) => this.changeStateFilter(event.target.value), children: Object.entries(filters).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value)) })
+        ] })
       ] }),
       /* @__PURE__ */ jsxs("details", { className: "session-filters", children: [
         /* @__PURE__ */ jsxs("summary", { children: [
@@ -73,7 +91,7 @@ class SessionList extends React.Component {
       selectedOutside ? row(selected) : null,
       items.map(row),
       error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "small error-text", children: error }) : null,
-      !busy && page && items.length === 0 ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6CA1\u6709\u5339\u914D\u7684\u4F1A\u8BDD" }) : null,
+      !busy && page && items.length === 0 ? /* @__PURE__ */ jsx("p", { className: "small muted", children: this.state.query ? "\u6CA1\u6709\u5339\u914D\u7684\u4F1A\u8BDD" : stateFilter === "active" ? "\u6682\u65E0\u6D3B\u8DC3\u4F1A\u8BDD" : stateFilter === "archived" ? "\u6682\u65E0\u5DF2\u5F52\u6863\u4F1A\u8BDD" : "\u6CA1\u6709\u5339\u914D\u7684\u4F1A\u8BDD" }) : null,
       /* @__PURE__ */ jsxs("div", { className: "session-pages", children: [
         /* @__PURE__ */ jsx("button", { type: "button", disabled: busy || index === 0, onClick: this.previous, children: "\u4E0A\u4E00\u9875" }),
         /* @__PURE__ */ jsx("span", { children: index + 1 }),

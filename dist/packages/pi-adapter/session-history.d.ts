@@ -7,6 +7,7 @@ export interface SessionCatalogPage {
     nextCursor: string | null;
     query: string;
     role: Role | 'all';
+    stateFilter: 'active' | 'archived' | 'all';
     limit: number;
 }
 export interface SessionHistoryPage {

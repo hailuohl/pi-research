@@ -5,7 +5,7 @@ import {integer,object,oneOf,text} from '../contracts/validation.js';
 
 export const MESSAGE_PREVIEW_CHARACTERS=4000,MESSAGE_PAGE_BYTES=262144;
 export type SessionCatalogItem=Pick<Row<Session>,'id'|'kind'|'projectId'|'version'|'createdAt'|'updatedAt'|'title'|'role'|'state'|'model'|'teamId'|'taskId'>;
-export interface SessionCatalogPage {items:SessionCatalogItem[];nextCursor:string|null;query:string;role:Role|'all';limit:number;}
+export interface SessionCatalogPage {items:SessionCatalogItem[];nextCursor:string|null;query:string;role:Role|'all';stateFilter:'active'|'archived'|'all';limit:number;}
 export interface SessionHistoryPage {beforeMessageId:string|null;afterMessageId:string|null;atLatest:boolean;previewCharacters:number;byteLimit:number;returnedBytes:number;}
 export type HistoryMessage=Row<Message>&{previewTruncated:boolean;contentBytes:number};
 export interface SessionView {session:Row<Session>;messages:HistoryMessage[];history:SessionHistoryPage;pendingMessages:HistoryMessage[];pendingTotal:number;pendingNextCursor:string|null;progress:{generation:number;active:boolean;canSteer:boolean;content:string;truncated:boolean;cursor:number};}
@@ -15,14 +15,15 @@ const closed=(value:unknown,keys:string[])=>{const x=object(value);ensure(Object
 function prefix(bytes:Uint8Array,complete:boolean){try{const d=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true});return d.decode(bytes,{stream:!complete});}catch{throw new DomainError('MESSAGE_ENCODING_INVALID','保存的消息不是完整有效的UTF-8；原始记录未改写');}}
 function bodyBytes(value:unknown,total:number){if(value===null&&total===0)return Buffer.alloc(0);ensure(value instanceof Uint8Array,'MESSAGE_ENCODING_INVALID','保存的消息正文缺失；原始记录未改写');return value;}
 export function sessionCatalog(store:Store,pid:string,value:unknown={}):SessionCatalogPage {
- const x=closed(value,['query','beforeSessionId','role','limit']),query=text(x.query??'','query',160,true).trim(),role=oneOf(x.role??'coordinator',roles,'role'),limit=integer(x.limit??10,'limit',1,50);
+ const x=closed(value,['query','beforeSessionId','role','stateFilter','limit']),query=text(x.query??'','query',160,true).trim(),role=oneOf(x.role??'coordinator',roles,'role'),stateFilter=oneOf(x.stateFilter??'all',['active','archived','all'] as const,'stateFilter'),limit=integer(x.limit??10,'limit',1,50);
  let where="kind='session' AND project_id=?",params:Array<string|number>=[pid];
  if(role!=='all'){where+=" AND json_extract(data,'$.role')=?";params.push(role);}
+ if(stateFilter!=='all'){where+=` AND json_extract(data,'$.state')${stateFilter==='archived'?'=':'<>'}?`;params.push('archived');}
  if(query){where+=" AND (instr(lower(json_extract(data,'$.title')),lower(?))>0 OR instr(lower(id),lower(?))>0)";params.push(query,query);}
  if(x.beforeSessionId!==undefined){const id=text(x.beforeSessionId,'beforeSessionId',100);store.get('session',id,pid);const cursor=store.db.prepare("SELECT rowid FROM records WHERE kind='session' AND id=? AND project_id=?").get(id,pid)!;where+=' AND rowid<?';params.push(Number(cursor.rowid));}
  const rows=store.db.prepare(`SELECT id,project_id,version,json_extract(data,'$.createdAt') createdAt,json_extract(data,'$.updatedAt') updatedAt,json_extract(data,'$.title') title,json_extract(data,'$.role') role,json_extract(data,'$.state') state,json_extract(data,'$.model') model,json_extract(data,'$.teamId') teamId,json_extract(data,'$.taskId') taskId FROM records WHERE ${where} ORDER BY rowid DESC LIMIT ?`).all(...params,limit+1);
  const items=rows.slice(0,limit).map(r=>({id:String(r.id),kind:'session',projectId:pid,version:Number(r.version),createdAt:String(r.createdAt),updatedAt:String(r.updatedAt),title:String(r.title),role:r.role as Role,state:r.state as Session['state'],model:JSON.parse(r.model as string) as ModelConfig,...(r.teamId?{teamId:String(r.teamId)}:{}),...(r.taskId?{taskId:String(r.taskId)}:{})}));
- return {items,nextCursor:rows.length>limit?items.at(-1)!.id:null,query,role,limit};
+ return {items,nextCursor:rows.length>limit?items.at(-1)!.id:null,query,role,stateFilter,limit};
 }
 function messageMeta(store:Store,session:Row<Session>,id:string){const r=store.db.prepare("SELECT rowid,version,project_id,json_extract(data,'$.sessionId') sessionId,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes,COALESCE(json_extract(data,'$.contentTruncated'),0) truncated FROM records WHERE kind='message' AND id=?").get(text(id,'messageId',100));ensure(r,'NOT_FOUND','历史消息不存在',404);ensure(r.project_id===session.projectId&&r.sessionId===session.id,'SCOPE_DENIED','消息游标不属于所选会话',403);return r;}
 export function sessionMessagePage(store:Store,session:Row<Session>,value:unknown={}) {

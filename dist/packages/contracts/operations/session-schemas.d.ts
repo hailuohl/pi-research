@@ -19,13 +19,16 @@ export declare const SESSION_HISTORY_INPUT_SCHEMAS: {
             readonly role: {
                 readonly enum: readonly ["all", "coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
             };
+            readonly stateFilter: {
+                readonly enum: readonly ["active", "archived", "all"];
+            };
             readonly limit: {
                 readonly type: "integer";
                 readonly minimum: number;
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("query" | "limit" | "role" | "beforeSessionId")[];
+        readonly required: readonly ("query" | "limit" | "role" | "stateFilter" | "beforeSessionId")[];
         readonly additionalProperties: false;
     };
     readonly session_view: {
@@ -222,13 +225,16 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
             readonly role: {
                 readonly enum: readonly ["all", "coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
             };
+            readonly stateFilter: {
+                readonly enum: readonly ["active", "archived", "all"];
+            };
             readonly limit: {
                 readonly type: "integer";
                 readonly minimum: number;
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ["items", "nextCursor", "query", "role", "limit"];
+        readonly required: readonly ["items", "nextCursor", "query", "role", "stateFilter", "limit"];
         readonly additionalProperties: false;
     };
     readonly session_view: {

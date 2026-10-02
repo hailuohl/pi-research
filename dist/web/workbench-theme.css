@@ -74,7 +74,9 @@ code { font-size: 12px; }
 .nav-list button:hover:not(.active) { background: #f7f4f1; color: var(--ink); }
 .nav-list em { background: #eee9e6; color: var(--muted); font-size: 11px; }
 .sidebar-sessions { display: block; min-height: 200px; flex: 1 0 auto; padding: 10px 0; border-top: 1px solid var(--line); }
-.sidebar-caption { font-size: 12px; color: var(--muted); padding: 0 8px; letter-spacing: 0; }
+.sidebar-caption { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 0 8px; letter-spacing: 0; }
+.session-state-filter { display: flex; align-items: center; gap: 3px; color: var(--muted); }
+.session-state-filter select { max-width: 82px; border: 0; padding: 3px 0; color: inherit; background: transparent; font-size: 12px; cursor: pointer; }
 .sidebar-sessions > button { display: flex; font-size: 13px; padding: 9px 10px; color: var(--ink); }
 .sidebar-sessions > button.selected-session { color: var(--green); background: var(--green-soft); }
 .session-search { margin: 6px 5px; }
