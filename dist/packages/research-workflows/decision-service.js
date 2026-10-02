@@ -159,8 +159,8 @@ export class DecisionService {
             }
             else if (!stopReason && ['refill', 'promote'].includes(d.action)) {
                 for (const spec of d.candidates) {
-                    const e = this.app.experiments.create(actor, c.projectId, { ...spec, parentId });
-                    const intent = this.app.runs.prepare(actor, e.id);
+                    const e = this.app.experiments.create(actor, c.projectId, { ...spec, parentId }, c.rootSessionId);
+                    const intent = this.app.runs.prepare(actor, e.id, c.rootSessionId);
                     this.app.campaigns.addMember(c, intent.id, true);
                     experimentIds.push(e.id);
                     intentIds.push(intent.id);

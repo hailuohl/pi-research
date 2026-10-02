@@ -231,7 +231,7 @@ export class ResearchPlanService {
         for (const spec of d.candidates) {
             let candidate = this.app.store.create('research-candidate', c.projectId, { campaignId: c.id, roundId: c.currentRoundId, planRevisionId: p.id, decisionId: d.id, spec, parentSource: p.parentSource, state: 'awaiting_implementation', ...(member ? { repairOfMemberId: member.id, repairRootMemberId: root } : {}) });
             if ((spec.implementation ?? 'config') === 'config') {
-                const e = this.app.experiments.createFromRevision(actor, c.projectId, p.parentSource.snapshotId, spec), intent = this.app.runs.prepare(actor, e.id);
+                const e = this.app.experiments.createFromRevision(actor, c.projectId, p.parentSource.snapshotId, spec), intent = this.app.runs.prepare(actor, e.id, c.rootSessionId);
                 candidate = this.app.store.update('research-candidate', candidate.id, candidate.version, { state: 'prepared', experimentId: e.id, intentId: intent.id, runApprovalId: intent.approvalId });
                 this.app.campaigns.addMember(c, intent.id, true, undefined, candidate);
                 experimentIds.push(e.id);
@@ -296,7 +296,7 @@ export class ResearchPlanService {
             ensure(c.currentRoundId === candidate.roundId, 'PLAN_INPUT_STALE', '候选所属轮次已经关闭');
             const { proposal, experiment } = this.checkProposal(candidate, proposalId);
             ensure(!this.app.store.list('research-candidate', pid).some(other => other.id !== candidate.id && other.proposalId === proposalId), 'PLAN_IMPLEMENTATION_MISMATCH', '整合已用于其他候选');
-            const intent = this.app.runs.prepare(actor, experiment.id);
+            const intent = this.app.runs.prepare(actor, experiment.id, c.rootSessionId);
             ensure(intent.manifest.snapshotDigest === proposal.candidateSnapshot.digest, 'PLAN_IMPLEMENTATION_MISMATCH', '整合后工作源码已改变，不能接入活动');
             candidate = this.app.store.update('research-candidate', candidate.id, candidate.version, { state: 'prepared', proposalId, experimentId: experiment.id, intentId: intent.id, testJobId: proposal.testJobId, reviewId: proposal.reviewId, reviewAcceptanceId: proposal.reviewAcceptanceId, integrationApprovalId: proposal.approvalId, testApprovalId: this.app.store.get('sandbox-job', proposal.testJobId, pid).grantId, reviewApprovalId: this.app.store.get('development-review', proposal.reviewId, pid).approvalId, runApprovalId: intent.approvalId });
             this.app.campaigns.addMember(c, intent.id, true, candidate.repairOfMemberId ? candidate.decisionId : undefined, candidate);

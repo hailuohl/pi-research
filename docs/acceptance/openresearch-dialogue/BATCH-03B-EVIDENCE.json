@@ -1,0 +1,71 @@
+{
+  "batch": "3B",
+  "localDate": "2026-10-03",
+  "checks": {
+    "relatedNew": {
+      "total": 4,
+      "passed": 4
+    },
+    "full": {
+      "total": 997,
+      "passed": 974,
+      "skipped": 23,
+      "failed": 0
+    },
+    "independentReview": "Astra: no blocking findings",
+    "cleanBuild": {
+      "identical": true,
+      "files": 502,
+      "manifestSha256": "a55d3b00052c5fc69f74ba5fd04e79f0820e89457f91d2bdefda7c765deeee80"
+    }
+  },
+  "live": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "campaign": {
+      "id": "42576969-8680-43cc-b70d-7f5bd3528faf",
+      "rootSessionId": "57bac1d3-cf26-405b-9883-5b1de5e1d8c3",
+      "roundNumber": 2,
+      "limits": {
+        "maxRounds": 2,
+        "maxCandidatesPerRound": 2,
+        "maxUnansweredRunsPerNode": 2,
+        "maxConsecutiveRegressions": 3,
+        "maxAnalysisAttempts": 2
+      }
+    },
+    "decision": {
+      "action": "promote",
+      "status": "applied",
+      "selectedRunId": "a4f5eece-360d-47b7-ad0c-a3d4f157e16b"
+    },
+    "experiment": {
+      "id": "a7913fda-ea24-4a45-a9be-25271f92481d",
+      "parentId": "90ed8a8a-96f8-48fb-8e9c-d912f19a2af3",
+      "researchBrief": {
+        "id": "4b1c9e18-6c46-4a14-96b0-47c063dc38f3",
+        "digest": "a121159f5969287db77f0eea46cb26d3e08e11ce1111392bd5b8af8ab2bb28b5",
+        "revision": 4,
+        "rootSessionId": "57bac1d3-cf26-405b-9883-5b1de5e1d8c3"
+      }
+    },
+    "intent": {
+      "id": "3927db78-ae21-486b-ba6d-9f28f05c6ca3",
+      "status": "prepared",
+      "rootSessionId": "57bac1d3-cf26-405b-9883-5b1de5e1d8c3",
+      "researchBrief": {
+        "id": "4b1c9e18-6c46-4a14-96b0-47c063dc38f3",
+        "digest": "a121159f5969287db77f0eea46cb26d3e08e11ce1111392bd5b8af8ab2bb28b5",
+        "revision": 4,
+        "rootSessionId": "57bac1d3-cf26-405b-9883-5b1de5e1d8c3"
+      },
+      "approvalStatus": "pending",
+      "hasRun": false
+    },
+    "reopened": {
+      "campaignState": "stopped",
+      "roundNumber": 2,
+      "decisionPreserved": true
+    }
+  }
+}
