@@ -1,3 +1,4 @@
+import {BudgetService} from '../policy/budget.js';
 import {SshTargetService} from './ssh-targets.js';
 import { assertExperimentSourceCurrent, assertProjectWritable } from '../policy/lifecycle.js';
 import {answerDisposition,assertOutcomeBoundary} from './outcome.js';
@@ -28,7 +29,7 @@ export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
     researchSourceGuard?: (experimentId:string,stage:'prepare'|'submit'|'execute',intentId?:string)=>void;
     private launching = new Set<string>();
-    constructor(private c: AppContext, private approvals: ApprovalService, private evidence: EvidenceService, private compute = new ComputeQueue(c), private briefs?: ResearchBriefService) { }
+    constructor(private c: AppContext, private approvals: ApprovalService, private evidence: EvidenceService, private compute = new ComputeQueue(c), private briefs?: ResearchBriefService, private budget = new BudgetService(c.store)) { }
     get(actor: Actor, id: string) { const run = this.c.store.get<Run>('run', id); scope(actor, run.projectId!); return run; }
     list(actor: Actor, projectId: string, cursor = 0, limit = 20) {
         userOnly(actor); scope(actor, projectId);
@@ -55,7 +56,8 @@ export class RunService {
             };
         });
     }
-    prepare(actor: Actor, experimentId: string, selectedRootSessionId?:string) {
+    prepare(actor: Actor, experimentId: string, selectedRootSessionId?:string, autoAnalyze=false) {
+        ensure(typeof autoAnalyze==='boolean','INVALID_INPUT','autoAnalyze必须为布尔值');
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_prepare');
         return this.c.store.transaction(() => {
@@ -69,14 +71,17 @@ export class RunService {
             ensure(root?.researchBriefId===undefined||this.briefs,'BRIEF_CAPTURE_UNAVAILABLE','研究简报服务未初始化');
             const researchBrief:ResearchBriefRef|undefined=rootSessionId?this.briefs?.capture(actor,e.projectId!,rootSessionId):undefined;
             ensure(!requiresBrief||researchBrief,'BRIEF_REQUIRED','绑定了研究计划的实验需要当前主会话的已确认研究计划');
+            if(autoAnalyze){ensure(root,'RUN_SESSION_REQUIRED','自动结果分析需要指定交互主会话');ensure(root.model.provider&&root.model.model,'MODEL_NOT_CONFIGURED','自动结果分析需要固定供应商和模型');}
+            const analysis=autoAnalyze?{rootSessionId:rootSessionId!,model:structuredClone(root!.model),maxAttempts:1 as const}:undefined;
             validateContract(e.contract);
             this.researchSourceGuard?.(experimentId,'prepare');
             const snap=snapshotDirectory(this.c.store.paths.physical(e.workspace),join(this.c.dataDir,'snapshots')),revision=this.c.store.maybe<SourceRevision>('source-revision',digest({projectId:e.projectId,experimentId:e.id,revision:e.revision}));
             const binding=revision?this.c.store.maybe<GitSourceBinding>('git-source-binding',revision.id):undefined;
-            const manifest:Manifest={experimentId:e.id,experimentVersion:e.version,experimentRevision:e.revision,contract:structuredClone(e.contract),contractDigest:e.contractDigest,snapshotDigest:snap.digest,snapshotPath:this.c.store.paths.reference(snap.path),sourceFiles:snap.files,createdAt:now(),...(researchBrief?{researchBrief}:{}),...(revision?.sourceDigest===snap.digest?{sourceRevisionId:revision.id,...(binding&&binding.sourceDigest===snap.digest?{gitCommit:binding.gitCommit}:{})}:{})};
+            const manifest:Manifest={experimentId:e.id,experimentVersion:e.version,experimentRevision:e.revision,contract:structuredClone(e.contract),contractDigest:e.contractDigest,snapshotDigest:snap.digest,snapshotPath:this.c.store.paths.reference(snap.path),sourceFiles:snap.files,createdAt:now(),...(analysis?{analysis}:{}),...(researchBrief?{researchBrief}:{}),...(revision?.sourceDigest===snap.digest?{sourceRevisionId:revision.id,...(binding&&binding.sourceDigest===snap.digest?{gitCommit:binding.gitCommit}:{})}:{})};
             if(manifest.contract.runner==='ssh')manifest.sshTarget=new SshTargetService(this.c).frozen(manifest.contract.sshTargetId!,true);
             verifyTrustedExample(manifest,this.c.repoRoot,this.c.store.paths);
-            const id=randomUUID(),hash=digest(manifest),approval=this.approvals.request(e.projectId!,'run-intent',id,hash,'run.submit','批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限');
+            const id=randomUUID(),hash=digest(manifest),approval=this.approvals.request(e.projectId!,'run-intent',id,hash,'run.submit','批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限'+(analysis?`。该Run终态后在指定对话使用${analysis.model.provider}/${analysis.model.model}最多启动1次Pi结果分析任务，可包含多个模型HTTP/工具往返，只读本次结果、诊断与建议，不批准或启动新计算。`:'' ));
+            if(analysis)this.budget.configure(e.projectId!,id,1);
             const result=this.c.store.create<RunIntent>('run-intent',e.projectId,{experimentId:e.id,manifest,manifestDigest:hash,approvalId:approval.id,status:'prepared',...(rootSessionId?{rootSessionId}:{})},id);this.c.store.event(e.projectId,'run.prepared',{intentId:id,experimentId:e.id,approvalId:approval.id,snapshotDigest:snap.digest,...(rootSessionId?{sessionId:rootSessionId}:{})});return result;
         });
     }

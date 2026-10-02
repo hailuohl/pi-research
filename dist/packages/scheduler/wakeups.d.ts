@@ -2,7 +2,7 @@ import type { ResearchApp } from '../research-app.js';
 import type { Actor, Message, Row, Task, Team } from '../domain/types.js';
 import type { RunObservation } from '../research-workflows/types.js';
 export interface Wakeup {
-    sourceKind: 'team' | 'campaign-result';
+    sourceKind: 'team' | 'campaign-result' | 'run-result';
     sourceId: string;
     ownerId: string;
     rootSessionId: string;
@@ -16,6 +16,7 @@ export interface Wakeup {
     blockReason?: string;
     messageId?: string;
     reservationId?: string;
+    analysisSessionPath?: string;
     generation?: number;
     error?: string;
 }
@@ -30,6 +31,7 @@ export declare class WakeupService {
     list(actor: Actor, projectId: string): Row<Wakeup>[];
     private teamSource;
     private campaignSource;
+    private runResultSource;
     private enqueue;
     private sourceStatus;
     private block;
@@ -52,6 +54,7 @@ export declare class WakeupService {
         }[];
         campaign?: undefined;
         observations?: undefined;
+        run?: undefined;
     } | {
         purpose: string;
         campaign: {
@@ -66,6 +69,35 @@ export declare class WakeupService {
         observations: Row<RunObservation>[];
         team?: undefined;
         tasks?: undefined;
+        run?: undefined;
+    } | {
+        purpose: string;
+        run: {
+            id: string;
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
+            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            validation: "incomplete" | "invalid" | "verified";
+            explanation: string;
+            metrics: Record<string, number> | null;
+            metricsContract: Record<string, {
+                unit: string;
+                direction: "min" | "max";
+            }>;
+            exitCode: number | null;
+            error: string | null;
+            artifactIds: string[];
+            evidenceIds: string[];
+            manifestBrief: {
+                id: string;
+                digest: string;
+                revision: number;
+                rootSessionId: string;
+            } | null;
+        };
+        team?: undefined;
+        tasks?: undefined;
+        campaign?: undefined;
+        observations?: undefined;
     };
     dispatch(id: string, readiness: {
         ready: boolean;
@@ -79,6 +111,7 @@ export declare class WakeupService {
     finish(id: string, error?: string, unknown?: boolean): Row<Wakeup>;
     request(actor: Actor, id: string): Row<Wakeup>;
     retry(actor: Actor, id: string): Row<Wakeup>;
+    private neverStarted;
     cancel(actor: Actor, id: string): Row<Wakeup>;
     resources(actor: Actor): {
         evidenceIds: Set<string>;

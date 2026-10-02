@@ -177,6 +177,13 @@ class ChatWorkflows extends React.Component {
         intent.manifest.researchBrief.revision,
         " \u7248\u8BA1\u5212"
       ] }) : null,
+      intent.manifest.analysis ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+        "\u7ED3\u675F\u540E\u7531 ",
+        intent.manifest.analysis.model.provider,
+        "/",
+        intent.manifest.analysis.model.model,
+        " \u81EA\u52A8\u5206\u6790\u4E00\u6B21\uFF0C\u4EC5\u8BFB\u53D6\u672C\u6B21\u7ED3\u679C\u5E76\u7ED9\u51FA\u5EFA\u8BAE\u3002"
+      ] }) : null,
       /* @__PURE__ */ jsxs("details", { children: [
         /* @__PURE__ */ jsx("summary", { children: "\u51BB\u7ED3\u53C2\u6570\u3001\u8BA1\u7B97\u5951\u7EA6\u4E0E\u6388\u6743" }),
         /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ intentId: intent.id, manifestDigest: intent.manifestDigest, manifest: intent.manifest, runGrant: bound }, null, 2) })

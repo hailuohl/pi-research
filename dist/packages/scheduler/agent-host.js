@@ -249,7 +249,8 @@ export class AgentHost {
             const bundleId = prepareSessionSkills(this.app, claimed, actor);
             const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId, claimed.role, bundleId);
             this.ensureReady(claimed);
-            const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = join(home, 'pi');
+            const isolatedRunAnalysis = !!wakeupId && this.app.wakeups.get(SYSTEM, wakeupId).sourceKind === 'run-result';
+            const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = isolatedRunAnalysis ? join(home, 'pi-analysis', wakeupId) : join(home, 'pi');
             mkdirSync(agentDir, { recursive: true, mode: 0o700 });
             mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
             const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: home, USERPROFILE: home, PI_API_KEY: process.env.PI_API_KEY, NO_COLOR: '1' };
@@ -260,31 +261,43 @@ export class AgentHost {
                 const marked = this.admission.markSpawnRequested(slot.id, this.ownerHost, claimed.generation);
                 store.update('agent-admission', marked.id, marked.version, { httpManagedVersion: 1 });
                 requested = true;
-                return (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+                const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+                // Retain the child before commit: a commit failure is not proof of zero model use.
+                active = { admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };
+                this.active.set(claimed.id, active);
+                spawned.on('error', error => this.finish(active, clean(error.message)));
+                spawned.once('exit', code => { active.exitObserved = true; if (active.ended)
+                    this.exited(active, code); });
+                spawned.once('close', code => { if (this.active.get(claimed.id) === active)
+                    this.exited(active, code); });
+                return spawned;
             });
-            const worker = { admissionId: slot.id, child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };
-            active = worker;
-            this.active.set(claimed.id, worker);
+            const worker = active;
             child.stdout?.on('data', () => { });
             child.stderr?.on('data', () => { });
             child.on('message', raw => { void this.onMessage(worker, raw, sessionDir).catch(e => this.finish(worker, clean(asError(e).message))); });
-            child.on('error', e => this.finish(worker, clean(e.message)));
             // exit can precede buffered IPC messages; close confirms those messages have drained.
-            child.once('exit', code => { worker.exitObserved = true; if (worker.ended)
-                this.exited(worker, code); });
-            child.once('close', code => { if (this.active.get(worker.sessionId) === worker)
-                this.exited(worker, code); });
             this.admission.markRunning(slot.id, this.ownerHost, claimed.generation, child.pid);
             const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
             worker.contextMessageIds = hostMessages.map(m => m.id);
-            const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
-            this.sendInput(worker, { type: 'start', managedHttp: true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
+            const history = !isolatedRunAnalysis && !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
+            this.sendInput(worker, { type: 'start', managedHttp: true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
             store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation: claimed.generation, attemptId: attempt?.id });
         }
         catch (error) {
             const failure = asError(error), startError = `${failure.code} — ${failure.message}`;
             if (active) {
-                this.finish(active, clean(error.message));
+                try {
+                    store.transaction(() => { const held = this.admission.assertOwned(slot.id, this.ownerHost, claimed.generation); store.update('agent-admission', held.id, held.version, { spawnRequested: true, workerPid: active.child.pid, httpManagedVersion: 1 }); });
+                    this.finish(active, clean(error.message));
+                }
+                finally {
+                    if (!active.exitObserved) {
+                        if (active.child.connected)
+                            active.child.disconnect();
+                        active.child.kill('SIGTERM');
+                    }
+                }
                 return;
             }
             store.transaction(() => { this.admission.release(slot.id, this.ownerHost, claimed.generation, requested ? 'synchronous-fork-failure' : 'not-forked'); if (attempt)
@@ -294,7 +307,7 @@ export class AgentHost {
                     store.update('message', m.id, m.version, { status: 'failed', error: startError });
             } if (wakeupId) {
                 const w = this.app.wakeups.get(SYSTEM, wakeupId);
-                store.update('wakeup', w.id, w.version, { state: 'queued', attempts: Math.max(0, w.attempts - 1) });
+                store.update('wakeup', w.id, w.version, { state: 'queued', attempts: Math.max(0, w.attempts - 1), generation: undefined });
                 this.app.wakeups.finish(w.id, startError, false);
             } const latest = store.get('session', claimed.id); if (latest.generation === claimed.generation)
                 store.update('session', latest.id, latest.version, { state: 'failed', leaseUntil: 0, lastError: startError }); });
@@ -458,7 +471,13 @@ export class AgentHost {
             failed(error);
         }
     }
-    savePath(a, file, root) { const rel = relative(resolve(root), resolve(file)); ensure(rel !== '' && !rel.startsWith('..') && !isAbsolute(rel) && file.endsWith('.jsonl'), 'SESSION_PATH_INVALID', 'Pi Session 路径超出受控目录'); const s = this.app.store.get('session', a.sessionId); if (s.piSessionPath && this.app.store.paths.same(s.piSessionPath, resolve(file)))
+    savePath(a, file, root) { const rel = relative(resolve(root), resolve(file)); ensure(rel !== '' && !rel.startsWith('..') && !isAbsolute(rel) && file.endsWith('.jsonl'), 'SESSION_PATH_INVALID', 'Pi Session 路径超出受控目录'); const s = this.app.store.get('session', a.sessionId); if (a.actor?.wakeupId) {
+        const w = this.app.wakeups.get(SYSTEM, a.actor.wakeupId);
+        if (w.sourceKind === 'run-result') {
+            this.app.store.update('wakeup', w.id, w.version, { analysisSessionPath: this.app.store.paths.reference(resolve(file)) });
+            return;
+        }
+    } if (s.piSessionPath && this.app.store.paths.same(s.piSessionPath, resolve(file)))
         return; this.app.store.update('session', s.id, s.version, { piSessionPath: this.app.store.paths.reference(resolve(file)) }); }
     abortProcess(a, error = '会话已中止或任务已失效') {
         if (a.ended || a.stopError)

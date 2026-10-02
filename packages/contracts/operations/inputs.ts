@@ -82,7 +82,7 @@ export const INPUT_SCHEMAS = {
     artifact_create: s.object({ title: s.string(200), content: s.string(2 * 1024 * 1024, 0), mediaType: s.nullable(s.string(100)) }, ['title', 'content']),
     literature_search: s.object({ query: s.string(500), limit: s.nullable(s.integer(1, 20)) }, ['query']),
     experiment_plan_submit: s.object({ title: s.string(200), hypothesis: s.nullable(s.string()), parentId: s.nullable(s.string()), expectedParentRevision:s.integer(1), config, contract: s.nullable(contract) }, ['title']),
-    run_prepare: s.object({ experimentId: id }, ['experimentId']),
+    run_prepare: s.object({ experimentId: id, autoAnalyze:s.boolean() }, ['experimentId']),
     run_submit: s.object({ intentId: id }, ['intentId']),
     run_inspect: s.object({ runId: id }, ['runId']),
     run_list: s.object({ cursor: s.integer(0, Number.MAX_SAFE_INTEGER), limit: s.integer(1, 100) }),

@@ -1283,6 +1283,9 @@ export declare const INPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly autoAnalyze: {
+                readonly type: "boolean";
+            };
         };
         readonly required: readonly ["experimentId"];
         readonly additionalProperties: false;

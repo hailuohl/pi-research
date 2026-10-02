@@ -41,12 +41,14 @@ const contract = object({
 }, ['sshTargetId', 'image', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy']);
 const sshTarget = object({ id: string, version: integer, hostKeyDigest: string, configDigest: string, engineId: string, protocolDigest: string, targetId: string });
 const researchBriefRef = object({ id: string, digest: string, revision: integer, rootSessionId: string });
+const runAnalysis = object({ rootSessionId: string, model: object({ provider: string, model: string, thinking: enumeration('off', 'minimal', 'low', 'medium', 'high', 'xhigh') }), maxAttempts: { const: 1 } });
 const manifest = object({
+    analysis: runAnalysis,
     researchBrief: researchBriefRef,
     experimentId: string, experimentVersion: integer, experimentRevision: integer,
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
     sourceFiles: array(sourceFile), createdAt: string, sourceRevisionId: string, gitCommit: string, sshTarget
-}, ['sourceRevisionId', 'gitCommit', 'sshTarget', 'researchBrief']);
+}, ['sourceRevisionId', 'gitCommit', 'sshTarget', 'researchBrief', 'analysis']);
 const runnerExecution = object({ backend: enumeration('docker', 'ssh'), sshHandle: string, dockerContext: string, containerName: string, containerId: string, imageId: string, controlDir: string, generation: integer, leaseUntil: number, startRequested: boolean, recoveryCount: integer, logTruncated: boolean, logsIncomplete: boolean, outputExceeded: boolean }, ['sshHandle', 'containerId', 'imageId', 'logTruncated', 'logsIncomplete', 'outputExceeded']);
 const taskResult = object({
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,

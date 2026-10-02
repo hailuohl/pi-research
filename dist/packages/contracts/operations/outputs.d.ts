@@ -109,6 +109,36 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly analysis: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly rootSessionId: {
+                                readonly type: "string";
+                            };
+                            readonly model: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly provider: {
+                                        readonly type: "string";
+                                    };
+                                    readonly model: {
+                                        readonly type: "string";
+                                    };
+                                    readonly thinking: {
+                                        readonly type: "string";
+                                        readonly enum: ["off", "minimal", "low", "medium", "high", "xhigh"];
+                                    };
+                                };
+                                readonly required: ("model" | "provider" | "thinking")[];
+                                readonly additionalProperties: false;
+                            };
+                            readonly maxAttempts: {
+                                readonly const: 1;
+                            };
+                        };
+                        readonly required: ("model" | "rootSessionId" | "maxAttempts")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly researchBrief: {
                         readonly type: "object";
                         readonly properties: {
@@ -9138,6 +9168,36 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly analysis: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly rootSessionId: {
+                                readonly type: "string";
+                            };
+                            readonly model: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly provider: {
+                                        readonly type: "string";
+                                    };
+                                    readonly model: {
+                                        readonly type: "string";
+                                    };
+                                    readonly thinking: {
+                                        readonly type: "string";
+                                        readonly enum: ["off", "minimal", "low", "medium", "high", "xhigh"];
+                                    };
+                                };
+                                readonly required: ("model" | "provider" | "thinking")[];
+                                readonly additionalProperties: false;
+                            };
+                            readonly maxAttempts: {
+                                readonly const: 1;
+                            };
+                        };
+                        readonly required: ("model" | "rootSessionId" | "maxAttempts")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly researchBrief: {
                         readonly type: "object";
                         readonly properties: {
@@ -9407,6 +9467,36 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly analysis: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly rootSessionId: {
+                                readonly type: "string";
+                            };
+                            readonly model: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly provider: {
+                                        readonly type: "string";
+                                    };
+                                    readonly model: {
+                                        readonly type: "string";
+                                    };
+                                    readonly thinking: {
+                                        readonly type: "string";
+                                        readonly enum: ["off", "minimal", "low", "medium", "high", "xhigh"];
+                                    };
+                                };
+                                readonly required: ("model" | "provider" | "thinking")[];
+                                readonly additionalProperties: false;
+                            };
+                            readonly maxAttempts: {
+                                readonly const: 1;
+                            };
+                        };
+                        readonly required: ("model" | "rootSessionId" | "maxAttempts")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly researchBrief: {
                         readonly type: "object";
                         readonly properties: {

@@ -1,3 +1,4 @@
+import { BudgetService } from '../policy/budget.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, RunIntent, Run, Row } from '../domain/types.js';
 import type { ResearchBriefService } from '../research-workflows/briefs.js';
@@ -12,9 +13,10 @@ export declare class RunService {
     private evidence;
     private compute;
     private briefs?;
+    private budget;
     researchSourceGuard?: (experimentId: string, stage: 'prepare' | 'submit' | 'execute', intentId?: string) => void;
     private launching;
-    constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue, briefs?: ResearchBriefService | undefined);
+    constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue, briefs?: ResearchBriefService | undefined, budget?: BudgetService);
     get(actor: Actor, id: string): Row<Run>;
     list(actor: Actor, projectId: string, cursor?: number, limit?: number): {
         items: {
@@ -35,7 +37,7 @@ export declare class RunService {
         cursor: number;
         hasMore: boolean;
     };
-    prepare(actor: Actor, experimentId: string, selectedRootSessionId?: string): Row<RunIntent>;
+    prepare(actor: Actor, experimentId: string, selectedRootSessionId?: string, autoAnalyze?: boolean): Row<RunIntent>;
     assertIntentActor(actor: Actor, intent: Row<RunIntent>): void;
     submit(actor: Actor, id: string): Row<Run>;
     /** Keep the version read and heartbeat write in one inter-process SQLite transaction. */

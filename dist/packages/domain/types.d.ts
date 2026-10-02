@@ -145,6 +145,11 @@ export interface Experiment {
     revision: number;
 }
 export interface Manifest {
+    analysis?: {
+        rootSessionId: string;
+        model: ModelConfig;
+        maxAttempts: 1;
+    };
     researchBrief?: ResearchBriefRef;
     sshTarget?: import('../runners/ssh-targets.js').SshTarget;
     experimentId: string;

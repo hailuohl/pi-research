@@ -125,7 +125,7 @@ const TOOL_METADATA = {
     artifact_create: { description: '保存实际 UTF-8 文件到不可变产物库。返回 ID；不会创建实测数据。', example: { title: 'review.md', content: '原文引用与限制', mediaType: 'text/markdown' } },
     literature_search: { description: 'Crossref 关键词元数据检索。不代表阅读论文全文；失败不是没有结果。', example: { query: 'gas sensing two dimensional materials', limit: 8 } },
     experiment_plan_submit: { description: '从当前对话准备实验草案（不运行），继承父实验固定契约；先读固定revision的config，提交完整配置对象（替换，不合并）及expectedParentRevision。正式运行另需人工批准。注意此工具只继承父/项目源码；新编写代码必须通过 change_proposal_prepare 整合。', example: { title: '二阶候选', hypothesis: '测试二阶模型', parentId: 'experiment-id', config: { polynomialDegree: 2, ridge: 0.000001 } } },
-    run_prepare: { description: '根据对话方案固定实验快照并生成原对话的审批卡，不执行计算；获确认后再用run_submit，结果可由project_inspect回查。', example: { experimentId: 'record-id' } },
+    run_prepare: { description: '固定实验快照及原对话审批卡。autoAnalyze=true可同时准备终态后最多一次Pi结果分析任务，模型/目的地/额度纳入固定批准；任务可含多个HTTP往返，不批准后续计算。默认false。', example: { experimentId: 'record-id', autoAnalyze: true } },
     run_submit: { description: '只提交当前对话已获批准的固定 RunIntent，不以新清单替代拒绝或失效意向；analyst Task 只能提交上下文 RunGrant 清单中的 RunIntent，不能准备新清单。', example: { intentId: 'record-id' } },
     run_list: { description: '按稳定游标分页读取当前项目 Run 摘要；完整结果继续用 run_inspect 读取。', example: { cursor: 0, limit: 20 } },
     run_inspect: { description: '读取真实 Run 的状态、指标和证据；结束 Agent 不能当作实验完成。', example: { runId: 'record-id' } },
