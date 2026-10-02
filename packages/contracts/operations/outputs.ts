@@ -204,7 +204,7 @@ export const OUTPUT_SCHEMAS = {
     literature_discover: DISCOVERY_OUTPUT_SCHEMA,
     project_inspect: object({
         textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument),pmcDocuments:array(pmcDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents','pmcDocuments']),
-        project: object({ id: string, name: string }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
+        project: object({ id: string, name: string, collaborationEnabled: boolean }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
         runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings
     }),
     text_evidence_search:textEvidenceSearch,

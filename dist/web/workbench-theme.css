@@ -159,6 +159,8 @@ code { font-size: 12px; }
 .composer textarea::placeholder { color: #817b76; }
 .composer-toolbar { padding: 8px 12px 12px; flex-wrap: wrap; gap: 9px; }
 .composer-toolbar select { font-size: 12px; max-width: 180px; color: var(--muted); background: #f7f5f2; padding: 6px; border-radius: 5px; }
+.chat-collaboration-control { display: flex; align-items: center; gap: 7px; flex-shrink: 0; white-space: nowrap; color: var(--muted); font-size: 11px; }
+.chat-collaboration-control .switch { flex-shrink: 0; }
 .composer-caption { font-size: 10px; color: var(--muted); padding-top: 10px; }
 .inspector { width: var(--inspector); min-width: 0; border: 1px solid var(--line); border-radius: 11px; background: #fff; }
 .inspector-title { padding: 21px 20px; border-color: var(--line); }

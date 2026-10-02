@@ -17,7 +17,6 @@ const navigationGroups = [
   { name: "\u7814\u7A76", ids: ["chat", "experiments", "campaigns", "implementation", "changes"] },
   { name: "\u7BA1\u7406", ids: ["integrations", "scheduler", "settings"] }
 ];
-const manualTasks = [{ key: "sources", role: "literature", objective: "\u6574\u7406\u7528\u6237\u5DF2\u63D0\u4F9B\u8D44\u6599\u53CA\u5019\u9009\u6587\u732E\uFF1B\u68C0\u7D22\u7B56\u7565\u4E0E\u6700\u7EC8\u6392\u5E8F\u7531\u4E3B\u534F\u8C03\u8005\u8D1F\u8D23\u3002\u660E\u786E\u672A\u9605\u8BFB\u7684\u5168\u6587\u3002", dependencies: [] }, { key: "analysis", role: "analyst", objective: "\u6838\u67E5\u5DF2\u6709\u8FD0\u884C\u6307\u6807\u53CA\u5176\u8BC1\u636E\uFF1B\u7F3A\u5C11\u5FC5\u8981\u8F93\u5165\u5219\u963B\u585E\uFF0C\u4E0D\u7F16\u9020\u7ED3\u679C\u3002", dependencies: [], critical: true }, { key: "review", role: "reviewer", objective: "\u72EC\u7ACB\u6838\u67E5\u5206\u6790\u7ED3\u8BBA\u4E0E\u771F\u5B9E\u8BC1\u636E\u3002", dependencies: ["sources"], reviewOf: "analysis" }, { key: "report", role: "writer", objective: "\u6839\u636E\u5DF2\u9A8C\u6536\u7684\u8F93\u5165\u5F62\u6210\u5B9E\u9645\u62A5\u544A\u4EA7\u7269\uFF0C\u8BF4\u660E\u9650\u5236\u3002", dependencies: ["analysis", "review"], expectedOutputs: [{ kind: "report", schemaId: "report", required: true }], acceptanceRuleIds: ["artifact-required"] }];
 function saved() {
   try {
     return JSON.parse(localStorage.getItem("pi-research-ui-v1") ?? "{}");
@@ -375,35 +374,6 @@ class App extends React.Component {
           /* @__PURE__ */ jsx("textarea", { name: "content", "aria-label": "\u914D\u7F6E\u6E90\u7801", className: "code-input", rows: 12, readOnly: modalData.frozen, defaultValue: modalData.content })
         ] })
       ] });
-    if (modal === "team")
-      return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u624B\u52A8\u7F16\u5199\u534F\u4F5C\u8BA1\u5212", submitLabel: "\u63D0\u4EA4\u8BA1\u5212\u5F85\u6279\u51C6", onSubmit: (fd) => this.perform(async () => {
-        let sessionId = this.state.sessionId;
-        if (!sessionId) {
-          const s = await api("/sessions", { projectId: data.project.id, title: "\u534F\u4F5C\u4E3B\u4F1A\u8BDD" });
-          sessionId = s.id;
-          await new Promise((resolve) => this.setState(this.sessionSelection(sessionId), resolve));
-        }
-        await api(`/sessions/${sessionId}/teams`, { goal: fd.get("goal"), tasks: JSON.parse(String(fd.get("tasks"))), budget: Number(fd.get("budget")), autoSummarize: fd.get("autoSummarize") === "on" });
-        done();
-      }), children: [
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u534F\u4F5C\u76EE\u6807",
-          /* @__PURE__ */ jsx("input", { name: "goal", "aria-label": "\u534F\u4F5C\u76EE\u6807", required: true, placeholder: "\u9700\u8981\u5171\u540C\u5B8C\u6210\u7684\u76EE\u6807" })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u4EFB\u52A1\u4F9D\u8D56 JSON",
-          /* @__PURE__ */ jsx("textarea", { className: "code-input", "aria-label": "\u4EFB\u52A1\u4F9D\u8D56 JSON", name: "tasks", defaultValue: JSON.stringify(manualTasks.map((t) => t.key === "analysis" ? { ...t, inputEvidenceIds: data?.evidence.map((e) => e.id) ?? [] } : t), null, 2), rows: 13, required: true })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u6700\u5927\u5C1D\u8BD5\u989D\u5EA6",
-          /* @__PURE__ */ jsx("input", { type: "number", name: "budget", min: 5, max: 100, defaultValue: 12 })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { className: "check-label", children: [
-          /* @__PURE__ */ jsx("input", { type: "checkbox", name: "autoSummarize", defaultChecked: true }),
-          "\u534F\u4F5C\u7ED3\u675F\u540E\u81EA\u52A8\u5524\u9192\u4E3B Pi \u7EFC\u5408\uFF08\u5360\u7528\u56E2\u961F\u5C1D\u8BD5\u989D\u5EA6\uFF09"
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8FD9\u662F\u624B\u52A8\u8BA1\u5212\u6A21\u677F\uFF0C\u4E0D\u662F\u6A21\u578B\u751F\u6210\u7684\u5EFA\u8BAE\u3002\u5173\u952E\u4EFB\u52A1\u901A\u8FC7 reviewOf \u5B89\u6392\u72EC\u7ACB\u5BA1\u67E5\uFF1B\u989D\u5EA6\u6309\u4EFB\u52A1\u5C1D\u8BD5\u8BA1\uFF0C\u4E0D\u662F\u5B9E\u9645\u8D26\u5355\u4E0A\u9650\u3002" })
-      ] });
     if (modal === "directive")
       return /* @__PURE__ */ jsxs(Modal, { ...base, title: "\u7ED9\u56E2\u961F\u53D1\u9001\u6307\u4EE4", submitLabel: "\u4FDD\u5B58\u6307\u4EE4", onSubmit: (fd) => this.perform(async () => {
         await api(`/teams/${modalData}/directives`, { kind: fd.get("kind"), content: fd.get("content") });
@@ -471,7 +441,7 @@ class App extends React.Component {
   }
   render() {
     const { boot, data, tab } = this.state;
-    const currentSession = data?.sessions.find((s) => s.id === this.state.sessionId), experiment = data?.experiments.find((e) => e.id === this.state.selectedExp);
+    const currentSession = data?.sessions.find((s) => s.id === this.state.sessionId), experiment = data?.experiments.find((e) => e.id === this.state.selectedExp), collaborationSessionId = currentSession?.taskId ? data?.teams.find((t) => t.id === currentSession.teamId)?.rootSessionId ?? "" : this.state.sessionId;
     return /* @__PURE__ */ jsxs("div", { className: "app-shell" + (this.state.navigationOpen ? " navigation-open" : ""), onKeyDown: (event) => {
       if (event.key === "Escape" && this.state.navigationOpen) this.toggleNavigation();
     }, children: [
@@ -571,7 +541,7 @@ class App extends React.Component {
         ] }) : null,
         /* @__PURE__ */ jsxs("div", { className: "workbench-content " + (["chat", "experiments"].includes(tab) && data ? "with-inspector" : ""), children: [
           /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
-            boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, messages: this.state.messages, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, perform: this.perform, onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
+            boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
             !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, session: currentSession, perform: this.perform }) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
               /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
               /* @__PURE__ */ jsxs("h1", { children: [
@@ -621,7 +591,7 @@ class App extends React.Component {
               this.setState({ selectedRun, selectedExp, tab: "experiments" });
             } }, data.project.id) : null
           ] }),
-          data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { onScheduler: () => this.setState({ tab: "scheduler" }), data, boot, tab, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onToggle: () => this.toggle(), onTeam: () => this.open("team"), onPrepare: () => {
+          data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { onScheduler: () => this.setState({ tab: "scheduler" }), data, boot, tab, sessionId: collaborationSessionId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onPrepare: () => {
             if (experiment)
               this.perform(() => api("/run-intents", { experimentId: experiment.id }), "\u5DF2\u51C6\u5907\u4E0D\u53EF\u53D8\u5FEB\u7167\uFF0C\u7B49\u5F85\u4EBA\u5DE5\u6279\u51C6");
           }, onChild: () => this.open("experiment", { parentId: experiment?.id }), onConfig: () => {

@@ -127,9 +127,10 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
                 return {messageId: m.id, content: m.content.slice(cursor, end), cursor: end, complete: end === m.content.length};
             }
             case 'project_inspect': {
+                const project = app.projects.get(actor, pid);
                 const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId ? app.wakeups.resources(actor) : null;
                 const runs = app.store.list('run', pid).filter(r => !grant || grant.runIds.has(r.id));
-                return { textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: app.projects.get(actor, pid).name }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id) };
+                return { textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id) };
             }
             case 'workspace_list': return listFiles(ownOrProject());
             case 'artifact_read': {

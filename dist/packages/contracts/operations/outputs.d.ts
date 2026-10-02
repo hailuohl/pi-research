@@ -3304,8 +3304,11 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly name: {
                         readonly type: "string";
                     };
+                    readonly collaborationEnabled: {
+                        readonly type: "boolean";
+                    };
                 };
-                readonly required: ("name" | "id")[];
+                readonly required: ("name" | "id" | "collaborationEnabled")[];
                 readonly additionalProperties: false;
             };
             readonly experiments: {

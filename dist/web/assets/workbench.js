@@ -96,7 +96,11 @@ class Chat extends React.Component {
               /* @__PURE__ */ jsx("option", { value: "steer", children: "\u5F15\u5BFC\u5F53\u524D\u4EFB\u52A1" }),
               /* @__PURE__ */ jsx("option", { value: "follow_up", children: "\u5F53\u524D\u7ED3\u675F\u540E\u6267\u884C" })
             ] }),
-            /* @__PURE__ */ jsx("span", { className: "small muted", children: data.project.settings.enabled ? "\u6309\u9700\u534F\u4F5C\u5DF2\u5F00\u542F" : "\u5355\u667A\u80FD\u4F53\u6A21\u5F0F" }),
+            /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
+              /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
+              /* @__PURE__ */ jsx("span", { children: "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F" })
+            ] }),
+            /* @__PURE__ */ jsx("span", { className: "small muted", children: data.project.settings.enabled ? "\u6309\u9700\u5206\u5DE5" : "\u5355\u4E3B Agent" }),
             /* @__PURE__ */ jsx("div", { className: "grow" }),
             session?.state === "running" && !session.taskId ? /* @__PURE__ */ jsxs("button", { type: "button", className: "secondary compact", onClick: () => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), "\u5DF2\u505C\u6B62 Agent\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88"), children: [
               /* @__PURE__ */ jsx(Icon, { name: "stop", size: 14 }),
@@ -357,14 +361,15 @@ class Inspector extends React.Component {
   }
   render() {
     const { data, boot, experiment: e, perform } = this.props;
-    const teams = data.teams.slice().reverse();
+    const teams = data.teams.slice().reverse().filter((t) => this.props.tab !== "chat" || t.rootSessionId === this.props.sessionId);
     const team = teams[0];
     const tasks = team ? data.tasks.filter((t) => t.teamId === team.id) : [];
     const budget = data.budgets.find((b) => b.teamId === team?.id);
     const run = this.currentRun();
     const intents = data.intents.filter((i) => i.experimentId === e?.id), intent = intents[intents.length - 1], approval = data.approvals.find((a) => a.id === intent?.approvalId);
     const runGrantRef = intent?.runGrant ?? approval?.runGrant, runGrant = (data.runGrants ?? []).find((g) => g.id === runGrantRef?.id);
-    const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending");
+    const teamIds = new Set(teams.map((t) => t.id));
+    const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending" && teamIds.has(a.subjectId));
     return /* @__PURE__ */ jsxs("aside", { className: "inspector", children: [
       /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
         /* @__PURE__ */ jsx(Icon, { name: this.props.tab === "experiments" ? "experiment" : "branch" }),
@@ -490,72 +495,32 @@ class Inspector extends React.Component {
           /* @__PURE__ */ jsx(RunFiles, { run, data, perform }, run.id)
         ] }) : null
       ] }) : null,
-      /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: data.project.settings.enabled || team?.state === "active", children: [
+      /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: pendingTeams.length > 0 || ["active", "paused", "draining"].includes(team?.state ?? "") || this.props.tab === "chat" && teams.length > 0, children: [
         /* @__PURE__ */ jsxs("summary", { children: [
-          "\u534F\u4F5C\u4E0E\u8D44\u6E90",
-          /* @__PURE__ */ jsx("span", { children: data.project.settings.enabled ? "\u5DF2\u5F00\u542F" : "\u6309\u9700\u5C55\u5F00" })
+          "\u534F\u4F5C\u8BA1\u5212\u4E0E\u7ED3\u679C",
+          /* @__PURE__ */ jsx("span", { children: pendingTeams.length ? "\u5F85\u5BA1\u6279" : team ? label(team.state) : "\u6682\u65E0\u4EFB\u52A1" })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-          /* @__PURE__ */ jsxs("div", { className: "toggle-heading", children: [
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("h3", { children: "\u591A\u667A\u80FD\u4F53\u534F\u4F5C" }),
-              /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6309\u9700\u5206\u5DE5\uFF0C\u72EC\u7ACB\u9A8C\u6536" })
-            ] }),
-            /* @__PURE__ */ jsx("button", { role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u534F\u4F5C", "aria-checked": data.project.settings.enabled ? "true" : "false", className: "switch " + (data.project.settings.enabled ? "on" : ""), onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) })
-          ] }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5F00\u542F\u53EA\u5141\u8BB8\u59D4\u6D3E\uFF0C\u4E0D\u6269\u5927\u8BA1\u7B97\u3001\u5408\u5E76\u6216\u53D1\u5E03\u6743\u9650\u3002" }),
-          /* @__PURE__ */ jsxs("div", { className: "limits", children: [
-            /* @__PURE__ */ jsxs("span", { children: [
-              "\u9879\u76EE\u52A9\u624B\u4E0A\u9650 ",
-              /* @__PURE__ */ jsx("b", { children: data.project.settings.maxConcurrentAssistants })
-            ] }),
-            /* @__PURE__ */ jsxs("span", { children: [
-              "\u5171\u4EAB\u6B63\u5F0F Run \u4E0A\u9650 ",
-              /* @__PURE__ */ jsx("b", { children: data.compute?.configuration.limits.maxRuns ?? "\u5F85\u52A0\u8F7D" })
-            ] })
-          ] }),
-          data.agentCapacity ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-            "\u5BBF\u4E3B Worker ",
-            data.agentCapacity.counts.held,
-            "/",
-            data.agentCapacity.maxWorkers,
-            " \xB7 \u5BBF\u4E3B\u53EF\u7528 ",
-            data.agentCapacity.available,
-            " \xB7 \u672A\u77E5\u4FDD\u7559 ",
-            data.agentCapacity.counts.unknown,
-            " \xB7 \u672C\u9879\u76EE\u53EF\u7528 ",
-            data.agentCapacity.project?.available ?? "\u5F85\u6838\u5BF9",
-            "\u3002"
-          ] }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BBF\u4E3B Worker \u5BB9\u91CF\u5F85\u52A0\u8F7D\u3002" }),
-          data.modelHttp ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-            "\u6A21\u578B HTTP \u8BF7\u6C42 ",
-            data.modelHttp.counts.active,
-            "/",
-            data.modelHttp.configuration.maxRequests,
-            " \xB7 \u6392\u961F ",
-            data.modelHttp.counts.queued,
-            " \xB7 \u672A\u77E5\u4FDD\u7559 ",
-            data.modelHttp.counts.unknown,
-            " \xB7 \u53EF\u6D3E\u53D1 ",
-            data.modelHttp.available,
-            "\u3002Worker \u4E0E\u8BF7\u6C42\u5206\u522B\u8BA1\u91CF\u3002"
-          ] }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6A21\u578B HTTP \u8BF7\u6C42\u72B6\u6001\u5F85\u52A0\u8F7D\u3002" }),
-          this.props.onScheduler ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: this.props.onScheduler, children: "\u67E5\u770B\u8D44\u6E90\u4E0E\u8C03\u5EA6" }) : null,
-          /* @__PURE__ */ jsxs("button", { className: "secondary full", onClick: this.props.onTeam, disabled: !data.project.settings.enabled, children: [
-            /* @__PURE__ */ jsx(Icon, { name: "plus", size: 15 }),
-            "\u521B\u5EFA\u534F\u4F5C\u8BA1\u5212"
-          ] })
+          this.props.tab === "chat" ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }),
+          this.props.onScheduler ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: this.props.onScheduler, children: "\u67E5\u770B\u8D44\u6E90\u4E0E\u8C03\u5EA6" }) : null
         ] }),
-        pendingTeams.map((a) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-          /* @__PURE__ */ jsx("div", { className: "small-label", children: "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" }),
-          /* @__PURE__ */ jsx("h3", { children: data.teams.find((t) => t.id === a.subjectId)?.goal }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: a.reason }),
-          /* @__PURE__ */ jsx("button", { className: "primary full", onClick: () => perform(async () => {
-            await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
-            await api(`/teams/${a.subjectId}/activate`, {});
-          }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u6279\u51C6"), children: "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
-          /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false })), children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" })
-        ] }, a.id)),
+        pendingTeams.map((a) => {
+          const pendingTeam = teams.find((t) => t.id === a.subjectId), canStart = data.project.settings.enabled && pendingTeam?.state === "awaiting_approval" && pendingTeam.delegationEnabled;
+          return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
+            /* @__PURE__ */ jsx("div", { className: "small-label", children: "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" }),
+            /* @__PURE__ */ jsx("h3", { children: pendingTeam?.goal }),
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: a.reason }),
+            !canStart ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u8BA1\u5212\u5DF2\u505C\u6B62\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u63D0\u51FA\u4EFB\u52A1\u3002" }) : null,
+            /* @__PURE__ */ jsx("button", { className: "primary full", disabled: !canStart, onClick: () => {
+              if (!canStart) return;
+              perform(async () => {
+                await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
+                await api(`/teams/${a.subjectId}/activate`, {});
+              }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u6279\u51C6");
+            }, children: "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
+            /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false })), children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" })
+          ] }, a.id);
+        }),
         team ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
           /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
             /* @__PURE__ */ jsx("h3", { children: "\u5F53\u524D\u56E2\u961F" }),
@@ -630,7 +595,7 @@ class Inspector extends React.Component {
             team.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/teams/${team.id}/resume`, {})), children: "\u6062\u590D" }) : null,
             /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
           ] })
-        ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: "\u534F\u4F5C\u8BA1\u5212\u3001\u52A9\u624B\u72B6\u6001\u4E0E\u5BA1\u67E5\u7ED3\u679C\u4F1A\u51FA\u73B0\u5728\u8FD9\u91CC\u3002\u4E0D\u4F1A\u4E3A\u5C55\u793A\u6548\u679C\u81EA\u52A8\u521B\u5EFA Agent\u3002" })
+        ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: this.props.tab === "chat" ? "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u4E0D\u4F1A\u5728 Inspector \u4E2D\u624B\u52A8\u521B\u5EFA\uFF0C\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" : "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "inspector-footer", children: [
         /* @__PURE__ */ jsx("span", { className: "status-dot" }),
