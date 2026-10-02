@@ -69,8 +69,8 @@ test('prebuilt CLI and authenticated HTTP core start in a directory without node
       try {
         const port = await service.listen(), base = 'http://127.0.0.1:' + port;
         assert.equal((await fetch(base + '/api/health')).status, 200);
-        assert.equal((await fetch(base + '/api/bootstrap')).status, 401);
-        assert.equal((await fetch(base + '/api/bootstrap', {headers:{Authorization:'Bearer ' + service.token}})).status, 200);
+        assert.equal((await fetch(base + '/api/bootstrap')).status, 200);
+        assert.equal((await fetch(base + '/api/bootstrap', {headers:{Origin:'https://other.invalid'}})).status, 403);
         assert.match(await (await fetch(base + '/')).text(), /<html/);
       } finally { await service.close(); }
     `], {cwd: dir, env, encoding: 'utf8', timeout: 15000});

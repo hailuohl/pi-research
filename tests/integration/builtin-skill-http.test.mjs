@@ -12,7 +12,7 @@ const legacy='6683733f868b846a6bed3434bba1ff2bdceed99aece0538ac75fe1c70bbd89f2';
 test('HTTP and CLI expose explicit builtin upgrades and exact composite rollback while session reads remain pinned',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'pi-builtin-http-')),server=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});
  try{
-  const app=server.app,p=app.projects.create(USER,{name:'Builtin upgrade transport'}),oldSession=app.sessions.create(USER,p.id,{}),port=await server.listen(),headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'};
+  const app=server.app,p=app.projects.create(USER,{name:'Builtin upgrade transport'}),oldSession=app.sessions.create(USER,p.id,{}),port=await server.listen(),headers={'Content-Type':'application/json'};
   const call=async(name,input={},sessionId)=>{const r=await fetch(`http://127.0.0.1:${port}/api/operations/${name}`,{method:'POST',headers:{...headers,'Idempotency-Key':randomUUID()},body:JSON.stringify({projectId:p.id,input,...(sessionId?{sessionId}:{})})});return {status:r.status,value:await r.json()};};
   const r=app.skills.import(USER,p.id,{packageId:'kept-method',revisionTag:'v1',description:'Keep this reviewed text through builtin upgrade',roles:['coordinator'],license:null,requirements:{tools:[],backends:[],artifactIds:[]},files:[{path:'SKILL.md',contentBase64:Buffer.from('UNIT reviewed method').toString('base64')}]},'import');app.skills.review(USER,p.id,{revisionId:r.id,decision:'approved',note:'Reviewed test text'});
   const first=await call('skill_bundle_configure',{expectedVersion:0,revisionIds:[r.id],builtinBundleId:legacy});assert.equal(first.status,200,JSON.stringify(first.value));assert.equal(first.value.builtinBundleId,legacy);
@@ -38,7 +38,7 @@ test('pre-upgrade Registry and service-only configuration receipts replay their 
    const input={expectedVersion:0,revisionIds:[]},old={version:1,bundleId:legacy,revisionIds:[]},key='legacy-'+layer,scope=layer==='registry'?`operation:user:${p.id}:project`:`skill-configure:${p.id}`,request=layer==='registry'?{name:'skill_bundle_configure',input}:input;
    // Exact former wire schema, seeded only into this isolated legacy-receipt fixture.
    app.store.operation(scope,key,request,()=>old);const before=app.store.db.prepare('SELECT * FROM operations WHERE scope=? AND key=?').get(scope,key),configurationBefore=app.store.get('skill-configuration',p.id);
-   const port=await server.listen(),headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json','Idempotency-Key':key};
+   const port=await server.listen(),headers={'Content-Type':'application/json','Idempotency-Key':key};
    const call=async value=>{const r=await fetch(`http://127.0.0.1:${port}/api/operations/skill_bundle_configure`,{method:'POST',headers,body:JSON.stringify({projectId:p.id,input:value})});return {status:r.status,value:await r.json()};};
    assert.equal(configured.builtinBundleId,legacy);assert.deepEqual(await call(input),{status:200,value:old});assert.deepEqual(await call(input),{status:200,value:old});
    assert.deepEqual(app.store.db.prepare('SELECT * FROM operations WHERE scope=? AND key=?').get(scope,key),before);assert.deepEqual(app.store.get('skill-configuration',p.id),configurationBefore);

@@ -170,8 +170,7 @@ async function main() {
             const body = option('--body');
             if (body)
                 parseJson(body);
-            const token = readFileSync(join(dataDir, 'access.token'), 'utf8').trim();
-            const response = await fetch(`http://127.0.0.1:${port}/api${path}`, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'Idempotency-Key': option('--key') ?? randomUUID() }, body: method === 'GET' ? undefined : body ?? '{}', redirect: 'error', signal: AbortSignal.timeout(30000) });
+            const response = await fetch(`http://127.0.0.1:${port}/api${path}`, { method, headers: { 'Content-Type': 'application/json', 'Idempotency-Key': option('--key') ?? randomUUID() }, body: method === 'GET' ? undefined : body ?? '{}', redirect: 'error', signal: AbortSignal.timeout(30000) });
             const result = await response.json();
             print(result);
             if (!response.ok)

@@ -14,7 +14,7 @@ test('HTTP/CLI history is bounded, project-scoped, stable on refresh, and cannot
   // The existing Host persists diagnostics up to 32,000 characters; failed history must remain readable.
   app.store.update('session',old.id,old.version,{lastError:'e'.repeat(32000)});
   for(let i=0;i<40;i++)app.sessions.create(USER,p.id,{title:`new ${i}`});const messages=Array.from({length:23},(_,i)=>app.store.create('message',p.id,{sessionId:old.id,role:'assistant',content:`message ${i}\n`+'内容🙂'.repeat(2500),mode:'prompt',status:'completed'}));
-  const port=await server.listen(),base=`http://127.0.0.1:${port}/api`,headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'};
+  const port=await server.listen(),base=`http://127.0.0.1:${port}/api`,headers={'Content-Type':'application/json'};
   const read=async path=>{const r=await fetch(base+path,{headers});return {status:r.status,body:await r.json()};},call=async(name,input,projectId=p.id)=>{const r=await fetch(base+'/operations/'+name,{method:'POST',headers,body:JSON.stringify({projectId,input})});return {status:r.status,body:await r.json()};};
   const catalog=await call('session_list',{query:'old anchor'});assert.equal(catalog.status,200);assert.equal(catalog.body.items.length,1);assert.equal(catalog.body.items[0].id,old.id);assert.ok(!JSON.stringify(catalog.body).includes(dir));
   const snapshot=await read(`/projects/${p.id}/state?sessionId=${old.id}`);assert.equal(snapshot.status,200);assert.equal(snapshot.body.sessions.length,31);assert.ok(snapshot.body.sessions.some(s=>s.id===old.id));

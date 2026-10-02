@@ -9,11 +9,11 @@
 本地启动：`node --env-file=.env dist/apps/server/index.js`；已有控制器或作业活动时沿原进程继续，不为收口重启。模型配置和密钥留本地。未使用 `.env` 时可直接运行 `node dist/apps/server/index.js`，是否可调用模型由运行时状态决定。
 
 - `GET /api/health`：源包身份 `0.3.1-experimental` 与 `local-owner-only`，不代表功能全范围或新发布。
-- 带 Bearer owner token 的 `GET /api/bootstrap`、`GET /api/capabilities`：运行时状态与已保存的能力验证范围；能力清单不是当前模型/计算目标探测。
+- 直接访问本机的 `GET /api/bootstrap`、`GET /api/capabilities`：运行时状态与已保存的能力验证范围；能力清单不是当前模型/计算目标探测。
 - `GET /api/operations`：当前 **132** 项精确输入/输出契约。owner 使用 `POST /api/operations/<id>`，请求为 `{projectId, sessionId?, input}`；写操作提供 `Idempotency-Key`。这里的 `sessionId` 只选择工作区，不授予 Agent 身份。
 - CLI：`node dist/apps/cli/index.js operation <id> --project <id> --input-file <JSON文件> [--session <id>] [--key <id>] [--data <数据目录>]`。Pi 使用同一 Registry，由 Host 派发真实角色、Task/Attempt 与租约，无法通过 owner HTTP 请求伪造。
 
-服务限本地回环、owner token 与同源边界。科研数据、数据库、原生会话和认证文件保留本机；源码远端备份不等于科研成果对外发布。
+服务限本地回环、Host 白名单、同源 Origin 与 Fetch Metadata 边界；工作台无需访问令牌。科研数据、数据库、原生会话和认证文件保留本机；源码远端备份不等于科研成果对外发布。
 
 ## 可用与受限清单
 

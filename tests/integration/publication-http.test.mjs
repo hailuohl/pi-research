@@ -3,7 +3,7 @@ import {createHttpServer} from '../../dist/apps/server/http.js';import {USER} fr
 test('publication owner HTTP/CLI contracts preserve immutable revisions, diagnostics, paging and approvals',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'pi-publication-http-')),server=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});
  try{
-  const app=server.app,p=app.projects.create(USER,{name:'Publication transport'}),port=await server.listen(),headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'};
+  const app=server.app,p=app.projects.create(USER,{name:'Publication transport'}),port=await server.listen(),headers={'Content-Type':'application/json'};
   const call=async(name,input={},key=randomUUID(),pid=p.id)=>{const r=await fetch(`http://127.0.0.1:${port}/api/operations/${name}`,{method:'POST',headers:{...headers,'Idempotency-Key':key},body:JSON.stringify({projectId:pid,input})});return {status:r.status,value:await r.json()};};
   const templates=await call('publication_templates');assert.equal(templates.status,200);assert.equal(templates.value.length,3);assert.equal((await call('publication_status')).value.configured,false);
   const profile=compilerProfile(process.cwd());app.store.create('publication-compiler-settings',null,{...profile,dockerContext:'default',imageDigest:'sha256:'+'a'.repeat(64),imageId:'sha256:'+'a'.repeat(64)},'global');

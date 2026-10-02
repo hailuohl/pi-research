@@ -9,7 +9,6 @@ export interface ServerOptions {
 export declare function createHttpServer(options: ServerOptions): {
     app: ResearchApp;
     host: AgentHost;
-    token: string;
     server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
     listen: () => Promise<number>;
     close: () => Promise<void>;

@@ -8,7 +8,7 @@ const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==
 
 test('all twelve workflow buttons preserve project and session while closing mobile navigation',()=>{
   const app=synchronousState(new App({}));
-  Object.assign(app.state,{loggedIn:true,boot:{projects:[]},projectId:'project',sessionId:'session',navigationOpen:true});
+  Object.assign(app.state,{boot:{projects:[]},projectId:'project',sessionId:'session',navigationOpen:true});
   const buttons=elements(app.render()).filter(node=>node.type==='button'&&node.props.onClick&&node.props.children?.[1]?.type==='span');
   assert.deepEqual(buttons.map(node=>text(node.props.children[1])).sort(),['研究会话','实验与运行','研究活动','实现与审查','变更提案','文献检索','项目工作区','资料与证据','报告与成果','技能与连接器','资源与调度','设置与能力'].sort());
   for(const button of buttons){

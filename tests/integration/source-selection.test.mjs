@@ -15,7 +15,7 @@ test('HTTP, CLI and Pi dispatcher select degree-2 child source while project rem
   try {
     const port = await server.listen(), app = server.app;
     const request = async (path, body) => {
-      const response = await fetch(`http://127.0.0.1:${port}/api${path}`, {method: body === undefined ? 'GET' : 'POST', headers: {Authorization: `Bearer ${server.token}`, 'Content-Type': 'application/json', 'Idempotency-Key': randomUUID()}, ...(body === undefined ? {} : {body: JSON.stringify(body)})});
+      const response = await fetch(`http://127.0.0.1:${port}/api${path}`, {method: body === undefined ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': randomUUID()}, ...(body === undefined ? {} : {body: JSON.stringify(body)})});
       return {status: response.status, data: await response.json()};
     };
     const ok = async (path, body) => {const r = await request(path, body); assert.equal(r.status, 200, JSON.stringify(r.data)); return r.data;};

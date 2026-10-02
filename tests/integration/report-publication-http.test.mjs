@@ -15,7 +15,7 @@ test('owner HTTP and CLI report contracts freeze manuscript results and preserve
  const dir=mkdtempSync(join(tmpdir(),'pi-report-publication-')),server=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});
  try{
   const app=server.app,p=app.projects.create(USER,{name:'UNIT manuscript report transport'}),fixture=publicationFixture(app,p.id),port=await server.listen();
-  const headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'};
+  const headers={'Content-Type':'application/json'};
   const call=async(name,input,key=randomUUID(),pid=p.id)=>{const r=await fetch(`http://127.0.0.1:${port}/api/operations/${name}`,{method:'POST',headers:{...headers,'Idempotency-Key':key},body:JSON.stringify({projectId:pid,input})});return {status:r.status,value:await r.json()};};
   const input={title:'UNIT fixed manuscript report',publicationResultIds:[fixture.result.id]},key=randomUUID(),created=await call('report_create',input,key);
   assert.equal(created.status,200,JSON.stringify(created.value));assert.deepEqual(await call('report_create',input,key),created);

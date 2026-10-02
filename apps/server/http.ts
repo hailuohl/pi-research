@@ -1,8 +1,7 @@
 import {operationRoute} from './operation-routes.js';
 import http from 'node:http';
-import { readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { ResearchApp } from '../../packages/research-app.js';
 import { AgentHost } from '../../packages/scheduler/agent-host.js';
@@ -18,12 +17,8 @@ export interface ServerOptions {
     port?: number;
 }
 export function createHttpServer(options: ServerOptions) {
-    const app = new ResearchApp(options.dataDir, options.repoRoot), host = new AgentHost(app), tokenFile = join(app.context.dataDir, 'access.token');
+    const app = new ResearchApp(options.dataDir, options.repoRoot), host = new AgentHost(app);
     const events=new EventStreamHub(app.store);
-    if (!existsSync(tokenFile))
-        writeFileSync(tokenFile, randomBytes(32).toString('hex'), { mode: 0o600, flag: 'wx' });
-    const token = readFileSync(tokenFile, 'utf8').trim();
-    ensure(token.length >= 32, 'TOKEN_INVALID', '本地访问令牌文件无效', 500);
     let port = options.port ?? 4317;
     const server = http.createServer(async (req, res) => {
         const headers = { 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" };
@@ -32,6 +27,7 @@ export function createHttpServer(options: ServerOptions) {
         try {
             const allowed = [`127.0.0.1:${port}`, `localhost:${port}`];
             ensure(allowed.includes(req.headers.host ?? ''), 'HOST_DENIED', '只允许回环地址访问', 403);
+            ensure(req.headers['sec-fetch-site'] !== 'cross-site', 'ORIGIN_DENIED', '拒绝跨站请求', 403);
             if (req.headers.origin)
                 ensure(req.headers.origin === `http://${req.headers.host}`, 'ORIGIN_DENIED', '拒绝跨站请求', 403);
             const url = new URL(req.url ?? '/', `http://${req.headers.host}`), path = url.pathname;
@@ -40,8 +36,6 @@ export function createHttpServer(options: ServerOptions) {
                 return json({ ok: true, version: '0.3.1-experimental', mode: 'local-owner-only' });
             }
             if (path.startsWith('/api/')) {
-                const provided = Buffer.from((req.headers.authorization ?? '').replace(/^Bearer /, '')), expected = Buffer.from(token);
-                ensure(provided.length === expected.length && timingSafeEqual(provided, expected), 'UNAUTHORIZED', '需要启动终端显示的本地访问令牌', 401);
                 const route = path.slice(4);
                 if (req.method === 'GET') {
                     if(route==='/events/stream'){const query=eventQuery(url,true,req.headers['last-event-id'] as string|undefined);if(query.projectId)app.projects.get(USER,query.projectId);events.open(req,res,query);return;}
@@ -118,5 +112,5 @@ export function createHttpServer(options: ServerOptions) {
     server.headersTimeout = 10000;
     server.maxHeadersCount = 50;
     let closing:Promise<void>|undefined;
-    return { app, host, token, server, listen: () => new Promise<number>((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = (server.address() as AddressInfo).port; host.start(); resolve(port); }); }), close: () => closing??=(async()=>{events.close();await host.stop(); server.closeIdleConnections(); await new Promise<void>(resolve => server.close(() => resolve())); app.close();})() };
+    return { app, host, server, listen: () => new Promise<number>((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = (server.address() as AddressInfo).port; host.start(); resolve(port); }); }), close: () => closing??=(async()=>{events.close();await host.stop(); server.closeIdleConnections(); await new Promise<void>(resolve => server.close(() => resolve())); app.close();})() };
 }

@@ -61,7 +61,7 @@ test('outer transaction failure removes imported files and mode metadata',async(
 test('HTTP import preflights Git outside SQLite and replays its receipt after the original source disappears',{skip:!hasGit},async()=>{
  const dir=mkdtempSync(join(tmpdir(),'project-import-http-')),source=join(dir,'source');mkdirSync(source);repository({source});
  const server=createHttpServer({dataDir:join(dir,'data'),repoRoot:process.cwd(),port:0}),port=await server.listen(),input={name:'HTTP Git',sourcePath:source};
- const request=async body=>{const response=await fetch(`http://127.0.0.1:${port}/api/projects/import`,{method:'POST',headers:{Authorization:`Bearer ${server.token}`,'Content-Type':'application/json','Idempotency-Key':'import-once'},body:JSON.stringify(body)});return {status:response.status,body:await response.json()};};
+ const request=async body=>{const response=await fetch(`http://127.0.0.1:${port}/api/projects/import`,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':'import-once'},body:JSON.stringify(body)});return {status:response.status,body:await response.json()};};
  try{const first=await request(input);assert.equal(first.status,200,JSON.stringify(first.body));renameSync(source,join(dir,'moved'));const replay=await request(input);assert.equal(replay.status,200);assert.deepEqual(replay.body,first.body);assert.equal(server.app.store.list('project').length,1);
   const conflict=await request({...input,name:'Different request'});assert.equal(conflict.body.error.code,'IDEMPOTENCY_CONFLICT');
  }finally{await server.close();rmSync(dir,{recursive:true,force:true});}

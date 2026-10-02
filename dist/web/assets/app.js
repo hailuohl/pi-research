@@ -6,7 +6,7 @@ import { IntegrationsView } from "./integrations.js";
 import { ChangesView } from "./changes.js";
 import { ImplementationView } from "./implementation.js";
 import { CampaignView } from "./campaigns.js";
-import { api, ApiError, hasToken, setToken } from "./api.js";
+import { api } from "./api.js";
 import { short } from "./models.js";
 import { Icon, Modal } from "./ui.js";
 import { Chat, Experiments, Inspector } from "./workbench.js";
@@ -168,7 +168,7 @@ class ExperimentModal extends React.Component {
 class App extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: saved().tab ?? "chat", selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedRunGrant: saved().selectedRunGrant ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, tokenDraft: "", loggedIn: hasToken(), navigationOpen: false };
+    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: saved().tab ?? "chat", selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedRunGrant: saved().selectedRunGrant ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, navigationOpen: false };
     this.experimentSelections = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([, value]) => typeof value === "string"));
     this.closeNavigationOnResize = () => {
       if (window.innerWidth > 760 && this.state.navigationOpen) this.setState({ navigationOpen: false });
@@ -218,12 +218,10 @@ class App extends React.Component {
   }
   componentDidMount() {
     window.addEventListener("resize", this.closeNavigationOnResize);
-    if (this.state.loggedIn) void this.refresh();
+    void this.refresh();
     this.timer = window.setInterval(() => {
-      if (this.state.loggedIn) {
-        if (this.feed) this.feed.wake();
-        else void this.refresh(true);
-      }
+      if (this.feed) this.feed.wake();
+      else void this.refresh(true);
     }, 2e4);
   }
   componentWillUnmount() {
@@ -240,11 +238,6 @@ class App extends React.Component {
       if (["projectId", "sessionId", "tab", "selectedExp", "selectedRun", "selectedReport", "selectedCampaign", "selectedRunGrant", "selectedDiscoveryGrant", "selectedDocument", "historyAnchor"].some((k) => prev[k] !== this.state[k]))
         localStorage.setItem("pi-research-ui-v1", JSON.stringify({ experimentSelections: this.experimentSelections, projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport, selectedCampaign: this.state.selectedCampaign, selectedRunGrant: this.state.selectedRunGrant, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, selectedDocument: this.state.selectedDocument, historyAnchor: { projectId: this.state.projectId, sessionId: this.state.sessionId, anchor: this.state.historyAnchor } }));
     } catch {
-    }
-    if (!this.state.loggedIn && prev.loggedIn) {
-      this.feed?.stop();
-      this.feed = void 0;
-      this.invalidateRead();
     }
   }
   invalidateRead() {
@@ -295,8 +288,7 @@ class App extends React.Component {
       return true;
     } catch (error) {
       if (!this.mounted || epoch !== this.refreshEpoch || controller.signal.aborted) return false;
-      if (error instanceof ApiError && error.status === 401) this.setState({ loggedIn: false, error: error.message });
-      else this.setState((previous) => ({ ...previous, connected: false, ...!quiet ? { error: error instanceof Error ? error.message : String(error) } : {} }));
+      this.setState((previous) => ({ ...previous, connected: false, ...!quiet ? { error: error instanceof Error ? error.message : String(error) } : {} }));
       return false;
     } finally {
       if (this.readController === controller) this.readController = void 0;
@@ -478,31 +470,7 @@ class App extends React.Component {
     return null;
   }
   render() {
-    const { boot, data, loggedIn, tab } = this.state;
-    if (!loggedIn)
-      return /* @__PURE__ */ jsxs("main", { className: "login", children: [
-        /* @__PURE__ */ jsxs("div", { className: "brand", children: [
-          /* @__PURE__ */ jsx("span", { children: "\u03C0" }),
-          "Pi Research"
-        ] }),
-        /* @__PURE__ */ jsx("h1", { children: "\u6253\u5F00\u4F60\u7684\u79D1\u7814\u5DE5\u4F5C\u53F0" }),
-        /* @__PURE__ */ jsx("p", { children: "\u8BF7\u4F7F\u7528\u542F\u52A8\u7EC8\u7AEF\u4E2D\u7684\u5B8C\u6574\u5730\u5740\uFF0C\u6216\u5728\u8FD9\u91CC\u7C98\u8D34\u672C\u673A\u8BBF\u95EE\u4EE4\u724C\u3002" }),
-        /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
-          e.preventDefault();
-          setToken(this.state.tokenDraft);
-          this.setState({ loggedIn: true, error: "" }, () => {
-            void this.refresh();
-          });
-        }, children: [
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u672C\u5730\u8BBF\u95EE\u4EE4\u724C",
-            /* @__PURE__ */ jsx("input", { "aria-label": "\u672C\u5730\u8BBF\u95EE\u4EE4\u724C", type: "password", value: this.state.tokenDraft, onChange: (e) => this.setState({ tokenDraft: e.target.value }), required: true })
-          ] }),
-          /* @__PURE__ */ jsx("button", { className: "primary", children: "\u8FDB\u5165\u5DE5\u4F5C\u53F0" })
-        ] }),
-        this.state.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.error }) : null,
-        /* @__PURE__ */ jsx("small", { children: "\u53EA\u7ED1\u5B9A 127.0.0.1\u3002\u4EE4\u724C\u4FDD\u5B58\u5728\u5F53\u524D\u6D4F\u89C8\u5668\u4F1A\u8BDD\u4E2D\uFF0C\u4E0D\u653E\u5165\u8BF7\u6C42 URL\u3002" })
-      ] });
+    const { boot, data, tab } = this.state;
     const currentSession = data?.sessions.find((s) => s.id === this.state.sessionId), experiment = data?.experiments.find((e) => e.id === this.state.selectedExp);
     return /* @__PURE__ */ jsxs("div", { className: "app-shell" + (this.state.navigationOpen ? " navigation-open" : ""), onKeyDown: (event) => {
       if (event.key === "Escape" && this.state.navigationOpen) this.toggleNavigation();

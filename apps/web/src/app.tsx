@@ -5,7 +5,7 @@ import {IntegrationsView} from './integrations.js';
 import {ChangesView} from './changes.js';
 import {ImplementationView} from './implementation.js';
 import { CampaignView } from './campaigns.js';
-import { api, ApiError, hasToken, setToken } from './api.js';
+import { api } from './api.js';
 import type { Bootstrap, ProjectState, Row, DocumentLocation, SessionHistoryPage, SessionView } from './models.js';
 import { short, label } from './models.js';
 import { Icon, Modal, Empty } from './ui.js';
@@ -37,8 +37,6 @@ interface State {
     error: string;
     notice: string;
     connected: boolean;
-    tokenDraft: string;
-    loggedIn: boolean;
     navigationOpen: boolean;
 }
 const navigation = [['chat', '研究会话', 'chat'], ['scheduler','资源与调度','settings'], ['implementation','实现与审查','branch'], ['campaigns', '研究活动', 'branch'], ['experiments', '实验与运行', 'experiment'], ['workspace', '项目工作区', 'folder'], ['changes','变更提案','branch'], ['literature', '文献检索', 'search'], ['integrations', '技能与连接器', 'settings'], ['evidence', '资料与证据', 'evidence'], ['reports', '报告与成果', 'report'], ['settings', '设置与能力', 'settings']];
@@ -98,7 +96,7 @@ class ExperimentModal extends React.Component<{
     }
 }
 export class App extends React.Component<{}, State> {
-    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedRunGrant:saved().selectedRunGrant??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [], history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, tokenDraft: '', loggedIn: hasToken(), navigationOpen: false };
+    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: saved().tab ?? 'chat', selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedRunGrant:saved().selectedRunGrant??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [], history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, navigationOpen: false };
     private experimentSelections:Record<string,string> = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([,value])=>typeof value==='string')) as Record<string,string>;
     private closeNavigationOnResize = () => { if(window.innerWidth>760&&this.state.navigationOpen)this.setState({navigationOpen:false}); };
     private navigationToggle:HTMLButtonElement|null=null;
@@ -111,15 +109,14 @@ export class App extends React.Component<{}, State> {
     private noticeTimer?: number;
     componentDidMount() {
         window.addEventListener('resize',this.closeNavigationOnResize);
-        if(this.state.loggedIn)void this.refresh();
-        this.timer=window.setInterval(()=>{if(this.state.loggedIn){if(this.feed)this.feed.wake();else void this.refresh(true);}},20000);
+        void this.refresh();
+        this.timer=window.setInterval(()=>{if(this.feed)this.feed.wake();else void this.refresh(true);},20000);
     }
     componentWillUnmount(){if(typeof window!=='undefined')window.removeEventListener?.('resize',this.closeNavigationOnResize);this.mounted=false;this.invalidateRead();this.feed?.stop();clearInterval(this.timer);clearTimeout(this.noticeTimer);}
     componentDidUpdate(_:any,prev:State){
         if(this.state.data?.project.id===this.state.projectId&&this.state.data.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;
         try { if(['projectId','sessionId','tab','selectedExp','selectedRun','selectedReport','selectedCampaign','selectedRunGrant','selectedDiscoveryGrant','selectedDocument','historyAnchor'].some(k=>(prev as any)[k] !==(this.state as any)[k]))
             localStorage.setItem('pi-research-ui-v1',JSON.stringify({experimentSelections:this.experimentSelections,projectId:this.state.projectId,sessionId:this.state.sessionId,tab:this.state.tab,selectedExp:this.state.selectedExp,selectedRun:this.state.selectedRun,selectedReport:this.state.selectedReport,selectedCampaign:this.state.selectedCampaign,selectedRunGrant:this.state.selectedRunGrant,selectedDiscoveryGrant:this.state.selectedDiscoveryGrant,selectedDocument:this.state.selectedDocument,historyAnchor:{projectId:this.state.projectId,sessionId:this.state.sessionId,anchor:this.state.historyAnchor}})); } catch { /* Viewing stays usable when browser storage is unavailable. */ }
-        if(!this.state.loggedIn&&prev.loggedIn){this.feed?.stop();this.feed=undefined;this.invalidateRead();}
     }
     private invalidateRead(){this.refreshEpoch++;this.readController?.abort();this.refreshing=undefined;}
     refresh(quiet=false):Promise<boolean>{
@@ -150,8 +147,7 @@ export class App extends React.Component<{}, State> {
             return true;
         }catch(error){
             if(!this.mounted||epoch!==this.refreshEpoch||controller.signal.aborted)return false;
-            if(error instanceof ApiError&&error.status===401)this.setState({loggedIn:false,error:error.message});
-            else this.setState(previous=>({...previous,connected:false,...(!quiet?{error:error instanceof Error?error.message:String(error)}:{})}));
+            this.setState(previous=>({...previous,connected:false,...(!quiet?{error:error instanceof Error?error.message:String(error)}:{})}));
             return false;
         }finally{if(this.readController===controller)this.readController=undefined;}
     }
@@ -239,9 +235,7 @@ export class App extends React.Component<{}, State> {
         this.setState({ navigationOpen }, () => document.getElementById(navigationOpen ? 'navigation-close' : 'navigation-toggle')?.focus());
     };
     render() {
-        const { boot, data, loggedIn, tab } = this.state;
-        if (!loggedIn)
-            return <main className="login"><div className="brand"><span>π</span>Pi Research</div><h1>打开你的科研工作台</h1><p>请使用启动终端中的完整地址，或在这里粘贴本机访问令牌。</p><form onSubmit={(e: any) => { e.preventDefault(); setToken(this.state.tokenDraft); this.setState({ loggedIn: true, error: '' }, () => { void this.refresh(); }); }}><label>本地访问令牌<input aria-label="本地访问令牌" type="password" value={this.state.tokenDraft} onChange={(e: any) => this.setState({ tokenDraft: e.target.value })} required/></label><button className="primary">进入工作台</button></form>{this.state.error ? <p role="alert" className="error-text">{this.state.error}</p> : null}<small>只绑定 127.0.0.1。令牌保存在当前浏览器会话中，不放入请求 URL。</small></main>;
+        const { boot, data, tab } = this.state;
         const currentSession = data?.sessions.find(s => s.id === this.state.sessionId), experiment = data?.experiments.find(e => e.id === this.state.selectedExp);
         return <div className={'app-shell' + (this.state.navigationOpen ? ' navigation-open' : '')} onKeyDown={event=>{if(event.key==='Escape'&&this.state.navigationOpen)this.toggleNavigation();}}><nav id="main-navigation" className="sidebar" aria-label="主导航"><div className="sidebar-brand"><a className="brand" href="#" onClick={(e: any) => { e.preventDefault(); this.setState({ tab: 'chat', navigationOpen: false }); }}><span>π</span><div>Pi Research<small>科研工作台</small></div></a><button id="navigation-close" className="icon-button mobile-navigation" aria-label="关闭导航" onClick={this.toggleNavigation}><Icon name="close"/></button></div>
  <label className="sidebar-project">项目<select aria-label="当前项目" value={this.state.projectId} onChange={(e: any) => this.switchProject(e.target.value)}>{!boot?.projects.length ? <option value="">尚未创建项目</option> : boot.projects.map(p => <option value={p.id} key={p.id}>{p.name}</option>)}</select></label><button className="new-project" onClick={() => this.setState({ navigationOpen: false },()=>this.open('project'))}><Icon name="plus" size={16}/>新建项目</button>

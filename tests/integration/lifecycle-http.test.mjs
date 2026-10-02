@@ -8,7 +8,7 @@ import {createHttpServer} from '../../dist/apps/server/http.js';
 test('HTTP archive blocks an already approved unsubmitted intent and preserves history access',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'lifecycle-http-')),server=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});const port=await server.listen();
  try {
-  const req=async(path,body)=>{const r=await fetch(`http://127.0.0.1:${port}/api${path}`,{method:body?'POST':'GET',headers:{Authorization:`Bearer ${server.token}`,'Content-Type':'application/json','Idempotency-Key':randomUUID()},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};};
+  const req=async(path,body)=>{const r=await fetch(`http://127.0.0.1:${port}/api${path}`,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','Idempotency-Key':randomUUID()},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()};};
   const p=(await req('/projects',{name:'Archive regression',template:'curve-fit'})).data;
   const e=(await req('/experiments',{projectId:p.id,title:'base'})).data;
   const i=(await req('/run-intents',{experimentId:e.id})).data;

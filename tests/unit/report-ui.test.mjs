@@ -111,7 +111,7 @@ test('PDF reference identity binds every location and artifact field; a mismatch
  }
 });
 
-test('PDF downloads use authenticated artifact IDs only after explicit clicks and late reads cannot grant actions',async t=>{
+test('PDF downloads use fixed artifact IDs only after explicit clicks and late reads cannot grant actions',async t=>{
  const oldFetch=globalThis.fetch,oldDocument=globalThis.document,oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;
  t.after(()=>{globalThis.fetch=oldFetch;globalThis.document=oldDocument;URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;});
  const pending=[],requests=[],downloads=[];
@@ -124,7 +124,7 @@ test('PDF downloads use authenticated artifact IDs only after explicit clicks an
  const valid=v.readReference(reference.id);pending[2](referenceResponse(reference));await valid;assert.equal(requests.length,3,'reading never starts downloads');
  for(const [kind,id,name] of [['raw','raw-pdf','fixed-v1.pdf'],['image','page-png','fixed-v1-page-2.png']]){
   const download=v.downloadDocument(kind),request=requests.at(-1);
-  assert.equal(request.url,`/api/artifacts/${id}/content`);assert.ok(request.options.headers.Authorization.startsWith('Bearer '));
+  assert.equal(request.url,`/api/artifacts/${id}/content`);assert.equal(Object.hasOwn(request.options?.headers??{},'Authorization'),false);
   pending.at(-1)({ok:true,blob:async()=>new Blob(['fixed bytes'])});await download;
   assert.deepEqual(downloads.at(-1),{name,href:'blob:local-download'});
  }

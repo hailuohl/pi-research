@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const {ProjectEventFeed}=await import('../../dist/web/assets/event-feed.js');
 const {LogView,LOG_PAGE_BYTES}=await import('../../dist/web/assets/log-view.js');
-const {ApiError,eventStream,setToken}=await import('../../dist/web/assets/api.js');
+const {ApiError,eventStream}=await import('../../dist/web/assets/api.js');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function view(read){const v=synchronousState(new LogView({read,streamLabel:'日志流'}));synchronousState(v);return v;}
 const page=(start,content,extra={})=>({start,content,cursor:start+Buffer.byteLength(content),size:start+Buffer.byteLength(content),identity:'stream-1',complete:false,...extra});
@@ -19,13 +19,13 @@ test('event acknowledgements are project-scoped and wait for successful snapshot
  let snapshots=0;globalThis.fetch=async()=>{throw Error('events offline');};const other=new ProjectEventFeed('q',async()=>{snapshots++;return true;},()=>{});await other.drain();other.stop();assert.equal(snapshots,1);assert.equal(storage.has('pi-research-events:q'),false);
 });
 
-test('event catch-up is three pages and stream authentication stays in headers',async t=>{
- const oldFetch=globalThis.fetch,oldStorage=globalThis.localStorage,oldSession=globalThis.sessionStorage;t.after(()=>{setToken('');globalThis.fetch=oldFetch;globalThis.localStorage=oldStorage;globalThis.sessionStorage=oldSession;});
- globalThis.localStorage={getItem:()=>null,setItem(){}};globalThis.sessionStorage={setItem(){}};let calls=0;
+test('event catch-up is three pages and streams use the event-stream request contract',async t=>{
+ const oldFetch=globalThis.fetch,oldStorage=globalThis.localStorage;t.after(()=>{globalThis.fetch=oldFetch;globalThis.localStorage=oldStorage;});
+ globalThis.localStorage={getItem:()=>null,setItem(){}};let calls=0;
  globalThis.fetch=async()=>({ok:true,json:async()=>({items:[{seq:++calls}],cursor:calls,latestCursor:100,hasMore:true,reset:false})});
  const feed=new ProjectEventFeed('p',async()=>true,()=>{});await feed.drain();feed.stop();assert.equal(calls,3);
- setToken('unit-token');let request;globalThis.fetch=async(url,options)=>{request={url,options};return {ok:true,body:new ReadableStream({start(c){c.close();}}),headers:new Headers({'content-type':'text/event-stream'})};};
- await eventStream('/events/stream?projectId=p&after=3',new AbortController().signal);assert.ok(!request.url.includes('unit-token'));assert.equal(request.options.headers.Authorization,'Bearer unit-token');
+ let request;globalThis.fetch=async(url,options)=>{request={url,options};return {ok:true,body:new ReadableStream({start(c){c.close();}}),headers:new Headers({'content-type':'text/event-stream'})};};
+ await eventStream('/events/stream?projectId=p&after=3',new AbortController().signal);assert.equal(request.url,'/api/events/stream?projectId=p&after=3');assert.ok(!request.url.includes('token='));assert.equal(request.options.headers.Accept,'text/event-stream');assert.equal(Object.hasOwn(request.options.headers,'Authorization'),false);
 });
 
 test('UTF-8 log windows stay bounded and record observed byte boundaries',async()=>{

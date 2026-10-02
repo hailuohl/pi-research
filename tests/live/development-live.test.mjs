@@ -68,7 +68,7 @@ time.sleep(3)
 unittest.main(verbosity=2)
 `;
             const p=prepare(source,{expectedArtifacts:['result.json'],dataArtifactIds:[data.id]});
-            const response=await fetch(`http://127.0.0.1:${port}/api/operations/development_inspect`,{method:'POST',headers:{Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'},body:JSON.stringify({projectId:project.id,input:{jobId:p.job.id}})});
+            const response=await fetch(`http://127.0.0.1:${port}/api/operations/development_inspect`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({projectId:project.id,input:{jobId:p.job.id}})});
             assert.equal(response.status,200);assert.equal((await response.json()).jobId,p.job.id);
             app.execution.launchPending();await wait(p.job.id,j=>j.state==='running'||terminal(j));
             await server.close();server=null;app=new ResearchApp(dir,process.cwd());

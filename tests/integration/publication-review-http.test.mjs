@@ -17,7 +17,7 @@ test('publication review owner HTTP/CLI contracts preserve exact targets, indepe
  try{
   const app=server.app,p=app.projects.create(USER,{name:'UNIT paper review transport'}),root=app.sessions.create(USER,p.id,{title:'Review owner'}),fixture=publicationFixture(app,p.id),port=await server.listen();
   app.projects.settings(USER,p.id,{expectedVersion:p.version,enabled:true});
-  const headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'},call=async(name,input,key=randomUUID(),pid=p.id)=>{const response=await fetch(`http://127.0.0.1:${port}/api/operations/${name}`,{method:'POST',headers:{...headers,'Idempotency-Key':key},body:JSON.stringify({projectId:pid,input})});return {status:response.status,value:await response.json()};};
+  const headers={'Content-Type':'application/json'},call=async(name,input,key=randomUUID(),pid=p.id)=>{const response=await fetch(`http://127.0.0.1:${port}/api/operations/${name}`,{method:'POST',headers:{...headers,'Idempotency-Key':key},body:JSON.stringify({projectId:pid,input})});return {status:response.status,value:await response.json()};};
   const input={resultId:fixture.result.id,rootSessionId:root.id,inputEvidenceIds:[]},key=randomUUID(),prepared=await call('publication_review_prepare',input,key);
   assert.equal(prepared.status,200,JSON.stringify(prepared.value));assert.equal(prepared.value.status,'awaiting_approval');assert.equal(prepared.value.publicationResultId,fixture.result.id);assert.equal(prepared.value.validity,'current');
   assert.deepEqual(await call('publication_review_prepare',input,key),prepared);assert.equal(app.store.list('publication-review',p.id).length,1);

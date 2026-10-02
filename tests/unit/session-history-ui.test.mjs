@@ -73,7 +73,7 @@ test('implementation, campaign and Run links reset history for sessions outside 
     const oldStorage=globalThis.localStorage;globalThis.localStorage={getItem:()=>null,setItem(){}};
     try{
         const app=synchronousState(new App({}));app.refresh=async()=>true;
-        Object.assign(app.state,{loggedIn:true,projectId:'p',sessionId:'recent',boot:{projects:[{id:'p'}]},data:{project:{id:'p'},sessions:[{id:'recent'}],experiments:[],runs:[]}});
+        Object.assign(app.state,{projectId:'p',sessionId:'recent',boot:{projects:[{id:'p'}]},data:{project:{id:'p'},sessions:[{id:'recent'}],experiments:[],runs:[]}});
         for(const [tab,name,callback,targetTab] of [['implementation','ImplementationView','onSession','implementation'],['campaigns','CampaignView','onImplementation','implementation'],['experiments','Experiments','onSession','chat']]){
             Object.assign(app.state,{tab,sessionId:'recent',messages:[{id:'old-body'}],history:{atLatest:false},historyAnchor:{direction:'before',id:'old-cursor'},stream:'old stream'});
             const view=component(app.render(),name);assert.ok(view,`${name} rendered`);view.props[callback]('older-root');

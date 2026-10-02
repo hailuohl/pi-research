@@ -17,7 +17,7 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
     const request = async (path, body, key = randomUUID()) => {
         const response = await fetch(`http://127.0.0.1:${port}/api${path}`, {
             method: body === undefined ? 'GET' : 'POST',
-            headers: { Authorization: `Bearer ${server.token}`, 'Content-Type': 'application/json', ...(key === null ? {} : { 'Idempotency-Key': key }) },
+            headers: {  'Content-Type': 'application/json', ...(key === null ? {} : { 'Idempotency-Key': key }) },
             ...(body === undefined ? {} : { body: JSON.stringify(body) }),
         });
         return { status: response.status, value: await response.json() };

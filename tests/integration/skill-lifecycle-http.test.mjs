@@ -8,7 +8,7 @@ function zip(files){const local=[],central=[];let offset=0;for(const [path,bytes
 test('owner skill operations have closed HTTP/CLI contracts, frozen session reads and no automatic grant to agents',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'pi-skill-http-')),server=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});
  try{
-  const app=server.app,p=app.projects.create(USER,{name:'Skill transport'}),s=app.sessions.create(USER,p.id,{}),port=await server.listen(),headers={'Content-Type':'application/json',Authorization:`Bearer ${server.token}`};
+  const app=server.app,p=app.projects.create(USER,{name:'Skill transport'}),s=app.sessions.create(USER,p.id,{}),port=await server.listen(),headers={'Content-Type':'application/json',};
   const call=async(name,input={},key=randomUUID(),sessionId)=>{const response=await fetch(`http://127.0.0.1:${port}/api/operations/${name}`,{method:'POST',headers:{...headers,'Idempotency-Key':key},body:JSON.stringify({projectId:p.id,input,...(sessionId?{sessionId}:{})})});return {status:response.status,value:await response.json()};};
   const figure=png(),archive=zip([['SKILL.md',Buffer.from('# Original 中文 skill\n')],['assets/figure.png',figure]]),input={packageId:'transport-method',revisionTag:'v1',description:'Transport fixture',roles:['coordinator'],license:null,requirements:{tools:[],backends:[],artifactIds:[]},zipBase64:archive.toString('base64')};
   const broken=Buffer.from(archive),imageOffset=archive.indexOf(figure);assert.ok(imageOffset>=0);broken[imageOffset+8+25]^=1;assert.notEqual((await call('skill_package_import',{...input,packageId:'broken-archive',zipBase64:broken.toString('base64')})).status,200);assert.equal((await call('skill_package_list')).value.revisions.length,0);

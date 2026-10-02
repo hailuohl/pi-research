@@ -9,7 +9,7 @@ import {createHttpServer} from '../../dist/apps/server/http.js';
 import {EventStreamHub,MAX_EVENT_STREAMS} from '../../dist/apps/server/event-stream.js';
 import {Store,EVENT_PAGE_PAYLOAD_BYTES} from '../../dist/packages/storage/store.js';
 import {USER} from '../../dist/packages/domain/types.js';
-async function setup(){const dir=mkdtempSync(join(tmpdir(),'events-http-')),service=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0}),port=await service.listen(),base=`http://127.0.0.1:${port}/api`;const headers={Authorization:`Bearer ${service.token}`};return {dir,service,base,headers,async get(path,extra={}){const response=await fetch(base+path,{headers:{...headers,...extra}});return {status:response.status,value:await response.json()};},async close(){await service.close();rmSync(dir,{recursive:true,force:true});}};}
+async function setup(){const dir=mkdtempSync(join(tmpdir(),'events-http-')),service=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0}),port=await service.listen(),base=`http://127.0.0.1:${port}/api`;const headers={};return {dir,service,base,headers,async get(path,extra={}){const response=await fetch(base+path,{headers:{...headers,...extra}});return {status:response.status,value:await response.json()};},async close(){await service.close();rmSync(dir,{recursive:true,force:true});}};}
 function timeout(promise){return new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('SSE fixture timeout')),3000);promise.then(value=>{clearTimeout(timer);resolve(value);},error=>{clearTimeout(timer);reject(error);});});}
 function frames(response){const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';return {reader,async next(){while(!buffer.includes('\n\n')){const item=await timeout(reader.read());if(item.done)return null;buffer+=decoder.decode(item.value,{stream:true});}const at=buffer.indexOf('\n\n'),frame=buffer.slice(0,at);buffer=buffer.slice(at+2);return frame;}};}
 const wake=frame=>JSON.parse(frame.split('\n').find(line=>line.startsWith('data: ')).slice(6));
@@ -25,16 +25,16 @@ test('event HTTP pages retain durable ordered cursors, project isolation, safe i
   const large=await s.get(`/events?projectId=${a.id}&after=1000000`);assert.equal(large.status,200);assert.equal(large.value.cursor,1000005);
   for(const query of ['after=-1','after=9007199254740992','after=1.5','limit=501','limit=0','after=0&after=1','token=forbidden'])assert.equal((await s.get('/events?'+query)).status,400,query);
   assert.equal((await s.get('/events?projectId=not-found')).status,404);
-  assert.equal((await fetch(s.base+'/events')).status,401);assert.equal((await s.get('/events',{Origin:'http://other.invalid'})).status,403);
+  assert.equal((await fetch(s.base+'/events')).status,200);assert.equal((await s.get('/events',{Origin:'http://other.invalid'})).status,403);
   const before=store.eventCursor(a.id);store.event(a.id,'fixture.oversize',{body:'x'.repeat(100000)});for(let n=0;n<8;n++)store.event(a.id,'fixture.medium',{body:'x'.repeat(60000)});
   const bounded=(await s.get(`/events?projectId=${a.id}&after=${before}`)).value;assert.equal(bounded.items.length,9);assert.equal(bounded.items[0].omitted,true);assert.equal(bounded.items[0].payload,null);assert.ok(bounded.items.filter(item=>!item.omitted).reduce((sum,item)=>sum+Buffer.byteLength(JSON.stringify(item.payload)),0)<=EVENT_PAGE_PAYLOAD_BYTES);assert.equal(bounded.cursor,bounded.latestCursor);
  }finally{await s.close();}
 });
 
-test('SSE authenticates, sends only coalesced wakeups, reconnects by cursor and closes with the HTTP service',async()=>{
+test('SSE opens without a token, sends only coalesced wakeups, reconnects by cursor and closes with the HTTP service',async()=>{
  const s=await setup();let stream,second;try {
   const p=s.service.app.projects.create(USER,{name:'stream'}),store=s.service.app.store,initial=store.eventCursor(p.id);
-  assert.equal((await fetch(s.base+`/events/stream?token=${s.service.token}`)).status,401);
+  assert.equal((await fetch(s.base+'/events/stream?token=legacy')).status,400);
   assert.equal((await s.get('/events/stream?token=ignored')).status,400);
   assert.equal((await s.get('/events/stream?after=1',{'Last-Event-ID':'2'})).status,400);assert.equal((await s.get('/events/stream',{'Last-Event-ID':'invalid'})).status,400);
   const response=await fetch(s.base+`/events/stream?projectId=${p.id}&after=${initial}`,{headers:s.headers});assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/text\/event-stream/);stream=frames(response);assert.deepEqual(wake(await stream.next()),{cursor:initial,reset:false});

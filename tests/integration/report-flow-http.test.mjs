@@ -15,7 +15,7 @@ test('report UI/Registry/CLI bind original results, export once and preserve his
  try{
   const app=server.app,p=app.projects.create(USER,{name:'Report transport',template:'curve-fit'}),e=app.experiments.create(USER,p.id,{title:'Measured fixture'});
   const intent=app.runs.prepare(USER,e.id);approve(app,intent.approvalId);const run=app.runs.submit(USER,intent.id);fixtureFinish({app},run,{mse:0.125});
-  const port=await server.listen(),base=`http://127.0.0.1:${port}/api`,headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'};
+  const port=await server.listen(),base=`http://127.0.0.1:${port}/api`,headers={'Content-Type':'application/json'};
   const request=async(path,body,key=randomUUID())=>{const r=await fetch(base+path,{method:'POST',headers:{...headers,'Idempotency-Key':key},body:JSON.stringify(body)});return {status:r.status,value:await r.json()};};
   const call=(name,input,key)=>request(`/operations/${name}`,{projectId:p.id,input},key);
   const body={projectId:p.id,title:'Exact observed run',runIds:[run.id]},key=randomUUID(),created=await request('/reports',body,key);

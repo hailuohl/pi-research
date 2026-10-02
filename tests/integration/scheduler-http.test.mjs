@@ -17,7 +17,7 @@ test('scheduler owner operations share versioned limits, bounded queue DTOs and 
  try{
   const app=server.app,p=app.projects.create(USER,{name:'Scheduling transport',template:'curve-fit'}),s=app.sessions.create(USER,p.id,{}),e=app.experiments.create(USER,p.id,{title:'Queue fixture'});
   const initial=app.compute.inspect(USER,p.id);app.compute.configure(USER,{expectedVersion:initial.configuration.version,limits:{maxJobs:0}});
-  const port=await server.listen(),headers={Authorization:`Bearer ${server.token}`,'Content-Type':'application/json'};
+  const port=await server.listen(),headers={'Content-Type':'application/json'};
   const call=async(name,input={},key=randomUUID())=>{const r=await fetch(`http://127.0.0.1:${port}/api/operations/${name}`,{method:'POST',headers:{...headers,'Idempotency-Key':key},body:JSON.stringify({projectId:p.id,input})});return {status:r.status,value:await r.json()};};
   const runs=[];for(let i=0;i<3;i++){const intent=app.runs.prepare(USER,e.id);approve(app,intent.approvalId);runs.push(app.runs.submit(USER,intent.id));}
   const before=runs.map(r=>r.manifestDigest),first=await call('compute_queue_inspect',{limit:2});assert.equal(first.status,200,JSON.stringify(first.value));assert.equal(first.value.items.length,2);assert.ok(first.value.nextCursor);assert.equal(first.value.usage.jobs,0);assert.equal(first.value.available.jobs,0);

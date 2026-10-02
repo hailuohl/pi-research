@@ -15,7 +15,7 @@ const terminal=row=>['succeeded','failed','cancelled','timed_out'].includes(row.
 test('real Docker long UTF-8 logs and durable events survive closing and reopening the HTTP controller',{skip,timeout:180000},async()=>{
  const base=resolve('.validation');mkdirSync(base,{recursive:true});const dir=mkdtempSync(join(base,'events-logs-live-'));
  let service,apiBase,headers,stream,runId,jobId,pid;const evidence={fixture:true,scientificConclusion:false,passed:false,image,context,checks:[]};
- const open=async()=>{service=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});apiBase=`http://127.0.0.1:${await service.listen()}/api`;headers={Authorization:`Bearer ${service.token}`};};
+ const open=async()=>{service=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});apiBase=`http://127.0.0.1:${await service.listen()}/api`;headers={};};
  const get=async path=>{const response=await fetch(apiBase+path,{headers,signal:AbortSignal.timeout(10000)}),value=await response.json();assert.equal(response.status,200,JSON.stringify(value));return value;};
  const wait=async(label,fn)=>{const end=Date.now()+75000;while(Date.now()<end){const value=fn();if(value)return value;await pause(150);}throw Error(label);};
  const approve=id=>{const row=service.app.store.get('approval',id);service.app.approvals.decide(USER,id,row.version,true);};
