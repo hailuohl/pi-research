@@ -33,7 +33,8 @@ export declare class RunService {
         cursor: number;
         hasMore: boolean;
     };
-    prepare(actor: Actor, experimentId: string): Row<RunIntent>;
+    prepare(actor: Actor, experimentId: string, selectedRootSessionId?: string): Row<RunIntent>;
+    assertIntentActor(actor: Actor, intent: Row<RunIntent>): void;
     submit(actor: Actor, id: string): Row<Run>;
     /** Keep the version read and heartbeat write in one inter-process SQLite transaction. */
     heartbeat(id: string): Row<Run>;

@@ -642,8 +642,16 @@ export declare const INPUT_SCHEMAS: {
     };
     readonly project_inspect: {
         readonly type: "object";
-        readonly properties: {};
-        readonly required: readonly never[];
+        readonly properties: {
+            readonly runIntentId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly "runIntentId"[];
         readonly additionalProperties: false;
     };
     readonly workspace_list: {
@@ -1091,6 +1099,11 @@ export declare const INPUT_SCHEMAS: {
                 }, {
                     readonly type: "null";
                 }];
+            };
+            readonly expectedParentRevision: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
             };
             readonly config: {
                 readonly type: "object";

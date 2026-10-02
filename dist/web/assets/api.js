@@ -18,9 +18,9 @@ class ApiError extends Error {
     this.status = status;
   }
 }
-async function api(path, body, method = "POST", signal) {
+async function api(path, body, method = "POST", signal, idempotencyKey) {
   const timeout = AbortSignal.timeout(22e3);
-  const response = await fetch("/api" + path, { method: body === void 0 ? "GET" : method, headers: { ...body === void 0 ? {} : { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() } }, ...body === void 0 ? {} : { body: JSON.stringify(body) }, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+  const response = await fetch("/api" + path, { method: body === void 0 ? "GET" : method, headers: { ...body === void 0 ? {} : { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey ?? crypto.randomUUID() } }, ...body === void 0 ? {} : { body: JSON.stringify(body) }, signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
   const data = await response.json();
   if (!response.ok)
     throw new ApiError(data.error?.code ?? "HTTP_ERROR", data.error?.message ?? `HTTP ${response.status}`, response.status);

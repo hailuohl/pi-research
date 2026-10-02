@@ -22,150 +22,10 @@ function saved() {
     return {};
   }
 }
-class ExperimentModal extends React.Component {
-  constructor() {
-    super(...arguments);
-    this.state = { runner: "trusted-example", metrics: [0], error: "" };
-    this.nextMetric = 1;
-  }
-  render() {
-    const { parent, busy, onClose, perform, onSave } = this.props, isolated = !parent && this.state.runner !== "trusted-example", ssh = this.state.runner === "ssh";
-    return /* @__PURE__ */ jsxs(Modal, { busy, onClose, wide: true, title: parent ? "\u6D3E\u751F\u5B50\u5B9E\u9A8C" : "\u5EFA\u7ACB\u5B9E\u9A8C\u8349\u6848", submitLabel: "\u4FDD\u5B58\u5B9E\u9A8C\u8349\u6848", onSubmit: (fd) => perform(async () => {
-      this.setState({ error: "" });
-      try {
-        const config = String(fd.get("config") ?? "").trim();
-        const input = { title: fd.get("title"), hypothesis: fd.get("hypothesis"), ...parent ? { parentId: parent.id } : {}, ...config ? { config: JSON.parse(config) } : {} };
-        if (isolated) {
-          const metrics = /* @__PURE__ */ Object.create(null);
-          for (const id of this.state.metrics) {
-            const name = String(fd.get(`metric-${id}`)).trim();
-            if (Object.prototype.hasOwnProperty.call(metrics, name)) throw Error("\u6307\u6807\u540D\u79F0\u4E0D\u80FD\u91CD\u590D");
-            metrics[name] = { unit: String(fd.get(`unit-${id}`)).trim(), direction: String(fd.get(`direction-${id}`)) };
-          }
-          const outputs = String(fd.get("outputs")).split(/\r?\n/).map((p) => p.trim()).filter(Boolean);
-          const args = String(fd.get("args") ?? "");
-          input.contract = { runner: ssh ? "ssh" : "docker", image: String(fd.get("image")).trim(), ...ssh ? { sshTargetId: String(fd.get("sshTargetId")).trim() } : { dockerContext: String(fd.get("context")).trim() }, command: [String(fd.get("executable")).trim(), ...args ? args.split(/\r?\n/) : []], environment: {}, datasetVersion: String(fd.get("dataset")).trim(), evaluationProtocolVersion: String(fd.get("protocol")).trim(), metrics, expectedArtifacts: [.../* @__PURE__ */ new Set(["metrics.json", ...outputs])], cpus: Number(fd.get("cpus")), memoryMb: Number(fd.get("memory")), timeoutSeconds: Number(fd.get("timeout")) };
-        }
-        await onSave(input);
-      } catch (error) {
-        this.setState({ error: error instanceof Error ? error.message : String(error) });
-        throw error;
-      }
-    }), children: [
-      this.state.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.error }) : null,
-      /* @__PURE__ */ jsxs("label", { children: [
-        "\u5B9E\u9A8C\u540D\u79F0",
-        /* @__PURE__ */ jsx("input", { name: "title", "aria-label": "\u5B9E\u9A8C\u540D\u79F0", defaultValue: parent ? "\u65B0\u5019\u9009\u5B9E\u9A8C" : "\u57FA\u7EBF\u5B9E\u9A8C", required: true, maxLength: 200 })
-      ] }),
-      /* @__PURE__ */ jsxs("label", { children: [
-        "\u7814\u7A76\u5047\u8BBE",
-        /* @__PURE__ */ jsx("textarea", { name: "hypothesis", "aria-label": "\u7814\u7A76\u5047\u8BBE", required: true, placeholder: "\u8981\u68C0\u9A8C\u7684\u5047\u8BBE\u3001\u5BF9\u7167\u6761\u4EF6\u548C\u9884\u671F\u7ED3\u679C" })
-      ] }),
-      parent ? /* @__PURE__ */ jsxs("p", { className: "notice", children: [
-        "\u7EE7\u627F\u7236\u5B9E\u9A8C\u8FD0\u884C\u534F\u8BAE\uFF1A",
-        parent.contract.runner === "docker" ? "Docker" : parent.contract.runner === "ssh" ? "SSH" : "\u53D7\u4FE1\u6570\u503C\u793A\u4F8B",
-        "\uFF0C\u5165\u53E3 ",
-        parent.contract.command.join(" "),
-        "\u3002\u6B64\u5904\u4E0D\u4FEE\u6539\u955C\u50CF\u3001\u6307\u6807\u6216\u8D44\u6E90\u5951\u7EA6\u3002"
-      ] }) : /* @__PURE__ */ jsxs("label", { children: [
-        "\u8FD0\u884C\u65B9\u5F0F",
-        /* @__PURE__ */ jsxs("select", { name: "runner", "aria-label": "\u8FD0\u884C\u65B9\u5F0F", value: this.state.runner, onChange: (e) => this.setState({ runner: e.target.value }), children: [
-          /* @__PURE__ */ jsx("option", { value: "trusted-example", children: "\u53D7\u4FE1\u66F2\u7EBF\u62DF\u5408\u793A\u4F8B" }),
-          /* @__PURE__ */ jsx("option", { value: "docker", children: "Docker \xB7 \u81EA\u6709\u7814\u7A76\u7A0B\u5E8F" }),
-          /* @__PURE__ */ jsx("option", { value: "ssh", children: "SSH \xB7 \u5DF2\u9A8C\u8BC1\u7684\u81EA\u6709 Linux \u76EE\u6807" })
-        ] })
-      ] }),
-      isolated ? /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u56FA\u5B9A\u955C\u50CF\u6458\u8981",
-          /* @__PURE__ */ jsx("input", { name: "image", "aria-label": "\u56FA\u5B9A\u955C\u50CF\u6458\u8981", required: true, placeholder: "python@sha256:\u2026", pattern: ".+@sha256:[a-f0-9]{64}", maxLength: 250 })
-        ] }),
-        ssh ? /* @__PURE__ */ jsxs("label", { children: [
-          "\u5DF2\u9A8C\u8BC1 SSH \u76EE\u6807 ID",
-          /* @__PURE__ */ jsx("input", { name: "sshTargetId", "aria-label": "SSH \u76EE\u6807 ID", required: true, maxLength: 80, pattern: "[A-Za-z0-9][A-Za-z0-9_-]*" })
-        ] }) : /* @__PURE__ */ jsxs("label", { children: [
-          "\u672C\u5730 Docker context",
-          /* @__PURE__ */ jsx("input", { name: "context", "aria-label": "Docker context", defaultValue: "desktop-linux", required: true, maxLength: 100 })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: ssh ? "\u5148\u7528\u672C\u673A ssh-target configure/probe \u56FA\u5B9A\u76EE\u6807\u8EAB\u4EFD\uFF1B\u4FDD\u5B58\u5B9E\u9A8C\u4E0D\u4F1A\u53D1\u9001\u6E90\u7801\uFF0C\u6B63\u5F0F\u8FD0\u884C\u4ECD\u9700\u5355\u72EC\u6279\u51C6\u3002" : "\u586B\u5199\u672C\u673A\u5DF2\u914D\u7F6E\u7684 Linux Docker context \u548C\u5DF2\u5B58\u5728\u7684\u56FA\u5B9A\u955C\u50CF\uFF1B\u4FDD\u5B58\u4E0D\u4F1A\u4E0B\u8F7D\u955C\u50CF\uFF0C\u4E5F\u4E0D\u4EE3\u8868\u5F15\u64CE\u9A8C\u8BC1\u901A\u8FC7\u3002" }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u53EF\u6267\u884C\u7A0B\u5E8F",
-          /* @__PURE__ */ jsx("input", { name: "executable", "aria-label": "\u53EF\u6267\u884C\u7A0B\u5E8F", defaultValue: "python", required: true })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u53C2\u6570\uFF08\u6BCF\u884C\u4E00\u4E2A\uFF0C\u4FDD\u7559\u7A7A\u683C\uFF09",
-          /* @__PURE__ */ jsx("textarea", { name: "args", "aria-label": "\u7A0B\u5E8F\u53C2\u6570", defaultValue: "main.py", rows: 3 })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u6570\u636E\u7248\u672C",
-            /* @__PURE__ */ jsx("input", { name: "dataset", "aria-label": "\u6570\u636E\u7248\u672C", required: true, placeholder: "\u4F8B\u5982 dataset-v1", maxLength: 200 })
-          ] }),
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u8BC4\u4F30\u534F\u8BAE\u7248\u672C",
-            /* @__PURE__ */ jsx("input", { name: "protocol", "aria-label": "\u8BC4\u4F30\u534F\u8BAE\u7248\u672C", required: true, placeholder: "\u4F8B\u5982 holdout-v1", maxLength: 200 })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("fieldset", { children: [
-          /* @__PURE__ */ jsx("legend", { children: "\u5B9E\u6D4B\u6307\u6807" }),
-          this.state.metrics.map((id, index) => /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
-            /* @__PURE__ */ jsxs("label", { children: [
-              "\u6307\u6807\u540D\u79F0 ",
-              index + 1,
-              /* @__PURE__ */ jsx("input", { name: `metric-${id}`, required: true, maxLength: 80, defaultValue: index === 0 ? "mse" : "" })
-            ] }),
-            /* @__PURE__ */ jsxs("label", { children: [
-              "\u5355\u4F4D ",
-              index + 1,
-              /* @__PURE__ */ jsx("input", { name: `unit-${id}`, required: true, maxLength: 100, placeholder: "\u4F8B\u5982 dimensionless" })
-            ] }),
-            /* @__PURE__ */ jsxs("label", { children: [
-              "\u65B9\u5411 ",
-              index + 1,
-              /* @__PURE__ */ jsxs("select", { name: `direction-${id}`, children: [
-                /* @__PURE__ */ jsx("option", { value: "min", children: "\u8D8A\u4F4E\u8D8A\u597D" }),
-                /* @__PURE__ */ jsx("option", { value: "max", children: "\u8D8A\u9AD8\u8D8A\u597D" })
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("button", { type: "button", className: "text-button", disabled: this.state.metrics.length === 1, onClick: () => this.setState({ metrics: this.state.metrics.filter((n) => n !== id) }), children: [
-              "\u79FB\u9664\u6307\u6807 ",
-              index + 1
-            ] })
-          ] }, id)),
-          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", onClick: () => this.setState({ metrics: [...this.state.metrics, this.nextMetric++] }), children: "\u6DFB\u52A0\u6307\u6807" })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u5FC5\u9700\u4EA7\u7269\uFF08\u6BCF\u884C\u4E00\u4E2A\u76F8\u5BF9\u8DEF\u5F84\uFF09",
-          /* @__PURE__ */ jsx("textarea", { name: "outputs", "aria-label": "\u5FC5\u9700\u4EA7\u7269", defaultValue: "metrics.json", rows: 3 })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "metrics.json \u59CB\u7EC8\u5FC5\u9700\uFF1B\u7A0B\u5E8F\u5C06\u6307\u6807\u53CA\u6587\u4EF6\u5199\u5165 /output\u3002" }),
-        /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
-          /* @__PURE__ */ jsxs("label", { children: [
-            "CPU \u6838\u6570",
-            /* @__PURE__ */ jsx("input", { name: "cpus", type: "number", min: 1, max: 64, defaultValue: 1, required: true })
-          ] }),
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u5185\u5B58 MiB",
-            /* @__PURE__ */ jsx("input", { name: "memory", type: "number", min: 64, max: 65536, defaultValue: 256, required: true })
-          ] }),
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u8D85\u65F6\u79D2\u6570",
-            /* @__PURE__ */ jsx("input", { name: "timeout", type: "number", min: 1, max: 86400, defaultValue: 60, required: true })
-          ] })
-        ] })
-      ] }) : null,
-      /* @__PURE__ */ jsxs("label", { children: [
-        "\u7248\u672C\u5316\u914D\u7F6E JSON\uFF08\u53EF\u9009\uFF09",
-        /* @__PURE__ */ jsx("textarea", { name: "config", "aria-label": "\u7248\u672C\u5316\u914D\u7F6E JSON", className: "code-input", defaultValue: (parent?.contract.runner ?? this.state.runner) === "trusted-example" ? JSON.stringify({ polynomialDegree: parent ? 2 : 1, ridge: 1e-6 }, null, 2) : "", rows: 5 }, parent?.id ?? this.state.runner)
-      ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u7559\u7A7A\u4FDD\u7559\u6765\u6E90\u6587\u4EF6\uFF1B\u586B\u5199\u65F6\u5C06\u914D\u7F6E\u4FDD\u5B58\u4E3A config.json\u3002\u521B\u5EFA\u5B9E\u9A8C\u4E0D\u4F1A\u8FD0\u884C\u4EE3\u7801\uFF0C\u6B63\u5F0F\u8FD0\u884C\u53E6\u884C\u51C6\u5907\u5E76\u6279\u51C6\u3002" })
-    ] });
-  }
-}
 class App extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: normalizeView(saved().tab ?? "chat"), selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedRunGrant: saved().selectedRunGrant ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, navigationOpen: false, sessionCreationSignal: 0 };
+    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: normalizeView(saved().tab ?? "chat"), selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, navigationOpen: false, sessionCreationSignal: 0 };
     this.experimentSelections = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([, value]) => typeof value === "string"));
     this.closeNavigationOnResize = () => {
       if (window.innerWidth > 760 && this.state.navigationOpen) this.setState({ navigationOpen: false });
@@ -241,8 +101,8 @@ class App extends React.Component {
   componentDidUpdate(_, prev) {
     if (this.state.data?.project.id === this.state.projectId && this.state.data.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[this.state.projectId] = this.state.selectedExp;
     try {
-      if (["projectId", "sessionId", "tab", "selectedExp", "selectedRun", "selectedReport", "selectedCampaign", "selectedRunGrant", "selectedDiscoveryGrant", "selectedDocument", "historyAnchor"].some((k) => prev[k] !== this.state[k]))
-        localStorage.setItem("pi-research-ui-v1", JSON.stringify({ experimentSelections: this.experimentSelections, projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport, selectedCampaign: this.state.selectedCampaign, selectedRunGrant: this.state.selectedRunGrant, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, selectedDocument: this.state.selectedDocument, historyAnchor: { projectId: this.state.projectId, sessionId: this.state.sessionId, anchor: this.state.historyAnchor } }));
+      if (["projectId", "sessionId", "tab", "selectedExp", "selectedRun", "selectedReport", "selectedCampaign", "selectedDiscoveryGrant", "selectedDocument", "historyAnchor"].some((k) => prev[k] !== this.state[k]))
+        localStorage.setItem("pi-research-ui-v1", JSON.stringify({ experimentSelections: this.experimentSelections, projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport, selectedCampaign: this.state.selectedCampaign, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, selectedDocument: this.state.selectedDocument, historyAnchor: { projectId: this.state.projectId, sessionId: this.state.sessionId, anchor: this.state.historyAnchor } }));
     } catch {
     }
   }
@@ -308,7 +168,7 @@ class App extends React.Component {
     this.invalidateRead();
     this.feed?.stop();
     this.feed = void 0;
-    this.setState({ ...this.sessionSelection(""), projectId: id, selectedExp: this.experimentSelections[id] ?? "", navigationOpen: false, selectedRun: "", selectedReport: "", selectedCampaign: "", selectedRunGrant: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", data: null }, () => {
+    this.setState({ ...this.sessionSelection(""), projectId: id, selectedExp: this.experimentSelections[id] ?? "", navigationOpen: false, selectedRun: "", selectedReport: "", selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", data: null }, () => {
       void this.refresh();
     });
   }
@@ -349,7 +209,7 @@ class App extends React.Component {
       return /* @__PURE__ */ jsxs(Modal, { ...base, title: "\u65B0\u5EFA\u672C\u5730\u9879\u76EE", submitLabel: "\u521B\u5EFA\u9879\u76EE", onSubmit: (fd) => this.perform(async () => {
         const p = await api("/projects", { name: fd.get("name"), description: fd.get("description"), template: fd.get("template") });
         const s = await api("/sessions", { projectId: p.id, title: "\u7814\u7A76\u4E3B\u4F1A\u8BDD" });
-        await new Promise((resolve) => this.setState({ ...this.sessionSelection(s.id, "chat"), projectId: p.id, selectedExp: "", selectedRun: "", selectedReport: "", selectedCampaign: "", selectedRunGrant: "", selectedDiscoveryGrant: "", selectedDocument: null, data: null }, resolve));
+        await new Promise((resolve) => this.setState({ ...this.sessionSelection(s.id, "chat"), projectId: p.id, selectedExp: "", selectedRun: "", selectedReport: "", selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, data: null }, resolve));
         done();
       }), children: [
         /* @__PURE__ */ jsxs("label", { children: [
@@ -369,22 +229,12 @@ class App extends React.Component {
         ] }),
         /* @__PURE__ */ jsx("div", { className: "notice", children: /* @__PURE__ */ jsx("p", { children: "\u66F2\u7EBF\u62DF\u5408\u4F7F\u7528\u56FA\u5B9A\u5408\u6210\u6570\u636E\uFF0C\u771F\u5B9E\u6267\u884C\u6570\u503C\u8BA1\u7B97\u3002\u5B83\u7528\u4E8E\u9A8C\u8BC1\u7CFB\u7EDF\uFF0C\u4E0D\u662F\u6750\u6599\u7814\u7A76\u6216 LLM \u6A21\u62DF\u3002" }) })
       ] });
-    if (modal === "experiment")
-      return /* @__PURE__ */ jsx(ExperimentModal, { ...base, parent: data.experiments.find((e) => e.id === modalData?.parentId), perform: this.perform, onSave: async (input) => {
-        const e = await api("/experiments", { projectId: data.project.id, ...input });
-        this.setState({ selectedExp: e.id, tab: "experiments" });
-        done();
-      } });
     if (modal === "config")
-      return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u5B9E\u9A8C\u7248\u672C\u5316\u914D\u7F6E", submitLabel: modalData.frozen ? "\u5173\u95ED\u53EA\u8BFB\u914D\u7F6E" : "\u4FDD\u5B58\u914D\u7F6E\u4FEE\u8BA2", onSubmit: (fd) => this.perform(async () => {
-        if (!modalData.frozen)
-          await api(`/experiments/${modalData.id}/files`, { path: "config.json", content: fd.get("content"), expectedDigest: modalData.digest, expectedVersion: modalData.version });
-        done();
-      }), children: [
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: modalData.frozen ? "\u5DF2\u51BB\u7ED3\u8282\u70B9\u4E0D\u80FD\u4FEE\u6539\uFF1B\u9700\u8981\u53D8\u66F4\u65F6\u8BF7\u6D3E\u751F\u5B50\u5B9E\u9A8C\u3002" : "\u4FDD\u5B58\u4F1A\u589E\u52A0\u65B9\u6848\u4FEE\u8BA2\uFF0C\u4E4B\u524D\u51C6\u5907\u7684\u8FD0\u884C\u6279\u51C6\u4E0D\u518D\u9002\u7528\u3002" }),
+      return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u5B9E\u9A8C\u53EA\u8BFB\u914D\u7F6E", submitLabel: "\u5173\u95ED\u914D\u7F6E", onSubmit: () => done(), children: [
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u914D\u7F6E\u7531\u7814\u7A76\u5BF9\u8BDD\u4E2D\u7684\u667A\u80FD\u4F53\u7BA1\u7406\u3002" }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u914D\u7F6E\u6E90\u7801",
-          /* @__PURE__ */ jsx("textarea", { name: "content", "aria-label": "\u914D\u7F6E\u6E90\u7801", className: "code-input", rows: 12, readOnly: modalData.frozen, defaultValue: modalData.content })
+          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u914D\u7F6E\u6E90\u7801", className: "code-input", rows: 12, readOnly: true, defaultValue: modalData.content })
         ] })
       ] });
     if (modal === "directive")
@@ -569,7 +419,7 @@ class App extends React.Component {
                 /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
               ] }),
               /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002" })
-            ] }) : tab === "chat" ? null : tab === "scheduler" ? /* @__PURE__ */ jsx(SchedulerView, { data, perform: this.perform }, data.project.id) : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { perform: this.perform, busy: this.state.busy, selectedRunGrant: this.state.selectedRunGrant, onSelectRunGrant: (selectedRunGrant) => this.setState({ selectedRunGrant }), onSession: (id) => this.selectSession(id), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
+            ] }) : tab === "chat" ? null : tab === "scheduler" ? /* @__PURE__ */ jsx(SchedulerView, { data, perform: this.perform }, data.project.id) : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { onSession: (id) => this.selectSession(id), onChat: () => this.setState({ tab: "chat" }), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
               this.invalidateRead();
               this.setState({ selectedExp, selectedRun: "" });
             }, onRun: (selectedRun, selectedExp) => {
@@ -579,7 +429,7 @@ class App extends React.Component {
               }
               this.invalidateRead();
               this.setState({ selectedRun, selectedExp });
-            }, onCreate: () => this.open("experiment"), onChild: () => this.open("experiment", { parentId: experiment?.id }) }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
+            } }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
               const clearHistory = { messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false };
               const campaign = data.campaigns.find((c) => c.id === selectedCampaign);
               if (!campaign) {
@@ -600,14 +450,11 @@ class App extends React.Component {
               this.setState({ selectedRun, selectedExp, tab: "experiments" });
             } }, data.project.id) : null
           ] }),
-          data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { onScheduler: () => this.setState({ tab: "scheduler" }), data, boot, tab, sessionId: collaborationSessionId, inlineWorkflows: tab === "chat" && currentSession?.role === "coordinator" && !currentSession.taskId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onPrepare: () => {
-            if (experiment)
-              this.perform(() => api("/run-intents", { experimentId: experiment.id }), "\u5DF2\u51C6\u5907\u4E0D\u53EF\u53D8\u5FEB\u7167\uFF0C\u7B49\u5F85\u4EBA\u5DE5\u6279\u51C6");
-          }, onChild: () => this.open("experiment", { parentId: experiment?.id }), onConfig: () => {
+          data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { onScheduler: () => this.setState({ tab: "scheduler" }), data, boot, tab, sessionId: collaborationSessionId, inlineWorkflows: tab === "chat" && currentSession?.role === "coordinator" && !currentSession.taskId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onConfig: () => {
             if (experiment)
               this.perform(async () => {
                 const file = await api(`/experiments/${experiment.id}/files?path=config.json`);
-                this.open("config", { id: experiment.id, version: experiment.version, frozen: experiment.lifecycle === "frozen", ...file });
+                this.open("config", { ...file });
               });
           }, onDirective: (teamId) => this.open("directive", teamId) }) : null
         ] })

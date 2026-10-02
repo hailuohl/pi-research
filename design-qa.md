@@ -74,3 +74,13 @@ Fonts/typography: 沿用11–12px工具条/菜单文字，网站名保留；28px
 Interactions: 5图标全部加载，保存按钮0个；勾选PubMed后刷新仍勾选，取消后刷新仍取消。失败/未知状态与重开恢复、并发点击、卸载回写由最终相关39项覆盖。390/1280px菜单完整，无横向溢出，模型和发送同排；控制台0错误。来源版本冲突的旧待办由这次即时更新所需的实际状态回读处理，队列重复CSS仍属原非阻断待办。本批无新P0/P1/P2。
 
 final result: passed
+
+## 2026-10-02 实验转入研究对话
+
+Source visual truth: 既有 `docs/acceptance/flow-frontend-redesign/experiments-desktop.jpg`（1487×1058），及用户的实验由智能体管理指示。Implementation: `.validation/experiment-dialogue/experiments-result-desktop.png`（1280×720）、`experiments-result-mobile.png`（390×844）、对话确认/完成卡截图。完整对比 `qa-comparison-full.png` 与详情区对比 `qa-comparison-focused.png` 已在同一输入中打开检查；旧图等比缩入1280×720，旧/新实验数量和结果状态不同，只比较本批入口与详情，不将数据、密度或状态差异作为设计缺陷。
+
+Fonts/typography、colors/tokens、asset quality: 沿用原主题、字体、图标与原生SVG树，没有生成或替换资产。Spacing/layout: 移除创建/准备/派生/授权表单，增加简短返回当前对话区域，参数改只读查看。Copy/content: 明确由对话Pi准备，必要确认进入原对话；指标来自实际Run，不把空状态或执行成功当结论。Inspector仍有来源、运行选择、真实日志与原始产物，树保持缩放/列表切换。
+
+Browser interactions: 普通意向确认可见，点击后只有当前根普通消息入队，Pi调用后出现真实Run与指标；实验页无手工创建/派生/准备/提交，配置只读且保存按钮0。完成后重开卡仍可查结果，确认按钮0，不重复提交。390/1280px无横向溢出，控制台0错误。首次观察完成卡已折叠，展开后结果链接可用，属于正常历史收起而非丢失。旧会话回跳兼容已恢复且原断言通过。无剩余P0/P1/P2。
+
+final result: passed

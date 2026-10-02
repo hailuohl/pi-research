@@ -2,7 +2,7 @@ import * as React from 'react';
 import {api} from './api.js';
 import {Badge} from './ui.js';
 import {short,label,number} from './models.js';
-import type {ProjectState,Session,Row,Approval,ChangeProposal,Campaign} from './models.js';
+import type {ProjectState,Session,Row,Approval,ChangeProposal,Campaign,RunIntent} from './models.js';
 import type {Perform} from './workbench.js';
 import {DevelopmentJob} from './implementation.js';
 import {ResearchPlanPanel} from './research-plan.js';
@@ -15,15 +15,61 @@ export function proposalSession(data:ProjectState,proposal:Row<ChangeProposal>):
 export class ChatWorkflows extends React.Component<{
     data:ProjectState;session:Row<Session>;busy:boolean;perform:Perform;
     onSession:(id:string)=>void;onExperiment:(id:string)=>void;onRun:(runId:string,experimentId:string)=>void;
-},{previews:Record<string,any>}> {
-    state={previews:{} as Record<string,any>};
+},{previews:Record<string,any>;runIntentRevision:number}> {
+    state={previews:{} as Record<string,any>,runIntentRevision:0};
     private mounted=true;private readEpoch=0;
+    private messageKeys=new Map<string,string>();private approvedRunIntents=new Set<string>();private queuedRunIntents=new Set<string>();
     componentWillUnmount(){this.mounted=false;this.readEpoch++;}
     call(name:string,input:unknown={}){return api(`/operations/${name}`,{projectId:this.props.data.project.id,sessionId:this.props.session.id,input});}
     decide(approval:Row<Approval>,approved:boolean){return api(`/approvals/${approval.id}/decide`,{expectedVersion:approval.version,approved});}
     async approved(approval:Row<Approval>|undefined){
         if(!approval||!['pending','approved'].includes(approval.status))throw Error('此固定事项尚未取得有效批准');
         if(approval.status==='pending')await this.decide(approval,true);
+    }
+    private dialogueMatches(projectId:string,sessionId:string){const {data,session}=this.props;return this.mounted&&!data.project.archived&&data.project.id===projectId&&session.id===sessionId&&session.role==='coordinator'&&!session.taskId&&session.state!=='archived';}
+    private runIntentInScope(projectId:string,sessionId:string,intentId:string,manifestDigest:string,campaignId?:string){
+        const {data}=this.props;
+        if(!this.dialogueMatches(projectId,sessionId))return false;
+        const intent=data.intents.find(i=>i.id===intentId);
+        if(!intent||intent.manifestDigest!==manifestDigest||intent.status!=='prepared'||intent.runId)return false;
+        if(!campaignId)return intent.rootSessionId===sessionId;
+        const campaign=data.campaigns.find(c=>c.id===campaignId),member=data.members.some(m=>m.campaignId===campaignId&&m.intentId===intentId)||(data.researchCandidates??[]).some(c=>c.campaignId===campaignId&&c.intentId===intentId);
+        if(campaign?.rootSessionId!==sessionId||!member)return false;
+        if(intent.rootSessionId===sessionId||intent.rootSessionId==null)return true;
+        const approval=data.approvals.find(a=>a.id===intent.approvalId),bound=intent.runGrant??approval?.runGrant,grant=(data.runGrants??[]).find(g=>g.id===bound?.id);
+        return !!bound&&!grant?.taskBinding&&grant?.sessionId===sessionId&&runGrantUsable(grant);
+    }
+    async continueRunIntent(intent:Row<RunIntent>,campaignId?:string){
+        const {data,session}=this.props,projectId=data.project.id,sessionId=session.id,intentId=intent.id,digest=intent.manifestDigest,approvalId=intent.approvalId,keyId=`${intentId}:${digest}`;
+        const messageKey=this.messageKeys.get(keyId)??crypto.randomUUID();this.messageKeys.set(keyId,messageKey);
+        const bound=intent.runGrant??data.approvals.find(a=>a.id===approvalId)?.runGrant,inspect=intent.rootSessionId===sessionId?`先调用 project_inspect({runIntentId:"${intentId}"})，核对唯一 RunIntent。`:intent.rootSessionId==null&&campaignId?`调用 campaign_inspect({campaignId:"${campaignId}"})，核对当前活动成员或候选中包含该固定 RunIntent。`: `此项依赖当前会话已核验的 RunGrant ${bound?.id??''}（${bound?.digest??''}）；按该绑定授权身份提交。`,content=`继续执行这份已确认的固定正式运行。${inspect}确认 manifestDigest 等于 "${digest}"、审批有效且仍可提交；然后只调用 run_submit({intentId:"${intentId}"})。提交后用返回的 Run id 调用 run_inspect 回查状态、真实指标和产物，必要时读取 run_logs。若意向失效、被拒绝或固定授权不可用，说明原因，不创建替代意向或补跑。若 Run 尚未结束，报告当前状态并结束本轮，不忙轮询。`;
+        if(!this.dialogueMatches(projectId,sessionId))return;
+        await this.props.perform(async()=>{
+            if(!this.dialogueMatches(projectId,sessionId))return;
+            if(!this.runIntentInScope(projectId,sessionId,intentId,digest,campaignId))throw Error('固定 RunIntent 已失效或不属于当前对话；未批准、未发送消息，也未创建替代意向。');
+            const current=this.props.data.intents.find(i=>i.id===intentId),approval=this.props.data.approvals.find(a=>a.id===approvalId),grantRef=current?.runGrant??approval?.runGrant,expectedRef=intent.runGrant??data.approvals.find(a=>a.id===approvalId)?.runGrant;
+            const sameGrant=(!grantRef&&!expectedRef)||(!!grantRef&&!!expectedRef&&grantRef.id===expectedRef.id&&grantRef.digest===expectedRef.digest&&grantRef.approvalId===expectedRef.approvalId);
+            if(!current||current.approvalId!==approvalId||!approval||!sameGrant)throw Error('固定 RunIntent 的审批或授权引用已变化；未发送执行消息。');
+            if(grantRef){
+                const grant=(this.props.data.runGrants??[]).find(g=>g.id===grantRef.id);
+                if(grant?.taskBinding)throw Error('此 RunIntent 绑定任务级授权，只能由对应的已授权任务提交。');
+                if(approval.status!=='approved'||grant?.sessionId!==sessionId||!runGrantUsable(grant))throw Error('绑定授权尚不可用或不属于当前对话；未发送执行消息。');
+            }else if(approval.status==='pending'&&!this.approvedRunIntents.has(keyId)){
+                await this.decide(approval,true);
+                if(!this.dialogueMatches(projectId,sessionId))return;
+                if(!this.runIntentInScope(projectId,sessionId,intentId,digest,campaignId))throw Error('批准完成后固定 RunIntent 已变化；未发送执行消息。');
+                this.approvedRunIntents.add(keyId);this.setState(state=>({runIntentRevision:state.runIntentRevision+1}));
+            }else if(approval.status!=='approved'&&!(approval.status==='pending'&&this.approvedRunIntents.has(keyId)))throw Error('此固定 RunIntent 未获有效批准；未发送执行消息。');
+            if(!this.dialogueMatches(projectId,sessionId))return;
+            if(!this.runIntentInScope(projectId,sessionId,intentId,digest,campaignId))throw Error('当前对话或固定 RunIntent 已变化；未发送执行消息。');
+            try{await api(`/sessions/${sessionId}/messages`,{content},'POST',undefined,messageKey);}catch(error){if(!this.dialogueMatches(projectId,sessionId))return;throw error;}
+            this.messageKeys.delete(keyId);this.approvedRunIntents.delete(keyId);this.queuedRunIntents.add(keyId);
+            if(this.dialogueMatches(projectId,sessionId))this.setState(state=>({runIntentRevision:state.runIntentRevision+1}));
+        });
+    }
+    runIntentCard(intent:Row<RunIntent>,disabled:boolean,campaignId?:string){
+        const {data,session}=this.props,approval=data.approvals.find(a=>a.id===intent.approvalId),bound=intent.runGrant??approval?.runGrant,grant=(data.runGrants??[]).find(g=>g.id===bound?.id),run=data.runs.find(r=>r.id===intent.runId&&r.experimentId===intent.experimentId),keyId=`${intent.id}:${intent.manifestDigest}`,taskBound=!!grant?.taskBinding,grantUsable=!!grant&&grant.sessionId===session.id&&runGrantUsable(grant),campaignOwned=!!campaignId&&data.campaigns.some(c=>c.id===campaignId&&c.rootSessionId===session.id)&&(data.members.some(m=>m.campaignId===campaignId&&m.intentId===intent.id)||(data.researchCandidates??[]).some(c=>c.campaignId===campaignId&&c.intentId===intent.id)),owned=campaignId?campaignOwned&&(intent.rootSessionId===session.id||intent.rootSessionId==null||!!bound&&!taskBound&&grantUsable):intent.rootSessionId===session.id,approved=approval?.status==='approved'||approval?.status==='pending'&&this.approvedRunIntents.has(keyId),queued=this.queuedRunIntents.has(keyId),canContinue=owned&&intent.status==='prepared'&&!intent.runId&&!run&&!queued&&!!approval&&(!bound&&['pending','approved'].includes(approval.status)||!!bound&&!taskBound&&grantUsable&&approval.status==='approved');
+        return <details className="workflow-card" key={intent.id} open={canContinue||queued}><summary>正式实验 · {data.experiments.find(e=>e.id===intent.experimentId)?.title??short(intent.experimentId)}<Badge value={run?.state??(approved?'approved':approval?.status??intent.status)}/></summary><details><summary>冻结参数、计算契约与授权</summary><pre className="file-preview">{JSON.stringify({intentId:intent.id,manifestDigest:intent.manifestDigest,manifest:intent.manifest,runGrant:bound},null,2)}</pre></details>{canContinue?<button className="primary compact" disabled={disabled} onClick={()=>this.continueRunIntent(intent,campaignId)}>确认并让智能体执行</button>:null}{queued&&intent.status==='prepared'&&!run?<p className="small muted" role="status">执行消息已入队，等待智能体回查固定运行。</p>:taskBound?<p className="small muted" role="status">此固定运行绑定任务级授权，由对应的已授权任务提交。</p>:bound&&!grantUsable?<p className="small muted" role="status">绑定授权不可用或不属于当前主会话；保留固定历史，不提供提交入口。</p>:!owned?<p className="small muted" role="status">此固定运行未绑定当前对话，只读保留。</p>:approval&&['rejected','stale'].includes(approval.status)?<p className="small muted" role="status">固定运行审批已{approval.status==='rejected'?'拒绝':'失效'}；不会自动创建替代意向。</p>:intent.status!=='prepared'&&!run?<p className="small muted" role="status">固定 RunIntent 状态为 {label(intent.status)}；不会自动补跑。</p>:null}{run?<div><button className="text-button" onClick={()=>this.props.onRun(run.id,run.experimentId)}>查看实际运行日志与结果</button>{run.metrics?<p className="small">{Object.entries(run.metrics).map(([name,value])=>`${name}=${number(value)}${run.manifest.contract.metrics[name]?.unit?` ${run.manifest.contract.metrics[name].unit}`:''}`).join(' · ')}</p>:null}</div>:null}</details>;
     }
     async preview(proposal:Row<ChangeProposal>){
         const epoch=++this.readEpoch;
@@ -44,7 +90,7 @@ export class ChatWorkflows extends React.Component<{
             {a?<p className="small muted">批准状态：{label(a.status)}</p>:null}
             <div className="actions wrap">{c.state==='active'?<button className="secondary compact" disabled={disabled} onClick={()=>perform(()=>api(`/campaigns/${c.id}/pause`,{expectedVersion:c.version}))}>暂停研究计划</button>:null}{c.state==='paused'?<button className="secondary compact" disabled={disabled} onClick={()=>perform(()=>api(`/campaigns/${c.id}/resume`,{expectedVersion:c.version}))}>恢复研究计划</button>:null}{['active','paused'].includes(c.state)?<button className="text-button danger" disabled={disabled} onClick={()=>perform(()=>api(`/campaigns/${c.id}/stop`,{expectedVersion:c.version,reason:'用户在原对话中停止研究计划'}))}>停止研究计划</button>:null}<button className="text-button" onClick={()=>onExperiment(c.focusExperimentId)}>查看当前实验</button></div>
             {observations.length?<details><summary>实际观测与证据（{observations.length}）</summary>{observations.map(o=><div className="inspector-section" key={o.id}><button className="text-button" onClick={()=>onRun(o.runId,o.experimentId)}>Run {short(o.runId)}</button><Badge value={o.validation}/><p>{c.primaryMetric}={number(o.metrics[c.primaryMetric])} · {o.explanation}</p><p className="small muted">观测 {short(o.id)} · 证据 {o.evidenceIds.map(short).join('、')||'未取得'}</p></div>)}</details>:null}
-            {data.intents.filter(i=>intentIds.has(i.id)).map(i=>{const approval=data.approvals.find(a=>a.id===i.approvalId),bound=i.runGrant??approval?.runGrant,grant=(data.runGrants??[]).find(g=>g.id===bound?.id),run=data.runs.find(r=>r.id===i.runId&&r.experimentId===i.experimentId);return <details className="workflow-card" key={i.id} open={i.status==='prepared'}><summary>正式实验 · {data.experiments.find(e=>e.id===i.experimentId)?.title??short(i.experimentId)}<Badge value={run?.state??approval?.status??i.status}/></summary><details><summary>固定快照、计算契约与授权</summary><pre className="file-preview">{JSON.stringify({intentId:i.id,manifestDigest:i.manifestDigest,manifest:i.manifest,runGrant:bound},null,2)}</pre></details>{i.status==='prepared'&&approval&&['pending','approved'].includes(approval.status)?<div className="actions wrap"><button className="primary compact" disabled={disabled||!!bound&&(!runGrantUsable(grant)||approval.status!=='approved')} onClick={()=>perform(async()=>{if(!bound)await this.approved(approval);await api(`/run-intents/${i.id}/submit`,{});},'正式实验已按固定快照提交')}>{bound?'提交授权内正式实验':approval.status==='approved'?'提交已批准正式实验':'批准并提交正式实验'}</button>{approval.status==='pending'&&!bound?<button className="text-button" disabled={disabled} onClick={()=>perform(()=>this.decide(approval,false))}>拒绝正式实验</button>:null}</div>:null}{run?<button className="text-button" onClick={()=>onRun(run.id,run.experimentId)}>查看该实验的真实日志与结果</button>:null}</details>;})}
+            {data.intents.filter(i=>intentIds.has(i.id)).map(i=>this.runIntentCard(i,disabled,c.id))}
             {data.decisions.filter(d=>d.campaignId===c.id).map(d=>{const approval=data.approvals.find(a=>a.id===d.approvalId);return <details className="workflow-card" key={d.id} open={d.status==='proposed'}><summary>研究决定 · {label(d.action)}<Badge value={d.status}/></summary><p>{d.reason}</p><details><summary>依据、候选配置与固定方案</summary><pre className="file-preview">{JSON.stringify(d,null,2)}</pre>{(data.experimentPlans??[]).filter(p=>p.id===d.planRevisionId).map(p=><pre className="file-preview" key={p.id}>{JSON.stringify(p,null,2)}</pre>)}</details>{d.status==='proposed'&&approval&&['pending','approved'].includes(approval.status)?<div className="actions wrap"><button className="primary compact" disabled={disabled} onClick={()=>perform(async()=>{await this.approved(approval);await api(`/campaign-decisions/${d.id}/apply`,{expectedVersion:d.version});},'研究决定已应用')}>{approval.status==='approved'?'应用已批准研究决定':'批准并应用研究决定'}</button>{approval.status==='pending'?<button className="text-button" disabled={disabled} onClick={()=>perform(()=>this.decide(approval,false))}>拒绝研究决定</button>:null}</div>:null}</details>;})}
             {(data.experimentPlans??[]).some(p=>p.campaignId===c.id)?<details><summary>已生成的方案、候选与结果比较</summary><ResearchPlanPanel data={data} campaign={c} busy={busy||disabled} perform={perform} onExperiment={onExperiment} onImplementation={onSession} onRun={onRun}/></details>:null}
         </details>;
@@ -62,10 +108,11 @@ export class ChatWorkflows extends React.Component<{
     render(){
         const {data,session,perform,busy,onExperiment}=this.props;
         if(session.taskId||session.role!=='coordinator')return null;
-        const disabled=busy||data.project.archived||session.state==='archived',campaigns=(data.campaigns??[]).filter(c=>c.rootSessionId===session.id),tasks=(data.developmentTasks??[]).filter(t=>t.sessionId===session.id),jobs=(data.sandboxJobs??[]).filter(j=>j.sessionId===session.id),reviews=(data.reviews??[]).filter(r=>r.producerSessionId===session.id),proposals=(data.changeProposals??[]).filter(p=>proposalSession(data,p)===session.id),unbound=(data.changeProposals??[]).filter(p=>!proposalSession(data,p));
-        if(!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!session.sourceRevisionId)return null;
+        const disabled=busy||data.project.archived||session.state==='archived',campaigns=(data.campaigns??[]).filter(c=>c.rootSessionId===session.id),tasks=(data.developmentTasks??[]).filter(t=>t.sessionId===session.id),jobs=(data.sandboxJobs??[]).filter(j=>j.sessionId===session.id),reviews=(data.reviews??[]).filter(r=>r.producerSessionId===session.id),proposals=(data.changeProposals??[]).filter(p=>proposalSession(data,p)===session.id),unbound=(data.changeProposals??[]).filter(p=>!proposalSession(data,p)),campaignIntentIds=new Set(campaigns.flatMap(c=>[...data.members.filter(m=>m.campaignId===c.id).map(m=>m.intentId),...(data.researchCandidates??[]).filter(v=>v.campaignId===c.id).flatMap(v=>v.intentId?[v.intentId]:[])])),runIntents=data.intents.filter(i=>i.rootSessionId===session.id&&!campaignIntentIds.has(i.id));
+        if(!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId)return null;
         return <section className="chat-workflows" aria-label="当前对话任务"><p className="small muted">任务由对话中的 Pi 准备；需要确认的固定事项显示在这里。状态会更新，后续要求继续在输入框说明。</p>
             {campaigns.slice().reverse().map(c=>this.campaignCard(c,disabled))}
+            {runIntents.map(i=>this.runIntentCard(i,disabled))}
             {session.sourceRevisionId?<details className="workflow-card"><summary>私有实现来源与有限授权</summary><p>固定来源 {short(session.sourceRevisionId)}。可在对话中要求 Pi 编写代码、测试或修复。</p><WorkingGrants data={data} session={session} busy={disabled} perform={perform} dirty={false}/></details>:null}
             {tasks.slice().reverse().map(t=>{const a=data.approvals.find(a=>a.id===t.grantId),derived=t.manifest.workingGrant,grant=(data.workingGrants??[]).find(g=>g.id===session.workingGrantId),oldTemplate=!!session.workingGrantId&&!derived,grantOpen=!session.workingGrantId||derived?.id===session.workingGrantId&&grant?.effectiveState==='active'&&grant.validity==='current'&&Date.parse(grant.expiresAt)>Date.now(),actionable=!t.jobId&&!oldTemplate&&!!a&&['pending','approved'].includes(a.status);return <details key={t.id} className="workflow-card" open={actionable}><summary>开发测试 · {t.title}<Badge value={a?.status??t.state}/></summary><p>源码 {short(t.sourceDigest)} · 固定命令 {JSON.stringify(t.manifest.command)}</p><details><summary>固定源码、镜像、资源与产物</summary><pre className="file-preview">{JSON.stringify({developmentTaskId:t.id,sourceDigest:t.sourceDigest,manifest:t.manifest},null,2)}</pre></details>{oldTemplate?<p role="status">已绑定有界授权，旧单次测试模板不可提交；请在对话中要求重新准备。</p>:null}{actionable?<div className="actions wrap"><button className="primary compact" disabled={disabled||!grantOpen} onClick={()=>perform(async()=>{await this.approved(a);await this.call('development_submit',{developmentTaskId:t.id});},'固定开发测试已提交，结果会在本对话更新')}>{a!.status==='approved'?'提交已批准开发测试':'批准并提交开发测试'}</button>{a!.status==='pending'&&!derived?<button className="text-button" disabled={disabled} onClick={()=>perform(()=>this.decide(a!,false))}>拒绝开发测试</button>:null}</div>:null}</details>;})}
             {jobs.slice().reverse().map(j=><details key={j.id} className="workflow-card"><summary>测试结果 · {short(j.id)}<Badge value={j.state}/><Badge value={j.integrity}/></summary><DevelopmentJob job={j} data={data} sessionId={session.id} perform={perform}/></details>)}

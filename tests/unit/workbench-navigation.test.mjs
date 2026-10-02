@@ -104,3 +104,16 @@ test('experiment selections restore per project and storage failure keeps the cu
   assert.doesNotThrow(()=>app.componentDidUpdate({},previous));
   app.componentWillUnmount();
 });
+
+test('returning from Experiments restores the same chat session and mounted chat key',()=>{
+  const previousStorage=globalThis.localStorage;globalThis.localStorage={getItem:()=>null,setItem(){}};
+  try{
+    const app=synchronousState(new App({})),session={id:'root-a',role:'coordinator',state:'idle',model:{provider:'test',model:'fixture'}};
+    Object.assign(app.state,{boot:{projects:[{id:'p',name:'Project'}],runtime:{ready:true}},projectId:'p',sessionId:session.id,tab:'experiments',data:{project:{id:'p',name:'Project',archived:false,settings:{enabled:false}},sessions:[session],experiments:[],runs:[],teams:[],campaigns:[],evidence:[],intents:[]},messages:[{id:'kept-message'}],pendingMessages:[{id:'kept-pending'}],historyAnchor:{direction:'before',id:'kept-cursor'},stream:'kept draft context'});
+    const chatKey=()=>elements(app.render()).find(node=>node.type?.name==='Chat')?.key,experiments=elements(app.render()).find(node=>node.type?.name==='Experiments'),before=chatKey();
+    assert.ok(experiments);experiments.props.onChat();
+    assert.equal(app.state.tab,'chat');assert.equal(app.state.sessionId,session.id);assert.equal(chatKey(),before);
+    assert.deepEqual(app.state.messages,[{id:'kept-message'}]);assert.deepEqual(app.state.pendingMessages,[{id:'kept-pending'}]);assert.deepEqual(app.state.historyAnchor,{direction:'before',id:'kept-cursor'});assert.equal(app.state.stream,'kept draft context');
+    app.componentWillUnmount();
+  }finally{globalThis.localStorage=previousStorage;}
+});

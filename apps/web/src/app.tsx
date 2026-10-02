@@ -5,7 +5,7 @@ import {IntegrationsView} from './integrations.js';
 import { api } from './api.js';
 import type { Bootstrap, ProjectState, Row, DocumentLocation, SessionHistoryPage, SessionView } from './models.js';
 import { short, label } from './models.js';
-import { Icon, Modal, Empty } from './ui.js';
+import { Icon, Modal } from './ui.js';
 import { Chat, Experiments, Inspector, type Perform } from './workbench.js';
 import type {QueueMessage} from './message-queue.js';
 import {SessionList} from './session-list.js';
@@ -21,7 +21,6 @@ interface State {
     selectedRun: string;
     selectedReport:string;
     selectedCampaign:string;
-    selectedRunGrant:string;
     selectedDiscoveryGrant:string;
     selectedDocument:DocumentLocation|null;
     messages: QueueMessage[];
@@ -57,50 +56,8 @@ function saved() {
         return {};
     }
 }
-class ExperimentModal extends React.Component<{
-    busy:boolean; parent?:any; onClose:()=>void; perform:Perform; onSave:(input:any)=>Promise<void>;
-}, {runner:string; metrics:number[];error:string}> {
-    state={runner:'trusted-example',metrics:[0],error:''};
-    private nextMetric=1;
-    render() {
-        const {parent,busy,onClose,perform,onSave}=this.props,isolated=!parent&&this.state.runner!=='trusted-example',ssh=this.state.runner==='ssh';
-        return <Modal busy={busy} onClose={onClose} wide title={parent?'派生子实验':'建立实验草案'} submitLabel="保存实验草案" onSubmit={fd=>perform(async()=>{
-            this.setState({error:''});
-            try {
-            const config=String(fd.get('config')??'').trim();
-            const input:any={title:fd.get('title'),hypothesis:fd.get('hypothesis'),...(parent?{parentId:parent.id}:{}),...(config?{config:JSON.parse(config)}:{})};
-            if(isolated){
-                const metrics:Record<string,{unit:string;direction:string}>=Object.create(null);
-                for(const id of this.state.metrics){const name=String(fd.get(`metric-${id}`)).trim();if(Object.prototype.hasOwnProperty.call(metrics,name))throw Error('指标名称不能重复');metrics[name]={unit:String(fd.get(`unit-${id}`)).trim(),direction:String(fd.get(`direction-${id}`))};}
-                const outputs=String(fd.get('outputs')).split(/\r?\n/).map(p=>p.trim()).filter(Boolean);
-                const args=String(fd.get('args')??'');
-                input.contract={runner:ssh?'ssh':'docker',image:String(fd.get('image')).trim(),...(ssh?{sshTargetId:String(fd.get('sshTargetId')).trim()}:{dockerContext:String(fd.get('context')).trim()}),command:[String(fd.get('executable')).trim(),...(args?args.split(/\r?\n/):[])],environment:{},datasetVersion:String(fd.get('dataset')).trim(),evaluationProtocolVersion:String(fd.get('protocol')).trim(),metrics,expectedArtifacts:[...new Set(['metrics.json',...outputs])],cpus:Number(fd.get('cpus')),memoryMb:Number(fd.get('memory')),timeoutSeconds:Number(fd.get('timeout'))};
-            }
-            await onSave(input);
-            } catch(error){this.setState({error:error instanceof Error?error.message:String(error)});throw error;}
-        })}>
-            {this.state.error?<p role="alert" className="error-text">{this.state.error}</p>:null}
-            <label>实验名称<input name="title" aria-label="实验名称" defaultValue={parent?'新候选实验':'基线实验'} required maxLength={200}/></label>
-            <label>研究假设<textarea name="hypothesis" aria-label="研究假设" required placeholder="要检验的假设、对照条件和预期结果"/></label>
-            {parent?<p className="notice">继承父实验运行协议：{parent.contract.runner==='docker'?'Docker':parent.contract.runner==='ssh'?'SSH':'受信数值示例'}，入口 {parent.contract.command.join(' ')}。此处不修改镜像、指标或资源契约。</p>:<label>运行方式<select name="runner" aria-label="运行方式" value={this.state.runner} onChange={(e:any)=>this.setState({runner:e.target.value})}><option value="trusted-example">受信曲线拟合示例</option><option value="docker">Docker · 自有研究程序</option><option value="ssh">SSH · 已验证的自有 Linux 目标</option></select></label>}
-            {isolated?<div>
-                <label>固定镜像摘要<input name="image" aria-label="固定镜像摘要" required placeholder="python@sha256:…" pattern=".+@sha256:[a-f0-9]{64}" maxLength={250}/></label>
-                {ssh?<label>已验证 SSH 目标 ID<input name="sshTargetId" aria-label="SSH 目标 ID" required maxLength={80} pattern="[A-Za-z0-9][A-Za-z0-9_-]*"/></label>:<label>本地 Docker context<input name="context" aria-label="Docker context" defaultValue="desktop-linux" required maxLength={100}/></label>}
-                <p className="small muted">{ssh?'先用本机 ssh-target configure/probe 固定目标身份；保存实验不会发送源码，正式运行仍需单独批准。':'填写本机已配置的 Linux Docker context 和已存在的固定镜像；保存不会下载镜像，也不代表引擎验证通过。'}</p>
-                <label>可执行程序<input name="executable" aria-label="可执行程序" defaultValue="python" required/></label>
-                <label>参数（每行一个，保留空格）<textarea name="args" aria-label="程序参数" defaultValue="main.py" rows={3}/></label>
-                <div className="form-columns"><label>数据版本<input name="dataset" aria-label="数据版本" required placeholder="例如 dataset-v1" maxLength={200}/></label><label>评估协议版本<input name="protocol" aria-label="评估协议版本" required placeholder="例如 holdout-v1" maxLength={200}/></label></div>
-                <fieldset><legend>实测指标</legend>{this.state.metrics.map((id,index)=><div className="form-columns" key={id}><label>指标名称 {index+1}<input name={`metric-${id}`} required maxLength={80} defaultValue={index===0?'mse':''}/></label><label>单位 {index+1}<input name={`unit-${id}`} required maxLength={100} placeholder="例如 dimensionless"/></label><label>方向 {index+1}<select name={`direction-${id}`}><option value="min">越低越好</option><option value="max">越高越好</option></select></label><button type="button" className="text-button" disabled={this.state.metrics.length===1} onClick={()=>this.setState({metrics:this.state.metrics.filter(n=>n!==id)})}>移除指标 {index+1}</button></div>)}<button type="button" className="secondary compact" onClick={()=>this.setState({metrics:[...this.state.metrics,this.nextMetric++]})}>添加指标</button></fieldset>
-                <label>必需产物（每行一个相对路径）<textarea name="outputs" aria-label="必需产物" defaultValue="metrics.json" rows={3}/></label><p className="small muted">metrics.json 始终必需；程序将指标及文件写入 /output。</p>
-                <div className="form-columns"><label>CPU 核数<input name="cpus" type="number" min={1} max={64} defaultValue={1} required/></label><label>内存 MiB<input name="memory" type="number" min={64} max={65536} defaultValue={256} required/></label><label>超时秒数<input name="timeout" type="number" min={1} max={86400} defaultValue={60} required/></label></div>
-            </div>:null}
-            <label>版本化配置 JSON（可选）<textarea key={parent?.id??this.state.runner} name="config" aria-label="版本化配置 JSON" className="code-input" defaultValue={(parent?.contract.runner??this.state.runner)==='trusted-example'?JSON.stringify({polynomialDegree:parent?2:1,ridge:0.000001},null,2):''} rows={5}/></label>
-            <p className="small muted">留空保留来源文件；填写时将配置保存为 config.json。创建实验不会运行代码，正式运行另行准备并批准。</p>
-        </Modal>;
-    }
-}
 export class App extends React.Component<{}, State> {
-    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: normalizeView(saved().tab ?? 'chat'), selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedRunGrant:saved().selectedRunGrant??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false, history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, navigationOpen: false,sessionCreationSignal:0 };
+    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: normalizeView(saved().tab ?? 'chat'), selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false, history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, navigationOpen: false,sessionCreationSignal:0 };
     private experimentSelections:Record<string,string> = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([,value])=>typeof value==='string')) as Record<string,string>;
     private closeNavigationOnResize = () => { if(window.innerWidth>760&&this.state.navigationOpen)this.setState({navigationOpen:false}); };
     private navigationToggle:HTMLButtonElement|null=null;
@@ -119,8 +76,8 @@ export class App extends React.Component<{}, State> {
     componentWillUnmount(){if(typeof window!=='undefined')window.removeEventListener?.('resize',this.closeNavigationOnResize);this.mounted=false;this.invalidateRead();this.feed?.stop();clearInterval(this.timer);clearTimeout(this.noticeTimer);}
     componentDidUpdate(_:any,prev:State){
         if(this.state.data?.project.id===this.state.projectId&&this.state.data.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;
-        try { if(['projectId','sessionId','tab','selectedExp','selectedRun','selectedReport','selectedCampaign','selectedRunGrant','selectedDiscoveryGrant','selectedDocument','historyAnchor'].some(k=>(prev as any)[k] !==(this.state as any)[k]))
-            localStorage.setItem('pi-research-ui-v1',JSON.stringify({experimentSelections:this.experimentSelections,projectId:this.state.projectId,sessionId:this.state.sessionId,tab:this.state.tab,selectedExp:this.state.selectedExp,selectedRun:this.state.selectedRun,selectedReport:this.state.selectedReport,selectedCampaign:this.state.selectedCampaign,selectedRunGrant:this.state.selectedRunGrant,selectedDiscoveryGrant:this.state.selectedDiscoveryGrant,selectedDocument:this.state.selectedDocument,historyAnchor:{projectId:this.state.projectId,sessionId:this.state.sessionId,anchor:this.state.historyAnchor}})); } catch { /* Viewing stays usable when browser storage is unavailable. */ }
+        try { if(['projectId','sessionId','tab','selectedExp','selectedRun','selectedReport','selectedCampaign','selectedDiscoveryGrant','selectedDocument','historyAnchor'].some(k=>(prev as any)[k] !==(this.state as any)[k]))
+            localStorage.setItem('pi-research-ui-v1',JSON.stringify({experimentSelections:this.experimentSelections,projectId:this.state.projectId,sessionId:this.state.sessionId,tab:this.state.tab,selectedExp:this.state.selectedExp,selectedRun:this.state.selectedRun,selectedReport:this.state.selectedReport,selectedCampaign:this.state.selectedCampaign,selectedDiscoveryGrant:this.state.selectedDiscoveryGrant,selectedDocument:this.state.selectedDocument,historyAnchor:{projectId:this.state.projectId,sessionId:this.state.sessionId,anchor:this.state.historyAnchor}})); } catch { /* Viewing stays usable when browser storage is unavailable. */ }
     }
     private invalidateRead(){this.refreshEpoch++;this.readController?.abort();this.refreshing=undefined;}
     refresh(quiet=false):Promise<boolean>{
@@ -181,7 +138,7 @@ export class App extends React.Component<{}, State> {
     private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'error'> {
         return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,error:''};
     }
-    switchProject(id: string) { if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',selectedCampaign:'',selectedRunGrant:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
+    switchProject(id: string) { if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
     selectSession(id: string,tab='chat') { this.invalidateRead(); this.setState(this.sessionSelection(id,tab), () => { void this.refresh(); }); }
     selectExperiment=(id:string,runId='')=>{const data=this.state.data;if(!data?.experiments.some(e=>e.id===id)||runId&&!data.runs.some(r=>r.id===runId&&r.experimentId===id)){this.setState({error:'指定实验或运行不在当前项目中。'});return;}this.invalidateRead();this.setState({selectedExp:id,selectedRun:runId,tab:'experiments'});};
     selectHistory=(anchor:{direction:'before'|'after';id:string}|null)=>{this.invalidateRead();this.setState({messages:[],historyAnchor:anchor,stream:'',streamTruncated:false},()=>void this.refresh());};
@@ -204,15 +161,9 @@ export class App extends React.Component<{}, State> {
         const base = { onClose: this.close, busy };
         const done = () => this.setState({ modal: '', modalData: null });
         if (modal === 'project')
-            return <Modal {...base} title="新建本地项目" submitLabel="创建项目" onSubmit={fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); await new Promise<void>(resolve=>this.setState({ ...this.sessionSelection(s.id,'chat'),projectId:p.id,selectedExp:'',selectedRun:'',selectedReport:'',selectedCampaign:'',selectedRunGrant:'',selectedDiscoveryGrant:'',selectedDocument:null,data:null },resolve)); done(); })}><label>项目名称<input aria-label="项目名称" name="name" required maxLength={120} placeholder="例如：材料筛选研究"/></label><label>项目说明<textarea name="description" placeholder="研究目标、范围或输入资料"/></label><label>项目模板<select aria-label="项目模板" name="template" defaultValue="curve-fit"><option value="curve-fit">真实曲线拟合示例 · 可直接运行</option><option value="empty">空项目 · 自行准备文件</option></select></label><div className="notice"><p>曲线拟合使用固定合成数据，真实执行数值计算。它用于验证系统，不是材料研究或 LLM 模拟。</p></div></Modal>;
-        if (modal === 'experiment')
-            return <ExperimentModal {...base} parent={data!.experiments.find(e=>e.id===modalData?.parentId)} perform={this.perform} onSave={async input=>{const e=await api('/experiments',{projectId:data!.project.id,...input});this.setState({selectedExp:e.id,tab:'experiments'});done();}}/>;
+            return <Modal {...base} title="新建本地项目" submitLabel="创建项目" onSubmit={fd => this.perform(async () => { const p = await api('/projects', { name: fd.get('name'), description: fd.get('description'), template: fd.get('template') }); const s = await api('/sessions', { projectId: p.id, title: '研究主会话' }); await new Promise<void>(resolve=>this.setState({ ...this.sessionSelection(s.id,'chat'),projectId:p.id,selectedExp:'',selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,data:null },resolve)); done(); })}><label>项目名称<input aria-label="项目名称" name="name" required maxLength={120} placeholder="例如：材料筛选研究"/></label><label>项目说明<textarea name="description" placeholder="研究目标、范围或输入资料"/></label><label>项目模板<select aria-label="项目模板" name="template" defaultValue="curve-fit"><option value="curve-fit">真实曲线拟合示例 · 可直接运行</option><option value="empty">空项目 · 自行准备文件</option></select></label><div className="notice"><p>曲线拟合使用固定合成数据，真实执行数值计算。它用于验证系统，不是材料研究或 LLM 模拟。</p></div></Modal>;
         if (modal === 'config')
-            return <Modal {...base} wide title="实验版本化配置" submitLabel={modalData.frozen ? '关闭只读配置' : '保存配置修订'} onSubmit={fd => this.perform(async () => {
-                    if (!modalData.frozen)
-                        await api(`/experiments/${modalData.id}/files`, { path: 'config.json', content: fd.get('content'), expectedDigest: modalData.digest, expectedVersion: modalData.version });
-                    done();
-                })}><p className="small muted">{modalData.frozen ? '已冻结节点不能修改；需要变更时请派生子实验。' : '保存会增加方案修订，之前准备的运行批准不再适用。'}</p><label>配置源码<textarea name="content" aria-label="配置源码" className="code-input" rows={12} readOnly={modalData.frozen} defaultValue={modalData.content}/></label></Modal>;
+            return <Modal {...base} wide title="实验只读配置" submitLabel="关闭配置" onSubmit={() => done()}><p className="small muted">配置由研究对话中的智能体管理。</p><label>配置源码<textarea aria-label="配置源码" className="code-input" rows={12} readOnly defaultValue={modalData.content}/></label></Modal>;
         if (modal === 'directive')
             return <Modal {...base} title="给团队发送指令" submitLabel="保存指令" onSubmit={fd => this.perform(async () => { await api(`/teams/${modalData}/directives`, { kind: fd.get('kind'), content: fd.get('content') }); done(); })}><label>指令语义<select name="kind"><option value="steer">引导当前工作 · 不修改研究目标</option><option value="follow_up">后续指令 · 当前任务结束后处理</option><option value="revise">改变研究目标 · 旧任务失效，暂停重新规划</option></select></label><label>指令内容<textarea name="content" rows={6} required/></label><p className="small muted">修改目标会保存新需求版本，不删除已有实验或结果。取消正式 Run 需单独操作。</p></Modal>;
         if (modal === 'evidence')
@@ -244,18 +195,15 @@ export class App extends React.Component<{}, State> {
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} session={currentSession} perform={this.perform}/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
                 tab === 'chat' ? null :
                     tab === 'scheduler' ? <SchedulerView key={data.project.id} data={data} perform={this.perform}/> :
-                    tab === 'experiments' ? <Experiments key={data.project.id} perform={this.perform} busy={this.state.busy} selectedRunGrant={this.state.selectedRunGrant} onSelectRunGrant={selectedRunGrant=>this.setState({selectedRunGrant})} onSession={id=>this.selectSession(id)} data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.invalidateRead(); this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp});}} onCreate={() => this.open('experiment')} onChild={() => this.open('experiment', { parentId: experiment?.id })}/> :
+                    tab === 'experiments' ? <Experiments key={data.project.id} onSession={id=>this.selectSession(id)} onChat={()=>this.setState({tab:'chat'})} data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.invalidateRead(); this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp});}}/> :
                         tab === 'workspace' ? <WorkspaceView key={data.project.id} data={data} perform={this.perform}/> :
                             tab === 'integrations' ? <IntegrationsView key={data.project.id} projectId={data.project.id} sessionId={this.state.sessionId} onLiterature={()=>this.setState({tab:'literature'})}/> :
                             tab === 'literature' ? <LiteratureView key={data.project.id} data={data} perform={this.perform} selectedDiscoveryGrant={this.state.selectedDiscoveryGrant} onSelectDiscoveryGrant={selectedDiscoveryGrant=>this.setState({selectedDiscoveryGrant})} onSession={id=>this.selectSession(id)} selectedDocument={this.state.selectedDocument??undefined} onDocument={selectedDocument=>this.setState({selectedDocument})} onSources={()=>this.setState({tab:'integrations'})}/> :
                                 tab === 'evidence' ? <EvidenceView onDocument={selectedDocument=>this.setState({selectedDocument,tab:'literature'})} key={data.project.id} data={data} perform={this.perform} onRegister={(artifactId, content) => this.open('evidence', { artifactId, content })} onClaim={() => this.open('claim')}/> :
                                     tab === 'reports' ? <ReportsView onCampaign={selectedCampaign=>{const clearHistory={messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false};const campaign=data.campaigns.find(c=>c.id===selectedCampaign);if(!campaign){this.setState({...clearHistory,error:'指定研究活动不在当前项目中，未跳转到其他活动。'});return;}if(!campaign.rootSessionId){this.setState({...clearHistory,error:'指定研究活动没有可打开的主会话。'});return;}this.setState({selectedCampaign},()=>this.selectSession(campaign.rootSessionId));}} onSession={id=>this.selectSession(id)} onDocument={selectedDocument=>this.setState({selectedDocument,tab:'literature'})} key={data.project.id} data={data} perform={this.perform} selectedReport={this.state.selectedReport} onSelect={selectedReport=>this.setState({selectedReport})} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定报告 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp,tab:'experiments'});}}/> : null}
- </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector onScheduler={()=>this.setState({tab:'scheduler'})} data={data} boot={boot} tab={tab} sessionId={collaborationSessionId} inlineWorkflows={tab==='chat'&&currentSession?.role==='coordinator'&&!currentSession.taskId} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onPrepare={() => {
+ </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector onScheduler={()=>this.setState({tab:'scheduler'})} data={data} boot={boot} tab={tab} sessionId={collaborationSessionId} inlineWorkflows={tab==='chat'&&currentSession?.role==='coordinator'&&!currentSession.taskId} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onConfig={() => {
                     if (experiment)
-                        this.perform(() => api('/run-intents', { experimentId: experiment.id }), '已准备不可变快照，等待人工批准');
-                }} onChild={() => this.open('experiment', { parentId: experiment?.id })} onConfig={() => {
-                    if (experiment)
-                        this.perform(async () => { const file = await api(`/experiments/${experiment.id}/files?path=config.json`); this.open('config', { id: experiment.id, version: experiment.version, frozen: experiment.lifecycle === 'frozen', ...file }); });
+                        this.perform(async () => { const file = await api(`/experiments/${experiment.id}/files?path=config.json`); this.open('config', { ...file }); });
                 }} onDirective={teamId => this.open('directive', teamId)}/> : null}</div></div>{this.modalView()}</div>;
     }
 }

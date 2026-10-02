@@ -63,8 +63,8 @@ const campaign = row('campaign', {
 const CORE_OUTPUT_SCHEMAS = {
     run_prepare: row('run-intent', {
         experimentId: string, manifest, manifestDigest: string, approvalId: string,
-        status: enumeration('prepared', 'submitted'), runId: string,runGrant:RUN_GRANT_REFERENCE_SCHEMA
-    }, ['runId','runGrant']),
+        status: enumeration('prepared', 'submitted'), runId: string,runGrant:RUN_GRANT_REFERENCE_SCHEMA,rootSessionId:string
+    }, ['runId','runGrant','rootSessionId']),
     run_submit: row('run', {
         experimentId: string, intentId: string, manifest, manifestDigest: string,
         state: enumeration('queued', 'submitting', 'running', 'cancelling', 'succeeded', 'failed', 'cancelled', 'unknown'),
@@ -212,7 +212,8 @@ export const OUTPUT_SCHEMAS = {
         textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument),pmcDocuments:array(pmcDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents','pmcDocuments']),
         project: object({ id: string, name: string, collaborationEnabled: boolean }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
         runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings,
-        campaigns: array(object({ id: string, goal: string, state: enumeration('draft', 'active', 'paused', 'stopped') }))
+        campaigns: array(object({ id: string, goal: string, state: enumeration('draft', 'active', 'paused', 'stopped') })),
+        runIntents:object({items:array(object({id:string,experimentId:string,approvalId:string,manifestDigest:string,status:enumeration('prepared','submitted'),approvalStatus:enumeration('pending','approved','rejected','stale','missing'),runId:string,runGrant:RUN_GRANT_REFERENCE_SCHEMA},['runId','runGrant'])),hasMore:boolean})
     }),
     text_evidence_search:textEvidenceSearch,
     campaign_enroll: member,

@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { scope, userOnly } from '../policy/permissions.js';
-import { object, text } from '../contracts/validation.js';
+import { object, text, integer } from '../contracts/validation.js';
 import { ensure } from '../domain/errors.js';
 import { digest } from '../storage/store.js';
 import { listFiles, safePath, readText, writeText, copySourceModes, setSourceModes } from './files.js';
@@ -41,16 +41,21 @@ export class ExperimentService {
     }
     create(actor, projectId, input) {
         scope(actor, projectId);
-        const p = this.projects.get(actor, projectId), x = object(input);
-        const parent = x.parentId ? this.c.store.get('experiment', text(x.parentId, 'parentId'), projectId) : undefined;
-        if (parent) {
-            ensure(parent.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能派生新源码');
-            assertExperimentSourceCurrent(this.c.store, parent);
-        }
-        const contract = parent ? parent.contract : x.contract ? validateContract(x.contract) : structuredClone(EXAMPLE_CONTRACT);
-        if (parent && x.contract)
-            ensure(digest(x.contract) === parent.contractDigest, 'CONTRACT_CHANGED', '子实验必须继承固定运行契约', 400);
+        const x = object(input);
+        ensure(x.expectedParentRevision === undefined || !!x.parentId, 'INVALID_INPUT', 'expectedParentRevision需要parentId');
         return this.c.store.transaction(() => {
+            assertProjectWritable(this.c.store, projectId);
+            const p = this.projects.get(actor, projectId);
+            const parent = x.parentId ? this.c.store.get('experiment', text(x.parentId, 'parentId'), projectId) : undefined;
+            if (parent) {
+                ensure(parent.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能派生新源码');
+                assertExperimentSourceCurrent(this.c.store, parent);
+            }
+            if (x.expectedParentRevision !== undefined)
+                ensure(parent.revision === integer(x.expectedParentRevision, 'expectedParentRevision', 1), 'EXPERIMENT_REVISION_CHANGED', '父实验修订已变化，请重新读取配置再准备候选');
+            const contract = parent ? parent.contract : x.contract ? validateContract(x.contract) : structuredClone(EXAMPLE_CONTRACT);
+            if (parent && x.contract)
+                ensure(digest(x.contract) === parent.contractDigest, 'CONTRACT_CHANGED', '子实验必须继承固定运行契约', 400);
             const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');
             mkdirSync(workspace, { recursive: true, mode: 0o700 });
             const source = this.c.store.paths.physical(parent?.workspace ?? p.workspace);

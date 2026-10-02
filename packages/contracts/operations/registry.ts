@@ -133,7 +133,11 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
                 const runs = app.store.list('run', pid).filter(r => !grant || grant.runIds.has(r.id));
                 const campaigns = !actor.taskId && !actor.wakeupId && session?.role === 'coordinator' && !session.taskId && session.state !== 'archived'
                     ? app.store.list('campaign', pid).filter(c => c.rootSessionId === session.id).map(({id, goal, state}) => ({id, goal, state})) : [];
-                return { textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns };
+                const interactive=!actor.taskId&&!actor.wakeupId&&session?.role==='coordinator'&&!session.taskId&&session.state!=='archived';
+                if(x.runIntentId!==undefined){ensure(interactive,'RUN_SESSION_REQUIRED','运行意向回查需要当前交互主会话');const selected=app.store.get<RunIntent>('run-intent',x.runIntentId as string,pid);ensure(selected.rootSessionId===session!.id,'RUN_SESSION_DENIED','运行意向不属于当前对话',403);}
+                const intentRows=interactive?app.store.db.prepare(`SELECT i.id,json_extract(i.data,'$.experimentId') experimentId,json_extract(i.data,'$.approvalId') approvalId,json_extract(i.data,'$.manifestDigest') manifestDigest,json_extract(i.data,'$.status') status,json_extract(i.data,'$.runId') runId,json_extract(i.data,'$.runGrant') runGrant,COALESCE(json_extract(a.data,'$.status'),'missing') approvalStatus FROM records i LEFT JOIN records a ON a.kind='approval' AND a.id=json_extract(i.data,'$.approvalId') AND a.project_id=i.project_id WHERE i.kind='run-intent' AND i.project_id=? AND json_extract(i.data,'$.rootSessionId')=?${x.runIntentId!==undefined?' AND i.id=?':''} ORDER BY CASE WHEN json_extract(i.data,'$.status')='prepared' THEN 0 ELSE 1 END,i.rowid DESC LIMIT 21`).all(pid,session!.id,...(x.runIntentId!==undefined?[x.runIntentId as string]:[])):[];
+                const runIntents={items:intentRows.slice(0,20).map(i=>({id:String(i.id),experimentId:String(i.experimentId),approvalId:String(i.approvalId),manifestDigest:String(i.manifestDigest),status:i.status,approvalStatus:i.approvalStatus,...(i.runId?{runId:String(i.runId)}:{}),...(i.runGrant?{runGrant:JSON.parse(String(i.runGrant))}:{})})),hasMore:intentRows.length>20};
+                return { textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns, runIntents };
             }
             case 'workspace_list': return listFiles(ownOrProject());
             case 'artifact_read': {
@@ -300,9 +304,10 @@ const SPECS: OperationSpec[] = [
     make('run_grant_activate',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.runGrants.activate(c.actor,c.projectId,x)}),
     make('run_grant_revoke',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.runGrants.revoke(c.actor,c.projectId,x)}),
     make('run_prepare', {idempotencyPolicy: 'key-required', authorize: recordScope('experiment', 'experimentId'), preconditions: noPrecondition,
-        execute: (c, x) => c.app.runs.prepare(c.actor, x.experimentId as string)}),
+        execute: (c, x) => c.app.runs.prepare(c.actor, x.experimentId as string,c.session?.id)}),
     make('run_submit', {idempotencyPolicy: 'key-required', authorize: (c,x) => {
         const intent=c.app.store.get<RunIntent>('run-intent',x.intentId as string,c.projectId);
+        c.app.runs.assertIntentActor(c.actor,intent);
         if(c.actor.type==='agent'&&c.actor.taskId)assertRunGrantTaskSubmission(c.app.store,c.actor,intent,!intent.runId);
         else if(intent.runGrant){const grant=c.app.store.get<{taskBinding?:unknown}>('run-grant',intent.runGrant.id,c.projectId);if(grant.taskBinding)assertRunGrantActor(c.app.store,c.actor,intent);}
     }, preconditions: noPrecondition,
@@ -393,9 +398,10 @@ export class OperationRegistry {
         }
         spec.authorize(context, input);
         const proposalOwner = id === 'change_proposal_prepare' ? session?.id : undefined;
+        const intentOwner = id === 'run_prepare' ? session?.id : undefined;
         const workspaceId = spec.requiresSession || proposalOwner || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
         // Large local document bodies are hashed before any writer transaction; metadata remains part of identity.
-        const request = {name: id,...(proposalOwner?{rootSessionId:proposalOwner}:{}),input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:['skill_package_import','manuscript_create'].includes(id)?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
+        const request = {name: id,...(proposalOwner||intentOwner?{rootSessionId:proposalOwner??intentOwner}:{}),input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:['skill_package_import','manuscript_create'].includes(id)?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value: unknown) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
             const result: unknown = JSON.parse(JSON.stringify(value));
@@ -403,11 +409,11 @@ export class OperationRegistry {
             return result;
         };
         // Legacy proposal receipts have no session identity; owned requests must not read or write them.
-        const legacy = proposalOwner ? undefined : options.legacy;
+        const legacy = proposalOwner||intentOwner ? undefined : options.legacy;
         const aliases: {scope: string; input: unknown}[] = legacy ? [legacy] : [];
         if (!legacy && actor.type === 'user') {
             let path: string | undefined, body: unknown;
-            if (id === 'run_prepare') { path = '/run-intents'; body = input; }
+            if (id === 'run_prepare'&&!intentOwner) { path = '/run-intents'; body = input; }
             if (id === 'run_submit') { path = `/run-intents/${input.intentId}/submit`; body = {}; }
             if (id === 'change_proposal_prepare' && !proposalOwner) { path = '/change-proposals'; body = {projectId: pid, ...input}; }
             if (id === 'workspace_write' && input.source === 'project') { path = `/projects/${pid}/files`; const {source, ...rest} = input; body = rest; }

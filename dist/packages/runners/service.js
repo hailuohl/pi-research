@@ -58,7 +58,7 @@ export class RunService {
             };
         });
     }
-    prepare(actor, experimentId) {
+    prepare(actor, experimentId, selectedRootSessionId) {
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_prepare');
         return this.c.store.transaction(() => {
@@ -68,6 +68,11 @@ export class RunService {
             assertExperimentSourceCurrent(this.c.store, e);
             ensure(e.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能执行');
             assertOutcomeBoundary(this.c.store, e);
+            const rootSessionId = actor.type === 'agent' ? actor.sessionId : selectedRootSessionId;
+            if (rootSessionId) {
+                const s = this.c.store.get('session', rootSessionId, e.projectId);
+                ensure(s.role === 'coordinator' && !s.taskId && !s.teamId && s.state !== 'archived' && !actor.taskId && !actor.wakeupId, 'RUN_SESSION_REQUIRED', '运行准备只支持交互主会话');
+            }
             validateContract(e.contract);
             this.researchSourceGuard?.(experimentId, 'prepare');
             const snap = snapshotDirectory(this.c.store.paths.physical(e.workspace), join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
@@ -77,18 +82,23 @@ export class RunService {
                 manifest.sshTarget = new SshTargetService(this.c).frozen(manifest.contract.sshTargetId, true);
             verifyTrustedExample(manifest, this.c.repoRoot, this.c.store.paths);
             const id = randomUUID(), hash = digest(manifest), approval = this.approvals.request(e.projectId, 'run-intent', id, hash, 'run.submit', '批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限');
-            const result = this.c.store.create('run-intent', e.projectId, { experimentId: e.id, manifest, manifestDigest: hash, approvalId: approval.id, status: 'prepared' }, id);
-            this.c.store.event(e.projectId, 'run.prepared', { intentId: id, experimentId: e.id, approvalId: approval.id, snapshotDigest: snap.digest });
+            const result = this.c.store.create('run-intent', e.projectId, { experimentId: e.id, manifest, manifestDigest: hash, approvalId: approval.id, status: 'prepared', ...(rootSessionId ? { rootSessionId } : {}) }, id);
+            this.c.store.event(e.projectId, 'run.prepared', { intentId: id, experimentId: e.id, approvalId: approval.id, snapshotDigest: snap.digest, ...(rootSessionId ? { sessionId: rootSessionId } : {}) });
             return result;
         });
+    }
+    assertIntentActor(actor, intent) {
+        scope(actor, intent.projectId);
+        assertRunGrantActor(this.c.store, actor, intent);
+        if (actor.type === 'agent' && !intent.runGrant && intent.rootSessionId)
+            ensure(actor.role === 'coordinator' && !actor.taskId && !actor.wakeupId && actor.sessionId === intent.rootSessionId, 'RUN_SESSION_DENIED', '此运行意向属于另一个研究对话', 403);
     }
     submit(actor, id) {
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_submit');
         return this.c.store.transaction(() => {
             const intent = this.c.store.get('run-intent', id);
-            scope(actor, intent.projectId);
-            assertRunGrantActor(this.c.store, actor, intent);
+            this.assertIntentActor(actor, intent);
             if (intent.runId)
                 return this.c.store.get('run', intent.runId);
             assertProjectWritable(this.c.store, intent.projectId);

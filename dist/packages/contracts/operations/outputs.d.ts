@@ -3390,8 +3390,79 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
+            readonly runIntents: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly items: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly id: {
+                                    readonly type: "string";
+                                };
+                                readonly experimentId: {
+                                    readonly type: "string";
+                                };
+                                readonly approvalId: {
+                                    readonly type: "string";
+                                };
+                                readonly manifestDigest: {
+                                    readonly type: "string";
+                                };
+                                readonly status: {
+                                    readonly type: "string";
+                                    readonly enum: ["prepared", "submitted"];
+                                };
+                                readonly approvalStatus: {
+                                    readonly type: "string";
+                                    readonly enum: ["pending", "approved", "rejected", "stale", "missing"];
+                                };
+                                readonly runId: {
+                                    readonly type: "string";
+                                };
+                                readonly runGrant: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly id: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly digest: {
+                                            minLength: number;
+                                            pattern: string;
+                                            type: "string";
+                                            description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            maxLength: number;
+                                        };
+                                        readonly approvalId: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["id", "digest", "approvalId"];
+                                    readonly additionalProperties: false;
+                                };
+                            };
+                            readonly required: ("id" | "approvalId" | "experimentId" | "manifestDigest" | "status" | "approvalStatus")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly hasMore: {
+                        readonly type: "boolean";
+                    };
+                };
+                readonly required: ("items" | "hasMore")[];
+                readonly additionalProperties: false;
+            };
         };
-        readonly required: ("project" | "evidenceIds" | "runs" | "textCorpus" | "experiments" | "campaigns")[];
+        readonly required: ("project" | "evidenceIds" | "runs" | "textCorpus" | "experiments" | "campaigns" | "runIntents")[];
         readonly additionalProperties: false;
     };
     readonly text_evidence_search: {
@@ -9206,6 +9277,9 @@ export declare const OUTPUT_SCHEMAS: {
                 };
                 readonly required: readonly ["id", "digest", "approvalId"];
                 readonly additionalProperties: false;
+            };
+            readonly rootSessionId: {
+                readonly type: "string";
             };
         };
         readonly required: ("id" | "approvalId" | "experimentId" | "manifestDigest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "status" | "manifest")[];

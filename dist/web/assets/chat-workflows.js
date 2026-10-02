@@ -13,9 +13,12 @@ function proposalSession(data, proposal) {
 class ChatWorkflows extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { previews: {} };
+    this.state = { previews: {}, runIntentRevision: 0 };
     this.mounted = true;
     this.readEpoch = 0;
+    this.messageKeys = /* @__PURE__ */ new Map();
+    this.approvedRunIntents = /* @__PURE__ */ new Set();
+    this.queuedRunIntents = /* @__PURE__ */ new Set();
   }
   componentWillUnmount() {
     this.mounted = false;
@@ -30,6 +33,87 @@ class ChatWorkflows extends React.Component {
   async approved(approval) {
     if (!approval || !["pending", "approved"].includes(approval.status)) throw Error("\u6B64\u56FA\u5B9A\u4E8B\u9879\u5C1A\u672A\u53D6\u5F97\u6709\u6548\u6279\u51C6");
     if (approval.status === "pending") await this.decide(approval, true);
+  }
+  dialogueMatches(projectId, sessionId) {
+    const { data, session } = this.props;
+    return this.mounted && !data.project.archived && data.project.id === projectId && session.id === sessionId && session.role === "coordinator" && !session.taskId && session.state !== "archived";
+  }
+  runIntentInScope(projectId, sessionId, intentId, manifestDigest, campaignId) {
+    const { data } = this.props;
+    if (!this.dialogueMatches(projectId, sessionId)) return false;
+    const intent = data.intents.find((i) => i.id === intentId);
+    if (!intent || intent.manifestDigest !== manifestDigest || intent.status !== "prepared" || intent.runId) return false;
+    if (!campaignId) return intent.rootSessionId === sessionId;
+    const campaign = data.campaigns.find((c) => c.id === campaignId), member = data.members.some((m) => m.campaignId === campaignId && m.intentId === intentId) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intentId);
+    if (campaign?.rootSessionId !== sessionId || !member) return false;
+    if (intent.rootSessionId === sessionId || intent.rootSessionId == null) return true;
+    const approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id);
+    return !!bound && !grant?.taskBinding && grant?.sessionId === sessionId && runGrantUsable(grant);
+  }
+  async continueRunIntent(intent, campaignId) {
+    const { data, session } = this.props, projectId = data.project.id, sessionId = session.id, intentId = intent.id, digest = intent.manifestDigest, approvalId = intent.approvalId, keyId = `${intentId}:${digest}`;
+    const messageKey = this.messageKeys.get(keyId) ?? crypto.randomUUID();
+    this.messageKeys.set(keyId, messageKey);
+    const bound = intent.runGrant ?? data.approvals.find((a) => a.id === approvalId)?.runGrant, inspect = intent.rootSessionId === sessionId ? `\u5148\u8C03\u7528 project_inspect({runIntentId:"${intentId}"})\uFF0C\u6838\u5BF9\u552F\u4E00 RunIntent\u3002` : intent.rootSessionId == null && campaignId ? `\u8C03\u7528 campaign_inspect({campaignId:"${campaignId}"})\uFF0C\u6838\u5BF9\u5F53\u524D\u6D3B\u52A8\u6210\u5458\u6216\u5019\u9009\u4E2D\u5305\u542B\u8BE5\u56FA\u5B9A RunIntent\u3002` : `\u6B64\u9879\u4F9D\u8D56\u5F53\u524D\u4F1A\u8BDD\u5DF2\u6838\u9A8C\u7684 RunGrant ${bound?.id ?? ""}\uFF08${bound?.digest ?? ""}\uFF09\uFF1B\u6309\u8BE5\u7ED1\u5B9A\u6388\u6743\u8EAB\u4EFD\u63D0\u4EA4\u3002`, content = `\u7EE7\u7EED\u6267\u884C\u8FD9\u4EFD\u5DF2\u786E\u8BA4\u7684\u56FA\u5B9A\u6B63\u5F0F\u8FD0\u884C\u3002${inspect}\u786E\u8BA4 manifestDigest \u7B49\u4E8E "${digest}"\u3001\u5BA1\u6279\u6709\u6548\u4E14\u4ECD\u53EF\u63D0\u4EA4\uFF1B\u7136\u540E\u53EA\u8C03\u7528 run_submit({intentId:"${intentId}"})\u3002\u63D0\u4EA4\u540E\u7528\u8FD4\u56DE\u7684 Run id \u8C03\u7528 run_inspect \u56DE\u67E5\u72B6\u6001\u3001\u771F\u5B9E\u6307\u6807\u548C\u4EA7\u7269\uFF0C\u5FC5\u8981\u65F6\u8BFB\u53D6 run_logs\u3002\u82E5\u610F\u5411\u5931\u6548\u3001\u88AB\u62D2\u7EDD\u6216\u56FA\u5B9A\u6388\u6743\u4E0D\u53EF\u7528\uFF0C\u8BF4\u660E\u539F\u56E0\uFF0C\u4E0D\u521B\u5EFA\u66FF\u4EE3\u610F\u5411\u6216\u8865\u8DD1\u3002\u82E5 Run \u5C1A\u672A\u7ED3\u675F\uFF0C\u62A5\u544A\u5F53\u524D\u72B6\u6001\u5E76\u7ED3\u675F\u672C\u8F6E\uFF0C\u4E0D\u5FD9\u8F6E\u8BE2\u3002`;
+    if (!this.dialogueMatches(projectId, sessionId)) return;
+    await this.props.perform(async () => {
+      if (!this.dialogueMatches(projectId, sessionId)) return;
+      if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u56FA\u5B9A RunIntent \u5DF2\u5931\u6548\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8BDD\uFF1B\u672A\u6279\u51C6\u3001\u672A\u53D1\u9001\u6D88\u606F\uFF0C\u4E5F\u672A\u521B\u5EFA\u66FF\u4EE3\u610F\u5411\u3002");
+      const current = this.props.data.intents.find((i) => i.id === intentId), approval = this.props.data.approvals.find((a) => a.id === approvalId), grantRef = current?.runGrant ?? approval?.runGrant, expectedRef = intent.runGrant ?? data.approvals.find((a) => a.id === approvalId)?.runGrant;
+      const sameGrant = !grantRef && !expectedRef || !!grantRef && !!expectedRef && grantRef.id === expectedRef.id && grantRef.digest === expectedRef.digest && grantRef.approvalId === expectedRef.approvalId;
+      if (!current || current.approvalId !== approvalId || !approval || !sameGrant) throw Error("\u56FA\u5B9A RunIntent \u7684\u5BA1\u6279\u6216\u6388\u6743\u5F15\u7528\u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+      if (grantRef) {
+        const grant = (this.props.data.runGrants ?? []).find((g) => g.id === grantRef.id);
+        if (grant?.taskBinding) throw Error("\u6B64 RunIntent \u7ED1\u5B9A\u4EFB\u52A1\u7EA7\u6388\u6743\uFF0C\u53EA\u80FD\u7531\u5BF9\u5E94\u7684\u5DF2\u6388\u6743\u4EFB\u52A1\u63D0\u4EA4\u3002");
+        if (approval.status !== "approved" || grant?.sessionId !== sessionId || !runGrantUsable(grant)) throw Error("\u7ED1\u5B9A\u6388\u6743\u5C1A\u4E0D\u53EF\u7528\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8BDD\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+      } else if (approval.status === "pending" && !this.approvedRunIntents.has(keyId)) {
+        await this.decide(approval, true);
+        if (!this.dialogueMatches(projectId, sessionId)) return;
+        if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u6279\u51C6\u5B8C\u6210\u540E\u56FA\u5B9A RunIntent \u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+        this.approvedRunIntents.add(keyId);
+        this.setState((state) => ({ runIntentRevision: state.runIntentRevision + 1 }));
+      } else if (approval.status !== "approved" && !(approval.status === "pending" && this.approvedRunIntents.has(keyId))) throw Error("\u6B64\u56FA\u5B9A RunIntent \u672A\u83B7\u6709\u6548\u6279\u51C6\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+      if (!this.dialogueMatches(projectId, sessionId)) return;
+      if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u5F53\u524D\u5BF9\u8BDD\u6216\u56FA\u5B9A RunIntent \u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+      try {
+        await api(`/sessions/${sessionId}/messages`, { content }, "POST", void 0, messageKey);
+      } catch (error) {
+        if (!this.dialogueMatches(projectId, sessionId)) return;
+        throw error;
+      }
+      this.messageKeys.delete(keyId);
+      this.approvedRunIntents.delete(keyId);
+      this.queuedRunIntents.add(keyId);
+      if (this.dialogueMatches(projectId, sessionId)) this.setState((state) => ({ runIntentRevision: state.runIntentRevision + 1 }));
+    });
+  }
+  runIntentCard(intent, disabled, campaignId) {
+    const { data, session } = this.props, approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id), run = data.runs.find((r) => r.id === intent.runId && r.experimentId === intent.experimentId), keyId = `${intent.id}:${intent.manifestDigest}`, taskBound = !!grant?.taskBinding, grantUsable = !!grant && grant.sessionId === session.id && runGrantUsable(grant), campaignOwned = !!campaignId && data.campaigns.some((c) => c.id === campaignId && c.rootSessionId === session.id) && (data.members.some((m) => m.campaignId === campaignId && m.intentId === intent.id) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intent.id)), owned = campaignId ? campaignOwned && (intent.rootSessionId === session.id || intent.rootSessionId == null || !!bound && !taskBound && grantUsable) : intent.rootSessionId === session.id, approved = approval?.status === "approved" || approval?.status === "pending" && this.approvedRunIntents.has(keyId), queued = this.queuedRunIntents.has(keyId), canContinue = owned && intent.status === "prepared" && !intent.runId && !run && !queued && !!approval && (!bound && ["pending", "approved"].includes(approval.status) || !!bound && !taskBound && grantUsable && approval.status === "approved");
+    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: canContinue || queued, children: [
+      /* @__PURE__ */ jsxs("summary", { children: [
+        "\u6B63\u5F0F\u5B9E\u9A8C \xB7 ",
+        data.experiments.find((e) => e.id === intent.experimentId)?.title ?? short(intent.experimentId),
+        /* @__PURE__ */ jsx(Badge, { value: run?.state ?? (approved ? "approved" : approval?.status ?? intent.status) })
+      ] }),
+      /* @__PURE__ */ jsxs("details", { children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u51BB\u7ED3\u53C2\u6570\u3001\u8BA1\u7B97\u5951\u7EA6\u4E0E\u6388\u6743" }),
+        /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ intentId: intent.id, manifestDigest: intent.manifestDigest, manifest: intent.manifest, runGrant: bound }, null, 2) })
+      ] }),
+      canContinue ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => this.continueRunIntent(intent, campaignId), children: "\u786E\u8BA4\u5E76\u8BA9\u667A\u80FD\u4F53\u6267\u884C" }) : null,
+      queued && intent.status === "prepared" && !run ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6267\u884C\u6D88\u606F\u5DF2\u5165\u961F\uFF0C\u7B49\u5F85\u667A\u80FD\u4F53\u56DE\u67E5\u56FA\u5B9A\u8FD0\u884C\u3002" }) : taskBound ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u56FA\u5B9A\u8FD0\u884C\u7ED1\u5B9A\u4EFB\u52A1\u7EA7\u6388\u6743\uFF0C\u7531\u5BF9\u5E94\u7684\u5DF2\u6388\u6743\u4EFB\u52A1\u63D0\u4EA4\u3002" }) : bound && !grantUsable ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u7ED1\u5B9A\u6388\u6743\u4E0D\u53EF\u7528\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u4E3B\u4F1A\u8BDD\uFF1B\u4FDD\u7559\u56FA\u5B9A\u5386\u53F2\uFF0C\u4E0D\u63D0\u4F9B\u63D0\u4EA4\u5165\u53E3\u3002" }) : !owned ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u56FA\u5B9A\u8FD0\u884C\u672A\u7ED1\u5B9A\u5F53\u524D\u5BF9\u8BDD\uFF0C\u53EA\u8BFB\u4FDD\u7559\u3002" }) : approval && ["rejected", "stale"].includes(approval.status) ? /* @__PURE__ */ jsxs("p", { className: "small muted", role: "status", children: [
+        "\u56FA\u5B9A\u8FD0\u884C\u5BA1\u6279\u5DF2",
+        approval.status === "rejected" ? "\u62D2\u7EDD" : "\u5931\u6548",
+        "\uFF1B\u4E0D\u4F1A\u81EA\u52A8\u521B\u5EFA\u66FF\u4EE3\u610F\u5411\u3002"
+      ] }) : intent.status !== "prepared" && !run ? /* @__PURE__ */ jsxs("p", { className: "small muted", role: "status", children: [
+        "\u56FA\u5B9A RunIntent \u72B6\u6001\u4E3A ",
+        label(intent.status),
+        "\uFF1B\u4E0D\u4F1A\u81EA\u52A8\u8865\u8DD1\u3002"
+      ] }) : null,
+      run ? /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.props.onRun(run.id, run.experimentId), children: "\u67E5\u770B\u5B9E\u9645\u8FD0\u884C\u65E5\u5FD7\u4E0E\u7ED3\u679C" }),
+        run.metrics ? /* @__PURE__ */ jsx("p", { className: "small", children: Object.entries(run.metrics).map(([name, value]) => `${name}=${number(value)}${run.manifest.contract.metrics[name]?.unit ? ` ${run.manifest.contract.metrics[name].unit}` : ""}`).join(" \xB7 ") }) : null
+      ] }) : null
+    ] }, intent.id);
   }
   async preview(proposal) {
     const epoch = ++this.readEpoch;
@@ -116,28 +200,7 @@ class ChatWorkflows extends React.Component {
           ] })
         ] }, o.id))
       ] }) : null,
-      data.intents.filter((i) => intentIds.has(i.id)).map((i) => {
-        const approval = data.approvals.find((a2) => a2.id === i.approvalId), bound = i.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id), run = data.runs.find((r) => r.id === i.runId && r.experimentId === i.experimentId);
-        return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: i.status === "prepared", children: [
-          /* @__PURE__ */ jsxs("summary", { children: [
-            "\u6B63\u5F0F\u5B9E\u9A8C \xB7 ",
-            data.experiments.find((e) => e.id === i.experimentId)?.title ?? short(i.experimentId),
-            /* @__PURE__ */ jsx(Badge, { value: run?.state ?? approval?.status ?? i.status })
-          ] }),
-          /* @__PURE__ */ jsxs("details", { children: [
-            /* @__PURE__ */ jsx("summary", { children: "\u56FA\u5B9A\u5FEB\u7167\u3001\u8BA1\u7B97\u5951\u7EA6\u4E0E\u6388\u6743" }),
-            /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ intentId: i.id, manifestDigest: i.manifestDigest, manifest: i.manifest, runGrant: bound }, null, 2) })
-          ] }),
-          i.status === "prepared" && approval && ["pending", "approved"].includes(approval.status) ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-            /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !!bound && (!runGrantUsable(grant) || approval.status !== "approved"), onClick: () => perform(async () => {
-              if (!bound) await this.approved(approval);
-              await api(`/run-intents/${i.id}/submit`, {});
-            }, "\u6B63\u5F0F\u5B9E\u9A8C\u5DF2\u6309\u56FA\u5B9A\u5FEB\u7167\u63D0\u4EA4"), children: bound ? "\u63D0\u4EA4\u6388\u6743\u5185\u6B63\u5F0F\u5B9E\u9A8C" : approval.status === "approved" ? "\u63D0\u4EA4\u5DF2\u6279\u51C6\u6B63\u5F0F\u5B9E\u9A8C" : "\u6279\u51C6\u5E76\u63D0\u4EA4\u6B63\u5F0F\u5B9E\u9A8C" }),
-            approval.status === "pending" && !bound ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled, onClick: () => perform(() => this.decide(approval, false)), children: "\u62D2\u7EDD\u6B63\u5F0F\u5B9E\u9A8C" }) : null
-          ] }) : null,
-          run ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => onRun(run.id, run.experimentId), children: "\u67E5\u770B\u8BE5\u5B9E\u9A8C\u7684\u771F\u5B9E\u65E5\u5FD7\u4E0E\u7ED3\u679C" }) : null
-        ] }, i.id);
-      }),
+      data.intents.filter((i) => intentIds.has(i.id)).map((i) => this.runIntentCard(i, disabled, c.id)),
       data.decisions.filter((d) => d.campaignId === c.id).map((d) => {
         const approval = data.approvals.find((a2) => a2.id === d.approvalId);
         return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: d.status === "proposed", children: [
@@ -223,11 +286,12 @@ class ChatWorkflows extends React.Component {
   render() {
     const { data, session, perform, busy, onExperiment } = this.props;
     if (session.taskId || session.role !== "coordinator") return null;
-    const disabled = busy || data.project.archived || session.state === "archived", campaigns = (data.campaigns ?? []).filter((c) => c.rootSessionId === session.id), tasks = (data.developmentTasks ?? []).filter((t) => t.sessionId === session.id), jobs = (data.sandboxJobs ?? []).filter((j) => j.sessionId === session.id), reviews = (data.reviews ?? []).filter((r) => r.producerSessionId === session.id), proposals = (data.changeProposals ?? []).filter((p) => proposalSession(data, p) === session.id), unbound = (data.changeProposals ?? []).filter((p) => !proposalSession(data, p));
-    if (!campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !session.sourceRevisionId) return null;
+    const disabled = busy || data.project.archived || session.state === "archived", campaigns = (data.campaigns ?? []).filter((c) => c.rootSessionId === session.id), tasks = (data.developmentTasks ?? []).filter((t) => t.sessionId === session.id), jobs = (data.sandboxJobs ?? []).filter((j) => j.sessionId === session.id), reviews = (data.reviews ?? []).filter((r) => r.producerSessionId === session.id), proposals = (data.changeProposals ?? []).filter((p) => proposalSession(data, p) === session.id), unbound = (data.changeProposals ?? []).filter((p) => !proposalSession(data, p)), campaignIntentIds = new Set(campaigns.flatMap((c) => [...data.members.filter((m) => m.campaignId === c.id).map((m) => m.intentId), ...(data.researchCandidates ?? []).filter((v) => v.campaignId === c.id).flatMap((v) => v.intentId ? [v.intentId] : [])])), runIntents = data.intents.filter((i) => i.rootSessionId === session.id && !campaignIntentIds.has(i.id));
+    if (!campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId) return null;
     return /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EFB\u52A1\u7531\u5BF9\u8BDD\u4E2D\u7684 Pi \u51C6\u5907\uFF1B\u9700\u8981\u786E\u8BA4\u7684\u56FA\u5B9A\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002\u72B6\u6001\u4F1A\u66F4\u65B0\uFF0C\u540E\u7EED\u8981\u6C42\u7EE7\u7EED\u5728\u8F93\u5165\u6846\u8BF4\u660E\u3002" }),
       campaigns.slice().reverse().map((c) => this.campaignCard(c, disabled)),
+      runIntents.map((i) => this.runIntentCard(i, disabled)),
       session.sourceRevisionId ? /* @__PURE__ */ jsxs("details", { className: "workflow-card", children: [
         /* @__PURE__ */ jsx("summary", { children: "\u79C1\u6709\u5B9E\u73B0\u6765\u6E90\u4E0E\u6709\u9650\u6388\u6743" }),
         /* @__PURE__ */ jsxs("p", { children: [

@@ -1,6 +1,5 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
-import { RunGrants, runGrantUsable } from "./run-grants.js";
 import { LogView } from "./log-view.js";
 import { SessionHistory } from "./session-history.js";
 import { MessageQueue } from "./message-queue.js";
@@ -12,7 +11,7 @@ import { ChatWorkflows } from "./chat-workflows.js";
 import { ComposerControls } from "./composer-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
-import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
+import { Icon, Badge, SectionTitle } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
@@ -115,26 +114,23 @@ class Chat extends React.Component {
     ] });
   }
 }
-function Experiments({ data, selected, onSelect, onCreate, onChild, onRun, perform, busy, onSession, selectedRunGrant, onSelectRunGrant }) {
+function Experiments({ data, selected, onSelect, onChat, onRun }) {
   const measured = comparableRuns(data, selected);
   const metric = comparisonMetric(data, selected);
   const max = Math.max(...measured.map((r) => Math.abs(r.metrics[metric.key])), 1e-6);
   return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
-    /* @__PURE__ */ jsx(SectionTitle, { title: "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", sub: "\u5B9E\u9A8C\u8840\u7F18\u3001\u56FA\u5B9A\u534F\u8BAE\u4E0E\u771F\u5B9E\u89C2\u6D4B\uFF0C\u59CB\u7EC8\u5206\u5F00\u8BB0\u5F55\u3002", children: /* @__PURE__ */ jsxs("button", { className: "primary", onClick: onCreate, children: [
-      /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
-      "\u65B0\u5EFA\u5B9E\u9A8C"
+    /* @__PURE__ */ jsx(SectionTitle, { title: "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", sub: "\u5B9E\u9A8C\u8840\u7F18\u3001\u56FA\u5B9A\u534F\u8BAE\u4E0E\u771F\u5B9E\u89C2\u6D4B\uFF0C\u59CB\u7EC8\u5206\u5F00\u8BB0\u5F55\u3002" }),
+    /* @__PURE__ */ jsx("section", { className: "surface", children: /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
+      /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("h2", { children: "\u4ECE\u7814\u7A76\u5BF9\u8BDD\u5F00\u59CB" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63CF\u8FF0\u5B9E\u9A8C\u76EE\u6807\uFF0C\u7531\u667A\u80FD\u4F53\u8BFB\u53D6\u914D\u7F6E\u3001\u521B\u5EFA\u65B9\u6848\u5E76\u53D1\u8D77\u8FD0\u884C\u3002" })
+      ] }),
+      /* @__PURE__ */ jsx("button", { className: "secondary", onClick: onChat, children: "\u8FD4\u56DE\u5F53\u524D\u7814\u7A76\u5BF9\u8BDD" })
     ] }) }),
     data.experiments.length ? /* @__PURE__ */ jsx(ExperimentGraph, { data, selected, onSelect }, data.project.id) : /* @__PURE__ */ jsxs("section", { className: "surface", children: [
       /* @__PURE__ */ jsx("div", { className: "surface-heading", children: /* @__PURE__ */ jsx("h2", { children: "\u5B9E\u9A8C\u8840\u7F18" }) }),
-      /* @__PURE__ */ jsxs(Empty, { title: "\u8FD8\u6CA1\u6709\u5B9E\u9A8C\u8282\u70B9", children: [
-        /* @__PURE__ */ jsx("p", { children: "\u4ECE\u9879\u76EE\u6E90\u7801\u5EFA\u7ACB\u57FA\u7EBF\u3002\u65B9\u6848\u53D8\u5316\u540E\uFF0C\u53EF\u4ECE\u9009\u4E2D\u7684\u8282\u70B9\u6D3E\u751F\u3002" }),
-        /* @__PURE__ */ jsx("button", { className: "secondary", onClick: onCreate, children: "\u521B\u5EFA\u57FA\u7EBF\u5B9E\u9A8C" })
-      ] })
+      /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u5B9E\u9A8C\u8282\u70B9\u3002\u8BF7\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63CF\u8FF0\u76EE\u6807\uFF0C\u7531\u667A\u80FD\u4F53\u521B\u5EFA\u5B9E\u9A8C\u65B9\u6848\u3002" })
     ] }),
-    perform ? /* @__PURE__ */ jsxs("details", { className: "experiment-run-grants", open: !!selectedRunGrant, children: [
-      /* @__PURE__ */ jsx("summary", { children: "\u6709\u754C\u8FD0\u884C\u6388\u6743" }),
-      /* @__PURE__ */ jsx(RunGrants, { data, perform, busy: !!busy, selectedGrant: selectedRunGrant, onSelect: onSelectRunGrant, onSession, onRun }, data.project.id)
-    ] }) : null,
     /* @__PURE__ */ jsxs("div", { className: "section-kpis", children: [
       /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsx("strong", { children: data.experiments.length.toString().padStart(2, "0") }),
@@ -361,8 +357,6 @@ class Inspector extends React.Component {
     const tasks = team ? data.tasks.filter((t) => t.teamId === team.id) : [];
     const budget = data.budgets.find((b) => b.teamId === team?.id);
     const run = this.currentRun();
-    const intents = data.intents.filter((i) => i.experimentId === e?.id), intent = intents[intents.length - 1], approval = data.approvals.find((a) => a.id === intent?.approvalId);
-    const runGrantRef = intent?.runGrant ?? approval?.runGrant, runGrant = (data.runGrants ?? []).find((g) => g.id === runGrantRef?.id);
     const teamIds = new Set(teams.map((t) => t.id));
     const inlineReviewTeams = new Set(this.props.inlineWorkflows ? (data.reviews ?? []).filter((r) => r.producerSessionId === this.props.sessionId).map((r) => r.teamId) : []);
     const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending" && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
@@ -393,63 +387,7 @@ class Inspector extends React.Component {
           /* @__PURE__ */ jsx("dt", { children: "\u6570\u636E\u7248\u672C" }),
           /* @__PURE__ */ jsx("dd", { children: e.contract.datasetVersion })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "stack-actions", children: [
-          /* @__PURE__ */ jsxs("button", { className: "primary", onClick: this.props.onPrepare, disabled: !!(intent?.status === "prepared" && approval?.status === "pending" && intent.manifest.experimentRevision === e.revision), children: [
-            /* @__PURE__ */ jsx(Icon, { name: "run", size: 15 }),
-            "\u51C6\u5907\u8FD0\u884C"
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-            /* @__PURE__ */ jsxs("button", { className: "secondary", onClick: this.props.onChild, children: [
-              /* @__PURE__ */ jsx(Icon, { name: "branch", size: 15 }),
-              "\u6D3E\u751F\u5B50\u5B9E\u9A8C"
-            ] }),
-            /* @__PURE__ */ jsx("button", { className: "secondary", onClick: this.props.onConfig, children: "\u67E5\u770B\u914D\u7F6E" })
-          ] })
-        ] }),
-        intent?.status === "prepared" && approval ? /* @__PURE__ */ jsxs("div", { className: "approval-card", children: [
-          /* @__PURE__ */ jsx("div", { className: "small-label", children: "\u6B63\u5F0F\u8FD0\u884C\u5BA1\u6279" }),
-          /* @__PURE__ */ jsx(Badge, { value: approval.status }),
-          /* @__PURE__ */ jsx("p", { children: "\u6B64\u6279\u51C6\u53EA\u6388\u6743\u5F53\u524D\u56FA\u5B9A\u5FEB\u7167\u4E0E\u8BA1\u7B97\u5951\u7EA6\u3002" }),
-          runGrantRef ? /* @__PURE__ */ jsxs("p", { className: "notice-inline", children: [
-            "\u7ED1\u5B9A RunGrant ",
-            short(runGrantRef.id),
-            " \xB7 ",
-            runGrant?.effectiveState ?? "\u7B49\u5F85\u6838\u9A8C",
-            "\uFF1B\u4E0D\u80FD\u6539\u7528\u72EC\u7ACB\u5355\u6B21\u6279\u51C6\u3002"
-          ] }) : null,
-          /* @__PURE__ */ jsxs("code", { className: "digest", children: [
-            intent.manifest.snapshotDigest.slice(0, 20),
-            "\u2026"
-          ] }),
-          /* @__PURE__ */ jsxs("dl", { className: "details", children: [
-            /* @__PURE__ */ jsx("dt", { children: "\u6267\u884C\u53C2\u6570" }),
-            /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { children: JSON.stringify(intent.manifest.contract.command) }) }),
-            /* @__PURE__ */ jsx("dt", { children: "\u955C\u50CF" }),
-            /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { children: intent.manifest.contract.image ?? "\u53D7\u4FE1\u793A\u4F8B" }) }),
-            /* @__PURE__ */ jsx("dt", { children: "\u8D44\u6E90" }),
-            /* @__PURE__ */ jsxs("dd", { children: [
-              intent.manifest.contract.cpus,
-              " CPU \xB7 ",
-              intent.manifest.contract.memoryMb,
-              " MiB \xB7 ",
-              intent.manifest.contract.timeoutSeconds,
-              " \u79D2"
-            ] }),
-            /* @__PURE__ */ jsx("dt", { children: "\u5FC5\u9700\u4EA7\u7269" }),
-            /* @__PURE__ */ jsx("dd", { children: intent.manifest.contract.expectedArtifacts.join("\u3001") })
-          ] }),
-          approval.status === "pending" && !runGrantRef ? /* @__PURE__ */ jsxs("div", { className: "stack-actions", children: [
-            /* @__PURE__ */ jsx("button", { className: "primary", onClick: () => perform(async () => {
-              await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true });
-              const submitted = await api(`/run-intents/${intent.id}/submit`, {});
-              this.props.onRun?.(submitted.id);
-            }, "\u5DF2\u63D0\u4EA4\u771F\u5B9E\u8FD0\u884C"), children: "\u6279\u51C6\u5E76\u63D0\u4EA4" }),
-            /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false }), "\u5DF2\u62D2\u7EDD\u8FD0\u884C"), children: "\u62D2\u7EDD" })
-          ] }) : approval.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: !!runGrantRef && !runGrantUsable(runGrant), onClick: () => perform(async () => {
-            const submitted = await api(`/run-intents/${intent.id}/submit`, {});
-            this.props.onRun?.(submitted.id);
-          }), children: runGrantRef ? "\u63D0\u4EA4\u6388\u6743\u5185\u56FA\u5B9A\u8FD0\u884C\uFF08\u8BA1\u4E00\u6B21\uFF09" : "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C" }) : null
-        ] }) : null,
+        /* @__PURE__ */ jsx("button", { className: "secondary", onClick: this.props.onConfig, children: "\u67E5\u770B\u53EA\u8BFB\u914D\u7F6E" }),
         this.props.selectedRun && !run ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: "\u6307\u5B9A Run \u4E0D\u5C5E\u4E8E\u5F53\u524D\u5B9E\u9A8C\u6216\u5DF2\u4E0D\u53EF\u7528\uFF0C\u672A\u663E\u793A\u5176\u4ED6\u8FD0\u884C\u3002" }) : null,
         run ? /* @__PURE__ */ jsxs("div", { className: "run-detail", children: [
           /* @__PURE__ */ jsxs("label", { children: [

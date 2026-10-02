@@ -156,6 +156,8 @@ export interface Manifest {
     gitCommit?: string;
 }
 export interface RunIntent {
+    /** Trusted creator context; does not change the fixed computation manifest. */
+    rootSessionId?: string;
     runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
     experimentId: string;
     manifest: Manifest;

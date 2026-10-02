@@ -8,7 +8,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, existsSync, writeFileSync, openSync, closeSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import type { AppContext } from '../domain/context.js';
-import type { Actor, Experiment, RunIntent, Run, Manifest, Row, SourceRevision } from '../domain/types.js';
+import type { Actor, Experiment, RunIntent, Run, Manifest, Row, SourceRevision,Session } from '../domain/types.js';
 import type {GitSourceBinding} from '../workspace/git-types.js';
 import type {RunExecution,DockerRunResult} from './adapter.js';
 import { ensure, asError } from '../domain/errors.js';
@@ -54,11 +54,13 @@ export class RunService {
             };
         });
     }
-    prepare(actor: Actor, experimentId: string) {
+    prepare(actor: Actor, experimentId: string, selectedRootSessionId?:string) {
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_prepare');
         return this.c.store.transaction(() => {
             const e=this.c.store.get<Experiment>('experiment',experimentId);scope(actor,e.projectId!);assertProjectWritable(this.c.store,e.projectId!);assertExperimentSourceCurrent(this.c.store,e);ensure(e.lifecycle!=='archived','EXPERIMENT_ARCHIVED','归档实验不能执行');assertOutcomeBoundary(this.c.store,e);
+            const rootSessionId=actor.type==='agent'?actor.sessionId:selectedRootSessionId;
+            if(rootSessionId){const s=this.c.store.get<Session>('session',rootSessionId,e.projectId!);ensure(s.role==='coordinator'&&!s.taskId&&!s.teamId&&s.state!=='archived'&&!actor.taskId&&!actor.wakeupId,'RUN_SESSION_REQUIRED','运行准备只支持交互主会话');}
             validateContract(e.contract);
             this.researchSourceGuard?.(experimentId,'prepare');
             const snap=snapshotDirectory(this.c.store.paths.physical(e.workspace),join(this.c.dataDir,'snapshots')),revision=this.c.store.maybe<SourceRevision>('source-revision',digest({projectId:e.projectId,experimentId:e.id,revision:e.revision}));
@@ -67,16 +69,19 @@ export class RunService {
             if(manifest.contract.runner==='ssh')manifest.sshTarget=new SshTargetService(this.c).frozen(manifest.contract.sshTargetId!,true);
             verifyTrustedExample(manifest,this.c.repoRoot,this.c.store.paths);
             const id=randomUUID(),hash=digest(manifest),approval=this.approvals.request(e.projectId!,'run-intent',id,hash,'run.submit','批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限');
-            const result=this.c.store.create<RunIntent>('run-intent',e.projectId,{experimentId:e.id,manifest,manifestDigest:hash,approvalId:approval.id,status:'prepared'},id);this.c.store.event(e.projectId,'run.prepared',{intentId:id,experimentId:e.id,approvalId:approval.id,snapshotDigest:snap.digest});return result;
+            const result=this.c.store.create<RunIntent>('run-intent',e.projectId,{experimentId:e.id,manifest,manifestDigest:hash,approvalId:approval.id,status:'prepared',...(rootSessionId?{rootSessionId}:{})},id);this.c.store.event(e.projectId,'run.prepared',{intentId:id,experimentId:e.id,approvalId:approval.id,snapshotDigest:snap.digest,...(rootSessionId?{sessionId:rootSessionId}:{})});return result;
         });
+    }
+    assertIntentActor(actor:Actor,intent:Row<RunIntent>){
+        scope(actor,intent.projectId!);assertRunGrantActor(this.c.store,actor,intent);
+        if(actor.type==='agent'&&!intent.runGrant&&intent.rootSessionId)ensure(actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId&&actor.sessionId===intent.rootSessionId,'RUN_SESSION_DENIED','此运行意向属于另一个研究对话',403);
     }
     submit(actor: Actor, id: string) {
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_submit');
         return this.c.store.transaction(() => {
             const intent = this.c.store.get<RunIntent>('run-intent', id);
-            scope(actor, intent.projectId!);
-            assertRunGrantActor(this.c.store,actor,intent);
+            this.assertIntentActor(actor,intent);
             if (intent.runId)
                 return this.c.store.get<Run>('run', intent.runId);
             assertProjectWritable(this.c.store,intent.projectId!);
