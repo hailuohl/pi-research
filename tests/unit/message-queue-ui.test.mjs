@@ -13,6 +13,26 @@ function queue(messages=[message('m')],overrides={}){
 const button=(view,label)=>elements(view.render()).find(node=>node.type==='button'&&text(node).includes(label));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 
+test('empty queues have no separate panel, and removing the last item hides the strip',()=>{
+  const empty=queue([]);assert.equal(empty.render(),null);
+  const view=queue([message('m')]);assert.ok(view.render());
+  const previous=view.props;view.props={...view.props,messages:[],total:0};view.componentDidUpdate(previous);
+  assert.equal(view.render(),null);
+});
+
+test('immediate action appears before edit and remove in the compact row',()=>{
+  const actions=elements(queue().render()).find(n=>n.props?.className==='message-queue-actions');
+  assert.deepEqual(elements(actions).filter(n=>n.type==='button').map(n=>n.props['aria-label']),['立即引导','编辑','删除']);
+});
+
+test('an input already being edited or an error stays visible when the queue becomes empty',()=>{
+  const view=queue([]);view.state.editingId='m';view.state.editVersion=1;view.state.editingMessage=message('m');view.state.draft='Unsaved edit';
+  assert.ok(view.render());assert.match(text(view.render()),/草稿已保留/);assert.equal(button(view,'保存').props.disabled,true);
+  view.closeEdit();assert.equal(view.render(),null);
+  view.state.error='Please refresh';assert.match(text(view.render()),/Please refresh/);
+  assert.doesNotMatch(text(view.render()),/暂无待发消息|0 条/);
+});
+
 test('queue actions are session-scoped and send the message version expected by the editor',async t=>{
   const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
   const calls=[],work=[];globalThis.fetch=async(url,init)=>{calls.push({url,init});return response(message('m',7));};

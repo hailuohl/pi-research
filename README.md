@@ -12,7 +12,7 @@
 
 研究活动、实现与审查、变更提案统一从研究对话发起，不再设置独立页面。Pi 准备计划、代码、测试、审查和固定变更；必要批准及状态回查在原对话内完成，完整差异查看后才能整合。见[对话工作流验收](docs/acceptance/flow-dialogue-workflows/RESULT.md)。
 
-对话直接发送，空闲时启动普通任务，运行中发送则排队。待发消息可编辑、删除，或点击“立即引导”交给当前任务的下一处理边界；已被领取的输入不能改写。Enter发送、Shift+Enter换行，支持中文输入法确认。见[消息队列验收](docs/acceptance/flow-composer-queue/RESULT.md)。
+对话直接发送，空闲时启动普通任务，运行中发送则排队。队列只在有待发内容时显示在输入框内，悬停消息可用铅笔编辑、叉号删除，手机上图标直接显示；“立即”交给当前任务的下一处理边界，已被领取的输入不能改写。Enter发送、Shift+Enter换行，支持中文输入法确认。见[消息队列验收](docs/acceptance/flow-composer-queue/RESULT.md)及[紧凑样式验收](docs/acceptance/flow-compact-queue/RESULT.md)。
 
 由 0.3.0-experimental 独立派生。保留既有实验、审批、快照、协作、Campaign 与有效性修复；新增受管技能目录和五源文献接口。不是完整 OpenResearch 替代品，也不是所有后端已连接的生产系统。
 

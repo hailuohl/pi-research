@@ -1,6 +1,7 @@
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
+import { Icon } from "./ui.js";
 const PAGE_LIMIT = 20, READ_LIMIT = 64e3, MAX_CONTENT = 32e3;
 const signature = (p) => JSON.stringify([p.total, p.nextCursor, p.canSteer, p.messages.map((m) => [m.id, m.version, m.status, m.contentBytes])]);
 const isQueuedUser = (m) => m.role === "user" && m.status === "queued" && m.origin !== "automation";
@@ -107,15 +108,15 @@ class MessageQueue extends React.Component {
     if (!this.props.sessionId) return null;
     const { pageIndex, total, nextCursor, loading, error, editingId, draft } = this.state, locked = this.props.disabled || this.props.busy || loading || this.state.actionBusy || !!this.state.readingId;
     const items = this.displayedItems;
+    if (!total && !items.length && !editingId && !this.state.readingId && !loading && !error && !this.state.actionBusy) return null;
     return /* @__PURE__ */ jsxs("section", { className: "message-queue", "aria-label": "\u5F85\u53D1\u6D88\u606F\u961F\u5217", children: [
-      /* @__PURE__ */ jsxs("div", { className: "message-queue-heading", children: [
-        /* @__PURE__ */ jsx("strong", { children: "\u5F85\u53D1\u961F\u5217" }),
+      total > 0 ? /* @__PURE__ */ jsxs("div", { className: "message-queue-heading", children: [
         /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
-          this.state.total,
-          " \u6761 \xB7 \u6309\u6392\u5165\u987A\u5E8F\u53D1\u9001"
+          "\u6392\u961F\u4E2D \xB7 ",
+          total
         ] }),
         pageIndex > 0 ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: locked, onClick: () => this.setState({ items: this.props.messages.filter(isQueuedUser), total: this.props.total, nextCursor: this.props.nextCursor, canSteer: this.props.canSteer, pageStarts: [null], pageIndex: 0, error: "" }), children: "\u961F\u9996" }) : null
-      ] }),
+      ] }) : null,
       error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text queue-error", children: error }) : null,
       items.length ? /* @__PURE__ */ jsx("ol", { className: "message-queue-list", children: items.map((message) => {
         const editing = editingId === message.id, stale = editing && this.staleEdit, steerRequested = this.state.steerRequested.includes(message.id), rowLocked = locked || !!editingId && !editing;
@@ -136,12 +137,27 @@ class MessageQueue extends React.Component {
               /* @__PURE__ */ jsx("button", { type: "button", disabled: this.state.actionBusy, onClick: this.closeEdit, children: "\u53D6\u6D88\u7F16\u8F91" })
             ] })
           ] }) : /* @__PURE__ */ jsxs("div", { className: "message-queue-actions", children: [
-            /* @__PURE__ */ jsx("button", { type: "button", disabled: rowLocked || this.state.readingId === message.id, onClick: () => void this.beginEdit(message), children: this.state.readingId === message.id ? "\u8BFB\u53D6\u5168\u6587\u2026" : "\u7F16\u8F91" }),
-            /* @__PURE__ */ jsx("button", { type: "button", disabled: rowLocked, onClick: () => void this.action(message, "cancel"), children: "\u5220\u9664" }),
-            /* @__PURE__ */ jsx("button", { type: "button", disabled: rowLocked || !this.state.canSteer || steerRequested, title: !this.state.canSteer ? "\u5F53\u524D\u4EFB\u52A1\u6682\u4E0D\u53EF\u7ACB\u5373\u5F15\u5BFC" : "\u5728\u4E0B\u4E00\u5DE5\u5177\u6216\u56DE\u5408\u8FB9\u754C\u751F\u6548", onClick: () => void this.action(message, "steer"), children: steerRequested ? "\u5DF2\u8BF7\u6C42 \xB7 \u7B49\u5F85\u8FB9\u754C" : "\u7ACB\u5373\u5F15\u5BFC" })
+            /* @__PURE__ */ jsxs("button", { type: "button", disabled: rowLocked || !this.state.canSteer || steerRequested, className: "queue-now", "aria-label": steerRequested ? "\u5DF2\u8BF7\u6C42\u7ACB\u5373\u5F15\u5BFC" : "\u7ACB\u5373\u5F15\u5BFC", title: !this.state.canSteer ? "\u5F53\u524D\u6CA1\u6709\u53EF\u63A5\u6536\u5F15\u5BFC\u7684\u4EFB\u52A1" : "\u5728\u5F53\u524D\u4EFB\u52A1\u7684\u4E0B\u4E00\u5904\u7406\u8FB9\u754C\u751F\u6548", onClick: () => void this.action(message, "steer"), children: [
+              /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 14 }),
+              steerRequested ? /* @__PURE__ */ jsxs(Fragment, { children: [
+                /* @__PURE__ */ jsx("span", { children: "\u5DF2\u8BF7\u6C42" }),
+                /* @__PURE__ */ jsx("span", { className: "sr-only", children: " \xB7 \u7B49\u5F85\u8FB9\u754C" })
+              ] }) : /* @__PURE__ */ jsxs(Fragment, { children: [
+                /* @__PURE__ */ jsx("span", { children: "\u7ACB\u5373" }),
+                /* @__PURE__ */ jsx("span", { className: "sr-only", children: "\u5F15\u5BFC" })
+              ] })
+            ] }),
+            /* @__PURE__ */ jsxs("button", { type: "button", disabled: rowLocked || this.state.readingId === message.id, "aria-label": "\u7F16\u8F91", title: "\u7F16\u8F91\u6392\u961F\u6D88\u606F", className: "queue-icon", onClick: () => void this.beginEdit(message), children: [
+              /* @__PURE__ */ jsx(Icon, { name: "edit", size: 15 }),
+              /* @__PURE__ */ jsx("span", { className: "sr-only", children: this.state.readingId === message.id ? "\u8BFB\u53D6\u5168\u6587\u2026" : "\u7F16\u8F91" })
+            ] }),
+            /* @__PURE__ */ jsxs("button", { type: "button", disabled: rowLocked, "aria-label": "\u5220\u9664", title: "\u5220\u9664\u6392\u961F\u6D88\u606F", className: "queue-icon", onClick: () => void this.action(message, "cancel"), children: [
+              /* @__PURE__ */ jsx(Icon, { name: "close", size: 15 }),
+              /* @__PURE__ */ jsx("span", { className: "sr-only", children: "\u5220\u9664" })
+            ] })
           ] })
         ] }, message.id);
-      }) }) : /* @__PURE__ */ jsx("p", { className: "small muted queue-empty", children: "\u6682\u65E0\u5F85\u53D1\u6D88\u606F" }),
+      }) }) : loading ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u5F85\u53D1\u6D88\u606F\u2026" }) : null,
       total > PAGE_LIMIT || pageIndex > 0 ? /* @__PURE__ */ jsxs("div", { className: "message-queue-pages", children: [
         /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
           "\u7B2C ",
