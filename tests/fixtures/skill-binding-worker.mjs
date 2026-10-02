@@ -12,6 +12,6 @@ process.on('message',m=>{
   process.send({type:'assistant_message',content:JSON.stringify({fixture:'ipc-only-no-sdk-no-model',phase:reads.length===1?'first':'second',bundleId,reads}),usage:{fixture:true,modelRequests:0}});
   if(reads.length===2)process.send({type:'done'});
  }else if(m.type==='steer'&&m.content==='READ_AFTER_RECONFIGURE'){
-  process.send({type:'message_ack',messageId:m.messageId});read(2);
+  process.send({type:'message_ack',messageId:m.messageId});process.send({type:'input_consumed',messageId:m.messageId});read(2);
  }else if(m.type==='abort')process.send({type:'done',aborted:true});
 });

@@ -1,3 +1,4 @@
+import {canSteerSession} from '../pi-adapter/session-history.js';
 import {prepareSessionSkills} from '../skills/runtime.js';
 import { fork, type ChildProcess } from 'node:child_process';
 import { mkdirSync, existsSync } from 'node:fs';
@@ -19,6 +20,7 @@ interface Active {
     generation: number;
     actor: Actor;
     messageIds: string[];
+    consumedIds: Set<string>;
     attemptId?: string;
     started: number;
     lastHeartbeat: number;
@@ -104,11 +106,15 @@ export class AgentHost {
                     active.lastHeartbeat = Date.now();
                 }
                 if (!s.taskId && !active.actor.wakeupId)
-                    for (const m of this.app.sessions.messages(SYSTEM, s.id).filter(m => m.role === 'user' && m.status === 'queued' && ['steer', 'follow_up'].includes(m.mode))) {
-                        if (active.sent.has(m.id))
-                            continue;
-                        active.sent.add(m.id);
-                        active.child.send({ type: m.mode, content: m.content, messageId: m.id });
+                    for (const queued of this.app.sessions.messages(SYSTEM, s.id).filter(m=>m.role==='user'&&m.origin!=='automation'&&!m.wakeupId&&m.status==='queued'&&m.mode==='steer')) {
+                        const m=this.app.store.transaction(()=>{
+                            const latest=this.app.store.get<Session>('session',s.id),input=this.app.store.get<Message>('message',queued.id,latest.projectId!);
+                            if(!this.valid(active)||!canSteerSession(this.app.store,latest)||input.sessionId!==latest.id||input.status!=='queued'||input.mode!=='steer'||(input.steerGeneration!==undefined&&input.steerGeneration!==active.generation))return null;
+                            return this.app.store.update<Message>('message',input.id,input.version,{status:'running'});
+                        });
+                        if(!m)continue;
+                        active.messageIds.push(m.id);active.sent.add(m.id);
+                        this.sendInput(active,{type:'steer',content:m.content,messageId:m.id},m.id);
                     }
                 if (s.taskId && a?.state === 'running')
                     for (const d of this.app.store.list<any>('directive', s.projectId!).filter(d => d.kind !== 'revise' && d.taskIds.includes(s.taskId) && !d.deliveredSessionIds.includes(s.id))) {
@@ -132,6 +138,7 @@ export class AgentHost {
             for (const s of this.app.store.list<Session>('session').filter(s => !s.taskId && s.state === 'queued')) {
                 if (!this.admission.snapshot().available)
                     break;
+                if(this.active.has(s.id))continue;
                 if (!this.inspect(s.model).ready)
                     continue;
                 try{assertWorkspaceReady(this.app.context,s.id);}catch{continue;}
@@ -175,12 +182,15 @@ export class AgentHost {
             const latest = store.get<Session>('session', session.id);
             assertWorkspaceReady(this.app.context,latest.id);
             if(['running','archived'].includes(latest.state))return null;
+            const input=messageId?store.get<Message>('message',messageId,latest.projectId!):undefined;
+            if(input){ensure(input.sessionId===latest.id,'SCOPE_DENIED','消息不属于此会话',403);if(input.status!=='queued')return null;}
             const slot=this.admission.tryAcquire(latest,latest.generation+1,this.ownerHost,attempt?.teamId);if(!slot)return null;
             const next = store.update<Session>('session', latest.id, latest.version, { state: 'running', generation: latest.generation + 1, leaseUntil: Date.now() + 30000, lastError: undefined });
-            if (messageId) {
-                const m = store.get<Message>('message', messageId);
-                ensure(m.status === 'queued' && m.sessionId === next.id, 'MESSAGE_STALE', '消息已失效');
-                store.update<Message>('message', m.id, m.version, { status: 'running' });
+            let message:Row<Message>|undefined;
+            if (input) {
+                const m = input;
+                ensure(m.status === 'queued' && m.sessionId === next.id && m.projectId===next.projectId, 'MESSAGE_STALE', '消息已失效');
+                message=store.update<Message>('message', m.id, m.version, { status: 'running' });
                 if (m.wakeupId) this.app.wakeups.markStarted(m.wakeupId, next.id, next.generation, m.id);
             }
             const wakeupId=messageId?store.get<Message>('message',messageId).wakeupId:undefined;
@@ -190,12 +200,13 @@ export class AgentHost {
             ensure(!attempt||attempt.skillBundleId===bundleId,'SKILL_BINDING_MISMATCH','任务与会话技能包不一致');
             const bound=store.update<Session>('session',next.id,next.version,{skillBundleId:bundleId});
             store.event(next.projectId,'session.skill_bundle_bound',{sessionId:next.id,generation:next.generation,bundleId});
-            return {session:bound,slot};
+            return {session:bound,slot,message};
         });
     }
-    private launch(session: Row<Session>, prompt: string, messageId?: string, attempt?: Row<TaskAttempt>,prepared?:{session:Row<Session>;slot:Row<AgentAdmission>}) {
+    private launch(session: Row<Session>, prompt: string, messageId?: string, attempt?: Row<TaskAttempt>,prepared?:{session:Row<Session>;slot:Row<AgentAdmission>;message?:Row<Message>}) {
         const reservation=prepared??this.claimSession(session,messageId,attempt);if(!reservation)return;
         const {session:claimed,slot}=reservation,store=this.app.store;
+        if(messageId){ensure(reservation.message?.id===messageId,'MESSAGE_STALE','领取正文缺失');prompt=reservation.message.content;}
         const wakeupId = messageId ? store.get<Message>('message', messageId).wakeupId : undefined;
         const actor: Actor = { ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId!, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
         let active:Active|undefined,requested=false;
@@ -214,7 +225,7 @@ export class AgentHost {
             const marked=this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);store.update('agent-admission',marked.id,marked.version,{httpManagedVersion:1});requested=true;
             return (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
         });
-        const worker: Active = {admissionId:slot.id, child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };active=worker;
+        const worker: Active = {admissionId:slot.id, child, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds:new Set(messageId?[messageId]:[]), attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };active=worker;
         this.active.set(claimed.id, worker);
         child.stdout?.on('data', () => { });
         child.stderr?.on('data', () => { });
@@ -227,7 +238,7 @@ export class AgentHost {
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
         worker.contextMessageIds = hostMessages.map(m => m.id);
         const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
-        child.send({ type: 'start', managedHttp:true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt });
+        this.sendInput(worker,{ type: 'start', managedHttp:true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             const failure=asError(error),startError=`${failure.code} — ${failure.message}`;
@@ -324,18 +335,19 @@ export class AgentHost {
         if (m?.type === 'delta' && typeof m.text === 'string') {
             const text=redact(m.text);this.app.store.transaction(()=>{ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');this.app.store.event(s.projectId, 'session.delta', { sessionId: s.id, generation:a.generation,text:text.slice(0,4000),truncated:text.length>4000 });});
         }
-        if (m?.type === 'message_ack') {
-            const msg = this.app.store.maybe<Message>('message', m.messageId);
-            if (msg && msg.sessionId === s.id && msg.status === 'queued') {
-                this.app.store.update<Message>('message', msg.id, msg.version, { status: 'running' });
-                a.messageIds.push(msg.id);
-            }
-            else {
-                const d = this.app.store.maybe<any>('directive', m.messageId);
-                if (d)
-                    this.app.store.update('directive', d.id, d.version, { deliveredSessionIds: [...d.deliveredSessionIds, s.id] });
-            }
+        if(m?.type==='input_consumed'&&a.messageIds.includes(m.messageId)&&a.sent.has(m.messageId))a.consumedIds.add(m.messageId);
+        if(m?.type==='control_error'&&a.messageIds.includes(m.messageId))this.failInput(a,m.messageId,clean(String(m.error??'Worker 未接受输入')));
+        if (m?.type === 'message_ack' && !a.messageIds.includes(m.messageId) && a.actor.taskId && a.sent.has(m.messageId)) {
+            const d=this.app.store.maybe<any>('directive',m.messageId);
+            if(d&&d.projectId===s.projectId&&d.taskIds.includes(s.taskId)&&!d.deliveredSessionIds.includes(s.id))this.app.store.update('directive',d.id,d.version,{deliveredSessionIds:[...d.deliveredSessionIds,s.id]});
         }
+    }
+    private failInput(a:Active,id:string,error:string){
+        this.app.store.transaction(()=>{const m=this.app.store.get<Message>('message',id);if(m.sessionId===a.sessionId&&m.status==='running')this.app.store.update<Message>('message',id,m.version,{status:'failed',error});});
+    }
+    private sendInput(a:Active,payload:Record<string,unknown>,messageId?:string){
+        const failed=(error:Error|null)=>{if(!error)return;if(messageId)this.failInput(a,messageId,clean(error.message));if(payload.type==='start')this.finish(a,clean(error.message));};
+        try{a.child.send(payload,failed);}catch(error){failed(error as Error);}
     }
     private savePath(a: Active, file: string, root: string) { const rel = relative(resolve(root), resolve(file)); ensure(rel !== '' && !rel.startsWith('..') && !isAbsolute(rel) && file.endsWith('.jsonl'), 'SESSION_PATH_INVALID', 'Pi Session 路径超出受控目录'); const s = this.app.store.get<Session>('session', a.sessionId); if(s.piSessionPath&&this.app.store.paths.same(s.piSessionPath,resolve(file)))return;this.app.store.update<Session>('session', s.id, s.version, { piSessionPath: this.app.store.paths.reference(resolve(file)) }); }
     private abortProcess(a: Active, error = '会话已中止或任务已失效') {
@@ -370,7 +382,7 @@ export class AgentHost {
             for (const id of a.messageIds) {
                 const m = store.get<Message>('message', id);
                 if (m.status === 'running')
-                    store.update<Message>('message', m.id, m.version, { status: error ? 'failed' : 'completed', error });
+                    store.update<Message>('message', m.id, m.version, { status: error||!a.consumedIds.has(id) ? 'failed' : 'completed', error:error??(a.consumedIds.has(id)?undefined:'未确认处理，请核对后重试') });
             }
             if (s.generation === a.generation && s.state === 'running') {
                 const queued = this.app.sessions.messages(SYSTEM, s.id).some(m => m.status === 'queued');

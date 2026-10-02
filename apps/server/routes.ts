@@ -42,6 +42,7 @@ export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: 
             return p;
     }
     if (kind === 'sessions' && id) {
+        if(action==='queue'){ensure([...url.searchParams.keys()].every(k=>['afterMessageId','limit'].includes(k))&&[...url.searchParams.keys()].every(k=>url.searchParams.getAll(k).length===1),'INVALID_INPUT','队列参数无效');return app.sessions.queue(USER,id,Object.fromEntries([...url.searchParams.entries()].map(([k,v])=>[k,k==='limit'?Number(v):v])));}
         if(action==='view') {ensure([...url.searchParams.keys()].every(k=>['beforeMessageId','afterMessageId','limit'].includes(k))&&[...url.searchParams.keys()].every(k=>url.searchParams.getAll(k).length===1),'INVALID_INPUT','消息页参数无效');return app.operations.execute(USER,'session_view',{sessionId:id,...Object.fromEntries([...url.searchParams.entries()].map(([k,v])=>[k,k==='limit'?Number(v):v]))},{projectId:app.sessions.get(USER,id).projectId!});}
         if (action === 'messages')
             return app.sessions.messages(USER, id);
@@ -115,6 +116,7 @@ export function writeRoute(app: ResearchApp, host: AgentHost, path: string, body
     if (path === '/sessions')
         return app.sessions.create(USER, text(x.projectId, 'projectId', 100), x);
     if (kind === 'sessions' && id) {
+        if(action==='queue'){ensure(method==='POST','INVALID_INPUT','队列操作只接受 POST');return app.sessions.queueAction(USER,id,x);}
         if (action === 'messages') {
             host.ensureReady(app.sessions.get(USER, id));
             return app.sessions.send(USER, id, x);

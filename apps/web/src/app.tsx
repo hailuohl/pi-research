@@ -7,8 +7,10 @@ import type { Bootstrap, ProjectState, Row, DocumentLocation, SessionHistoryPage
 import { short, label } from './models.js';
 import { Icon, Modal, Empty } from './ui.js';
 import { Chat, Experiments, Inspector, type Perform } from './workbench.js';
+import type {QueueMessage} from './message-queue.js';
 import {SessionList} from './session-list.js';
 import { WorkspaceView, EvidenceView, ReportsView, LiteratureView, SettingsView } from './data-views.js';
+type CurrentSessionView=Omit<SessionView,'messages'|'progress'>&{messages:QueueMessage[];pendingMessages:QueueMessage[];pendingTotal:number;pendingNextCursor:string|null;progress:SessionView['progress']&{canSteer:boolean}};
 interface State {
     boot: Bootstrap | null;
     data: ProjectState | null;
@@ -22,7 +24,11 @@ interface State {
     selectedRunGrant:string;
     selectedDiscoveryGrant:string;
     selectedDocument:DocumentLocation|null;
-    messages: SessionView['messages'];
+    messages: QueueMessage[];
+    pendingMessages:QueueMessage[];
+    pendingTotal:number;
+    pendingNextCursor:string|null;
+    canSteer:boolean;
     history:SessionHistoryPage|null;
     historyAnchor:{direction:'before'|'after';id:string}|null;
     stream: string;
@@ -93,7 +99,7 @@ class ExperimentModal extends React.Component<{
     }
 }
 export class App extends React.Component<{}, State> {
-    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: normalizeView(saved().tab ?? 'chat'), selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedRunGrant:saved().selectedRunGrant??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [], history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, navigationOpen: false };
+    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: normalizeView(saved().tab ?? 'chat'), selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedRunGrant:saved().selectedRunGrant??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false, history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, navigationOpen: false };
     private experimentSelections:Record<string,string> = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([,value])=>typeof value==='string')) as Record<string,string>;
     private closeNavigationOnResize = () => { if(window.innerWidth>760&&this.state.navigationOpen)this.setState({navigationOpen:false}); };
     private navigationToggle:HTMLButtonElement|null=null;
@@ -131,14 +137,14 @@ export class App extends React.Component<{}, State> {
             let data=projectId?await api<ProjectState>(`/projects/${projectId}/state${requestedSession?'?sessionId='+encodeURIComponent(requestedSession):''}`,undefined,'GET',controller.signal):null;
             const sessionId=requestedSession||(data?.sessions.find(s=>s.role==='coordinator'&&s.state!=='archived')?.id??'');
             const anchor=requestedSession?this.state.historyAnchor:null;
-            const view=sessionId?await api<SessionView>(`/sessions/${sessionId}/view${anchor?'?'+(anchor.direction==='before'?'beforeMessageId':'afterMessageId')+'='+encodeURIComponent(anchor.id):''}`,undefined,'GET',controller.signal):null;
+            const view=sessionId?await api<CurrentSessionView>(`/sessions/${sessionId}/view${anchor?'?'+(anchor.direction==='before'?'beforeMessageId':'afterMessageId')+'='+encodeURIComponent(anchor.id):''}`,undefined,'GET',controller.signal):null;
             if(!this.mounted||epoch!==this.refreshEpoch)return false;
             if(view&&view.session.id!==sessionId)throw Error('会话快照与当前选择不一致');
             if(data&&view)data={...data,sessions:data.sessions.some(s=>s.id===sessionId)?data.sessions.map(s=>s.id===sessionId?view.session:s):[...data.sessions,view.session]};
             const active=!!view?.progress.active&&view.progress.generation===view.session.generation;
             const requestedExp=projectId===this.state.projectId?this.state.selectedExp:this.experimentSelections[projectId]??'';
             const selectedExp=data?.experiments.some(e=>e.id===requestedExp)?requestedExp:data?.experiments[0]?.id??'';
-            await new Promise<void>(resolve=>this.setState({boot,data,projectId,sessionId,messages:view?.messages??[],history:view?.history??null,historyAnchor:anchor,selectedExp,stream:!anchor&&active?view!.progress.content:'',streamTruncated:!anchor&&active&&!!view?.progress.truncated,connected:true},resolve));
+            await new Promise<void>(resolve=>this.setState({boot,data,projectId,sessionId,messages:view?.messages??[],pendingMessages:view?.pendingMessages??[],pendingTotal:view?.pendingTotal??0,pendingNextCursor:view?.pendingNextCursor??null,canSteer:view?.progress?.canSteer??false,history:view?.history??null,historyAnchor:anchor,selectedExp,stream:!anchor&&active?view!.progress.content:'',streamTruncated:!anchor&&active&&!!view?.progress.truncated,connected:true},resolve));
             if(!this.mounted||epoch!==this.refreshEpoch)return false;
             if(this.feed?.projectId!==projectId){this.feed?.stop();this.feed=undefined;if(projectId){const feed=new ProjectEventFeed(projectId,()=>this.refresh(true),eventNotice=>{if(this.mounted&&this.feed===feed)this.setState({eventNotice});});this.feed=feed;feed.start();}}
             return true;
@@ -171,8 +177,8 @@ export class App extends React.Component<{}, State> {
             this.setState({ busy: false });
         }
     };
-    private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'error'> {
-        return {sessionId:id,tab:normalizeView(tab),messages:[],history:null,historyAnchor:null,stream:'',streamTruncated:false,error:''};
+    private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'error'> {
+        return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,error:''};
     }
     switchProject(id: string) { if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',selectedCampaign:'',selectedRunGrant:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
     selectSession(id: string,tab='chat') { this.invalidateRead(); this.setState(this.sessionSelection(id,tab), () => { void this.refresh(); }); }
@@ -232,7 +238,7 @@ export class App extends React.Component<{}, State> {
  {this.state.eventNotice?<p className="small muted" role="status">{this.state.eventNotice}</p>:null}{this.state.error ? <div className="global-error" role="alert"><strong>操作未完成</strong><span>{this.state.error}</span><button className="icon-button" aria-label="关闭错误提示" onClick={() => this.setState({ error: '' })}><Icon name="close" size={16}/></button></div> : null}{this.state.notice ? <div className="toast" role="status"><Icon name="check" size={16}/>{this.state.notice}</div> : null}
  <div className={'workbench-content ' + (['chat', 'experiments'].includes(tab) && data ? 'with-inspector' : '')}>
  <main className={'main-pane page-' + tab + (tab === 'chat' ? ' chat-pane' : '')}>
-{boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} busy={this.state.busy} messages={this.state.messages} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
+{boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} busy={this.state.busy} messages={this.state.messages} pendingMessages={this.state.pendingMessages} pendingTotal={this.state.pendingTotal} pendingNextCursor={this.state.pendingNextCursor} canSteer={this.state.canSteer} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} session={currentSession} perform={this.perform}/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
                 tab === 'chat' ? null :
                     tab === 'scheduler' ? <SchedulerView key={data.project.id} data={data} perform={this.perform}/> :
@@ -241,7 +247,7 @@ export class App extends React.Component<{}, State> {
                             tab === 'integrations' ? <IntegrationsView key={data.project.id} projectId={data.project.id} sessionId={this.state.sessionId} onLiterature={()=>this.setState({tab:'literature'})}/> :
                             tab === 'literature' ? <LiteratureView key={data.project.id} data={data} perform={this.perform} selectedDiscoveryGrant={this.state.selectedDiscoveryGrant} onSelectDiscoveryGrant={selectedDiscoveryGrant=>this.setState({selectedDiscoveryGrant})} onSession={id=>this.selectSession(id)} selectedDocument={this.state.selectedDocument??undefined} onDocument={selectedDocument=>this.setState({selectedDocument})} onSources={()=>this.setState({tab:'integrations'})}/> :
                                 tab === 'evidence' ? <EvidenceView onDocument={selectedDocument=>this.setState({selectedDocument,tab:'literature'})} key={data.project.id} data={data} perform={this.perform} onRegister={(artifactId, content) => this.open('evidence', { artifactId, content })} onClaim={() => this.open('claim')}/> :
-                                    tab === 'reports' ? <ReportsView onCampaign={selectedCampaign=>{const clearHistory={messages:[],history:null,historyAnchor:null,stream:'',streamTruncated:false};const campaign=data.campaigns.find(c=>c.id===selectedCampaign);if(!campaign){this.setState({...clearHistory,error:'指定研究活动不在当前项目中，未跳转到其他活动。'});return;}if(!campaign.rootSessionId){this.setState({...clearHistory,error:'指定研究活动没有可打开的主会话。'});return;}this.setState({selectedCampaign},()=>this.selectSession(campaign.rootSessionId));}} onSession={id=>this.selectSession(id)} onDocument={selectedDocument=>this.setState({selectedDocument,tab:'literature'})} key={data.project.id} data={data} perform={this.perform} selectedReport={this.state.selectedReport} onSelect={selectedReport=>this.setState({selectedReport})} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定报告 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp,tab:'experiments'});}}/> : null}
+                                    tab === 'reports' ? <ReportsView onCampaign={selectedCampaign=>{const clearHistory={messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false};const campaign=data.campaigns.find(c=>c.id===selectedCampaign);if(!campaign){this.setState({...clearHistory,error:'指定研究活动不在当前项目中，未跳转到其他活动。'});return;}if(!campaign.rootSessionId){this.setState({...clearHistory,error:'指定研究活动没有可打开的主会话。'});return;}this.setState({selectedCampaign},()=>this.selectSession(campaign.rootSessionId));}} onSession={id=>this.selectSession(id)} onDocument={selectedDocument=>this.setState({selectedDocument,tab:'literature'})} key={data.project.id} data={data} perform={this.perform} selectedReport={this.state.selectedReport} onSelect={selectedReport=>this.setState({selectedReport})} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定报告 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp,tab:'experiments'});}}/> : null}
  </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector onScheduler={()=>this.setState({tab:'scheduler'})} data={data} boot={boot} tab={tab} sessionId={collaborationSessionId} inlineWorkflows={tab==='chat'&&currentSession?.role==='coordinator'&&!currentSession.taskId} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onPrepare={() => {
                     if (experiment)
                         this.perform(() => api('/run-intents', { experimentId: experiment.id }), '已准备不可变快照，等待人工批准');

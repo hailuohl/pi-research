@@ -73,6 +73,8 @@ export interface Message {
     content: string;
     contentTruncated?: boolean;
     mode: 'prompt' | 'steer' | 'follow_up';
+    steerGeneration?: number;
+    queueRemoved?: boolean;
     status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
     error?: string;
     origin?: 'user' | 'automation';

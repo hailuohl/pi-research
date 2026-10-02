@@ -3,6 +3,7 @@ import * as React from "react";
 import { RunGrants, runGrantUsable } from "./run-grants.js";
 import { LogView } from "./log-view.js";
 import { SessionHistory } from "./session-history.js";
+import { MessageQueue } from "./message-queue.js";
 import { ComputeWait } from "./scheduler-view.js";
 import { WakeupPanel } from "./campaigns.js";
 import { comparableRuns, comparisonMetric } from "./models.js";
@@ -14,11 +15,15 @@ import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { draft: "", mode: "prompt" };
+    this.state = { draft: "" };
+    this.mounted = true;
+  }
+  componentWillUnmount() {
+    this.mounted = false;
   }
   render() {
     const { data, boot, session, messages } = this.props;
-    const canSend = boot.runtime.ready && !!session && !!session.model.provider && !!session.model.model && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
+    const canSend = boot.runtime.ready && !this.props.busy && !!session && !!session.model.provider && !!session.model.model && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
     return /* @__PURE__ */ jsxs("div", { className: "chat-page", children: [
       /* @__PURE__ */ jsxs("div", { className: "chat-heading", children: [
         /* @__PURE__ */ jsxs("div", { children: [
@@ -76,28 +81,22 @@ class Chat extends React.Component {
         session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
+        session?.role === "coordinator" ? /* @__PURE__ */ jsx(MessageQueue, { projectId: data.project.id, sessionId: session.id, messages: this.props.pendingMessages, total: this.props.pendingTotal, nextCursor: this.props.pendingNextCursor, canSteer: this.props.canSteer, disabled: data.project.archived || !!session.taskId || session.state === "archived" || !!this.props.historyAnchor || !!this.props.history && !this.props.history.atLatest, busy: this.props.busy, perform: this.props.perform }, data.project.id + ":" + session.id) : null,
         /* @__PURE__ */ jsxs("form", { className: "composer", onSubmit: (e) => {
           e.preventDefault();
-          if (!session || !canSend || !this.state.draft.trim())
-            return;
+          if (!session || !canSend || !this.state.draft.trim()) return;
           const content = this.state.draft;
           this.props.perform(async () => {
-            await api(`/sessions/${session.id}/messages`, { content, mode: this.state.mode });
-            this.setState({ draft: "" });
+            await api(`/sessions/${session.id}/messages`, { content });
+            if (this.mounted && this.props.session?.id === session.id && this.state.draft === content) this.setState({ draft: "" });
           });
         }, children: [
-          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\uFF0C\u6216\u53D1\u6D88\u606F\u5F15\u5BFC\u5F53\u524D\u4EFB\u52A1\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState({ draft: e.target.value }), onKeyDown: (e) => {
-            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-              e.preventDefault();
-              e.currentTarget.form.requestSubmit();
-            }
+          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState({ draft: e.target.value }), onKeyDown: (e) => {
+            if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.nativeEvent?.isComposing || e.keyCode === 229 || e.nativeEvent?.keyCode === 229) return;
+            e.preventDefault();
+            e.currentTarget.form.requestSubmit();
           } }),
           /* @__PURE__ */ jsxs("div", { className: "composer-toolbar", children: [
-            /* @__PURE__ */ jsxs("select", { "aria-label": "\u6D88\u606F\u65B9\u5F0F", value: this.state.mode, onChange: (e) => this.setState({ mode: e.target.value }), children: [
-              /* @__PURE__ */ jsx("option", { value: "prompt", children: "\u666E\u901A\u6D88\u606F" }),
-              /* @__PURE__ */ jsx("option", { value: "steer", children: "\u5F15\u5BFC\u5F53\u524D\u4EFB\u52A1" }),
-              /* @__PURE__ */ jsx("option", { value: "follow_up", children: "\u5F53\u524D\u7ED3\u675F\u540E\u6267\u884C" })
-            ] }),
             /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
               /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
               /* @__PURE__ */ jsx("span", { children: "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F" })
@@ -116,7 +115,7 @@ class Chat extends React.Component {
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "composer-caption", children: [
           "\u56FA\u5B9A\u5FEB\u7167 \xB7 \u663E\u5F0F\u5BA1\u6279 \xB7 \u53EF\u8FFD\u6EAF\u8BC1\u636E ",
-          /* @__PURE__ */ jsx("span", { children: "Ctrl + Enter \u53D1\u9001" })
+          /* @__PURE__ */ jsx("span", { children: "Enter \u53D1\u9001 \xB7 Shift + Enter \u6362\u884C \xB7 Ctrl/\u2318 + Enter \u53D1\u9001" })
         ] })
       ] })
     ] });

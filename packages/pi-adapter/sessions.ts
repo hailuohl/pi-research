@@ -1,4 +1,4 @@
-import {sessionCatalog,sessionMessagePage,sessionMessageContent,type SessionView} from './session-history.js';
+import {sessionCatalog,sessionMessagePage,sessionMessageContent,sessionQueue,canSteerSession,type SessionView} from './session-history.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -46,16 +46,38 @@ export class SessionService {
     }
     send(actor: Actor, id: string, value: unknown) {
         userOnly(actor);
-        const s = this.get(actor, id), x = object(value);
-        ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
-        ensure(!s.taskId, 'TASK_MESSAGE_REQUIRED', '请通过任务引导发送消息');
+        const x = object(value);
         return this.c.store.transaction(() => {
+            const s=this.get(actor,id);
+            ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
+            ensure(!s.taskId, 'TASK_MESSAGE_REQUIRED', '请通过任务引导发送消息');
             assertProjectWritable(this.c.store,s.projectId!);
-            const msg = this.c.store.create<Message>('message', s.projectId, { sessionId: id, role: 'user', content: text(x.content, 'content', 32000), mode: oneOf(x.mode ?? 'prompt', ['prompt', 'steer', 'follow_up'] as const, 'mode'), status: 'queued' });
-            if (s.state !== 'running')
-                this.c.store.update<Session>('session', id, s.version, { state: 'queued', lastError: undefined });
-            this.c.store.event(s.projectId, 'session.message_queued', { sessionId: id, messageId: msg.id, mode: msg.mode });
+            const pending=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND json_extract(data,'$.status') IN ('queued','running') LIMIT 1").get(s.projectId!,id);
+            const mode=oneOf(x.mode ?? (s.state==='running'||pending?'follow_up':'prompt'), ['prompt','steer','follow_up'] as const,'mode');
+            const msg=this.c.store.create<Message>('message',s.projectId,{sessionId:id,role:'user',content:text(x.content,'content',32000),mode,status:'queued',...(mode==='steer'?{steerGeneration:s.generation}:{})});
+            if(s.state!=='running')this.c.store.update<Session>('session',id,s.version,{state:'queued',lastError:undefined});
+            this.c.store.event(s.projectId,'session.message_queued',{sessionId:id,messageId:msg.id,mode});
             return msg;
+        });
+    }
+    queue(actor:Actor,id:string,input:unknown={}){userOnly(actor);return this.c.store.readSnapshot(()=>sessionQueue(this.c.store,this.get(actor,id),input));}
+    queueAction(actor:Actor,id:string,value:unknown){
+        userOnly(actor);const x=object(value);
+        ensure(Object.keys(x).every(k=>['messageId','expectedVersion','action','content'].includes(k)),'INVALID_INPUT','队列操作包含未知字段');
+        const action=oneOf(x.action,['edit','cancel','steer'] as const,'action'),messageId=text(x.messageId,'messageId',100),version=integer(x.expectedVersion,'expectedVersion',1);
+        ensure(action==='edit'||x.content===undefined,'INVALID_INPUT','只有编辑操作接受正文');
+        const content=action==='edit'?text(x.content,'content',32000):undefined;
+        return this.c.store.transaction(()=>{
+            const s=this.get(actor,id);assertProjectWritable(this.c.store,s.projectId!);
+            ensure(s.state!=='archived','SESSION_ARCHIVED','会话已归档');ensure(!s.taskId,'TASK_MESSAGE_REQUIRED','请通过任务引导发送消息');
+            const m=this.c.store.get<Message>('message',messageId,s.projectId!);
+            ensure(m.sessionId===id&&m.role==='user'&&m.origin!=='automation'&&!m.wakeupId,'SCOPE_DENIED','消息不属于此用户队列',403);
+            ensure(m.version===version,'VERSION_CONFLICT','消息版本已变化，请刷新队列');
+            ensure(m.status==='queued','MESSAGE_STALE','消息已被领取，不能再修改');
+            if(action==='steer')ensure(canSteerSession(this.c.store,s),'SESSION_BUSY','当前会话不能接收立即引导');
+            const updated=this.c.store.update<Message>('message',m.id,m.version,action==='edit'?{content}:action==='cancel'?{status:'cancelled',queueRemoved:true}:{mode:'steer',steerGeneration:s.generation});
+            if(action==='cancel'&&s.state==='queued'&&!this.messages(actor,id).some(v=>v.status==='queued'))this.c.store.update<Session>('session',s.id,s.version,{state:'idle'});
+            this.c.store.event(s.projectId,'session.queue_changed',{sessionId:id,messageId:m.id,action});return updated;
         });
     }
     rename(actor: Actor, id: string, title: string, expectedVersion: number) { userOnly(actor); this.get(actor, id); return this.c.store.update<Session>('session', id, expectedVersion, { title: text(title, 'title', 160) }); }
@@ -80,18 +102,19 @@ export class SessionService {
         userOnly(actor);
         return this.c.store.readSnapshot(()=>{
             const session=this.get(actor,id),pid=session.projectId!,page=sessionMessagePage(this.c.store,session,input),cursor=this.c.store.eventCursor(pid);
-            const progress={generation:session.generation,active:session.state==='running',content:'',truncated:false,cursor};
-            if(!progress.active)return {session,...page,progress};
+            const queue=sessionQueue(this.c.store,session),pending={pendingMessages:queue.items,pendingTotal:queue.total,pendingNextCursor:queue.nextCursor};
+            const progress={generation:session.generation,active:session.state==='running',canSteer:queue.canSteer,content:'',truncated:false,cursor};
+            if(!progress.active)return {session,...page,...pending,progress};
             const start=this.c.store.db.prepare("SELECT seq,json_extract(payload,'$.generation') generation FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='agent.started' ORDER BY seq DESC LIMIT 1").get(pid,id);
             // Legacy events did not identify an execution generation; never replay them into a new turn.
-            if(!start||start.generation!==session.generation)return {session,...page,progress};
+            if(!start||start.generation!==session.generation)return {session,...page,...pending,progress};
             const completed=this.c.store.db.prepare("SELECT seq FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.message_completed' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid,id,start.seq,session.generation);
             const rows=this.c.store.db.prepare("SELECT seq,substr(json_extract(payload,'$.text'),1,4000) text,COALESCE(json_extract(payload,'$.truncated'),0) truncated FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.delta' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 257").all(pid,id,completed?.seq??start.seq,session.generation);
             const visible=rows.slice(0,256).reverse(),content=visible.map(r=>typeof r.text==='string'?r.text:'').join('');
             progress.content=content.slice(-32000);progress.truncated=rows.length>256||content.length>32000||visible.some(r=>!!r.truncated);
             // Avoid starting the preview in the middle of a UTF-16 surrogate pair.
             if(progress.content.length&&/[\uDC00-\uDFFF]/.test(progress.content[0])){progress.content=progress.content.slice(1);progress.truncated=true;}
-            return {session,...page,progress};
+            return {session,...page,...pending,progress};
         });
     }
     /** Host-only persisted input; never masquerades as a user-authored message. */
@@ -128,14 +151,14 @@ export class SessionService {
     }
     branch(actor: Actor, id: string, throughMessageId: string) {
         userOnly(actor);
-        const original = this.get(actor, id), messages = this.messages(actor, id);
-        const index = messages.findIndex(m => m.id === throughMessageId);
-        ensure(index >= 0, 'NOT_FOUND', '分支消息不存在', 404);
         return this.c.store.transaction(() => {
+            const original = this.get(actor, id), messages = this.messages(actor, id);
+            const index = messages.findIndex(m => m.id === throughMessageId);
+            ensure(index >= 0, 'NOT_FOUND', '分支消息不存在', 404);
             const s = this.create(actor, original.projectId!, { title: original.title + ' · 分支' });
             const branch = this.c.store.update<Session>('session', s.id, s.version, { parentSessionId: id, model: original.model });
             for (const m of messages.slice(0, index + 1))
-                this.c.store.create<Message>('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: 'completed' });
+                this.c.store.create<Message>('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved?'cancelled':'completed',...(m.queueRemoved?{queueRemoved:true}:{}) });
             this.c.store.event(s.projectId, 'session.branched', { parentId: id, sessionId: s.id, throughMessageId });
             return branch;
         });

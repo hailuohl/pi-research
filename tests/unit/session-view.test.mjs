@@ -18,7 +18,7 @@ test('session view restores only the current generation and latest unfinished an
   assert.deepEqual(s.app.sessions.view(USER,s.session.id),view,'rereading cannot duplicate preview text');
   finishMessage(s,2,'当前完整输出🙂');assert.equal(s.app.sessions.view(USER,s.session.id).progress.content,'');assert.equal(s.app.sessions.view(USER,s.session.id).messages.at(-1).content,'当前完整输出🙂');
   delta(s,2,'next answer');assert.equal(s.app.sessions.view(USER,s.session.id).progress.content,'next answer');
-  const row=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',row.id,row.version,{state:'interrupted',generation:3});assert.deepEqual(s.app.sessions.view(USER,row.id).progress,{generation:3,active:false,content:'',truncated:false,cursor:s.app.store.eventCursor(s.project.id)});
+  const row=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',row.id,row.version,{state:'interrupted',generation:3});assert.deepEqual(s.app.sessions.view(USER,row.id).progress,{generation:3,active:false,canSteer:false,content:'',truncated:false,cursor:s.app.store.eventCursor(s.project.id)});
   assert.throws(()=>s.app.sessions.view({type:'agent',projectId:s.project.id},row.id),{code:'PERMISSION_DENIED'});
  }finally{s.close();}
 });

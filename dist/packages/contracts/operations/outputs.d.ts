@@ -10611,6 +10611,129 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly required: readonly ["id", "kind", "projectId", "version", "createdAt", "updatedAt", "title", "role", "state", "model", "workspace", "piSessionPath", "generation", "leaseUntil"];
                 readonly additionalProperties: false;
             };
+            readonly pendingMessages: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        kind: {
+                            const: string;
+                        };
+                        sessionId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        role: {
+                            readonly enum: readonly ["user", "assistant", "system"];
+                        };
+                        content: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        mode: {
+                            readonly enum: readonly ["prompt", "steer", "follow_up"];
+                        };
+                        status: {
+                            readonly enum: readonly ["queued", "running", "completed", "failed", "cancelled"];
+                        };
+                        contentTruncated: {
+                            readonly type: "boolean";
+                        };
+                        previewTruncated: {
+                            readonly type: "boolean";
+                        };
+                        contentBytes: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        error: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        origin: {
+                            readonly enum: readonly ["user", "automation"];
+                        };
+                        wakeupId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        queueRemoved: {
+                            readonly type: "boolean";
+                        };
+                        steerGeneration: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        id: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        projectId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        version: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        createdAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        updatedAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                    };
+                    readonly required: readonly ["id", "kind", "projectId", "version", "createdAt", "updatedAt", "sessionId", "role", "content", "mode", "status", "contentTruncated", "previewTruncated", "contentBytes"];
+                    readonly additionalProperties: false;
+                };
+                readonly minItems: number;
+            };
+            readonly pendingTotal: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly pendingNextCursor: {
+                readonly anyOf: readonly [{
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                }, {
+                    readonly type: "null";
+                }];
+            };
             readonly messages: {
                 readonly maxItems?: number | undefined;
                 readonly type: "array";
@@ -10670,6 +10793,14 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                             readonly minLength: number;
                             readonly maxLength: number;
+                        };
+                        queueRemoved: {
+                            readonly type: "boolean";
+                        };
+                        steerGeneration: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
                         };
                         id: {
                             readonly pattern?: string | undefined;
@@ -10764,6 +10895,9 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly active: {
                         readonly type: "boolean";
                     };
+                    readonly canSteer: {
+                        readonly type: "boolean";
+                    };
                     readonly content: {
                         readonly pattern?: string | undefined;
                         readonly type: "string";
@@ -10780,11 +10914,11 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly maximum: number;
                     };
                 };
-                readonly required: readonly ["generation", "active", "content", "truncated", "cursor"];
+                readonly required: readonly ["generation", "active", "canSteer", "content", "truncated", "cursor"];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: readonly ["session", "messages", "history", "progress"];
+        readonly required: readonly ["session", "messages", "history", "progress", "pendingMessages", "pendingTotal", "pendingNextCursor"];
         readonly additionalProperties: false;
     };
     readonly session_message_read: {

@@ -9,6 +9,7 @@ interface Active {
     generation: number;
     actor: Actor;
     messageIds: string[];
+    consumedIds: Set<string>;
     attemptId?: string;
     started: number;
     lastHeartbeat: number;
@@ -62,6 +63,8 @@ export declare class AgentHost {
     private exited;
     private valid;
     private onMessage;
+    private failInput;
+    private sendInput;
     private savePath;
     private abortProcess;
     private finish;

@@ -16,6 +16,34 @@ export declare class SessionService {
         workspace?: string;
     }): Row<Session>;
     send(actor: Actor, id: string, value: unknown): Row<Message>;
+    queue(actor: Actor, id: string, input?: unknown): {
+        items: {
+            contentTruncated: boolean;
+            previewTruncated: boolean;
+            contentBytes: number;
+            id: string;
+            kind: string;
+            projectId: string | null;
+            version: number;
+            createdAt: string;
+            updatedAt: string;
+            sessionId: string;
+            role: "user" | "assistant" | "system";
+            content: string;
+            mode: "prompt" | "steer" | "follow_up";
+            steerGeneration?: number;
+            queueRemoved?: boolean;
+            status: "queued" | "running" | "completed" | "failed" | "cancelled";
+            error?: string;
+            origin?: "user" | "automation";
+            wakeupId?: string;
+            usage?: unknown;
+        }[];
+        total: number;
+        nextCursor: string | null;
+        canSteer: boolean;
+    };
+    queueAction(actor: Actor, id: string, value: unknown): Row<Message>;
     rename(actor: Actor, id: string, title: string, expectedVersion: number): Row<Session>;
     archive(actor: Actor, id: string, expectedVersion: number): Row<Session>;
     interrupt(actor: Actor, id: string): Row<Session>;

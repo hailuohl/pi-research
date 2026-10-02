@@ -25,9 +25,13 @@ export interface SessionView {
     session: Row<Session>;
     messages: HistoryMessage[];
     history: SessionHistoryPage;
+    pendingMessages: HistoryMessage[];
+    pendingTotal: number;
+    pendingNextCursor: string | null;
     progress: {
         generation: number;
         active: boolean;
+        canSteer: boolean;
         content: string;
         truncated: boolean;
         cursor: number;
@@ -58,3 +62,31 @@ export declare function sessionMessagePage(store: Store, session: Row<Session>, 
     };
 };
 export declare function sessionMessageContent(store: Store, session: Row<Session>, value: unknown): SessionMessageContent;
+export declare function canSteerSession(store: Store, session: Row<Session>): boolean;
+export declare function sessionQueue(store: Store, session: Row<Session>, value?: unknown): {
+    items: {
+        contentTruncated: boolean;
+        previewTruncated: boolean;
+        contentBytes: number;
+        id: string;
+        kind: string;
+        projectId: string | null;
+        version: number;
+        createdAt: string;
+        updatedAt: string;
+        sessionId: string;
+        role: "user" | "assistant" | "system";
+        content: string;
+        mode: "prompt" | "steer" | "follow_up";
+        steerGeneration?: number;
+        queueRemoved?: boolean;
+        status: "queued" | "running" | "completed" | "failed" | "cancelled";
+        error?: string;
+        origin?: "user" | "automation";
+        wakeupId?: string;
+        usage?: unknown;
+    }[];
+    total: number;
+    nextCursor: string | null;
+    canSteer: boolean;
+};

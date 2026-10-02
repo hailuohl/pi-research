@@ -14,14 +14,15 @@ function chat({project=data(),current=session,busy=false,onToggle=()=>{},perform
 }
 const toggleOf=view=>elements(view.render()).find(node=>node.type==='button'&&node.props.role==='switch');
 
-test('composer mode switch is separate from message submission and preserves the existing message payload',async t=>{
+test('composer sends an ordinary message while collaboration mode remains project-scoped',async t=>{
   const oldFetch=globalThis.fetch;
   t.after(()=>{globalThis.fetch=oldFetch;});
   const calls=[],performed=[];let toggles=0;
   globalThis.fetch=async(url,init)=>{calls.push({url,init});return{ok:true,json:async()=>({})};};
   const view=chat({onToggle:()=>{toggles++;},perform:fn=>{const work=fn();performed.push(work);return work;}});
-  view.state.draft='Compare these results';view.state.mode='follow_up';
+  view.state.draft='Compare these results';
   const tree=view.render(),toggle=elements(tree).find(node=>node.type==='button'&&node.props.role==='switch'),form=elements(tree).find(node=>node.type==='form'&&node.props.className==='composer');
+  assert.equal(elements(tree).some(node=>node.type==='select'&&node.props['aria-label']==='消息方式'),false);
   assert.equal(toggle.props.type,'button');
   assert.equal(toggle.props['aria-label'],'多智能体模式');
   assert.match(toggle.props.title,/同项目所有研究会话共享/);
@@ -31,7 +32,32 @@ test('composer mode switch is separate from message submission and preserves the
   await Promise.all(performed);
   assert.equal(calls.length,1);
   assert.equal(calls[0].url,'/api/sessions/root-a/messages');
-  assert.deepEqual(JSON.parse(calls[0].init.body),{content:'Compare these results',mode:'follow_up'});
+  assert.deepEqual(JSON.parse(calls[0].init.body),{content:'Compare these results'});
+});
+
+test('Enter sends; Shift+Enter and composing Enter stay in the textarea',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  const calls=[],performed=[];globalThis.fetch=async(url,init)=>{calls.push({url,init});return{ok:true,json:async()=>({})};};
+  const view=chat({perform:fn=>{const work=fn();performed.push(work);return work;}}),tree=view.render(),form=elements(tree).find(node=>node.type==='form'&&node.props.className==='composer'),textarea=elements(tree).find(node=>node.type==='textarea'&&node.props['aria-label']==='研究问题');
+  let submits=0;const key=(extra={})=>{let prevented=false;textarea.props.onKeyDown({key:'Enter',shiftKey:false,preventDefault(){prevented=true;},currentTarget:{form:{requestSubmit(){submits++;form.props.onSubmit({preventDefault(){}});}}},...extra});return prevented;};
+  view.state.draft='line one';assert.equal(key({shiftKey:true}),false);assert.equal(submits,0);
+  assert.equal(key({isComposing:true}),false);assert.equal(key({keyCode:229}),false);assert.equal(submits,0);
+  assert.equal(key(),true);await Promise.all(performed);
+  assert.equal(submits,1);assert.equal(calls.length,1);assert.deepEqual(JSON.parse(calls[0].init.body),{content:'line one'});
+  for(const modifier of [{ctrlKey:true},{metaKey:true}]){view.state.draft='shortcut message';assert.equal(key(modifier),true);await Promise.all(performed.slice(-1));}
+  assert.equal(calls.length,3);assert.deepEqual(JSON.parse(calls[2].init.body),{content:'shortcut message'});
+});
+
+test('send failure keeps the draft, and a response does not clear newer typing',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  let resolve;globalThis.fetch=()=>new Promise(r=>{resolve=r;});
+  const performed=[],view=chat({perform:fn=>{const work=fn().catch(error=>error);performed.push(work);return work;}}),form=elements(view.render()).find(node=>node.type==='form'&&node.props.className==='composer');
+  view.state.draft='first message';form.props.onSubmit({preventDefault(){}});view.state.draft='next message';
+  resolve({ok:true,json:async()=>({})});await Promise.all(performed);
+  assert.equal(view.state.draft,'next message');
+  globalThis.fetch=async()=>({ok:false,status:409,json:async()=>({error:{message:'write failed'}})});
+  const retry=elements(view.render()).find(node=>node.type==='form'&&node.props.className==='composer');retry.props.onSubmit({preventDefault(){}});
+  await Promise.all(performed.slice(1));assert.equal(view.state.draft,'next message');
 });
 
 test('mode switch disables while busy, without a session, on task or archived sessions, and for archived projects',()=>{

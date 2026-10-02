@@ -42,13 +42,13 @@ export function sessionMessagePage(store, session, value = {}) {
     const where = "kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=?", params = [session.projectId, session.id];
     if (anchor)
         params.push(Number(anchor.rowid));
-    const rows = store.db.prepare(`SELECT rowid,id,version,json_extract(data,'$.createdAt') createdAt,json_extract(data,'$.updatedAt') updatedAt,json_extract(data,'$.role') role,json_extract(data,'$.mode') mode,json_extract(data,'$.status') status,json_extract(data,'$.origin') origin,json_extract(data,'$.wakeupId') wakeupId,substr(json_extract(data,'$.error'),1,1000) error,length(json_extract(data,'$.error')) errorLength,COALESCE(json_extract(data,'$.contentTruncated'),0) truncated,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes,substr(CAST(json_extract(data,'$.content') AS BLOB),1,16000) content FROM records WHERE ${where}${anchor ? ` AND rowid${after ? '>' : '<'}?` : ''} ORDER BY rowid ${after ? 'ASC' : 'DESC'} LIMIT ?`).all(...params, limit);
+    const rows = store.db.prepare(`SELECT rowid,id,version,json_extract(data,'$.createdAt') createdAt,json_extract(data,'$.updatedAt') updatedAt,json_extract(data,'$.role') role,json_extract(data,'$.mode') mode,json_extract(data,'$.status') status,json_extract(data,'$.origin') origin,json_extract(data,'$.wakeupId') wakeupId,json_extract(data,'$.queueRemoved') queueRemoved,substr(json_extract(data,'$.error'),1,1000) error,length(json_extract(data,'$.error')) errorLength,COALESCE(json_extract(data,'$.contentTruncated'),0) truncated,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes,substr(CAST(json_extract(data,'$.content') AS BLOB),1,16000) content FROM records WHERE ${where}${anchor ? ` AND rowid${after ? '>' : '<'}?` : ''} ORDER BY rowid ${after ? 'ASC' : 'DESC'} LIMIT ?`).all(...params, limit);
     const kept = [];
     let returnedBytes = 2;
     for (const r of rows) {
         ensure(typeof r.bytes === 'number', 'MESSAGE_ENCODING_INVALID', '保存的消息正文缺失');
         const raw = bodyBytes(r.content, r.bytes), content = Array.from(prefix(raw, raw.byteLength === r.bytes)).slice(0, MESSAGE_PREVIEW_CHARACTERS).join('');
-        const message = { id: String(r.id), kind: 'message', projectId: session.projectId, version: Number(r.version), createdAt: String(r.createdAt), updatedAt: String(r.updatedAt), sessionId: session.id, role: r.role, mode: r.mode, status: r.status, content, contentTruncated: !!r.truncated, previewTruncated: Buffer.byteLength(content, 'utf8') < Number(r.bytes), contentBytes: Number(r.bytes), ...(r.origin ? { origin: r.origin } : {}), ...(r.wakeupId ? { wakeupId: String(r.wakeupId) } : {}), ...(r.error ? { error: String(r.error) + (Number(r.errorLength) > 1000 ? '…（诊断过长，原始记录保留）' : '') } : {}) };
+        const message = { id: String(r.id), kind: 'message', projectId: session.projectId, version: Number(r.version), createdAt: String(r.createdAt), updatedAt: String(r.updatedAt), sessionId: session.id, role: r.role, mode: r.mode, status: r.status, content, contentTruncated: !!r.truncated, previewTruncated: Buffer.byteLength(content, 'utf8') < Number(r.bytes), contentBytes: Number(r.bytes), ...(r.queueRemoved ? { queueRemoved: true } : {}), ...(r.origin ? { origin: r.origin } : {}), ...(r.wakeupId ? { wakeupId: String(r.wakeupId) } : {}), ...(r.error ? { error: String(r.error) + (Number(r.errorLength) > 1000 ? '…（诊断过长，原始记录保留）' : '') } : {}) };
         const bytes = Buffer.byteLength(JSON.stringify(message), 'utf8') + (kept.length ? 1 : 0);
         if (returnedBytes + bytes > MESSAGE_PAGE_BYTES)
             break;
@@ -74,5 +74,19 @@ export function sessionMessageContent(store, session, value) {
         offset--;
     const cursor = base + offset, window = bytes.subarray(offset, offset + limit), content = prefix(window, cursor + window.length === Number(r.bytes)), end = cursor + Buffer.byteLength(content, 'utf8');
     return { sessionId: session.id, messageId, version: Number(r.version), content, cursor, end, total: Number(r.bytes), complete: end === Number(r.bytes), cursorUnit: 'utf8-byte', sourceTruncated: !!r.truncated };
+}
+export function canSteerSession(store, session) {
+    return session.state === 'running' && session.leaseUntil > Date.now() && !session.taskId && !store.get('project', session.projectId).archived && !!store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND COALESCE(json_extract(data,'$.origin'),'user')<>'automation' AND json_extract(data,'$.status')='running' LIMIT 1").get(session.projectId, session.id) && !store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.status')='running' AND (json_extract(data,'$.role')='system' OR json_extract(data,'$.origin')='automation' OR json_extract(data,'$.wakeupId') IS NOT NULL) LIMIT 1").get(session.projectId, session.id);
+}
+export function sessionQueue(store, session, value = {}) {
+    const x = closed(value, ['afterMessageId', 'limit']), limit = integer(x.limit ?? 20, 'limit', 1, 20), anchor = x.afterMessageId === undefined ? undefined : messageMeta(store, session, text(x.afterMessageId, 'afterMessageId', 100));
+    const where = "kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND COALESCE(json_extract(data,'$.origin'),'user')<>'automation' AND json_extract(data,'$.wakeupId') IS NULL AND json_extract(data,'$.status')='queued'";
+    const total = Number(store.db.prepare(`SELECT COUNT(*) n FROM records WHERE ${where}`).get(session.projectId, session.id).n);
+    const params = [session.projectId, session.id];
+    if (anchor)
+        params.push(Number(anchor.rowid));
+    const rows = store.db.prepare(`SELECT json_set(data,'$.content',substr(json_extract(data,'$.content'),1,4000)) data,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes FROM records WHERE ${where}${anchor ? ' AND rowid>?' : ''} ORDER BY rowid LIMIT ?`).all(...params, limit + 1);
+    const items = rows.slice(0, limit).map(r => { const m = JSON.parse(r.data); return { ...m, contentTruncated: !!m.contentTruncated, previewTruncated: Buffer.byteLength(m.content, 'utf8') < Number(r.bytes), contentBytes: Number(r.bytes) }; });
+    return { items, total, nextCursor: rows.length > limit ? items.at(-1).id : null, canSteer: canSteerSession(store, session) };
 }
 //# sourceMappingURL=session-history.js.map

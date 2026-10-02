@@ -47,6 +47,17 @@ test('message reader rejects mismatched identity, version, encoding, and byte bo
     }
 });
 
+test('queued user messages stay in the separate queue while deleted messages remain visible and cannot be retried',()=>{
+    const reader=synchronousState(new SessionHistory({projectId:'p',sessionId:'s',messages:[
+        {id:'queued',version:1,role:'user',status:'queued',content:'queue preview'},
+        {id:'auto',version:1,role:'user',status:'queued',origin:'automation',content:'automation notice'},
+        {id:'removed',version:2,role:'user',status:'cancelled',queueRemoved:true,content:'removed from queue'},
+    ],history:null,historyAnchor:null,onNavigate(){},perform(){}}));
+    const tree=reader.render(),rendered=JSON.stringify(tree),buttons=[];
+    const walk=node=>{if(Array.isArray(node))node.forEach(walk);else if(node&&typeof node==='object'){if(node.type==='button')buttons.push(node);walk(node.props?.children);}};walk(tree);
+    assert.doesNotMatch(rendered,/queue preview/);assert.match(rendered,/automation notice/);assert.match(rendered,/已移出队列/);assert.equal(buttons.some(button=>String(button.props.children).includes('重试此消息')),false);
+});
+
 test('a history anchor keeps return-to-live visible after the last newer page',()=>{
     const reader=synchronousState(new SessionHistory({projectId:'p',sessionId:'s',messages:[],history:{beforeMessageId:null,afterMessageId:null,atLatest:true},historyAnchor:{direction:'after',id:'m'},onNavigate(){},perform(){}}));
     assert.match(JSON.stringify(reader.render()),/返回最新/);reader.componentWillUnmount();
@@ -63,8 +74,9 @@ test('refresh keeps an explicitly selected old session and its history anchor',a
     const oldFetch=globalThis.fetch,oldStorage=globalThis.localStorage;t.after(()=>{globalThis.fetch=oldFetch;globalThis.localStorage=oldStorage;});
     globalThis.localStorage={getItem:()=>null,setItem(){}};
     const app=synchronousState(new App({}));app.feed={projectId:'p',stop(){}};app.state.projectId='p';app.state.sessionId='old';app.state.historyAnchor={direction:'before',id:'m10'};
-    const urls=[];globalThis.fetch=async url=>{urls.push(url);if(url.endsWith('/bootstrap'))return response({projects:[{id:'p'}]});if(url.includes('/state'))return response({sessions:[{id:'recent',role:'coordinator'}],experiments:[]});return response({session:{id:'old',role:'coordinator',generation:1},messages:[{id:'m1'}],history:{beforeMessageId:'m1',afterMessageId:'m2',atLatest:false},progress:{generation:1,active:true,content:'hidden'}});};
-    assert.equal(await app.refresh(),true);assert.equal(app.state.sessionId,'old');assert.equal(app.state.messages[0].id,'m1');assert.equal(app.state.stream,'');
+    const pending={id:'queued',sessionId:'old',role:'user',status:'queued',version:3,content:'first pending'};
+    const urls=[];globalThis.fetch=async url=>{urls.push(url);if(url.endsWith('/bootstrap'))return response({projects:[{id:'p'}]});if(url.includes('/state'))return response({sessions:[{id:'recent',role:'coordinator'}],experiments:[]});return response({session:{id:'old',role:'coordinator',generation:1},messages:[{id:'m1'}],pendingMessages:[pending],pendingTotal:21,pendingNextCursor:'queued-20',history:{beforeMessageId:'m1',afterMessageId:'m2',atLatest:false},progress:{generation:1,active:true,content:'hidden',canSteer:true}});};
+    assert.equal(await app.refresh(),true);assert.equal(app.state.sessionId,'old');assert.equal(app.state.messages[0].id,'m1');assert.equal(app.state.pendingMessages[0].id,'queued');assert.equal(app.state.pendingTotal,21);assert.equal(app.state.pendingNextCursor,'queued-20');assert.equal(app.state.canSteer,true);assert.equal(app.state.stream,'');
     assert.ok(urls.some(url=>url.includes('/state?sessionId=old')));assert.ok(urls.some(url=>url.includes('/sessions/old/view?beforeMessageId=m10')));
     app.componentWillUnmount();
 });
@@ -75,10 +87,10 @@ test('legacy workflow hints and Run links reset history for sessions outside rec
         const app=synchronousState(new App({}));app.refresh=async()=>true;
         Object.assign(app.state,{projectId:'p',sessionId:'recent',boot:{projects:[{id:'p'}]},data:{project:{id:'p'},sessions:[{id:'recent'}],experiments:[],runs:[]}});
         for(const tab of ['implementation','campaigns','changes','experiments']){
-            Object.assign(app.state,{tab,sessionId:'recent',messages:[{id:'old-body'}],history:{atLatest:false},historyAnchor:{direction:'before',id:'old-cursor'},stream:'old stream'});
+            Object.assign(app.state,{tab,sessionId:'recent',messages:[{id:'old-body'}],pendingMessages:[{id:'old-queue'}],pendingTotal:1,pendingNextCursor:null,canSteer:true,history:{atLatest:false},historyAnchor:{direction:'before',id:'old-cursor'},stream:'old stream'});
             if(tab==='experiments'){const view=component(app.render(),'Experiments');assert.ok(view,'Experiments rendered');view.props.onSession('older-root');}
             else app.selectSession('older-root',tab);
-            assert.equal(app.state.sessionId,'older-root');assert.equal(app.state.tab,'chat');assert.deepEqual(app.state.messages,[]);assert.equal(app.state.history,null);assert.equal(app.state.historyAnchor,null);assert.equal(app.state.stream,'');
+            assert.equal(app.state.sessionId,'older-root');assert.equal(app.state.tab,'chat');assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.pendingNextCursor,null);assert.equal(app.state.canSteer,false);assert.equal(app.state.history,null);assert.equal(app.state.historyAnchor,null);assert.equal(app.state.stream,'');
         }
         app.componentWillUnmount();
     }finally{globalThis.localStorage=oldStorage;}
@@ -88,10 +100,10 @@ test('foreign session selection reports scoped failure without showing the previ
     const oldFetch=globalThis.fetch,oldStorage=globalThis.localStorage;t.after(()=>{globalThis.fetch=oldFetch;globalThis.localStorage=oldStorage;});
     globalThis.localStorage={getItem:()=>null,setItem(){}};
     const app=synchronousState(new App({}));app.feed={projectId:'p',stop(){}};
-    Object.assign(app.state,{projectId:'p',sessionId:'recent',messages:[{id:'previous-body'}],historyAnchor:{direction:'before',id:'previous-cursor'}});
+    Object.assign(app.state,{projectId:'p',sessionId:'recent',messages:[{id:'previous-body'}],pendingMessages:[{id:'previous-queue'}],pendingTotal:1,pendingNextCursor:'q',canSteer:true,historyAnchor:{direction:'before',id:'previous-cursor'}});
     const urls=[];globalThis.fetch=async url=>{urls.push(url);return url.endsWith('/bootstrap')?response({projects:[{id:'p'}]}):{ok:false,status:403,json:async()=>({error:{code:'SCOPE_DENIED',message:'会话不属于此项目'}})};};
     app.selectSession('foreign');await app.refresh();
-    assert.deepEqual(app.state.messages,[]);assert.equal(app.state.historyAnchor,null);assert.match(app.state.error,/不属于此项目/);
+    assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.pendingNextCursor,null);assert.equal(app.state.canSteer,false);assert.equal(app.state.historyAnchor,null);assert.match(app.state.error,/不属于此项目/);
     assert.ok(urls.some(url=>url.includes('/state?sessionId=foreign')));assert.ok(!urls.some(url=>url.includes('/sessions/foreign/view')));
     app.componentWillUnmount();
 });
@@ -101,10 +113,10 @@ test('project and session creation clear the prior history selection',async t=>{
     globalThis.localStorage={getItem:()=>null,setItem(){}};
     globalThis.fetch=async url=>response(url.endsWith('/projects')?{id:'new-project'}:url.endsWith('/sessions')?{id:'new-session'}:{});
     const app=synchronousState(new App({}));app.perform=async fn=>fn();app.refresh=async()=>true;
-    Object.assign(app.state,{projectId:'old-project',sessionId:'old-session',modal:'project',messages:[{id:'old-body'}],historyAnchor:{direction:'before',id:'old-cursor'}});
+    Object.assign(app.state,{projectId:'old-project',sessionId:'old-session',modal:'project',messages:[{id:'old-body'}],pendingMessages:[{id:'old-queue'}],pendingTotal:1,pendingNextCursor:'q',canSteer:true,historyAnchor:{direction:'before',id:'old-cursor'}});
     await app.modalView().props.onSubmit({get:()=>''});
-    assert.equal(app.state.projectId,'new-project');assert.equal(app.state.sessionId,'new-session');assert.deepEqual(app.state.messages,[]);assert.equal(app.state.historyAnchor,null);
-    Object.assign(app.state,{messages:[{id:'old-body'}],historyAnchor:{direction:'before',id:'old-cursor'}});
-    await app.newSession();assert.deepEqual(app.state.messages,[]);assert.equal(app.state.historyAnchor,null);
+    assert.equal(app.state.projectId,'new-project');assert.equal(app.state.sessionId,'new-session');assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.historyAnchor,null);
+    Object.assign(app.state,{messages:[{id:'old-body'}],pendingMessages:[{id:'old-queue'}],pendingTotal:1,pendingNextCursor:'q',canSteer:true,historyAnchor:{direction:'before',id:'old-cursor'}});
+    await app.newSession();assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.pendingNextCursor,null);assert.equal(app.state.canSteer,false);assert.equal(app.state.historyAnchor,null);
     app.componentWillUnmount();
 });

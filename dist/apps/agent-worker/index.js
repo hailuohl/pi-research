@@ -11,6 +11,8 @@ let providerFailure;
 let started = false, stopping = false, taskSubmitted = false, turns = 0;
 const httpStop = new AbortController();
 let seq = 0;
+const queuedInputs = [];
+let initialUserSeen = false;
 const pending = new Map();
 function send(value) {
     if (process.connected)
@@ -38,17 +40,24 @@ process.on('message', async (message) => {
     if (raw?.type === 'steer' || raw?.type === 'follow_up') {
         if (session && !taskSubmitted && !stopping) {
             try {
+                queuedInputs.push({ id: raw.messageId, content: raw.content });
                 raw.type === 'steer' ? await session.steer(raw.content) : await session.followUp(raw.content);
                 if (taskSubmitted || stopping) {
                     session.clearQueue();
+                    send({ type: 'control_error', messageId: raw.messageId, error: 'Worker 已停止接收输入' });
                     return;
                 }
                 send({ type: 'message_ack', messageId: raw.messageId });
             }
             catch (e) {
+                const index = queuedInputs.findIndex(m => m.id === raw.messageId);
+                if (index >= 0)
+                    queuedInputs.splice(index, 1);
                 send({ type: 'control_error', messageId: raw.messageId, error: e instanceof Error ? e.message : String(e) });
             }
         }
+        else
+            send({ type: 'control_error', messageId: raw.messageId, error: 'Worker 尚未就绪或已停止接收输入' });
         return;
     }
     if (raw?.type !== 'start' || started)
@@ -105,6 +114,19 @@ process.on('message', async (message) => {
             throw new Error('MODEL_FALLBACK_REFUSED: SDK 尝试切换未经批准的模型');
         send({ type: 'ready', sessionFile: session.sessionFile, sessionId: session.sessionId, activeTools: session.getActiveToolNames(), model: { provider: session.model?.provider, id: session.model?.id } });
         session.subscribe((e) => {
+            if (e.type === 'message_start' && e.message.role === 'user') {
+                if (!initialUserSeen)
+                    initialUserSeen = true;
+                else {
+                    const body = typeof e.message.content === 'string' ? e.message.content : e.message.content.filter(p => p.type === 'text').map(p => p.text).join('');
+                    // Controlled resource loader has no skills, templates or input extensions; match only the next raw input.
+                    const next = queuedInputs[0];
+                    if (next && next.content === body) {
+                        queuedInputs.shift();
+                        send({ type: 'input_consumed', messageId: next.id });
+                    }
+                }
+            }
             if (e.type === 'tool_execution_start' || e.type === 'tool_execution_end')
                 send({ type: e.type, tool: e.toolName, toolCallId: e.toolCallId, ...(e.type === 'tool_execution_end' ? { isError: e.isError } : {}) });
             if (e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
