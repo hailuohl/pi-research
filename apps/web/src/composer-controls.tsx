@@ -6,6 +6,7 @@ import { Icon } from './ui.js';
 
 const SOURCES = ['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref'] as const;
 const SOURCE_NAMES: Record<typeof SOURCES[number], string> = { alphaxiv: 'alphaXiv', openalex: 'OpenAlex', biorxiv: 'bioRxiv', pubmed: 'PubMed', crossref: 'Crossref' };
+const SOURCE_LOGOS:Record<typeof SOURCES[number],string>={alphaxiv:'alphaxiv.svg',openalex:'openalex.svg',biorxiv:'biorxiv.svg',pubmed:'pubmed.png',crossref:'crossref.ico'};
 type SourceId = typeof SOURCES[number];
 interface ConnectorConfig { version: number; enabled: Record<SourceId, boolean> }
 interface ImportedDocument { id: string; title: string; original: { artifactId: string; digest: string; size: number; mediaType: MessageAttachment['mediaType'] } }
@@ -25,7 +26,7 @@ interface Props {
     hasDraft: boolean;
     onSendModel: (model: ModelConfig) => void;
 }
-interface State { config: ConnectorConfig | null; sourceDraft: Record<SourceId, boolean>; sourcesOpen: boolean; loading: boolean; loadingError: string; uploadError: string; uploading: boolean }
+interface State { config: ConnectorConfig | null; sourceDraft: Record<SourceId, boolean>; sourcesOpen: boolean; loading: boolean; loadingError: string; saving: boolean; uploadError: string; uploading: boolean }
 
 const configCopy = (config: ConnectorConfig) => Object.fromEntries(SOURCES.map(source => [source, !!config.enabled?.[source]])) as Record<SourceId, boolean>;
 const modelKey = (model: ModelConfig) => JSON.stringify([model.provider, model.model, model.thinking]);
@@ -41,7 +42,7 @@ function toBase64(bytes: Uint8Array) {
 }
 
 export class ComposerControls extends React.Component<Props, State> {
-    state: State = { config: null, sourceDraft: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: false }, sourcesOpen: false, loading: true, loadingError: '', uploadError: '', uploading: false };
+    state: State = { config: null, sourceDraft: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: false }, sourcesOpen: false, loading: true, loadingError: '', saving: false, uploadError: '', uploading: false };
     private mounted = true;
     private request = 0;
 
@@ -63,16 +64,23 @@ export class ComposerControls extends React.Component<Props, State> {
         }
     }
 
-    saveSources = () => {
+    async configureSource(source:SourceId, enabled:boolean) {
         const { config } = this.state;
-        if (!config || this.props.busy || this.props.projectArchived) return;
-        const projectId = this.props.projectId;
-        return this.props.perform(async () => {
-            const saved = await api<ConnectorConfig>(`/projects/${encodeURIComponent(projectId)}/connectors`, { expectedVersion: config.version, enabled: this.state.sourceDraft });
-            if (this.mounted && projectId === this.props.projectId)
-                this.setState({ config: saved, sourceDraft: configCopy(saved), sourcesOpen: false, loadingError: '' });
-        }, '已保存项目级文献来源开关；没有发起网络检索');
-    };
+        if (!config || this.state.loading || this.state.saving || this.props.busy || this.props.projectArchived) return;
+        const projectId = this.props.projectId, request=this.request, current=()=>this.mounted&&request===this.request&&projectId===this.props.projectId;
+        this.setState({saving:true,loadingError:'',sourceDraft:{...this.state.sourceDraft,[source]:enabled}});
+        await this.props.perform(async()=>{
+        try {
+            const saved = await api<ConnectorConfig>(`/projects/${encodeURIComponent(projectId)}/connectors`, { expectedVersion: config.version, enabled: {[source]:enabled} });
+            if(current())this.setState({config:saved,sourceDraft:configCopy(saved)});
+        } catch(error) {
+            if(!current())return;
+            const message=error instanceof Error?error.message:String(error);
+            try {const latest=await api<ConnectorConfig>(`/projects/${encodeURIComponent(projectId)}/connectors`);if(current())this.setState({config:latest,sourceDraft:configCopy(latest),loadingError:message});}
+            catch {if(current())this.setState({config:null,sourceDraft:configCopy(config),loadingError:message+'；来源状态未确认，请重新打开菜单重试。'});}
+        } finally {if(current())this.setState({saving:false});}
+        });
+    }
 
     private async addFiles(files: File[]) {
         const { attachments, projectId, session } = this.props;
@@ -116,8 +124,8 @@ export class ComposerControls extends React.Component<Props, State> {
             <div className="composer-toolbar">
                 <div className="composer-control-left">
                     <div className="source-control">
-                        <button type="button" className="composer-tool-button" aria-expanded={sourcesOpen} aria-controls="composer-source-menu" disabled={!session || projectArchived || busy} onClick={() => this.setState({ sourcesOpen: !sourcesOpen })}><Icon name="database" size={16}/><span>来源</span><small>{sourceCount}/5</small></button>
-                        {sourcesOpen ? <div className="composer-popover" id="composer-source-menu" role="group" aria-label="项目文献来源" onKeyDown={(event: any) => { if (event.key === 'Escape') this.setState({ sourcesOpen: false }); }}><div className="composer-popover-heading"><strong>文献来源</strong><button type="button" aria-label="关闭来源设置" onClick={() => this.setState({ sourcesOpen: false })}><Icon name="close" size={14}/></button></div><p className="small muted">只保存项目级开关，不会自动检索。</p>{loading ? <p className="small muted">正在读取设置…</p> : null}{loadingError ? <p className="error-text" role="alert">{loadingError}</p> : null}{SOURCES.map(source => <label className="composer-source-option" key={source}><Icon name={source==='openalex'?'network':source==='biorxiv'?'microscope':source==='crossref'?'link':'book-open'} size={15}/><span>{SOURCE_NAMES[source]}</span><input type="checkbox" aria-label={`启用 ${SOURCE_NAMES[source]}`} checked={sourceDraft[source]} disabled={!config || busy || projectArchived} onChange={(event: any) => this.setState({ sourceDraft: { ...sourceDraft, [source]: event.target.checked } })}/></label>)}<button type="button" className="secondary compact" disabled={!config || loading || busy || projectArchived} onClick={this.saveSources}>保存来源开关</button></div> : null}
+                        <button type="button" className="composer-tool-button" aria-expanded={sourcesOpen} aria-controls="composer-source-menu" disabled={!session || projectArchived || busy} onClick={() => { const opening=!sourcesOpen; this.setState({sourcesOpen:opening}); if(opening&&!this.state.config)void this.loadSources(); }}><Icon name="database" size={16}/><span>来源</span><small>{sourceCount}/5</small></button>
+                        {sourcesOpen ? <div className="composer-popover" id="composer-source-menu" role="group" aria-label="项目文献来源" onKeyDown={(event: any) => { if (event.key === 'Escape') this.setState({ sourcesOpen: false }); }}><div className="composer-popover-heading"><strong>文献来源</strong><button type="button" aria-label="关闭来源设置" onClick={() => this.setState({ sourcesOpen: false })}><Icon name="close" size={14}/></button></div>{loading ? <p className="small muted">正在读取设置…</p> : null}{loadingError ? <p className="error-text" role="alert">{loadingError}</p> : null}{SOURCES.map(source => <label className="composer-source-option" key={source}><img className="composer-source-logo" src={'/source-logos/'+SOURCE_LOGOS[source]} width={16} height={16} alt="" aria-hidden="true"/><span>{SOURCE_NAMES[source]}</span><input type="checkbox" aria-label={`启用 ${SOURCE_NAMES[source]}`} checked={sourceDraft[source]} disabled={!config || loading || this.state.saving || busy || projectArchived} onChange={(event: any) => { void this.configureSource(source,event.target.checked); }}/></label>)}</div> : null}
                     </div>
                     <label className={'composer-tool-button composer-file-button'+(uploadDisabled?' disabled':'')} aria-label="添加 PDF、TXT 或 MD 附件"><Icon name="paperclip" size={16}/><span>附件</span>{attachments.length ? <small>{attachments.length}</small> : null}<input type="file" multiple accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" disabled={uploadDisabled} onChange={(event: any) => { const files = Array.from(event.currentTarget.files ?? []) as File[]; event.currentTarget.value = ''; void this.addFiles(files); }}/></label>
                     {this.props.children}

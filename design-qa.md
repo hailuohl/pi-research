@@ -64,3 +64,13 @@ Interactions: 浏览器保存两套模型、空模型首次选择、来源勾选
 Nonblocking follow-ups: 来源版本冲突后需刷新重载；两条队列附件CSS声明重复。无剩余P0/P1/P2。
 
 final result: passed
+
+## 2026-10-02 网站图标、紧凑菜单及即时开关
+
+Source visual truth: 同一用户OpenResearch参考图，及上一批`.validation/composer-controls/composer-desktop-final.png`。Implementation: `.validation/source-brand-icons/desktop-immediate.png`、`mobile-immediate.png`。桌面1280×720、手机390×844，CSS与捕获1:1；最终全视图组合`comparison-full-final.png`和控件裁剪组合`comparison-focused-final.png`已在同一输入中打开比较。两边来源菜单均展开、选择4/5且模型相同；主对话历史来自上一批验收，变化在本次编辑区域之外，不据此评判设计漂移。
+
+Fonts/typography: 沿用11–12px工具条/菜单文字，网站名保留；28px行仍可点选。Spacing/layout: 菜单270→218px、约271.8→179.3px，输入最小高度80→64px，工具栏减少留白，取消独立保存按钮。Colors/tokens: 保留网站原始色彩和本项目暖白酒红。Asset fidelity: 五网站真实文件，三个SVG与本地OpenResearch原件哈希一致；PubMed使用官网NCBI favicon，未用上游Pm占位；Crossref为官网ICO。Copy/content: 网站名称、勾选语义和模型/附件入口保持清楚，移除常驻说明，更新失败才显示实际错误。
+
+Interactions: 5图标全部加载，保存按钮0个；勾选PubMed后刷新仍勾选，取消后刷新仍取消。失败/未知状态与重开恢复、并发点击、卸载回写由最终相关39项覆盖。390/1280px菜单完整，无横向溢出，模型和发送同排；控制台0错误。来源版本冲突的旧待办由这次即时更新所需的实际状态回读处理，队列重复CSS仍属原非阻断待办。本批无新P0/P1/P2。
+
+final result: passed

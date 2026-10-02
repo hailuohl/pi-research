@@ -20,31 +20,51 @@ function chatProps(overrides = {}) {
     return { data: { project: { id: 'p', archived: false, settings: { enabled: false } }, teams: [], wakeups: [] }, boot, session, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, onHistory() {}, stream: '', busy: false, perform: async fn => fn(), onToggle() {}, onNew() {}, onExperiments() {}, onWorkspace() {}, onSession() {}, onExperiment() {}, onRun() {}, ...overrides };
 }
 
-test('source popover saves a project version and keeps its draft after a failed save or close', async t => {
+test('source checkboxes apply immediately, reload confirmed flags on failure and preserve selection on close', async t => {
     const oldFetch = globalThis.fetch; t.after(() => { globalThis.fetch = oldFetch; });
-    let fail = true, request;
+    let fail = true, failRead = false, request;
+    let config = { version: 4, enabled: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: true } };
     globalThis.fetch = async (url, init) => {
-        if (!init?.body) return response({ version: 4, enabled: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: true } });
+        if (!init?.body) { if(failRead)throw Error('state read failed'); return response(config); }
         request = { url, body: JSON.parse(init.body) };
-        return fail ? { ok: false, status: 409, json: async () => ({ error: { message: 'version conflict' } }) } : response({ version: 5, enabled: request.body.enabled });
+        if (fail) return { ok: false, status: 409, json: async () => ({ error: { message: 'version conflict' } }) };
+        config = { version: config.version + 1, enabled: { ...config.enabled, ...request.body.enabled } };
+        return response(config);
     };
-    const perform = async fn => { try { return await fn(); } catch { return undefined; } };
-    const view = synchronousState(new ComposerControls(controlsProps({ perform })));
-    await view.loadSources();
-    view.setState({ sourcesOpen: true });
-    const checkbox = find(view.render(), node => node.type === 'input' && node.props['aria-label'] === '启用 alphaXiv');
-    checkbox.props.onChange({ target: { checked: true } });
-    await view.saveSources();
-    assert.equal(request.url, '/api/projects/p/connectors');
-    assert.equal(request.body.expectedVersion, 4);
-    assert.equal(request.body.enabled.alphaxiv, true);
-    assert.equal(view.state.sourceDraft.alphaxiv, true);
-    assert.equal(view.state.config.version, 4);
+    const view = synchronousState(new ComposerControls(controlsProps()));
+    await view.loadSources(); view.setState({ sourcesOpen: true });
+    assert.equal(find(view.render(), node => node.type === 'button' && node.props.children === '保存来源开关'), undefined);
+    await view.configureSource('alphaxiv', true);
+    assert.deepEqual(request, { url: '/api/projects/p/connectors', body: { expectedVersion: 4, enabled: { alphaxiv: true } } });
+    assert.equal(view.state.sourceDraft.alphaxiv, false, 'failed enable must not claim the source is enabled');
+    assert.equal(view.state.config.version, 4); assert.equal(view.state.saving, false); assert.match(view.state.loadingError, /version conflict/);
+    fail = false; await view.configureSource('alphaxiv', true);
+    assert.equal(view.state.config.version, 5); assert.equal(view.state.sourceDraft.alphaxiv, true); assert.equal(view.state.sourcesOpen, true);
     view.setState({ sourcesOpen: false }); view.setState({ sourcesOpen: true });
     assert.equal(find(view.render(), node => node.type === 'input' && node.props['aria-label'] === '启用 alphaXiv').props.checked, true);
-    fail = false; await view.saveSources();
-    assert.equal(view.state.config.version, 5);
-    assert.equal(view.state.sourcesOpen, false);
+    await view.configureSource('alphaxiv', false);
+    assert.equal(request.body.expectedVersion, 5); assert.deepEqual(request.body.enabled, { alphaxiv: false }); assert.equal(view.state.sourceDraft.alphaxiv, false); assert.equal(view.state.sourceDraft.crossref, true);
+    fail=true;failRead=true;await view.configureSource('openalex',true);
+    assert.equal(view.state.config,null);assert.equal(view.state.sourceDraft.openalex,false);assert.match(view.state.loadingError,/来源状态未确认/);
+    assert.ok(find(view.render(), node=>node.type==='input'&&node.props['aria-label']==='启用 OpenAlex').props.disabled);
+    failRead=false;
+    find(view.render(),node=>node.type==='button'&&node.props['aria-controls']==='composer-source-menu').props.onClick();
+    find(view.render(),node=>node.type==='button'&&node.props['aria-controls']==='composer-source-menu').props.onClick();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(view.state.config.version,6);assert.equal(view.state.loading,false);
+});
+
+test('source updates serialize versioned clicks and cannot publish a late response after unmount', async t => {
+    const oldFetch = globalThis.fetch; t.after(() => { globalThis.fetch = oldFetch; });
+    let resolvePost, posts = 0;
+    const config = { version: 2, enabled: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: true } };
+    globalThis.fetch = async (_url, init) => !init?.body ? response(config) : (++posts, new Promise(resolve => { resolvePost = resolve; }));
+    const view = synchronousState(new ComposerControls(controlsProps())); await view.loadSources(); view.setState({ sourcesOpen: true });
+    const updating = view.configureSource('openalex', true); await view.configureSource('biorxiv', true);
+    assert.equal(posts, 1); assert.equal(view.state.saving, true);
+    assert.ok(find(view.render(), node => node.type === 'input' && node.props['aria-label'] === '启用 bioRxiv').props.disabled);
+    view.componentWillUnmount(); resolvePost(response({ version: 3, enabled: { ...config.enabled, openalex: true } })); await updating;
+    assert.equal(view.state.config.version, 2, 'late completion cannot mutate the unmounted source controller');
 });
 
 test('current-session model menu sends only the selected saved config and respects fixed grants', () => {

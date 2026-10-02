@@ -4,6 +4,7 @@ import { api } from "./api.js";
 import { Icon } from "./ui.js";
 const SOURCES = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
 const SOURCE_NAMES = { alphaxiv: "alphaXiv", openalex: "OpenAlex", biorxiv: "bioRxiv", pubmed: "PubMed", crossref: "Crossref" };
+const SOURCE_LOGOS = { alphaxiv: "alphaxiv.svg", openalex: "openalex.svg", biorxiv: "biorxiv.svg", pubmed: "pubmed.png", crossref: "crossref.ico" };
 const configCopy = (config) => Object.fromEntries(SOURCES.map((source) => [source, !!config.enabled?.[source]]));
 const modelKey = (model) => JSON.stringify([model.provider, model.model, model.thinking]);
 function fileType(file) {
@@ -19,19 +20,9 @@ function toBase64(bytes) {
 class ComposerControls extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { config: null, sourceDraft: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: false }, sourcesOpen: false, loading: true, loadingError: "", uploadError: "", uploading: false };
+    this.state = { config: null, sourceDraft: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: false }, sourcesOpen: false, loading: true, loadingError: "", saving: false, uploadError: "", uploading: false };
     this.mounted = true;
     this.request = 0;
-    this.saveSources = () => {
-      const { config } = this.state;
-      if (!config || this.props.busy || this.props.projectArchived) return;
-      const projectId = this.props.projectId;
-      return this.props.perform(async () => {
-        const saved = await api(`/projects/${encodeURIComponent(projectId)}/connectors`, { expectedVersion: config.version, enabled: this.state.sourceDraft });
-        if (this.mounted && projectId === this.props.projectId)
-          this.setState({ config: saved, sourceDraft: configCopy(saved), sourcesOpen: false, loadingError: "" });
-      }, "\u5DF2\u4FDD\u5B58\u9879\u76EE\u7EA7\u6587\u732E\u6765\u6E90\u5F00\u5173\uFF1B\u6CA1\u6709\u53D1\u8D77\u7F51\u7EDC\u68C0\u7D22");
-    };
   }
   componentDidMount() {
     void this.loadSources();
@@ -54,6 +45,29 @@ class ComposerControls extends React.Component {
       if (this.mounted && request === this.request)
         this.setState({ loading: false, loadingError: error instanceof Error ? error.message : String(error) });
     }
+  }
+  async configureSource(source, enabled) {
+    const { config } = this.state;
+    if (!config || this.state.loading || this.state.saving || this.props.busy || this.props.projectArchived) return;
+    const projectId = this.props.projectId, request = this.request, current = () => this.mounted && request === this.request && projectId === this.props.projectId;
+    this.setState({ saving: true, loadingError: "", sourceDraft: { ...this.state.sourceDraft, [source]: enabled } });
+    await this.props.perform(async () => {
+      try {
+        const saved = await api(`/projects/${encodeURIComponent(projectId)}/connectors`, { expectedVersion: config.version, enabled: { [source]: enabled } });
+        if (current()) this.setState({ config: saved, sourceDraft: configCopy(saved) });
+      } catch (error) {
+        if (!current()) return;
+        const message = error instanceof Error ? error.message : String(error);
+        try {
+          const latest = await api(`/projects/${encodeURIComponent(projectId)}/connectors`);
+          if (current()) this.setState({ config: latest, sourceDraft: configCopy(latest), loadingError: message });
+        } catch {
+          if (current()) this.setState({ config: null, sourceDraft: configCopy(config), loadingError: message + "\uFF1B\u6765\u6E90\u72B6\u6001\u672A\u786E\u8BA4\uFF0C\u8BF7\u91CD\u65B0\u6253\u5F00\u83DC\u5355\u91CD\u8BD5\u3002" });
+        }
+      } finally {
+        if (current()) this.setState({ saving: false });
+      }
+    });
   }
   async addFiles(files) {
     const { attachments, projectId, session } = this.props;
@@ -106,7 +120,11 @@ class ComposerControls extends React.Component {
       /* @__PURE__ */ jsxs("div", { className: "composer-toolbar", children: [
         /* @__PURE__ */ jsxs("div", { className: "composer-control-left", children: [
           /* @__PURE__ */ jsxs("div", { className: "source-control", children: [
-            /* @__PURE__ */ jsxs("button", { type: "button", className: "composer-tool-button", "aria-expanded": sourcesOpen, "aria-controls": "composer-source-menu", disabled: !session || projectArchived || busy, onClick: () => this.setState({ sourcesOpen: !sourcesOpen }), children: [
+            /* @__PURE__ */ jsxs("button", { type: "button", className: "composer-tool-button", "aria-expanded": sourcesOpen, "aria-controls": "composer-source-menu", disabled: !session || projectArchived || busy, onClick: () => {
+              const opening = !sourcesOpen;
+              this.setState({ sourcesOpen: opening });
+              if (opening && !this.state.config) void this.loadSources();
+            }, children: [
               /* @__PURE__ */ jsx(Icon, { name: "database", size: 16 }),
               /* @__PURE__ */ jsx("span", { children: "\u6765\u6E90" }),
               /* @__PURE__ */ jsxs("small", { children: [
@@ -121,15 +139,15 @@ class ComposerControls extends React.Component {
                 /* @__PURE__ */ jsx("strong", { children: "\u6587\u732E\u6765\u6E90" }),
                 /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "\u5173\u95ED\u6765\u6E90\u8BBE\u7F6E", onClick: () => this.setState({ sourcesOpen: false }), children: /* @__PURE__ */ jsx(Icon, { name: "close", size: 14 }) })
               ] }),
-              /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53EA\u4FDD\u5B58\u9879\u76EE\u7EA7\u5F00\u5173\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u68C0\u7D22\u3002" }),
               loading ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6B63\u5728\u8BFB\u53D6\u8BBE\u7F6E\u2026" }) : null,
               loadingError ? /* @__PURE__ */ jsx("p", { className: "error-text", role: "alert", children: loadingError }) : null,
               SOURCES.map((source) => /* @__PURE__ */ jsxs("label", { className: "composer-source-option", children: [
-                /* @__PURE__ */ jsx(Icon, { name: source === "openalex" ? "network" : source === "biorxiv" ? "microscope" : source === "crossref" ? "link" : "book-open", size: 15 }),
+                /* @__PURE__ */ jsx("img", { className: "composer-source-logo", src: "/source-logos/" + SOURCE_LOGOS[source], width: 16, height: 16, alt: "", "aria-hidden": "true" }),
                 /* @__PURE__ */ jsx("span", { children: SOURCE_NAMES[source] }),
-                /* @__PURE__ */ jsx("input", { type: "checkbox", "aria-label": `\u542F\u7528 ${SOURCE_NAMES[source]}`, checked: sourceDraft[source], disabled: !config || busy || projectArchived, onChange: (event) => this.setState({ sourceDraft: { ...sourceDraft, [source]: event.target.checked } }) })
-              ] }, source)),
-              /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", disabled: !config || loading || busy || projectArchived, onClick: this.saveSources, children: "\u4FDD\u5B58\u6765\u6E90\u5F00\u5173" })
+                /* @__PURE__ */ jsx("input", { type: "checkbox", "aria-label": `\u542F\u7528 ${SOURCE_NAMES[source]}`, checked: sourceDraft[source], disabled: !config || loading || this.state.saving || busy || projectArchived, onChange: (event) => {
+                  void this.configureSource(source, event.target.checked);
+                } })
+              ] }, source))
             ] }) : null
           ] }),
           /* @__PURE__ */ jsxs("label", { className: "composer-tool-button composer-file-button" + (uploadDisabled ? " disabled" : ""), "aria-label": "\u6DFB\u52A0 PDF\u3001TXT \u6216 MD \u9644\u4EF6", children: [
