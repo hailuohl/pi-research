@@ -3,7 +3,7 @@ import {attachmentScope,readAttachment} from '../../pi-adapter/attachments.js';
 import {digest} from '../../storage/store.js';
 import {routePaperId, parseSearch} from '../../connectors/contracts.js';
 import type {ResearchApp} from '../../research-app.js';
-import type {Actor, Session, Row, Task, TaskAttempt, Project,RunIntent} from '../../domain/types.js';
+import type {Actor, Session, Row, Task, TaskAttempt, Project,RunIntent,ResearchBriefRef} from '../../domain/types.js';
 import {ensure} from '../../domain/errors.js';
 import {text, object, integer} from '../validation.js';
 import {scope, userOnly, toolAllowed, AUTOMATION_TOOLS} from '../../policy/permissions.js';
@@ -137,7 +137,9 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
                 if(x.runIntentId!==undefined){ensure(interactive,'RUN_SESSION_REQUIRED','运行意向回查需要当前交互主会话');const selected=app.store.get<RunIntent>('run-intent',x.runIntentId as string,pid);ensure(selected.rootSessionId===session!.id,'RUN_SESSION_DENIED','运行意向不属于当前对话',403);}
                 const intentRows=interactive?app.store.db.prepare(`SELECT i.id,json_extract(i.data,'$.experimentId') experimentId,json_extract(i.data,'$.approvalId') approvalId,json_extract(i.data,'$.manifestDigest') manifestDigest,json_extract(i.data,'$.status') status,json_extract(i.data,'$.runId') runId,json_extract(i.data,'$.runGrant') runGrant,COALESCE(json_extract(a.data,'$.status'),'missing') approvalStatus FROM records i LEFT JOIN records a ON a.kind='approval' AND a.id=json_extract(i.data,'$.approvalId') AND a.project_id=i.project_id WHERE i.kind='run-intent' AND i.project_id=? AND json_extract(i.data,'$.rootSessionId')=?${x.runIntentId!==undefined?' AND i.id=?':''} ORDER BY CASE WHEN json_extract(i.data,'$.status')='prepared' THEN 0 ELSE 1 END,i.rowid DESC LIMIT 21`).all(pid,session!.id,...(x.runIntentId!==undefined?[x.runIntentId as string]:[])):[];
                 const runIntents={items:intentRows.slice(0,20).map(i=>({id:String(i.id),experimentId:String(i.experimentId),approvalId:String(i.approvalId),manifestDigest:String(i.manifestDigest),status:i.status,approvalStatus:i.approvalStatus,...(i.runId?{runId:String(i.runId)}:{}),...(i.runGrant?{runGrant:JSON.parse(String(i.runGrant))}:{})})),hasMore:intentRows.length>20};
-                return { textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns, runIntents };
+                const projectFiles=interactive?listFiles(app.store.paths.physical(project.workspace)):null;
+                const projectSource=projectFiles?{files:projectFiles.slice(0,50).map(f=>({path:f.path,size:f.size})),hasMore:projectFiles.length>50}:null;
+                return {projectSource, textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns, runIntents };
             }
             case 'workspace_list': return listFiles(ownOrProject());
             case 'artifact_read': {
@@ -149,7 +151,7 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
             case 'artifact_create': return app.evidence.put(pid, text(x.title, 'title', 200), Buffer.from(text(x.content, 'content', 2 * 1024 * 1024, true)), text(x.mediaType ?? 'text/plain', 'mediaType', 100), actor.type === 'user' ? 'user' : `agent:${session!.id}`, actor.taskId ? { taskId: actor.taskId } : actor.wakeupId ? { wakeupId: actor.wakeupId } : {});
             case 'evidence_register': return app.evidence.register(actor, pid, text(x.artifactId, 'artifactId', 100), integer(x.start, 'start', 0), integer(x.end, 'end', 1), text(x.description, 'description', 2000));
             case 'evidence_read': return app.evidence.verify(pid, text(x.evidenceId, 'evidenceId', 100), false);
-            case 'experiment_plan_submit': return app.experiments.create(actor, pid, x);
+            case 'experiment_plan_submit': return app.experiments.create(actor, pid, x, session?.id);
             case 'run_inspect': return app.store.get('run', text(x.runId, 'runId', 100), pid);
             case 'run_logs':
                 app.store.get('run', text(x.runId, 'runId', 100), pid);
@@ -402,9 +404,10 @@ export class OperationRegistry {
         spec.authorize(context, input);
         const proposalOwner = id === 'change_proposal_prepare' ? session?.id : undefined;
         const intentOwner = id === 'run_prepare' ? session?.id : undefined;
+        const experimentOwner = id === 'experiment_plan_submit' && actor.type==='user' ? session?.id : undefined;
         const workspaceId = spec.requiresSession || proposalOwner || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
         // Large local document bodies are hashed before any writer transaction; metadata remains part of identity.
-        const request = {name: id,...(proposalOwner||intentOwner?{rootSessionId:proposalOwner??intentOwner}:{}),input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:['skill_package_import','manuscript_create'].includes(id)?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
+        const request = {name: id,...(proposalOwner||intentOwner||experimentOwner?{rootSessionId:proposalOwner??intentOwner??experimentOwner}:{}),input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:['skill_package_import','manuscript_create'].includes(id)?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value: unknown) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
             const result: unknown = JSON.parse(JSON.stringify(value));
@@ -412,7 +415,7 @@ export class OperationRegistry {
             return result;
         };
         // Legacy proposal receipts have no session identity; owned requests must not read or write them.
-        const legacy = proposalOwner||intentOwner ? undefined : options.legacy;
+        const legacy = proposalOwner||intentOwner||experimentOwner ? undefined : options.legacy;
         const aliases: {scope: string; input: unknown}[] = legacy ? [legacy] : [];
         if (!legacy && actor.type === 'user') {
             let path: string | undefined, body: unknown;
@@ -421,10 +424,10 @@ export class OperationRegistry {
             if (id === 'change_proposal_prepare' && !proposalOwner) { path = '/change-proposals'; body = {projectId: pid, ...input}; }
             if (id === 'workspace_write' && input.source === 'project') { path = `/projects/${pid}/files`; const {source, ...rest} = input; body = rest; }
             const projectPaths: Record<string, string> = {report_create:'/reports',text_evidence_search: '/text-evidence-search', artifact_create: '/artifacts', evidence_register: '/evidence', experiment_plan_submit: '/experiments'};
-            if (projectPaths[id]) { path = projectPaths[id]; body = {projectId: pid, ...input}; }
+            if (projectPaths[id] && !(id==='experiment_plan_submit'&&experimentOwner)) { path = projectPaths[id]; body = {projectId: pid, ...input}; }
             if (id === 'campaign_enroll' || id === 'campaign_decision_submit') { path = `/campaigns/${input.campaignId}/${id === 'campaign_enroll' ? 'members' : 'decisions'}`; const {campaignId, ...rest} = input; body = rest; }
             if (id === 'collaboration_plan_submit' || id === 'agent_delegate') { path = `/sessions/${session!.id}/teams`; body = input; }
-            if (id === 'experiment_plan_submit' && input.parentId) { const {parentId, ...childBody} = input; for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) aliases.push({scope: `${method}:/experiments/${parentId}/children`, input: {body: childBody, query: ''}}); }
+            if (id === 'experiment_plan_submit' && !experimentOwner && input.parentId) { const {parentId, ...childBody} = input; for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) aliases.push({scope: `${method}:/experiments/${parentId}/children`, input: {body: childBody, query: ''}}); }
             if (path) for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) aliases.push({scope: `${method}:${path}`, input: {body, query: ''}});
         }
         const lookup = () => {
@@ -492,6 +495,11 @@ export class OperationRegistry {
             if(['text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit','session_attachment_read'].includes(id))spec.authorize(context,input);
             const previous = lookup();
             if (previous) {
+                if(id==='experiment_plan_submit'&&actor.type==='agent') {
+                    this.authorizeAgent(actor,id);
+                    const created=previous.value as {researchBrief?:ResearchBriefRef};
+                    if(created.researchBrief)this.app.researchBriefs.assertReference(actor,pid,session!.id,created.researchBrief);
+                }
                 if(id==='research_brief_save') {
                     const receipt=previous.value as {id:string},view=this.app.researchBriefs.inspect(actor,pid,session!.id,receipt.id);
                     ensure(view.brief,'BRIEF_EVIDENCE_UNAVAILABLE','该研究计划修订当前不可读取，请重新核对来源',403);

@@ -178,7 +178,7 @@ function ExperimentCard({ node, runs, selected, onSelect, parentTitle, list = fa
           ] })
         ] }) : /* @__PURE__ */ jsx("span", { className: "experiment-graph-run-empty", children: "\u6682\u65E0\u8FD0\u884C" }) }),
         /* @__PURE__ */ jsx("span", { className: "experiment-graph-metric", title: metric, children: metric }),
-        /* @__PURE__ */ jsx("span", { className: "experiment-graph-relation", children: parentTitle ? `\u6D3E\u751F\u81EA ${parentTitle}` : relationNote(node) }),
+        /* @__PURE__ */ jsx("span", { className: "experiment-graph-relation", children: (parentTitle ? `\u6D3E\u751F\u81EA ${parentTitle}` : relationNote(node)) + (experiment.researchBrief ? ` \xB7 \u7B2C${experiment.researchBrief.revision}\u7248\u8BA1\u5212` : " ").trimEnd() }),
         node.inCycle || node.missingParentId ? /* @__PURE__ */ jsx("span", { className: "experiment-graph-warning", role: "note", children: relationNote(node) }) : null
       ]
     }

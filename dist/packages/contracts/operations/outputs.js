@@ -40,11 +40,13 @@ const contract = object({
     sshTargetId: string, image: string, cpus: integer, memoryMb: integer, dockerContext: string, pids: integer, workMb: integer, logBytes: integer, outputBytes: integer, networkPolicy: { const: 'none' }
 }, ['sshTargetId', 'image', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy']);
 const sshTarget = object({ id: string, version: integer, hostKeyDigest: string, configDigest: string, engineId: string, protocolDigest: string, targetId: string });
+const researchBriefRef = object({ id: string, digest: string, revision: integer, rootSessionId: string });
 const manifest = object({
+    researchBrief: researchBriefRef,
     experimentId: string, experimentVersion: integer, experimentRevision: integer,
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
     sourceFiles: array(sourceFile), createdAt: string, sourceRevisionId: string, gitCommit: string, sshTarget
-}, ['sourceRevisionId', 'gitCommit', 'sshTarget']);
+}, ['sourceRevisionId', 'gitCommit', 'sshTarget', 'researchBrief']);
 const runnerExecution = object({ backend: enumeration('docker', 'ssh'), sshHandle: string, dockerContext: string, containerName: string, containerId: string, imageId: string, controlDir: string, generation: integer, leaseUntil: number, startRequested: boolean, recoveryCount: integer, logTruncated: boolean, logsIncomplete: boolean, outputExceeded: boolean }, ['sshHandle', 'containerId', 'imageId', 'logTruncated', 'logsIncomplete', 'outputExceeded']);
 const taskResult = object({
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,
@@ -184,7 +186,7 @@ export const OUTPUT_SCHEMAS = {
     run_source_list: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, files: array(sourceFile) }, ['gitCommit']),
     run_source_read: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, path: string, size: integer, digest: string, mode: enumeration('100644', '100755'), cursor: integer, end: integer, complete: boolean, content: string }, ['gitCommit', 'mode']),
     approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string, workingGrant: WORKING_GRANT_REFERENCE_SCHEMA, runGrant: RUN_GRANT_REFERENCE_SCHEMA }, ['decidedAt', 'workingGrant', 'runGrant'])),
-    experiment_plan_submit: row('experiment', { title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId']),
+    experiment_plan_submit: row('experiment', { researchBrief: researchBriefRef, title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId', 'researchBrief']),
     collaboration_plan_submit: team,
     agent_delegate: team,
     task_inspect: array(row('task', {
@@ -207,10 +209,11 @@ export const OUTPUT_SCHEMAS = {
     project_inspect: object({
         textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument), pmcDocuments: array(pmcDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents', 'pmcDocuments']),
         project: object({ id: string, name: string, collaborationEnabled: boolean }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
+        projectSource: { anyOf: [object({ files: array(object({ path: string, size: integer })), hasMore: boolean }), { type: 'null' }] },
         runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings,
         campaigns: array(object({ id: string, goal: string, state: enumeration('draft', 'active', 'paused', 'stopped') })),
         runIntents: object({ items: array(object({ id: string, experimentId: string, approvalId: string, manifestDigest: string, status: enumeration('prepared', 'submitted'), approvalStatus: enumeration('pending', 'approved', 'rejected', 'stale', 'missing'), runId: string, runGrant: RUN_GRANT_REFERENCE_SCHEMA }, ['runId', 'runGrant'])), hasMore: boolean })
-    }),
+    }, ['projectSource']),
     text_evidence_search: textEvidenceSearch,
     campaign_enroll: member,
     campaign_decision_submit: decision,

@@ -109,6 +109,25 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly researchBrief: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly digest: {
+                                readonly type: "string";
+                            };
+                            readonly revision: {
+                                readonly type: "integer";
+                            };
+                            readonly rootSessionId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly experimentId: {
                         readonly type: "string";
                     };
@@ -1430,6 +1449,25 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         } & {
+            readonly researchBrief: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly id: {
+                        readonly type: "string";
+                    };
+                    readonly digest: {
+                        readonly type: "string";
+                    };
+                    readonly revision: {
+                        readonly type: "integer";
+                    };
+                    readonly rootSessionId: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                readonly additionalProperties: false;
+            };
             readonly title: {
                 readonly type: "string";
             };
@@ -3336,6 +3374,36 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly required: ("id" | "title" | "lifecycle")[];
                     readonly additionalProperties: false;
                 };
+            };
+            readonly projectSource: {
+                readonly anyOf: readonly [{
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly files: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly path: {
+                                        readonly type: "string";
+                                    };
+                                    readonly size: {
+                                        readonly type: "integer";
+                                    };
+                                };
+                                readonly required: ("path" | "size")[];
+                                readonly additionalProperties: false;
+                            };
+                        };
+                        readonly hasMore: {
+                            readonly type: "boolean";
+                        };
+                    };
+                    readonly required: ("files" | "hasMore")[];
+                    readonly additionalProperties: false;
+                }, {
+                    readonly type: "null";
+                }];
             };
             readonly runs: {
                 readonly type: "array";
@@ -9070,6 +9138,25 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly researchBrief: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly digest: {
+                                readonly type: "string";
+                            };
+                            readonly revision: {
+                                readonly type: "integer";
+                            };
+                            readonly rootSessionId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly experimentId: {
                         readonly type: "string";
                     };
@@ -9320,6 +9407,25 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly researchBrief: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly digest: {
+                                readonly type: "string";
+                            };
+                            readonly revision: {
+                                readonly type: "integer";
+                            };
+                            readonly rootSessionId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly experimentId: {
                         readonly type: "string";
                     };

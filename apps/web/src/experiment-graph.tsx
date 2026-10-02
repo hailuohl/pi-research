@@ -205,7 +205,7 @@ function ExperimentCard({ node, runs, selected, onSelect, parentTitle, list = fa
             </> : <span className="experiment-graph-run-empty">暂无运行</span>}
         </span>
         <span className="experiment-graph-metric" title={metric}>{metric}</span>
-        <span className="experiment-graph-relation">{parentTitle?`派生自 ${parentTitle}`:relationNote(node)}</span>
+        <span className="experiment-graph-relation">{(parentTitle?`派生自 ${parentTitle}`:relationNote(node))+(experiment.researchBrief?` · 第${experiment.researchBrief.revision}版计划`:" ").trimEnd()}</span>
         {node.inCycle || node.missingParentId ? <span className="experiment-graph-warning" role="note">{relationNote(node)}</span> : null}
     </button>;
 }

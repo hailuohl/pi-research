@@ -22,13 +22,15 @@ export class RunService {
     approvals;
     evidence;
     compute;
+    briefs;
     researchSourceGuard;
     launching = new Set();
-    constructor(c, approvals, evidence, compute = new ComputeQueue(c)) {
+    constructor(c, approvals, evidence, compute = new ComputeQueue(c), briefs) {
         this.c = c;
         this.approvals = approvals;
         this.evidence = evidence;
         this.compute = compute;
+        this.briefs = briefs;
     }
     get(actor, id) { const run = this.c.store.get('run', id); scope(actor, run.projectId); return run; }
     list(actor, projectId, cursor = 0, limit = 20) {
@@ -68,16 +70,28 @@ export class RunService {
             assertExperimentSourceCurrent(this.c.store, e);
             ensure(e.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能执行');
             assertOutcomeBoundary(this.c.store, e);
-            const rootSessionId = actor.type === 'agent' ? actor.sessionId : selectedRootSessionId;
-            if (rootSessionId) {
-                const s = this.c.store.get('session', rootSessionId, e.projectId);
-                ensure(s.role === 'coordinator' && !s.taskId && !s.teamId && s.state !== 'archived' && !actor.taskId && !actor.wakeupId, 'RUN_SESSION_REQUIRED', '运行准备只支持交互主会话');
+            let requiresBrief = false, current = e;
+            const lineage = new Set();
+            while (current) {
+                ensure(!lineage.has(current.id), 'EXPERIMENT_ANCESTRY_CYCLE', '实验派生链存在循环');
+                lineage.add(current.id);
+                requiresBrief = requiresBrief || !!current.researchBrief;
+                current = current.parentId ? this.c.store.get('experiment', current.parentId, e.projectId) : undefined;
             }
+            const rootSessionId = actor.type === 'agent' ? actor.sessionId : selectedRootSessionId;
+            const root = rootSessionId ? this.c.store.get('session', rootSessionId, e.projectId) : undefined;
+            if (rootSessionId)
+                ensure(root.role === 'coordinator' && !root.taskId && !root.teamId && root.state !== 'archived' && !actor.taskId && !actor.wakeupId, 'RUN_SESSION_REQUIRED', '运行准备只支持交互主会话');
+            else
+                ensure(!requiresBrief, 'RUN_SESSION_REQUIRED', '绑定了研究计划的实验需要主会话才能准备运行');
+            ensure(root?.researchBriefId === undefined || this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
+            const researchBrief = rootSessionId ? this.briefs?.capture(actor, e.projectId, rootSessionId) : undefined;
+            ensure(!requiresBrief || researchBrief, 'BRIEF_REQUIRED', '绑定了研究计划的实验需要当前主会话的已确认研究计划');
             validateContract(e.contract);
             this.researchSourceGuard?.(experimentId, 'prepare');
             const snap = snapshotDirectory(this.c.store.paths.physical(e.workspace), join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
             const binding = revision ? this.c.store.maybe('git-source-binding', revision.id) : undefined;
-            const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: this.c.store.paths.reference(snap.path), sourceFiles: snap.files, createdAt: now(), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
+            const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: this.c.store.paths.reference(snap.path), sourceFiles: snap.files, createdAt: now(), ...(researchBrief ? { researchBrief } : {}), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
             if (manifest.contract.runner === 'ssh')
                 manifest.sshTarget = new SshTargetService(this.c).frozen(manifest.contract.sshTargetId, true);
             verifyTrustedExample(manifest, this.c.repoRoot, this.c.store.paths);
@@ -103,6 +117,20 @@ export class RunService {
                 return this.c.store.get('run', intent.runId);
             assertProjectWritable(this.c.store, intent.projectId);
             assertRunGrantIntent(this.c.store, intent, true);
+            ensure(digest(intent.manifest) === intent.manifestDigest, 'MANIFEST_CORRUPTED', '运行意向快照摘要不符');
+            const ref = intent.manifest.researchBrief;
+            if (ref) {
+                ensure(intent.rootSessionId === ref.rootSessionId, 'BRIEF_REFERENCE_MISMATCH', '运行意向主会话与固定研究简报不一致');
+                ensure(this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
+                const teamId = actor.teamId;
+                const ownRoot = actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.attemptId && !actor.wakeupId && !teamId && actor.sessionId === ref.rootSessionId;
+                if (actor.type === 'user' || ownRoot)
+                    this.briefs.assertReference(actor, intent.projectId, ref.rootSessionId, ref);
+                else {
+                    ensure(intent.runGrant, 'RUN_GRANT_SCOPE_DENIED', '该会话不能读取此研究简报', 403);
+                    this.briefs.assertAdmission(intent.projectId, ref);
+                }
+            }
             this.researchSourceGuard?.(intent.experimentId, 'submit', intent.id);
             const e = this.c.store.get('experiment', intent.experimentId, intent.projectId);
             assertExperimentSourceCurrent(this.c.store, e);
@@ -156,6 +184,10 @@ export class RunService {
         const intent = this.c.store.get('run-intent', run.intentId, run.projectId);
         ensure(intent.status === 'submitted' && intent.runId === run.id && intent.experimentId === e.id && run.manifest.experimentId === e.id &&
             intent.manifestDigest === run.manifestDigest && digest(intent.manifest) === run.manifestDigest && digest(run.manifest) === run.manifestDigest, 'APPROVAL_STALE', '作业、运行意向与已批准快照不一致');
+        if (admission && intent.manifest.researchBrief) {
+            ensure(this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
+            this.briefs.assertAdmission(run.projectId, intent.manifest.researchBrief);
+        }
         ensure(e.revision === run.manifest.experimentRevision && e.contractDigest === run.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
         ensure(digest(run.manifest.contract) === run.manifest.contractDigest && digest(run.manifest.sourceFiles) === run.manifest.snapshotDigest, 'MANIFEST_CORRUPTED', '运行契约或源码清单摘要不符');
         if (run.execution?.backend === 'ssh') {

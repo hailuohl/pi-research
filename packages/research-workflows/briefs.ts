@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Actor, Row, Session } from '../domain/types.js';
+import type { Actor, ResearchBriefRef, Row, Session } from '../domain/types.js';
 import type { ResearchApp } from '../research-app.js';
 import { ensure, asError } from '../domain/errors.js';
 import { integer, object, oneOf, text } from '../contracts/validation.js';
@@ -119,6 +119,40 @@ export class ResearchBriefService {
             this.app.textCorpusGrants.authorizeContent(actor, projectId, 'evidence_read', { evidenceId });
             this.app.evidence.verify(projectId, evidenceId);
         }
+    }
+
+    capture(actor: Actor, projectId: string, rootSessionId: string): ResearchBriefRef | undefined {
+        const root = this.root(actor, projectId, rootSessionId, true), id = root.researchBriefId;
+        if (id === undefined) return undefined;
+        const row = this.app.store.get<ResearchBrief>('research-brief', id, projectId);
+        ensure(row.rootSessionId === root.id, 'BRIEF_CORRUPTED', '最新研究简报不属于当前主会话');
+        ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '当前最新研究计划尚未确认');
+        ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
+        this.checkEvidence(actor, projectId, row.evidenceIds);
+        return { id: row.id, digest: row.digest, revision: row.revision, rootSessionId: row.rootSessionId };
+    }
+
+    assertReference(actor: Actor, projectId: string, rootSessionId: string, ref: ResearchBriefRef): void {
+        const root = this.root(actor, projectId, rootSessionId);
+        ensure(ref.rootSessionId === root.id, 'BRIEF_REFERENCE_MISMATCH', '研究简报引用不属于当前主会话');
+        const row = this.app.store.get<ResearchBrief>('research-brief', ref.id, projectId);
+        ensure(row.rootSessionId === root.id && row.id === ref.id && row.digest === ref.digest && row.revision === ref.revision,
+            'BRIEF_REFERENCE_MISMATCH', '固定研究简报引用与原记录不一致');
+        ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '固定研究计划尚未确认');
+        ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
+        this.checkEvidence(actor, projectId, row.evidenceIds);
+    }
+
+    /** Host-only: validate admission evidence without granting access to brief contents. */
+    assertAdmission(projectId: string, ref: ResearchBriefRef): void {
+        const root = this.app.store.get<Session>('session', ref.rootSessionId, projectId);
+        ensure(root.role === 'coordinator' && !root.taskId && !root.teamId, 'INVALID_ROOT_SESSION', '研究简报只属于项目主协调会话');
+        const row = this.app.store.get<ResearchBrief>('research-brief', ref.id, projectId);
+        ensure(row.rootSessionId === ref.rootSessionId && row.id === ref.id && row.digest === ref.digest && row.revision === ref.revision,
+            'BRIEF_REFERENCE_MISMATCH', '固定研究简报引用与原记录不一致');
+        ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '固定研究计划尚未确认');
+        ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
+        for (const evidenceId of row.evidenceIds) this.app.evidence.verify(projectId, evidenceId, true);
     }
 
     save(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief> {

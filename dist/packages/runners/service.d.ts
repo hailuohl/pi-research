@@ -1,5 +1,6 @@
 import type { AppContext } from '../domain/context.js';
 import type { Actor, RunIntent, Run, Row } from '../domain/types.js';
+import type { ResearchBriefService } from '../research-workflows/briefs.js';
 import type { DockerRunResult } from './adapter.js';
 import { ApprovalService } from '../policy/approvals.js';
 import { EvidenceService } from '../evidence/service.js';
@@ -10,9 +11,10 @@ export declare class RunService {
     private approvals;
     private evidence;
     private compute;
+    private briefs?;
     researchSourceGuard?: (experimentId: string, stage: 'prepare' | 'submit' | 'execute', intentId?: string) => void;
     private launching;
-    constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue);
+    constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue, briefs?: ResearchBriefService | undefined);
     get(actor: Actor, id: string): Row<Run>;
     list(actor: Actor, projectId: string, cursor?: number, limit?: number): {
         items: {

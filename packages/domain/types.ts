@@ -125,7 +125,9 @@ export interface ResearchContract {
     outputBytes?: number;
     networkPolicy?: 'none';
 }
+export interface ResearchBriefRef { id:string; digest:string; revision:number; rootSessionId:string; }
 export interface Experiment {
+    researchBrief?: ResearchBriefRef;
     title: string;
     hypothesis: string;
     parentId: string | null;
@@ -138,6 +140,7 @@ export interface Experiment {
     revision: number;
 }
 export interface Manifest {
+    researchBrief?: ResearchBriefRef;
     sshTarget?: import('../runners/ssh-targets.js').SshTarget;
     experimentId: string;
     experimentVersion: number;

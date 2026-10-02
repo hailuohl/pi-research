@@ -15,9 +15,11 @@ import { EXAMPLE_CONTRACT, validateContract } from '../runners/contracts.js';
 export class ExperimentService {
     c;
     projects;
-    constructor(c, projects) {
+    briefs;
+    constructor(c, projects, briefs) {
         this.c = c;
         this.projects = projects;
+        this.briefs = briefs;
     }
     get(actor, id) { const e = this.c.store.get('experiment', id); scope(actor, e.projectId); return e; }
     /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
@@ -39,7 +41,7 @@ export class ExperimentService {
         this.c.store.event(projectId, 'experiment.created', { id, parentId: parent.id, parentSourceRevisionId: source.id });
         return child;
     }
-    create(actor, projectId, input) {
+    create(actor, projectId, input, selectedRootSessionId) {
         scope(actor, projectId);
         const x = object(input);
         ensure(x.expectedParentRevision === undefined || !!x.parentId, 'INVALID_INPUT', 'expectedParentRevision需要parentId');
@@ -47,6 +49,17 @@ export class ExperimentService {
             assertProjectWritable(this.c.store, projectId);
             const p = this.projects.get(actor, projectId);
             const parent = x.parentId ? this.c.store.get('experiment', text(x.parentId, 'parentId'), projectId) : undefined;
+            const interactiveRoot = actor.type === 'user' || actor.type === 'agent' && actor.role === 'coordinator';
+            const rootSessionId = actor.type === 'agent' && actor.role === 'coordinator' ? actor.sessionId : actor.type === 'user' ? selectedRootSessionId : undefined;
+            if (actor.type === 'agent' && actor.role === 'coordinator')
+                ensure(rootSessionId, 'RUN_SESSION_REQUIRED', '交互协调会话需要主会话身份');
+            if (interactiveRoot && parent?.researchBrief && !rootSessionId)
+                ensure(false, 'RUN_SESSION_REQUIRED', '从绑定研究计划的实验派生需要主会话');
+            const root = rootSessionId ? this.c.store.get('session', rootSessionId, projectId) : undefined;
+            ensure(root?.researchBriefId === undefined || this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
+            const researchBrief = rootSessionId ? this.briefs?.capture(actor, projectId, rootSessionId) : undefined;
+            if (interactiveRoot && parent?.researchBrief)
+                ensure(researchBrief, 'BRIEF_REQUIRED', '从绑定研究计划派生需要当前主会话的已确认研究计划');
             if (parent) {
                 ensure(parent.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能派生新源码');
                 assertExperimentSourceCurrent(this.c.store, parent);
@@ -70,7 +83,7 @@ export class ExperimentService {
                 object(x.config);
                 writeFileSync(join(workspace, 'config.json'), JSON.stringify(x.config, null, 2), { mode: 0o600 });
             }
-            const e = this.c.store.create('experiment', projectId, { title: text(x.title, 'title', 200), hypothesis: text(x.hypothesis ?? '尚未填写假设', 'hypothesis', 10000), parentId: parent?.id ?? null, lifecycle: 'provisional', contract, contractDigest: digest(contract), workspace: this.c.store.paths.reference(workspace), notes: [], revision: 1 }, id);
+            const e = this.c.store.create('experiment', projectId, { title: text(x.title, 'title', 200), hypothesis: text(x.hypothesis ?? '尚未填写假设', 'hypothesis', 10000), parentId: parent?.id ?? null, lifecycle: 'provisional', contract, contractDigest: digest(contract), workspace: this.c.store.paths.reference(workspace), notes: [], revision: 1, ...(researchBrief ? { researchBrief } : {}) }, id);
             captureSourceRevision(this.c, e);
             this.c.store.event(projectId, 'experiment.created', { id, parentId: e.parentId });
             return e;

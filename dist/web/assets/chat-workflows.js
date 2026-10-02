@@ -58,7 +58,7 @@ class ChatWorkflows extends React.Component {
         "\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212 \xB7 \u7B2C ",
         brief.revision,
         " \u7248",
-        /* @__PURE__ */ jsx(Badge, { value: confirmed ? "approved" : brief.status === "ready" ? "pending" : "draft" })
+        /* @__PURE__ */ jsx(Badge, { value: confirmed ? "approved" : brief.status === "ready" ? "pending" : "draft", caption: confirmed ? "\u5DF2\u786E\u8BA4" : brief.status === "ready" ? "\u5F85\u786E\u8BA4" : "\u5F85\u6F84\u6E05" })
       ] }),
       /* @__PURE__ */ jsx("p", { children: /* @__PURE__ */ jsx("strong", { children: brief.question }) }),
       /* @__PURE__ */ jsx("p", { children: brief.scope }),
@@ -70,11 +70,18 @@ class ChatWorkflows extends React.Component {
         /* @__PURE__ */ jsx("strong", { children: "\u5224\u65AD\u6807\u51C6" }),
         /* @__PURE__ */ jsx("ul", { children: brief.successCriteria.map((q, i) => /* @__PURE__ */ jsx("li", { children: q }, i)) })
       ] }) : null,
-      brief.steps.length ? /* @__PURE__ */ jsx("ol", { children: brief.steps.map((step, i) => /* @__PURE__ */ jsxs("li", { children: [
-        /* @__PURE__ */ jsx("strong", { children: step.title }),
-        " \xB7 ",
-        step.description
-      ] }, i)) }) : null,
+      brief.steps.length ? /* @__PURE__ */ jsxs("details", { children: [
+        /* @__PURE__ */ jsxs("summary", { children: [
+          "\u7814\u7A76\u6B65\u9AA4\uFF08",
+          brief.steps.length,
+          "\uFF09"
+        ] }),
+        /* @__PURE__ */ jsx("ol", { children: brief.steps.map((step, i) => /* @__PURE__ */ jsxs("li", { children: [
+          /* @__PURE__ */ jsx("strong", { children: step.title }),
+          " \xB7 ",
+          step.description
+        ] }, i)) })
+      ] }) : null,
       /* @__PURE__ */ jsxs("details", { children: [
         /* @__PURE__ */ jsxs("summary", { children: [
           "\u6587\u732E\u3001\u5047\u8BBE\u4E0E\u7EA6\u675F \xB7 ",
@@ -165,6 +172,11 @@ class ChatWorkflows extends React.Component {
         data.experiments.find((e) => e.id === intent.experimentId)?.title ?? short(intent.experimentId),
         /* @__PURE__ */ jsx(Badge, { value: run?.state ?? (approved ? "approved" : approval?.status ?? intent.status) })
       ] }),
+      intent.manifest.researchBrief ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+        "\u7814\u7A76\u4F9D\u636E\uFF1A\u7B2C ",
+        intent.manifest.researchBrief.revision,
+        " \u7248\u8BA1\u5212"
+      ] }) : null,
       /* @__PURE__ */ jsxs("details", { children: [
         /* @__PURE__ */ jsx("summary", { children: "\u51BB\u7ED3\u53C2\u6570\u3001\u8BA1\u7B97\u5951\u7EA6\u4E0E\u6388\u6743" }),
         /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ intentId: intent.id, manifestDigest: intent.manifestDigest, manifest: intent.manifest, runGrant: bound }, null, 2) })

@@ -86,6 +86,37 @@ export class ResearchBriefService {
             this.app.evidence.verify(projectId, evidenceId);
         }
     }
+    capture(actor, projectId, rootSessionId) {
+        const root = this.root(actor, projectId, rootSessionId, true), id = root.researchBriefId;
+        if (id === undefined)
+            return undefined;
+        const row = this.app.store.get('research-brief', id, projectId);
+        ensure(row.rootSessionId === root.id, 'BRIEF_CORRUPTED', '最新研究简报不属于当前主会话');
+        ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '当前最新研究计划尚未确认');
+        ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
+        this.checkEvidence(actor, projectId, row.evidenceIds);
+        return { id: row.id, digest: row.digest, revision: row.revision, rootSessionId: row.rootSessionId };
+    }
+    assertReference(actor, projectId, rootSessionId, ref) {
+        const root = this.root(actor, projectId, rootSessionId);
+        ensure(ref.rootSessionId === root.id, 'BRIEF_REFERENCE_MISMATCH', '研究简报引用不属于当前主会话');
+        const row = this.app.store.get('research-brief', ref.id, projectId);
+        ensure(row.rootSessionId === root.id && row.id === ref.id && row.digest === ref.digest && row.revision === ref.revision, 'BRIEF_REFERENCE_MISMATCH', '固定研究简报引用与原记录不一致');
+        ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '固定研究计划尚未确认');
+        ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
+        this.checkEvidence(actor, projectId, row.evidenceIds);
+    }
+    /** Host-only: validate admission evidence without granting access to brief contents. */
+    assertAdmission(projectId, ref) {
+        const root = this.app.store.get('session', ref.rootSessionId, projectId);
+        ensure(root.role === 'coordinator' && !root.taskId && !root.teamId, 'INVALID_ROOT_SESSION', '研究简报只属于项目主协调会话');
+        const row = this.app.store.get('research-brief', ref.id, projectId);
+        ensure(row.rootSessionId === ref.rootSessionId && row.id === ref.id && row.digest === ref.digest && row.revision === ref.revision, 'BRIEF_REFERENCE_MISMATCH', '固定研究简报引用与原记录不一致');
+        ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '固定研究计划尚未确认');
+        ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
+        for (const evidenceId of row.evidenceIds)
+            this.app.evidence.verify(projectId, evidenceId, true);
+    }
     save(actor, projectId, sessionId, input) {
         const { content, status, expectedRevisionId } = parseContent(input);
         return this.app.store.transaction(() => {

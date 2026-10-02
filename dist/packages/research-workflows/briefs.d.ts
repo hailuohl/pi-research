@@ -1,4 +1,4 @@
-import type { Actor, Row } from '../domain/types.js';
+import type { Actor, ResearchBriefRef, Row } from '../domain/types.js';
 import type { ResearchApp } from '../research-app.js';
 export interface ResearchBrief {
     rootSessionId: string;
@@ -43,6 +43,10 @@ export declare class ResearchBriefService {
     constructor(app: ResearchApp);
     private root;
     private checkEvidence;
+    capture(actor: Actor, projectId: string, rootSessionId: string): ResearchBriefRef | undefined;
+    assertReference(actor: Actor, projectId: string, rootSessionId: string, ref: ResearchBriefRef): void;
+    /** Host-only: validate admission evidence without granting access to brief contents. */
+    assertAdmission(projectId: string, ref: ResearchBriefRef): void;
     save(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief>;
     inspect(actor: Actor, projectId: string, sessionId: string, briefId?: string): ResearchBriefInspection;
     confirm(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief>;
