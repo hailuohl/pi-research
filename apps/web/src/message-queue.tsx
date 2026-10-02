@@ -1,10 +1,11 @@
 import * as React from 'react';
-import {api} from './api.js';
+import {api,downloadArtifact} from './api.js';
 import {Icon} from './ui.js';
+import type {MessageAttachment} from './models.js';
 import type {SessionHistoryPage,SessionMessageContent,SessionView} from './models.js';
 import type {Perform} from './workbench.js';
 
-export type QueueMessage=SessionView['messages'][number]&{queueRemoved?:boolean};
+export type QueueMessage=SessionView['messages'][number]&{queueRemoved?:boolean;attachments?:MessageAttachment[]};
 interface Props {projectId:string;sessionId:string;messages:QueueMessage[];total:number;nextCursor:string|null;canSteer:boolean;disabled:boolean;busy:boolean;perform:Perform;}
 interface Page {items:QueueMessage[];total:number;nextCursor:string|null;canSteer:boolean;}
 interface State {items:QueueMessage[];total:number;nextCursor:string|null;canSteer:boolean;pageStarts:(string|null)[];pageIndex:number;loading:boolean;error:string;readingId:string;editingId:string;editingMessage:QueueMessage|null;editVersion:number;draft:string;actionBusy:boolean;steerRequested:string[];}
@@ -91,7 +92,7 @@ export class MessageQueue extends React.Component<Props,State> {
             {error?<p role="alert" className="error-text queue-error">{error}</p>:null}
             {items.length? <ol className="message-queue-list">{items.map(message=>{
                 const editing=editingId===message.id,stale=editing&&this.staleEdit,steerRequested=this.state.steerRequested.includes(message.id),rowLocked=locked||!!editingId&&!editing;
-                return <li className="message-queue-row" key={message.id}><div className="message-queue-preview"><span>{message.content||'（空消息）'}</span>{message.previewTruncated?<small>预览 {message.contentBytes} 字节中的一部分</small>:null}</div>
+                return <li className="message-queue-row" key={message.id}><div className="message-queue-preview"><span>{message.content||'（空消息）'}</span>{message.previewTruncated?<small>预览 {message.contentBytes} 字节中的一部分</small>:null}{message.attachments?.length?<div className="message-queue-attachments">{message.attachments.map(attachment=><button type="button" className="text-button" key={attachment.documentVersionId} aria-label={`下载排队附件原件 ${attachment.title}`} disabled={this.props.busy} onClick={()=>this.props.perform(()=>downloadArtifact(attachment.artifactId,attachment.title))}><Icon name="evidence" size={13}/>{attachment.title}</button>)}</div>:null}</div>
                     {editing?<div className="message-queue-editor"><textarea aria-label="编辑排队消息" maxLength={MAX_CONTENT} value={draft} disabled={this.state.actionBusy} onChange={e=>this.setState({draft:e.target.value,error:''})}/>{stale?<p role="alert" className="error-text">消息版本已变化或已离开队列。草稿已保留，请取消后重新读取。</p>:null}<div className="message-queue-actions"><button type="button" disabled={locked||stale||!draft.trim()} onClick={()=>void this.action(message,'edit',draft)}>保存</button><button type="button" disabled={this.state.actionBusy} onClick={this.closeEdit}>取消编辑</button></div></div>:<div className="message-queue-actions"><button type="button" disabled={rowLocked||!this.state.canSteer||steerRequested} className="queue-now" aria-label={steerRequested?'已请求立即引导':'立即引导'} title={!this.state.canSteer?'当前没有可接收引导的任务':'在当前任务的下一处理边界生效'} onClick={()=>void this.action(message,'steer')}><Icon name="arrow" size={14}/>{steerRequested?<><span>已请求</span><span className="sr-only"> · 等待边界</span></>:<><span>立即</span><span className="sr-only">引导</span></>}</button><button type="button" disabled={rowLocked||this.state.readingId===message.id} aria-label="编辑" title="编辑排队消息" className="queue-icon" onClick={()=>void this.beginEdit(message)}><Icon name="edit" size={15}/><span className="sr-only">{this.state.readingId===message.id?'读取全文…':'编辑'}</span></button><button type="button" disabled={rowLocked} aria-label="删除" title="删除排队消息" className="queue-icon" onClick={()=>void this.action(message,'cancel')}><Icon name="close" size={15}/><span className="sr-only">删除</span></button></div>}
                 </li>;
             })}</ol>:loading?<p className="small muted" role="status">正在读取待发消息…</p>:null}

@@ -1,4 +1,5 @@
 import { sessionCatalog, sessionMessagePage, sessionMessageContent, sessionQueue, canSteerSession } from './session-history.js';
+import { attachmentReferences } from './attachments.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -15,14 +16,48 @@ export class SessionService {
     model() {
         return this.c.store.maybe('app-settings', 'global')?.model ?? { provider: process.env.PI_PROVIDER ?? '', model: process.env.PI_MODEL ?? '', thinking: 'off' };
     }
+    models() {
+        const settings = this.c.store.maybe('app-settings', 'global'), current = this.model();
+        return [current, ...(settings?.models ?? [])].filter((m, i, all) => !!m.provider && !!m.model && all.findIndex(v => v.provider === m.provider && v.model === m.model) === i);
+    }
     configure(actor, value) {
         userOnly(actor);
         const x = object(value);
+        ensure(Object.keys(x).every(k => ['provider', 'model', 'thinking'].includes(k)), 'INVALID_INPUT', '模型配置包含未知字段');
         const model = { provider: text(x.provider, 'provider', 100), model: text(x.model, 'model', 160), thinking: oneOf(x.thinking ?? 'off', ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'], 'thinking') };
-        const old = this.c.store.maybe('app-settings', 'global');
-        if (old)
-            return this.c.store.update('app-settings', 'global', old.version, { model });
-        return this.c.store.create('app-settings', null, { model }, 'global');
+        return this.c.store.transaction(() => {
+            const old = this.c.store.maybe('app-settings', 'global');
+            const models = [model, ...this.models().filter(m => m.provider !== model.provider || m.model !== model.model)];
+            ensure(models.length <= 20, 'MODEL_LIMIT', '最多保存20个模型');
+            if (old)
+                return this.c.store.update('app-settings', 'global', old.version, { model, models });
+            return this.c.store.create('app-settings', null, { model, models }, 'global');
+        });
+    }
+    selectModel(actor, id, value) {
+        userOnly(actor);
+        const x = object(value);
+        ensure(Object.keys(x).every(k => ['expectedVersion', 'model'].includes(k)), 'INVALID_INPUT', '模型选择包含未知字段');
+        const version = integer(x.expectedVersion, 'expectedVersion', 1);
+        return this.c.store.transaction(() => {
+            const s = this.get(actor, id);
+            assertProjectWritable(this.c.store, s.projectId);
+            ensure(s.version === version, 'VERSION_CONFLICT', '会话版本已变化，请刷新');
+            ensure(!s.taskId && !s.teamId && s.role === 'coordinator' && !['running', 'queued', 'archived'].includes(s.state), 'SESSION_BUSY', '只能切换空闲主会话的模型');
+            const pending = this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.status') IN ('queued','running') LIMIT 1").get(s.projectId, id);
+            const worker = this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='agent-admission' AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.state')<>'released' LIMIT 1").get(id);
+            ensure(!pending && !worker, 'SESSION_BUSY', '等待输入和当前 Worker 退出后再切换模型');
+            const grant = s.textCorpusGrantId || s.discoveryGrantId || s.runGrantId || s.workingGrantId || this.c.store.db.prepare("SELECT 1 FROM records WHERE kind IN ('text-corpus-grant','discovery-grant','run-grant','working-grant') AND project_id=? AND json_extract(data,'$.sessionId')=? LIMIT 1").get(s.projectId, id);
+            const team = this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='team' AND project_id=? AND json_extract(data,'$.rootSessionId')=? AND json_extract(data,'$.state') IN ('awaiting_approval','active','paused','draining') LIMIT 1").get(s.projectId, id);
+            ensure(!grant && !team, 'MODEL_BOUND', '此会话已有固定授权或协作计划，请用所选默认模型新建会话');
+            const raw = x.model === undefined ? this.model() : object(x.model);
+            ensure(Object.keys(raw).every(k => ['provider', 'model', 'thinking'].includes(k)), 'INVALID_INPUT', '模型选择包含未知字段');
+            const model = { provider: text(raw.provider, 'provider', 100), model: text(raw.model, 'model', 160), thinking: oneOf(raw.thinking ?? 'off', ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'], 'thinking') };
+            ensure(this.models().some(m => m.provider === model.provider && m.model === model.model && m.thinking === model.thinking), 'MODEL_NOT_CONFIGURED', '先在设置中保存该模型');
+            const updated = this.c.store.update('session', id, s.version, { model });
+            this.c.store.event(s.projectId, 'session.model_changed', { sessionId: id, model });
+            return updated;
+        });
     }
     get(actor, id) { const s = this.c.store.get('session', id); scope(actor, s.projectId); return s; }
     create(actor, projectId, input, internal) {
@@ -44,9 +79,10 @@ export class SessionService {
             ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
             ensure(!s.taskId, 'TASK_MESSAGE_REQUIRED', '请通过任务引导发送消息');
             assertProjectWritable(this.c.store, s.projectId);
+            const attachments = x.attachmentDocumentIds === undefined ? [] : attachmentReferences(this.c.store, s, x.attachmentDocumentIds);
             const pending = this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND json_extract(data,'$.status') IN ('queued','running') LIMIT 1").get(s.projectId, id);
             const mode = oneOf(x.mode ?? (s.state === 'running' || pending ? 'follow_up' : 'prompt'), ['prompt', 'steer', 'follow_up'], 'mode');
-            const msg = this.c.store.create('message', s.projectId, { sessionId: id, role: 'user', content: text(x.content, 'content', 32000), mode, status: 'queued', ...(mode === 'steer' ? { steerGeneration: s.generation } : {}) });
+            const msg = this.c.store.create('message', s.projectId, { sessionId: id, role: 'user', content: text(x.content, 'content', 32000), mode, status: 'queued', ...(attachments.length ? { attachments } : {}), ...(mode === 'steer' ? { steerGeneration: s.generation } : {}) });
             if (s.state !== 'running')
                 this.c.store.update('session', id, s.version, { state: 'queued', lastError: undefined });
             this.c.store.event(s.projectId, 'session.message_queued', { sessionId: id, messageId: msg.id, mode });
@@ -166,11 +202,11 @@ export class SessionService {
             const s = this.create(actor, original.projectId, { title: original.title + ' · 分支' });
             const branch = this.c.store.update('session', s.id, s.version, { parentSessionId: id, model: original.model });
             for (const m of messages.slice(0, index + 1))
-                this.c.store.create('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved ? 'cancelled' : 'completed', ...(m.queueRemoved ? { queueRemoved: true } : {}) });
+                this.c.store.create('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved ? 'cancelled' : 'completed', ...(m.attachments ? { attachments: m.attachments } : {}), ...(m.queueRemoved ? { queueRemoved: true } : {}) });
             this.c.store.event(s.projectId, 'session.branched', { parentId: id, sessionId: s.id, throughMessageId });
             return branch;
         });
     }
-    retry(actor, id, messageId) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.send(actor, id, { content: m.content, mode: 'prompt' }); }
+    retry(actor, id, messageId) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.send(actor, id, { content: m.content, mode: 'prompt', ...(m.attachments ? { attachmentDocumentIds: m.attachments.map(a => a.documentVersionId) } : {}) }); }
 }
 //# sourceMappingURL=sessions.js.map

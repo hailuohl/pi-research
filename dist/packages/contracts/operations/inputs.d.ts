@@ -2695,6 +2695,37 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["sessionId", "messageId"];
         readonly additionalProperties: false;
     };
+    readonly session_attachment_read: {
+        readonly type: "object";
+        readonly properties: {
+            readonly messageId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly documentVersionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["messageId", "documentVersionId"];
+        readonly additionalProperties: false;
+    };
     readonly compute_target_probe: {
         readonly type: "object";
         readonly properties: {

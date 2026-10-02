@@ -1,6 +1,6 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
-import { api } from "./api.js";
+import { api, downloadArtifact } from "./api.js";
 import { Icon } from "./ui.js";
 const PAGE_LIMIT = 20, READ_LIMIT = 64e3, MAX_CONTENT = 32e3;
 const signature = (p) => JSON.stringify([p.total, p.nextCursor, p.canSteer, p.messages.map((m) => [m.id, m.version, m.status, m.contentBytes])]);
@@ -127,7 +127,11 @@ class MessageQueue extends React.Component {
               "\u9884\u89C8 ",
               message.contentBytes,
               " \u5B57\u8282\u4E2D\u7684\u4E00\u90E8\u5206"
-            ] }) : null
+            ] }) : null,
+            message.attachments?.length ? /* @__PURE__ */ jsx("div", { className: "message-queue-attachments", children: message.attachments.map((attachment) => /* @__PURE__ */ jsxs("button", { type: "button", className: "text-button", "aria-label": `\u4E0B\u8F7D\u6392\u961F\u9644\u4EF6\u539F\u4EF6 ${attachment.title}`, disabled: this.props.busy, onClick: () => this.props.perform(() => downloadArtifact(attachment.artifactId, attachment.title)), children: [
+              /* @__PURE__ */ jsx(Icon, { name: "evidence", size: 13 }),
+              attachment.title
+            ] }, attachment.documentVersionId)) }) : null
           ] }),
           editing ? /* @__PURE__ */ jsxs("div", { className: "message-queue-editor", children: [
             /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7F16\u8F91\u6392\u961F\u6D88\u606F", maxLength: MAX_CONTENT, value: draft, disabled: this.state.actionBusy, onChange: (e) => this.setState({ draft: e.target.value, error: "" }) }),

@@ -9,13 +9,14 @@ import { WakeupPanel } from "./campaigns.js";
 import { comparableRuns, comparisonMetric } from "./models.js";
 import { ExperimentGraph } from "./experiment-graph.js";
 import { ChatWorkflows } from "./chat-workflows.js";
+import { ComposerControls } from "./composer-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
 import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { draft: "" };
+    this.state = { draft: "", draftVersion: 0, attachments: [] };
     this.mounted = true;
   }
   componentWillUnmount() {
@@ -23,7 +24,8 @@ class Chat extends React.Component {
   }
   render() {
     const { data, boot, session, messages } = this.props;
-    const canSend = boot.runtime.ready && !this.props.busy && !!session && !!session.model.provider && !!session.model.model && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
+    const canSend = boot.runtime.ready && !this.props.busy && !data.project.archived && !!session && !!session.model.provider && !!session.model.model && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
+    const hasDraft = !!this.state.draft.trim() || this.state.attachments.length > 0;
     return /* @__PURE__ */ jsxs("div", { className: "chat-page", children: [
       /* @__PURE__ */ jsxs("div", { className: "chat-heading", children: [
         /* @__PURE__ */ jsxs("div", { children: [
@@ -85,34 +87,24 @@ class Chat extends React.Component {
           session?.role === "coordinator" ? /* @__PURE__ */ jsx(MessageQueue, { projectId: data.project.id, sessionId: session.id, messages: this.props.pendingMessages, total: this.props.pendingTotal, nextCursor: this.props.pendingNextCursor, canSteer: this.props.canSteer, disabled: data.project.archived || !!session.taskId || session.state === "archived" || !!this.props.historyAnchor || !!this.props.history && !this.props.history.atLatest, busy: this.props.busy, perform: this.props.perform }, data.project.id + ":" + session.id) : null,
           /* @__PURE__ */ jsxs("form", { className: "composer", onSubmit: (e) => {
             e.preventDefault();
-            if (!session || !canSend || !this.state.draft.trim()) return;
-            const content = this.state.draft;
+            if (!session || !canSend || !this.state.draft.trim() && !this.state.attachments.length) return;
+            const draft = this.state.draft, draftVersion = this.state.draftVersion, attachments = this.state.attachments.slice(), content = draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", sentIds = new Set(attachments.map((attachment) => attachment.documentVersionId));
             this.props.perform(async () => {
-              await api(`/sessions/${session.id}/messages`, { content });
-              if (this.mounted && this.props.session?.id === session.id && this.state.draft === content) this.setState({ draft: "" });
+              await api(`/sessions/${session.id}/messages`, { content, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} });
+              if (this.mounted && this.props.session?.id === session.id) this.setState((current) => ({ draft: current.draftVersion === draftVersion && current.draft === draft ? "" : current.draft, attachments: current.attachments.filter((attachment) => !sentIds.has(attachment.documentVersionId)) }));
             });
           }, children: [
-            /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState({ draft: e.target.value }), onKeyDown: (e) => {
+            /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState((current) => ({ draft: e.target.value, draftVersion: current.draftVersion + 1 })), onKeyDown: (e) => {
               if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.nativeEvent?.isComposing || e.keyCode === 229 || e.nativeEvent?.keyCode === 229) return;
               e.preventDefault();
               e.currentTarget.form.requestSubmit();
             } }),
-            /* @__PURE__ */ jsxs("div", { className: "composer-toolbar", children: [
-              /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
-                /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
-                /* @__PURE__ */ jsx("span", { children: "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F" })
-              ] }),
-              /* @__PURE__ */ jsx("span", { className: "small muted", children: data.project.settings.enabled ? "\u6309\u9700\u5206\u5DE5" : "\u5355\u4E3B Agent" }),
-              /* @__PURE__ */ jsx("div", { className: "grow" }),
-              session?.state === "running" && !session.taskId ? /* @__PURE__ */ jsxs("button", { type: "button", className: "secondary compact", onClick: () => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), "\u5DF2\u505C\u6B62 Agent\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88"), children: [
-                /* @__PURE__ */ jsx(Icon, { name: "stop", size: 14 }),
-                "\u505C\u6B62 Agent"
-              ] }) : null,
-              /* @__PURE__ */ jsxs("button", { className: "primary compact", disabled: !canSend || !this.state.draft.trim() || !session, children: [
-                /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 16 }),
-                "\u53D1\u9001"
-              ] })
-            ] })
+            /* @__PURE__ */ jsx(ComposerControls, { boot, projectId: data.project.id, projectArchived: data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => {
+              if (session) this.props.perform(() => api(`/sessions/${session.id}/model`, { expectedVersion: session.version, model }), "\u5DF2\u66F4\u65B0\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\uFF1B\u9879\u76EE\u9ED8\u8BA4\u6A21\u578B\u672A\u66F4\u6539");
+            }, children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
+              /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
+              /* @__PURE__ */ jsx("span", { children: "\u591A\u667A\u80FD\u4F53" })
+            ] }) }, `${data.project.id}:${session?.id ?? ""}`)
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "composer-caption", children: [

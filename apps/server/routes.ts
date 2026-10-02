@@ -17,7 +17,7 @@ export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: 
     const parts = path.split('/').filter(Boolean);
     const [kind, id, action] = parts;
     if (path === '/bootstrap')
-        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), runtime: host.status(), capabilities: CAPABILITIES };
+        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), models:app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
     if (path === '/capabilities')
         return CAPABILITIES;
     if (path === '/events') {
@@ -130,9 +130,7 @@ export function writeRoute(app: ResearchApp, host: AgentHost, path: string, body
         if (action === 'archive')
             return app.sessions.archive(USER, id, integer(x.expectedVersion, 'expectedVersion', 1));
         if (action === 'model') {
-            const s = app.sessions.get(USER, id);
-            ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '不能改变运行中或已分配助手的模型');
-            return app.store.update<Session>('session', id, integer(x.expectedVersion, 'expectedVersion', 1), { model: app.sessions.model() });
+            return app.sessions.selectModel(USER,id,x);
         }
         if (!action)
             return app.sessions.rename(USER, id, text(x.title, 'title', 160), integer(x.expectedVersion, 'expectedVersion', 1));

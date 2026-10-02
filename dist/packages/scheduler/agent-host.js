@@ -1,4 +1,5 @@
 import { canSteerSession } from '../pi-adapter/session-history.js';
+import { messageInput } from '../pi-adapter/attachments.js';
 import { prepareSessionSkills } from '../skills/runtime.js';
 import { fork } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -102,7 +103,7 @@ export class AgentHost {
                             continue;
                         active.messageIds.push(m.id);
                         active.sent.add(m.id);
-                        this.sendInput(active, { type: 'steer', content: m.content, messageId: m.id }, m.id);
+                        this.sendInput(active, { type: 'steer', content: messageInput(m), messageId: m.id }, m.id);
                     }
                 if (s.taskId && a?.state === 'running')
                     for (const d of this.app.store.list('directive', s.projectId).filter(d => d.kind !== 'revise' && d.taskIds.includes(s.taskId) && !d.deliveredSessionIds.includes(s.id))) {
@@ -239,7 +240,7 @@ export class AgentHost {
         const { session: claimed, slot } = reservation, store = this.app.store;
         if (messageId) {
             ensure(reservation.message?.id === messageId, 'MESSAGE_STALE', '领取正文缺失');
-            prompt = reservation.message.content;
+            prompt = messageInput(reservation.message);
         }
         const wakeupId = messageId ? store.get('message', messageId).wakeupId : undefined;
         const actor = { ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
@@ -276,7 +277,7 @@ export class AgentHost {
             this.admission.markRunning(slot.id, this.ownerHost, claimed.generation, child.pid);
             const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
             worker.contextMessageIds = hostMessages.map(m => m.id);
-            const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: m.content })) : [];
+            const history = !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
             this.sendInput(worker, { type: 'start', managedHttp: true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
             store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation: claimed.generation, attemptId: attempt?.id });
         }

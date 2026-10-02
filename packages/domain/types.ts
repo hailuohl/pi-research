@@ -68,6 +68,7 @@ export interface Session {
     parentSessionId?: string;
 }
 export interface Message {
+    attachments?: MessageAttachment[];
     sessionId: string;
     role: 'user' | 'assistant' | 'system';
     content: string;
@@ -80,6 +81,14 @@ export interface Message {
     origin?: 'user' | 'automation';
     wakeupId?: string;
     usage?: unknown;
+}
+export interface MessageAttachment {
+    documentVersionId:string;
+    artifactId:string;
+    digest:string;
+    title:string;
+    mediaType:string;
+    size:number;
 }
 export interface Approval {
     runGrant?: import('../policy/run-grant-types.js').RunGrantReference;

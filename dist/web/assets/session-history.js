@@ -1,8 +1,8 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
-import { api } from "./api.js";
+import { api, downloadArtifact } from "./api.js";
 import { date } from "./models.js";
-import { Badge } from "./ui.js";
+import { Badge, Icon } from "./ui.js";
 const READ_LIMIT = 16e3;
 class SessionHistory extends React.Component {
   constructor() {
@@ -88,6 +88,12 @@ class SessionHistory extends React.Component {
             /* @__PURE__ */ jsx("summary", { children: "\u67E5\u770B\u5DF2\u79FB\u51FA\u961F\u5217\u7684\u539F\u6D88\u606F" }),
             content(message)
           ] }) : content(message),
+          message.attachments?.length ? /* @__PURE__ */ jsx("div", { className: "message-attachments", "aria-label": "\u6D88\u606F\u9644\u4EF6", children: message.attachments.map((attachment) => /* @__PURE__ */ jsxs("div", { className: "message-attachment", children: [
+            /* @__PURE__ */ jsx(Icon, { name: "evidence", size: 15 }),
+            /* @__PURE__ */ jsx("span", { title: attachment.title, children: attachment.title }),
+            /* @__PURE__ */ jsx("small", { children: attachment.mediaType === "application/pdf" ? "PDF \u539F\u4EF6 \xB7 \u9700\u663E\u5F0F\u89E3\u6790" : "\u6587\u672C\u539F\u4EF6" }),
+            /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", "aria-label": `\u4E0B\u8F7D\u9644\u4EF6\u539F\u4EF6 ${attachment.title}`, onClick: () => perform(() => downloadArtifact(attachment.artifactId, attachment.title)), children: "\u4E0B\u8F7D\u539F\u4EF6" })
+          ] }, attachment.documentVersionId)) }) : null,
           message.error ? /* @__PURE__ */ jsx("p", { className: "error-text", children: message.error }) : null,
           /* @__PURE__ */ jsxs("div", { className: "message-tools", children: [
             /* @__PURE__ */ jsx("button", { onClick: () => perform(() => api(`/sessions/${sessionId}/branch`, { messageId: message.id }), "\u5DF2\u521B\u5EFA\u5BF9\u8BDD\u5206\u652F\uFF1B\u5B9E\u9A8C\u8BB0\u5F55\u4FDD\u6301\u4E0D\u53D8"), children: "\u4ECE\u6B64\u5904\u5206\u652F" }),

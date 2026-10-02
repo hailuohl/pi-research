@@ -75,6 +75,7 @@ export declare function sessionQueue(store: Store, session: Row<Session>, value?
         version: number;
         createdAt: string;
         updatedAt: string;
+        attachments?: import("../domain/types.js").MessageAttachment[];
         sessionId: string;
         role: "user" | "assistant" | "system";
         content: string;

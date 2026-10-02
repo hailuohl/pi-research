@@ -36,3 +36,31 @@ Focused-region evidence: 同屏原尺度对照中的节点文字、连线、右�
 - [P3] 很大树图仍全量渲染；实际项目达到该规模后再考虑可见节点裁剪。
 
 final result: passed
+
+## 2026-10-02 输入框控件复核
+
+Source visual truth: 用户提供的 OpenResearch 图片 2（3585×1931）：`C:/Users/HAILUO~1/AppData/Local/Temp/codex-clipboard-eaebddbd-f70a-4178-84c7-a863cc8d0aca.png`。本批只对齐输入框左下来源/附件、右下模型/发送及展开菜单；按项目现有设计保留暖白和酒红配色、五种实际来源及多智能体开关。
+
+Implementation: `http://127.0.0.1:4794/`，独立本机夹具项目。桌面1280×720、手机390×844；实现截图均为CSS像素1:1。原图全视图等比缩至1280×689，保留剩余留白；来源图裁剪1320,1615–2560,1930，实现区域312,310–902,654，再各自等比缩放，比较控件关系，不把未知原图密度或有意保留的配色差异当作缺陷。
+
+Same-state evidence: `.validation/composer-controls/composer-desktop-final.png`（来源展开、空闲会话、已选模型），`composer-mobile-final.png`；全视图组合 `qa-full-comparison.png`、控件区域组合 `qa-focused-comparison.png`。已在同一输入中打开两个组合图比较，另查看手机实际截图。
+
+Comparison history:
+
+- [P1，已修复] 初次来源弹层被composer-stack的overflow:hidden裁切，alphaXiv等选项点不到。外壳改为overflow:visible，保留表单和队列圆角；修后DOM alphaXiv勾选改变，五源开关实际保存成功。
+- [P2，已修复] 桌面发送按钮另起一行，手机模型字段过宽使发送再起第三行。调整工具栏单排/窄屏两排及字段宽度；最终桌面来源/附件左侧、模型/发送右侧，手机模型与发送在同一行靠右；390px和1280px无横向溢出。
+- 用户追加图标要求：引入7份固定版本的Lucide原始SVG及完整ISC/MIT许可，数据源、回形针、模型和来源行统一15–16px；实际图像加载naturalWidth均24，不新增运行时依赖。
+
+Required fidelity surfaces:
+
+- Fonts/typography: 沿用项目现有中文/系统字体，工具条11–12px、菜单12px，主标题与正文不扩批调整；模型ID在窄字段省略，原生选项保留完整名称与思考等级。
+- Spacing/layout: 菜单270px、行高至少32px、表单12px圆角，去除label额外下边距。桌面按钮中心对齐，手机保留可点击区域和两排工具栏。
+- Colors/tokens: 沿用暖白、灰色与酒红选中/聚焦，保持项目既有主题。没有新增渐变和重阴影。
+- Asset fidelity: 使用实际Lucide文件，源提交记录在`apps/web/public/icons/source.json`，原许可随发布目录保存；未用符号或绘制图案代替回形针/数据库/模型图标。
+- Copy/content: 五种来源名称对应现有连接器；附件明确TXT/MD/PDF和原件状态；设置保存默认模型，当前会话选择独立。未把PDF原件保存显示成已读全文。
+
+Interactions: 浏览器保存两套模型、空模型首次选择、来源勾选及保存、附件历史下载入口和普通发送已验；原生文件输入的accept/multiple属性已检查。文件读取/逐个导入和失败保留由25项UI检查与实际HTTP/Pi本机SSE工具链验证，未声称自动化操作了系统文件选择对话框。控制台0错误；未调用远端供应商或文献查询。
+
+Nonblocking follow-ups: 来源版本冲突后需刷新重载；两条队列附件CSS声明重复。无剩余P0/P1/P2。
+
+final result: passed

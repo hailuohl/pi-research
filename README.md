@@ -14,6 +14,8 @@
 
 对话直接发送，空闲时启动普通任务，运行中发送则排队。队列只在有待发内容时显示在输入框内，悬停消息可用铅笔编辑、叉号删除，手机上图标直接显示；“立即”交给当前任务的下一处理边界，已被领取的输入不能改写。Enter发送、Shift+Enter换行，支持中文输入法确认。见[消息队列验收](docs/acceptance/flow-composer-queue/RESULT.md)及[紧凑样式验收](docs/acceptance/flow-compact-queue/RESULT.md)。
 
+输入框左下提供带图标的文献来源与附件入口，右下选择当前会话模型并发送。设置页可保存最多20个供应商/模型ID/思考级别组合，并设为新会话默认；当前会话选型独立，运行、排队、Worker未退出或已有固定授权时不能切换。附件复用项目原件归档，支持每条消息最多5份PDF/TXT/MD、每份32 MiB；文本可由当前交互主会话分页读取，PDF仅保存原件并提示显式解析。队列修改/移除保留原件，失败保留草稿与已上传引用。供应商凭据仍使用现有本地配置。见[输入框控件验收](docs/acceptance/flow-composer-controls/RESULT.md)。
+
 由 0.3.0-experimental 独立派生。保留既有实验、审批、快照、协作、Campaign 与有效性修复；新增受管技能目录和五源文献接口。不是完整 OpenResearch 替代品，也不是所有后端已连接的生产系统。
 
 ## 启动
@@ -36,7 +38,7 @@ node dist/apps/server/index.js
 - 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
-- 当前 132 个操作通过 OperationRegistry 统一验证输入/输出、权限与幂等；包括固定源码、测试/审查、有限授权、文献/文档、文稿/报告、历史分页和资源配置。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。owner HTTP 的 sessionId 不授予Agent身份，现有批准边界保持。
+- 当前 134 个操作通过 OperationRegistry 统一验证输入/输出、权限与幂等；包括固定源码、测试/审查、有限授权、文献/文档、文稿/报告、历史分页、消息附件和资源配置。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。owner HTTP 的 sessionId 不授予Agent身份，现有批准边界保持。
 - 支持指定实验 revision 或 snapshotId 读取固定源码、查看文件差异并准备私有工作区；助手继承已批准团队的固定来源。项目工作区与所选实验明确区分。
 - 保留原有默认关闭的本地文本检索、精确重复分组和可选MMR；新获取的论文不会自动加入本地检索白名单。
 

@@ -5,9 +5,12 @@ export declare class SessionService {
     private c;
     constructor(c: AppContext);
     model(): ModelConfig;
+    models(): ModelConfig[];
     configure(actor: Actor, value: unknown): Row<{
         model: ModelConfig;
+        models: ModelConfig[];
     }>;
+    selectModel(actor: Actor, id: string, value: unknown): Row<Session>;
     get(actor: Actor, id: string): Row<Session>;
     create(actor: Actor, projectId: string, input: unknown, internal?: {
         role: Role;
@@ -27,6 +30,7 @@ export declare class SessionService {
             version: number;
             createdAt: string;
             updatedAt: string;
+            attachments?: import("../domain/types.js").MessageAttachment[];
             sessionId: string;
             role: "user" | "assistant" | "system";
             content: string;

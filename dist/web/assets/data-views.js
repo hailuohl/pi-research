@@ -220,13 +220,15 @@ class EvidenceView extends React.Component {
 }
 import { ReportsView } from "./report-view.js";
 import { LiteratureView } from "./literature-view.js";
+const settingsModelKey = (model) => JSON.stringify([model.provider, model.model]);
 class SettingsView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { provider: this.props.boot.model.provider, model: this.props.boot.model.model, thinking: this.props.boot.model.thinking, apply: true };
+    this.state = { provider: this.props.boot.model.provider, model: this.props.boot.model.model, thinking: this.props.boot.model.thinking, savedChoice: settingsModelKey(this.props.boot.model) };
   }
   render() {
-    const { boot, session, perform } = this.props;
+    const { boot, perform } = this.props;
+    const models = [...new Map([...boot.models ?? [], boot.model].filter((model) => model.provider && model.model).map((model) => [settingsModelKey(model), model])).values()];
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll settings-page", children: [
       /* @__PURE__ */ jsx(SectionTitle, { title: "\u8BBE\u7F6E\u4E0E\u80FD\u529B\u72B6\u6001", sub: "\u914D\u7F6E\u4E0D\u4EE3\u8868\u9A8C\u6536\u901A\u8FC7\u3002\u6240\u6709\u672A\u9A8C\u8BC1\u6216\u672A\u5B9E\u73B0\u7684\u80FD\u529B\u90FD\u4F1A\u660E\u786E\u4FDD\u7559\u3002" }),
       /* @__PURE__ */ jsxs("section", { className: "surface settings-model", children: [
@@ -238,33 +240,46 @@ class SettingsView extends React.Component {
           ] })
         ] }),
         /* @__PURE__ */ jsx("p", { className: "muted", children: boot.runtime.message }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6B64\u5904\u4FDD\u5B58\u9ED8\u8BA4\u6A21\u578B\uFF0C\u4F9B\u65B0\u4F1A\u8BDD\u4F7F\u7528\uFF1B\u5F53\u524D\u4F1A\u8BDD\u53EF\u5728 Chat \u8F93\u5165\u6846\u5DE5\u5177\u680F\u5355\u72EC\u9009\u62E9\u3002" }),
         /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
           e.preventDefault();
+          const model = { provider: this.state.provider, model: this.state.model, thinking: this.state.thinking };
           perform(async () => {
-            await api("/settings/model", { provider: this.state.provider, model: this.state.model, thinking: this.state.thinking });
-            if (this.state.apply && session && !session.taskId)
-              await api(`/sessions/${session.id}/model`, { expectedVersion: session.version });
-          }, "\u6A21\u578B\u914D\u7F6E\u5DF2\u4FDD\u5B58\uFF1B\u4FDD\u5B58\u4E0D\u4EE3\u8868\u4F9B\u5E94\u5546\u8FDE\u63A5\u6210\u529F");
+            await api("/settings/model", model);
+            this.setState({ savedChoice: settingsModelKey(model) });
+          }, "\u5DF2\u4FDD\u5B58\u9ED8\u8BA4\u6A21\u578B\uFF1B\u4FDD\u5B58\u4E0D\u4EE3\u8868\u4F9B\u5E94\u5546\u8FDE\u63A5\u6210\u529F");
         }, children: [
+          /* @__PURE__ */ jsxs("label", { className: "settings-saved-model", children: [
+            "\u5DF2\u6709\u6A21\u578B",
+            /* @__PURE__ */ jsxs("select", { "aria-label": "\u9009\u62E9\u5DF2\u6709\u6A21\u578B", value: this.state.savedChoice, onChange: (e) => {
+              const model = models.find((item) => settingsModelKey(item) === e.target.value);
+              if (model) this.setState({ provider: model.provider, model: model.model, thinking: model.thinking, savedChoice: e.target.value });
+            }, children: [
+              /* @__PURE__ */ jsx("option", { value: "", children: "\u624B\u52A8\u914D\u7F6E" }),
+              models.map((model) => /* @__PURE__ */ jsxs("option", { value: settingsModelKey(model), children: [
+                model.provider,
+                " / ",
+                model.model,
+                " \xB7 ",
+                model.thinking
+              ] }, settingsModelKey(model)))
+            ] })
+          ] }),
           /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
             /* @__PURE__ */ jsxs("label", { children: [
               "\u4F9B\u5E94\u5546\u6807\u8BC6",
-              /* @__PURE__ */ jsx("input", { required: true, "aria-label": "\u4F9B\u5E94\u5546\u6807\u8BC6", placeholder: "Pi \u4E2D\u7684 provider ID", value: this.state.provider, onChange: (e) => this.setState({ provider: e.target.value }) })
+              /* @__PURE__ */ jsx("input", { required: true, "aria-label": "\u4F9B\u5E94\u5546\u6807\u8BC6", placeholder: "Pi \u4E2D\u7684 provider ID", value: this.state.provider, onChange: (e) => this.setState({ provider: e.target.value, savedChoice: "" }) })
             ] }),
             /* @__PURE__ */ jsxs("label", { children: [
               "\u6A21\u578B ID",
-              /* @__PURE__ */ jsx("input", { required: true, "aria-label": "\u6A21\u578B ID", placeholder: "\u5B9E\u9645\u53EF\u7528\u7684\u6A21\u578B\u6807\u8BC6", value: this.state.model, onChange: (e) => this.setState({ model: e.target.value }) })
+              /* @__PURE__ */ jsx("input", { required: true, "aria-label": "\u6A21\u578B ID", placeholder: "\u5B9E\u9645\u53EF\u7528\u7684\u6A21\u578B\u6807\u8BC6", value: this.state.model, onChange: (e) => this.setState({ model: e.target.value, savedChoice: "" }) })
             ] }),
             /* @__PURE__ */ jsxs("label", { children: [
               "\u601D\u8003\u914D\u7F6E",
-              /* @__PURE__ */ jsx("select", { "aria-label": "\u601D\u8003\u914D\u7F6E", value: this.state.thinking, onChange: (e) => this.setState({ thinking: e.target.value }), children: ["off", "minimal", "low", "medium", "high", "xhigh"].map((v) => /* @__PURE__ */ jsx("option", { value: v, children: v }, v)) })
+              /* @__PURE__ */ jsx("select", { "aria-label": "\u601D\u8003\u914D\u7F6E", value: this.state.thinking, onChange: (e) => this.setState({ thinking: e.target.value, savedChoice: "" }), children: ["off", "minimal", "low", "medium", "high", "xhigh"].map((v) => /* @__PURE__ */ jsx("option", { value: v, children: v }, v)) })
             ] })
           ] }),
-          /* @__PURE__ */ jsxs("label", { className: "checkbox-label", children: [
-            /* @__PURE__ */ jsx("input", { type: "checkbox", checked: this.state.apply, disabled: !session || session.state === "running", onChange: (e) => this.setState({ apply: e.target.checked }) }),
-            "\u540C\u65F6\u7528\u4E8E\u5F53\u524D\u7A7A\u95F2\u4E3B\u4F1A\u8BDD\uFF1B\u5DF2\u6279\u51C6\u56E2\u961F\u7684\u6A21\u578B\u914D\u7F6E\u4FDD\u6301\u56FA\u5B9A"
-          ] }),
-          /* @__PURE__ */ jsx("button", { className: "primary", type: "submit", children: "\u4FDD\u5B58\u6A21\u578B\u914D\u7F6E" })
+          /* @__PURE__ */ jsx("button", { className: "primary", type: "submit", children: "\u4FDD\u5B58\u4E3A\u9ED8\u8BA4\u6A21\u578B\uFF08\u7528\u4E8E\u65B0\u4F1A\u8BDD\uFF09" })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "setup-notes", children: [
           /* @__PURE__ */ jsx("h3", { children: "\u672C\u5730\u63A5\u5165" }),

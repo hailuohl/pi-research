@@ -1,4 +1,5 @@
 import {readCatalog,readSkill,inspectSessionSkills,selectSessionSkills} from '../../skills/runtime.js';
+import {attachmentScope,readAttachment} from '../../pi-adapter/attachments.js';
 import {digest} from '../../storage/store.js';
 import {routePaperId, parseSearch} from '../../connectors/contracts.js';
 import type {ResearchApp} from '../../research-app.js';
@@ -229,6 +230,7 @@ const SPECS: OperationSpec[] = [
     make('session_list',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.sessions.list(c.actor,c.projectId,x)}),
     make('session_view',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:recordScope('session','sessionId'),execute:(c,x)=>{const {sessionId,...paging}=x;return c.app.sessions.view(c.actor,sessionId as string,paging);}}),
     make('session_message_read',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:recordScope('session','sessionId'),execute:(c,x)=>{const {sessionId,...paging}=x;return c.app.sessions.messageRead(c.actor,sessionId as string,paging);}}),
+    make('session_attachment_read',{idempotencyPolicy:'read-only',requiresSession:true,authorize:(c,x)=>{if(c.actor.type==='agent')c.app.operations.authorizeAgent(c.actor,'session_attachment_read');attachmentScope(c.app.store,c.actor,c.session!,x);},preconditions:noPrecondition,execute:(c,x)=>readAttachment(c.app.store,c.actor,c.session!,x)}),
     make('model_http_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.modelHttp.inspect(c.actor,c.projectId,x)}),
     make('model_http_configure',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.modelHttp.configure(c.actor,x,c.projectId)}),
     make('report_create',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.reports.create(c.actor,c.projectId,x)}),
@@ -474,7 +476,7 @@ export class OperationRegistry {
         // Recheck under the write lock before invoking: other HTTP/CLI processes share this DB.
         return this.app.store.transaction(() => {
             // PDF authority must be current under the same writer lock as cached receipt return.
-            if(['text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit'].includes(id))spec.authorize(context,input);
+            if(['text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit','session_attachment_read'].includes(id))spec.authorize(context,input);
             const previous = lookup();
             if (previous) {
                 if(id==='text_evidence_search')this.app.textEvidence.verifyReplay(actor,pid,input);

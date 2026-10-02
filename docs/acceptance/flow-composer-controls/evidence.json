@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-02",
+  "scope": "settings model presets; current-session model choice; composer sources and document attachments",
+  "behavior": {
+    "modelsPersisted": true,
+    "defaultIndependentOfCurrentSession": true,
+    "modelChangesFencedByPendingWorkerAndBindings": true,
+    "projectSourceSettingsReused": true,
+    "documentFormats": ["application/pdf", "text/plain", "text/markdown"],
+    "maxAttachments": 5,
+    "maxFileBytes": 33554432,
+    "attachmentScope": "existing owner project archive",
+    "messageReferencesPersisted": true,
+    "textReadFencedBySessionMessageAndLease": true,
+    "pdfStatus": "requires_parse",
+    "failureAndNewDraftPreserved": true,
+    "queueEditCancelRetryBranchPreserveReferences": true
+  },
+  "tests": {
+    "backendFocusedPassed": 33,
+    "httpAndPinnedSdkPassed": 1,
+    "frontendFocusedPassed": 25,
+    "fullInitial": {"total": 948, "passed": 924, "skipped": 23, "failed": 1, "durationMs": 471226.4434},
+    "requiredRepair": "Tool catalog count updated from 133 to 134; all existing schema/example assertions retained.",
+    "repairFocused": {"passed": 44, "failed": 0, "durationMs": 732.9989}
+  },
+  "independentReview": {
+    "boundaryModel": "gpt-6-astra",
+    "visualIntegrationModel": "gpt-6-sol",
+    "finalBlockingFindings": 0,
+    "deferred": ["Reload needed after source-setting version conflict.", "Two duplicated queue attachment CSS rules."]
+  },
+  "browser": {
+    "widths": [390, 1280],
+    "horizontalOverflow": false,
+    "modelSettingsAndCurrentChoice": true,
+    "allFiveSourcesClickableAndSave": true,
+    "attachmentHistoryVisible": true,
+    "ordinaryComposerSend": true,
+    "nativeFileInputAttributesChecked": true,
+    "systemFileChooserAutomated": false,
+    "iconNaturalWidth": 24,
+    "consoleErrors": 0,
+    "externalProviderRequests": 0,
+    "externalLiteratureRequests": 0,
+    "researchRecordsDeleted": 0,
+    "localFixedSseFixture": true
+  },
+  "visualQa": {"menuClippingFixed": true, "desktopAndMobileSendAlignmentFixed": true, "report": "design-qa.md", "finalResult": "passed"},
+  "cleanBuild": {
+    "node": "24.19.0",
+    "files": 489,
+    "identical": true,
+    "distManifestSha256": "1be7961b3d58960730e9ae6800f1ea51fdee256a61d8b3e5008fef830837a314",
+    "summary": ".validation/clean-build-BBjBtj/summary.json"
+  },
+  "rawEvidence": ".validation/composer-controls/"
+}

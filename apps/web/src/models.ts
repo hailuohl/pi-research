@@ -32,8 +32,8 @@ import type {TextCorpusGrantDTO} from '../../../dist/packages/policy/text-corpus
 export type {TextCorpusGrantDTO} from '../../../dist/packages/policy/text-corpus-grants.js';
 export interface DocumentLocation {documentVersionId:string;parseResultId?:string;pageNumber?:number;start?:number;end?:number;}
 export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision,ExperimentPlanRevision,ResearchCandidate, Wakeup };
-import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig } from '../../../dist/packages/domain/types.js';
-export type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig };
+import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig, MessageAttachment } from '../../../dist/packages/domain/types.js';
+export type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig, MessageAttachment };
 export type {SessionCatalogItem,SessionCatalogPage,SessionHistoryPage,SessionView,SessionMessageContent} from '../../../dist/packages/pi-adapter/session-history.js';
 export interface DevelopmentManifestDTO {
     workingGrant?:{id:string;digest:string;approvalId:string};
@@ -102,6 +102,7 @@ export interface Bootstrap {
     version: string;
     projects: Row<Project>[];
     model: ModelConfig;
+    models?: ModelConfig[];
     runtime: {
         ready: boolean;
         code: string;
