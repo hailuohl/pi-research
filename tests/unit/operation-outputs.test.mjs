@@ -59,6 +59,9 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('research_skill_read',{skillId:'pi-research-overview'});
   await call('connector_status');
   await call('project_inspect');
+  const preparedCampaign=await call('campaign_prepare',{goal:'schema fixture',baselineExperimentId:s.baseline.id});
+  assert.equal(preparedCampaign.state,'draft');assert.equal(s.app.store.get('approval',preparedCampaign.approvalId).status,'pending');
+  const projectIndex=await call('project_inspect');assert.deepEqual(projectIndex.campaigns,[{id:preparedCampaign.id,goal:'schema fixture',state:'draft'}]);
   await call('workspace_list',{source:'project'});
   await call('workspace_write',{path:'sample.txt',content:'sample',expectedDigest:null});
   await call('workspace_read',{path:'sample.txt'});

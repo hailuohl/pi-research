@@ -7,6 +7,7 @@ import { ComputeWait } from "./scheduler-view.js";
 import { WakeupPanel } from "./campaigns.js";
 import { comparableRuns, comparisonMetric } from "./models.js";
 import { ExperimentGraph } from "./experiment-graph.js";
+import { ChatWorkflows } from "./chat-workflows.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
 import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
@@ -71,7 +72,8 @@ class Chat extends React.Component {
             /* @__PURE__ */ jsx("div", { className: "prose-text", children: this.props.stream }),
             this.props.streamTruncated ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u663E\u793A\u5F53\u524D\u8F93\u51FA\u5C3E\u90E8\uFF0C\u524D\u6587\u5DF2\u7701\u7565\uFF1B\u5B8C\u6574\u5185\u5BB9\u4EE5\u539F\u751F\u4F1A\u8BDD\u8BB0\u5F55\u4E3A\u51C6\u3002" }) : null
           ] })
-        ] }) : null
+        ] }) : null,
+        session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
         /* @__PURE__ */ jsxs("form", { className: "composer", onSubmit: (e) => {
@@ -369,7 +371,8 @@ class Inspector extends React.Component {
     const intents = data.intents.filter((i) => i.experimentId === e?.id), intent = intents[intents.length - 1], approval = data.approvals.find((a) => a.id === intent?.approvalId);
     const runGrantRef = intent?.runGrant ?? approval?.runGrant, runGrant = (data.runGrants ?? []).find((g) => g.id === runGrantRef?.id);
     const teamIds = new Set(teams.map((t) => t.id));
-    const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending" && teamIds.has(a.subjectId));
+    const inlineReviewTeams = new Set(this.props.inlineWorkflows ? (data.reviews ?? []).filter((r) => r.producerSessionId === this.props.sessionId).map((r) => r.teamId) : []);
+    const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending" && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
     return /* @__PURE__ */ jsxs("aside", { className: "inspector", children: [
       /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
         /* @__PURE__ */ jsx(Icon, { name: this.props.tab === "experiments" ? "experiment" : "branch" }),

@@ -30,7 +30,7 @@ class PrivateWorkspace extends React.Component<{projectId:string;session:Row<Ses
     }
 }
 
-class DevelopmentJob extends React.Component<{job:SandboxJobDTO;data:ProjectState;perform:Perform;sessionId:string;onScheduler?:()=>void},{expanded:boolean;artifact:string}> {
+export class DevelopmentJob extends React.Component<{job:SandboxJobDTO;data:ProjectState;perform:Perform;sessionId:string;onScheduler?:()=>void},{expanded:boolean;artifact:string}> {
     state={expanded:false,artifact:''};private artifactEpoch=0;
     componentWillUnmount(){this.artifactEpoch++;}
     render(){const {job,data,perform}=this.props,terminal=['succeeded','failed','cancelled','timed_out'].includes(job.state);return <div className="inspector-section"><h3>开发测试作业 {short(job.id)}</h3><div className="actions"><Badge value={job.state}/><Badge value={job.integrity}/><span>退出码 {job.exitCode??'—'}</span></div><code className="digest code-wrap" style={{display:'block'}}>{job.sourceDigest}</code>{job.manifest.workingGrant?<p className="small muted">派生授权 WorkingGrant {short(job.manifest.workingGrant.id)} · 原批准 {short(job.manifest.workingGrant.approvalId)}；此提交已计次。</p>:null}{!terminal?<ComputeWait data={data} kind="development" id={job.id} onScheduler={this.props.onScheduler}/>:null}{job.error?<p className="error-text">{job.error}</p>:null}

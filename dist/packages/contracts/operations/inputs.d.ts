@@ -116,6 +116,76 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["id"];
         readonly additionalProperties: false;
     };
+    readonly campaign_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly goal: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly baselineExperimentId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly primaryMetric: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly limits: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly maxRounds: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly maxCandidatesPerRound: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly maxUnansweredRunsPerNode: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly maxConsecutiveRegressions: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly maxAnalysisAttempts: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
+                    readonly deadline: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                };
+                readonly required: readonly [];
+                readonly additionalProperties: false;
+            };
+            readonly autoAnalyze: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: readonly ["goal", "baselineExperimentId"];
+        readonly additionalProperties: false;
+    };
     readonly campaign_inspect: {
         readonly type: "object";
         readonly properties: {

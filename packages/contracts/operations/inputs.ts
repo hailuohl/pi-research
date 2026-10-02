@@ -17,6 +17,7 @@ import { s, type JsonSchema, type InferSchema } from './schema.js';
 const id = s.string(100), version = s.integer(1), cursor = s.nullable(s.integer(0)), source = s.nullable(s.enum(['session', 'project']));
 const strings = (max = 100) => s.array(s.string(1000), max);
 const sources = s.enum(['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref']);
+const campaignLimits = s.object({ maxRounds: s.integer(1, 20), maxCandidatesPerRound: s.integer(1, 24), maxUnansweredRunsPerNode: s.integer(1, 5), maxConsecutiveRegressions: s.integer(1, 10), maxAnalysisAttempts: s.integer(0, 100), deadline: s.string(80) });
 const config = { type: 'object', additionalProperties: s.json('Experiment-specific configuration values; arbitrary keys and nested JSON are intentional because each runner owns its configuration contract.'), description: 'Runner-specific experiment configuration; schema validation does not apply defaults or coerce values.' } as const;
 const contract = s.object({
     runner: s.enum(['trusted-example', 'docker', 'ssh']), sshTargetId: id, image: s.string(250), command: s.array({...s.string(1000,0),pattern:'^[^\u0000]*$'}, 30, 1),
@@ -53,6 +54,7 @@ export const INPUT_SCHEMAS = {
     connector_status: s.object({}),
     literature_discover: DISCOVERY_INPUT_SCHEMA,
     paper_read: s.object({ id: s.string(300), source: sources }, ['id']),
+    campaign_prepare: s.object({ goal: s.string(8000), baselineExperimentId: id, primaryMetric: s.string(100), limits: campaignLimits, autoAnalyze: s.boolean() }, ['goal', 'baselineExperimentId']),
     campaign_inspect: s.object({ campaignId: id }, ['campaignId']),
     campaign_enroll: s.object({ campaignId: id, intentId: id, expectedVersion: version, required: s.nullable(s.boolean()), repairDecisionId: id }, ['campaignId', 'intentId', 'expectedVersion']),
     campaign_decision_submit: s.object({ campaignId: id, expectedVersion: version, action: s.enum(['repair', 'refill', 'promote', 'stop']), observationIds: { ...strings(), minItems: 1, uniqueItems: true }, reason: s.string(8000), selectedRunId: id, candidates: s.nullable(s.array(candidate, 24)),experimentPlan:EXPERIMENT_PLAN_INPUT_SCHEMA }, ['campaignId', 'expectedVersion', 'action', 'observationIds', 'reason']),

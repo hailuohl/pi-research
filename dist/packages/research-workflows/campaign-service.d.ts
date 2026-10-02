@@ -1,5 +1,5 @@
 import type { ResearchApp } from '../research-app.js';
-import type { Actor, Row } from '../domain/types.js';
+import type { Actor, Row, Session } from '../domain/types.js';
 import type { Campaign, CampaignMember, ResearchRound, RunObservation, CampaignDecision, ResearchCandidate } from './types.js';
 /** Business state only. Never starts a model or a process while holding a transaction. */
 export declare class CampaignService {
@@ -11,8 +11,11 @@ export declare class CampaignService {
     observations(actor: Actor, id: string): Row<RunObservation>[];
     decisions(actor: Actor, id: string): Row<CampaignDecision>[];
     coordinator(actor: Actor, c: Row<Campaign>): void;
+    prepareSession(actor: Actor, projectId: string, sessionId: string): Row<Session>;
     assertActive(c: Row<Campaign>): void;
     create(actor: Actor, projectId: string, value: unknown): Row<Campaign>;
+    prepare(actor: Actor, projectId: string, sessionId: string, value: unknown): Row<Campaign>;
+    private createDraft;
     activate(actor: Actor, id: string, expectedVersion: number): Row<Campaign>;
     pause(actor: Actor, id: string, expectedVersion: number): Row<Campaign>;
     resume(actor: Actor, id: string, expectedVersion: number): Row<Campaign>;

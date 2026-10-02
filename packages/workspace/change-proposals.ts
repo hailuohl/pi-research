@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {mkdirSync,rmSync,writeFileSync} from 'node:fs';
 import {join,dirname} from 'node:path';
 import type {ResearchApp} from '../research-app.js';
-import type {Actor,Artifact,Task,Row,Experiment,ChangeProposal} from '../domain/types.js';
+import type {Actor,Artifact,Task,Row,Experiment,Session,ChangeProposal} from '../domain/types.js';
 import type {SandboxJob} from '../execution/contracts.js';
 import {scope,userOnly} from '../policy/permissions.js';
 import {ensure} from '../domain/errors.js';
@@ -13,11 +13,22 @@ import {safePath,snapshotDirectory,verifySnapshot,setSourceModes} from './files.
 import {readStableFile} from './stable-file.js';
 import {validateSourceRevision} from './source-access.js';
 
+export function changeProposalPayload(p:ChangeProposal){const {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot,rootSessionId}=p;return {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot,...(rootSessionId?{rootSessionId}:{}),...(p.testJobId?{testJobId:p.testJobId}:{}),...(p.flow?{flow:p.flow,reviewId:p.reviewId,reviewAcceptanceId:p.reviewAcceptanceId}:{})};}
+
 /** Immutable, explicitly reviewed file handoff. This is NOT a Git merge or a test runner. */
 export class ChangeProposalService {
     constructor(private app:ResearchApp){}
     get(actor:Actor,id:string){const p=this.app.store.get<ChangeProposal>('change-proposal',id);scope(actor,p.projectId!);return p;}
-    private payload(p:ChangeProposal){const {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot}=p;return {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot,...(p.testJobId?{testJobId:p.testJobId}:{}),...(p.flow?{flow:p.flow,reviewId:p.reviewId,reviewAcceptanceId:p.reviewAcceptanceId}:{})};}
+    private ownerSession(actor:Actor,projectId:string,sessionId?:string) {
+        if(actor.type==='agent') {
+            ensure(actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId&&actor.sessionId&&(!sessionId||sessionId===actor.sessionId),'TOOL_DENIED','变更提案只能绑定当前交互式主协调会话',403);
+            sessionId=actor.sessionId;
+        }
+        if(!sessionId)return undefined;
+        const session=this.app.store.get<Session>('session',sessionId,projectId);
+        ensure(session.role==='coordinator'&&!session.taskId&&session.state!=='archived','INVALID_ROOT_SESSION','提案所有者必须是当前项目内未归档的主协调会话');
+        return session.id;
+    }
     private content(actor:Actor,projectId:string,id:string){
         const a=this.app.store.get<Artifact>('artifact',id,projectId);
         if(actor.type==='agent'){
@@ -31,10 +42,11 @@ export class ChangeProposalService {
         new TextDecoder('utf-8',{fatal:true}).decode(bytes);
         return {artifact:a,bytes,taskResultDigest,sourceAcceptanceId};
     }
-    prepare(actor:Actor,projectId:string,value:unknown){
+    prepare(actor:Actor,projectId:string,value:unknown,sessionId?:string){
         scope(actor,projectId);
         ensure(actor.type==='user'||actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId,'TOOL_DENIED','此操作需要用户或交互式主协调者',403);
         const project=this.app.projects.get(actor,projectId);ensure(!project.archived,'PROJECT_ARCHIVED','项目已归档');
+        const rootSessionId=this.ownerSession(actor,projectId,sessionId);
         const x=object(value),base=this.app.store.get<Experiment>('experiment',text(x.baseExperimentId,'baseExperimentId',100),projectId);
         ensure(x.flow===undefined&&x.reviewId===undefined&&x.reviewAcceptanceId===undefined,'CHANGE_FLOW_REQUIRED','受审整合只能从固定审查记录准备',400);
         ensure(base.lifecycle!=='archived','EXPERIMENT_ARCHIVED','基准实验已归档');
@@ -65,7 +77,7 @@ export class ChangeProposalService {
                 for(const c of changes) if('sourceAcceptanceId' in c && c.sourceAcceptanceId) assertAcceptanceCurrent(this.app.store,projectId,c.sourceAcceptanceId);
                 ensure(this.app.store.get<Experiment>('experiment',base.id).revision===base.revision,'CHANGE_BASE_STALE','基准版本已变化');
                 if(testJobId)this.app.development.assertResultMatches(actor,projectId,testJobId,candidateSnapshot.digest);
-                const data={...(testJobId?{testJobId}:{}),baseExperimentId:base.id,baseRevision:base.revision,baseSnapshot,contractDigest:base.contractDigest,title,hypothesis,changes,candidateSnapshot};
+                const data={...(testJobId?{testJobId}:{}),...(rootSessionId?{rootSessionId}:{}),baseExperimentId:base.id,baseRevision:base.revision,baseSnapshot,contractDigest:base.contractDigest,title,hypothesis,changes,candidateSnapshot};
                 const id=randomUUID(),hash=digest(data),a=this.app.approvals.request(projectId,'change-proposal',id,hash,'change.integrate','审阅固定变更后创建新子实验；不执行测试、不自动运行、不修改父实验');
                 const proposal=this.app.store.create<ChangeProposal>('change-proposal',projectId,{...data,digest:hash,approvalId:a.id,state:'prepared',testsStatus:testJobId?'passed':'not_run'},id);
                 this.app.store.event(projectId,'change.prepared',{proposalId:id,baseExperimentId:base.id,candidateDigest:candidateSnapshot.digest});return proposal;
@@ -98,17 +110,17 @@ export class ChangeProposalService {
                 changes.push({path,expectedDigest:a?.digest??null,artifactId:artifact.id,artifactDigest:artifact.digest,mode:b.mode??'100644',...(a?.mode?{beforeMode:a.mode}:{})});
             }
             ensure(changes.length>0,'CHANGE_EMPTY','测试候选与基准源码没有实际变化');
-            const data={flow:'reviewed-development' as const,reviewId,reviewAcceptanceId:proof.reviewAcceptanceId,testJobId:job.id,baseExperimentId:base.id,baseRevision:base.revision,baseSnapshot,contractDigest:base.contractDigest,title,hypothesis,changes,candidateSnapshot};
+            const data={flow:'reviewed-development' as const,reviewId,reviewAcceptanceId:proof.reviewAcceptanceId,testJobId:job.id,rootSessionId:review.producerSessionId,baseExperimentId:base.id,baseRevision:base.revision,baseSnapshot,contractDigest:base.contractDigest,title,hypothesis,changes,candidateSnapshot};
             const id=randomUUID(),hash=digest(data),approval=this.app.approvals.request(projectId,'change-proposal',id,hash,'change.integrate','审阅已测试且独立审查通过的固定源码，批准后创建新子实验；正式运行仍需另行批准');
             const proposal=this.app.store.create<ChangeProposal>('change-proposal',projectId,{...data,digest:hash,approvalId:approval.id,state:'prepared',testsStatus:'passed'},id);
             this.app.store.event(projectId,'change.reviewed_prepared',{proposalId:id,reviewId,testJobId:job.id,candidateDigest:candidateSnapshot.digest});return proposal;
         });
     }
-    inspect(actor:Actor,id:string){const p=this.get(actor,id);ensure(digest(this.payload(p))===p.digest,'CHANGE_PROPOSAL_CORRUPTED','变更提案摘要不一致');return {proposal:p,files:p.changes.map(c=>({path:c.path,expectedDigest:c.expectedDigest,artifactDigest:c.artifactDigest,beforeMode:c.beforeMode,afterMode:c.mode,before:c.expectedDigest?readStableFile(this.app.store.paths.physical(p.baseSnapshot.path),c.path,2*1024*1024).toString('utf8'):null,after:c.artifactId?this.app.evidence.read(actor,c.artifactId).bytes.toString('utf8'):null}))};}
+    inspect(actor:Actor,id:string){const p=this.get(actor,id);ensure(digest(changeProposalPayload(p))===p.digest,'CHANGE_PROPOSAL_CORRUPTED','变更提案摘要不一致');return {proposal:p,files:p.changes.map(c=>({path:c.path,expectedDigest:c.expectedDigest,artifactDigest:c.artifactDigest,beforeMode:c.beforeMode,afterMode:c.mode,before:c.expectedDigest?readStableFile(this.app.store.paths.physical(p.baseSnapshot.path),c.path,2*1024*1024).toString('utf8'):null,after:c.artifactId?this.app.evidence.read(actor,c.artifactId).bytes.toString('utf8'):null}))};}
     apply(actor:Actor,id:string){
         userOnly(actor);
         return this.app.store.transaction(()=>{
-            const p=this.get(actor,id);ensure(digest(this.payload(p))===p.digest,'CHANGE_PROPOSAL_CORRUPTED','变更提案已被改变');
+            const p=this.get(actor,id);ensure(digest(changeProposalPayload(p))===p.digest,'CHANGE_PROPOSAL_CORRUPTED','变更提案已被改变');
             if(p.state==='applied')return this.app.experiments.get(actor,p.appliedExperimentId!);
             ensure(p.sourceValidity!=='stale','CHANGE_SOURCE_STALE','提案的来源审查已撤销，需重新准备并批准');
             ensure(!this.app.projects.get(actor,p.projectId!).archived,'PROJECT_ARCHIVED','项目已归档');

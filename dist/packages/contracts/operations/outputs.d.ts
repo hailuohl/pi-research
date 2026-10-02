@@ -509,6 +509,9 @@ export declare const OUTPUT_SCHEMAS: {
             readonly hypothesis: {
                 readonly type: "string";
             };
+            readonly rootSessionId: {
+                readonly type: "string";
+            };
             readonly changes: {
                 readonly type: "array";
                 readonly items: {
@@ -3367,8 +3370,28 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly type: "string";
                 };
             };
+            readonly campaigns: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly goal: {
+                            readonly type: "string";
+                        };
+                        readonly state: {
+                            readonly type: "string";
+                            readonly enum: ["draft", "active", "paused", "stopped"];
+                        };
+                    };
+                    readonly required: ("id" | "state" | "goal")[];
+                    readonly additionalProperties: false;
+                };
+            };
         };
-        readonly required: ("project" | "evidenceIds" | "runs" | "textCorpus" | "experiments")[];
+        readonly required: ("project" | "evidenceIds" | "runs" | "textCorpus" | "experiments" | "campaigns")[];
         readonly additionalProperties: false;
     };
     readonly text_evidence_search: {
@@ -4048,7 +4071,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("id" | "approvalId" | "planDigest" | "contractDigest" | "state" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "rootSessionId" | "limits" | "primaryMetric" | "direction" | "goal" | "rootModel" | "baselineExperimentId" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "autoAnalyze" | "consecutiveRegressions")[];
+                readonly required: ("id" | "approvalId" | "planDigest" | "contractDigest" | "state" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "rootSessionId" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
                 readonly additionalProperties: false;
             };
             readonly members: {
@@ -4834,7 +4857,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("observations" | "campaign" | "members" | "rounds" | "decisions")[];
+        readonly required: ("campaign" | "observations" | "members" | "rounds" | "decisions")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_create: {
@@ -9726,6 +9749,9 @@ export declare const OUTPUT_SCHEMAS: {
             readonly hypothesis: {
                 readonly type: "string";
             };
+            readonly rootSessionId: {
+                readonly type: "string";
+            };
             readonly changes: {
                 readonly type: "array";
                 readonly items: {
@@ -9851,6 +9877,125 @@ export declare const OUTPUT_SCHEMAS: {
             };
         };
         readonly required: ("id" | "title" | "digest" | "approvalId" | "contractDigest" | "state" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "hypothesis" | "changes" | "baseExperimentId" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
+        readonly additionalProperties: false;
+    };
+    readonly campaign_prepare: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly type: "string";
+            };
+            readonly kind: {
+                readonly const: "campaign";
+            };
+            readonly projectId: {
+                readonly anyOf: readonly [{
+                    readonly type: "string";
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly createdAt: {
+                readonly type: "string";
+            };
+            readonly updatedAt: {
+                readonly type: "string";
+            };
+        } & {
+            readonly goal: {
+                readonly type: "string";
+            };
+            readonly rootSessionId: {
+                readonly type: "string";
+            };
+            readonly rootModel: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly provider: {
+                        readonly type: "string";
+                    };
+                    readonly model: {
+                        readonly type: "string";
+                    };
+                    readonly thinking: {
+                        readonly type: "string";
+                        readonly enum: ["off", "minimal", "low", "medium", "high", "xhigh"];
+                    };
+                };
+                readonly required: ("model" | "provider" | "thinking")[];
+                readonly additionalProperties: false;
+            };
+            readonly baselineExperimentId: {
+                readonly type: "string";
+            };
+            readonly focusExperimentId: {
+                readonly type: "string";
+            };
+            readonly contractDigest: {
+                readonly type: "string";
+            };
+            readonly primaryMetric: {
+                readonly type: "string";
+            };
+            readonly direction: {
+                readonly type: "string";
+                readonly enum: ["min", "max"];
+            };
+            readonly state: {
+                readonly type: "string";
+                readonly enum: ["draft", "active", "paused", "stopped"];
+            };
+            readonly currentRoundId: {
+                readonly type: "string";
+            };
+            readonly roundNumber: {
+                readonly type: "integer";
+            };
+            readonly limits: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly maxRounds: {
+                        readonly type: "integer";
+                    };
+                    readonly maxCandidatesPerRound: {
+                        readonly type: "integer";
+                    };
+                    readonly maxUnansweredRunsPerNode: {
+                        readonly type: "integer";
+                    };
+                    readonly maxConsecutiveRegressions: {
+                        readonly type: "integer";
+                    };
+                    readonly maxAnalysisAttempts: {
+                        readonly type: "integer";
+                    };
+                    readonly deadline: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("maxRounds" | "maxCandidatesPerRound" | "maxUnansweredRunsPerNode" | "maxConsecutiveRegressions" | "maxAnalysisAttempts")[];
+                readonly additionalProperties: false;
+            };
+            readonly autoAnalyze: {
+                readonly type: "boolean";
+            };
+            readonly approvalId: {
+                readonly type: "string";
+            };
+            readonly planDigest: {
+                readonly type: "string";
+            };
+            readonly consecutiveRegressions: {
+                readonly type: "integer";
+            };
+            readonly stopReason: {
+                readonly type: "string";
+            };
+        };
+        readonly required: ("id" | "approvalId" | "planDigest" | "contractDigest" | "state" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "rootSessionId" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
         readonly additionalProperties: false;
     };
     readonly task_result_submit: {

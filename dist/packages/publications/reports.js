@@ -17,6 +17,7 @@ import { ensure, asError } from '../domain/errors.js';
 import { digest } from '../storage/store.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { verifySnapshot, safePath } from '../workspace/files.js';
+import { changeProposalPayload } from '../workspace/change-proposals.js';
 const clean = (value) => JSON.parse(JSON.stringify(value));
 const escaped = (value) => value.replace(/([\\`*_{}\[\]()<>#!|])/g, '\\$1').replace(/\r?\n/g, ' ');
 const excluded = (path) => path.split(/[\\/]/).some(p => /^(\.git|\.git-credentials|\.ssh|\.aws|\.kube|\.docker|\.pi|\.pi-research|\.pi-runtime|\.npmrc|\.pypirc|\.env(?:\..*)?|access\.token|auth\.json|id_rsa|id_ed25519|credentials(?:\..*)?|diagnostic\.log|supervisor\.log)$/i.test(p));
@@ -184,9 +185,8 @@ export class ReportService {
         return job;
     }
     checkProposal(pid, p) {
-        const { baseExperimentId, baseRevision, baseSnapshot, contractDigest, title, hypothesis, changes, candidateSnapshot } = p;
-        const value = { baseExperimentId, baseRevision, baseSnapshot, contractDigest, title, hypothesis, changes, candidateSnapshot, ...(p.testJobId ? { testJobId: p.testJobId } : {}), ...(p.flow ? { flow: p.flow, reviewId: p.reviewId, reviewAcceptanceId: p.reviewAcceptanceId } : {}) };
-        ensure(digest(value) === p.digest && p.sourceValidity !== 'stale', 'CHANGE_SOURCE_STALE', '整合提案的固定绑定已改变或失效');
+        const { candidateSnapshot } = p;
+        ensure(digest(changeProposalPayload(p)) === p.digest && p.sourceValidity !== 'stale', 'CHANGE_SOURCE_STALE', '整合提案的固定绑定已改变或失效');
         ensure(digest(candidateSnapshot.files) === candidateSnapshot.digest, 'SNAPSHOT_CORRUPTED', '整合候选清单摘要不符');
         verifySnapshot(this.c.store.paths.physical(candidateSnapshot.path), candidateSnapshot.files);
         const approval = this.c.store.get('approval', p.approvalId, pid);

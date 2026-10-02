@@ -283,7 +283,7 @@ class ResearchPlanPanel extends React.Component {
             if (run) onRun?.(run.id, candidate.experimentId);
             else if (!intent?.runId) onExperiment(candidate.experimentId);
           }, children: "\u67E5\u770B\u5019\u9009\u5B9E\u9A8C\u3001\u65E5\u5FD7\u4E0E\u56FA\u5B9A Run" }) : null,
-          candidate.sessionId && onImplementation ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onImplementation(candidate.sessionId), children: "\u6253\u5F00\u6B64\u5019\u9009\u7684\u5B9E\u73B0\u4E0E\u5BA1\u67E5" }) : null,
+          candidate.sessionId && onImplementation ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onImplementation(candidate.sessionId), children: "\u6253\u5F00\u6B64\u5019\u9009\u7684\u7814\u7A76\u5BF9\u8BDD" }) : null,
           candidate.state === "awaiting_implementation" && !candidate.sessionId ? /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);

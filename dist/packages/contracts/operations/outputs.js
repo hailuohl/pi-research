@@ -50,6 +50,11 @@ const taskResult = object({
     claims: array(object({ statement: string, evidenceIds: strings, limitations: strings })),
     unresolvedQuestions: strings, verdict: enumeration('accept', 'reject', 'disputed')
 }, ['verdict']);
+const campaign = row('campaign', {
+    goal: string, rootSessionId: string, rootModel: object({ provider: string, model: string, thinking: enumeration('off', 'minimal', 'low', 'medium', 'high', 'xhigh') }), baselineExperimentId: string, focusExperimentId: string, contractDigest: string, primaryMetric: string, direction: enumeration('min', 'max'), state: enumeration('draft', 'active', 'paused', 'stopped'), currentRoundId: string, roundNumber: integer,
+    limits: object({ maxRounds: integer, maxCandidatesPerRound: integer, maxUnansweredRunsPerNode: integer, maxConsecutiveRegressions: integer, maxAnalysisAttempts: integer, deadline: string }, ['deadline']),
+    autoAnalyze: boolean, approvalId: string, planDigest: string, consecutiveRegressions: integer, stopReason: string
+}, ['stopReason']);
 /** Success payloads are the existing service records, including durable replay fields. */
 const CORE_OUTPUT_SCHEMAS = {
     run_prepare: row('run-intent', {
@@ -81,14 +86,15 @@ const CORE_OUTPUT_SCHEMAS = {
     workspace_write: object({ path: string, digest: string, size: integer }),
     change_proposal_prepare: row('change-proposal', {
         baseExperimentId: string, baseRevision: integer, baseSnapshot: snapshot, contractDigest: string,
-        title: string, hypothesis: string,
+        title: string, hypothesis: string, rootSessionId: string,
         changes: array(object({
             path: string, expectedDigest: nullableString, artifactId: nullableString, artifactDigest: nullableString,
             taskId: string, taskResultDigest: string, sourceAcceptanceId: string, mode: enumeration('100644', '100755'), beforeMode: enumeration('100644', '100755')
         }, ['taskId', 'taskResultDigest', 'sourceAcceptanceId', 'mode', 'beforeMode'])),
         candidateSnapshot: snapshot, digest: string, approvalId: string, state: enumeration('prepared', 'applied'),
         testsStatus: enumeration('not_run', 'passed'), testJobId: string, appliedExperimentId: string, sourceValidity: enumeration('current', 'stale'), invalidatedBy: string, flow: { const: 'reviewed-development' }, reviewId: string, reviewAcceptanceId: string
-    }, ['testJobId', 'appliedExperimentId', 'sourceValidity', 'invalidatedBy', 'flow', 'reviewId', 'reviewAcceptanceId']),
+    }, ['rootSessionId', 'testJobId', 'appliedExperimentId', 'sourceValidity', 'invalidatedBy', 'flow', 'reviewId', 'reviewAcceptanceId']),
+    campaign_prepare: campaign,
     task_result_submit: row('task-result', {
         taskId: string, attemptId: string, planVersion: integer, directiveVersion: integer,
         inputDigest: string, digest: string, result: taskResult
@@ -199,17 +205,14 @@ export const OUTPUT_SCHEMAS = {
     project_inspect: object({
         textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument), pmcDocuments: array(pmcDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents', 'pmcDocuments']),
         project: object({ id: string, name: string, collaborationEnabled: boolean }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
-        runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings
+        runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings,
+        campaigns: array(object({ id: string, goal: string, state: enumeration('draft', 'active', 'paused', 'stopped') }))
     }),
     text_evidence_search: textEvidenceSearch,
     campaign_enroll: member,
     campaign_decision_submit: decision,
     campaign_inspect: object({
-        campaign: row('campaign', {
-            goal: string, rootSessionId: string, rootModel: object({ provider: string, model: string, thinking: enumeration('off', 'minimal', 'low', 'medium', 'high', 'xhigh') }), baselineExperimentId: string, focusExperimentId: string, contractDigest: string, primaryMetric: string, direction: enumeration('min', 'max'), state: enumeration('draft', 'active', 'paused', 'stopped'), currentRoundId: string, roundNumber: integer,
-            limits: object({ maxRounds: integer, maxCandidatesPerRound: integer, maxUnansweredRunsPerNode: integer, maxConsecutiveRegressions: integer, maxAnalysisAttempts: integer, deadline: string }, ['deadline']),
-            autoAnalyze: boolean, approvalId: string, planDigest: string, consecutiveRegressions: integer, stopReason: string
-        }, ['stopReason']),
+        campaign,
         members: array(member), rounds: array(row('research-round', { campaignId: string, number: integer, parentExperimentId: string, state: enumeration('open', 'closed'), decisionId: string, parentSource: PLAN_SOURCE_SCHEMA }, ['decisionId', 'parentSource'])), plans: array(EXPERIMENT_PLAN_SCHEMA), candidates: array(RESEARCH_CANDIDATE_SCHEMA),
         observations: array(row('run-observation', { campaignId: string, roundId: string, memberId: string, runId: string, experimentId: string, manifestDigest: string, contentDigest: string, executionState: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, metrics: { type: 'object', additionalProperties: number }, evidenceIds: strings, validation: enumeration('verified', 'incomplete', 'invalid'), explanation: string, status: enumeration('pending', 'decided'), decisionId: string }, ['decisionId'])), decisions: array(decision)
     }, ['plans', 'candidates'])

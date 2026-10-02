@@ -69,15 +69,16 @@ test('refresh keeps an explicitly selected old session and its history anchor',a
     app.componentWillUnmount();
 });
 
-test('implementation, campaign and Run links reset history for sessions outside recent state',()=>{
+test('legacy workflow hints and Run links reset history for sessions outside recent state',()=>{
     const oldStorage=globalThis.localStorage;globalThis.localStorage={getItem:()=>null,setItem(){}};
     try{
         const app=synchronousState(new App({}));app.refresh=async()=>true;
         Object.assign(app.state,{projectId:'p',sessionId:'recent',boot:{projects:[{id:'p'}]},data:{project:{id:'p'},sessions:[{id:'recent'}],experiments:[],runs:[]}});
-        for(const [tab,name,callback,targetTab] of [['implementation','ImplementationView','onSession','implementation'],['campaigns','CampaignView','onImplementation','implementation'],['experiments','Experiments','onSession','chat']]){
+        for(const tab of ['implementation','campaigns','changes','experiments']){
             Object.assign(app.state,{tab,sessionId:'recent',messages:[{id:'old-body'}],history:{atLatest:false},historyAnchor:{direction:'before',id:'old-cursor'},stream:'old stream'});
-            const view=component(app.render(),name);assert.ok(view,`${name} rendered`);view.props[callback]('older-root');
-            assert.equal(app.state.sessionId,'older-root');assert.equal(app.state.tab,targetTab);assert.deepEqual(app.state.messages,[]);assert.equal(app.state.history,null);assert.equal(app.state.historyAnchor,null);assert.equal(app.state.stream,'');
+            if(tab==='experiments'){const view=component(app.render(),'Experiments');assert.ok(view,'Experiments rendered');view.props.onSession('older-root');}
+            else app.selectSession('older-root',tab);
+            assert.equal(app.state.sessionId,'older-root');assert.equal(app.state.tab,'chat');assert.deepEqual(app.state.messages,[]);assert.equal(app.state.history,null);assert.equal(app.state.historyAnchor,null);assert.equal(app.state.stream,'');
         }
         app.componentWillUnmount();
     }finally{globalThis.localStorage=oldStorage;}

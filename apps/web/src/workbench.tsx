@@ -6,6 +6,7 @@ import {ComputeWait} from './scheduler-view.js';
 import { WakeupPanel } from './campaigns.js';
 import { comparableRuns, comparisonMetric } from './models.js';
 import { ExperimentGraph } from './experiment-graph.js';
+import {ChatWorkflows} from './chat-workflows.js';
 import { api, artifactText, downloadArtifact } from './api.js';
 import type { Bootstrap, ProjectState, Row, Session, Experiment, Run, SessionView, SessionHistoryPage } from './models.js';
 import { short, number, date, label } from './models.js';
@@ -28,6 +29,8 @@ export class Chat extends React.Component<{
     onExperiments: () => void;
     onWorkspace: () => void;
     onSession: (id:string) => void;
+    onExperiment: (id:string) => void;
+    onRun: (runId:string,experimentId:string) => void;
 }, {
     draft: string;
     mode: string;
@@ -43,7 +46,7 @@ export class Chat extends React.Component<{
                 }}><Icon name="evidence"/></button></div> : null}</div>
  {!boot.runtime.ready ? <div className="notice runtime-notice"><span className="status-dot amber"/><div><strong>Pi 尚未就绪</strong><p>{boot.runtime.message} 项目、快照、真实数值实验和证据管理仍可使用。</p></div></div> : null}
  {session?.taskId?<p className="notice runtime-notice">这是团队任务会话。请通过团队任务控件发送指令或管理任务。</p>:session?.state==='archived'?<p className="notice runtime-notice">此会话已归档，不能发送消息。</p>:null}
- <div className="conversation" aria-live="polite">{messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <div className="welcome"><div className="welcome-mark">π</div><h2>今天想研究什么？</h2><p>从一个问题开始，逐步形成实验与结果。</p><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>查看实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目文件</span><Icon name="arrow"/></button></div><p className="small muted">这是工作台的引导界面，不是模型生成的研究结果。</p></div> : <SessionHistory projectId={data.project.id} sessionId={session?.id??''} messages={messages} history={this.props.history} historyAnchor={this.props.historyAnchor} onNavigate={this.props.onHistory} perform={this.props.perform}/>}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/> : null}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) && this.props.stream ? <article className="message"><div className="message-avatar">π</div><div className="message-body"><div className="message-meta">Pi · 流式输出，等待最终消息</div><div className="prose-text">{this.props.stream}</div>{this.props.streamTruncated?<p className="small muted">仅显示当前输出尾部，前文已省略；完整内容以原生会话记录为准。</p>:null}</div></article> : null}</div>
+ <div className="conversation" aria-live="polite">{messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <div className="welcome"><div className="welcome-mark">π</div><h2>今天想研究什么？</h2><p>从一个问题开始，逐步形成实验与结果。</p><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>查看实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目文件</span><Icon name="arrow"/></button></div><p className="small muted">这是工作台的引导界面，不是模型生成的研究结果。</p></div> : <SessionHistory projectId={data.project.id} sessionId={session?.id??''} messages={messages} history={this.props.history} historyAnchor={this.props.historyAnchor} onNavigate={this.props.onHistory} perform={this.props.perform}/>}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/> : null}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) && this.props.stream ? <article className="message"><div className="message-avatar">π</div><div className="message-body"><div className="message-meta">Pi · 流式输出，等待最终消息</div><div className="prose-text">{this.props.stream}</div>{this.props.streamTruncated?<p className="small muted">仅显示当前输出尾部，前文已省略；完整内容以原生会话记录为准。</p>:null}</div></article> : null}{session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <ChatWorkflows data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onExperiment={this.props.onExperiment} onRun={this.props.onRun}/> : null}</div>
  <div className="composer-wrap"><form className="composer" onSubmit={(e: any) => {
                 e.preventDefault();
                 if (!session || !canSend || !this.state.draft.trim())
@@ -128,6 +131,7 @@ export class Inspector extends React.Component<{
     boot: Bootstrap;
     tab: string;
     sessionId:string;
+    inlineWorkflows?:boolean;
     experiment: Row<Experiment> | undefined;
     perform: Perform;
     onPrepare: () => void;
@@ -149,7 +153,8 @@ export class Inspector extends React.Component<{
         const intents = data.intents.filter(i => i.experimentId === e?.id), intent = intents[intents.length - 1], approval = data.approvals.find(a => a.id === intent?.approvalId);
         const runGrantRef=intent?.runGrant??approval?.runGrant,runGrant=(data.runGrants??[]).find(g=>g.id===runGrantRef?.id);
         const teamIds = new Set(teams.map(t => t.id));
-        const pendingTeams = data.approvals.filter(a => a.subjectKind === 'team' && a.status === 'pending' && teamIds.has(a.subjectId));
+        const inlineReviewTeams=new Set(this.props.inlineWorkflows?(data.reviews??[]).filter(r=>r.producerSessionId===this.props.sessionId).map(r=>r.teamId):[]);
+        const pendingTeams = data.approvals.filter(a => a.subjectKind === 'team' && a.status === 'pending' && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
         return <aside className="inspector">
  <div className="inspector-title"><Icon name={this.props.tab === 'experiments' ? 'experiment' : 'branch'}/><h2>{this.props.tab === 'experiments' ? '实验详情' : '协作空间'}</h2><span className="small muted">本地</span></div>
  {this.props.tab === 'experiments' && e ? <div className="inspector-section"><div className="detail-title"><h3>{e.title}</h3><div data-testid="selected-experiment-state"><Badge value={e.lifecycle}/></div></div><p className="detail-hypothesis">{e.hypothesis}</p><dl className="details"><dt>实验 ID</dt><dd><code>{short(e.id)}</code></dd><dt>方案修订</dt><dd>v{e.revision}</dd><dt>固定入口</dt><dd><code>{e.contract.command.join(' ')}</code></dd><dt>计算方式</dt><dd>{e.contract.runner === 'trusted-example' ? '受信本地数值示例' : 'Docker · 固定镜像隔离运行'}</dd><dt>数据版本</dt><dd>{e.contract.datasetVersion}</dd></dl><div className="stack-actions"><button className="primary" onClick={this.props.onPrepare} disabled={!!(intent?.status === 'prepared' && approval?.status === 'pending' && intent.manifest.experimentRevision === e.revision)}><Icon name="run" size={15}/>准备运行</button><div className="actions"><button className="secondary" onClick={this.props.onChild}><Icon name="branch" size={15}/>派生子实验</button><button className="secondary" onClick={this.props.onConfig}>查看配置</button></div></div>

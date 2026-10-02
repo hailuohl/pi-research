@@ -25,6 +25,7 @@ import {ensure,asError} from '../domain/errors.js';
 import {digest} from '../storage/store.js';
 import {readStableFile} from '../workspace/stable-file.js';
 import {verifySnapshot,safePath} from '../workspace/files.js';
+import {changeProposalPayload} from '../workspace/change-proposals.js';
 import type {EvidenceService} from '../evidence/service.js';
 import type {ReportBindings,ReportReference,ReportRun,ReportRecord,ReportInspection,ReportExportCollection} from './report-types.js';
 
@@ -134,9 +135,8 @@ export class ReportService {
         this.app.development.assertCurrent(job,true);job.artifactIds.forEach(id=>this.bytes(pid,id));return job;
     }
     private checkProposal(pid:string,p:Row<ChangeProposal>) {
-        const {baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot}=p;
-        const value={baseExperimentId,baseRevision,baseSnapshot,contractDigest,title,hypothesis,changes,candidateSnapshot,...(p.testJobId?{testJobId:p.testJobId}:{}),...(p.flow?{flow:p.flow,reviewId:p.reviewId,reviewAcceptanceId:p.reviewAcceptanceId}:{})};
-        ensure(digest(value)===p.digest&&p.sourceValidity!=='stale','CHANGE_SOURCE_STALE','整合提案的固定绑定已改变或失效');
+        const {candidateSnapshot}=p;
+        ensure(digest(changeProposalPayload(p))===p.digest&&p.sourceValidity!=='stale','CHANGE_SOURCE_STALE','整合提案的固定绑定已改变或失效');
         ensure(digest(candidateSnapshot.files)===candidateSnapshot.digest,'SNAPSHOT_CORRUPTED','整合候选清单摘要不符');verifySnapshot(this.c.store.paths.physical(candidateSnapshot.path),candidateSnapshot.files);
         const approval=this.c.store.get<Approval>('approval',p.approvalId,pid);ensure(approval.status==='approved'&&approval.subjectId===p.id&&approval.scope==='change.integrate'&&approval.digest===p.digest,'APPROVAL_STALE','整合审批已失效');
         if(p.testJobId){const j=this.c.store.get<SandboxJob>('sandbox-job',p.testJobId,pid),grant=this.c.store.get<Approval>('approval',j.grantId,pid);assertWorkingGrantJob(this.c.store,j);

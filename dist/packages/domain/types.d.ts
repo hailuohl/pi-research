@@ -334,6 +334,7 @@ export interface ChangeProposal {
     contractDigest: string;
     title: string;
     hypothesis: string;
+    rootSessionId?: string;
     changes: Array<{
         path: string;
         expectedDigest: string | null;

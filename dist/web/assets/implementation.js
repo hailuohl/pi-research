@@ -515,5 +515,6 @@ class ImplementationView extends React.Component {
   }
 }
 export {
+  DevelopmentJob,
   ImplementationView
 };

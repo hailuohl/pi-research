@@ -110,7 +110,9 @@ function executeRegistered(c, name, x) {
             const project = app.projects.get(actor, pid);
             const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId ? app.wakeups.resources(actor) : null;
             const runs = app.store.list('run', pid).filter(r => !grant || grant.runIds.has(r.id));
-            return { textCorpus: app.textEvidence.status(actor, pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: r.evidenceIds.filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id) };
+            const campaigns = !actor.taskId && !actor.wakeupId && session?.role === 'coordinator' && !session.taskId && session.state !== 'archived'
+                ? app.store.list('campaign', pid).filter(c => c.rootSessionId === session.id).map(({ id, goal, state }) => ({ id, goal, state })) : [];
+            return { textCorpus: app.textEvidence.status(actor, pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: r.evidenceIds.filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns };
         }
         case 'workspace_list': return listFiles(ownOrProject());
         case 'artifact_read': {
@@ -267,6 +269,8 @@ const SPECS = [
     make('task_result_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'task_result_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'task_result_read', x) }),
     make('task_context_read', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'task_context_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'task_context_read', x) }),
     make('task_progress_report', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'task_progress_report', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'task_progress_report', x) }),
+    make('campaign_prepare', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => { if (c.actor.type === 'agent')
+            c.app.operations.authorizeAgent(c.actor, 'campaign_prepare'); c.app.campaigns.prepareSession(c.actor, c.projectId, c.session.id); }, preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.campaigns.prepare(c.actor, c.projectId, c.session.id, x) }),
     make('campaign_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'campaign_inspect', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'campaign_inspect', x) }),
     make('campaign_enroll', { idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'campaign_enroll', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'campaign_enroll', x) }),
     make('campaign_decision_submit', { idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'campaign_decision_submit', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'campaign_decision_submit', x) }),
@@ -305,7 +309,7 @@ const SPECS = [
             ? c.app.projects.writeFile(c.actor, c.projectId, x.path, x.content, x.expectedDigest)
             : writeText(c.app.store.paths.physical(c.session.workspace), x.path, x.content, x.expectedDigest, c.app.store) }),
     make('change_proposal_prepare', { idempotencyPolicy: 'key-required', authorize: recordScope('experiment', 'baseExperimentId'), preconditions: noPrecondition,
-        execute: (c, x) => c.app.changes.prepare(c.actor, c.projectId, x) }),
+        execute: (c, x) => c.app.changes.prepare(c.actor, c.projectId, x, c.session?.id) }),
     make('task_result_submit', { idempotencyPolicy: 'key-required', authorize: c => {
             ensure(c.actor.type === 'agent' && c.actor.taskId && c.actor.attemptId, 'PERMISSION_DENIED', '需要宿主派发的任务身份', 403);
         }, preconditions: noPrecondition, execute: (c, x) => c.app.teams.submit(c.actor, x) }),
@@ -394,17 +398,20 @@ export class OperationRegistry {
                 (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field]);
         }
         spec.authorize(context, input);
-        const workspaceId = spec.requiresSession || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
+        const proposalOwner = id === 'change_proposal_prepare' ? session?.id : undefined;
+        const workspaceId = spec.requiresSession || proposalOwner || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
         // Large local document bodies are hashed before any writer transaction; metadata remains part of identity.
-        const request = { name: id, input: id === 'document_import' ? { ...input, contentBase64: undefined, contentDigest: digest(input.contentBase64) } : ['skill_package_import', 'manuscript_create'].includes(id) ? { inputDigest: digest(input) } : input }, operationScope = actor.type === 'agent' ? `agent:${session.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
+        const request = { name: id, ...(proposalOwner ? { rootSessionId: proposalOwner } : {}), input: id === 'document_import' ? { ...input, contentBase64: undefined, contentDigest: digest(input.contentBase64) } : ['skill_package_import', 'manuscript_create'].includes(id) ? { inputDigest: digest(input) } : input }, operationScope = actor.type === 'agent' ? `agent:${session.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
             const result = JSON.parse(JSON.stringify(value));
             validateSchema(spec.outputSchema, result, 'output');
             return result;
         };
-        const aliases = options.legacy ? [options.legacy] : [];
-        if (!options.legacy && actor.type === 'user') {
+        // Legacy proposal receipts have no session identity; owned requests must not read or write them.
+        const legacy = proposalOwner ? undefined : options.legacy;
+        const aliases = legacy ? [legacy] : [];
+        if (!legacy && actor.type === 'user') {
             let path, body;
             if (id === 'run_prepare') {
                 path = '/run-intents';
@@ -414,7 +421,7 @@ export class OperationRegistry {
                 path = `/run-intents/${input.intentId}/submit`;
                 body = {};
             }
-            if (id === 'change_proposal_prepare') {
+            if (id === 'change_proposal_prepare' && !proposalOwner) {
                 path = '/change-proposals';
                 body = { projectId: pid, ...input };
             }
@@ -458,7 +465,7 @@ export class OperationRegistry {
         const save = (value) => {
             const result = output(value);
             const write = () => cached ? this.app.store.operation(operationScope, key, request, () => result) : result;
-            return options.legacy ? this.app.store.operation(options.legacy.scope, key, options.legacy.input, write) : write();
+            return legacy ? this.app.store.operation(legacy.scope, key, legacy.input, write) : write();
         };
         const invoke = () => {
             if (actor.type === 'agent')

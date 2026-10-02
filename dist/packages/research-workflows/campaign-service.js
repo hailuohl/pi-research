@@ -41,6 +41,15 @@ export class CampaignService {
         ensure(actor.type === 'user' || actor.type === 'agent' && actor.role === 'coordinator' &&
             actor.sessionId === c.rootSessionId && !actor.taskId, 'PERMISSION_DENIED', '只有用户或所属主协调会话可提出研究决定', 403);
     }
+    prepareSession(actor, projectId, sessionId) {
+        scope(actor, projectId);
+        ensure(actor.type === 'user' || actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.wakeupId && actor.sessionId === sessionId, 'TOOL_DENIED', '研究活动只能由当前交互式主协调会话准备', 403);
+        const project = this.app.projects.get(actor, projectId);
+        ensure(!project.archived, 'PROJECT_ARCHIVED', '项目已归档');
+        const root = this.app.store.get('session', text(sessionId, 'sessionId', 100), projectId);
+        ensure(root.role === 'coordinator' && !root.taskId && root.state !== 'archived', 'INVALID_ROOT_SESSION', '需要当前项目内未归档的主协调会话');
+        return root;
+    }
     assertActive(c) {
         ensure(c.state === 'active', 'CAMPAIGN_NOT_ACTIVE', '研究活动未启动、已暂停或已停止');
         ensure(!this.app.store.get('project', c.projectId).archived, 'PROJECT_ARCHIVED', '项目已归档');
@@ -53,6 +62,15 @@ export class CampaignService {
         const x = object(value), root = this.app.sessions.get(actor, text(x.rootSessionId, 'rootSessionId', 100));
         ensure(root.projectId === projectId, 'SCOPE_DENIED', '主会话属于其他项目', 403);
         ensure(root.role === 'coordinator' && !root.taskId && root.state !== 'archived', 'INVALID_ROOT_SESSION', '需要可用的主协调会话');
+        return this.createDraft(projectId, root, value);
+    }
+    prepare(actor, projectId, sessionId, value) {
+        const root = this.prepareSession(actor, projectId, sessionId), x = object(value);
+        ensure(Object.keys(x).every(key => ['goal', 'baselineExperimentId', 'primaryMetric', 'limits', 'autoAnalyze'].includes(key)), 'INVALID_INPUT', '研究活动准备不接受会话、项目或模型身份字段', 400);
+        return this.createDraft(projectId, root, value);
+    }
+    createDraft(projectId, root, value) {
+        const x = object(value);
         const baseline = this.app.store.get('experiment', text(x.baselineExperimentId, 'baselineExperimentId', 100), projectId);
         ensure(baseline.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '基线已归档');
         const goal = text(x.goal, 'goal', 8000), limits = parseLimits(x.limits), autoAnalyze = bool(x.autoAnalyze ?? false, 'autoAnalyze');
