@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Pi Research · 会话交互设计预览</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f7f8fa;
+      --surface: #fff;
+      --surface-soft: #f2f3f5;
+      --surface-quiet: #fafafb;
+      --line: #e5e7eb;
+      --line-strong: #d4d7dc;
+      --ink: #202328;
+      --muted: #69717d;
+      --muted-strong: #4f5661;
+      --accent: #24272d;
+      --accent-ink: #fff;
+      --soft-ink: #343941;
+      --good-bg: #edf4ef;
+      --good-ink: #315b3c;
+      --warn-bg: #f8f1e5;
+      --warn-ink: #72501b;
+      --error-bg: #fbefed;
+      --error-ink: #8d3931;
+      --focus: #6f7f9c;
+      --font: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    }
+    body[data-theme="dark"] {
+      color-scheme: dark;
+      --page: #1b1c1f;
+      --surface: #222428;
+      --surface-soft: #2b2d32;
+      --surface-quiet: #25272b;
+      --line: #393c42;
+      --line-strong: #4b4f57;
+      --ink: #eceef1;
+      --muted: #a4aab4;
+      --muted-strong: #c4c8cf;
+      --accent: #f0f1f3;
+      --accent-ink: #202226;
+      --soft-ink: #eceef1;
+      --good-bg: #26372b;
+      --good-ink: #b5d4bd;
+      --warn-bg: #3a3225;
+      --warn-ink: #e6ce9d;
+      --error-bg: #402c2b;
+      --error-ink: #e8b4ad;
+      --focus: #bac7df;
+    }
+    body[data-theme="wine"] {
+      color-scheme: light;
+      --page: #faf7f6;
+      --surface: #fffdfc;
+      --surface-soft: #f5eeec;
+      --surface-quiet: #fcf9f8;
+      --line: #eadeda;
+      --line-strong: #d9c4bf;
+      --ink: #2e2323;
+      --muted: #796b69;
+      --muted-strong: #5f4c4a;
+      --accent: #762c3b;
+      --accent-ink: #fff;
+      --soft-ink: #4c3036;
+      --good-bg: #edf3ed;
+      --good-ink: #315b3c;
+      --warn-bg: #f8f1e5;
+      --warn-ink: #72501b;
+      --error-bg: #fbefed;
+      --error-ink: #8d3931;
+      --focus: #97636d;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+      background: var(--page);
+      color: var(--ink);
+      font: 15px/1.8 var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, textarea, select { color: inherit; font: inherit; }
+    button { cursor: pointer; }
+    button:disabled, textarea:disabled { cursor: not-allowed; opacity: .56; }
+    button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+    .preview-toolbar {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 24px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+    .preview-heading, .preview-controls, .toolbar-group, .theme-switch, .app-topbar, .top-actions,
+    .brand, .sidebar-project, .nav-label, .chat-heading, .chat-tools, .message-heading,
+    .composer-actions, .composer-controls, .composer-bottom, .context-heading, .dialog-heading,
+    .list-heading { display: flex; align-items: center; }
+    .preview-heading { gap: 12px; min-width: 0; }
+    .preview-wordmark { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 650; white-space: nowrap; }
+    .pi-mark { display: inline-grid; width: 26px; height: 26px; place-items: center; border: 1px solid var(--line-strong); border-radius: 6px; font-size: 20px; line-height: 1; }
+    .preview-note, .preview-meta { color: var(--muted); font-size: 12px; }
+    .preview-note { white-space: nowrap; }
+    .preview-controls { justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+    .toolbar-group { gap: 8px; }
+    .control-label { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .theme-switch { gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-quiet); }
+    .theme-switch button, .preview-select, .quiet-button, .icon-button, .mode-switch button {
+      min-height: 32px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted-strong);
+    }
+    .theme-switch button { padding: 4px 8px; font-size: 12px; }
+    .theme-switch button[aria-pressed="true"] { border-color: var(--line); background: var(--surface); color: var(--ink); }
+    .preview-select { min-width: 116px; padding: 4px 28px 4px 8px; border-color: var(--line); background: var(--surface); font-size: 12px; }
+    .text-button, .primary-button, .secondary-button, .nav-button, .session-button, .search-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--soft-ink);
+      text-align: left;
+      white-space: nowrap;
+      line-height: 1.4;
+      text-decoration: none;
+    }
+    .text-button:hover, .secondary-button:hover, .quiet-button:hover, .nav-button:hover, .session-button:hover { background: var(--surface-soft); }
+    .primary-button { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+    .primary-button:hover { filter: brightness(.93); }
+    .primary-button svg, .text-button svg, .secondary-button svg, .nav-button svg, .session-button svg, .quiet-button svg,
+    .search-trigger svg, .icon-button svg { flex: 0 0 auto; }
+    .link-button { border: 0; padding: 0; background: none; color: var(--muted-strong); text-decoration: underline; text-underline-offset: 3px; }
+    .link-button:hover { color: var(--ink); }
+    .icon-button { display: inline-grid; width: 36px; min-width: 36px; place-items: center; border-color: var(--line); background: var(--surface); }
+    .quiet-button { padding: 4px 8px; font-size: 13px; }
+    .app-frame { display: flex; flex: 1 1 auto; min-height: 0; min-width: 0; background: var(--page); }
+    .sidebar { display: flex; flex: 0 0 224px; flex-direction: column; min-width: 0; border-right: 1px solid var(--line); background: var(--surface); }
+    .sidebar-content { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 16px 12px; }
+    .brand { gap: 8px; padding: 0 8px 16px; font-size: 14px; font-weight: 650; }
+    .sidebar-project { justify-content: space-between; width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); text-align: left; }
+    .sidebar-project span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-label { margin: 16px 8px 8px; color: var(--muted); font-size: 11px; font-weight: 650; letter-spacing: .045em; text-transform: uppercase; }
+    .nav-stack, .session-list { display: grid; gap: 4px; }
+    .nav-button, .session-button { justify-content: flex-start; width: 100%; min-width: 0; min-height: 34px; padding: 6px 8px; border-color: transparent; background: transparent; font-size: 13px; }
+    .nav-button[aria-current="page"] { background: var(--surface-soft); color: var(--ink); font-weight: 600; }
+    .nav-button span, .session-button .session-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .session-area { min-height: 0; margin-top: 8px; overflow: auto; }
+    .list-heading { justify-content: space-between; gap: 8px; }
+    .session-button { display: flex; flex-wrap: nowrap; justify-content: space-between; gap: 8px; }
+    .session-button[aria-current="true"] { border-color: var(--line); background: var(--surface-quiet); color: var(--ink); }
+    .session-state { flex: 0 0 auto; color: var(--muted); font-size: 11px; }
+    .sidebar-bottom { display: grid; gap: 4px; margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); }
+    .app-workspace { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0; }
+    .app-topbar { flex: 0 0 52px; justify-content: space-between; gap: 12px; min-width: 0; padding: 0 20px; border-bottom: 1px solid var(--line); background: var(--surface); }
+    .breadcrumbs { display: flex; min-width: 0; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+    .breadcrumbs strong { overflow: hidden; color: var(--muted-strong); font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
+    .top-actions { gap: 8px; }
+    .search-trigger { min-height: 32px; padding: 4px 8px; color: var(--muted); font-size: 12px; }
+    kbd { padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface-quiet); color: var(--muted); font: 11px/1.5 var(--font); }
+    .mobile-menu-button, .context-open-button { display: none; }
+    .context-open-button { display: inline-flex; white-space: nowrap; }
+    .main-layout { display: grid; flex: 1; grid-template-columns: minmax(0, 1fr) 320px; min-width: 0; min-height: 0; }
+    .main-layout.context-collapsed { grid-template-columns: minmax(0, 1fr); }
+    .main-layout.context-collapsed .context-panel { display: none; }
+    .chat-panel { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .chat-heading { flex: 0 0 auto; justify-content: space-between; gap: 16px; min-width: 0; padding: 20px 24px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+    .chat-heading > div:first-child { min-width: 0; }
+    .eyebrow { margin: 0 0 4px; color: var(--muted); font-size: 12px; }
+    h1, h2, h3, p { overflow-wrap: anywhere; }
+    .chat-heading h1 { margin: 0; font-size: 21px; font-weight: 620; line-height: 1.4; letter-spacing: -.02em; }
+    .chat-meta { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .chat-tools { flex: 0 0 auto; gap: 8px; }
+    .status-text { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .status-text::before { width: 6px; height: 6px; border-radius: 6px; background: currentColor; content: ""; }
+    .transcript { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 24px; }
+    .transcript-inner { width: 100%; max-width: 760px; margin: 0 auto; }
+    .state-banner { margin-bottom: 16px; }
+    .alert { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+    .alert-copy { min-width: 0; }
+    .alert strong { display: block; font-size: 13px; font-weight: 620; }
+    .alert p { margin: 2px 0 0; color: var(--muted-strong); font-size: 12px; }
+    .alert-error { border-color: color-mix(in srgb, var(--error-ink) 30%, var(--line)); background: var(--error-bg); color: var(--error-ink); }
+    .alert-info { background: var(--surface-soft); }
+    .message-thread { display: grid; gap: 24px; }
+    .message { min-width: 0; }
+    .message-heading { gap: 8px; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+    .message-heading strong { color: var(--muted-strong); font-weight: 600; }
+    .demo-tag { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 10px; }
+    .user-copy { max-width: 88%; margin-left: auto; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow-wrap: anywhere; }
+    .message-body { max-width: 100%; overflow-wrap: anywhere; }
+    .message-body p { margin: 0 0 12px; }
+    .message-body p:last-child { margin-bottom: 0; }
+    .message-body ul { display: grid; gap: 4px; margin: 0 0 12px; padding-left: 20px; }
+    .plan-card { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-left: 3px solid var(--line-strong); border-radius: 6px; background: var(--surface); }
+    .plan-card-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .plan-state { color: var(--warn-ink); font-size: 11px; }
+    .plan-card h3 { margin: 8px 0 4px; font-size: 15px; font-weight: 620; }
+    .plan-card p { margin: 0 0 8px; color: var(--muted-strong); font-size: 13px; }
+    .plan-facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .fact { padding: 2px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted-strong); font-size: 11px; }
+    .empty-state { display: grid; min-height: 250px; align-content: center; justify-items: center; padding: 24px; text-align: center; }
+    .empty-symbol { display: grid; width: 40px; height: 40px; place-items: center; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted-strong); }
+    .empty-state h2 { margin: 0 0 4px; font-size: 16px; font-weight: 620; }
+    .empty-state p { max-width: 380px; margin: 0; color: var(--muted); font-size: 13px; }
+    .skeleton-stack { display: grid; gap: 16px; max-width: 620px; margin: 8px auto; }
+    .skeleton-line { height: 14px; border-radius: 4px; background: linear-gradient(90deg, var(--surface-soft), var(--line), var(--surface-soft)); background-size: 220% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+    .skeleton-line:nth-child(2) { width: 88%; }
+    .skeleton-line:nth-child(3) { width: 64%; margin-bottom: 16px; }
+    .skeleton-block { height: 92px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+    @keyframes shimmer { to { background-position: -220% 0; } }
+    .composer { flex: 0 0 auto; padding: 12px 24px 16px; border-top: 1px solid var(--line); background: var(--surface); }
+    .composer-inner { width: 100%; max-width: 760px; margin: 0 auto; }
+    .composer-shell { padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); }
+    .composer-shell:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .composer-actions { justify-content: space-between; gap: 8px; padding-bottom: 8px; }
+    .composer-actions-left, .composer-mode-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .composer-controls { justify-content: space-between; gap: 12px; min-width: 0; }
+    .mode-switch { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; }
+    .mode-switch button { min-height: 28px; padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+    .mode-switch button[aria-pressed="true"] { border-color: var(--line); background: var(--surface-soft); color: var(--ink); }
+    .model-state { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .composer textarea { display: block; width: 100%; min-height: 58px; max-height: 160px; resize: vertical; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 14px; line-height: 1.7; }
+    .composer textarea:focus-visible { outline: 0; }
+    .composer textarea::placeholder { color: var(--muted); }
+    .composer-bottom { justify-content: space-between; gap: 12px; margin-top: 8px; }
+    .composer-hint { margin: 0; color: var(--muted); font-size: 11px; }
+    .composer-bottom-right { display: flex; align-items: center; gap: 8px; }
+    .send-button { min-width: 76px; }
+    .context-panel { min-width: 0; overflow: auto; padding: 20px 16px; border-left: 1px solid var(--line); background: var(--surface); }
+    .context-heading { justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+    .context-heading h2 { margin: 0; font-size: 14px; font-weight: 620; }
+    .context-section { padding: 16px 0; border-top: 1px solid var(--line); }
+    .context-section:first-of-type { padding-top: 0; border-top: 0; }
+    .context-kicker { margin: 0 0 4px; color: var(--muted); font-size: 11px; }
+    .context-section h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+    .context-section p { margin: 0 0 8px; color: var(--muted-strong); font-size: 12px; }
+    .context-section ol, .context-section ul { display: grid; gap: 4px; margin: 8px 0 0; padding-left: 20px; color: var(--muted-strong); font-size: 12px; }
+    .approval-note { padding: 10px; border-left: 2px solid var(--line-strong); background: var(--surface-quiet); color: var(--muted-strong); font-size: 12px; }
+    details { border-top: 1px solid var(--line); }
+    details summary { display: flex; justify-content: space-between; gap: 8px; padding: 12px 0; color: var(--muted-strong); cursor: pointer; font-size: 12px; list-style-position: inside; }
+    details summary span { color: var(--muted); font-size: 11px; }
+    details ul { padding: 0 0 12px 20px; color: var(--muted-strong); font-size: 12px; }
+    .plan-detail[hidden], [data-overview][hidden] { display: none; }
+    .detail-title-row { display: flex; justify-content: space-between; gap: 8px; }
+    .dialog-close { margin-left: auto; }
+    dialog {
+      width: min(520px, calc(100vw - 32px));
+      max-height: min(80dvh, 720px);
+      padding: 0;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: 0 18px 48px rgb(0 0 0 / .16);
+    }
+    dialog::backdrop { background: rgb(18 20 23 / .42); }
+    dialog.drawer { inset: 0 0 0 auto; width: min(90vw, 360px); height: 100dvh; max-height: none; margin: 0; border: 0; border-left: 1px solid var(--line); border-radius: 0; box-shadow: -12px 0 32px rgb(0 0 0 / .12); }
+    .dialog-panel { display: flex; max-height: min(80dvh, 720px); flex-direction: column; min-width: 0; }
+    dialog.drawer .dialog-panel { height: 100%; max-height: none; }
+    .dialog-heading { flex: 0 0 auto; justify-content: space-between; gap: 12px; min-height: 56px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+    .dialog-heading h2 { margin: 0; font-size: 15px; font-weight: 620; }
+    .dialog-body { overflow: auto; padding: 16px; }
+    .dialog-body p { margin: 0 0 12px; color: var(--muted-strong); font-size: 13px; }
+    .dialog-footnote { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+    .choice-list, .search-results { display: grid; gap: 8px; }
+    .choice-button { display: flex; width: 100%; justify-content: space-between; gap: 12px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); text-align: left; }
+    .choice-button:hover { background: var(--surface-soft); }
+    .choice-description { display: block; color: var(--muted); font-size: 11px; }
+    .search-field { width: 100%; min-height: 40px; margin-bottom: 12px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); }
+    .no-results { padding: 20px 8px; color: var(--muted); text-align: center; font-size: 13px; }
+    .component-map { display: grid; gap: 8px; margin: 12px 0; }
+    .component-map div { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; }
+    .component-map dt { color: var(--muted); }
+    .component-map dd { margin: 0; color: var(--muted-strong); }
+    .sidebar-dialog-content { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+    .sidebar-dialog-content .sidebar-content { min-height: 100%; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 1180px) {
+      .main-layout { grid-template-columns: minmax(0, 1fr); }
+      .context-panel { display: none; }
+    }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .mobile-menu-button { display: inline-grid; }
+      .app-topbar { padding: 0 12px; }
+    }
+    @media (max-width: 640px) {
+      .preview-toolbar { align-items: flex-start; flex-direction: column; gap: 8px; padding: 8px 12px; }
+      .preview-heading { width: 100%; justify-content: space-between; }
+      .preview-controls { width: 100%; justify-content: space-between; gap: 8px; }
+      .preview-controls > .toolbar-group { gap: 6px; }
+      .theme-switch button { padding: 4px 6px; }
+      .preview-select { min-width: 104px; }
+      .preview-wordmark { font-size: 13px; }
+      .preview-note { font-size: 11px; }
+      .preview-meta { display: none; }
+      .app-topbar { flex-basis: 48px; gap: 8px; }
+      .breadcrumbs { gap: 5px; }
+      .search-trigger { width: 36px; justify-content: center; padding: 4px; font-size: 0; }
+      .search-trigger kbd { display: none; }
+      .app-topbar .status-text { display: none; }
+      .context-open-button { width: 36px; min-width: 36px; justify-content: center; padding: 4px; font-size: 0; }
+      .chat-heading { align-items: flex-start; padding: 16px 16px 12px; }
+      .chat-heading h1 { font-size: 18px; }
+      .chat-tools .status-text { display: none; }
+      .transcript { padding: 16px; }
+      .composer { padding: 8px 12px 12px; }
+      .composer-shell { padding: 8px; }
+      .composer-actions { align-items: flex-start; }
+      .composer-actions-left, .composer-mode-row { gap: 4px; }
+      .quiet-button { padding: 4px 6px; font-size: 12px; }
+      .composer-controls { align-items: flex-end; flex-wrap: wrap; gap: 8px; }
+      .mode-switch button { padding: 3px 6px; }
+      .model-state { font-size: 10px; }
+      .composer-hint { max-width: none; font-size: 10px; }
+      .composer-bottom { align-items: flex-end; flex-wrap: wrap; gap: 8px; }
+      .composer-bottom .composer-hint { flex: 1 0 100%; }
+      .composer-bottom-right { width: 100%; justify-content: flex-end; }
+      .user-copy { max-width: 96%; }
+      .component-map div { grid-template-columns: 1fr; gap: 2px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <header class="preview-toolbar">
+    <div class="preview-heading">
+      <div class="preview-wordmark"><span class="pi-mark" aria-hidden="true">π</span><span>会话工作区</span></div>
+      <div><div class="preview-note">交互设计预览 · 合成数据</div><div class="preview-meta">原生 HTML · 状态仅保留在当前页面</div></div>
+    </div>
+    <div class="preview-controls">
+      <div class="toolbar-group">
+        <span class="control-label" id="themeLabel">外观</span>
+        <div class="theme-switch" role="group" aria-labelledby="themeLabel">
+          <button type="button" data-theme-choice="light" aria-pressed="true">浅色</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">深色</button>
+          <button type="button" data-theme-choice="wine" aria-pressed="false">酒红</button>
+        </div>
+      </div>
+      <label class="toolbar-group" for="stateSelect">
+        <span class="control-label">状态预览</span>
+        <select id="stateSelect" class="preview-select" aria-label="选择会话状态">
+          <option value="normal">正常</option>
+          <option value="empty">空会话</option>
+          <option value="loading">加载中</option>
+          <option value="error">读取失败</option>
+          <option value="archived">已归档</option>
+        </select>
+      </label>
+      <button class="quiet-button" type="button" data-action="open-components">组件映射</button>
+    </div>
+  </header>
+
+  <div class="app-frame">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="sidebar-content" id="sidebarContent">
+        <div class="brand"><span class="pi-mark" aria-hidden="true">π</span><span>Pi Research</span></div>
+        <button class="sidebar-project" type="button" data-action="open-projects" aria-label="切换项目">
+          <span id="sidebarProjectName">曲线拟合研究</span><span aria-hidden="true">⌄</span>
+        </button>
+        <button class="primary-button" type="button" data-action="new-session"><span data-icon="plus"></span>新建会话</button>
+        <p class="sidebar-label">工作区</p>
+        <nav class="nav-stack" aria-label="工作区导航">
+          <button class="nav-button" type="button" data-action="open-info" data-title="实验与运行" aria-current="false"><span data-icon="experiment"></span><span>实验与运行</span></button>
+          <button class="nav-button" type="button" data-action="open-info" data-title="研究资料"><span data-icon="evidence"></span><span>研究资料</span></button>
+          <button class="nav-button" type="button" data-action="open-info" data-title="研究报告"><span data-icon="report"></span><span>研究报告</span></button>
+        </nav>
+        <div class="session-area">
+          <div class="list-heading"><p class="sidebar-label">会话</p><button class="quiet-button" type="button" data-action="open-search" aria-label="搜索会话"><span data-icon="search"></span></button></div>
+          <div class="session-list" data-session-list></div>
+        </div>
+        <div class="sidebar-bottom">
+          <button class="nav-button" type="button" data-action="open-source"><span data-icon="evidence"></span><span>项目级文献来源</span></button>
+          <button class="nav-button" type="button" data-action="open-info" data-title="模型配置"><span data-icon="experiment"></span><span>模型配置</span></button>
+          <button class="nav-button" type="button" data-action="open-info" data-title="设置"><span data-icon="settings"></span><span>设置</span></button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="app-workspace">
+      <header class="app-topbar">
+        <div class="toolbar-group" style="min-width:0; gap:8px">
+          <button class="icon-button mobile-menu-button" type="button" data-action="open-nav" aria-label="打开主导航"><span data-icon="folder"></span></button>
+          <nav class="breadcrumbs" aria-label="面包屑导航"><strong id="projectCrumb">曲线拟合研究</strong><span aria-hidden="true">/</span><span>会话</span></nav>
+        </div>
+        <div class="top-actions">
+          <button class="search-trigger" type="button" data-action="open-search"><span data-icon="search"></span>搜索会话 <kbd>Ctrl K</kbd></button>
+          <button class="text-button context-open-button" id="contextToggle" type="button" data-action="open-context" aria-label="收起会话上下文" aria-controls="contextPanel" aria-expanded="true"><span data-icon="branch"></span>上下文</button>
+          <span class="status-text" aria-label="演示模式">演示模式</span>
+        </div>
+      </header>
+
+      <main class="main-layout">
+        <section class="chat-panel" aria-labelledby="sessionTitle">
+          <header class="chat-heading">
+            <div>
+              <p class="eyebrow" id="conversationEyebrow">研究协调 · 会话</p>
+              <h1 id="sessionTitle">基线实验设计</h1>
+              <p class="chat-meta" id="sessionMeta">今天 15:42 更新 · 曲线拟合研究</p>
+            </div>
+            <div class="chat-tools">
+              <span class="status-text" id="conversationStatus">正常</span>
+              <button class="quiet-button" type="button" data-action="archive">归档</button>
+            </div>
+          </header>
+          <div class="transcript" id="transcript" aria-live="polite">
+            <div class="transcript-inner">
+              <div class="state-banner" id="stateBanner"></div>
+              <div class="message-thread" id="messageThread"></div>
+            </div>
+          </div>
+          <section class="composer" aria-label="撰写消息">
+            <div class="composer-inner">
+              <div class="composer-shell">
+                <div class="composer-actions">
+                  <div class="composer-actions-left">
+                    <button class="quiet-button" type="button" data-action="open-source"><span data-icon="evidence"></span>来源</button>
+                    <button class="quiet-button" type="button" data-action="open-attachment"><span data-icon="plus"></span>附件</button>
+                  </div>
+                  <span class="model-state">模型待配置</span>
+                </div>
+                <label class="sr-only" for="messageInput">输入消息</label>
+                <textarea id="messageInput" rows="2" placeholder="继续梳理研究问题…" aria-describedby="composerHint"></textarea>
+                <div class="composer-bottom">
+                  <p class="composer-hint" id="composerHint">Ctrl+Enter 发送 · 仅模拟，不调用模型</p>
+                  <div class="composer-bottom-right">
+                    <div class="mode-switch" role="group" aria-label="消息模式">
+                      <button type="button" data-mode="normal" aria-pressed="true">普通</button>
+                      <button type="button" data-mode="guided" aria-pressed="false">引导</button>
+                      <button type="button" data-mode="followup" aria-pressed="false">后续</button>
+                    </div>
+                    <button class="primary-button send-button" id="sendButton" type="button" data-action="send"><span data-icon="arrow"></span>发送</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <aside class="context-panel" id="contextPanel" aria-label="会话上下文">
+          <div class="context-content" id="contextContent">
+            <div data-overview>
+              <div class="context-heading"><h2>当前上下文</h2><span class="preview-note">演示</span></div>
+              <section class="context-section">
+                <p class="context-kicker">项目</p>
+                <h3 id="contextProjectName">曲线拟合研究</h3>
+                <p>目标：比较基线方法在固定数据划分下的拟合误差。</p>
+                <button class="link-button" type="button" data-action="open-projects">切换项目</button>
+              </section>
+              <section class="context-section">
+                <p class="context-kicker">当前会话</p>
+                <h3 id="contextSessionName">研究协调</h3>
+                <p>聚焦实验条件、对照方案与误差指标的可复现描述。</p>
+              </section>
+              <section class="context-section">
+                <p class="context-kicker">研究计划</p>
+                <h3>基线比较</h3>
+                <ol><li>固定训练、验证与测试划分。</li><li>对比简单基线和候选方法。</li><li>用 RMSE 汇报测试误差。</li></ol>
+                <p style="margin-top:12px"><button class="link-button" type="button" data-action="view-plan">查看实验草案</button></p>
+              </section>
+              <div class="approval-note">正式运行实验需要单独批准。此预览不会启动任务。</div>
+              <details>
+                <summary><span>2 份演示资料</span><span>未连接真实来源</span></summary>
+                <ul><li>基线方法说明（合成摘要）</li><li>评价指标备忘（合成摘要）</li></ul>
+              </details>
+            </div>
+            <div class="plan-detail" data-plan-detail hidden>
+              <div class="context-heading detail-title-row"><h2>实验草案</h2><button class="quiet-button" type="button" data-action="back-context">返回</button></div>
+              <section class="context-section">
+                <p class="context-kicker">草案 · 尚未运行</p>
+                <h3>分层对照与 RMSE 评价</h3>
+                <p>使用相同的数据划分和预处理，先比较简单基线与候选方法，再汇总测试集 RMSE。</p>
+                <ul><li>固定随机种子与划分清单。</li><li>记录每种方法的配置和输入版本。</li><li>只报告完成运行后得到的指标。</li></ul>
+              </section>
+              <div class="approval-note">当前内容只是方案草稿，不包含真实指标或运行结果。正式运行需要单独批准。</div>
+            </div>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+
+  <dialog class="drawer" id="navDialog" aria-labelledby="navDialogTitle">
+    <div class="dialog-panel sidebar-dialog-content">
+      <div class="dialog-heading"><h2 id="navDialogTitle">主导航</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭导航"><span data-icon="close"></span></button></div>
+      <div class="dialog-body" id="mobileNavContent" style="flex:1; padding:0; min-height:0"></div>
+    </div>
+  </dialog>
+  <dialog class="drawer" id="contextDialog" aria-labelledby="contextDialogTitle">
+    <div class="dialog-panel">
+      <div class="dialog-heading"><h2 id="contextDialogTitle">会话上下文</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭上下文"><span data-icon="close"></span></button></div>
+      <div class="dialog-body" id="contextDialogBody"></div>
+    </div>
+  </dialog>
+  <dialog id="searchDialog" aria-labelledby="searchDialogTitle">
+    <div class="dialog-panel">
+      <div class="dialog-heading"><h2 id="searchDialogTitle">搜索会话</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭搜索"><span data-icon="close"></span></button></div>
+      <div class="dialog-body"><label class="sr-only" for="searchInput">查找本地演示会话</label><input class="search-field" id="searchInput" type="search" placeholder="搜索会话名称…" autocomplete="off"><div class="search-results" id="searchResults" aria-live="polite"></div><div class="dialog-footnote">仅搜索本页面中的合成会话。按 Escape 关闭。</div></div>
+    </div>
+  </dialog>
+  <dialog id="projectDialog" aria-labelledby="projectDialogTitle">
+    <div class="dialog-panel">
+      <div class="dialog-heading"><h2 id="projectDialogTitle">切换项目</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭项目选择"><span data-icon="close"></span></button></div>
+      <div class="dialog-body"><p>选择一个用于展示的合成项目。此选择只在当前页面生效。</p><div class="choice-list" id="projectChoices"></div><div class="dialog-footnote">项目与会话名称均为演示数据，不会保存项目设置。</div></div>
+    </div>
+  </dialog>
+  <dialog id="sourceDialog" aria-labelledby="sourceDialogTitle">
+    <div class="dialog-panel">
+      <div class="dialog-heading"><h2 id="sourceDialogTitle">项目级文献来源（预览）</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭来源设置"><span data-icon="close"></span></button></div>
+      <div class="dialog-body"><p>下面仅展示来源选择的界面结构。勾选不会保存项目设置，也不会访问外部资料。</p><div class="choice-list"><label class="choice-button"><span><input type="checkbox" checked> 基线方法说明 <span class="choice-description">合成资料 · 本地预览</span></span></label><label class="choice-button"><span><input type="checkbox" checked> 评价指标备忘 <span class="choice-description">合成资料 · 本地预览</span></span></label></div><div class="dialog-footnote">正式实现可使用 shadcn Field、Checkbox、Dialog；当前是原生 HTML 控件。</div></div>
+    </div>
+  </dialog>
+  <dialog id="attachmentDialog" aria-labelledby="attachmentDialogTitle">
+    <div class="dialog-panel">
+      <div class="dialog-heading"><h2 id="attachmentDialogTitle">附件（预览）</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭附件说明"><span data-icon="close"></span></button></div>
+      <div class="dialog-body"><p>附件上传尚未接入。此按钮只展示交互位置，不会读取或上传文件。</p><div class="dialog-footnote">正式实现可接入 Button、InputGroup 与 Attachment；当前无文件选择和上传行为。</div></div>
+    </div>
+  </dialog>
+  <dialog id="infoDialog" aria-labelledby="infoDialogTitle">
+    <div class="dialog-panel">
+      <div class="dialog-heading"><h2 id="infoDialogTitle">设计范围</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭说明"><span data-icon="close"></span></button></div>
+      <div class="dialog-body"><p id="infoDialogCopy">该入口用于展示信息。</p><div class="dialog-footnote">这里只覆盖会话主流程，其余入口尚未接入功能。</div></div>
+    </div>
+  </dialog>
+  <dialog id="componentsDialog" aria-labelledby="componentsDialogTitle">
+    <div class="dialog-panel">
+      <div class="dialog-heading"><h2 id="componentsDialogTitle">建议的 shadcn/ui 组件映射</h2><button class="icon-button dialog-close" type="button" data-close-dialog aria-label="关闭组件映射"><span data-icon="close"></span></button></div>
+      <div class="dialog-body">
+        <p>这是组件选择建议。当前文件是无依赖的原生 HTML 交互稿，项目尚未在此预览中安装或接入 shadcn/ui。</p>
+        <dl class="component-map"><div><dt>导航与路径</dt><dd>Sidebar、Breadcrumb、Button</dd></div><div><dt>消息列表</dt><dd>MessageScroller、Message、Bubble、Marker</dd></div><div><dt>输入区</dt><dd>InputGroup、ToggleGroup、Button</dd></div><div><dt>侧栏与弹层</dt><dd>Sheet、Dialog、Command</dd></div><div><dt>状态反馈</dt><dd>Alert、Empty、Skeleton、Badge</dd></div></dl>
+        <div class="dialog-footnote">页面结构和状态有意保持轻量；正式实现时再按已安装组件和项目基座核对 API。</div>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // Paths are reused from apps/web/src/ui.tsx; the preview does not load external icon assets.
+      const iconPaths = {
+        plus: "M12 5v14M5 12h14",
+        search: "M15 15l6 6M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14",
+        chat: "M4 4h16v12H9l-5 4z",
+        experiment: "M9 3h6m-5 0v6L4 20h16L14 9V3M7 15h10",
+        folder: "M3 6h7l2 2h9v12H3z",
+        evidence: "M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7",
+        report: "M5 3h14v18H5zM9 8h6M9 12h6M9 16h4",
+        settings: "M4 7h16M4 17h16M8 4v6M16 14v6",
+        arrow: "M5 12h14M13 6l6 6-6 6",
+        close: "m6 6 12 12M6 18 18 6",
+        branch: "M6 4v16M6 10h6c4 0 6-2 6-6M3 4h6M3 20h6M15 4h6"
+      };
+      document.querySelectorAll("[data-icon]").forEach(function (slot) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("width", "16");
+        svg.setAttribute("height", "16");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        svg.setAttribute("stroke-width", "1.7");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("stroke-linejoin", "round");
+        svg.setAttribute("aria-hidden", "true");
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", iconPaths[slot.dataset.icon] || iconPaths.chat);
+        svg.append(path);
+        slot.replaceWith(svg);
+      });
+
+      function firstMessages() {
+        return [
+          { role: "user", time: "15:42", text: "先帮我梳理基线实验的对照条件和评价指标。" },
+          { role: "assistant", time: "15:42", mode: "引导式整理", blocks: [
+            { kind: "p", text: "可以先把实验条件固定下来，再比较方法本身的差异。下面这份草案只描述计划，不代表已经运行。" },
+            { kind: "list", items: ["使用同一份训练、验证和测试划分，并记录随机种子。", "设置简单基线作为参照，再与候选方法比较。", "在独立测试集上报告 RMSE，并保留每次运行的配置。"] },
+            { kind: "p", text: "这样可以把数据划分、方法配置和评价口径分开记录，方便复现与解释结果。" },
+            { kind: "plan", title: "分层对照与 RMSE 评价", description: "固定划分 · 简单基线对照 · 测试集 RMSE", facts: ["草案", "尚未运行", "无真实指标"] }
+          ] }
+        ];
+      }
+      function smallMessages(topic) {
+        return [
+          { role: "user", time: "14:08", text: topic === "peak" ? "峰值假设还需要哪些校准检查？" : "请列一下分割评价的对照条件。" },
+          { role: "assistant", time: "14:09", mode: "预览回复", blocks: [
+            { kind: "p", text: "这是合成会话示例。正式分析前，应先固定数据范围、划分方式和评价口径。" },
+            { kind: "list", items: ["记录输入数据版本。", "让对照方法使用相同的数据与预处理。", "运行前检查指标定义和批准状态。"] }
+          ] }
+        ];
+      }
+      const projects = {
+        curve: { name: "曲线拟合研究", sessions: [
+          { id: "baseline", title: "基线实验设计", type: "normal", messages: firstMessages() },
+          { id: "peak", title: "峰值假设校准", type: "normal", messages: smallMessages("peak") },
+          { id: "blank", title: "空白笔记", type: "empty", messages: [] },
+          { id: "archive", title: "旧版采样讨论", type: "archived", messages: smallMessages("peak") }
+        ] },
+        imaging: { name: "细胞成像探索", sessions: [
+          { id: "segmentation", title: "分割评价指标", type: "normal", messages: smallMessages("segmentation") },
+          { id: "imaging-blank", title: "观察记录", type: "empty", messages: [] }
+        ] }
+      };
+      let projectId = "curve";
+      let currentSessionId = "baseline";
+      let previewState = "normal";
+      let activeMode = "normal";
+      let isComposing = false;
+      let planDetailVisible = false;
+      const modeNames = { normal: "普通", guided: "引导", followup: "后续" };
+      const stateNames = { normal: "正常", empty: "空会话", loading: "加载中", error: "读取失败", archived: "已归档" };
+      const stateSelect = document.getElementById("stateSelect");
+      const messageInput = document.getElementById("messageInput");
+      const sendButton = document.getElementById("sendButton");
+      const returnFocus = new WeakMap();
+      const dialogStack = [];
+
+      function currentProject() { return projects[projectId]; }
+      function currentSessions() { return currentProject().sessions; }
+      function currentSession() { return currentSessions().find(function (item) { return item.id === currentSessionId; }) || currentSessions()[0]; }
+      function makeIcon(name) {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("width", "16");
+        svg.setAttribute("height", "16");
+        svg.setAttribute("fill", "none");
+        svg.setAttribute("stroke", "currentColor");
+        svg.setAttribute("stroke-width", "1.7");
+        svg.setAttribute("stroke-linecap", "round");
+        svg.setAttribute("stroke-linejoin", "round");
+        svg.setAttribute("aria-hidden", "true");
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", iconPaths[name] || iconPaths.chat);
+        svg.append(path);
+        return svg;
+      }
+      function openDialog(dialog, trigger) {
+        if (!dialog) return;
+        returnFocus.set(dialog, trigger || document.activeElement);
+        if (!dialog.open) { dialog.showModal(); dialogStack.push(dialog); }
+      }
+      function closeDialog(dialog) {
+        if (dialog && dialog.open) dialog.close();
+      }
+      document.querySelectorAll("dialog").forEach(function (dialog) {
+        dialog.addEventListener("close", function () {
+          const index = dialogStack.indexOf(dialog);
+          if (index !== -1) dialogStack.splice(index, 1);
+          const target = returnFocus.get(dialog);
+          if (target && target.isConnected && typeof target.focus === "function") target.focus();
+          if (dialog.id === "contextDialog") {
+            const wide = window.matchMedia("(min-width: 1181px)").matches;
+            const expanded = wide && !document.querySelector(".main-layout").classList.contains("context-collapsed");
+            document.getElementById("contextToggle").setAttribute("aria-expanded", String(expanded));
+            document.getElementById("contextToggle").setAttribute("aria-label", expanded ? "收起会话上下文" : "展开会话上下文");
+          }
+        });
+        dialog.addEventListener("click", function (event) {
+          if (event.target === dialog) closeDialog(dialog);
+        });
+      });
+
+      function renderSessions() {
+        document.querySelectorAll("[data-session-list]").forEach(function (list) {
+          list.replaceChildren();
+          currentSessions().forEach(function (session) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "session-button";
+            button.dataset.action = "select-session";
+            button.dataset.sessionId = session.id;
+            button.setAttribute("aria-current", String(session.id === currentSessionId));
+            const name = document.createElement("span");
+            name.className = "session-name";
+            name.textContent = session.title;
+            const state = document.createElement("span");
+            state.className = "session-state";
+            state.textContent = session.type === "archived" ? "已归档" : session.type === "empty" ? "空" : "";
+            button.append(name, state);
+            list.append(button);
+          });
+        });
+      }
+      function renderContextNames() {
+        document.getElementById("sidebarProjectName").textContent = currentProject().name;
+        document.getElementById("projectCrumb").textContent = currentProject().name;
+        document.getElementById("contextProjectName").textContent = currentProject().name;
+        document.getElementById("contextSessionName").textContent = projectId === "curve" ? "研究协调" : "图像评估协调";
+        document.getElementById("conversationEyebrow").textContent = (projectId === "curve" ? "研究协调" : "图像评估协调") + " · 会话";
+      }
+      function renderMessage(item) {
+        const article = document.createElement("article");
+        article.className = "message";
+        const heading = document.createElement("div");
+        heading.className = "message-heading";
+        const speaker = document.createElement("strong");
+        speaker.textContent = item.role === "user" ? "你" : "Pi 助手";
+        const time = document.createElement("time");
+        time.textContent = item.time || "刚刚";
+        heading.append(speaker, time);
+        if (item.role === "assistant") {
+          const tag = document.createElement("span");
+          tag.className = "demo-tag";
+          tag.textContent = item.mode || "预览回复";
+          heading.append(tag);
+        }
+        article.append(heading);
+        if (item.role === "user") {
+          const copy = document.createElement("div");
+          copy.className = "user-copy";
+          copy.textContent = item.text;
+          article.append(copy);
+          return article;
+        }
+        const body = document.createElement("div");
+        body.className = "message-body";
+        (item.blocks || []).forEach(function (block) {
+          if (block.kind === "p") {
+            const paragraph = document.createElement("p");
+            paragraph.textContent = block.text;
+            body.append(paragraph);
+          } else if (block.kind === "list") {
+            const list = document.createElement("ul");
+            block.items.forEach(function (text) {
+              const entry = document.createElement("li");
+              entry.textContent = text;
+              list.append(entry);
+            });
+            body.append(list);
+          } else if (block.kind === "plan") {
+            const card = document.createElement("section");
+            card.className = "plan-card";
+            const top = document.createElement("div");
+            top.className = "plan-card-top";
+            const label = document.createElement("span");
+            label.className = "plan-state";
+            label.textContent = "实验草案 · 尚未运行";
+            top.append(label);
+            const title = document.createElement("h3");
+            title.textContent = block.title;
+            const description = document.createElement("p");
+            description.textContent = block.description;
+            const facts = document.createElement("div");
+            facts.className = "plan-facts";
+            block.facts.forEach(function (text) {
+              const fact = document.createElement("span");
+              fact.className = "fact";
+              fact.textContent = text;
+              facts.append(fact);
+            });
+            const detail = document.createElement("button");
+            detail.type = "button";
+            detail.className = "link-button";
+            detail.dataset.action = "view-plan";
+            detail.textContent = "查看实验草案 →";
+            card.append(top, title, description, facts, detail);
+            body.append(card);
+          }
+        });
+        article.append(body);
+        return article;
+      }
+      function renderSkeleton() {
+        const stack = document.createElement("div");
+        stack.className = "skeleton-stack";
+        stack.setAttribute("aria-label", "正在加载会话内容");
+        stack.setAttribute("role", "status");
+        ["line", "line", "line", "block"].forEach(function (kind) {
+          const row = document.createElement("div");
+          row.className = kind === "line" ? "skeleton-line" : "skeleton-block";
+          row.setAttribute("aria-hidden", "true");
+          stack.append(row);
+        });
+        document.getElementById("messageThread").replaceChildren(stack);
+      }
+      function renderBanner(title, copy, kind, actionLabel) {
+        const banner = document.getElementById("stateBanner");
+        const alert = document.createElement("div");
+        alert.className = "alert " + (kind === "error" ? "alert-error" : "alert-info");
+        const text = document.createElement("div");
+        text.className = "alert-copy";
+        const strong = document.createElement("strong");
+        strong.textContent = title;
+        const paragraph = document.createElement("p");
+        paragraph.textContent = copy;
+        text.append(strong, paragraph);
+        alert.append(text);
+        if (actionLabel) {
+          const action = document.createElement("button");
+          action.type = "button";
+          action.className = "secondary-button";
+          action.dataset.action = "retry";
+          action.textContent = actionLabel;
+          alert.append(action);
+        }
+        banner.replaceChildren(alert);
+      }
+      function renderConversation() {
+        const session = currentSession();
+        if (session.type === "archived") previewState = "archived";
+        const title = document.getElementById("sessionTitle");
+        title.textContent = session.title;
+        document.getElementById("sessionMeta").textContent = session.type === "archived" ? "已归档 · 内容保留 · 仅演示" : "今天 15:42 更新 · " + currentProject().name;
+        document.getElementById("conversationStatus").textContent = stateNames[previewState];
+        stateSelect.value = previewState;
+        document.getElementById("stateBanner").replaceChildren();
+        const thread = document.getElementById("messageThread");
+        thread.replaceChildren();
+        if (previewState === "loading") {
+          renderSkeleton();
+        } else if (previewState === "empty") {
+          const empty = document.createElement("div");
+          empty.className = "empty-state";
+          const symbol = document.createElement("div");
+          symbol.className = "empty-symbol";
+          symbol.append(makeIcon("experiment"));
+          const heading = document.createElement("h2");
+          heading.textContent = "从一个问题开始";
+          const copy = document.createElement("p");
+          copy.textContent = "这个会话还没有消息。写下研究问题，预览一条仅在本页生成的模拟回复。";
+          empty.append(symbol, heading, copy);
+          thread.append(empty);
+        } else {
+          if (previewState === "error") renderBanner("读取失败", "未能读取演示会话，已有内容保留。可重试本地预览。", "error", "重试");
+          if (previewState === "archived") renderBanner("此会话已归档", "历史内容仍可阅读；发送、来源和附件操作已停用。", "info");
+          session.messages.forEach(function (item) { thread.append(renderMessage(item)); });
+        }
+        const locked = previewState === "loading" || previewState === "archived" || session.type === "archived";
+        stateSelect.disabled = session.type === "archived";
+        messageInput.disabled = locked;
+        messageInput.placeholder = previewState === "archived" ? "已归档会话为只读" : "继续梳理研究问题…";
+        document.querySelectorAll(".composer [data-action='open-source'], .composer [data-action='open-attachment'], .mode-switch button").forEach(function (button) { button.disabled = locked; });
+        document.querySelector("[data-action='archive']").disabled = session.type === "archived" || previewState === "archived";
+        updateSendButton();
+        renderSessions();
+        syncPlanDetail();
+      }
+      function syncPlanDetail() {
+        document.querySelectorAll("[data-overview]").forEach(function (node) { node.hidden = planDetailVisible; });
+        document.querySelectorAll("[data-plan-detail]").forEach(function (node) { node.hidden = !planDetailVisible; });
+      }
+      function showPlanDetail() {
+        planDetailVisible = true;
+        syncPlanDetail();
+        if (window.matchMedia("(max-width: 1180px)").matches) openContextDialog(document.activeElement);
+        else if (document.querySelector(".main-layout").classList.contains("context-collapsed")) {
+          document.querySelector(".main-layout").classList.remove("context-collapsed");
+          document.getElementById("contextToggle").setAttribute("aria-expanded", "true");
+          document.getElementById("contextToggle").setAttribute("aria-label", "收起会话上下文");
+        }
+      }
+      function openContextDialog(trigger) {
+        const content = document.getElementById("contextContent").cloneNode(true);
+        content.removeAttribute("id");
+        content.querySelectorAll("[id]").forEach(function (node) { node.removeAttribute("id"); });
+        document.getElementById("contextDialogBody").replaceChildren(content);
+        syncPlanDetail();
+        openDialog(document.getElementById("contextDialog"), trigger);
+        document.getElementById("contextToggle").setAttribute("aria-expanded", "true");
+      }
+      function openNavDialog(trigger) {
+        const content = document.getElementById("sidebarContent").cloneNode(true);
+        content.removeAttribute("id");
+        content.querySelectorAll("[id]").forEach(function (node) { node.removeAttribute("id"); });
+        document.getElementById("mobileNavContent").replaceChildren(content);
+        openDialog(document.getElementById("navDialog"), trigger);
+      }
+      function toggleContext(trigger) {
+        if (window.matchMedia("(max-width: 1180px)").matches) {
+          openContextDialog(trigger);
+          return;
+        }
+        const layout = document.querySelector(".main-layout");
+        const collapsed = layout.classList.toggle("context-collapsed");
+        trigger.setAttribute("aria-expanded", String(!collapsed));
+        trigger.setAttribute("aria-label", collapsed ? "展开会话上下文" : "收起会话上下文");
+      }
+      function closeNavAndFocusComposer() {
+        closeDialog(document.getElementById("navDialog"));
+        requestAnimationFrame(function () { messageInput.focus(); });
+      }
+      function updateSendButton() {
+        const locked = messageInput.disabled || currentSession().type === "archived" || previewState === "archived";
+        sendButton.disabled = locked || !messageInput.value.trim();
+      }
+      function clearComposerDraft() {
+        messageInput.value = "";
+        updateSendButton();
+      }
+      function selectSession(id) {
+        const session = currentSessions().find(function (item) { return item.id === id; });
+        if (!session) return;
+        currentSessionId = session.id;
+        previewState = session.type;
+        planDetailVisible = false;
+        clearComposerDraft();
+        renderConversation();
+      }
+      function createSession() {
+        const session = { id: "new-" + String(Date.now()), title: "未命名会话", type: "empty", messages: [] };
+        currentSessions().unshift(session);
+        currentSessionId = session.id;
+        previewState = "empty";
+        planDetailVisible = false;
+        clearComposerDraft();
+        renderConversation();
+      }
+      function renderSearchResults(query) {
+        const results = document.getElementById("searchResults");
+        results.replaceChildren();
+        const normalized = query.trim().toLocaleLowerCase("zh-CN");
+        const matches = Object.keys(projects).flatMap(function (id) {
+          return projects[id].sessions.map(function (session) { return { projectId: id, project: projects[id].name, session: session }; });
+        }).filter(function (item) { return !normalized || item.session.title.toLocaleLowerCase("zh-CN").includes(normalized); });
+        if (!matches.length) {
+          const empty = document.createElement("div");
+          empty.className = "no-results";
+          empty.setAttribute("role", "status");
+          empty.textContent = "没有找到匹配的演示会话";
+          results.append(empty);
+          return;
+        }
+        matches.forEach(function (item) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "choice-button";
+          button.dataset.action = "search-select";
+          button.dataset.projectId = item.projectId;
+          button.dataset.sessionId = item.session.id;
+          const label = document.createElement("span");
+          label.textContent = item.session.title;
+          const project = document.createElement("span");
+          project.className = "choice-description";
+          project.textContent = item.project;
+          button.append(label, project);
+          results.append(button);
+        });
+      }
+      function openSearch(trigger) {
+        const dialog = document.getElementById("searchDialog");
+        if (dialog.open) { document.getElementById("searchInput").focus(); return; }
+        renderSearchResults("");
+        openDialog(dialog, trigger);
+        requestAnimationFrame(function () { document.getElementById("searchInput").focus(); });
+      }
+      function renderProjectChoices() {
+        const list = document.getElementById("projectChoices");
+        list.replaceChildren();
+        Object.keys(projects).forEach(function (id) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "choice-button";
+          button.dataset.action = "select-project";
+          button.dataset.projectId = id;
+          const name = document.createElement("span");
+          name.textContent = projects[id].name;
+          const note = document.createElement("span");
+          note.className = "choice-description";
+          note.textContent = projects[id].sessions.length + " 个演示会话" + (id === projectId ? " · 当前项目" : "");
+          button.append(name, note);
+          list.append(button);
+        });
+      }
+      function sendMessage() {
+        const session = currentSession();
+        if (isComposing || messageInput.disabled || session.type === "archived" || previewState === "archived" || !messageInput.value.trim()) return;
+        const text = messageInput.value.trim();
+        session.type = "normal";
+        previewState = "normal";
+        session.messages.push({ role: "user", time: "刚刚", text: text });
+        const modeText = modeNames[activeMode];
+        const answer = activeMode === "guided"
+          ? "这是一条引导模式的模拟回复。先明确研究目标，再补充对照条件，最后确认评价指标是否适合当前数据。"
+          : activeMode === "followup"
+            ? "这是一条后续模式的模拟回复。沿用当前会话的演示上下文，建议把数据划分、方法配置和指标定义逐项核对。"
+            : "这是一条普通模式的模拟回复。可以把问题拆成数据条件、对照方案与评价口径，再逐项确认。";
+        session.messages.push({ role: "assistant", time: "刚刚", mode: modeText + " · 演示回复", blocks: [
+          { kind: "p", text: answer },
+          { kind: "p", text: "此回复由本地预览脚本生成，没有网络请求，也没有调用模型。" }
+        ] });
+        messageInput.value = "";
+        renderConversation();
+        messageInput.focus();
+        document.getElementById("transcript").scrollTop = document.getElementById("transcript").scrollHeight;
+      }
+      function showInfo(title) {
+        document.getElementById("infoDialogTitle").textContent = title || "设计范围";
+        document.getElementById("infoDialogCopy").textContent = "“" + (title || "此入口") + "”在主流程预览中仅展示导航位置，没有接入真实功能或后端。";
+        openDialog(document.getElementById("infoDialog"), document.activeElement);
+      }
+
+      document.querySelectorAll("[data-theme-choice]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          document.body.dataset.theme = button.dataset.themeChoice;
+          document.querySelectorAll("[data-theme-choice]").forEach(function (item) { item.setAttribute("aria-pressed", String(item === button)); });
+        });
+      });
+      document.querySelectorAll("[data-mode]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          activeMode = button.dataset.mode;
+          document.querySelectorAll("[data-mode]").forEach(function (item) { item.setAttribute("aria-pressed", String(item === button)); });
+        });
+      });
+      stateSelect.addEventListener("change", function () {
+        previewState = currentSession().type === "archived" ? "archived" : stateSelect.value;
+        renderConversation();
+      });
+      messageInput.addEventListener("input", updateSendButton);
+      messageInput.addEventListener("compositionstart", function () { isComposing = true; });
+      messageInput.addEventListener("compositionend", function () { isComposing = false; });
+      messageInput.addEventListener("keydown", function (event) {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && !event.isComposing && !isComposing && event.keyCode !== 229) {
+          event.preventDefault();
+          sendMessage();
+        }
+      });
+      document.getElementById("searchInput").addEventListener("input", function (event) { renderSearchResults(event.currentTarget.value); });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          const top = dialogStack.filter(function (dialog) { return dialog.open; }).pop();
+          if (top) { event.preventDefault(); closeDialog(top); }
+          return;
+        }
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+          event.preventDefault();
+          openSearch(document.activeElement);
+        }
+      });
+      document.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-action], [data-close-dialog]");
+        if (!button) return;
+        if (button.hasAttribute("data-close-dialog")) { closeDialog(button.closest("dialog")); return; }
+        const action = button.dataset.action;
+        if (action === "new-session") { createSession(); closeNavAndFocusComposer(); }
+        else if (action === "select-session") { selectSession(button.dataset.sessionId); closeNavAndFocusComposer(); }
+        else if (action === "open-search") openSearch(button);
+        else if (action === "open-nav") openNavDialog(button);
+        else if (action === "open-context") toggleContext(button);
+        else if (action === "open-projects") { renderProjectChoices(); openDialog(document.getElementById("projectDialog"), button); }
+        else if (action === "select-project") {
+          projectId = button.dataset.projectId;
+          currentSessionId = currentSessions()[0].id;
+          previewState = currentSession().type;
+          planDetailVisible = false;
+          clearComposerDraft();
+          closeDialog(document.getElementById("projectDialog"));
+          renderContextNames();
+          renderConversation();
+        } else if (action === "search-select") {
+          projectId = button.dataset.projectId;
+          currentSessionId = button.dataset.sessionId;
+          previewState = currentSession().type;
+          planDetailVisible = false;
+          clearComposerDraft();
+          closeDialog(document.getElementById("searchDialog"));
+          renderContextNames();
+          renderConversation();
+        } else if (action === "open-source") openDialog(document.getElementById("sourceDialog"), button);
+        else if (action === "open-attachment") openDialog(document.getElementById("attachmentDialog"), button);
+        else if (action === "open-components") openDialog(document.getElementById("componentsDialog"), button);
+        else if (action === "open-info") showInfo(button.dataset.title);
+        else if (action === "view-plan") showPlanDetail();
+        else if (action === "back-context") { planDetailVisible = false; syncPlanDetail(); }
+        else if (action === "archive") {
+          currentSession().type = "archived";
+          previewState = "archived";
+          renderConversation();
+        } else if (action === "retry") {
+          previewState = "loading";
+          renderConversation();
+          window.setTimeout(function () { previewState = currentSession().type === "archived" ? "archived" : "normal"; renderConversation(); }, 650);
+        } else if (action === "send") sendMessage();
+      });
+
+      const contextBreakpoint = window.matchMedia("(min-width: 1181px)");
+      function syncContextToggle() {
+        const expanded = contextBreakpoint.matches
+          ? !document.querySelector(".main-layout").classList.contains("context-collapsed")
+          : document.getElementById("contextDialog").open;
+        const toggle = document.getElementById("contextToggle");
+        toggle.setAttribute("aria-expanded", String(expanded));
+        toggle.setAttribute("aria-label", expanded ? "收起会话上下文" : "展开会话上下文");
+      }
+      contextBreakpoint.addEventListener("change", syncContextToggle);
+      syncContextToggle();
+      renderContextNames();
+      renderConversation();
+    }());
+  </script>
+</body>
+</html>

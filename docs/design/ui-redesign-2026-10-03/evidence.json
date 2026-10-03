@@ -1,0 +1,88 @@
+{
+  "task": "UI-DESIGN-01",
+  "date": "2026-10-03",
+  "scope": "standalone design preview: choose/create session, read, simulated message",
+  "baselineCommit": "a3e11ba652c376133c42e12b23459481a140899b",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "artifacts": {
+    "preview.html": "4D87E3CCB7B5B1BE720C9EE338CB4BF4668308A18BE3D4D6A5EB6A9C0BD3A74F",
+    "README.md": "69C297D021345713FCCC20F4F9A0DDD369E5AE79E07F1A70941AB1F694790A12",
+    "screenshot": "preview-desktop.png"
+  },
+  "checks": {
+    "inlineScriptSyntax": "passed using Node Function parser",
+    "newSessionSend": "passed; user message and explicit local simulated reply visible",
+    "messageModes": "passed: normal, guided, follow-up",
+    "ctrlEnter": "passed in browser",
+    "emptySend": "disabled",
+    "readFailure": "passed: existing content retained; retry shows loading then usable content",
+    "archived": "passed: history visible, input disabled, state selector disabled",
+    "desktopContext": "passed: collapse and draft-detail navigation reopens context",
+    "mobileNavigation": "passed: create/select closes dialog and focuses composer",
+    "mobileContext": "passed: opens and closes as dialog",
+    "search": "passed: Ctrl+K opens, no-results state visible, Escape closes and restores input focus",
+    "nestedDialogs": "passed after repair: source -> Ctrl+K -> Escape closes search and restores source close control; second Escape closes source and restores source trigger",
+    "appearance": "passed: light, dark and wine switch; message body computes to 15px",
+    "responsiveWidths": [320, 390, 768, 1024, 1440],
+    "responsiveResult": "document/body width equals viewport; no visible button outside viewport; send control remains visible",
+    "consoleWarningsOrErrors": 0,
+    "realImeComposition": "not run; guards for composition state, event.isComposing and keyCode 229 inspected",
+    "screenReaderAndAutomatedA11y": "not run; native dialogs, accessible names and keyboard paths inspected",
+    "productionRegressionAndBuild": "not run: no production source, dependencies or build pipeline changes; this batch is a standalone preview",
+    "realPiDockerAndExternalSources": "not run; preview invokes none"
+  },
+  "reproductionsAndRepairs": [
+    "Before repair: new empty session cleared input after send but remained empty. After repair: converts session/state to normal and displays messages; browser passed.",
+    "Before repair: 390px send/context labels wrapped. After repair: send remains one line and header uses labeled icon controls; browser passed.",
+    "Before repair: no desktop collapse and no composer focus ring. Added collapse control and focus-within ring; checked in browser.",
+    "Escape search close did not restore focus reliably in initial browser check. Explicit Escape handling and repeated-search guard added; affected browser path passed.",
+    "Independent review found DOM order was used instead of actual dialog open order. Source -> Ctrl+K -> Escape reproduced closing the wrong dialog. Added open-order stack; browser and independent actual-callback memory checks passed. aria-controls target ID repaired."
+  ],
+  "isolation": {
+    "productionAppModified": false,
+    "realDataOrAuthFilesRead": false,
+    "statePersistence": "none; reload resets synthetic data",
+    "previewNetworkAndStorageCalls": "no fetch, XHR, WebSocket, EventSource or local/session storage in source",
+    "server": "dedicated Python static server bound to 127.0.0.1, serving only this design directory",
+    "preservedInFlightFiles": [
+      "apps/web/public/styles.css",
+      "dist/web/styles.css",
+      "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
+      "docs/reference-baseline/capability-matrix.json",
+      "docs/specs/project-design.txt"
+    ]
+  },
+  "research": {
+    "shadcnCli": "4.21.1",
+    "projectConfig": "Manual React/esbuild; no components.json, Tailwind or installed shadcn components",
+    "registry": "@shadcn inspected; no components installed",
+    "blocksVerifiedByCliView": ["sidebar-07", "sidebar-08"],
+    "docsVerified": ["sidebar", "command", "resizable", "sheet", "input-group", "empty", "theming"],
+    "chatComponents": "official web docs verified; CLI docs did not resolve these links; installation unverified",
+    "windowsCliIssue": "one search printed results then exited with libuv assertion; no project mutation",
+    "currentAppVisualAccess": "login page only; baseline chat image is the checked-in 2026-10-02 screenshot"
+  },
+  "agents": [
+    {"role": "read-only inventory", "requestedModel": "gpt-6.1-sol", "requestedReasoningEffort": "high", "runtime": "requested and accepted; model/effort not echoed"},
+    {"role": "preview implementation", "requestedModel": "gpt-6-luna", "requestedReasoningEffort": "max", "runtime": "requested and accepted; model/effort not echoed"},
+    {"role": "independent review", "requestedModel": "gpt-6.1-sol", "requestedReasoningEffort": "high", "runtime": "requested and accepted; model/effort not echoed"}
+  ],
+  "independentReview": {
+    "status": "passed after targeted blocker repair; no remaining blockers",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "frozenBaseline": "a3e11ba652c376133c42e12b23459481a140899b",
+    "finalPreviewHash": "4D87E3CCB7B5B1BE720C9EE338CB4BF4668308A18BE3D4D6A5EB6A9C0BD3A74F",
+    "finalPatch": ".validation/ui-redesign-2026-10-03/repaired-preview.patch",
+    "finalPatchHash": "27684DF695EED554BEA1DB0491767857F0F2D02001593B947FA74A15EC04E291",
+    "checks": "snapshot hashes, JS syntax, JSON parse, duplicate IDs, absence of network/storage calls, screenshot observation; actual keydown/open/close callbacks independently exercised in memory",
+    "targetedRecheck": "dialog order, focus restoration and contextPanel ID only",
+    "nonblockingBacklog": "Reopening search retains the old input value while initially displaying all results; clear input or reuse its query during production implementation."
+  },
+  "delivery": {
+    "artifactStatus": "verified standalone design preview",
+    "repository": "https://github.com/hailuohl/pi-research",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "commitReference": "the commit containing this directory; root records the SHA and verifies remote reachability in the final delivery message"
+  }
+}
