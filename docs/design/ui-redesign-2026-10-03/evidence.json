@@ -1,13 +1,14 @@
 {
-  "task": "UI-CHAT-03",
+  "task": "UI-POLISH-04",
   "date": "2026-10-03",
-  "scope": "Codex-inspired message bubbles and composer surfaces; preserve workbench and tool slots",
-  "baselineCommit": "664c6eee472ede91325a5f5c750bb1dcabb34132",
+  "scope": "List, menu, state and icon visual polish in the standalone preview",
+  "baselineCommit": "6ba0cdd7dd745dcb6974dfb2d557de14d084cee7",
   "branch": "implementation/pr01-reproducible-baseline",
   "artifacts": {
-    "preview.html": "09CD12E19A4100BF491F3A45AC961CA1B9B625FBD4141EA4E1A1E376C6B3FB19",
-    "README.md": "889DD1D139C088EF76C8AACB2848216969D5B65296A96B4B6159F673D667F192",
-    "preview-desktop.png": "6F810FA55F2C02B263DD895092130F1A4F5D652EFEB53F52135D5E6782B978B3"
+    "preview.html": "365F3870E4B5281157BAA4C377E53410172506AEEC33FBF4C7538E2D1E600FFE",
+    "README.md": "262C3E592DE49E8F96C7255AAF517E8DD96EB904CCE8C96D9EE6C7BC7C69297E",
+    "icon-sources.json": "4B74D901C34FC0946AF431C88189E5C22977797F396B1634E882748FD3A781AF",
+    "preview-desktop.png": "E2968BA2E66A1ECFF8016C0D58DF0040E6E5325FA5E98F58022EE57BF0E79E96"
   },
   "layoutAcceptance": {
     "sourceOfTruth": "current app.tsx, workbench.tsx, session-list.tsx, composer-controls.tsx and three existing public CSS files",
@@ -132,8 +133,8 @@
     ],
     "320pxLimitation": "existing CSS min-width:320px retained; observed document scrollWidth320 vs clientWidth305 with the vertical scrollbar. No claim of a clean 320px overflow check. The later live-baseline sample returned 1280px and was not accepted as a 320px comparison.",
     "rawMachineEvidence": ".validation/ui-style-2026-10-03/{baseline-layout.json,preview-layout.json,final-responsive.json,final-panel-comparison.json}",
-    "currentGeometry": ".validation/ui-chat-2026-10-03/geometry.json",
-    "currentDesktopCheck": "1280x720/1440x844/1024x844 main panel rectangles match the recorded original baseline; composer/control slots measured",
+    "currentGeometry": ".validation/ui-polish-2026-10-03/geometry.json",
+    "currentDesktopCheck": "1280x720/1440x844/1024x844 side/topbar/main/inspector rectangles match original baseline; composer,left controls and send boxes unchanged",
     "current1280Composer": {
       "x": 313.3333435058594,
       "y": 513.6041870117188,
@@ -152,7 +153,19 @@
       "width": 69.33333587646484,
       "height": 30
     },
-    "invalidResizeSample": "First attempt resized the selected PDF reference instead of the background preview. Repeated1280 samples were not accepted as1440/1024; closed temporary reference, selected preview tab3, then reran with width/height assertions."
+    "invalidResizeSample": "First attempt resized the selected PDF reference instead of the background preview. Repeated1280 samples were not accepted as1440/1024; closed temporary reference, selected preview tab3, then reran with width/height assertions.",
+    "current1440Source": {
+      "x": 335.3333435058594,
+      "y": 728.5,
+      "width": 75,
+      "height": 30
+    },
+    "current1440Send": {
+      "x": 969.3333740234376,
+      "y": 728.5,
+      "width": 69.33333587646484,
+      "height": 30
+    }
   },
   "interactionChecks": {
     "newSessionAndSend": "passed: new empty session -> message visible -> explicit local simulated reply",
@@ -169,7 +182,14 @@
     "currentSend": "passed: new session Enter send shows user text and local simulated reply",
     "currentSource": "passed390px: source popover width218, Escape returns sourceButton",
     "currentArchive": "passed: archived input disabled, two retained messages readable",
-    "currentThemes": "light and dark pixels checked; dark assistant background transparent and composer16px radius; existing wine token skin reused"
+    "currentThemes": "light/dark pixels inspected; source logos remain visible on white brand backplates; wine semantic token behavior reused",
+    "listSelection": "passed: selecting peak updates single aria-current row",
+    "listArchived": "passed: archived filter shows archive icon and visible archived text; selection preserves two messages and disables composer",
+    "listEmptySearch": "passed: no matching session message shown, clearing search restores rows",
+    "listEmptySessionSend": "passed: blank row with visible empty label selects session,Enter message and simulated reply visible",
+    "currentErrorBadge": "passed: text remains reading failed, class badge s-failed and composer disabled",
+    "currentMobile": "passed390px: nav background inert,35.33px rows,blank selection and simulated send; source popover218px,5 logos loaded,document/client375px",
+    "logoLoading": "5 complete images with positive naturalWidth"
   },
   "isolation": {
     "productionModified": false,
@@ -183,7 +203,8 @@
       "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
       "docs/reference-baseline/capability-matrix.json",
       "docs/specs/project-design.txt"
-    ]
+    ],
+    "inFlightHashesMatchPriorDeliveredBaseline": true
   },
   "references": {
     "codex": "official introduction read; project/thread workflow principles are design inference, not exact current visual parameters",
@@ -197,12 +218,12 @@
     "codexChat": "official release page/whitepaper read; Web PDF screenshot returned references without image content and browser PDF capture was blank. No verified exact Codex pixel parameters or clone claim."
   },
   "independentReview": {
-    "status": "passed; no blockers or nonblocking issues",
-    "frozenPreviewHash": "09CD12E19A4100BF491F3A45AC961CA1B9B625FBD4141EA4E1A1E376C6B3FB19",
-    "patchPath": ".validation/ui-chat-2026-10-03/review.patch",
-    "patchHash": "C405640A4E8CCC6B1F80F2D1D83DACA30C8B9AC58AAE8B0B94FEE913A3B1A671",
-    "checks": "hashes/HEAD/branch/live diff, CSS scope/geometry declarations and accessible authors/timestamps; script identical to HEAD after removing the single aria-label addition",
-    "notRun": "browser, physical IME, screen-reader/axe; root owns browser evidence"
+    "status": "passed; no blockers or added nonblocking issues",
+    "frozenPreviewHash": "365F3870E4B5281157BAA4C377E53410172506AEEC33FBF4C7538E2D1E600FFE",
+    "patchPath": ".validation/ui-polish-2026-10-03/review.patch",
+    "patchHash": "65FE339F0D16AA8E7D7D1296167F80E7026D5C5C80EBC96D74D15AFE9ED5473F",
+    "checks": "snapshot hashes,JS syntax,22 glyph/hash comparisons,5 decoded logo byte comparisons,full license texts,no SVG active content,CSS scope/geometry/row height/focus/disabled guards,filter and sender safety",
+    "notRun": "browser,physical IME,reader/axe,real Pi/Docker;root owns browser evidence"
   },
   "notRun": [
     "production build/regression: no production source or dependency changes",
@@ -213,29 +234,45 @@
   ],
   "agents": [
     {
-      "role": "read-only Codex references",
+      "role": "read-only list/icon inventory",
       "requestedModel": "gpt-6.1-sol",
       "requestedReasoningEffort": "high",
-      "runtime": "requested and accepted; not echoed"
+      "runtime": "requested and accepted;not echoed"
     },
     {
       "role": "independent review",
       "requestedModel": "gpt-6.1-sol",
       "requestedReasoningEffort": "high",
-      "runtime": "requested and accepted; not echoed"
+      "runtime": "requested and accepted;not echoed"
     }
   ],
   "delivery": {
-    "artifactStatus": "verified chat style preview",
+    "artifactStatus": "verified list and icon polish preview",
     "repository": "https://github.com/hailuohl/pi-research",
     "branch": "implementation/pr01-reproducible-baseline",
     "commitReference": "commit containing this revision; SHA and remote synchronization confirmed in final delivery message"
   },
-  "previousBatchEvidence": "UI-STYLE-02 is retained in commit 664c6eee472ede91325a5f5c750bb1dcabb34132; unchanged interaction checks are reused because script differs only by article aria-label.",
+  "previousBatchEvidence": "UI-CHAT-03 retained in commit 6ba0cdd7dd745dcb6974dfb2d557de14d084cee7; the chat skin, layout rules and input guards remain unchanged.",
   "chatChanges": [
     "right-aligned content-width user bubble, max-width85%, radius16px",
     "assistant transparent text surface; visible avatars/repeated author title removed",
     "author article label and visually clipped timestamps retained; explicit simulation text remains visible",
     "composer radius16px, soft background/focus ring; pill send keeps original box"
-  ]
+  ],
+  "polishChanges": [
+    "22 glyphs unified on the already-pinned Lucide revision;16px default,1.7 stroke,decorative aria-hidden/focusable=false",
+    "skills/resources/filter/rename/mobile-navigation glyph semantics corrected",
+    "session rows gain selection/hover styling, one-line title and empty/archived text pills; row height35.33px preserved",
+    "five existing website logos embedded as data URLs; original license text retained",
+    "state badge text preserved; error class now s-failed; context description/value weight improved"
+  ],
+  "iconProvenance": {
+    "record": "icon-sources.json",
+    "revision": "aace268b9be318c4f6d8a09a35139f860d07d9c5",
+    "glyphs": 22,
+    "newRuntimeDependencies": 0,
+    "upstreamFetch": "19 public static SVGs fetched at fixed commit,all HTTP200;3 existing SVGs reused",
+    "logos": "five existing project files; bytes independently compared after data-URL decoding",
+    "licenses": "existing Lucide ISC/MIT and source-logo OpenResearch license texts retained inline"
+  }
 }
