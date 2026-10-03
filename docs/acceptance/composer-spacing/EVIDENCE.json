@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-03",
+  "scope": "仅缩小输入框工具栏上下留白",
+  "acceptance": [
+    {
+      "id": 1,
+      "description": "工具栏上下留白减少16px",
+      "result": "passed"
+    },
+    {
+      "id": 2,
+      "description": "按钮尺寸、横向间距与交互逻辑未改；来源菜单正常",
+      "result": "passed"
+    },
+    {
+      "id": 3,
+      "description": "刷新后显示生效；历史与原有未提交改动保留",
+      "result": "passed"
+    }
+  ],
+  "measured": {
+    "before": {
+      "marginTop": 9,
+      "paddingTop": 5,
+      "paddingBottom": 8,
+      "height": 49.3333
+    },
+    "after": {
+      "marginTop": 2,
+      "paddingTop": 2,
+      "paddingBottom": 2,
+      "height": 40.3333
+    },
+    "verticalSpaceReduction": 16,
+    "unit": "px"
+  },
+  "cleanBuild": {
+    "identical": true,
+    "files": 505,
+    "distManifestSha256": "8fe5b58974b1dadcc7f96ab94ed33c7f850e94256a5bdf6ee5cd0bdcafdbad50"
+  },
+  "review": {
+    "model": "gpt-6-sol",
+    "blockers": 0
+  },
+  "evidencePaths": {
+    "logs": ".validation/composer-spacing/",
+    "screenshot": ".validation/composer-spacing/toolbar.jpg",
+    "cleanBuild": ".validation/clean-build-Vk1peZ/summary.json"
+  },
+  "regression": {
+    "tests": 1022,
+    "passed": 999,
+    "skipped": 23,
+    "failed": 0
+  }
+}
