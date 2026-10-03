@@ -1,57 +1,58 @@
-# Pi Research UI 设计方案
+# Pi Research：参考 AI 桌面软件的视觉方案
 
-日期：2026-10-03。范围：项目/会话选择 → 阅读会话 → 输入消息。交付可点击的设计预览与 shadcn 组件选型，尚未接入正式前端。
+日期：2026-10-03。范围：项目/会话选择 → 阅读 → 输入消息的设计预览。当前用户约束优先：保留已确认的布局、栏宽、导航分组、工具入口和输入框控件位置，只改视觉样式。正式前端未接入这次样式方案。
 
-打开 [交互预览](preview.html)。默认推荐「浅色中性」，也可切换「深色专注」和「酒红延续」；三种外观共用同一信息架构。预览使用合成内容和原生 HTML/CSS/JavaScript，不调用 Pi、供应商、文献服务或项目 API，不保存正式项目设置，刷新后恢复演示初态。
+打开 [交互预览](preview.html)。默认「简洁浅色」，可在「设计预览」中切换「专注深色」「酒红延续」及演示状态。三种外观使用同一布局。内容为合成数据，发送明确为本地模拟；不调用模型、文献服务或项目 API，不保存正式项目设置。
 
-## 现状与设计判断
+## 参考依据与自己的设计判断
 
-项目是 React 19.3.0 + esbuild + 原生 CSS，不需要换成 Next.js 或 Vite。`shadcn info --json` 确认尚无 `components.json`、Tailwind、组件基础库和已安装 shadcn 组件。
-
-当前页面实际由 `styles.css`、`workbench-theme.css`、`experiment-graph.css`、`chat-messages.css` 依次覆盖。主题已有暖白和酒红，但最后的消息样式把 Markdown 正文降至 12px、部分过程摘要降至 10px。现有布局有会话主区与固定上下文栏；进一步简化应让常态阅读和输入占据主要空间，辅助工具保持可发现。
-
-本次检查了当前源码、2026-10-02 已入库的会话验收截图和本机服务登录页。当前浏览器未登录正式工作台，未把历史截图当作本次实时画面；没有读取认证文件或研究数据库。
-
-## 可用 UI 与取舍
-
-| UI 来源/组件 | 适合的位置 | 本项目建议 |
+| 参考软件 | 已核实的官方证据 | 本项目借鉴 |
 | --- | --- | --- |
-| [官方 Sidebar Blocks](https://ui.shadcn.com/blocks/sidebar)：sidebar-07 | 可折叠导航、项目切换、会话目录 | 推荐参考其导航组合与折叠能力；移除示例中的账号、商业菜单与占位卡片 |
-| 同一官方库：sidebar-08 | 内容内嵌、次级导航 | 可作为延续现有三栏工作台的较保守方向 |
-| [Command](https://ui.shadcn.com/docs/components/base/command) | Ctrl+K 查找会话与工具 | 与现有服务端会话搜索/分页接线，不能把本地显示的会话误当全部记录 |
-| [Sheet](https://ui.shadcn.com/docs/components/base/sheet) / [Resizable](https://ui.shadcn.com/docs/components/base/resizable) | 移动导航、辅助上下文、可调宽面板 | 首批优先 Sheet；已有实际需要时再加可调宽，避免把聊天空间切得过碎 |
-| [Input Group](https://ui.shadcn.com/docs/components/base/input-group) + Select / Popover / Switch | 消息输入、来源、模型、协作开关 | 控件高度、文字层级和焦点统一，保留现有业务处理 |
-| [Message](https://ui.shadcn.com/docs/components/base/message) / [Bubble](https://ui.shadcn.com/docs/components/base/bubble) / [Attachment](https://ui.shadcn.com/docs/components/base/attachment) | 消息、附件和过程记录 | 适合整理呈现层；具体安装路径与接口需在接入时复核 |
-| [Empty](https://ui.shadcn.com/docs/components/base/empty) + Alert / Skeleton / Badge | 空态、错误、加载和状态 | 错误与批准要求持续可见；成功提示才用短暂通知 |
+| [Codex](https://openai.com/index/introducing-the-codex-app/) | 官方介绍将项目、独立会话、工作进展及变更审查组织在同一工作环境中 | 让当前会话、过程信息与下一步操作具有清楚的主次。这是我们对工作流的设计提炼，未声称获得当前 Codex 精确视觉参数 |
+| [ZCode](https://zcode.network/cn/docs/task-management/) | 官方任务管理文档，以及[新任务界面图](https://zcode.network/content/docs/v2/screenshots/20260802-glm53/zcode-glm53-new-task-cn.png)：深石墨画布、稍浅的输入区、细边界、底部紧凑控件 | 深色皮肤用较小明暗差区分区域；输入框边框与聚焦态明确，控制栏保持原位 |
+| [MiMo Desktop](https://mimo.mi.com/docs/en-US/news/latest/mimo-desktop) | 官方介绍及[实际产品界面图](https://aistudio-cdn.xiaomimimo.com/xiaomimimo-static/mimo-docs-figures/display/YPfhblZmnoQPcOxhivwcWCLXnNh.png)：灰白导航、白色会话、轻灰过程文本与输入面板 | 浅色皮肤突出正文，弱化时间、来源和过程记录；借鉴既有区域内的阅读层级 |
 
-已用 npm runner 的 shadcn CLI 4.21.1 查询官方 registry，并通过 `view` 确认 sidebar-07/08 的文件与依赖组合。Sidebar、Command、Resizable、Sheet、Input Group、Empty 的 CLI 文档链接可解析。聊天组件的官方文档可读取，但该 CLI 的 `docs` 暂未返回其链接；这不是已验证安装。一次 Windows CLI 搜索在输出结果后退出异常，未进行安装或修改项目。
+已在浏览器查看 ZCode 与 MiMo 图片像素。MiMo 文档第一张“Unified AI Orchestration”图片是架构图，不作为软件界面证据。官方未提供完整字体、色值、圆角与交互状态参数；本预览为 Pi Research 自己的样式方案，不是逐像素复制，也不复制它们的导航结构或新增其功能。
 
-组件基础以官方 shadcn 为首选。当前需求是研究工作台，现成营销页面的装饰、动效和卡片不适合作为整页模板。可以采用基础组件的源码，再按项目功能组合；不同时引入第二套完整 UI 系统。
+## 保留的布局
 
-## 推荐的信息架构
+以当前 `apps/web/src/app.tsx`、`workbench.tsx`、`session-list.tsx`、`composer-controls.tsx` 及现有 CSS 为准，不沿用上一版探索预览的重排。
 
-- 左侧：项目选择、新建会话、会话目录、实验入口；管理入口靠下，减少与当前研究争夺注意力。
-- 顶部：项目/会话位置、全局查找、工作区工具、上下文开关。文件、文献、证据和成果延续现有辅助入口。
-- 中间：会话标题、状态、可阅读的消息与固定输入区。正文 15px、辅助文字 12px、约 1.8 行高。
-- 右侧：当前计划、资料和待批准事项。可收起；窄屏按需打开侧抽屉。正式接入时，即使收起上下文也须在主区保留待批准和阻断状态摘要。
+- 桌面保留项目和会话目录、中间研究会话、右侧协作空间；原有外边距、栏间距、面板圆角、滚动区域和断点保持。
+- 1280/1440px 保留 252px 左栏及 320px 右栏；小于等于 1200px 为 228/285px，761–980px 为 208/245px，大于等于 1600px 为 264/350px。
+- 「研究」仍为新建会话、实验与运行；「管理」仍为技能与连接器、资源与调度、设置与能力；会话目录仍保留分类、查找筛选和分页位置。
+- 项目文件、文献检索、资料与证据、报告与成果仍在顶部「工作区」菜单，不移到常驻侧栏。
+- 输入框保留上方文字区，底部左侧来源、附件、多智能体，右侧模型与发送；原有窄屏换行规则保持。未加入上一版预览的底部消息模式切换组。
+- 760px 及以下保留导航抽屉，协作面板排在主区域之后；未引入右侧抽屉或新增上下文收起入口。
 
-视觉采用清晰的平直分区、轻分隔线、有限圆角和稳定间距；主要按钮明确，弱操作简化。状态用图标/文字辅助，不能只依赖颜色。默认灰白与近黑主操作便于长时间阅读；酒红作为保留原品牌的备选，深色适合低亮环境。
+## 视觉方案
 
-## 演示与验收条件
+1. 简洁浅色：中性浅灰画布、灰白导航、白色阅读区、石墨正文与主操作；选中项使用轻底色和文字权重。
+2. 专注深色：深石墨画布与稍浅的区域表面；文字与焦点清晰，减少大面积高饱和强调。
+3. 酒红延续：保留原来的品牌强调色，统一正文与辅助文字的对比度。
 
-1. 新建/选择会话、阅读与模拟发送形成完整主流程，发送与回复显式标注演示。
-2. 项目和会话作用域、普通/引导/后续消息、归档禁发及正式批准语义清晰，无真实后端请求。
-3. 正常、空会话、加载、读取失败/重试、归档和搜索无结果可查看；320/390/768/1024/1440px 无外层横向溢出，键盘主要路径与抽屉焦点可用。
-4. 明确区分设计预览与正式组件接入；既有在途修改保留，不新增生产依赖，不改变历史或科研数据。
+字号和字重形成层级，正文约 14–15px、辅助文字约 12px；状态始终保留文字。字体变化产生自然文本重排，但不借此调整栏宽、控件顺序、区域位置或导航架构。输入框通过细边框和可见聚焦态建立操作重心。
 
-## 正式接入边界
+## shadcn 接入映射
 
-第一批只落地会话主流程：新增必要的 shadcn 配置与样式编译，保留 React/esbuild；迁移导航、工具菜单、输入控件、消息表面与反馈。遵循实际选定的 registry、组件基础和命名约定，不直接覆盖已有组件或套用整站 preset。
+项目仍是 React/esbuild/原生 CSS，尚无 `components.json`、Tailwind 和已安装 shadcn 组件。本预览采用自包含 HTML/CSS/JavaScript，只验证设计方向。
 
-现有 `ScrollHistory` 已处理前后游标、20 条分页、200 条窗口、去重、来源校验和阅读位置恢复。[Message Scroller](https://ui.shadcn.com/docs/components/base/message-scroller) 可列为后续候选，不能在未验证这些契约前整体替换历史控制。草稿在同一会话切换工具时保留，切换项目/会话的生命周期沿用现有实现。
+| 现有位置 | 可用组件 | 接入要求 |
+| --- | --- | --- |
+| 原侧栏、目录与顶部菜单 | Sidebar、Select、DropdownMenu、Collapsible | 在原结构内替换控件，不套用整页 Sidebar Block |
+| 原输入框与工具栏 | Input Group、Button、Popover、Switch、Select | 原位置和原业务语义保持，不新增同类控制 |
+| 消息与状态 | Message、Bubble、Attachment、Badge、Alert、Skeleton、Empty | 优化呈现；来源、失败、批准与归档语义持续可见 |
+| 现有弹窗 | Dialog | 标题、键盘关闭、焦点恢复和禁用状态统一 |
 
-项目级文献来源与多智能体开关仍是项目设置；模型选择仍遵循会话绑定与授权限制。附件上传、冻结来源、正式 Run、文稿编译与成果验收继续使用原业务边界。实验图与其他页面待该主流程验收后再按需推进。
+官方组件参考：[Sidebar](https://ui.shadcn.com/docs/components/base/sidebar)、[Input Group](https://ui.shadcn.com/docs/components/base/input-group)、[Message](https://ui.shadcn.com/docs/components/base/message)、[Theming](https://ui.shadcn.com/docs/theming)。前批已完成相关文档与 registry 查询，不重复安装或套用 preset。
 
-## 交付证据
+正式接入时仍保留现有 ScrollHistory 的前后游标、分页窗口、去重与阅读位置恢复，不因外观设计整体替换历史控制。多智能体和来源仍是项目级设置；模型、附件、正式 Run、文稿与批准边界沿用原业务。
 
-本次浏览器验证与独立复核状态见 [evidence.json](evidence.json)。预览验证仅证明上述设计演示，不能替代正式前端集成、真实 Pi/Docker 或科研流程验证。
+## 本批验收
+
+1. 桌面及窄屏区域、栏宽、导航和输入控件顺序符合原布局；三种主题的几何布局一致。
+2. 项目→新建/选择会话→阅读→模拟发送可走通；空、加载、失败/重试和归档状态明确。
+3. 输入与弹窗键盘路径可用，无真实网络或数据持久化；不伪称模型已运行、资料已检索或附件已上传。
+4. 正式前端与既有在途修改保留原字节；本批仅更新预览、说明和精简证据。
+
+实际浏览器检查、独立复核及未运行项见 [evidence.json](evidence.json)。前一版探索记录保留在 Git 历史中，本版取代其布局建议。
