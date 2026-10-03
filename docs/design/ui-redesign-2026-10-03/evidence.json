@@ -1,33 +1,158 @@
 {
-  "task": "UI-STYLE-02",
+  "task": "UI-CHAT-03",
   "date": "2026-10-03",
-  "scope": "AI desktop visual skin preview; preserve the existing Pi Research layout",
-  "baselineCommit": "65cadf0366a0426a477bfd29a096c8de2393f6f5",
+  "scope": "Codex-inspired message bubbles and composer surfaces; preserve workbench and tool slots",
+  "baselineCommit": "664c6eee472ede91325a5f5c750bb1dcabb34132",
   "branch": "implementation/pr01-reproducible-baseline",
   "artifacts": {
-    "preview.html": "2588D7E3C8BDEDDD178940AA923C785F7196CEC0EE29AC5F3C2804502C8D9312",
-    "README.md": "BDCEBB4FE1C359C6CF477C9114CA0831ABD4CB444FC8D51D6C88FBF8B4FBDFF6",
-    "preview-desktop.png": "ECDAD82CDE328385B259AC0F88A0758C2AABEAA8BD229C7165C9C431DC096E85"
+    "preview.html": "09CD12E19A4100BF491F3A45AC961CA1B9B625FBD4141EA4E1A1E376C6B3FB19",
+    "README.md": "889DD1D139C088EF76C8AACB2848216969D5B65296A96B4B6159F673D667F192",
+    "preview-desktop.png": "6F810FA55F2C02B263DD895092130F1A4F5D652EFEB53F52135D5E6782B978B3"
   },
   "layoutAcceptance": {
     "sourceOfTruth": "current app.tsx, workbench.tsx, session-list.tsx, composer-controls.tsx and three existing public CSS files",
     "baselineVisual": "read-only existing isolated UI acceptance server on 127.0.0.1:4794",
     "desktopFinalComparison": {
-      "1280x720": {"sidebar": [16,16,252,688], "topbar": [284,16,980,45], "main": [284,61,646,643], "inspector": [944,61,320,643], "equalToBaseline": true},
-      "1440x844": {"sidebar": [16,16,252,812], "topbar": [284,16,1140,45], "main": [284,61,806,767], "inspector": [1104,61,320,767], "equalToBaseline": true},
-      "1024x844": {"sidebar": [12,12,228,820], "topbar": [252,12,760,45], "main": [252,57,461,775], "inspector": [727,57,285,775], "equalToBaseline": true}
+      "1280x720": {
+        "sidebar": [
+          16,
+          16,
+          252,
+          688
+        ],
+        "topbar": [
+          284,
+          16,
+          980,
+          45
+        ],
+        "main": [
+          284,
+          61,
+          646,
+          643
+        ],
+        "inspector": [
+          944,
+          61,
+          320,
+          643
+        ],
+        "equalToBaseline": true
+      },
+      "1440x844": {
+        "sidebar": [
+          16,
+          16,
+          252,
+          812
+        ],
+        "topbar": [
+          284,
+          16,
+          1140,
+          45
+        ],
+        "main": [
+          284,
+          61,
+          806,
+          767
+        ],
+        "inspector": [
+          1104,
+          61,
+          320,
+          767
+        ],
+        "equalToBaseline": true
+      },
+      "1024x844": {
+        "sidebar": [
+          12,
+          12,
+          228,
+          820
+        ],
+        "topbar": [
+          252,
+          12,
+          760,
+          45
+        ],
+        "main": [
+          252,
+          57,
+          461,
+          775
+        ],
+        "inspector": [
+          727,
+          57,
+          285,
+          775
+        ],
+        "equalToBaseline": true
+      }
     },
     "rectangleFormat": "x,y,width,height in CSS pixels",
     "themes": "light/dark/wine: identical 252px sidebar, 320px inspector and main x=284 at 1280px",
     "navigation": "research/management/session groups, project selector and local footer retained",
     "workspaceMenu": "project workspace/literature/evidence/reports remain in the top menu; evidence entry exercised",
-    "composerOrder": ["composer-control-left", "grow", "composer-model-control", "composer-submit-control"],
-    "sourcePopover": {"width":218, "x":335.3333435058594, "bottom":598.5000152587891, "buttonTop":604.5, "placement":"original source button above; no centered source modal", "sources":["alphaXiv","OpenAlex","bioRxiv","PubMed","Crossref"]},
+    "composerOrder": [
+      "composer-control-left",
+      "grow",
+      "composer-model-control",
+      "composer-submit-control"
+    ],
+    "sourcePopover": {
+      "width": 218,
+      "x": 335.3333435058594,
+      "bottom": 598.5000152587891,
+      "buttonTop": 604.5,
+      "placement": "original source button above; no centered source modal",
+      "sources": [
+        "alphaXiv",
+        "OpenAlex",
+        "bioRxiv",
+        "PubMed",
+        "Crossref"
+      ]
+    },
     "modelCaption": "nowrap; long synthetic options; original right-side position preserved",
     "390px": "topbar x=10,y=10,height=45; main x=10,y=55; inspector follows main vertically; native navigation background inert attribute verified; Escape restores navigation-toggle",
-    "responsiveWidthsInspected": [320,390,768,1024,1280,1440,1680],
+    "responsiveWidthsInspected": [
+      320,
+      390,
+      768,
+      1024,
+      1280,
+      1440,
+      1680
+    ],
     "320pxLimitation": "existing CSS min-width:320px retained; observed document scrollWidth320 vs clientWidth305 with the vertical scrollbar. No claim of a clean 320px overflow check. The later live-baseline sample returned 1280px and was not accepted as a 320px comparison.",
-    "rawMachineEvidence": ".validation/ui-style-2026-10-03/{baseline-layout.json,preview-layout.json,final-responsive.json,final-panel-comparison.json}"
+    "rawMachineEvidence": ".validation/ui-style-2026-10-03/{baseline-layout.json,preview-layout.json,final-responsive.json,final-panel-comparison.json}",
+    "currentGeometry": ".validation/ui-chat-2026-10-03/geometry.json",
+    "currentDesktopCheck": "1280x720/1440x844/1024x844 main panel rectangles match the recorded original baseline; composer/control slots measured",
+    "current1280Composer": {
+      "x": 313.3333435058594,
+      "y": 513.6041870117188,
+      "width": 587.3333740234375,
+      "height": 138.0625
+    },
+    "current1280Source": {
+      "x": 335.3333435058594,
+      "y": 604.5,
+      "width": 75,
+      "height": 30
+    },
+    "current1280Send": {
+      "x": 809.3333740234375,
+      "y": 604.5,
+      "width": 69.33333587646484,
+      "height": 30
+    },
+    "invalidResizeSample": "First attempt resized the selected PDF reference instead of the background preview. Repeated1280 samples were not accepted as1440/1024; closed temporary reference, selected preview tab3, then reran with width/height assertions."
   },
   "interactionChecks": {
     "newSessionAndSend": "passed: new empty session -> message visible -> explicit local simulated reply",
@@ -39,7 +164,12 @@
     "mobile": "passed: create session closes navigation and focuses input; simulated send; source popover stays within available width; Escape returns to source trigger",
     "nestedSourceInfo": "passed: Escape closes info dialog, keeps source popover; next Escape closes source and restores sourceButton",
     "themes": "all three inspected; light and dark pixels checked",
-    "consoleWarningsOrErrors": 0
+    "consoleWarningsOrErrors": 0,
+    "currentLongMessages": "passed: desktop long Chinese and390px long unbroken context_ text stay inside bubble/conversation; scrollWidth<=clientWidth",
+    "currentSend": "passed: new session Enter send shows user text and local simulated reply",
+    "currentSource": "passed390px: source popover width218, Escape returns sourceButton",
+    "currentArchive": "passed: archived input disabled, two retained messages readable",
+    "currentThemes": "light and dark pixels checked; dark assistant background transparent and composer16px radius; existing wine token skin reused"
   },
   "isolation": {
     "productionModified": false,
@@ -47,28 +177,65 @@
     "realModelOrRunSubmitted": false,
     "realResearchOrAuthFilesCopied": false,
     "sourceHashesBeforeAndAfterMatch": true,
-    "inFlightFilesPreserved": ["apps/web/public/styles.css","dist/web/styles.css","docs/reference-baseline/OPENRESEARCH-COMPARISON.md","docs/reference-baseline/capability-matrix.json","docs/specs/project-design.txt"]
+    "inFlightFilesPreserved": [
+      "apps/web/public/styles.css",
+      "dist/web/styles.css",
+      "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
+      "docs/reference-baseline/capability-matrix.json",
+      "docs/specs/project-design.txt"
+    ]
   },
   "references": {
     "codex": "official introduction read; project/thread workflow principles are design inference, not exact current visual parameters",
     "zcode": "official task-management page and new-task screenshot opened; product pixels inspected",
     "mimo": "official introduction and YPfhblZmnoQPcOxhivwcWCLXnNh.png product image opened; pixels inspected; first Igy9bu173oeiGBxVB3acPYMqnVe.png is architecture, excluded as UI evidence",
-    "urls": ["https://openai.com/index/introducing-the-codex-app/","https://zcode.network/cn/docs/task-management/","https://mimo.mi.com/docs/en-US/news/latest/mimo-desktop"]
+    "urls": [
+      "https://openai.com/index/introducing-the-codex-app/",
+      "https://zcode.network/cn/docs/task-management/",
+      "https://mimo.mi.com/docs/en-US/news/latest/mimo-desktop"
+    ],
+    "codexChat": "official release page/whitepaper read; Web PDF screenshot returned references without image content and browser PDF capture was blank. No verified exact Codex pixel parameters or clone claim."
   },
   "independentReview": {
-    "status": "passed; no blockers or necessary nonblocking repairs",
-    "frozenPreviewHash": "2588D7E3C8BDEDDD178940AA923C785F7196CEC0EE29AC5F3C2804502C8D9312",
-    "patchPath": ".validation/ui-style-2026-10-03/review.patch",
-    "patchHash": "B05BCB273BF340BACFC1E5BA7513A2AC743E1E4F319699004AC5598C37BC07CF",
-    "checks": "hashes/HEAD/branch, production-component structure, layout rule comparison, script syntax, actual function isolation checks for sending/archival/history/draft/new-session/keyboard and stale retry invalidation; no browser or file writes",
-    "checkHarnessIssue": "first in-memory CRLF extractor failed; corrected extractor passed. Harness issue, not product failure.",
-    "sampleTiming": "independent JSON comparison used earlier samples; root final-panel-comparison was rerun after the last source-popover/model-caption correction"
+    "status": "passed; no blockers or nonblocking issues",
+    "frozenPreviewHash": "09CD12E19A4100BF491F3A45AC961CA1B9B625FBD4141EA4E1A1E376C6B3FB19",
+    "patchPath": ".validation/ui-chat-2026-10-03/review.patch",
+    "patchHash": "C405640A4E8CCC6B1F80F2D1D83DACA30C8B9AC58AAE8B0B94FEE913A3B1A671",
+    "checks": "hashes/HEAD/branch/live diff, CSS scope/geometry declarations and accessible authors/timestamps; script identical to HEAD after removing the single aria-label addition",
+    "notRun": "browser, physical IME, screen-reader/axe; root owns browser evidence"
   },
-  "notRun": ["production build/regression: no production source or dependency changes", "actual shadcn install/integration", "physical IME", "screen-reader/axe", "real Pi/Docker/external literature workflows"],
-  "agents": [
-    {"role":"reference research","requestedModel":"gpt-6.1-sol","requestedReasoningEffort":"high","runtime":"requested and accepted; not echoed"},
-    {"role":"preview implementation","requestedModel":"gpt-6.1-sol","requestedReasoningEffort":"high","runtime":"requested and accepted; not echoed"},
-    {"role":"independent review","requestedModel":"gpt-6.1-sol","requestedReasoningEffort":"high","runtime":"requested and accepted; not echoed"}
+  "notRun": [
+    "production build/regression: no production source or dependency changes",
+    "actual shadcn install/integration",
+    "physical IME",
+    "screen-reader/axe",
+    "real Pi/Docker/external literature workflows"
   ],
-  "delivery": {"artifactStatus":"verified style preview", "repository":"https://github.com/hailuohl/pi-research", "branch":"implementation/pr01-reproducible-baseline", "commitReference":"commit containing this revision; SHA and remote synchronization confirmed in final delivery message"}
+  "agents": [
+    {
+      "role": "read-only Codex references",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtime": "requested and accepted; not echoed"
+    },
+    {
+      "role": "independent review",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtime": "requested and accepted; not echoed"
+    }
+  ],
+  "delivery": {
+    "artifactStatus": "verified chat style preview",
+    "repository": "https://github.com/hailuohl/pi-research",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "commitReference": "commit containing this revision; SHA and remote synchronization confirmed in final delivery message"
+  },
+  "previousBatchEvidence": "UI-STYLE-02 is retained in commit 664c6eee472ede91325a5f5c750bb1dcabb34132; unchanged interaction checks are reused because script differs only by article aria-label.",
+  "chatChanges": [
+    "right-aligned content-width user bubble, max-width85%, radius16px",
+    "assistant transparent text surface; visible avatars/repeated author title removed",
+    "author article label and visually clipped timestamps retained; explicit simulation text remains visible",
+    "composer radius16px, soft background/focus ring; pill send keeps original box"
+  ]
 }
