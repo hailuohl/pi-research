@@ -1,4 +1,4 @@
-import type { SourceSnapshot } from '../domain/types.js';
+import type { ResearchBriefRef, SourceSnapshot } from '../domain/types.js';
 export declare const PUBLICATION_PROFILE = "latex-document-v1";
 export declare const PUBLICATION_RESOURCES: {
     cpus: number;
@@ -45,6 +45,10 @@ export interface ManuscriptRevision {
     mainFile: string;
     bibliography: BibliographyMode;
     templateId?: string;
+    rootSessionId?: string;
+    previousRevisionId?: string;
+    researchBrief?: ResearchBriefRef;
+    evidenceIds?: string[];
     sourceDigest: string;
     manifestArtifactId: string;
     manifestArtifactDigest: string;

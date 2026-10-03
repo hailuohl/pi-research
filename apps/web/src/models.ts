@@ -6,6 +6,8 @@ export type {RunGrantDTO} from '../../../dist/packages/policy/run-grant-types.js
 export type {WorkingGrantDTO} from '../../../dist/packages/policy/working-grant-types.js';
 import type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision,ExperimentPlanRevision,ResearchCandidate } from '../../../dist/packages/research-workflows/types.js';
 export type {ManuscriptRevision,PublicationBuildResult,PublicationEngine,BibliographyMode} from '../../../dist/packages/publications/build-types.js';
+import type {ManuscriptRevision} from '../../../dist/packages/publications/build-types.js';
+import type {PublicationReviewInspection} from '../../../dist/packages/publications/reviews-types.js';
 import type {MANUSCRIPT_TEMPLATES} from '../../../dist/packages/publications/templates.js';
 export type ManuscriptTemplate=typeof MANUSCRIPT_TEMPLATES[number];
 import type {PublicationBuildService} from '../../../dist/packages/publications/build-service.js';
@@ -60,6 +62,10 @@ export interface ReportRecord {id:string;artifactId:string;runIds:string[];claim
 import type {ResearchBriefService} from '../../../dist/packages/research-workflows/briefs.js';
 export type ResearchBriefView=ReturnType<ResearchBriefService['inspect']>;
 export interface ProjectState {
+    manuscripts?:Row<ManuscriptRevision>[];
+    publicationJobs?:PublicationBuildJobDTO[];
+    publicationReviews?:PublicationReviewInspection[];
+    publicationExports?:Array<{reportId:string;artifactId:string}>;
     researchBrief?:ResearchBriefView|null;
     textCorpusGrants?:TextCorpusGrantDTO[];
     discoveryGrants?:DiscoveryGrantDTO[];

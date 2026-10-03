@@ -8,6 +8,7 @@ import {DevelopmentJob} from './implementation.js';
 import {ResearchPlanPanel} from './research-plan.js';
 import {WorkingGrants} from './working-grants.js';
 import {runGrantUsable} from './run-grants.js';
+import {PublicationDialogue} from './publication-dialogue.js';
 
 export function proposalSession(data:ProjectState,proposal:Row<ChangeProposal>):string|undefined {
     return (proposal as any).rootSessionId || (data.reviews??[]).find(r=>r.id===proposal.reviewId)?.producerSessionId || (data.sandboxJobs??[]).find(j=>j.id===proposal.testJobId)?.sessionId;
@@ -135,9 +136,10 @@ export class ChatWorkflows extends React.Component<{
         const {data,session,perform,busy,onExperiment}=this.props;
         if(session.taskId||session.role!=='coordinator')return null;
         const disabled=busy||data.project.archived||session.state==='archived',campaigns=(data.campaigns??[]).filter(c=>c.rootSessionId===session.id),tasks=(data.developmentTasks??[]).filter(t=>t.sessionId===session.id),jobs=(data.sandboxJobs??[]).filter(j=>j.sessionId===session.id),reviews=(data.reviews??[]).filter(r=>r.producerSessionId===session.id),proposals=(data.changeProposals??[]).filter(p=>proposalSession(data,p)===session.id),unbound=(data.changeProposals??[]).filter(p=>!proposalSession(data,p)),campaignIntentIds=new Set(campaigns.flatMap(c=>[...data.members.filter(m=>m.campaignId===c.id).map(m=>m.intentId),...(data.researchCandidates??[]).filter(v=>v.campaignId===c.id).flatMap(v=>v.intentId?[v.intentId]:[])])),runIntents=data.intents.filter(i=>i.rootSessionId===session.id&&!campaignIntentIds.has(i.id));
-        if(!data.researchBrief?.brief&&!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId)return null;
+        if(!data.researchBrief?.brief&&!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId&&!(data.manuscripts??[]).some(r=>r.rootSessionId===session.id))return null;
         return <section className="chat-workflows" aria-label="当前对话任务"><p className="small muted">任务由对话中的 Pi 准备；需要确认的固定事项显示在这里。状态会更新，后续要求继续在输入框说明。</p>
             {this.researchBriefCard(disabled)}
+            <PublicationDialogue data={data} session={session} disabled={disabled} busy={busy} perform={perform}/>
             {campaigns.slice().reverse().map(c=>this.campaignCard(c,disabled))}
             {runIntents.map(i=>this.runIntentCard(i,disabled))}
             {session.sourceRevisionId?<details className="workflow-card"><summary>私有实现来源与有限授权</summary><p>固定来源 {short(session.sourceRevisionId)}。可在对话中要求 Pi 编写代码、测试或修复。</p><WorkingGrants data={data} session={session} busy={disabled} perform={perform} dirty={false}/></details>:null}

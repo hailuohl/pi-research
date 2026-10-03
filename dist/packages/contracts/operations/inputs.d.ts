@@ -3842,7 +3842,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly minItems: number;
             };
         };
-        readonly required: readonly ["resultId", "rootSessionId"];
+        readonly required: readonly ["resultId"];
         readonly additionalProperties: false;
     };
     readonly publication_review_inspect: {
@@ -3908,6 +3908,25 @@ export declare const INPUT_SCHEMAS: {
                 readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                 readonly minLength: number;
                 readonly maxLength: number;
+            };
+            readonly previousRevisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly evidenceIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
             };
             readonly files: {
                 readonly maxItems?: number | undefined;

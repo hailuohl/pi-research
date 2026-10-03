@@ -4,7 +4,7 @@ import { digest } from '../../storage/store.js';
 import { routePaperId, parseSearch } from '../../connectors/contracts.js';
 import { ensure } from '../../domain/errors.js';
 import { text, object, integer } from '../validation.js';
-import { scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
+import { interactiveCoordinator, scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
 import { assertProjectWritable } from '../../policy/lifecycle.js';
 import { readText, writeText, listFiles } from '../../workspace/files.js';
 import { INPUT_SCHEMAS } from './inputs.js';
@@ -23,6 +23,10 @@ const workspaceScope = (c, x) => {
 };
 const noPrecondition = () => { };
 const make = (id, definition) => ({ id, inputSchema: INPUT_SCHEMAS[id], outputSchema: OUTPUT_SCHEMAS[id], ...definition });
+const publicationAccess = (c, name) => { if (c.actor.type === 'agent')
+    interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, name));
+else
+    userOnly(c.actor); };
 function paperReplay(c, x) {
     const target = routePaperId(x.id, x.source), serviceScope = `connector-paper:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}`;
     const preferred = c.actor.type === 'agent' ? `${c.session.id}:${c.idempotencyKey}` : c.idempotencyKey;
@@ -172,22 +176,22 @@ const SPECS = [
     make('campaign_candidate_prepare', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.researchPlans.prepareCandidate(c.actor, c.projectId, x) }),
     make('campaign_candidate_attach', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.researchPlans.attachCandidate(c.actor, c.projectId, x) }),
     make('campaign_comparison', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.researchPlans.comparison(c.actor, c.projectId, x) }),
-    make('publication_review_prepare', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.publicationReviews.prepare(c.actor, c.projectId, x) }),
-    make('publication_review_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.inspect(c.actor, c.projectId, x.reviewId) }),
-    make('publication_review_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.list(c.actor, c.projectId, { resultId: x.resultId }) }),
-    make('publication_templates', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: c => c.app.publicationBuilds.templates(c.actor, c.projectId) }),
-    make('manuscript_create', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.createRevision(c.actor, c.projectId, x, c.validate, c.idempotencyKey) }),
-    make('manuscript_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.revisions(c.actor, c.projectId, x.cursor, x.limit) }),
-    make('manuscript_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.revision(c.actor, c.projectId, x.revisionId) }),
-    make('manuscript_source_read', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.readSource(c.actor, c.projectId, x.revisionId, x.path, x.cursor, x.limit) }),
-    make('publication_status', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: c => c.app.publicationBuilds.status(c.actor, c.projectId) }),
+    make('publication_review_prepare', { idempotencyPolicy: 'key-required', authorize: c => publicationAccess(c, 'publication_review_prepare'), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.publicationReviews.prepare(c.actor, c.projectId, x) }),
+    make('publication_review_inspect', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_review_inspect'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.inspect(c.actor, c.projectId, x.reviewId) }),
+    make('publication_review_list', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_review_list'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationReviews.list(c.actor, c.projectId, { resultId: x.resultId }) }),
+    make('publication_templates', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_templates'), preconditions: noPrecondition, execute: c => c.app.publicationBuilds.templates(c.actor, c.projectId) }),
+    make('manuscript_create', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => publicationAccess(c, 'manuscript_create'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.createRevision(c.actor, c.projectId, x, c.validate, c.idempotencyKey, c.session?.id) }),
+    make('manuscript_list', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'manuscript_list'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.revisions(c.actor, c.projectId, x.cursor, x.limit) }),
+    make('manuscript_inspect', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'manuscript_inspect'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.revision(c.actor, c.projectId, x.revisionId) }),
+    make('manuscript_source_read', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'manuscript_source_read'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.readSource(c.actor, c.projectId, x.revisionId, x.path, x.cursor, x.limit) }),
+    make('publication_status', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_status'), preconditions: noPrecondition, execute: c => c.app.publicationBuilds.status(c.actor, c.projectId) }),
     make('publication_configure', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.configure(c.actor, x, c.validate, c.idempotencyKey) }),
-    make('publication_prepare', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.prepare(c.actor, c.projectId, x, c.idempotencyKey, c.validate) }),
+    make('publication_prepare', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => publicationAccess(c, 'publication_prepare'), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.publicationBuilds.prepare(c.actor, c.projectId, x, c.idempotencyKey, c.validate) }),
     make('publication_submit', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.submit(c.actor, c.projectId, x.jobId) }),
-    make('publication_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.inspect(c.actor, c.projectId, x.jobId) }),
+    make('publication_inspect', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_inspect'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.inspect(c.actor, c.projectId, x.jobId) }),
     make('publication_cancel', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.cancel(c.actor, c.projectId, x.jobId) }),
-    make('publication_result', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.result(c.actor, c.projectId, x.resultId) }),
-    make('publication_build_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.jobs(c.actor, c.projectId, x) }),
+    make('publication_result', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_result'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.result(c.actor, c.projectId, x.resultId) }),
+    make('publication_build_list', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_build_list'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.jobs(c.actor, c.projectId, x) }),
     make('skill_package_import', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.import(c.actor, c.projectId, x, c.idempotencyKey) }),
     make('skill_package_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: c => c.app.skills.catalog(c.actor, c.projectId) }),
     make('skill_package_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.inspect(c.actor, c.projectId, x.revisionId) }),
@@ -418,9 +422,11 @@ export class OperationRegistry {
         const proposalOwner = id === 'change_proposal_prepare' ? session?.id : undefined;
         const intentOwner = id === 'run_prepare' ? session?.id : undefined;
         const experimentOwner = id === 'experiment_plan_submit' && actor.type === 'user' ? session?.id : undefined;
-        const workspaceId = spec.requiresSession || proposalOwner || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
+        const manuscriptOwner = id === 'manuscript_create' ? session?.id : undefined;
+        const agentPublicationOwner = actor.type === 'agent' && ['manuscript_create', 'publication_prepare', 'publication_review_prepare'].includes(id) ? session?.id : undefined;
+        const workspaceId = spec.requiresSession || proposalOwner || manuscriptOwner || ['task_inspect', 'task_result_read', 'research_skill_list', 'research_skill_read'].includes(id) || id.startsWith('workspace_') && input.source !== 'project' ? session?.id : undefined;
         // Large local document bodies are hashed before any writer transaction; metadata remains part of identity.
-        const request = { name: id, ...(proposalOwner || intentOwner || experimentOwner ? { rootSessionId: proposalOwner ?? intentOwner ?? experimentOwner } : {}), input: id === 'document_import' ? { ...input, contentBase64: undefined, contentDigest: digest(input.contentBase64) } : ['skill_package_import', 'manuscript_create'].includes(id) ? { inputDigest: digest(input) } : input }, operationScope = actor.type === 'agent' ? `agent:${session.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
+        const request = { name: id, ...(proposalOwner || intentOwner || experimentOwner || manuscriptOwner || agentPublicationOwner ? { rootSessionId: proposalOwner ?? intentOwner ?? experimentOwner ?? manuscriptOwner ?? agentPublicationOwner } : {}), input: id === 'document_import' ? { ...input, contentBase64: undefined, contentDigest: digest(input.contentBase64) } : ['skill_package_import', 'manuscript_create'].includes(id) ? { inputDigest: digest(input) } : input }, operationScope = actor.type === 'agent' ? `agent:${session.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
             const result = JSON.parse(JSON.stringify(value));
@@ -494,7 +500,16 @@ export class OperationRegistry {
         };
         if (spec.asynchronous) {
             if (['report_export', 'compute_target_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare', 'skill_package_import', 'manuscript_create', 'publication_configure', 'publication_prepare', 'publication_submit'].includes(id)) {
-                const previous = lookup();
+                const previous = this.app.store.transaction(() => {
+                    const found = lookup();
+                    if (found && actor.type === 'agent') {
+                        if (id === 'manuscript_create')
+                            this.app.publicationBuilds.revision(actor, pid, found.value.id);
+                        if (id === 'publication_prepare')
+                            this.app.publicationBuilds.inspect(actor, pid, found.value.jobId);
+                    }
+                    return found;
+                });
                 if (previous)
                     return output(previous.value);
             }
@@ -556,6 +571,10 @@ export class OperationRegistry {
                 }
                 if (id === 'text_evidence_search')
                     this.app.textEvidence.verifyReplay(actor, pid, input);
+                if (actor.type === 'agent' && id === 'publication_review_prepare')
+                    return output(spec.execute(context, input));
+                if (actor.type === 'agent' && ['publication_templates', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list'].includes(id))
+                    return output(spec.execute(context, input));
                 return save(previous.value);
             }
             const pending = this.app.store.maybe('operation-pending', digest({ scope: operationScope, key }));

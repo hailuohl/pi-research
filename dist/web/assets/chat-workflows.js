@@ -7,6 +7,7 @@ import { DevelopmentJob } from "./implementation.js";
 import { ResearchPlanPanel } from "./research-plan.js";
 import { WorkingGrants } from "./working-grants.js";
 import { runGrantUsable } from "./run-grants.js";
+import { PublicationDialogue } from "./publication-dialogue.js";
 function proposalSession(data, proposal) {
   return proposal.rootSessionId || (data.reviews ?? []).find((r) => r.id === proposal.reviewId)?.producerSessionId || (data.sandboxJobs ?? []).find((j) => j.id === proposal.testJobId)?.sessionId;
 }
@@ -376,10 +377,11 @@ class ChatWorkflows extends React.Component {
     const { data, session, perform, busy, onExperiment } = this.props;
     if (session.taskId || session.role !== "coordinator") return null;
     const disabled = busy || data.project.archived || session.state === "archived", campaigns = (data.campaigns ?? []).filter((c) => c.rootSessionId === session.id), tasks = (data.developmentTasks ?? []).filter((t) => t.sessionId === session.id), jobs = (data.sandboxJobs ?? []).filter((j) => j.sessionId === session.id), reviews = (data.reviews ?? []).filter((r) => r.producerSessionId === session.id), proposals = (data.changeProposals ?? []).filter((p) => proposalSession(data, p) === session.id), unbound = (data.changeProposals ?? []).filter((p) => !proposalSession(data, p)), campaignIntentIds = new Set(campaigns.flatMap((c) => [...data.members.filter((m) => m.campaignId === c.id).map((m) => m.intentId), ...(data.researchCandidates ?? []).filter((v) => v.campaignId === c.id).flatMap((v) => v.intentId ? [v.intentId] : [])])), runIntents = data.intents.filter((i) => i.rootSessionId === session.id && !campaignIntentIds.has(i.id));
-    if (!data.researchBrief?.brief && !campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId) return null;
+    if (!data.researchBrief?.brief && !campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId && !(data.manuscripts ?? []).some((r) => r.rootSessionId === session.id)) return null;
     return /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EFB\u52A1\u7531\u5BF9\u8BDD\u4E2D\u7684 Pi \u51C6\u5907\uFF1B\u9700\u8981\u786E\u8BA4\u7684\u56FA\u5B9A\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002\u72B6\u6001\u4F1A\u66F4\u65B0\uFF0C\u540E\u7EED\u8981\u6C42\u7EE7\u7EED\u5728\u8F93\u5165\u6846\u8BF4\u660E\u3002" }),
       this.researchBriefCard(disabled),
+      /* @__PURE__ */ jsx(PublicationDialogue, { data, session, disabled, busy, perform }),
       campaigns.slice().reverse().map((c) => this.campaignCard(c, disabled)),
       runIntents.map((i) => this.runIntentCard(i, disabled)),
       session.sourceRevisionId ? /* @__PURE__ */ jsxs("details", { className: "workflow-card", children: [

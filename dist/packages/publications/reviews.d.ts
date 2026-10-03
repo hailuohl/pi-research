@@ -6,6 +6,10 @@ export declare class PublicationReviewService {
     constructor(app: ResearchApp);
     private artifact;
     private evidence;
+    private coordinator;
+    private assertAgentReview;
+    private inputEvidence;
+    private runEvidence;
     private target;
     prepare(actor: Actor, pid: string, value: unknown): PublicationReviewInspection;
     private current;

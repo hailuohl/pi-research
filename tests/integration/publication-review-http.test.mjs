@@ -26,10 +26,11 @@ test('publication review owner HTTP/CLI contracts preserve exact targets, indepe
   assert.equal((await call('publication_review_prepare',{...input,verdict:'accept'})).value.error.code,'INVALID_INPUT');
   assert.equal((await call('publication_review_prepare',{...input,inputEvidenceIds:Array(41).fill('evidence')})).value.error.code,'INVALID_INPUT');
   const other=app.projects.create(USER,{name:'Other project'});assert.notEqual((await call('publication_review_inspect',{reviewId:prepared.value.id},randomUUID(),other.id)).status,200);
-  await assert.rejects(()=>new ToolDispatcher(app).execute({type:'agent',projectId:p.id,sessionId:root.id,role:'coordinator',generation:0},'publication_review_prepare',input,'agent-denied'),{code:'TOOL_DENIED'});
+  await assert.rejects(()=>new ToolDispatcher(app).execute({type:'agent',projectId:p.id,sessionId:root.id,role:'coordinator',generation:0},'publication_review_prepare',input,'agent-denied'),{code:'LEASE_EXPIRED'});
   approve(app,prepared.value.approvalId);app.teams.activate(USER,prepared.value.teamId);const claimed=app.teams.claim(prepared.value.teamId);assert.ok(claimed);
   assert.notEqual(claimed.attempt.sessionId,root.id);assert.equal(claimed.context.publicationReview.publicationResultId,fixture.result.id);
   const dispatcher=new ToolDispatcher(app),who=actor(claimed);
+  await assert.rejects(()=>dispatcher.execute(who,'publication_review_prepare',input,'task-denied'),{code:'TOOL_DENIED'});
   assert.deepEqual((await dispatcher.execute(who,'task_context_read',{},'context')).publicationReview,claimed.context.publicationReview);
   await dispatcher.execute(who,'task_result_submit',result({verdict:'disputed',evidenceIds:prepared.value.requiredEvidenceIds}),'result');
   const inspected=await call('publication_review_inspect',{reviewId:prepared.value.id});assert.equal(inspected.status,200,JSON.stringify(inspected.value));assert.equal(inspected.value.status,'disputed');assert.equal(inspected.value.verdict,'disputed');assert.equal(inspected.value.validity,'current');

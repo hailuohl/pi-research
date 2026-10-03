@@ -1,4 +1,4 @@
-import type {SourceSnapshot} from '../domain/types.js';
+import type {ResearchBriefRef,SourceSnapshot} from '../domain/types.js';
 export const PUBLICATION_PROFILE='latex-document-v1';
 export const PUBLICATION_RESOURCES={cpus:1,memoryMb:768,pids:64,timeoutSeconds:150,workMb:256,logBytes:2*1024*1024,outputBytes:128*1024*1024};
 export const PUBLICATION_TERMINAL=['succeeded','failed','cancelled','timed_out'] as const;
@@ -8,7 +8,7 @@ export interface PublicationProfile {profileId:typeof PUBLICATION_PROFILE;lockDi
 export interface CompilerConfiguration extends PublicationProfile {dockerContext:string;imageDigest:string;imageId:string;}
 export interface AssetProvenance {kind:'unknown'|'run'|'sandbox-job';id?:string;sourceDigest?:string;manifestDigest?:string;approvalId?:string;}
 export interface ManuscriptFile {path:string;artifactId:string;digest:string;size:number;mediaType:string;provenance:AssetProvenance;}
-export interface ManuscriptRevision {title:string;engine:PublicationEngine;mainFile:string;bibliography:BibliographyMode;templateId?:string;sourceDigest:string;manifestArtifactId:string;manifestArtifactDigest:string;files:ManuscriptFile[];}
+export interface ManuscriptRevision {title:string;engine:PublicationEngine;mainFile:string;bibliography:BibliographyMode;templateId?:string;rootSessionId?:string;previousRevisionId?:string;researchBrief?:ResearchBriefRef;evidenceIds?:string[];sourceDigest:string;manifestArtifactId:string;manifestArtifactDigest:string;files:ManuscriptFile[];}
 export interface PublicationManifest extends PublicationProfile {purpose:'publication-build';revisionId:string;revisionDigest:string;sourceDigest:string;engine:PublicationEngine;mainFile:string;bibliography:BibliographyMode;dockerContext:string;environmentImageDigest:string;command:string[];inputSnapshot:SourceSnapshot;dataArtifacts:Array<{id:string;digest:string;size:number;path:string}>;resources:typeof PUBLICATION_RESOURCES;}
 export interface PublicationBuildJob {revisionId:string;manifest:PublicationManifest;manifestDigest:string;approvalId:string;state:'prepared'|'queued'|'starting'|'running'|'unknown'|'succeeded'|'failed'|'cancelled'|'timed_out';integrity:'pending'|'complete'|'incomplete'|'invalid';containerName:string;containerId?:string;imageId?:string;generation:number;leaseUntil:number;workerPid?:number;startRequested:boolean;cancelRequested:boolean;recoveryCount:number;outputDir:string;controlDir:string;startedAt?:string;endedAt?:string;exitCode?:number|null;error?:string;artifactIds:string[];resultId?:string;logTruncated?:boolean;}
 export interface BuildDiagnostic {severity:'error'|'warning';code:string;message:string;file:string|null;line:number|null;pass:number|null;}

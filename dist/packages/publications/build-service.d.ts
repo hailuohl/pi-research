@@ -20,6 +20,9 @@ export declare class PublicationBuildService {
     private app;
     private stopped;
     constructor(app: ResearchApp);
+    private coordinator;
+    private assertAgentEvidence;
+    private assertAgentRevision;
     templates(actor: Actor, pid: string): {
         id: string;
         title: string;
@@ -48,7 +51,7 @@ export declare class PublicationBuildService {
     private assertRevision;
     private provenance;
     private assertSource;
-    createRevision(actor: Actor, pid: string, value: unknown, validate?: () => void, key?: string): Row<ManuscriptRevision>;
+    createRevision(actor: Actor, pid: string, value: unknown, validate?: () => void, key?: string, trustedSessionId?: string): Row<ManuscriptRevision>;
     status(actor: Actor, pid?: string): {
         configuration?: {
             dockerContext: string;

@@ -77,7 +77,7 @@ export declare const PUBLICATION_REVIEW_SCHEMA: {
             readonly type: "string";
         };
     };
-    readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "revisionId" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+    readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[];
     readonly additionalProperties: false;
 };
 export declare const PUBLICATION_INPUT_SCHEMAS: {
@@ -111,7 +111,7 @@ export declare const PUBLICATION_INPUT_SCHEMAS: {
                 readonly minItems: number;
             };
         };
-        readonly required: readonly ["resultId", "rootSessionId"];
+        readonly required: readonly ["resultId"];
         readonly additionalProperties: false;
     };
     readonly publication_review_inspect: {
@@ -177,6 +177,25 @@ export declare const PUBLICATION_INPUT_SCHEMAS: {
                 readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                 readonly minLength: number;
                 readonly maxLength: number;
+            };
+            readonly previousRevisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly evidenceIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
             };
             readonly files: {
                 readonly maxItems?: number | undefined;
@@ -484,7 +503,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "revisionId" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+        readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_review_inspect: {
@@ -566,7 +585,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "revisionId" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+        readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_review_list: {
@@ -651,7 +670,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                     readonly type: "string";
                 };
             };
-            readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "revisionId" | "rootSessionId" | "publicationResultId" | "pdfDigest")[];
+            readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[];
             readonly additionalProperties: false;
         };
         readonly minItems: number;
@@ -737,6 +756,37 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
             };
             readonly templateId: {
                 readonly type: "string";
+            };
+            readonly rootSessionId: {
+                readonly type: "string";
+            };
+            readonly previousRevisionId: {
+                readonly type: "string";
+            };
+            readonly researchBrief: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly id: {
+                        readonly type: "string";
+                    };
+                    readonly digest: {
+                        readonly type: "string";
+                    };
+                    readonly revision: {
+                        readonly type: "integer";
+                    };
+                    readonly rootSessionId: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                readonly additionalProperties: false;
+            };
+            readonly evidenceIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
             };
             readonly sourceDigest: {
                 readonly type: "string";
@@ -838,6 +888,37 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
             };
             readonly templateId: {
                 readonly type: "string";
+            };
+            readonly rootSessionId: {
+                readonly type: "string";
+            };
+            readonly previousRevisionId: {
+                readonly type: "string";
+            };
+            readonly researchBrief: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly id: {
+                        readonly type: "string";
+                    };
+                    readonly digest: {
+                        readonly type: "string";
+                    };
+                    readonly revision: {
+                        readonly type: "integer";
+                    };
+                    readonly rootSessionId: {
+                        readonly type: "string";
+                    };
+                };
+                readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                readonly additionalProperties: false;
+            };
+            readonly evidenceIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
             };
             readonly sourceDigest: {
                 readonly type: "string";
@@ -944,6 +1025,37 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                         };
                         readonly templateId: {
                             readonly type: "string";
+                        };
+                        readonly rootSessionId: {
+                            readonly type: "string";
+                        };
+                        readonly previousRevisionId: {
+                            readonly type: "string";
+                        };
+                        readonly researchBrief: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly id: {
+                                    readonly type: "string";
+                                };
+                                readonly digest: {
+                                    readonly type: "string";
+                                };
+                                readonly revision: {
+                                    readonly type: "integer";
+                                };
+                                readonly rootSessionId: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly evidenceIds: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "string";
+                            };
                         };
                         readonly sourceDigest: {
                             readonly type: "string";

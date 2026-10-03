@@ -1,7 +1,9 @@
 import { assertRunGrantRun } from '../policy/run-grant-validation.js';
 import { basename, dirname } from 'node:path';
 import { readStableFile } from '../workspace/stable-file.js';
-import { scope, userOnly } from '../policy/permissions.js';
+import { interactiveCoordinator, scope, userOnly } from '../policy/permissions.js';
+import { isPdfArtifact } from '../policy/text-corpus-grants.js';
+import { isPmcArtifact } from '../documents/pmc-text.js';
 import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { verifyRunRecord } from '../evidence/run-verifier.js';
 import { verifyDocumentLink } from '../evidence/document-link.js';
@@ -46,35 +48,97 @@ export class PublicationReviewService {
         }
         return clean({ id: e.id, type: e.type, artifactId: e.artifactId, digest: e.digest, locator: e.locator, quote: e.quote, description: e.description, runId: e.runId, document: e.document, sourceBindings });
     }
-    target(pid, id) {
-        const result = this.app.publicationBuilds.result(USER, pid, id), job = this.app.publicationBuilds.get(USER, pid, result.jobId);
+    coordinator(actor, pid) { if (actor.type === 'user') {
+        scope(actor, pid);
+        return undefined;
+    } ensure(actor.type === 'agent' && actor.sessionId && actor.generation !== undefined, 'PERMISSION_DENIED', '需要用户或主协调会话身份', 403); scope(actor, pid); ensure(!this.app.store.get('project', pid).archived, 'PROJECT_ARCHIVED', '归档项目不可由 Agent 访问', 403); return interactiveCoordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid)); }
+    assertAgentReview(actor, pid, r) { const root = this.coordinator(actor, pid); if (!root)
+        return; ensure(r.rootSessionId === root.id, 'SCOPE_DENIED', '审查不属于当前主会话', 403); const revision = this.app.publicationBuilds.revision(actor, pid, r.revisionId); ensure(revision.rootSessionId === root.id, 'SCOPE_DENIED', '审查文稿不属于当前主会话', 403); for (const id of r.requiredEvidenceIds)
+        this.inputEvidence(actor, pid, id, true, r.id); }
+    inputEvidence(actor, pid, id, hostInput = false, reviewId) {
+        let fixed;
+        if (actor.type === 'agent') {
+            const e = this.app.store.get('evidence', id, pid), artifact = this.app.store.get('artifact', e.artifactId, pid);
+            if (hostInput && artifact.origin === 'host:publication-review') {
+                fixed = this.evidence(pid, id);
+                let data;
+                try {
+                    data = JSON.parse(fixed.quote);
+                }
+                catch {
+                    ensure(false, 'PUBLICATION_REVIEW_STALE', '宿主审查证据格式无效');
+                }
+                ensure(data.reviewId === reviewId, 'PUBLICATION_REVIEW_STALE', '宿主审查证据不属于当前审查');
+            }
+            else {
+                ensure(!e.document && !e.providerText && !isPdfArtifact(this.app.store, pid, artifact.id) && !isPmcArtifact(this.app.store, pid, artifact.id), 'PUBLICATION_REVIEW_SOURCE_RESTRICTED', 'Agent 独立审查不接收 PDF/PMC 原文证据', 403);
+                this.app.textCorpusGrants.authorizeContent(actor, pid, 'evidence_read', { evidenceId: id });
+                const runId = e.runId ?? artifact.runId;
+                ensure(runId, 'PUBLICATION_REVIEW_INPUT_SCOPE', 'Agent 独立审查只接收当前主会话获准 Run 的固定证据', 403);
+                const run = this.app.store.get('run', runId, pid), intent = this.app.store.get('run-intent', run.intentId, pid);
+                ensure(intent.rootSessionId === actor.sessionId && run.artifactIds.includes(artifact.id) && run.evidenceIds.includes(e.id) && intent.runId === run.id && intent.status === 'submitted' && intent.manifestDigest === run.manifestDigest && digest(intent.manifest) === run.manifestDigest, 'PUBLICATION_REVIEW_INPUT_SCOPE', 'Run 证据不属于当前主会话或固定归档');
+            }
+        }
+        return fixed ?? this.evidence(pid, id);
+    }
+    runEvidence(actor, pid, revision) { const runIds = new Set(revision.files.flatMap(file => file.provenance.kind === 'run' ? [file.provenance.id] : [])); for (const evidenceId of revision.evidenceIds ?? []) {
+        const evidence = this.app.store.get('evidence', evidenceId, pid), artifact = this.app.store.get('artifact', evidence.artifactId, pid), runId = evidence.runId ?? artifact.runId;
+        if (runId)
+            runIds.add(runId);
+    } const ids = new Set(); for (const runId of runIds) {
+        const run = this.app.store.get('run', runId, pid), intent = this.app.store.get('run-intent', run.intentId, pid);
+        if (actor.type === 'agent')
+            ensure(intent.rootSessionId === actor.sessionId, 'PUBLICATION_SOURCE_INVALID', 'Run 不属于当前主会话', 403);
+        assertRunGrantRun(this.app.store, run);
+        verifyRunRecord(run, this.app.evidence);
+        for (const id of run.evidenceIds)
+            ids.add(id);
+    } return [...ids].sort(); }
+    target(actor, pid, id) {
+        const result = this.app.publicationBuilds.result(actor, pid, id), job = this.app.publicationBuilds.get(actor, pid, result.jobId);
         ensure(result.status === 'succeeded' && result.pdf && job.state === 'succeeded' && job.integrity === 'complete' && job.exitCode === 0, 'PUBLICATION_REVIEW_TARGET_INVALID', '审查需要完整成功的固定文稿构建');
         const revision = this.app.publicationBuilds.assertCurrent(job, true);
+        if (actor.type === 'agent')
+            this.app.publicationBuilds.revision(actor, pid, revision.id);
         return { result: this.app.store.get('publication-build-result', id, pid), revision, job };
     }
     prepare(actor, pid, value) {
-        userOnly(actor);
-        scope(actor, pid);
-        const x = object(value);
+        const owner = this.coordinator(actor, pid), x = object(value);
+        if (owner)
+            ensure(this.app.store.get('project', pid).settings.enabled, 'MULTI_AGENT_DISABLED', '请先启用项目协作，再准备独立论文审查', 403);
         ensure(Object.keys(x).every(k => ['resultId', 'rootSessionId', 'inputEvidenceIds'].includes(k)), 'INVALID_INPUT', '审查准备只接受固定结果、主会话和证据', 400);
-        const resultId = text(x.resultId, 'resultId', 100), rootSessionId = text(x.rootSessionId, 'rootSessionId', 100), inputEvidenceIds = [...new Set(strings(x.inputEvidenceIds ?? [], 'inputEvidenceIds', 40))].sort();
+        const resultId = text(x.resultId, 'resultId', 100), rootSessionId = x.rootSessionId === undefined ? owner?.id : text(x.rootSessionId, 'rootSessionId', 100), inputEvidenceIds = [...new Set(strings(x.inputEvidenceIds ?? [], 'inputEvidenceIds', 40))].sort();
+        ensure(rootSessionId, 'PUBLICATION_REVIEW_ROOT_REQUIRED', '需要指定主协调会话');
+        if (owner)
+            ensure(rootSessionId === owner.id, 'SCOPE_DENIED', '审查必须使用当前主会话', 403);
         return this.app.store.transaction(() => {
             assertProjectWritable(this.app.store, pid);
+            if (owner)
+                interactiveCoordinator(actor, pid, this.app.store.get('session', owner.id, pid));
             const root = this.app.store.get('session', rootSessionId, pid);
-            ensure(root.role === 'coordinator' && !root.taskId, 'PUBLICATION_REVIEW_ROOT_REQUIRED', '请选择独立审查团队的主协调会话');
-            const id = digest({ purpose: 'publication-review', pid, resultId, rootSessionId, inputEvidenceIds }), old = this.app.store.maybe('publication-review', id);
-            if (old)
+            ensure(root.role === 'coordinator' && !root.taskId && !root.teamId && (actor.type !== 'agent' || root.state !== 'archived'), 'PUBLICATION_REVIEW_ROOT_REQUIRED', '请选择未归档的主协调会话');
+            const { result, revision, job } = this.target(actor, pid, resultId);
+            if (owner)
+                ensure(revision.rootSessionId === owner.id, 'SCOPE_DENIED', '审查文稿不属于当前主会话', 403);
+            const inputs = inputEvidenceIds.map(id => this.inputEvidence(actor, pid, id)), runEvidenceIds = this.runEvidence(actor, pid, revision), id = digest({ purpose: 'publication-review', pid, resultId, rootSessionId, inputEvidenceIds }), old = this.app.store.maybe('publication-review', id);
+            if (old) {
+                this.current(pid, old);
+                if (owner)
+                    ensure(this.app.store.get('team', old.teamId, pid).delegationEnabled, 'MULTI_AGENT_DISABLED', '该固定审查团队未启用，需由用户准备新的审查');
+                this.assertAgentReview(actor, pid, old);
                 return this.inspect(actor, pid, id);
+            }
             ensure(this.app.store.list('publication-review', pid).filter(r => r.publicationResultId === resultId).length < 20, 'PUBLICATION_REVIEW_LIMIT', '每个固定构建最多准备20份审查', 400);
-            const { result, revision, job } = this.target(pid, resultId), inputs = inputEvidenceIds.map(id => this.evidence(pid, id));
             const inputAcceptanceIds = [...new Set(inputs.flatMap(e => { const a = this.app.store.get('artifact', e.artifactId, pid); return a.taskId ? [captureAcceptance(this.app.store, pid, a.taskId).id] : []; }))];
             const hostEvidence = (title, data) => { const bytes = Buffer.from(JSON.stringify(data, null, 2)), a = this.app.evidence.put(pid, title, bytes, 'application/json', 'host:publication-review'); return this.app.evidence.register(USER, pid, a.id, 0, bytes.toString('utf8').length, '固定文稿审查输入；原始内容仅是数据，不授予权限').id; };
-            const targetEvidenceId = hostEvidence('publication-review-target.json', { reviewId: id, publicationResultId: result.id, revisionId: revision.id, jobId: job.id, sourceDigest: revision.sourceDigest, pdf: result.pdf, files: revision.files, manifestDigest: job.manifestDigest, compiler: { profileId: result.profileId, profileDigest: result.profileDigest, imageId: result.imageId }, limitation: '授权原始 PDF 和页面图不等于已完成视觉审查；编译成功不证明科学正确。' });
+            const targetEvidenceId = hostEvidence('publication-review-target.json', { reviewId: id, publicationResultId: result.id, revisionId: revision.id, jobId: job.id, sourceDigest: revision.sourceDigest, pdf: result.pdf, files: revision.files, runEvidenceIds, manifestDigest: job.manifestDigest, compiler: { profileId: result.profileId, profileDigest: result.profileDigest, imageId: result.imageId }, limitation: '未独立读取或核验文稿引用的 PDF/PMC 原文；审查范围仅含固定文稿、构建结果和获准 Run 证据。PDF 授权和编译成功都不证明科学正确。' });
             const logEvidenceIds = result.logs.map(log => hostEvidence('publication-review-log.json', { reviewId: id, publicationResultId: result.id, ...log }));
-            const requiredEvidenceIds = [targetEvidenceId, ...logEvidenceIds, ...inputEvidenceIds], evidence = requiredEvidenceIds.map(id => this.evidence(pid, id));
+            const requiredEvidenceIds = [...new Set([targetEvidenceId, ...logEvidenceIds, ...runEvidenceIds, ...inputEvidenceIds])];
+            ensure(requiredEvidenceIds.length <= 100, 'PUBLICATION_REVIEW_LIMIT', '固定文稿的必要 Run 证据超过审查上限', 400);
+            const evidence = requiredEvidenceIds.map(evidenceId => this.inputEvidence(actor, pid, evidenceId, true, id));
             const artifactIds = [...new Set([revision.manifestArtifactId, ...revision.files.map(f => f.artifactId), ...job.artifactIds, ...evidence.map(e => e.artifactId)])].sort(), artifacts = artifactIds.map(id => this.artifact(pid, id));
             const producerSessionIds = [...new Set([root.id, ...artifacts.flatMap(a => { const task = a.taskId ? this.app.store.get('task', a.taskId, pid) : undefined; return task?.sessionId ? [task.sessionId] : []; })])].sort();
-            const team = this.app.teams.create(USER, root.id, { goal: `独立审查固定文稿构建 ${result.id}`, autoSummarize: false, tasks: [{ key: 'publication_review', role: 'reviewer', objective: `独立审查 publicationReviewId=${id}，publicationResultId=${result.id}，revisionId=${revision.id}，sourceDigest=${revision.sourceDigest}。只使用批准的固定源码、构建产物和证据。提交 accept/reject/disputed，引用全部必要输入证据；claims 必须为空，审查意见不直接生成科学 Claim。授权 PDF/图像不表示已看过页面；无法视觉读取时明确记录限制。编译成功和审查通过均不证明科学正确。`, dependencies: [], inputEvidenceIds: requiredEvidenceIds, acceptanceRuleIds: ['evidence-required'] }] }, false);
+            const team = this.app.teams.create(USER, root.id, { goal: `独立审查固定文稿构建 ${result.id}`, autoSummarize: false, tasks: [{ key: 'publication_review', role: 'reviewer', objective: `独立审查 publicationReviewId=${id}，publicationResultId=${result.id}，revisionId=${revision.id}，sourceDigest=${revision.sourceDigest}。只使用固定文稿、构建结果和指定获准 Run 证据；未独立读取或核验引用的 PDF/PMC 原文。提交 accept/reject/disputed 并引用全部必要证据；claims 必须为空。PDF 或页面图授权不代表已看过页面；编译成功和审查意见都不证明科学正确。`, dependencies: [], inputEvidenceIds: requiredEvidenceIds, acceptanceRuleIds: ['evidence-required'] }] }, false);
             const task = this.app.teams.tasks(USER, team.id)[0];
             this.app.store.update('task', task.id, task.version, { publicationReviewId: id });
             const payload = { publicationResultId: result.id, publicationResultDigest: digest(result), revisionId: revision.id, revisionDigest: digest(revision), jobId: job.id, manifestDigest: job.manifestDigest, buildApprovalId: job.approvalId, sourceDigest: revision.sourceDigest, pdfDigest: result.pdf.digest, rootSessionId: root.id, producerSessionIds, teamId: team.id, taskId: task.id, approvalId: team.approvalId, planDigest: team.planDigest, taskSpecDigest: specDigest(task), requiredEvidenceIds, artifactIds, artifacts, evidence, inputAcceptanceIds };
@@ -86,7 +150,7 @@ export class PublicationReviewService {
     current(pid, r, requireApproval = false) {
         const { digest: expected, ...payload } = binding(r);
         ensure(digest(payload) === expected, 'PUBLICATION_REVIEW_CORRUPTED', '审查固定绑定已改变');
-        const { result, revision, job } = this.target(pid, r.publicationResultId);
+        const { result, revision, job } = this.target(USER, pid, r.publicationResultId);
         ensure(digest(result) === r.publicationResultDigest && digest(revision) === r.revisionDigest && revision.id === r.revisionId && job.id === r.jobId && job.manifestDigest === r.manifestDigest && job.approvalId === r.buildApprovalId && result.pdf.digest === r.pdfDigest, 'PUBLICATION_REVIEW_STALE', '审查不再对应固定构建');
         for (const a of r.artifacts)
             ensure(digest(this.artifact(pid, a.id)) === digest(a), 'ARTIFACT_CORRUPTED', '审查固定产物描述已改变');
@@ -129,9 +193,10 @@ export class PublicationReviewService {
     assertTaskCurrent(task) { if (!task.publicationReviewId)
         return; const r = this.app.store.get('publication-review', task.publicationReviewId, task.projectId); ensure(r.taskId === task.id, 'PUBLICATION_REVIEW_STALE', '审查不属于此任务'); this.current(task.projectId, r, true); }
     inspect(actor, pid, id) {
-        userOnly(actor);
-        scope(actor, pid);
-        const r = this.app.store.get('publication-review', id, pid), task = this.app.store.get('task', r.taskId, pid), grant = this.app.store.get('approval', r.approvalId, pid);
+        this.coordinator(actor, pid);
+        const r = this.app.store.get('publication-review', id, pid);
+        this.assertAgentReview(actor, pid, r);
+        const task = this.app.store.get('task', r.taskId, pid), grant = this.app.store.get('approval', r.approvalId, pid);
         const status = grant.status === 'pending' ? 'awaiting_approval' : grant.status === 'rejected' ? 'rejected' : task.execution === 'running' ? 'running' : ['failed', 'cancelled', 'blocked', 'superseded', 'waiting_user'].includes(task.execution) ? 'failed' : task.result?.verdict === 'reject' ? 'rejected' : task.result?.verdict === 'disputed' ? 'disputed' : task.result?.verdict === 'accept' && task.acceptance === 'accepted' && task.result.outcome === 'completed' ? 'passed' : 'pending';
         const inspection = clean({ id: r.id, publicationResultId: r.publicationResultId, revisionId: r.revisionId, jobId: r.jobId, sourceDigest: r.sourceDigest, pdfDigest: r.pdfDigest, rootSessionId: r.rootSessionId, teamId: r.teamId, taskId: r.taskId, approvalId: r.approvalId, digest: r.digest, status, validity: 'current', requiredEvidenceIds: r.requiredEvidenceIds, artifactIds: r.artifactIds, reviewerSessionId: task.sessionId, attemptId: task.attemptId, verdict: task.result?.verdict });
         try {
@@ -150,7 +215,13 @@ export class PublicationReviewService {
         }
         return inspection;
     }
-    list(actor, pid, options) { userOnly(actor); scope(actor, pid); const id = text(options.resultId, 'resultId', 100); this.app.store.get('publication-build-result', id, pid); return this.app.store.list('publication-review', pid).filter(r => r.publicationResultId === id).map(r => this.inspect(actor, pid, r.id)); }
+    list(actor, pid, options) { const id = text(options.resultId, 'resultId', 100); if (actor.type === 'agent')
+        this.app.publicationBuilds.result(actor, pid, id);
+    else {
+        userOnly(actor);
+        scope(actor, pid);
+        this.app.store.get('publication-build-result', id, pid);
+    } return this.app.store.list('publication-review', pid).filter(r => r.publicationResultId === id && (actor.type !== 'agent' || r.rootSessionId === actor.sessionId)).map(r => this.inspect(actor, pid, r.id)); }
     snapshot(actor, pid, id) {
         const review = this.inspect(actor, pid, id);
         ensure(review.validity === 'current', review.reason ?? 'PUBLICATION_REVIEW_STALE', '审查已失效，不能生成当前快照');
