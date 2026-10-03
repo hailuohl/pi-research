@@ -6,7 +6,7 @@
   "branch": "implementation/pr01-reproducible-baseline",
   "artifacts": {
     "preview.html": "365F3870E4B5281157BAA4C377E53410172506AEEC33FBF4C7538E2D1E600FFE",
-    "README.md": "262C3E592DE49E8F96C7255AAF517E8DD96EB904CCE8C96D9EE6C7BC7C69297E",
+    "README.md": "C3082255F70A2904BD7E09CD765B96B619A4C3CE9078200DA08B28069329DA02",
     "icon-sources.json": "4B74D901C34FC0946AF431C88189E5C22977797F396B1634E882748FD3A781AF",
     "preview-desktop.png": "E2968BA2E66A1ECFF8016C0D58DF0040E6E5325FA5E98F58022EE57BF0E79E96"
   },
@@ -274,5 +274,14 @@
     "upstreamFetch": "19 public static SVGs fetched at fixed commit,all HTTP200;3 existing SVGs reused",
     "logos": "five existing project files; bytes independently compared after data-URL decoding",
     "licenses": "existing Lucide ISC/MIT and source-logo OpenResearch license texts retained inline"
+  },
+  "selectedTheme": {
+    "id": "light",
+    "label": "简洁浅色",
+    "date": "2026-10-04",
+    "chosenBy": "user",
+    "verification": "HTML default data-theme=light and live browser body data-theme=light",
+    "scope": "design selection; no production code changes",
+    "screenshot": ".validation/ui-theme-selection-2026-10-04/light-selected.png"
   }
 }
