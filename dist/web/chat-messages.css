@@ -1,6 +1,7 @@
 .conversation .message-meta time,.conversation .message-tools{opacity:0;transition:opacity .14s ease}
 .conversation .message:hover .message-meta time,.conversation .message:focus-within .message-meta time,.conversation .message:hover .message-tools,.conversation .message:focus-within .message-tools{opacity:1}
 .conversation .message-tools{pointer-events:none}
+.conversation .message-user{flex-direction:row-reverse}
 .conversation .message:hover .message-tools,.conversation .message:focus-within .message-tools{pointer-events:auto}
 .conversation .message-branch-button:focus-visible,.conversation .message-read-button:focus-visible{outline:2px solid #8c3044;outline-offset:3px}
 .conversation .message-markdown{min-width:0;color:#4b3e41;font-size:12px;line-height:1.85;overflow-wrap:anywhere}
