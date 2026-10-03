@@ -20,6 +20,37 @@ function chatProps(overrides = {}) {
     return { data: { project: { id: 'p', archived: false, settings: { enabled: false } }, teams: [], wakeups: [] }, boot, session, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, onHistory() {}, stream: '', busy: false, perform: async fn => fn(), onToggle() {}, onNew() {}, onExperiments() {}, onWorkspace() {}, onSession() {}, onExperiment() {}, onRun() {}, ...overrides };
 }
 
+test('composer shares one send/stop button and keeps queued drafts sendable during execution',()=>{
+    for(const state of ['idle','queued','running','interrupted']){
+        const view=synchronousState(new ComposerControls(controlsProps({session:{...session,state},hasDraft:false})));
+        const buttons=elements(view.render()).filter(n=>n.type==='button'&&n.props.className?.includes('composer-submit-control'));
+        assert.equal(buttons.length,1);const active=['queued','running'].includes(state);
+        assert.equal(buttons[0].props.type,active?'button':'submit');assert.equal(buttons[0].props['aria-label'],active?'停止模型':'发送');assert.equal(buttons[0].props.disabled,!active);
+        assert.doesNotMatch(JSON.stringify(view.render()),/停止 Agent/);
+        if(active){view.props={...view.props,hasDraft:true};const send=find(view.render(),n=>n.type==='button'&&n.props.className?.includes('composer-submit-control'));assert.equal(send.props.type,'submit');assert.equal(send.props['aria-label'],'排队发送');assert.equal(send.props.disabled,false);assert.equal(send.props.onClick,undefined);}
+    }
+});
+
+test('composer stop interrupts the exact current session and stale or ineligible clicks do nothing',async t=>{
+    const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const requests=[];
+    globalThis.fetch=async(url,init)=>{requests.push({url,body:JSON.parse(init.body)});return response({});};
+    const view=synchronousState(new ComposerControls(controlsProps({session:{...session,state:'running'},hasDraft:false})));
+    const stop=find(view.render(),n=>n.type==='button'&&n.props['aria-label']==='停止模型');assert.ok(stop);
+    await stop.props.onClick();assert.deepEqual(requests,[{url:'/api/sessions/s/interrupt',body:{}}]);
+    for(const override of [{busy:true},{projectArchived:true},{session:{...session,id:'other',state:'running'}},{session:{...session,state:'idle'}},{session:{...session,state:'running',taskId:'task'}},{session:{...session,state:'archived'}}]){
+        view.props={...controlsProps({session:{...session,state:'running'},hasDraft:false}),...override};await stop.props.onClick();
+    }
+    view.props=controlsProps({session:{...session,state:'running'},hasDraft:false});view.componentWillUnmount();await stop.props.onClick();assert.equal(requests.length,1);
+});
+
+test('stop request failure remains a failure and preserves the running control for retry',async t=>{
+    const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);
+    globalThis.fetch=async()=>({ok:false,status:409,json:async()=>({error:{message:'stop not acknowledged'}})});
+    const view=synchronousState(new ComposerControls(controlsProps({session:{...session,state:'running'},hasDraft:false})));
+    const stop=find(view.render(),n=>n.type==='button'&&n.props['aria-label']==='停止模型');
+    await assert.rejects(stop.props.onClick(),/stop not acknowledged/);assert.equal(find(view.render(),n=>n.type==='button'&&n.props['aria-label']==='停止模型').props.disabled,false);
+});
+
 test('source checkboxes apply immediately, reload confirmed flags on failure and preserve selection on close', async t => {
     const oldFetch = globalThis.fetch; t.after(() => { globalThis.fetch = oldFetch; });
     let fail = true, failRead = false, request;

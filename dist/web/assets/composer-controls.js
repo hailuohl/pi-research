@@ -103,12 +103,18 @@ class ComposerControls extends React.Component {
     for (const model of models) if (model?.provider && model.model) unique.set(modelKey(model), model);
     return [...unique.values()];
   }
+  stopSession(sessionId) {
+    const { session, busy, projectArchived } = this.props;
+    if (!this.mounted || session?.id !== sessionId || busy || projectArchived || session.taskId || !["running", "queued"].includes(session.state)) return;
+    return this.props.perform(() => api(`/sessions/${sessionId}/interrupt`, {}), "\u5DF2\u505C\u6B62\u6A21\u578B\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88");
+  }
   render() {
     const { boot, session, projectArchived, modelLocked, busy, attachments, canSend, hasDraft } = this.props;
     const { config, sourceDraft, sourcesOpen, loading, loadingError, uploadError, uploading } = this.state;
     const currentModel = session?.model, options = this.modelOptions(), modelDisabled = !session || projectArchived || busy || modelLocked || !!session.taskId || session.role !== "coordinator" || ["running", "queued", "archived"].includes(session.state);
     const uploadDisabled = !session || projectArchived || !!session.taskId || session.state === "archived" || uploading || attachments.length >= 5;
     const sourceCount = SOURCES.filter((source) => sourceDraft[source]).length;
+    const executing = !!session && !session.taskId && ["running", "queued"].includes(session.state), showStop = executing && !hasDraft;
     return /* @__PURE__ */ jsxs(Fragment, { children: [
       attachments.length ? /* @__PURE__ */ jsx("div", { className: "composer-attachment-list", "aria-label": "\u5F85\u53D1\u9001\u9644\u4EF6", children: attachments.map((attachment) => /* @__PURE__ */ jsxs("span", { className: "composer-attachment", children: [
         /* @__PURE__ */ jsx(Icon, { name: "evidence", size: 14 }),
@@ -163,10 +169,6 @@ class ComposerControls extends React.Component {
           this.props.children
         ] }),
         /* @__PURE__ */ jsx("div", { className: "grow" }),
-        session?.state === "running" && !session.taskId ? /* @__PURE__ */ jsxs("button", { type: "button", className: "secondary compact", disabled: busy, onClick: () => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), "\u5DF2\u505C\u6B62 Agent\uFF1B\u6B63\u5F0F\u5B9E\u9A8C\u672A\u53D6\u6D88"), children: [
-          /* @__PURE__ */ jsx(Icon, { name: "stop", size: 14 }),
-          "\u505C\u6B62 Agent"
-        ] }) : null,
         /* @__PURE__ */ jsxs("label", { className: "composer-model-control", children: [
           /* @__PURE__ */ jsx(Icon, { name: "cpu", size: 15 }),
           /* @__PURE__ */ jsx("span", { children: "\u6A21\u578B" }),
@@ -185,9 +187,9 @@ class ComposerControls extends React.Component {
             ] }, modelKey(model)))
           ] })
         ] }),
-        /* @__PURE__ */ jsxs("button", { className: "primary compact", type: "submit", disabled: !canSend || !hasDraft || !session, children: [
-          /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 16 }),
-          "\u53D1\u9001"
+        /* @__PURE__ */ jsxs("button", { className: "primary compact composer-submit-control", type: showStop ? "button" : "submit", "aria-label": showStop ? "\u505C\u6B62\u6A21\u578B" : executing ? "\u6392\u961F\u53D1\u9001" : "\u53D1\u9001", title: showStop ? "\u505C\u6B62\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1" : executing ? "\u53D1\u9001\u5230\u961F\u5217" : "\u53D1\u9001\u6D88\u606F", "data-action": showStop ? "stop" : "send", disabled: showStop ? busy || projectArchived : !canSend || !hasDraft || !session, onClick: showStop ? () => this.stopSession(session.id) : void 0, children: [
+          /* @__PURE__ */ jsx(Icon, { name: showStop ? "stop" : "arrow", size: 16 }),
+          showStop ? "\u505C\u6B62" : "\u53D1\u9001"
         ] })
       ] })
     ] });

@@ -112,12 +112,19 @@ export class ComposerControls extends React.Component<Props, State> {
         return [...unique.values()];
     }
 
+    stopSession(sessionId:string) {
+        const {session,busy,projectArchived}=this.props;
+        if(!this.mounted||session?.id!==sessionId||busy||projectArchived||session.taskId||!['running','queued'].includes(session.state))return;
+        return this.props.perform(()=>api(`/sessions/${sessionId}/interrupt`,{}),'已停止模型；正式实验未取消');
+    }
+
     render() {
         const { boot, session, projectArchived, modelLocked, busy, attachments, canSend, hasDraft } = this.props;
         const { config, sourceDraft, sourcesOpen, loading, loadingError, uploadError, uploading } = this.state;
         const currentModel = session?.model, options = this.modelOptions(), modelDisabled = !session || projectArchived || busy || modelLocked || !!session.taskId || session.role !== 'coordinator' || ['running', 'queued', 'archived'].includes(session.state);
         const uploadDisabled = !session || projectArchived || !!session.taskId || session.state === 'archived' || uploading || attachments.length >= 5;
         const sourceCount = SOURCES.filter(source => sourceDraft[source]).length;
+        const executing=!!session&&!session.taskId&&['running','queued'].includes(session.state),showStop=executing&&!hasDraft;
         return <>
             {attachments.length ? <div className="composer-attachment-list" aria-label="待发送附件">{attachments.map(attachment => <span className="composer-attachment" key={attachment.documentVersionId}><Icon name="evidence" size={14}/><span title={`已保存项目资料：${attachment.title}`}>{attachment.title}</span><small>{attachment.mediaType === 'application/pdf' ? '项目资料 · PDF 原件 · 需显式解析' : '项目资料 · 文本原件'}</small><button type="button" aria-label={`从草稿移除 ${attachment.title}`} title="只移除草稿引用，不删除项目原件" disabled={busy} onClick={() => this.props.onRemoveAttachment(attachment.documentVersionId)}><Icon name="close" size={13}/></button></span>)}</div> : null}
             {uploadError ? <p className="error-text composer-control-error" role="alert">{uploadError}</p> : null}
@@ -131,9 +138,8 @@ export class ComposerControls extends React.Component<Props, State> {
                     {this.props.children}
                 </div>
                 <div className="grow"/>
-                {session?.state === 'running' && !session.taskId ? <button type="button" className="secondary compact" disabled={busy} onClick={() => this.props.perform(() => api(`/sessions/${session.id}/interrupt`, {}), '已停止 Agent；正式实验未取消')}><Icon name="stop" size={14}/>停止 Agent</button> : null}
                 <label className="composer-model-control"><Icon name="cpu" size={15}/><span>模型</span><select aria-label="会话模型与思考等级" value={currentModel?.provider&&currentModel.model ? modelKey(currentModel) : ''} disabled={modelDisabled} title={modelLocked ? '当前会话已绑定固定授权，模型不能更改' : '当前会话运行或授权状态下暂不可更改模型'} onChange={(event: any) => { const selected = options.find(model => modelKey(model) === event.target.value); if (selected && (!currentModel || modelKey(selected) !== modelKey(currentModel))) this.props.onSendModel(selected); }}><option value="">{currentModel?.provider&&currentModel.model?'选择模型':'未配置模型'}</option>{options.map(model => <option key={modelKey(model)} value={modelKey(model)}>{model.provider} / {model.model} · {model.thinking}{modelKey(model) === modelKey(boot.model) ? '（默认）' : ''}</option>)}</select></label>
-                <button className="primary compact" type="submit" disabled={!canSend || !hasDraft || !session}><Icon name="arrow" size={16}/>发送</button>
+                <button className="primary compact composer-submit-control" type={showStop?'button':'submit'} aria-label={showStop?'停止模型':executing?'排队发送':'发送'} title={showStop?'停止当前对话任务':executing?'发送到队列':'发送消息'} data-action={showStop?'stop':'send'} disabled={showStop?busy||projectArchived:!canSend||!hasDraft||!session} onClick={showStop?()=>this.stopSession(session!.id):undefined}><Icon name={showStop?'stop':'arrow'} size={16}/>{showStop?'停止':'发送'}</button>
             </div>
         </>;
     }
