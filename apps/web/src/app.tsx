@@ -32,6 +32,7 @@ interface State {
     historyAnchor:{direction:'before'|'after';id:string}|null;
     stream: string;
     streamTruncated:boolean;
+    activity:SessionView['progress']['activity'];
     eventNotice:string;
     modal: string;
     modalData: any;
@@ -57,7 +58,7 @@ function saved() {
     }
 }
 export class App extends React.Component<{}, State> {
-    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: normalizeView(saved().tab ?? 'chat'), selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false, history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, navigationOpen: false,sessionCreationSignal:0 };
+    state: State = { boot: null, data: null, projectId: saved().projectId ?? '', sessionId: saved().sessionId ?? '', tab: normalizeView(saved().tab ?? 'chat'), selectedExp: saved().selectedExp ?? '', selectedRun:saved().selectedRun??'',selectedReport:saved().selectedReport??'',selectedCampaign:saved().selectedCampaign??'',selectedDiscoveryGrant:saved().selectedDiscoveryGrant??'',selectedDocument:saved().selectedDocument??null, messages: [],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false, history:null,historyAnchor:saved().historyAnchor&&saved().historyAnchor.projectId===saved().projectId&&saved().historyAnchor.sessionId===saved().sessionId?saved().historyAnchor.anchor:null, stream: '',streamTruncated:false,activity:null,eventNotice:'', modal: '', modalData: null, busy: false, error: '', notice: '', connected: false, navigationOpen: false,sessionCreationSignal:0 };
     private experimentSelections:Record<string,string> = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([,value])=>typeof value==='string')) as Record<string,string>;
     private closeNavigationOnResize = () => { if(window.innerWidth>760&&this.state.navigationOpen)this.setState({navigationOpen:false}); };
     private navigationToggle:HTMLButtonElement|null=null;
@@ -102,7 +103,7 @@ export class App extends React.Component<{}, State> {
             const active=!!view?.progress.active&&view.progress.generation===view.session.generation;
             const requestedExp=projectId===this.state.projectId?this.state.selectedExp:this.experimentSelections[projectId]??'';
             const selectedExp=data?.experiments.some(e=>e.id===requestedExp)?requestedExp:data?.experiments[0]?.id??'';
-            await new Promise<void>(resolve=>this.setState({boot,data,projectId,sessionId,messages:view?.messages??[],pendingMessages:view?.pendingMessages??[],pendingTotal:view?.pendingTotal??0,pendingNextCursor:view?.pendingNextCursor??null,canSteer:view?.progress?.canSteer??false,history:view?.history??null,historyAnchor:anchor,selectedExp,stream:!anchor&&active?view!.progress.content:'',streamTruncated:!anchor&&active&&!!view?.progress.truncated,connected:true},resolve));
+            await new Promise<void>(resolve=>this.setState({boot,data,projectId,sessionId,messages:view?.messages??[],pendingMessages:view?.pendingMessages??[],pendingTotal:view?.pendingTotal??0,pendingNextCursor:view?.pendingNextCursor??null,canSteer:view?.progress?.canSteer??false,history:view?.history??null,historyAnchor:anchor,selectedExp,stream:!anchor&&active?view!.progress.content:'',streamTruncated:!anchor&&active&&!!view?.progress.truncated,activity:!anchor&&active?view?.progress.activity??null:null,connected:true},resolve));
             if(!this.mounted||epoch!==this.refreshEpoch)return false;
             if(this.feed?.projectId!==projectId){this.feed?.stop();this.feed=undefined;if(projectId){const feed=new ProjectEventFeed(projectId,()=>this.refresh(true),eventNotice=>{if(this.mounted&&this.feed===feed)this.setState({eventNotice});});this.feed=feed;feed.start();}}
             return true;
@@ -135,13 +136,13 @@ export class App extends React.Component<{}, State> {
             this.setState({ busy: false });
         }
     };
-    private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'error'> {
-        return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,error:''};
+    private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'activity'|'error'> {
+        return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,activity:null,error:''};
     }
     switchProject(id: string) { if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
     selectSession(id: string,tab='chat') { this.invalidateRead(); this.setState(this.sessionSelection(id,tab), () => { void this.refresh(); }); }
     selectExperiment=(id:string,runId='')=>{const data=this.state.data;if(!data?.experiments.some(e=>e.id===id)||runId&&!data.runs.some(r=>r.id===runId&&r.experimentId===id)){this.setState({error:'指定实验或运行不在当前项目中。'});return;}this.invalidateRead();this.setState({selectedExp:id,selectedRun:runId,tab:'experiments'});};
-    selectHistory=(anchor:{direction:'before'|'after';id:string}|null)=>{this.invalidateRead();this.setState({messages:[],historyAnchor:anchor,stream:'',streamTruncated:false},()=>void this.refresh());};
+    selectHistory=(anchor:{direction:'before'|'after';id:string}|null)=>{this.invalidateRead();this.setState({messages:[],historyAnchor:anchor,stream:'',streamTruncated:false,activity:null},()=>void this.refresh());};
     open(modal: string, data: any = null) { this.setState({ modal, modalData: data, error: '' }); }
     close = () => {
         if (!this.state.busy)
@@ -191,7 +192,7 @@ export class App extends React.Component<{}, State> {
  {this.state.eventNotice?<p className="small muted" role="status">{this.state.eventNotice}</p>:null}{this.state.error ? <div className="global-error" role="alert"><strong>操作未完成</strong><span>{this.state.error}</span><button className="icon-button" aria-label="关闭错误提示" onClick={() => this.setState({ error: '' })}><Icon name="close" size={16}/></button></div> : null}{this.state.notice ? <div className="toast" role="status"><Icon name="check" size={16}/>{this.state.notice}</div> : null}
  <div className={'workbench-content ' + (['chat', 'experiments'].includes(tab) && data ? 'with-inspector' : '')}>
  <main className={'main-pane page-' + tab + (tab === 'chat' ? ' chat-pane' : '')}>
-{boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} busy={this.state.busy} messages={this.state.messages} pendingMessages={this.state.pendingMessages} pendingTotal={this.state.pendingTotal} pendingNextCursor={this.state.pendingNextCursor} canSteer={this.state.canSteer} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
+{boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} busy={this.state.busy} messages={this.state.messages} pendingMessages={this.state.pendingMessages} pendingTotal={this.state.pendingTotal} pendingNextCursor={this.state.pendingNextCursor} canSteer={this.state.canSteer} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} activity={this.state.activity} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} session={currentSession} perform={this.perform}/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
                 tab === 'chat' ? null :
                     tab === 'scheduler' ? <SchedulerView key={data.project.id} data={data} perform={this.perform}/> :

@@ -9,6 +9,37 @@ const start=(s,generation)=>{const row=s.app.sessions.get(USER,s.session.id);s.a
 const delta=(s,generation,text,truncated=false)=>s.app.store.event(s.project.id,'session.delta',{sessionId:s.session.id,generation,text,truncated});
 const finishMessage=(s,generation,content)=>s.app.store.transaction(()=>{const m=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'assistant',content,mode:'prompt',status:'completed'});s.app.store.event(s.project.id,'session.message_completed',{sessionId:s.session.id,generation,messageId:m.id});return m;});
 
+test('tool activity is scoped to the current unfinished response and never replays a stale or foreign generation',()=>{
+ const s=setup();try{
+  start(s,2);
+  const event=(sessionId,generation,tool,status)=>s.app.store.event(s.project.id,'session.activity',{sessionId,generation,tool,status});
+  event(s.session.id,2,'project_inspect','running');
+  event('other-session',2,'workspace_read','running');event(s.session.id,1,'run_submit','running');
+  assert.deepEqual(s.app.sessions.view(USER,s.session.id).progress.activity,{tool:'project_inspect',status:'running'});
+  event(s.session.id,2,'project_inspect','failed');
+  assert.deepEqual(s.app.sessions.view(USER,s.session.id).progress.activity,{tool:'project_inspect',status:'failed'});
+  finishMessage(s,2,'Failure explained');assert.equal(s.app.sessions.view(USER,s.session.id).progress.activity,undefined);
+  start(s,3);assert.equal(s.app.sessions.view(USER,s.session.id).progress.activity,undefined);
+ }finally{s.close();}
+});
+
+test('IPC keeps response phases and safe tool names after reopening, without storing tool arguments in activity',async()=>{
+ const s=setup(),worker=join(s.dir,'message-parts-fixture.mjs');
+ writeFileSync(worker,`// UNIT IPC fixture; no SDK/model call.\nprocess.on('message',m=>{if(m.type==='start'){process.send({type:'assistant_message',content:'',toolCalls:['project_inspect','unknown-private-name'],phase:'commentary',stopReason:'toolUse',usage:{fixture:true}});process.send({type:'tool_execution_start',tool:'project_inspect',toolCallId:'call',input:{secret:'must-not-be-recorded'}});}if(m.type==='finish_fixture'){process.send({type:'tool_execution_end',tool:'project_inspect',toolCallId:'call',isError:true});process.send({type:'tool_execution_end',tool:'project_inspect',toolCallId:'call',isError:true});process.send({type:'assistant_message',content:'## Final answer',phase:'final_answer',stopReason:'stop',usage:{fixture:true}});process.send({type:'done'});}});`);
+ const host=new AgentHost(s.app,{inspect:()=>({ready:true,code:'FIXTURE',message:'No model'}),workerEntry:worker});
+ try{
+  s.app.sessions.send(USER,s.session.id,{content:'fixture grouping'});host.tick();
+  const until=Date.now()+5000;while(Date.now()<until&&!s.app.sessions.view(USER,s.session.id).progress.activity)await new Promise(r=>setTimeout(r,20));
+  let view=s.app.sessions.view(USER,s.session.id);assert.deepEqual(view.progress.activity,{tool:'project_inspect',status:'running'});
+  const interim=view.messages.find(m=>m.role==='assistant');assert.equal(interim.generation,1);assert.equal(interim.phase,'commentary');assert.deepEqual(interim.toolCalls,['project_inspect']);
+  host.active.get(s.session.id).child.send({type:'finish_fixture'});
+  const end=Date.now()+5000;while(Date.now()<end&&s.app.sessions.get(USER,s.session.id).state==='running')await new Promise(r=>setTimeout(r,20));
+  view=s.app.sessions.view(USER,s.session.id);assert.equal(view.progress.active,false);assert.equal(view.progress.activity,undefined);assert.equal(view.messages.at(-1).phase,'final_answer');assert.equal(view.messages.at(-1).content,'## Final answer');
+  const activity=s.app.store.events(0,s.project.id).filter(e=>e.type==='session.activity');assert.equal(activity.length,3);assert.equal(view.messages.filter(m=>m.role==='system'&&m.status==='failed').length,1);assert.match(view.messages.find(m=>m.role==='system').content,/project_inspect.*调用失败/);assert.doesNotMatch(JSON.stringify(activity),/must-not-be-recorded|unknown-private-name|toolCallId/);
+  const reopened=new ResearchApp(s.dir,process.cwd());try{assert.deepEqual(reopened.sessions.view(USER,s.session.id).messages,view.messages);}finally{reopened.close();}
+ }finally{await host.stop();s.close();}
+});
+
 test('session view restores only the current generation and latest unfinished answer, without replaying historical deltas',()=>{
  const s=setup();try{
   start(s,1);delta(s,1,'old preview');finishMessage(s,1,'old final');start(s,2);delta(s,2,'当前');

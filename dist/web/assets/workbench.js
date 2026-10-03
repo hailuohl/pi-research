@@ -1,7 +1,7 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { LogView } from "./log-view.js";
-import { SessionHistory } from "./session-history.js";
+import { SessionHistory, ConversationActivity } from "./session-history.js";
 import { MessageQueue } from "./message-queue.js";
 import { ComputeWait } from "./scheduler-view.js";
 import { WakeupPanel } from "./campaigns.js";
@@ -69,16 +69,9 @@ class Chat extends React.Component {
             ] })
           ] }),
           /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8FD9\u662F\u5DE5\u4F5C\u53F0\u7684\u5F15\u5BFC\u754C\u9762\uFF0C\u4E0D\u662F\u6A21\u578B\u751F\u6210\u7684\u7814\u7A76\u7ED3\u679C\u3002" })
-        ] }) : /* @__PURE__ */ jsx(SessionHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform }),
+        ] }) : /* @__PURE__ */ jsx(SessionHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0 }),
         !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(WakeupPanel, { data, busy: false, sessionId: session?.id, perform: this.props.perform, onSession: this.props.onSession }) : null,
-        !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) && this.props.stream ? /* @__PURE__ */ jsxs("article", { className: "message", children: [
-          /* @__PURE__ */ jsx("div", { className: "message-avatar", children: "\u03C0" }),
-          /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
-            /* @__PURE__ */ jsx("div", { className: "message-meta", children: "Pi \xB7 \u6D41\u5F0F\u8F93\u51FA\uFF0C\u7B49\u5F85\u6700\u7EC8\u6D88\u606F" }),
-            /* @__PURE__ */ jsx("div", { className: "prose-text", children: this.props.stream }),
-            this.props.streamTruncated ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u663E\u793A\u5F53\u524D\u8F93\u51FA\u5C3E\u90E8\uFF0C\u524D\u6587\u5DF2\u7701\u7565\uFF1B\u5B8C\u6574\u5185\u5BB9\u4EE5\u539F\u751F\u4F1A\u8BDD\u8BB0\u5F55\u4E3A\u51C6\u3002" }) : null
-          ] })
-        ] }) : null,
+        !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null,
         session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
@@ -429,7 +422,7 @@ class Inspector extends React.Component {
           /* @__PURE__ */ jsx(RunFiles, { run, data, perform }, run.id)
         ] }) : null
       ] }) : null,
-      /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: pendingTeams.length > 0 || ["active", "paused", "draining"].includes(team?.state ?? "") || this.props.tab === "chat" && teams.length > 0, children: [
+      /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: pendingTeams.length > 0 || ["active", "paused", "draining", "failed", "partial"].includes(team?.state ?? ""), children: [
         /* @__PURE__ */ jsxs("summary", { children: [
           "\u534F\u4F5C\u8BA1\u5212\u4E0E\u7ED3\u679C",
           /* @__PURE__ */ jsx("span", { children: pendingTeams.length ? "\u5F85\u5BA1\u6279" : team ? label(team.state) : "\u6682\u65E0\u4EFB\u52A1" })

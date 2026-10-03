@@ -1356,7 +1356,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_inspect: {
@@ -1862,7 +1862,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_cancel: {
@@ -2368,7 +2368,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_retry: {
@@ -2874,7 +2874,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly document_import: {

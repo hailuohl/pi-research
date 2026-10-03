@@ -1,4 +1,4 @@
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { ResearchPlanFields, ResearchPlanPanel, readResearchPlan, readPlanCandidates } from "./research-plan.js";
 import { api } from "./api.js";
@@ -7,48 +7,64 @@ import { Badge, Empty, Modal, SectionTitle } from "./ui.js";
 function WakeupPanel({ data, perform, busy, onSession, sessionId }) {
   const items = data.wakeups.filter((w) => !sessionId || w.rootSessionId === sessionId);
   if (!items.length) return null;
-  return /* @__PURE__ */ jsxs("section", { className: "wakeup-panel", "aria-label": "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5", children: [
-    /* @__PURE__ */ jsx("h2", { children: "\u7ED3\u679C\u901A\u77E5\u4E0E\u4E3B\u4F1A\u8BDD\u5206\u6790" }),
-    /* @__PURE__ */ jsx("p", { className: "muted small", children: "\u901A\u77E5\u5DF2\u4FDD\u5B58\u5230\u6570\u636E\u5E93\u3002\u4EC5\u5728\u6388\u6743\u3001\u989D\u5EA6\u548C Pi \u914D\u7F6E\u5747\u6709\u6548\u65F6\u8C03\u7528\u6A21\u578B\uFF1B\u6682\u505C\u6216\u53D6\u6D88\u8FD9\u91CC\u7684\u5206\u6790\u4E0D\u4F1A\u53D6\u6D88 Run\u3002" }),
-    items.map((w) => {
-      const budget = data.budgets.find((b) => b.campaignId === w.ownerId || b.teamId === w.ownerId);
-      return /* @__PURE__ */ jsxs("article", { className: "wakeup-row", children: [
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("strong", { children: w.sourceKind === "team" ? "\u534F\u4F5C\u6210\u679C\u7EFC\u5408" : "\u5B9E\u9A8C\u7ED3\u679C\u5206\u6790" }),
-          " ",
-          /* @__PURE__ */ jsx(Badge, { value: w.state }),
-          /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-            w.automatic ? "\u5DF2\u6388\u6743\u81EA\u52A8\u5206\u6790" : "\u4EC5\u624B\u52A8\u8BF7\u6C42",
-            " \xB7 \u5DF2\u5C1D\u8BD5 ",
-            w.attempts,
-            "/",
-            w.maxAttempts,
-            " \xB7 ",
-            short(w.sourceId)
-          ] }),
-          w.blockReason || w.error ? /* @__PURE__ */ jsx("p", { className: "notice-inline", role: "status", children: w.blockReason || w.error }) : null,
-          budget ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-            "\u5C1D\u8BD5\u989D\u5EA6\uFF1A\u5DF2\u7528 ",
-            budget.used,
-            " / \u9884\u7559 ",
-            budget.reserved,
-            " / \u672A\u77E5 ",
-            budget.unknown,
-            " / \u53EF\u7528 ",
-            budget.available,
-            "\uFF1B\u4E0D\u662F\u8D27\u5E01\u8D26\u5355"
-          ] }) : null
+  const historical = (w) => ["completed", "superseded", "cancelled"].includes(w.state) && !w.error;
+  const row = (w) => {
+    const budget = data.budgets.find((b) => b.campaignId === w.ownerId || b.teamId === w.ownerId);
+    return /* @__PURE__ */ jsxs("article", { className: "wakeup-row", children: [
+      /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("strong", { children: w.sourceKind === "team" ? "\u534F\u4F5C\u6210\u679C\u7EFC\u5408" : "\u5B9E\u9A8C\u7ED3\u679C\u5206\u6790" }),
+        " ",
+        /* @__PURE__ */ jsx(Badge, { value: w.state }),
+        /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+          w.automatic ? "\u5DF2\u6388\u6743\u81EA\u52A8\u5206\u6790" : "\u4EC5\u624B\u52A8\u8BF7\u6C42",
+          " \xB7 \u5DF2\u5C1D\u8BD5 ",
+          w.attempts,
+          "/",
+          w.maxAttempts,
+          " \xB7 ",
+          short(w.sourceId)
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-          sessionId === w.rootSessionId ? null : /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onSession(w.rootSessionId), children: "\u67E5\u770B\u4E3B\u4F1A\u8BDD" }),
-          w.state === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy || w.requested, onClick: () => perform(() => api(`/wakeups/${w.id}/request`, {}), "\u8BF7\u6C42\u5DF2\u4FDD\u5B58\uFF1B\u5C31\u7EEA\u540E\u6267\u884C"), children: w.requested ? "\u5DF2\u8BF7\u6C42\u5206\u6790" : "\u8BF7\u6C42\u5206\u6790" }) : null,
-          ["pending", "queued", "running"].includes(w.state) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => api(`/wakeups/${w.id}/cancel`, {}), "\u5DF2\u53D6\u6D88\u6B64\u5206\u6790\uFF0C\u4E0D\u5F71\u54CD\u5B9E\u9A8C"), children: "\u53D6\u6D88\u5206\u6790" }) : null,
-          ["failed", "cancelled"].includes(w.state) && w.attempts < w.maxAttempts ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy, onClick: () => {
-            if (confirm("\u5C06\u589E\u52A0\u4E00\u6B21\u6A21\u578B\u5C1D\u8BD5\uFF1B\u4E4B\u524D\u672A\u77E5\u7684\u7528\u91CF\u4E0D\u4F1A\u81EA\u52A8\u91CA\u653E\u3002\u7EE7\u7EED\uFF1F")) perform(() => api(`/wakeups/${w.id}/retry`, {}));
-          }, children: "\u663E\u5F0F\u91CD\u8BD5" }) : null
-        ] })
-      ] }, w.id);
-    })
+        w.blockReason || w.error ? /* @__PURE__ */ jsx("p", { className: "notice-inline", role: "status", children: w.blockReason || w.error }) : null,
+        budget ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+          "\u5C1D\u8BD5\u989D\u5EA6\uFF1A\u5DF2\u7528 ",
+          budget.used,
+          " / \u9884\u7559 ",
+          budget.reserved,
+          " / \u672A\u77E5 ",
+          budget.unknown,
+          " / \u53EF\u7528 ",
+          budget.available,
+          "\uFF1B\u4E0D\u662F\u8D27\u5E01\u8D26\u5355"
+        ] }) : null
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "actions", children: [
+        sessionId === w.rootSessionId ? null : /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onSession(w.rootSessionId), children: "\u67E5\u770B\u4E3B\u4F1A\u8BDD" }),
+        w.state === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy || w.requested, onClick: () => perform(() => api(`/wakeups/${w.id}/request`, {}), "\u8BF7\u6C42\u5DF2\u4FDD\u5B58\uFF1B\u5C31\u7EEA\u540E\u6267\u884C"), children: w.requested ? "\u5DF2\u8BF7\u6C42\u5206\u6790" : "\u8BF7\u6C42\u5206\u6790" }) : null,
+        ["pending", "queued", "running"].includes(w.state) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => api(`/wakeups/${w.id}/cancel`, {}), "\u5DF2\u53D6\u6D88\u6B64\u5206\u6790\uFF0C\u4E0D\u5F71\u54CD\u5B9E\u9A8C"), children: "\u53D6\u6D88\u5206\u6790" }) : null,
+        ["failed", "cancelled"].includes(w.state) && w.attempts < w.maxAttempts ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy, onClick: () => {
+          if (confirm("\u5C06\u589E\u52A0\u4E00\u6B21\u6A21\u578B\u5C1D\u8BD5\uFF1B\u4E4B\u524D\u672A\u77E5\u7684\u7528\u91CF\u4E0D\u4F1A\u81EA\u52A8\u91CA\u653E\u3002\u7EE7\u7EED\uFF1F")) perform(() => api(`/wakeups/${w.id}/retry`, {}));
+        }, children: "\u663E\u5F0F\u91CD\u8BD5" }) : null
+      ] })
+    ] }, w.id);
+  };
+  const older = items.filter(historical), current = items.filter((w) => !historical(w));
+  return /* @__PURE__ */ jsxs("section", { className: "wakeup-panel", "aria-label": "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5", children: [
+    current.length ? /* @__PURE__ */ jsxs(Fragment, { children: [
+      /* @__PURE__ */ jsx("h2", { children: "\u7ED3\u679C\u5206\u6790" }),
+      current.map(row)
+    ] }) : null,
+    older.length ? /* @__PURE__ */ jsxs("details", { className: "notification-history", children: [
+      /* @__PURE__ */ jsxs("summary", { children: [
+        "\u5DF2\u7ED3\u675F\u7684\u7ED3\u679C\u901A\u77E5\uFF08",
+        older.length,
+        "\uFF09"
+      ] }),
+      older.map(row)
+    ] }) : null,
+    /* @__PURE__ */ jsxs("details", { className: "notification-history", children: [
+      /* @__PURE__ */ jsx("summary", { children: "\u5206\u6790\u8C03\u7528\u8BF4\u660E" }),
+      /* @__PURE__ */ jsx("p", { className: "muted small", children: "\u901A\u77E5\u5DF2\u4FDD\u5B58\u5230\u6570\u636E\u5E93\u3002\u4EC5\u5728\u6388\u6743\u3001\u989D\u5EA6\u548C Pi \u914D\u7F6E\u5747\u6709\u6548\u65F6\u8C03\u7528\u6A21\u578B\uFF1B\u6682\u505C\u6216\u53D6\u6D88\u8FD9\u91CC\u7684\u5206\u6790\u4E0D\u4F1A\u53D6\u6D88 Run\u3002" })
+    ] })
   ] });
 }
 class CampaignView extends React.Component {

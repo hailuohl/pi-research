@@ -25,7 +25,7 @@ function saved() {
 class App extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: normalizeView(saved().tab ?? "chat"), selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, navigationOpen: false, sessionCreationSignal: 0 };
+    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: normalizeView(saved().tab ?? "chat"), selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, activity: null, eventNotice: "", modal: "", modalData: null, busy: false, error: "", notice: "", connected: false, navigationOpen: false, sessionCreationSignal: 0 };
     this.experimentSelections = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([, value]) => typeof value === "string"));
     this.closeNavigationOnResize = () => {
       if (window.innerWidth > 760 && this.state.navigationOpen) this.setState({ navigationOpen: false });
@@ -65,7 +65,7 @@ class App extends React.Component {
     };
     this.selectHistory = (anchor) => {
       this.invalidateRead();
-      this.setState({ messages: [], historyAnchor: anchor, stream: "", streamTruncated: false }, () => void this.refresh());
+      this.setState({ messages: [], historyAnchor: anchor, stream: "", streamTruncated: false, activity: null }, () => void this.refresh());
     };
     this.close = () => {
       if (!this.state.busy)
@@ -138,7 +138,7 @@ class App extends React.Component {
       const active = !!view?.progress.active && view.progress.generation === view.session.generation;
       const requestedExp = projectId === this.state.projectId ? this.state.selectedExp : this.experimentSelections[projectId] ?? "";
       const selectedExp = data?.experiments.some((e) => e.id === requestedExp) ? requestedExp : data?.experiments[0]?.id ?? "";
-      await new Promise((resolve) => this.setState({ boot, data, projectId, sessionId, messages: view?.messages ?? [], pendingMessages: view?.pendingMessages ?? [], pendingTotal: view?.pendingTotal ?? 0, pendingNextCursor: view?.pendingNextCursor ?? null, canSteer: view?.progress?.canSteer ?? false, history: view?.history ?? null, historyAnchor: anchor, selectedExp, stream: !anchor && active ? view.progress.content : "", streamTruncated: !anchor && active && !!view?.progress.truncated, connected: true }, resolve));
+      await new Promise((resolve) => this.setState({ boot, data, projectId, sessionId, messages: view?.messages ?? [], pendingMessages: view?.pendingMessages ?? [], pendingTotal: view?.pendingTotal ?? 0, pendingNextCursor: view?.pendingNextCursor ?? null, canSteer: view?.progress?.canSteer ?? false, history: view?.history ?? null, historyAnchor: anchor, selectedExp, stream: !anchor && active ? view.progress.content : "", streamTruncated: !anchor && active && !!view?.progress.truncated, activity: !anchor && active ? view?.progress.activity ?? null : null, connected: true }, resolve));
       if (!this.mounted || epoch !== this.refreshEpoch) return false;
       if (this.feed?.projectId !== projectId) {
         this.feed?.stop();
@@ -161,7 +161,7 @@ class App extends React.Component {
     }
   }
   sessionSelection(id, tab = this.state.tab) {
-    return { sessionId: id, tab: normalizeView(tab), messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false, error: "" };
+    return { sessionId: id, tab: normalizeView(tab), messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false, activity: null, error: "" };
   }
   switchProject(id) {
     if (this.state.data?.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[this.state.projectId] = this.state.selectedExp;
@@ -401,7 +401,7 @@ class App extends React.Component {
         ] }) : null,
         /* @__PURE__ */ jsxs("div", { className: "workbench-content " + (["chat", "experiments"].includes(tab) && data ? "with-inspector" : ""), children: [
           /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
-            boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
+            boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
             !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, session: currentSession, perform: this.perform }) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
               /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
               /* @__PURE__ */ jsxs("h1", { children: [

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {ResearchPlanFields,ResearchPlanPanel,readResearchPlan,readPlanCandidates} from './research-plan.js';
 import { api } from './api.js';
-import type { ProjectState, Campaign, Row, CampaignDecision } from './models.js';
+import type { ProjectState, Campaign, Row, CampaignDecision, Wakeup } from './models.js';
 import { short, label, number } from './models.js';
 import { Badge, Empty, Modal, SectionTitle } from './ui.js';
 import type { Perform } from './workbench.js';
@@ -14,8 +14,8 @@ export function WakeupPanel({data, perform, busy, onSession, sessionId}: {
 }) {
     const items = data.wakeups.filter(w => !sessionId || w.rootSessionId === sessionId);
     if (!items.length) return null;
-    return <section className="wakeup-panel" aria-label="持久化结果通知"><h2>结果通知与主会话分析</h2><p className="muted small">通知已保存到数据库。仅在授权、额度和 Pi 配置均有效时调用模型；暂停或取消这里的分析不会取消 Run。</p>
-        {items.map(w => {const budget=data.budgets.find(b=>b.campaignId===w.ownerId||b.teamId===w.ownerId);return <article className="wakeup-row" key={w.id}>
+    const historical=(w:Row<Wakeup>)=>['completed','superseded','cancelled'].includes(w.state)&&!w.error;
+    const row=(w:Row<Wakeup>)=>{const budget=data.budgets.find(b=>b.campaignId===w.ownerId||b.teamId===w.ownerId);return <article className="wakeup-row" key={w.id}>
             <div><strong>{w.sourceKind==='team'?'协作成果综合':'实验结果分析'}</strong> <Badge value={w.state}/><p className="small muted">{w.automatic?'已授权自动分析':'仅手动请求'} · 已尝试 {w.attempts}/{w.maxAttempts} · {short(w.sourceId)}</p>
                 {w.blockReason||w.error?<p className="notice-inline" role="status">{w.blockReason||w.error}</p>:null}
                 {budget?<p className="small muted">尝试额度：已用 {budget.used} / 预留 {budget.reserved} / 未知 {budget.unknown} / 可用 {budget.available}；不是货币账单</p>:null}
@@ -23,7 +23,12 @@ export function WakeupPanel({data, perform, busy, onSession, sessionId}: {
                 {w.state==='pending'?<button className="secondary compact" disabled={busy||w.requested} onClick={()=>perform(()=>api(`/wakeups/${w.id}/request`,{}),'请求已保存；就绪后执行')}>{w.requested?'已请求分析':'请求分析'}</button>:null}
                 {['pending','queued','running'].includes(w.state)?<button className="text-button" disabled={busy} onClick={()=>perform(()=>api(`/wakeups/${w.id}/cancel`,{}),'已取消此分析，不影响实验')}>取消分析</button>:null}
                 {['failed','cancelled'].includes(w.state)&&w.attempts<w.maxAttempts?<button className="secondary compact" disabled={busy} onClick={()=>{if(confirm('将增加一次模型尝试；之前未知的用量不会自动释放。继续？'))perform(()=>api(`/wakeups/${w.id}/retry`,{}));}}>显式重试</button>:null}
-            </div></article>;})}
+        </div></article>;};
+    const older=items.filter(historical),current=items.filter(w=>!historical(w));
+    return <section className="wakeup-panel" aria-label="持久化结果通知">
+        {current.length?<><h2>结果分析</h2>{current.map(row)}</>:null}
+        {older.length?<details className="notification-history"><summary>已结束的结果通知（{older.length}）</summary>{older.map(row)}</details>:null}
+        <details className="notification-history"><summary>分析调用说明</summary><p className="muted small">通知已保存到数据库。仅在授权、额度和 Pi 配置均有效时调用模型；暂停或取消这里的分析不会取消 Run。</p></details>
     </section>;
 }
 

@@ -5532,7 +5532,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_inspect: {
@@ -6038,7 +6038,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_cancel: {
@@ -6544,7 +6544,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_retry: {
@@ -7050,7 +7050,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "phase" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly document_import: {
@@ -10959,6 +10959,26 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minimum: number;
                             readonly maximum: number;
                         };
+                        generation: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        phase: {
+                            readonly enum: readonly ["commentary", "final_answer"];
+                        };
+                        toolCalls: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly minItems: number;
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
@@ -11130,6 +11150,26 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minimum: number;
                             readonly maximum: number;
                         };
+                        generation: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        phase: {
+                            readonly enum: readonly ["commentary", "final_answer"];
+                        };
+                        toolCalls: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly minItems: number;
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
@@ -11288,6 +11328,27 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                         readonly minimum: number;
                         readonly maximum: number;
+                    };
+                    readonly activity: {
+                        readonly anyOf: readonly [{
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly tool: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly status: {
+                                    readonly enum: readonly ["running", "completed", "failed"];
+                                };
+                            };
+                            readonly required: readonly ["tool", "status"];
+                            readonly additionalProperties: false;
+                        }, {
+                            readonly type: "null";
+                        }];
                     };
                 };
                 readonly required: readonly ["generation", "active", "canSteer", "content", "truncated", "cursor"];

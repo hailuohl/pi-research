@@ -19,6 +19,7 @@ interface Active {
     providerError?: string;
     stopError?: string;
     assistantOutput?: boolean;
+    failedToolCalls?: Set<string>;
     contextMessageIds?: string[];
 }
 /** Dependency injection is in-process test infrastructure only; HTTP/config never select a replacement worker. */

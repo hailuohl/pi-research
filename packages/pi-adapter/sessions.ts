@@ -134,12 +134,14 @@ export class SessionService {
         return this.c.store.readSnapshot(()=>{
             const session=this.get(actor,id),pid=session.projectId!,page=sessionMessagePage(this.c.store,session,input),cursor=this.c.store.eventCursor(pid);
             const queue=sessionQueue(this.c.store,session),pending={pendingMessages:queue.items,pendingTotal:queue.total,pendingNextCursor:queue.nextCursor};
-            const progress={generation:session.generation,active:session.state==='running',canSteer:queue.canSteer,content:'',truncated:false,cursor};
+            const progress:SessionView['progress']={generation:session.generation,active:session.state==='running',canSteer:queue.canSteer,content:'',truncated:false,cursor};
             if(!progress.active)return {session,...page,...pending,progress};
             const start=this.c.store.db.prepare("SELECT seq,json_extract(payload,'$.generation') generation FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='agent.started' ORDER BY seq DESC LIMIT 1").get(pid,id);
             // Legacy events did not identify an execution generation; never replay them into a new turn.
             if(!start||start.generation!==session.generation)return {session,...page,...pending,progress};
             const completed=this.c.store.db.prepare("SELECT seq FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.message_completed' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid,id,start.seq,session.generation);
+            const activity=this.c.store.db.prepare("SELECT json_extract(payload,'$.tool') tool,json_extract(payload,'$.status') status FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.activity' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid,id,completed?.seq??start.seq,session.generation);
+            if(activity&&typeof activity.tool==='string'&&['running','completed','failed'].includes(String(activity.status)))progress.activity={tool:activity.tool,status:activity.status as 'running'|'completed'|'failed'};
             const rows=this.c.store.db.prepare("SELECT seq,substr(json_extract(payload,'$.text'),1,4000) text,COALESCE(json_extract(payload,'$.truncated'),0) truncated FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.delta' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 257").all(pid,id,completed?.seq??start.seq,session.generation);
             const visible=rows.slice(0,256).reverse(),content=visible.map(r=>typeof r.text==='string'?r.text:'').join('');
             progress.content=content.slice(-32000);progress.truncated=rows.length>256||content.length>32000||visible.some(r=>!!r.truncated);

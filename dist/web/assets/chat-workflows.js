@@ -54,7 +54,7 @@ class ChatWorkflows extends React.Component {
     const { data, session, perform } = this.props, view = data.researchBrief, brief = view?.brief;
     if (!view || !brief || brief.rootSessionId !== session.id) return null;
     const current = view.latestId === brief.id, valid = view.evidenceChecks.every((e) => e.current), confirmed = brief.status === "confirmed";
-    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: brief.status !== "confirmed", children: [
+    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: brief.status !== "confirmed" || !valid, children: [
       /* @__PURE__ */ jsxs("summary", { children: [
         "\u7814\u7A76\u95EE\u9898\u4E0E\u8BA1\u5212 \xB7 \u7B2C ",
         brief.revision,
@@ -114,7 +114,7 @@ class ChatWorkflows extends React.Component {
           short(h.digest)
         ] }, h.id))
       ] }) : null
-    ] });
+    ] }, "research-brief");
   }
   runIntentInScope(projectId, sessionId, intentId, manifestDigest, campaignId) {
     const { data } = this.props;
@@ -217,7 +217,7 @@ class ChatWorkflows extends React.Component {
     const { data, perform, onSession, onExperiment, onRun, busy } = this.props, a = data.approvals.find((a2) => a2.id === c.approvalId), baseline = data.experiments.find((e) => e.id === c.baselineExperimentId);
     const observations = data.observations.filter((o) => o.campaignId === c.id);
     const intentIds = /* @__PURE__ */ new Set([...data.members.filter((m) => m.campaignId === c.id).map((m) => m.intentId), ...(data.researchCandidates ?? []).filter((v) => v.campaignId === c.id).flatMap((v) => v.intentId ? [v.intentId] : [])]);
-    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: c.state === "draft", children: [
+    return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: c.state === "draft" || data.decisions.some((d) => d.campaignId === c.id && d.status === "proposed") || data.intents.some((i) => intentIds.has(i.id) && i.status === "prepared" && !i.runId) || data.runs.some((r) => data.intents.some((i) => intentIds.has(i.id) && i.runId === r.id) && ["failed", "unknown"].includes(r.state)), children: [
       /* @__PURE__ */ jsxs("summary", { children: [
         "\u7814\u7A76\u8BA1\u5212 \xB7 ",
         c.goal,
@@ -378,7 +378,16 @@ class ChatWorkflows extends React.Component {
     if (session.taskId || session.role !== "coordinator") return null;
     const disabled = busy || data.project.archived || session.state === "archived", campaigns = (data.campaigns ?? []).filter((c) => c.rootSessionId === session.id), tasks = (data.developmentTasks ?? []).filter((t) => t.sessionId === session.id), jobs = (data.sandboxJobs ?? []).filter((j) => j.sessionId === session.id), reviews = (data.reviews ?? []).filter((r) => r.producerSessionId === session.id), proposals = (data.changeProposals ?? []).filter((p) => proposalSession(data, p) === session.id), unbound = (data.changeProposals ?? []).filter((p) => !proposalSession(data, p)), campaignIntentIds = new Set(campaigns.flatMap((c) => [...data.members.filter((m) => m.campaignId === c.id).map((m) => m.intentId), ...(data.researchCandidates ?? []).filter((v) => v.campaignId === c.id).flatMap((v) => v.intentId ? [v.intentId] : [])])), runIntents = data.intents.filter((i) => i.rootSessionId === session.id && !campaignIntentIds.has(i.id));
     if (!data.researchBrief?.brief && !campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId && !(data.manuscripts ?? []).some((r) => r.rootSessionId === session.id)) return null;
-    return /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
+    const completedIds = /* @__PURE__ */ new Set([
+      ...data.researchBrief?.brief?.status === "confirmed" && data.researchBrief.evidenceChecks.every((e) => e.current) ? ["research-brief"] : [],
+      ...runIntents.filter((i) => data.runs.some((r) => r.id === i.runId && r.state === "succeeded")).map((i) => i.id),
+      ...campaigns.filter((c) => c.state === "stopped" && !data.decisions.some((d) => d.campaignId === c.id && d.status === "proposed") && !data.intents.some((i) => (data.members.some((m) => m.campaignId === c.id && m.intentId === i.id) || (data.researchCandidates ?? []).some((v) => v.campaignId === c.id && v.intentId === i.id)) && (!i.runId || data.runs.some((r) => r.id === i.runId && r.state !== "succeeded")))).map((c) => c.id),
+      ...tasks.filter((t) => jobs.some((j) => j.id === t.jobId && j.state === "succeeded")).map((t) => t.id),
+      ...jobs.filter((j) => j.state === "succeeded").map((j) => j.id),
+      ...reviews.filter((r) => r.status === "passed" && data.tasks.some((t) => t.id === r.taskId && t.result?.verdict === "accept")).map((r) => r.id),
+      ...proposals.filter((p) => p.state === "applied" && p.sourceValidity !== "stale").map((p) => p.id)
+    ]);
+    const content = /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EFB\u52A1\u7531\u5BF9\u8BDD\u4E2D\u7684 Pi \u51C6\u5907\uFF1B\u9700\u8981\u786E\u8BA4\u7684\u56FA\u5B9A\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002\u72B6\u6001\u4F1A\u66F4\u65B0\uFF0C\u540E\u7EED\u8981\u6C42\u7EE7\u7EED\u5728\u8F93\u5165\u6846\u8BF4\u660E\u3002" }),
       this.researchBriefCard(disabled),
       /* @__PURE__ */ jsx(PublicationDialogue, { data, session, disabled, busy, perform }),
@@ -478,6 +487,21 @@ class ChatWorkflows extends React.Component {
           "\uFF0C\u53EA\u8BFB\uFF09"
         ] }),
         unbound.map((p) => this.proposalCard(p, true, true))
+      ] }) : null
+    ] });
+    const current = [], completed = [];
+    React.Children.forEach(content.props.children, (child) => {
+      (React.isValidElement(child) && completedIds.has(String(child.key)) ? completed : current).push(child);
+    });
+    return /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
+      current,
+      completed.length ? /* @__PURE__ */ jsxs("details", { className: "workflow-history", children: [
+        /* @__PURE__ */ jsxs("summary", { children: [
+          "\u5DF2\u5B8C\u6210\u4E8B\u9879\uFF08",
+          completed.length,
+          "\uFF09"
+        ] }),
+        completed
       ] }) : null
     ] });
   }

@@ -43,7 +43,7 @@ export class ChatWorkflows extends React.Component<{
         const {data,session,perform}=this.props,view=data.researchBrief,brief=view?.brief;
         if(!view||!brief||brief.rootSessionId!==session.id)return null;
         const current=view.latestId===brief.id,valid=view.evidenceChecks.every(e=>e.current),confirmed=brief.status==='confirmed';
-        return <details className="workflow-card" open={brief.status!=='confirmed'}><summary>研究问题与计划 · 第 {brief.revision} 版<Badge value={confirmed?'approved':brief.status==='ready'?'pending':'draft'} caption={confirmed?'已确认':brief.status==='ready'?'待确认':'待澄清'}/></summary>
+        return <details key="research-brief" className="workflow-card" open={brief.status!=='confirmed'||!valid}><summary>研究问题与计划 · 第 {brief.revision} 版<Badge value={confirmed?'approved':brief.status==='ready'?'pending':'draft'} caption={confirmed?'已确认':brief.status==='ready'?'待确认':'待澄清'}/></summary>
             <p><strong>{brief.question}</strong></p><p>{brief.scope}</p>
             {brief.clarificationQuestions.length?<div><strong>待明确的问题</strong><ul>{brief.clarificationQuestions.map((q,i)=><li key={i}>{q}</li>)}</ul></div>:null}
             {brief.successCriteria.length?<div><strong>判断标准</strong><ul>{brief.successCriteria.map((q,i)=><li key={i}>{q}</li>)}</ul></div>:null}
@@ -110,7 +110,7 @@ export class ChatWorkflows extends React.Component<{
         const {data,perform,onSession,onExperiment,onRun,busy}=this.props,a=data.approvals.find(a=>a.id===c.approvalId),baseline=data.experiments.find(e=>e.id===c.baselineExperimentId);
         const observations=data.observations.filter(o=>o.campaignId===c.id);
         const intentIds=new Set([...data.members.filter(m=>m.campaignId===c.id).map(m=>m.intentId),...(data.researchCandidates??[]).filter(v=>v.campaignId===c.id).flatMap(v=>v.intentId?[v.intentId]:[])]);
-        return <details key={c.id} className="workflow-card" open={c.state==='draft'}><summary>研究计划 · {c.goal}<Badge value={c.state}/></summary>
+        return <details key={c.id} className="workflow-card" open={c.state==='draft'||data.decisions.some(d=>d.campaignId===c.id&&d.status==='proposed')||data.intents.some(i=>intentIds.has(i.id)&&i.status==='prepared'&&!i.runId)||data.runs.some(r=>data.intents.some(i=>intentIds.has(i.id)&&i.runId===r.id)&&['failed','unknown'].includes(r.state))}><summary>研究计划 · {c.goal}<Badge value={c.state}/></summary>
             <p>{c.goal}</p><dl className="details"><dt>基线</dt><dd>{baseline?.title??short(c.baselineExperimentId)}</dd><dt>评价指标</dt><dd>{c.primaryMetric} · {c.direction==='min'?'越小越好':'越大越好'}</dd><dt>已绑定模型</dt><dd>{c.rootModel.provider||'未配置供应商'} / {c.rootModel.model||'未配置模型'}</dd><dt>结果分析</dt><dd>{c.autoAnalyze?'批准后允许有界自动分析':'由对话指令请求分析'}</dd></dl>
             <details><summary>固定来源、额度与截止条件</summary><pre className="file-preview">{JSON.stringify({id:c.id,rootSessionId:c.rootSessionId,contractDigest:c.contractDigest,planDigest:c.planDigest,limits:c.limits,rootModel:c.rootModel},null,2)}</pre></details>
             {c.state==='draft'&&a&&['pending','approved'].includes(a.status)?<div className="actions wrap"><button className="primary compact" disabled={disabled} onClick={()=>perform(async()=>{await this.approved(a);await api(`/campaigns/${c.id}/activate`,{expectedVersion:c.version});},'研究计划已启动；正式实验仍按固定授权提交')}>{a.status==='approved'?'启动已批准研究计划':'批准并启动研究计划'}</button>{a.status==='pending'?<button className="text-button" disabled={disabled} onClick={()=>perform(()=>this.decide(a,false))}>拒绝研究计划</button>:null}</div>:null}
@@ -137,7 +137,16 @@ export class ChatWorkflows extends React.Component<{
         if(session.taskId||session.role!=='coordinator')return null;
         const disabled=busy||data.project.archived||session.state==='archived',campaigns=(data.campaigns??[]).filter(c=>c.rootSessionId===session.id),tasks=(data.developmentTasks??[]).filter(t=>t.sessionId===session.id),jobs=(data.sandboxJobs??[]).filter(j=>j.sessionId===session.id),reviews=(data.reviews??[]).filter(r=>r.producerSessionId===session.id),proposals=(data.changeProposals??[]).filter(p=>proposalSession(data,p)===session.id),unbound=(data.changeProposals??[]).filter(p=>!proposalSession(data,p)),campaignIntentIds=new Set(campaigns.flatMap(c=>[...data.members.filter(m=>m.campaignId===c.id).map(m=>m.intentId),...(data.researchCandidates??[]).filter(v=>v.campaignId===c.id).flatMap(v=>v.intentId?[v.intentId]:[])])),runIntents=data.intents.filter(i=>i.rootSessionId===session.id&&!campaignIntentIds.has(i.id));
         if(!data.researchBrief?.brief&&!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId&&!(data.manuscripts??[]).some(r=>r.rootSessionId===session.id))return null;
-        return <section className="chat-workflows" aria-label="当前对话任务"><p className="small muted">任务由对话中的 Pi 准备；需要确认的固定事项显示在这里。状态会更新，后续要求继续在输入框说明。</p>
+        const completedIds=new Set<string>([
+            ...(data.researchBrief?.brief?.status==='confirmed'&&data.researchBrief.evidenceChecks.every(e=>e.current)?['research-brief']:[]),
+            ...runIntents.filter(i=>data.runs.some(r=>r.id===i.runId&&r.state==='succeeded')).map(i=>i.id),
+            ...campaigns.filter(c=>c.state==='stopped'&&!data.decisions.some(d=>d.campaignId===c.id&&d.status==='proposed')&&!data.intents.some(i=>(data.members.some(m=>m.campaignId===c.id&&m.intentId===i.id)||(data.researchCandidates??[]).some(v=>v.campaignId===c.id&&v.intentId===i.id))&&(!i.runId||data.runs.some(r=>r.id===i.runId&&r.state!=='succeeded')))).map(c=>c.id),
+            ...tasks.filter(t=>jobs.some(j=>j.id===t.jobId&&j.state==='succeeded')).map(t=>t.id),
+            ...jobs.filter(j=>j.state==='succeeded').map(j=>j.id),
+            ...reviews.filter(r=>r.status==='passed'&&data.tasks.some(t=>t.id===r.taskId&&t.result?.verdict==='accept')).map(r=>r.id),
+            ...proposals.filter(p=>p.state==='applied'&&p.sourceValidity!=='stale').map(p=>p.id),
+        ]);
+        const content=<section className="chat-workflows" aria-label="当前对话任务"><p className="small muted">任务由对话中的 Pi 准备；需要确认的固定事项显示在这里。状态会更新，后续要求继续在输入框说明。</p>
             {this.researchBriefCard(disabled)}
             <PublicationDialogue data={data} session={session} disabled={disabled} busy={busy} perform={perform}/>
             {campaigns.slice().reverse().map(c=>this.campaignCard(c,disabled))}
@@ -149,5 +158,8 @@ export class ChatWorkflows extends React.Component<{
             {proposals.slice().reverse().map(p=>this.proposalCard(p,disabled))}
             {unbound.length?<details className="workflow-card"><summary>未绑定会话的历史提案（{unbound.length}，只读）</summary>{unbound.map(p=>this.proposalCard(p,true,true))}</details>:null}
         </section>;
+        const current:React.ReactNode[]=[],completed:React.ReactNode[]=[];
+        React.Children.forEach(content.props.children,child=>{(React.isValidElement(child)&&completedIds.has(String(child.key))?completed:current).push(child);});
+        return <section className="chat-workflows" aria-label="当前对话任务">{current}{completed.length?<details className="workflow-history"><summary>已完成事项（{completed.length}）</summary>{completed}</details>:null}</section>;
     }
 }

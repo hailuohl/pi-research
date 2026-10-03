@@ -61,7 +61,10 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
     render(){
         const {data,session,disabled,busy,perform}=this.props,revisions=(data.manuscripts??[]).filter(r=>r.rootSessionId===session.id);
         if(!revisions.length)return null;
-        return <>{revisions.map(revision=>{const jobs=(data.publicationJobs??[]).filter(j=>j.revisionId===revision.id);return <details className="workflow-card" key={revision.id} open={!jobs.length||jobs.some(j=>j.state==='prepared')}><summary>文稿 · {revision.title}<span>版本 {short(revision.id)}</span></summary>
+        const superseded=new Set(revisions.flatMap(r=>r.previousRevisionId?[r.previousRevisionId]:[]));
+        const needsAttention=(j:PublicationBuildJobDTO)=>['prepared','failed','unknown','timed_out','cancelled'].includes(j.state)||!!j.error||(data.publicationReviews??[]).some(r=>r.publicationResultId===j.resultId&&r.status==='awaiting_approval');
+        const isCurrent=(r:Row<ManuscriptRevision>)=>!superseded.has(r.id)||(data.publicationJobs??[]).some(j=>j.revisionId===r.id&&needsAttention(j));
+        const renderRevision=(revision:Row<ManuscriptRevision>)=>{const jobs=(data.publicationJobs??[]).filter(j=>j.revisionId===revision.id);return <details className="workflow-card" key={revision.id} open={!jobs.length||jobs.some(needsAttention)}><summary>文稿 · {revision.title}<span>版本 {short(revision.id)}</span></summary>
             {revision.previousRevisionId?<p>修订自 {short(revision.previousRevisionId)} · 旧版本保留</p>:null}
             <p>{revision.files.length} 个固定文件 · {revision.engine}</p>
             <button className="text-button" disabled={busy} onClick={()=>perform(()=>this.draft(revision))}>查看文稿源码</button>
@@ -77,6 +80,8 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
                 {reviews.map(review=><details key={review.id} open={review.status==='awaiting_approval'}><summary>论文独立审查 <Badge value={review.status}/></summary><p>{review.summary??'仅审查这一固定文稿及获准证据。'}</p>{review.reason?<p>{review.reason}</p>:null}{review.status==='awaiting_approval'&&review.validity==='current'?<button className="primary compact" disabled={disabled||!data.project.settings.enabled||!data.teams.find(t=>t.id===review.teamId)?.delegationEnabled} onClick={()=>perform(()=>this.startReview(review.id),'论文独立审查已启动')}>批准并启动审查</button>:null}{!data.project.settings.enabled&&review.status==='awaiting_approval'?<p>启用多智能体开关后可执行独立审查。</p>:null}</details>)}
                 {(data.publicationExports??[]).filter(e=>reportIds.has(e.reportId)).map(e=><button key={e.artifactId} className="text-button" onClick={()=>perform(()=>downloadArtifact(e.artifactId,`report-${e.reportId}.tar.gz`))}>下载已归档成果包</button>)}
             </div>;})}
-        </details>;})}{this.state.pdfUrl?<details className="workflow-card" open><summary>{this.state.pdfTitle} · PDF</summary><button className="text-button" onClick={()=>{this.releasePdf();this.setState({pdfUrl:'',pdfTitle:''});}}>关闭预览</button><iframe title={this.state.pdfTitle} src={this.state.pdfUrl} style={{width:'100%',height:'70vh',border:0}}/></details>:null}</>;
+        </details>;};
+        const older=revisions.filter(r=>!isCurrent(r));
+        return <>{revisions.filter(isCurrent).map(renderRevision)}{older.length?<details className="workflow-history"><summary>历史文稿（{older.length}）</summary>{older.map(renderRevision)}</details>:null}{this.state.pdfUrl?<details className="workflow-card" open><summary>{this.state.pdfTitle} · PDF</summary><button className="text-button" onClick={()=>{this.releasePdf();this.setState({pdfUrl:'',pdfTitle:''});}}>关闭预览</button><iframe title={this.state.pdfTitle} src={this.state.pdfUrl} style={{width:'100%',height:'70vh',border:0}}/></details>:null}</>;
     }
 }

@@ -31,6 +31,7 @@ interface Active {
     providerError?: string;
     stopError?: string;
     assistantOutput?: boolean;
+    failedToolCalls?: Set<string>;
     contextMessageIds?: string[];
 }
 const redact = (s: string) => s.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]');
@@ -191,7 +192,7 @@ export class AgentHost {
             if (input) {
                 const m = input;
                 ensure(m.status === 'queued' && m.sessionId === next.id && m.projectId===next.projectId, 'MESSAGE_STALE', '消息已失效');
-                message=store.update<Message>('message', m.id, m.version, { status: 'running' });
+                message=store.update<Message>('message', m.id, m.version, { status: 'running',generation:next.generation });
                 if (m.wakeupId) this.app.wakeups.markStarted(m.wakeupId, next.id, next.generation, m.id);
             }
             const wakeupId=messageId?store.get<Message>('message',messageId).wakeupId:undefined;
@@ -327,6 +328,26 @@ export class AgentHost {
             ensure(Array.isArray(m.messageIds) && m.messageIds.every((id: unknown) => typeof id === 'string' && a.contextMessageIds?.includes(id)), 'SCOPE_DENIED', '不能确认未投递的上下文通知', 403);
             this.app.store.transaction(() => this.app.sessions.acknowledgeNotices(s.id, m.messageIds));
         }
+        if (m?.type === 'tool_execution_start' || m?.type === 'tool_execution_end') {
+            const tool = String(m.tool ?? '');
+            if (!this.tools.definitions(a.actor.role!, !!a.actor.wakeupId).some(definition => definition.name === tool)) return;
+            const failedCallId=m.type === 'tool_execution_end' && m.isError ? String(m.toolCallId ?? tool).slice(0,200) : null;
+            const seen=a.failedToolCalls ??= new Set<string>();
+            let noticeSaved=false;
+            this.app.store.transaction(() => {
+                ensure(this.valid(a), 'LEASE_EXPIRED', '旧 Worker 不能保存当前工具状态');
+                this.app.store.event(s.projectId, 'session.activity', {sessionId:s.id,generation:a.generation,tool,status:m.type === 'tool_execution_start' ? 'running' : m.isError ? 'failed' : 'completed'});
+                if (failedCallId !== null) {
+                    if (!seen.has(failedCallId)) {
+                        const notice = this.app.store.create<Message>('message', s.projectId, {sessionId:s.id,generation:a.generation,role:'system',content:`工具 ${tool} 调用失败。请查看智能体说明或对应任务的诊断。`,mode:'follow_up',status:'failed'});
+                        this.app.store.event(s.projectId, 'session.message_completed', {sessionId:s.id,messageId:notice.id});
+                        noticeSaved=true;
+                    }
+                }
+            });
+            if(noticeSaved)seen.add(failedCallId!);
+            return;
+        }
         if (m?.type === 'ready') {
             ensure(m.model?.provider === s.model.provider && m.model?.id === s.model.model, 'MODEL_FALLBACK_REFUSED', 'Pi 尝试切换未经批准的模型');
             if (m.sessionFile)
@@ -338,7 +359,9 @@ export class AgentHost {
             const content=redact(String(m.content??''));
             this.app.store.transaction(()=>{
                 ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');
-                const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? clean(String(m.error)) : undefined, usage: m.usage });
+                const allowed = new Set(this.tools.definitions(a.actor.role!, !!a.actor.wakeupId).map(definition => definition.name));
+                const toolCalls = Array.isArray(m.toolCalls) ? m.toolCalls.filter((name:unknown):name is string => typeof name === 'string' && allowed.has(name)).slice(0,64) : [];
+                const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, generation:a.generation,phase:toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer',...(toolCalls.length ? {toolCalls} : {}), ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? clean(String(m.error)) : undefined, usage: m.usage });
                 this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, generation:s.generation,messageId: record.id });
                 this.app.store.create('model-usage', s.projectId, { sessionId: s.id, attemptId: a.attemptId ?? null, provider: s.model.provider, model: s.model.model, usage: m.usage, status: m.usage ? 'reported' : 'unknown', stopReason: m.stopReason ?? null });
             });

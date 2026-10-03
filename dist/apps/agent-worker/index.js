@@ -134,7 +134,8 @@ process.on('message', async (message) => {
             if (e.type === 'message_end' && e.message?.role === 'assistant') {
                 providerFailure = e.message.stopReason === 'aborted' && stopping ? providerFailure : assistantFailure(e.message) ?? providerFailure;
                 const content = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'text').map(p => p.text).join('') : '';
-                send({ type: 'assistant_message', content, usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: assistantFailure(e.message) ?? null });
+                const toolCalls = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'toolCall').map(p => p.name).slice(0, 64) : [];
+                send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: assistantFailure(e.message) ?? null });
             }
             if (e.type === 'turn_start' && ++turns > 12) {
                 stopping = true;

@@ -69,6 +69,9 @@ export interface Session {
     parentSessionId?: string;
 }
 export interface Message {
+    generation?: number;
+    phase?: 'commentary' | 'final_answer';
+    toolCalls?: string[];
     attachments?: MessageAttachment[];
     sessionId: string;
     role: 'user' | 'assistant' | 'system';

@@ -30,6 +30,9 @@ export declare class SessionService {
             version: number;
             createdAt: string;
             updatedAt: string;
+            generation?: number;
+            phase?: "commentary" | "final_answer";
+            toolCalls?: string[];
             attachments?: import("../domain/types.js").MessageAttachment[];
             sessionId: string;
             role: "user" | "assistant" | "system";

@@ -147,6 +147,9 @@ export class SessionService {
             if (!start || start.generation !== session.generation)
                 return { session, ...page, ...pending, progress };
             const completed = this.c.store.db.prepare("SELECT seq FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.message_completed' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid, id, start.seq, session.generation);
+            const activity = this.c.store.db.prepare("SELECT json_extract(payload,'$.tool') tool,json_extract(payload,'$.status') status FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.activity' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid, id, completed?.seq ?? start.seq, session.generation);
+            if (activity && typeof activity.tool === 'string' && ['running', 'completed', 'failed'].includes(String(activity.status)))
+                progress.activity = { tool: activity.tool, status: activity.status };
             const rows = this.c.store.db.prepare("SELECT seq,substr(json_extract(payload,'$.text'),1,4000) text,COALESCE(json_extract(payload,'$.truncated'),0) truncated FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.delta' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 257").all(pid, id, completed?.seq ?? start.seq, session.generation);
             const visible = rows.slice(0, 256).reverse(), content = visible.map(r => typeof r.text === 'string' ? r.text : '').join('');
             progress.content = content.slice(-32000);
