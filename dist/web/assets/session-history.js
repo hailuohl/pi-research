@@ -83,11 +83,7 @@ class SessionHistory extends React.Component {
     const { sessionId, messages, history, historyAnchor, onNavigate, perform } = this.props, { messageId, page, busy, error } = this.state;
     const transcript = messages.filter((message) => !(message.role === "user" && message.status === "queued" && message.origin !== "automation"));
     const active = messages.find((message) => message.id === messageId);
-    const controls = /* @__PURE__ */ jsxs("div", { className: "history-controls", children: [
-      /* @__PURE__ */ jsx("button", { type: "button", disabled: !history?.beforeMessageId, onClick: () => history?.beforeMessageId && onNavigate({ direction: "before", id: history.beforeMessageId }), children: "\u66F4\u65E9\u6D88\u606F" }),
-      /* @__PURE__ */ jsx("button", { type: "button", disabled: !history?.afterMessageId, onClick: () => history?.afterMessageId && onNavigate({ direction: "after", id: history.afterMessageId }), children: "\u66F4\u65B0\u6D88\u606F" }),
-      historyAnchor || !history?.atLatest ? /* @__PURE__ */ jsx("button", { type: "button", onClick: () => onNavigate(null), children: "\u8FD4\u56DE\u6700\u65B0" }) : null
-    ] });
+    const controls = historyAnchor || history && !history.atLatest ? /* @__PURE__ */ jsx("div", { className: "history-controls", children: /* @__PURE__ */ jsx("button", { type: "button", onClick: () => onNavigate(null), children: "\u8FD4\u56DE\u6700\u65B0" }) }) : null;
     const content = (message) => /* @__PURE__ */ jsx(Fragment, { children: active?.id === message.id ? /* @__PURE__ */ jsxs("div", { className: "message-reader", children: [
       /* @__PURE__ */ jsxs("div", { className: "history-controls", children: [
         /* @__PURE__ */ jsx("strong", { children: "\u6D88\u606F\u539F\u6587" }),
@@ -123,7 +119,7 @@ class SessionHistory extends React.Component {
     ] }) });
     const card = (message) => {
       const current = conversationMessage(message), summary = toolSummary(current);
-      return /* @__PURE__ */ jsxs("article", { className: "message message-" + message.role, children: [
+      return /* @__PURE__ */ jsxs("article", { className: "message message-" + message.role, "data-history-anchor-id": message.id, children: [
         /* @__PURE__ */ jsx("div", { className: "message-avatar", children: message.role === "user" ? "\u6211" : message.role === "assistant" ? "\u03C0" : "\xB7" }),
         /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
           /* @__PURE__ */ jsxs("div", { className: "message-meta", children: [
@@ -162,7 +158,7 @@ class SessionHistory extends React.Component {
       const flush = () => {
         if (details.length) {
           const held = details.splice(0), generation = conversationMessage(held[0]).generation, current = this.props.activeGeneration !== void 0 && generation === this.props.activeGeneration;
-          rows.push(/* @__PURE__ */ jsxs("details", { className: "workflow-history", children: [
+          rows.push(/* @__PURE__ */ jsxs("details", { className: "workflow-history", "data-history-anchor-id": held[0].id, children: [
             /* @__PURE__ */ jsxs("summary", { children: [
               current ? "\u5F53\u524D\u5DE5\u4F5C\u8BE6\u60C5" : "\u5DE5\u4F5C\u8BE6\u60C5",
               " \xB7 ",
@@ -223,7 +219,7 @@ class SessionHistory extends React.Component {
         index = next;
         continue;
       }
-      if (message.role === "system" && !exceptional(message)) rendered.push(/* @__PURE__ */ jsxs("details", { className: "notification-history", children: [
+      if (message.role === "system" && !exceptional(message)) rendered.push(/* @__PURE__ */ jsxs("details", { className: "notification-history", "data-history-anchor-id": message.id, children: [
         /* @__PURE__ */ jsxs("summary", { children: [
           /* @__PURE__ */ jsx("span", { children: "\u72B6\u6001\u901A\u77E5" }),
           /* @__PURE__ */ jsx("span", { children: systemSummary(message) })
@@ -234,9 +230,8 @@ class SessionHistory extends React.Component {
       index++;
     }
     return /* @__PURE__ */ jsxs(Fragment, { children: [
-      history ? controls : null,
       rendered,
-      history ? controls : null
+      controls
     ] });
   }
 }

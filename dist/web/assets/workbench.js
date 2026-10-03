@@ -1,7 +1,8 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { LogView } from "./log-view.js";
-import { SessionHistory, ConversationActivity } from "./session-history.js";
+import { ConversationActivity } from "./session-history.js";
+import { ScrollHistory } from "./scroll-history.js";
 import { MessageQueue } from "./message-queue.js";
 import { ComputeWait } from "./scheduler-view.js";
 import { WakeupPanel } from "./campaigns.js";
@@ -69,7 +70,7 @@ class Chat extends React.Component {
             ] })
           ] }),
           /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8FD9\u662F\u5DE5\u4F5C\u53F0\u7684\u5F15\u5BFC\u754C\u9762\uFF0C\u4E0D\u662F\u6A21\u578B\u751F\u6210\u7684\u7814\u7A76\u7ED3\u679C\u3002" })
-        ] }) : /* @__PURE__ */ jsx(SessionHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0 }),
+        ] }) : /* @__PURE__ */ jsx(ScrollHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream }),
         !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(WakeupPanel, { data, busy: false, sessionId: session?.id, perform: this.props.perform, onSession: this.props.onSession }) : null,
         !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null,
         session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null

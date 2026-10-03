@@ -13,7 +13,7 @@ test('assistant commentary folds into work details while final Markdown stays vi
         message('answer','# 答案标题\n\n**结论**：可以继续。',{generation:4,phase:'final_answer'}),
         message('empty','',{generation:5,phase:'final_answer'}),
     ]);
-    assert.match(html,/<details class="workflow-history">/);
+    assert.match(html,/<details class="workflow-history" data-history-anchor-id="commentary">/);
     assert.match(html,/工作详情 · 1 条过程消息/);
     assert.match(html,/涉及工具：读取文件、工具调用/);
     assert.match(html,/<h1>答案标题<\/h1>/);
@@ -35,7 +35,7 @@ test('generations and user messages stop assistant grouping; legacy turns keep t
     assert.match(html,/<strong>你<\/strong>/);
     assert.match(html,/旧答案/);
     assert.match(html,/新答案/);
-    const legacy=html.match(/<details class="workflow-history">([\s\S]*?)<\/details>/)?.[1]??'';
+    const legacy=html.match(/<details class="workflow-history" data-history-anchor-id="old-work">([\s\S]*?)<\/details>/)?.[1]??'';
     assert.match(legacy,/旧过程/);
     assert.doesNotMatch(legacy,/旧答案/);
 });
@@ -90,7 +90,7 @@ test('system notifications fold to one-line summaries unless they report failure
         {...message('notice','任务已经结束。后面还有详情。',{role:'system'}),wakeupId:'w1'},
         {...message('notice-error','任务未完成。请检查。',{role:'system',status:'failed',error:'worker failed'}),wakeupId:'w2'},
     ]);
-    assert.match(html,/<details class="notification-history"><summary><span>状态通知<\/span><span>任务已经结束。…<\/span><\/summary>/);
+    assert.match(html,/<details class="notification-history" data-history-anchor-id="notice"><summary><span>状态通知<\/span><span>任务已经结束。…<\/span><\/summary>/);
     assert.match(html,/worker failed/);
     assert.equal((html.match(/<details class="notification-history"/g)??[]).length,1);
     assert.match(html,/持久化结果通知/);

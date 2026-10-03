@@ -37,6 +37,12 @@
 .conversation .conversation-activity .message-markdown{margin-top:5px}
 .composer-submit-control[data-action="stop"] svg rect{fill:currentColor;stroke:none}
 .composer .composer-toolbar{margin-top:2px;padding-top:2px;padding-bottom:2px}
+.conversation{overflow-anchor:none}
+.scroll-history{min-height:1px}
+.scroll-history-loading{padding:6px 0;text-align:center;color:var(--muted);font-size:11px}
+.scroll-history-error{display:flex;align-items:center;justify-content:center;gap:10px;padding:8px 0;color:var(--wine);font-size:11px}
+.scroll-history-error button{color:var(--wine);text-decoration:underline}
+.scroll-history>.history-controls{justify-content:center;position:sticky;bottom:0;padding:6px 0;background:#fff}
 @media (hover:none), (max-width:700px){
   .conversation .message-meta time,.conversation .message-tools{opacity:1}
   .conversation .message-tools{pointer-events:auto}
