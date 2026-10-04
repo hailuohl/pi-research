@@ -1,16 +1,16 @@
 /* Approved light skin. Loaded last; workbench widths, spacing and breakpoints
    remain owned by the existing layout stylesheets. */
 :root {
-  --canvas: #f7f7f8;
+  --canvas: #f7f8fa;
   --paper: #fff;
-  --soft: #f1f2f3;
-  --quiet: #fafafb;
-  --ink: #24262b;
-  --muted: #6b7079;
-  --green: #292d35;
-  --green-dark: #16191f;
-  --green-soft: #e9ebee;
-  --line: #e1e3e7;
+  --soft: #f2f3f6;
+  --quiet: #fafbfd;
+  --ink: #252a34;
+  --muted: #626e7e;
+  --green: #2b313d;
+  --green-dark: #1c222c;
+  --green-soft: #eaedf2;
+  --line: #e1e5eb;
   --warning: #85642b;
   --danger: #a33d37;
   --accent-ink: #fff;
@@ -22,6 +22,7 @@
   --wine: var(--green);
   --bg: var(--soft);
   --border: var(--line);
+  --panel-shadow: 0 1px 2px #202b3b03, 0 6px 20px #202b3b04;
   color-scheme: light;
 }
 body { background: var(--canvas); color: var(--ink); -webkit-font-smoothing: antialiased; }
@@ -271,7 +272,55 @@ select:not([multiple]):not([size]):disabled { color: var(--muted); opacity: .6; 
 .experiment-graph-card .badge.s-succeeded, .experiment-graph-card .badge.s-complete, .experiment-graph-card .badge.s-accepted, .experiment-graph-card .badge.s-completed { background: var(--success-bg); color: var(--success); }
 .experiment-graph-warning { color: var(--danger); }
 .experiment-run-grants > section.surface { border-color: var(--line); }
+
+/* Shared visual polish: paint and optical edges, without changing geometry. */
+.sidebar, .main-pane, .inspector { border-radius: 14px; }
+.main-pane, .inspector { box-shadow: var(--panel-shadow); }
+.sidebar-footer { background: color-mix(in srgb, var(--paper) 30%, var(--soft)); }
+.surface { border-radius: 10px; }
+.surface-heading, .modal > header { background: var(--quiet); }
+.modal { border-radius: 16px; }
+.workspace-tool-items { border-radius: 12px; }
+.primary, .secondary, .danger-outline, .file-upload, .icon-button { border-radius: 8px; }
+.primary, .secondary, .danger-outline, .icon-button, .text-button,
+.composer-tool-button, .file-tree button, .artifact-item {
+  transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+.primary:not(:disabled) { box-shadow: inset 0 1px 0 #ffffff18, 0 1px 2px #202b3b12; }
+.primary:hover:not(:disabled) { border-color: var(--green-dark); box-shadow: inset 0 1px 0 #ffffff18, 0 2px 5px #202b3b18; }
+.primary:active:not(:disabled) { box-shadow: inset 0 1px 3px #00000022; }
+.primary:disabled { background: var(--soft); border-color: var(--line); color: var(--muted); opacity: 1; box-shadow: none; }
+.secondary:hover:not(:disabled), .icon-button:hover:not(:disabled) {
+  background: var(--green-soft); border-color: color-mix(in srgb, var(--ink) 16%, var(--line));
+}
+.secondary:active:not(:disabled), .icon-button:active:not(:disabled) { box-shadow: inset 0 1px 2px #202b3b0d; }
+.text-button:hover:not(:disabled) { color: var(--ink); }
+.text-button.danger, .inspector-section .error-text, .task-card .error-text { color: var(--danger); }
+.text-button.danger:hover:not(:disabled) { color: var(--danger); background: var(--danger-bg); }
+label > input:not([type=checkbox]):not([type=radio]), label > textarea, label > select { background: var(--quiet); }
+label > input:not([type=checkbox]):not([type=radio]):focus:not(:disabled),
+label > textarea:focus:not(:disabled) { background: var(--paper); border-color: var(--focus); }
+.inline-warning { color: var(--warning); background: var(--warn-bg); border-color: var(--line); border-radius: 8px; }
+.inspector-section .inline-warning { color: var(--warning); }
+.s-approved, .s-verified, .s-implemented { color: var(--success); background: var(--success-bg); border-color: var(--line); }
+.s-awaiting_approval, .s-integration_unverified, .s-partial, .s-waiting_user, .s-disputed {
+  color: var(--warning); background: var(--warn-bg); border-color: var(--line);
+}
+.empty-symbol { border-style: solid; border-color: var(--line); background: var(--quiet); color: var(--muted); box-shadow: inset 0 1px 0 var(--paper); }
+.empty h3 { color: var(--ink); }
+.empty > div:not(.empty-symbol), .inline-empty, .small-label,
+.run-detail summary, .run-detail h4 code, .team-progress > strong > span { color: var(--muted); }
+.task-footer { border-color: var(--line); }
+.approval-card .digest { color: var(--warning); }
+tbody tr.selected-row:hover { background: var(--green-soft); }
+.metric-row, .limits, .team-progress, .session-pages, .message-queue-pages, td.numeric { font-variant-numeric: tabular-nums; }
+.conversation .message-markdown a { text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.sidebar-body, .conversation, .page-scroll, .inspector, .editor textarea, .form-body, .table-wrap {
+  scrollbar-color: color-mix(in srgb, var(--muted) 32%, var(--paper)) transparent;
+}
 @media (prefers-reduced-motion: reduce) {
   .nav-list button, .sidebar-sessions > button, .workspace-tool-items > button,
-  select:not([multiple]):not([size]), select::picker-icon { transition: none; }
+  select:not([multiple]):not([size]), select::picker-icon,
+  .primary, .secondary, .danger-outline, .icon-button, .text-button,
+  .composer-tool-button, .file-tree button, .artifact-item { transition: none; }
 }
