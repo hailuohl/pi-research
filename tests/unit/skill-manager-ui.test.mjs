@@ -100,3 +100,17 @@ test('late catalog loads and upgrades cannot replace another project builtin sel
  assert.equal(pending[4].projectId,'next-project');pending[4].resolve(reply(next));await save;
  assert.equal(v.state.catalog,catalog);assert.equal(v.state.builtinBundleId,'builtin-old');assert.equal(v.state.notice,'');assert.equal(v.state.busy,false);
 });
+
+test('revision list preserves revoked cancellation and latest decision while native disclosures keep import mounted',()=>{
+ const v=view(),approved=revision('approved'),revoked=revision('revoked');approved.reviews=[{id:'review',decision:'approved'}];revoked.reviews=[{id:'review',decision:'approved'}];revoked.revocations=[{id:'revoke',note:'retained'}];
+ v.state.catalog={...catalog,revisions:[revision('pending'),approved,revoked]};v.state.enabled=['revoked'];
+ const all=nodes(v.render()),checkbox=id=>all.find(n=>n.type==='input'&&n.props['aria-label']===`配置启用 figure ${id}`);
+ assert.equal(checkbox('pending').props.disabled,true);assert.equal(checkbox('approved').props.disabled,false);assert.equal(checkbox('revoked').props.disabled,false);assert.equal(checkbox('revoked').props.checked,true);
+ checkbox('revoked').props.onChange({target:{checked:false}});assert.deepEqual(v.state.enabled,[]);const next=nodes(v.render());assert.equal(next.find(n=>n.type==='input'&&n.props['aria-label']==='配置启用 figure revoked').props.disabled,true);
+ const badges=all.filter(n=>n.type?.name==='Badge');assert.deepEqual(badges.map(n=>n.props.caption),['待审','审阅通过','已撤销']);
+ const settings=all.find(n=>n.type==='details'&&n.props.className==='skill-version-settings integration-disclosure');assert.ok(settings);assert.ok(nodes(settings).some(n=>n.type==='select'));assert.ok(!nodes(settings).some(n=>n.type==='button'&&text(n).includes('保存启用')));
+ const actions=all.find(n=>n.props.className==='skill-config-actions'),save=all.filter(n=>n.type==='button'&&text(n).includes('保存启用'));assert.ok(actions);assert.equal(save.length,1);assert.ok(nodes(actions).includes(save[0]));assert.match(text(actions),/配置更改需保存后生效/);assert.ok(all.indexOf(actions)>all.findIndex(n=>n.props.className==='skill-revision-list'));
+ const element=all.find(n=>n.type?.name==='SkillImport'),form=sync(new element.type(element.props));form.state.description='local unsaved draft';
+ const disclosure=nodes(form.render()).find(n=>n.type==='details');assert.equal(disclosure.props.className,'skill-import-disclosure');assert.match(text(disclosure),/导入待审技能版本/);assert.ok(nodes(disclosure).some(n=>n.type==='form'&&n.props.onSubmit));assert.equal(form.state.description,'local unsaved draft');
+ assert.ok(!nodes(disclosure).some(n=>n.props.onDrop));assert.equal(element.key,'project');
+});

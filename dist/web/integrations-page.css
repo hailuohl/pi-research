@@ -1,0 +1,123 @@
+/* OpenResearch-style reading column and compact cards, scoped to this page. */
+.integrations-page { max-width: none; }
+.integrations-page .integration-workspace { max-width: 840px; margin: 0 auto; min-width: 0; }
+.integrations-page .integration-workspace > .section-title { gap: 20px; margin-bottom: 22px; }
+.integrations-page .integration-workspace > .section-title h1 { font-size: 30px; line-height: 1.3; letter-spacing: -.6px; }
+.integrations-page .integration-workspace > .section-title > div > p { max-width: 480px; line-height: 1.7; }
+.integrations-page .integration-workspace > .section-title .actions { gap: 8px; }
+.integrations-page .integration-tabs { display: flex; gap: 6px; padding: 0; margin: 0 0 22px; border-bottom: 1px solid var(--line); }
+.integrations-page .integration-tabs > button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+  min-height: 42px; border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent;
+  color: var(--muted); font-size: 14px; font-weight: 500; background: transparent;
+}
+.integrations-page .integration-tabs > button:hover { background: var(--quiet); color: var(--ink); }
+.integrations-page .integration-tabs > button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--green); background: var(--quiet); }
+.integrations-page .integration-tabs > button:focus-visible { outline-offset: -3px; }
+.integrations-page .integration-panel[hidden] { display: none; }
+.integrations-page .integration-panel { min-width: 0; }
+.integrations-page .surface { margin-bottom: 18px; border-radius: 10px; box-shadow: none; }
+.integrations-page .surface-heading { padding: 16px 18px; background: var(--paper); gap: 12px; }
+.integrations-page .surface-heading h2 { font-size: 16px; font-weight: 600; }
+.integrations-page .surface-heading > .ui-icon { color: var(--muted); }
+.integrations-page .builtin-skills-card > p { padding: 0 18px; }
+.integrations-page .skill-toolbar { display: flex; align-items: center; gap: 8px; margin: 14px 18px; border: 1px solid var(--line); border-radius: 7px; padding: 0 10px; background: var(--quiet); }
+.integrations-page .skill-toolbar > .ui-icon { color: var(--muted); flex-shrink: 0; }
+.integrations-page .skill-toolbar input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 9px 0; font-size: 13px; }
+.integrations-page .skill-toolbar:focus-within { border-color: var(--focus); }
+.integrations-page .builtin-skill-list { max-height: 390px; overflow: auto; padding: 0 18px 4px; scrollbar-color: var(--line) transparent; }
+.integrations-page .builtin-skill-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); min-width: 0; }
+.integrations-page .builtin-skill-row:first-child { border-top: 0; }
+.integrations-page .builtin-skill-row > .ui-icon { flex-shrink: 0; margin-top: 2px; color: var(--muted); }
+.integrations-page .builtin-skill-copy { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 12px; }
+.integrations-page .builtin-skill-copy h3 { font-size: 14px; font-weight: 600; color: var(--ink); margin: 0; }
+.integrations-page .builtin-skill-copy p { margin: 0; font-size: 12px; line-height: 1.7; color: var(--muted); }
+.integrations-page .builtin-skill-copy h3 { grid-column: 1; }
+.integrations-page .builtin-skill-copy > p.code-wrap { grid-column: 1; grid-row: 2; font-size: 11px; }
+.integrations-page .builtin-skill-copy > p:not(.code-wrap) { grid-column: 1 / -1; grid-row: 3; }
+.integrations-page .builtin-skill-copy > span { grid-column: 2; grid-row: 1; align-self: center; font-size: 11px; }
+.integrations-page .builtin-skill-copy code { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.integrations-page .builtin-skill-row > button { flex-shrink: 0; }
+.integrations-page .skill-resource-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; }
+.integrations-page .skill-resource-actions .text-button { font-size: 11px; }
+.integrations-page .skill-reader { border-top: 1px solid var(--line); padding: 16px 18px; background: var(--quiet); min-width: 0; }
+.integrations-page .skill-reader header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.integrations-page .skill-reader h3 { overflow-wrap: anywhere; }
+.integrations-page pre.integration-content { margin: 12px 0; border: 1px solid var(--line); background: var(--paper); font-family: Consolas, 'Microsoft YaHei', monospace; font-size: 12px; line-height: 1.8; max-width: 100%; }
+.integrations-page .skill-manager-card { padding: 0; }
+.integrations-page .skill-manager-card > p, .integrations-page .skill-manager-card > h3,
+.integrations-page .skill-manager-card > button { margin-left: 18px; margin-right: 18px; }
+.integrations-page .skill-manager-card > p { line-height: 1.75; }
+.integrations-page .skill-manager-card > button { margin-bottom: 8px; }
+.integrations-page .skill-config-actions { margin: 14px 18px 18px; padding-top: 12px; border-top: 1px solid var(--line); }
+.integrations-page .skill-config-actions > p { margin: 6px 0 10px; }
+.integrations-page .integration-disclosure, .integrations-page .skill-version-settings { margin: 12px 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.integrations-page .integration-disclosure > summary, .integrations-page .skill-version-settings > summary { padding: 12px 14px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--ink); }
+.integrations-page .integration-disclosure > summary small, .integrations-page .skill-version-settings > summary small { color: var(--muted); font-weight: 400; }
+.integrations-page .integration-disclosure[open] > summary, .integrations-page .skill-version-settings[open] > summary { border-bottom: 1px solid var(--line); background: var(--quiet); }
+.integrations-page .integration-disclosure-content { padding: 16px; min-width: 0; }
+.integrations-page .integration-disclosure-content > :last-child { margin-bottom: 0; }
+.integrations-page .integration-disclosure > p { margin: 12px 14px; }
+.integrations-page .integration-disclosure-content .inspector-section { padding: 0; border: 0; }
+.integrations-page .skill-import-disclosure { margin: 16px 18px; border: 1px dashed color-mix(in srgb, var(--muted) 40%, var(--line)); border-radius: 8px; background: var(--quiet); }
+.integrations-page .skill-import-disclosure > summary { padding: 18px; cursor: pointer; font-size: 13px; color: var(--ink); }
+.integrations-page .skill-import-disclosure > summary .ui-icon { vertical-align: middle; margin-right: 8px; color: var(--muted); }
+.integrations-page .skill-import-disclosure > form { padding: 18px; border-top: 1px solid var(--line); background: var(--paper); }
+.integrations-page .skill-import-disclosure input[type="file"] { padding: 10px; font-size: 12px; width: 100%; }
+.integrations-page .skill-revision-list { margin: 10px 18px; }
+.integrations-page .skill-revision-row { padding: 14px 0; border-top: 1px solid var(--line); min-width: 0; }
+.integrations-page .skill-revision-row:first-child { border-top: 0; }
+.integrations-page .skill-revision-row > label { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; flex-wrap: wrap; }
+.integrations-page .skill-revision-row p { margin: 6px 0; }
+.integrations-page .skill-manager-card .inspector-section { padding: 18px; border-color: var(--line); }
+.integrations-page .skill-session-section { background: var(--quiet); border-top: 1px solid var(--line); }
+.integrations-page .skill-session-section h3 { margin-bottom: 10px; }
+.integrations-page .skill-session-choices { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.integrations-page .skill-session-choices label { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 0; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; background: var(--paper); overflow-wrap: anywhere; min-width: 0; }
+.integrations-page .skill-session-choices input { width: 16px; height: 16px; margin: 0; flex-shrink: 0; }
+.integrations-page .skill-session-choices label:has(input:checked) { border-color: var(--focus); background: var(--green-soft); }
+.integrations-page .s-revoked { color: var(--danger); background: var(--danger-bg); }
+.integrations-page .connector-catalog > .inline-warning { margin: 14px 18px; padding: 10px 12px; font-size: 12px; }
+.integrations-page .connector-list { padding: 0 18px; }
+.integrations-page .connector-row { display: flex; align-items: center; gap: 12px; padding: 16px 0; margin: 0; border-top: 1px solid var(--line); min-width: 0; }
+.integrations-page .connector-row:first-child { border-top: 0; }
+.integrations-page .connector-logo { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.integrations-page .connector-logo img { width: 22px; height: 22px; object-fit: contain; }
+.integrations-page .connector-copy { flex: 1; min-width: 0; }
+.integrations-page .connector-copy strong { display: block; font-size: 14px; font-weight: 600; }
+.integrations-page .connector-copy small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.integrations-page .connector-copy .small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+.integrations-page .connector-status { color: var(--muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+.integrations-page .connector-row[data-enabled="true"] .connector-status { color: var(--ink); }
+.integrations-page input.connector-toggle {
+  appearance: none; display: block; position: relative; width: 34px; height: 20px; flex-shrink: 0;
+  margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--line); cursor: pointer; transition: background-color .14s ease;
+}
+.integrations-page input.connector-toggle::before { content: ''; display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--paper); position: absolute; left: 2px; top: 2px; box-shadow: 0 1px 2px #202b3b16; transition: transform .14s ease; }
+.integrations-page input.connector-toggle:checked { background: var(--green); border-color: var(--green); }
+.integrations-page input.connector-toggle:checked::before { transform: translateX(14px); }
+.integrations-page input.connector-toggle:disabled { opacity: .5; cursor: not-allowed; }
+.integrations-page .connector-results, .integrations-page .connector-catalog > .inspector-section { padding: 16px 18px; }
+.integrations-page .connector-results article { padding: 14px 0; border-top: 1px solid var(--line); }
+.integrations-page .connector-results article h3 { font-size: 14px; margin-bottom: 5px; }
+.integrations-page .history-row { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.integrations-page .code-wrap { overflow-wrap: anywhere; word-break: break-word; min-width: 0; }
+@media (max-width: 760px) {
+  .integrations-page .integration-workspace > .section-title { flex-direction: column; align-items: stretch; gap: 12px; }
+  .integrations-page .integration-workspace > .section-title h1 { font-size: 26px; }
+  .integrations-page .integration-workspace > .section-title > div > p { max-width: none; }
+  .integrations-page .integration-tabs { margin-bottom: 16px; }
+  .integrations-page .builtin-skill-row { gap: 9px; flex-wrap: wrap; }
+  .integrations-page .builtin-skill-copy { flex-basis: calc(100% - 32px); }
+  .integrations-page .builtin-skill-row > button { margin-left: 29px; }
+  .integrations-page .builtin-skill-list { max-height: 480px; }
+  .integrations-page .skill-session-choices { grid-template-columns: 1fr; }
+  .integrations-page .connector-row { gap: 10px; }
+  .integrations-page .connector-status { display: none; }
+  .integrations-page .integration-disclosure, .integrations-page .skill-version-settings { margin-left: 12px; margin-right: 12px; }
+  .integrations-page .integration-disclosure-content { padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .integrations-page input.connector-toggle, .integrations-page input.connector-toggle::before { transition: none; }
+}

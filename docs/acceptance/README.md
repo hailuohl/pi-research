@@ -7,3 +7,5 @@
 前端视觉验收：[正式前端浅色皮肤](flow-light-frontend/RESULT.md)、[浅色下拉控件](flow-dropdown-polish/RESULT.md)、[浅色视觉细节](flow-visual-polish/RESULT.md)。这些批次保留已确认布局；具体测试范围与未运行项见各自机器证据。
 
 会话交互：[复用未发送的新会话](flow-empty-session-reuse/RESULT.md)，保留原布局、历史与创建接口。
+
+页面重设计：[技能与连接器](flow-skills-redesign/RESULT.md)，参照固定 OpenResearch 的阅读列、技能列表及来源开关设计。
