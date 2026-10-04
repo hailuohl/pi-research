@@ -38,7 +38,7 @@ class Chat extends React.Component {
             const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title);
             if (title)
               this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));
-          }, children: /* @__PURE__ */ jsx(Icon, { name: "evidence" }) })
+          }, children: /* @__PURE__ */ jsx(Icon, { name: "edit" }) })
         ] }) : null
       ] }),
       !boot.runtime.ready ? /* @__PURE__ */ jsxs("div", { className: "notice runtime-notice", children: [

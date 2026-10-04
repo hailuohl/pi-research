@@ -1,9 +1,114 @@
 import * as React from 'react';
 import { label } from './models.js';
-export function Icon({ name, size = 18 }: {
-    name: string;
-    size?: number;
-}) { if (['database','paperclip','cpu','book-open','network','microscope','link'].includes(name)) return <img className="ui-library-icon" src={'/icons/'+name+'.svg'} width={size} height={size} alt="" aria-hidden="true"/>; const paths: Record<string, React.ReactNode> = { chat: <path d="M4 4h16v12H9l-5 4z"/>, experiment: <path d="M9 3h6m-5 0v6L4 20h16L14 9V3M7 15h10"/>, folder: <path d="M3 6h7l2 2h9v12H3z"/>, evidence: <path d="M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7"/>, report: <path d="M5 3h14v18H5zM9 8h6M9 12h6M9 16h4"/>, settings: <path d="M4 7h16M4 17h16M8 4v6M16 14v6"/>, plus: <path d="M12 5v14M5 12h14"/>, search: <path d="M15 15l6 6M10 17a7 7 0 1 1 0-14 7 7 0 0 1 0 14"/>, arrow: <path d="M5 12h14M13 6l6 6-6 6"/>, close: <path d="m6 6 12 12M6 18 18 6"/>, edit: <path d="m16 3 5 5L9 20l-6 1 1-6zM14 5l5 5"/>, check: <path d="m5 12 4 4L19 6"/>, stop: <rect x="6" y="6" width="12" height="12" rx="2"/>, chevron: <path d="m8 4 8 8-8 8"/>, branch: <path d="M6 4v16M6 10h6c4 0 6-2 6-6M3 4h6M3 20h6M15 4h6"/>, run: <path d="m7 4 14 8-14 8z"/> }; return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] ?? paths.report}</svg>; }
+/*! Lucide Icons and Contributors; ISC / Feather MIT.
+ * Full licenses are shipped at /icons/LICENSE.lucide.txt.
+ * Static glyphs from https://github.com/lucide-icons/lucide/tree/aace268b9be318c4f6d8a09a35139f860d07d9c5/icons
+ * Key mappings follow docs/design/ui-redesign-2026-10-03/icon-sources.json;
+ * additional check, stop (square), run (play), book-open, network, microscope and link use the same revision.
+ */
+const iconPaths: Record<string, React.ReactNode> = {
+    'plus': <g><path d="M5 12h14" />
+  <path d="M12 5v14" /></g>,
+    'chat': <g><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></g>,
+    'chat-empty': <g><path d="M14 3h2" />
+  <path d="M16 19h-2" />
+  <path d="M2 12v-2" />
+  <path d="M2 16v5.286a.71.71 0 0 0 1.212.502l1.149-1.149" />
+  <path d="M20 19a2 2 0 0 0 2-2v-1" />
+  <path d="M22 10v2" />
+  <path d="M22 6V5a2 2 0 0 0-2-2" />
+  <path d="M4 3a2 2 0 0 0-2 2v1" />
+  <path d="M8 19h2" />
+  <path d="M8 3h2" /></g>,
+    'experiment': <g><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" />
+  <path d="M6.453 15h11.094" />
+  <path d="M8.5 2h7" /></g>,
+    'folder': <g><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></g>,
+    'evidence': <g><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M14 2v5a1 1 0 0 0 1 1h5" />
+  <path d="M10 9H8" />
+  <path d="M16 13H8" />
+  <path d="M16 17H8" /></g>,
+    'report': <g><path d="M2 6h4" />
+  <path d="M2 10h4" />
+  <path d="M2 14h4" />
+  <path d="M2 18h4" />
+  <rect width="16" height="20" x="4" y="2" rx="2" />
+  <path d="M9.5 8h5" />
+  <path d="M9.5 12H16" />
+  <path d="M9.5 16H14" /></g>,
+    'settings': <g><path d="M10 5H3" />
+  <path d="M12 19H3" />
+  <path d="M14 3v4" />
+  <path d="M16 17v4" />
+  <path d="M21 12h-9" />
+  <path d="M21 19h-5" />
+  <path d="M21 5h-7" />
+  <path d="M8 10v4" />
+  <path d="M8 12H3" /></g>,
+    'search': <g><path d="m21 21-4.34-4.34" />
+  <circle cx="11" cy="11" r="8" /></g>,
+    'arrow': <g><path d="M5 12h14" />
+  <path d="m12 5 7 7-7 7" /></g>,
+    'close': <g><path d="M18 6 6 18" />
+  <path d="m6 6 12 12" /></g>,
+    'chevron': <g><path d="m9 18 6-6-6-6" /></g>,
+    'branch': <g><path d="M15 6a9 9 0 0 0-9 9V3" />
+  <circle cx="18" cy="6" r="3" />
+  <circle cx="6" cy="18" r="3" /></g>,
+    'edit': <g><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+  <path d="m15 5 4 4" /></g>,
+    'skills': <g><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /></g>,
+    'resources': <g><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></g>,
+    'filter': <g><path d="M2 5h20" />
+  <path d="M6 12h12" />
+  <path d="M9 19h6" /></g>,
+    'menu': <g><path d="M4 5h16" />
+  <path d="M4 12h16" />
+  <path d="M4 19h16" /></g>,
+    'archive': <g><rect width="20" height="5" x="2" y="3" rx="1" />
+  <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" />
+  <path d="M10 12h4" /></g>,
+    'database': <g><ellipse cx="12" cy="5" rx="9" ry="3" />
+  <path d="M3 5V19A9 3 0 0 0 21 19V5" />
+  <path d="M3 12A9 3 0 0 0 21 12" /></g>,
+    'paperclip': <g><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551" /></g>,
+    'cpu': <g><path d="M12 20v2" />
+  <path d="M12 2v2" />
+  <path d="M17 20v2" />
+  <path d="M17 2v2" />
+  <path d="M2 12h2" />
+  <path d="M2 17h2" />
+  <path d="M2 7h2" />
+  <path d="M20 12h2" />
+  <path d="M20 17h2" />
+  <path d="M20 7h2" />
+  <path d="M7 20v2" />
+  <path d="M7 2v2" />
+  <rect x="4" y="4" width="16" height="16" rx="2" />
+  <rect x="8" y="8" width="8" height="8" rx="1" /></g>,
+    'book-open': <g><path d="M12 5v16" />
+  <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" /></g>,
+    'network': <g><rect x="16" y="16" width="6" height="6" rx="1" />
+  <rect x="2" y="16" width="6" height="6" rx="1" />
+  <rect x="9" y="2" width="6" height="6" rx="1" />
+  <path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3" />
+  <path d="M12 12V8" /></g>,
+    'microscope': <g><path d="M6 18h8" />
+  <path d="M3 22h18" />
+  <path d="M14 22a7 7 0 1 0 0-14h-1" />
+  <path d="M9 14h2" />
+  <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z" />
+  <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3" /></g>,
+    'link': <g><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></g>,
+    'check': <g><path d="M20 6 9 17l-5-5" /></g>,
+    'stop': <g><rect width="18" height="18" x="3" y="3" rx="2" /></g>,
+    'run': <g><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" /></g>,
+};
+export function Icon({ name, size = 18 }: { name: string; size?: number; }) {
+    return <svg className="ui-icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{iconPaths[name] ?? iconPaths.report}</svg>;
+}
 export function Badge({ value, caption }: {
     value: string;
     caption?: string;

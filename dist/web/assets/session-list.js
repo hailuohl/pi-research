@@ -65,15 +65,16 @@ class SessionList extends React.Component {
     const items = page?.items ?? [];
     const selectedMatchesFilter = selected && (stateFilter === "all" || (stateFilter === "archived" ? selected.state === "archived" : selected.state !== "archived"));
     const selectedOutside = selectedMatchesFilter && selectedId && !items.some((item) => item.id === selectedId);
-    const row = (item) => /* @__PURE__ */ jsxs("button", { className: item.id === selectedId ? "selected-session" : "", onClick: () => onSelect(item.id), children: [
-      /* @__PURE__ */ jsx("span", { className: "session-dot " + (item.state === "running" ? "live" : "") }),
-      /* @__PURE__ */ jsx("span", { children: item.title })
+    const row = (item) => /* @__PURE__ */ jsxs("button", { className: item.id === selectedId ? "selected-session" : "", "aria-current": item.id === selectedId ? "page" : void 0, title: item.title, onClick: () => onSelect(item.id), children: [
+      /* @__PURE__ */ jsx(Icon, { name: item.state === "archived" ? "archive" : "chat", size: 16 }),
+      /* @__PURE__ */ jsx("span", { className: "session-label", children: item.title }),
+      item.state === "archived" ? /* @__PURE__ */ jsx("span", { className: "session-state-pill", children: "\u5DF2\u5F52\u6863" }) : item.state === "running" ? /* @__PURE__ */ jsx("span", { className: "session-state-pill s-running", children: "\u8FD0\u884C\u4E2D" }) : null
     ] }, item.id);
     return /* @__PURE__ */ jsxs("div", { className: "sidebar-sessions", children: [
       /* @__PURE__ */ jsxs("div", { className: "sidebar-caption", children: [
         /* @__PURE__ */ jsx("span", { children: "\u4F1A\u8BDD" }),
         /* @__PURE__ */ jsxs("label", { className: "session-state-filter", children: [
-          /* @__PURE__ */ jsx(Icon, { name: "settings", size: 14 }),
+          /* @__PURE__ */ jsx(Icon, { name: "filter", size: 14 }),
           /* @__PURE__ */ jsx("select", { "aria-label": "\u4F1A\u8BDD\u5206\u7C7B", value: stateFilter, disabled: !this.props.projectId || this.props.busy, onChange: (event) => this.changeStateFilter(event.target.value), children: Object.entries(filters).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value)) })
         ] })
       ] }),

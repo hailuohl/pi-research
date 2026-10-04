@@ -41,8 +41,8 @@ const systemSummary = (message) => {
 function ConversationActivity({ content, active, activity, truncated }) {
   if (!active) return null;
   const message = activity ? `${activity.status === "running" ? "\u6B63\u5728\u8C03\u7528" : activity.status === "failed" ? "\u8C03\u7528\u5931\u8D25" : "\u5DE5\u5177\u5DF2\u8FD4\u56DE"} ${toolLabel(activity.tool)}` : "\u6B63\u5728\u601D\u8003\u2026";
-  return /* @__PURE__ */ jsxs("article", { className: "message message-assistant conversation-activity", "aria-live": "polite", children: [
-    /* @__PURE__ */ jsx("div", { className: "message-avatar", children: "\u03C0" }),
+  return /* @__PURE__ */ jsxs("article", { className: "message message-assistant conversation-activity", "aria-label": "Pi \xB7 \u6B63\u5728\u5904\u7406", "aria-live": "polite", children: [
+    /* @__PURE__ */ jsx("div", { className: "message-avatar", "aria-hidden": "true", children: "\u03C0" }),
     /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
       /* @__PURE__ */ jsx("div", { className: "message-meta", children: /* @__PURE__ */ jsx("strong", { children: "Pi \xB7 \u6B63\u5728\u5904\u7406" }) }),
       /* @__PURE__ */ jsx("p", { className: "activity-line", children: message }),
@@ -119,11 +119,12 @@ class SessionHistory extends React.Component {
     ] }) });
     const card = (message) => {
       const current = conversationMessage(message), summary = toolSummary(current);
-      return /* @__PURE__ */ jsxs("article", { className: "message message-" + message.role, "data-history-anchor-id": message.id, children: [
-        /* @__PURE__ */ jsx("div", { className: "message-avatar", children: message.role === "user" ? "\u6211" : message.role === "assistant" ? "\u03C0" : "\xB7" }),
+      const author = message.role === "user" ? "\u4F60" : message.role === "assistant" ? message.wakeupId ? "Pi \xB7 \u7ED3\u679C\u5206\u6790" : "Pi" : message.wakeupId ? "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5" : "\u5DE5\u4F5C\u53F0\u72B6\u6001\u901A\u77E5";
+      return /* @__PURE__ */ jsxs("article", { className: "message message-" + message.role, "aria-label": author, "data-notification": message.wakeupId ? "wakeup" : void 0, "data-history-anchor-id": message.id, children: [
+        /* @__PURE__ */ jsx("div", { className: "message-avatar", "aria-hidden": "true", children: message.role === "user" ? "\u6211" : message.role === "assistant" ? "\u03C0" : "\xB7" }),
         /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
           /* @__PURE__ */ jsxs("div", { className: "message-meta", children: [
-            /* @__PURE__ */ jsx("strong", { children: message.role === "user" ? "\u4F60" : message.role === "assistant" ? message.wakeupId ? "Pi \xB7 \u7ED3\u679C\u5206\u6790" : "Pi" : message.wakeupId ? "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5" : "\u5DE5\u4F5C\u53F0\u72B6\u6001\u901A\u77E5" }),
+            /* @__PURE__ */ jsx("strong", { children: author }),
             /* @__PURE__ */ jsx("time", { dateTime: message.createdAt, title: message.createdAt, children: date(message.createdAt) }),
             message.queueRemoved ? /* @__PURE__ */ jsx("span", { className: "badge s-cancelled", children: "\u5DF2\u79FB\u51FA\u961F\u5217" }) : message.status && message.status !== "completed" ? /* @__PURE__ */ jsx(Badge, { value: message.status }) : null
           ] }),

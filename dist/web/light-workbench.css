@@ -1,0 +1,213 @@
+/* Approved light skin. Loaded last; workbench widths, spacing and breakpoints
+   remain owned by the existing layout stylesheets. */
+:root {
+  --canvas: #f7f7f8;
+  --paper: #fff;
+  --soft: #f1f2f3;
+  --quiet: #fafafb;
+  --ink: #24262b;
+  --muted: #6b7079;
+  --green: #292d35;
+  --green-dark: #16191f;
+  --green-soft: #e9ebee;
+  --line: #e1e3e7;
+  --warning: #85642b;
+  --danger: #a33d37;
+  --accent-ink: #fff;
+  --focus: #687991;
+  --warn-bg: #faf5eb;
+  --danger-bg: #fff0ee;
+  --success: #3b6c4f;
+  --success-bg: #edf4ee;
+  --wine: var(--green);
+  --bg: var(--soft);
+  --border: var(--line);
+  color-scheme: light;
+}
+body { background: var(--canvas); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.sidebar { background: var(--soft); box-shadow: none; }
+.sidebar-project > select, input, select, textarea, .session-search input, .session-role,
+.workspace-tool-items, .main-pane, .chat-pane, .composer-wrap, .composer, .composer-stack,
+.inspector, .secondary, .welcome-actions button, .workflow-card, .surface,
+.surface-heading, .task-card, .search-panel, .editor-toolbar, .editor textarea,
+.workspace-grid, .login, .modal { background: var(--paper); color: var(--ink); border-color: var(--line); }
+label > input:not([type=checkbox]), label > select, label > textarea { background: var(--paper); border-color: var(--line); }
+.brand > span, .welcome-mark, .text-button, .welcome-actions button > svg:first-child { color: var(--green); }
+.primary { background: var(--green); border-color: var(--green); color: var(--accent-ink); }
+.primary:hover:not(:disabled) { background: var(--green-dark); }
+.nav-list button.active, .workspace-tool-items > button.active,
+.file-tree button.active, .artifact-item.active { background: var(--green-soft); color: var(--ink); }
+.nav-list button:hover:not(.active), .secondary:hover:not(:disabled), .icon-button:hover,
+.workspace-tool-menu > summary:hover, .workspace-tool-menu[open] > summary,
+.workspace-tool-items > button:hover, .composer-tool-button:hover:not(:disabled):not(.disabled),
+.composer-tool-button[aria-expanded="true"], .welcome-actions button:hover,
+.artifact-item:hover { background: var(--green-soft); border-color: var(--line); color: var(--ink); }
+.local-avatar, .composer-tool-button small, .composer-toolbar select, .nav-list em,
+.role-mark, .file-tree, .editor-status, .modal footer, .modal-preview, .run-selection > label,
+.composer-attachment, .message-attachment, .setup-notes code, .logs,
+.metric-track, .evidence-record blockquote { background: var(--soft); border-color: var(--line); }
+.local-avatar, .composer-tool-button small, .composer-toolbar select, .nav-list em,
+.role-mark, .logs, .limits, .detail-hypothesis, .footnote, .metric-row,
+.metric-row code, .paper-number, .editor-toolbar > code { color: var(--muted); }
+.limits b { color: var(--ink); }
+.metric-track > div { background: var(--muted); }
+.chat-heading { border-color: var(--line); }
+.artifact-item.active { box-shadow: inset 2px 0 var(--green); }
+.evidence-type { color: var(--green); background: var(--green-soft); border-color: var(--line); }
+.evidence-record blockquote { border-left-color: var(--muted); }
+.evidence-record summary::before, .task-card summary { color: var(--muted); }
+.connection-state.ready, .composer-caption { color: var(--muted); }
+.switch { background: var(--line); }
+.switch.on { background: var(--green); }
+.switch > span { background: var(--paper); box-shadow: none; }
+.composer, .composer-stack { border-color: var(--line); box-shadow: none; }
+.composer-stack:focus-within, .composer:focus-within {
+  border-color: var(--focus); box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 14%, transparent);
+}
+.composer-stack { border-radius: 16px; background: var(--quiet); box-shadow: 0 1px 3px #00000005; }
+.composer-stack .composer { border-radius: 16px; background: transparent; }
+.composer textarea { font-size: 14px; background: transparent; caret-color: var(--ink); }
+.composer textarea::placeholder { color: var(--muted); }
+.composer .composer-model-control select { background: transparent; border-color: transparent; }
+.composer .composer-submit-control { border-radius: 999px; }
+.composer-stack > .message-queue { border-radius: 16px 16px 0 0; }
+.composer-popover { background: var(--paper); border-color: var(--line); box-shadow: 0 6px 18px #00000010; }
+.composer-source-option { border-radius: 5px; }
+.composer-source-option input { accent-color: var(--green); }
+.composer-source-option:hover { background: var(--quiet); }
+.composer-source-option:has(input:checked) { background: var(--green-soft); }
+.composer-source-option:has(input:disabled) { opacity: .55; }
+.message-queue { background: var(--quiet); }
+.message-queue-row + .message-queue-row { border-color: var(--line); }
+.message-queue-actions .queue-now { background: var(--soft); }
+.message-queue-actions button:hover:not(:disabled), .message-queue-pages button:hover:not(:disabled) {
+  background: var(--green-soft); border-color: var(--line);
+}
+.notice, .runtime-notice, .approval-card { background: var(--warn-bg); border-color: var(--line); color: var(--warning); }
+.notice strong, .runtime-notice strong, .approval-card h4, .approval-card p,
+.approval-card .small, .approval-card .small-label { color: var(--warning); }
+.error-text, .preview-error, .scroll-history-error, .scroll-history-error button { color: var(--danger); }
+.global-error, .danger-outline { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 25%, var(--line)); color: var(--danger); }
+.toast { background: var(--paper); border-color: var(--line); color: var(--ink); box-shadow: 0 4px 18px #00000010; }
+.modal-backdrop, .navigation-backdrop { background: #24262b54; }
+.modal { box-shadow: 0 24px 80px #00000026; }
+.badge { background: var(--soft); border-color: var(--line); color: var(--muted); border-radius: 999px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 5%, transparent); }
+.s-frozen, .s-archived, .s-idle, .s-cancelled { background: var(--soft); color: var(--muted); }
+.s-provisional, .s-pending, .s-prepared { background: var(--green-soft); color: var(--green); }
+.s-succeeded, .s-complete, .s-accepted, .s-completed { background: var(--success-bg); color: var(--success); }
+.s-failed, .s-invalid, .s-rejected, .s-incomplete { background: var(--danger-bg); color: var(--danger); }
+.s-running, .s-queued, .s-unknown { background: var(--warn-bg); color: var(--warning); }
+th { background: var(--quiet); border-color: var(--line); }
+td { border-color: var(--line); }
+tbody tr:hover { background: var(--quiet); }
+.selected-row { background: var(--green-soft); }
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible { outline-color: var(--focus); }
+
+/* Fixed-size inline Lucide glyphs and single-line session rows. */
+.ui-icon { flex-shrink: 0; vertical-align: middle; }
+.nav-list button .ui-icon, .workspace-tool-items > button .ui-icon,
+.sidebar-sessions > button .ui-icon, .inspector-title > .ui-icon { color: var(--muted); }
+.nav-list button:hover .ui-icon, .nav-list button.active .ui-icon,
+.workspace-tool-items > button:hover .ui-icon, .workspace-tool-items > button.active .ui-icon,
+.sidebar-sessions > button.selected-session .ui-icon { color: var(--ink); }
+.nav-list button, .sidebar-sessions > button, .workspace-tool-items > button {
+  transition: background-color .14s ease, color .14s ease, box-shadow .14s ease;
+}
+.sidebar-sessions > button { border-radius: 8px; }
+.sidebar-sessions > button:hover:not(.selected-session) { background: var(--quiet); color: var(--ink); }
+.sidebar-sessions > button.selected-session {
+  background: var(--green-soft); color: var(--ink); font-weight: 600;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 7%, transparent);
+}
+.session-label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.session-state-pill { flex-shrink: 0; padding: 1px 5px; border-radius: 5px; color: var(--muted); background: var(--quiet); font-size: 10px; line-height: 1.5; }
+.session-state-pill.s-running { color: var(--warning); background: var(--warn-bg); }
+.sidebar-caption, .nav-groups summary { color: var(--muted); }
+.sidebar-project > select { box-shadow: 0 1px 2px #00000004; }
+.workspace-tool-items { box-shadow: 0 8px 24px #00000010; }
+.workspace-tool-items > button { color: var(--ink); }
+.details dd { font-weight: 500; }
+
+/* Conversation surfaces adapt the approved preview to real status metadata.
+   Only authors/timestamps are quiet; failure/removal badges stay visible. */
+.conversation .message-avatar { display: none; }
+.conversation .message { gap: 0; }
+.conversation .message-user .message-body {
+  flex: 0 1 auto; width: fit-content; max-width: 85%; margin-left: auto;
+  padding: 12px 16px; border: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  border-radius: 16px; background: var(--soft); color: var(--ink);
+}
+.conversation .message:not(.message-user) .message-body {
+  flex: 1; max-width: 100%; padding: 0; border: 0; border-radius: 0; background: transparent;
+}
+.conversation .message-user .message-meta > strong,
+.conversation .message-assistant:not(.conversation-activity):not([data-notification="wakeup"]) .message-meta > strong,
+.conversation .message-user .message-meta > time,
+.conversation .message-assistant .message-meta > time {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.conversation .message-meta { color: var(--muted); flex-wrap: wrap; }
+.conversation .message-meta strong, .conversation .message-system .message-meta strong { color: var(--muted); }
+.conversation .message-meta time { color: var(--muted); }
+.conversation .message-tools button, .conversation .message-tool-summary,
+.conversation .conversation-activity .activity-line { color: var(--muted); font-size: 12px; }
+.conversation .message-tools button:hover { color: var(--ink); }
+.conversation .prose-text, .conversation .message-markdown {
+  min-width: 0; color: var(--ink); font-size: 15px; line-height: 1.85; overflow-wrap: anywhere;
+}
+.conversation .message-system .prose-text { background: var(--quiet); border-color: var(--line); color: var(--ink); }
+.conversation .message-markdown h1, .conversation .message-markdown h2,
+.conversation .message-markdown h3, .conversation .message-markdown h4,
+.conversation .message-markdown h5, .conversation .message-markdown h6 { color: var(--ink); }
+.conversation .message-markdown a { color: var(--green); text-decoration-color: var(--muted); }
+.conversation .message-markdown a:hover { color: var(--green-dark); text-decoration-color: currentColor; }
+.conversation .message-markdown :not(pre) > code {
+  border-color: var(--line); background: var(--quiet); color: var(--ink); font-size: .92em;
+}
+.conversation .message-markdown pre { border-color: var(--line); background: var(--quiet); color: var(--ink); }
+.conversation .message-markdown pre code { font-size: 13px; }
+.conversation .message-markdown blockquote { border-left-color: var(--muted); color: var(--muted); }
+.conversation .message-markdown hr, .conversation .message-table-scroll,
+.conversation .message-markdown th, .conversation .message-markdown td { border-color: var(--line); }
+.conversation .message-markdown table { font-size: 13px; }
+.conversation .message-markdown th { background: var(--soft); color: var(--ink); }
+.conversation .message-raw-html, .conversation .message-image-alt { color: var(--muted); border-color: var(--line); }
+.conversation .workflow-history, .conversation .notification-history { border-color: var(--line); background: var(--paper); }
+.conversation .workflow-history > summary, .conversation .notification-history > summary { color: var(--muted); font-size: 12px; }
+.conversation .workflow-history[open] > summary, .conversation .notification-history[open] > summary { border-color: var(--line); }
+.conversation .notification-history > summary span:last-child { color: var(--muted); }
+.conversation .message-branch-button:focus-visible, .conversation .message-read-button:focus-visible,
+.conversation .message-table-scroll:focus-visible { outline-color: var(--focus); }
+.scroll-history > .history-controls { background: var(--paper); }
+
+/* Existing graph geometry is retained; controls and nodes use the same skin. */
+.experiment-lineage, .experiment-graph-toolbar, .experiment-graph-card,
+.experiment-graph-controls button, .experiment-run-grants { background: var(--paper); color: var(--ink); border-color: var(--line); }
+.experiment-graph-heading h2, .experiment-graph-title { color: var(--ink); }
+.experiment-graph-heading > span, .experiment-graph-title > svg,
+.experiment-graph-run-id, .experiment-graph-run-empty, .experiment-graph-metric,
+.experiment-run-grants > summary { color: var(--muted); }
+.experiment-graph-controls button:hover:not(:disabled), .experiment-graph-controls .experiment-graph-view-switch button[aria-pressed="true"] {
+  background: var(--green-soft); color: var(--ink); border-color: var(--line); box-shadow: none;
+}
+.experiment-graph-view-switch { background: var(--quiet); border-color: var(--line); }
+.experiment-graph-viewport { background-color: var(--canvas); background-image: radial-gradient(var(--line) .65px, transparent .65px); }
+.experiment-graph-viewport.is-list-view { background: var(--paper); }
+.experiment-graph-list { background: var(--canvas); }
+.experiment-graph-edges path { stroke: var(--muted); }
+.experiment-graph-card { box-shadow: 0 2px 6px #00000005; }
+.experiment-graph-card:hover { border-color: var(--muted); box-shadow: 0 3px 10px #00000008; }
+.experiment-graph-card.is-selected { border-color: var(--green); box-shadow: 0 0 0 2px #292d351c, 0 3px 10px #00000008; }
+.experiment-graph-card:focus-visible { outline-color: var(--focus); }
+.experiment-graph-viewport:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
+.experiment-graph-card-heading > .badge, .experiment-graph-run-badges .badge { border-color: var(--line); background: var(--soft); color: var(--muted); }
+.experiment-graph-card .badge.s-running, .experiment-graph-card .badge.s-queued, .experiment-graph-card .badge.s-unknown { background: var(--warn-bg); color: var(--warning); }
+.experiment-graph-card .badge.s-failed, .experiment-graph-card .badge.s-invalid, .experiment-graph-card .badge.s-rejected, .experiment-graph-card .badge.s-incomplete { background: var(--danger-bg); color: var(--danger); }
+.experiment-graph-card .badge.s-succeeded, .experiment-graph-card .badge.s-complete, .experiment-graph-card .badge.s-accepted, .experiment-graph-card .badge.s-completed { background: var(--success-bg); color: var(--success); }
+.experiment-graph-warning { color: var(--danger); }
+.experiment-run-grants > section.surface { border-color: var(--line); }
+@media (prefers-reduced-motion: reduce) {
+  .nav-list button, .sidebar-sessions > button, .workspace-tool-items > button { transition: none; }
+}
