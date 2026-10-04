@@ -1,5 +1,6 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { nativeSelectButton } from "./ui.js";
 import { api, artifactText } from "./api.js";
 import { short } from "./models.js";
 const pair = (value) => `${value.documentVersionId}:${value.parseResultId}`;
@@ -85,6 +86,7 @@ class TextEvidencePanel extends React.Component {
       }, children: [
         /* @__PURE__ */ jsx("input", { "aria-label": "\u672C\u5730\u539F\u6587\u5173\u952E\u8BCD", placeholder: "\u8F93\u5165\u5173\u952E\u8BCD\uFF1B\u4E2D\u6587\u53EF\u4F7F\u7528\u77ED\u8BED", value: this.state.query, disabled: this.state.loading, onChange: (e) => this.setState({ query: e.target.value }) }),
         /* @__PURE__ */ jsxs("select", { "aria-label": "\u68C0\u7D22\u6392\u5E8F\u7B56\u7565", value: this.state.mmrLambda, disabled: this.state.loading, onChange: (e) => this.setState({ mmrLambda: Number(e.target.value), result: null }), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: 1, children: "\u7CBE\u786E\u53BB\u91CD\uFF0B\u76F8\u5173\u6027\uFF08\u9ED8\u8BA4\uFF09" }),
           /* @__PURE__ */ jsx("option", { value: 0.65, children: "\u7CBE\u786E\u53BB\u91CD\uFF0BMMR 0.65\uFF08\u8BD5\u9A8C\uFF09" })
         ] }),
@@ -199,6 +201,7 @@ class TextCorpusGrantPanel extends React.Component {
           /* @__PURE__ */ jsxs("label", { children: [
             "\u6307\u5B9A\u4E3B\u534F\u8C03\u4F1A\u8BDD",
             /* @__PURE__ */ jsxs("select", { "aria-label": "\u539F\u6587\u68C0\u7D22\u6388\u6743\u4E3B\u4F1A\u8BDD", required: true, value: s.sessionId, onChange: (e) => this.setState({ sessionId: e.target.value }), children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u5C1A\u672A\u7ED1\u5B9A\u539F\u6587\u6388\u6743\u7684\u4F1A\u8BDD" }),
               data.sessions.filter((row) => row.role === "coordinator" && !row.taskId && row.state !== "archived" && !row.textCorpusGrantId).map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
                 row.title,
@@ -233,6 +236,7 @@ class TextCorpusGrantPanel extends React.Component {
             /* @__PURE__ */ jsxs("label", { children: [
               "\u6700\u591A\u65B0\u68C0\u7D22\u6B21\u6570",
               /* @__PURE__ */ jsxs("select", { "aria-label": "\u539F\u6587\u6388\u6743\u68C0\u7D22\u6B21\u6570", value: s.maxSearches, onChange: (e) => this.setState({ maxSearches: Number(e.target.value) }), children: [
+                nativeSelectButton,
                 /* @__PURE__ */ jsx("option", { value: 1, children: "1 \u6B21" }),
                 /* @__PURE__ */ jsx("option", { value: 2, children: "2 \u6B21" })
               ] })
@@ -247,11 +251,14 @@ class TextCorpusGrantPanel extends React.Component {
       ] }),
       grants.length ? /* @__PURE__ */ jsxs("label", { children: [
         "\u67E5\u770B\u56FA\u5B9A\u539F\u6587\u6388\u6743",
-        /* @__PURE__ */ jsx("select", { "aria-label": "\u67E5\u770B\u56FA\u5B9A\u539F\u6587\u6388\u6743", value: selectedId, onChange: (e) => this.setState({ selectedId: e.target.value }), children: grants.map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
-          short(row.id),
-          " \xB7 ",
-          row.state
-        ] }, row.id)) })
+        /* @__PURE__ */ jsxs("select", { "aria-label": "\u67E5\u770B\u56FA\u5B9A\u539F\u6587\u6388\u6743", value: selectedId, onChange: (e) => this.setState({ selectedId: e.target.value }), children: [
+          nativeSelectButton,
+          grants.map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
+            short(row.id),
+            " \xB7 ",
+            row.state
+          ] }, row.id))
+        ] })
       ] }) : /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u6682\u65E0\u56FA\u5B9A\u539F\u6587\u4F1A\u8BDD\u6388\u6743\u3002" }),
       s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
       g ? /* @__PURE__ */ jsxs("div", { children: [

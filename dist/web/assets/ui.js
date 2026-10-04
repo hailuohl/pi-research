@@ -169,6 +169,21 @@ function SectionTitle({ title, sub, children }) {
     /* @__PURE__ */ jsx("div", { className: "actions", children })
   ] });
 }
+function syncNativeSelectContent(button) {
+  const select = button?.closest("select");
+  const content = button?.querySelector("selectedcontent");
+  if (!select || !content || getComputedStyle(select).appearance !== "base-select") return;
+  const sync = () => {
+    const option = select.selectedOptions[0];
+    if (content.innerHTML === (option?.innerHTML ?? "")) return;
+    content.replaceChildren(...Array.from(option?.childNodes ?? []).map((node) => node.cloneNode(true)));
+  };
+  const observer = new MutationObserver(sync);
+  observer.observe(select, { childList: true, characterData: true, subtree: true });
+  sync();
+  return () => observer.disconnect();
+}
+const nativeSelectButton = React.createElement("button", { type: "button", ref: syncNativeSelectContent }, React.createElement("selectedcontent"));
 class Modal extends React.Component {
   constructor() {
     super(...arguments);
@@ -189,7 +204,9 @@ class Modal extends React.Component {
     }, children: /* @__PURE__ */ jsxs("section", { ref: (el) => {
       this.el = el;
     }, role: "dialog", "aria-modal": "true", "aria-label": this.props.title, className: "modal " + (this.props.wide ? "wide" : ""), onKeyDown: (e) => {
-      if (e.key === "Escape")
+      const select = e.target?.closest?.("select");
+      const pickerOpen = select && getComputedStyle(select).appearance === "base-select" && select.matches(":open");
+      if (e.key === "Escape" && !pickerOpen)
         this.props.onClose();
       if (e.key === "Tab") {
         const els = Array.from(this.el.querySelectorAll("button:not(:disabled),input,select,textarea"));
@@ -225,5 +242,6 @@ export {
   Empty,
   Icon,
   Modal,
-  SectionTitle
+  SectionTitle,
+  nativeSelectButton
 };

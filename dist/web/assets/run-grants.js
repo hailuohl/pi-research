@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { short, label } from "./models.js";
-import { Badge } from "./ui.js";
+import { Badge, nativeSelectButton } from "./ui.js";
 const expiry = () => {
   const d = new Date(Date.now() + 36e5);
   return new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
@@ -93,6 +93,7 @@ class RunGrants extends React.Component {
           /* @__PURE__ */ jsxs("label", { children: [
             "\u4E13\u7528\u4E3B\u534F\u8C03\u4F1A\u8BDD",
             /* @__PURE__ */ jsxs("select", { name: "sessionId", required: true, children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u5C1A\u672A\u7ED1\u5B9A RunGrant \u7684\u4E3B\u4F1A\u8BDD" }),
               data.sessions.filter((s) => s.role === "coordinator" && !s.taskId && s.state !== "archived" && !s.runGrantId).map((s) => /* @__PURE__ */ jsxs("option", { value: s.id, children: [
                 s.title,
@@ -136,6 +137,7 @@ class RunGrants extends React.Component {
       grants.length ? /* @__PURE__ */ jsxs("label", { children: [
         "\u67E5\u770B\u8FD0\u884C\u6388\u6743",
         /* @__PURE__ */ jsxs("select", { value: this.state.selected, onChange: (e) => this.select(e.target.value), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "", disabled: true, children: "\u9009\u62E9\u6388\u6743\u8BB0\u5F55" }),
           grants.map((g) => /* @__PURE__ */ jsxs("option", { value: g.id, children: [
             short(g.id),

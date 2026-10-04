@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api, artifactBlob, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
-import { SectionTitle, Badge, Empty } from "./ui.js";
+import { SectionTitle, Badge, Empty, nativeSelectButton } from "./ui.js";
 import { TextEvidencePanel } from "./text-evidence.js";
 import { DiscoveryGrants } from "./discovery-grants.js";
 const sources = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
@@ -221,6 +221,7 @@ class LiteratureView extends React.Component {
           /* @__PURE__ */ jsxs("label", { children: [
             "\u83B7\u53D6\u5185\u5BB9",
             /* @__PURE__ */ jsxs("select", { "aria-label": "\u83B7\u53D6\u5185\u5BB9\u7C7B\u578B", value: s.format, onChange: (e) => this.setState({ format: e.target.value, requestedVersion: e.target.value === "oa-full-text" ? "" : this.state.requestedVersion }), children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "provider-text", children: "\u6765\u6E90\u63D0\u4F9B\u7684\u6587\u672C / \u6458\u8981 / \u5143\u6570\u636E" }),
               /* @__PURE__ */ jsx("option", { value: "original-pdf", children: "\u539F\u59CB PDF\uFF08\u4E0D\u53EF\u53D6\u5F97\u65F6\u660E\u786E\u5931\u8D25\uFF09" }),
               /* @__PURE__ */ jsx("option", { value: "oa-full-text", children: "PMC \u5F00\u653E\u83B7\u53D6\u5168\u6587\uFF08\u4EC5 PubMed\uFF1B\u65E0 PDF \u9875\u6620\u5C04\uFF09" })
@@ -579,6 +580,7 @@ class DocumentPages extends React.Component {
           /* @__PURE__ */ jsxs("select", { "aria-label": "\u56FA\u5B9A\u7269\u7406\u9875", value: list.items.some((x) => x.pageNumber === this.props.pageNumber) ? this.props.pageNumber : "", onChange: (e) => {
             if (e.target.value) this.props.onPage(Number(e.target.value));
           }, children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u6B64\u6E05\u5355\u4E2D\u7684\u7269\u7406\u9875" }),
             list.items.map((page) => /* @__PURE__ */ jsxs("option", { value: page.pageNumber, children: [
               "\u7269\u7406\u9875 ",
@@ -638,6 +640,7 @@ class DocumentPages extends React.Component {
               const paragraph = p.paragraphs.find((x) => String(x.index) === e.target.value);
               if (paragraph) this.setState({ start: paragraph.start, end: paragraph.end });
             }, children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u624B\u52A8\u6307\u5B9A\u533A\u95F4\u6216\u9009\u62E9\u6BB5\u843D" }),
               p.paragraphs.map((x) => /* @__PURE__ */ jsxs("option", { value: x.index, disabled: x.start < s.base || x.end > s.cursor, children: [
                 "\u6BB5\u843D ",

@@ -2,7 +2,7 @@ import * as React from 'react';
 import { api } from './api.js';
 import type { Bootstrap, MessageAttachment, ModelConfig, Row, Session } from './models.js';
 import type { Perform } from './workbench.js';
-import { Icon } from './ui.js';
+import {Icon, nativeSelectButton} from './ui.js';
 
 const SOURCES = ['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref'] as const;
 const SOURCE_NAMES: Record<typeof SOURCES[number], string> = { alphaxiv: 'alphaXiv', openalex: 'OpenAlex', biorxiv: 'bioRxiv', pubmed: 'PubMed', crossref: 'Crossref' };
@@ -138,7 +138,7 @@ export class ComposerControls extends React.Component<Props, State> {
                     {this.props.children}
                 </div>
                 <div className="grow"/>
-                <label className="composer-model-control"><Icon name="cpu" size={15}/><span>模型</span><select aria-label="会话模型与思考等级" value={currentModel?.provider&&currentModel.model ? modelKey(currentModel) : ''} disabled={modelDisabled} title={modelLocked ? '当前会话已绑定固定授权，模型不能更改' : '当前会话运行或授权状态下暂不可更改模型'} onChange={(event: any) => { const selected = options.find(model => modelKey(model) === event.target.value); if (selected && (!currentModel || modelKey(selected) !== modelKey(currentModel))) this.props.onSendModel(selected); }}><option value="">{currentModel?.provider&&currentModel.model?'选择模型':'未配置模型'}</option>{options.map(model => <option key={modelKey(model)} value={modelKey(model)}>{model.provider} / {model.model} · {model.thinking}{modelKey(model) === modelKey(boot.model) ? '（默认）' : ''}</option>)}</select></label>
+                <label className="composer-model-control"><Icon name="cpu" size={15}/><span>模型</span><select aria-label="会话模型与思考等级" value={currentModel?.provider&&currentModel.model ? modelKey(currentModel) : ''} disabled={modelDisabled} title={modelLocked ? '当前会话已绑定固定授权，模型不能更改' : '当前会话运行或授权状态下暂不可更改模型'} onChange={(event: any) => { const selected = options.find(model => modelKey(model) === event.target.value); if (selected && (!currentModel || modelKey(selected) !== modelKey(currentModel))) this.props.onSendModel(selected); }}>{nativeSelectButton}<option value="">{currentModel?.provider&&currentModel.model?'选择模型':'未配置模型'}</option>{options.map(model => <option key={modelKey(model)} value={modelKey(model)}>{model.provider} / {model.model} · {model.thinking}{modelKey(model) === modelKey(boot.model) ? '（默认）' : ''}</option>)}</select></label>
                 <button className="primary compact composer-submit-control" type={showStop?'button':'submit'} aria-label={showStop?'停止模型':executing?'排队发送':'发送'} title={showStop?'停止当前对话任务':executing?'发送到队列':'发送消息'} data-action={showStop?'stop':'send'} disabled={showStop?busy||projectArchived:!canSend||!hasDraft||!session} onClick={showStop?()=>this.stopSession(session!.id):undefined}><Icon name={showStop?'stop':'arrow'} size={16}/>{showStop?'停止':'发送'}</button>
             </div>
         </>;

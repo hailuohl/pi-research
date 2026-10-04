@@ -3,7 +3,7 @@ import * as React from "react";
 import { api, artifactBlob, downloadArtifact } from "./api.js";
 import { verifiedPageImage } from "./literature-view.js";
 import { short, label } from "./models.js";
-import { Badge } from "./ui.js";
+import { Badge, nativeSelectButton } from "./ui.js";
 import { PublicationReviewPanel } from "./publication-review-view.js";
 function publicationPath(path) {
   return !!path && path.length <= 240 && path.split("/").every((part) => /^[A-Za-z0-9_][A-Za-z0-9_. -]*$/.test(part) && !/[. ]$/.test(part) && !/^AGENTS(?:\.|$)/i.test(part) && !/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part));
@@ -280,6 +280,7 @@ class PublicationView extends React.Component {
           /* @__PURE__ */ jsxs("select", { "aria-label": "\u5386\u53F2\u56FA\u5B9A\u6587\u7A3F", value: r?.id ?? "", onChange: (e) => {
             if (e.target.value) void this.openRevision(e.target.value);
           }, children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u56FA\u5B9A\u4FEE\u8BA2" }),
             (r && !s.revisions.some((row) => row.id === r.id) ? [r, ...s.revisions] : s.revisions).map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
               row.title,
@@ -339,7 +340,10 @@ class PublicationView extends React.Component {
           ] }),
           /* @__PURE__ */ jsxs("label", { children: [
             "\u56FA\u5B9A\u6E90\u6587\u4EF6",
-            /* @__PURE__ */ jsx("select", { "aria-label": "\u56FA\u5B9A\u6E90\u6587\u4EF6", value: s.sourcePath, onChange: (e) => void this.readSource(e.target.value), children: r.files.filter((f) => f.mediaType.startsWith("text/") && publicationSourcePath(f.path)).map((f) => /* @__PURE__ */ jsx("option", { value: f.path, children: f.path }, f.path)) })
+            /* @__PURE__ */ jsxs("select", { "aria-label": "\u56FA\u5B9A\u6E90\u6587\u4EF6", value: s.sourcePath, onChange: (e) => void this.readSource(e.target.value), children: [
+              nativeSelectButton,
+              r.files.filter((f) => f.mediaType.startsWith("text/") && publicationSourcePath(f.path)).map((f) => /* @__PURE__ */ jsx("option", { value: f.path, children: f.path }, f.path))
+            ] })
           ] }),
           /* @__PURE__ */ jsxs("label", { children: [
             "\u56FA\u5B9A\u6E90\u7801\uFF08\u53EA\u8BFB\uFF09",
@@ -357,6 +361,7 @@ class PublicationView extends React.Component {
             /* @__PURE__ */ jsxs("select", { "aria-label": "\u5386\u53F2\u6587\u7A3F\u6784\u5EFA", value: j?.id ?? "", onChange: (e) => {
               if (e.target.value) void this.openJob(e.target.value);
             }, children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u6784\u5EFA\u4EFB\u52A1" }),
               s.jobs.map((job) => /* @__PURE__ */ jsxs("option", { value: job.id, children: [
                 short(job.id),
@@ -559,6 +564,7 @@ class ManuscriptEditor extends React.Component {
       /* @__PURE__ */ jsxs("label", { children: [
         "\u57FA\u7840\u6A21\u677F",
         /* @__PURE__ */ jsxs("select", { "aria-label": "\u6587\u7A3F\u57FA\u7840\u6A21\u677F", value: s.templateId, onChange: (e) => this.template(e.target.value), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u6A21\u677F" }),
           this.props.templates.map((t) => /* @__PURE__ */ jsx("option", { value: t.id, children: t.title }, t.id))
         ] })
@@ -570,15 +576,22 @@ class ManuscriptEditor extends React.Component {
       /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
         /* @__PURE__ */ jsxs("label", { children: [
           "\u7F16\u8BD1\u5F15\u64CE",
-          /* @__PURE__ */ jsx("select", { "aria-label": "\u6587\u7A3F\u7F16\u8BD1\u5F15\u64CE", value: s.engine, onChange: (e) => this.setState({ engine: e.target.value }), children: ["pdflatex", "xelatex", "lualatex"].map((engine) => /* @__PURE__ */ jsx("option", { value: engine, children: engine }, engine)) })
+          /* @__PURE__ */ jsxs("select", { "aria-label": "\u6587\u7A3F\u7F16\u8BD1\u5F15\u64CE", value: s.engine, onChange: (e) => this.setState({ engine: e.target.value }), children: [
+            nativeSelectButton,
+            ["pdflatex", "xelatex", "lualatex"].map((engine) => /* @__PURE__ */ jsx("option", { value: engine, children: engine }, engine))
+          ] })
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u53C2\u8003\u6587\u732E\u7B56\u7565",
-          /* @__PURE__ */ jsx("select", { "aria-label": "\u53C2\u8003\u6587\u732E\u7B56\u7565", value: s.bibliography, onChange: (e) => this.setState({ bibliography: e.target.value }), children: ["none", "auto", "bibtex", "biber"].map((mode) => /* @__PURE__ */ jsx("option", { value: mode, children: mode }, mode)) })
+          /* @__PURE__ */ jsxs("select", { "aria-label": "\u53C2\u8003\u6587\u732E\u7B56\u7565", value: s.bibliography, onChange: (e) => this.setState({ bibliography: e.target.value }), children: [
+            nativeSelectButton,
+            ["none", "auto", "bibtex", "biber"].map((mode) => /* @__PURE__ */ jsx("option", { value: mode, children: mode }, mode))
+          ] })
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u4E3B TeX \u6587\u4EF6",
           /* @__PURE__ */ jsxs("select", { "aria-label": "\u4E3B TeX \u6587\u4EF6", value: s.mainFile, onChange: (e) => this.setState({ mainFile: e.target.value }), children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4E3B\u6587\u4EF6" }),
             allFiles.filter((f) => f.path.endsWith(".tex")).map((f) => /* @__PURE__ */ jsxs("option", { value: f.path, children: [
               f.path,
@@ -589,7 +602,10 @@ class ManuscriptEditor extends React.Component {
       ] }),
       /* @__PURE__ */ jsxs("label", { children: [
         "\u7F16\u8F91\u8349\u7A3F\u6587\u4EF6",
-        /* @__PURE__ */ jsx("select", { "aria-label": "\u7F16\u8F91\u8349\u7A3F\u6587\u4EF6", value: s.selected, onChange: (e) => this.setState({ selected: e.target.value }), children: s.files.map((f) => /* @__PURE__ */ jsx("option", { value: f.path, children: f.path }, f.path)) })
+        /* @__PURE__ */ jsxs("select", { "aria-label": "\u7F16\u8F91\u8349\u7A3F\u6587\u4EF6", value: s.selected, onChange: (e) => this.setState({ selected: e.target.value }), children: [
+          nativeSelectButton,
+          s.files.map((f) => /* @__PURE__ */ jsx("option", { value: f.path, children: f.path }, f.path))
+        ] })
       ] }),
       file ? /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsxs("label", { children: [
@@ -610,6 +626,7 @@ class ManuscriptEditor extends React.Component {
       /* @__PURE__ */ jsxs("label", { children: [
         "\u5F53\u524D\u9879\u76EE\u5DF2\u5F52\u6863\u4EA7\u7269",
         /* @__PURE__ */ jsxs("select", { "aria-label": "\u6587\u7A3F\u56FA\u5B9A\u8D44\u4EA7", value: s.assetId, onChange: (e) => this.changeAsset({ assetId: e.target.value }), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4EA7\u7269" }),
           this.props.data.artifacts.filter((a) => a.projectId === this.props.data.project.id).map((a) => /* @__PURE__ */ jsxs("option", { value: a.id, children: [
             a.title,
@@ -752,11 +769,14 @@ class PublicationPreview extends React.Component {
       this.props.ready && r.status === "succeeded" && r.converged && !r.hadErrors && r.previews.length ? /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsxs("label", { children: [
           "\u6587\u7A3F\u7269\u7406\u9875",
-          /* @__PURE__ */ jsx("select", { "aria-label": "\u6587\u7A3F\u7269\u7406\u9875", value: s.page, onChange: (e) => void this.load(Number(e.target.value)), children: r.previews.map((p) => /* @__PURE__ */ jsxs("option", { value: p.pageNumber, children: [
-            "\u7B2C ",
-            p.pageNumber,
-            " \u9875"
-          ] }, p.pageNumber)) })
+          /* @__PURE__ */ jsxs("select", { "aria-label": "\u6587\u7A3F\u7269\u7406\u9875", value: s.page, onChange: (e) => void this.load(Number(e.target.value)), children: [
+            nativeSelectButton,
+            r.previews.map((p) => /* @__PURE__ */ jsxs("option", { value: p.pageNumber, children: [
+              "\u7B2C ",
+              p.pageNumber,
+              " \u9875"
+            ] }, p.pageNumber))
+          ] })
         ] }),
         s.imageURL ? /* @__PURE__ */ jsx("img", { src: s.imageURL, alt: `\u56FA\u5B9A\u6587\u7A3F\u7B2C ${s.page} \u9875`, style: { maxWidth: "100%", height: "auto" }, onError: () => this.setState({ error: "\u6D4F\u89C8\u5668\u65E0\u6CD5\u89E3\u7801\u56FA\u5B9A PNG \u9875\u56FE\uFF1B\u53EF\u4E0B\u8F7D PDF \u6838\u5BF9\u3002" }) }) : /* @__PURE__ */ jsx("p", { role: "status", children: s.loading ? "\u6B63\u5728\u6838\u5BF9 PNG \u7B7E\u540D\u548C\u6458\u8981\u2026" : "\u9875\u56FE\u4E0D\u53EF\u7528" })
       ] }) : null,

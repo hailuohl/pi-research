@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
-import { Badge } from "./ui.js";
+import { Badge, nativeSelectButton } from "./ui.js";
 const sources = ["crossref", "alphaxiv", "openalex", "biorxiv", "pubmed"];
 const initialSearch = () => ({ query: "", sources: ["crossref"], limit: 2, strategy: "keyword", prioritize: "default" });
 const initialTarget = () => ({ source: "crossref", id: "", format: "provider-text" });
@@ -105,6 +105,7 @@ class DiscoveryGrants extends React.Component {
           /* @__PURE__ */ jsxs("label", { children: [
             "\u6307\u5B9A\u4E3B\u534F\u8C03\u4F1A\u8BDD",
             /* @__PURE__ */ jsxs("select", { "aria-label": "\u53D1\u73B0\u6388\u6743\u4E3B\u4F1A\u8BDD", required: true, value: s.sessionId, onChange: (e) => this.setState({ sessionId: e.target.value }), children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u672A\u7ED1\u5B9A\u53D1\u73B0\u6388\u6743\u7684\u4E3B\u4F1A\u8BDD" }),
               data.sessions.filter((row) => row.role === "coordinator" && !row.taskId && row.state !== "archived" && !row.discoveryGrantId).map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
                 row.title,
@@ -124,7 +125,10 @@ class DiscoveryGrants extends React.Component {
               /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
                 /* @__PURE__ */ jsxs("label", { children: [
                   "\u6765\u6E90",
-                  /* @__PURE__ */ jsx("select", { "aria-label": `\u6388\u6743\u68C0\u7D22\u6765\u6E90 ${index + 1}`, value: search.sources[0], onChange: (e) => this.setState({ searches: s.searches.map((item, i) => i === index ? { ...item, sources: [e.target.value] } : item) }), children: sources.map((source) => /* @__PURE__ */ jsx("option", { children: source }, source)) })
+                  /* @__PURE__ */ jsxs("select", { "aria-label": `\u6388\u6743\u68C0\u7D22\u6765\u6E90 ${index + 1}`, value: search.sources[0], onChange: (e) => this.setState({ searches: s.searches.map((item, i) => i === index ? { ...item, sources: [e.target.value] } : item) }), children: [
+                    nativeSelectButton,
+                    sources.map((source) => /* @__PURE__ */ jsx("option", { children: source }, source))
+                  ] })
                 ] }),
                 /* @__PURE__ */ jsxs("label", { children: [
                   "\u6700\u591A\u7ED3\u679C",
@@ -133,6 +137,7 @@ class DiscoveryGrants extends React.Component {
                 /* @__PURE__ */ jsxs("label", { children: [
                   "\u7B56\u7565",
                   /* @__PURE__ */ jsxs("select", { value: search.strategy, onChange: (e) => this.setState({ searches: s.searches.map((item, i) => i === index ? { ...item, strategy: e.target.value } : item) }), children: [
+                    nativeSelectButton,
                     /* @__PURE__ */ jsx("option", { value: "keyword", children: "\u5173\u952E\u8BCD" }),
                     /* @__PURE__ */ jsx("option", { value: "embedding", children: "\u8BED\u4E49" })
                   ] })
@@ -140,6 +145,7 @@ class DiscoveryGrants extends React.Component {
                 /* @__PURE__ */ jsxs("label", { children: [
                   "\u6392\u5E8F",
                   /* @__PURE__ */ jsxs("select", { value: search.prioritize, onChange: (e) => this.setState({ searches: s.searches.map((item, i) => i === index ? { ...item, prioritize: e.target.value } : item) }), children: [
+                    nativeSelectButton,
                     /* @__PURE__ */ jsx("option", { value: "default", children: "\u9ED8\u8BA4" }),
                     /* @__PURE__ */ jsx("option", { value: "recency", children: "\u6700\u8FD1" }),
                     /* @__PURE__ */ jsx("option", { value: "historical", children: "\u5386\u53F2" }),
@@ -165,7 +171,10 @@ class DiscoveryGrants extends React.Component {
               /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
                 /* @__PURE__ */ jsxs("label", { children: [
                   "\u6765\u6E90",
-                  /* @__PURE__ */ jsx("select", { value: target.source, onChange: (e) => this.setState({ targets: s.targets.map((item, i) => i === index ? { ...item, source: e.target.value } : item) }), children: sources.map((source) => /* @__PURE__ */ jsx("option", { children: source }, source)) })
+                  /* @__PURE__ */ jsxs("select", { value: target.source, onChange: (e) => this.setState({ targets: s.targets.map((item, i) => i === index ? { ...item, source: e.target.value } : item) }), children: [
+                    nativeSelectButton,
+                    sources.map((source) => /* @__PURE__ */ jsx("option", { children: source }, source))
+                  ] })
                 ] }),
                 /* @__PURE__ */ jsxs("label", { children: [
                   "\u8D44\u6599 ID",
@@ -174,6 +183,7 @@ class DiscoveryGrants extends React.Component {
                 /* @__PURE__ */ jsxs("label", { children: [
                   "\u5185\u5BB9\u683C\u5F0F",
                   /* @__PURE__ */ jsxs("select", { value: target.format, onChange: (e) => this.setState({ targets: s.targets.map((item, i) => i === index ? { ...item, format: e.target.value } : item) }), children: [
+                    nativeSelectButton,
                     /* @__PURE__ */ jsx("option", { value: "provider-text", children: "\u4F9B\u5E94\u5546\u6587\u672C/\u5143\u6570\u636E" }),
                     /* @__PURE__ */ jsx("option", { value: "original-pdf", children: "\u539F\u59CB PDF" })
                   ] })
@@ -218,6 +228,7 @@ class DiscoveryGrants extends React.Component {
       (data.discoveryGrants ?? []).length ? /* @__PURE__ */ jsxs("label", { children: [
         "\u67E5\u770B\u53D1\u73B0\u6388\u6743",
         /* @__PURE__ */ jsxs("select", { "aria-label": "\u67E5\u770B\u53D1\u73B0\u6388\u6743", value: s.selected, onChange: (e) => this.select(e.target.value), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "", disabled: true, children: "\u9009\u62E9\u6388\u6743" }),
           (data.discoveryGrants ?? []).map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
             short(row.id),

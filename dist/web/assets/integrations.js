@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { literatureSourceURL } from "./literature-view.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
-import { SectionTitle } from "./ui.js";
+import { SectionTitle, nativeSelectButton } from "./ui.js";
 import { SkillManager } from "./skill-manager.js";
 const sources = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
 class IntegrationsView extends React.Component {
@@ -153,6 +153,7 @@ class IntegrationsView extends React.Component {
             /* @__PURE__ */ jsxs("label", { children: [
               "alphaXiv \u7B56\u7565",
               /* @__PURE__ */ jsxs("select", { value: s.strategy, onChange: (e) => this.setState({ strategy: e.target.value }), children: [
+                nativeSelectButton,
                 /* @__PURE__ */ jsx("option", { value: "keyword", children: "\u5173\u952E\u8BCD" }),
                 /* @__PURE__ */ jsx("option", { value: "embedding", children: "\u8BED\u4E49\u5019\u9009" })
               ] })
@@ -160,6 +161,7 @@ class IntegrationsView extends React.Component {
             /* @__PURE__ */ jsxs("label", { children: [
               "\u4F18\u5148\u7EA7",
               /* @__PURE__ */ jsxs("select", { value: s.priority, onChange: (e) => this.setState({ priority: e.target.value }), children: [
+                nativeSelectButton,
                 /* @__PURE__ */ jsx("option", { value: "default", children: "\u76F8\u5173\u6027" }),
                 /* @__PURE__ */ jsx("option", { value: "recency", children: "\u65B0\u8FD1" }),
                 /* @__PURE__ */ jsx("option", { value: "historical", children: "\u65E9\u671F" }),

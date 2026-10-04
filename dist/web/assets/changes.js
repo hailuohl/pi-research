@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { short } from "./models.js";
-import { SectionTitle, Badge, Empty } from "./ui.js";
+import { SectionTitle, Badge, Empty, nativeSelectButton } from "./ui.js";
 class ChangesView extends React.Component {
   constructor() {
     super(...arguments);
@@ -40,6 +40,7 @@ class ChangesView extends React.Component {
           /* @__PURE__ */ jsxs("label", { children: [
             "\u7236\u5B9E\u9A8C",
             /* @__PURE__ */ jsxs("select", { "aria-label": "\u7236\u5B9E\u9A8C", required: true, value: this.state.baseId, onChange: (e) => this.setState({ baseId: e.target.value }), children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u56FA\u5B9A\u57FA\u51C6" }),
               data.experiments.filter((e) => e.lifecycle !== "archived").map((e) => /* @__PURE__ */ jsxs("option", { value: e.id, children: [
                 e.title,
@@ -54,6 +55,7 @@ class ChangesView extends React.Component {
               const a = selectable.find((a2) => a2.id === e.target.value);
               this.setState({ artifactId: e.target.value, path: a?.title ?? this.state.path });
             }, children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4E0D\u53EF\u53D8\u6587\u672C\u4EA7\u7269" }),
               selectable.map((a) => /* @__PURE__ */ jsxs("option", { value: a.id, children: [
                 a.title,

@@ -3,7 +3,7 @@ import * as React from "react";
 import { ResearchPlanFields, ResearchPlanPanel, readResearchPlan, readPlanCandidates } from "./research-plan.js";
 import { api } from "./api.js";
 import { short, label, number } from "./models.js";
-import { Badge, Empty, Modal, SectionTitle } from "./ui.js";
+import { Badge, Empty, Modal, SectionTitle, nativeSelectButton } from "./ui.js";
 function WakeupPanel({ data, perform, busy, onSession, sessionId }) {
   const items = data.wakeups.filter((w) => !sessionId || w.rootSessionId === sessionId);
   if (!items.length) return null;
@@ -94,11 +94,17 @@ class CampaignView extends React.Component {
       ] }),
       /* @__PURE__ */ jsxs("label", { children: [
         "\u4E3B\u534F\u8C03\u4F1A\u8BDD",
-        /* @__PURE__ */ jsx("select", { name: "session", required: true, children: data.sessions.filter((s) => s.role === "coordinator" && s.state !== "archived").map((s) => /* @__PURE__ */ jsx("option", { value: s.id, children: s.title }, s.id)) })
+        /* @__PURE__ */ jsxs("select", { name: "session", required: true, children: [
+          nativeSelectButton,
+          data.sessions.filter((s) => s.role === "coordinator" && s.state !== "archived").map((s) => /* @__PURE__ */ jsx("option", { value: s.id, children: s.title }, s.id))
+        ] })
       ] }),
       /* @__PURE__ */ jsxs("label", { children: [
         "\u57FA\u7EBF\u5B9E\u9A8C",
-        /* @__PURE__ */ jsx("select", { name: "baseline", required: true, children: data.experiments.filter((e) => e.lifecycle !== "archived").map((e) => /* @__PURE__ */ jsx("option", { value: e.id, children: e.title }, e.id)) })
+        /* @__PURE__ */ jsxs("select", { name: "baseline", required: true, children: [
+          nativeSelectButton,
+          data.experiments.filter((e) => e.lifecycle !== "archived").map((e) => /* @__PURE__ */ jsx("option", { value: e.id, children: e.title }, e.id))
+        ] })
       ] }),
       /* @__PURE__ */ jsxs("label", { children: [
         "\u4E3B\u6307\u6807\u540D\u79F0",
@@ -132,6 +138,7 @@ class CampaignView extends React.Component {
       /* @__PURE__ */ jsxs("label", { children: [
         "\u51B3\u5B9A\u7C7B\u578B",
         /* @__PURE__ */ jsxs("select", { name: "action", value: this.state.action, onChange: (e) => this.setState({ action: e.target.value }), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "repair", children: "Repair \xB7 \u65E0\u7ED3\u679C\u5019\u9009\u7684\u53D7\u5BA1\u4FEE\u590D" }),
           /* @__PURE__ */ jsx("option", { value: "refill", children: "Refill \xB7 \u540C\u4E00\u7236\u8282\u70B9\u8865\u5145\u5019\u9009" }),
           /* @__PURE__ */ jsx("option", { value: "promote", children: "Promote \xB7 \u4FDD\u7559\u7ED3\u679C\u5E76\u521B\u5EFA\u4E0B\u4E00\u8F6E" }),
@@ -155,13 +162,16 @@ class CampaignView extends React.Component {
       ] }),
       this.state.action === "promote" ? /* @__PURE__ */ jsxs("label", { children: [
         "\u4F5C\u4E3A\u4E0B\u4E00\u8F6E\u7236\u8282\u70B9\u7684\u5DF2\u6D4B\u91CF Run",
-        /* @__PURE__ */ jsx("select", { name: "selectedRun", required: true, children: observations.filter((o) => o.validation === "verified").map((o) => /* @__PURE__ */ jsxs("option", { value: o.runId, children: [
-          data.experiments.find((e) => e.id === o.experimentId)?.title,
-          " \xB7 ",
-          c.primaryMetric,
-          "=",
-          number(o.metrics[c.primaryMetric])
-        ] }, o.id)) })
+        /* @__PURE__ */ jsxs("select", { name: "selectedRun", required: true, children: [
+          nativeSelectButton,
+          observations.filter((o) => o.validation === "verified").map((o) => /* @__PURE__ */ jsxs("option", { value: o.runId, children: [
+            data.experiments.find((e) => e.id === o.experimentId)?.title,
+            " \xB7 ",
+            c.primaryMetric,
+            "=",
+            number(o.metrics[c.primaryMetric])
+          ] }, o.id))
+        ] })
       ] }) : null,
       this.state.action !== "stop" ? /* @__PURE__ */ jsx(ResearchPlanFields, { data, campaign: c, repair: this.state.action === "repair" }, this.state.action) : null,
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5FC5\u9700\u5019\u9009\u5C1A\u672A\u5B8C\u6210\u65F6\uFF0C\u670D\u52A1\u7AEF\u62D2\u7EDD Promote\u3002Repair \u4EC5\u7528\u4E8E\u5DF2\u8BA4\u5B9A\u65E0\u7ED3\u679C\u7684\u5931\u8D25\uFF0C\u5E76\u4FDD\u7559\u539F Run\u3002\u6279\u51C6\u65B9\u6848\u53EA\u51C6\u5907\u5019\u9009\uFF1B\u6D4B\u8BD5\u3001\u5BA1\u67E5\u3001\u6574\u5408\u548C\u6B63\u5F0F Run \u4ECD\u5355\u72EC\u6279\u51C6\u3002" })
@@ -219,10 +229,13 @@ class CampaignView extends React.Component {
       }, children: "\u660E\u786E\u9009\u62E9\u53EF\u7528\u6D3B\u52A8" }) : "\u5148\u521B\u5EFA\u4E3B\u4F1A\u8BDD\u4E0E\u57FA\u7EBF\u5B9E\u9A8C\uFF0C\u518D\u5EFA\u7ACB\u6D3B\u52A8\u3002\u6B63\u5F0F\u8BA1\u7B97\u59CB\u7EC8\u5355\u72EC\u6279\u51C6\u3002" }) : /* @__PURE__ */ jsxs("div", { children: [
         /* @__PURE__ */ jsxs("label", { className: "campaign-picker", children: [
           "\u5F53\u524D\u6D3B\u52A8",
-          /* @__PURE__ */ jsx("select", { value: c.id, onChange: (e) => {
+          /* @__PURE__ */ jsxs("select", { value: c.id, onChange: (e) => {
             this.setState({ selected: e.target.value, decision: false });
             this.props.onSelect?.(e.target.value);
-          }, children: data.campaigns.map((item) => /* @__PURE__ */ jsx("option", { value: item.id, children: item.goal.slice(0, 80) }, item.id)) })
+          }, children: [
+            nativeSelectButton,
+            data.campaigns.map((item) => /* @__PURE__ */ jsx("option", { value: item.id, children: item.goal.slice(0, 80) }, item.id))
+          ] })
         ] }),
         /* @__PURE__ */ jsxs("section", { className: "campaign-overview", children: [
           /* @__PURE__ */ jsxs("div", { className: "actions", children: [
@@ -346,15 +359,19 @@ class CampaignView extends React.Component {
           }, children: [
             /* @__PURE__ */ jsxs("label", { children: [
               "\u767B\u8BB0\u5DF2\u51C6\u5907\u7684\u56FA\u5B9A RunIntent",
-              /* @__PURE__ */ jsx("select", { name: "intent", required: true, disabled: !available.length, children: available.map((i) => /* @__PURE__ */ jsxs("option", { value: i.id, children: [
-                data.experiments.find((e) => e.id === i.experimentId)?.title,
-                " \xB7 ",
-                short(i.id)
-              ] }, i.id)) })
+              /* @__PURE__ */ jsxs("select", { name: "intent", required: true, disabled: !available.length, children: [
+                nativeSelectButton,
+                available.map((i) => /* @__PURE__ */ jsxs("option", { value: i.id, children: [
+                  data.experiments.find((e) => e.id === i.experimentId)?.title,
+                  " \xB7 ",
+                  short(i.id)
+                ] }, i.id))
+              ] })
             ] }),
             /* @__PURE__ */ jsxs("label", { children: [
               "\u4FEE\u590D\u6279\u51C6\uFF08\u9996\u6B21\u767B\u8BB0\u7559\u7A7A\uFF09",
               /* @__PURE__ */ jsxs("select", { name: "repair", children: [
+                nativeSelectButton,
                 /* @__PURE__ */ jsx("option", { value: "", children: "\u4E0D\u4F7F\u7528\u4FEE\u590D\u6279\u51C6" }),
                 data.decisions.filter((d) => d.campaignId === c.id && d.roundId === c.currentRoundId && d.action === "repair" && d.status === "applied" && !members.some((m) => m.repairDecisionId === d.id)).map((d) => /* @__PURE__ */ jsxs("option", { value: d.id, children: [
                   short(d.id),

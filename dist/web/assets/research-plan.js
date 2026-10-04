@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { short, number } from "./models.js";
-import { Badge } from "./ui.js";
+import { Badge, nativeSelectButton } from "./ui.js";
 const lines = (value) => String(value ?? "").split("\n").map((v) => v.trim()).filter(Boolean);
 function readResearchPlan(fd, primaryMetric) {
   return { hypothesis: String(fd.get("planHypothesis")), controlRunIds: fd.getAll("controlRuns").map(String), changedFactors: lines(fd.get("factors")), dataSplit: String(fd.get("dataSplit")), dataArtifactIds: fd.getAll("dataArtifacts").map(String), primaryMetric, guardrailMetrics: fd.getAll("guardrails").map(String), repetitions: { count: Number(fd.get("repeatCount")), rationale: String(fd.get("repeatRationale")) }, successCriteria: String(fd.get("success")), inconclusiveCriteria: String(fd.get("inconclusive")), stoppingCriteria: String(fd.get("stopping")), ...fd.get("previousPlan") ? { previousRevisionId: String(fd.get("previousPlan")) } : {} };
@@ -53,6 +53,7 @@ class CandidateFields extends React.Component {
       /* @__PURE__ */ jsxs("label", { children: [
         "\u5B9E\u73B0\u65B9\u5F0F",
         /* @__PURE__ */ jsxs("select", { name: `${prefix}Implementation`, value: implementation, disabled: repair, onChange: (e) => this.setState({ implementation: e.target.value }), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "config", children: "\u56FA\u5B9A\u7236\u6E90\u7801\u7684\u53C2\u6570\u5019\u9009" }),
           /* @__PURE__ */ jsx("option", { value: "reviewed-code", children: "\u6539\u4EE3\u7801\uFF0C\u7ECF\u6D4B\u8BD5\u548C\u72EC\u7ACB\u5BA1\u67E5" })
         ] })
@@ -162,6 +163,7 @@ class ResearchPlanFields extends React.Component {
       /* @__PURE__ */ jsxs("label", { children: [
         "\u4FEE\u8BA2\u81EA\uFF08\u53EF\u9009\uFF09",
         /* @__PURE__ */ jsxs("select", { name: "previousPlan", children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "", children: "\u65B0\u65B9\u6848" }),
           plans.filter((p) => p.campaignId === c.id).map((p) => /* @__PURE__ */ jsx("option", { value: p.id, children: short(p.id) }, p.id))
         ] })
@@ -292,6 +294,7 @@ class ResearchPlanPanel extends React.Component {
             /* @__PURE__ */ jsxs("label", { children: [
               "\u79C1\u6709\u5B9E\u73B0\u4E3B\u4F1A\u8BDD",
               /* @__PURE__ */ jsxs("select", { name: "sessionId", required: true, children: [
+                nativeSelectButton,
                 /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4E13\u7528\u4E3B\u4F1A\u8BDD" }),
                 data.sessions.filter((s) => s.role === "coordinator" && !s.taskId && s.state !== "archived").map((s) => /* @__PURE__ */ jsxs("option", { value: s.id, children: [
                   s.title,
@@ -310,6 +313,7 @@ class ResearchPlanPanel extends React.Component {
             /* @__PURE__ */ jsxs("label", { children: [
               "\u5DF2\u6279\u51C6\u5E76\u6574\u5408\u7684\u53D7\u5BA1\u53D8\u66F4",
               /* @__PURE__ */ jsxs("select", { name: "proposalId", required: true, children: [
+                nativeSelectButton,
                 /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u5DF2\u5E94\u7528\u53D8\u66F4" }),
                 proposals.map((p) => /* @__PURE__ */ jsxs("option", { value: p.id, children: [
                   p.title,

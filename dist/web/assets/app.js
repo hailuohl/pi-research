@@ -5,7 +5,7 @@ import { SchedulerView } from "./scheduler-view.js";
 import { IntegrationsView } from "./integrations.js";
 import { api } from "./api.js";
 import { short } from "./models.js";
-import { Icon, Modal } from "./ui.js";
+import { Icon, Modal, nativeSelectButton } from "./ui.js";
 import { Chat, Experiments, Inspector } from "./workbench.js";
 import { SessionList } from "./session-list.js";
 import { WorkspaceView, EvidenceView, ReportsView, LiteratureView, SettingsView } from "./data-views.js";
@@ -223,6 +223,7 @@ class App extends React.Component {
         /* @__PURE__ */ jsxs("label", { children: [
           "\u9879\u76EE\u6A21\u677F",
           /* @__PURE__ */ jsxs("select", { "aria-label": "\u9879\u76EE\u6A21\u677F", name: "template", defaultValue: "curve-fit", children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "curve-fit", children: "\u771F\u5B9E\u66F2\u7EBF\u62DF\u5408\u793A\u4F8B \xB7 \u53EF\u76F4\u63A5\u8FD0\u884C" }),
             /* @__PURE__ */ jsx("option", { value: "empty", children: "\u7A7A\u9879\u76EE \xB7 \u81EA\u884C\u51C6\u5907\u6587\u4EF6" })
           ] })
@@ -245,6 +246,7 @@ class App extends React.Component {
         /* @__PURE__ */ jsxs("label", { children: [
           "\u6307\u4EE4\u8BED\u4E49",
           /* @__PURE__ */ jsxs("select", { name: "kind", children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "steer", children: "\u5F15\u5BFC\u5F53\u524D\u5DE5\u4F5C \xB7 \u4E0D\u4FEE\u6539\u7814\u7A76\u76EE\u6807" }),
             /* @__PURE__ */ jsx("option", { value: "follow_up", children: "\u540E\u7EED\u6307\u4EE4 \xB7 \u5F53\u524D\u4EFB\u52A1\u7ED3\u675F\u540E\u5904\u7406" }),
             /* @__PURE__ */ jsx("option", { value: "revise", children: "\u6539\u53D8\u7814\u7A76\u76EE\u6807 \xB7 \u65E7\u4EFB\u52A1\u5931\u6548\uFF0C\u6682\u505C\u91CD\u65B0\u89C4\u5212" })
@@ -289,11 +291,14 @@ class App extends React.Component {
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u8BC1\u636E\u6765\u6E90",
-          /* @__PURE__ */ jsx("select", { name: "evidenceId", children: data.evidence.map((e) => /* @__PURE__ */ jsxs("option", { value: e.id, children: [
-            e.description,
-            " \xB7 ",
-            short(e.id)
-          ] }, e.id)) })
+          /* @__PURE__ */ jsxs("select", { name: "evidenceId", children: [
+            nativeSelectButton,
+            data.evidence.map((e) => /* @__PURE__ */ jsxs("option", { value: e.id, children: [
+              e.description,
+              " \xB7 ",
+              short(e.id)
+            ] }, e.id))
+          ] })
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u9650\u5236\uFF08\u6BCF\u884C\u4E00\u6761\uFF09",
@@ -324,7 +329,10 @@ class App extends React.Component {
         ] }),
         /* @__PURE__ */ jsxs("label", { className: "sidebar-project", children: [
           "\u9879\u76EE",
-          /* @__PURE__ */ jsx("select", { "aria-label": "\u5F53\u524D\u9879\u76EE", value: this.state.projectId, onChange: (e) => this.switchProject(e.target.value), children: !boot?.projects.length ? /* @__PURE__ */ jsx("option", { value: "", children: "\u5C1A\u672A\u521B\u5EFA\u9879\u76EE" }) : boot.projects.map((p) => /* @__PURE__ */ jsx("option", { value: p.id, children: p.name }, p.id)) })
+          /* @__PURE__ */ jsxs("select", { "aria-label": "\u5F53\u524D\u9879\u76EE", value: this.state.projectId, onChange: (e) => this.switchProject(e.target.value), children: [
+            nativeSelectButton,
+            !boot?.projects.length ? /* @__PURE__ */ jsx("option", { value: "", children: "\u5C1A\u672A\u521B\u5EFA\u9879\u76EE" }) : boot.projects.map((p) => /* @__PURE__ */ jsx("option", { value: p.id, children: p.name }, p.id))
+          ] })
         ] }),
         /* @__PURE__ */ jsxs("button", { className: "new-project", onClick: () => this.setState({ navigationOpen: false }, () => this.open("project")), children: [
           /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),

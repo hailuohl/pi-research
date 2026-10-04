@@ -122,6 +122,22 @@ export function SectionTitle({ title, sub, children }: {
     sub?: string;
     children?: React.ReactNode;
 }) { return <div className="section-title"><div><h1>{title}</h1>{sub ? <p>{sub}</p> : null}</div><div className="actions">{children}</div></div>; }
+function syncNativeSelectContent(button: HTMLButtonElement | null) {
+    const select = button?.closest<HTMLSelectElement>('select');
+    const content = button?.querySelector('selectedcontent');
+    if (!select || !content || getComputedStyle(select).appearance !== 'base-select') return;
+    // Native selectedcontent does not refresh when the chosen option's label changes.
+    const sync = () => {
+        const option = select.selectedOptions[0];
+        if (content.innerHTML === (option?.innerHTML ?? '')) return;
+        content.replaceChildren(...Array.from(option?.childNodes ?? []).map(node => node.cloneNode(true)));
+    };
+    const observer = new MutationObserver(sync);
+    observer.observe(select, { childList: true, characterData: true, subtree: true });
+    sync();
+    return () => observer.disconnect();
+}
+export const nativeSelectButton = React.createElement('button',{type:'button',ref:syncNativeSelectContent},React.createElement('selectedcontent'));
 export class Modal extends React.Component<{
     title: string;
     children: React.ReactNode;
@@ -140,7 +156,9 @@ export class Modal extends React.Component<{
                 if (e.target === e.currentTarget)
                     this.props.onClose();
             }}><section ref={(el) => { this.el = el; }} role="dialog" aria-modal="true" aria-label={this.props.title} className={'modal ' + (this.props.wide ? 'wide' : '')} onKeyDown={(e) => {
-                if (e.key === 'Escape')
+                const select = (e.target as HTMLElement | undefined)?.closest?.('select');
+                const pickerOpen = select && getComputedStyle(select).appearance === 'base-select' && select.matches(':open');
+                if (e.key === 'Escape' && !pickerOpen)
                     this.props.onClose();
                 if (e.key === 'Tab') {
                     const els = Array.from(this.el!.querySelectorAll<HTMLElement>('button:not(:disabled),input,select,textarea'));

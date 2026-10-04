@@ -1,7 +1,7 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
-import { Icon } from "./ui.js";
+import { Icon, nativeSelectButton } from "./ui.js";
 const SOURCES = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
 const SOURCE_NAMES = { alphaxiv: "alphaXiv", openalex: "OpenAlex", biorxiv: "bioRxiv", pubmed: "PubMed", crossref: "Crossref" };
 const SOURCE_LOGOS = { alphaxiv: "alphaxiv.svg", openalex: "openalex.svg", biorxiv: "biorxiv.svg", pubmed: "pubmed.png", crossref: "crossref.ico" };
@@ -176,6 +176,7 @@ class ComposerControls extends React.Component {
             const selected = options.find((model) => modelKey(model) === event.target.value);
             if (selected && (!currentModel || modelKey(selected) !== modelKey(currentModel))) this.props.onSendModel(selected);
           }, children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "", children: currentModel?.provider && currentModel.model ? "\u9009\u62E9\u6A21\u578B" : "\u672A\u914D\u7F6E\u6A21\u578B" }),
             options.map((model) => /* @__PURE__ */ jsxs("option", { value: modelKey(model), children: [
               model.provider,

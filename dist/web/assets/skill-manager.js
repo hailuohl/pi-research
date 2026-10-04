@@ -1,5 +1,6 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { nativeSelectButton } from "./ui.js";
 import { api } from "./api.js";
 import { label } from "./models.js";
 const call = (projectId, name, input = {}) => api(`/operations/${name}`, { projectId, input });
@@ -313,14 +314,17 @@ class SkillManager extends React.Component {
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u65B0\u7ED1\u5B9A\u4F7F\u7528\u7684\u5185\u7F6E\u53D1\u884C\u7248\u672C",
-          /* @__PURE__ */ jsx("select", { value: s.builtinBundleId, disabled: s.busy, onChange: (e) => this.setState({ builtinBundleId: e.target.value }), children: s.catalog.builtinReleases.map((release) => /* @__PURE__ */ jsxs("option", { value: release.bundleId, children: [
-            release.bundleId,
-            " \xB7 ",
-            release.skillCount,
-            " \u4E2A\u6280\u80FD",
-            release.current ? " \xB7 \u5F53\u524D\u53D1\u884C" : "",
-            release.bundleId === s.catalog.configuration.builtinBundleId ? " \xB7 \u5DF2\u914D\u7F6E\u57FA\u7EBF" : ""
-          ] }, release.bundleId)) })
+          /* @__PURE__ */ jsxs("select", { value: s.builtinBundleId, disabled: s.busy, onChange: (e) => this.setState({ builtinBundleId: e.target.value }), children: [
+            nativeSelectButton,
+            s.catalog.builtinReleases.map((release) => /* @__PURE__ */ jsxs("option", { value: release.bundleId, children: [
+              release.bundleId,
+              " \xB7 ",
+              release.skillCount,
+              " \u4E2A\u6280\u80FD",
+              release.current ? " \xB7 \u5F53\u524D\u53D1\u884C" : "",
+              release.bundleId === s.catalog.configuration.builtinBundleId ? " \xB7 \u5DF2\u914D\u7F6E\u57FA\u7EBF" : ""
+            ] }, release.bundleId))
+          ] })
         ] }),
         /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9009\u62E9\u53D1\u884C\u7248\u672C\u540E\u4FDD\u5B58\u624D\u4F1A\u5207\u6362\uFF0C\u4EC5\u5F71\u54CD\u540E\u7EED\u65B0\u7ED1\u5B9A\uFF1B\u5DF2\u7ED1\u5B9A\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F Bundle ID\uFF0C\u5E76\u6309\u539F\u7248\u672C\u9884\u68C0\u3002\u672A\u914D\u7F6E\u9879\u76EE\u7684\u65B0\u7ED1\u5B9A\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u53D1\u884C\u3002\u81EA\u5B9A\u4E49\u4FEE\u8BA2\u4FDD\u6301\u52FE\u9009\uFF0C\u5347\u7EA7\u5185\u7F6E\u7248\u672C\u987B\u5728\u6B64\u663E\u5F0F\u9009\u62E9\u3002" })
       ] }) : null,

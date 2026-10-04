@@ -12,7 +12,7 @@ import { ChatWorkflows } from "./chat-workflows.js";
 import { ComposerControls } from "./composer-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
-import { Icon, Badge, SectionTitle } from "./ui.js";
+import { Icon, Badge, SectionTitle, nativeSelectButton } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
@@ -315,6 +315,7 @@ class RunFiles extends React.Component {
           /* @__PURE__ */ jsxs("select", { "aria-label": "\u56FA\u5B9A\u6E90\u7801\u6587\u4EF6", value: this.state.sourcePath, onChange: (e) => {
             if (e.target.value) void this.readSource(e.target.value);
           }, children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u6587\u4EF6" }),
             this.state.files.map((f) => /* @__PURE__ */ jsxs("option", { value: f.path, children: [
               f.path,
@@ -386,13 +387,16 @@ class Inspector extends React.Component {
         run ? /* @__PURE__ */ jsxs("div", { className: "run-detail", children: [
           /* @__PURE__ */ jsxs("label", { children: [
             "\u67E5\u770B\u8FD0\u884C",
-            /* @__PURE__ */ jsx("select", { "aria-label": "\u67E5\u770B\u8FD0\u884C", value: run.id, onChange: (event) => this.props.onRun?.(event.target.value), children: data.runs.filter((r) => r.experimentId === e.id).slice().reverse().map((r) => /* @__PURE__ */ jsxs("option", { value: r.id, children: [
-              date(r.createdAt),
-              " \xB7 ",
-              short(r.id),
-              " \xB7 ",
-              label(r.state)
-            ] }, r.id)) })
+            /* @__PURE__ */ jsxs("select", { "aria-label": "\u67E5\u770B\u8FD0\u884C", value: run.id, onChange: (event) => this.props.onRun?.(event.target.value), children: [
+              nativeSelectButton,
+              data.runs.filter((r) => r.experimentId === e.id).slice().reverse().map((r) => /* @__PURE__ */ jsxs("option", { value: r.id, children: [
+                date(r.createdAt),
+                " \xB7 ",
+                short(r.id),
+                " \xB7 ",
+                label(r.state)
+              ] }, r.id))
+            ] })
           ] }),
           /* @__PURE__ */ jsxs("h4", { children: [
             "\u8FD0\u884C ",

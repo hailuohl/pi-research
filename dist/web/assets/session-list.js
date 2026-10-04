@@ -1,7 +1,7 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
-import { Icon } from "./ui.js";
+import { Icon, nativeSelectButton } from "./ui.js";
 const roles = { all: "\u5168\u90E8\u89D2\u8272", coordinator: "\u4E3B\u534F\u8C03\u8005", literature: "\u6587\u732E", designer: "\u8BBE\u8BA1", implementer: "\u5B9E\u73B0", analyst: "\u5206\u6790", reviewer: "\u5BA1\u67E5", writer: "\u5199\u4F5C" };
 const filters = { active: "\u6D3B\u8DC3", archived: "\u5DF2\u5F52\u6863", all: "\u5168\u90E8" };
 class SessionList extends React.Component {
@@ -75,7 +75,10 @@ class SessionList extends React.Component {
         /* @__PURE__ */ jsx("span", { children: "\u4F1A\u8BDD" }),
         /* @__PURE__ */ jsxs("label", { className: "session-state-filter", children: [
           /* @__PURE__ */ jsx(Icon, { name: "filter", size: 14 }),
-          /* @__PURE__ */ jsx("select", { "aria-label": "\u4F1A\u8BDD\u5206\u7C7B", value: stateFilter, disabled: !this.props.projectId || this.props.busy, onChange: (event) => this.changeStateFilter(event.target.value), children: Object.entries(filters).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value)) })
+          /* @__PURE__ */ jsxs("select", { "aria-label": "\u4F1A\u8BDD\u5206\u7C7B", value: stateFilter, disabled: !this.props.projectId || this.props.busy, onChange: (event) => this.changeStateFilter(event.target.value), children: [
+            nativeSelectButton,
+            Object.entries(filters).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value))
+          ] })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("details", { className: "session-filters", children: [
@@ -87,7 +90,10 @@ class SessionList extends React.Component {
           /* @__PURE__ */ jsx("input", { "aria-label": "\u641C\u7D22\u4F1A\u8BDD", placeholder: "\u641C\u7D22\u4F1A\u8BDD", value: this.state.draft, onChange: (event) => this.setState({ draft: event.target.value }) }),
           /* @__PURE__ */ jsx("button", { type: "submit", disabled: busy, children: "\u641C\u7D22" })
         ] }),
-        /* @__PURE__ */ jsx("select", { className: "session-role", "aria-label": "\u4F1A\u8BDD\u89D2\u8272", value: this.state.role, onChange: (event) => this.changeRole(event.target.value), children: Object.entries(roles).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value)) })
+        /* @__PURE__ */ jsxs("select", { className: "session-role", "aria-label": "\u4F1A\u8BDD\u89D2\u8272", value: this.state.role, onChange: (event) => this.changeRole(event.target.value), children: [
+          nativeSelectButton,
+          Object.entries(roles).map(([value, name]) => /* @__PURE__ */ jsx("option", { value, children: name }, value))
+        ] })
       ] }),
       selectedOutside ? row(selected) : null,
       items.map(row),

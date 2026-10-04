@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
-import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
+import { Icon, Badge, Empty, SectionTitle, nativeSelectButton } from "./ui.js";
 class WorkspaceView extends React.Component {
   constructor() {
     super(...arguments);
@@ -255,6 +255,7 @@ class SettingsView extends React.Component {
               const model = models.find((item) => settingsModelKey(item) === e.target.value);
               if (model) this.setState({ provider: model.provider, model: model.model, thinking: model.thinking, savedChoice: e.target.value });
             }, children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u624B\u52A8\u914D\u7F6E" }),
               models.map((model) => /* @__PURE__ */ jsxs("option", { value: settingsModelKey(model), children: [
                 model.provider,
@@ -276,7 +277,10 @@ class SettingsView extends React.Component {
             ] }),
             /* @__PURE__ */ jsxs("label", { children: [
               "\u601D\u8003\u914D\u7F6E",
-              /* @__PURE__ */ jsx("select", { "aria-label": "\u601D\u8003\u914D\u7F6E", value: this.state.thinking, onChange: (e) => this.setState({ thinking: e.target.value, savedChoice: "" }), children: ["off", "minimal", "low", "medium", "high", "xhigh"].map((v) => /* @__PURE__ */ jsx("option", { value: v, children: v }, v)) })
+              /* @__PURE__ */ jsxs("select", { "aria-label": "\u601D\u8003\u914D\u7F6E", value: this.state.thinking, onChange: (e) => this.setState({ thinking: e.target.value, savedChoice: "" }), children: [
+                nativeSelectButton,
+                ["off", "minimal", "low", "medium", "high", "xhigh"].map((v) => /* @__PURE__ */ jsx("option", { value: v, children: v }, v))
+              ] })
             ] })
           ] }),
           /* @__PURE__ */ jsx("button", { className: "primary", type: "submit", children: "\u4FDD\u5B58\u4E3A\u9ED8\u8BA4\u6A21\u578B\uFF08\u7528\u4E8E\u65B0\u4F1A\u8BDD\uFF09" })

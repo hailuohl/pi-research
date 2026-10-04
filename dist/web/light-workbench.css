@@ -104,6 +104,69 @@ tbody tr:hover { background: var(--quiet); }
 button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible,
 select:focus-visible, textarea:focus-visible { outline-color: var(--focus); }
 
+/* Native form semantics stay intact; older browsers keep their own picker. */
+select:not([multiple]):not([size]) {
+  border-radius: 8px;
+  transition: border-color .14s ease, background-color .14s ease;
+}
+select:not([multiple]):not([size]):not(:disabled) { cursor: pointer; }
+select:not([multiple]):not([size]):hover:not(:disabled) { border-color: var(--muted); }
+select:not([multiple]):not([size]):disabled { color: var(--muted); opacity: .6; cursor: not-allowed; }
+@supports (appearance: base-select) and selector(select::picker(select)) {
+  select:not([multiple]):not([size]),
+  select:not([multiple]):not([size])::picker(select) { appearance: base-select; }
+  select:not([multiple]):not([size]) {
+    display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+  }
+  select > button { all: unset; flex: 1; min-width: 0; display: block; text-align: start; }
+  select selectedcontent { display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  /* Match the original compact native controls' line boxes. */
+  .sidebar-project > select { line-height: 20px; }
+  .session-state-filter select, .session-role, .composer-model-control select { line-height: calc(52px / 3); }
+  .session-state-filter select { width: 56px; height: calc(70px / 3); min-height: 0; }
+  select::picker-icon { color: var(--muted); font-size: 12px; line-height: inherit; flex-shrink: 0; transition: rotate .14s ease; }
+  select:open::picker-icon { rotate: 180deg; }
+  select:open { outline: 2px solid color-mix(in srgb, var(--focus) 22%, transparent); outline-offset: 2px; }
+  select:not([multiple]):not([size])::picker(select) {
+    box-sizing: border-box;
+    min-width: anchor-size(width);
+    max-width: min(420px, calc(100vw - 24px));
+    max-height: min(320px, 45vh);
+    padding: 5px;
+    margin-block: 6px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 8px 28px #24262b1a, 0 2px 6px #24262b0a;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  select:not([multiple]):not([size]) option {
+    min-height: 34px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    gap: 10px;
+    cursor: pointer;
+  }
+  select:not([multiple]):not([size]) option:checked { background: var(--soft); font-weight: 600; }
+  select:not([multiple]):not([size]) option:hover:not(:disabled),
+  select:not([multiple]):not([size]) option:focus:not(:disabled) {
+    background: var(--green-soft); outline: none;
+  }
+  select:not([multiple]):not([size]) option:disabled { color: var(--muted); opacity: .6; cursor: not-allowed; }
+  select:not([multiple]):not([size]) option::checkmark { color: var(--ink); margin-inline-start: auto; order: 1; }
+}
+
 /* Fixed-size inline Lucide glyphs and single-line session rows. */
 .ui-icon { flex-shrink: 0; vertical-align: middle; }
 .nav-list button .ui-icon, .workspace-tool-items > button .ui-icon,
@@ -209,5 +272,6 @@ select:focus-visible, textarea:focus-visible { outline-color: var(--focus); }
 .experiment-graph-warning { color: var(--danger); }
 .experiment-run-grants > section.surface { border-color: var(--line); }
 @media (prefers-reduced-motion: reduce) {
-  .nav-list button, .sidebar-sessions > button, .workspace-tool-items > button { transition: none; }
+  .nav-list button, .sidebar-sessions > button, .workspace-tool-items > button,
+  select:not([multiple]):not([size]), select::picker-icon { transition: none; }
 }

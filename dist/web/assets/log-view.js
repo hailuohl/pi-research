@@ -1,5 +1,6 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { nativeSelectButton } from "./ui.js";
 import { ApiError } from "./api.js";
 const LOG_PAGE_BYTES = 65536;
 class LogView extends React.Component {
@@ -85,6 +86,7 @@ class LogView extends React.Component {
       /* @__PURE__ */ jsxs("label", { children: [
         this.props.streamLabel,
         /* @__PURE__ */ jsxs("select", { "aria-label": this.props.streamLabel, value: s.stream, onChange: (e) => this.selectStream(e.target.value), children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "stdout", children: "\u6807\u51C6\u8F93\u51FA stdout" }),
           /* @__PURE__ */ jsx("option", { value: "stderr", children: "\u9519\u8BEF\u8F93\u51FA stderr" })
         ] })

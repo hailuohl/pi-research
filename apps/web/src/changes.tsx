@@ -2,7 +2,7 @@ import * as React from 'react';
 import {api} from './api.js';
 import type {ProjectState} from './models.js';
 import {short} from './models.js';
-import {SectionTitle,Badge,Empty} from './ui.js';
+import {SectionTitle,Badge,Empty, nativeSelectButton} from './ui.js';
 import type {Perform} from './workbench.js';
 /** Human-controlled, single-file form; multi-file proposals are supported by the same API. */
 export class ChangesView extends React.Component<{data:ProjectState;perform:Perform},{baseId:string;artifactId:string;path:string;title:string;hypothesis:string;preview:any;inspected:string}> {
@@ -21,8 +21,8 @@ export class ChangesView extends React.Component<{data:ProjectState;perform:Perf
         <p className="inline-warning">整合不会自动运行测试或正式计算。当前只支持文本文件；运行仍需单独批准。没有测试记录不表示测试通过。</p>
         <section className="surface"><div className="surface-heading"><h2>传统产物变更入口</h2></div>
         <form className="form-body" onSubmit={(e:any)=>{e.preventDefault();void this.prepare();}}>
-        <label>父实验<select aria-label="父实验" required value={this.state.baseId} onChange={(e:any)=>this.setState({baseId:e.target.value})}><option value="">选择固定基准</option>{data.experiments.filter(e=>e.lifecycle!=='archived').map(e=><option key={e.id} value={e.id}>{e.title} · 修订 {e.revision}</option>)}</select></label>
-        <label>代码或配置产物<select aria-label="代码或配置产物" required value={this.state.artifactId} onChange={(e:any)=>{const a=selectable.find(a=>a.id===e.target.value);this.setState({artifactId:e.target.value,path:a?.title??this.state.path});}}><option value="">选择不可变文本产物</option>{selectable.map(a=><option key={a.id} value={a.id}>{a.title} · {short(a.id)}</option>)}</select></label>
+        <label>父实验<select aria-label="父实验" required value={this.state.baseId} onChange={(e:any)=>this.setState({baseId:e.target.value})}>{nativeSelectButton}<option value="">选择固定基准</option>{data.experiments.filter(e=>e.lifecycle!=='archived').map(e=><option key={e.id} value={e.id}>{e.title} · 修订 {e.revision}</option>)}</select></label>
+        <label>代码或配置产物<select aria-label="代码或配置产物" required value={this.state.artifactId} onChange={(e:any)=>{const a=selectable.find(a=>a.id===e.target.value);this.setState({artifactId:e.target.value,path:a?.title??this.state.path});}}>{nativeSelectButton}<option value="">选择不可变文本产物</option>{selectable.map(a=><option key={a.id} value={a.id}>{a.title} · {short(a.id)}</option>)}</select></label>
         <label>目标相对路径<input aria-label="目标相对路径" required value={this.state.path} onChange={(e:any)=>this.setState({path:e.target.value})} placeholder="例如 config.json 或 src/model.py"/></label>
         <label>新子实验名称<input required aria-label="新子实验名称" value={this.state.title} onChange={(e:any)=>this.setState({title:e.target.value})}/></label>
         <label>研究变化与依据<textarea required aria-label="研究变化与依据" value={this.state.hypothesis} onChange={(e:any)=>this.setState({hypothesis:e.target.value})}/></label>

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {nativeSelectButton} from './ui.js';
 import {ApiError} from './api.js';
 export interface LogPage {content:string;cursor:number;complete:boolean;start:number;size:number;identity:string|null;}
 export interface LogRequest {stream:'stdout'|'stderr';cursor:number;identity?:string;}
@@ -37,7 +38,7 @@ export class LogView extends React.Component<{
     navigate(cursor:number){this.invalidate();this.setState({following:false,loading:false},()=>void this.load(cursor));}
     fromStart(){this.invalidate();this.starts=[0];this.setState({page:null,following:false,loading:false,error:'',reset:false},()=>void this.load(0,true));}
     selectStream(stream:'stdout'|'stderr'){this.invalidate();this.starts=[0];this.setState({stream,page:null,following:true,loading:false,error:'',reset:false},()=>void this.follow());}
-    render(){const s=this.state,p=s.page,previous=this.starts.filter(start=>start<(p?.start??0)).pop();return <div><label>{this.props.streamLabel}<select aria-label={this.props.streamLabel} value={s.stream} onChange={(e:any)=>this.selectStream(e.target.value)}><option value="stdout">标准输出 stdout</option><option value="stderr">错误输出 stderr</option></select></label>
+    render(){const s=this.state,p=s.page,previous=this.starts.filter(start=>start<(p?.start??0)).pop();return <div><label>{this.props.streamLabel}<select aria-label={this.props.streamLabel} value={s.stream} onChange={(e:any)=>this.selectStream(e.target.value)}>{nativeSelectButton}<option value="stdout">标准输出 stdout</option><option value="stderr">错误输出 stderr</option></select></label>
         <p className="small muted">每页最多 64 KiB；只显示当前窗口，不代表完整日志。原始归档可在产物中下载。</p>{p?<p className="small muted">字节范围 [{p.start}, {p.cursor}) / 最近观察大小 {p.size}{p.start>0?'；前文未在当前窗口显示':''} · {s.following?'跟随末尾':'回查模式'}</p>:null}
         <pre className="logs" aria-label={`${s.stream} 日志`}>{p?.content||(s.loading?'读取日志…':'此页暂无内容。')}</pre>{s.error?<p role="alert" className="error-text">{s.error}</p>:null}
         <div className="actions wrap"><button className="secondary compact" onClick={()=>this.fromStart()}>{s.reset?'确认重置并从头读取':'从头读取'}</button><button className="secondary compact" disabled={s.loading||s.reset||previous===undefined} onClick={()=>{if(previous!==undefined)this.navigate(previous);}}>上一页日志</button><button className="secondary compact" disabled={s.loading||s.reset||!p||p.cursor>=p.size} onClick={()=>this.navigate(p!.cursor)}>下一页日志</button><button className="secondary compact" disabled={s.loading||s.reset} onClick={()=>{this.invalidate();this.setState({following:true,loading:false},()=>void this.follow());}}>继续跟随末尾</button>{s.following?<button className="text-button" onClick={()=>this.setState({following:false})}>暂停跟随</button>:null}</div>

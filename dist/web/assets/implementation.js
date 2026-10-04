@@ -5,7 +5,7 @@ import { LogView } from "./log-view.js";
 import { ComputeWait } from "./scheduler-view.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, label } from "./models.js";
-import { SectionTitle, Badge, Empty } from "./ui.js";
+import { SectionTitle, Badge, Empty, nativeSelectButton } from "./ui.js";
 const op = (projectId, sessionId, name, input = {}) => api(`/operations/${name}`, { projectId, sessionId, input });
 const message = (error) => error instanceof Error ? error.message : String(error);
 class PrivateWorkspace extends React.Component {
@@ -90,6 +90,7 @@ class PrivateWorkspace extends React.Component {
         /* @__PURE__ */ jsxs("select", { "aria-label": "\u79C1\u6709\u6E90\u7801\u6587\u4EF6", value: this.state.path, onChange: (e) => {
           if (e.target.value) void this.open(e.target.value);
         }, children: [
+          nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u6587\u4EF6" }),
           this.state.files.map((f) => /* @__PURE__ */ jsxs("option", { value: f.path, children: [
             f.path,
@@ -254,6 +255,7 @@ class ImplementationView extends React.Component {
             this.setState({ dirty: false, gitReady: false, preview: null, reviewContent: "" });
             this.props.onSession(e.target.value);
           }, children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4E3B\u534F\u8C03\u8005\u4F1A\u8BDD" }),
             data.sessions.filter((s) => s.role === "coordinator" && !s.taskId && s.state !== "archived").map((s) => /* @__PURE__ */ jsxs("option", { value: s.id, children: [
               s.title,
@@ -269,6 +271,7 @@ class ImplementationView extends React.Component {
               const ex = data.experiments.find((x) => x.id === e.target.value);
               this.setState({ experimentId: e.target.value, revision: ex?.revision ?? 1 });
             }, children: [
+              nativeSelectButton,
               /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u5DF2\u6709\u5B9E\u9A8C" }),
               data.experiments.filter((e) => e.lifecycle !== "archived").map((e) => /* @__PURE__ */ jsxs("option", { value: e.id, children: [
                 e.title,

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {api} from './api.js';
 import type {SessionCatalogPage,Row,Session} from './models.js';
-import {Icon} from './ui.js';
+import {Icon, nativeSelectButton} from './ui.js';
 
 type Role='all'|'coordinator'|'literature'|'designer'|'implementer'|'analyst'|'reviewer'|'writer';
 type StateFilter='active'|'archived'|'all';
@@ -37,9 +37,9 @@ export class SessionList extends React.Component<Props,State> {
         const selectedMatchesFilter=selected&&(stateFilter==='all'||(stateFilter==='archived'?selected.state==='archived':selected.state!=='archived'));
         const selectedOutside=selectedMatchesFilter&&selectedId&&!items.some(item=>item.id===selectedId);
         const row=(item:{id:string;state:string;title:string})=><button key={item.id} className={item.id===selectedId?'selected-session':''} aria-current={item.id===selectedId?'page':undefined} title={item.title} onClick={()=>onSelect(item.id)}><Icon name={item.state==='archived'?'archive':'chat'} size={16}/><span className="session-label">{item.title}</span>{item.state==='archived'?<span className="session-state-pill">已归档</span>:item.state==='running'?<span className="session-state-pill s-running">运行中</span>:null}</button>;
-        return <div className="sidebar-sessions"><div className="sidebar-caption"><span>会话</span><label className="session-state-filter"><Icon name="filter" size={14}/><select aria-label="会话分类" value={stateFilter} disabled={!this.props.projectId||this.props.busy} onChange={event=>this.changeStateFilter(event.target.value as StateFilter)}>{Object.entries(filters).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></label></div>
+        return <div className="sidebar-sessions"><div className="sidebar-caption"><span>会话</span><label className="session-state-filter"><Icon name="filter" size={14}/><select aria-label="会话分类" value={stateFilter} disabled={!this.props.projectId||this.props.busy} onChange={event=>this.changeStateFilter(event.target.value as StateFilter)}>{nativeSelectButton}{Object.entries(filters).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></label></div>
             <details className="session-filters"><summary>查找与筛选{this.state.query?' · 已筛选':''}</summary><form className="session-search" onSubmit={this.search}><input aria-label="搜索会话" placeholder="搜索会话" value={this.state.draft} onChange={event=>this.setState({draft:event.target.value})}/><button type="submit" disabled={busy}>搜索</button></form>
-            <select className="session-role" aria-label="会话角色" value={this.state.role} onChange={event=>this.changeRole(event.target.value as Role)}>{Object.entries(roles).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></details>
+            <select className="session-role" aria-label="会话角色" value={this.state.role} onChange={event=>this.changeRole(event.target.value as Role)}>{nativeSelectButton}{Object.entries(roles).map(([value,name])=><option key={value} value={value}>{name}</option>)}</select></details>
             {selectedOutside?row(selected):null}
             {items.map(row)}
             {error?<p role="alert" className="small error-text">{error}</p>:null}

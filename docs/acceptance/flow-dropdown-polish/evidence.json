@@ -1,0 +1,201 @@
+{
+  "task": "UI-DROPDOWN-06",
+  "date": "2026-10-04",
+  "baselineCommit": "a69ff330c889c79ba46a5dbf411a90169de5600a",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "sourceHashes": {
+    "apps/web/public/light-workbench.css": "77DFD2DFEF9A51D73C25D83ADFFE8345AA32CE3BBA3414F4D0514882A6CADB46",
+    "apps/web/src/app.tsx": "E0C44EFBBD375F159E7518BECED0A2443B3B75017B8E15BEF58D0F9603AE5555",
+    "apps/web/src/campaigns.tsx": "39A511DF11DDD69CFA4461FF24B0775652EC9FB70D9E793060333A71D5A7BAD4",
+    "apps/web/src/changes.tsx": "DA8885F8745D3762113AD91D81E828809B76A4CF037DBC34234BD02C8605BD1A",
+    "apps/web/src/composer-controls.tsx": "675A4484310C165F182745944C4D785FAF28BB7CC9AE6B936B4E576788B36EE1",
+    "apps/web/src/data-views.tsx": "1C4BF6D45D79FF30A5A6054268B80086BB25ED507AA6FD871CB5FDF444788FD5",
+    "apps/web/src/discovery-grants.tsx": "C0A31FD2849D1BB18E52FB5C989DA01E8EB6A49B9F1AE5F1310C2B7E38AD5852",
+    "apps/web/src/implementation.tsx": "DDD08FE94C46C8A84905524D03330C46DE8E90FFCBBC764BEAD56F8A2C47F95C",
+    "apps/web/src/integrations.tsx": "A7E778D6CB70A0E59F0E909160243BDB994A96F0D57DCD15AC860D8D32F1028F",
+    "apps/web/src/literature-view.tsx": "893A4C29F8B200D4F759B30A80931E87E0646EDC59421E0B19A5339B5934DCFC",
+    "apps/web/src/log-view.tsx": "1CACAB2728523DE74496BC1B351AC2F26782364F6827537468FD0D1E68F1349F",
+    "apps/web/src/publication-review-view.tsx": "E0E4397164B9D7C6996C53245FC4EBA3DC755F83A69558775A5F98762A80514A",
+    "apps/web/src/publication-view.tsx": "37B1C14F6274C0E64CC4A5C921D952851975C655269CEA9C1671715B0ED1B561",
+    "apps/web/src/research-plan.tsx": "13150EC76B25DFA264C15F2C58E8B9ABDB3F774C8660BDCCCBF7605FE71AFDAE",
+    "apps/web/src/run-grants.tsx": "BEA2042DA62290FAB47325B0F22BD6F7F438260FA08C573932DD1A3435F2A4FB",
+    "apps/web/src/session-list.tsx": "CCA5D37C61A61F7FCBBF4C7D90E1FECA37DAC4DA203F1AF94CD48DADB99E9C14",
+    "apps/web/src/skill-manager.tsx": "9123F890BEABD991B47EA62E19D90E0CC5EDD1579A4119A8EE97207525F45367",
+    "apps/web/src/text-evidence.tsx": "EFC1C80E1D5A17F47BAE11FBDEEBF8737402372D5CA63BA0F233CC970D65B08C",
+    "apps/web/src/ui.tsx": "66CE0D53806485B20F319E0ED64028FC2CDF6035D2F4BADA10410DA6BAD9381C",
+    "apps/web/src/workbench.tsx": "985C6D1E4DDD7C452ADB512984AE22B143C4B7767F179F41DB599455A1F858CD",
+    "apps/web/src/working-grants.tsx": "574849ED9BBDAE9349AA327DB06BC5CF421D3C3905A1B3BE86107DF613EA5F2D",
+    "tests/unit/skill-manager-ui.test.mjs": "DB847C633C572F5DB3C4616EC4BA7FF6A4A868EFB084C7BEB9DB09E2AA404707"
+  },
+  "patch": {
+    "path": ".validation/ui-dropdowns-2026-10-04/final-source-review.patch",
+    "sha256": "4a0f21a0d5b0df20656c96996e4fbcd71d9b2ab110878319eb45bb69433bd2ea"
+  },
+  "changes": {
+    "nativeSelects": 60,
+    "callingFiles": 19,
+    "sharedButton": "button type=button / selectedcontent",
+    "newDependencies": 0,
+    "businessAttrsAndOptionsUnchanged": true,
+    "closedContent": "ellipsis with dynamic option-content synchronization"
+  },
+  "checks": {
+    "fullRegression": {
+      "command": "npm run test:core",
+      "tests": 1036,
+      "passed": 1013,
+      "failed": 0,
+      "skipped": 23,
+      "status": "integrated selectedcontent snapshot; unrelated results reused after local DOM-ref/Escape repair"
+    },
+    "affectedAfterRepair": {
+      "command": "node --test --test-concurrency=1 tests/unit/*-ui.test.mjs tests/unit/composer-controls.test.mjs",
+      "tests": 184,
+      "passed": 184,
+      "failed": 0,
+      "skipped": 0
+    },
+    "cleanBuild": {
+      "node": "24.19.0",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "files": 507,
+      "identical": true,
+      "manifestSha256": "d954366ba5fcf01421e660a4054170772ea932d7d381988e8fa0c96db8948377"
+    },
+    "browser": {
+      "actualCompiledApp": true,
+      "fixtureUrl": "http://127.0.0.1:4796/",
+      "data": "synthetic local fixture only;no external model requests",
+      "geometry": [
+        {
+          "viewport": [
+            1440,
+            844
+          ],
+          "maxDelta": 0
+        },
+        {
+          "viewport": [
+            1280,
+            720
+          ],
+          "maxDelta": 0
+        },
+        {
+          "viewport": [
+            1024,
+            844
+          ],
+          "maxDelta": 0
+        },
+        {
+          "viewport": [
+            390,
+            844
+          ],
+          "maxDelta": 0
+        }
+      ],
+      "mobile": {
+        "clientWidth": 375,
+        "optionRight": 369.00001525878906,
+        "selectedContentRight": 226.08333587646484,
+        "sendLeft": 254
+      },
+      "keyboard": "ArrowDown/Enter select archived;Escape closes popup;Tab reaches next control",
+      "archive": "history retained,model disabled with muted appearance",
+      "projectAndRoleSelection": "passed",
+      "modelSelectionAndReload": "passed",
+      "dynamicOptionText": {
+        "content": "offline-light-ui / fixture · off（默认）",
+        "match": true,
+        "option": "offline-light-ui / fixture · off（默认）",
+        "value": "[\"offline-light-ui\",\"fixture\",\"off\"]"
+      },
+      "modalEscape": {
+        "firstEscapeRetains": true,
+        "pickerCloses": true,
+        "secondEscapeCloses": true
+      },
+      "fallback": {
+        "guardDisabled": true,
+        "appearance": "auto",
+        "optionsPreserved": true,
+        "archiveSelectionWorks": true,
+        "modelDisabled": true,
+        "otherEngineTest": false
+      },
+      "currentWorkbench": {
+        "url": "http://127.0.0.1:4794/",
+        "appearance": "base-select",
+        "customButton": true,
+        "lastStylesheet": "/light-workbench.css",
+        "viewportOverrideReset": true
+      },
+      "console": "no new dropdown error; existing rename prompt() unsupported in IAB observed outside dropdown path"
+    }
+  },
+  "independentReview": {
+    "status": "passed;no remaining blockers or nonblocking issues",
+    "baseline": "a69ff330c889c79ba46a5dbf411a90169de5600a",
+    "sourceSnapshot": ".validation/ui-dropdowns-2026-10-04/final-source-snapshot.json",
+    "gui": "root drove UI;reviewer read code,images and machine evidence",
+    "checked": "22 source hashes,60 exact native selects,CSS cascade,DOM sync/Escape repairs,geometry,GUI artifacts and applicable test/build evidence"
+  },
+  "agents": [
+    {
+      "role": "inventory",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtime": "requested;tool accepted;model/effort not echoed"
+    },
+    {
+      "role": "native first-child markup",
+      "requestedModel": "gpt-6-luna",
+      "requestedEffort": "max",
+      "runtime": "requested;tool accepted;model/effort not echoed"
+    },
+    {
+      "role": "independent review",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtime": "requested;tool accepted;model/effort not echoed"
+    }
+  ],
+  "preservedInFlight": {
+    "apps/web/public/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+    "dist/web/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+    "docs/reference-baseline/OPENRESEARCH-COMPARISON.md": "57655c0f434da59c5e87377e2d615293498bd581e6c96e0b03206006aaf23afe",
+    "docs/reference-baseline/capability-matrix.json": "9d716565f9640cdfc5054c9467d46db8f63945a0a296c45b480b88d0019b5037",
+    "docs/specs/project-design.txt": "251e12b2201f1cbb87f497f5771f20d0011a20f73e2ec324ce613141e958a6f7"
+  },
+  "notRun": [
+    "other browser engines",
+    "physical IME",
+    "screenreader/axe",
+    "external provider",
+    "Docker",
+    "unchanged full regression repeated after DOM-ref/Escape repair"
+  ],
+  "logs": {
+    "full": ".validation/ui-dropdowns-2026-10-04/final-full-tests.log",
+    "affected": ".validation/ui-dropdowns-2026-10-04/repair-ui-tests.log",
+    "build": ".validation/ui-dropdowns-2026-10-04/repair-build.log",
+    "clean": ".validation/clean-build-7WMjkn/summary.json",
+    "geometry": ".validation/ui-dropdowns-2026-10-04/before.json / after.json",
+    "gui": ".validation/ui-dropdowns-2026-10-04/browser.json"
+  }
+}

@@ -1,5 +1,6 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { nativeSelectButton } from "./ui.js";
 import { api } from "./api.js";
 import { short, label } from "./models.js";
 function publicationReviewStatus(status) {
@@ -98,6 +99,7 @@ class PublicationReviewPanel extends React.Component {
         /* @__PURE__ */ jsxs("label", { children: [
           "\u8BBA\u6587\u5BA1\u67E5\u4E3B\u534F\u8C03\u4F1A\u8BDD",
           /* @__PURE__ */ jsxs("select", { "aria-label": "\u8BBA\u6587\u5BA1\u67E5\u4E3B\u534F\u8C03\u4F1A\u8BDD", value: s.rootSessionId, disabled: s.busy, onChange: (e) => this.setState({ rootSessionId: e.target.value }), children: [
+            nativeSelectButton,
             /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4E3B\u534F\u8C03\u4F1A\u8BDD" }),
             roots.map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
               row.title,

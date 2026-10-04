@@ -77,7 +77,7 @@ test('builtin release upgrade is explicit, keeps custom revisions, and leaves ol
  globalThis.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return reply(url.endsWith('skill_package_list')?configured:configured.configuration);};
  await v.refresh();
  let tree=v.render(),select=nodes(tree).find(n=>n.type==='select');
- assert.equal(select.props.value,'builtin-old');assert.equal(select.props.children.length,2);assert.match(text(tree),/可选发行版本\s+2\s+个/);assert.match(text(tree),/仅影响后续新绑定/);assert.match(text(tree),/未配置项目的新绑定默认使用当前发行/);
+ assert.equal(select.props.value,'builtin-old');assert.equal(nodes(select).filter(n=>n.type==='option').length,2);assert.match(text(tree),/可选发行版本\s+2\s+个/);assert.match(text(tree),/仅影响后续新绑定/);assert.match(text(tree),/未配置项目的新绑定默认使用当前发行/);
  const existing=session(v);existing.state.result={sessionId:'session',version:9,skillBundleId:'old-session-composite',skillIds:['figure'],ready:false,missing:[{skillId:'figure',kind:'tool',value:'plot',reason:'原版本能力不可用'}]};existing.state.selected=['figure'];
  select.props.onChange({target:{value:'builtin-new'}});assert.deepEqual(v.state.enabled,['r1']);assert.equal(requests.length,1);
  await nodes(v.render()).find(n=>n.type==='button'&&text(n).includes('保存启用')).props.onClick();
