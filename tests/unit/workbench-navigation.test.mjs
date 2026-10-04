@@ -6,6 +6,127 @@ import {App} from '../../dist/web/assets/app.js';
 const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children)];
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'?node:'';
 const response=data=>({ok:true,json:async()=>data});
+const projectResponse=url=>url.startsWith('/api/projects/')?response({id:url.split('/')[3],archived:false}):null;
+const idleSession=(id,extra={})=>({id,projectId:'project',title:'研究主会话',role:'coordinator',state:'idle',piSessionPath:null,generation:0,leaseUntil:0,model:{provider:'test',model:'chosen',thinking:'high'},...extra});
+const catalog=items=>({items,nextCursor:null});
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+function sessionApp(){const app=synchronousState(new App({}));app.refresh=async()=>true;Object.assign(app.state,{projectId:'project',sessionId:'current'});return app;}
+
+test('repeated new-session clicks reuse the current empty root and keep the mounted Chat contract',async t=>{
+  const oldFetch=globalThis.fetch,oldStorage=globalThis.localStorage;t.after(()=>{globalThis.fetch=oldFetch;globalThis.localStorage=oldStorage;});
+  globalThis.localStorage={getItem:()=>JSON.stringify({projectId:'project',sessionId:'current'}),setItem(){}};
+  const app=sessionApp(),session=idleSession('current',{title:'已改名的会话',skillIds:['chosen-skill'],workingGrantId:'grant'});
+  Object.assign(app.state,{boot:{projects:[{id:'project',name:'Project'}],runtime:{ready:true}},navigationOpen:true,data:{project:{id:'project',name:'Project',settings:{enabled:false}},sessions:[session],experiments:[],runs:[],teams:[],campaigns:[],evidence:[],wakeups:[],intents:[]}});
+  const chatElement=()=>elements(app.render()).find(node=>node.type?.name==='Chat'),before=chatElement(),chat=synchronousState(new before.type(before.props));
+  chat.state.draft='unsent draft';chat.state.attachments=[{artifactId:'attached'}];
+  const requests=[];globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);requests.push({url,method:options.method});if(url==='/api/sessions/current')return response(session);if(url==='/api/sessions/current/messages')return response([]);throw Error('Unexpected create or catalog request');};
+  await app.newSession();await app.newSession();
+  assert.equal(app.state.sessionId,'current');assert.equal(app.state.navigationOpen,false);assert.equal(app.state.sessionCreationSignal,2);
+  assert.equal(chatElement().key,before.key);assert.equal(chatElement().props.data,before.props.data);assert.equal(chatElement().props.session.model,session.model);assert.equal(chatElement().props.session.workingGrantId,'grant');
+  chat.props=chatElement().props;assert.equal(chat.state.draft,'unsent draft');assert.deepEqual(chat.state.attachments,[{artifactId:'attached'}]);
+  assert.deepEqual(requests.map(r=>r.url),['/api/sessions/current','/api/sessions/current/messages','/api/sessions/current','/api/sessions/current/messages']);assert.ok(requests.every(r=>r.method==='GET'));
+  app.componentWillUnmount();
+});
+
+test('an empty root outside recent state is found through all catalog pages, with fresh metadata',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  const app=sessionApp(),pages=[],messageReads=[],metadataReads=[];
+  const firstPage=Array.from({length:50},(_,n)=>idleSession('used-'+n,{generation:1}));
+  globalThis.fetch=async(url,options)=>{
+    if(projectResponse(url))return projectResponse(url);
+    if(url.endsWith('/session_list')){const body=JSON.parse(options.body);pages.push(body);return response(body.input.beforeSessionId?catalog([idleSession('older-empty')]):{items:firstPage,nextCursor:'used-49'});}
+    if(url.endsWith('/messages')){messageReads.push(url);return response([]);}
+    if(url==='/api/sessions')throw Error('Must reuse the older empty root');
+    const id=url.split('/').at(-1);metadataReads.push(id);return response(idleSession(id,{generation:id==='older-empty'?0:1}));
+  };
+  await app.newSession();
+  assert.equal(app.state.sessionId,'older-empty');assert.equal(app.state.error,'');assert.equal(pages.length,2);
+  assert.deepEqual(pages[0],{projectId:'project',input:{role:'coordinator',stateFilter:'active',limit:50}});assert.equal(pages[1].input.beforeSessionId,'used-49');
+  assert.deepEqual(messageReads,['/api/sessions/older-empty/messages']);assert.equal(metadataReads.length,52);assert.equal(app.state.sessionCreationSignal,1);
+  app.componentWillUnmount();
+});
+
+test('any saved message excludes an otherwise new root, including removed queue and host messages',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  for(const message of [...['queued','running','completed','failed','cancelled'].map(status=>({id:'m',role:'user',status,...(status==='cancelled'?{queueRemoved:true}:{})})),{id:'m',role:'system',status:'completed'},{id:'m',role:'user',status:'queued',origin:'automation'}]){
+    const app=sessionApp(),creates=[],reads=[];
+    globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);reads.push(url);if(url==='/api/sessions/current')return response(idleSession('current'));if(url.endsWith('/messages'))return response([message]);if(url.endsWith('/session_list'))return response(catalog([idleSession('current')]));creates.push(JSON.parse(options.body));return response({id:'created'});};
+    await app.newSession();assert.equal(app.state.sessionId,'created',JSON.stringify(message));assert.deepEqual(creates,[{projectId:'project',title:'新的研究会话'}]);assert.equal(reads.filter(url=>url==='/api/sessions/current').length,1);assert.equal(reads.filter(url=>url.endsWith('/messages')).length,1);app.componentWillUnmount();
+  }
+});
+
+test('foreign, archived, task, team, branch, running and previously started roots are never reused',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  const blocked=[{projectId:'other'},{state:'archived'},{taskId:'task'},{teamId:'team'},{parentSessionId:'parent'},{state:'running'},{state:'queued'},{role:'analyst'},{piSessionPath:'native.jsonl'},{generation:1},{leaseUntil:1}];
+  for(const extra of blocked){
+    const app=sessionApp(),reads=[],candidate=idleSession('current',extra);
+    globalThis.fetch=async(url)=>{if(projectResponse(url))return projectResponse(url);reads.push(url);if(url==='/api/sessions/current')return response(candidate);if(url.endsWith('/session_list'))return response(catalog([candidate]));if(url.endsWith('/messages'))throw Error('Blocked metadata must not read history');return response({id:'created'});};
+    await app.newSession();assert.equal(app.state.sessionId,'created',JSON.stringify(extra));assert.equal(app.state.error,'');assert.ok(!reads.some(url=>url.endsWith('/messages')));assert.equal(reads.filter(url=>url==='/api/sessions/current').length,1);app.componentWillUnmount();
+  }
+  const app=sessionApp();globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/current'?response(idleSession('current',{generation:1})):url.endsWith('/session_list')?response(catalog([idleSession('changed-branch')])):url==='/api/sessions/changed-branch'?response(idleSession('changed-branch',{parentSessionId:'parent'})):url==='/api/sessions'?response({id:'created'}):Promise.reject(Error('Must reject fresh branch metadata')));
+  await app.newSession();assert.equal(app.state.sessionId,'created');assert.equal(app.state.error,'');app.componentWillUnmount();
+});
+
+test('lookup failures preserve the view and release the lock for retry without an accidental create',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  for(const stage of ['metadata','messages','malformed-messages','catalog','candidate']){
+    const app=sessionApp();Object.assign(app.state,{tab:'reports',navigationOpen:true,messages:[{id:'kept'}],pendingMessages:[{id:'queued'}],historyAnchor:{direction:'before',id:'cursor'}});
+    let creates=0;
+    globalThis.fetch=async url=>{
+      if(projectResponse(url))return projectResponse(url);
+      if(url==='/api/sessions'){creates++;return response({id:'created'});}
+      if(url==='/api/sessions/current'){if(stage==='metadata')throw Error('lookup failed');return response(idleSession('current',{generation:['catalog','candidate'].includes(stage)?1:0}));}
+      if(url.endsWith('/messages')){if(stage==='messages')throw Error('lookup failed');return response({items:[]});}
+      if(url.endsWith('/session_list')){if(stage==='catalog')throw Error('lookup failed');return response(catalog([idleSession('candidate')]));}
+      throw Error('lookup failed');
+    };
+    await app.newSession();assert.equal(creates,0,stage);assert.equal(app.state.sessionId,'current');assert.equal(app.state.tab,'reports');assert.equal(app.state.navigationOpen,true);assert.deepEqual(app.state.messages,[{id:'kept'}]);assert.deepEqual(app.state.pendingMessages,[{id:'queued'}]);assert.equal(app.state.historyAnchor.id,'cursor');assert.ok(app.state.error);assert.equal(app.state.busy,false);
+    globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/current'?response(idleSession('current')):url.endsWith('/messages')?response([]):Promise.reject(Error('Retry should reuse current')));
+    await app.newSession();assert.equal(app.state.error,'');assert.equal(app.state.sessionId,'current');assert.equal(app.state.sessionCreationSignal,1);app.componentWillUnmount();
+  }
+});
+
+test('new-session refuses a freshly archived project and preserves the view on project-read failure',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  for(const archived of [true,false]){
+    const app=sessionApp();Object.assign(app.state,{data:{project:{id:'project',archived:false}},tab:'reports',navigationOpen:true,messages:[{id:'kept'}]});
+    const requests=[];globalThis.fetch=async url=>{requests.push(url);if(archived)return response({id:'project',archived:true});throw Error('project read failed');};
+    await app.newSession();assert.deepEqual(requests,['/api/projects/project']);assert.equal(app.state.sessionId,'current');assert.equal(app.state.tab,'reports');assert.equal(app.state.navigationOpen,true);assert.deepEqual(app.state.messages,[{id:'kept'}]);assert.ok(app.state.error);assert.equal(app.state.sessionCreationSignal,0);app.componentWillUnmount();
+  }
+});
+
+test('same-tick clicks start one creation flow before React applies busy state',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  const app=sessionApp(),setState=app.setState;app.setState=(update,callback)=>{if(typeof update==='object'&&'busy' in update)queueMicrotask(()=>setState(update,callback));else setState(update,callback);};
+  let finish,creates=0;globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/current'?response(idleSession('current',{generation:1})):url.endsWith('/session_list')?response(catalog([])):new Promise(resolve=>{creates++;finish=resolve;}));
+  const first=app.newSession(),second=app.newSession();await flush();assert.equal(creates,1);finish(response({id:'created'}));await Promise.all([first,second]);assert.equal(app.state.sessionId,'created');assert.equal(app.state.sessionCreationSignal,1);app.componentWillUnmount();
+});
+
+test('late lookup or create responses cannot take over after A to B to A or unmount',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  for(const stage of ['project','metadata','messages','catalog','create'])for(const unmount of [false,true]){
+    const app=sessionApp(),requests=[];let finish;
+    globalThis.fetch=async url=>{
+      const held=stage==='project'?url==='/api/projects/project':stage==='metadata'?url==='/api/sessions/current':stage==='messages'?url.endsWith('/messages'):stage==='catalog'?url.endsWith('/session_list'):url==='/api/sessions';
+      if(!held&&projectResponse(url))return projectResponse(url);
+      requests.push(url);
+      if(held)return new Promise(resolve=>{finish=resolve;});
+      if(url==='/api/sessions/current')return response(idleSession('current',{generation:stage==='messages'?0:1}));
+      if(url.endsWith('/session_list'))return response(catalog([]));throw Error('Unexpected request');
+    };
+    const creating=app.newSession();await flush();assert.ok(finish,stage);
+    if(unmount)app.componentWillUnmount();else{app.switchProject('other');app.switchProject('project');Object.assign(app.state,{sessionId:'new-selection',error:'new-project-error'});}
+    const selection=app.state.sessionId;
+    finish(response(stage==='project'?{id:'project',archived:false}:stage==='metadata'?idleSession('current'):stage==='messages'?[]:stage==='catalog'?catalog([]):{id:'stale-created'}));await creating;
+    assert.equal(app.state.sessionId,selection);assert.equal(app.state.sessionCreationSignal,0);assert.equal(requests.at(-1),stage==='project'?'/api/projects/project':stage==='metadata'?'/api/sessions/current':stage==='messages'?'/api/sessions/current/messages':stage==='catalog'?'/api/operations/session_list':'/api/sessions');if(!unmount)assert.equal(app.state.error,'new-project-error');app.componentWillUnmount();
+  }
+});
+
+test('late lookup errors do not appear in the newly selected project',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  const app=sessionApp();let fail;globalThis.fetch=url=>projectResponse(url)??new Promise((_resolve,reject)=>{fail=reject;});
+  const creating=app.newSession();await flush();app.switchProject('other');app.switchProject('project');app.state.error='current view';fail(Error('stale failure'));await creating;assert.equal(app.state.error,'current view');assert.equal(app.state.sessionCreationSignal,0);app.componentWillUnmount();
+});
 
 test('other workflow buttons preserve project and session while closing mobile navigation',()=>{
   const app=synchronousState(new App({}));
@@ -32,7 +153,7 @@ test('new-session navigation button creates within the current project and prese
   app.state.busy=true;assert.equal(getCreateButton().props.disabled,true);
   app.state.busy=false;app.state.projectId='';assert.equal(getCreateButton().props.disabled,true);
   app.state.projectId='project';
-  const requests=[];globalThis.fetch=async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});return response({id:'new-session'});};
+  const requests=[];globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);if(url==='/api/sessions/old-session')return response(idleSession('old-session',{generation:1}));if(url.endsWith('/session_list'))return response(catalog([]));requests.push({url,body:JSON.parse(options.body)});return response({id:'new-session'});};
   await getCreateButton().props.onClick();
   assert.deepEqual(requests,[{url:'/api/sessions',body:{projectId:'project',title:'新的研究会话'}}]);
   assert.equal(app.state.projectId,'project');assert.equal(app.state.sessionId,'new-session');assert.equal(app.state.tab,'chat');assert.equal(app.state.navigationOpen,false);
@@ -40,7 +161,7 @@ test('new-session navigation button creates within the current project and prese
 
   Object.assign(app.state,{boot:{runtime:{ready:true},projects:[{id:'project',name:'Project'}]},data:{project:{id:'project',name:'Project',settings:{enabled:false},version:1},sessions:[{id:'new-session',title:'New',state:'open'}],experiments:[],runs:[],teams:[],campaigns:[],evidence:[],tasks:[],wakeups:[]},sessionId:'new-session',tab:'chat',navigationOpen:true,messages:[{id:'keep-message'}],pendingMessages:[{id:'keep-pending'}],pendingTotal:1,pendingNextCursor:'keep-q',canSteer:true,history:{atLatest:false},historyAnchor:{direction:'before',id:'keep-cursor'},stream:'keep stream'});
   const chatKey=()=>elements(app.render()).find(node=>node.type?.name==='Chat')?.key,previousChatKey=chatKey();
-  globalThis.fetch=async()=>({ok:false,status:403,json:async()=>({error:{code:'SCOPE_DENIED',message:'会话不属于此项目'}})});
+  globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/new-session'?response(idleSession('new-session',{generation:1})):url.endsWith('/session_list')?response(catalog([])):({ok:false,status:403,json:async()=>({error:{code:'SCOPE_DENIED',message:'会话不属于此项目'}})}));
   await getCreateButton().props.onClick();
   assert.equal(app.state.projectId,'project');assert.equal(app.state.sessionId,'new-session');assert.equal(app.state.tab,'chat');assert.equal(app.state.navigationOpen,true);
   assert.deepEqual(app.state.messages,[{id:'keep-message'}]);assert.deepEqual(app.state.pendingMessages,[{id:'keep-pending'}]);assert.equal(app.state.pendingTotal,1);assert.equal(app.state.pendingNextCursor,'keep-q');assert.equal(app.state.historyAnchor.id,'keep-cursor');assert.equal(app.state.stream,'keep stream');assert.equal(app.state.sessionCreationSignal,1);assert.equal(chatKey(),previousChatKey);assert.match(app.state.error,/不属于此项目/);
@@ -52,9 +173,10 @@ test('a completed create for a previous project cannot replace the newly selecte
   const app=synchronousState(new App({}));app.refresh=async()=>true;
   Object.assign(app.state,{projectId:'old-project',sessionId:'old-session',navigationOpen:true});
   let resolvePost,request;
-  globalThis.fetch=async(_url,options)=>{request=JSON.parse(options.body);return new Promise(resolve=>{resolvePost=resolve;});};
+  globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);if(url==='/api/sessions/old-session')return response(idleSession('old-session',{projectId:'old-project',generation:1}));if(url.endsWith('/session_list'))return response(catalog([]));request=JSON.parse(options.body);return new Promise(resolve=>{resolvePost=resolve;});};
   const createButton=elements(app.render()).find(node=>node.type==='button'&&text(node.props.children?.[1])==='新建会话');
   const creating=createButton.props.onClick();
+  await flush();
   app.switchProject('new-project');
   resolvePost(response({id:'created-in-old-project'}));
   await creating;

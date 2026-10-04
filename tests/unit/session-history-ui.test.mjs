@@ -151,7 +151,7 @@ test('foreign session selection reports scoped failure without showing the previ
 test('project and session creation clear the prior history selection',async t=>{
     const oldFetch=globalThis.fetch,oldStorage=globalThis.localStorage;t.after(()=>{globalThis.fetch=oldFetch;globalThis.localStorage=oldStorage;});
     globalThis.localStorage={getItem:()=>null,setItem(){}};
-    globalThis.fetch=async url=>response(url.endsWith('/projects')?{id:'new-project'}:url.endsWith('/sessions')?{id:'new-session'}:{});
+    globalThis.fetch=async url=>response(url.endsWith('/projects')?{id:'new-project'}:url.endsWith('/projects/new-project')?{id:'new-project',archived:false}:url.endsWith('/sessions')?{id:'new-session'}:url.endsWith('/session_list')?{items:[],nextCursor:null}:url.endsWith('/sessions/new-session')?{id:'new-session',projectId:'new-project',role:'coordinator',state:'idle',generation:1}:{});
     const app=synchronousState(new App({}));app.perform=async fn=>fn();app.refresh=async()=>true;
     Object.assign(app.state,{projectId:'old-project',sessionId:'old-session',modal:'project',messages:[{id:'old-body'}],pendingMessages:[{id:'old-queue'}],pendingTotal:1,pendingNextCursor:'q',canSteer:true,historyAnchor:{direction:'before',id:'old-cursor'}});
     await app.modalView().props.onSubmit({get:()=>''});

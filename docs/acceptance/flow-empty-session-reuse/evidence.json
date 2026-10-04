@@ -1,0 +1,169 @@
+{
+  "task": "UI-EMPTY-08",
+  "date": "2026-10-04",
+  "baselineCommit": "b954d3ac49755224535d2de6717d86b670229f62",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "sourceHashes": {
+    "apps/web/src/app.tsx": "9d79879f4f731c8cb219b1448e1e22231776964f3a89cddad98a95f573da9bdb",
+    "tests/unit/workbench-navigation.test.mjs": "5718e09979465b15568d2596fee80141f4b474f5ccaa1019769dde093793773a",
+    "tests/unit/session-history-ui.test.mjs": "d9e5aee59d9183f021add5d71c952fcb352e1be133a2bae7eeba0751a96c9103"
+  },
+  "patch": {
+    "path": ".validation/ui-empty-session-2026-10-04/source-review.patch",
+    "sha256": "7265ce2248b34481484aa674487c0feb0555ef8e98726c614cd80d828daec612"
+  },
+  "distHashes": {
+    "dist/web/assets/app.js": "b91dc82268070107267bc8e90d01c1863f33a42f9af511b62d1788b26483b7ab",
+    "dist/web/assets/main.js": "321f2fe2ba3236766ac700729751bcce5ff5b47d4761ffbc29e2e9934a43420f"
+  },
+  "checks": {
+    "red": {
+      "tests": 28,
+      "passed": 19,
+      "failed": 9,
+      "status": "new regressions fail on baseline compiled app"
+    },
+    "green": {
+      "tests": 28,
+      "passed": 28,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    "full": {
+      "tests": 1045,
+      "passed": 1022,
+      "failed": 0,
+      "skipped": 23,
+      "exitCode": 0
+    },
+    "clean": {
+      "node": "24.19.0",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 507,
+      "manifestSha256": "eb0955d1a138b33d25476062bcb809469b89793d081cf327d7d5ad00fbd350a2"
+    },
+    "browser": {
+      "url": "http://127.0.0.1:4796/",
+      "actualCompiledApp": true,
+      "syntheticData": true,
+      "externalModelCalls": false,
+      "counts": {
+        "before": {
+          "sessions": 4,
+          "latestMessageCount": 2
+        },
+        "firstClick": {
+          "sessions": 5,
+          "latestMessageCount": 0
+        },
+        "repeatBeforeFix": {
+          "sessions": 6,
+          "latestMessageCount": 0
+        },
+        "repeatAfterFix": {
+          "sessions": 6,
+          "latestMessageCount": 0
+        },
+        "repeatedAfterFix": {
+          "sessions": 6,
+          "latestMessageCount": 0
+        },
+        "reuseFromUsed": {
+          "sessions": 6,
+          "latestMessageCount": 0
+        },
+        "afterSend": {
+          "sessions": 6,
+          "latestMessageCount": 2
+        },
+        "createAfterUsed": {
+          "sessions": 7,
+          "latestMessageCount": 0
+        },
+        "afterReloadMobile": {
+          "sessions": 7,
+          "latestMessageCount": 0
+        }
+      },
+      "sameIdAfterRepeat": true,
+      "current": {
+        "draft": "未发送草稿：再次新建应保留。",
+        "error": "",
+        "model": "[\"offline-light-ui\",\"fixture\",\"off\"]",
+        "newEnabled": true
+      },
+      "chosenModelAfterReuse": {
+        "value": "offline-light-ui/fixture/minimal retained while global default off",
+        "evidence": "root browser evaluate tool output;reuse-current.json records the earlier off-model case"
+      },
+      "usedHistoryThenReuseBlank": true,
+      "realPiReply": "local fixed SSE;two persisted messages after send",
+      "noCandidateCreates": true,
+      "reopenedMobile": {
+        "draft": "手机草稿：空白会话仍复用。",
+        "error": "",
+        "focused": "navigation-toggle",
+        "navClosed": true,
+        "newEnabled": true
+      },
+      "sameIdAfterReopen": true,
+      "actualWorkbench": {
+        "url": "http://127.0.0.1:4794/assets/main.js",
+        "status": 200,
+        "sha256": "321f2fe2ba3236766ac700729751bcce5ff5b47d4761ffbc29e2e9934a43420f"
+      },
+      "viewportOverrideReset": true,
+      "serviceRestart": false,
+      "layout": "prior evidence reused;render and CSS unchanged",
+      "notes": "old reproduction wait used nonexistent active/new-chat selectors;API counted successful creations. Mobile snapshot taken only after async navigation close."
+    }
+  },
+  "independentReview": {
+    "status": "passed;no unresolved blockers;dynamic evidence complete",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "xhigh",
+    "runtime": "requested;tool accepted;model/effort not echoed"
+  },
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtime": "requested;tool accepted;model/effort not echoed"
+  },
+  "preservedInFlight": {
+    "apps/web/public/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+    "dist/web/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+    "docs/reference-baseline/OPENRESEARCH-COMPARISON.md": "57655c0f434da59c5e87377e2d615293498bd581e6c96e0b03206006aaf23afe",
+    "docs/reference-baseline/capability-matrix.json": "9d716565f9640cdfc5054c9467d46db8f63945a0a296c45b480b88d0019b5037",
+    "docs/specs/project-design.txt": "251e12b2201f1cbb87f497f5771f20d0011a20f73e2ec324ce613141e958a6f7"
+  },
+  "limitations": [
+    "legacy full messages read for never-run candidates;large cancelled history may be slow",
+    "independent tabs simultaneous initial creation not globally serialized",
+    "physical attachment file chooser not run",
+    "other browser engines not run",
+    "no changes to historical duplicate records"
+  ],
+  "logs": {
+    "red": ".validation/ui-empty-session-2026-10-04/unit-red.log",
+    "green": ".validation/ui-empty-session-2026-10-04/unit-green.log",
+    "full": ".validation/ui-empty-session-2026-10-04/full-tests.log",
+    "build": ".validation/ui-empty-session-2026-10-04/build.log",
+    "clean": ".validation/clean-build-KlO47D/summary.json",
+    "gui": ".validation/ui-empty-session-2026-10-04/browser-counts.json"
+  }
+}

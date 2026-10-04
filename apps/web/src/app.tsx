@@ -3,7 +3,7 @@ import {ProjectEventFeed} from './event-feed.js';
 import {SchedulerView} from './scheduler-view.js';
 import {IntegrationsView} from './integrations.js';
 import { api } from './api.js';
-import type { Bootstrap, ProjectState, Row, DocumentLocation, SessionHistoryPage, SessionView } from './models.js';
+import type { Bootstrap, Project, ProjectState, Row, Session, SessionCatalogItem, SessionCatalogPage, DocumentLocation, SessionHistoryPage, SessionView } from './models.js';
 import { short, label } from './models.js';
 import {Icon, Modal, nativeSelectButton} from './ui.js';
 import { Chat, Experiments, Inspector, type Perform } from './workbench.js';
@@ -68,6 +68,8 @@ export class App extends React.Component<{}, State> {
     private readController?:AbortController;
     private feed?:ProjectEventFeed;
     private mounted=true;
+    private projectSelectionEpoch=0;
+    private creatingSession=false;
     private noticeTimer?: number;
     componentDidMount() {
         window.addEventListener('resize',this.closeNavigationOnResize);
@@ -139,7 +141,7 @@ export class App extends React.Component<{}, State> {
     private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'activity'|'error'> {
         return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,activity:null,error:''};
     }
-    switchProject(id: string) { if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
+    switchProject(id: string) { this.projectSelectionEpoch++;if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
     selectSession(id: string,tab='chat') { this.invalidateRead(); this.setState(this.sessionSelection(id,tab), () => { void this.refresh(); }); }
     selectExperiment=(id:string,runId='')=>{const data=this.state.data;if(!data?.experiments.some(e=>e.id===id)||runId&&!data.runs.some(r=>r.id===runId&&r.experimentId===id)){this.setState({error:'指定实验或运行不在当前项目中。'});return;}this.invalidateRead();this.setState({selectedExp:id,selectedRun:runId,tab:'experiments'});};
     selectHistory=(anchor:{direction:'before'|'after';id:string}|null)=>{this.invalidateRead();this.setState({messages:[],historyAnchor:anchor,stream:'',streamTruncated:false,activity:null},()=>void this.refresh());};
@@ -149,10 +151,55 @@ export class App extends React.Component<{}, State> {
             this.setState({ modal: '', modalData: null });
     };
     async newSession() {
-        const projectId=this.state.projectId;
-        if (!projectId||this.state.busy)
+        const projectId=this.state.projectId,currentSessionId=this.state.sessionId,epoch=this.projectSelectionEpoch;
+        if (!this.mounted||!projectId||this.state.busy||this.creatingSession)
             return;
-        await this.perform(async () => { const s = await api('/sessions', { projectId, title: '新的研究会话' }); if(!this.mounted||this.state.projectId!==projectId)return; const closeNavigation=this.state.navigationOpen; await new Promise<void>(resolve=>this.setState({...this.sessionSelection(s.id,'chat'),navigationOpen:false,sessionCreationSignal:this.state.sessionCreationSignal+1},()=>{if(closeNavigation)this.navigationToggle?.focus();resolve();})); });
+        this.creatingSession=true;
+        const current=()=>this.mounted&&this.state.projectId===projectId&&this.projectSelectionEpoch===epoch;
+        const eligible=(s:SessionCatalogItem)=>s.projectId===projectId&&s.role==='coordinator'&&s.state==='idle'&&!s.taskId&&!s.teamId;
+        const seen=new Set<string>();
+        const emptySession=async(id:string):Promise<Row<Session>|null>=>{
+            seen.add(id);
+            const session=await api<Row<Session>>(`/sessions/${encodeURIComponent(id)}`);
+            if(!current())return null;
+            if(session.id!==id)throw Error('会话快照与请求不一致');
+            if(!eligible(session)||session.parentSessionId||session.piSessionPath!==null||session.generation!==0||session.leaseUntil!==0)return null;
+            const messages=await api<unknown>(`/sessions/${encodeURIComponent(id)}/messages`);
+            if(!current())return null;
+            if(!Array.isArray(messages))throw Error('会话消息读取未返回完整历史');
+            return messages.length===0?session:null;
+        };
+        try{
+            await this.perform(async()=>{
+                try{
+                    const project=await api<Row<Project>>(`/projects/${encodeURIComponent(projectId)}`);
+                    if(!current())return;
+                    if(project.id!==projectId||typeof project.archived!=='boolean')throw Error('项目快照与请求不一致');
+                    if(project.archived)throw Error('已归档项目不可新建会话');
+                    let session=currentSessionId?await emptySession(currentSessionId):null;
+                    if(!current())return;
+                    let cursor:string|undefined;
+                    const cursors=new Set<string>();
+                    while(!session){
+                        const page=await api<SessionCatalogPage>('/operations/session_list',{projectId,input:{role:'coordinator',stateFilter:'active',limit:50,...(cursor?{beforeSessionId:cursor}:{})}});
+                        if(!current())return;
+                        if(!Array.isArray(page.items))throw Error('会话目录读取失败');
+                        for(const item of page.items){
+                            if(seen.has(item.id)||!eligible(item))continue;
+                            session=await emptySession(item.id);
+                            if(!current())return;
+                            if(session)break;
+                        }
+                        if(session||!page.nextCursor)break;
+                        if(cursors.has(page.nextCursor))throw Error('会话目录游标重复');
+                        cursor=page.nextCursor;cursors.add(cursor);
+                    }
+                    if(!session){session=await api<Row<Session>>('/sessions',{projectId,title:'新的研究会话'});if(!current())return;}
+                    const closeNavigation=this.state.navigationOpen,sessionId=session.id;
+                    await new Promise<void>(resolve=>this.setState({...this.sessionSelection(sessionId,'chat'),navigationOpen:false,sessionCreationSignal:this.state.sessionCreationSignal+1},()=>{if(closeNavigation)this.navigationToggle?.focus();resolve();}));
+                }catch(error){if(current())throw error;}
+            });
+        }finally{this.creatingSession=false;}
     }
     async toggle() { const p = this.state.data!.project; await this.perform(() => api(`/projects/${p.id}/collaboration-settings`, { expectedVersion: p.version, enabled: !p.settings.enabled })); }
     modalView() {

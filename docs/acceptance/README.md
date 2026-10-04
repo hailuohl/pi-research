@@ -5,3 +5,5 @@
 `pr01/`–`pr04/`、`flow-*/` 各自保留当批记录；`0.3.0-experimental/`、`0.2.2/` 与根目录旧日志是历史结果，不代表当前版本重复验证或完整计划已完成。
 
 前端视觉验收：[正式前端浅色皮肤](flow-light-frontend/RESULT.md)、[浅色下拉控件](flow-dropdown-polish/RESULT.md)、[浅色视觉细节](flow-visual-polish/RESULT.md)。这些批次保留已确认布局；具体测试范围与未运行项见各自机器证据。
+
+会话交互：[复用未发送的新会话](flow-empty-session-reuse/RESULT.md)，保留原布局、历史与创建接口。

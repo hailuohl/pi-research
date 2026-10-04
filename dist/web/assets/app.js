@@ -33,6 +33,8 @@ class App extends React.Component {
     this.navigationToggle = null;
     this.refreshEpoch = 0;
     this.mounted = true;
+    this.projectSelectionEpoch = 0;
+    this.creatingSession = false;
     this.perform = async (fn, success) => {
       if (this.state.busy)
         return;
@@ -164,6 +166,7 @@ class App extends React.Component {
     return { sessionId: id, tab: normalizeView(tab), messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false, activity: null, error: "" };
   }
   switchProject(id) {
+    this.projectSelectionEpoch++;
     if (this.state.data?.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[this.state.projectId] = this.state.selectedExp;
     this.invalidateRead();
     this.feed?.stop();
@@ -182,18 +185,66 @@ class App extends React.Component {
     this.setState({ modal, modalData: data, error: "" });
   }
   async newSession() {
-    const projectId = this.state.projectId;
-    if (!projectId || this.state.busy)
+    const projectId = this.state.projectId, currentSessionId = this.state.sessionId, epoch = this.projectSelectionEpoch;
+    if (!this.mounted || !projectId || this.state.busy || this.creatingSession)
       return;
-    await this.perform(async () => {
-      const s = await api("/sessions", { projectId, title: "\u65B0\u7684\u7814\u7A76\u4F1A\u8BDD" });
-      if (!this.mounted || this.state.projectId !== projectId) return;
-      const closeNavigation = this.state.navigationOpen;
-      await new Promise((resolve) => this.setState({ ...this.sessionSelection(s.id, "chat"), navigationOpen: false, sessionCreationSignal: this.state.sessionCreationSignal + 1 }, () => {
-        if (closeNavigation) this.navigationToggle?.focus();
-        resolve();
-      }));
-    });
+    this.creatingSession = true;
+    const current = () => this.mounted && this.state.projectId === projectId && this.projectSelectionEpoch === epoch;
+    const eligible = (s) => s.projectId === projectId && s.role === "coordinator" && s.state === "idle" && !s.taskId && !s.teamId;
+    const seen = /* @__PURE__ */ new Set();
+    const emptySession = async (id) => {
+      seen.add(id);
+      const session = await api(`/sessions/${encodeURIComponent(id)}`);
+      if (!current()) return null;
+      if (session.id !== id) throw Error("\u4F1A\u8BDD\u5FEB\u7167\u4E0E\u8BF7\u6C42\u4E0D\u4E00\u81F4");
+      if (!eligible(session) || session.parentSessionId || session.piSessionPath !== null || session.generation !== 0 || session.leaseUntil !== 0) return null;
+      const messages = await api(`/sessions/${encodeURIComponent(id)}/messages`);
+      if (!current()) return null;
+      if (!Array.isArray(messages)) throw Error("\u4F1A\u8BDD\u6D88\u606F\u8BFB\u53D6\u672A\u8FD4\u56DE\u5B8C\u6574\u5386\u53F2");
+      return messages.length === 0 ? session : null;
+    };
+    try {
+      await this.perform(async () => {
+        try {
+          const project = await api(`/projects/${encodeURIComponent(projectId)}`);
+          if (!current()) return;
+          if (project.id !== projectId || typeof project.archived !== "boolean") throw Error("\u9879\u76EE\u5FEB\u7167\u4E0E\u8BF7\u6C42\u4E0D\u4E00\u81F4");
+          if (project.archived) throw Error("\u5DF2\u5F52\u6863\u9879\u76EE\u4E0D\u53EF\u65B0\u5EFA\u4F1A\u8BDD");
+          let session = currentSessionId ? await emptySession(currentSessionId) : null;
+          if (!current()) return;
+          let cursor;
+          const cursors = /* @__PURE__ */ new Set();
+          while (!session) {
+            const page = await api("/operations/session_list", { projectId, input: { role: "coordinator", stateFilter: "active", limit: 50, ...cursor ? { beforeSessionId: cursor } : {} } });
+            if (!current()) return;
+            if (!Array.isArray(page.items)) throw Error("\u4F1A\u8BDD\u76EE\u5F55\u8BFB\u53D6\u5931\u8D25");
+            for (const item of page.items) {
+              if (seen.has(item.id) || !eligible(item)) continue;
+              session = await emptySession(item.id);
+              if (!current()) return;
+              if (session) break;
+            }
+            if (session || !page.nextCursor) break;
+            if (cursors.has(page.nextCursor)) throw Error("\u4F1A\u8BDD\u76EE\u5F55\u6E38\u6807\u91CD\u590D");
+            cursor = page.nextCursor;
+            cursors.add(cursor);
+          }
+          if (!session) {
+            session = await api("/sessions", { projectId, title: "\u65B0\u7684\u7814\u7A76\u4F1A\u8BDD" });
+            if (!current()) return;
+          }
+          const closeNavigation = this.state.navigationOpen, sessionId = session.id;
+          await new Promise((resolve) => this.setState({ ...this.sessionSelection(sessionId, "chat"), navigationOpen: false, sessionCreationSignal: this.state.sessionCreationSignal + 1 }, () => {
+            if (closeNavigation) this.navigationToggle?.focus();
+            resolve();
+          }));
+        } catch (error) {
+          if (current()) throw error;
+        }
+      });
+    } finally {
+      this.creatingSession = false;
+    }
   }
   async toggle() {
     const p = this.state.data.project;
