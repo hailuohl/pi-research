@@ -3,7 +3,9 @@ import type { AppContext } from '../domain/context.js';
 import type { Actor, Row, Session, SourceRevision } from '../domain/types.js';
 import type { GitOperation, GitWorkspace } from './git-types.js';
 export declare function queueSourceHistory(c: AppContext, r: Row<SourceRevision>, parentSourceRevisionId?: string, legacy?: boolean): Row<GitOperation>;
-export declare function queueWorkspaceHistory(c: AppContext, s: Row<Session>, r: Row<SourceRevision>): Row<GitWorkspace>;
+export declare function queueWorkspaceHistory(c: AppContext, s: Row<Session>, r: Row<SourceRevision>, permission?: import('../policy/session-permissions.js').PermissionReference, approve?: (job: GitOperation & {
+    id: string;
+}) => import('../policy/session-permissions.js').GitActionApproval | undefined): Row<GitWorkspace>;
 /** Shared by tools and host launch; source-free note sessions have no code branch to lock. */
 export declare function assertWorkspaceReady(c: AppContext, sessionId: string): Row<import("./git-types.js").WorkspaceLease> | undefined;
 export declare class GitService {

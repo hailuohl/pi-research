@@ -95,7 +95,7 @@ export class AgentHost {
                     for (const queued of this.app.sessions.messages(SYSTEM, s.id).filter(m => m.role === 'user' && m.origin !== 'automation' && !m.wakeupId && m.status === 'queued' && m.mode === 'steer')) {
                         const m = this.app.store.transaction(() => {
                             const latest = this.app.store.get('session', s.id), input = this.app.store.get('message', queued.id, latest.projectId);
-                            if (!this.valid(active) || !canSteerSession(this.app.store, latest) || input.sessionId !== latest.id || input.status !== 'queued' || input.mode !== 'steer' || (input.steerGeneration !== undefined && input.steerGeneration !== active.generation))
+                            if (!this.valid(active) || !canSteerSession(this.app.store, latest) || input.sessionId !== latest.id || input.status !== 'queued' || input.mode !== 'steer' || (input.steerGeneration !== undefined && input.steerGeneration !== active.generation) || JSON.stringify(input.permission) !== JSON.stringify(active.actor.permission))
                                 return null;
                             return this.app.store.update('message', input.id, input.version, { status: 'running' });
                         });
@@ -149,6 +149,11 @@ export class AgentHost {
                     catch (error) {
                         const e = asError(error), latest = this.app.store.get('session', s.id);
                         this.app.store.update('session', s.id, latest.version, { state: 'failed', lastError: `${e.code} — ${e.message}` });
+                        if (e.code === 'SESSION_PERMISSION_STALE') {
+                            const m = this.app.store.get('message', next.id);
+                            if (m.status === 'queued')
+                                this.app.store.update('message', m.id, m.version, { status: 'failed', error: e.message });
+                        }
                     }
                 }
             }
@@ -211,10 +216,22 @@ export class AgentHost {
                 if (input.status !== 'queued')
                     return null;
             }
+            const permission = this.app.sessionPermissions.capture(latest.id, !!input?.wakeupId);
+            if (input && !input.permission)
+                ensure(permission.epoch === 0 && permission.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧排队输入没有当前权限依据，请用户明确重试');
+            if (input?.permission)
+                ensure(JSON.stringify(input.permission) === JSON.stringify(permission), 'SESSION_PERMISSION_STALE', '排队消息权限已变化，请用户明确重试');
+            if (latest.teamId) {
+                const team = store.get('team', latest.teamId, latest.projectId);
+                if (team.permission)
+                    this.app.sessionPermissions.assert(team.permission, false);
+                else
+                    ensure(permission.epoch === 0 && permission.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧协作计划没有当前权限依据');
+            }
             const slot = this.admission.tryAcquire(latest, latest.generation + 1, this.ownerHost, attempt?.teamId);
             if (!slot)
                 return null;
-            const next = store.update('session', latest.id, latest.version, { state: 'running', generation: latest.generation + 1, leaseUntil: Date.now() + 30000, lastError: undefined });
+            const next = store.update('session', latest.id, latest.version, { state: 'running', generation: latest.generation + 1, leaseUntil: Date.now() + 30000, lastError: undefined, executionPermission: permission });
             let message;
             if (input) {
                 const m = input;
@@ -243,7 +260,7 @@ export class AgentHost {
             prompt = messageInput(reservation.message);
         }
         const wakeupId = messageId ? store.get('message', messageId).wakeupId : undefined;
-        const actor = { ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
+        const actor = { permission: claimed.executionPermission, ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
         let active, requested = false;
         try {
             const bundleId = prepareSessionSkills(this.app, claimed, actor);
@@ -282,7 +299,7 @@ export class AgentHost {
             const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
             worker.contextMessageIds = hostMessages.map(m => m.id);
             const history = !isolatedRunAnalysis && !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
-            this.sendInput(worker, { type: 'start', managedHttp: true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
+            this.sendInput(worker, { type: 'start', managedHttp: true, permissionMode: actor.permission?.mode ?? 'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
             store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation: claimed.generation, attemptId: attempt?.id });
         }
         catch (error) {

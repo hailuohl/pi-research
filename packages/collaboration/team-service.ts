@@ -52,10 +52,10 @@ export class TeamService {
             this.assertInputsCurrent(p.id,tasks);
             const source=inheritSource&&s.sourceRevisionId?{sourceRevisionId:s.sourceRevisionId}:{};
             if(source.sourceRevisionId) validateSourceRevision(this.c,p.id,source.sourceRevisionId);
-            const id = randomUUID(), planDigest = digest({ tasks, goal, settings: p.settings, limit, model: s.model, autoSummarize, ...source });
-            const a = this.approvals.request(p.id, 'team', id, planDigest, 'collaboration', `允许 ${tasks.length} 个协作任务，${limit} 次尝试；自动综合=${autoSummarize}；不批准正式计算或代码合并。`);
-            const team = this.c.store.create<Team>('team', p.id, { ...source, rootSessionId, goal, state: 'awaiting_approval', settings: { ...p.settings }, delegationEnabled: true, planVersion: 1, directiveVersion: 1, planDigest, approvalId: a.id, summarySent: false, autoSummarize }, id);
-            this.c.store.create('team-plan', p.id, { ...source, teamId: id, planVersion: 1, directiveVersion: 1, tasks, goal, digest: planDigest, model: s.model });
+            const permission=this.sessions.taskPermissionCapture?.(rootSessionId), taskPermissionEffects=permission&&permission.mode!=='legacy'?[...TASK_PERMISSION_EFFECTS]:undefined; const id = randomUUID(), planDigest = digest({ tasks, goal, settings: p.settings, limit, model: s.model, autoSummarize, ...source,...(taskPermissionEffects?{taskPermissionEffects,permission}:{}) });
+            const a = this.approvals.request(p.id, 'team', id, planDigest, 'collaboration', `允许 ${tasks.length} 个协作任务，${limit} 次尝试；自动综合=${autoSummarize}；不批准正式计算或代码合并。${taskPermissionEffects?'授权所列任务角色在固定来源内写私有工作区并产生任务私有产物、证据和草案；不授权新联网、宿主命令、共享写入或自行审批。':''}`);
+            const team = this.c.store.create<Team>('team', p.id, { ...(permission?{permission}:{}),...(taskPermissionEffects?{taskPermissionEffects}:{}), ...source, rootSessionId, goal, state: 'awaiting_approval', settings: { ...p.settings }, delegationEnabled: true, planVersion: 1, directiveVersion: 1, planDigest, approvalId: a.id, summarySent: false, autoSummarize }, id);
+            this.c.store.create('team-plan', p.id, { ...source, teamId: id, planVersion: 1, directiveVersion: 1, tasks, goal, digest: planDigest, model: s.model,...(taskPermissionEffects?{taskPermissionEffects,permission}:{}) });
             for (const spec of tasks)
                 this.c.store.create<Task>('task', p.id, { ...spec, teamId: id, execution: 'pending', acceptance: 'pending', planVersion: 1, directiveVersion: 1, attemptCount: 0, generation: 0 });
             this.budget.configure(p.id, id, limit);
@@ -70,8 +70,20 @@ export class TeamService {
             if(a.taskId) taskAcceptanceBasis(this.c.store,projectId,a.taskId);
         }
     }
+    assertPermission(t: Row<Team>) {
+        const current=this.sessions.taskPermissionCapture?.(t.rootSessionId);
+        if(t.permission) {
+            ensure(current&&digest(current)===digest(t.permission),'SESSION_PERMISSION_STALE','协作计划批准时的权限已变化');
+            ensure(t.permission.mode!=='readOnly','SESSION_READ_ONLY','只读会话不能派发新的任务副作用',403);
+            if(t.permission.mode!=='legacy') {
+                const plan=this.c.store.list<{teamId:string;permission?:Team['permission'];taskPermissionEffects?:string[]}>('team-plan',t.projectId!).find(plan=>plan.teamId===t.id);
+                ensure(plan&&digest(plan.permission)===digest(t.permission)&&digest(plan.taskPermissionEffects)===digest(t.taskPermissionEffects),'APPROVAL_STALE','协作权限与原批准计划不符');
+            }
+        } else ensure(!current||current.mode==='legacy'&&current.epoch===0&&current.hostEpoch===0,'SESSION_PERMISSION_STALE','旧协作计划没有当前权限依据');
+    }
     private assertDispatchPlan(t: Row<Team>) {
         const p = assertProjectWritable(this.c.store,t.projectId!);
+        this.assertPermission(t);
         ensure(t.delegationEnabled && p.settings.enabled,'MULTI_AGENT_DISABLED','协作已经关闭');
         const tasks = this.tasks(SYSTEM,t.id);
         validateGraph(tasks,p.settings.maxTasksPerTeam);
@@ -146,7 +158,7 @@ export class TeamService {
                 let prepared:Row<{attemptId:string;sessionId:string}>|undefined;
                 if(p.gitHistoryEnabled&&source) {
                     const prepareId=digest({taskId:task.id,generation});prepared=this.c.store.maybe('task-workspace',prepareId);
-                    if(!prepared){const attemptId=randomUUID(),workspace=join(this.c.dataDir,'workspaces',id,task.id,attemptId);mkdirSync(workspace,{recursive:true,mode:0o700});const s=this.sessions.create(SYSTEM,p.id,{title:`${task.role} · ${task.objective.slice(0,60)}`},{role:task.role,teamId:id,taskId:task.id,workspace});copySourceRevision(source,workspace,true,this.c.store.paths);const bound=this.c.store.update<Session>('session',s.id,s.version,{sourceRevisionId:source.id,sourceDigest:source.sourceDigest,...(taskGrant?{discoveryGrantId:taskGrant.id}:{})});queueWorkspaceHistory(this.c,bound,source);prepared=this.c.store.create('task-workspace',p.id,{attemptId,sessionId:s.id},prepareId);}
+                    if(!prepared){const attemptId=randomUUID(),workspace=join(this.c.dataDir,'workspaces',id,task.id,attemptId);mkdirSync(workspace,{recursive:true,mode:0o700});const s=this.sessions.create(SYSTEM,p.id,{title:`${task.role} · ${task.objective.slice(0,60)}`},{role:task.role,teamId:id,taskId:task.id,workspace});copySourceRevision(source,workspace,true,this.c.store.paths);const bound=this.c.store.update<Session>('session',s.id,s.version,{sourceRevisionId:source.id,sourceDigest:source.sourceDigest,...(taskGrant?{discoveryGrantId:taskGrant.id}:{})});queueWorkspaceHistory(this.c,bound,source,t.permission);prepared=this.c.store.create('task-workspace',p.id,{attemptId,sessionId:s.id},prepareId);}
                     const w=this.c.store.get<GitWorkspace>('git-workspace',prepared.sessionId);
                     if(w.state!=='ready')return null;
                 }
@@ -491,3 +503,4 @@ export class TeamService {
         });
     }
 }
+import {TASK_PERMISSION_EFFECTS} from '../policy/session-permissions.js';

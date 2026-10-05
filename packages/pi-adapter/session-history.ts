@@ -52,7 +52,7 @@ export function sessionQueue(store:Store,session:Row<Session>,value:unknown={}){
  const where="kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND COALESCE(json_extract(data,'$.origin'),'user')<>'automation' AND json_extract(data,'$.wakeupId') IS NULL AND json_extract(data,'$.status')='queued'";
  const total=Number(store.db.prepare(`SELECT COUNT(*) n FROM records WHERE ${where}`).get(session.projectId!,session.id)!.n);
  const params:Array<string|number>=[session.projectId!,session.id];if(anchor)params.push(Number(anchor.rowid));
- const rows=store.db.prepare(`SELECT json_set(data,'$.content',substr(json_extract(data,'$.content'),1,4000)) data,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes FROM records WHERE ${where}${anchor?' AND rowid>?':''} ORDER BY rowid LIMIT ?`).all(...params,limit+1);
+ const rows=store.db.prepare(`SELECT json_remove(json_set(data,'$.content',substr(json_extract(data,'$.content'),1,4000)),'$.permission') data,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes FROM records WHERE ${where}${anchor?' AND rowid>?':''} ORDER BY rowid LIMIT ?`).all(...params,limit+1);
  const items=rows.slice(0,limit).map(r=>{const m=JSON.parse(r.data as string) as Row<Message>;return {...m,contentTruncated:!!m.contentTruncated,previewTruncated:Buffer.byteLength(m.content,'utf8')<Number(r.bytes),contentBytes:Number(r.bytes)};});
  return {items,total,nextCursor:rows.length>limit?items.at(-1)!.id:null,canSteer:canSteerSession(store,session)};
 }

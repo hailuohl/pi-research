@@ -108,7 +108,7 @@ export declare class ResearchPlanService {
             subjectId: string;
             digest: string;
             scope: string;
-            status: "stale" | "pending" | "approved" | "rejected";
+            status: "pending" | "approved" | "rejected" | "stale";
         }[];
         decisions: Row<CampaignDecision>[];
         campaignId: string;

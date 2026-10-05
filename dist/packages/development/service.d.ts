@@ -105,6 +105,7 @@ export declare class DevelopmentService {
     };
     private current;
     assertCurrent(job: Row<SandboxJob>, verifyFiles?: boolean): void;
+    private assertPermission;
     submit(actor: Actor, pid: string, id: string): {
         id: string;
         jobId: string;

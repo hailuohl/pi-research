@@ -19,7 +19,7 @@ export interface SessionSetup {
 }
 /** Compile against the pinned SDK; imports stay type-only for dependency-free core startup. */
 export declare function buildSessionOptions(sdk: Pick<typeof import('@earendil-works/pi-coding-agent'), 'SessionManager' | 'SettingsManager' | 'createExtensionRuntime' | 'CURRENT_SESSION_VERSION'>, setup: SessionSetup, customTools: ToolDefinition[], modelRuntime: CreateAgentSessionOptions['modelRuntime'], model: CreateAgentSessionOptions['model']): CreateAgentSessionOptions;
-export declare function systemInstruction(role: Role, hostAccess?: boolean): string;
+export declare function systemInstruction(role: Role, hostAccess?: boolean, mode?: import('../policy/session-permissions.js').PermissionReference['mode']): string;
 export declare function assistantFailure(message: {
     stopReason?: string;
     errorMessage?: string;

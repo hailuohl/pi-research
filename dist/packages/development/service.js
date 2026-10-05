@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdirSync, readdirSync, chmodSync, rmdirSync, existsSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
 import { SANDBOX_TERMINAL } from '../execution/contracts.js';
-import { ensure } from '../domain/errors.js';
+import { ensure, asError } from '../domain/errors.js';
 import { object, text, integer, strings } from '../contracts/validation.js';
 import { scope, ROLE_TOOLS } from '../policy/permissions.js';
 import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
@@ -131,6 +131,8 @@ export class DevelopmentService {
     }
     get(actor, pid, id) { const t = this.app.store.get('development-task', id, pid); this.access(actor, pid, t.sessionId); return { ...t, developmentTaskId: t.id, manifest: publicManifest(t.manifest) }; }
     current(t, pid, active, deadline, verifyFiles = true) {
+        if ('developmentTaskId' in t)
+            this.assertPermission(t);
         ensure(digest(t.manifest) === t.manifestDigest && t.sourceDigest === t.manifest.inputSnapshot.digest && digest(t.manifest.inputSnapshot.files) === t.sourceDigest, 'MANIFEST_CORRUPTED', '开发测试清单校验失败');
         const id = 'developmentTaskId' in t ? t.developmentTaskId : t.id;
         const approval = this.app.approvals.assert(t.grantId, pid, id, t.manifestDigest, 'development.test');
@@ -188,6 +190,12 @@ export class DevelopmentService {
         }
     }
     assertCurrent(job, verifyFiles = true) { this.current(job, job.projectId, true, (job.state === 'queued' || job.state === 'starting') && !job.startRequested, verifyFiles); }
+    assertPermission(job) { if (job.permission)
+        this.app.sessionPermissions.assertJob(job.permission, { kind: 'development', subjectId: job.developmentTaskId, approvalId: job.grantId, manifestDigest: job.manifestDigest }, job.sessionId);
+    else if (job.permissionOrigin !== 'owner') {
+        const ref = this.app.sessionPermissions.capture(job.sessionId);
+        ensure(ref.epoch === 0 && ref.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧测试没有当前会话权限依据');
+    } }
     submit(actor, pid, id) {
         return this.app.store.transaction(() => {
             const t = this.app.store.get('development-task', id, pid);
@@ -204,7 +212,8 @@ export class DevelopmentService {
             chmodSync(outputDir, 0o777);
             mkdirSync(controlDir, { recursive: true, mode: 0o700 });
             this.app.store.onRollback(() => { rmdirSync(controlDir); rmdirSync(outputDir); rmdirSync(root); });
-            this.app.store.create('sandbox-job', pid, { developmentTaskId: t.id, sessionId: t.sessionId, sourceDigest: t.sourceDigest, manifest: t.manifest, manifestDigest: t.manifestDigest, grantId: t.grantId, state: 'queued', integrity: 'pending', containerName: `pi-development-${jobId}`, outputDir: this.app.store.paths.reference(outputDir), controlDir: this.app.store.paths.reference(controlDir), generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, artifactIds: [], recoveryCount: 0 }, jobId);
+            const permission = actor.type === 'agent' ? this.app.sessionPermissions.captureJob(actor, { kind: 'development', subjectId: t.id, approvalId: t.grantId, manifestDigest: t.manifestDigest }) : undefined;
+            this.app.store.create('sandbox-job', pid, { permissionOrigin: actor.type === 'user' ? 'owner' : 'agent', ...(permission ? { permission } : {}), developmentTaskId: t.id, sessionId: t.sessionId, sourceDigest: t.sourceDigest, manifest: t.manifest, manifestDigest: t.manifestDigest, grantId: t.grantId, state: 'queued', integrity: 'pending', containerName: `pi-development-${jobId}`, outputDir: this.app.store.paths.reference(outputDir), controlDir: this.app.store.paths.reference(controlDir), generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, artifactIds: [], recoveryCount: 0 }, jobId);
             this.app.store.update('development-task', t.id, t.version, { state: 'submitted', jobId });
             this.app.store.event(pid, 'development.submitted', { developmentTaskId: t.id, jobId });
             return this.inspect(actor, pid, jobId);
@@ -236,6 +245,15 @@ export class DevelopmentService {
             if (SANDBOX_TERMINAL.includes(j.state))
                 return j;
             ensure(SANDBOX_TERMINAL.includes(result.state), 'INVALID_INPUT', '只允许归档已确认结束的任务');
+            try {
+                this.assertPermission(j);
+            }
+            catch (e) {
+                const error = asError(e), state = result.state === 'succeeded' ? 'failed' : result.state;
+                const stopped = this.app.store.update('sandbox-job', id, j.version, { state, integrity: 'invalid', exitCode: result.exitCode, error: error.code + ': ' + error.message, endedAt: now(), leaseUntil: 0, artifactIds: [] });
+                this.app.store.event(pid, 'development.finalized', { jobId: id, state, integrity: 'invalid', permissionStale: true });
+                return stopped;
+            }
             let integrity = 'complete', state = result.state;
             const errors = [], artifactIds = [], extra = j.manifest.scopeTaskId ? { taskId: j.manifest.scopeTaskId } : {};
             const archive = (root, path, limit, media = 'application/octet-stream', emptyIfAbsent = false, title = path) => { try {

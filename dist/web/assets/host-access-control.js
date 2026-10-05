@@ -2,10 +2,11 @@ import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { Icon, Modal } from "./ui.js";
+const modeLabels = { readOnly: "\u53EA\u8BFB", confirm: "\u53D8\u66F4\u524D\u786E\u8BA4", autoEdit: "\u81EA\u52A8\u7F16\u8F91", fullAccess: "\u5B8C\u5168\u8BBF\u95EE", legacy: "\u73B0\u6709\u53D7\u63A7\u5DE5\u5177" };
 class HostAccessControl extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { status: null, open: false, menuOpen: false, error: "", saving: false };
+    this.state = { status: null, permission: null, open: false, menuOpen: false, error: "", saving: false };
     this.alive = true;
     this.request = 0;
     this.trigger = React.createRef();
@@ -71,11 +72,33 @@ class HostAccessControl extends React.Component {
   async load() {
     const request = ++this.request;
     try {
-      const status = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/host-access`);
-      if (this.alive && request === this.request) this.setState({ status });
+      const permission = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/permissions`);
+      if (this.alive && request === this.request) this.setState({ permission, status: permission.hostAccess });
     } catch (error) {
-      if (this.alive && request === this.request) this.setState({ status: null, error: error instanceof Error ? error.message : String(error) });
+      if (this.alive && request === this.request) this.setState({ status: null, permission: null, error: error instanceof Error ? error.message : String(error) });
     }
+  }
+  async saveMode(mode) {
+    const permission = this.state.permission, status = this.state.status;
+    if (!permission || !status || this.state.saving || this.props.busy) return;
+    this.closeMenu();
+    this.trigger.current?.focus();
+    if (permission.mode === mode) return;
+    this.request++;
+    this.setState({ saving: true, error: "" });
+    await this.props.perform(async () => {
+      try {
+        await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/permissions`, { mode, expectedVersion: permission.version, expectedHostVersion: status.version });
+      } catch (error) {
+        if (this.alive) this.setState({ error: error instanceof Error ? error.message : String(error) });
+        throw error;
+      } finally {
+        if (this.alive) {
+          this.setState({ saving: false });
+          await this.load();
+        }
+      }
+    }, "\u4F1A\u8BDD\u6743\u9650\u5DF2\u66F4\u65B0\u4E3A" + modeLabels[mode]);
   }
   async save(enabled) {
     const status = this.state.status;
@@ -102,11 +125,11 @@ class HostAccessControl extends React.Component {
     }, enabled ? "\u5DF2\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE\uFF1B\u4E0D\u63D0\u4F9B\u540C\u7528\u6237\u9694\u79BB" : "\u5DF2\u64A4\u9500\u65B0\u5BBF\u4E3B\u547D\u4EE4\u6388\u6743\uFF1B\u53D7\u7BA1\u547D\u4EE4\u6B63\u5728\u505C\u6B62");
   }
   render() {
-    const { status, open, menuOpen, error, saving } = this.state, menuId = "host-permission-menu-" + this.props.sessionId, enabled = this.dialogEnabled;
+    const { status, permission, open, menuOpen, error, saving } = this.state, menuId = "host-permission-menu-" + this.props.sessionId, enabled = this.dialogEnabled, mode = permission?.mode ?? (status?.enabled ? "fullAccess" : "legacy");
     return /* @__PURE__ */ jsxs(Fragment, { children: [
-      /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "host-access-trigger" + (status?.enabled ? " enabled" : ""), "aria-label": "\u4F1A\u8BDD\u6743\u9650\uFF1A" + (status?.enabled ? "\u5B8C\u5168\u8BBF\u95EE" : "\u53D7\u63A7\u5DE5\u5177"), "aria-haspopup": "menu", "aria-expanded": menuOpen, "aria-controls": menuId, popoverTarget: menuId, disabled: this.props.archived || !status, children: [
+      /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "host-access-trigger" + (status?.enabled ? " enabled" : ""), "aria-label": "\u4F1A\u8BDD\u6743\u9650\uFF1A" + modeLabels[mode], "aria-haspopup": "menu", "aria-expanded": menuOpen, "aria-controls": menuId, popoverTarget: menuId, disabled: this.props.archived || !status || saving, children: [
         /* @__PURE__ */ jsx(Icon, { name: "cpu", size: 13 }),
-        /* @__PURE__ */ jsx("span", { children: status?.enabled ? "\u5B8C\u5168\u8BBF\u95EE" : "\u53D7\u63A7\u6743\u9650" }),
+        /* @__PURE__ */ jsx("span", { children: modeLabels[mode] }),
         /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 11 })
       ] }),
       /* @__PURE__ */ jsxs("div", { ref: this.menu, id: menuId, popover: "auto", role: "menu", "aria-label": "\u4F1A\u8BDD\u6743\u9650", className: "host-permission-menu", onKeyDown: this.menuKeys, onToggle: (event) => {
@@ -122,30 +145,16 @@ class HostAccessControl extends React.Component {
           /* @__PURE__ */ jsx("small", { children: "\u4EC5\u5F53\u524D\u4F1A\u8BDD" })
         ] }),
         /* @__PURE__ */ jsxs("div", { role: "group", "aria-label": "\u6743\u9650\u6863\u4F4D", children: [
-          /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": "false", disabled: true, className: "host-permission-row", children: [
-            /* @__PURE__ */ jsx(Icon, { name: "book-open" }),
+          [{ mode: "readOnly", icon: "book-open", description: "\u67E5\u770B\u5DF2\u6709\u8D44\u6599\uFF0C\u4E0D\u7F16\u8F91\u3001\u8054\u7F51\u6216\u6267\u884C" }, { mode: "confirm", icon: "settings", description: "\u53D8\u66F4\u4E0E\u65B0\u8054\u7F51\u8BF7\u6C42\u5148\u7531\u4F60\u786E\u8BA4" }, { mode: "autoEdit", icon: "edit", description: "\u79C1\u6709\u5DE5\u4F5C\u533A\u81EA\u52A8\u7F16\u8F91\uFF0C\u6267\u884C\u4ECD\u9700\u786E\u8BA4" }].map((item) => /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": mode === item.mode, disabled: !permission?.available || saving || this.props.busy, className: "host-permission-row" + (mode === item.mode ? " selected" : ""), onClick: () => {
+            void this.saveMode(item.mode);
+          }, children: [
+            /* @__PURE__ */ jsx(Icon, { name: item.icon }),
             /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
-              /* @__PURE__ */ jsx("strong", { children: "\u53EA\u8BFB" }),
-              /* @__PURE__ */ jsx("small", { children: "\u67E5\u770B\u5DF2\u6709\u8D44\u6599\uFF0C\u4E0D\u7F16\u8F91\u6216\u6267\u884C\u547D\u4EE4" })
+              /* @__PURE__ */ jsx("strong", { children: modeLabels[item.mode] }),
+              /* @__PURE__ */ jsx("small", { children: item.description })
             ] }),
-            /* @__PURE__ */ jsx("span", { className: "host-permission-tag", children: "\u5F85\u63A5\u5165" })
-          ] }),
-          /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": "false", disabled: true, className: "host-permission-row", children: [
-            /* @__PURE__ */ jsx(Icon, { name: "settings" }),
-            /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
-              /* @__PURE__ */ jsx("strong", { children: "\u53D8\u66F4\u524D\u786E\u8BA4" }),
-              /* @__PURE__ */ jsx("small", { children: "\u7F16\u8F91\u4E0E\u547D\u4EE4\u6267\u884C\u524D\uFF0C\u5148\u7531\u4F60\u786E\u8BA4" })
-            ] }),
-            /* @__PURE__ */ jsx("span", { className: "host-permission-tag", children: "\u5F85\u63A5\u5165" })
-          ] }),
-          /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": "false", disabled: true, className: "host-permission-row", children: [
-            /* @__PURE__ */ jsx(Icon, { name: "edit" }),
-            /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
-              /* @__PURE__ */ jsx("strong", { children: "\u81EA\u52A8\u7F16\u8F91" }),
-              /* @__PURE__ */ jsx("small", { children: "\u8303\u56F4\u5185\u81EA\u52A8\u7F16\u8F91\uFF0C\u547D\u4EE4\u4ECD\u9700\u786E\u8BA4" })
-            ] }),
-            /* @__PURE__ */ jsx("span", { className: "host-permission-tag", children: "\u5F85\u63A5\u5165" })
-          ] }),
+            mode === item.mode ? /* @__PURE__ */ jsx(Icon, { name: "check" }) : null
+          ] }, item.mode)),
           /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": !!status?.enabled, disabled: !status || !status.available && !status.enabled || saving || this.props.busy, onClick: this.showDetails, className: "host-permission-row" + (status?.enabled ? " selected" : ""), children: [
             /* @__PURE__ */ jsx(Icon, { name: "cpu" }),
             /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
@@ -158,13 +167,14 @@ class HostAccessControl extends React.Component {
         /* @__PURE__ */ jsxs("div", { className: "host-permission-footer", children: [
           /* @__PURE__ */ jsxs("span", { children: [
             "\u5F53\u524D\uFF1A",
-            status?.enabled ? "\u5B8C\u5168\u8BBF\u95EE" : "\u73B0\u6709\u53D7\u63A7\u5DE5\u5177"
+            modeLabels[mode]
           ] }),
           /* @__PURE__ */ jsx("button", { type: "button", role: "menuitem", onClick: status?.enabled ? this.showDetails : () => {
             this.closeMenu();
             this.trigger.current?.focus();
           }, className: "host-permission-secondary", children: status?.enabled ? "\u8303\u56F4\u4E0E\u64A4\u9500" : "\u5173\u95ED" })
         ] }),
+        permission && !permission.available ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", children: permission.reason }) : null,
         status && !status.available && !status.enabled ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", children: status.reason }) : null,
         error ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", role: "status", children: error }) : null
       ] }),

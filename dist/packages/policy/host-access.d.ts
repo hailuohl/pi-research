@@ -29,6 +29,7 @@ export interface HostCommand {
 /** Trusted same-user host execution, deliberately NOT an OS sandbox or owner-auth boundary. */
 export declare class HostAccessService {
     private c;
+    onChanged?: (sessionId: string) => void;
     private readonly runtimeId;
     private readonly active;
     private readonly uncertain;
@@ -55,7 +56,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "starting" | "running" | "unknown";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -78,7 +79,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "starting" | "running" | "unknown";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -100,7 +101,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "starting" | "running" | "unknown";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;

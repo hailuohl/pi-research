@@ -19,6 +19,7 @@ export declare class TeamService {
     create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean): Row<Team>;
     activate(actor: Actor, id: string): Row<Team>;
     private assertInputsCurrent;
+    assertPermission(t: Row<Team>): void;
     private assertDispatchPlan;
     /** Claim and reserve atomically. No network, model or process launch in this transaction. */
     claim(id: string, prepareOnly?: boolean): {

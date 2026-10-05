@@ -1,6 +1,6 @@
 # 四档权限与界面设计
 
-> 实施更新：用户随后要求完全访问就绪，已接通本机可信模式；实际边界与原强隔离方案的区别见 [HOST-IMPLEMENTATION.zh-CN.md](./HOST-IMPLEMENTATION.zh-CN.md)。本文件其余内容保留为设计记录。
+> 实施更新：四档已接通实际执行，见 [权限接入验收](../../acceptance/flow-permission-modes/RESULT.md)。本机可信模式的实际边界见 [HOST-IMPLEMENTATION.zh-CN.md](./HOST-IMPLEMENTATION.zh-CN.md)。本文件其余内容保留为原设计记录。
 
 日期：2026-10-05。代码基线：`86dcf3c90e135391c28f1301c29a09f09006cfbf`。
 

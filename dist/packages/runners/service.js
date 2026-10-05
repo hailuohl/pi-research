@@ -25,6 +25,9 @@ export class RunService {
     compute;
     briefs;
     budget;
+    permissionCapture;
+    permissionGuard;
+    permissionForSession;
     researchSourceGuard;
     launching = new Set();
     constructor(c, approvals, evidence, compute = new ComputeQueue(c), briefs, budget = new BudgetService(c.store)) {
@@ -160,7 +163,8 @@ export class RunService {
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
             const execution = intent.manifest.contract.runner !== 'trusted-example' ? { backend: intent.manifest.contract.runner, dockerContext: intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.dockerContext ?? 'default', ...(intent.manifest.contract.runner === 'ssh' ? { sshHandle: `pi-ssh-${runId}` } : {}), containerName: `pi-research-${runId}`, controlDir: this.c.store.paths.reference(join(this.c.dataDir, 'jobs', runId, 'control')), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
-            const run = this.c.store.create('run', intent.projectId, { experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir: this.c.store.paths.reference(outputDir), cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}), ...(intent.runGrant ? { runGrant: intent.runGrant } : {}) }, runId);
+            const permission = this.permissionCapture?.(actor, { kind: 'run', subjectId: intent.id, approvalId: intent.approvalId, manifestDigest: intent.manifestDigest });
+            const run = this.c.store.create('run', intent.projectId, { permissionOrigin: actor.type === 'user' ? 'owner' : 'agent', ...(permission ? { permission } : {}), experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir: this.c.store.paths.reference(outputDir), cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}), ...(intent.runGrant ? { runGrant: intent.runGrant } : {}) }, runId);
             if (run.manifest.sshTarget) {
                 const t = run.manifest.sshTarget;
                 this.c.store.db.prepare("UPDATE compute_queue SET target_id=?,engine_id=?,endpoint=?,bound=1 WHERE kind='run' AND id=?").run(t.targetId, t.engineId, t.configDigest + ':' + t.protocolDigest, run.id);
@@ -186,6 +190,7 @@ export class RunService {
     }
     /** Also used just before Docker start and while supervising a running immutable job. */
     assertExecutionGrant(run, admission = !TERMINAL.includes(run.state) && (run.execution ? !run.execution.startRequested : !run.startRequested)) {
+        this.assertPermission(run);
         assertRunGrantRun(this.c.store, run, admission);
         this.researchSourceGuard?.(run.experimentId, 'execute', run.intentId);
         assertProjectWritable(this.c.store, run.projectId);
@@ -211,6 +216,12 @@ export class RunService {
         assertOutcomeBoundary(this.c.store, e);
         this.approvals.assert(intent.approvalId, run.projectId, intent.id, run.manifestDigest, 'run.submit');
     }
+    assertPermission(run) { const intent = this.c.store.get('run-intent', run.intentId, run.projectId); if (run.permission)
+        this.permissionGuard?.(run.permission, { kind: 'run', subjectId: run.intentId, approvalId: intent.approvalId, manifestDigest: run.manifestDigest }, intent.rootSessionId);
+    else if (run.permissionOrigin !== 'owner' && intent.rootSessionId) {
+        const ref = this.permissionForSession?.(intent.rootSessionId);
+        ensure(!ref || ref.epoch === 0 && ref.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧作业没有当前会话权限依据');
+    } }
     /** Both launch callers hold the same write transaction as their authorization check. */
     cancelBeforeLaunch(run, error) {
         if (run.state !== 'queued' || run.startedAt || run.childPid)
@@ -296,6 +307,15 @@ export class RunService {
                 return r;
             if (facts)
                 ensure(r.execution?.generation === facts.generation && r.execution.leaseUntil > Date.now(), 'LEASE_EXPIRED', '旧监管器不能归档当前作业');
+            try {
+                this.assertPermission(r);
+            }
+            catch (e) {
+                const failure = asError(e);
+                const stopped = this.c.store.update('run', id, r.version, { state, integrity: 'invalid', judgment: 'pending', answerDisposition: 'needs_review', exitCode, endedAt: now(), heartbeat: Date.now(), error: failure.code + ': ' + failure.message, artifactIds: [], evidenceIds: [], ...(r.execution ? { execution: { ...r.execution, leaseUntil: 0 } } : {}) });
+                this.c.store.event(r.projectId, 'run.finalized', { runId: id, state, integrity: 'invalid', permissionStale: true });
+                return stopped;
+            }
             const collected = collectRunArtifacts(r, this.evidence, this.c.store.paths), { metrics, artifactIds, evidenceIds, errors } = collected;
             let integrity = collected.integrity;
             if (facts?.incomplete && integrity !== 'invalid')

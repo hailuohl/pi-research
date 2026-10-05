@@ -50,6 +50,8 @@ export interface DevelopmentTask {
 }
 export type SandboxState = 'queued' | 'starting' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'timed_out' | 'unknown';
 export interface SandboxJob {
+    permissionOrigin?: 'owner' | 'agent';
+    permission?: import('../policy/session-permissions.js').JobPermission;
     developmentTaskId: string;
     sessionId: string;
     sourceDigest: string;

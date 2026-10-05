@@ -3,6 +3,9 @@ import type { AppContext } from '../domain/context.js';
 import type { Actor, Session, Message, ModelConfig, Role, Row } from '../domain/types.js';
 export declare class SessionService {
     private c;
+    permissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
+    taskPermissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
+    permissionBranch?: (originalId: string, branchId: string) => void;
     constructor(c: AppContext);
     model(): ModelConfig;
     models(): ModelConfig[];
@@ -30,6 +33,7 @@ export declare class SessionService {
             version: number;
             createdAt: string;
             updatedAt: string;
+            permission?: import("../policy/session-permissions.js").PermissionReference;
             generation?: number;
             phase?: "commentary" | "final_answer";
             toolCalls?: string[];

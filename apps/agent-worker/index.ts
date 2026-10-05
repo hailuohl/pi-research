@@ -15,7 +15,7 @@ type WorkerMessage =
     | {type: 'tool_response'|'model_http_response'; requestId: number; error?: {code: string; message: string}; result?: unknown}
     | {type: 'abort'}
     | {type: 'steer' | 'follow_up'; content: string; messageId: string}
-    | {type: 'start'; managedHttp?:boolean; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
+    | {type: 'start'; managedHttp?:boolean; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
 let session: AgentSession | undefined;
 let providerFailure: string | undefined;
 let started = false, stopping = false, taskSubmitted = false, turns = 0;
@@ -90,7 +90,7 @@ process.on('message', async (message) => {
             if (name === 'task_result_submit') taskSubmitted = true;
             return result;
         });
-        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role,raw.tools.some(tool=>tool.name==='host_execute')) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
+        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role,raw.tools.some(tool=>tool.name==='host_execute'),raw.permissionMode) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
         if(raw.managedHttp){
             if(!(MANAGED_HTTP_APIS as readonly string[]).includes(model.api))throw new Error('MODEL_HTTP_UNSUPPORTED: 所选SDK传输尚未接入受管HTTP，不会绕过限流');

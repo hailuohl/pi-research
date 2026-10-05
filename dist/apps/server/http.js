@@ -17,7 +17,7 @@ export function createHttpServer(options) {
     const server = http.createServer(async (req, res) => {
         const headers = { 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" };
         Object.entries(headers).forEach(([k, v]) => res.setHeader(k, v));
-        const json = (value, status = 200) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.end(JSON.stringify(value)); };
+        const json = (value, status = 200) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.end(JSON.stringify(publicRecords(value))); };
         try {
             const allowed = [`127.0.0.1:${port}`, `localhost:${port}`];
             ensure(allowed.includes(req.headers.host ?? ''), 'HOST_DENIED', '只允许回环地址访问', 403);
@@ -96,6 +96,11 @@ export function createHttpServer(options) {
                     return json(app.store.operation(scope, key, request, () => app.projects.importDirectory(USER, body, prepared)));
                 }
                 const hostAccessRoute = route.match(/^\/sessions\/([^/]+)\/host-access$/);
+                const permissionRoute = route.match(/^\/sessions\/([^/]+)\/(?:permissions|permission-actions\/[^/]+\/decide)$/);
+                if (permissionRoute) {
+                    app.store.operation(`${req.method}:${route}`, key, { body, query: url.search }, () => { writeRoute(app, host, route, body, req.method); return { sessionId: permissionRoute[1] }; });
+                    return json(app.sessionPermissions.status(USER, permissionRoute[1]));
+                }
                 if (hostAccessRoute) {
                     app.store.operation(`${req.method}:${route}`, key, { body, query: url.search }, () => { writeRoute(app, host, route, body, req.method); return { sessionId: hostAccessRoute[1] }; });
                     return json(app.hostAccess.status(USER, hostAccessRoute[1]));
@@ -128,4 +133,5 @@ export function createHttpServer(options) {
     let closing;
     return { app, host, server, listen: () => new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = server.address().port; host.start(); resolve(port); }); }), close: () => closing ??= (async () => { events.close(); await host.stop(); await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise(resolve => server.close(() => resolve())); app.close(); })() };
 }
+import { publicRecords } from '../../packages/domain/public-record.js';
 //# sourceMappingURL=http.js.map

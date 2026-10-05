@@ -3,6 +3,7 @@ import { attachmentScope, readAttachment } from '../../pi-adapter/attachments.js
 import { digest } from '../../storage/store.js';
 import { routePaperId, parseSearch } from '../../connectors/contracts.js';
 import { ensure } from '../../domain/errors.js';
+import { publicRecords } from '../../domain/public-record.js';
 import { text, object, integer } from '../validation.js';
 import { interactiveCoordinator, scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
 import { assertProjectWritable } from '../../policy/lifecycle.js';
@@ -395,7 +396,8 @@ export class OperationRegistry {
             ensure(!session || selected.id === session.id, 'SCOPE_DENIED', '不能切换 Agent 的会话工作区', 403);
             session = selected;
         }
-        const key = options.idempotencyKey;
+        let key = options.idempotencyKey;
+        let permission;
         const cached = id !== 'research_brief_inspect' && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
         if (cached)
             ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
@@ -405,6 +407,11 @@ export class OperationRegistry {
                     this.authorizeAgent(actor, id);
                 else
                     assertProjectWritable(this.app.store, pid);
+                if (permission) {
+                    this.app.sessionPermissions.assert(permission.reference, false);
+                    if (permission.actionId && !permission.consumed)
+                        this.app.sessionPermissions.validate(permission.reference, session.id, id, input, permission.actionId);
+                }
             } };
         if (spec.requiresSession)
             ensure(session, 'SESSION_REQUIRED', '需要指定项目内的会话', 400);
@@ -420,6 +427,11 @@ export class OperationRegistry {
                 (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field]);
         }
         spec.authorize(context, input);
+        permission = this.app.sessionPermissions.guard(actor, id, input, key);
+        if (permission?.key) {
+            key = permission.key;
+            context.idempotencyKey = key;
+        }
         const proposalOwner = id === 'change_proposal_prepare' ? session?.id : undefined;
         const intentOwner = id === 'run_prepare' ? session?.id : undefined;
         const experimentOwner = id === 'experiment_plan_submit' && actor.type === 'user' ? session?.id : undefined;
@@ -430,7 +442,7 @@ export class OperationRegistry {
         const request = { name: id, ...(proposalOwner || intentOwner || experimentOwner || manuscriptOwner || agentPublicationOwner ? { rootSessionId: proposalOwner ?? intentOwner ?? experimentOwner ?? manuscriptOwner ?? agentPublicationOwner } : {}), input: id === 'document_import' ? { ...input, contentBase64: undefined, contentDigest: digest(input.contentBase64) } : ['skill_package_import', 'manuscript_create'].includes(id) ? { inputDigest: digest(input) } : input }, operationScope = actor.type === 'agent' ? `agent:${session.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
-            const result = JSON.parse(JSON.stringify(value));
+            const result = JSON.parse(JSON.stringify(publicRecords(value)));
             validateSchema(spec.outputSchema, result, 'output');
             return result;
         };
@@ -491,12 +503,24 @@ export class OperationRegistry {
         const save = (value) => {
             const result = output(value);
             const write = () => cached ? this.app.store.operation(operationScope, key, request, () => result) : result;
-            return legacy ? this.app.store.operation(legacy.scope, key, legacy.input, write) : write();
+            const saved = legacy ? this.app.store.operation(legacy.scope, key, legacy.input, write) : write();
+            if (permission?.actionId)
+                this.app.sessionPermissions.complete(permission.actionId);
+            return saved;
         };
         const invoke = () => {
             if (actor.type === 'agent')
                 this.authorizeAgent(actor, id);
+            if (permission) {
+                this.app.sessionPermissions.assert(permission.reference, false);
+                if (permission.actionId) {
+                    this.app.sessionPermissions.validate(permission.reference, session.id, id, input, permission.actionId);
+                    this.app.sessionPermissions.begin(permission.actionId);
+                }
+            }
             spec.preconditions(context, input);
+            if (permission?.actionId)
+                context.actor = { ...actor, permissionActionId: permission.actionId };
             return spec.execute(context, input);
         };
         // Host execution owns its durable intent/receipt. Never reconstruct or rerun an unknown command.
@@ -505,8 +529,13 @@ export class OperationRegistry {
             return Promise.resolve(invoke()).then(value => { context.validate(); this.app.hostAccess.assertAgent(actor); return output(value); });
         }
         if (spec.asynchronous) {
+            // Owner receipts remain readable after archival; only new effects require a writable project.
+            if (actor.type === 'agent')
+                context.validate();
             if (['report_export', 'compute_target_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare', 'skill_package_import', 'manuscript_create', 'publication_configure', 'publication_prepare', 'publication_submit'].includes(id)) {
                 const previous = this.app.store.transaction(() => {
+                    if (actor.type === 'agent')
+                        context.validate();
                     const found = lookup();
                     if (found && actor.type === 'agent') {
                         if (id === 'manuscript_create')
@@ -519,6 +548,10 @@ export class OperationRegistry {
                 if (previous)
                     return output(previous.value);
             }
+            if (permission?.consumed) {
+                const prior = this.app.store.transaction(() => { context.validate(); const found = lookup(); ensure(found, 'SESSION_ACTION_CONSUMED', '该批准已消费且回执待核对，不重复副作用'); ensure(externalReplay(context, id, input).completed, 'OPERATION_IN_PROGRESS', '领域回执尚未确认，禁止重复外部请求'); return found; });
+                return output(prior.value);
+            }
             context.validate();
             const hash = digest(request), pendingId = digest({ scope: operationScope, key });
             const inFlight = this.pending.get(pendingId);
@@ -529,6 +562,7 @@ export class OperationRegistry {
             }
             let reserved = false;
             this.app.store.transaction(() => {
+                context.validate();
                 if (lookup())
                     return;
                 const prior = this.app.store.maybe('operation-pending', pendingId);
@@ -547,7 +581,8 @@ export class OperationRegistry {
             const promise = Promise.resolve().then(invoke).then(value => {
                 context.validate();
                 return this.app.store.transaction(() => { const result = save(value); clear(); return result; });
-            }).catch(error => { clear(); throw error; }).finally(() => { this.pending.delete(pendingId); });
+            }).catch(error => { clear(); if (permission?.actionId)
+                this.app.sessionPermissions.failed(permission.actionId, error, true); throw error; }).finally(() => { this.pending.delete(pendingId); });
             this.pending.set(pendingId, { hash, promise });
             return promise;
         }
@@ -558,40 +593,49 @@ export class OperationRegistry {
             return result;
         }
         // Recheck under the write lock before invoking: other HTTP/CLI processes share this DB.
-        return this.app.store.transaction(() => {
-            // PDF authority must be current under the same writer lock as cached receipt return.
-            if (['text_evidence_search', 'artifact_read', 'evidence_register', 'evidence_read', 'run_submit', 'session_attachment_read'].includes(id))
-                spec.authorize(context, input);
-            const previous = lookup();
-            if (previous) {
-                if (id === 'experiment_plan_submit' && actor.type === 'agent') {
-                    this.authorizeAgent(actor, id);
-                    const created = previous.value;
-                    if (created.researchBrief)
-                        this.app.researchBriefs.assertReference(actor, pid, session.id, created.researchBrief);
+        try {
+            return this.app.store.transaction(() => {
+                if (permission)
+                    this.app.sessionPermissions.assert(permission.reference, false);
+                // PDF authority must be current under the same writer lock as cached receipt return.
+                if (['text_evidence_search', 'artifact_read', 'evidence_register', 'evidence_read', 'run_submit', 'session_attachment_read'].includes(id))
+                    spec.authorize(context, input);
+                const previous = lookup();
+                if (previous) {
+                    if (id === 'experiment_plan_submit' && actor.type === 'agent') {
+                        this.authorizeAgent(actor, id);
+                        const created = previous.value;
+                        if (created.researchBrief)
+                            this.app.researchBriefs.assertReference(actor, pid, session.id, created.researchBrief);
+                    }
+                    if (id === 'research_brief_save') {
+                        const receipt = previous.value, view = this.app.researchBriefs.inspect(actor, pid, session.id, receipt.id);
+                        ensure(view.brief, 'BRIEF_EVIDENCE_UNAVAILABLE', '该研究计划修订当前不可读取，请重新核对来源', 403);
+                        return output(view.brief);
+                    }
+                    if (id === 'text_evidence_search')
+                        this.app.textEvidence.verifyReplay(actor, pid, input);
+                    if (actor.type === 'agent' && id === 'publication_review_prepare')
+                        return output(spec.execute(context, input));
+                    if (actor.type === 'agent' && ['publication_templates', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list'].includes(id))
+                        return output(spec.execute(context, input));
+                    return save(previous.value);
                 }
-                if (id === 'research_brief_save') {
-                    const receipt = previous.value, view = this.app.researchBriefs.inspect(actor, pid, session.id, receipt.id);
-                    ensure(view.brief, 'BRIEF_EVIDENCE_UNAVAILABLE', '该研究计划修订当前不可读取，请重新核对来源', 403);
-                    return output(view.brief);
+                const pending = this.app.store.maybe('operation-pending', digest({ scope: operationScope, key }));
+                if (pending) {
+                    ensure(pending.hash === digest(request), 'IDEMPOTENCY_CONFLICT', '相同幂等键不能用于不同请求');
+                    ensure(false, 'OPERATION_IN_PROGRESS', '同键外部操作结果仍待对账');
                 }
-                if (id === 'text_evidence_search')
-                    this.app.textEvidence.verifyReplay(actor, pid, input);
-                if (actor.type === 'agent' && id === 'publication_review_prepare')
-                    return output(spec.execute(context, input));
-                if (actor.type === 'agent' && ['publication_templates', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list'].includes(id))
-                    return output(spec.execute(context, input));
-                return save(previous.value);
-            }
-            const pending = this.app.store.maybe('operation-pending', digest({ scope: operationScope, key }));
-            if (pending) {
-                ensure(pending.hash === digest(request), 'IDEMPOTENCY_CONFLICT', '相同幂等键不能用于不同请求');
-                ensure(false, 'OPERATION_IN_PROGRESS', '同键外部操作结果仍待对账');
-            }
-            const result = save(invoke());
-            this.app.store.event(pid, actor.type === 'agent' ? 'tool.executed' : 'operation.executed', { sessionId: session?.id, taskId: actor.taskId, attemptId: actor.attemptId, tool: id, callId: key });
-            return result;
-        });
+                const result = save(invoke());
+                this.app.store.event(pid, actor.type === 'agent' ? 'tool.executed' : 'operation.executed', { sessionId: session?.id, taskId: actor.taskId, attemptId: actor.attemptId, tool: id, callId: key });
+                return result;
+            });
+        }
+        catch (error) {
+            if (permission?.actionId)
+                this.app.sessionPermissions.failed(permission.actionId, error);
+            throw error;
+        }
     }
 }
 //# sourceMappingURL=registry.js.map

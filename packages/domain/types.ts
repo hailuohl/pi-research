@@ -10,6 +10,9 @@ export interface Entity {
 export type Row<T = Record<string, unknown>> = Entity & T;
 export type Role = 'coordinator' | 'literature' | 'designer' | 'implementer' | 'analyst' | 'reviewer' | 'writer';
 export interface Actor {
+    /** Host-only; never parsed from request/tool input. */
+    permissionActionId?:string;
+    permission?: import('../policy/session-permissions.js').PermissionReference;
     type: 'user' | 'agent' | 'system';
     projectId?: string;
     sessionId?: string;
@@ -46,6 +49,7 @@ export interface ModelConfig {
     thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
 }
 export interface Session {
+    executionPermission?: import('../policy/session-permissions.js').PermissionReference;
     researchBriefId?: string;
     textCorpusGrantId?: string;
     discoveryGrantId?: string;
@@ -69,6 +73,7 @@ export interface Session {
     parentSessionId?: string;
 }
 export interface Message {
+    permission?: import('../policy/session-permissions.js').PermissionReference;
     generation?: number;
     phase?: 'commentary' | 'final_answer';
     toolCalls?: string[];
@@ -175,6 +180,8 @@ export interface RunIntent {
     runId?: string;
 }
 export interface Run {
+    permissionOrigin?:'owner'|'agent';
+    permission?: import('../policy/session-permissions.js').JobPermission;
     runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
     startRequested?: boolean;
     experimentId: string;
@@ -269,6 +276,8 @@ export interface TaskSpec {
     acceptanceRuleIds?: string[];
 }
 export interface Team {
+    taskPermissionEffects?: string[];
+    permission?: import('../policy/session-permissions.js').PermissionReference;
     sourceRevisionId?: string;
     rootSessionId: string;
     goal: string;

@@ -43,7 +43,7 @@ export declare class WakeupService {
         team: {
             id: string;
             goal: string;
-            state: "failed" | "cancelled" | "active" | "completed" | "partial" | "awaiting_approval" | "paused" | "draining";
+            state: "failed" | "cancelled" | "completed" | "active" | "partial" | "awaiting_approval" | "paused" | "draining";
         };
         tasks: {
             id: string;

@@ -11,6 +11,7 @@ import { readStableFile } from './stable-file.js';
 import { validateSourceRevision } from './source-access.js';
 import { GitCommand } from './git-command.js';
 import { WorkspaceLeases } from './leases.js';
+import { assertWorkingGrantReference, workingGrantReference } from '../policy/working-grant-validation.js';
 const terminal = (state) => ['complete', 'conflict', 'failed'].includes(state);
 const snapshot = (c, path) => {
     const physical = c.store.paths.physical(path);
@@ -32,7 +33,7 @@ export function queueSourceHistory(c, r, parentSourceRevisionId, legacy = false)
         return op;
     });
 }
-export function queueWorkspaceHistory(c, s, r) {
+export function queueWorkspaceHistory(c, s, r, permission, approve) {
     return c.store.transaction(() => {
         const old = c.store.maybe('git-workspace', s.id);
         if (old) {
@@ -41,7 +42,8 @@ export function queueWorkspaceHistory(c, s, r) {
         }
         queueSourceHistory(c, r, undefined, true);
         const id = randomUUID(), branch = `refs/heads/session-${s.id}`, path = join(c.dataDir, 'git-worktrees', s.projectId, s.id), input = snapshot(c, s.workspace);
-        c.store.create('git-operation', s.projectId, { action: 'checkout', state: 'queued', sourceRevisionId: r.id, sessionId: s.id, snapshot: input, branch, workspace: c.store.paths.reference(path), previousWorkspace: s.workspace, message: `Prepare session ${s.id}`, commitDate: now(), generation: 0, leaseUntil: 0 }, id);
+        const job = { permissionOrigin: permission ? 'agent' : 'owner', ...(permission ? { permission } : {}), action: 'checkout', state: 'queued', sourceRevisionId: r.id, sessionId: s.id, snapshot: input, branch, workspace: c.store.paths.reference(path), previousWorkspace: s.workspace, message: `Prepare session ${s.id}`, commitDate: now(), generation: 0, leaseUntil: 0 }, approvedAction = approve?.({ ...job, id });
+        c.store.create('git-operation', s.projectId, { ...job, ...(approvedAction ? { approvedAction } : {}) }, id);
         const result = c.store.create('git-workspace', s.projectId, { sessionId: s.id, sourceRevisionId: r.id, branch, path: c.store.paths.reference(path), state: 'pending', operationId: id, snapshot: input }, s.id);
         c.store.event(s.projectId, 'git.workspace_queued', { sessionId: s.id, operationId: id });
         return result;
@@ -120,11 +122,12 @@ export class GitService {
         return this.app.store.transaction(() => {
             const s = this.access(actor, pid, sessionId, true), w = this.app.store.get('git-workspace', sessionId, pid), x = object(value);
             this.app.workingGrants.assertWorkspace(actor, pid, sessionId);
+            const workingGrant = actor.type === 'agent' && s.workingGrantId ? workingGrantReference(this.app.store.get('working-grant', s.workingGrantId, pid)) : undefined;
             ensure(w.head === text(x.expectedHead, 'expectedHead', 64), 'GIT_HEAD_CONFLICT', 'Git HEAD 已变化，请重新查看差异');
             const input = snapshot(this.app.context, s.workspace);
             ensure(input.digest !== w.snapshot.digest, 'CHANGE_EMPTY', '工作区没有源码变化');
-            const id = randomUUID();
-            this.app.store.create('git-operation', pid, { action: 'commit', state: 'queued', sourceRevisionId: w.sourceRevisionId, sessionId, branch: w.branch, workspace: w.path, expectedHead: w.head, snapshot: input, message: text(x.message, 'message', 1000), commitDate: now(), generation: 0, leaseUntil: 0 }, id);
+            const id = randomUUID(), job = { ...(workingGrant ? { workingGrant } : {}), permissionOrigin: actor.type === 'user' ? 'owner' : 'agent', ...(actor.type === 'agent' ? { permission: this.app.sessionPermissions.capture(actor.sessionId, true) } : {}), action: 'commit', state: 'queued', sourceRevisionId: w.sourceRevisionId, sessionId, branch: w.branch, workspace: w.path, expectedHead: w.head, snapshot: input, message: text(x.message, 'message', 1000), commitDate: now(), generation: 0, leaseUntil: 0 }, approvedAction = actor.type === 'agent' ? this.app.sessionPermissions.captureGit(actor, { ...job, id }) : undefined;
+            this.app.store.create('git-operation', pid, { ...job, ...(approvedAction ? { approvedAction } : {}) }, id);
             this.app.store.update('git-workspace', w.id, w.version, { state: 'pending', operationId: id });
             this.app.store.event(pid, 'git.commit_queued', { sessionId, operationId: id, sourceDigest: input.digest });
             return this.operation(actor, pid, id);
@@ -183,12 +186,20 @@ export class GitService {
             return false;
         let job = claimed.job;
         const owner = `operation:${job.id}`, pid = job.projectId, repo = new GitCommand(this.app.context.dataDir, pid), opDir = join(this.app.context.dataDir, 'git-operations', job.id), receipt = `refs/pi/operations/${job.id}`;
-        const fence = () => { leases.assert(pid, 'repository', owner, claimed.lease.generation); const j = store.get('git-operation', job.id); ensure(j.generation === job.generation && j.leaseUntil > Date.now() && j.state === 'running', 'WORKSPACE_LEASE_EXPIRED', 'Git 执行器已失去租约'); return j; };
+        const leaseFence = () => { leases.assert(pid, 'repository', owner, claimed.lease.generation); const j = store.get('git-operation', job.id); ensure(j.generation === job.generation && j.leaseUntil > Date.now() && j.state === 'running', 'WORKSPACE_LEASE_EXPIRED', 'Git 执行器已失去租约'); return j; };
+        const fence = () => { const j = leaseFence(); if (j.permission)
+            this.app.sessionPermissions.assertGit(j);
+        else if (j.sessionId && j.permissionOrigin !== 'owner') {
+            const ref = this.app.sessionPermissions.capture(j.sessionId);
+            ensure(ref.epoch === 0 && ref.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧 Git 操作没有当前权限依据');
+        } if (j.workingGrant)
+            assertWorkingGrantReference(store, pid, j.workingGrant, true); return j; };
         const renew = setInterval(() => { try {
             store.transaction(() => { const j = fence(); leases.renew(pid, 'repository', owner, claimed.lease.generation); store.update('git-operation', j.id, j.version, { leaseUntil: Date.now() + 60000 }); });
         }
         catch { } }, 3000);
         try {
+            fence();
             assertProjectWritable(store, pid);
             validateSourceRevision(this.app.context, pid, job.sourceRevisionId);
             verifySnapshot(store.paths.physical(job.snapshot.path), job.snapshot.files);
@@ -291,7 +302,7 @@ export class GitService {
         catch (error) {
             const e = asError(error);
             try {
-                store.transaction(() => { job = fence(); const state = /CONFLICT|FROZEN|CORRUPTED|STALE/.test(e.code) ? 'conflict' : 'failed'; store.update('git-operation', job.id, job.version, { state, error: e.code, diagnostic: e.message.slice(0, 4000), leaseUntil: 0 }); if (job.sessionId) {
+                store.transaction(() => { job = leaseFence(); const state = /CONFLICT|FROZEN|CORRUPTED|STALE/.test(e.code) ? 'conflict' : 'failed'; store.update('git-operation', job.id, job.version, { state, error: e.code, diagnostic: e.message.slice(0, 4000), leaseUntil: 0 }); if (job.sessionId) {
                     const w = store.get('git-workspace', job.sessionId);
                     if (w.operationId === job.id)
                         store.update('git-workspace', w.id, w.version, { state });
@@ -310,7 +321,7 @@ export class GitService {
     }
     retry(actor, pid, id) {
         ensure(actor.type === 'user', 'PERMISSION_DENIED', '恢复操作需要用户身份', 403);
-        return this.app.store.transaction(() => { const op = this.app.store.get('git-operation', id, pid); ensure(['failed', 'conflict'].includes(op.state), 'GIT_OPERATION_BUSY', '只能重试已停止的 Git 操作'); assertProjectWritable(this.app.store, pid); this.app.store.update('git-operation', id, op.version, { state: 'queued', error: undefined, leaseUntil: 0 }); if (op.sessionId) {
+        return this.app.store.transaction(() => { const op = this.app.store.get('git-operation', id, pid); ensure(['failed', 'conflict'].includes(op.state), 'GIT_OPERATION_BUSY', '只能重试已停止的 Git 操作'); assertProjectWritable(this.app.store, pid); this.app.store.update('git-operation', id, op.version, { state: 'queued', error: undefined, leaseUntil: 0, permissionOrigin: 'owner', permission: undefined, workingGrant: undefined, approvedAction: undefined }); if (op.sessionId) {
             const w = this.app.store.get('git-workspace', op.sessionId);
             ensure(w.operationId === id, 'GIT_SOURCE_CONFLICT', '操作已被替代');
             this.app.store.update('git-workspace', w.id, w.version, { state: 'pending' });
@@ -322,6 +333,9 @@ export class GitService {
         if (s.taskId) {
             const t = this.app.store.get('task', s.taskId), team = this.app.store.get('team', t.teamId);
             ensure(['pending', 'running'].includes(t.execution) && team.state === 'active' && team.delegationEnabled, 'TASK_INPUT_STALE', '任务不再允许准备源码');
+            this.app.teams.assertPermission(team);
+            if (job.permissionOrigin !== 'owner')
+                ensure(digest(job.permission) === digest(team.permission), 'APPROVAL_STALE', '任务 Git 权限与原协作计划不符');
             this.app.approvals.assert(team.approvalId, job.projectId, team.id, team.planDigest, 'collaboration');
         }
         return s;

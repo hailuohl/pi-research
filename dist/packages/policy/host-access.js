@@ -10,6 +10,7 @@ const clean = (value) => value.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]
 /** Trusted same-user host execution, deliberately NOT an OS sandbox or owner-auth boundary. */
 export class HostAccessService {
     c;
+    onChanged;
     runtimeId = randomUUID();
     active = new Map();
     uncertain = new Map();
@@ -63,6 +64,7 @@ export class HostAccessService {
             else
                 this.c.store.create('host-access', session.projectId, grant, id);
             this.c.store.event(session.projectId, 'host_access.enabled', { sessionId: id, epoch: grant.epoch, boundary: grant.boundary, osSandboxVerified: false });
+            this.onChanged?.(id);
         });
         for (const job of this.jobs(this.session(actor, id)))
             if (job.state === 'unknown')
@@ -76,6 +78,7 @@ export class HostAccessService {
         const expected = integer(x.expectedVersion, 'expectedVersion', 0), session = this.session(actor, id);
         this.c.store.transaction(() => { const prior = this.c.store.maybe('host-access', id); ensure((prior?.version ?? 0) === expected, 'VERSION_CONFLICT', '权限已变化，请刷新后重试'); if (prior)
             this.c.store.update('host-access', id, prior.version, { state: 'revoked', epoch: prior.epoch + 1 }); this.c.store.event(session.projectId, 'host_access.revoked', { sessionId: id, epoch: (prior?.epoch ?? 0) + 1 }); });
+        this.onChanged?.(id);
         for (const job of this.active.values())
             if (job.sessionId === id)
                 job.cancel('完全访问已撤销；已发出的网络和文件变更无法撤回');

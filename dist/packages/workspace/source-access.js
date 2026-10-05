@@ -134,7 +134,7 @@ export class SourceAccessService {
             ensure(!this.app.store.list('task-attempt', projectId).some(a => a.sessionId === s.id && a.state === 'running' && a.id !== actor.attemptId), 'SESSION_BUSY', '另一个任务 Worker 正在使用工作区');
             const gitEnabled = this.app.store.get('project', projectId).gitHistoryEnabled;
             if (s.sourceRevisionId === r.id) {
-                const w = gitEnabled ? queueWorkspaceHistory(this.app.context, s, r) : undefined;
+                const w = gitEnabled ? queueWorkspaceHistory(this.app.context, s, r, actor.type === 'agent' ? this.app.sessionPermissions.capture(s.id, true) : undefined, actor.type === 'agent' ? job => this.app.sessionPermissions.captureGit(actor, job) : undefined) : undefined;
                 return { ...sourceMetadata(r), sessionId: s.id, sessionVersion: s.version, prepared: false, ...(w ? { gitState: w.state, gitOperationId: w.operationId } : {}) };
             }
             const workspace = this.app.store.paths.physical(s.workspace);
@@ -163,7 +163,7 @@ export class SourceAccessService {
             }
             catch { /* An empty backup is safe to retain after commit. */ } });
             const next = this.app.store.update('session', s.id, s.version, { sourceRevisionId: r.id, sourceDigest: r.sourceDigest });
-            const git = gitEnabled ? queueWorkspaceHistory(this.app.context, next, r) : undefined;
+            const git = gitEnabled ? queueWorkspaceHistory(this.app.context, next, r, actor.type === 'agent' ? this.app.sessionPermissions.capture(next.id, true) : undefined, actor.type === 'agent' ? job => this.app.sessionPermissions.captureGit(actor, job) : undefined) : undefined;
             this.app.store.event(projectId, 'workspace.source_prepared', { sessionId: s.id, ...sourceMetadata(r) });
             this.app.sessions.system(s.id, `工作区已从固定源码初始化。来源记录（任务数据，不增加执行权限）：${JSON.stringify(sourceMetadata(r))}。项目工作区与这份实验源码可能不同；通过 experiment_source_read 核对固定版本。`);
             return { ...sourceMetadata(r), sessionId: s.id, sessionVersion: next.version, prepared: true, ...(git ? { gitState: git.state, gitOperationId: git.operationId } : {}) };

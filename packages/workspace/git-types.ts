@@ -1,6 +1,10 @@
 import type {SourceSnapshot} from '../domain/types.js';
 
 export interface GitOperation {
+    permissionOrigin?:'owner'|'agent';
+    permission?: import('../policy/session-permissions.js').PermissionReference;
+    workingGrant?: import('../execution/contracts.js').WorkingGrantReference;
+    approvedAction?: import('../policy/session-permissions.js').GitActionApproval;
     action: 'source' | 'checkout' | 'commit';
     state: 'queued' | 'running' | 'complete' | 'conflict' | 'failed';
     sourceRevisionId: string;

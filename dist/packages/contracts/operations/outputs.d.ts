@@ -64,7 +64,7 @@ declare const row: <const K extends string, const P extends Record<string, JsonS
             readonly type: "string";
         };
     } & P;
-    readonly required: (Exclude<"id", O[number]> | Exclude<"version", O[number]> | Exclude<"kind", O[number]> | Exclude<"projectId", O[number]> | Exclude<"createdAt", O[number]> | Exclude<"updatedAt", O[number]> | Exclude<keyof P & string, O[number]>)[];
+    readonly required: (Exclude<"id", O[number]> | Exclude<"createdAt", O[number]> | Exclude<"kind", O[number]> | Exclude<"version", O[number]> | Exclude<"projectId", O[number]> | Exclude<"updatedAt", O[number]> | Exclude<keyof P & string, O[number]>)[];
     readonly additionalProperties: false;
 };
 declare const nullable: <const S extends JsonSchema>(schema: S) => {
@@ -322,7 +322,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("experimentId" | "experimentRevision" | "contractDigest" | "createdAt" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
+                readonly required: ("createdAt" | "experimentId" | "experimentRevision" | "contractDigest" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
                 readonly additionalProperties: false;
             };
             readonly manifestDigest: {
@@ -443,7 +443,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "boolean";
                     };
                 };
-                readonly required: ("generation" | "dockerContext" | "leaseUntil" | "containerName" | "startRequested" | "recoveryCount" | "controlDir" | "backend")[];
+                readonly required: ("generation" | "leaseUntil" | "dockerContext" | "containerName" | "startRequested" | "recoveryCount" | "controlDir" | "backend")[];
                 readonly additionalProperties: false;
             };
             readonly runGrant: {
@@ -478,7 +478,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("id" | "version" | "experimentId" | "manifestDigest" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "artifactIds" | "evidenceIds" | "manifest" | "integrity" | "cancelRequested" | "outputDir" | "intentId" | "judgment")[];
+        readonly required: ("id" | "state" | "createdAt" | "experimentId" | "kind" | "version" | "manifestDigest" | "projectId" | "updatedAt" | "artifactIds" | "evidenceIds" | "manifest" | "integrity" | "cancelRequested" | "outputDir" | "intentId" | "judgment")[];
         readonly additionalProperties: false;
     };
     readonly reviewed_change_prepare: {
@@ -546,7 +546,7 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("files" | "path" | "digest")[];
+                readonly required: ("path" | "digest" | "files")[];
                 readonly additionalProperties: false;
             };
             readonly contractDigest: {
@@ -645,7 +645,7 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("files" | "path" | "digest")[];
+                readonly required: ("path" | "digest" | "files")[];
                 readonly additionalProperties: false;
             };
             readonly digest: {
@@ -685,7 +685,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "title" | "digest" | "approvalId" | "contractDigest" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "hypothesis" | "changes" | "baseExperimentId" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
+        readonly required: ("id" | "digest" | "state" | "createdAt" | "title" | "kind" | "version" | "approvalId" | "contractDigest" | "projectId" | "updatedAt" | "hypothesis" | "changes" | "baseExperimentId" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
         readonly additionalProperties: false;
     };
     readonly workspace_list: {
@@ -732,7 +732,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "title" | "cursor" | "content" | "digest" | "mediaType" | "artifactId")[];
+        readonly required: ("digest" | "complete" | "title" | "content" | "cursor" | "mediaType" | "artifactId")[];
         readonly additionalProperties: false;
     };
     readonly artifact_create: {
@@ -817,7 +817,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "title" | "path" | "size" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "mediaType" | "origin")[];
+        readonly required: ("id" | "path" | "size" | "digest" | "createdAt" | "title" | "kind" | "version" | "projectId" | "updatedAt" | "mediaType" | "origin")[];
         readonly additionalProperties: false;
     };
     readonly report_create: {
@@ -902,7 +902,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "title" | "path" | "size" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "mediaType" | "origin")[];
+        readonly required: ("id" | "path" | "size" | "digest" | "createdAt" | "title" | "kind" | "version" | "projectId" | "updatedAt" | "mediaType" | "origin")[];
         readonly additionalProperties: false;
     };
     readonly report_export: {
@@ -987,7 +987,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "title" | "path" | "size" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "mediaType" | "origin")[];
+        readonly required: ("id" | "path" | "size" | "digest" | "createdAt" | "title" | "kind" | "version" | "projectId" | "updatedAt" | "mediaType" | "origin")[];
         readonly additionalProperties: false;
     };
     readonly evidence_register: {
@@ -1093,7 +1093,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "artifactId" | "type" | "description" | "locator" | "quote")[];
+        readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "artifactId" | "type" | "description" | "locator" | "quote")[];
         readonly additionalProperties: false;
     };
     readonly evidence_read: {
@@ -1199,7 +1199,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "artifactId" | "type" | "description" | "locator" | "quote")[];
+        readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "artifactId" | "type" | "description" | "locator" | "quote")[];
         readonly additionalProperties: false;
     };
     readonly session_notice_read: {
@@ -1218,7 +1218,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "cursor" | "content" | "messageId")[];
+        readonly required: ("complete" | "content" | "cursor" | "messageId")[];
         readonly additionalProperties: false;
     };
     readonly run_logs: {
@@ -1247,7 +1247,7 @@ export declare const OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("complete" | "cursor" | "content" | "size" | "start" | "identity")[];
+        readonly required: ("size" | "complete" | "content" | "cursor" | "start" | "identity")[];
         readonly additionalProperties: false;
     };
     readonly run_source_list: {
@@ -1292,7 +1292,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("files" | "experimentId" | "sourceDigest" | "revision" | "runId")[];
+        readonly required: ("experimentId" | "sourceDigest" | "revision" | "files" | "runId")[];
         readonly additionalProperties: false;
     };
     readonly run_source_read: {
@@ -1339,7 +1339,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("complete" | "end" | "cursor" | "content" | "path" | "size" | "digest" | "experimentId" | "sourceDigest" | "revision" | "runId")[];
+        readonly required: ("path" | "size" | "digest" | "complete" | "experimentId" | "sourceDigest" | "content" | "revision" | "end" | "cursor" | "runId")[];
         readonly additionalProperties: false;
     };
     readonly approval_request: {
@@ -1449,7 +1449,7 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
-            readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "subjectKind" | "subjectId" | "scope" | "reason")[];
+            readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "subjectKind" | "subjectId" | "scope" | "status" | "reason" | "projectId" | "updatedAt")[];
             readonly additionalProperties: false;
         };
     };
@@ -1619,7 +1619,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "integer";
             };
         };
-        readonly required: ("id" | "version" | "title" | "contractDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revision" | "parentId" | "workspace" | "hypothesis" | "contract" | "lifecycle" | "notes")[];
+        readonly required: ("id" | "createdAt" | "parentId" | "title" | "workspace" | "kind" | "version" | "revision" | "contractDigest" | "projectId" | "updatedAt" | "hypothesis" | "contract" | "lifecycle" | "notes")[];
         readonly additionalProperties: false;
     };
     readonly collaboration_plan_submit: {
@@ -1687,7 +1687,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: "drain";
                     };
                 };
-                readonly required: ("strategy" | "enabled" | "maxActiveAgents" | "maxConcurrentAssistants" | "shutdownPolicy" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
+                readonly required: ("enabled" | "strategy" | "maxActiveAgents" | "maxConcurrentAssistants" | "shutdownPolicy" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
                 readonly additionalProperties: false;
             };
             readonly delegationEnabled: {
@@ -1718,7 +1718,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "approvalId" | "planDigest" | "planVersion" | "directiveVersion" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settings" | "rootSessionId" | "goal" | "delegationEnabled" | "summarySent")[];
+        readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "approvalId" | "rootSessionId" | "planDigest" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "settings" | "goal" | "delegationEnabled" | "summarySent")[];
         readonly additionalProperties: false;
     };
     readonly agent_delegate: {
@@ -1786,7 +1786,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: "drain";
                     };
                 };
-                readonly required: ("strategy" | "enabled" | "maxActiveAgents" | "maxConcurrentAssistants" | "shutdownPolicy" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
+                readonly required: ("enabled" | "strategy" | "maxActiveAgents" | "maxConcurrentAssistants" | "shutdownPolicy" | "maxTasksPerTeam" | "maxTaskAttempts" | "requirePlanConfirmation")[];
                 readonly additionalProperties: false;
             };
             readonly delegationEnabled: {
@@ -1817,7 +1817,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "approvalId" | "planDigest" | "planVersion" | "directiveVersion" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settings" | "rootSessionId" | "goal" | "delegationEnabled" | "summarySent")[];
+        readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "approvalId" | "rootSessionId" | "planDigest" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "settings" | "goal" | "delegationEnabled" | "summarySent")[];
         readonly additionalProperties: false;
     };
     readonly task_inspect: {
@@ -2027,7 +2027,7 @@ export declare const OUTPUT_SCHEMAS: {
                     };
                 };
             };
-            readonly required: ("key" | "id" | "version" | "role" | "teamId" | "planVersion" | "directiveVersion" | "generation" | "kind" | "projectId" | "createdAt" | "updatedAt" | "execution" | "acceptance" | "objective" | "dependencies" | "attemptCount")[];
+            readonly required: ("key" | "id" | "generation" | "createdAt" | "role" | "teamId" | "kind" | "version" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "execution" | "acceptance" | "objective" | "dependencies" | "attemptCount")[];
             readonly additionalProperties: false;
         };
     };
@@ -2552,7 +2552,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "projectId" | "createdAt" | "type" | "seq" | "payload")[];
+        readonly required: ("id" | "createdAt" | "projectId" | "type" | "seq" | "payload")[];
         readonly additionalProperties: false;
     };
     readonly research_skill_list: {
@@ -2638,7 +2638,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "source" | "digest" | "resources" | "description")[];
+                    readonly required: ("id" | "digest" | "source" | "resources" | "description")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -2684,7 +2684,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "source" | "content" | "digest" | "bundleId" | "resource")[];
+        readonly required: ("id" | "digest" | "source" | "content" | "bundleId" | "resource")[];
         readonly additionalProperties: false;
     };
     readonly connector_status: {
@@ -2826,12 +2826,12 @@ export declare const OUTPUT_SCHEMAS: {
                             }];
                         };
                     };
-                    readonly required: ("error" | "id" | "host" | "source" | "status" | "startedAt" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("id" | "source" | "error" | "status" | "host" | "startedAt" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("version" | "enabled" | "requestLimit" | "credentials" | "capabilities" | "observations" | "requestsUsed" | "budgetUnit" | "defaults")[];
+        readonly required: ("enabled" | "version" | "requestLimit" | "credentials" | "capabilities" | "observations" | "requestsUsed" | "budgetUnit" | "defaults")[];
         readonly additionalProperties: false;
     };
     readonly literature_search: {
@@ -2908,7 +2908,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly const: "crossref";
                         };
                     };
-                    readonly required: ("date" | "source" | "doi" | "title" | "fullTextRead" | "url" | "authors" | "journal")[];
+                    readonly required: ("source" | "title" | "date" | "doi" | "fullTextRead" | "url" | "authors" | "journal")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -2959,7 +2959,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "query" | "source" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "retrievedAt" | "items")[];
+        readonly required: ("id" | "source" | "createdAt" | "kind" | "version" | "query" | "coverage" | "projectId" | "updatedAt" | "retrievedAt" | "items")[];
         readonly additionalProperties: false;
     };
     readonly literature_discover: {
@@ -3173,7 +3173,7 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                    readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3246,7 +3246,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+        readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
         readonly additionalProperties: false;
     };
     readonly project_inspect: {
@@ -3286,7 +3286,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                 };
                             };
-                            readonly required: ("title" | "size" | "digest" | "artifactId")[];
+                            readonly required: ("size" | "digest" | "title" | "artifactId")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -3363,7 +3363,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: 0;
                     };
                 };
-                readonly required: ("version" | "sources" | "corpusId" | "enabled" | "limits" | "method" | "modelCalls" | "networkCalls" | "parserVersion")[];
+                readonly required: ("enabled" | "version" | "sources" | "corpusId" | "limits" | "method" | "modelCalls" | "networkCalls" | "parserVersion")[];
                 readonly additionalProperties: false;
             };
             readonly project: {
@@ -3548,7 +3548,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly additionalProperties: false;
                                 };
                             };
-                            readonly required: ("id" | "approvalId" | "experimentId" | "manifestDigest" | "status" | "approvalStatus")[];
+                            readonly required: ("id" | "experimentId" | "approvalId" | "status" | "manifestDigest" | "approvalStatus")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -3776,7 +3776,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "integer";
                                     };
                                 };
-                                readonly required: ("title" | "digest" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
+                                readonly required: ("digest" | "title" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -3877,7 +3877,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("title" | "digest" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
+                    readonly required: ("digest" | "title" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -3932,7 +3932,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("id" | "version" | "query" | "limit" | "hits" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
+        readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "query" | "limit" | "hits" | "coverage" | "projectId" | "updatedAt" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
         readonly additionalProperties: false;
     };
     readonly campaign_enroll: {
@@ -3989,7 +3989,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "experimentId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "required" | "intentId" | "campaignId" | "roundId")[];
+        readonly required: ("id" | "createdAt" | "experimentId" | "kind" | "version" | "projectId" | "updatedAt" | "required" | "intentId" | "campaignId" | "roundId")[];
         readonly additionalProperties: false;
     };
     readonly campaign_decision_submit: {
@@ -4118,7 +4118,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "approvalId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "reason" | "action" | "inputDigest" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
+        readonly required: ("id" | "createdAt" | "kind" | "version" | "approvalId" | "inputDigest" | "status" | "reason" | "projectId" | "updatedAt" | "action" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
         readonly additionalProperties: false;
     };
     readonly campaign_inspect: {
@@ -4240,7 +4240,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("id" | "version" | "approvalId" | "planDigest" | "contractDigest" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "rootSessionId" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
+                readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "approvalId" | "rootSessionId" | "planDigest" | "contractDigest" | "projectId" | "updatedAt" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
                 readonly additionalProperties: false;
             };
             readonly members: {
@@ -4299,7 +4299,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "experimentId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "required" | "intentId" | "campaignId" | "roundId")[];
+                    readonly required: ("id" | "createdAt" | "experimentId" | "kind" | "version" | "projectId" | "updatedAt" | "required" | "intentId" | "campaignId" | "roundId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -4367,7 +4367,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("number" | "id" | "version" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "campaignId" | "parentExperimentId")[];
+                    readonly required: ("number" | "id" | "state" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "campaignId" | "parentExperimentId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -4463,7 +4463,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "runId" | "intentId" | "contentDigest")[];
+                                readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "runId" | "intentId" | "contentDigest")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -4499,7 +4499,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                     readonly type: "string";
                                                 };
                                             };
-                                            readonly required: ("approvalId" | "teamId" | "planDigest")[];
+                                            readonly required: ("teamId" | "approvalId" | "planDigest")[];
                                             readonly additionalProperties: false;
                                         };
                                     };
@@ -4525,7 +4525,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                 readonly type: "string";
                                             };
                                         };
-                                        readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "runId" | "intentId" | "contentDigest")[];
+                                        readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "runId" | "intentId" | "contentDigest")[];
                                         readonly additionalProperties: false;
                                     };
                                     readonly documents: {
@@ -4598,7 +4598,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "intentId" | "terminal")[];
+                                readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "intentId" | "terminal")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -4673,7 +4673,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "digest" | "contractDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "inputDigest" | "successCriteria" | "hypothesis" | "controlRunIds" | "changedFactors" | "dataArtifactIds" | "guardrailMetrics" | "repetitions" | "dataSplit" | "primaryMetric" | "inconclusiveCriteria" | "stoppingCriteria" | "campaignId" | "roundId" | "decisionId" | "parentSource" | "controlBindings" | "dataBindings" | "inputRuns" | "observationIds" | "campaignApprovalId" | "campaignPlanDigest" | "decisionApprovalId")[];
+                    readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "inputDigest" | "contractDigest" | "projectId" | "updatedAt" | "successCriteria" | "hypothesis" | "controlRunIds" | "changedFactors" | "dataArtifactIds" | "guardrailMetrics" | "repetitions" | "dataSplit" | "primaryMetric" | "inconclusiveCriteria" | "stoppingCriteria" | "campaignId" | "roundId" | "decisionId" | "parentSource" | "controlBindings" | "dataBindings" | "inputRuns" | "observationIds" | "campaignApprovalId" | "campaignPlanDigest" | "decisionApprovalId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -4801,7 +4801,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
+                    readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -4889,7 +4889,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "experimentId" | "manifestDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "runId" | "evidenceIds" | "integrity" | "campaignId" | "roundId" | "contentDigest" | "validation" | "metrics" | "memberId" | "executionState" | "explanation")[];
+                    readonly required: ("id" | "createdAt" | "experimentId" | "kind" | "version" | "status" | "manifestDigest" | "projectId" | "updatedAt" | "runId" | "evidenceIds" | "integrity" | "campaignId" | "roundId" | "contentDigest" | "validation" | "metrics" | "memberId" | "executionState" | "explanation")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -5021,7 +5021,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "approvalId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "reason" | "action" | "inputDigest" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "approvalId" | "inputDigest" | "status" | "reason" | "projectId" | "updatedAt" | "action" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -5197,7 +5197,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("code" | "message")[];
+                readonly required: ("message" | "code")[];
                 readonly additionalProperties: false;
             };
             readonly previousTaskId: {
@@ -5421,7 +5421,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -5494,7 +5494,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -5532,7 +5532,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "state" | "generation" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_inspect: {
@@ -5703,7 +5703,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("code" | "message")[];
+                readonly required: ("message" | "code")[];
                 readonly additionalProperties: false;
             };
             readonly previousTaskId: {
@@ -5927,7 +5927,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -6000,7 +6000,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -6038,7 +6038,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "state" | "generation" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_cancel: {
@@ -6209,7 +6209,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("code" | "message")[];
+                readonly required: ("message" | "code")[];
                 readonly additionalProperties: false;
             };
             readonly previousTaskId: {
@@ -6433,7 +6433,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -6506,7 +6506,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -6544,7 +6544,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "state" | "generation" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_retry: {
@@ -6715,7 +6715,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("code" | "message")[];
+                readonly required: ("message" | "code")[];
                 readonly additionalProperties: false;
             };
             readonly previousTaskId: {
@@ -6939,7 +6939,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -7012,7 +7012,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -7050,7 +7050,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "state" | "generation" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("id" | "state" | "generation" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "phase" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly document_import: {
@@ -7159,7 +7159,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("versionAssurance" | "reportedVersion" | "kind" | "requestedVersion")[];
+                readonly required: ("kind" | "versionAssurance" | "reportedVersion" | "requestedVersion")[];
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
@@ -7243,7 +7243,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "license" | "kind" | "projectId" | "createdAt" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
+        readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "license" | "projectId" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
         readonly additionalProperties: false;
     };
     readonly document_from_paper: {
@@ -7352,7 +7352,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("versionAssurance" | "reportedVersion" | "kind" | "requestedVersion")[];
+                readonly required: ("kind" | "versionAssurance" | "reportedVersion" | "requestedVersion")[];
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
@@ -7436,7 +7436,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "license" | "kind" | "projectId" | "createdAt" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
+        readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "license" | "projectId" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
         readonly additionalProperties: false;
     };
     readonly document_inspect: {
@@ -7545,7 +7545,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("versionAssurance" | "reportedVersion" | "kind" | "requestedVersion")[];
+                readonly required: ("kind" | "versionAssurance" | "reportedVersion" | "requestedVersion")[];
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
@@ -7629,7 +7629,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "license" | "kind" | "projectId" | "createdAt" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
+        readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "license" | "projectId" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
         readonly additionalProperties: false;
     };
     readonly document_list: {
@@ -7743,7 +7743,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("versionAssurance" | "reportedVersion" | "kind" | "requestedVersion")[];
+                            readonly required: ("kind" | "versionAssurance" | "reportedVersion" | "requestedVersion")[];
                             readonly additionalProperties: false;
                         };
                         readonly contentKind: {
@@ -7827,7 +7827,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "license" | "kind" | "projectId" | "createdAt" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
+                    readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "license" | "projectId" | "updatedAt" | "original" | "limitations" | "acquiredAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -8108,7 +8108,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "exitCode" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
         readonly additionalProperties: false;
     };
     readonly document_parse_submit: {
@@ -8216,7 +8216,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "exitCode" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
         readonly additionalProperties: false;
     };
     readonly document_parse_inspect: {
@@ -8324,7 +8324,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "exitCode" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
         readonly additionalProperties: false;
     };
     readonly document_parse_cancel: {
@@ -8432,7 +8432,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "exitCode" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "documentVersionId" | "rawDigest" | "artifactIds" | "profileId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested")[];
         readonly additionalProperties: false;
     };
     readonly document_pages: {
@@ -8722,7 +8722,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("complete" | "end" | "cursor" | "content" | "textArtifactDigest" | "textArtifactId" | "imageArtifactDigest" | "textStatus" | "documentVersionId" | "rawDigest" | "pageNumber" | "width" | "height" | "resultId" | "paragraphs" | "pageLabel" | "imageWidth" | "imageHeight" | "imageArtifactId")[];
+        readonly required: ("complete" | "content" | "end" | "cursor" | "textArtifactDigest" | "textArtifactId" | "imageArtifactDigest" | "textStatus" | "documentVersionId" | "rawDigest" | "pageNumber" | "width" | "height" | "resultId" | "paragraphs" | "pageLabel" | "imageWidth" | "imageHeight" | "imageArtifactId")[];
         readonly additionalProperties: false;
     };
     readonly document_evidence_register: {
@@ -8802,7 +8802,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "artifactId" | "type" | "description" | "locator" | "quote" | "document")[];
+        readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "artifactId" | "type" | "description" | "locator" | "quote" | "document")[];
         readonly additionalProperties: false;
     };
     readonly experiment_source_list: {
@@ -9381,7 +9381,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("experimentId" | "experimentRevision" | "contractDigest" | "createdAt" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
+                readonly required: ("createdAt" | "experimentId" | "experimentRevision" | "contractDigest" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
                 readonly additionalProperties: false;
             };
             readonly manifestDigest: {
@@ -9429,7 +9429,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "approvalId" | "experimentId" | "manifestDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "manifest")[];
+        readonly required: ("id" | "createdAt" | "experimentId" | "kind" | "version" | "approvalId" | "status" | "manifestDigest" | "projectId" | "updatedAt" | "manifest")[];
         readonly additionalProperties: false;
     };
     readonly run_submit: {
@@ -9680,7 +9680,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("experimentId" | "experimentRevision" | "contractDigest" | "createdAt" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
+                readonly required: ("createdAt" | "experimentId" | "experimentRevision" | "contractDigest" | "contract" | "sourceFiles" | "experimentVersion" | "snapshotDigest" | "snapshotPath")[];
                 readonly additionalProperties: false;
             };
             readonly manifestDigest: {
@@ -9801,7 +9801,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "boolean";
                     };
                 };
-                readonly required: ("generation" | "dockerContext" | "leaseUntil" | "containerName" | "startRequested" | "recoveryCount" | "controlDir" | "backend")[];
+                readonly required: ("generation" | "leaseUntil" | "dockerContext" | "containerName" | "startRequested" | "recoveryCount" | "controlDir" | "backend")[];
                 readonly additionalProperties: false;
             };
             readonly runGrant: {
@@ -9836,7 +9836,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("id" | "version" | "experimentId" | "manifestDigest" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "artifactIds" | "evidenceIds" | "manifest" | "integrity" | "cancelRequested" | "outputDir" | "intentId" | "judgment")[];
+        readonly required: ("id" | "state" | "createdAt" | "experimentId" | "kind" | "version" | "manifestDigest" | "projectId" | "updatedAt" | "artifactIds" | "evidenceIds" | "manifest" | "integrity" | "cancelRequested" | "outputDir" | "intentId" | "judgment")[];
         readonly additionalProperties: false;
     };
     readonly run_list: {
@@ -9893,7 +9893,7 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("id" | "experimentId" | "manifestDigest" | "state" | "projectId" | "createdAt" | "updatedAt" | "integrity" | "intentId" | "judgment")[];
+                    readonly required: ("id" | "state" | "createdAt" | "experimentId" | "manifestDigest" | "projectId" | "updatedAt" | "integrity" | "intentId" | "judgment")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -9923,7 +9923,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "integer";
             };
         };
-        readonly required: ("content" | "path" | "size" | "digest")[];
+        readonly required: ("path" | "size" | "digest" | "content")[];
         readonly additionalProperties: false;
     };
     readonly workspace_write: {
@@ -10007,7 +10007,7 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("files" | "path" | "digest")[];
+                readonly required: ("path" | "digest" | "files")[];
                 readonly additionalProperties: false;
             };
             readonly contractDigest: {
@@ -10106,7 +10106,7 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("files" | "path" | "digest")[];
+                readonly required: ("path" | "digest" | "files")[];
                 readonly additionalProperties: false;
             };
             readonly digest: {
@@ -10146,7 +10146,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "title" | "digest" | "approvalId" | "contractDigest" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "hypothesis" | "changes" | "baseExperimentId" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
+        readonly required: ("id" | "digest" | "state" | "createdAt" | "title" | "kind" | "version" | "approvalId" | "contractDigest" | "projectId" | "updatedAt" | "hypothesis" | "changes" | "baseExperimentId" | "testsStatus" | "baseRevision" | "baseSnapshot" | "candidateSnapshot")[];
         readonly additionalProperties: false;
     };
     readonly campaign_prepare: {
@@ -10265,7 +10265,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "approvalId" | "planDigest" | "contractDigest" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "rootSessionId" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
+        readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "approvalId" | "rootSessionId" | "planDigest" | "contractDigest" | "projectId" | "updatedAt" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
         readonly additionalProperties: false;
     };
     readonly task_result_submit: {
@@ -10374,7 +10374,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "taskId" | "planVersion" | "directiveVersion" | "kind" | "projectId" | "createdAt" | "updatedAt" | "result" | "attemptId" | "inputDigest")[];
+        readonly required: ("id" | "digest" | "createdAt" | "attemptId" | "taskId" | "kind" | "version" | "inputDigest" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "result")[];
         readonly additionalProperties: false;
     };
     readonly paper_read: {
@@ -10546,7 +10546,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "sourceUrl" | "versionAssurance" | "requestedId" | "pageMapping" | "kind" | "projectId" | "createdAt" | "updatedAt" | "scopeSessionId" | "scopeAttemptId" | "artifactId" | "limitations" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "sourceResponses")[];
+        readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "sourceUrl" | "versionAssurance" | "requestedId" | "pageMapping" | "projectId" | "updatedAt" | "scopeSessionId" | "scopeAttemptId" | "artifactId" | "limitations" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "sourceResponses")[];
         readonly additionalProperties: false;
     };
     readonly session_list: {
@@ -11022,7 +11022,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("title" | "size" | "digest" | "mediaType" | "artifactId" | "documentVersionId")[];
+                                readonly required: ("size" | "digest" | "title" | "mediaType" | "artifactId" | "documentVersionId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -11213,7 +11213,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("title" | "size" | "digest" | "mediaType" | "artifactId" | "documentVersionId")[];
+                                readonly required: ("size" | "digest" | "title" | "mediaType" | "artifactId" | "documentVersionId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -11493,7 +11493,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly [...("title" | "size" | "digest" | "mediaType" | "artifactId" | "documentVersionId")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
+        readonly required: readonly [...("size" | "digest" | "title" | "mediaType" | "artifactId" | "documentVersionId")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
         readonly additionalProperties: false;
     };
     readonly compute_target_probe: {
@@ -11611,7 +11611,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("unknown" | "cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
+                readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -11647,7 +11647,7 @@ export declare const OUTPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: ("cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
+                readonly required: ("development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -11760,7 +11760,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                 };
                             };
-                            readonly required: ("unknown" | "cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
+                            readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
                             readonly additionalProperties: false;
                         };
                         readonly available: {
@@ -11796,7 +11796,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("cpus" | "memoryMb" | "documents" | "development" | "runs" | "publications" | "jobs")[];
+                            readonly required: ("development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -11863,7 +11863,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "targetId" | "state" | "generation" | "kind" | "projectId" | "reason" | "leaseUntil" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("id" | "state" | "generation" | "leaseUntil" | "kind" | "reason" | "targetId" | "projectId" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -11875,7 +11875,7 @@ export declare const OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("queued" | "nextCursor" | "targets" | "usage" | "scope" | "available" | "configuration" | "items")[];
+        readonly required: ("queued" | "scope" | "nextCursor" | "targets" | "usage" | "available" | "configuration" | "items")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {
@@ -12003,7 +12003,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("code" | "message")[];
+                                readonly required: ("message" | "code")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -12144,7 +12144,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("code" | "message")[];
+                                readonly required: ("message" | "code")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -12257,7 +12257,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("active" | "queued" | "unknown")[];
+                readonly required: ("queued" | "unknown" | "active")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -12314,7 +12314,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "model" | "sessionId" | "state" | "provider" | "queuedAt")[];
+                    readonly required: ("id" | "state" | "sessionId" | "model" | "provider" | "queuedAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -12326,7 +12326,7 @@ export declare const OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("nextCursor" | "coverage" | "scope" | "available" | "configuration" | "items" | "unit" | "counts" | "supportedApis" | "legacyWorkerCount")[];
+        readonly required: ("scope" | "nextCursor" | "coverage" | "available" | "configuration" | "items" | "unit" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
     readonly model_http_configure: {
@@ -12364,7 +12364,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("active" | "queued" | "unknown")[];
+                readonly required: ("queued" | "unknown" | "active")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -12421,7 +12421,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "model" | "sessionId" | "state" | "provider" | "queuedAt")[];
+                    readonly required: ("id" | "state" | "sessionId" | "model" | "provider" | "queuedAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -12433,7 +12433,7 @@ export declare const OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("nextCursor" | "coverage" | "scope" | "available" | "configuration" | "items" | "unit" | "counts" | "supportedApis" | "legacyWorkerCount")[];
+        readonly required: ("scope" | "nextCursor" | "coverage" | "available" | "configuration" | "items" | "unit" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
     readonly report_list: {
@@ -12472,7 +12472,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("id" | "title" | "projectId" | "createdAt" | "updatedAt" | "artifactId" | "formatVersion" | "runCount" | "claimCount")[];
+                    readonly required: ("id" | "createdAt" | "title" | "projectId" | "updatedAt" | "artifactId" | "formatVersion" | "runCount" | "claimCount")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -12674,7 +12674,7 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("experimentId" | "sourceDigest" | "state" | "revision" | "runId" | "integrity" | "metrics" | "judgment")[];
+                    readonly required: ("state" | "experimentId" | "sourceDigest" | "revision" | "runId" | "integrity" | "metrics" | "judgment")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -12711,7 +12711,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("title" | "sourceDigest" | "jobId" | "pages" | "resultId" | "revisionId" | "pdfDigest" | "pdfArtifactId" | "referenceId")[];
+                    readonly required: ("sourceDigest" | "title" | "jobId" | "pages" | "resultId" | "revisionId" | "pdfDigest" | "pdfArtifactId" | "referenceId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -12812,7 +12812,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: readonly [...("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[], "referenceId"];
+                                readonly required: readonly [...("id" | "digest" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "rootSessionId" | "status" | "jobId" | "requiredEvidenceIds" | "validity" | "artifactIds" | "revisionId" | "publicationResultId" | "pdfDigest")[], "referenceId"];
                                 readonly type: "object";
                                 readonly additionalProperties: false;
                             };
@@ -12995,7 +12995,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "end" | "cursor" | "content" | "reference" | "mediaType")[];
+        readonly required: ("complete" | "content" | "end" | "cursor" | "reference" | "mediaType")[];
         readonly additionalProperties: false;
     };
     readonly development_review_prepare: {
@@ -14132,7 +14132,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("error" | "id" | "host" | "version" | "source" | "bytes" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("id" | "bytes" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "version" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -14351,7 +14351,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -14424,7 +14424,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -14619,7 +14619,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "requestedId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -14658,7 +14658,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "sources" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_inspect: {
@@ -15139,7 +15139,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("error" | "id" | "host" | "version" | "source" | "bytes" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("id" | "bytes" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "version" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -15358,7 +15358,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -15431,7 +15431,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -15626,7 +15626,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "requestedId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -15665,7 +15665,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "sources" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_activate: {
@@ -16146,7 +16146,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("error" | "id" | "host" | "version" | "source" | "bytes" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("id" | "bytes" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "version" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -16365,7 +16365,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -16438,7 +16438,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -16633,7 +16633,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "requestedId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -16672,7 +16672,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "sources" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_revoke: {
@@ -17153,7 +17153,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("error" | "id" | "host" | "version" | "source" | "bytes" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "requestDigest" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("id" | "bytes" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "version" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -17372,7 +17372,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("id" | "abstract" | "source" | "duplicates" | "title" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -17445,7 +17445,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sources" | "query" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "settingsVersion" | "status" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "sources" | "query" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -17640,7 +17640,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "version" | "source" | "title" | "contentKind" | "requestedId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("id" | "source" | "createdAt" | "title" | "kind" | "version" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "artifactId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -17679,7 +17679,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "sources" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "usage" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_prepare: {
@@ -18332,7 +18332,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "entries" | "digest" | "model" | "sessionId" | "maxRuns" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "entries" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_inspect: {
@@ -18985,7 +18985,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "entries" | "digest" | "model" | "sessionId" | "maxRuns" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "entries" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_activate: {
@@ -19638,7 +19638,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "entries" | "digest" | "model" | "sessionId" | "maxRuns" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "entries" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_revoke: {
@@ -20291,7 +20291,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "entries" | "digest" | "model" | "sessionId" | "maxRuns" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "entries" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly working_grant_prepare: {
@@ -20752,7 +20752,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "sourceRevisionId" | "state" | "dataArtifacts" | "baselineSnapshot" | "kind" | "projectId" | "createdAt" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
     readonly working_grant_inspect: {
@@ -21213,7 +21213,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "sourceRevisionId" | "state" | "dataArtifacts" | "baselineSnapshot" | "kind" | "projectId" | "createdAt" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
     readonly working_grant_activate: {
@@ -21674,7 +21674,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "sourceRevisionId" | "state" | "dataArtifacts" | "baselineSnapshot" | "kind" | "projectId" | "createdAt" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
     readonly working_grant_revoke: {
@@ -22135,7 +22135,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "sourceRevisionId" | "state" | "dataArtifacts" | "baselineSnapshot" | "kind" | "projectId" | "createdAt" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "usage" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
     readonly development_prepare: {
@@ -24151,7 +24151,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[];
+        readonly required: ("id" | "digest" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "rootSessionId" | "status" | "jobId" | "requiredEvidenceIds" | "validity" | "artifactIds" | "revisionId" | "publicationResultId" | "pdfDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_review_inspect: {
@@ -24233,7 +24233,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[];
+        readonly required: ("id" | "digest" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "rootSessionId" | "status" | "jobId" | "requiredEvidenceIds" | "validity" | "artifactIds" | "revisionId" | "publicationResultId" | "pdfDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_review_list: {
@@ -24318,7 +24318,7 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly type: "string";
                 };
             };
-            readonly required: ("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[];
+            readonly required: ("id" | "digest" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "rootSessionId" | "status" | "jobId" | "requiredEvidenceIds" | "validity" | "artifactIds" | "revisionId" | "publicationResultId" | "pdfDigest")[];
             readonly additionalProperties: false;
         };
         readonly minItems: number;
@@ -24355,12 +24355,12 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("content" | "path")[];
+                        readonly required: ("path" | "content")[];
                         readonly additionalProperties: false;
                     };
                 };
             };
-            readonly required: ("files" | "id" | "title" | "engine" | "bibliography" | "mainFile")[];
+            readonly required: ("id" | "title" | "files" | "engine" | "bibliography" | "mainFile")[];
             readonly additionalProperties: false;
         };
     };
@@ -24493,7 +24493,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("files" | "id" | "version" | "title" | "sourceDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("id" | "createdAt" | "sourceDigest" | "title" | "kind" | "version" | "files" | "projectId" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_inspect: {
@@ -24625,7 +24625,7 @@ export declare const OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("files" | "id" | "version" | "title" | "sourceDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+        readonly required: ("id" | "createdAt" | "sourceDigest" | "title" | "kind" | "version" | "files" | "projectId" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_list: {
@@ -24762,7 +24762,7 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("files" | "id" | "version" | "title" | "sourceDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
+                    readonly required: ("id" | "createdAt" | "sourceDigest" | "title" | "kind" | "version" | "files" | "projectId" | "updatedAt" | "engine" | "bibliography" | "mainFile" | "manifestArtifactId" | "manifestArtifactDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -24802,7 +24802,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "end" | "cursor" | "content" | "path" | "digest" | "mediaType")[];
+        readonly required: ("path" | "digest" | "complete" | "content" | "end" | "cursor" | "mediaType")[];
         readonly additionalProperties: false;
     };
     readonly publication_status: {
@@ -25096,7 +25096,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "sourceDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "exitCode" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "sourceDigest" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_submit: {
@@ -25222,7 +25222,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "sourceDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "exitCode" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "sourceDigest" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_inspect: {
@@ -25348,7 +25348,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "sourceDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "exitCode" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "sourceDigest" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_cancel: {
@@ -25474,7 +25474,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "approvalId" | "manifestDigest" | "sourceDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "exitCode" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+        readonly required: ("id" | "state" | "generation" | "exitCode" | "sourceDigest" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
         readonly additionalProperties: false;
     };
     readonly publication_result: {
@@ -25581,7 +25581,7 @@ export declare const OUTPUT_SCHEMAS: {
                             }];
                         };
                     };
-                    readonly required: ("file" | "code" | "message" | "severity" | "line" | "pass")[];
+                    readonly required: ("file" | "message" | "code" | "severity" | "line" | "pass")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -25680,7 +25680,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly const: 1;
             };
         };
-        readonly required: ("id" | "version" | "manifestDigest" | "sourceDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "jobId" | "status" | "logs" | "diagnostics" | "pdf" | "previews" | "formatVersion" | "profileId" | "engine" | "bibliography" | "engineVersion" | "hadErrors" | "converged" | "passes" | "imageId" | "revisionId" | "profileDigest" | "manifestArtifactId" | "manifestArtifactDigest" | "sourceValidity")[];
+        readonly required: ("id" | "createdAt" | "sourceDigest" | "kind" | "version" | "logs" | "diagnostics" | "status" | "manifestDigest" | "projectId" | "updatedAt" | "jobId" | "pdf" | "previews" | "formatVersion" | "profileId" | "engine" | "bibliography" | "engineVersion" | "hadErrors" | "converged" | "passes" | "imageId" | "revisionId" | "profileDigest" | "manifestArtifactId" | "manifestArtifactDigest" | "sourceValidity")[];
         readonly additionalProperties: false;
     };
     readonly publication_build_list: {
@@ -25811,7 +25811,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "approvalId" | "manifestDigest" | "sourceDigest" | "state" | "generation" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "exitCode" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
+                    readonly required: ("id" | "state" | "generation" | "exitCode" | "sourceDigest" | "approvalId" | "manifestDigest" | "dockerContext" | "resources" | "jobId" | "imageDigest" | "artifactIds" | "profileId" | "engine" | "bibliography" | "mainFile" | "revisionId" | "profileDigest" | "integrity" | "startRequested" | "cancelRequested" | "lockDigest" | "scriptDigest" | "dockerfileDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -25928,7 +25928,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly enum: readonly ["text-only", "text-with-static-assets"];
             };
         };
-        readonly required: ("files" | "id" | "version" | "license" | "kind" | "projectId" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+        readonly required: ("id" | "createdAt" | "kind" | "version" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_list: {
@@ -26063,7 +26063,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly enum: readonly ["text-only", "text-with-static-assets"];
                                 };
                             };
-                            readonly required: ("files" | "id" | "version" | "license" | "kind" | "projectId" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                            readonly required: ("id" | "createdAt" | "kind" | "version" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                             readonly additionalProperties: false;
                         };
                         readonly reviews: {
@@ -26107,7 +26107,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("id" | "version" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
+                                readonly required: ("id" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -26149,7 +26149,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("id" | "version" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
+                                readonly required: ("id" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -26286,7 +26286,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["text-only", "text-with-static-assets"];
                     };
                 };
-                readonly required: ("files" | "id" | "version" | "license" | "kind" | "projectId" | "createdAt" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("id" | "createdAt" | "kind" | "version" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly reviews: {
@@ -26330,7 +26330,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -26372,7 +26372,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -26461,7 +26461,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
+        readonly required: ("id" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "revisionId" | "contentDigest" | "decision" | "note")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_revoke: {
@@ -26500,7 +26500,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
+        readonly required: ("id" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
         readonly additionalProperties: false;
     };
     readonly skill_bundle_configure: {
@@ -26568,12 +26568,12 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("kind" | "value" | "reason" | "skillId")[];
+                    readonly required: ("kind" | "reason" | "value" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("version" | "sessionId" | "skillIds" | "skillBundleId" | "ready" | "missing")[];
+        readonly required: ("ready" | "sessionId" | "skillIds" | "skillBundleId" | "version" | "missing")[];
         readonly additionalProperties: false;
     };
     readonly skill_preflight: {
@@ -26619,12 +26619,12 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("kind" | "value" | "reason" | "skillId")[];
+                    readonly required: ("kind" | "reason" | "value" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("version" | "sessionId" | "skillIds" | "skillBundleId" | "ready" | "missing")[];
+        readonly required: ("ready" | "sessionId" | "skillIds" | "skillBundleId" | "version" | "missing")[];
         readonly additionalProperties: false;
     };
     readonly campaign_plan_inspect: {
@@ -26720,7 +26720,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "runId" | "intentId" | "contentDigest")[];
+                            readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "runId" | "intentId" | "contentDigest")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -26756,7 +26756,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                 readonly type: "string";
                                             };
                                         };
-                                        readonly required: ("approvalId" | "teamId" | "planDigest")[];
+                                        readonly required: ("teamId" | "approvalId" | "planDigest")[];
                                         readonly additionalProperties: false;
                                     };
                                 };
@@ -26782,7 +26782,7 @@ export declare const OUTPUT_SCHEMAS: {
                                             readonly type: "string";
                                         };
                                     };
-                                    readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "runId" | "intentId" | "contentDigest")[];
+                                    readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "runId" | "intentId" | "contentDigest")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly documents: {
@@ -26855,7 +26855,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "intentId" | "terminal")[];
+                            readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "intentId" | "terminal")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -26930,7 +26930,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("id" | "version" | "digest" | "contractDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "inputDigest" | "successCriteria" | "hypothesis" | "controlRunIds" | "changedFactors" | "dataArtifactIds" | "guardrailMetrics" | "repetitions" | "dataSplit" | "primaryMetric" | "inconclusiveCriteria" | "stoppingCriteria" | "campaignId" | "roundId" | "decisionId" | "parentSource" | "controlBindings" | "dataBindings" | "inputRuns" | "observationIds" | "campaignApprovalId" | "campaignPlanDigest" | "decisionApprovalId")[];
+                readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "inputDigest" | "contractDigest" | "projectId" | "updatedAt" | "successCriteria" | "hypothesis" | "controlRunIds" | "changedFactors" | "dataArtifactIds" | "guardrailMetrics" | "repetitions" | "dataSplit" | "primaryMetric" | "inconclusiveCriteria" | "stoppingCriteria" | "campaignId" | "roundId" | "decisionId" | "parentSource" | "controlBindings" | "dataBindings" | "inputRuns" | "observationIds" | "campaignApprovalId" | "campaignPlanDigest" | "decisionApprovalId")[];
                 readonly additionalProperties: false;
             };
             readonly candidates: {
@@ -27057,7 +27057,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
+                    readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -27196,7 +27196,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
+        readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
         readonly additionalProperties: false;
     };
     readonly campaign_candidate_attach: {
@@ -27321,7 +27321,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("id" | "version" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
+        readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
         readonly additionalProperties: false;
     };
     readonly campaign_comparison: {
@@ -27437,7 +27437,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                 readonly type: "string";
                                             };
                                         };
-                                        readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "runId" | "intentId" | "contentDigest")[];
+                                        readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "runId" | "intentId" | "contentDigest")[];
                                         readonly additionalProperties: false;
                                     };
                                 };
@@ -27473,7 +27473,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                             readonly type: "string";
                                                         };
                                                     };
-                                                    readonly required: ("approvalId" | "teamId" | "planDigest")[];
+                                                    readonly required: ("teamId" | "approvalId" | "planDigest")[];
                                                     readonly additionalProperties: false;
                                                 };
                                             };
@@ -27499,7 +27499,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                         readonly type: "string";
                                                     };
                                                 };
-                                                readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "runId" | "intentId" | "contentDigest")[];
+                                                readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "runId" | "intentId" | "contentDigest")[];
                                                 readonly additionalProperties: false;
                                             };
                                             readonly documents: {
@@ -27572,7 +27572,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                 readonly type: "string";
                                             };
                                         };
-                                        readonly required: ("approvalId" | "manifestDigest" | "sourceDigest" | "intentId" | "terminal")[];
+                                        readonly required: ("sourceDigest" | "approvalId" | "manifestDigest" | "intentId" | "terminal")[];
                                         readonly additionalProperties: false;
                                     };
                                 };
@@ -27647,7 +27647,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("id" | "version" | "digest" | "contractDigest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "inputDigest" | "successCriteria" | "hypothesis" | "controlRunIds" | "changedFactors" | "dataArtifactIds" | "guardrailMetrics" | "repetitions" | "dataSplit" | "primaryMetric" | "inconclusiveCriteria" | "stoppingCriteria" | "campaignId" | "roundId" | "decisionId" | "parentSource" | "controlBindings" | "dataBindings" | "inputRuns" | "observationIds" | "campaignApprovalId" | "campaignPlanDigest" | "decisionApprovalId")[];
+                            readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "inputDigest" | "contractDigest" | "projectId" | "updatedAt" | "successCriteria" | "hypothesis" | "controlRunIds" | "changedFactors" | "dataArtifactIds" | "guardrailMetrics" | "repetitions" | "dataSplit" | "primaryMetric" | "inconclusiveCriteria" | "stoppingCriteria" | "campaignId" | "roundId" | "decisionId" | "parentSource" | "controlBindings" | "dataBindings" | "inputRuns" | "observationIds" | "campaignApprovalId" | "campaignPlanDigest" | "decisionApprovalId")[];
                             readonly additionalProperties: false;
                         };
                         readonly candidates: {
@@ -27774,7 +27774,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("id" | "version" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
+                                readonly required: ("id" | "state" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "planRevisionId" | "decisionId" | "spec" | "parentSource")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -28062,7 +28062,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sessionId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "requestDigest" | "searchId" | "grantId" | "grantDigest")[];
+                    readonly required: ("id" | "sessionId" | "requestDigest" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "searchId" | "grantId" | "grantDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -28281,7 +28281,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                     readonly type: "integer";
                                                 };
                                             };
-                                            readonly required: ("title" | "digest" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
+                                            readonly required: ("digest" | "title" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
                                             readonly additionalProperties: false;
                                         };
                                     };
@@ -28382,7 +28382,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "integer";
                                     };
                                 };
-                                readonly required: ("title" | "digest" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
+                                readonly required: ("digest" | "title" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -28437,12 +28437,12 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("id" | "version" | "query" | "limit" | "hits" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "query" | "limit" | "hits" | "coverage" | "projectId" | "updatedAt" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
         readonly additionalProperties: false;
     };
     readonly text_corpus_grant_inspect: {
@@ -28631,7 +28631,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sessionId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "requestDigest" | "searchId" | "grantId" | "grantDigest")[];
+                    readonly required: ("id" | "sessionId" | "requestDigest" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "searchId" | "grantId" | "grantDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -28850,7 +28850,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                     readonly type: "integer";
                                                 };
                                             };
-                                            readonly required: ("title" | "digest" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
+                                            readonly required: ("digest" | "title" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
                                             readonly additionalProperties: false;
                                         };
                                     };
@@ -28951,7 +28951,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "integer";
                                     };
                                 };
-                                readonly required: ("title" | "digest" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
+                                readonly required: ("digest" | "title" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -29006,12 +29006,12 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("id" | "version" | "query" | "limit" | "hits" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "query" | "limit" | "hits" | "coverage" | "projectId" | "updatedAt" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
         readonly additionalProperties: false;
     };
     readonly text_corpus_grant_activate: {
@@ -29200,7 +29200,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sessionId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "requestDigest" | "searchId" | "grantId" | "grantDigest")[];
+                    readonly required: ("id" | "sessionId" | "requestDigest" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "searchId" | "grantId" | "grantDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -29419,7 +29419,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                     readonly type: "integer";
                                                 };
                                             };
-                                            readonly required: ("title" | "digest" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
+                                            readonly required: ("digest" | "title" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
                                             readonly additionalProperties: false;
                                         };
                                     };
@@ -29520,7 +29520,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "integer";
                                     };
                                 };
-                                readonly required: ("title" | "digest" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
+                                readonly required: ("digest" | "title" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -29575,12 +29575,12 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("id" | "version" | "query" | "limit" | "hits" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "query" | "limit" | "hits" | "coverage" | "projectId" | "updatedAt" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
         readonly additionalProperties: false;
     };
     readonly text_corpus_grant_revoke: {
@@ -29769,7 +29769,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("id" | "version" | "sessionId" | "kind" | "projectId" | "createdAt" | "updatedAt" | "requestDigest" | "searchId" | "grantId" | "grantDigest")[];
+                    readonly required: ("id" | "sessionId" | "requestDigest" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "searchId" | "grantId" | "grantDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -29988,7 +29988,7 @@ export declare const OUTPUT_SCHEMAS: {
                                                     readonly type: "integer";
                                                 };
                                             };
-                                            readonly required: ("title" | "digest" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
+                                            readonly required: ("digest" | "title" | "artifactId" | "locator" | "lineStart" | "lineEnd")[];
                                             readonly additionalProperties: false;
                                         };
                                     };
@@ -30089,7 +30089,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly type: "integer";
                                     };
                                 };
-                                readonly required: ("title" | "digest" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
+                                readonly required: ("digest" | "title" | "artifactId" | "locator" | "quote" | "evidenceId" | "score" | "lineStart" | "lineEnd" | "alternativeSources" | "chunkId")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -30144,12 +30144,12 @@ export declare const OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("id" | "version" | "query" | "limit" | "hits" | "coverage" | "kind" | "projectId" | "createdAt" | "updatedAt" | "status" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
+                    readonly required: ("id" | "createdAt" | "kind" | "version" | "status" | "query" | "limit" | "hits" | "coverage" | "projectId" | "updatedAt" | "corpusId" | "artifactIds" | "configurationVersion" | "mmrLambda" | "usage" | "limitations" | "deduplicateExact" | "method")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("id" | "version" | "digest" | "model" | "sessionId" | "expiresAt" | "approvalId" | "state" | "kind" | "projectId" | "createdAt" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
+        readonly required: ("id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "version" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "corpusId" | "documents" | "configurationVersion" | "usage" | "maxSearches" | "effectiveState" | "reasons" | "uses" | "searchResults")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_save: {
@@ -30336,7 +30336,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "revision" | "rootSessionId" | "scope" | "status" | "projectId" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -30527,7 +30527,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+                    readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "revision" | "rootSessionId" | "scope" | "status" | "projectId" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -30802,7 +30802,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("id" | "digest" | "createdAt" | "kind" | "version" | "revision" | "rootSessionId" | "scope" | "status" | "projectId" | "updatedAt" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
     readonly host_execute: {

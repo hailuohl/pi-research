@@ -175,7 +175,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("id" | "title" | "projectId" | "createdAt" | "updatedAt" | "artifactId" | "formatVersion" | "runCount" | "claimCount")[];
+                    readonly required: ("id" | "createdAt" | "title" | "projectId" | "updatedAt" | "artifactId" | "formatVersion" | "runCount" | "claimCount")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -377,7 +377,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("experimentId" | "sourceDigest" | "state" | "revision" | "runId" | "integrity" | "metrics" | "judgment")[];
+                    readonly required: ("state" | "experimentId" | "sourceDigest" | "revision" | "runId" | "integrity" | "metrics" | "judgment")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -414,7 +414,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("title" | "sourceDigest" | "jobId" | "pages" | "resultId" | "revisionId" | "pdfDigest" | "pdfArtifactId" | "referenceId")[];
+                    readonly required: ("sourceDigest" | "title" | "jobId" | "pages" | "resultId" | "revisionId" | "pdfDigest" | "pdfArtifactId" | "referenceId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -515,7 +515,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: readonly [...("id" | "digest" | "approvalId" | "teamId" | "taskId" | "sourceDigest" | "jobId" | "requiredEvidenceIds" | "validity" | "status" | "artifactIds" | "rootSessionId" | "revisionId" | "publicationResultId" | "pdfDigest")[], "referenceId"];
+                                readonly required: readonly [...("id" | "digest" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "rootSessionId" | "status" | "jobId" | "requiredEvidenceIds" | "validity" | "artifactIds" | "revisionId" | "publicationResultId" | "pdfDigest")[], "referenceId"];
                                 readonly type: "object";
                                 readonly additionalProperties: false;
                             };
@@ -698,7 +698,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "end" | "cursor" | "content" | "reference" | "mediaType")[];
+        readonly required: ("complete" | "content" | "end" | "cursor" | "reference" | "mediaType")[];
         readonly additionalProperties: false;
     };
 };

@@ -7,6 +7,7 @@ import {validateContract} from '../../dist/packages/runners/contracts.js';
 import {validateSchema} from '../../dist/packages/contracts/operations/schema.js';
 import {OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/outputs.js';
 import {digest} from '../../dist/packages/storage/store.js';
+import {publicRecord} from '../../dist/packages/domain/public-record.js';
 const physical=(app,reference)=>app.store.paths.physical(reference);
 
 const contract={runner:'docker',image:`python@sha256:${'a'.repeat(64)}`,command:['python','main.py',''],environment:{},datasetVersion:'unit-dataset-v1',evaluationProtocolVersion:'unit-protocol-v1',metrics:{score:{unit:'ratio',direction:'max'}},expectedArtifacts:['metrics.json'],timeoutSeconds:30,cpus:1,memoryMb:128};
@@ -17,7 +18,8 @@ function operation(s,name,input,projectId=s.project.id){const value=s.app.operat
 test('formal Docker preparation and submission persist bounded immutable contracts without starting Docker',()=>{
  const s=setup();try{const {e,i}=intent(s);validateSchema(OUTPUT_SCHEMAS.run_prepare,JSON.parse(JSON.stringify(i)),'output');
   assert.equal(i.manifest.contract.networkPolicy,'none');assert.equal(i.manifest.contract.dockerContext,'default');assert.equal(i.manifest.contract.pids,128);assert.deepEqual(i.manifest.contract.command,['python','main.py','']);assert.ok(i.manifest.sourceRevisionId);
-  assert.throws(()=>s.app.runs.submit(USER,i.id),{code:'APPROVAL_REQUIRED'});const run=submit(s,i);validateSchema(OUTPUT_SCHEMAS.run_submit,JSON.parse(JSON.stringify(run)),'output');
+  assert.throws(()=>s.app.runs.submit(USER,i.id),{code:'APPROVAL_REQUIRED'});const run=submit(s,i),wire=JSON.parse(JSON.stringify(publicRecord(run)));validateSchema(OUTPUT_SCHEMAS.run_submit,wire,'output');
+  assert.equal(run.permissionOrigin,'owner');assert.equal(s.app.store.get('run',run.id).permissionOrigin,'owner');assert.equal('permissionOrigin' in wire,false);assert.throws(()=>validateSchema(OUTPUT_SCHEMAS.run_submit,{...wire,unexpected:true},'output'));
   assert.equal(run.state,'queued');assert.equal(run.execution.backend,'docker');assert.equal(run.execution.startRequested,false);assert.equal(run.execution.containerId,undefined);assert.equal(run.execution.generation,0);assert.equal(run.childPid,undefined);assert.equal(run.experimentId,e.id);
   assert.equal(s.app.runs.submit(USER,i.id).id,run.id);assert.equal(s.app.store.list('run').length,1);
  }finally{s.close();}

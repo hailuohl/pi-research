@@ -2639,7 +2639,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("query" | "limit" | "role" | "stateFilter" | "beforeSessionId")[];
+        readonly required: readonly ("role" | "query" | "limit" | "stateFilter" | "beforeSessionId")[];
         readonly additionalProperties: false;
     };
     readonly session_view: {
@@ -4659,7 +4659,7 @@ export declare const INPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("status" | "scope" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary" | "expectedRevisionId")[];
+        readonly required: ("scope" | "status" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary" | "expectedRevisionId")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {

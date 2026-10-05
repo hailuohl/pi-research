@@ -1,4 +1,5 @@
 import { HostAccessService } from './policy/host-access.js';
+import { SessionPermissionService } from './policy/session-permissions.js';
 import { SshTargetService } from './runners/ssh-targets.js';
 import { ModelHttpService } from './scheduler/model-http.js';
 import { PublicationBuildService } from './publications/build-service.js';
@@ -40,6 +41,7 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly sessionPermissions: SessionPermissionService;
     readonly hostAccess: HostAccessService;
     readonly discoveryGrants: DiscoveryGrantService;
     readonly textCorpusGrants: TextCorpusGrantService;

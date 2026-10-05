@@ -14,6 +14,9 @@ export declare class RunService {
     private compute;
     private briefs?;
     private budget;
+    permissionCapture?: (actor: Actor, execution: import('../policy/session-permissions.js').ApprovedExecution) => import('../policy/session-permissions.js').JobPermission | undefined;
+    permissionGuard?: (permission: import('../policy/session-permissions.js').JobPermission, execution: import('../policy/session-permissions.js').ApprovedExecution, sessionId?: string) => void;
+    permissionForSession?: (id: string) => import('../policy/session-permissions.js').PermissionReference;
     researchSourceGuard?: (experimentId: string, stage: 'prepare' | 'submit' | 'execute', intentId?: string) => void;
     private launching;
     constructor(c: AppContext, approvals: ApprovalService, evidence: EvidenceService, compute?: ComputeQueue, briefs?: ResearchBriefService | undefined, budget?: BudgetService);
@@ -46,6 +49,7 @@ export declare class RunService {
     assertLaunchable(run: Row<Run>): void;
     /** Also used just before Docker start and while supervising a running immutable job. */
     assertExecutionGrant(run: Row<Run>, admission?: boolean): void;
+    private assertPermission;
     /** Both launch callers hold the same write transaction as their authorization check. */
     cancelBeforeLaunch(run: Row<Run>, error: unknown): void;
     launchPending(): void;

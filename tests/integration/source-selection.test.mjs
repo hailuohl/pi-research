@@ -23,6 +23,9 @@ test('HTTP, CLI and Pi dispatcher select degree-2 child source while project rem
     const parent = await ok('/experiments', {projectId: project.id, title: 'degree one'});
     const child = await ok(`/experiments/${parent.id}/children`, {title: 'degree two', config: {polynomialDegree: 2, ridge: 0.000001}});
     const session = await ok('/sessions', {projectId: project.id});
+    const permission = await ok(`/sessions/${session.id}/permissions`);
+    assert.equal(permission.mode, 'confirm');
+    await ok(`/sessions/${session.id}/permissions`, {mode: 'autoEdit', expectedVersion: permission.version});
     const sessionWorkspace = app.store.paths.physical(session.workspace);
     const selected = {experimentId: child.id, revision: 1};
     const operation = (name, input, sessionId) => ok(`/operations/${name}`, {projectId: project.id, ...(sessionId ? {sessionId} : {}), input});

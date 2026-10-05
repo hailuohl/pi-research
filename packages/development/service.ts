@@ -7,7 +7,7 @@ import type {ResearchApp} from '../research-app.js';
 import type {Actor, Approval, Artifact, Row, Session, Task, TaskAttempt, Team, SourceRevision, Experiment} from '../domain/types.js';
 import type {DevelopmentTask, SandboxJob, SandboxManifest, SandboxResources, SandboxState} from '../execution/contracts.js';
 import {SANDBOX_TERMINAL} from '../execution/contracts.js';
-import {ensure} from '../domain/errors.js';
+import {ensure,asError} from '../domain/errors.js';
 import {object, text, integer, strings} from '../contracts/validation.js';
 import {scope, ROLE_TOOLS} from '../policy/permissions.js';
 import {assertProjectWritable,assertExperimentSourceCurrent} from '../policy/lifecycle.js';
@@ -100,6 +100,7 @@ export class DevelopmentService {
     }
     get(actor:Actor,pid:string,id:string) {const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);return {...t,developmentTaskId:t.id,manifest:publicManifest(t.manifest)};}
     private current(t:DevelopmentTask|SandboxJob,pid:string,active:boolean,deadline:boolean,verifyFiles=true) {
+        if('developmentTaskId' in t)this.assertPermission(t as Row<SandboxJob>);
         ensure(digest(t.manifest)===t.manifestDigest&&t.sourceDigest===t.manifest.inputSnapshot.digest&&digest(t.manifest.inputSnapshot.files)===t.sourceDigest,'MANIFEST_CORRUPTED','开发测试清单校验失败');
         const id='developmentTaskId' in t?t.developmentTaskId:(t as Row<DevelopmentTask>).id;
         const approval=this.app.approvals.assert(t.grantId,pid,id,t.manifestDigest,'development.test');ensure(approval.subjectKind==='development-task','APPROVAL_STALE','审批类型不匹配');
@@ -130,6 +131,7 @@ export class DevelopmentService {
         }
     }
     assertCurrent(job:Row<SandboxJob>,verifyFiles=true) {this.current(job,job.projectId!,true,(job.state==='queued'||job.state==='starting')&&!job.startRequested,verifyFiles);}
+    private assertPermission(job:Row<SandboxJob>){if(job.permission)this.app.sessionPermissions.assertJob(job.permission,{kind:'development',subjectId:job.developmentTaskId,approvalId:job.grantId,manifestDigest:job.manifestDigest},job.sessionId);else if(job.permissionOrigin!=='owner'){const ref=this.app.sessionPermissions.capture(job.sessionId);ensure(ref.epoch===0&&ref.hostEpoch===0,'SESSION_PERMISSION_STALE','旧测试没有当前会话权限依据');}}
     submit(actor:Actor,pid:string,id:string) {
         return this.app.store.transaction(()=>{
             const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);
@@ -141,7 +143,8 @@ export class DevelopmentService {
             this.app.workingGrants.consume(pid,t,jobId);
             mkdirSync(outputDir,{recursive:true,mode:0o777});chmodSync(outputDir,0o777);mkdirSync(controlDir,{recursive:true,mode:0o700});
             this.app.store.onRollback(()=>{rmdirSync(controlDir);rmdirSync(outputDir);rmdirSync(root);});
-            this.app.store.create<SandboxJob>('sandbox-job',pid,{developmentTaskId:t.id,sessionId:t.sessionId,sourceDigest:t.sourceDigest,manifest:t.manifest,manifestDigest:t.manifestDigest,grantId:t.grantId,state:'queued',integrity:'pending',containerName:`pi-development-${jobId}`,outputDir:this.app.store.paths.reference(outputDir),controlDir:this.app.store.paths.reference(controlDir),generation:0,leaseUntil:0,startRequested:false,cancelRequested:false,artifactIds:[],recoveryCount:0},jobId);
+            const permission=actor.type==='agent'?this.app.sessionPermissions.captureJob(actor,{kind:'development',subjectId:t.id,approvalId:t.grantId,manifestDigest:t.manifestDigest}):undefined;
+            this.app.store.create<SandboxJob>('sandbox-job',pid,{permissionOrigin:actor.type==='user'?'owner':'agent',...(permission?{permission}:{}),developmentTaskId:t.id,sessionId:t.sessionId,sourceDigest:t.sourceDigest,manifest:t.manifest,manifestDigest:t.manifestDigest,grantId:t.grantId,state:'queued',integrity:'pending',containerName:`pi-development-${jobId}`,outputDir:this.app.store.paths.reference(outputDir),controlDir:this.app.store.paths.reference(controlDir),generation:0,leaseUntil:0,startRequested:false,cancelRequested:false,artifactIds:[],recoveryCount:0},jobId);
             this.app.store.update<DevelopmentTask>('development-task',t.id,t.version,{state:'submitted',jobId});
             this.app.store.event(pid,'development.submitted',{developmentTaskId:t.id,jobId});return this.inspect(actor,pid,jobId);
         });
@@ -163,6 +166,7 @@ export class DevelopmentService {
             ensure(result.generation===undefined||j.generation===result.generation,'LEASE_EXPIRED','旧执行器不能归档新任务');
             if(SANDBOX_TERMINAL.includes(j.state))return j;
             ensure(SANDBOX_TERMINAL.includes(result.state),'INVALID_INPUT','只允许归档已确认结束的任务');
+            try{this.assertPermission(j);}catch(e){const error=asError(e),state=result.state==='succeeded'?'failed':result.state;const stopped=this.app.store.update<SandboxJob>('sandbox-job',id,j.version,{state,integrity:'invalid',exitCode:result.exitCode,error:error.code+': '+error.message,endedAt:now(),leaseUntil:0,artifactIds:[]});this.app.store.event(pid,'development.finalized',{jobId:id,state,integrity:'invalid',permissionStale:true});return stopped;}
             let integrity:SandboxJob['integrity']='complete',state=result.state;const errors:string[]=[],artifactIds:string[]=[],extra=j.manifest.scopeTaskId?{taskId:j.manifest.scopeTaskId}:{};
             const archive=(root:string,path:string,limit:number,media='application/octet-stream',emptyIfAbsent=false,title=path)=>{try{const bytes=emptyIfAbsent&&!existsSync(safePath(root,path))?Buffer.alloc(0):readStableFile(root,path,Math.min(limit,32*MiB)),a=this.app.evidence.put(pid,title,bytes,media,`development:${id}`,extra);artifactIds.push(a.id);return a;}catch {integrity='incomplete';errors.push(`archive failed: ${title}`);return undefined;}};
             const stdout=archive(this.app.store.paths.physical(j.controlDir),'stdout.log',j.manifest.resources.logBytes,'text/plain',!j.startRequested),stderr=archive(this.app.store.paths.physical(j.controlDir),'stderr.log',j.manifest.resources.logBytes,'text/plain',!j.startRequested);

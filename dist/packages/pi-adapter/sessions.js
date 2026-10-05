@@ -1,4 +1,5 @@
 import { sessionCatalog, sessionMessagePage, sessionMessageContent, sessionQueue, canSteerSession } from './session-history.js';
+import { publicRecord } from '../domain/public-record.js';
 import { attachmentReferences } from './attachments.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { mkdirSync } from 'node:fs';
@@ -10,6 +11,9 @@ import { ensure } from '../domain/errors.js';
 import { object, text, oneOf, integer } from '../contracts/validation.js';
 export class SessionService {
     c;
+    permissionCapture;
+    taskPermissionCapture;
+    permissionBranch;
     constructor(c) {
         this.c = c;
     }
@@ -82,7 +86,8 @@ export class SessionService {
             const attachments = x.attachmentDocumentIds === undefined ? [] : attachmentReferences(this.c.store, s, x.attachmentDocumentIds);
             const pending = this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND json_extract(data,'$.status') IN ('queued','running') LIMIT 1").get(s.projectId, id);
             const mode = oneOf(x.mode ?? (s.state === 'running' || pending ? 'follow_up' : 'prompt'), ['prompt', 'steer', 'follow_up'], 'mode');
-            const msg = this.c.store.create('message', s.projectId, { sessionId: id, role: 'user', content: text(x.content, 'content', 32000), mode, status: 'queued', ...(attachments.length ? { attachments } : {}), ...(mode === 'steer' ? { steerGeneration: s.generation } : {}) });
+            const permission = this.permissionCapture?.(id);
+            const msg = this.c.store.create('message', s.projectId, { sessionId: id, role: 'user', content: text(x.content, 'content', 32000), mode, status: 'queued', ...(permission ? { permission } : {}), ...(attachments.length ? { attachments } : {}), ...(mode === 'steer' ? { steerGeneration: s.generation } : {}) });
             if (s.state !== 'running')
                 this.c.store.update('session', id, s.version, { state: 'queued', lastError: undefined });
             this.c.store.event(s.projectId, 'session.message_queued', { sessionId: id, messageId: msg.id, mode });
@@ -137,15 +142,15 @@ export class SessionService {
     view(actor, id, input = {}) {
         userOnly(actor);
         return this.c.store.readSnapshot(() => {
-            const session = this.get(actor, id), pid = session.projectId, page = sessionMessagePage(this.c.store, session, input), cursor = this.c.store.eventCursor(pid);
+            const session = this.get(actor, id), visibleSession = publicRecord(session), pid = session.projectId, page = sessionMessagePage(this.c.store, session, input), cursor = this.c.store.eventCursor(pid);
             const queue = sessionQueue(this.c.store, session), pending = { pendingMessages: queue.items, pendingTotal: queue.total, pendingNextCursor: queue.nextCursor };
             const progress = { generation: session.generation, active: session.state === 'running', canSteer: queue.canSteer, content: '', truncated: false, cursor };
             if (!progress.active)
-                return { session, ...page, ...pending, progress };
+                return { session: visibleSession, ...page, ...pending, progress };
             const start = this.c.store.db.prepare("SELECT seq,json_extract(payload,'$.generation') generation FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='agent.started' ORDER BY seq DESC LIMIT 1").get(pid, id);
             // Legacy events did not identify an execution generation; never replay them into a new turn.
             if (!start || start.generation !== session.generation)
-                return { session, ...page, ...pending, progress };
+                return { session: visibleSession, ...page, ...pending, progress };
             const completed = this.c.store.db.prepare("SELECT seq FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.message_completed' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid, id, start.seq, session.generation);
             const activity = this.c.store.db.prepare("SELECT json_extract(payload,'$.tool') tool,json_extract(payload,'$.status') status FROM events WHERE project_id=? AND json_extract(payload,'$.sessionId')=? AND type='session.activity' AND seq>? AND json_extract(payload,'$.generation')=? ORDER BY seq DESC LIMIT 1").get(pid, id, completed?.seq ?? start.seq, session.generation);
             if (activity && typeof activity.tool === 'string' && ['running', 'completed', 'failed'].includes(String(activity.status)))
@@ -159,7 +164,7 @@ export class SessionService {
                 progress.content = progress.content.slice(1);
                 progress.truncated = true;
             }
-            return { session, ...page, ...pending, progress };
+            return { session: visibleSession, ...page, ...pending, progress };
         });
     }
     /** Host-only persisted input; never masquerades as a user-authored message. */
@@ -167,7 +172,7 @@ export class SessionService {
         const s = this.c.store.get('session', id);
         ensure(!s.taskId && s.role === 'coordinator' && !['running', 'archived'].includes(s.state), 'SESSION_BUSY', '主会话不能接收新的自动输入');
         const message = this.c.store.create('message', s.projectId, { sessionId: id, role: 'system', origin: 'automation', wakeupId,
-            content, mode: 'prompt', status: 'queued' });
+            content, mode: 'prompt', status: 'queued', ...(this.taskPermissionCapture ? { permission: this.taskPermissionCapture(id) } : {}) });
         this.c.store.update('session', id, s.version, { state: 'queued', lastError: undefined });
         this.c.store.event(s.projectId, 'session.automation_queued', { sessionId: id, messageId: message.id, wakeupId });
         return message;
@@ -204,6 +209,7 @@ export class SessionService {
             ensure(index >= 0, 'NOT_FOUND', '分支消息不存在', 404);
             const s = this.create(actor, original.projectId, { title: original.title + ' · 分支' });
             const branch = this.c.store.update('session', s.id, s.version, { parentSessionId: id, model: original.model });
+            this.permissionBranch?.(id, s.id);
             for (const m of messages.slice(0, index + 1))
                 this.c.store.create('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved ? 'cancelled' : 'completed', ...(m.attachments ? { attachments: m.attachments } : {}), ...(m.queueRemoved ? { queueRemoved: true } : {}) });
             this.c.store.event(s.projectId, 'session.branched', { parentId: id, sessionId: s.id, throughMessageId });
