@@ -5,20 +5,68 @@ import { Icon, Modal } from "./ui.js";
 class HostAccessControl extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { status: null, open: false, error: "", saving: false };
+    this.state = { status: null, open: false, menuOpen: false, error: "", saving: false };
     this.alive = true;
     this.request = 0;
+    this.trigger = React.createRef();
+    this.menu = React.createRef();
+    this.dialogEnabled = false;
+    this.positionMenu = () => {
+      const menu = this.menu.current, trigger = this.trigger.current;
+      if (!menu?.matches(":popover-open") || !trigger) return;
+      const width = document.documentElement.clientWidth, height = window.innerHeight;
+      menu.style.width = Math.min(320, width - 32) + "px";
+      const r = trigger.getBoundingClientRect(), m = menu.getBoundingClientRect();
+      const above = r.top - m.height - 8, below = r.bottom + 8;
+      menu.style.left = Math.max(16, Math.min(r.left, width - m.width - 16)) + "px";
+      menu.style.top = Math.max(16, Math.min(above >= 16 ? above : below + m.height <= height - 16 ? below : 16, height - m.height - 16)) + "px";
+    };
+    this.closeMenu = () => {
+      if (this.menu.current?.matches(":popover-open")) this.menu.current.hidePopover();
+    };
+    this.showDetails = () => {
+      const status = this.state.status;
+      if (!status) return;
+      this.dialogEnabled = status.enabled;
+      this.closeMenu();
+      this.trigger.current?.focus();
+      this.setState({ open: true, error: "" });
+    };
+    this.menuKeys = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        this.closeMenu();
+        this.trigger.current?.focus();
+        return;
+      }
+      if (event.key === "Tab") {
+        this.closeMenu();
+        this.trigger.current?.focus();
+        return;
+      }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const items = Array.from(this.menu.current?.querySelectorAll('button[role^="menuitem"]:not(:disabled)') ?? []);
+      if (!items.length) return;
+      const current = items.indexOf(document.activeElement);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items[next].focus();
+    };
   }
   componentDidMount() {
     void this.load();
     this.timer = setInterval(() => {
       if (!this.state.saving) void this.load();
     }, 1500);
+    window.addEventListener("resize", this.positionMenu);
+    window.addEventListener("scroll", this.positionMenu, true);
   }
   componentWillUnmount() {
     this.alive = false;
     this.request++;
     clearInterval(this.timer);
+    window.removeEventListener("resize", this.positionMenu);
+    window.removeEventListener("scroll", this.positionMenu, true);
   }
   async load() {
     const request = ++this.request;
@@ -32,6 +80,10 @@ class HostAccessControl extends React.Component {
   async save(enabled) {
     const status = this.state.status;
     if (!status || this.state.saving || this.props.busy) return;
+    if (enabled === status.enabled) {
+      this.setState({ open: false, error: "\u6743\u9650\u72B6\u6001\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9" });
+      return;
+    }
     this.request++;
     this.setState({ saving: true, error: "" });
     await this.props.perform(async () => {
@@ -50,18 +102,77 @@ class HostAccessControl extends React.Component {
     }, enabled ? "\u5DF2\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE\uFF1B\u4E0D\u63D0\u4F9B\u540C\u7528\u6237\u9694\u79BB" : "\u5DF2\u64A4\u9500\u65B0\u5BBF\u4E3B\u547D\u4EE4\u6388\u6743\uFF1B\u53D7\u7BA1\u547D\u4EE4\u6B63\u5728\u505C\u6B62");
   }
   render() {
-    const { status, open, error, saving } = this.state;
+    const { status, open, menuOpen, error, saving } = this.state, menuId = "host-permission-menu-" + this.props.sessionId, enabled = this.dialogEnabled;
     return /* @__PURE__ */ jsxs(Fragment, { children: [
-      /* @__PURE__ */ jsxs("button", { type: "button", className: "host-access-trigger" + (status?.enabled ? " enabled" : ""), "aria-label": status?.enabled ? "\u672C\u673A\u5B8C\u5168\u8BBF\u95EE\u5DF2\u542F\u7528\uFF0C\u67E5\u770B\u6216\u64A4\u9500" : status && !status.available ? "\u67E5\u770B\u672C\u673A\u5B8C\u5168\u8BBF\u95EE\u9650\u5236" : "\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE", disabled: this.props.archived || !status, onClick: () => this.setState({ open: true, error: "" }), children: [
+      /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "host-access-trigger" + (status?.enabled ? " enabled" : ""), "aria-label": "\u4F1A\u8BDD\u6743\u9650\uFF1A" + (status?.enabled ? "\u5B8C\u5168\u8BBF\u95EE" : "\u53D7\u63A7\u5DE5\u5177"), "aria-haspopup": "menu", "aria-expanded": menuOpen, "aria-controls": menuId, popoverTarget: menuId, disabled: this.props.archived || !status, children: [
         /* @__PURE__ */ jsx(Icon, { name: "cpu", size: 13 }),
-        /* @__PURE__ */ jsx("span", { children: status?.enabled ? "\u5B8C\u5168\u8BBF\u95EE" : status?.available ? "\u5B8C\u5168\u8BBF\u95EE \xB7 \u53EF\u542F\u7528" : "\u5B8C\u5168\u8BBF\u95EE \xB7 \u53D7\u9650" }),
+        /* @__PURE__ */ jsx("span", { children: status?.enabled ? "\u5B8C\u5168\u8BBF\u95EE" : "\u53D7\u63A7\u6743\u9650" }),
         /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 11 })
       ] }),
-      open && status ? /* @__PURE__ */ jsxs(Modal, { title: status.enabled ? "\u672C\u673A\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE", onClose: () => {
+      /* @__PURE__ */ jsxs("div", { ref: this.menu, id: menuId, popover: "auto", role: "menu", "aria-label": "\u4F1A\u8BDD\u6743\u9650", className: "host-permission-menu", onKeyDown: this.menuKeys, onToggle: (event) => {
+        const opening = event.newState === "open";
+        this.setState({ menuOpen: opening });
+        if (opening) {
+          this.positionMenu();
+          this.menu.current?.querySelector('button[role^="menuitem"]:not(:disabled)')?.focus();
+        }
+      }, children: [
+        /* @__PURE__ */ jsxs("div", { className: "host-permission-heading", children: [
+          /* @__PURE__ */ jsx("strong", { children: "\u4F1A\u8BDD\u6743\u9650" }),
+          /* @__PURE__ */ jsx("small", { children: "\u4EC5\u5F53\u524D\u4F1A\u8BDD" })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { role: "group", "aria-label": "\u6743\u9650\u6863\u4F4D", children: [
+          /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": "false", disabled: true, className: "host-permission-row", children: [
+            /* @__PURE__ */ jsx(Icon, { name: "book-open" }),
+            /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
+              /* @__PURE__ */ jsx("strong", { children: "\u53EA\u8BFB" }),
+              /* @__PURE__ */ jsx("small", { children: "\u67E5\u770B\u5DF2\u6709\u8D44\u6599\uFF0C\u4E0D\u7F16\u8F91\u6216\u6267\u884C\u547D\u4EE4" })
+            ] }),
+            /* @__PURE__ */ jsx("span", { className: "host-permission-tag", children: "\u5F85\u63A5\u5165" })
+          ] }),
+          /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": "false", disabled: true, className: "host-permission-row", children: [
+            /* @__PURE__ */ jsx(Icon, { name: "settings" }),
+            /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
+              /* @__PURE__ */ jsx("strong", { children: "\u53D8\u66F4\u524D\u786E\u8BA4" }),
+              /* @__PURE__ */ jsx("small", { children: "\u7F16\u8F91\u4E0E\u547D\u4EE4\u6267\u884C\u524D\uFF0C\u5148\u7531\u4F60\u786E\u8BA4" })
+            ] }),
+            /* @__PURE__ */ jsx("span", { className: "host-permission-tag", children: "\u5F85\u63A5\u5165" })
+          ] }),
+          /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": "false", disabled: true, className: "host-permission-row", children: [
+            /* @__PURE__ */ jsx(Icon, { name: "edit" }),
+            /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
+              /* @__PURE__ */ jsx("strong", { children: "\u81EA\u52A8\u7F16\u8F91" }),
+              /* @__PURE__ */ jsx("small", { children: "\u8303\u56F4\u5185\u81EA\u52A8\u7F16\u8F91\uFF0C\u547D\u4EE4\u4ECD\u9700\u786E\u8BA4" })
+            ] }),
+            /* @__PURE__ */ jsx("span", { className: "host-permission-tag", children: "\u5F85\u63A5\u5165" })
+          ] }),
+          /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": !!status?.enabled, disabled: !status || !status.available && !status.enabled || saving || this.props.busy, onClick: this.showDetails, className: "host-permission-row" + (status?.enabled ? " selected" : ""), children: [
+            /* @__PURE__ */ jsx(Icon, { name: "cpu" }),
+            /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
+              /* @__PURE__ */ jsx("strong", { children: "\u5B8C\u5168\u8BBF\u95EE" }),
+              /* @__PURE__ */ jsx("small", { children: "\u672C\u673A\u6587\u4EF6\u3001\u547D\u4EE4\u4E0E\u7F51\u7EDC \xB7 \u672A\u9694\u79BB" })
+            ] }),
+            status?.enabled ? /* @__PURE__ */ jsx(Icon, { name: "check" }) : null
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "host-permission-footer", children: [
+          /* @__PURE__ */ jsxs("span", { children: [
+            "\u5F53\u524D\uFF1A",
+            status?.enabled ? "\u5B8C\u5168\u8BBF\u95EE" : "\u73B0\u6709\u53D7\u63A7\u5DE5\u5177"
+          ] }),
+          /* @__PURE__ */ jsx("button", { type: "button", role: "menuitem", onClick: status?.enabled ? this.showDetails : () => {
+            this.closeMenu();
+            this.trigger.current?.focus();
+          }, className: "host-permission-secondary", children: status?.enabled ? "\u8303\u56F4\u4E0E\u64A4\u9500" : "\u5173\u95ED" })
+        ] }),
+        status && !status.available && !status.enabled ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", children: status.reason }) : null,
+        error ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", role: "status", children: error }) : null
+      ] }),
+      open && status ? /* @__PURE__ */ jsxs(Modal, { title: enabled ? "\u672C\u673A\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE", onClose: () => {
         if (!saving) this.setState({ open: false });
       }, onSubmit: () => {
-        void this.save(!status.enabled);
-      }, submitLabel: status.enabled ? "\u64A4\u9500\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u5B8C\u5168\u8BBF\u95EE", busy: saving || this.props.busy || !status.enabled && !status.available, children: [
+        void this.save(!enabled);
+      }, submitLabel: enabled ? "\u64A4\u9500\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u5B8C\u5168\u8BBF\u95EE", busy: saving || this.props.busy || !enabled && !status.available, children: [
         /* @__PURE__ */ jsx("p", { children: "\u4F7F\u7528\u5F53\u524D\u7CFB\u7EDF\u7528\u6237\u6743\u9650\u5185\u7684\u771F\u5B9E\u6587\u4EF6\u3001\u547D\u4EE4\u4E0E\u666E\u901A\u7F51\u7EDC\u3002\u4EC5\u5F53\u524D\u4EA4\u4E92\u4E3B\u4F1A\u8BDD\u4F7F\u7528\uFF0C\u5B50\u4EFB\u52A1\u548C\u81EA\u52A8\u5524\u9192\u4E0D\u7EE7\u627F\u3002" }),
         /* @__PURE__ */ jsxs("div", { className: "host-access-notice", children: [
           /* @__PURE__ */ jsx("strong", { children: "\u672C\u673A\u53EF\u4FE1\u6A21\u5F0F \xB7 \u672A\u9694\u79BB" }),
@@ -83,11 +194,11 @@ class HostAccessControl extends React.Component {
           " \xB7 PID ",
           job.pid ?? "\u65E0\u6CD5\u786E\u8BA4"
         ] }, job.id)),
-        !status.enabled ? /* @__PURE__ */ jsxs("label", { className: "host-access-ack", children: [
+        !enabled ? /* @__PURE__ */ jsxs("label", { className: "host-access-ack", children: [
           /* @__PURE__ */ jsx("input", { type: "checkbox", required: true, "aria-label": "\u63A5\u53D7\u672C\u673A\u5B8C\u5168\u8BBF\u95EE\u7684\u672A\u9694\u79BB\u8303\u56F4" }),
           "\u6211\u7406\u89E3\u672C\u673A\u672A\u9694\u79BB\u53CA\u540C\u7528\u6237\u6570\u636E\u53EF\u8FBE\uFF0C\u5E76\u4E3A\u6B64\u4F1A\u8BDD\u542F\u7528\u3002"
         ] }) : null,
-        !status.enabled && status.unknownCommands ? /* @__PURE__ */ jsxs("label", { className: "host-access-ack", children: [
+        !enabled && status.unknownCommands ? /* @__PURE__ */ jsxs("label", { className: "host-access-ack", children: [
           /* @__PURE__ */ jsx("input", { type: "checkbox", required: true, "aria-label": "\u5DF2\u6838\u5BF9\u672A\u77E5\u547D\u4EE4\u7684\u8FDB\u7A0B\u548C\u5916\u90E8\u6548\u679C" }),
           "\u6211\u5DF2\u6838\u5BF9\u4E0A\u8FF0\u672A\u77E5\u547D\u4EE4\u7684\u539F\u8FDB\u7A0B\u53CA\u5916\u90E8\u6548\u679C\uFF0C\u5E76\u660E\u786E\u5141\u8BB8\u65B0\u7684\u6267\u884C\u3002"
         ] }) : null,

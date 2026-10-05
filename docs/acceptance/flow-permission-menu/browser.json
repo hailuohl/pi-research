@@ -1,0 +1,326 @@
+{
+  "date": "2026-10-06",
+  "baseline": "d0076f8d7e4aebbf255ba90ba329fa19df939957",
+  "checks": [
+    {
+      "name": "arrow-skips-disabled",
+      "result": "关闭"
+    },
+    {
+      "name": "home-first-enabled",
+      "result": "menuitemradio"
+    },
+    {
+      "name": "escape-focus",
+      "result": {
+        "closed": true,
+        "focus": "会话权限：受控工具"
+      }
+    },
+    {
+      "name": "selection-opens-confirmation-only",
+      "result": {
+        "checked": false,
+        "dialog": "启用本机完全访问",
+        "mode": "受控权限"
+      }
+    },
+    {
+      "name": "modal-cancel-focus",
+      "result": "会话权限：受控工具"
+    },
+    {
+      "name": "server-selected-check",
+      "result": [
+        {
+          "checked": "false",
+          "disabled": true,
+          "name": "只读"
+        },
+        {
+          "checked": "false",
+          "disabled": true,
+          "name": "变更前确认"
+        },
+        {
+          "checked": "false",
+          "disabled": true,
+          "name": "自动编辑"
+        },
+        {
+          "checked": "true",
+          "disabled": false,
+          "name": "完全访问"
+        }
+      ]
+    },
+    {
+      "name": "end-last-enabled",
+      "result": "关闭"
+    },
+    {
+      "name": "tab-leaves-menu",
+      "result": {
+        "closed": true,
+        "focusMenu": false
+      }
+    },
+    {
+      "name": "outside-click-preserves-input-focus",
+      "result": {
+        "closed": true,
+        "focus": "研究问题"
+      }
+    }
+  ],
+  "geometry": [
+    {
+      "boxes": {
+        ".composer": {
+          "height": 138.0625,
+          "width": 747.3333740234375,
+          "x": 313.3333435058594,
+          "y": 637.6041870117188
+        },
+        ".composer-caption": {
+          "height": 24,
+          "width": 748.6666870117188,
+          "x": 312.66668701171875,
+          "y": 785.3333740234375
+        },
+        ".composer-control-left": {
+          "height": 30,
+          "width": 225,
+          "x": 335.3333435058594,
+          "y": 728.5
+        },
+        ".composer-submit-control": {
+          "height": 30,
+          "width": 69.33333587646484,
+          "x": 969.3333740234376,
+          "y": 728.5
+        },
+        ".inspector": {
+          "height": 767,
+          "width": 320,
+          "x": 1104,
+          "y": 61
+        },
+        ".main-pane": {
+          "height": 767,
+          "width": 806,
+          "x": 284,
+          "y": 61
+        },
+        ".sidebar": {
+          "height": 812,
+          "width": 252,
+          "x": 16,
+          "y": 16
+        },
+        ".topbar": {
+          "height": 45,
+          "width": 1140,
+          "x": 284,
+          "y": 16
+        }
+      },
+      "clientWidth": 1440,
+      "fits": true,
+      "menu": {
+        "height": 357.5,
+        "width": 320,
+        "x": 312.66668701171875,
+        "y": 419.8333435058594
+      },
+      "scrollWidth": 1440,
+      "viewport": [
+        1440,
+        844
+      ]
+    },
+    {
+      "boxes": {
+        ".composer": {
+          "height": 174.0625,
+          "width": 414.3333435058594,
+          "x": 275.3333435058594,
+          "y": 606.2708740234375
+        },
+        ".composer-caption": {
+          "height": 23.33333396911621,
+          "width": 415.6666870117187,
+          "x": 274.66668701171875,
+          "y": 790
+        },
+        ".composer-control-left": {
+          "height": 30,
+          "width": 370.3333435058594,
+          "x": 297.3333435058594,
+          "y": 694
+        },
+        ".composer-submit-control": {
+          "height": 30,
+          "width": 69.33333587646484,
+          "x": 598.3333740234375,
+          "y": 733.1666870117188
+        },
+        ".inspector": {
+          "height": 775,
+          "width": 285,
+          "x": 727,
+          "y": 57
+        },
+        ".main-pane": {
+          "height": 775,
+          "width": 461,
+          "x": 252,
+          "y": 57
+        },
+        ".sidebar": {
+          "height": 820,
+          "width": 228,
+          "x": 12,
+          "y": 12
+        },
+        ".topbar": {
+          "height": 45,
+          "width": 760,
+          "x": 252,
+          "y": 12
+        }
+      },
+      "clientWidth": 1024,
+      "fits": true,
+      "menu": {
+        "height": 357.5,
+        "width": 320,
+        "x": 274.66668701171875,
+        "y": 424.1666870117187
+      },
+      "scrollWidth": 1024,
+      "viewport": [
+        1024,
+        844
+      ]
+    },
+    {
+      "boxes": {
+        ".composer": {
+          "height": 190.6666717529297,
+          "width": 316,
+          "x": 29.33333396911621,
+          "y": 415.6979370117187
+        },
+        ".composer-caption": {
+          "height": 23.33333396911621,
+          "width": 317.3333435058594,
+          "x": 28.666667938232425,
+          "y": 616.03125
+        },
+        ".composer-control-left": {
+          "height": 30,
+          "width": 272,
+          "x": 51.33333587646485,
+          "y": 520.03125
+        },
+        ".composer-submit-control": {
+          "height": 30,
+          "width": 69.33333587646484,
+          "x": 254,
+          "y": 559.1979370117188
+        },
+        ".inspector": {
+          "height": 164,
+          "width": 354.66668701171875,
+          "x": 10,
+          "y": 670.03125
+        },
+        ".main-pane": {
+          "height": 1056.3646240234375,
+          "width": 354.66668701171875,
+          "x": 10,
+          "y": -398.3333435058594
+        },
+        ".sidebar": {
+          "height": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        ".topbar": {
+          "height": 45,
+          "width": 354.66668701171875,
+          "x": 10,
+          "y": -443.3333435058594
+        }
+      },
+      "clientWidth": 375,
+      "fits": true,
+      "menu": {
+        "height": 357.5,
+        "width": 320,
+        "x": 28.666667938232425,
+        "y": 250.1979217529297
+      },
+      "scrollWidth": 375,
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  ],
+  "browserLogs": [],
+  "fixedVisibility": [
+    {
+      "caption": 23.33333396911621,
+      "current": "当前：现有受控工具",
+      "currentDisplay": "block",
+      "menuFits": true,
+      "tags": [
+        {
+          "display": "flex",
+          "text": "待接入",
+          "width": 37
+        },
+        {
+          "display": "flex",
+          "text": "待接入",
+          "width": 37
+        },
+        {
+          "display": "flex",
+          "text": "待接入",
+          "width": 37
+        }
+      ],
+      "triggerLabel": "block",
+      "width": 1024
+    },
+    {
+      "caption": 23.33333396911621,
+      "current": "当前：现有受控工具",
+      "currentDisplay": "block",
+      "menuFits": true,
+      "tags": [
+        {
+          "display": "flex",
+          "text": "待接入",
+          "width": 37
+        },
+        {
+          "display": "flex",
+          "text": "待接入",
+          "width": 37
+        },
+        {
+          "display": "flex",
+          "text": "待接入",
+          "width": 37
+        }
+      ],
+      "triggerLabel": "block",
+      "width": 390
+    }
+  ]
+}
