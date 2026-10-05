@@ -1,3 +1,4 @@
+import {HOST_EXECUTION_OUTPUT_SCHEMA} from './host-access-schemas.js';
 import {RESEARCH_BRIEF_OUTPUT_SCHEMAS} from './research-brief-schemas.js';
 import {SESSION_HISTORY_OUTPUT_SCHEMAS} from './session-schemas.js';
 import {PUBLICATION_OUTPUT_SCHEMAS} from './publication-schemas.js';
@@ -172,6 +173,7 @@ const artifact = row('artifact', { title: string, digest: string, size: integer,
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    host_execute:HOST_EXECUTION_OUTPUT_SCHEMA,
     ...RESEARCH_BRIEF_OUTPUT_SCHEMAS,
     text_corpus_grant_prepare:textCorpusGrant,text_corpus_grant_inspect:textCorpusGrant,text_corpus_grant_activate:textCorpusGrant,text_corpus_grant_revoke:textCorpusGrant,
     ...RESEARCH_PLAN_OUTPUT_SCHEMAS,

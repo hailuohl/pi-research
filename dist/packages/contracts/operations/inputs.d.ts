@@ -4695,5 +4695,36 @@ export declare const INPUT_SCHEMAS: {
         readonly required: ("expectedVersion" | "briefId")[];
         readonly additionalProperties: false;
     };
+    readonly host_execute: {
+        readonly type: "object";
+        readonly properties: {
+            readonly argv: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern: "^[^\0]*$";
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+            readonly cwd: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly timeoutMs: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["argv"];
+        readonly additionalProperties: false;
+    };
 };
 export type OperationInput<N extends keyof typeof INPUT_SCHEMAS> = InferSchema<(typeof INPUT_SCHEMAS)[N]>;

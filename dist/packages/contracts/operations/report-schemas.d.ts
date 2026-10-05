@@ -283,7 +283,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("textArtifactDigest" | "documentVersionId" | "parseResultId" | "rawDigest" | "pageNumber" | "start" | "end" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                            readonly required: ("end" | "textArtifactDigest" | "documentVersionId" | "parseResultId" | "rawDigest" | "pageNumber" | "start" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
                         readonly providerText: {
@@ -317,11 +317,11 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentVersionId" | "documentDigest" | "rawDigest" | "start" | "end" | "rawArtifactId")[];
+                            readonly required: ("end" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentVersionId" | "documentDigest" | "rawDigest" | "start" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "label" | "type" | "targetId")[];
+                    readonly required: ("id" | "targetId" | "label" | "type")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -641,7 +641,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("textArtifactDigest" | "documentVersionId" | "parseResultId" | "rawDigest" | "pageNumber" | "start" | "end" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                        readonly required: ("end" | "textArtifactDigest" | "documentVersionId" | "parseResultId" | "rawDigest" | "pageNumber" | "start" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                     readonly providerText: {
@@ -675,11 +675,11 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentVersionId" | "documentDigest" | "rawDigest" | "start" | "end" | "rawArtifactId")[];
+                        readonly required: ("end" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentVersionId" | "documentDigest" | "rawDigest" | "start" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("id" | "label" | "type" | "targetId")[];
+                readonly required: ("id" | "targetId" | "label" | "type")[];
                 readonly additionalProperties: false;
             };
             readonly content: {
@@ -698,7 +698,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "cursor" | "content" | "reference" | "mediaType" | "end")[];
+        readonly required: ("complete" | "end" | "cursor" | "content" | "reference" | "mediaType")[];
         readonly additionalProperties: false;
     };
 };

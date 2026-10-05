@@ -49,12 +49,14 @@ test('legacy search records and frozen Crossref page metadata both satisfy the o
 test('all existing public tools have closed, literal success contracts exercised with service records', async () => {
  const s=setup(), savedFetch=globalThis.fetch, seen=new Set();
  try {
+  s.app.hostAccess.enable(USER,s.session.id,{expectedVersion:0,acknowledgedSameUserAccess:true});
   const current=s.app.store.get('session',s.session.id);
   s.app.store.update('session',current.id,current.version,{state:'running',generation:1,skillBundleId:s.app.skills.configuration(s.project.id).bundleId,leaseUntil:Date.now()+120000});
   const root={type:'agent',projectId:s.project.id,sessionId:s.session.id,generation:1,role:'coordinator'}, tools=new ToolDispatcher(s.app);
   let serial=0;
   const check=(name,value)=>{validateSchema(OUTPUT_SCHEMAS[name],value,'output');seen.add(name);return value;};
   const call=async(name,input={},a=root)=>check(name,await tools.execute(a,name,input,`schema-${++serial}`));
+  const hostResult=await call('host_execute',{argv:[process.execPath,'-e','console.log("closed host contract")']});assert.equal(hostResult.state,'succeeded');assert.equal(hostResult.stdout.trim(),'closed host contract');
   await call('research_skill_list');
   await call('research_skill_read',{skillId:'pi-research-overview'});
   await call('connector_status');

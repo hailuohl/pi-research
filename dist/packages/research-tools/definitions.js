@@ -1,6 +1,7 @@
 import { INPUT_SCHEMAS } from '../contracts/operations/inputs.js';
 import { OUTPUT_SCHEMAS } from '../contracts/operations/outputs.js';
 const TOOL_METADATA = {
+    host_execute: { description: '仅已显式启用本机完全访问的交互主协调会话可用：执行系统用户权限内的真实程序，argv第一项为程序，其余为原样参数，不经自动Shell拼接；可访问文件和普通网络。本机未隔离，不能声称保护同用户应用数据、凭据或第三方账户。超时/撤权停止受管进程，未知状态不重试。领域正式运行、审批与结论仍沿原工具流程。', example: { argv: ['node', '-e', 'console.log(process.cwd())'], timeoutMs: 30000 } },
     text_corpus_grant_prepare: { description: '用户入口：冻结指定主 Pi 会话、模型和精确 PDF 解析版本，或单独一份 PMC OA 文档，准备最多两次新词项检索的待批准授权。PMC 使用 documents:[] 和单项 pmcDocuments。', example: { sessionId: 'session-id', documents: [{ documentVersionId: 'document-id', parseResultId: 'parse-result-id' }], corpusId: 'corpus-id', configurationVersion: 1, maxSearches: 2, expiresAt: '2026-09-29T12:00:00Z' } },
     text_corpus_grant_inspect: { description: '用户入口：回查固定原文检索授权、持久计次与历史检索。', example: { grantId: 'grant-id' } },
     text_corpus_grant_activate: { description: '用户入口：激活已批准的固定原文检索授权，不启动模型或联网。', example: { grantId: 'grant-id', expectedVersion: 1 } },

@@ -121,6 +121,7 @@ export interface Bootstrap {
         installedVersion: string | null;
         node: string;
         maxModelWorkers: number;
+        hostAccess?:{available:boolean;boundary:'trusted-host';requiresExplicitSessionEnable:boolean;revokedOnRestart:boolean};
     };
     capabilities: Array<{
         id: string;

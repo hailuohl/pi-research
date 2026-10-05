@@ -29,7 +29,7 @@ export class AgentHost {
         this.admission = app.agentAdmission;
     }
     inspect(model) { return (this.dependencies.inspect ?? inspectPi)(this.app.context.repoRoot, model); }
-    status() { const capacity = this.admission.snapshot(); return { ...this.inspect(this.app.sessions.model()), activeWorkers: capacity.counts.held, maxModelWorkers: capacity.maxWorkers, workerCapacity: capacity, workerUnit: 'pi-worker', httpConcurrencyMeasured: false, toolIsolation: 'host-allowlist-no-shell', osSandboxVerified: false }; }
+    status() { const capacity = this.admission.snapshot(); return { ...this.inspect(this.app.sessions.model()), activeWorkers: capacity.counts.held, maxModelWorkers: capacity.maxWorkers, workerCapacity: capacity, workerUnit: 'pi-worker', httpConcurrencyMeasured: false, toolIsolation: 'host-allowlist-explicit-trusted-shell', osSandboxVerified: false, hostAccess: { available: true, boundary: 'trusted-host', requiresExplicitSessionEnable: true, revokedOnRestart: true } }; }
     start() {
         this.timer = setInterval(() => {
             try {
@@ -249,6 +249,7 @@ export class AgentHost {
             const bundleId = prepareSessionSkills(this.app, claimed, actor);
             const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId, claimed.role, bundleId);
             this.ensureReady(claimed);
+            const toolDefinitions = this.tools.definitions(claimed.role, !!wakeupId, claimed.id);
             const isolatedRunAnalysis = !!wakeupId && this.app.wakeups.get(SYSTEM, wakeupId).sourceKind === 'run-result';
             const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = isolatedRunAnalysis ? join(home, 'pi-analysis', wakeupId) : join(home, 'pi');
             mkdirSync(agentDir, { recursive: true, mode: 0o700 });
@@ -263,7 +264,7 @@ export class AgentHost {
                 requested = true;
                 const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
                 // Retain the child before commit: a commit failure is not proof of zero model use.
-                active = { admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false };
+                active = { admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)) };
                 this.active.set(claimed.id, active);
                 spawned.on('error', error => this.finish(active, clean(error.message)));
                 spawned.once('exit', code => { active.exitObserved = true; if (active.ended)
@@ -281,7 +282,7 @@ export class AgentHost {
             const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
             worker.contextMessageIds = hostMessages.map(m => m.id);
             const history = !isolatedRunAnalysis && !claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
-            this.sendInput(worker, { type: 'start', managedHttp: true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: this.tools.definitions(claimed.role, !!wakeupId), history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
+            this.sendInput(worker, { type: 'start', managedHttp: true, skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
             store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation: claimed.generation, attemptId: attempt?.id });
         }
         catch (error) {
@@ -425,7 +426,8 @@ export class AgentHost {
         }
         if (m?.type === 'tool_execution_start' || m?.type === 'tool_execution_end') {
             const tool = String(m.tool ?? '');
-            if (!this.tools.definitions(a.actor.role, !!a.actor.wakeupId).some(definition => definition.name === tool))
+            // Revocation fences effects, but must not erase the final failure event for an already advertised tool.
+            if (!(a.advertisedTools ?? new Set(this.tools.definitions(a.actor.role, !!a.actor.wakeupId, a.sessionId).map(definition => definition.name))).has(tool))
                 return;
             const failedCallId = m.type === 'tool_execution_end' && m.isError ? String(m.toolCallId ?? tool).slice(0, 200) : null;
             const seen = a.failedToolCalls ??= new Set();
@@ -458,7 +460,7 @@ export class AgentHost {
             const content = redact(String(m.content ?? ''));
             this.app.store.transaction(() => {
                 ensure(this.valid(a), 'LEASE_EXPIRED', '旧 Worker 不能保存当前会话输出');
-                const allowed = new Set(this.tools.definitions(a.actor.role, !!a.actor.wakeupId).map(definition => definition.name));
+                const allowed = a.advertisedTools ?? new Set(this.tools.definitions(a.actor.role, !!a.actor.wakeupId, a.sessionId).map(definition => definition.name));
                 const toolCalls = Array.isArray(m.toolCalls) ? m.toolCalls.filter((name) => typeof name === 'string' && allowed.has(name)).slice(0, 64) : [];
                 const record = this.app.store.create('message', s.projectId, { sessionId: s.id, generation: a.generation, phase: toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer', ...(toolCalls.length ? { toolCalls } : {}), ...(a.actor.wakeupId ? { origin: 'automation', wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0, 32000), ...(content.length > 32000 ? { contentTruncated: true } : {}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? clean(String(m.error)) : undefined, usage: m.usage });
                 this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, generation: s.generation, messageId: record.id });

@@ -462,7 +462,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("usage" | "targetId" | "available" | "configuration" | "backend" | "contexts")[];
+                    readonly required: ("targetId" | "usage" | "available" | "configuration" | "backend" | "contexts")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -525,7 +525,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "state" | "generation" | "kind" | "projectId" | "reason" | "leaseUntil" | "targetId" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("id" | "targetId" | "state" | "generation" | "kind" | "projectId" | "reason" | "leaseUntil" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };

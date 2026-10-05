@@ -3,7 +3,7 @@ import type { Actor } from '../domain/types.js';
 export declare class ToolDispatcher {
     private app;
     constructor(app: ResearchApp);
-    definitions(role: NonNullable<Actor['role']>, automation?: boolean): {
+    definitions(role: NonNullable<Actor['role']>, automation?: boolean, sessionId?: string): {
         description: string;
         example: unknown;
         inputSchema: import("../contracts/operations/schema.js").JsonSchema;

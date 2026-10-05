@@ -1,5 +1,6 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { HostAccessControl } from "./host-access-control.js";
 import { LogView } from "./log-view.js";
 import { ConversationActivity } from "./session-history.js";
 import { ScrollHistory } from "./scroll-history.js";
@@ -101,8 +102,12 @@ class Chat extends React.Component {
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "composer-caption", children: [
-          "\u56FA\u5B9A\u5FEB\u7167 \xB7 \u663E\u5F0F\u5BA1\u6279 \xB7 \u53EF\u8FFD\u6EAF\u8BC1\u636E ",
-          /* @__PURE__ */ jsx("span", { children: "Enter \u53D1\u9001 \xB7 Shift + Enter \u6362\u884C \xB7 Ctrl/\u2318 + Enter \u53D1\u9001" })
+          boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : "\u56FA\u5B9A\u5FEB\u7167 \xB7 \u663E\u5F0F\u5BA1\u6279 \xB7 \u53EF\u8FFD\u6EAF\u8BC1\u636E",
+          " ",
+          /* @__PURE__ */ jsxs("span", { children: [
+            "Enter \u53D1\u9001",
+            /* @__PURE__ */ jsx("span", { className: "host-extra-key", children: " \xB7 Shift + Enter \u6362\u884C \xB7 Ctrl/\u2318 + Enter \u53D1\u9001" })
+          ] })
         ] })
       ] })
     ] });

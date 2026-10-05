@@ -1,0 +1,5 @@
+import { s } from './schema.js';
+const id = s.string(100);
+export const HOST_EXECUTION_INPUT_SCHEMA = s.object({ argv: s.array({ ...s.string(32000, 0), pattern: '^[^\u0000]*$' }, 128, 1), cwd: s.string(32000), timeoutMs: s.integer(1, 60000) }, ['argv']);
+export const HOST_EXECUTION_OUTPUT_SCHEMA = s.object({ id, kind: { const: 'host-command' }, projectId: id, version: s.integer(1), createdAt: s.string(100), updatedAt: s.string(100), sessionId: id, generation: s.integer(0), epoch: s.integer(1), runtimeId: id, requestDigest: id, argv: s.array(s.string(32000, 0), 128, 1), cwd: s.string(32000), timeoutMs: s.integer(1, 60000), state: s.enum(['starting', 'running', 'succeeded', 'failed', 'cancelled', 'unknown']), pid: s.integer(1), stdout: s.string(65536, 0), stderr: s.string(65536, 0), outputTruncated: s.boolean(), exitCode: s.nullable(s.integer(-2147483648, 2147483647)), error: s.string(32000) }, ['id', 'kind', 'projectId', 'version', 'createdAt', 'updatedAt', 'sessionId', 'generation', 'epoch', 'runtimeId', 'requestDigest', 'argv', 'cwd', 'timeoutMs', 'state', 'stdout', 'stderr', 'outputTruncated']);
+//# sourceMappingURL=host-access-schemas.js.map

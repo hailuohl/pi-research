@@ -21,6 +21,7 @@ interface Active {
     assistantOutput?: boolean;
     failedToolCalls?: Set<string>;
     contextMessageIds?: string[];
+    advertisedTools?: Set<string>;
 }
 /** Dependency injection is in-process test infrastructure only; HTTP/config never select a replacement worker. */
 interface HostDependencies {
@@ -52,6 +53,12 @@ export declare class AgentHost {
         httpConcurrencyMeasured: boolean;
         toolIsolation: string;
         osSandboxVerified: boolean;
+        hostAccess: {
+            available: boolean;
+            boundary: string;
+            requiresExplicitSessionEnable: boolean;
+            revokedOnRestart: boolean;
+        };
         ready: boolean;
         code: string;
         message: string;

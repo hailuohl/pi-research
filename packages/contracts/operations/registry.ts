@@ -179,6 +179,7 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('host_execute',{requiresSession:true,asynchronous:true,idempotencyPolicy:'key-required',authorize:(c)=>{c.app.hostAccess.assertAgent(c.actor);},preconditions:(c)=>{c.app.hostAccess.assertAgent(c.actor);},execute:(c,x)=>c.app.hostAccess.execute(c.actor,x,c.idempotencyKey!)}),
     make('research_brief_save',{idempotencyPolicy:'key-required',requiresSession:true,authorize:c=>{c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id);},preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.researchBriefs.save(c.actor,c.projectId,c.session!.id,x)}),
     make('research_brief_inspect',{idempotencyPolicy:'read-only',requiresSession:true,authorize:noPrecondition,preconditions:noPrecondition,execute:(c,x)=>c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id,x.briefId as string|undefined)}),
     make('research_brief_confirm',{idempotencyPolicy:'key-required',requiresSession:true,authorize:(c,x)=>{userOnly(c.actor);c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id,x.briefId as string);},preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.researchBriefs.confirm(c.actor,c.projectId,c.session!.id,x)}),
@@ -452,6 +453,8 @@ export class OperationRegistry {
             spec.preconditions(context, input);
             return spec.execute(context, input);
         };
+        // Host execution owns its durable intent/receipt. Never reconstruct or rerun an unknown command.
+        if(id==='host_execute'){context.validate();return Promise.resolve(invoke()).then(value=>{context.validate();this.app.hostAccess.assertAgent(actor);return output(value);});}
         if (spec.asynchronous) {
             if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(id)) {
                 const previous=this.app.store.transaction(()=>{const found=lookup();if(found&&actor.type==='agent'){

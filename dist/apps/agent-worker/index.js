@@ -89,7 +89,7 @@ process.on('message', async (message) => {
                 taskSubmitted = true;
             return result;
         });
-        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
+        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role, raw.tools.some(tool => tool.name === 'host_execute')) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
         if (raw.managedHttp) {
             if (!MANAGED_HTTP_APIS.includes(model.api))

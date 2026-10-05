@@ -95,6 +95,11 @@ export function createHttpServer(options) {
                     const prepared = await app.projects.prepareImport(USER, body);
                     return json(app.store.operation(scope, key, request, () => app.projects.importDirectory(USER, body, prepared)));
                 }
+                const hostAccessRoute = route.match(/^\/sessions\/([^/]+)\/host-access$/);
+                if (hostAccessRoute) {
+                    app.store.operation(`${req.method}:${route}`, key, { body, query: url.search }, () => { writeRoute(app, host, route, body, req.method); return { sessionId: hostAccessRoute[1] }; });
+                    return json(app.hostAccess.status(USER, hostAccessRoute[1]));
+                }
                 const value = app.store.operation(`${req.method}:${route}`, key, { body, query: url.search }, () => writeRoute(app, host, route, body, req.method));
                 return json(value);
             }
@@ -121,6 +126,6 @@ export function createHttpServer(options) {
     server.headersTimeout = 10000;
     server.maxHeadersCount = 50;
     let closing;
-    return { app, host, server, listen: () => new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = server.address().port; host.start(); resolve(port); }); }), close: () => closing ??= (async () => { events.close(); await host.stop(); server.closeIdleConnections(); await new Promise(resolve => server.close(() => resolve())); app.close(); })() };
+    return { app, host, server, listen: () => new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = server.address().port; host.start(); resolve(port); }); }), close: () => closing ??= (async () => { events.close(); await host.stop(); await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise(resolve => server.close(() => resolve())); app.close(); })() };
 }
 //# sourceMappingURL=http.js.map

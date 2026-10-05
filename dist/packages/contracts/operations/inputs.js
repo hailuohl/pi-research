@@ -1,3 +1,4 @@
+import { HOST_EXECUTION_INPUT_SCHEMA } from './host-access-schemas.js';
 import { RESEARCH_BRIEF_INPUT_SCHEMAS } from './research-brief-schemas.js';
 import { SESSION_HISTORY_INPUT_SCHEMAS } from './session-schemas.js';
 import { PUBLICATION_INPUT_SCHEMAS } from './publication-schemas.js';
@@ -43,6 +44,7 @@ const plan = s.object({ goal: s.string(8000), tasks: s.array(task, 24, 1), budge
 const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    host_execute: HOST_EXECUTION_INPUT_SCHEMA,
     ...RESEARCH_BRIEF_INPUT_SCHEMAS,
     ...RESEARCH_PLAN_INPUT_SCHEMAS,
     ...SKILL_INPUT_SCHEMAS,

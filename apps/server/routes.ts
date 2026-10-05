@@ -16,6 +16,7 @@ export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: 
     if (research !== undefined) return research;
     const parts = path.split('/').filter(Boolean);
     const [kind, id, action] = parts;
+    if(kind==='sessions'&&id&&action==='host-access')return app.hostAccess.status(USER,id);
     if (path === '/bootstrap')
         return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), models:app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
     if (path === '/capabilities')
@@ -99,6 +100,7 @@ export function writeRoute(app: ResearchApp, host: AgentHost, path: string, body
     }
     const integration=writeIntegrationRoute(app,path,body); if(integration!==undefined)return integration;
     const x = object(body), [kind, id, action] = path.split('/').filter(Boolean);
+    if(kind==='sessions'&&id&&action==='host-access'){ensure(method==='POST','METHOD_NOT_ALLOWED','宿主权限设置只接受 POST',405);const {enabled,...input}=x;ensure(typeof enabled==='boolean','INVALID_INPUT','enabled 必须为布尔值');return enabled?app.hostAccess.enable(USER,id,input):app.hostAccess.revoke(USER,id,input);}
     const research = writeCampaignRoute(app, path, x);
     if (research !== undefined) return research;
     if (kind === 'projects' && id && action === 'text-evidence') return app.textEvidence.configure(USER,id,x);

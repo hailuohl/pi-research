@@ -1,0 +1,8 @@
+.composer-caption:has(.host-access-trigger){padding-top:0;height:24px;align-items:center}
+.composer-caption .host-access-trigger{height:24px;display:inline-flex;align-items:center;gap:5px;padding:0 3px;color:var(--muted);font-size:11px;border-radius:5px;white-space:nowrap;flex-shrink:0}
+.composer-caption .host-access-trigger:hover{background:var(--soft,#f2f3f6);color:var(--ink)}
+.composer-caption .host-access-trigger.enabled{color:#85642b;background:#fbf5e9}
+.host-access-notice{border:1px solid #ebdfc6;border-radius:8px;background:#fbf5e9;padding:12px 14px;margin:16px 0;color:#85642b;font-size:12px}
+.host-access-notice p{margin-top:6px}.host-access-note{margin-top:12px;color:#85642b;font-size:12px}
+.host-access-ack{display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.9;margin-top:18px}.host-access-ack input{margin-top:5px;flex-shrink:0}
+@media(max-width:1040px){.composer-caption:has(.host-access-trigger){height:calc(10px + 1lh)}.composer-caption:has(.host-access-trigger)>span{font-size:8px}.composer-caption:has(.host-access-trigger)>span .host-extra-key{display:none}}

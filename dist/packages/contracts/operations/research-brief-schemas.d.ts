@@ -365,7 +365,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "digest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -556,7 +556,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "digest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+                    readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -831,7 +831,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("id" | "digest" | "kind" | "projectId" | "version" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("id" | "version" | "digest" | "kind" | "projectId" | "createdAt" | "updatedAt" | "revision" | "status" | "scope" | "evidenceIds" | "rootSessionId" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
 };
