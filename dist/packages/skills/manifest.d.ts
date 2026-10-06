@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "547f5f0d9dc3a27db86a26d9747c8b102b73ccc5fb1073b80fba07c2f0fb2feb";
+export declare const BUNDLE_ID = "ea9fd8e00f0fc2a5aca8c900f14ea2e97a0b613a6baa5a86111064646b364c5a";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "5a511f85b11b45d083747eb0d64b0e4396469aafdf0e70a56ed9589467f38806";
+    readonly digest: "a616fa56550323e89283517ac75337bc4c79cdd6e8434d096162d4d6b99f595b";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -88,20 +88,6 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
         readonly path: "agent-skills/orx-compute/SKILL.md";
         readonly blob: "60566d92cd5e86f1d6684d731444af512531ea0c";
-    };
-}, {
-    readonly id: "pi-research-instances";
-    readonly name: "pi-research-instances";
-    readonly description: "Use when a user asks for a persistent machine, provisioning, or an interactive remote workspace.";
-    readonly roles: readonly ["coordinator", "designer"];
-    readonly path: "skills/piresearch/pi-research-instances/SKILL.md";
-    readonly digest: "b70d2802a9be595a72c505c3b4631487c4f5b9e7312f7c60ab9f4a11f90498cd";
-    readonly resources: readonly [];
-    readonly source: {
-        readonly repository: "alphaXiv/OpenResearch";
-        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
-        readonly path: "agent-skills/orx-instances/SKILL.md";
-        readonly blob: "80bf26dc1634a4809fae9ee3d0c5598951258026";
     };
 }, {
     readonly id: "pi-research-evidence";

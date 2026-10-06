@@ -26,7 +26,8 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 | 报告与持久成果 | pi-research-reports |
 | 绘图脚本和科研图形 | pi-research-figures |
 | 论文草稿 | pi-research-paper |
-| 技能模板、外部机器、产品问题 | customize / instances / feedback 对应技能 |
+| 技能模板 | pi-research-customize |
+| 产品问题 | pi-research-feedback |
 
 所有工具参数放入 `input` 对象；工具返回的 ID 才可作后续引用。Project、Experiment、Run、Session、Task 不是同一种对象，禁止互换。
 

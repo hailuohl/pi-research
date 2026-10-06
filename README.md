@@ -8,6 +8,8 @@
 
 2026-10-07执行后端收敛为**本地受信示例、Docker、SSH**；其他执行后端已从当前能力目录、技能参考和接入计划移除。旧技能发行与历史会话仍保留原版本，见[验收记录](docs/acceptance/flow-compute-backends/RESULT.md)。
 
+随后移除远程实例技能及占位、云资源管理和完整远程工作台部署规划。当前默认目录为13个内置技能、8份参考；GPU扩展及既有资源调度保持，见[继续清理记录](docs/acceptance/flow-compute-related-cleanup/RESULT.md)。
+
 历史目标（2026-09-29）：曾要求对齐OpenResearch前端，并把桌面分发及自建托管范围移出当时排期。该排期由上面的当前阶段目标取代；已有成果与在途改动继续保留。
 
 2026-10-04 已将用户选定的[浅色视觉方案正式接入](docs/acceptance/flow-light-frontend/RESULT.md)：保持原布局，更新真实聊天、列表和图标；设计预览与正式应用入口、回归及干净构建证据见该记录。
@@ -41,7 +43,7 @@ node dist/apps/server/index.js
 
 ## 实际提供
 
-- 14个技能模块（13个上游主题＋总览），8份参考（2份计算、6份图表）；按角色和发布哈希加载，项目未知技能不会自动执行。
+- 13个技能模块（12个上游主题＋总览），8份参考（2份计算、6份图表）；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
 - 当前 134 个操作通过 OperationRegistry 统一验证输入/输出、权限与幂等；包括固定源码、测试/审查、有限授权、文献/文档、文稿/报告、历史分页、消息附件和资源配置。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。owner HTTP 的 sessionId 不授予Agent身份，现有批准边界保持。
@@ -122,4 +124,4 @@ npm run test:live
 - [许可证/修改说明](THIRD_PARTY_NOTICES.md)
 - [上一个版本README（历史）](docs/openresearch/previous-README.md)
 
-各阶段证据按实际范围保留：智谱Pi、本机CPU Docker、有限授权、PubMed摘要/PMC原文、固定文档/文稿、Wine与Anscombe比较及备份迁移已有记录；其他原PDF来源、自动root唤醒、GPU/外部远端仍受限或待验。用户授权主代理拟定的[分组红酒任务](docs/acceptance/flow-wine-grouped-trial/RESULT.md)已完成真实后端试用，当前转入按需维护，不循环追加示例。完整前端、桌面/团队暂缓；自建托管范围长期独立保留，不能称本阶段已实现。准确入口与科学/环境限制以[后端清单](docs/BACKEND-READINESS.zh-CN.md)为准。
+各阶段证据按实际范围保留：智谱Pi、本机CPU Docker、有限授权、PubMed摘要/PMC原文、固定文档/文稿、Wine与Anscombe比较及备份迁移已有记录；其他原PDF来源、自动root唤醒、GPU/外部SSH目标仍受限或待验。用户授权主代理拟定的[分组红酒任务](docs/acceptance/flow-wine-grouped-trial/RESULT.md)已完成真实后端试用，当前转入按需维护，不循环追加示例。完整前端、桌面/团队暂缓。准确入口与科学/环境限制以[后端清单](docs/BACKEND-READINESS.zh-CN.md)为准。

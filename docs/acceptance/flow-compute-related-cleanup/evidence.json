@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-07",
+  "baseline": "062d02655975729c07bb6266ae7d42b27bf62838",
+  "builtinBundleId": "ea9fd8e00f0fc2a5aca8c900f14ea2e97a0b613a6baa5a86111064646b364c5a",
+  "builtinSkills": 13,
+  "builtinResources": 8,
+  "removedDefaultSkill": "pi-research-instances",
+  "removedConnectorPlaceholder": "standalone-instances",
+  "computeBackends": ["trusted-example", "docker", "ssh"],
+  "existingReleasesUnchanged": 4,
+  "oldReleaseFilesUnchanged": 113,
+  "originalInFlightFilesUnchanged": 5,
+  "currentReadError": "SKILL_NOT_FOUND",
+  "retiredNameUploadError": "SKILL_PACKAGE_ID_INVALID",
+  "checks": {
+    "build": {"exitCode": 0, "log": ".validation/compute-related-cleanup-20261007/build.log"},
+    "focused": {
+      "exitCode": 0,
+      "tests": 51,
+      "passed": 51,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".validation/compute-related-cleanup-20261007/focused-tests.log"
+    },
+    "full": {
+      "command": "npm run test:core",
+      "exitCode": 0,
+      "tests": 1134,
+      "passed": 1111,
+      "failed": 0,
+      "skipped": 23,
+      "skipScope": "Optional real Docker/compiler checks and POSIX permission checks on Windows",
+      "log": ".validation/compute-related-cleanup-20261007/full-tests.log"
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "exitCode": 0,
+      "npmCiExitCode": 0,
+      "buildExitCode": 0,
+      "typecheckExitCode": 0,
+      "files": 524,
+      "identical": true,
+      "distManifestSha256": "692fe61f692362ddb36b0c4459d6359a4671b89b49b26522a93537ac46c91383",
+      "summary": ".validation/clean-build-mLYohK/summary.json"
+    }
+  },
+  "models": {
+    "implementation": {"requestedModel": "gpt-6.1-sol", "requestedEffort": "high", "runtime": "not echoed"},
+    "independentReview": {"requestedModel": "gpt-6-astra", "requestedEffort": "xhigh", "runtime": "not echoed"}
+  },
+  "existingProjectSkillConfigurationsModified": false,
+  "permissionsChanged": false,
+  "researchServiceRestarted": false,
+  "realProviderModelInvoked": false,
+  "externalSshContacted": false
+}

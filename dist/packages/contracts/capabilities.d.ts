@@ -12,14 +12,14 @@ export declare const CAPABILITIES: readonly [{
     readonly stage: "M2/M4";
     readonly status: "partial";
     readonly verification: "导入审阅、固定bundle、升级/回滚、真实Pi写作与图表/diagram产物已验";
-    readonly notes: "13个主题模块与总览；按角色/摘要固定，资源审阅不授权脚本执行。新模板与领域写作按实际任务需要验收。";
+    readonly notes: "12个主题模块与总览；按角色/摘要固定，资源审阅不授权脚本执行。新模板与领域写作按实际任务需要验收。";
 }, {
     readonly id: "projects";
     readonly name: "本地项目 / 文件导入";
     readonly stage: "M1";
     readonly status: "implemented";
     readonly verification: "项目副本导入、受管Git工作区及离线备份/异址恢复已验";
-    readonly notes: "输入原目录保留；备份限离线、同平台、单活动副本，目标必须不存在。远程完整工作台未验。";
+    readonly notes: "输入原目录保留；备份限离线、同平台、单活动副本，目标必须不存在。";
 }, {
     readonly id: "sessions";
     readonly name: "会话 / 排队 / 中止 / 分支";
@@ -134,11 +134,11 @@ export declare const CAPABILITIES: readonly [{
     readonly notes: "明确内容、目标、可见性及授权后按需启动；开发代码的授权Git备份不等于科研成果发布。";
 }, {
     readonly id: "desktop";
-    readonly name: "桌面安装 / 托管计算 / 团队账户";
+    readonly name: "桌面安装 / 团队协作";
     readonly stage: "M8";
     readonly status: "not_implemented";
-    readonly verification: "当前阶段暂缓或长期独立范围";
-    readonly notes: "桌面/更新/应用回滚及团队协作暂缓；账户/组织/托管实例/用量账本保留长期范围。当前本地服务为单用户回环鉴权。";
+    readonly verification: "当前阶段暂缓";
+    readonly notes: "桌面/更新/应用回滚及团队协作暂缓。当前本地服务为单用户回环鉴权。";
 }, {
     readonly id: "parity";
     readonly name: "完整对齐与科研能力评测";

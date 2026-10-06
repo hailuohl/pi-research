@@ -16,7 +16,7 @@
 | PR09 | 既有React/API路径与历史证据保留 | 前端布局及全面重构暂缓；当前只验后端 |
 | PR10 | 固定PDF/页段、语料授权、[PubMed摘要](acceptance/flow-pubmed-abstract/RESULTS.zh-CN.md)、PMC原文/表格文本、[PaperRead转文档](acceptance/flow-paper-document/RESULT.md)已验 | PDF阅读顺序/表图结构仍未知；复杂表格语义未恢复；[bioRxiv/OpenAlex原PDF](acceptance/flow-biorxiv-original-pdf/RESULTS.zh-CN.md)保留环境待验 |
 | PR11–12 | 技能审阅/固定/回滚、[静态资源](acceptance/flow-skill-binary/RESULTS.zh-CN.md)、[diagram](acceptance/flow-diagram/RESULTS.zh-CN.md)、Wine/Anscombe比较/图表/可编辑论文及 [独立文稿审查](acceptance/flow-anscombe-paper-review/RESULTS.zh-CN.md)已有证据 | 新模板、图表或领域写作以真实任务所需为限；审查接受不证明科学结论 |
-| PR13 | [SSH隔离回环](acceptance/flow-ssh-run/RESULTS.zh-CN.md)及 [嵌套源码修复](acceptance/flow-ssh-nested-umask/RESULT.md)已验；2026-10-07执行后端收敛为本地受信示例、Docker、SSH | 外部SSH目标仍按实际环境验收，远程工作台另列；其他后端已移出接入计划 |
+| PR13 | [SSH隔离回环](acceptance/flow-ssh-run/RESULTS.zh-CN.md)及 [嵌套源码修复](acceptance/flow-ssh-nested-umask/RESULT.md)已验；2026-10-07执行后端收敛为本地受信示例、Docker、SSH | 外部SSH目标仍按实际环境验收；其他后端、实例与云资源管理、完整远程工作台部署已移出计划 |
 | PR14 | 离线备份、异址迁移与 [新增科研实体恢复](acceptance/flow-rich-backup-restore/RESULT.md)已验；当前限同平台、单活动副本 | 产品Git发布、Overleaf、跨平台恢复按需；桌面与团队协作暂缓 |
 
 后端收口与本次用户授权拟定的真实任务均已交付。新任务仍需明确论文/代码/数据、协议与交付；不循环追加示例、授权变体或无需求工程矩阵。前端/桌面/团队暂缓，环境待验和长期范围继续保留。

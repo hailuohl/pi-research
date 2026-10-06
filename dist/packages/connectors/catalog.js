@@ -9,6 +9,6 @@ export const CONNECTOR_CAPABILITIES = [
     { id: 'ssh', category: 'compute', operations: ['submit', 'inspect', 'cancel', 'logs', 'collect'], implementation: 'existing-runner', verification: 'local-tests', limitation: 'CPU loopback execution tested; user-configured and probed SSH target with trusted Linux Docker supervisor; external hosts unverified; GPU resource allocation not supported' },
     { id: 'code-handoff', category: 'collaboration', operations: ['prepare', 'inspect', 'approve-user', 'apply-user'], implementation: 'existing-service', verification: 'local-tests', limitation: 'Creates child snapshot; not Git merge/push' },
     { id: 'latex-compile', category: 'publication', operations: ['fixed-manuscript', 'approved-docker-build', 'diagnostics', 'pdf-preview'], implementation: 'existing-runner', verification: 'local-tests', limitation: 'Requires explicit pinned compiler image and separate per-build approval; readiness is reported by publication_status' },
-    ...['overleaf', 'git-publish', 'standalone-instances'].map(id => ({ id, category: 'publication', operations: [], implementation: 'not-implemented', verification: 'unavailable', limitation: 'No connection, authentication or external side effects' })),
+    ...['overleaf', 'git-publish'].map(id => ({ id, category: 'publication', operations: [], implementation: 'not-implemented', verification: 'unavailable', limitation: 'No connection, authentication or external side effects' })),
 ];
 //# sourceMappingURL=catalog.js.map
