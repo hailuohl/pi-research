@@ -2,15 +2,14 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { literatureSourceURL } from "./literature-view.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
-import { SectionTitle, Empty, Icon, nativeSelectButton } from "./ui.js";
+import { SectionTitle, Icon, nativeSelectButton } from "./ui.js";
 import { SkillManager } from "./skill-manager.js";
 const sources = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
-const builtinNames = { overview: ["\u7814\u7A76\u5DE5\u4F5C\u6D41", "skills"], create: ["\u7814\u7A76\u542F\u52A8", "plus"], "experiment-tree": ["\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], git: ["\u4EE3\u7801\u4E0E\u7248\u672C", "branch"], "agent-delegation": ["\u534F\u4F5C\u65B9\u6CD5", "network"], compute: ["\u8BA1\u7B97\u73AF\u5883", "cpu"], instances: ["\u8FDC\u7A0B\u5B9E\u4F8B", "resources"], evidence: ["\u8BC1\u636E\u4E0E\u5F15\u7528", "evidence"], reports: ["\u62A5\u544A\u4E0E\u6210\u679C", "report"], figures: ["\u56FE\u8868\u4E0E\u53EF\u89C6\u5316", "report"], paper: ["\u8BBA\u6587\u5199\u4F5C", "book-open"], customize: ["\u6280\u80FD\u5B9A\u5236", "settings"], feedback: ["\u8BC4\u4EF7\u4E0E\u53CD\u9988", "chat"], "lit-review": ["\u6587\u732E\u7814\u7A76", "search"] };
 const sourceInfo = { alphaxiv: { name: "alphaXiv", description: "\u9884\u5370\u672C\u7814\u7A76\u4E0E\u8BED\u4E49\u5019\u9009", logo: "alphaxiv.svg" }, openalex: { name: "OpenAlex", description: "\u5F00\u653E\u5B66\u672F\u76EE\u5F55\u4E0E\u7814\u7A76\u5143\u6570\u636E", logo: "openalex.svg" }, biorxiv: { name: "bioRxiv", description: "\u751F\u547D\u79D1\u5B66\u9884\u5370\u672C", logo: "biorxiv.svg" }, pubmed: { name: "PubMed", description: "\u751F\u7269\u533B\u5B66\u6587\u732E\u4E0E\u6458\u8981", logo: "pubmed.png" }, crossref: { name: "Crossref", description: "DOI \u6CE8\u518C\u4E0E\u51FA\u7248\u5143\u6570\u636E", logo: "crossref.ico" } };
 class IntegrationsView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { activePanel: "skills", skillQuery: "", skills: [], bundleId: "", config: null, selectedSkill: null, selectedSources: ["crossref"], query: "", priority: "default", strategy: "keyword", after: "", before: "", limit: 8, search: null, paper: null, paperText: "", history: null, busy: false, error: "" };
+    this.state = { activePanel: "skills", config: null, selectedSources: ["crossref"], query: "", priority: "default", strategy: "keyword", after: "", before: "", limit: 8, search: null, paper: null, paperText: "", history: null, busy: false, error: "" };
     this.mounted = true;
   }
   componentDidMount() {
@@ -31,8 +30,8 @@ class IntegrationsView extends React.Component {
     }
   }
   async load() {
-    const [catalog, config, history] = await Promise.all([api("/skills"), api(`/projects/${this.props.projectId}/connectors`), api(`/projects/${this.props.projectId}/connector-history`)]);
-    if (this.mounted) this.setState({ skills: catalog.skills, bundleId: catalog.bundleId, config, history, selectedSources: this.state.selectedSources.filter((s) => config.enabled[s]) });
+    const [config, history] = await Promise.all([api(`/projects/${this.props.projectId}/connectors`), api(`/projects/${this.props.projectId}/connector-history`)]);
+    if (this.mounted) this.setState({ config, history, selectedSources: this.state.selectedSources.filter((s) => config.enabled[s]) });
   }
   async configure(source, enabled) {
     await this.run(async () => {
@@ -58,12 +57,6 @@ class IntegrationsView extends React.Component {
       await this.load();
     });
   }
-  async skill(id, resource) {
-    await this.run(async () => {
-      const s = await api(`/skills/${id}${resource ? "?resource=" + encodeURIComponent(resource) : ""}`);
-      if (this.mounted) this.setState({ selectedSkill: s });
-    });
-  }
   panelId(panel) {
     return `integrations-${this.props.projectId}-${panel}`;
   }
@@ -82,7 +75,7 @@ class IntegrationsView extends React.Component {
     }
   }
   render() {
-    const s = this.state, c = s.config, query = s.skillQuery.trim().toLocaleLowerCase(), filteredSkills = s.skills.filter((skill) => `${skill.id} ${skill.description} ${builtinNames[skill.id.replace(/^pi-research-/, "")]?.[0] ?? ""}`.toLocaleLowerCase().includes(query));
+    const s = this.state, c = s.config;
     return /* @__PURE__ */ jsx("div", { className: "page-scroll integrations-page", children: /* @__PURE__ */ jsxs("div", { className: "integration-workspace", children: [
       /* @__PURE__ */ jsxs(SectionTitle, { title: "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", sub: "\u9009\u62E9\u7814\u7A76\u65B9\u6CD5\uFF0C\u7BA1\u7406\u6587\u732E\u6765\u6E90\u6388\u6743\u3002", children: [
         this.props.onLiterature ? /* @__PURE__ */ jsx("button", { className: "primary", onClick: this.props.onLiterature, children: "\u524D\u5F80\u6301\u4E45\u6587\u732E\u4EFB\u52A1" }) : null,
@@ -93,56 +86,7 @@ class IntegrationsView extends React.Component {
         panel === "skills" ? "\u6280\u80FD" : "\u8FDE\u63A5\u5668"
       ] }, panel)) }),
       s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
-      /* @__PURE__ */ jsxs("section", { className: "integration-panel", id: this.panelId("skills"), role: "tabpanel", "aria-labelledby": this.panelId("skills") + "-tab", hidden: s.activePanel !== "skills", children: [
-        /* @__PURE__ */ jsxs("section", { className: "surface builtin-skills-card", children: [
-          /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-            /* @__PURE__ */ jsx("h2", { children: "\u5185\u7F6E\u7814\u7A76\u6280\u80FD" }),
-            /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
-              s.skills.length,
-              " \u4E2A\u6280\u80FD"
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6309\u89D2\u8272\u4E0E\u89E6\u53D1\u6761\u4EF6\u8BFB\u53D6\u65B9\u6CD5\u8BF4\u660E\u3002\u76EE\u5F55\u5C55\u793A\u4E0D\u6388\u4E88\u5DE5\u5177\u6216\u8BA1\u7B97\u6743\u9650\u3002" }),
-          /* @__PURE__ */ jsxs("div", { className: "skill-toolbar", children: [
-            /* @__PURE__ */ jsx(Icon, { name: "search" }),
-            /* @__PURE__ */ jsx("input", { "aria-label": "\u641C\u7D22\u5185\u7F6E\u6280\u80FD", value: s.skillQuery, onChange: (e) => this.setState({ skillQuery: e.target.value }), placeholder: "\u641C\u7D22\u6280\u80FD ID \u6216\u8BF4\u660E" })
-          ] }),
-          /* @__PURE__ */ jsx("div", { className: "builtin-skill-list", children: filteredSkills.map((skill) => {
-            const friendly = builtinNames[skill.id.replace(/^pi-research-/, "")];
-            return /* @__PURE__ */ jsxs("div", { className: "builtin-skill-row", children: [
-              /* @__PURE__ */ jsx(Icon, { name: friendly?.[1] ?? "skills" }),
-              /* @__PURE__ */ jsxs("div", { className: "builtin-skill-copy", children: [
-                /* @__PURE__ */ jsx("h3", { children: friendly?.[0] ?? skill.id }),
-                /* @__PURE__ */ jsx("p", { className: "small code-wrap", children: skill.id }),
-                /* @__PURE__ */ jsx("p", { className: "small muted", children: skill.description }),
-                /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
-                  skill.resources.length,
-                  " \u4E2A\u8D44\u6E90"
-                ] }),
-                skill.resources.length ? /* @__PURE__ */ jsx("div", { className: "skill-resource-actions", children: skill.resources.map((resource) => /* @__PURE__ */ jsx("button", { className: "text-button small code-wrap", disabled: s.busy, onClick: () => this.skill(skill.id, resource), children: resource }, resource)) }) : null
-              ] }),
-              /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: s.busy, onClick: () => this.skill(skill.id), children: "\u67E5\u770B\u8BF4\u660E" })
-            ] }, skill.id);
-          }) }),
-          !filteredSkills.length ? /* @__PURE__ */ jsx(Empty, { title: query ? "\u6CA1\u6709\u5339\u914D\u7684\u5185\u7F6E\u6280\u80FD" : "\u5C1A\u672A\u53D6\u5F97\u5185\u7F6E\u6280\u80FD", children: query ? "\u5C1D\u8BD5\u5176\u4ED6 ID \u6216\u8BF4\u660E\u5173\u952E\u8BCD\u3002" : "\u5237\u65B0\u672C\u5730\u72B6\u6001\u540E\u91CD\u8BD5\u3002" }) : null,
-          s.selectedSkill ? /* @__PURE__ */ jsxs("section", { className: "skill-reader", children: [
-            /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-              /* @__PURE__ */ jsxs("h3", { children: [
-                s.selectedSkill.id,
-                " / ",
-                s.selectedSkill.resource
-              ] }),
-              /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => this.setState({ selectedSkill: null }), children: "\u5173\u95ED\u8BF4\u660E" })
-            ] }),
-            /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-              "SHA-256 ",
-              s.selectedSkill.digest
-            ] }),
-            /* @__PURE__ */ jsx("pre", { className: "integration-content", children: s.selectedSkill.content })
-          ] }) : null
-        ] }),
-        /* @__PURE__ */ jsx(SkillManager, { projectId: this.props.projectId, sessionId: this.props.sessionId }, this.props.projectId)
-      ] }),
+      /* @__PURE__ */ jsx("section", { className: "integration-panel", id: this.panelId("skills"), role: "tabpanel", "aria-labelledby": this.panelId("skills") + "-tab", hidden: s.activePanel !== "skills", children: /* @__PURE__ */ jsx(SkillManager, { projectId: this.props.projectId, sessionId: this.props.sessionId }, this.props.projectId) }),
       /* @__PURE__ */ jsxs("section", { className: "integration-panel", id: this.panelId("connectors"), role: "tabpanel", "aria-labelledby": this.panelId("connectors") + "-tab", hidden: s.activePanel !== "connectors", children: [
         /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u5F00\u542F\u6765\u6E90\u53EA\u6388\u6743\u5411\u8BE5\u5916\u90E8\u670D\u52A1\u53D1\u9001\u67E5\u8BE2\uFF0C\u4E0D\u4FDD\u8BC1\u7F51\u7EDC\u53EF\u8FBE\u6216\u5168\u6587\u53EF\u5F97\u3002\u5B9E\u9645\u8BF7\u6C42\u72B6\u6001\u5355\u72EC\u8BB0\u5F55\uFF1B\u6765\u6E90\u9519\u8BEF\u4E0D\u4EE3\u8868\u6CA1\u6709\u76F8\u5173\u8BBA\u6587\u3002\u4E0D\u4F1A\u6388\u4E88\u8BA1\u7B97\u3001\u53D1\u5E03\u6216\u989D\u5916\u6A21\u578B\u8C03\u7528\u6743\u9650\u3002" }),
         /* @__PURE__ */ jsxs("section", { className: "surface connector-catalog", children: [

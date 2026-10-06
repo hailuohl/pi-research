@@ -247,6 +247,76 @@ export declare function readSkill(app: ResearchApp, actor: Actor, pid: string, i
         readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
         readonly path: "agent-skills/orx-lit-review/SKILL.md";
         readonly blob: "a64ea8d7f3ec04b4f325979951ba072bd74db3f8";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "SKILL.md";
+        readonly blob: "904b26802cf62d7ba84fa99f3c2c804026cd9e46";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-create/SKILL.md";
+        readonly blob: "6d502f794f82a124cdd93723e2676d8cf0f8861b";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-experiment-tree/SKILL.md";
+        readonly blob: "e888fc9d179ddfae87c4a0732224cf354a9c5430";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-git/SKILL.md";
+        readonly blob: "13af3bae031a9434c111c9c5ef77bbb8c80cc3bf";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-agent-delegation/SKILL.md";
+        readonly blob: "2cb9938569dca476c99c108df491835eadc19b65";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-compute/SKILL.md";
+        readonly blob: "60566d92cd5e86f1d6684d731444af512531ea0c";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-instances/SKILL.md";
+        readonly blob: "80bf26dc1634a4809fae9ee3d0c5598951258026";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-evidence/SKILL.md";
+        readonly blob: "2b15de716916abceb5cbf6a40e2cff75abc37cb1";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-reports/SKILL.md";
+        readonly blob: "313d3ca61372e5f2e101cac6e78828393d03ad87";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-figures/SKILL.md";
+        readonly blob: "611c11b12c395789d3aa0d2c015cf4ce0594a345";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-paper/SKILL.md";
+        readonly blob: "46fdc3e4207e1ca9c3c8ec51649bc1b242c6ecaa";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-customize/SKILL.md";
+        readonly blob: "51d608098dc24df19518bea4f6fc71963a26c2b4";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-feedback/SKILL.md";
+        readonly blob: "82a729e681bb9fe361589aa953d92769b698196f";
+    } | {
+        readonly repository: "alphaXiv/OpenResearch";
+        readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
+        readonly path: "agent-skills/orx-lit-review/SKILL.md";
+        readonly blob: "a64ea8d7f3ec04b4f325979951ba072bd74db3f8";
     };
 } | {
     bundleId: string;

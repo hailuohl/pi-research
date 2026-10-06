@@ -31,9 +31,14 @@ export interface SkillRevocation {
     contentDigest: string;
     note: string;
 }
+export interface SkillDeletion {
+    revisionId: string;
+    contentDigest: string;
+}
 export interface SkillBundle {
     builtinBundleId: string;
     revisionIds: string[];
+    disabledBuiltinIds?: string[];
     contentDigest: string;
 }
 export interface SkillConfiguration {

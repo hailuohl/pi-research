@@ -9,7 +9,7 @@ or trust an adjacent manifest merely because it exists.
 The original `6683733f...` release keeps its historical ID. That ID predates the
 current `SHA256(JSON.stringify(skills))` release algorithm; its separately pinned
 `manifestDigest` verifies the original metadata without renaming old sessions.
-Current-release reads verify `skills/openresearch`; historical reads verify the
+Current-release reads verify `skills/piresearch`; historical reads verify the
 registered archive. Native Pi skill/file discovery remains disabled.
 
 To publish an update, review the intended source and metadata changes, then run

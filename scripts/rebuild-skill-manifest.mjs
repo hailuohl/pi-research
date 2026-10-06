@@ -3,7 +3,7 @@
 import {readFileSync,writeFileSync,lstatSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve,dirname,join,relative,isAbsolute} from 'node:path';
 import {createHash} from 'node:crypto';
-const root=resolve('.'),file=join(root,'skills/openresearch/manifest.json'),m=JSON.parse(readFileSync(file,'utf8'));
+const root=resolve('.'),file=join(root,'skills/piresearch/manifest.json'),m=JSON.parse(readFileSync(file,'utf8'));
 const sha=b=>createHash('sha256').update(b).digest('hex'),json=v=>JSON.stringify(v,null,2)+'\n';
 function safe(p){const path=resolve(root,p),rel=relative(root,path);if(rel==='..'||rel.startsWith('../')||rel.startsWith('..\\')||isAbsolute(rel))throw Error('path escapes release');let base=root;for(const part of rel.split(/[\\/]/)){base=join(base,part);if(existsSync(base)&&lstatSync(base).isSymbolicLink())throw Error('symlink skill refused');}return path;}
 function bytes(p){const path=safe(p),stat=lstatSync(path);if(!stat.isFile()||stat.size>128*1024)throw Error('invalid release file');return readFileSync(path);}
@@ -22,7 +22,7 @@ if(!releases.some(r=>r.bundleId===previousId&&r.manifestDigest===sha(JSON.string
 const names=new Set();
 for(const s of m.skills){
  if(!/^pi-research-[a-z0-9-]+$/.test(s.id)||names.has(s.id))throw Error('invalid or duplicate skill ID');names.add(s.id);
- if(s.path!==`skills/openresearch/${s.id}/SKILL.md`)throw Error('invalid skill entry path');
+ if(s.path!==`skills/piresearch/${s.id}/SKILL.md`)throw Error('invalid skill entry path');
  s.digest=sha(bytes(s.path));const paths=new Set();
  for(const r of s.resources){const parts=r.path.split('/');if(!parts.length||parts.some(p=>!p||p==='.'||p==='..'||/[\\:\x00-\x1f]/.test(p)||['.pi','.git','.codex','hooks','extensions'].includes(p.toLowerCase())||/^agents(?:\.|$)/i.test(p))||paths.has(r.path.toLowerCase()))throw Error('unsafe resource path');paths.add(r.path.toLowerCase());r.digest=sha(bytes(join(dirname(s.path),r.path)));}
 }

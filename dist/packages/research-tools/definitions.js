@@ -32,6 +32,7 @@ const TOOL_METADATA = {
     skill_package_read: { description: '用户入口：按固定清单读取待审或历史技能资源；文本返回 UTF-8，静态 PNG 返回原字节 Base64。', example: { revisionId: 'revision-id', resource: 'assets/figure.png' } },
     skill_package_review: { description: '用户入口：审阅指定内容摘要，批准或拒绝该技能版本；不授予执行权限。', example: { revisionId: 'revision-id', decision: 'approved', note: '已阅读固定正文和声明' } },
     skill_package_revoke: { description: '用户入口：撤销指定技能版本，阻止未来启动，保留历史记录。', example: { revisionId: 'revision-id', note: '停止使用该版本' } },
+    skill_package_delete: { description: '用户入口：从技能管理列表移除版本并停止后续新绑定；保留固定历史原文、审阅与旧任务。', example: { revisionId: 'revision-id', expectedVersion: 1 } },
     skill_bundle_configure: { description: '用户入口：配置已审阅技能修订；默认保留内置基线，显式 builtinBundleId 切换发行，bundleId 精确回滚整包；不改已有会话或任务。', example: { expectedVersion: 0, revisionIds: [] } },
     skill_session_select: { description: '用户入口：在尚未启动 Pi 的会话选择必需技能，固定包并回查能力预检。', example: { sessionId: 'session-id', expectedVersion: 1, skillIds: [] } },
     skill_preflight: { description: '用户入口：检查会话固定技能的工具、后端和数据条件，不启动模型。', example: { sessionId: 'session-id' } },

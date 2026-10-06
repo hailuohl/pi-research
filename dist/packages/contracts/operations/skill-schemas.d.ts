@@ -233,6 +233,25 @@ export declare const SKILL_INPUT_SCHEMAS: {
         readonly required: readonly ["revisionId", "note"];
         readonly additionalProperties: false;
     };
+    readonly skill_package_delete: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["revisionId", "expectedVersion"];
+        readonly additionalProperties: false;
+    };
     readonly skill_bundle_configure: {
         readonly type: "object";
         readonly properties: {
@@ -266,6 +285,18 @@ export declare const SKILL_INPUT_SCHEMAS: {
                 readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                 readonly minLength: number;
                 readonly maxLength: number;
+            };
+            readonly disabledBuiltinIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
             };
         };
         readonly required: readonly ["expectedVersion"];
@@ -444,8 +475,14 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
+                    readonly disabledBuiltinIds: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "string";
+                        };
+                    };
                 };
-                readonly required: ("version" | "revisionIds" | "bundleId" | "builtinBundleId")[];
+                readonly required: ("version" | "revisionIds" | "disabledBuiltinIds" | "bundleId" | "builtinBundleId")[];
                 readonly additionalProperties: false;
             };
             readonly revisions: {
@@ -669,8 +706,52 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
+            readonly builtinSkills: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly id: {
+                            readonly type: "string";
+                        };
+                        readonly description: {
+                            readonly type: "string";
+                        };
+                        readonly digest: {
+                            readonly type: "string";
+                        };
+                        readonly resources: {
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly source: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly repository: {
+                                    readonly type: "string";
+                                };
+                                readonly commit: {
+                                    readonly type: "string";
+                                };
+                                readonly path: {
+                                    readonly type: "string";
+                                };
+                                readonly blob: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly required: ("path" | "commit" | "blob" | "repository")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly required: ("id" | "digest" | "source" | "resources" | "description")[];
+                    readonly additionalProperties: false;
+                };
+            };
         };
-        readonly required: ("configuration" | "revisions" | "builtinReleases")[];
+        readonly required: ("configuration" | "revisions" | "builtinReleases" | "builtinSkills")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_inspect: {
@@ -995,6 +1076,34 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
         readonly required: ("id" | "createdAt" | "kind" | "version" | "projectId" | "updatedAt" | "revisionId" | "contentDigest" | "note")[];
         readonly additionalProperties: false;
     };
+    readonly skill_package_delete: {
+        readonly type: "object";
+        readonly properties: {
+            readonly version: {
+                readonly type: "integer";
+            };
+            readonly bundleId: {
+                readonly type: "string";
+            };
+            readonly builtinBundleId: {
+                readonly type: "string";
+            };
+            readonly revisionIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly disabledBuiltinIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+        };
+        readonly required: ("version" | "revisionIds" | "disabledBuiltinIds" | "bundleId" | "builtinBundleId")[];
+        readonly additionalProperties: false;
+    };
     readonly skill_bundle_configure: {
         readonly type: "object";
         readonly properties: {
@@ -1008,6 +1117,12 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
             readonly revisionIds: {
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "string";
+                };
+            };
+            readonly disabledBuiltinIds: {
                 readonly type: "array";
                 readonly items: {
                     readonly type: "string";

@@ -1,6 +1,6 @@
 # 角色指令与受管科研技能
 
-角色身份和基础权限说明仍来自 `packages/pi-adapter/options.ts`；科研方法来自 `skills/openresearch/` 的受管发布包。宿主初始注入总览与角色目录，模型通过 `research_skill_read` 按需读取。
+角色身份和基础权限说明仍来自 `packages/pi-adapter/options.ts`；科研方法来自 `skills/piresearch/` 的受管发布包。宿主初始注入总览与角色目录，模型通过 `research_skill_read` 按需读取。
 
 不扫描项目或用户工作目录的 SKILL/AGENTS/.pi，也不执行扩展。技能被读取不改变角色权限。原始角色文档如下，属于历史说明：
 

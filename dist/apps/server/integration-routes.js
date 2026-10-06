@@ -8,7 +8,7 @@ export function readIntegrationRoute(app, path, url) {
     }
     const skill = path.match(/^\/skills\/([a-z0-9-]+)$/);
     if (skill)
-        return app.skills.read('coordinator', skill[1], url.searchParams.get('resource') ?? undefined);
+        return app.skills.read('coordinator', skill[1], url.searchParams.get('resource') ?? undefined, url.searchParams.has('bundleId') ? text(url.searchParams.get('bundleId'), 'bundleId', 100) : app.skills.bundleId);
     const p = path.match(/^\/projects\/([^/]+)\/(connectors|connector-history)$/);
     if (p) {
         app.store.get('project', p[1]);

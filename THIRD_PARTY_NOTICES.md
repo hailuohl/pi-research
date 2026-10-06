@@ -53,7 +53,7 @@ The original project design names OpenResearch as a functional reference;
 that is not a claim of endorsement, behavioral parity or completed cloning.
 
 ## OpenResearch skills and literature protocol adaptation
-Copyright (c) 2026 alphaXiv. MIT; full text in `third_party/openresearch/LICENSE`. Based on commit 3037f727e80e0ab20c61a87c613a50dde009a835. `skills/openresearch` rewrites all 13 canonical modules plus the overview for Pi Research tools and safety boundaries. `packages/connectors` ports selected literature protocol behavior from Rust `src/client.rs` to TypeScript and adds independent validation, cancellation, settings and bounded requests. No ORX runtime, hosted account, telemetry, or remote compute implementation is included. Source inventory and intentional differences are in `third_party/openresearch/source-manifest.json`.
+Copyright (c) 2026 alphaXiv. MIT; full text in `third_party/openresearch/LICENSE`. Based on commit 3037f727e80e0ab20c61a87c613a50dde009a835. `skills/piresearch` rewrites all 13 canonical modules plus the overview for Pi Research tools and safety boundaries. `packages/connectors` ports selected literature protocol behavior from Rust `src/client.rs` to TypeScript and adds independent validation, cancellation, settings and bounded requests. No ORX runtime, hosted account, telemetry, or remote compute implementation is included. Source inventory and intentional differences are in `third_party/openresearch/source-manifest.json`.
 
 ## Optional isolated PDF parser
 

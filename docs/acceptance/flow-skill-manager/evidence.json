@@ -1,0 +1,27 @@
+{
+  "task": "skill-manager-20261006",
+  "date": "2026-10-06",
+  "baselineCommit": "d0d7b871bbd4d10459bbca43eef2959293cbc6eb",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "builtinRelease": "344a44dcf73a8bcb2b2cdf5acf637f756c1763ef05c5ba464bc8285fa45a188b",
+  "migration": {"unchangedSkillFiles": 29, "unchangedHistoricalFiles": 60},
+  "checks": {
+    "initialFocused": {"tests": 57, "passed": 57, "failed": 0, "skipped": 0},
+    "fullRun": {"command": "npm run test:core", "tests": 1103, "passed": 1079, "failed": 1, "skipped": 23, "exitCode": 1, "log": ".validation/skill-manager-20261006/full-test.log", "failure": "operation-schema advertised count 138 versus 139"},
+    "repairFocused": {"tests": 44, "passed": 44, "failed": 0, "skipped": 0, "log": ".validation/skill-manager-20261006/repair-test.log"},
+    "schemaRecheck": {"tests": 9, "passed": 9, "failed": 0, "skipped": 0, "log": ".validation/skill-manager-20261006/schema-recheck.log"},
+    "cleanBuild": {"installExitCode": 0, "buildExitCode": 0, "typecheckExitCode": 0, "repairBuildExitCode": 0, "files": 524, "identical": true, "manifestSha256": "96579b961db752687985537227fbbbc621c208f43c67b0895d34aeb2f2c86a83", "summary": ".validation/skill-manager-20261006/final-clean-summary.json"}
+  },
+  "independentReview": {
+    "requestedModel": "gpt-6-astra", "requestedEffort": "xhigh", "runtimeVerification": "requested; runtime not echoed",
+    "initialPatch": ".validation/skill-manager-20261006/review.patch", "initialPatchSha256": "35abc85abc8717f6856e87f625b18a9be67c362bd558ee9b96107de2a933fc2b",
+    "repairPatch": ".validation/skill-manager-20261006/repair-review.patch", "repairPatchSha256": "ded193cd04e5badffda568118211bde68daf10592cf636b59f55573aec9da450",
+    "repairFileHashes": ".validation/skill-manager-20261006/repair-hashes.json", "schemaTestSha256": "033d90d569f0609a98d25a0643854cafa52737916b024042171fd9a820fe9449",
+    "blockersResolved": 2, "remainingBlockers": 0, "nonblocking": "session choices still list disabled builtin entries; save is denied by backend"
+  },
+  "implementation": {"requestedModel": "gpt-6.1-sol", "requestedEffort": "high", "runtimeVerification": "requested; runtime not echoed"},
+  "browser": {"environment": "isolated synthetic data at port 4797", "upload": "filechooser SKILL.md import succeeded", "flow": ["builtin off", "reload persisted off", "builtin on", "review upload", "upload on", "upload off", "upload delete", "native file upload", "connector switch restored"], "widthsWithoutOverflow": [1440,1024,768,320], "consoleErrors": 0, "consoleWarnings": 0, "externalRequestsUsed": 0, "searches": 0, "papers": 0},
+  "notRun": ["real model invocation", "Docker job", "external literature query"],
+  "delivery": {"restartExistingService": false, "existingServiceNeedsRestart": true},
+  "uncommittedUserFilesExcluded": ["apps/web/public/styles.css","dist/web/styles.css","docs/reference-baseline/OPENRESEARCH-COMPARISON.md","docs/reference-baseline/capability-matrix.json","docs/specs/project-design.txt"]
+}

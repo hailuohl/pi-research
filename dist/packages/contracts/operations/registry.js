@@ -200,6 +200,7 @@ const SPECS = [
     make('skill_package_read', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.readRevision(c.actor, c.projectId, x.revisionId, x.resource) }),
     make('skill_package_review', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.review(c.actor, c.projectId, x, c.idempotencyKey) }),
     make('skill_package_revoke', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.revoke(c.actor, c.projectId, x, c.idempotencyKey) }),
+    make('skill_package_delete', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.delete(c.actor, c.projectId, x, c.idempotencyKey) }),
     make('skill_bundle_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.configure(c.actor, c.projectId, x, c.idempotencyKey) }),
     make('skill_session_select', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => selectSessionSkills(c.app, c.actor, c.projectId, x) }),
     make('skill_preflight', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => inspectSessionSkills(c.app, c.actor, c.projectId, x.sessionId) }),

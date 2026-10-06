@@ -4,7 +4,7 @@ import {object,text,oneOf} from '../../packages/contracts/validation.js';
 const ROLES=['coordinator','literature','designer','implementer','analyst','reviewer','writer'] as const;
 export function readIntegrationRoute(app:ResearchApp,path:string,url:URL):unknown{
  if(path==='/skills'){const role=oneOf(url.searchParams.get('role')??'coordinator',ROLES,'role');return {bundleId:app.skills.bundleId,skills:app.skills.list(role)};}
- const skill=path.match(/^\/skills\/([a-z0-9-]+)$/);if(skill)return app.skills.read('coordinator',skill[1],url.searchParams.get('resource')??undefined);
+ const skill=path.match(/^\/skills\/([a-z0-9-]+)$/);if(skill)return app.skills.read('coordinator',skill[1],url.searchParams.get('resource')??undefined,url.searchParams.has('bundleId')?text(url.searchParams.get('bundleId'),'bundleId',100):app.skills.bundleId);
  const p=path.match(/^\/projects\/([^/]+)\/(connectors|connector-history)$/);if(p){app.store.get('project',p[1]);if(p[2]==='connectors')return app.operations.execute(USER,'connector_status',{},{projectId:p[1]});return {observations:app.connectors.observations(USER,p[1]),searches:app.store.list('connector-search',p[1]).slice(-30),papers:app.store.list('paper-read',p[1]).slice(-30),scope:'last-30-per-kind'};}
  return undefined;
 }

@@ -127,7 +127,7 @@ export class SkillService {
     verified(path, expected, rootPath = this.root) { return content(this.verifiedBytes(path, expected, rootPath)); }
     read(role, id, resource, builtinBundleId = BUNDLE_ID) { const release = this.builtin(builtinBundleId), e = release.skills.find(e => e.id === id); ensure(e, 'SKILL_NOT_FOUND', '技能不在受管清单内', 404); ensure(e.roles.includes(role), 'SKILL_SCOPE_DENIED', '该角色无此技能入口', 403); const r = resource ? e.resources.find(r => r.path === resource) : undefined; ensure(!resource || r, 'SKILL_RESOURCE_NOT_FOUND', '资源不在受管清单内', 404); const hash = r?.digest ?? e.digest, path = release.archived ? join('skills/releases', builtinBundleId, 'blobs', hash) : resource ? join(dirname(e.path), resource) : e.path; return { id, resource: resource ?? 'SKILL.md', content: this.verified(path, hash), digest: hash, bundleId: builtinBundleId, source: e.source }; }
     bootstrap(role) { return this.bootstrapEntries(role, BUNDLE_ID, this.list(role), this.read(role, 'pi-research-overview').content); }
-    bootstrapEntries(role, bundleId, entries, overview, builtinBundleId = BUNDLE_ID) { const prompt = `\n\n受管科研技能包 ${bundleId}\n以下是可按需读取的技能，不是额外权限。使用 research_skill_read({input:{skillId:"...",resource?:"..."}})，不要调用不存在的 read/Shell/orx 工具。仅技能目录/总览进入初始上下文，按触发条件读取相关模块。文本审阅不批准执行脚本。\n${entries.map(e => `${e.id}: ${e.description}`).join('\n')}\n\n${overview}`; return { bundleId, prompt, skills: entries.map(e => ({ name: e.id, description: e.description, filePath: e.revisionId ? join(this.c.dataDir, 'skill-blobs', e.digest) : builtinBundleId === BUNDLE_ID ? join(this.root, 'skills/openresearch', e.id, 'SKILL.md') : join(this.root, 'skills/releases', builtinBundleId, 'blobs', e.digest), baseDir: e.revisionId ? join(this.c.dataDir, 'skill-blobs') : builtinBundleId === BUNDLE_ID ? join(this.root, 'skills/openresearch', e.id) : join(this.root, 'skills/releases', builtinBundleId, 'blobs'), source: 'pi-research-reviewed-bundle', disableModelInvocation: false })) }; }
+    bootstrapEntries(role, bundleId, entries, overview, builtinBundleId = BUNDLE_ID) { const prompt = `\n\n受管科研技能包 ${bundleId}\n以下是可按需读取的技能，不是额外权限。使用 research_skill_read({input:{skillId:"...",resource?:"..."}})，不要调用不存在的 read/Shell/orx 工具。仅技能目录/总览进入初始上下文，按触发条件读取相关模块。文本审阅不批准执行脚本。\n${entries.map(e => `${e.id}: ${e.description}`).join('\n')}\n\n${overview}`; return { bundleId, prompt, skills: entries.map(e => ({ name: e.id, description: e.description, filePath: e.revisionId ? join(this.c.dataDir, 'skill-blobs', e.digest) : builtinBundleId === BUNDLE_ID ? join(this.root, 'skills/piresearch', e.id, 'SKILL.md') : join(this.root, 'skills/releases', builtinBundleId, 'blobs', e.digest), baseDir: e.revisionId ? join(this.c.dataDir, 'skill-blobs') : builtinBundleId === BUNDLE_ID ? join(this.root, 'skills/piresearch', e.id) : join(this.root, 'skills/releases', builtinBundleId, 'blobs'), source: 'pi-research-reviewed-bundle', disableModelInvocation: false })) }; }
     owner(actor, pid, write = false) { userOnly(actor); scope(actor, pid); if (write)
         assertProjectWritable(this.c.store, pid);
     else
@@ -136,17 +136,18 @@ export class SkillService {
     resolveBundle(pid, bundleId) {
         if (bundleId === BUNDLE_ID || BUILTIN_RELEASES.some(r => r.bundleId === bundleId)) {
             this.builtin(bundleId);
-            return { builtinBundleId: bundleId, revisions: [] };
+            return { builtinBundleId: bundleId, revisions: [], disabledBuiltinIds: [] };
         }
         const b = this.c.store.maybe('skill-bundle', bundleId);
         ensure(b, 'SKILL_BUNDLE_UNKNOWN', '未找到此固定技能包；拒绝替换为当前版本', 404);
         ensure(b.projectId === pid, 'SCOPE_DENIED', '技能包不属于当前项目', 403);
-        ensure(digest({ projectId: pid, builtinBundleId: b.builtinBundleId, revisionIds: b.revisionIds }) === b.contentDigest && b.id === b.contentDigest, 'SKILL_INTEGRITY_FAILED', '技能包清单摘要不匹配');
+        ensure(digest({ projectId: pid, builtinBundleId: b.builtinBundleId, revisionIds: b.revisionIds, ...(b.disabledBuiltinIds?.length ? { disabledBuiltinIds: b.disabledBuiltinIds } : {}) }) === b.contentDigest && b.id === b.contentDigest, 'SKILL_INTEGRITY_FAILED', '技能包清单摘要不匹配');
         this.builtin(b.builtinBundleId);
-        const revisions = b.revisionIds.map(id => this.revision(pid, id));
+        const revisions = b.revisionIds.map(id => this.revision(pid, id)), disabledBuiltinIds = this.disabledIds(b.builtinBundleId, b.disabledBuiltinIds ?? []);
         this.noCollisions(b.builtinBundleId, revisions);
-        return { builtinBundleId: b.builtinBundleId, revisions };
+        return { builtinBundleId: b.builtinBundleId, revisions, disabledBuiltinIds };
     }
+    disabledIds(builtinBundleId, ids) { const builtin = this.builtin(builtinBundleId); ensure(new Set(ids).size === ids.length, 'INVALID_INPUT', '禁用技能不能重复', 400); ensure(ids.every(id => builtin.skills.some(e => e.id === id)), 'SKILL_NOT_FOUND', '禁用技能不在所选内置发行内', 404); return [...ids].sort(); }
     noCollisions(builtinBundleId, revisions) { const builtin = this.builtin(builtinBundleId); ensure(new Set(revisions.map(r => r.packageId)).size === revisions.length && !revisions.some(r => builtin.skills.some(e => e.id === r.packageId)), 'SKILL_DUPLICATE_PACKAGE', '固定技能包不能包含重名技能', 400); }
     approved(pid, r) { const reviews = this.c.store.list('skill-review', pid).filter(x => x.revisionId === r.id); ensure(reviews.at(-1)?.decision === 'approved' && reviews.at(-1)?.contentDigest === r.contentDigest, 'SKILL_NOT_APPROVED', '技能修订尚未通过用户审阅'); ensure(!this.c.store.list('skill-revocation', pid).some(x => x.revisionId === r.id), 'SKILL_REVOKED', '技能版本已撤销，不能启动或启用'); }
     import(actor, pid, input, key) {
@@ -211,31 +212,63 @@ export class SkillService {
         const x = object(value), input = { revisionId: text(x.revisionId, 'revisionId', 100), note: text(x.note, 'note', 4000) };
         return this.c.store.operation(`skill-revoke:${pid}`, key, input, () => { this.owner(actor, pid, true); const r = this.revision(pid, input.revisionId), record = this.c.store.create('skill-revocation', pid, { ...input, contentDigest: r.contentDigest }); this.c.store.event(pid, 'skill.revoked', { revisionId: r.id, revocationId: record.id }); return record; });
     }
-    configuration(pid) { this.c.store.get('project', pid); const row = this.c.store.maybe('skill-configuration', pid), bundleId = row?.bundleId ?? BUNDLE_ID; const { builtinBundleId } = this.resolveBundle(pid, bundleId); return { version: row?.version ?? 0, bundleId, builtinBundleId, revisionIds: row?.revisionIds ?? [] }; }
+    configuration(pid) { this.c.store.get('project', pid); const row = this.c.store.maybe('skill-configuration', pid), bundleId = row?.bundleId ?? BUNDLE_ID; const { builtinBundleId, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); return { version: row?.version ?? 0, bundleId, builtinBundleId, revisionIds: row?.revisionIds ?? [], disabledBuiltinIds }; }
+    saveConfiguration(pid, old, builtinBundleId, revisionIds, disabledBuiltinIds, selectedBundleId) {
+        const body = { projectId: pid, builtinBundleId, revisionIds, ...(disabledBuiltinIds.length ? { disabledBuiltinIds } : {}) }, bundleId = selectedBundleId ?? (revisionIds.length || disabledBuiltinIds.length ? digest(body) : builtinBundleId);
+        if ((revisionIds.length || disabledBuiltinIds.length) && !this.c.store.maybe('skill-bundle', bundleId))
+            this.c.store.create('skill-bundle', pid, { builtinBundleId, revisionIds, ...(disabledBuiltinIds.length ? { disabledBuiltinIds } : {}), contentDigest: bundleId }, bundleId);
+        const data = { bundleId, revisionIds }, row = old ? this.c.store.update('skill-configuration', pid, old.version, data) : this.c.store.create('skill-configuration', pid, data, pid);
+        this.c.store.event(pid, 'skill.configured', { bundleId, builtinBundleId, revisionIds, disabledBuiltinIds, previousBundleId: old?.bundleId ?? BUNDLE_ID });
+        return { version: row.version, ...data, builtinBundleId, disabledBuiltinIds };
+    }
     configure(actor, pid, value, key = randomUUID()) {
         this.owner(actor, pid);
         const x = object(value), expectedVersion = integer(x.expectedVersion, 'expectedVersion', 0);
-        ensure((x.revisionIds !== undefined) !== (x.bundleId !== undefined) && !(x.bundleId !== undefined && x.builtinBundleId !== undefined), 'INVALID_INPUT', 'bundleId 与 revisionIds/builtinBundleId 不能混用', 400);
-        const input = { expectedVersion, ...(x.bundleId !== undefined ? { bundleId: text(x.bundleId, 'bundleId', 100) } : { revisionIds: strings(x.revisionIds, 'revisionIds', 64), ...(x.builtinBundleId !== undefined ? { builtinBundleId: text(x.builtinBundleId, 'builtinBundleId', 100) } : {}) }) };
+        ensure((x.revisionIds !== undefined) !== (x.bundleId !== undefined) && !(x.bundleId !== undefined && (x.builtinBundleId !== undefined || x.disabledBuiltinIds !== undefined)), 'INVALID_INPUT', 'bundleId 与 revisionIds/builtinBundleId/disabledBuiltinIds 不能混用', 400);
+        const input = { expectedVersion, ...(x.bundleId !== undefined ? { bundleId: text(x.bundleId, 'bundleId', 100) } : { revisionIds: strings(x.revisionIds, 'revisionIds', 64), ...(x.builtinBundleId !== undefined ? { builtinBundleId: text(x.builtinBundleId, 'builtinBundleId', 100) } : {}), ...(x.disabledBuiltinIds !== undefined ? { disabledBuiltinIds: strings(x.disabledBuiltinIds, 'disabledBuiltinIds', 64) } : {}) }) };
         return this.c.store.operation(`skill-configure:${pid}`, key, input, () => {
             this.owner(actor, pid, true);
             const old = this.c.store.maybe('skill-configuration', pid);
             ensure((old?.version ?? 0) === expectedVersion, 'VERSION_CONFLICT', '技能配置已更新，请刷新');
-            const selected = 'bundleId' in input ? this.resolveBundle(pid, input.bundleId) : { builtinBundleId: input.builtinBundleId ?? this.configuration(pid).builtinBundleId, revisions: input.revisionIds.map(id => this.revision(pid, id)) };
-            const { builtinBundleId, revisions } = selected;
+            let current;
+            if (!('bundleId' in input) && old) {
+                try {
+                    current = this.resolveBundle(pid, old.bundleId);
+                }
+                catch (e) {
+                    if (!input.builtinBundleId || e.code !== 'SKILL_BUNDLE_UNKNOWN')
+                        throw e;
+                }
+            }
+            const selected = 'bundleId' in input ? this.resolveBundle(pid, input.bundleId) : { builtinBundleId: input.builtinBundleId ?? this.configuration(pid).builtinBundleId, revisions: input.revisionIds.map(id => this.revision(pid, id)), disabledBuiltinIds: input.disabledBuiltinIds ?? current?.disabledBuiltinIds ?? [] };
+            const { builtinBundleId, revisions } = selected, disabledBuiltinIds = this.disabledIds(builtinBundleId, selected.disabledBuiltinIds);
             this.noCollisions(builtinBundleId, revisions);
-            for (const r of revisions)
-                this.approved(pid, r);
-            const revisionIds = revisions.map(r => r.id).sort(), body = { projectId: pid, builtinBundleId, revisionIds }, bundleId = 'bundleId' in input ? input.bundleId : revisionIds.length ? digest(body) : builtinBundleId;
-            if (revisionIds.length && !this.c.store.maybe('skill-bundle', bundleId))
-                this.c.store.create('skill-bundle', pid, { builtinBundleId, revisionIds, contentDigest: bundleId }, bundleId);
-            const data = { bundleId, revisionIds }, row = old ? this.c.store.update('skill-configuration', pid, old.version, data) : this.c.store.create('skill-configuration', pid, data, pid);
-            this.c.store.event(pid, 'skill.configured', { bundleId, builtinBundleId, revisionIds, previousBundleId: old?.bundleId ?? BUNDLE_ID });
-            return { version: row.version, ...data, builtinBundleId };
+            const removingOnly = !('bundleId' in input) && !!current && builtinBundleId === current.builtinBundleId && revisions.length < current.revisions.length && revisions.every(r => current.revisions.some(previous => previous.id === r.id));
+            for (const r of revisions) {
+                ensure(!this.c.store.maybe('skill-deletion', r.id), 'SKILL_DELETED', '技能版本已从管理列表删除，不能再次启用');
+                if (!removingOnly)
+                    this.approved(pid, r);
+            }
+            return this.saveConfiguration(pid, old, builtinBundleId, revisions.map(r => r.id).sort(), disabledBuiltinIds, 'bundleId' in input ? input.bundleId : undefined);
+        });
+    }
+    delete(actor, pid, value, key = randomUUID()) {
+        this.owner(actor, pid);
+        const x = object(value), input = { revisionId: text(x.revisionId, 'revisionId', 100), expectedVersion: integer(x.expectedVersion, 'expectedVersion', 0) };
+        return this.c.store.operation(`skill-delete:${pid}`, key, input, () => {
+            this.owner(actor, pid, true);
+            const revision = this.revision(pid, input.revisionId), old = this.c.store.maybe('skill-configuration', pid);
+            ensure((old?.version ?? 0) === input.expectedVersion, 'VERSION_CONFLICT', '技能配置已更新，请刷新');
+            ensure(!this.c.store.maybe('skill-deletion', revision.id), 'SKILL_DELETED', '技能版本已从管理列表删除');
+            const current = this.resolveBundle(pid, old?.bundleId ?? BUNDLE_ID);
+            this.c.store.create('skill-deletion', pid, { revisionId: revision.id, contentDigest: revision.contentDigest }, revision.id);
+            const configuration = this.saveConfiguration(pid, old, current.builtinBundleId, current.revisions.filter(r => r.id !== revision.id).map(r => r.id).sort(), current.disabledBuiltinIds);
+            this.c.store.event(pid, 'skill.deleted', { revisionId: revision.id, contentDigest: revision.contentDigest, bundleId: configuration.bundleId });
+            return configuration;
         });
     }
     inspect(actor, pid, revisionId) { this.owner(actor, pid); const revision = this.revision(pid, revisionId); return { revision, reviews: this.c.store.list('skill-review', pid).filter(r => r.revisionId === revisionId), revocations: this.c.store.list('skill-revocation', pid).filter(r => r.revisionId === revisionId) }; }
-    catalog(actor, pid) { this.owner(actor, pid); return { configuration: this.configuration(pid), builtinReleases: this.builtinReleases(), revisions: this.c.store.list('skill-package-revision', pid).map(r => this.inspect(actor, pid, r.id)) }; }
+    catalog(actor, pid) { this.owner(actor, pid); const configuration = this.configuration(pid); return { configuration, builtinSkills: this.list('coordinator', configuration.builtinBundleId), builtinReleases: this.builtinReleases(), revisions: this.c.store.list('skill-package-revision', pid).filter(r => !this.c.store.maybe('skill-deletion', r.id)).map(r => this.inspect(actor, pid, r.id)) }; }
     readRevision(actor, pid, revisionId, resource = 'SKILL.md') { this.owner(actor, pid); const r = this.revision(pid, revisionId), f = r.files.find(f => f.path === resource); ensure(f, 'SKILL_RESOURCE_NOT_FOUND', '资源不在冻结技能清单内', 404); const bytes = this.revisionBytes(r, f); return f.mediaType === 'image/png' ? { revisionId, resource, digest: f.digest, mediaType: f.mediaType, contentBase64: bytes.toString('base64') } : { revisionId, resource, content: content(bytes), digest: f.digest }; }
     revisionBytes(r, f) { const bytes = this.verifiedBytes(join(this.c.dataDir, 'skill-blobs', f.digest), f.digest, this.c.dataDir); if (f.mediaType === 'image/png') {
         ensure(canonicalPngPath(f.path), 'SKILL_INTEGRITY_FAILED', '固定 PNG 类型与路径不匹配');
@@ -247,11 +280,11 @@ export class SkillService {
     } return bytes; }
     revisionText(r, resource) { const f = r.files.find(f => f.path === resource); ensure(f, 'SKILL_RESOURCE_NOT_FOUND', '资源不在冻结技能清单内', 404); ensure(f.mediaType !== 'image/png', 'SKILL_RESOURCE_BINARY', 'Agent 技能读取仅支持 UTF-8 文本资源', 400); return { resource, content: content(this.revisionBytes(r, f)), digest: f.digest }; }
     entry(r) { return { id: r.packageId, description: r.description, digest: r.files.find(f => f.path === 'SKILL.md').digest, resources: r.files.filter(f => f.path !== 'SKILL.md').map(f => f.path), source: { repository: 'user-import', commit: r.contentDigest, path: 'SKILL.md', blob: r.contentDigest }, revisionId: r.id, requirements: r.requirements }; }
-    bundleCatalog(pid, role, bundleId) { const { builtinBundleId, revisions } = this.resolveBundle(pid, bundleId); return { bundleId, builtinBundleId, revisionIds: revisions.map(r => r.id), skills: [...this.list(role, builtinBundleId), ...revisions.filter(r => r.roles.includes(role)).map(r => this.entry(r))] }; }
-    bundleRead(pid, role, bundleId, id, resource) { const { builtinBundleId, revisions } = this.resolveBundle(pid, bundleId); if (this.builtin(builtinBundleId).skills.some(e => e.id === id))
+    bundleCatalog(pid, role, bundleId) { const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); return { bundleId, builtinBundleId, revisionIds: revisions.map(r => r.id), skills: [...this.list(role, builtinBundleId).filter(e => !disabledBuiltinIds.includes(e.id)), ...revisions.filter(r => r.roles.includes(role)).map(r => this.entry(r))] }; }
+    bundleRead(pid, role, bundleId, id, resource) { const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); ensure(!disabledBuiltinIds.includes(id), 'SKILL_DISABLED', '技能在此固定包中已关闭', 403); if (this.builtin(builtinBundleId).skills.some(e => e.id === id))
         return { ...this.read(role, id, resource, builtinBundleId), bundleId }; const r = revisions.find(r => r.packageId === id); ensure(r, 'SKILL_NOT_FOUND', '技能不在固定包清单内', 404); ensure(r.roles.includes(role), 'SKILL_SCOPE_DENIED', '该角色无此技能入口', 403); return { id, ...this.revisionText(r, resource ?? 'SKILL.md'), bundleId, source: this.entry(r).source }; }
-    bundleBootstrap(pid, role, bundleId) { const { skills, builtinBundleId } = this.bundleCatalog(pid, role, bundleId); return this.bootstrapEntries(role, bundleId, skills, this.bundleRead(pid, role, bundleId, 'pi-research-overview').content, builtinBundleId); }
-    ensureBundleStartAllowed(pid, bundleId) { const { builtinBundleId, revisions } = this.resolveBundle(pid, bundleId); for (const entry of this.builtin(builtinBundleId).skills) {
+    bundleBootstrap(pid, role, bundleId) { const { skills, builtinBundleId } = this.bundleCatalog(pid, role, bundleId); return this.bootstrapEntries(role, bundleId, skills, skills.some(e => e.id === 'pi-research-overview') ? this.bundleRead(pid, role, bundleId, 'pi-research-overview').content : '', builtinBundleId); }
+    ensureBundleStartAllowed(pid, bundleId) { const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); for (const entry of this.builtin(builtinBundleId).skills.filter(e => !disabledBuiltinIds.includes(e.id))) {
         const role = entry.roles[0];
         this.read(role, entry.id, undefined, builtinBundleId);
         for (const resource of entry.resources)

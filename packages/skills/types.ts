@@ -14,5 +14,6 @@ export interface SkillPackageRevision {
 }
 export interface ReviewRecord {revisionId:string;contentDigest:string;decision:'approved'|'rejected';note:string}
 export interface SkillRevocation {revisionId:string;contentDigest:string;note:string}
-export interface SkillBundle {builtinBundleId:string;revisionIds:string[];contentDigest:string}
+export interface SkillDeletion {revisionId:string;contentDigest:string}
+export interface SkillBundle {builtinBundleId:string;revisionIds:string[];disabledBuiltinIds?:string[];contentDigest:string}
 export interface SkillConfiguration {bundleId:string;revisionIds:string[]}

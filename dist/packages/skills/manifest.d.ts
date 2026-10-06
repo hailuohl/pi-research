@@ -1,10 +1,10 @@
-export declare const BUNDLE_ID = "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd";
+export declare const BUNDLE_ID = "344a44dcf73a8bcb2b2cdf5acf637f756c1763ef05c5ba464bc8285fa45a188b";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
-    readonly path: "skills/openresearch/pi-research-overview/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
     readonly digest: "5a511f85b11b45d083747eb0d64b0e4396469aafdf0e70a56ed9589467f38806";
     readonly resources: readonly [];
     readonly source: {
@@ -18,7 +18,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-create";
     readonly description: "Use when a project is new, empty, imported, or needs a baseline or reproduction scope.";
     readonly roles: readonly ["coordinator", "designer"];
-    readonly path: "skills/openresearch/pi-research-create/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-create/SKILL.md";
     readonly digest: "3960cb2e658bb7208d04078c9ef9244839876a9d8d8e7d008ef73955299ccd0a";
     readonly resources: readonly [];
     readonly source: {
@@ -32,7 +32,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-experiment-tree";
     readonly description: "Use when interpreting completed runs, planning a round, repairing, promoting, or stopping.";
     readonly roles: readonly ["coordinator", "designer", "analyst", "reviewer"];
-    readonly path: "skills/openresearch/pi-research-experiment-tree/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-experiment-tree/SKILL.md";
     readonly digest: "cfbd4178626646e8be5e23cbaeb46439dbe5a2350a5d56b7be7894e9024408f6";
     readonly resources: readonly [];
     readonly source: {
@@ -46,7 +46,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-git";
     readonly description: "Use when editing code, comparing a child, preparing a handoff, or avoiding shared-workspace conflicts.";
     readonly roles: readonly ["coordinator", "implementer", "reviewer", "designer"];
-    readonly path: "skills/openresearch/pi-research-git/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-git/SKILL.md";
     readonly digest: "32fc7a6560fbebd4c8488afcf5e4362839a4fad85ca4cb824c9ed475f678de91";
     readonly resources: readonly [];
     readonly source: {
@@ -60,7 +60,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-agent-delegation";
     readonly description: "Use when proposing a team, splitting independent work, reviewing helper output, or handling a stalled team.";
     readonly roles: readonly ["coordinator"];
-    readonly path: "skills/openresearch/pi-research-agent-delegation/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-agent-delegation/SKILL.md";
     readonly digest: "74e7cfec80151b5722d0e1c1daf75772032fc947a2e185cf7c640f562b4cfb56";
     readonly resources: readonly [];
     readonly source: {
@@ -74,7 +74,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-compute";
     readonly description: "Use before preparing, launching, cancelling, sizing, or reconciling an experiment run.";
     readonly roles: readonly ["coordinator", "designer", "implementer", "analyst", "reviewer"];
-    readonly path: "skills/openresearch/pi-research-compute/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-compute/SKILL.md";
     readonly digest: "1e14da9bd14ea16cd36d38c57df9c454c1949de2a9b7586968fab2a79e23ccf3";
     readonly resources: readonly [{
         readonly path: "references/local.md";
@@ -115,7 +115,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-instances";
     readonly description: "Use when a user asks for a persistent machine, provisioning, or an interactive remote workspace.";
     readonly roles: readonly ["coordinator", "designer"];
-    readonly path: "skills/openresearch/pi-research-instances/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-instances/SKILL.md";
     readonly digest: "a3482be12289897c9d5a0c07c8bb6269ecaee3cd84d6a87ddb51c1cf9203e162";
     readonly resources: readonly [];
     readonly source: {
@@ -129,7 +129,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-evidence";
     readonly description: "Use when reading logs, validating numerical claims, quoting papers, or checking stale evidence.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
-    readonly path: "skills/openresearch/pi-research-evidence/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
     readonly digest: "8a2eb3b79eea9f6ef66cea51fda81d0858fe29a059c657201ebfe8305523c7d3";
     readonly resources: readonly [];
     readonly source: {
@@ -143,7 +143,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-reports";
     readonly description: "Use when producing a report, comparison, durable research note, or end-of-round handoff.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
-    readonly path: "skills/openresearch/pi-research-reports/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-reports/SKILL.md";
     readonly digest: "34e81e4131c0d357b0ffdbc8e08200b2d0c204552b986aba633ef0e760cbbced";
     readonly resources: readonly [];
     readonly source: {
@@ -157,7 +157,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-figures";
     readonly description: "Use when preparing a scientific plot, multi-panel figure, diagram, or figure audit.";
     readonly roles: readonly ["coordinator", "analyst", "writer", "reviewer"];
-    readonly path: "skills/openresearch/pi-research-figures/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-figures/SKILL.md";
     readonly digest: "104a0fbe5956ac53659ed85a18ca3a0b1fbf9c7b3dbfc584e55beef58c9ded01";
     readonly resources: readonly [{
         readonly path: "references/curves.md";
@@ -189,7 +189,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-paper";
     readonly description: "Use when drafting a manuscript, preprint, LaTeX section, or checking references and compilation needs.";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
-    readonly path: "skills/openresearch/pi-research-paper/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
     readonly digest: "b891b00397bb77733b91c7f168192a6bce576b3240c4f47f1f89e06f390ad1b4";
     readonly resources: readonly [];
     readonly source: {
@@ -203,7 +203,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-customize";
     readonly description: "Use when reviewing a skill bundle, adding a research method, or selecting reusable templates.";
     readonly roles: readonly ["coordinator"];
-    readonly path: "skills/openresearch/pi-research-customize/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-customize/SKILL.md";
     readonly digest: "1fcf97a9022ff9c5acbde566bd697380bf5d0b0fc061dd9bb837bd28ffbde5c6";
     readonly resources: readonly [];
     readonly source: {
@@ -217,7 +217,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-feedback";
     readonly description: "Use when recording a product bug, limitation, unexpected behavior, or requested capability.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
-    readonly path: "skills/openresearch/pi-research-feedback/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-feedback/SKILL.md";
     readonly digest: "7840904e65469f6aab637771caad1cd5a78d895eaed0c7460986f4c9396a50f5";
     readonly resources: readonly [];
     readonly source: {
@@ -231,7 +231,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly name: "pi-research-lit-review";
     readonly description: "Use when searching literature, reading selected papers, or grounding scientific comparisons.";
     readonly roles: readonly ["coordinator", "literature", "designer", "analyst", "reviewer", "writer"];
-    readonly path: "skills/openresearch/pi-research-lit-review/SKILL.md";
+    readonly path: "skills/piresearch/pi-research-lit-review/SKILL.md";
     readonly digest: "63b186ee963d40497a454bf98792599e5b7e0dc1374c98ed74e272f22e780808";
     readonly resources: readonly [];
     readonly source: {
