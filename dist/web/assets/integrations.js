@@ -11,32 +11,55 @@ class IntegrationsView extends React.Component {
     super(...arguments);
     this.state = { activePanel: "skills", config: null, selectedSources: ["crossref"], query: "", priority: "default", strategy: "keyword", after: "", before: "", limit: 8, search: null, paper: null, paperText: "", history: null, busy: false, error: "" };
     this.mounted = true;
+    this.epoch = 0;
+    this.loadEpoch = 0;
   }
   componentDidMount() {
     void this.run(() => this.load());
   }
   componentWillUnmount() {
     this.mounted = false;
+    this.epoch++;
+    this.loadEpoch++;
+  }
+  componentDidUpdate(prev) {
+    if (prev.projectId !== this.props.projectId) {
+      this.epoch++;
+      this.loadEpoch++;
+      this.setState({ config: null, history: null, search: null, paper: null, paperText: "", query: "", selectedSources: ["crossref"], busy: false, error: "" });
+      void this.run(() => this.load());
+    } else if (prev.refreshToken !== this.props.refreshToken) void this.load(true);
+  }
+  current(epoch) {
+    return this.mounted && epoch === this.epoch;
   }
   async run(fn) {
     if (this.state.busy) return;
+    const epoch = this.epoch;
+    this.loadEpoch++;
     this.setState({ busy: true, error: "" });
     try {
       await fn();
     } catch (e) {
-      if (this.mounted) this.setState({ error: e instanceof Error ? e.message : String(e) });
+      if (this.current(epoch)) this.setState({ error: e instanceof Error ? e.message : String(e) });
     } finally {
-      if (this.mounted) this.setState({ busy: false });
+      if (this.current(epoch)) this.setState({ busy: false });
     }
   }
-  async load() {
-    const [config, history] = await Promise.all([api(`/projects/${this.props.projectId}/connectors`), api(`/projects/${this.props.projectId}/connector-history`)]);
-    if (this.mounted) this.setState({ config, history, selectedSources: this.state.selectedSources.filter((s) => config.enabled[s]) });
+  async load(quiet = false) {
+    if (quiet && this.state.busy) return;
+    const epoch = this.epoch, request = ++this.loadEpoch, projectId = this.props.projectId;
+    try {
+      const [config, history] = await Promise.all([api(`/projects/${projectId}/connectors`), api(`/projects/${projectId}/connector-history`)]);
+      if (this.current(epoch) && request === this.loadEpoch) this.setState({ config, history, selectedSources: this.state.selectedSources.filter((s) => config.enabled[s]) });
+    } catch (error) {
+      if (!quiet) throw error;
+    }
   }
   async configure(source, enabled) {
     await this.run(async () => {
-      const c = await api(`/projects/${this.props.projectId}/connectors`, { expectedVersion: this.state.config.version, enabled: { [source]: enabled } });
-      this.setState({ config: c, selectedSources: this.state.selectedSources.filter((s) => c.enabled[s]) });
+      const epoch = this.epoch, c = await api(`/projects/${this.props.projectId}/connectors`, { expectedVersion: this.state.config.version, enabled: { [source]: enabled } });
+      if (this.current(epoch)) this.setState({ config: c, selectedSources: this.state.selectedSources.filter((s) => c.enabled[s]) });
     });
   }
   selectSource(source, checked) {
@@ -44,17 +67,22 @@ class IntegrationsView extends React.Component {
   }
   async search() {
     await this.run(async () => {
-      const result = await api("/connectors/discover", { projectId: this.props.projectId, query: this.state.query, sources: this.state.selectedSources, limit: this.state.limit, prioritize: this.state.priority, strategy: this.state.strategy, ...this.state.after ? { publishedAfter: this.state.after } : {}, ...this.state.before ? { publishedBefore: this.state.before } : {} });
-      if (this.mounted) this.setState({ search: result });
-      await this.load();
+      const epoch = this.epoch, result = await api("/connectors/discover", { projectId: this.props.projectId, query: this.state.query, sources: this.state.selectedSources, limit: this.state.limit, prioritize: this.state.priority, strategy: this.state.strategy, ...this.state.after ? { publishedAfter: this.state.after } : {}, ...this.state.before ? { publishedBefore: this.state.before } : {} });
+      if (this.current(epoch)) {
+        this.setState({ search: result });
+        await this.load();
+      }
     });
   }
   async readPaper(id, source) {
     await this.run(async () => {
-      const paper = await api("/connectors/paper", { projectId: this.props.projectId, id, source });
+      const epoch = this.epoch, paper = await api("/connectors/paper", { projectId: this.props.projectId, id, source });
+      if (!this.current(epoch)) return;
       const content = await artifactText(paper.artifactId);
-      if (this.mounted) this.setState({ paper, paperText: content });
-      await this.load();
+      if (this.current(epoch)) {
+        this.setState({ paper, paperText: content });
+        await this.load();
+      }
     });
   }
   panelId(panel) {
@@ -77,16 +105,13 @@ class IntegrationsView extends React.Component {
   render() {
     const s = this.state, c = s.config;
     return /* @__PURE__ */ jsx("div", { className: "page-scroll integrations-page", children: /* @__PURE__ */ jsxs("div", { className: "integration-workspace", children: [
-      /* @__PURE__ */ jsxs(SectionTitle, { title: "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", sub: "\u9009\u62E9\u7814\u7A76\u65B9\u6CD5\uFF0C\u7BA1\u7406\u6587\u732E\u6765\u6E90\u6388\u6743\u3002", children: [
-        this.props.onLiterature ? /* @__PURE__ */ jsx("button", { className: "primary", onClick: this.props.onLiterature, children: "\u524D\u5F80\u6301\u4E45\u6587\u732E\u4EFB\u52A1" }) : null,
-        /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => this.run(() => this.load()), children: "\u5237\u65B0\u672C\u5730\u72B6\u6001" })
-      ] }),
+      /* @__PURE__ */ jsx(SectionTitle, { title: "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", sub: s.activePanel === "skills" ? "\u6D4F\u89C8\u7814\u7A76\u65B9\u6CD5\uFF0C\u4E0A\u4F20\u540E\u5373\u53EF\u5728\u65B0\u4F1A\u8BDD\u4F7F\u7528\u3002" : "\u7BA1\u7406\u6587\u732E\u6765\u6E90\u6388\u6743\u4E0E\u5B9E\u9645\u8BF7\u6C42\u8BB0\u5F55\u3002", children: s.activePanel === "connectors" && this.props.onLiterature ? /* @__PURE__ */ jsx("button", { className: "primary", onClick: this.props.onLiterature, children: "\u524D\u5F80\u6301\u4E45\u6587\u732E\u4EFB\u52A1" }) : null }),
       /* @__PURE__ */ jsx("div", { className: "integration-tabs", role: "tablist", "aria-label": "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668\u5206\u7C7B", children: ["skills", "connectors"].map((panel) => /* @__PURE__ */ jsxs("button", { type: "button", role: "tab", id: this.panelId(panel) + "-tab", "aria-controls": this.panelId(panel), "aria-selected": s.activePanel === panel, tabIndex: s.activePanel === panel ? 0 : -1, onClick: () => this.setPanel(panel), onKeyDown: (e) => this.tabKey(e, panel), children: [
         /* @__PURE__ */ jsx(Icon, { name: panel === "skills" ? "skills" : "link" }),
         panel === "skills" ? "\u6280\u80FD" : "\u8FDE\u63A5\u5668"
       ] }, panel)) }),
       s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
-      /* @__PURE__ */ jsx("section", { className: "integration-panel", id: this.panelId("skills"), role: "tabpanel", "aria-labelledby": this.panelId("skills") + "-tab", hidden: s.activePanel !== "skills", children: /* @__PURE__ */ jsx(SkillManager, { projectId: this.props.projectId, sessionId: this.props.sessionId }, this.props.projectId) }),
+      /* @__PURE__ */ jsx("section", { className: "integration-panel", id: this.panelId("skills"), role: "tabpanel", "aria-labelledby": this.panelId("skills") + "-tab", hidden: s.activePanel !== "skills", children: /* @__PURE__ */ jsx(SkillManager, { projectId: this.props.projectId, sessionId: this.props.sessionId, refreshToken: this.props.refreshToken, readOnly: this.props.readOnly }, this.props.projectId) }),
       /* @__PURE__ */ jsxs("section", { className: "integration-panel", id: this.panelId("connectors"), role: "tabpanel", "aria-labelledby": this.panelId("connectors") + "-tab", hidden: s.activePanel !== "connectors", children: [
         /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u5F00\u542F\u6765\u6E90\u53EA\u6388\u6743\u5411\u8BE5\u5916\u90E8\u670D\u52A1\u53D1\u9001\u67E5\u8BE2\uFF0C\u4E0D\u4FDD\u8BC1\u7F51\u7EDC\u53EF\u8FBE\u6216\u5168\u6587\u53EF\u5F97\u3002\u5B9E\u9645\u8BF7\u6C42\u72B6\u6001\u5355\u72EC\u8BB0\u5F55\uFF1B\u6765\u6E90\u9519\u8BEF\u4E0D\u4EE3\u8868\u6CA1\u6709\u76F8\u5173\u8BBA\u6587\u3002\u4E0D\u4F1A\u6388\u4E88\u8BA1\u7B97\u3001\u53D1\u5E03\u6216\u989D\u5916\u6A21\u578B\u8C03\u7528\u6743\u9650\u3002" }),
         /* @__PURE__ */ jsxs("section", { className: "surface connector-catalog", children: [
@@ -120,9 +145,9 @@ class IntegrationsView extends React.Component {
                     /* @__PURE__ */ jsx("input", { type: "number", min: "1", max: "10000", defaultValue: c.requestLimit, "aria-label": "\u8BF7\u6C42\u4E0A\u9650", id: "request-cap-" + this.props.projectId }, "cap-" + c.version)
                   ] }),
                   /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => this.run(async () => {
-                    const input = document.getElementById("request-cap-" + this.props.projectId);
+                    const epoch = this.epoch, input = document.getElementById("request-cap-" + this.props.projectId);
                     const config = await api(`/projects/${this.props.projectId}/connectors`, { expectedVersion: c.version, requestLimit: Number(input.value) });
-                    this.setState({ config });
+                    if (this.current(epoch)) this.setState({ config });
                   }), children: "\u4FDD\u5B58\u8BF7\u6C42\u4E0A\u9650" })
                 ] }),
                 /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
@@ -313,8 +338,8 @@ class IntegrationsView extends React.Component {
             ] }, r.id)),
             s.history.papers.slice().reverse().map((r) => /* @__PURE__ */ jsxs("div", { className: "history-row", children: [
               /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.run(async () => {
-                const content = await artifactText(r.artifactId);
-                this.setState({ paper: r, paperText: content });
+                const epoch = this.epoch, content = await artifactText(r.artifactId);
+                if (this.current(epoch)) this.setState({ paper: r, paperText: content });
               }), children: r.title }),
               /* @__PURE__ */ jsx("span", { children: r.contentKind })
             ] }, r.id))

@@ -1,12 +1,10 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
-import { nativeSelectButton, Icon, Badge } from "./ui.js";
+import { Icon } from "./ui.js";
 import { api } from "./api.js";
 import { label } from "./models.js";
-const builtinNames = { overview: ["\u7814\u7A76\u5DE5\u4F5C\u6D41", "skills"], create: ["\u7814\u7A76\u542F\u52A8", "plus"], "experiment-tree": ["\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], git: ["\u4EE3\u7801\u4E0E\u7248\u672C", "branch"], "agent-delegation": ["\u534F\u4F5C\u65B9\u6CD5", "network"], compute: ["\u8BA1\u7B97\u73AF\u5883", "cpu"], instances: ["\u8FDC\u7A0B\u5B9E\u4F8B", "resources"], evidence: ["\u8BC1\u636E\u4E0E\u5F15\u7528", "evidence"], reports: ["\u62A5\u544A\u4E0E\u6210\u679C", "report"], figures: ["\u56FE\u8868\u4E0E\u53EF\u89C6\u5316", "report"], paper: ["\u8BBA\u6587\u5199\u4F5C", "book-open"], customize: ["\u6280\u80FD\u5B9A\u5236", "settings"], feedback: ["\u8BC4\u4EF7\u4E0E\u53CD\u9988", "chat"], "lit-review": ["\u6587\u732E\u7814\u7A76", "search"] };
-const call = (projectId, name, input = {}) => api(`/operations/${name}`, { projectId, input });
-const words = (value) => value.split(/[\s,，]+/).filter(Boolean);
-const roles = ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+const builtinNames = { overview: ["\u7814\u7A76\u5DE5\u4F5C\u6D41", "skills", "\u68B3\u7406\u7814\u7A76\u76EE\u6807\uFF0C\u5B89\u6392\u53EF\u8FFD\u6EAF\u7684\u7814\u7A76\u6B65\u9AA4\u3002"], create: ["\u7814\u7A76\u542F\u52A8", "plus", "\u5EFA\u7ACB\u9879\u76EE\uFF0C\u660E\u786E\u95EE\u9898\u4E0E\u4E0B\u4E00\u6B65\u8BA1\u5212\u3002"], "experiment-tree": ["\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment", "\u7EC4\u7EC7\u5B9E\u9A8C\u5206\u652F\uFF0C\u8BB0\u5F55\u8FD0\u884C\u4E0E\u7ED3\u679C\u3002"], git: ["\u4EE3\u7801\u4E0E\u7248\u672C", "branch", "\u7BA1\u7406\u4EE3\u7801\u53D8\u66F4\u4E0E\u7248\u672C\u8BB0\u5F55\u3002"], "agent-delegation": ["\u534F\u4F5C\u65B9\u6CD5", "network", "\u5212\u5206\u534F\u4F5C\u4EFB\u52A1\uFF0C\u6838\u5BF9\u4EA4\u63A5\u4E0E\u7ED3\u679C\u3002"], compute: ["\u8BA1\u7B97\u73AF\u5883", "cpu", "\u9009\u62E9\u8BA1\u7B97\u8D44\u6E90\uFF0C\u6838\u5BF9\u8FD0\u884C\u6761\u4EF6\u3002"], instances: ["\u8FDC\u7A0B\u5B9E\u4F8B", "resources", "\u8BC4\u4F30\u8FDC\u7A0B\u5B9E\u4F8B\u4E0E\u8FDE\u63A5\u9700\u6C42\u3002"], evidence: ["\u8BC1\u636E\u4E0E\u5F15\u7528", "evidence", "\u767B\u8BB0\u6765\u6E90\uFF0C\u5EFA\u7ACB\u53EF\u6838\u67E5\u7684\u8BC1\u636E\u94FE\u3002"], reports: ["\u62A5\u544A\u4E0E\u6210\u679C", "report", "\u6C47\u603B\u7814\u7A76\u7ED3\u679C\u4E0E\u4EA4\u4ED8\u6750\u6599\u3002"], figures: ["\u56FE\u8868\u4E0E\u53EF\u89C6\u5316", "report", "\u5236\u4F5C\u56FE\u8868\uFF0C\u68C0\u67E5\u53EF\u89C6\u5316\u8868\u8FBE\u3002"], paper: ["\u8BBA\u6587\u5199\u4F5C", "book-open", "\u7EC4\u7EC7\u8BBA\u6587\u7ED3\u6784\u3001\u8BBA\u8BC1\u4E0E\u5F15\u7528\u3002"], customize: ["\u6280\u80FD\u5B9A\u5236", "settings", "\u5BA1\u9605\u4E0E\u63A5\u5165\u53EF\u590D\u7528\u7684\u7814\u7A76\u65B9\u6CD5\u3002"], feedback: ["\u8BC4\u4EF7\u4E0E\u53CD\u9988", "chat", "\u8BB0\u5F55\u4EA7\u54C1\u95EE\u9898\u548C\u6539\u8FDB\u5EFA\u8BAE\u3002"], "lit-review": ["\u6587\u732E\u7814\u7A76", "search", "\u68C0\u7D22\u4E0E\u9605\u8BFB\u6587\u732E\uFF0C\u6574\u7406\u76F8\u5173\u5DE5\u4F5C\u3002"] };
+const call = (projectId, name, input = {}, key) => api(`/operations/${name}`, { projectId, input }, "POST", void 0, key);
 async function skillFileBase64(file) {
   if (file.size > 2 * 1024 * 1024) throw Error("\u5355\u4E2A\u4E0A\u4F20\u6587\u4EF6\u4E0D\u80FD\u8D85\u8FC7 2 MiB");
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -17,181 +15,102 @@ async function skillFileBase64(file) {
 class SkillImport extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { packageId: "", revisionTag: "", description: "", license: "", roles: ["coordinator"], tools: "", backends: "", artifactIds: "", files: [], error: "" };
+    this.state = { packageId: "", description: "", files: [], error: "" };
     this.mounted = true;
     this.submitting = false;
+    this.key = "";
+    this.draftEpoch = 0;
+    this.form = React.createRef();
   }
   componentWillUnmount() {
     this.mounted = false;
+    this.draftEpoch++;
+  }
+  change(field, value) {
+    this.key = "";
+    this.draftEpoch++;
+    this.setState({ [field]: value });
+  }
+  async choose(files) {
+    const epoch = ++this.draftEpoch;
+    this.key = "";
+    this.setState({ files, error: "" });
+    const original = files.find((file) => file.name === "SKILL.md");
+    if (!original || original.size > 128 * 1024) return;
+    try {
+      const frontmatter = (await original.text()).match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1];
+      if (!frontmatter || !this.mounted || epoch !== this.draftEpoch) return;
+      const hint = (field) => {
+        const value = frontmatter.match(new RegExp(`^${field}:[ \\t]*(.+)$`, "m"))?.[1].trim() ?? "";
+        return /^[>|](?:[+-]?[1-9]?|[1-9][+-]?)(?:\s+#.*)?$/.test(value) ? "" : value.replace(/^(['"])(.*)\1$/, "$2");
+      };
+      this.setState({ packageId: this.state.packageId || hint("name").slice(0, 100), description: this.state.description || hint("description").slice(0, 2e3) });
+    } catch {
+    }
   }
   async submit() {
     if (this.submitting || this.props.busy) return;
+    const epoch = this.draftEpoch;
     this.submitting = true;
     this.setState({ error: "" });
     try {
       const s = this.state;
-      if (!s.files.length || s.files.length > 64) throw Error("\u8BF7\u9009\u62E9 1\u201364 \u4E2A\u6587\u672C\u6587\u4EF6\uFF0C\u6216\u5355\u4E2A\u542B\u9759\u6001 PNG \u7684 ZIP");
+      if (!/^[a-z][a-z0-9-]{0,99}$/.test(s.packageId.trim())) throw Error("\u6280\u80FD\u540D\u79F0\u987B\u4EE5\u5C0F\u5199\u5B57\u6BCD\u5F00\u5934\uFF0C\u53EA\u542B\u5C0F\u5199\u5B57\u6BCD\u3001\u6570\u5B57\u548C\u8FDE\u5B57\u7B26");
+      if (!s.files.length || s.files.length > 64) throw Error("\u8BF7\u9009\u62E9 1\u201364 \u4E2A\u6587\u672C\u6587\u4EF6\uFF0C\u6216\u5355\u4E2A ZIP");
       if (s.files.reduce((n, f) => n + f.size, 0) > 2 * 1024 * 1024) throw Error("\u4E0A\u4F20\u603B\u91CF\u4E0D\u80FD\u8D85\u8FC7 2 MiB");
       const zip = s.files.some((f) => /\.zip$/i.test(f.name));
       if (zip && s.files.length !== 1) throw Error("ZIP \u5FC5\u987B\u5355\u72EC\u4E0A\u4F20");
+      if (!this.key) this.key = crypto.randomUUID();
+      const key = this.key;
       const payload = zip ? { zipBase64: await skillFileBase64(s.files[0]) } : { files: await Promise.all(s.files.map(async (file) => ({ path: file.name, contentBase64: await skillFileBase64(file) }))) };
-      if (this.mounted) await this.props.submit({ packageId: s.packageId, revisionTag: s.revisionTag, description: s.description, roles: s.roles, license: s.license.trim() || null, requirements: { tools: words(s.tools), backends: words(s.backends), artifactIds: words(s.artifactIds) }, ...payload });
+      if (this.mounted && epoch === this.draftEpoch && await this.props.submit({ packageId: s.packageId.trim(), revisionTag: `upload-${key}`, description: s.description.trim() || "\u7528\u6237\u4E0A\u4F20\u7684\u7814\u7A76\u6280\u80FD", roles: ["coordinator"], license: null, requirements: { tools: [], backends: [], artifactIds: [] }, ...payload }, key) && this.mounted && epoch === this.draftEpoch) {
+        this.key = "";
+        this.draftEpoch++;
+        this.form.current?.reset();
+        this.setState({ packageId: "", description: "", files: [], error: "" });
+      }
     } catch (e) {
-      if (this.mounted) this.setState({ error: e instanceof Error ? e.message : String(e) });
+      if (this.mounted && epoch === this.draftEpoch) this.setState({ error: e instanceof Error ? e.message : String(e) });
     } finally {
       this.submitting = false;
+      if (this.mounted) this.setState({});
     }
   }
   render() {
-    const s = this.state;
-    return /* @__PURE__ */ jsxs("details", { className: "skill-import-disclosure", id: "skill-upload", children: [
-      /* @__PURE__ */ jsxs("summary", { children: [
-        /* @__PURE__ */ jsx(Icon, { name: "paperclip" }),
-        "\u4E0A\u4F20\u6280\u80FD",
-        /* @__PURE__ */ jsx(Icon, { name: "plus" })
+    const s = this.state, busy = this.props.busy || this.submitting;
+    return /* @__PURE__ */ jsx("div", { className: "skill-import-form", children: /* @__PURE__ */ jsxs("form", { ref: this.form, onSubmit: (e) => {
+      e.preventDefault();
+      void this.submit();
+    }, children: [
+      /* @__PURE__ */ jsxs("label", { children: [
+        "\u6280\u80FD\u6587\u4EF6",
+        /* @__PURE__ */ jsx("input", { type: "file", multiple: true, disabled: busy, onChange: (e) => void this.choose(Array.from(e.target.files ?? [])) })
       ] }),
-      /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
-        e.preventDefault();
-        void this.submit();
-      }, children: [
-        /* @__PURE__ */ jsxs("div", { className: "integration-controls", children: [
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u5305 ID",
-            /* @__PURE__ */ jsx("input", { required: true, maxLength: 100, value: s.packageId, onChange: (e) => this.setState({ packageId: e.target.value }) })
-          ] }),
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u7248\u672C\u6807\u7B7E",
-            /* @__PURE__ */ jsx("input", { required: true, maxLength: 100, value: s.revisionTag, onChange: (e) => this.setState({ revisionTag: e.target.value }) })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u63CF\u8FF0",
-          /* @__PURE__ */ jsx("input", { required: true, maxLength: 2e3, value: s.description, onChange: (e) => this.setState({ description: e.target.value }) })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u8BB8\u53EF\u8BC1\u58F0\u660E\uFF08\u7A7A\u767D\u8868\u793A\u672A\u77E5\uFF09",
-          /* @__PURE__ */ jsx("input", { value: s.license, maxLength: 500, onChange: (e) => this.setState({ license: e.target.value }) })
-        ] }),
-        /* @__PURE__ */ jsxs("fieldset", { children: [
-          /* @__PURE__ */ jsx("legend", { children: "\u9002\u7528\u89D2\u8272" }),
-          /* @__PURE__ */ jsx("div", { className: "connector-switches", children: roles.map((role) => /* @__PURE__ */ jsxs("label", { children: [
-            /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.roles.includes(role), onChange: (e) => this.setState({ roles: e.target.checked ? [...s.roles, role] : s.roles.filter((r) => r !== role) }) }),
-            label(role)
-          ] }, role)) })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "integration-controls", children: [
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u5FC5\u9700\u5DE5\u5177\uFF08\u7A7A\u683C\u6216\u9017\u53F7\u5206\u9694\uFF09",
-            /* @__PURE__ */ jsx("input", { value: s.tools, onChange: (e) => this.setState({ tools: e.target.value }) })
-          ] }),
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u5FC5\u9700\u540E\u7AEF",
-            /* @__PURE__ */ jsx("input", { value: s.backends, onChange: (e) => this.setState({ backends: e.target.value }) })
-          ] }),
-          /* @__PURE__ */ jsxs("label", { children: [
-            "\u5FC5\u9700\u6570\u636E artifact ID",
-            /* @__PURE__ */ jsx("input", { value: s.artifactIds, onChange: (e) => this.setState({ artifactIds: e.target.value }) })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u9009\u62E9 SKILL.md \u548C\u6587\u672C\u8D44\u6E90\uFF0C\u6216\u542B assets/*.png \u7684\u53D7\u9650 ZIP",
-          /* @__PURE__ */ jsx("input", { type: "file", multiple: true, disabled: this.props.busy, onChange: (e) => this.setState({ files: Array.from(e.target.files ?? []) }) })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6700\u591A64\u4E2A\u6587\u4EF6\uFF0C\u6BCF\u4EFD\u6587\u672C\u6216\u9759\u6001 PNG \u6700\u591A128 KiB\uFF0C\u603B\u91CF\u53CA ZIP \u6700\u591A2 MiB\u3002\u666E\u901A\u591A\u9009\u4FDD\u7559\u6587\u4EF6\u540D\uFF1B\u5D4C\u5957\u8D44\u6E90\u8BF7\u7528 ZIP\u3002\u8D44\u6E90\u53EA\u4FDD\u5B58\u548C\u4E0B\u8F7D\uFF0C\u4E0D\u8FD0\u884C\u811A\u672C\u3002" }),
-        s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
-        /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.busy || !s.files.length || !s.roles.length, children: "\u5BFC\u5165\u4E3A\u5F85\u5BA1\u7248\u672C" })
-      ] })
-    ] });
-  }
-}
-class SkillSession extends React.Component {
-  constructor() {
-    super(...arguments);
-    this.state = { result: null, selected: [], builtin: [], busy: false, error: "" };
-    this.mounted = true;
-    this.epoch = 0;
-  }
-  componentDidMount() {
-    void this.load();
-  }
-  componentWillUnmount() {
-    this.mounted = false;
-    this.epoch++;
-  }
-  componentDidUpdate(prev) {
-    if (prev.projectId !== this.props.projectId || prev.sessionId !== this.props.sessionId) {
-      this.epoch++;
-      this.setState({ result: null, selected: [], busy: false, error: "" });
-      void this.load();
-    }
-  }
-  async load(save = false) {
-    if (!this.props.sessionId) return;
-    const epoch = ++this.epoch, sessionId = this.props.sessionId, projectId = this.props.projectId, input = save ? { sessionId, expectedVersion: this.state.result.version, skillIds: this.state.selected } : { sessionId };
-    this.setState({ busy: true, error: "", result: null });
-    try {
-      const [result, builtin] = await Promise.all([call(projectId, save ? "skill_session_select" : "skill_preflight", input), api("/skills")]);
-      if (this.mounted && epoch === this.epoch) this.setState({ result, selected: result.skillIds, builtin: builtin.skills.map((skill) => skill.id) });
-    } catch (e) {
-      if (this.mounted && epoch === this.epoch) this.setState({ error: e instanceof Error ? e.message : String(e) });
-    } finally {
-      if (this.mounted && epoch === this.epoch) this.setState({ busy: false });
-    }
-  }
-  render() {
-    const s = this.state, ids = Array.from(/* @__PURE__ */ new Set([...s.builtin, ...(this.props.catalog?.revisions ?? []).filter((item) => this.props.catalog.configuration.revisionIds.includes(item.revision.id)).map((item) => item.revision.packageId), ...s.selected]));
-    return /* @__PURE__ */ jsxs("div", { className: "inspector-section skill-session-section", children: [
-      /* @__PURE__ */ jsx("h3", { children: "\u5F53\u524D\u4F1A\u8BDD\u663E\u5F0F\u6280\u80FD\u9009\u62E9" }),
-      !this.props.sessionId ? /* @__PURE__ */ jsx("p", { children: "\u5148\u5728\u7814\u7A76\u4F1A\u8BDD\u4E2D\u521B\u5EFA\u6216\u9009\u62E9\u4F1A\u8BDD\uFF0C\u518D\u9009\u62E9\u672C\u6B21\u4EFB\u52A1\u5FC5\u9700\u6280\u80FD\u3002" }) : /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsxs("details", { className: "integration-disclosure", children: [
-          /* @__PURE__ */ jsx("summary", { children: "\u4F1A\u8BDD\u4E0E\u56FA\u5B9A Bundle" }),
-          /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-            "\u4F1A\u8BDD ",
-            this.props.sessionId,
-            " \xB7 \u56FA\u5B9A Bundle ",
-            s.result?.skillBundleId ?? "\u672A\u7ED1\u5B9A"
-          ] })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9879\u76EE\u914D\u7F6E\u5347\u7EA7\u4E0D\u4F1A\u6539\u53D8\u6B64\u4F1A\u8BDD\u7684\u56FA\u5B9A Bundle \u6216\u5386\u53F2\u4EFB\u52A1\u7ED1\u5B9A\u3002\u53EA\u68C0\u67E5\u663E\u5F0F\u9009\u7528\u7684\u6280\u80FD\uFF1B\u672A\u9009\u62E9\u7684\u76EE\u5F55\u9879\u4E0D\u4F1A\u963B\u6B62\u542F\u52A8\u3002\u5DF2\u5F00\u59CB\u539F\u751F Pi \u7684\u4F1A\u8BDD\u4E0D\u80FD\u6539\u7ED1\uFF0C\u8BF7\u65B0\u5EFA\u4F1A\u8BDD\u3002\u4FDD\u5B58\u9009\u62E9\u4E0D\u4F1A\u542F\u52A8\u6A21\u578B\u3002" }),
-        /* @__PURE__ */ jsx("div", { className: "skill-session-choices", children: ids.map((id) => /* @__PURE__ */ jsxs("label", { children: [
-          /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.selected.includes(id), disabled: s.busy || !s.result, onChange: (e) => this.setState({ selected: e.target.checked ? [...s.selected, id] : s.selected.filter((x) => x !== id) }) }),
-          id
-        ] }, id)) }),
-        /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-          /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.busy || !s.result, onClick: () => this.load(true), children: "\u4FDD\u5B58\u663E\u5F0F\u9009\u62E9\u5E76\u9884\u68C0" }),
-          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => this.load(), children: "\u5237\u65B0\u5DF2\u4FDD\u5B58\u9009\u62E9\u7684\u9884\u68C0" })
-        ] }),
-        s.busy ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u6838\u5BF9\u4F1A\u8BDD\u7ED1\u5B9A\u4E0E\u80FD\u529B\u2026" }) : null,
-        s.result ? /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsxs("p", { role: "status", children: [
-            "\u5DF2\u4FDD\u5B58\u9009\u62E9\uFF1A",
-            s.result.skillIds.join("\u3001") || "\u65E0",
-            " \xB7 ",
-            s.result.ready ? "\u672C\u6B21\u9884\u68C0\u901A\u8FC7\uFF1B\u542F\u52A8\u65F6\u4ECD\u4F1A\u91CD\u65B0\u6838\u5BF9" : "\u542F\u52A8\u88AB\u963B\u6B62"
-          ] }),
-          s.result.missing.map((item, i) => /* @__PURE__ */ jsxs("p", { className: "inline-warning code-wrap", children: [
-            item.skillId,
-            " \xB7 ",
-            item.kind,
-            " \xB7 ",
-            item.value,
-            "\uFF1A",
-            item.reason
-          ] }, i))
-        ] }) : null
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9009\u62E9 SKILL.md \u548C\u6587\u672C\u8D44\u6E90\uFF0C\u6216 ZIP\u3002\u6700\u591A64\u4EFD\u6587\u4EF6\uFF0C\u5355\u4EFD\u6587\u672C\u6216\u9759\u6001 PNG \u6700\u591A128 KiB\uFF0C\u603B\u91CF\u53CA ZIP \u6700\u591A2 MiB\uFF1B\u5D4C\u5957\u8D44\u6E90\u7528 ZIP\u3002" }),
+      /* @__PURE__ */ jsxs("label", { children: [
+        "\u6280\u80FD\u540D\u79F0",
+        /* @__PURE__ */ jsx("input", { required: true, pattern: "[a-z][a-z0-9-]{0,99}", title: "\u4EE5\u5C0F\u5199\u5B57\u6BCD\u5F00\u5934\uFF0C\u53EA\u542B\u5C0F\u5199\u5B57\u6BCD\u3001\u6570\u5B57\u548C\u8FDE\u5B57\u7B26", maxLength: 100, disabled: busy, value: s.packageId, onChange: (e) => this.change("packageId", e.target.value), placeholder: "\u5982 research-method" })
       ] }),
-      s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null
-    ] });
+      /* @__PURE__ */ jsxs("label", { children: [
+        "\u8BF4\u660E\uFF08\u53EF\u9009\uFF09",
+        /* @__PURE__ */ jsx("input", { maxLength: 2e3, disabled: busy, value: s.description, onChange: (e) => this.change("description", e.target.value) })
+      ] }),
+      s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
+      /* @__PURE__ */ jsx("button", { className: "primary", disabled: busy || !s.files.length, children: "\u4E0A\u4F20\u5E76\u5F00\u542F" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4E0A\u4F20\u540E\u81EA\u52A8\u5F00\u542F\uFF0C\u65B0\u4F1A\u8BDD\u53EF\u7528\uFF1B\u4E0D\u6267\u884C\u811A\u672C\u3002\u4E0D\u4F1A\u6388\u4E88\u5DE5\u5177\u3001\u6570\u636E\u6216\u8BA1\u7B97\u6743\u9650\u3002" })
+    ] }) });
   }
 }
 class SkillManager extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { catalog: null, selected: null, content: null, builtinContent: null, query: "", enabled: [], disabledBuiltinIds: [], builtinBundleId: "", note: "", busy: false, reading: false, error: "", notice: "" };
+    this.state = { catalog: null, selected: null, content: null, builtinContent: null, builtinId: "", panel: null, query: "", enabled: [], busy: false, reading: false, error: "", notice: "" };
     this.mounted = true;
     this.epoch = 0;
     this.readEpoch = 0;
+    this.catalogEpoch = 0;
     this.locked = false;
+    this.dialog = React.createRef();
   }
   componentDidMount() {
     void this.refresh();
@@ -200,35 +119,86 @@ class SkillManager extends React.Component {
     this.mounted = false;
     this.epoch++;
     this.readEpoch++;
+    this.catalogEpoch++;
   }
   componentDidUpdate(prev) {
     if (prev.projectId !== this.props.projectId) {
       this.epoch++;
       this.readEpoch++;
+      this.catalogEpoch++;
       this.locked = false;
-      this.setState({ catalog: null, selected: null, content: null, builtinContent: null, query: "", enabled: [], disabledBuiltinIds: [], builtinBundleId: "", busy: false, reading: false, error: "", notice: "" });
+      this.dialog.current?.close();
+      this.setState({ catalog: null, selected: null, content: null, builtinContent: null, builtinId: "", panel: null, query: "", enabled: [], busy: false, reading: false, error: "", notice: "" });
       void this.refresh();
-    }
+    } else if (prev.refreshToken !== this.props.refreshToken) void this.refresh(true);
+  }
+  openPanel(panel) {
+    this.setState({ panel }, () => {
+      if (this.dialog.current && !this.dialog.current.open) this.dialog.current.showModal();
+    });
+  }
+  closePanel() {
+    this.readEpoch++;
+    this.dialog.current?.close();
+    this.setState({ panel: null, selected: null, content: null, builtinContent: null, builtinId: "", reading: false });
   }
   current(epoch) {
     return this.mounted && epoch === this.epoch;
   }
-  async refresh() {
-    await this.run(async (epoch) => {
-      const catalog = await call(this.props.projectId, "skill_package_list");
-      if (this.current(epoch)) this.setState({ catalog, enabled: catalog.configuration.revisionIds, disabledBuiltinIds: catalog.configuration.disabledBuiltinIds ?? [], builtinBundleId: catalog.configuration.builtinBundleId });
-    });
+  applyCatalog(catalog) {
+    const id = this.state.selected?.revision.id, selected = catalog.revisions.find((item) => item.revision.id === id) ?? null;
+    this.setState({ catalog, enabled: catalog.configuration.revisionIds, selected });
+    if (id && !selected && this.state.panel === "detail") this.closePanel();
   }
-  async run(fn, notice = "") {
-    if (this.locked) return;
+  needsRestore(catalog) {
+    return !this.props.readOnly && !!catalog.configuration.disabledBuiltinIds?.length;
+  }
+  async refresh(quiet = false, preserveMessages = false) {
+    if (quiet) {
+      if (this.locked) return;
+      const epoch = this.epoch, request = ++this.catalogEpoch;
+      try {
+        const catalog = await call(this.props.projectId, "skill_package_list");
+        if (this.current(epoch) && request === this.catalogEpoch && !this.locked) {
+          if (this.needsRestore(catalog)) await this.refresh(false, true);
+          else this.applyCatalog(catalog);
+        }
+      } catch {
+      }
+      return;
+    }
+    await this.run(async (epoch) => {
+      const projectId = this.props.projectId;
+      let catalog = await call(projectId, "skill_package_list");
+      if (!this.current(epoch)) return;
+      if (this.needsRestore(catalog)) {
+        const c = catalog.configuration;
+        try {
+          await call(projectId, "skill_bundle_configure", { expectedVersion: c.version, revisionIds: c.revisionIds, builtinBundleId: c.builtinBundleId, disabledBuiltinIds: [] }, `skill-restore-${c.bundleId}-${c.version}`);
+          if (!this.current(epoch)) return;
+          catalog = await call(projectId, "skill_package_list");
+        } catch (error) {
+          if (this.current(epoch)) this.applyCatalog(catalog);
+          throw error;
+        }
+      }
+      if (this.current(epoch)) this.applyCatalog(catalog);
+    }, "", preserveMessages);
+  }
+  async run(fn, notice = "", preserveMessages = false) {
+    if (this.locked) return false;
     this.locked = true;
+    this.catalogEpoch++;
     const epoch = this.epoch;
-    this.setState({ busy: true, error: "", notice: "" });
+    this.setState((s) => ({ busy: true, error: preserveMessages ? s.error : "", notice: preserveMessages ? s.notice : "" }));
     try {
       await fn(epoch);
-      if (this.current(epoch) && notice) this.setState({ notice });
+      if (!this.current(epoch)) return false;
+      if (notice) this.setState({ notice });
+      return true;
     } catch (e) {
       if (this.current(epoch)) this.setState({ error: e instanceof Error ? e.message : String(e) });
+      return false;
     } finally {
       if (this.current(epoch)) {
         this.locked = false;
@@ -236,12 +206,15 @@ class SkillManager extends React.Component {
       }
     }
   }
-  async inspect(revisionId) {
+  async inspect(revisionId, readOriginal = false) {
     const request = ++this.readEpoch, epoch = this.epoch;
-    this.setState({ selected: null, content: null, builtinContent: null, note: "", reading: true, error: "" });
+    this.setState({ selected: null, content: null, builtinContent: null, builtinId: "", reading: true, error: "" });
     try {
       const selected = await call(this.props.projectId, "skill_package_inspect", { revisionId });
-      if (this.current(epoch) && request === this.readEpoch) this.setState({ selected });
+      if (this.current(epoch) && request === this.readEpoch) {
+        this.setState({ selected });
+        if (readOriginal) await this.read("SKILL.md", revisionId);
+      }
     } catch (e) {
       if (this.current(epoch) && request === this.readEpoch) this.setState({ error: e instanceof Error ? e.message : String(e) });
     } finally {
@@ -251,7 +224,7 @@ class SkillManager extends React.Component {
   async readBuiltin(id, resource) {
     const request = ++this.readEpoch, epoch = this.epoch, bundleId = this.state.catalog?.configuration.builtinBundleId;
     if (!bundleId) return;
-    this.setState({ selected: null, content: null, builtinContent: null, reading: true, error: "" });
+    this.setState({ selected: null, content: null, builtinContent: null, builtinId: id, reading: true, error: "" });
     try {
       const query = new URLSearchParams({ bundleId });
       if (resource) query.set("resource", resource);
@@ -263,8 +236,7 @@ class SkillManager extends React.Component {
       if (this.current(epoch) && request === this.readEpoch) this.setState({ reading: false });
     }
   }
-  async read(resource) {
-    const revisionId = this.state.selected?.revision.id;
+  async read(resource, revisionId = this.state.selected?.revision.id) {
     if (!revisionId) return;
     const request = ++this.readEpoch, epoch = this.epoch;
     this.setState({ content: null, reading: true, error: "" });
@@ -297,244 +269,190 @@ class SkillManager extends React.Component {
       if (this.current(epoch) && request === this.readEpoch) this.setState({ error: error instanceof Error ? error.message : String(error) });
     }
   }
-  async mutate(name, input, notice) {
-    await this.run(async (epoch) => {
+  async mutate(name, input, notice, key) {
+    if (this.props.readOnly) return false;
+    return this.run(async (epoch) => {
       const projectId = this.props.projectId;
-      await call(projectId, name, input);
+      await call(projectId, name, input, key);
       const catalog = await call(projectId, "skill_package_list");
-      if (this.current(epoch)) {
-        const id = this.state.selected?.revision.id;
-        this.setState({ catalog, enabled: catalog.configuration.revisionIds, disabledBuiltinIds: catalog.configuration.disabledBuiltinIds ?? [], builtinBundleId: catalog.configuration.builtinBundleId, selected: catalog.revisions.find((item) => item.revision.id === id) ?? null });
-      }
+      if (this.current(epoch)) this.applyCatalog(catalog);
     }, notice);
   }
-  async configure(revisionIds = this.state.enabled, builtinBundleId = this.state.catalog?.configuration.builtinBundleId) {
-    if (!this.state.catalog) return;
-    await this.mutate("skill_bundle_configure", { expectedVersion: this.state.catalog.configuration.version, revisionIds, builtinBundleId, ...this.state.catalog.configuration.disabledBuiltinIds?.length ? { disabledBuiltinIds: [] } : {} }, "\u5DF2\u4FDD\u5B58\u914D\u7F6E\uFF1B\u5185\u7F6E\u6280\u80FD\u56FA\u5B9A\u5F00\u542F\uFF0C\u5DF2\u6709\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F\u914D\u7F6E\u3002");
+  async upload(input, key) {
+    const epoch = this.epoch, saved = await this.mutate("skill_package_upload", input, "\u6280\u80FD\u5DF2\u4E0A\u4F20\u5E76\u5F00\u542F\u3002", key);
+    if (saved && this.current(epoch) && this.state.panel === "upload") this.closePanel();
+    return saved;
+  }
+  async configure(revisionIds = this.state.enabled) {
+    if (!this.state.catalog) return false;
+    const c = this.state.catalog.configuration;
+    return this.mutate("skill_bundle_configure", { expectedVersion: c.version, revisionIds, builtinBundleId: c.builtinBundleId, ...c.disabledBuiltinIds?.length ? { disabledBuiltinIds: [] } : {} }, "\u5DF2\u4FDD\u5B58\u6280\u80FD\u5F00\u5173\uFF1B\u5DF2\u6709\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F\u914D\u7F6E\u3002");
+  }
+  async enable(revisionId) {
+    if (!this.state.catalog) return false;
+    return this.mutate("skill_package_enable", { revisionId, expectedVersion: this.state.catalog.configuration.version }, "\u6280\u80FD\u5DF2\u5F00\u542F\uFF0C\u65B0\u4F1A\u8BDD\u53EF\u7528\u3002");
   }
   async remove(revisionId) {
-    if (!this.state.catalog) return;
-    await this.mutate("skill_package_delete", { revisionId, expectedVersion: this.state.catalog.configuration.version }, "\u5DF2\u4ECE\u6280\u80FD\u5217\u8868\u5220\u9664\u5E76\u505C\u6B62\u540E\u7EED\u542F\u7528\uFF1B\u5386\u53F2\u539F\u6587\u4E0E\u5DF2\u56FA\u5B9A\u4F1A\u8BDD\u4FDD\u7559\u3002");
+    if (!this.state.catalog) return false;
+    const epoch = this.epoch, saved = await this.mutate("skill_package_delete", { revisionId, expectedVersion: this.state.catalog.configuration.version }, "\u6280\u80FD\u5DF2\u5220\u9664\uFF1B\u5386\u53F2\u539F\u6587\u4E0E\u5DF2\u56FA\u5B9A\u4F1A\u8BDD\u4FDD\u7559\u3002");
+    if (saved && this.current(epoch) && this.state.selected?.revision.id === revisionId) this.closePanel();
+    return saved;
   }
   render() {
-    const s = this.state, selected = s.selected, r = selected?.revision, query = s.query.trim().toLocaleLowerCase(), matches = (value) => value.toLocaleLowerCase().includes(query), builtins = (s.catalog?.builtinSkills ?? []).filter((skill) => matches(`${skill.id} ${skill.description} ${builtinNames[skill.id.replace(/^pi-research-/, "")]?.[0] ?? ""}`)), revisions = (s.catalog?.revisions ?? []).filter((item) => matches(`${item.revision.packageId} ${item.revision.revisionTag} ${item.revision.description}`));
-    return /* @__PURE__ */ jsxs("section", { className: "surface skill-manager-card", children: [
-      /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-        /* @__PURE__ */ jsx("h2", { children: "\u6280\u80FD" }),
-        /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => this.refresh(), children: "\u5237\u65B0\u6280\u80FD\u72B6\u6001" })
-      ] }),
+    const s = this.state, selected = s.selected, r = selected?.revision, builtin = s.catalog?.builtinSkills?.find((skill) => skill.id === s.builtinId), friendly = builtinNames[s.builtinId.replace(/^pi-research-/, "")], query = s.query.trim().toLocaleLowerCase(), matches = (value) => value.toLocaleLowerCase().includes(query), builtins = (s.catalog?.builtinSkills ?? []).filter((skill) => matches(`${skill.id} ${skill.description} ${builtinNames[skill.id.replace(/^pi-research-/, "")]?.join(" ") ?? ""}`)), revisions = (s.catalog?.revisions ?? []).filter((item) => matches(`${item.revision.packageId} ${item.revision.revisionTag} ${item.revision.description}`)), title = s.panel === "upload" ? "\u4E0A\u4F20\u6280\u80FD" : r ? r.packageId : friendly?.[0] ?? s.builtinId;
+    return /* @__PURE__ */ jsxs("section", { className: "skill-manager-card", "aria-label": "\u6280\u80FD\u5E93", children: [
       /* @__PURE__ */ jsxs("div", { className: "skill-toolbar", children: [
-        /* @__PURE__ */ jsx(Icon, { name: "search" }),
-        /* @__PURE__ */ jsx("input", { type: "search", "aria-label": "\u641C\u7D22\u6280\u80FD", value: s.query, onChange: (e) => this.setState({ query: e.target.value }), placeholder: "\u641C\u7D22\u540D\u79F0\u6216\u8BF4\u660E" }),
+        /* @__PURE__ */ jsxs("label", { className: "skill-search", children: [
+          /* @__PURE__ */ jsx(Icon, { name: "search" }),
+          /* @__PURE__ */ jsx("input", { type: "search", "aria-label": "\u641C\u7D22\u6280\u80FD", value: s.query, onChange: (e) => this.setState({ query: e.target.value }), placeholder: "\u641C\u7D22\u540D\u79F0\u6216\u8BF4\u660E" })
+        ] }),
+        /* @__PURE__ */ jsxs("button", { className: "primary", disabled: this.props.readOnly, onClick: () => this.openPanel("upload"), children: [
+          /* @__PURE__ */ jsx(Icon, { name: "plus" }),
+          "\u4E0A\u4F20\u6280\u80FD"
+        ] })
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "skill-library-meta", children: [
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5185\u7F6E\u6280\u80FD\u59CB\u7EC8\u7531\u7CFB\u7EDF\u63D0\u4F9B" }),
         /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
-          (s.catalog?.builtinSkills?.length ?? 0) + (s.catalog?.revisions.length ?? 0),
+          builtins.length + revisions.length,
           " \u4E2A\u6280\u80FD\u7248\u672C"
         ] })
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5185\u7F6E\u6280\u80FD\u56FA\u5B9A\u5F00\u542F\uFF0C\u4E0D\u53EF\u53D6\u6D88\u3002\u4E0A\u4F20\u6280\u80FD\u5BA1\u9605\u540E\u542F\u7528\uFF0C\u5F00\u5173\u81EA\u52A8\u4FDD\u5B58\u3002" }),
-      s.disabledBuiltinIds.length ? /* @__PURE__ */ jsxs("p", { className: "inline-warning", children: [
-        "\u65E7\u914D\u7F6E\u542B\u5DF2\u5173\u95ED\u7684\u5185\u7F6E\u6280\u80FD\u3002",
-        /* @__PURE__ */ jsx("button", { className: "text-button", disabled: s.busy, onClick: () => this.configure(), children: "\u6062\u590D\u5185\u7F6E\u9ED8\u8BA4" }),
-        "\u4EC5\u66F4\u65B0\u540E\u7EED\u65B0\u7ED1\u5B9A\u3002"
-      ] }) : null,
-      s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
-      s.notice ? /* @__PURE__ */ jsx("p", { role: "status", children: s.notice }) : null,
-      s.busy ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u4FDD\u5B58\u6216\u8BFB\u53D6\u6743\u5A01\u72B6\u6001\u2026" }) : null,
-      /* @__PURE__ */ jsx(SkillImport, { busy: s.busy, submit: (input) => this.mutate("skill_package_import", input, "\u5DF2\u5BFC\u5165\u5F85\u5BA1\u7248\u672C\uFF1B\u5C1A\u672A\u542F\u7528\u3002") }, this.props.projectId),
-      !s.catalog ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u6280\u80FD\u5217\u8868\uFF1B\u8BFB\u53D6\u5931\u8D25\u65F6\u53EF\u5237\u65B0\u91CD\u8BD5\u3002" }) : /* @__PURE__ */ jsxs("div", { className: "skill-catalog", children: [
-        /* @__PURE__ */ jsxs("h3", { className: "skill-group-heading", children: [
-          "\u5185\u7F6E\u6280\u80FD ",
-          /* @__PURE__ */ jsx("span", { className: "small muted", children: "piresearch" })
-        ] }),
-        /* @__PURE__ */ jsx("div", { className: "builtin-skill-list", children: builtins.map((skill) => {
-          const friendly = builtinNames[skill.id.replace(/^pi-research-/, "")], enabled = !s.disabledBuiltinIds.includes(skill.id);
-          return /* @__PURE__ */ jsxs("div", { className: "builtin-skill-row", children: [
-            /* @__PURE__ */ jsx(Icon, { name: friendly?.[1] ?? "skills" }),
-            /* @__PURE__ */ jsxs("div", { className: "builtin-skill-copy", children: [
-              /* @__PURE__ */ jsx("h3", { children: friendly?.[0] ?? skill.id }),
-              /* @__PURE__ */ jsx("p", { className: "small muted skill-description", title: skill.description, children: skill.description }),
-              /* @__PURE__ */ jsxs("details", { className: "skill-resource-disclosure", children: [
-                /* @__PURE__ */ jsx("summary", { children: "\u8BE6\u60C5" }),
-                /* @__PURE__ */ jsx("p", { className: "small code-wrap", children: skill.id }),
-                /* @__PURE__ */ jsx("p", { className: "small muted", children: skill.description }),
-                skill.resources.length ? /* @__PURE__ */ jsx("div", { className: "skill-resource-actions", children: skill.resources.map((resource) => /* @__PURE__ */ jsx("button", { className: "text-button small code-wrap", disabled: s.reading, onClick: () => this.readBuiltin(skill.id, resource), children: resource }, resource)) }) : null
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxs("div", { className: "skill-row-actions", children: [
-              /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: s.reading, onClick: () => this.readBuiltin(skill.id), children: "\u67E5\u770B\u8BF4\u660E" }),
-              /* @__PURE__ */ jsxs("label", { className: "skill-switch", children: [
-                /* @__PURE__ */ jsx("span", { children: enabled ? "\u56FA\u5B9A\u5F00\u542F" : "\u65E7\u914D\u7F6E\u5DF2\u5173\u95ED" }),
-                /* @__PURE__ */ jsx("input", { className: "connector-toggle", role: "switch", type: "checkbox", "aria-label": `\u542F\u7528\u5185\u7F6E\u6280\u80FD ${skill.id}`, checked: enabled, disabled: true })
-              ] })
-            ] })
-          ] }, skill.id);
-        }) }),
-        /* @__PURE__ */ jsx("h3", { className: "skill-group-heading", children: "\u4E0A\u4F20\u7684\u6280\u80FD" }),
-        !s.catalog.revisions.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u4E0A\u4F20\u6280\u80FD\u3002\u4E0A\u4F20 SKILL.md \u6216 ZIP \u5F00\u59CB\u4F7F\u7528\u3002" }) : /* @__PURE__ */ jsx("div", { className: "skill-revision-list", children: revisions.map((item) => {
-          const revision = item.revision, approved = item.reviews[item.reviews.length - 1]?.decision === "approved", revoked = item.revocations.length > 0, enabled = s.enabled.includes(revision.id);
+      !s.panel && s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
+      !s.panel && s.notice ? /* @__PURE__ */ jsx("p", { role: "status", children: s.notice }) : null,
+      !s.catalog ? /* @__PURE__ */ jsx("p", { role: "status", className: "inline-empty", children: "\u6B63\u5728\u8BFB\u53D6\u6280\u80FD\u5217\u8868\uFF0C\u72B6\u6001\u4F1A\u81EA\u52A8\u66F4\u65B0\u3002" }) : /* @__PURE__ */ jsxs("div", { className: "skill-catalog", children: [
+        revisions.map((item) => {
+          const revision = item.revision, enabled = s.enabled.includes(revision.id);
           return /* @__PURE__ */ jsxs("div", { className: "skill-revision-row", children: [
             /* @__PURE__ */ jsx(Icon, { name: "skills" }),
-            /* @__PURE__ */ jsxs("div", { className: "skill-revision-copy", children: [
+            /* @__PURE__ */ jsxs("div", { className: "skill-row-copy", children: [
               /* @__PURE__ */ jsxs("h3", { children: [
-                revision.packageId,
-                " ",
-                /* @__PURE__ */ jsx("span", { className: "small muted", children: revision.revisionTag })
-              ] }),
-              /* @__PURE__ */ jsx("p", { className: "small muted", children: revision.description }),
-              /* @__PURE__ */ jsx(Badge, { value: revoked ? "revoked" : approved ? "approved" : item.reviews.length ? "rejected" : "pending", caption: revoked ? "\u5DF2\u64A4\u9500" : approved ? "\u5BA1\u9605\u901A\u8FC7" : item.reviews.length ? "\u5BA1\u9605\u672A\u901A\u8FC7" : "\u5F85\u5BA1" }),
-              /* @__PURE__ */ jsxs("details", { className: "skill-resource-disclosure", children: [
-                /* @__PURE__ */ jsx("summary", { children: "\u9700\u6C42\u4E0E\u8BB8\u53EF\u8BC1" }),
-                /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-                  "\u5FC5\u9700\u5DE5\u5177\uFF1A",
-                  revision.requirements.tools.join(", ") || "\u65E0",
-                  "\uFF1B\u540E\u7AEF\uFF1A",
-                  revision.requirements.backends.join(", ") || "\u65E0",
-                  "\uFF1B\u6570\u636E\uFF1A",
-                  revision.requirements.artifactIds.join(", ") || "\u65E0",
-                  "\u3002\u8BB8\u53EF\u8BC1\uFF1A",
-                  revision.license ?? "\u672A\u77E5"
+                /* @__PURE__ */ jsx("button", { className: "skill-name-button", "aria-label": `\u67E5\u770B\u6280\u80FD ${revision.packageId} ${revision.revisionTag}`, onClick: () => {
+                  this.openPanel("detail");
+                  void this.inspect(revision.id, true);
+                }, children: revision.packageId }),
+                /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
+                  revision.revisionTag.replace(/^upload-/, "").slice(0, 8),
+                  " \xB7 \u4E0A\u4F20"
                 ] })
-              ] })
+              ] }),
+              /* @__PURE__ */ jsx("p", { className: "small muted skill-description", title: revision.description, children: revision.description })
             ] }),
-            /* @__PURE__ */ jsxs("div", { className: "skill-row-actions", children: [
-              /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: s.reading, onClick: () => this.inspect(revision.id), children: "\u67E5\u770B / \u5BA1\u9605" }),
-              /* @__PURE__ */ jsx("button", { className: "text-button", "aria-label": `\u5220\u9664\u6280\u80FD ${revision.packageId} ${revision.revisionTag}`, disabled: s.busy, onClick: () => this.remove(revision.id), children: "\u5220\u9664" }),
-              /* @__PURE__ */ jsxs("label", { className: "skill-switch", children: [
-                /* @__PURE__ */ jsx("span", { children: enabled ? "\u5DF2\u5F00\u542F" : "\u5DF2\u5173\u95ED" }),
-                /* @__PURE__ */ jsx("input", { className: "connector-toggle", role: "switch", type: "checkbox", "aria-label": `\u914D\u7F6E\u542F\u7528 ${revision.packageId} ${revision.revisionTag}`, disabled: s.busy || !enabled && (!approved || revoked), checked: enabled, onChange: (e) => this.configure(e.target.checked ? [...s.enabled.filter((id) => !s.catalog.revisions.some((other) => other.revision.id === id && other.revision.packageId === revision.packageId)), revision.id] : s.enabled.filter((id) => id !== revision.id)) })
-              ] })
+            /* @__PURE__ */ jsxs("label", { className: "skill-switch", children: [
+              /* @__PURE__ */ jsx("span", { children: enabled ? "\u5DF2\u5F00\u542F" : "\u5DF2\u5173\u95ED" }),
+              /* @__PURE__ */ jsx("input", { className: "connector-toggle", role: "switch", type: "checkbox", "aria-label": `\u914D\u7F6E\u542F\u7528 ${revision.packageId} ${revision.revisionTag}`, disabled: this.props.readOnly || s.busy || !enabled && item.revocations.length > 0, checked: enabled, onChange: (e) => e.target.checked ? this.enable(revision.id) : this.configure(s.enabled.filter((id) => id !== revision.id)) })
             ] })
           ] }, revision.id);
-        }) }),
-        query && !builtins.length && !revisions.length ? /* @__PURE__ */ jsx("p", { role: "status", className: "inline-empty", children: "\u6CA1\u6709\u5339\u914D\u7684\u6280\u80FD\u3002\u5C1D\u8BD5\u5176\u4ED6\u540D\u79F0\u6216\u8BF4\u660E\u5173\u952E\u8BCD\u3002" }) : null
+        }),
+        builtins.map((skill) => {
+          const name = builtinNames[skill.id.replace(/^pi-research-/, "")];
+          return /* @__PURE__ */ jsxs("div", { className: "builtin-skill-row", children: [
+            /* @__PURE__ */ jsx(Icon, { name: name?.[1] ?? "skills" }),
+            /* @__PURE__ */ jsxs("div", { className: "skill-row-copy", children: [
+              /* @__PURE__ */ jsxs("h3", { children: [
+                /* @__PURE__ */ jsx("button", { className: "skill-name-button", "aria-label": `\u67E5\u770B\u6280\u80FD ${name?.[0] ?? skill.id}`, onClick: () => {
+                  this.openPanel("detail");
+                  void this.readBuiltin(skill.id);
+                }, children: name?.[0] ?? skill.id }),
+                /* @__PURE__ */ jsx("span", { className: "skill-source small muted", children: "\u5185\u7F6E" })
+              ] }),
+              /* @__PURE__ */ jsx("p", { className: "small muted skill-description", title: name?.[2] ?? skill.description, children: name?.[2] ?? skill.description })
+            ] })
+          ] }, skill.id);
+        }),
+        !builtins.length && !revisions.length ? /* @__PURE__ */ jsx("p", { role: "status", className: "inline-empty", children: query ? "\u6CA1\u6709\u5339\u914D\u7684\u6280\u80FD\u3002\u5C1D\u8BD5\u5176\u4ED6\u540D\u79F0\u6216\u8BF4\u660E\u5173\u952E\u8BCD\u3002" : "\u5C1A\u65E0\u6280\u80FD\u3002\u4E0A\u4F20 SKILL.md \u6216 ZIP \u5F00\u59CB\u4F7F\u7528\u3002" }) : null
       ] }),
-      s.builtinContent ? /* @__PURE__ */ jsxs("section", { className: "skill-reader", children: [
-        /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-          /* @__PURE__ */ jsxs("h3", { children: [
-            s.builtinContent.id,
-            " / ",
-            s.builtinContent.resource
-          ] }),
-          /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => {
-            this.readEpoch++;
-            this.setState({ builtinContent: null });
-          }, children: "\u5173\u95ED\u8BF4\u660E" })
+      /* @__PURE__ */ jsxs("dialog", { ref: this.dialog, className: "skill-dialog", "aria-labelledby": `skill-panel-title-${this.props.projectId}`, onCancel: (e) => {
+        e.preventDefault();
+        this.closePanel();
+      }, children: [
+        /* @__PURE__ */ jsxs("header", { className: "skill-dialog-heading", children: [
+          /* @__PURE__ */ jsx("h2", { id: `skill-panel-title-${this.props.projectId}`, children: title || "\u6280\u80FD\u8BE6\u60C5" }),
+          /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => this.closePanel(), "aria-label": "\u5173\u95ED\u6280\u80FD\u9762\u677F", children: "\u5173\u95ED" })
         ] }),
-        /* @__PURE__ */ jsxs("details", { children: [
-          /* @__PURE__ */ jsx("summary", { children: "\u5185\u5BB9\u6458\u8981" }),
-          /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-            "SHA-256 ",
-            s.builtinContent.digest
-          ] })
-        ] }),
-        "content" in s.builtinContent ? /* @__PURE__ */ jsx("pre", { className: "integration-content", children: s.builtinContent.content }) : null
-      ] }) : null,
-      /* @__PURE__ */ jsxs("details", { className: "integration-disclosure", children: [
-        /* @__PURE__ */ jsx("summary", { children: "\u5BA1\u9605\u4E0E\u6743\u9650\u8FB9\u754C" }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BA1\u9605\u53EA\u6279\u51C6\u6587\u672C\u52A0\u8F7D\u53CA\u9759\u6001\u8D44\u6E90\u4FDD\u5B58\uFF1B\u58F0\u660E\u9700\u6C42\u4E0D\u4F1A\u6388\u4E88\u5DE5\u5177\u3001\u6570\u636E\u3001\u811A\u672C\u6267\u884C\u6216\u8BA1\u7B97\u6743\u9650\u3002\u672A\u77E5\u8BB8\u53EF\u8BC1\u4E0D\u4EE3\u8868\u83B7\u5F97\u518D\u5206\u53D1\u8BB8\u53EF\u3002\u56FE\u5F62\u4E0E\u8BBA\u6587\u6267\u884C\u80FD\u529B\u987B\u5206\u522B\u9884\u68C0\uFF0C\u76EE\u5F55\u5C55\u793A\u4E0D\u4EE3\u8868\u6267\u884C\u5668\u5DF2\u5B9E\u73B0\u3002\u5220\u9664\u4E0A\u4F20\u6280\u80FD\u4F1A\u79FB\u51FA\u5217\u8868\u5E76\u505C\u6B62\u540E\u7EED\u542F\u7528\uFF0C\u5386\u53F2\u539F\u6587\u4E0E\u5DF2\u56FA\u5B9A\u4F1A\u8BDD\u4FDD\u7559\uFF1B\u5185\u7F6E\u6280\u80FD\u56FA\u5B9A\u5F00\u542F\u3002" })
-      ] }),
-      /* @__PURE__ */ jsxs("details", { className: "skill-version-settings integration-disclosure", children: [
-        /* @__PURE__ */ jsx("summary", { children: "\u56FA\u5B9A\u7248\u672C\u4E0E\u9879\u76EE\u914D\u7F6E" }),
-        /* @__PURE__ */ jsxs("div", { className: "integration-disclosure-content", children: [
-          /* @__PURE__ */ jsx("h3", { children: "\u56FA\u5B9A\u7248\u672C\u76EE\u5F55 / \u914D\u7F6E\u6307\u9488" }),
-          /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-            "\u5F53\u524D Bundle ",
-            s.catalog?.configuration.bundleId ?? "\u8BFB\u53D6\u4E2D",
-            " \xB7 \u914D\u7F6E\u7248\u672C ",
-            s.catalog?.configuration.version ?? "\u2014"
-          ] }),
-          s.catalog ? /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-              "\u5F53\u524D\u5185\u7F6E\u57FA\u7EBF ",
-              s.catalog.configuration.builtinBundleId,
-              " \xB7 \u53EF\u9009\u53D1\u884C\u7248\u672C ",
-              s.catalog.builtinReleases.length,
-              " \u4E2A"
-            ] }),
-            /* @__PURE__ */ jsxs("label", { children: [
-              "\u65B0\u7ED1\u5B9A\u4F7F\u7528\u7684\u5185\u7F6E\u53D1\u884C\u7248\u672C",
-              /* @__PURE__ */ jsxs("select", { value: s.builtinBundleId, disabled: s.busy, onChange: (e) => this.setState({ builtinBundleId: e.target.value }), children: [
-                nativeSelectButton,
-                s.catalog.builtinReleases.map((release) => /* @__PURE__ */ jsxs("option", { value: release.bundleId, children: [
-                  release.bundleId,
-                  " \xB7 ",
-                  release.skillCount,
-                  " \u4E2A\u6280\u80FD",
-                  release.current ? " \xB7 \u5F53\u524D\u53D1\u884C" : "",
-                  release.bundleId === s.catalog.configuration.builtinBundleId ? " \xB7 \u5DF2\u914D\u7F6E\u57FA\u7EBF" : ""
-                ] }, release.bundleId))
+        /* @__PURE__ */ jsxs("div", { className: "skill-dialog-body", children: [
+          s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
+          s.notice ? /* @__PURE__ */ jsx("p", { role: "status", children: s.notice }) : null,
+          /* @__PURE__ */ jsx("div", { className: "skill-panel skill-upload-panel", hidden: s.panel !== "upload", children: /* @__PURE__ */ jsx(SkillImport, { busy: s.busy || !!this.props.readOnly, submit: (input, key) => this.upload(input, key) }, this.props.projectId) }),
+          /* @__PURE__ */ jsxs("div", { className: "skill-panel skill-detail-panel", hidden: s.panel !== "detail", children: [
+            s.reading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u8BF4\u660E\u2026" }) : null,
+            builtin ? /* @__PURE__ */ jsxs("div", { className: "skill-builtin-detail", children: [
+              /* @__PURE__ */ jsx("p", { children: builtin.description }),
+              builtin.resources.some((resource) => resource !== "SKILL.md") ? /* @__PURE__ */ jsxs("div", { className: "skill-resource-actions", children: [
+                /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: s.reading, onClick: () => this.readBuiltin(builtin.id), children: "SKILL.md" }),
+                builtin.resources.filter((resource) => resource !== "SKILL.md").map((resource) => /* @__PURE__ */ jsx("button", { className: "secondary compact code-wrap", disabled: s.reading, onClick: () => this.readBuiltin(builtin.id, resource), children: resource }, resource))
+              ] }) : null
+            ] }) : null,
+            s.builtinContent ? /* @__PURE__ */ jsxs("section", { className: "skill-reader", children: [
+              "content" in s.builtinContent ? /* @__PURE__ */ jsx("pre", { className: "integration-content", children: s.builtinContent.content }) : null,
+              /* @__PURE__ */ jsxs("details", { className: "skill-technical", children: [
+                /* @__PURE__ */ jsx("summary", { children: "\u6587\u4EF6\u4FE1\u606F" }),
+                /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
+                  s.builtinContent.id,
+                  " / ",
+                  s.builtinContent.resource,
+                  /* @__PURE__ */ jsx("br", {}),
+                  "SHA-256 ",
+                  s.builtinContent.digest
+                ] })
               ] })
-            ] }),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9009\u62E9\u53D1\u884C\u7248\u672C\u540E\u4FDD\u5B58\u624D\u4F1A\u5207\u6362\uFF0C\u4EC5\u5F71\u54CD\u540E\u7EED\u65B0\u7ED1\u5B9A\uFF1B\u5DF2\u7ED1\u5B9A\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F Bundle ID\uFF0C\u5E76\u6309\u539F\u7248\u672C\u9884\u68C0\u3002\u672A\u914D\u7F6E\u9879\u76EE\u7684\u65B0\u7ED1\u5B9A\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u53D1\u884C\u3002\u81EA\u5B9A\u4E49\u4FEE\u8BA2\u4FDD\u6301\u52FE\u9009\uFF0C\u5347\u7EA7\u5185\u7F6E\u7248\u672C\u987B\u5728\u6B64\u663E\u5F0F\u9009\u62E9\u3002" })
-          ] }) : null,
-          /* @__PURE__ */ jsxs("div", { className: "skill-config-actions", children: [
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53D1\u884C\u7248\u672C\u66F4\u6539\u9700\u4FDD\u5B58\u540E\u751F\u6548\uFF1B\u4E0A\u4F20\u6280\u80FD\u5F00\u5173\u81EA\u52A8\u4FDD\u5B58\u3002" }),
-            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy || !s.catalog, onClick: () => this.configure(s.enabled, s.builtinBundleId), children: "\u4FDD\u5B58\u542F\u7528 / \u56DE\u6EDA\u5230\u6240\u9009\u7248\u672C" }),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u540C\u4E00\u5305\u5F00\u542F\u4E00\u4E2A\u7248\u672C\u65F6\u4F1A\u66FF\u6362\u5F53\u524D\u7248\u672C\u3002\u542F\u7528\u4E0D\u7B49\u4E8E\u4EFB\u52A1\u5FC5\u9700\uFF0C\u987B\u5728\u4F1A\u8BDD\u4E2D\u663E\u5F0F\u9009\u62E9\u3002" })
+            ] }) : null,
+            r && selected ? /* @__PURE__ */ jsxs("div", { className: "skill-revision-detail", children: [
+              /* @__PURE__ */ jsx("p", { children: r.description }),
+              r.files.length > 1 ? /* @__PURE__ */ jsx("div", { className: "skill-resource-actions", children: r.files.map((file) => /* @__PURE__ */ jsx("button", { className: "secondary compact code-wrap", disabled: s.reading, onClick: () => this.read(file.path), children: file.path }, file.path)) }) : null,
+              s.content ? /* @__PURE__ */ jsx("div", { children: "contentBase64" in s.content ? /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9759\u6001 PNG \u6309\u539F\u5B57\u8282\u4E0B\u8F7D\uFF1B\u4E0D\u6267\u884C\u3002" }),
+                /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => void this.downloadBinary(), children: "\u4E0B\u8F7D PNG" })
+              ] }) : /* @__PURE__ */ jsx("pre", { className: "integration-content", children: s.content.content }) }) : null,
+              /* @__PURE__ */ jsxs("details", { className: "skill-technical", children: [
+                /* @__PURE__ */ jsx("summary", { children: "\u7248\u672C\u4E0E\u6587\u4EF6\u4FE1\u606F" }),
+                /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
+                  "Revision ",
+                  r.id,
+                  " \xB7 ",
+                  r.revisionTag,
+                  /* @__PURE__ */ jsx("br", {}),
+                  "SHA-256 ",
+                  r.contentDigest,
+                  /* @__PURE__ */ jsx("br", {}),
+                  "\u89D2\u8272 ",
+                  r.roles.map(label).join("\u3001"),
+                  " \xB7 \u8BB8\u53EF\u8BC1\uFF1A",
+                  r.license ?? "\u672A\u77E5"
+                ] }),
+                /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
+                  "\u5FC5\u9700\u5DE5\u5177\uFF1A",
+                  r.requirements.tools.join(", ") || "\u65E0",
+                  "\uFF1B\u540E\u7AEF\uFF1A",
+                  r.requirements.backends.join(", ") || "\u65E0",
+                  "\uFF1B\u6570\u636E\uFF1A",
+                  r.requirements.artifactIds.join(", ") || "\u65E0"
+                ] }),
+                /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u58F0\u660E\u4E0D\u4F1A\u6388\u4E88\u5DE5\u5177\u3001\u6570\u636E\u6216\u8BA1\u7B97\u6743\u9650\u3002\u672A\u77E5\u8BB8\u53EF\u8BC1\u4E0D\u4EE3\u8868\u83B7\u5F97\u518D\u5206\u53D1\u8BB8\u53EF\u3002\u5DF2\u6709\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F\u56FA\u5B9A\u7248\u672C\u3002" }),
+                s.content ? /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
+                  s.content.resource,
+                  " \xB7 SHA-256 ",
+                  s.content.digest
+                ] }) : null,
+                selected.reviews.map((review) => /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
+                  label(review.decision),
+                  " \xB7 ",
+                  review.note,
+                  " \xB7 ",
+                  review.contentDigest
+                ] }, review.id)),
+                selected.revocations.map((revoke) => /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
+                  "\u64A4\u9500 \xB7 ",
+                  revoke.note
+                ] }, revoke.id))
+              ] }),
+              /* @__PURE__ */ jsxs("div", { className: "skill-delete-actions", children: [
+                /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5220\u9664\u505C\u6B62\u540E\u7EED\u542F\u7528\uFF0C\u5386\u53F2\u8BB0\u5F55\u4FDD\u7559\u3002" }),
+                /* @__PURE__ */ jsx("button", { className: "danger-outline", "aria-label": `\u5220\u9664\u6280\u80FD ${r.packageId} ${r.revisionTag}`, disabled: this.props.readOnly || s.busy, onClick: () => this.remove(r.id), children: "\u5220\u9664\u6280\u80FD" })
+              ] })
+            ] }) : null
           ] })
         ] })
-      ] }),
-      s.reading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u7248\u672C\u2026" }) : null,
-      r && selected ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-        /* @__PURE__ */ jsxs("h3", { children: [
-          r.packageId,
-          " / ",
-          r.revisionTag
-        ] }),
-        /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-          "Revision ",
-          r.id,
-          /* @__PURE__ */ jsx("br", {}),
-          "SHA-256 ",
-          r.contentDigest,
-          /* @__PURE__ */ jsx("br", {}),
-          "\u89D2\u8272 ",
-          r.roles.map(label).join("\u3001"),
-          " \xB7 \u8BB8\u53EF\u8BC1 ",
-          r.license ?? "\u672A\u77E5"
-        ] }),
-        /* @__PURE__ */ jsx("div", { className: "actions wrap", children: r.files.map((file) => /* @__PURE__ */ jsxs("button", { className: "secondary compact code-wrap", onClick: () => this.read(file.path), children: [
-          file.path,
-          " \xB7 ",
-          file.size,
-          " B",
-          file.mediaType === "image/png" ? " \xB7 \u9759\u6001 PNG" : ""
-        ] }, file.path)) }),
-        s.content ? /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
-            s.content.resource,
-            " \xB7 SHA-256 ",
-            s.content.digest
-          ] }),
-          "contentBase64" in s.content ? /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u56FA\u5B9A PNG \u4EC5\u6309\u539F\u5B57\u8282\u4E0B\u8F7D\uFF1B\u4E0D\u4F1A\u52A0\u8F7D\u5230\u6A21\u578B\u4E0A\u4E0B\u6587\u6216\u5728\u6B64\u6267\u884C\u3002" }),
-            /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => void this.downloadBinary(), children: "\u4E0B\u8F7D\u56FA\u5B9A PNG" })
-          ] }) : /* @__PURE__ */ jsx("pre", { className: "integration-content", children: s.content.content })
-        ] }) : null,
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u5BA1\u9605 / \u64A4\u9500\u7406\u7531",
-          /* @__PURE__ */ jsx("textarea", { value: s.note, maxLength: 4e3, onChange: (e) => this.setState({ note: e.target.value }) })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-          /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.busy || !s.note.trim() || !!selected.revocations.length, onClick: () => this.mutate("skill_package_review", { revisionId: r.id, decision: "approved", note: s.note }, "\u5BA1\u9605\u51B3\u5B9A\u5DF2\u4FDD\u5B58\uFF1B\u4ECD\u9700\u663E\u5F0F\u542F\u7528\u3002"), children: "\u6279\u51C6\u6B64\u56FA\u5B9A\u7248\u672C" }),
-          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy || !s.note.trim() || !!selected.revocations.length, onClick: () => this.mutate("skill_package_review", { revisionId: r.id, decision: "rejected", note: s.note }, "\u62D2\u7EDD\u51B3\u5B9A\u5DF2\u4FDD\u5B58\u3002"), children: "\u62D2\u7EDD" }),
-          /* @__PURE__ */ jsx("button", { className: "danger-outline", disabled: s.busy || !s.note.trim() || !!selected.revocations.length, onClick: () => this.mutate("skill_package_revoke", { revisionId: r.id, note: s.note }, "\u7248\u672C\u5DF2\u64A4\u9500\uFF1B\u5386\u53F2\u539F\u6587\u4E0E\u51B3\u5B9A\u4FDD\u7559\u3002"), children: "\u64A4\u9500\u6B64\u7248\u672C" })
-        ] }),
-        selected.reviews.map((review) => /* @__PURE__ */ jsxs("p", { className: "small", children: [
-          label(review.decision),
-          " \xB7 ",
-          review.note,
-          " \xB7 ",
-          review.contentDigest
-        ] }, review.id)),
-        selected.revocations.map((revoke) => /* @__PURE__ */ jsxs("p", { className: "small", children: [
-          "\u64A4\u9500 \xB7 ",
-          revoke.note
-        ] }, revoke.id))
-      ] }) : null,
-      /* @__PURE__ */ jsxs("details", { className: "integration-disclosure", children: [
-        /* @__PURE__ */ jsx("summary", { children: "\u5F53\u524D\u4F1A\u8BDD\u6280\u80FD\u9009\u62E9\u4E0E\u9884\u68C0" }),
-        /* @__PURE__ */ jsx(SkillSession, { projectId: this.props.projectId, sessionId: this.props.sessionId, catalog: s.catalog })
       ] })
     ] });
   }

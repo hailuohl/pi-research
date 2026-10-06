@@ -31,6 +31,8 @@ const TOOL_METADATA: Record<string, {
     publication_result:{description:'用户或同主会话协调者入口：读取固定编译诊断、PDF及页图；错误PDF不能冒充成功。',example:{resultId:'publication-result-id'}},
     publication_build_list:{description:'用户或同主会话协调者入口：有界回查当前项目或指定文稿的构建历史。',example:{cursor:0,limit:30}},
     skill_package_import:{description:'用户入口：导入固定 UTF-8 技能/资源或受限 ZIP，形成待审版本，不执行脚本。',example:{packageId:'local-method',revisionTag:'v1',description:'用户方法',roles:['coordinator'],license:null,requirements:{tools:[],backends:[],artifactIds:[]},files:[{path:'SKILL.md',contentBase64:'IyBNZXRob2Q='}]}},
+    skill_package_upload:{description:'用户入口：上传固定技能文本/静态资源并原子开启；同名替换未来配置，保留历史。上传授权加载，不代表内容审查，不授予执行、工具、数据或模型权限。',example:{packageId:'local-method',revisionTag:'v1',description:'用户方法',roles:['coordinator'],license:null,requirements:{tools:[],backends:[],artifactIds:[]},files:[{path:'SKILL.md',contentBase64:'IyBNZXRob2Q='}]}},
+    skill_package_enable:{description:'用户入口：按配置版本开启现有固定技能文本/静态资源；撤销或删除的修订禁止重开，不授予执行权限。',example:{revisionId:'revision-id',expectedVersion:0}},
     skill_package_list:{description:'用户入口：查看项目技能修订、审阅/撤销、当前内置基线与可选发行版本。',example:{}},
     skill_package_inspect:{description:'用户入口：回查固定技能修订及审阅决定。',example:{revisionId:'revision-id'}},
     skill_package_read:{description:'用户入口：按固定清单读取待审或历史技能资源；文本返回 UTF-8，静态 PNG 返回原字节 Base64。',example:{revisionId:'revision-id',resource:'assets/figure.png'}},

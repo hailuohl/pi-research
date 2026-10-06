@@ -147,6 +147,148 @@ export declare const SKILL_INPUT_SCHEMAS: {
         readonly required: readonly ["packageId", "revisionTag", "description", "roles", "license", "requirements"];
         readonly additionalProperties: false;
     };
+    readonly skill_package_upload: {
+        readonly type: "object";
+        readonly properties: {
+            readonly packageId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly revisionTag: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly description: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly roles: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly enum: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+                };
+                readonly minItems: number;
+            };
+            readonly license: {
+                readonly anyOf: readonly [{
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                }, {
+                    readonly type: "null";
+                }];
+            };
+            readonly requirements: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly tools: {
+                        readonly maxItems?: number | undefined;
+                        readonly type: "array";
+                        readonly items: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly minItems: number;
+                    };
+                    readonly backends: {
+                        readonly maxItems?: number | undefined;
+                        readonly type: "array";
+                        readonly items: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly minItems: number;
+                    };
+                    readonly artifactIds: {
+                        readonly maxItems?: number | undefined;
+                        readonly type: "array";
+                        readonly items: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly minItems: number;
+                    };
+                };
+                readonly required: readonly ["tools", "backends", "artifactIds"];
+                readonly additionalProperties: false;
+            };
+            readonly files: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly path: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly contentBase64: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                    };
+                    readonly required: readonly ["path", "contentBase64"];
+                    readonly additionalProperties: false;
+                };
+                readonly minItems: number;
+            };
+            readonly zipBase64: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["packageId", "revisionTag", "description", "roles", "license", "requirements"];
+        readonly additionalProperties: false;
+    };
+    readonly skill_package_enable: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["revisionId", "expectedVersion"];
+        readonly additionalProperties: false;
+    };
     readonly skill_package_list: {
         readonly type: "object";
         readonly properties: {};
@@ -452,6 +594,286 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
             };
         };
         readonly required: ("id" | "createdAt" | "kind" | "version" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+        readonly additionalProperties: false;
+    };
+    readonly skill_package_upload: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revision: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly id: {
+                        readonly type: "string";
+                    };
+                    readonly kind: {
+                        readonly const: "skill-package-revision";
+                    };
+                    readonly projectId: {
+                        readonly anyOf: readonly [{
+                            readonly type: "string";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly version: {
+                        readonly type: "integer";
+                    };
+                    readonly createdAt: {
+                        readonly type: "string";
+                    };
+                    readonly updatedAt: {
+                        readonly type: "string";
+                    };
+                } & {
+                    readonly packageId: {
+                        readonly type: "string";
+                    };
+                    readonly revisionTag: {
+                        readonly type: "string";
+                    };
+                    readonly description: {
+                        readonly type: "string";
+                    };
+                    readonly roles: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly enum: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+                        };
+                    };
+                    readonly license: {
+                        readonly anyOf: readonly [{
+                            readonly type: "string";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly requirements: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly tools: {
+                                readonly type: "array";
+                                readonly items: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly backends: {
+                                readonly type: "array";
+                                readonly items: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly artifactIds: {
+                                readonly type: "array";
+                                readonly items: {
+                                    readonly type: "string";
+                                };
+                            };
+                        };
+                        readonly required: ("artifactIds" | "tools" | "backends")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly files: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly path: {
+                                    readonly type: "string";
+                                };
+                                readonly digest: {
+                                    readonly type: "string";
+                                };
+                                readonly size: {
+                                    readonly type: "integer";
+                                };
+                                readonly mediaType: {
+                                    readonly const: "image/png";
+                                };
+                            };
+                            readonly required: readonly ["path", "digest", "size"];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly contentDigest: {
+                        readonly type: "string";
+                    };
+                    readonly authorization: {
+                        readonly enum: readonly ["text-only", "text-with-static-assets"];
+                    };
+                };
+                readonly required: ("id" | "createdAt" | "kind" | "version" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly additionalProperties: false;
+            };
+            readonly configuration: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly version: {
+                        readonly type: "integer";
+                    };
+                    readonly bundleId: {
+                        readonly type: "string";
+                    };
+                    readonly builtinBundleId: {
+                        readonly type: "string";
+                    };
+                    readonly revisionIds: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly disabledBuiltinIds: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "string";
+                        };
+                    };
+                };
+                readonly required: ("version" | "revisionIds" | "disabledBuiltinIds" | "bundleId" | "builtinBundleId")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("revision" | "configuration")[];
+        readonly additionalProperties: false;
+    };
+    readonly skill_package_enable: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revision: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly id: {
+                        readonly type: "string";
+                    };
+                    readonly kind: {
+                        readonly const: "skill-package-revision";
+                    };
+                    readonly projectId: {
+                        readonly anyOf: readonly [{
+                            readonly type: "string";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly version: {
+                        readonly type: "integer";
+                    };
+                    readonly createdAt: {
+                        readonly type: "string";
+                    };
+                    readonly updatedAt: {
+                        readonly type: "string";
+                    };
+                } & {
+                    readonly packageId: {
+                        readonly type: "string";
+                    };
+                    readonly revisionTag: {
+                        readonly type: "string";
+                    };
+                    readonly description: {
+                        readonly type: "string";
+                    };
+                    readonly roles: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly enum: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
+                        };
+                    };
+                    readonly license: {
+                        readonly anyOf: readonly [{
+                            readonly type: "string";
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly requirements: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly tools: {
+                                readonly type: "array";
+                                readonly items: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly backends: {
+                                readonly type: "array";
+                                readonly items: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly artifactIds: {
+                                readonly type: "array";
+                                readonly items: {
+                                    readonly type: "string";
+                                };
+                            };
+                        };
+                        readonly required: ("artifactIds" | "tools" | "backends")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly files: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly path: {
+                                    readonly type: "string";
+                                };
+                                readonly digest: {
+                                    readonly type: "string";
+                                };
+                                readonly size: {
+                                    readonly type: "integer";
+                                };
+                                readonly mediaType: {
+                                    readonly const: "image/png";
+                                };
+                            };
+                            readonly required: readonly ["path", "digest", "size"];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly contentDigest: {
+                        readonly type: "string";
+                    };
+                    readonly authorization: {
+                        readonly enum: readonly ["text-only", "text-with-static-assets"];
+                    };
+                };
+                readonly required: ("id" | "createdAt" | "kind" | "version" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly additionalProperties: false;
+            };
+            readonly configuration: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly version: {
+                        readonly type: "integer";
+                    };
+                    readonly bundleId: {
+                        readonly type: "string";
+                    };
+                    readonly builtinBundleId: {
+                        readonly type: "string";
+                    };
+                    readonly revisionIds: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "string";
+                        };
+                    };
+                    readonly disabledBuiltinIds: {
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "string";
+                        };
+                    };
+                };
+                readonly required: ("version" | "revisionIds" | "disabledBuiltinIds" | "bundleId" | "builtinBundleId")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("revision" | "configuration")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_list: {

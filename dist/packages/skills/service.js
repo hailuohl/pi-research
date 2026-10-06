@@ -201,6 +201,35 @@ export class SkillService {
         }
         return this.c.store.operation(op, key, request, () => { this.owner(actor, pid, true); ensure(this.c.store.list('skill-package-revision', pid).length < 128, 'SKILL_REVISION_LIMIT', '每项目最多保存 128 个技能修订', 409); const r = this.c.store.create('skill-package-revision', pid, prepared); this.c.store.event(pid, 'skill.imported', { revisionId: r.id, contentDigest: r.contentDigest }); return r; });
     }
+    upload(actor, pid, input, key) {
+        this.owner(actor, pid);
+        return this.c.store.operation(`skill-upload:${pid}`, key, { inputDigest: digest(input) }, () => {
+            this.owner(actor, pid, true);
+            const revision = this.import(actor, pid, input, digest({ operation: 'skill-upload', step: 'import', key }));
+            return this.enable(actor, pid, { revisionId: revision.id, expectedVersion: this.configuration(pid).version }, digest({ operation: 'skill-upload', step: 'enable', key }));
+        });
+    }
+    enable(actor, pid, value, key) {
+        this.owner(actor, pid);
+        const x = object(value), input = { revisionId: text(x.revisionId, 'revisionId', 100), expectedVersion: integer(x.expectedVersion, 'expectedVersion', 0) };
+        return this.c.store.operation(`skill-enable:${pid}`, key, input, () => {
+            this.owner(actor, pid, true);
+            const revision = this.revision(pid, input.revisionId), current = this.configuration(pid);
+            ensure(current.version === input.expectedVersion, 'VERSION_CONFLICT', '技能配置已更新，请重试');
+            ensure(!this.c.store.maybe('skill-deletion', revision.id), 'SKILL_DELETED', '技能版本已从管理列表删除，不能再次启用');
+            this.review(actor, pid, { revisionId: revision.id, decision: 'approved', note: '用户通过上传/开启授权加载此固定文本和静态资源，未进行内容审查，不授予脚本、工具、计算、数据或模型权限。' }, digest({ operation: 'skill-enable', step: 'authorize', key }));
+            const revisionIds = [...current.revisionIds.filter(id => this.revision(pid, id).packageId !== revision.packageId), revision.id];
+            try {
+                const configuration = this.configure(actor, pid, { expectedVersion: input.expectedVersion, builtinBundleId: current.builtinBundleId, revisionIds, disabledBuiltinIds: [] }, digest({ operation: 'skill-enable', step: 'configure', key }));
+                return { revision, configuration };
+            }
+            catch (error) {
+                if (['SKILL_REVOKED', 'SKILL_NOT_APPROVED', 'SKILL_DELETED'].includes(error.code ?? ''))
+                    error.message += '；请先关闭当前配置中不可用的技能';
+                throw error;
+            }
+        });
+    }
     review(actor, pid, value, key = randomUUID()) {
         this.owner(actor, pid);
         const x = object(value), input = { revisionId: text(x.revisionId, 'revisionId', 100), decision: oneOf(x.decision, ['approved', 'rejected'], 'decision'), note: text(x.note, 'note', 4000) };
@@ -245,9 +274,10 @@ export class SkillService {
             const { builtinBundleId, revisions } = selected, disabledBuiltinIds = this.disabledIds(builtinBundleId, selected.disabledBuiltinIds);
             this.noCollisions(builtinBundleId, revisions);
             const removingOnly = !('bundleId' in input) && !!current && builtinBundleId === current.builtinBundleId && revisions.length < current.revisions.length && revisions.every(r => current.revisions.some(previous => previous.id === r.id));
+            const restoringOnly = !('bundleId' in input) && !!current && current.disabledBuiltinIds.length > 0 && !disabledBuiltinIds.length && builtinBundleId === current.builtinBundleId && revisions.length === current.revisions.length && revisions.every(r => current.revisions.some(previous => previous.id === r.id));
             for (const r of revisions) {
                 ensure(!this.c.store.maybe('skill-deletion', r.id), 'SKILL_DELETED', '技能版本已从管理列表删除，不能再次启用');
-                if (!removingOnly)
+                if (!removingOnly && !restoringOnly)
                     this.approved(pid, r);
             }
             return this.saveConfiguration(pid, old, builtinBundleId, revisions.map(r => r.id).sort(), disabledBuiltinIds, 'bundleId' in input ? input.bundleId : undefined);

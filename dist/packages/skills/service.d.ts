@@ -335,6 +335,26 @@ export declare class SkillService {
     private noCollisions;
     private approved;
     import(actor: Actor, pid: string, input: unknown, key: string): Row<SkillPackageRevision>;
+    upload(actor: Actor, pid: string, input: unknown, key: string): {
+        revision: Row<SkillPackageRevision>;
+        configuration: {
+            builtinBundleId: string;
+            disabledBuiltinIds: string[];
+            bundleId: string;
+            revisionIds: string[];
+            version: number;
+        };
+    };
+    enable(actor: Actor, pid: string, value: unknown, key: string): {
+        revision: Row<SkillPackageRevision>;
+        configuration: {
+            builtinBundleId: string;
+            disabledBuiltinIds: string[];
+            bundleId: string;
+            revisionIds: string[];
+            version: number;
+        };
+    };
     review(actor: Actor, pid: string, value: unknown, key?: string): Row<ReviewRecord>;
     revoke(actor: Actor, pid: string, value: unknown, key?: string): Row<SkillRevocation>;
     configuration(pid: string): {

@@ -105,6 +105,28 @@ export class SkillService {
   for(const f of staged){const path=join(dir,f.digest);try{writeFileSync(path,f.bytes,{flag:'wx',mode:0o444});}catch(e){if((e as NodeJS.ErrnoException).code!=='EEXIST')throw e;}this.verifiedBytes(path,f.digest,this.c.dataDir);}
   return this.c.store.operation(op,key,request,()=>{this.owner(actor,pid,true);ensure(this.c.store.list('skill-package-revision',pid).length<128,'SKILL_REVISION_LIMIT','每项目最多保存 128 个技能修订',409);const r=this.c.store.create<SkillPackageRevision>('skill-package-revision',pid,prepared);this.c.store.event(pid,'skill.imported',{revisionId:r.id,contentDigest:r.contentDigest});return r;});
  }
+ upload(actor:Actor,pid:string,input:unknown,key:string){
+  this.owner(actor,pid);
+  return this.c.store.operation(`skill-upload:${pid}`,key,{inputDigest:digest(input)},()=>{
+   this.owner(actor,pid,true);
+   const revision=this.import(actor,pid,input,digest({operation:'skill-upload',step:'import',key}));
+   return this.enable(actor,pid,{revisionId:revision.id,expectedVersion:this.configuration(pid).version},digest({operation:'skill-upload',step:'enable',key}));
+  });
+ }
+ enable(actor:Actor,pid:string,value:unknown,key:string){
+  this.owner(actor,pid);const x=object(value),input={revisionId:text(x.revisionId,'revisionId',100),expectedVersion:integer(x.expectedVersion,'expectedVersion',0)};
+  return this.c.store.operation(`skill-enable:${pid}`,key,input,()=>{
+   this.owner(actor,pid,true);const revision=this.revision(pid,input.revisionId),current=this.configuration(pid);
+   ensure(current.version===input.expectedVersion,'VERSION_CONFLICT','技能配置已更新，请重试');
+   ensure(!this.c.store.maybe('skill-deletion',revision.id),'SKILL_DELETED','技能版本已从管理列表删除，不能再次启用');
+   this.review(actor,pid,{revisionId:revision.id,decision:'approved',note:'用户通过上传/开启授权加载此固定文本和静态资源，未进行内容审查，不授予脚本、工具、计算、数据或模型权限。'},digest({operation:'skill-enable',step:'authorize',key}));
+   const revisionIds=[...current.revisionIds.filter(id=>this.revision(pid,id).packageId!==revision.packageId),revision.id];
+   try{
+    const configuration=this.configure(actor,pid,{expectedVersion:input.expectedVersion,builtinBundleId:current.builtinBundleId,revisionIds,disabledBuiltinIds:[]},digest({operation:'skill-enable',step:'configure',key}));
+    return {revision,configuration};
+   }catch(error){if(['SKILL_REVOKED','SKILL_NOT_APPROVED','SKILL_DELETED'].includes((error as {code?:string}).code??''))(error as Error).message+='；请先关闭当前配置中不可用的技能';throw error;}
+  });
+ }
  review(actor:Actor,pid:string,value:unknown,key:string=randomUUID()){
   this.owner(actor,pid);const x=object(value),input={revisionId:text(x.revisionId,'revisionId',100),decision:oneOf(x.decision,['approved','rejected'] as const,'decision'),note:text(x.note,'note',4000)};
   return this.c.store.operation(`skill-review:${pid}`,key,input,()=>{this.owner(actor,pid,true);const r=this.revision(pid,input.revisionId);ensure(!this.c.store.list<SkillRevocation>('skill-revocation',pid).some(v=>v.revisionId===r.id),'SKILL_REVOKED','撤销的版本不能重新审阅启用');for(const f of r.files)this.revisionBytes(r,f);const record=this.c.store.create<ReviewRecord>('skill-review',pid,{...input,contentDigest:r.contentDigest});this.c.store.event(pid,'skill.reviewed',{revisionId:r.id,reviewId:record.id,decision:input.decision});return record;});
@@ -126,7 +148,8 @@ export class SkillService {
    let current:ReturnType<SkillService['resolveBundle']>|undefined;if(!('bundleId' in input)&&old){try{current=this.resolveBundle(pid,old.bundleId);}catch(e){if(!input.builtinBundleId||(e as {code?:string}).code!=='SKILL_BUNDLE_UNKNOWN')throw e;}}
    const selected='bundleId' in input?this.resolveBundle(pid,input.bundleId):{builtinBundleId:input.builtinBundleId??this.configuration(pid).builtinBundleId,revisions:input.revisionIds.map(id=>this.revision(pid,id)),disabledBuiltinIds:input.disabledBuiltinIds??[]};ensure(!selected.disabledBuiltinIds.length,'BUILTIN_SKILL_REQUIRED','内置技能默认必需，不能关闭',400);const {builtinBundleId,revisions}=selected,disabledBuiltinIds=this.disabledIds(builtinBundleId,selected.disabledBuiltinIds);this.noCollisions(builtinBundleId,revisions);
    const removingOnly=!('bundleId' in input)&&!!current&&builtinBundleId===current.builtinBundleId&&revisions.length<current.revisions.length&&revisions.every(r=>current.revisions.some(previous=>previous.id===r.id));
-   for(const r of revisions){ensure(!this.c.store.maybe('skill-deletion',r.id),'SKILL_DELETED','技能版本已从管理列表删除，不能再次启用');if(!removingOnly)this.approved(pid,r);}
+   const restoringOnly=!('bundleId' in input)&&!!current&&current.disabledBuiltinIds.length>0&&!disabledBuiltinIds.length&&builtinBundleId===current.builtinBundleId&&revisions.length===current.revisions.length&&revisions.every(r=>current.revisions.some(previous=>previous.id===r.id));
+   for(const r of revisions){ensure(!this.c.store.maybe('skill-deletion',r.id),'SKILL_DELETED','技能版本已从管理列表删除，不能再次启用');if(!removingOnly&&!restoringOnly)this.approved(pid,r);}
    return this.saveConfiguration(pid,old,builtinBundleId,revisions.map(r=>r.id).sort(),disabledBuiltinIds,'bundleId' in input?input.bundleId:undefined);
   });
  }

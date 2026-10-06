@@ -32,14 +32,15 @@ test('native tab buttons support arrow, Home, End focus and leave Enter and Spac
  assert.ok(tabs().every(n=>n.type==='button'&&n.props.type==='button'));
 });
 
-test('builtin filtering is local, preserves catalog and description, and falls back for unfamiliar IDs',async t=>{
+test('library search is local, preserves canonical descriptions, and falls back for unfamiliar IDs',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);let requests=0;globalThis.fetch=()=>{requests++;throw Error('unexpected request');};const v=await makeSkillView();
  const skills=[{id:'pi-research-overview',description:'Original Workflow text',resources:['reference.txt']},{id:'third-party-special',description:'Unfamiliar tool notes',resources:[]},{id:'pi-research-compute',description:'Use available compute resources',resources:[]}];v.state.catalog.builtinSkills=skills;
  const input=()=>nodes(v.render()).find(n=>n.props['aria-label']==='搜索技能');const rows=()=>nodes(v.render()).filter(n=>n.props.className==='builtin-skill-row');
- assert.match(text(rows()[0]),/研究工作流/);assert.match(text(rows()[0]),/Original Workflow text/);assert.match(text(rows()[1]),/third-party-special/);assert.match(text(v.render()),/3\s+个技能/);
- input().props.onChange({target:{value:' TOOL '}});assert.equal(rows().length,1);assert.match(text(rows()[0]),/third-party-special/);input().props.onChange({target:{value:'PI-RESEARCH-OVERVIEW'}});assert.equal(rows().length,1);assert.match(text(rows()[0]),/Original Workflow text/);
- input().props.onChange({target:{value:'计算'}});assert.equal(rows().length,1);assert.match(text(rows()[0]),/计算环境/);assert.match(text(rows()[0]),/pi-research-compute/);
- input().props.onChange({target:{value:'unmatched'}});assert.equal(rows().length,0);assert.match(text(v.render()),/没有匹配的技能/);assert.equal(v.state.catalog.builtinSkills,skills);assert.equal(skills.length,3);assert.equal(requests,0);
+ assert.match(text(rows()[0]),/研究工作流/);assert.match(text(rows()[0]),/梳理研究目标/);assert.match(text(rows()[1]),/third-party-special/);assert.match(text(v.render()),/3\s+个技能/);
+ input().props.onChange({target:{value:' TOOL '}});assert.equal(rows().length,1);assert.match(text(rows()[0]),/third-party-special/);input().props.onChange({target:{value:'Original Workflow'}});assert.equal(rows().length,1);assert.match(text(rows()[0]),/研究工作流/);input().props.onChange({target:{value:'PI-RESEARCH-OVERVIEW'}});assert.equal(rows().length,1);
+ input().props.onChange({target:{value:'计算'}});assert.equal(rows().length,1);assert.match(text(rows()[0]),/计算环境/);
+ input().props.onChange({target:{value:'unmatched'}});assert.equal(rows().length,0);assert.match(text(v.render()),/没有匹配的技能/);assert.equal(v.state.catalog.builtinSkills,skills);assert.equal(skills.length,3);
+ input().props.onChange({target:{value:''}});assert.equal(rows().length,3);assert.ok(!nodes(v.render()).some(n=>n.props['aria-label']==='技能来源'));assert.equal(requests,0);
 });
 
 test('source switches retain explicit authorization payload, decorative local logos, and disabled states',async t=>{
@@ -51,7 +52,22 @@ test('source switches retain explicit authorization payload, decorative local lo
 
 test('built-in resource reading and closing retain original text without implicit source requests',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=await makeSkillView();v.state.catalog.builtinSkills=[{id:'pi-research-overview',description:'text',resources:['ref notes.txt']}];globalThis.fetch=async url=>{requests.push(url);return {ok:true,json:async()=>({id:'pi-research-overview',resource:'ref notes.txt',digest:'fixed-digest',content:'<script>original</script>'})};};
- await nodes(v.render()).find(n=>n.type==='button'&&text(n)==='ref notes.txt').props.onClick();assert.deepEqual(requests,['/api/skills/pi-research-overview?bundleId=builtin-old&resource=ref+notes.txt']);
+ v.openPanel('detail');await v.readBuiltin('pi-research-overview','ref notes.txt');assert.deepEqual(requests,['/api/skills/pi-research-overview?bundleId=builtin-old&resource=ref+notes.txt']);
  const tree=v.render(),pre=nodes(tree).find(n=>n.type==='pre'&&text(n)==='<script>original</script>');assert.ok(pre);assert.ok(!pre.props.dangerouslySetInnerHTML);assert.match(text(tree),/fixed-digest/);
- nodes(tree).find(n=>n.type==='button'&&text(n)==='关闭说明').props.onClick();assert.equal(v.state.builtinContent,null);assert.equal(requests.length,1);
+ nodes(tree).find(n=>n.type==='button'&&n.props['aria-label']==='关闭技能面板').props.onClick();assert.equal(v.state.builtinContent,null);assert.equal(v.state.panel,null);assert.equal(requests.length,1);
+});
+
+test('project snapshot silently updates local connector state, forwards the token and exposes no refresh button',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=await makeView(),history={observations:[],searches:[],papers:[]},snapshot={project:{id:'p'}};
+ Object.assign(v.state,{error:'retained error',query:'unsaved query'});globalThis.fetch=async(url,options)=>{requests.push({url,method:options.method});return {ok:true,json:async()=>url.endsWith('/connectors')?{...config,version:5}:history};};
+ const previous=v.props;v.props={...previous,refreshToken:snapshot};v.componentDidUpdate(previous);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(v.state.config.version,5);assert.equal(v.state.history,history);assert.equal(v.state.error,'retained error');assert.equal(v.state.query,'unsaved query');assert.equal(nodes(v.render()).find(n=>n.type?.name==='SkillManager').props.refreshToken,snapshot);
+ assert.deepEqual(requests,[{url:'/api/projects/p/connectors',method:'GET'},{url:'/api/projects/p/connector-history',method:'GET'}]);assert.ok(!nodes(v.render()).some(n=>n.type==='button'&&/刷新/.test(text(n))));
+});
+
+test('late local connector reads cannot replace an explicit toggle or a different project',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const pending=[],v=await makeView(),history={observations:[],searches:[],papers:[]},reply=value=>({ok:true,json:async()=>value});globalThis.fetch=(url,options)=>new Promise(resolve=>pending.push({url,options,resolve}));
+ const quiet=v.load(true),toggle=nodes(v.render()).find(n=>n.props['aria-label']==='启用 alphaXiv').props.onChange({target:{checked:true}});const updated={...config,version:5,enabled:{...config.enabled,alphaxiv:true}};pending[2].resolve(reply(updated));await toggle;pending[0].resolve(reply(config));pending[1].resolve(reply(history));await quiet;assert.equal(v.state.config,updated);
+ const earlier=v.load(true),previous=v.props;v.props={...previous,projectId:'other'};v.componentDidUpdate(previous);pending[5].resolve(reply({...config,version:8}));pending[6].resolve(reply(history));await new Promise(resolve=>setImmediate(resolve));pending[3].resolve(reply(config));pending[4].resolve(reply(history));await earlier;assert.equal(v.state.config.version,8);assert.equal(v.state.busy,false);
+ assert.ok(pending.slice(5).every(request=>request.url.startsWith('/api/projects/other/')));
 });
