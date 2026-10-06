@@ -240,7 +240,8 @@ export class SkillService {
                         throw e;
                 }
             }
-            const selected = 'bundleId' in input ? this.resolveBundle(pid, input.bundleId) : { builtinBundleId: input.builtinBundleId ?? this.configuration(pid).builtinBundleId, revisions: input.revisionIds.map(id => this.revision(pid, id)), disabledBuiltinIds: input.disabledBuiltinIds ?? current?.disabledBuiltinIds ?? [] };
+            const selected = 'bundleId' in input ? this.resolveBundle(pid, input.bundleId) : { builtinBundleId: input.builtinBundleId ?? this.configuration(pid).builtinBundleId, revisions: input.revisionIds.map(id => this.revision(pid, id)), disabledBuiltinIds: input.disabledBuiltinIds ?? [] };
+            ensure(!selected.disabledBuiltinIds.length, 'BUILTIN_SKILL_REQUIRED', '内置技能默认必需，不能关闭', 400);
             const { builtinBundleId, revisions } = selected, disabledBuiltinIds = this.disabledIds(builtinBundleId, selected.disabledBuiltinIds);
             this.noCollisions(builtinBundleId, revisions);
             const removingOnly = !('bundleId' in input) && !!current && builtinBundleId === current.builtinBundleId && revisions.length < current.revisions.length && revisions.every(r => current.revisions.some(previous => previous.id === r.id));
@@ -262,7 +263,7 @@ export class SkillService {
             ensure(!this.c.store.maybe('skill-deletion', revision.id), 'SKILL_DELETED', '技能版本已从管理列表删除');
             const current = this.resolveBundle(pid, old?.bundleId ?? BUNDLE_ID);
             this.c.store.create('skill-deletion', pid, { revisionId: revision.id, contentDigest: revision.contentDigest }, revision.id);
-            const configuration = this.saveConfiguration(pid, old, current.builtinBundleId, current.revisions.filter(r => r.id !== revision.id).map(r => r.id).sort(), current.disabledBuiltinIds);
+            const configuration = this.saveConfiguration(pid, old, current.builtinBundleId, current.revisions.filter(r => r.id !== revision.id).map(r => r.id).sort(), []);
             this.c.store.event(pid, 'skill.deleted', { revisionId: revision.id, contentDigest: revision.contentDigest, bundleId: configuration.bundleId });
             return configuration;
         });

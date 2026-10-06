@@ -13,14 +13,21 @@ function session(v){const element=nodes(v.render()).find(n=>n.type?.name==='Skil
 const reply=value=>({ok:true,json:async()=>value});
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 
-test('builtin switches save disabled IDs immediately and reload persisted state before re-enabling',async t=>{
+test('default builtin switches are checked and locked with descriptions and resources still inspectable',()=>{
+ const v=view();v.state.catalog={...catalog,builtinSkills:[{id:'pi-research-overview',description:'workflow',resources:['reference.txt'],digest:'hash'}]};
+ const all=nodes(v.render()),toggle=all.find(n=>n.type==='input'&&n.props['aria-label']==='启用内置技能 pi-research-overview');
+ assert.equal(toggle.props.role,'switch');assert.equal(toggle.props.checked,true);assert.equal(toggle.props.disabled,true);assert.equal(toggle.props.onChange,undefined);
+ assert.match(text(v.render()),/固定开启，不可取消/);assert.ok(all.some(n=>n.type==='details'&&text(n).includes('reference.txt')));assert.ok(all.some(n=>n.type==='p'&&n.props.className?.includes('skill-description')&&n.props.title==='workflow'));
+ assert.ok(!all.some(n=>n.type==='button'&&n.props['aria-label']==='删除技能 pi-research-overview'));
+});
+
+test('legacy disabled builtin configuration has an explicit restore action without changing uploaded selection',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=view(),skill={id:'pi-research-overview',description:'workflow',resources:[],digest:'hash'};
- let current={...catalog,builtinSkills:[skill],configuration:{...catalog.configuration,disabledBuiltinIds:[]}};
- globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body);requests.push({url,...body});if(url.endsWith('skill_bundle_configure'))current={...current,configuration:{...current.configuration,version:current.configuration.version+1,disabledBuiltinIds:body.input.disabledBuiltinIds??[]}};return reply(current);};
- await v.refresh();const toggle=()=>nodes(v.render()).find(n=>n.type==='input'&&n.props['aria-label']==='启用内置技能 pi-research-overview');
- assert.equal(toggle().props.role,'switch');assert.equal(toggle().props.checked,true);assert.equal(toggle().props.disabled,false);
- await toggle().props.onChange({target:{checked:false}});assert.deepEqual(requests[1].input,{expectedVersion:3,revisionIds:[],builtinBundleId:'builtin-old',disabledBuiltinIds:[skill.id]});assert.equal(toggle().props.checked,false);
- await v.refresh();assert.equal(toggle().props.checked,false);await toggle().props.onChange({target:{checked:true}});assert.deepEqual(requests[4].input.disabledBuiltinIds,[]);assert.equal(toggle().props.checked,true);
+ const legacy={...catalog,builtinSkills:[skill],configuration:{...catalog.configuration,revisionIds:['r1'],disabledBuiltinIds:[skill.id]}},restored={...legacy,configuration:{...legacy.configuration,version:4,disabledBuiltinIds:[]}};
+ globalThis.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return reply(requests.length===1?legacy:restored);};
+ await v.refresh();assert.equal(nodes(v.render()).find(n=>n.props['aria-label']==='启用内置技能 pi-research-overview').props.checked,false);
+ await nodes(v.render()).find(n=>n.type==='button'&&text(n)==='恢复内置默认').props.onClick();assert.deepEqual(requests[1].input,{expectedVersion:3,revisionIds:['r1'],builtinBundleId:'builtin-old',disabledBuiltinIds:[]});
+ const toggle=nodes(v.render()).find(n=>n.props['aria-label']==='启用内置技能 pi-research-overview');assert.equal(toggle.props.checked,true);assert.equal(toggle.props.disabled,true);assert.deepEqual(v.state.enabled,['r1']);
 });
 
 test('uploaded deletion sends the selected revision and configuration version and refreshes the list',async t=>{
@@ -30,17 +37,17 @@ test('uploaded deletion sends the selected revision and configuration version an
  assert.deepEqual(requests[0].input,{revisionId:'r1',expectedVersion:3});assert.ok(requests[0].url.endsWith('skill_package_delete'));assert.equal(v.state.catalog.revisions.length,0);assert.match(v.state.notice,/历史原文.*保留/);
 });
 
-test('failed builtin save retains authority and exposes error; pending uploads cannot be enabled',async t=>{
- const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const v=view();v.state.catalog={...catalog,builtinSkills:[{id:'pi-research-overview',description:'workflow',resources:[]}]};v.state.builtinBundleId='builtin-old';
+test('failed upload save retains authority and exposes error; pending uploads cannot be enabled',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const v=view(),approved=revision('r1');approved.reviews=[{decision:'approved'}];v.state.catalog={...catalog,revisions:[approved]};v.state.builtinBundleId='builtin-old';
  globalThis.fetch=async()=>({ok:false,status:409,json:async()=>({error:{code:'VERSION_CONFLICT',message:'配置已更新，请刷新'}})});
- const toggle=()=>nodes(v.render()).find(n=>n.type==='input'&&n.props['aria-label']==='启用内置技能 pi-research-overview');await toggle().props.onChange({target:{checked:false}});
- assert.equal(toggle().props.checked,true);assert.match(text(v.render()),/配置已更新，请刷新/);assert.equal(nodes(v.render()).find(n=>n.props['aria-label']==='配置启用 figure r1').props.disabled,true);
+ const toggle=()=>nodes(v.render()).find(n=>n.type==='input'&&n.props['aria-label']==='配置启用 figure r1');await toggle().props.onChange({target:{checked:true}});
+ assert.equal(toggle().props.checked,false);assert.match(text(v.render()),/配置已更新，请刷新/);v.state.catalog=catalog;assert.equal(toggle().props.disabled,true);
 });
 
 test('row switches cannot silently save an unconfirmed builtin release selection',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const v=view(),requests=[];v.state.catalog=catalog;v.state.builtinBundleId='builtin-new';
  globalThis.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return reply(catalog);};
- await v.configure([],['pi-research-overview']);assert.equal(requests[0].input.builtinBundleId,'builtin-old');
+ await v.configure([]);assert.equal(requests[0].input.builtinBundleId,'builtin-old');assert.equal(requests[0].input.disabledBuiltinIds,undefined);
 });
 
 test('native controls show unknown license and unavailable declarations without pretending readiness',()=>{
@@ -140,9 +147,9 @@ test('revision list preserves revoked cancellation and latest decision while nat
  globalThis.fetch=async()=>reply({...v.state.catalog,configuration:{...catalog.configuration,revisionIds:[]}});
  await checkbox('revoked').props.onChange({target:{checked:false}});assert.deepEqual(v.state.enabled,[]);const next=nodes(v.render());assert.equal(next.find(n=>n.type==='input'&&n.props['aria-label']==='配置启用 figure revoked').props.disabled,true);
  const badges=all.filter(n=>n.type?.name==='Badge');assert.deepEqual(badges.map(n=>n.props.caption),['待审','审阅通过','已撤销']);
- const settings=all.find(n=>n.type==='details'&&n.props.className==='skill-version-settings integration-disclosure');assert.ok(settings);assert.ok(nodes(settings).some(n=>n.type==='select'));assert.ok(!nodes(settings).some(n=>n.type==='button'&&text(n).includes('保存启用')));
- const actions=all.find(n=>n.props.className==='skill-config-actions'),save=all.filter(n=>n.type==='button'&&text(n).includes('保存启用'));assert.ok(actions);assert.equal(save.length,1);assert.ok(nodes(actions).includes(save[0]));assert.match(text(actions),/发行版本更改需保存后生效/);assert.match(text(actions),/列表开关自动保存/);assert.ok(all.indexOf(actions)>all.findIndex(n=>n.props.className==='skill-revision-list'));
+ const settings=all.find(n=>n.type==='details'&&n.props.className==='skill-version-settings integration-disclosure');assert.ok(settings);assert.ok(nodes(settings).some(n=>n.type==='select'));assert.ok(nodes(settings).some(n=>n.type==='button'&&text(n).includes('保存启用')));
+ const actions=all.find(n=>n.props.className==='skill-config-actions'),save=all.filter(n=>n.type==='button'&&text(n).includes('保存启用'));assert.ok(actions);assert.equal(save.length,1);assert.ok(nodes(actions).includes(save[0]));assert.ok(nodes(settings).includes(actions));assert.match(text(actions),/发行版本更改需保存后生效/);assert.match(text(actions),/上传技能开关自动保存/);assert.ok(all.indexOf(actions)>all.findIndex(n=>n.props.className==='skill-revision-list'));
  const element=all.find(n=>n.type?.name==='SkillImport'),form=sync(new element.type(element.props));form.state.description='local unsaved draft';
- const disclosure=nodes(form.render()).find(n=>n.type==='details');assert.equal(disclosure.props.className,'skill-import-disclosure');assert.match(text(disclosure),/导入待审技能版本/);assert.ok(nodes(disclosure).some(n=>n.type==='form'&&n.props.onSubmit));assert.equal(form.state.description,'local unsaved draft');
+ const disclosure=nodes(form.render()).find(n=>n.type==='details');assert.equal(disclosure.props.className,'skill-import-disclosure');assert.match(text(disclosure),/上传技能/);assert.ok(nodes(disclosure).some(n=>n.type==='form'&&n.props.onSubmit));assert.equal(form.state.description,'local unsaved draft');
  assert.ok(!nodes(disclosure).some(n=>n.props.onDrop));assert.equal(element.key,'project');
 });

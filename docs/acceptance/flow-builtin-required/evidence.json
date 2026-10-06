@@ -1,0 +1,157 @@
+{
+  "task": "builtin-required-compact-20261006",
+  "date": "2026-10-06",
+  "baselineCommit": "567091f0a350c507328c3e8f6bf848cbeb87cc79",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "checks": {
+    "related": {
+      "tests": 55,
+      "passed": 55,
+      "failed": 0,
+      "skipped": 0
+    },
+    "full": {
+      "tests": 1107,
+      "passed": 1084,
+      "failed": 0,
+      "skipped": 23,
+      "exitCode": 0,
+      "log": ".validation/builtin-required-20261006/full-test.log"
+    },
+    "cleanBuild": {
+      "identical": true,
+      "files": 524,
+      "manifestSha256": "e1455bc3b407b6857af7d22656b916393619dd403a4b1c48b8eeda2e102139df",
+      "summary": ".validation/clean-build-EzkPsm/summary.json",
+      "repairSummary": ".validation/builtin-required-20261006/final-clean-summary.json"
+    }
+  },
+  "browser": {
+    "layout": [
+      {
+        "clientWidth": 1440,
+        "locked": true,
+        "overflowRows": 0,
+        "rowHeights": [
+          58,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59
+        ],
+        "scrollWidth": 1440,
+        "width": 1440
+      },
+      {
+        "clientWidth": 1024,
+        "locked": true,
+        "overflowRows": 0,
+        "rowHeights": [
+          58,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59
+        ],
+        "scrollWidth": 1024,
+        "width": 1024
+      },
+      {
+        "clientWidth": 768,
+        "locked": true,
+        "overflowRows": 0,
+        "rowHeights": [
+          58,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59,
+          59
+        ],
+        "scrollWidth": 768,
+        "width": 768
+      },
+      {
+        "clientWidth": 305,
+        "locked": true,
+        "overflowRows": 0,
+        "rowHeights": [
+          94,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95
+        ],
+        "scrollWidth": 305,
+        "width": 320
+      }
+    ],
+    "innerHorizontalOverflow": [],
+    "lockedBuiltinCount": 14,
+    "readResource": "pi-research-compute/references/ssh.md",
+    "uploadedFlow": [
+      "on",
+      "off",
+      "delete"
+    ],
+    "rootOverflowRepair": "scoped html/body min-width override; compare scrollWidth to documentElement.clientWidth",
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "data": "isolated synthetic project"
+  },
+  "review": {
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeVerification": "requested; runtime not echoed",
+    "patch": ".validation/builtin-required-20261006/review.patch",
+    "patchSha256": "78ebc9e1749bedede4ac9ee14ba12d4b9dc0912a3f1f8ec6e3da95fc5fde0f34",
+    "fileHashes": ".validation/builtin-required-20261006/review-hashes.json",
+    "fileCount": 11,
+    "isolatedChecks": 5,
+    "blockers": 0,
+    "overflowRepairPatch": ".validation/builtin-required-20261006/overflow-repair.patch",
+    "overflowRepairPatchSha256": "8B9AD8F3D1F3AB5BA71F7F489B33E2F3AB39E50E910BFE64D00B8090BD8D3874",
+    "overflowRepairCssSha256": "8087E305D86F7D114B46032C2AB41A68AAAE14DB6EEDC54D287BEF88DEA41845"
+  },
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeVerification": "requested; runtime not echoed"
+  },
+  "existingServicesRestarted": false
+}

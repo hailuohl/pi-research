@@ -47,7 +47,7 @@ class SkillImport extends React.Component {
     return /* @__PURE__ */ jsxs("details", { className: "skill-import-disclosure", id: "skill-upload", children: [
       /* @__PURE__ */ jsxs("summary", { children: [
         /* @__PURE__ */ jsx(Icon, { name: "paperclip" }),
-        "\u4E0A\u4F20\u6280\u80FD \xB7 \u5BFC\u5165\u5F85\u5BA1\u6280\u80FD\u7248\u672C",
+        "\u4E0A\u4F20\u6280\u80FD",
         /* @__PURE__ */ jsx(Icon, { name: "plus" })
       ] }),
       /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
@@ -308,9 +308,9 @@ class SkillManager extends React.Component {
       }
     }, notice);
   }
-  async configure(revisionIds = this.state.enabled, disabledBuiltinIds = this.state.disabledBuiltinIds, builtinBundleId = this.state.catalog?.configuration.builtinBundleId) {
+  async configure(revisionIds = this.state.enabled, builtinBundleId = this.state.catalog?.configuration.builtinBundleId) {
     if (!this.state.catalog) return;
-    await this.mutate("skill_bundle_configure", { expectedVersion: this.state.catalog.configuration.version, revisionIds, builtinBundleId, ...disabledBuiltinIds.length ? { disabledBuiltinIds } : this.state.catalog.configuration.disabledBuiltinIds?.length ? { disabledBuiltinIds: [] } : {} }, "\u5DF2\u4FDD\u5B58\u6280\u80FD\u5F00\u5173\uFF1B\u540E\u7EED\u65B0\u7ED1\u5B9A\u751F\u6548\uFF0C\u5DF2\u6709\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F\u914D\u7F6E\u3002");
+    await this.mutate("skill_bundle_configure", { expectedVersion: this.state.catalog.configuration.version, revisionIds, builtinBundleId, ...this.state.catalog.configuration.disabledBuiltinIds?.length ? { disabledBuiltinIds: [] } : {} }, "\u5DF2\u4FDD\u5B58\u914D\u7F6E\uFF1B\u5185\u7F6E\u6280\u80FD\u56FA\u5B9A\u5F00\u542F\uFF0C\u5DF2\u6709\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F\u914D\u7F6E\u3002");
   }
   async remove(revisionId) {
     if (!this.state.catalog) return;
@@ -320,10 +320,7 @@ class SkillManager extends React.Component {
     const s = this.state, selected = s.selected, r = selected?.revision, query = s.query.trim().toLocaleLowerCase(), matches = (value) => value.toLocaleLowerCase().includes(query), builtins = (s.catalog?.builtinSkills ?? []).filter((skill) => matches(`${skill.id} ${skill.description} ${builtinNames[skill.id.replace(/^pi-research-/, "")]?.[0] ?? ""}`)), revisions = (s.catalog?.revisions ?? []).filter((item) => matches(`${item.revision.packageId} ${item.revision.revisionTag} ${item.revision.description}`));
     return /* @__PURE__ */ jsxs("section", { className: "surface skill-manager-card", children: [
       /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-        /* @__PURE__ */ jsxs("div", { children: [
-          /* @__PURE__ */ jsx("h2", { children: "\u6280\u80FD" }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u7BA1\u7406\u7814\u7A76\u65B9\u6CD5\u4E0E\u4E0A\u4F20\u6280\u80FD" })
-        ] }),
+        /* @__PURE__ */ jsx("h2", { children: "\u6280\u80FD" }),
         /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => this.refresh(), children: "\u5237\u65B0\u6280\u80FD\u72B6\u6001" })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "skill-toolbar", children: [
@@ -334,7 +331,12 @@ class SkillManager extends React.Component {
           " \u4E2A\u6280\u80FD\u7248\u672C"
         ] })
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5185\u7F6E\u6280\u80FD\u9ED8\u8BA4\u5F00\u542F\uFF0C\u53EF\u968F\u65F6\u5173\u95ED\u3002\u4E0A\u4F20\u6280\u80FD\u5148\u5BA1\u9605\u518D\u542F\u7528\uFF1B\u5F00\u5173\u81EA\u52A8\u4FDD\u5B58\uFF0C\u4EC5\u5F71\u54CD\u540E\u7EED\u65B0\u7ED1\u5B9A\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5185\u7F6E\u6280\u80FD\u56FA\u5B9A\u5F00\u542F\uFF0C\u4E0D\u53EF\u53D6\u6D88\u3002\u4E0A\u4F20\u6280\u80FD\u5BA1\u9605\u540E\u542F\u7528\uFF0C\u5F00\u5173\u81EA\u52A8\u4FDD\u5B58\u3002" }),
+      s.disabledBuiltinIds.length ? /* @__PURE__ */ jsxs("p", { className: "inline-warning", children: [
+        "\u65E7\u914D\u7F6E\u542B\u5DF2\u5173\u95ED\u7684\u5185\u7F6E\u6280\u80FD\u3002",
+        /* @__PURE__ */ jsx("button", { className: "text-button", disabled: s.busy, onClick: () => this.configure(), children: "\u6062\u590D\u5185\u7F6E\u9ED8\u8BA4" }),
+        "\u4EC5\u66F4\u65B0\u540E\u7EED\u65B0\u7ED1\u5B9A\u3002"
+      ] }) : null,
       s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
       s.notice ? /* @__PURE__ */ jsx("p", { role: "status", children: s.notice }) : null,
       s.busy ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u4FDD\u5B58\u6216\u8BFB\u53D6\u6743\u5A01\u72B6\u6001\u2026" }) : null,
@@ -350,21 +352,19 @@ class SkillManager extends React.Component {
             /* @__PURE__ */ jsx(Icon, { name: friendly?.[1] ?? "skills" }),
             /* @__PURE__ */ jsxs("div", { className: "builtin-skill-copy", children: [
               /* @__PURE__ */ jsx("h3", { children: friendly?.[0] ?? skill.id }),
-              /* @__PURE__ */ jsx("p", { className: "small code-wrap", children: skill.id }),
-              /* @__PURE__ */ jsx("p", { className: "small muted", children: skill.description }),
-              skill.resources.length ? /* @__PURE__ */ jsxs("details", { className: "skill-resource-disclosure", children: [
-                /* @__PURE__ */ jsxs("summary", { children: [
-                  skill.resources.length,
-                  " \u4E2A\u8D44\u6E90"
-                ] }),
-                /* @__PURE__ */ jsx("div", { className: "skill-resource-actions", children: skill.resources.map((resource) => /* @__PURE__ */ jsx("button", { className: "text-button small code-wrap", disabled: s.reading, onClick: () => this.readBuiltin(skill.id, resource), children: resource }, resource)) })
-              ] }) : null
+              /* @__PURE__ */ jsx("p", { className: "small muted skill-description", title: skill.description, children: skill.description }),
+              /* @__PURE__ */ jsxs("details", { className: "skill-resource-disclosure", children: [
+                /* @__PURE__ */ jsx("summary", { children: "\u8BE6\u60C5" }),
+                /* @__PURE__ */ jsx("p", { className: "small code-wrap", children: skill.id }),
+                /* @__PURE__ */ jsx("p", { className: "small muted", children: skill.description }),
+                skill.resources.length ? /* @__PURE__ */ jsx("div", { className: "skill-resource-actions", children: skill.resources.map((resource) => /* @__PURE__ */ jsx("button", { className: "text-button small code-wrap", disabled: s.reading, onClick: () => this.readBuiltin(skill.id, resource), children: resource }, resource)) }) : null
+              ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "skill-row-actions", children: [
               /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: s.reading, onClick: () => this.readBuiltin(skill.id), children: "\u67E5\u770B\u8BF4\u660E" }),
               /* @__PURE__ */ jsxs("label", { className: "skill-switch", children: [
-                /* @__PURE__ */ jsx("span", { children: enabled ? "\u5DF2\u5F00\u542F" : "\u5DF2\u5173\u95ED" }),
-                /* @__PURE__ */ jsx("input", { className: "connector-toggle", role: "switch", type: "checkbox", "aria-label": `\u542F\u7528\u5185\u7F6E\u6280\u80FD ${skill.id}`, checked: enabled, disabled: s.busy, onChange: (e) => this.configure(s.enabled, e.target.checked ? s.disabledBuiltinIds.filter((id) => id !== skill.id) : [...s.disabledBuiltinIds, skill.id]) })
+                /* @__PURE__ */ jsx("span", { children: enabled ? "\u56FA\u5B9A\u5F00\u542F" : "\u65E7\u914D\u7F6E\u5DF2\u5173\u95ED" }),
+                /* @__PURE__ */ jsx("input", { className: "connector-toggle", role: "switch", type: "checkbox", "aria-label": `\u542F\u7528\u5185\u7F6E\u6280\u80FD ${skill.id}`, checked: enabled, disabled: true })
               ] })
             ] })
           ] }, skill.id);
@@ -431,7 +431,7 @@ class SkillManager extends React.Component {
       ] }) : null,
       /* @__PURE__ */ jsxs("details", { className: "integration-disclosure", children: [
         /* @__PURE__ */ jsx("summary", { children: "\u5BA1\u9605\u4E0E\u6743\u9650\u8FB9\u754C" }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BA1\u9605\u53EA\u6279\u51C6\u6587\u672C\u52A0\u8F7D\u53CA\u9759\u6001\u8D44\u6E90\u4FDD\u5B58\uFF1B\u58F0\u660E\u9700\u6C42\u4E0D\u4F1A\u6388\u4E88\u5DE5\u5177\u3001\u6570\u636E\u3001\u811A\u672C\u6267\u884C\u6216\u8BA1\u7B97\u6743\u9650\u3002\u672A\u77E5\u8BB8\u53EF\u8BC1\u4E0D\u4EE3\u8868\u83B7\u5F97\u518D\u5206\u53D1\u8BB8\u53EF\u3002\u56FE\u5F62\u4E0E\u8BBA\u6587\u6267\u884C\u80FD\u529B\u987B\u5206\u522B\u9884\u68C0\uFF0C\u76EE\u5F55\u5C55\u793A\u4E0D\u4EE3\u8868\u6267\u884C\u5668\u5DF2\u5B9E\u73B0\u3002\u5220\u9664\u4E0A\u4F20\u6280\u80FD\u4F1A\u79FB\u51FA\u5217\u8868\u5E76\u505C\u6B62\u540E\u7EED\u542F\u7528\uFF0C\u5386\u53F2\u539F\u6587\u4E0E\u5DF2\u56FA\u5B9A\u4F1A\u8BDD\u4FDD\u7559\uFF1B\u5185\u7F6E\u6280\u80FD\u53EF\u5173\u95ED\u3002" })
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BA1\u9605\u53EA\u6279\u51C6\u6587\u672C\u52A0\u8F7D\u53CA\u9759\u6001\u8D44\u6E90\u4FDD\u5B58\uFF1B\u58F0\u660E\u9700\u6C42\u4E0D\u4F1A\u6388\u4E88\u5DE5\u5177\u3001\u6570\u636E\u3001\u811A\u672C\u6267\u884C\u6216\u8BA1\u7B97\u6743\u9650\u3002\u672A\u77E5\u8BB8\u53EF\u8BC1\u4E0D\u4EE3\u8868\u83B7\u5F97\u518D\u5206\u53D1\u8BB8\u53EF\u3002\u56FE\u5F62\u4E0E\u8BBA\u6587\u6267\u884C\u80FD\u529B\u987B\u5206\u522B\u9884\u68C0\uFF0C\u76EE\u5F55\u5C55\u793A\u4E0D\u4EE3\u8868\u6267\u884C\u5668\u5DF2\u5B9E\u73B0\u3002\u5220\u9664\u4E0A\u4F20\u6280\u80FD\u4F1A\u79FB\u51FA\u5217\u8868\u5E76\u505C\u6B62\u540E\u7EED\u542F\u7528\uFF0C\u5386\u53F2\u539F\u6587\u4E0E\u5DF2\u56FA\u5B9A\u4F1A\u8BDD\u4FDD\u7559\uFF1B\u5185\u7F6E\u6280\u80FD\u56FA\u5B9A\u5F00\u542F\u3002" })
       ] }),
       /* @__PURE__ */ jsxs("details", { className: "skill-version-settings integration-disclosure", children: [
         /* @__PURE__ */ jsx("summary", { children: "\u56FA\u5B9A\u7248\u672C\u4E0E\u9879\u76EE\u914D\u7F6E" }),
@@ -466,13 +466,13 @@ class SkillManager extends React.Component {
               ] })
             ] }),
             /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9009\u62E9\u53D1\u884C\u7248\u672C\u540E\u4FDD\u5B58\u624D\u4F1A\u5207\u6362\uFF0C\u4EC5\u5F71\u54CD\u540E\u7EED\u65B0\u7ED1\u5B9A\uFF1B\u5DF2\u7ED1\u5B9A\u4F1A\u8BDD\u53CA\u5386\u53F2\u4EFB\u52A1\u4FDD\u7559\u539F Bundle ID\uFF0C\u5E76\u6309\u539F\u7248\u672C\u9884\u68C0\u3002\u672A\u914D\u7F6E\u9879\u76EE\u7684\u65B0\u7ED1\u5B9A\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u53D1\u884C\u3002\u81EA\u5B9A\u4E49\u4FEE\u8BA2\u4FDD\u6301\u52FE\u9009\uFF0C\u5347\u7EA7\u5185\u7F6E\u7248\u672C\u987B\u5728\u6B64\u663E\u5F0F\u9009\u62E9\u3002" })
-          ] }) : null
+          ] }) : null,
+          /* @__PURE__ */ jsxs("div", { className: "skill-config-actions", children: [
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53D1\u884C\u7248\u672C\u66F4\u6539\u9700\u4FDD\u5B58\u540E\u751F\u6548\uFF1B\u4E0A\u4F20\u6280\u80FD\u5F00\u5173\u81EA\u52A8\u4FDD\u5B58\u3002" }),
+            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy || !s.catalog, onClick: () => this.configure(s.enabled, s.builtinBundleId), children: "\u4FDD\u5B58\u542F\u7528 / \u56DE\u6EDA\u5230\u6240\u9009\u7248\u672C" }),
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u540C\u4E00\u5305\u5F00\u542F\u4E00\u4E2A\u7248\u672C\u65F6\u4F1A\u66FF\u6362\u5F53\u524D\u7248\u672C\u3002\u542F\u7528\u4E0D\u7B49\u4E8E\u4EFB\u52A1\u5FC5\u9700\uFF0C\u987B\u5728\u4F1A\u8BDD\u4E2D\u663E\u5F0F\u9009\u62E9\u3002" })
+          ] })
         ] })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "skill-config-actions", children: [
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53D1\u884C\u7248\u672C\u66F4\u6539\u9700\u4FDD\u5B58\u540E\u751F\u6548\uFF1B\u5217\u8868\u5F00\u5173\u81EA\u52A8\u4FDD\u5B58\u3002" }),
-        /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy || !s.catalog, onClick: () => this.configure(s.enabled, s.disabledBuiltinIds, s.builtinBundleId), children: "\u4FDD\u5B58\u542F\u7528 / \u56DE\u6EDA\u5230\u6240\u9009\u7248\u672C" }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u540C\u4E00\u5305\u5F00\u542F\u4E00\u4E2A\u7248\u672C\u65F6\u4F1A\u66FF\u6362\u5F53\u524D\u7248\u672C\u3002\u542F\u7528\u4E0D\u7B49\u4E8E\u4EFB\u52A1\u5FC5\u9700\uFF0C\u987B\u5728\u4F1A\u8BDD\u4E2D\u663E\u5F0F\u9009\u62E9\u3002" })
       ] }),
       s.reading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u7248\u672C\u2026" }) : null,
       r && selected ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
