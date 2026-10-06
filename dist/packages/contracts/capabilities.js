@@ -16,7 +16,7 @@ export const CAPABILITIES = [
     { id: 'workbench', name: '科研工作台', stage: 'M6', status: 'partial', verification: 'React构建及既有浏览器科研流程已有历史证据', notes: '前端布局与完整重构当前暂缓；固定原版逐屏对齐未完成。项目总览仍读取多类完整历史，Run/报告/会话另有有界入口。' },
     { id: 'evidence', name: '类型化证据 / Claim / 固定报告', stage: 'M6', status: 'verified', verification: '运行/文档原文、固定引用、报告与成果包实测；撤销阻断新交付', notes: '固定ID、源码/测试、原始产物和页段可回查，旧正文/包字节保留。审查accept、退出码和文件存在不证明科学结论。' },
     { id: 'latex', name: 'LaTeX / PDF 编译预览', stage: 'M6', status: 'partial', verification: '隔离三引擎/Bib、真实PDF、固定图形来源及论文审查/导出已验', notes: '需已配置固定Docker镜像及单独批准，禁shell escape和网络。编译成功不等于排版或科学审查通过；缺包/错误/超限明确失败，新模板按需。' },
-    { id: 'remote', name: 'SSH / Slurm / K8s / Ray / HF / Modal / Tinker', stage: 'M7', status: 'partial', verification: 'SSH→Linux Docker隔离回环及嵌套源码修复已实测', notes: '外部SSH主机、Slurm、远程完整工作台及其他云后端仍需求/环境待验。回环不代替真实远端目标。' },
+    { id: 'remote', name: 'SSH', stage: 'M7', status: 'partial', verification: 'SSH→Linux Docker隔离回环及嵌套源码修复已实测', notes: '限用户配置并探测的SSH目标与受信Linux Docker监管器；外部SSH主机仍需目标验收，GPU资源分配尚未接入。回环不代替真实远端目标，当前可用性另看目标探测与队列。' },
     { id: 'code-handoff', name: '受控代码产物交接', stage: 'M3/M5', status: 'verified', verification: '真实Pi私有实现、Docker测试、独立审查及批准差异整合已验', notes: '父来源、测试/审查与CAS绑定进入新子实验，受管Git历史已接入。产品不自动推送成果，其他恢复/并发组合按实际阻断补验。' },
     { id: 'publish', name: 'Git发布 / Overleaf', stage: 'M8', status: 'not_implemented', verification: '本地可编辑TeX/PDF/成果包已验；产品远端发布与同步未验', notes: '明确内容、目标、可见性及授权后按需启动；开发代码的授权Git备份不等于科研成果发布。' },
     { id: 'desktop', name: '桌面安装 / 托管计算 / 团队账户', stage: 'M8', status: 'not_implemented', verification: '当前阶段暂缓或长期独立范围', notes: '桌面/更新/应用回滚及团队协作暂缓；账户/组织/托管实例/用量账本保留长期范围。当前本地服务为单用户回环鉴权。' },

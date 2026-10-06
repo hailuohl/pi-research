@@ -1,5 +1,7 @@
 # OpenResearch 技能与连接器适配
 
+2026-10-07当前范围：执行后端仅保留本地受信示例、Docker、SSH，计算技能只附带 `references/local.md` 和 `references/ssh.md`，加上6份图表参考共8份。当前可用命令为 `node dist/apps/cli/index.js skills pi-research-compute --resource references/ssh.md`。当前状态见[后端清单](../BACKEND-READINESS.zh-CN.md)；以下保留初次移植时的范围与验收说明，不作为当前能力目录或待办。
+
 ## 交付范围
 
 本次不是安装 OpenResearch 二进制或把 ORX 命令简单改名。参照 `alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835`，将十三个内置技能及总览改写为本项目的受控工具工作流；把学术文献检索相关 Rust HTTP 协议逻辑独立移植为 TypeScript 适配器。运行不调用 ORX CLI、服务、数据库或托管账户。

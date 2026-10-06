@@ -5,7 +5,7 @@ description: "Use when a user asks for a persistent machine, provisioning, or an
 
 # 持久实例与实验作业
 
-原上游可以通过组织账户申请持久机器；本项目当前 **未实现实例申请、资源目录、计费、SSH 登录或远程工作台**。`connector_status` 对 standalone-instances/managed-compute 返回不可用；不可填写一个虚构实例 ID 作为成功。
+原上游可以通过组织账户申请持久机器；本项目当前 **未实现实例申请、资源目录、计费、交互式 SSH 登录或远程工作台**。`connector_status` 对 standalone-instances 返回不可用；不可填写一个虚构实例 ID 作为成功。
 
 持久实例用于用户交互式开发；Run 是固定快照的一次有界执行。不要把启动一个远端进程当成已管理实例，也不要把创建实例当成实验已跑完。浏览器断开、Agent 中止、作业取消和释放机器是四个不同动作。
 

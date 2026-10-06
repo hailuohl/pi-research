@@ -113,11 +113,11 @@ export declare const CAPABILITIES: readonly [{
     readonly notes: "需已配置固定Docker镜像及单独批准，禁shell escape和网络。编译成功不等于排版或科学审查通过；缺包/错误/超限明确失败，新模板按需。";
 }, {
     readonly id: "remote";
-    readonly name: "SSH / Slurm / K8s / Ray / HF / Modal / Tinker";
+    readonly name: "SSH";
     readonly stage: "M7";
     readonly status: "partial";
     readonly verification: "SSH→Linux Docker隔离回环及嵌套源码修复已实测";
-    readonly notes: "外部SSH主机、Slurm、远程完整工作台及其他云后端仍需求/环境待验。回环不代替真实远端目标。";
+    readonly notes: "限用户配置并探测的SSH目标与受信Linux Docker监管器；外部SSH主机仍需目标验收，GPU资源分配尚未接入。回环不代替真实远端目标，当前可用性另看目标探测与队列。";
 }, {
     readonly id: "code-handoff";
     readonly name: "受控代码产物交接";

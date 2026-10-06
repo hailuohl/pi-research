@@ -6,6 +6,8 @@
 
 当前状态（2026-10-01文档核对）：[后端收口](docs/acceptance/flow-backend-readiness/RESULT.md)与用户授权拟定的[分组红酒试用](docs/acceptance/flow-wine-grouped-trial/RESULT.md)均已交付，本地后端阶段已完成，转入按需维护。[试用清单](docs/BACKEND-READINESS.zh-CN.md)列明入口、证据与限制。2026-10-02按用户新指示完成[前端布局重设计](docs/acceptance/flow-frontend-redesign/RESULT.md)：会话为主入口，辅助资料与成果从工作区工具打开，实验支持节点树图与列表。固定文稿、编译批准及最终报告仍沿用户操作；PR14桌面/团队协作暂缓；更多授权、远端、GPU与成果发布/同步按需求和环境触发，PR01–14长期范围保留。
 
+2026-10-07执行后端收敛为**本地受信示例、Docker、SSH**；其他执行后端已从当前能力目录、技能参考和接入计划移除。旧技能发行与历史会话仍保留原版本，见[验收记录](docs/acceptance/flow-compute-backends/RESULT.md)。
+
 历史目标（2026-09-29）：曾要求对齐OpenResearch前端，并把桌面分发及自建托管范围移出当时排期。该排期由上面的当前阶段目标取代；已有成果与在途改动继续保留。
 
 2026-10-04 已将用户选定的[浅色视觉方案正式接入](docs/acceptance/flow-light-frontend/RESULT.md)：保持原布局，更新真实聊天、列表和图标；设计预览与正式应用入口、回归及干净构建证据见该记录。
@@ -39,7 +41,7 @@ node dist/apps/server/index.js
 
 ## 实际提供
 
-- 14个技能模块（13个上游主题＋总览），15份兼容/方法参考；按角色和发布哈希加载，项目未知技能不会自动执行。
+- 14个技能模块（13个上游主题＋总览），8份参考（2份计算、6份图表）；按角色和发布哈希加载，项目未知技能不会自动执行。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
 - 当前 134 个操作通过 OperationRegistry 统一验证输入/输出、权限与幂等；包括固定源码、测试/审查、有限授权、文献/文档、文稿/报告、历史分页、消息附件和资源配置。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。owner HTTP 的 sessionId 不授予Agent身份，现有批准边界保持。

@@ -4,6 +4,8 @@
 
 `reference-baseline` 下的固定上游/早期能力矩阵以及旧批次“下一批”是历史来源与当时证据维度；当前排期与后端状态以本清单及实施计划为准，不能把原始快照中的未验状态当作后续功能尚未交付。
 
+2026-10-07执行后端范围调整：只保留本地受信示例、Docker、SSH；其他执行后端的当前能力项、技能参考及接入计划已移除。既有会话与旧发行继续按原固定版本读取，历史记录不重写。
+
 ## 统一入口
 
 本地启动：`node --env-file=.env dist/apps/server/index.js`；已有控制器或作业活动时沿原进程继续，不为收口重启。模型配置和密钥留本地。未使用 `.env` 时可直接运行 `node dist/apps/server/index.js`，是否可调用模型由运行时状态决定。
@@ -33,7 +35,8 @@
 | 受限 | `GET /api/projects/:id/state` 与连接器历史总览 | 多类历史仍全量读取；文档/连接器部分列表仅最近30项，不能据此判断旧ID不存在。有界Run/报告入口不等于总览已分页，实际大项目阻断再修 |
 | 受限 | PDF/PMC结构、用量与科学解释 | PDF阅读顺序/表图结构与扫描OCR仍有限；PMC表格文本不恢复复杂网格语义。SDK用量观察不等于HTTP次数/真实账单，未取得实际账单不估算费用 |
 | 需求触发 | 更多Task授权、RunGrant参数语言、新技能/模板、压力/恢复矩阵、产品Git发布/Overleaf | WorkingGrant仍限主协调会话；现有流程能满足任务时不扩权。发布/同步需要明确内容、目标与授权，当前代码备份仓库不是成果发布入口 |
-| 环境待验 | bioRxiv/OpenAlex原PDF、自动root唤醒、GPU、外部SSH/Slurm及云目标 | [bioRxiv 429/OpenAlex缺凭据](acceptance/flow-biorxiv-original-pdf/RESULTS.zh-CN.md)；自动唤醒目前只有IPC证据。SSH已有[隔离回环](acceptance/flow-ssh-run/RESULTS.zh-CN.md)和[嵌套源码修复](acceptance/flow-ssh-nested-umask/RESULT.md)，不证明外部主机；其余目标需实际需求与环境 |
+| 环境待验 | bioRxiv/OpenAlex原PDF、自动root唤醒、外部SSH目标 | [bioRxiv 429/OpenAlex缺凭据](acceptance/flow-biorxiv-original-pdf/RESULTS.zh-CN.md)；自动唤醒目前只有IPC证据。SSH已有[隔离回环](acceptance/flow-ssh-run/RESULTS.zh-CN.md)和[嵌套源码修复](acceptance/flow-ssh-nested-umask/RESULT.md)，不证明外部主机 |
+| 需求触发，尚未接入 | GPU资源声明与设备分配 | 当前正式运行契约只有CPU、内存等资源；需要补充GPU契约、容器设备接线及目标环境验收，不属于新增执行后端 |
 | 暂缓 | PR09前端布局/完整重构；PR14桌面/更新/应用回滚/团队产品协作 | 用户恢复后另定范围。已有内部Team/Reviewer工作流保留；账户/组织/托管实例/用量账本为长期独立范围 |
 
 ## 按需维护：新任务所需输入

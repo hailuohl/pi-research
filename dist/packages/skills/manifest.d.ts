@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "344a44dcf73a8bcb2b2cdf5acf637f756c1763ef05c5ba464bc8285fa45a188b";
+export declare const BUNDLE_ID = "547f5f0d9dc3a27db86a26d9747c8b102b73ccc5fb1073b80fba07c2f0fb2feb";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -75,34 +75,13 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before preparing, launching, cancelling, sizing, or reconciling an experiment run.";
     readonly roles: readonly ["coordinator", "designer", "implementer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-compute/SKILL.md";
-    readonly digest: "1e14da9bd14ea16cd36d38c57df9c454c1949de2a9b7586968fab2a79e23ccf3";
+    readonly digest: "7f49408c562c43864ff8382971fab467344b2a095e413a93a045966bdae39a1d";
     readonly resources: readonly [{
         readonly path: "references/local.md";
-        readonly digest: "6a216654ed6069e8959c2fd3a5b5cbaf2bb04e76c12efdde41cfed078a5c78b7";
+        readonly digest: "b7bf1a0d303d53a73239d597a5415c302c77889d204e8cc35f75ea74a43a5298";
     }, {
         readonly path: "references/ssh.md";
-        readonly digest: "5b8a497ab023fac473b660b5cbf85961afb7d5de231aba955a11e1d65dfd2c62";
-    }, {
-        readonly path: "references/slurm.md";
-        readonly digest: "b3fd81092d8c18d4d1b9687c1e13e5fea71ee2b45166e7a51464731ac520bea2";
-    }, {
-        readonly path: "references/k8s.md";
-        readonly digest: "a321bac4fa039a0cde698e73201773da275098ee99610db7538a51b9462de097";
-    }, {
-        readonly path: "references/ray.md";
-        readonly digest: "404a3fcfdbe8a66c75d2169df2e006fc27071ade03dc9abd2b6c236bf0fc72a1";
-    }, {
-        readonly path: "references/hf.md";
-        readonly digest: "04dc0a6f797134afe4e8db41d554c2688dcac61d872731fa923a9ff4596d5854";
-    }, {
-        readonly path: "references/modal.md";
-        readonly digest: "841ab793672ec85a07fa5b5b566cb31485f2709a7c60a82e0bdcc7944d233dd7";
-    }, {
-        readonly path: "references/tinker.md";
-        readonly digest: "b747a1c81807e97135a3a579ea53d1b3ecc7fff0fa02ed39ff22e4eb5f3b10a8";
-    }, {
-        readonly path: "references/openresearch.md";
-        readonly digest: "81bcc82858ae56bb5d064529ae90aca99a7fb0ff27c058fe640a615a9453d728";
+        readonly digest: "466fb9db080bfbea1ad67044985d0405c4d8bde132a34c993eb6b55e704e6066";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -116,7 +95,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when a user asks for a persistent machine, provisioning, or an interactive remote workspace.";
     readonly roles: readonly ["coordinator", "designer"];
     readonly path: "skills/piresearch/pi-research-instances/SKILL.md";
-    readonly digest: "a3482be12289897c9d5a0c07c8bb6269ecaee3cd84d6a87ddb51c1cf9203e162";
+    readonly digest: "b70d2802a9be595a72c505c3b4631487c4f5b9e7312f7c60ab9f4a11f90498cd";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
