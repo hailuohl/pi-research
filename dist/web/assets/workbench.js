@@ -95,7 +95,7 @@ class Chat extends React.Component {
               e.preventDefault();
               e.currentTarget.form.requestSubmit();
             } }),
-            /* @__PURE__ */ jsx(ComposerControls, { boot, projectId: data.project.id, projectArchived: data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => {
+            /* @__PURE__ */ jsx(ComposerControls, { permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => {
               if (session) this.props.perform(() => api(`/sessions/${session.id}/model`, { expectedVersion: session.version, model }), "\u5DF2\u66F4\u65B0\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\uFF1B\u9879\u76EE\u9ED8\u8BA4\u6A21\u578B\u672A\u66F4\u6539");
             }, children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
               /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
@@ -103,9 +103,8 @@ class Chat extends React.Component {
             ] }) }, `${data.project.id}:${session?.id ?? ""}`)
           ] })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "composer-caption", children: [
-          boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : "\u56FA\u5B9A\u5FEB\u7167 \xB7 \u663E\u5F0F\u5BA1\u6279 \xB7 \u53EF\u8FFD\u6EAF\u8BC1\u636E",
-          " ",
+        /* @__PURE__ */ jsxs("div", { className: "composer-caption composer-caption-note", children: [
+          "\u56FA\u5B9A\u5FEB\u7167 \xB7 \u663E\u5F0F\u5BA1\u6279 \xB7 \u53EF\u8FFD\u6EAF\u8BC1\u636E ",
           /* @__PURE__ */ jsxs("span", { children: [
             "Enter \u53D1\u9001",
             /* @__PURE__ */ jsx("span", { className: "host-extra-key", children: " \xB7 Shift + Enter \u6362\u884C \xB7 Ctrl/\u2318 + Enter \u53D1\u9001" })

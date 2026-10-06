@@ -29,3 +29,7 @@ test('confirmed enable retains the exact host API acknowledgements and selection
 test('restricted mode changes send both versions and selection changes only after the server accepts',async()=>{
  const view=control(),saved=globalThis.fetch,requests=[];globalThis.fetch=async(url,opts)=>{requests.push({url,opts});assert.equal(view.state.permission.mode,'confirm');return {ok:true,json:async()=>({...view.state.permission,mode:'autoEdit',version:5,hostAccess:status({version:3})})};};try{await view.saveMode('autoEdit');assert.deepEqual(JSON.parse(requests[0].opts.body),{mode:'autoEdit',expectedVersion:4,expectedHostVersion:2});assert.equal(requests[0].url,'/api/sessions/session-fixture/permissions');assert.equal(view.state.permission.mode,'autoEdit');assert.equal(requests.filter(r=>r.opts.method==='POST').length,1);}finally{globalThis.fetch=saved;}
 });
+
+test('the permission modal prevents its form submit from bubbling into the message composer',()=>{
+ const view=control();view.showDetails();const boundary=elements(view.render()).find(node=>node.type==='div'&&node.props.onSubmit);assert.ok(boundary);assert.ok(elements(boundary).some(node=>node.type===Modal));let stopped=false;boundary.props.onSubmit({stopPropagation(){stopped=true;}});assert.equal(stopped,true);
+});

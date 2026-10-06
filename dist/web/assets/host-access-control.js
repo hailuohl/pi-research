@@ -1,8 +1,13 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { api } from "./api.js";
 import { Icon, Modal } from "./ui.js";
 const modeLabels = { readOnly: "\u53EA\u8BFB", confirm: "\u53D8\u66F4\u524D\u786E\u8BA4", autoEdit: "\u81EA\u52A8\u7F16\u8F91", fullAccess: "\u5B8C\u5168\u8BBF\u95EE", legacy: "\u73B0\u6709\u53D7\u63A7\u5DE5\u5177" };
+function permissionDialog(dialog) {
+  const boundary = /* @__PURE__ */ jsx("div", { onSubmit: (event) => event.stopPropagation(), children: dialog });
+  return typeof document === "undefined" ? boundary : createPortal(boundary, document.body);
+}
 class HostAccessControl extends React.Component {
   constructor() {
     super(...arguments);
@@ -129,7 +134,7 @@ class HostAccessControl extends React.Component {
     return /* @__PURE__ */ jsxs(Fragment, { children: [
       /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "host-access-trigger" + (status?.enabled ? " enabled" : ""), "aria-label": "\u4F1A\u8BDD\u6743\u9650\uFF1A" + modeLabels[mode], "aria-haspopup": "menu", "aria-expanded": menuOpen, "aria-controls": menuId, popoverTarget: menuId, disabled: this.props.archived || !status || saving, children: [
         /* @__PURE__ */ jsx(Icon, { name: "cpu", size: 13 }),
-        /* @__PURE__ */ jsx("span", { children: modeLabels[mode] }),
+        /* @__PURE__ */ jsx("span", { children: mode === "legacy" ? "\u53D7\u63A7\u5DE5\u5177" : modeLabels[mode] }),
         /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 11 })
       ] }),
       /* @__PURE__ */ jsxs("div", { ref: this.menu, id: menuId, popover: "auto", role: "menu", "aria-label": "\u4F1A\u8BDD\u6743\u9650", className: "host-permission-menu", onKeyDown: this.menuKeys, onToggle: (event) => {
@@ -178,7 +183,7 @@ class HostAccessControl extends React.Component {
         status && !status.available && !status.enabled ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", children: status.reason }) : null,
         error ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", role: "status", children: error }) : null
       ] }),
-      open && status ? /* @__PURE__ */ jsxs(Modal, { title: enabled ? "\u672C\u673A\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE", onClose: () => {
+      open && status ? permissionDialog(/* @__PURE__ */ jsxs(Modal, { title: enabled ? "\u672C\u673A\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE", onClose: () => {
         if (!saving) this.setState({ open: false });
       }, onSubmit: () => {
         void this.save(!enabled);
@@ -214,7 +219,7 @@ class HostAccessControl extends React.Component {
         ] }) : null,
         !status.available && !status.enabled ? /* @__PURE__ */ jsx("p", { role: "alert", children: status.reason }) : null,
         error ? /* @__PURE__ */ jsx("p", { className: "error-text", role: "alert", children: error }) : null
-      ] }) : null
+      ] })) : null
     ] });
   }
 }

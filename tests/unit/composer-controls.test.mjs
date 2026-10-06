@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { synchronousState } from '../support/ui.mjs';
 import { ComposerControls } from '../../dist/web/assets/composer-controls.js';
+import {ComposerModelMenu} from '../../dist/web/assets/composer-model-menu.js';
+import {HostAccessControl} from '../../dist/web/assets/host-access-control.js';
 import { Chat } from '../../dist/web/assets/workbench.js';
 import { SettingsView } from '../../dist/web/assets/data-views.js';
 import { SessionHistory } from '../../dist/web/assets/session-history.js';
@@ -101,14 +103,25 @@ test('source updates serialize versioned clicks and cannot publish a late respon
 test('current-session model menu sends only the selected saved config and respects fixed grants', () => {
     const selected = [];
     const view = synchronousState(new ComposerControls(controlsProps({ onSendModel: value => selected.push(value) })));
-    const select = find(view.render(), node => node.type === 'select' && node.props['aria-label'] === '会话模型与思考等级');
-    const option = elements(select.props.children).find(child => child.type === 'option' && child.props.value === JSON.stringify(['other', 'large', 'high']));
-    select.props.onChange({ target: { value: option.props.value } });
+    const menu = find(view.render(), node => node.type === ComposerModelMenu);
+    const picker = synchronousState(new ComposerModelMenu(menu.props));
+    picker.choose(menu.props.options.find(option=>option.provider==='other'&&option.model==='large'));
     assert.deepEqual(selected, [{ provider: 'other', model: 'large', thinking: 'high' }]);
+    picker.choose({provider:'unknown',model:'injected',thinking:'high'});assert.equal(selected.length,1);
     const locked = synchronousState(new ComposerControls(controlsProps({ modelLocked: true })));
-    assert.equal(find(locked.render(), node => node.type === 'select' && node.props['aria-label'] === '会话模型与思考等级').props.disabled, true);
+    assert.equal(find(locked.render(), node => node.type === ComposerModelMenu).props.disabled, true);
+    for(const override of [{session:undefined},{busy:true},{projectArchived:true},{session:{...session,taskId:'task'}},{session:{...session,role:'reviewer'}},...['running','queued','archived'].map(state=>({session:{...session,state}}))]){
+        const disabled=synchronousState(new ComposerControls(controlsProps(override)));
+        assert.equal(find(disabled.render(),node=>node.type===ComposerModelMenu).props.disabled,true);
+    }
 });
 
+test('permissions are inside the composer toolbar and absent from the outside caption',()=>{
+    const view=synchronousState(new Chat(chatProps({boot:{...boot,runtime:{...boot.runtime,hostAccess:{available:true}}}}))),form=find(view.render(),node=>node.type==='form'&&node.props.className==='composer');
+    const controls=find(form,node=>node.type===ComposerControls);assert.equal(controls.props.permissionControl.type,HostAccessControl);assert.equal(controls.props.permissionControl.props.sessionId,session.id);
+    const caption=find(view.render(),node=>node.props?.className?.includes('composer-caption-note'));assert.equal(find(caption,node=>node.type===HostAccessControl),undefined);
+    const composed=synchronousState(new ComposerControls(controls.props));const toolbar=find(composed.render(),node=>node.props?.className==='composer-toolbar');assert.ok(find(toolbar,node=>node.type===HostAccessControl));
+});
 test('document imports add each successful project reference and keep it if a later import fails', async t => {
     const oldFetch = globalThis.fetch; t.after(() => { globalThis.fetch = oldFetch; });
     const imported = [], calls = [];

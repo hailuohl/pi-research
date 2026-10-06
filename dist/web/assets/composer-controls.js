@@ -1,7 +1,8 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
-import { Icon, nativeSelectButton } from "./ui.js";
+import { Icon } from "./ui.js";
+import { ComposerModelMenu } from "./composer-model-menu.js";
 const SOURCES = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
 const SOURCE_NAMES = { alphaxiv: "alphaXiv", openalex: "OpenAlex", biorxiv: "bioRxiv", pubmed: "PubMed", crossref: "Crossref" };
 const SOURCE_LOGOS = { alphaxiv: "alphaxiv.svg", openalex: "openalex.svg", biorxiv: "biorxiv.svg", pubmed: "pubmed.png", crossref: "crossref.ico" };
@@ -169,25 +170,8 @@ class ComposerControls extends React.Component {
           this.props.children
         ] }),
         /* @__PURE__ */ jsx("div", { className: "grow" }),
-        /* @__PURE__ */ jsxs("label", { className: "composer-model-control", children: [
-          /* @__PURE__ */ jsx(Icon, { name: "cpu", size: 15 }),
-          /* @__PURE__ */ jsx("span", { children: "\u6A21\u578B" }),
-          /* @__PURE__ */ jsxs("select", { "aria-label": "\u4F1A\u8BDD\u6A21\u578B\u4E0E\u601D\u8003\u7B49\u7EA7", value: currentModel?.provider && currentModel.model ? modelKey(currentModel) : "", disabled: modelDisabled, title: modelLocked ? "\u5F53\u524D\u4F1A\u8BDD\u5DF2\u7ED1\u5B9A\u56FA\u5B9A\u6388\u6743\uFF0C\u6A21\u578B\u4E0D\u80FD\u66F4\u6539" : "\u5F53\u524D\u4F1A\u8BDD\u8FD0\u884C\u6216\u6388\u6743\u72B6\u6001\u4E0B\u6682\u4E0D\u53EF\u66F4\u6539\u6A21\u578B", onChange: (event) => {
-            const selected = options.find((model) => modelKey(model) === event.target.value);
-            if (selected && (!currentModel || modelKey(selected) !== modelKey(currentModel))) this.props.onSendModel(selected);
-          }, children: [
-            nativeSelectButton,
-            /* @__PURE__ */ jsx("option", { value: "", children: currentModel?.provider && currentModel.model ? "\u9009\u62E9\u6A21\u578B" : "\u672A\u914D\u7F6E\u6A21\u578B" }),
-            options.map((model) => /* @__PURE__ */ jsxs("option", { value: modelKey(model), children: [
-              model.provider,
-              " / ",
-              model.model,
-              " \xB7 ",
-              model.thinking,
-              modelKey(model) === modelKey(boot.model) ? "\uFF08\u9ED8\u8BA4\uFF09" : ""
-            ] }, modelKey(model)))
-          ] })
-        ] }),
+        /* @__PURE__ */ jsx(ComposerModelMenu, { sessionId: session?.id ?? "none", current: currentModel, options, disabled: modelDisabled, locked: modelLocked, onSelect: this.props.onSendModel }),
+        this.props.permissionControl,
         /* @__PURE__ */ jsxs("button", { className: "primary compact composer-submit-control", type: showStop ? "button" : "submit", "aria-label": showStop ? "\u505C\u6B62\u6A21\u578B" : executing ? "\u6392\u961F\u53D1\u9001" : "\u53D1\u9001", title: showStop ? "\u505C\u6B62\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1" : executing ? "\u53D1\u9001\u5230\u961F\u5217" : "\u53D1\u9001\u6D88\u606F", "data-action": showStop ? "stop" : "send", disabled: showStop ? busy || projectArchived : !canSend || !hasDraft || !session, onClick: showStop ? () => this.stopSession(session.id) : void 0, children: [
           /* @__PURE__ */ jsx(Icon, { name: showStop ? "stop" : "arrow", size: 16 }),
           showStop ? "\u505C\u6B62" : "\u53D1\u9001"

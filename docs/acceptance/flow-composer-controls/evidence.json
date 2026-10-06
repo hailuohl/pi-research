@@ -1,58 +1,57 @@
 {
-  "date": "2026-10-02",
-  "scope": "settings model presets; current-session model choice; composer sources and document attachments",
-  "behavior": {
-    "modelsPersisted": true,
-    "defaultIndependentOfCurrentSession": true,
-    "modelChangesFencedByPendingWorkerAndBindings": true,
-    "projectSourceSettingsReused": true,
-    "documentFormats": ["application/pdf", "text/plain", "text/markdown"],
-    "maxAttachments": 5,
-    "maxFileBytes": 33554432,
-    "attachmentScope": "existing owner project archive",
-    "messageReferencesPersisted": true,
-    "textReadFencedBySessionMessageAndLease": true,
-    "pdfStatus": "requires_parse",
-    "failureAndNewDraftPreserved": true,
-    "queueEditCancelRetryBranchPreserveReferences": true
+  "date": "2026-10-06",
+  "baseline": "c42a78e322304387c5ea6ebd67250619ecf1e94d",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "full": {
+    "status": "passed",
+    "tests": 1092,
+    "pass": 1069,
+    "fail": 0,
+    "skipped": 23,
+    "log": ".validation/composer-controls-2026-10-06/full-tests.log"
   },
-  "tests": {
-    "backendFocusedPassed": 33,
-    "httpAndPinnedSdkPassed": 1,
-    "frontendFocusedPassed": 25,
-    "fullInitial": {"total": 948, "passed": 924, "skipped": 23, "failed": 1, "durationMs": 471226.4434},
-    "requiredRepair": "Tool catalog count updated from 133 to 134; all existing schema/example assertions retained.",
-    "repairFocused": {"passed": 44, "failed": 0, "durationMs": 732.9989}
+  "clean": {
+    "status": "passed",
+    "files": 524,
+    "manifestSha256": "e3ba6e2d20a85260bcfc8874d1ccd23c633bbbb6cc465d0352202cfb163614f9",
+    "summary": ".validation/clean-build-nKdsjx/summary.json"
   },
-  "independentReview": {
-    "boundaryModel": "gpt-6-astra",
-    "visualIntegrationModel": "gpt-6-sol",
-    "finalBlockingFindings": 0,
-    "deferred": ["Reload needed after source-setting version conflict.", "Two duplicated queue attachment CSS rules."]
+  "review": {
+    "status": "passed",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeConfigurationEchoed": false,
+    "diffSha256": "75d0d6f55d2908dd3f31c39a6f4bcbd4b18c9b96ea609425d21bbd1d4fe12e19"
   },
-  "browser": {
-    "widths": [390, 1280],
-    "horizontalOverflow": false,
-    "modelSettingsAndCurrentChoice": true,
-    "allFiveSourcesClickableAndSave": true,
-    "attachmentHistoryVisible": true,
-    "ordinaryComposerSend": true,
-    "nativeFileInputAttributesChecked": true,
-    "systemFileChooserAutomated": false,
-    "iconNaturalWidth": 24,
-    "consoleErrors": 0,
-    "externalProviderRequests": 0,
-    "externalLiteratureRequests": 0,
-    "researchRecordsDeleted": 0,
-    "localFixedSseFixture": true
+  "live": {
+    "url": "http://127.0.0.1:4794/",
+    "permissionInsideComposer": true,
+    "modelMenu": true,
+    "backendRestarted": false,
+    "realSelectionChanged": false,
+    "mainJsSha256": "678c5ad6f0eebb7cbeef80ae0304fd2d0843155faa1d7cb22b18d14b0bdba65a",
+    "hostCssSha256": "6992fe61c162d4e77073e8f9b35808f4bf52d19eef8ed19606d3aa17417743a5"
   },
-  "visualQa": {"menuClippingFixed": true, "desktopAndMobileSendAlignmentFixed": true, "report": "design-qa.md", "finalResult": "passed"},
-  "cleanBuild": {
-    "node": "24.19.0",
-    "files": 489,
-    "identical": true,
-    "distManifestSha256": "1be7961b3d58960730e9ae6800f1ea51fdee256a61d8b3e5008fef830837a314",
-    "summary": ".validation/clean-build-BBjBtj/summary.json"
-  },
-  "rawEvidence": ".validation/composer-controls/"
+  "protectedFiles": [
+    {
+      "path": "apps/web/public/styles.css",
+      "sha256": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2"
+    },
+    {
+      "path": "dist/web/styles.css",
+      "sha256": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2"
+    },
+    {
+      "path": "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
+      "sha256": "57655c0f434da59c5e87377e2d615293498bd581e6c96e0b03206006aaf23afe"
+    },
+    {
+      "path": "docs/reference-baseline/capability-matrix.json",
+      "sha256": "9d716565f9640cdfc5054c9467d46db8f63945a0a296c45b480b88d0019b5037"
+    },
+    {
+      "path": "docs/specs/project-design.txt",
+      "sha256": "251e12b2201f1cbb87f497f5771f20d0011a20f73e2ec324ce613141e958a6f7"
+    }
+  ]
 }
