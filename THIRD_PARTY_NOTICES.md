@@ -48,12 +48,13 @@ Pi packages are not bundled. Install the pinned Pi runtime separately and
 retain the upstream notices distributed with those packages. Their runtime
 and transitive lockfile is generated in `.pi-runtime/` when installed.
 
-No OpenResearch runtime code, database, CLI, service or skills are bundled.
+No OpenResearch application runtime, database, CLI or hosted service is bundled.
+The adapted skills and selected figure resources are described below.
 The original project design names OpenResearch as a functional reference;
 that is not a claim of endorsement, behavioral parity or completed cloning.
 
 ## OpenResearch skills and literature protocol adaptation
-Copyright (c) 2026 alphaXiv. MIT; full text in `third_party/openresearch/LICENSE`. Based on commit 3037f727e80e0ab20c61a87c613a50dde009a835. `skills/piresearch` rewrites all 13 canonical modules plus the overview for Pi Research tools and safety boundaries. `packages/connectors` ports selected literature protocol behavior from Rust `src/client.rs` to TypeScript and adds independent validation, cancellation, settings and bounded requests. No ORX runtime, hosted account, telemetry, or remote compute implementation is included. Source inventory and intentional differences are in `third_party/openresearch/source-manifest.json`.
+Copyright (c) 2026 alphaXiv. MIT; full text in `third_party/openresearch/LICENSE`. Based on commit 3037f727e80e0ab20c61a87c613a50dde009a835. The current `skills/piresearch` release adapts twelve thematic modules plus the overview to existing Pi Research tools and role boundaries; historical releases retain their original scope. Six figure references and the selected matplotlib/TikZ assets are adapted from the same verified upstream revision. The figure assets retain their license notices when copied into a work product. Loading a resource does not execute it. `packages/connectors` ports selected literature protocol behavior from Rust `src/client.rs` to TypeScript and adds independent validation, cancellation, settings and bounded requests. No ORX application runtime, hosted account or telemetry is included. Source identities and the current adaptation scope are recorded in `third_party/openresearch/source-manifest.json`.
 
 ## Optional isolated PDF parser
 

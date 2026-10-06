@@ -1,7 +1,7 @@
 {
   "repository": "alphaXiv/OpenResearch",
   "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
-  "method": "GitHub connector source reads; text adapted, protocol logic ported; not a full repository fork",
+  "method": "Pinned GitHub sources verified against Git blob identities; research methods and selected assets adapted to existing Pi Research interfaces, not a full runtime fork",
   "skillSources": [
     {
       "repository": "alphaXiv/OpenResearch",
@@ -117,5 +117,78 @@
       ]
     ]
   },
-  "notFetched": "The complete original backend implementations and figure assets/subreferences were not acquired or ported. Local compatibility references explicitly say so."
+  "notFetched": "Complete OpenResearch runtime and backend implementations are not acquired or ported. Sources for the retained skills, six figure references, two figure assets, and local/SSH references were fetched for current-interface adaptation.",
+  "currentScope": "13 retained skills; local trusted example, Docker and SSH only. Instance/cloud scope excluded by user. Unimplemented product features documented as differences, not enabled by skill text.",
+  "resourceSources": [
+    {
+      "path": "agent-skills/orx-compute/references/local.md",
+      "blob": "e0c1df9c6a516dfc0fd2d3bf82206ad8a0592e45",
+      "sha256": "6ba6f018fb80bbb92d37f23bfc7b48b1d1c8f2e8511a12c53f2cf9ffcea53588",
+      "size": 790,
+      "localPath": "skills/piresearch/pi-research-compute/references/local.md"
+    },
+    {
+      "path": "agent-skills/orx-compute/references/ssh.md",
+      "blob": "7f35e7366a630b60e0f86e2ca628e27eb8a3fd2b",
+      "sha256": "a19fa8f58b62d40e2bb106f2f13607554d43d004a2843c2c478e00dbed33594f",
+      "size": 2541,
+      "localPath": "skills/piresearch/pi-research-compute/references/ssh.md"
+    },
+    {
+      "path": "agent-skills/orx-figures/assets/orx_figstyle.py",
+      "blob": "c54d418b91b3a5df561abdf31fc8cd51538abe91",
+      "sha256": "9372d4ebbc32c9fdbb364adf76fdcf2b0708a4c50490fc639f06c9af360a61d9",
+      "size": 21867,
+      "localPath": "skills/piresearch/pi-research-figures/assets/pi_figstyle.py"
+    },
+    {
+      "path": "agent-skills/orx-figures/assets/orx-tikz-preamble.tex",
+      "blob": "99e18c1ab9b42cf05f3ea148d40a37eab2a61c87",
+      "sha256": "a1c24c26ae44dfa8754b38c4e63fe134734f3fd62859f0eeef15f7eb681b3a14",
+      "size": 2743,
+      "localPath": "skills/piresearch/pi-research-figures/assets/pi-tikz-preamble.tex"
+    },
+    {
+      "path": "agent-skills/orx-figures/references/comparison.md",
+      "blob": "c2a27641cf7c379991fbcc1b8fd1b243ef1241a1",
+      "sha256": "6cc33e320125cbd6be89f26a846a8ee3e86cd031bc4fc34b9fc5849d5af8c76a",
+      "size": 9804,
+      "localPath": "skills/piresearch/pi-research-figures/references/comparison.md"
+    },
+    {
+      "path": "agent-skills/orx-figures/references/curves.md",
+      "blob": "8cea15c41781365384199a847fad8511ca69e71c",
+      "sha256": "67307d6296bc84ec6e8170fc3e8b1526321d772dba572c48b2ca6038c23747c0",
+      "size": 5752,
+      "localPath": "skills/piresearch/pi-research-figures/references/curves.md"
+    },
+    {
+      "path": "agent-skills/orx-figures/references/diagram.md",
+      "blob": "927247efcbe2e55f021bf9b3b0167e0d158f1f65",
+      "sha256": "146e13f3129904045a751b351ea2fcdbcd7884358c9ea9720247217e88a35e8e",
+      "size": 6580,
+      "localPath": "skills/piresearch/pi-research-figures/references/diagram.md"
+    },
+    {
+      "path": "agent-skills/orx-figures/references/matrix.md",
+      "blob": "5c9cadc0fba6344645ddb71de65f7099f869e633",
+      "sha256": "ea059f5195c085437d3acc2c0a1b14dae799b618af1bb03f262dc6da9d89b6db",
+      "size": 7160,
+      "localPath": "skills/piresearch/pi-research-figures/references/matrix.md"
+    },
+    {
+      "path": "agent-skills/orx-figures/references/pareto.md",
+      "blob": "edda07cc3fe37e9612fc0fc4c42a8fe76d2410c6",
+      "sha256": "96d48bdfdf7a8e2aca51f064c9d9e9894ded211223f2628fa302f2955b91b15e",
+      "size": 6419,
+      "localPath": "skills/piresearch/pi-research-figures/references/pareto.md"
+    },
+    {
+      "path": "agent-skills/orx-figures/references/scaling.md",
+      "blob": "7fbd874a7c3d307955af3afc9cc577744f11dec3",
+      "sha256": "57baf4cff62813511b9f97d874abcacaa6221438e85ceff347a0cac5f8a82605",
+      "size": 7884,
+      "localPath": "skills/piresearch/pi-research-figures/references/scaling.md"
+    }
+  ]
 }

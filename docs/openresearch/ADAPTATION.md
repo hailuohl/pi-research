@@ -1,6 +1,6 @@
 # OpenResearch 技能与连接器适配
 
-2026-10-07当前范围：执行后端仅保留本地受信示例、Docker、SSH，计算技能只附带 `references/local.md` 和 `references/ssh.md`，加上6份图表参考共8份。远程实例技能已从当前默认目录移除，现为13个技能；历史发行仍保留原文。当前可用命令为 `node dist/apps/cli/index.js skills pi-research-compute --resource references/ssh.md`。当前状态见[后端清单](../BACKEND-READINESS.zh-CN.md)；以下保留初次移植时的范围与验收说明，不作为当前能力目录或待办。
+2026-10-07当前范围：执行后端仅保留本地受信示例、Docker、SSH，远程实例技能已移除。当前13项技能按本项目已完成功能适配，附24份按需资源，包括保留的计算参考、完整图形方法/样式/示例和论文模板。当前可用命令为 `node dist/apps/cli/index.js skills pi-research-compute --resource references/ssh.md`。功能与差异见[当前技能对照](CURRENT-SKILLS.zh-CN.md)，当前运行状态见[后端清单](../BACKEND-READINESS.zh-CN.md)；以下保留初次移植时的范围与验收说明，不作为当前能力目录或待办。
 
 ## 交付范围
 
