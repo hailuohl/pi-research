@@ -10,6 +10,7 @@ Git 技能增加本地完成→准确提交→各 ref 回执的流程、合法 P
 - 后端聚焦 26/26；主代理技能、schema、HTTP/CLI 和真实 Pi SDK 接线 31/31；独立 Astra/xhigh 4/4，冻结 78 文件哈希一致，无阻断。请求配置已接受，运行时未回显。
 - 真实本地 Git 提交经现有 mock GitHub worker 到 saved synced，准确 SHA/ref、同 callId 新观察、旧回执及重开通过。真实固定 Pi SDK 接收保存的回执，私密错误哨兵未进入模型请求。
 - 干净安装/构建/类型检查通过，554 个 dist 文件完全一致。关键路径已纳入三平台 CI，远端结果另行确认。
+- 提交 `b88711e` 的[远端 CI](https://github.com/hailuohl/pi-research/actions/runs/37622102857) 中 macOS/Linux 通过，Windows 在既有取消测试删除临时目录时遇到 EPERM。局部测试修正先观察真实 running，再等待自己启动的监管进程 close 才清理；原状态断言保留，不改生产代码。相关 10/10 与独立 Sol/high 定向复核通过，实际 CI 复验另行记录。
 - 没有实际研究仓库的远端上传测试或外部模型自主行为实测；mock 远端与离线供应商不算此项验证。
 - 第一批已记录的 parity 旧目录文档缺口继续保留，不重复检查或扩入本批。原有五个在途文件未修改或提交。
 
