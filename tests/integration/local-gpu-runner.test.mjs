@@ -33,6 +33,7 @@ test('local CPU runtime freezes public identity without path and executes approv
  const s=setup();try{const run=prepared(s);assert.equal(JSON.stringify(run.manifest).includes(process.execPath),false);assert.equal(run.manifest.localExecution.isolation,'none');assert.equal(run.manifest.contract.gpu,undefined);
   const q=s.app.store.db.prepare('SELECT * FROM compute_queue WHERE id=?').get(run.id);assert.equal(q.backend,'local');assert.equal(q.bound,1);assert.equal(q.target_id,run.manifest.localRuntime.hostId);
   const done=await wait(s.app,run.id,20000);assert.equal(done.state,'succeeded',JSON.stringify(done));assert.equal(done.integrity,'complete');assert.equal(done.metrics.value,42);
+  if(process.platform==='win32')assert.match(readFileSync(join(s.app.store.paths.physical(run.execution.controlDir),'supervisor.log'),'utf8'),/PI_LOCAL_STAGE:boot[\s\S]*PI_LOCAL_STAGE:spec-ready[\s\S]*PI_LOCAL_STAGE:interop-ready/);
   const env=s.app.operations.execute(USER,'execution_environment_list',{}, {projectId:s.project.id});validateSchema(OUTPUT_SCHEMAS.execution_environment_list,env,'output');
  }finally{s.close();}
 });

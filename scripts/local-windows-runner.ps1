@@ -1,6 +1,8 @@
 param([Parameter(Mandatory=$true)][string]$SpecPath)
 $ErrorActionPreference='Stop'
+[Console]::Error.WriteLine('PI_LOCAL_STAGE:boot')
 $spec=Get-Content -LiteralPath $SpecPath -Raw -Encoding UTF8 | ConvertFrom-Json
+[Console]::Error.WriteLine('PI_LOCAL_STAGE:spec-ready')
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -28,6 +30,7 @@ public static class PiNativeJob {
  public static string Quote(string value) {var s=new StringBuilder("\"");int slash=0;foreach(char c in value){if(c=='\\'){slash++;continue;}if(c=='"'){s.Append('\\',slash*2+1);s.Append(c);}else{s.Append('\\',slash);s.Append(c);}slash=0;}s.Append('\\',slash*2);return s.Append('"').ToString();}
 }
 '@
+[Console]::Error.WriteLine('PI_LOCAL_STAGE:interop-ready')
 function Write-Receipt($name,$value){$path=Join-Path $spec.control $name;$json=$value|ConvertTo-Json -Compress;[IO.File]::WriteAllText($path+'.tmp',$json,[Text.UTF8Encoding]::new($false));Move-Item -LiteralPath ($path+'.tmp') -Destination $path -Force}
 $job=[IntPtr]::Zero;$pi=[PiNativeJob+PROCESSINFO]::new();$handles=@();$envp=[IntPtr]::Zero
 try {
