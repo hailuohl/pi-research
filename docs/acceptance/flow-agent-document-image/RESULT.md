@@ -14,6 +14,7 @@ lit-review/evidence/paper/overview 已适配真实范围流程和证据边界。
 - 真实 Pi/Worker/Host 的 localhost 脚本化供应商收到两张不同的合成固定页，第二页复用准确范围授权；合法 native 重开通过，实际 HTTP 排队时撤解析批准零新外发、旧文件前缀保留。非实际视觉理解/新 PDF 解析。
 - 浏览器实际点固定结果“带入”，进入选定会话并看到“固定解析 · 视觉读取须另批”，截图及精简浏览器证据同目录。最初无模型的测试会话明确提示配置错误；配置本地脚本化模型后入口成功，没有使用外部凭据。
 - 最终隔离安装、构建、类型检查通过，557 个 dist 产物完全一致；关键路径加入三平台 CI，远端结果另行确认。
+- 提交 `1970628` 的[远端 CI](https://github.com/hailuohl/pi-research/actions/runs/37641711122) 中 Windows/Linux 通过，macOS 的新图片/范围检查也通过，但旧 HTTP/CLI 测试以符号链接临时目录初始化，被存储保护拒绝。局部规范化测试临时父目录为真实路径，不改变产品 noLinks 或权限断言；单文件 1/1 与 Sol/medium 独立复核通过，实际 macOS CI 再验。
 - 原有五个在途文件未修改或提交；已知 parity 基线旧目录文档缺口仍按第一批记录保留。
 
 原始机器日志保留 `.validation/agent-document-image/`、`.validation/document-visual-design/` 与原干净构建目录；本目录只保存必要证据，不提交运行数据库或原生对话。

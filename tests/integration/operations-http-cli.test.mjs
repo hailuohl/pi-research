@@ -1,7 +1,7 @@
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -11,7 +11,7 @@ import { USER } from '../../dist/packages/domain/types.js';
 import { ToolDispatcher } from '../../dist/packages/research-tools/dispatcher.js';
 
 test('HTTP and CLI operations share strict contracts, owner scope and idempotency', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'pi-operations-'));
+    const dir = mkdtempSync(join(realpathSync.native(tmpdir()), 'pi-operations-'));
     const server = createHttpServer({ dataDir: dir, repoRoot: process.cwd(), port: 0 });
     const port = await server.listen();
     const request = async (path, body, key = randomUUID()) => {
