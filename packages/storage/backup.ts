@@ -47,7 +47,7 @@ function managedTree(root:string,destination?:string,privateLocalJobs:ReadonlySe
  const sensitiveNarrative=(value:unknown,active=false):boolean=>typeof value==='string'?active&&secrets.some(secret=>value.includes(secret)):Array.isArray(value)?value.some(item=>sensitiveNarrative(item,active)):plain(value)?Object.entries(value).some(([key,item])=>sensitiveNarrative(item,active||['text','thinking','errorMessage','summary','arguments','error'].includes(key)||['message','content'].includes(key)&&typeof item==='string')):false;
  function walk(path:string) {
   const source=join(root,path),info=lstatSync(source);ensure(!info.isSymbolicLink(),'BACKUP_PATH_DENIED','管理树不能含链接',403);
-  if(path&&(EXCLUDED.has(path)||/^environment-variables\.json(?:\.[\w-]+\.tmp)?$/i.test(path)||/^jobs\/[^/]+\/control\/native-spec\.json$/.test(path))){excluded.push(path);return;}
+  if(path&&(EXCLUDED.has(path)||/^(?:model-connections|environment-variables)\.json(?:\.[\w-]+\.tmp)?$/i.test(path)||/^jobs\/[^/]+\/control\/native-spec\.json$/.test(path))){excluded.push(path);return;}
   const parts=path.split('/');
   const privateJob=parts[0]==='jobs'&&privateLocalJobs.has(parts[1]);
   if(privateJob&&parts.length>3&&!(parts.length===4&&parts[2]==='control'&&/^(?:native-(?:start|result)|terminal(?:-\d+)?)\.json$/.test(parts[3]))){excluded.push(redactEnvironment(root,path));return;}

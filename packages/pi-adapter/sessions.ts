@@ -29,11 +29,12 @@ export class SessionService {
     configure(actor: Actor, value: unknown) {
         userOnly(actor);
         const x = object(value);
-        ensure(Object.keys(x).every(k=>['provider','model','thinking'].includes(k)),'INVALID_INPUT','模型配置包含未知字段');
+        ensure(Object.keys(x).every(k=>['provider','model','thinking','expectedVersion'].includes(k)),'INVALID_INPUT','模型配置包含未知字段');
         const model: ModelConfig = { provider: text(x.provider, 'provider', 100), model: text(x.model, 'model', 160), thinking: oneOf(x.thinking ?? 'off', ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const, 'thinking') };
         return this.c.store.transaction(()=>{const old = this.c.store.maybe<{
             model: ModelConfig;
         }>('app-settings', 'global');
+        if(x.expectedVersion!==undefined)ensure((old?.version??0)===integer(x.expectedVersion,'expectedVersion',0),'VERSION_CONFLICT','默认模型已变化，请刷新后核对草稿');
         const models=[model,...this.models().filter(m=>m.provider!==model.provider||m.model!==model.model)];
         ensure(models.length<=20,'MODEL_LIMIT','最多保存20个模型');
         if (old)

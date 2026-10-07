@@ -1,8 +1,8 @@
 {
   "batch": "local-environment",
   "sourceBaseline": "f3f0dd6ee2b2bbe4857cae947490adf6cb48caca",
-  "sourcePatchSha256": "a24eaf9fe7b6b639c106be217409f2b926726c0f5e04366b54b6a62e5df16a8c",
-  "buildManifestSha256": "ecee125f16cf39c3eff231ab3c04e3b0964f7abf3f58109f47d0c08364aa86da",
+  "sourcePatchSha256": "f86b214463b10760d1793f3891d8e6a77b6b83a0bf721040db8666d1cf36c16f",
+  "buildManifestSha256": "2d6293787d148e112c472f7e0f9e4cc4a257467a1ad1f26e08030fed106d26c7",
   "node": "24.19.0",
   "platform": "win32",
   "checks": [
@@ -63,6 +63,19 @@
       "name": "parent-clean-build",
       "log": ".validation/flow-environment/clean-build-parent.log",
       "status": "passed"
+    },
+    {
+      "name": "completed-model-parent-integration",
+      "log": ".validation/flow-environment/model-integration.log",
+      "skip": 0,
+      "fail": 0,
+      "pass": 59
+    },
+    {
+      "name": "model-merged-clean-build",
+      "log": ".validation/flow-environment/clean-build-model-integration.log",
+      "files": 574,
+      "status": "passed"
     }
   ],
   "skipped": {
@@ -107,7 +120,7 @@
   ],
   "review": {
     "sourceHashes": 41,
-    "status": "passed-after-two-required-repairs",
+    "status": "passed-after-required-repairs-and-model-intersection-review",
     "nonBlocking": [
       "Short values may rewrite the host output redaction marker on the raw-cut branch."
     ],
@@ -121,10 +134,8 @@
     "All configured values are treated as sensitive narrative strings."
   ],
   "unrelatedWorkExcluded": [
-    "model-connections and settings UI",
-    "skill workflow revisions",
     "global styles",
     "private research specifications"
   ],
-  "deliveryParent": "4dbdafddf39eef09a1b14cbc0e5b72fac7050b3a"
+  "deliveryParent": "21a82b520727684c37370deb7d6581078440040c"
 }

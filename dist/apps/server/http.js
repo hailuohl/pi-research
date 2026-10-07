@@ -1,5 +1,6 @@
 import { operationRoute } from './operation-routes.js';
 import { writeEnvironment } from './environment-routes.js';
+import { configureModelConnection } from '../../packages/pi-adapter/model-connections.js';
 import http from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
@@ -80,6 +81,10 @@ export function createHttpServer(options) {
                 }
                 if (route === '/settings/environment')
                     return json(writeEnvironment(app, url, req.method, body, key));
+                if (route === '/settings/model-connections') {
+                    ensure(req.method === 'POST' && url.search === '', 'METHOD_NOT_ALLOWED', '模型连接保存仅接受无查询参数的 POST', 405);
+                    return json(configureModelConnection(app.context, USER, body, key));
+                }
                 const controller = new AbortController();
                 if (route === '/publication-templates') {
                     ensure(req.method === 'POST' && url.search === '', 'METHOD_NOT_ALLOWED', '模板导入只接受无查询参数的 POST', 405);

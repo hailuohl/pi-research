@@ -12,8 +12,24 @@ import {createDataBackup,restoreDataBackup} from '../../dist/packages/storage/ba
 import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
 import {startTeam,spec} from '../support/collaboration.mjs';
 import {digest} from '../../dist/packages/storage/store.js';
+import {configureModelConnection} from '../../dist/packages/pi-adapter/model-connections.js';
 const token='fixture secret with spaces-abcdefghijk';
 const save=(s,value=token,expectedVersion=0)=>configureEnvironment(s.app.context,USER,{action:'set',expectedVersion,name:'RESEARCH_API_KEY',value},'set-'+expectedVersion);
+
+test('completed model connections take priority over saved PI_API_KEY while other local variables and fallback remain usable',async()=>{
+ const s=setup(),seen=[],prior=process.env.PI_API_KEY,host=new AgentHost(s.app,{inspect:()=>({ready:true,code:'FIXTURE'}),fork:(_file,_argv,options)=>{seen.push(options.env);throw new Error('fixture fork capture');}});
+ try{
+  process.env.PI_API_KEY='fixture-host-fallback';
+  configureEnvironment(s.app.context,USER,{action:'set',expectedVersion:0,name:'PI_API_KEY',value:'fixture-environment-key'},'environment-key');
+  configureEnvironment(s.app.context,USER,{action:'set',expectedVersion:1,name:'RESEARCH_API_KEY',value:token},'research-key');
+  configureModelConnection(s.app.context,USER,{expectedVersion:0,provider:'environment-fixture',name:'Fixture',baseUrl:'https://fixture.invalid',api:'openai-completions',apiKey:'fixture-connection-key'},'connection-key');
+  const start=provider=>{s.app.sessions.configure(USER,{provider,model:'fixture-model',thinking:'off'});const session=s.app.sessions.create(USER,s.project.id,{title:'credential precedence'});s.app.sessions.send(USER,session.id,{content:'fixture request'});host.tick();};
+  start('environment-fixture');assert.equal(seen.at(-1).PI_API_KEY,'fixture-connection-key');assert.equal(seen.at(-1).RESEARCH_API_KEY,token);
+  start('environment-other');assert.equal(seen.at(-1).PI_API_KEY,'fixture-environment-key');
+  configureEnvironment(s.app.context,USER,{action:'delete',expectedVersion:2,name:'PI_API_KEY'},'delete-environment-key');
+  start('environment-other');assert.equal(seen.at(-1).PI_API_KEY,'fixture-host-fallback');assert.equal(seen.at(-1).RESEARCH_API_KEY,token);
+ }finally{if(prior===undefined)delete process.env.PI_API_KEY;else process.env.PI_API_KEY=prior;await host.stop();s.close();}
+});
 
 test('research artifact_create masks active and deleted credentials before CAS while user imports retain their bytes',async()=>{
  const s=setup();try{

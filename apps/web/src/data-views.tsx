@@ -1,10 +1,8 @@
 import * as React from 'react';
-import {TemplateLibraryView} from './template-library-view.js';
-import {GitHubSettings} from './github-controls.js';
 import { api, artifactText, downloadArtifact } from './api.js';
-import type { ProjectState, Bootstrap, ModelConfig, Row, Session, DocumentLocation, DocumentEvidenceLink } from './models.js';
+import type { ProjectState, DocumentLocation, DocumentEvidenceLink } from './models.js';
 import { short, date, label } from './models.js';
-import {Icon, Badge, Empty, SectionTitle, nativeSelectButton} from './ui.js';
+import {Icon, Badge, Empty, SectionTitle} from './ui.js';
 import type { Perform } from './workbench.js';
 export class WorkspaceView extends React.Component<{
     data: ProjectState;
@@ -93,27 +91,4 @@ export class EvidenceView extends React.Component<{
 }
 export {ReportsView} from './report-view.js';
 export {LiteratureView} from './literature-view.js';
-const settingsModelKey=(model:ModelConfig)=>JSON.stringify([model.provider,model.model]);
-export class SettingsView extends React.Component<{
-    boot: Bootstrap;
-    projectId?: string;
-    session?: Row<Session>;
-    perform: Perform;
-}, {
-    provider: string;
-    model: string;
-    thinking: string;
-    savedChoice: string;
-}> {
-    state = { provider: this.props.boot.model.provider, model: this.props.boot.model.model, thinking: this.props.boot.model.thinking, savedChoice: settingsModelKey(this.props.boot.model) };
-    render() {
-        const { boot, perform } = this.props;
-        const models=[...new Map([...(boot.models??[]),boot.model].filter(model=>model.provider&&model.model).map(model=>[settingsModelKey(model),model] as const)).values()];
-        return <div className="page-scroll settings-page"><SectionTitle title="设置与能力状态" sub="配置不代表验收通过。所有未验证或未实现的能力都会明确保留。"/><section className="surface settings-model"><div className="surface-heading"><h2>Pi 模型配置</h2><span className={'connection-state ' + (boot.runtime.ready ? 'ready' : '')}><span className={'status-dot ' + (boot.runtime.ready ? '' : 'amber')}/>{boot.runtime.ready ? '已配置 · 待真实验证' : '尚未就绪'}</span></div><p className="muted">{boot.runtime.message}</p><p className="small muted">此处保存默认模型，供新会话使用；当前会话可在 Chat 输入框工具栏单独选择。</p><form onSubmit={(e: any) => {
-                e.preventDefault();
-                const model={ provider: this.state.provider, model: this.state.model, thinking: this.state.thinking as ModelConfig['thinking'] };
-                perform(async () => { await api('/settings/model', model); this.setState({ savedChoice: settingsModelKey(model) }); }, '已保存默认模型；保存不代表供应商连接成功');
-            }}><label className="settings-saved-model">已有模型<select aria-label="选择已有模型" value={this.state.savedChoice} onChange={(e: any) => { const model=models.find(item=>settingsModelKey(item)===e.target.value); if(model)this.setState({provider:model.provider,model:model.model,thinking:model.thinking,savedChoice:e.target.value}); }}>{nativeSelectButton}<option value="">手动配置</option>{models.map(model=><option key={settingsModelKey(model)} value={settingsModelKey(model)}>{model.provider} / {model.model} · {model.thinking}</option>)}</select></label><div className="form-columns"><label>供应商标识<input required aria-label="供应商标识" placeholder="Pi 中的 provider ID" value={this.state.provider} onChange={(e: any) => this.setState({ provider: e.target.value, savedChoice: '' })}/></label><label>模型 ID<input required aria-label="模型 ID" placeholder="实际可用的模型标识" value={this.state.model} onChange={(e: any) => this.setState({ model: e.target.value, savedChoice: '' })}/></label><label>思考配置<select aria-label="思考配置" value={this.state.thinking} onChange={(e: any) => this.setState({ thinking: e.target.value, savedChoice: '' })}>{nativeSelectButton}{['off', 'minimal', 'low', 'medium', 'high', 'xhigh'].map(v => <option value={v} key={v}>{v}</option>)}</select></label></div><button className="primary" type="submit">保存为默认模型（用于新会话）</button></form><div className="setup-notes"><h3>本地接入</h3><p>1. 使用 Node.js ≥22.19.0（建议 24）。当前内核：<code>{boot.runtime.node}</code>。</p><p>2. 在项目目录执行 <code>npm run setup:pi</code>，安装固定 Pi {boot.runtime.expectedVersion}。</p><p>3. 将所选供应商密钥写入本地 <code>.env</code> 的 <code>PI_API_KEY</code>，再重启服务。不要把密钥发到聊天、放进研究仓库或报告。</p><p>4. 自定义模型可由用户配置数据目录下的 <code>models.json</code>。真实调用仍需验证接口兼容性。</p></div></section>
- <GitHubSettings projectId={this.props.projectId}/><TemplateLibraryView/><section className="surface"><div className="surface-heading"><h2>能力与验收矩阵</h2><span className="small muted">v0.2 · 未完成 M0—M9 全量复刻</span></div><div className="table-wrap"><table className="capability-table"><thead><tr><th>能力</th><th>状态</th><th>验证与范围</th></tr></thead><tbody>{boot.capabilities.map(c => <tr key={c.id}><td><strong>{c.name}</strong><small>{c.stage}</small></td><td><Badge value={c.status}/></td><td><span>{c.verification}</span><small>{c.notes}</small></td></tr>)}</tbody></table></div></section><div className="notice"><Icon name="settings"/><p>当前部署是回环地址、单用户本地工作台。未实现多租户认证、远程托管服务与整机级 Agent 沙箱；请勿直接暴露到公网。</p></div></div>;
-    }
-}
+export {SettingsView} from './settings-view.js';

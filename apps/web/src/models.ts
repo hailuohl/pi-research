@@ -106,10 +106,24 @@ export interface ProjectState {
     decisions: Row<CampaignDecision>[];
     wakeups: Row<Wakeup>[];
 }
+export interface ModelConnection {
+    provider: string;
+    name: string;
+    baseUrl: string;
+    api: string;
+    hasApiKey: boolean;
+}
+export interface ModelConnections {
+    version: number;
+    connections: ModelConnection[];
+    supportedApis: string[];
+    liveVerified: false;
+}
 export interface Bootstrap {
     version: string;
     projects: Row<Project>[];
     model: ModelConfig;
+    modelVersion?: number;
     models?: ModelConfig[];
     runtime: {
         ready: boolean;

@@ -20,7 +20,7 @@ import { verifySnapshot, safePath } from '../workspace/files.js';
 import { changeProposalPayload } from '../workspace/change-proposals.js';
 const clean = (value) => JSON.parse(JSON.stringify(value));
 const escaped = (value) => value.replace(/([\\`*_{}\[\]()<>#!|])/g, '\\$1').replace(/\r?\n/g, ' ');
-export const excluded = (path) => path.split(/[\\/]/).some(p => /^(\.git|\.git-credentials|\.ssh|\.aws|\.kube|\.docker|\.pi|\.pi-research|\.pi-runtime|\.npmrc|\.pypirc|\.env(?:\..*)?|access\.token|auth\.json|environment-variables\.json(?:\.[\w-]+\.tmp)?|id_rsa|id_ed25519|credentials(?:\..*)?|diagnostic\.log|supervisor\.log)$/i.test(p));
+export const excluded = (path) => path.split(/[\\/]/).some(p => /^(\.git|\.git-credentials|\.ssh|\.aws|\.kube|\.docker|\.pi|\.pi-research|\.pi-runtime|\.npmrc|\.pypirc|\.env(?:\..*)?|access\.token|auth\.json|(?:model-connections|environment-variables)\.json(?:\.[\w-]+\.tmp)?|id_rsa|id_ed25519|credentials(?:\..*)?|diagnostic\.log|supervisor\.log)$/i.test(p));
 const claimContent = (c) => clean({ statement: c.statement, evidenceIds: c.evidenceIds, limitations: c.limitations, taskId: c.taskId, sourceAttemptId: c.sourceAttemptId, sourceResultDigest: c.sourceResultDigest, sourceAcceptanceId: c.sourceAcceptanceId, sourceAcceptanceIds: c.sourceAcceptanceIds });
 const payload = (r) => clean({ artifactId: r.artifactId, artifactDigest: r.artifactDigest, title: r.title, formatVersion: r.formatVersion, runIds: r.runIds, claimIds: r.claimIds, evidenceIds: r.evidenceIds, references: r.references, runs: r.runs, bindings: r.bindings });
 function plainPng(bytes) {

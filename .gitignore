@@ -9,4 +9,5 @@ test-results/
 __pycache__/
 *.pyc
 .validation/
+model-connections.json*
 environment-variables.json*
