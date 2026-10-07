@@ -7,6 +7,8 @@ const root=resolve('.'),file=join(root,'skills/piresearch/manifest.json'),m=JSON
 const sha=b=>createHash('sha256').update(b).digest('hex'),json=v=>JSON.stringify(v,null,2)+'\n';
 function safe(p){const path=resolve(root,p),rel=relative(root,path);if(rel==='..'||rel.startsWith('../')||rel.startsWith('..\\')||isAbsolute(rel))throw Error('path escapes release');let base=root;for(const part of rel.split(/[\\/]/)){base=join(base,part);if(existsSync(base)&&lstatSync(base).isSymbolicLink())throw Error('symlink skill refused');}return path;}
 function bytes(p){const path=safe(p),stat=lstatSync(path);if(!stat.isFile()||stat.size>128*1024)throw Error('invalid release file');return readFileSync(path);}
+// Current text is checked out with eol=lf; archived blobs preserve their original bytes.
+function sourceBytes(p){const value=bytes(p);if(!p.toLowerCase().endsWith('.png')&&value.includes(Buffer.from('\r\n')))throw Error('skill source must use LF before publishing: '+p);return value;}
 function files(release){return release.skills.flatMap(s=>[{path:s.path,digest:s.digest},...s.resources.map(r=>({path:join(dirname(s.path),r.path),digest:r.digest}))]);}
 const indexPath=safe('skills/releases/index.json'),index=JSON.parse(readFileSync(indexPath,'utf8'));
 const releases=index.map(entry=>{
@@ -23,8 +25,8 @@ const names=new Set();
 for(const s of m.skills){
  if(!/^pi-research-[a-z0-9-]+$/.test(s.id)||names.has(s.id))throw Error('invalid or duplicate skill ID');names.add(s.id);
  if(s.path!==`skills/piresearch/${s.id}/SKILL.md`)throw Error('invalid skill entry path');
- s.digest=sha(bytes(s.path));const paths=new Set();
- for(const r of s.resources){const parts=r.path.split('/');if(!parts.length||parts.some(p=>!p||p==='.'||p==='..'||/[\\:\x00-\x1f]/.test(p)||['.pi','.git','.codex','hooks','extensions'].includes(p.toLowerCase())||/^agents(?:\.|$)/i.test(p))||paths.has(r.path.toLowerCase()))throw Error('unsafe resource path');paths.add(r.path.toLowerCase());r.digest=sha(bytes(join(dirname(s.path),r.path)));}
+ s.digest=sha(sourceBytes(s.path));const paths=new Set();
+ for(const r of s.resources){const parts=r.path.split('/');if(!parts.length||parts.some(p=>!p||p==='.'||p==='..'||/[\\:\x00-\x1f]/.test(p)||['.pi','.git','.codex','hooks','extensions'].includes(p.toLowerCase())||/^agents(?:\.|$)/i.test(p))||paths.has(r.path.toLowerCase()))throw Error('unsafe resource path');paths.add(r.path.toLowerCase());r.digest=sha(sourceBytes(join(dirname(s.path),r.path)));}
 }
 m.bundleId=sha(JSON.stringify(m.skills));
 const release={...m,manifestDigest:sha(JSON.stringify(m.skills))},dir=safe(join('skills/releases',m.bundleId));

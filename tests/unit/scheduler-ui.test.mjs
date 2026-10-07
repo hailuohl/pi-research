@@ -19,7 +19,7 @@ test('installed React scheduler explains shared budgets, alias identity, unknown
  assert.match(content,/2 \/ 4 个；可用 2/);assert.match(content,/未设预算；已预留 2 核/);
  assert.match(content,/已包含在上述作业占用中，不重复扣减/);assert.match(content,/default、desktop-linux/);
  assert.equal(computeReasonLabels.manual_recovery_required,'旧宿主作业需要人工核对，保留占用');assert.match(content,/共享上限\s+1\s+个实际 HTTP 请求/);assert.match(content,/排队\s+1/);assert.doesNotMatch(content,/HTTP 并发未测量/);assert.match(content,/等待共享 Worker 容量/);assert.match(content,/待核对原作业并恢复监管/);
- assert.equal(Object.keys(computeReasonLabels).length,13);
+ assert.equal(Object.keys(computeReasonLabels).length,14);
 });
 
 test('server available capacity is displayed without local recalculation',()=>{const v=view();v.props.data.compute.available={...available,jobs:0};assert.match(flatten(v.render()),/2 \/ 4 个；可用 0/);});
@@ -67,6 +67,7 @@ test('target probe sends only explicit context, refreshes after success and safe
  globalThis.fetch=async(url,options)=>{requests.push({url,body:JSON.parse(options.body)});return fail?{ok:false,status:409,json:async()=>({error:{code:'COMPUTE_TARGET_PROBE_REQUIRED',message:'<script>context needs checking</script>'}})}:{ok:true,json:async()=>({context:'desktop-linux',targetId:'engine-1',backend:'docker',observedAt:'2026-09-28T00:00:00Z'})};};
  const element=nodes(view().render()).find(n=>n.type?.name==='TargetProbe'),probe=new element.type({...element.props,onConfirmed:async()=>{refreshes++;}});
  synchronousState(probe);
+ assert.equal(probe.state.context,'');await probe.probe();assert.equal(requests.length,0);probe.state.context='desktop-linux';
  await probe.probe();assert.equal(refreshes,1);assert.ok(requests[0].url.endsWith('/compute_target_probe'));
  assert.deepEqual(requests[0].body,{projectId:'project',input:{context:'desktop-linux'}});assert.equal(probe.state.result.targetId,'engine-1');
  fail=true;await probe.probe();assert.equal(refreshes,1);assert.equal(probe.state.result,null);assert.equal(probe.state.context,'desktop-linux');

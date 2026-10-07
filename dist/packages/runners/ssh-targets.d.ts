@@ -9,6 +9,7 @@ export interface SshTarget {
     engineId: string;
     protocolDigest: string;
     targetId: string;
+    gpuProtocol?: boolean;
 }
 export interface PrivateSshTarget {
     id: string;
@@ -21,6 +22,7 @@ export interface PrivateSshTarget {
     remoteRoot: string;
     identityDigest: string;
     hostKeyDigest: string;
+    gpuProtocol?: boolean;
     verified?: SshTarget;
 }
 export declare class SshTargetService {

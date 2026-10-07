@@ -173,6 +173,14 @@ class ChatWorkflows extends React.Component {
         data.experiments.find((e) => e.id === intent.experimentId)?.title ?? short(intent.experimentId),
         /* @__PURE__ */ jsx(Badge, { value: run?.state ?? (approved ? "approved" : approval?.status ?? intent.status) })
       ] }),
+      intent.manifest.contract?.runner === "local" ? /* @__PURE__ */ jsxs("p", { className: "small", children: [
+        "\u672C\u5730\u6267\u884C\uFF1A\u4F7F\u7528\u5F53\u524D\u7528\u6237\u6743\u9650\uFF0C\u6587\u4EF6\u548C\u7F51\u7EDC\u4E0D\u9694\u79BB\u3002\u8FD0\u884C\u73AF\u5883 ",
+        intent.manifest.contract.localRuntimeId
+      ] }) : null,
+      intent.manifest.contract?.gpu ? /* @__PURE__ */ jsxs("p", { className: "small code-wrap", children: [
+        "NVIDIA \u8BBE\u5907\uFF1A",
+        intent.manifest.contract.gpu.deviceIds.join("\u3001")
+      ] }) : null,
       intent.manifest.researchBrief ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
         "\u7814\u7A76\u4F9D\u636E\uFF1A\u7B2C ",
         intent.manifest.researchBrief.revision,

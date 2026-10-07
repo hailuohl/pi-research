@@ -41,6 +41,7 @@ export async function superviseSshRun(initial:DockerRun,c:AppContext,callbacks:D
     try {
         await callbacks.verifyTarget?.();
         if(!possible){
+            targets.assertFrozen(target,true);
             const r=read();ensure(!r.cancelRequested,'RUN_CANCELLED','运行已取消');callbacks.assertGrant(r);
             verifySnapshot(c.store.paths.physical(r.manifest.snapshotPath),r.manifest.sourceFiles);
             const files=r.manifest.sourceFiles.map(f=>readStableFile(c.store.paths.physical(r.manifest.snapshotPath),f.path,f.size).toString('base64'));

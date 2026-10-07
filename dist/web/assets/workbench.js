@@ -384,7 +384,7 @@ class Inspector extends React.Component {
           /* @__PURE__ */ jsx("dt", { children: "\u56FA\u5B9A\u5165\u53E3" }),
           /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { children: e.contract.command.join(" ") }) }),
           /* @__PURE__ */ jsx("dt", { children: "\u8BA1\u7B97\u65B9\u5F0F" }),
-          /* @__PURE__ */ jsx("dd", { children: e.contract.runner === "trusted-example" ? "\u53D7\u4FE1\u672C\u5730\u6570\u503C\u793A\u4F8B" : "Docker \xB7 \u56FA\u5B9A\u955C\u50CF\u9694\u79BB\u8FD0\u884C" }),
+          /* @__PURE__ */ jsx("dd", { children: e.contract.runner === "trusted-example" ? "\u53D7\u4FE1\u672C\u5730\u6570\u503C\u793A\u4F8B" : e.contract.runner === "local" ? "\u672C\u5730 \xB7 \u5F53\u524D\u7528\u6237\u6743\u9650\uFF08\u4E0D\u9694\u79BB\uFF09" : e.contract.runner === "ssh" ? "SSH \xB7 \u56FA\u5B9A\u955C\u50CF\u9694\u79BB\u8FD0\u884C" : "Docker \xB7 \u56FA\u5B9A\u955C\u50CF\u9694\u79BB\u8FD0\u884C" }),
           /* @__PURE__ */ jsx("dt", { children: "\u6570\u636E\u7248\u672C" }),
           /* @__PURE__ */ jsx("dd", { children: e.contract.datasetVersion })
         ] }),

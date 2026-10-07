@@ -218,8 +218,8 @@ class RunGrants extends React.Component {
             /* @__PURE__ */ jsxs("dl", { className: "details", children: [
               /* @__PURE__ */ jsx("dt", { children: "\u56FA\u5B9A argv" }),
               /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { children: JSON.stringify(item.contract.command) }) }),
-              /* @__PURE__ */ jsx("dt", { children: "\u955C\u50CF" }),
-              /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { className: "digest code-wrap", style: { display: "block" }, children: item.contract.image ?? "\u53D7\u4FE1\u672C\u5730\u6570\u503C\u793A\u4F8B" }) }),
+              /* @__PURE__ */ jsx("dt", { children: "\u6267\u884C\u73AF\u5883" }),
+              /* @__PURE__ */ jsx("dd", { children: /* @__PURE__ */ jsx("code", { className: "digest code-wrap", style: { display: "block" }, children: item.contract.runner === "local" ? `\u672C\u5730 ${item.contract.localRuntimeId} \xB7 \u5F53\u524D\u7528\u6237\u6743\u9650\uFF0C\u6587\u4EF6\u4E0E\u7F51\u7EDC\u4E0D\u9694\u79BB` : item.contract.image ?? "\u53D7\u4FE1\u672C\u5730\u6570\u503C\u793A\u4F8B" }) }),
               /* @__PURE__ */ jsx("dt", { children: "Docker context" }),
               /* @__PURE__ */ jsx("dd", { children: item.contract.dockerContext ?? "\u4E0D\u9002\u7528" }),
               /* @__PURE__ */ jsx("dt", { children: "\u8D44\u6E90" }),
@@ -229,7 +229,11 @@ class RunGrants extends React.Component {
                 item.contract.memoryMb,
                 " MiB \xB7 ",
                 item.contract.timeoutSeconds,
-                " \u79D2"
+                " \u79D2",
+                item.contract.gpu ? /* @__PURE__ */ jsxs("p", { className: "code-wrap", children: [
+                  "NVIDIA\uFF1A",
+                  item.contract.gpu.deviceIds.join("\u3001")
+                ] }) : null
               ] }),
               /* @__PURE__ */ jsx("dt", { children: "\u6570\u636E / \u534F\u8BAE" }),
               /* @__PURE__ */ jsxs("dd", { children: [

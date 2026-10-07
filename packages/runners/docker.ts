@@ -2,7 +2,7 @@ import {spawn} from 'node:child_process';
 import {chmodSync, mkdirSync, lstatSync, readdirSync} from 'node:fs';
 import {join} from 'node:path';
 import type {Manifest, ResearchContract} from '../domain/types.js';
-import {createArgs, physicalDockerJob, docker, dockerEnv, inspect, preflight, retireUncertainStart, stageInputs, type Container, type DockerJob} from '../execution/docker.js';
+import {assertContainerStartPolicy,createArgs, physicalDockerJob, docker, dockerEnv, inspect, preflight, retireUncertainStart, stageInputs, type Container, type DockerJob} from '../execution/docker.js';
 import {safePath} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
 import type {DataPaths} from '../storage/data-paths.js';
@@ -14,7 +14,7 @@ export function formalDockerJob(run: DockerRun): DockerJob {
     if (c.runner !== 'docker' || !c.image) throw new Error('Formal Docker adapter requires a pinned Docker contract');
     return {id: run.id, manifestDigest: run.manifestDigest, containerName: run.execution.containerName, containerId: run.execution.containerId, startRequested: run.execution.startRequested, outputDir: run.outputDir, controlDir: run.execution.controlDir,
         manifest: {inputSnapshot: {path: run.manifest.snapshotPath, digest: run.manifest.snapshotDigest, files: run.manifest.sourceFiles}, dataArtifacts: (run.manifest as Manifest & {dataArtifacts?: DockerJob['manifest']['dataArtifacts']}).dataArtifacts ?? [], command: c.command, environmentImageDigest: c.image, dockerContext: run.execution.dockerContext,
-            resources: {cpus: c.cpus, memoryMb: c.memoryMb, pids: c.pids ?? 512, workMb: c.workMb ?? 1024, logBytes: c.logBytes ?? 16 * 1024 * 1024}}};
+            resources: {...(c.gpu?{gpu:c.gpu}:{}),cpus: c.cpus, memoryMb: c.memoryMb, pids: c.pids ?? 512, workMb: c.workMb ?? 1024, logBytes: c.logBytes ?? 16 * 1024 * 1024}}};
 }
 export class DockerAdapter implements RunnerAdapter {
     readonly capabilities: RunnerCapabilities = {backend: 'docker', isolated: true, recoverable: true};
@@ -64,6 +64,7 @@ export class DockerAdapter implements RunnerAdapter {
         if (!this.job.startRequested) throw new Error('Start intent must be persisted before Docker start');
         const container = await this.inspect();
         if (!container || container.State.Status !== 'created') throw new Error('Formal run container is not in the one-time start state');
+        assertContainerStartPolicy(this.job,container);
         return this.capture(['start', '--attach'], onLog);
     }
     async readLogs(onLog: RunnerLogSink): Promise<RunnerProcess> {

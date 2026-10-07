@@ -1,3 +1,5 @@
+import { LocalRuntimeService } from '../runners/local-runtime.js';
+import { nativeGpuInventory, assertGpuDevices } from '../runners/gpu.js';
 import { SshTargetService } from '../runners/ssh-targets.js';
 import { userOnly, scope } from '../policy/permissions.js';
 import { object, integer, text } from '../contracts/validation.js';
@@ -6,6 +8,12 @@ import { docker, probeDockerTarget, JOB_LABEL, MANIFEST_LABEL } from '../executi
 const TERMINAL = ['succeeded', 'failed', 'cancelled', 'timed_out'];
 const DEFAULTS = { maxRuns: 1, maxDevelopment: 1, maxJobs: 2, cpus: null, memoryMb: null, maxQueued: null };
 const sourceKind = (kind) => kind === 'publication' ? 'publication-build-job' : kind === 'document' ? 'document-parse-job' : kind === 'development' ? 'sandbox-job' : 'run';
+const LEGACY_SSH_QUEUED_SQL = "q.backend='ssh' AND EXISTS(SELECT 1 FROM records legacy WHERE legacy.kind='run' AND legacy.id=q.id AND COALESCE(json_extract(legacy.data,'$.manifest.sshTarget.gpuProtocol'),0)<>1)";
+// ponytail: CPU Docker and new GPU jobs do not overlap during upgrades; add per-job isolation proof only if concurrent CPU/GPU scheduling is needed.
+const GPU_BUSY_SQL = `q.kind='run' AND EXISTS(SELECT 1 FROM records candidate WHERE candidate.kind='run' AND candidate.id=q.id AND COALESCE(json_array_length(candidate.data,'$.manifest.contract.gpu.deviceIds'),0)>0 AND (
+EXISTS(SELECT 1 FROM json_each(candidate.data,'$.manifest.contract.gpu.deviceIds') d JOIN compute_gpu_claims g ON g.uuid=d.value WHERE g.kind<>q.kind OR g.id<>q.id)
+OR EXISTS(SELECT 1 FROM compute_queue blocker LEFT JOIN records b ON b.id=blocker.id AND b.kind=CASE blocker.kind WHEN 'run' THEN 'run' WHEN 'development' THEN 'sandbox-job' WHEN 'document' THEN 'document-parse-job' ELSE 'publication-build-job' END
+WHERE blocker.phase NOT IN ('succeeded','failed','cancelled','timed_out') AND ((blocker.backend='docker' AND COALESCE(json_array_length(b.data,'$.manifest.contract.gpu.deviceIds'),0)=0) OR (blocker.backend='ssh' AND COALESCE(json_extract(b.data,'$.manifest.sshTarget.gpuProtocol'),0)<>1)))))`;
 /** One SQLite-backed budget for formal Runs and development jobs; leases never release resources. */
 export class ComputeQueue {
     c;
@@ -39,7 +47,7 @@ export class ComputeQueue {
         return { jobs: Number(r.jobs), runs: Number(r.runs), development: Number(r.development), documents: Number(r.documents), publications: Number(r.publications), cpus: Number(r.cpu) / 1000, memoryMb: Number(r.memory), unknown: Number(r.unknown) };
     }
     targetReady(r, fresh = false) {
-        if (r.backend === 'trusted-example')
+        if (r.backend === 'trusted-example' || r.backend === 'local')
             return true;
         const ctx = this.context(r.context_name);
         return !!(r.bound && ctx?.status === 'ready' && ctx.engine_id === r.engine_id && ctx.endpoint === r.endpoint && (!fresh || ctx.next_probe_at > Date.now()));
@@ -48,9 +56,11 @@ export class ComputeQueue {
     available(limits, usage) { return { jobs: Math.max(0, limits.maxJobs - usage.jobs), runs: Math.max(0, limits.maxRuns - usage.runs), development: Math.max(0, limits.maxDevelopment - usage.development), documents: Math.max(0, 1 - usage.documents), publications: Math.max(0, 1 - usage.publications), cpus: limits.cpus === null ? null : Math.max(0, Math.round(limits.cpus * 1000) - Math.round(usage.cpus * 1000)) / 1000, memoryMb: limits.memoryMb === null ? null : Math.max(0, limits.memoryMb - usage.memoryMb) }; }
     effectiveAvailable(host, target) { const min = (a, b) => a === null ? b : b === null ? a : Math.min(a, b); return { jobs: Math.min(host.jobs, target.jobs), runs: Math.min(host.runs, target.runs), development: Math.min(host.development, target.development), documents: Math.min(host.documents, target.documents), publications: Math.min(host.publications, target.publications), cpus: min(host.cpus, target.cpus), memoryMb: min(host.memoryMb, target.memoryMb) }; }
     tooLarge(r) { const empty = { jobs: 0, runs: 0, development: 0, documents: 0, publications: 0, cpus: 0, memoryMb: 0, unknown: 0 }; return !this.fits(r, this.config().limits, empty) || !this.fits(r, this.config(r.target_id).limits, empty); }
-    capacity(r) { if (!this.fits(r, this.config().limits, this.usage()))
+    capacity(r) { if (this.gpuBusy(r))
+        return 'gpu_busy'; if (!this.fits(r, this.config().limits, this.usage()))
         return 'host_capacity'; if (!this.fits(r, this.config(r.target_id).limits, this.usage(r.target_id)))
         return 'target_capacity'; }
+    gpuBusy(r) { return !!this.c.store.db.prepare(`SELECT 1 FROM compute_queue q WHERE q.kind=? AND q.id=? AND (${GPU_BUSY_SQL})`).get(r.kind, r.id); }
     bindCachedQueued() {
         this.c.store.db.prepare(`UPDATE compute_queue SET target_id=(SELECT target_id FROM compute_contexts WHERE context=context_name),engine_id=(SELECT engine_id FROM compute_contexts WHERE context=context_name),endpoint=(SELECT endpoint FROM compute_contexts WHERE context=context_name),bound=1 WHERE phase='queued' AND held=0 AND bound=0 AND EXISTS(SELECT 1 FROM compute_contexts WHERE context=context_name AND status='ready' AND next_probe_at>?)`).run(Date.now());
     }
@@ -60,7 +70,8 @@ export class ComputeQueue {
         const acceptable = (key, column, factor = 1) => `((${effective(key)}) IS NULL OR ${column}<=(${effective(key)})*${factor}) AND (json_extract(h.data,'$.${key}') IS NULL OR ${column}<=json_extract(h.data,'$.${key}')*${factor})`;
         return this.c.store.db.prepare(`WITH eligible AS (
 SELECT q.* FROM compute_queue q JOIN compute_limits h ON h.target_id='host' LEFT JOIN compute_limits t ON t.target_id=q.target_id
-WHERE q.phase='queued' AND q.bound=1 AND q.next_attempt_at<=? AND (q.backend='trusted-example' OR EXISTS(SELECT 1 FROM compute_contexts c WHERE c.context=q.context_name AND c.status='ready' AND c.engine_id=q.engine_id AND c.endpoint=q.endpoint AND c.next_probe_at>?))
+WHERE q.phase='queued' AND q.bound=1 AND q.next_attempt_at<=? AND (q.backend IN ('trusted-example','local') OR EXISTS(SELECT 1 FROM compute_contexts c WHERE c.context=q.context_name AND c.status='ready' AND c.engine_id=q.engine_id AND c.endpoint=q.endpoint AND c.next_probe_at>?))
+AND NOT (${GPU_BUSY_SQL}) AND NOT (${LEGACY_SSH_QUEUED_SQL})
 AND ${acceptable('cpus', 'q.cpu_millis', 1000)} AND ${acceptable('memoryMb', 'q.memory_mb')}
 AND (${effective('maxJobs')})>=1 AND json_extract(h.data,'$.maxJobs')>=1
 AND (q.kind='run' AND (${effective('maxRuns')})>=1 AND json_extract(h.data,'$.maxRuns')>=1 OR q.kind='development' AND (${effective('maxDevelopment')})>=1 AND json_extract(h.data,'$.maxDevelopment')>=1 OR q.kind IN ('document','publication'))),
@@ -93,7 +104,9 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
             this.bindCachedQueued();
             const q = this.row(kind, id);
             if (q.held) {
-                if (q.backend === 'trusted-example' || q.lease_until > Date.now() || q.next_attempt_at > Date.now() || !this.targetReady(q))
+                if (['trusted-example', 'local'].includes(q.backend) || q.lease_until > Date.now() || q.next_attempt_at > Date.now() || !this.targetReady(q))
+                    return null;
+                if (q.kind === 'run' && !this.c.store.get('run', id).execution?.startRequested && this.gpuBusy(q))
                     return null;
             }
             else {
@@ -110,11 +123,19 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
                     this.c.store.db.prepare('UPDATE compute_queue SET next_attempt_at=? WHERE kind=? AND id=?').run(q.next_attempt_at, kind, id);
                 return result ?? null;
             }
+            if (after.held && kind === 'run') {
+                const run = this.c.store.get('run', id);
+                for (const uuid of run.manifest.contract.gpu?.deviceIds ?? []) {
+                    this.c.store.db.prepare('INSERT OR IGNORE INTO compute_gpu_claims(uuid,kind,id) VALUES(?,?,?)').run(uuid, kind, id);
+                    const claim = this.c.store.db.prepare('SELECT kind,id FROM compute_gpu_claims WHERE uuid=?').get(uuid);
+                    ensure(claim.kind === kind && claim.id === id, 'GPU_BUSY', 'GPU 已被其他作业占用', 409);
+                }
+            }
             ensure(after.held === 1 || TERMINAL.includes(after.phase), 'COMPUTE_ADMISSION_NOT_CLAIMED', '领取回调必须原子更新业务执行状态');
             return result;
         });
     }
-    assertEnqueue(kind, _projectId, context) {
+    assertEnqueue(kind, _projectId, context, localTargetId) {
         const limit = this.config().limits.maxQueued;
         if (limit !== null)
             ensure(Number(this.c.store.db.prepare("SELECT count(*) n FROM compute_queue WHERE phase='queued'").get().n) < limit, 'COMPUTE_QUEUE_FULL', '计算等待队列已满');
@@ -123,7 +144,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
             const capped = this.c.store.db.prepare("SELECT 1 FROM compute_limits WHERE target_id NOT IN ('host','host-example') AND json_extract(data,'$.maxQueued') IS NOT NULL LIMIT 1").get();
             ensure(!capped || ctx?.status === 'ready' && ctx.next_probe_at > Date.now() && ctx.target_id, 'COMPUTE_TARGET_PROBE_REQUIRED', '存在目标队列配额；请先核对 Docker context 的当前引擎身份', 409);
         }
-        const target = name ? ctx?.target_id : 'host-example';
+        const target = localTargetId ?? (name ? ctx?.target_id : 'host-example');
         if (!target)
             return;
         const targetLimit = this.config(target).limits.maxQueued;
@@ -160,6 +181,20 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         const before = this.row(kind, id);
         if (before.backend === 'trusted-example')
             return;
+        if (before.backend === 'local') {
+            try {
+                const run = this.c.store.get('run', id);
+                new LocalRuntimeService(this.c).resolve(run.manifest.contract.localRuntimeId, run.manifest.localRuntime);
+                if (run.manifest.contract.gpu)
+                    assertGpuDevices(run.manifest.contract.gpu, await nativeGpuInventory());
+                this.c.store.db.prepare('UPDATE compute_queue SET last_error=NULL WHERE kind=? AND id=?').run(kind, id);
+            }
+            catch (error) {
+                this.c.store.db.prepare('UPDATE compute_queue SET last_error=?,next_attempt_at=? WHERE kind=? AND id=?').run(error.code ?? 'LOCAL_TARGET_UNAVAILABLE', Date.now() + 5000, kind, id);
+                throw error;
+            }
+            return;
+        }
         let identity;
         try {
             identity = await this.probe(before.context_name);
@@ -167,6 +202,10 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         catch {
             this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now() + 5000, before.context_name);
             throw new DomainError('COMPUTE_TARGET_UNAVAILABLE', '不能确认原计算目标身份；保持资源预留', 409);
+        }
+        if (kind === 'run') {
+            const frozen = this.c.store.get('run', id).manifest.gpuTarget;
+            ensure(!frozen || frozen.targetId === identity.targetId, 'COMPUTE_TARGET_CHANGED', 'GPU 目标与批准清单不同');
         }
         let owned = true;
         try {
@@ -237,11 +276,15 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         return this.c.store.transaction(() => { ensure(targetId === 'host' || targetId === 'host-example' || !!this.c.store.db.prepare('SELECT 1 FROM compute_contexts WHERE target_id=? UNION SELECT 1 FROM compute_queue WHERE target_id=? LIMIT 1').get(targetId, targetId), 'NOT_FOUND', '计算目标尚未识别', 404); const current = this.config(targetId); ensure(current.version === integer(x.expectedVersion, 'expectedVersion', 0), 'VERSION_CONFLICT', '配额已更新'); const old = this.c.store.db.prepare('SELECT data FROM compute_limits WHERE target_id=?').get(targetId), data = { ...(old ? JSON.parse(old.data) : {}), ...patch }; this.c.store.db.prepare('INSERT INTO compute_limits VALUES(?,?,?) ON CONFLICT(target_id) DO UPDATE SET version=excluded.version,data=excluded.data').run(targetId, current.version + 1, JSON.stringify(data)); return this.config(targetId); });
     }
     reason(r, heads, next) {
+        if (!r.held && this.c.store.db.prepare(`SELECT 1 FROM compute_queue q WHERE q.kind=? AND q.id=? AND (${LEGACY_SSH_QUEUED_SQL})`).get(r.kind, r.id))
+            return 'target_changed';
+        if (r.backend === 'local' && !r.held && r.last_error)
+            return 'target_unavailable';
         if (r.held && r.lease_until > Date.now())
             return 'worker_active';
         if (r.held && r.next_attempt_at > Date.now())
             return 'recovery_backoff';
-        if (r.backend !== 'trusted-example') {
+        if (r.backend !== 'trusted-example' && r.backend !== 'local') {
             if (!r.bound)
                 return r.held ? 'legacy_target_unknown' : 'target_unresolved';
             const context = this.context(r.context_name);
@@ -253,7 +296,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
                 return 'target_unresolved';
         }
         if (r.held)
-            return r.backend !== 'trusted-example' ? 'recovery_due' : 'manual_recovery_required';
+            return !['trusted-example', 'local'].includes(r.backend) ? 'recovery_due' : 'manual_recovery_required';
         if (this.tooLarge(r))
             return 'request_too_large';
         const capacity = this.capacity(r);
@@ -271,7 +314,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         const rows = this.c.store.db.prepare(`SELECT * FROM compute_queue WHERE phase NOT IN ('succeeded','failed','cancelled','timed_out') AND sequence>? ${pid ? 'AND project_id=?' : ''} ORDER BY sequence LIMIT ?`).all(...(pid ? [cursor, pid, limit + 1] : [cursor, limit + 1]));
         const targets = this.c.store.db.prepare("SELECT target_id FROM compute_contexts WHERE target_id IS NOT NULL UNION SELECT target_id FROM compute_queue WHERE held=1 AND target_id IS NOT NULL UNION SELECT target_id FROM compute_queue WHERE phase='queued' AND target_id IS NOT NULL UNION SELECT 'host-example' target_id ORDER BY target_id LIMIT 256").all(), heads = this.heads(), next = heads.find(r => !this.capacity(r));
         const configuration = this.config(), usage = this.usage(), available = this.available(configuration.limits, usage);
-        return { scope: 'shared-data-directory', configuration, usage, available, queued: Number(this.c.store.db.prepare("SELECT count(*) n FROM compute_queue WHERE phase='queued'").get().n), targets: targets.map(t => { const id = String(t.target_id), configuration = this.config(id), usage = this.usage(id); return { targetId: id, backend: id === 'host-example' ? 'trusted-example' : id.startsWith('ssh-') ? 'ssh' : 'docker', contexts: this.c.store.db.prepare('SELECT context FROM compute_contexts WHERE target_id=? ORDER BY context').all(id).map(c => String(c.context)), configuration, usage, available: this.effectiveAvailable(available, this.available(configuration.limits, usage)) }; }), items: rows.slice(0, limit).map(r => ({ kind: r.kind, id: r.id, projectId: r.project_id, sequence: r.sequence, state: r.phase, held: !!r.held, backend: r.backend, targetId: r.bound ? r.target_id : null, requested: { cpus: r.cpu_millis / 1000, memoryMb: r.memory_mb }, generation: r.generation, leaseUntil: r.lease_until, nextAttemptAt: r.next_attempt_at, reason: this.reason(r, heads, next) })), nextCursor: rows.length > limit ? rows[limit - 1].sequence : null };
+        return { scope: 'shared-data-directory', configuration, usage, available, queued: Number(this.c.store.db.prepare("SELECT count(*) n FROM compute_queue WHERE phase='queued'").get().n), targets: targets.map(t => { const id = String(t.target_id), configuration = this.config(id), usage = this.usage(id); return { targetId: id, backend: id.startsWith('local-') ? 'local' : id === 'host-example' ? 'trusted-example' : id.startsWith('ssh-') ? 'ssh' : 'docker', contexts: this.c.store.db.prepare('SELECT context FROM compute_contexts WHERE target_id=? ORDER BY context').all(id).map(c => String(c.context)), configuration, usage, available: this.effectiveAvailable(available, this.available(configuration.limits, usage)) }; }), items: rows.slice(0, limit).map(r => ({ kind: r.kind, id: r.id, projectId: r.project_id, sequence: r.sequence, state: r.phase, held: !!r.held, backend: r.backend, targetId: r.bound ? r.target_id : null, requested: { cpus: r.cpu_millis / 1000, memoryMb: r.memory_mb, ...(r.kind === 'run' && this.c.store.get('run', r.id).manifest.contract.gpu ? { gpu: this.c.store.get('run', r.id).manifest.contract.gpu } : {}) }, generation: r.generation, leaseUntil: r.lease_until, nextAttemptAt: r.next_attempt_at, reason: this.reason(r, heads, next) })), nextCursor: rows.length > limit ? rows[limit - 1].sequence : null };
     }
 }
 //# sourceMappingURL=compute-queue.js.map

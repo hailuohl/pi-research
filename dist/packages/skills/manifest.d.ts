@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "ce58da58ca468628efe224f196f4fa9b756095484847de5f253e78f2fe0bbc3a";
+export declare const BUNDLE_ID = "14e1170adc7bf3ab02a4b37a44172082d5853732fc1df1bd0aac9fbde70479cb";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "69b11f26e0ff1120bc9868b60d3da2feeced0ad68d33da1a1d4c4045353f6c70";
+    readonly digest: "7acc3e3fc42e09575add132a0b4d85ae626e3ea8fabd68988129ab410e964151";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -19,7 +19,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when starting or importing a project, selecting a baseline/parent, defining a fixed run contract, or creating a reproduction experiment.";
     readonly roles: readonly ["coordinator", "designer"];
     readonly path: "skills/piresearch/pi-research-create/SKILL.md";
-    readonly digest: "a24dac45022b2de3a376cbedb4bac0c43410344c5072e218a5b9e1a1da639742";
+    readonly digest: "472161f2c32eea89141294333d6398a40b08879c8b68d728078f417d315d8286";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -33,7 +33,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before the first launch, planning or changing experiments, shaping rounds, interpreting completions, repairing, promoting, stopping, or reporting progress.";
     readonly roles: readonly ["coordinator", "designer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-experiment-tree/SKILL.md";
-    readonly digest: "9da51b89dee04b7862cb9f2a52ea73ea1194f659a9a1088e033bdf618bd568a0";
+    readonly digest: "9699b2e29f9ae7748b202889d08ff6ace49d69b0c9cf9587d430e3f4b3e7b05a";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -75,13 +75,13 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/SSH reference.";
     readonly roles: readonly ["coordinator", "designer", "implementer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-compute/SKILL.md";
-    readonly digest: "c62ec4a09db90b2d05033539652715d39d71cc57ff1e69e28f848251ca30a70e";
+    readonly digest: "b0ce03bd9dedea3fd3fb2cdc55ad8edab8043c153bcd58e9dc0a3bcc7b4fd680";
     readonly resources: readonly [{
         readonly path: "references/local.md";
-        readonly digest: "5a33728ecd0f7ee91e360749c4ae03d85bb0526f6027ad032fcc45b61b25cb33";
+        readonly digest: "d345d7977a3c9393b554cb7210ec8ea88d5859393c800ad16bc635bd21f0cafb";
     }, {
         readonly path: "references/ssh.md";
-        readonly digest: "ef026f3710e61d28e32bf01a5800332dd242c71f661d3b6fd4118f97cddcda83";
+        readonly digest: "b9b52c318cea1a61849601f2f0eb373c176f4787bb22ce5d2d5298a4aeb56764";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -95,7 +95,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before launching a run whose output must be judged, reading logs or numerical evidence, validating run-derived claims, or reporting results.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
-    readonly digest: "246f0f316890b0a20e9d1fd11395c8508235490b22b47350198c9fb05ccd3b57";
+    readonly digest: "ff0703e9013deecedf2088715af99f9fa481783d09d425c52e173f1039866e09";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

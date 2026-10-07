@@ -1,3 +1,4 @@
+import { GPU_SCHEMA } from './execution-environment-schemas.js';
 import { s } from './schema.js';
 const str = { type: 'string' }, num = { type: 'number' }, int = { type: 'integer' }, bool = { type: 'boolean' };
 const array = (items) => ({ type: 'array', items });
@@ -24,8 +25,8 @@ export const SCHEDULER_INPUT_SCHEMAS = {
 export const SCHEDULER_OUTPUT_SCHEMAS = {
     compute_target_probe: object({ context: str, targetId: str, backend: { const: 'docker' }, observedAt: str }),
     compute_queue_inspect: object({ scope: { const: 'shared-data-directory' }, configuration, usage, available, queued: int,
-        targets: array(object({ targetId: str, backend: s.enum(['docker', 'trusted-example', 'ssh']), contexts: array(str), configuration, usage, available })),
-        items: array(object({ kind: s.enum(['run', 'development', 'document', 'publication']), id: str, projectId: str, sequence: int, state: str, held: bool, backend: s.enum(['docker', 'trusted-example', 'ssh']), targetId: s.nullable(str), requested: object({ cpus: num, memoryMb: int }), generation: int, leaseUntil: int, nextAttemptAt: int, reason: s.enum(['ready', 'worker_active', 'recovery_due', 'target_unresolved', 'target_unavailable', 'target_changed', 'legacy_target_unknown', 'request_too_large', 'host_capacity', 'target_capacity', 'earlier_job', 'recovery_backoff', 'manual_recovery_required']) })), nextCursor: s.nullable(int) }),
+        targets: array(object({ targetId: str, backend: s.enum(['local', 'docker', 'trusted-example', 'ssh']), contexts: array(str), configuration, usage, available })),
+        items: array(object({ kind: s.enum(['run', 'development', 'document', 'publication']), id: str, projectId: str, sequence: int, state: str, held: bool, backend: s.enum(['local', 'docker', 'trusted-example', 'ssh']), targetId: s.nullable(str), requested: object({ cpus: num, memoryMb: int, gpu: GPU_SCHEMA }, ['gpu']), generation: int, leaseUntil: int, nextAttemptAt: int, reason: s.enum(['gpu_busy', 'ready', 'worker_active', 'recovery_due', 'target_unresolved', 'target_unavailable', 'target_changed', 'legacy_target_unknown', 'request_too_large', 'host_capacity', 'target_capacity', 'earlier_job', 'recovery_backoff', 'manual_recovery_required']) })), nextCursor: s.nullable(int) }),
     compute_capacity_configure: configuration, agent_capacity_inspect: agents, agent_capacity_configure: agents,
     model_http_inspect: modelHttp, model_http_configure: modelHttp,
 };

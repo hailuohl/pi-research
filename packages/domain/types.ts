@@ -121,7 +121,9 @@ export interface ResearchContract {
     }>;
     expectedArtifacts: string[];
     timeoutSeconds: number;
-    runner: 'trusted-example' | 'docker' | 'ssh';
+    runner: 'trusted-example' | 'local' | 'docker' | 'ssh';
+    localRuntimeId?: string;
+    gpu?: import('../runners/gpu.js').GpuRequest;
     sshTargetId?: string;
     image?: string;
     cpus: number;
@@ -131,7 +133,7 @@ export interface ResearchContract {
     workMb?: number;
     logBytes?: number;
     outputBytes?: number;
-    networkPolicy?: 'none';
+    networkPolicy?: 'none' | 'host';
 }
 export interface ResearchBriefRef { id:string; digest:string; revision:number; rootSessionId:string; }
 export interface Experiment {
@@ -148,6 +150,9 @@ export interface Experiment {
     revision: number;
 }
 export interface Manifest {
+    localRuntime?: import('../runners/local-runtime.js').LocalRuntime;
+    localExecution?: {isolation:'none';resourceEnforcement:'advisory';networkIsolation:false};
+    gpuTarget?: import('../runners/gpu.js').GpuTarget;
     analysis?: {rootSessionId:string; model:ModelConfig; maxAttempts:1};
     researchBrief?: ResearchBriefRef;
     sshTarget?: import('../runners/ssh-targets.js').SshTarget;

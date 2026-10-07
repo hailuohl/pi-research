@@ -1,4 +1,5 @@
 import { superviseSshRun } from '../../packages/runners/ssh-supervisor.js';
+import { superviseLocalRun } from '../../packages/runners/local-supervisor.js';
 import { appendFileSync, mkdirSync, writeFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { now } from '../../packages/storage/store.js';
@@ -68,7 +69,9 @@ try {
             } return store.update('run', runId, r.version, value); }),
             finalize: facts => { fence(); receipt(facts.exitCode, facts.state, facts.error, facts); },
         };
-        if (run.execution.backend === 'ssh')
+        if (run.execution.backend === 'local')
+            await superviseLocalRun(run, app.context, callbacks);
+        else if (run.execution.backend === 'ssh')
             await superviseSshRun(run, app.context, callbacks);
         else
             await superviseDockerRun(run, callbacks);

@@ -15,7 +15,7 @@ export interface DockerJob {
         inputSnapshot: SourceSnapshot;
         dataArtifacts: Array<{id: string; path: string; digest: string; size: number}>;
         command: string[]; environmentImageDigest: string; dockerContext: string;
-        resources: {pids: number; cpus: number; memoryMb: number; workMb: number; logBytes: number};
+        resources: {gpu?:import('../runners/gpu.js').GpuRequest;pids: number; cpus: number; memoryMb: number; workMb: number; logBytes: number};
     };
 }
 /** Short-lived execution paths; the original approved manifest and its digest remain untouched. */
@@ -32,7 +32,9 @@ function sourceBootstrap(job: DockerJob): string {
         safePath(job.manifest.inputSnapshot.path, f.path);
         return "'/work/" + f.path.replace(/'/g, "'\\''") + "'";
     });
-    return executable.length ? BOOTSTRAP.replace(' && exec', ` && chmod 755 -- ${executable.join(' ')} && exec`) : BOOTSTRAP;
+    const gpu=job.manifest.resources.gpu;
+    const prefix=gpu?`test "$(nvidia-smi --query-gpu=uuid --format=csv,noheader | LC_ALL=C sort)" = "$(printf '%s\\n' ${gpu.deviceIds.map(id=>`'${id}'`).join(' ')} | LC_ALL=C sort)" || { echo GPU_DEVICE_VISIBILITY_MISMATCH >&2; exit 78; }; `:'';
+    return prefix+(executable.length ? BOOTSTRAP.replace(' && exec', ` && chmod 755 -- ${executable.join(' ')} && exec`) : BOOTSTRAP);
 }
 export function stageInputs(job: DockerJob) {
     if (job.startRequested || job.containerId) throw new Error('Cannot modify inputs after container creation');
@@ -98,11 +100,21 @@ export async function probeDockerTarget(context:string):Promise<{targetId:string
     if(info.OSType!=='linux'||typeof info.ID!=='string'||!/^[A-Za-z0-9._:-]{1,200}$/.test(info.ID))throw new Error('A Linux Docker engine identity is required');
     return {targetId:'docker-'+digest(info.ID),engineId:info.ID,endpoint:endpoint.startsWith('npipe:')?endpoint.toLowerCase():endpoint};
 }
-export interface Container {Id: string; Image: string; Config: {Labels: Record<string, string>}; State: {Status: string; Running: boolean; ExitCode: number; StartedAt: string; FinishedAt: string; Error?: string};}
+export interface Container {Id: string; Image: string; Config: {Labels: Record<string, string>;Env?:string[]}; HostConfig?:{DeviceRequests?:Array<{DeviceIDs?:string[]}>}; State: {Status: string; Running: boolean; ExitCode: number; StartedAt: string; FinishedAt: string; Error?: string};}
+/** Inspect only before a new start; legacy running containers retain their existing lifecycle. */
+export function assertContainerStartPolicy(job:DockerJob,container:Container):void {
+    const gpu=job.manifest.resources.gpu,env=container.Config.Env??[];
+    for(const [key,value] of [['NVIDIA_VISIBLE_DEVICES',gpu?gpu.deviceIds.join(','):'void'],['CUDA_VISIBLE_DEVICES',gpu?gpu.deviceIds.join(','):'-1']]) {
+        const values=env.filter(v=>v.startsWith(key+'='));if(values.length!==1||values[0]!==key+'='+value)throw new Error('CONTAINER_GPU_POLICY_MISMATCH: explicit device visibility required before start');
+    }
+    if(!gpu&&(container.HostConfig?.DeviceRequests?.length??0)>0)throw new Error('CONTAINER_GPU_POLICY_MISMATCH: CPU container requests devices');
+}
 export async function inspect(job: DockerJob): Promise<Container | null> {
     try {
         const value = JSON.parse(await docker(job.manifest.dockerContext, ['inspect', '--type', 'container', job.containerId ?? job.containerName]))[0] as Container;
         if (value.Config.Labels?.[JOB_LABEL] !== job.id || value.Config.Labels?.[MANIFEST_LABEL] !== job.manifestDigest || (job.containerId && value.Id !== job.containerId)) throw new Error('Container ownership mismatch');
+        if(value.State.Status==='created'&&!job.startRequested)assertContainerStartPolicy(job,value);
+        if(job.manifest.resources.gpu){const ids=value.HostConfig?.DeviceRequests?.flatMap(r=>r.DeviceIDs??[])??[];if(digest([...ids].sort())!==digest([...job.manifest.resources.gpu.deviceIds].sort()))throw new Error('Container GPU device request mismatch');}
         return value;
     } catch (error) {
         if (/No such (object|container)/i.test((error as Error).message)) return null;
@@ -133,6 +145,8 @@ export function createArgs(job: DockerJob): string[] {
         return ['--mount', `type=bind,src=${path},dst=${target}${readonly ? ',readonly' : ''}`];
     };
     return ['create', '--pull', 'never', '--name', job.containerName, '--label', `${JOB_LABEL}=${job.id}`, '--label', `${MANIFEST_LABEL}=${job.manifestDigest}`,
+        ...(r.gpu?['--gpus',r.gpu.deviceIds.length===1?'device='+r.gpu.deviceIds[0]:'"device='+r.gpu.deviceIds.join(',')+'"','--env','NVIDIA_DRIVER_CAPABILITIES=compute,utility']:[]),
+        '--env','NVIDIA_VISIBLE_DEVICES='+(r.gpu?r.gpu.deviceIds.join(','):'void'),'--env','CUDA_VISIBLE_DEVICES='+(r.gpu?r.gpu.deviceIds.join(','):'-1'),
         '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--pids-limit', String(r.pids), '--cpus', String(r.cpus), '--memory', `${r.memoryMb}m`, '--memory-swap', `${r.memoryMb}m`, '--user', '65532:65532',
         '--tmpfs', `/work:rw,nosuid,nodev,exec,uid=65532,gid=65532,mode=1777,size=${r.workMb}m`, '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,uid=65532,gid=65532,mode=1777,size=32m',
         ...mount(join(job.controlDir, 'source'), '/source', true), ...mount(join(job.controlDir, 'bootstrap.sh'), '/pi-bootstrap.sh', true), ...m.dataArtifacts.flatMap(a => mount(join(job.controlDir, 'data', a.id), `/data/${a.id}`, true)), ...mount(job.outputDir, '/output', false),

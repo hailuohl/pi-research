@@ -43,18 +43,18 @@ export declare const CAPABILITIES: readonly [{
     readonly notes: "整合形成新子实验，冻结历史保留。WorkingGrant、RunGrant、DiscoveryGrant各自有界；外部发布另行授权。";
 }, {
     readonly id: "runner-local";
-    readonly name: "本地受信数值示例 Runner";
+    readonly name: "本地可信执行 / 固定数值示例";
     readonly stage: "M3";
-    readonly status: "verified";
-    readonly verification: "独立监管进程实测";
-    readonly notes: "仅允许随包审计的固定示例代码；不是任意代码沙箱。";
+    readonly status: "partial";
+    readonly verification: "固定示例、Windows 本地 CPU/NVIDIA 正式运行、中文路径、进程树取消及控制器重开通过";
+    readonly notes: "local 使用本机配置的固定运行时与获准源码；文件/网络不隔离，资源仅调度记账。trusted-example 限制保留。NVIDIA 逐元素运算与共享 UUID 占用已验；其他硬件、环境与平台按各自目标核对。";
 }, {
     readonly id: "runner-docker";
     readonly name: "Docker 任意代码 Runner";
     readonly stage: "M3";
     readonly status: "verified";
-    readonly verification: "本机Linux CPU正式Run、开发测试、取消及同容器恢复已验";
-    readonly notes: "固定镜像摘要、只读源/数据、禁网与有限资源。CPU证据不证明GPU或其他主机；当前可用性另看目标探测与队列。";
+    readonly verification: "本机Linux CPU正式Run、开发测试、取消及同容器恢复已验；WSL2显式三UUID的NVIDIA运算通过";
+    readonly notes: "固定镜像摘要、只读源/数据、禁网与有限资源。CPU证据不证明GPU或其他主机；本机WSL2单卡选择暴露额外设备时会拒绝执行，三卡须逐一明确批准。当前可用性另看目标探测与队列。";
 }, {
     readonly id: "literature";
     readonly name: "文献检索与原文版本";
@@ -116,8 +116,8 @@ export declare const CAPABILITIES: readonly [{
     readonly name: "SSH";
     readonly stage: "M7";
     readonly status: "partial";
-    readonly verification: "SSH→Linux Docker隔离回环及嵌套源码修复已实测";
-    readonly notes: "限用户配置并探测的SSH目标与受信Linux Docker监管器；外部SSH主机仍需目标验收，GPU资源分配尚未接入。回环不代替真实远端目标，当前可用性另看目标探测与队列。";
+    readonly verification: "SSH→Linux Docker隔离回环及嵌套源码修复已实测；独立GPU协议的三UUID实际运算、旧协议保留通过";
+    readonly notes: "限用户配置并探测的SSH目标与受信Linux Docker监管器；NVIDIA 完整 UUID 声明与共享占用已接入，需独立 GPU helper。外部 SSH/GPU 主机仍需目标验收，回环不代替真实远端设备证据。";
 }, {
     readonly id: "code-handoff";
     readonly name: "受控代码产物交接";

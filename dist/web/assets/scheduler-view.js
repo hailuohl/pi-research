@@ -1,9 +1,10 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
+import { ExecutionEnvironments } from "./execution-environments.js";
 import { short, label } from "./models.js";
 import { SectionTitle, Badge } from "./ui.js";
-const computeReasonLabels = { ready: "\u5BB9\u91CF\u68C0\u67E5\u901A\u8FC7\uFF0C\u7B49\u5F85\u8C03\u5EA6", worker_active: "\u6267\u884C\u5668\u4ECD\u6301\u6709\u6709\u6548\u79DF\u7EA6", recovery_due: "\u5F85\u6838\u5BF9\u539F\u4F5C\u4E1A\u5E76\u6062\u590D\u76D1\u7BA1", target_unresolved: "\u8BA1\u7B97\u76EE\u6807\u5C1A\u672A\u89E3\u6790", target_unavailable: "\u8BA1\u7B97\u76EE\u6807\u6682\u4E0D\u53EF\u7528", target_changed: "\u76EE\u6807\u8EAB\u4EFD\u5DF2\u53D8\u5316\uFF0C\u9700\u8981\u6838\u5BF9", legacy_target_unknown: "\u65E7\u4F5C\u4E1A\u76EE\u6807\u672A\u77E5\uFF0C\u4FDD\u7559\u5360\u7528", request_too_large: "\u8BF7\u6C42\u8D85\u8FC7\u914D\u7F6E\u603B\u5BB9\u91CF\uFF0C\u7B49\u5F85\u4E0D\u4F1A\u81EA\u52A8\u89E3\u51B3", host_capacity: "\u7B49\u5F85\u5171\u4EAB\u5BBF\u4E3B\u5BB9\u91CF", target_capacity: "\u7B49\u5F85\u6B64\u8BA1\u7B97\u76EE\u6807\u5BB9\u91CF", earlier_job: "\u7B49\u5F85\u66F4\u65E9\u7684\u4F5C\u4E1A", recovery_backoff: "\u6062\u590D\u6682\u7F13\uFF0C\u7B49\u5F85\u4E0B\u6B21\u6838\u5BF9", manual_recovery_required: "\u65E7\u5BBF\u4E3B\u4F5C\u4E1A\u9700\u8981\u4EBA\u5DE5\u6838\u5BF9\uFF0C\u4FDD\u7559\u5360\u7528" };
+const computeReasonLabels = { gpu_busy: "\u7B49\u5F85 GPU \u8BBE\u5907\uFF0C\u6216\u7B49\u5F85 CPU Docker\uFF0F\u65E7\u7248 SSH \u4F5C\u4E1A\u7ED3\u675F", ready: "\u5BB9\u91CF\u68C0\u67E5\u901A\u8FC7\uFF0C\u7B49\u5F85\u8C03\u5EA6", worker_active: "\u6267\u884C\u5668\u4ECD\u6301\u6709\u6709\u6548\u79DF\u7EA6", recovery_due: "\u5F85\u6838\u5BF9\u539F\u4F5C\u4E1A\u5E76\u6062\u590D\u76D1\u7BA1", target_unresolved: "\u8BA1\u7B97\u76EE\u6807\u5C1A\u672A\u89E3\u6790", target_unavailable: "\u8BA1\u7B97\u76EE\u6807\u6682\u4E0D\u53EF\u7528", target_changed: "\u76EE\u6807\u8EAB\u4EFD\u5DF2\u53D8\u5316\uFF0C\u9700\u8981\u6838\u5BF9", legacy_target_unknown: "\u65E7\u4F5C\u4E1A\u76EE\u6807\u672A\u77E5\uFF0C\u4FDD\u7559\u5360\u7528", request_too_large: "\u8BF7\u6C42\u8D85\u8FC7\u914D\u7F6E\u603B\u5BB9\u91CF\uFF0C\u7B49\u5F85\u4E0D\u4F1A\u81EA\u52A8\u89E3\u51B3", host_capacity: "\u7B49\u5F85\u5171\u4EAB\u5BBF\u4E3B\u5BB9\u91CF", target_capacity: "\u7B49\u5F85\u6B64\u8BA1\u7B97\u76EE\u6807\u5BB9\u91CF", earlier_job: "\u7B49\u5F85\u66F4\u65E9\u7684\u4F5C\u4E1A", recovery_backoff: "\u6062\u590D\u6682\u7F13\uFF0C\u7B49\u5F85\u4E0B\u6B21\u6838\u5BF9", manual_recovery_required: "\u65E7\u5BBF\u4E3B\u4F5C\u4E1A\u9700\u8981\u4EBA\u5DE5\u6838\u5BF9\uFF0C\u4FDD\u7559\u5360\u7528" };
 const call = (projectId, name, input = {}) => api(`/operations/${name}`, { projectId, input });
 const limitsFields = [{ key: "maxRuns", label: "\u6B63\u5F0F Run \u4E0A\u9650" }, { key: "maxDevelopment", label: "\u5F00\u53D1\u6D4B\u8BD5\u4E0A\u9650" }, { key: "maxJobs", label: "\u8BA1\u7B97\u4F5C\u4E1A\u603B\u4E0A\u9650" }, { key: "cpus", label: "CPU \u9884\u7B97\uFF08\u6838\uFF09", nullable: true }, { key: "memoryMb", label: "\u5185\u5B58\u9884\u7B97\uFF08MiB\uFF09", nullable: true }, { key: "maxQueued", label: "\u6392\u961F\u6570\u91CF\u4E0A\u9650", nullable: true }];
 const values = (limits) => Object.fromEntries(limitsFields.map((f) => [f.key, limits[f.key] === null ? "" : String(limits[f.key])]));
@@ -16,7 +17,9 @@ function ComputeWait({ data, kind, id, onScheduler }) {
       item.requested.cpus,
       " CPU / ",
       item.requested.memoryMb,
-      " MiB \xB7 ",
+      " MiB",
+      item.requested.gpu ? ` / ${item.requested.gpu.deviceIds.length} NVIDIA GPU` : "",
+      " \xB7 ",
       item.held ? "\u5BB9\u91CF\u4FDD\u7559\u4E2D" : "\u5C1A\u672A\u9884\u7559\u5BB9\u91CF",
       item.state === "unknown" ? "\uFF1B\u672A\u77E5\u72B6\u6001\u4E0D\u4F1A\u81EA\u52A8\u91CA\u653E\u5BB9\u91CF" : ""
     ] }) : null,
@@ -209,7 +212,7 @@ class ModelHttpForm extends React.Component {
 class TargetProbe extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { context: "desktop-linux", busy: false, error: "", result: null };
+    this.state = { context: "", busy: false, error: "", result: null };
     this.mounted = true;
   }
   componentWillUnmount() {
@@ -217,6 +220,10 @@ class TargetProbe extends React.Component {
   }
   async probe() {
     if (this.state.busy) return;
+    if (!this.state.context.trim()) {
+      this.setState({ error: "\u8BF7\u8F93\u5165\u672C\u673A Docker context" });
+      return;
+    }
     this.setState({ busy: true, error: "", result: null });
     try {
       await this.props.perform(async () => {
@@ -243,7 +250,7 @@ class TargetProbe extends React.Component {
       }, children: [
         /* @__PURE__ */ jsxs("label", { children: [
           "\u672C\u673A Docker context",
-          /* @__PURE__ */ jsx("input", { "aria-label": "\u6838\u5BF9\u76EE\u6807\u7684 Docker context", required: true, maxLength: 100, pattern: "[A-Za-z0-9][A-Za-z0-9_.-]*", disabled: this.state.busy, value: this.state.context, onChange: (e) => this.setState({ context: e.target.value, result: null, error: "" }) })
+          /* @__PURE__ */ jsx("input", { "aria-label": "\u6838\u5BF9\u76EE\u6807\u7684 Docker context", placeholder: "\u8F93\u5165\u672C\u673A Docker context", required: true, maxLength: 100, pattern: "[A-Za-z0-9][A-Za-z0-9_.-]*", disabled: this.state.busy, value: this.state.context, onChange: (e) => this.setState({ context: e.target.value, result: null, error: "" }) })
         ] }),
         /* @__PURE__ */ jsx("button", { className: "secondary", disabled: this.state.busy || !this.state.context.trim(), children: this.state.busy ? "\u6B63\u5728\u6838\u5BF9\u2026" : "\u6838\u5BF9 Docker \u76EE\u6807" })
       ] }),
@@ -296,6 +303,7 @@ class SchedulerView extends React.Component {
       /* @__PURE__ */ jsx(SectionTitle, { title: "\u8D44\u6E90\u4E0E\u8C03\u5EA6", sub: "\u5171\u4EAB\u5BB9\u91CF\u3001\u5F53\u524D\u9879\u76EE\u961F\u5217\u548C\u4FDD\u7559\u4E2D\u7684\u672A\u77E5\u5360\u7528\u3002", children: /* @__PURE__ */ jsx("button", { className: "secondary", disabled: this.state.loading, onClick: () => void this.refresh(), children: "\u5237\u65B0\u8C03\u5EA6\u72B6\u6001" }) }),
       /* @__PURE__ */ jsx("p", { className: "notice", children: "\u5BB9\u91CF\u8BBE\u7F6E\u5F71\u54CD\u5171\u4EAB\u540C\u4E00\u6570\u636E\u76EE\u5F55\u7684\u6240\u6709\u9879\u76EE\uFF0C\u4E0D\u4FEE\u6539\u5DF2\u7ECF\u6279\u51C6\u7684\u547D\u4EE4\u3001\u955C\u50CF\u6216\u8D44\u6E90\u9700\u6C42\u3002\u4EE5\u4E0B\u6570\u5B57\u662F\u8C03\u5EA6\u9884\u7B97\uFF0C\u4E0D\u662F\u786C\u4EF6\u7A7A\u95F2\u91CF\u3001Token \u6216\u8D26\u5355\u786C\u9650\u989D\u3002" }),
       this.state.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.error }) : null,
+      /* @__PURE__ */ jsx(ExecutionEnvironments, { projectId: this.props.data.project.id }, this.props.data.project.id),
       /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
         /* @__PURE__ */ jsx("h2", { children: "\u5BBF\u4E3B Pi Worker" }),
         a ? /* @__PURE__ */ jsxs("div", { children: [
@@ -466,7 +474,7 @@ class SchedulerView extends React.Component {
           ] })
         ] }),
         c.targets.map((target) => /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
-          /* @__PURE__ */ jsx("h2", { children: target.backend === "docker" ? "Docker \u8BA1\u7B97\u76EE\u6807" : "\u53D7\u4FE1\u672C\u5730\u793A\u4F8B\u76EE\u6807" }),
+          /* @__PURE__ */ jsx("h2", { children: { docker: "Docker \u8BA1\u7B97\u76EE\u6807", ssh: "SSH \u8BA1\u7B97\u76EE\u6807", local: "\u672C\u5730\u8BA1\u7B97\u76EE\u6807", "trusted-example": "\u53D7\u4FE1\u672C\u5730\u793A\u4F8B\u76EE\u6807" }[target.backend] }),
           /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
             "Context \u522B\u540D\uFF1A",
             target.contexts.join("\u3001") || "\u65E0",
@@ -523,7 +531,12 @@ function QueueRow({ item }) {
       item.requested.cpus,
       " CPU / ",
       item.requested.memoryMb,
-      " MiB"
+      " MiB",
+      item.requested.gpu ? /* @__PURE__ */ jsxs("p", { children: [
+        item.requested.gpu.deviceIds.length,
+        " NVIDIA GPU",
+        item.requested.gpu.deviceIds.map((id) => /* @__PURE__ */ jsx("code", { className: "code-wrap", children: id }, id))
+      ] }) : null
     ] }),
     /* @__PURE__ */ jsxs("td", { children: [
       item.held ? "\u5BB9\u91CF\u4FDD\u7559\u4E2D" : "\u672A\u5360\u5BB9\u91CF",

@@ -19,7 +19,7 @@ description: "Use when starting or importing a project, selecting a baseline/par
 
 先明确基线问题、假设、实现版本、数据/切分版本、评价协议、主指标及方向/单位、必需产物、时间和计算边界。将可复现环境准备留在提交的脚本/固定镜像，遵守项目既有 Python 环境政策，不自动安装依赖。
 
-首根可提供完整 contract：runner 只能 trusted-example/docker/ssh；Docker/SSH 的 image 要固定 @sha256，command 是 argv，environment 为空、networkPolicy=none。契约必须声明 metrics 和包含 metrics.json 的 expectedArtifacts，具体资源见 pi-research-compute。无 contract 使用随包曲线拟合 EXAMPLE_CONTRACT，不能称为通用执行入口。用户确认的研究计划是研究语义来源，缺确认时先处理需求，不能无关示例顶替目标科研。
+首根可提供完整 contract：runner 只能 local/trusted-example/docker/ssh（前三类物理执行位置为本地/Docker/SSH）；local固定已配置localRuntimeId，command首项为同一ID、networkPolicy=host；Docker/SSH 的 image 要固定 @sha256、networkPolicy=none；command 是 argv、environment 为空。NVIDIA另声明gpu.vendor=nvidia与已核对的完整deviceIds；未声明gpu保持CPU。契约必须声明 metrics 和包含 metrics.json 的 expectedArtifacts，具体资源见 pi-research-compute。无 contract 使用随包曲线拟合 EXAMPLE_CONTRACT，不能称为通用执行入口。用户确认的研究计划是研究语义来源，缺确认时先处理需求，不能无关示例顶替目标科研。
 
 同树子实验继承契约，不能用“项目改命令”改掉已建立的比较合同。确需不同入口/环境/协议时单独建立新基线及比较边界，重新批准；不把跨契约结果当同条件排名。
 

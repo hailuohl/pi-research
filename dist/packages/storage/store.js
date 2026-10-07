@@ -64,12 +64,32 @@ INSERT INTO schema_migrations VALUES(4,datetime('now'));`);
         this.migrateDocumentQueue();
         this.migratePublicationQueue();
         this.migrateSshQueue();
+        this.migrateLocalGpuQueue();
         this.transaction(() => { if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=7').get())
             return; this.db.exec("CREATE INDEX records_session_catalog ON records(kind,project_id,json_extract(data,'$.role')) WHERE kind='session'; INSERT INTO schema_migrations VALUES(7,datetime('now'));"); });
         this.transaction(() => { if (!readDataLocation(this.db))
             setDataLocation(this.db, dirname(path)); this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(9,datetime('now'));"); });
         this.transaction(() => { this.textWrites = new TextWriteRecovery(this.db, path); this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(8,datetime('now'));"); });
         this.transaction(() => { });
+    }
+    migrateLocalGpuQueue() {
+        this.transaction(() => {
+            if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=11').get())
+                return;
+            for (const name of ['compute_queue_insert_gate', 'compute_queue_update_gate', 'compute_queue_insert', 'compute_queue_update']) {
+                const row = this.db.prepare("SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?").get(name);
+                const alias = name.endsWith('_gate') ? 'NEW' : 'r';
+                let sql = String(row.sql).replaceAll("ELSE 'trusted-example' END", `WHEN json_extract(${alias}.data,'$.manifest.contract.runner')='local' THEN 'local' ELSE 'trusted-example' END`)
+                    .replaceAll("THEN 'host-example' ELSE", `THEN 'host-example' WHEN json_extract(${alias}.data,'$.manifest.contract.runner')='local' THEN json_extract(${alias}.data,'$.manifest.localRuntime.hostId') ELSE`)
+                    .replaceAll("='trusted-example' THEN 1 ELSE 0 END", "IN ('trusted-example','local') THEN 1 ELSE 0 END");
+                this.db.exec('DROP TRIGGER ' + name);
+                this.db.exec(sql);
+            }
+            this.db.exec(`CREATE TABLE compute_gpu_claims(uuid TEXT PRIMARY KEY,kind TEXT NOT NULL,id TEXT NOT NULL);
+CREATE INDEX compute_gpu_claims_job ON compute_gpu_claims(kind,id);
+CREATE TRIGGER gpu_claim_release AFTER UPDATE ON records WHEN NEW.kind='run' AND json_extract(NEW.data,'$.state') IN ('succeeded','failed','cancelled') BEGIN DELETE FROM compute_gpu_claims WHERE kind='run' AND id=NEW.id; END;
+INSERT INTO schema_migrations VALUES(11,datetime('now'));`);
+        });
     }
     migrateSshQueue() {
         this.transaction(() => {

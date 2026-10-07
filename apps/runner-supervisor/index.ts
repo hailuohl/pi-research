@@ -1,4 +1,5 @@
 import {superviseSshRun} from '../../packages/runners/ssh-supervisor.js';
+import {superviseLocalRun} from '../../packages/runners/local-supervisor.js';
 import {appendFileSync, mkdirSync, writeFileSync, renameSync} from 'node:fs';
 import {join} from 'node:path';
 import {now} from '../../packages/storage/store.js';
@@ -43,7 +44,7 @@ try {
             patch:value=>store.transaction(()=>{fence();const r=store.get<Run>('run',runId);if(value.execution?.startRequested&&!r.execution!.startRequested){ensure(!r.cancelRequested,'RUN_CANCELLED','作业已请求取消');service.assertExecutionGrant(r);}return store.update<Run>('run',runId,r.version,value) as DockerRun;}),
             finalize:facts=>{fence();receipt(facts.exitCode,facts.state,facts.error,facts);},
         };
-        if(run.execution.backend==='ssh')await superviseSshRun(run as DockerRun,app.context,callbacks);else await superviseDockerRun(run as DockerRun,callbacks);
+        if(run.execution.backend==='local')await superviseLocalRun(run as DockerRun,app.context,callbacks);else if(run.execution.backend==='ssh')await superviseSshRun(run as DockerRun,app.context,callbacks);else await superviseDockerRun(run as DockerRun,callbacks);
     } else {
         const adapter=new TrustedExampleAdapter(run,repoRoot,store.paths);
         let processHandle:RunnerProcess|undefined,timer:NodeJS.Timeout|undefined,timeout:NodeJS.Timeout|undefined,observedCancel=false,timedOut=false,truncated=false,bytes=0,authorityError:string|undefined;

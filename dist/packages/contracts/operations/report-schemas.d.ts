@@ -372,7 +372,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("name" | "value" | "unit" | "referenceId")[];
+                                readonly required: ("value" | "name" | "unit" | "referenceId")[];
                                 readonly additionalProperties: false;
                             };
                         };

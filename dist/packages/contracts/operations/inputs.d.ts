@@ -1117,7 +1117,7 @@ export declare const INPUT_SCHEMAS: {
                     readonly type: "object";
                     readonly properties: {
                         readonly runner: {
-                            readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                            readonly enum: readonly ["trusted-example", "local", "docker", "ssh"];
                         };
                         readonly sshTargetId: {
                             readonly pattern?: string | undefined;
@@ -1144,6 +1144,35 @@ export declare const INPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                             readonly minItems: number;
+                        };
+                        readonly localRuntimeId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly gpu: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly vendor: {
+                                    readonly const: "nvidia";
+                                };
+                                readonly deviceIds: {
+                                    readonly maxItems?: number | undefined;
+                                    readonly type: "array";
+                                    readonly items: {
+                                        readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly minItems: number;
+                                };
+                            };
+                            readonly required: readonly ["vendor", "deviceIds"];
+                            readonly additionalProperties: false;
                         };
                         readonly environment: {
                             readonly type: "object";
@@ -1260,7 +1289,7 @@ export declare const INPUT_SCHEMAS: {
                             readonly maximum: number;
                         };
                         readonly networkPolicy: {
-                            readonly const: "none";
+                            readonly enum: readonly ["none", "host"];
                         };
                     };
                     readonly required: readonly ["runner", "command", "datasetVersion", "evaluationProtocolVersion", "metrics", "expectedArtifacts"];
@@ -4992,6 +5021,152 @@ export declare const INPUT_SCHEMAS: {
             };
         };
         readonly required: readonly ["argv"];
+        readonly additionalProperties: false;
+    };
+    readonly local_runtime_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly executable: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["id", "executable", "expectedVersion"];
+        readonly additionalProperties: false;
+    };
+    readonly execution_environment_list: {
+        readonly type: "object";
+        readonly properties: {};
+        readonly required: readonly [];
+        readonly additionalProperties: false;
+    };
+    readonly gpu_target_probe: {
+        readonly type: "object";
+        readonly properties: {
+            readonly backend: {
+                readonly enum: readonly ["local", "docker", "ssh"];
+            };
+            readonly context: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sshTargetId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly localRuntimeId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly image: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["backend"];
+        readonly additionalProperties: false;
+    };
+    readonly ssh_target_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly host: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly port: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly user: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly identityFile: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly knownHostsFile: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly remoteRoot: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly gpuProtocol: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: readonly ["id", "host", "user", "identityFile", "knownHostsFile", "remoteRoot", "expectedVersion"];
+        readonly additionalProperties: false;
+    };
+    readonly ssh_target_probe: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["id"];
         readonly additionalProperties: false;
     };
 };

@@ -5,6 +5,49 @@ import {existsSync,mkdirSync,mkdtempSync,readFileSync,rmSync,writeFileSync} from
 import {dirname,join,resolve,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 
+test('new SSH worker explicitly disables CPU GPU inheritance and validates created-container policy before start',()=>{
+ const script=String.raw`
+import contextlib, copy, importlib.util, sys, tempfile, types
+from pathlib import Path
+if sys.platform=='win32':sys.modules['fcntl']=types.SimpleNamespace(LOCK_EX=2,flock=lambda *a:None)
+spec=importlib.util.spec_from_file_location('gpu_endpoint','scripts/ssh-runner-gpu.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+class Started(BaseException):pass
+uuid='GPU-11111111-1111-1111-1111-111111111111'
+base={'image':'python@sha256:'+'a'*64,'command':['python','main.py'],'cpus':1,'memoryMb':512,'pids':512,'workMb':16}
+for scenario in ['cpu','gpu','unsafe-created']:
+    c=copy.deepcopy(base)
+    if scenario=='gpu':c['gpu']={'vendor':'nvidia','deviceIds':[uuid]}
+    r={'state':'submitting','handle':'fixture','manifestDigest':'digest','engineId':'engine','protocolDigest':'protocol','contract':c,'startRequested':False}
+    captured=[];state={'created':False,'started':False}
+    m.locked=lambda _:contextlib.nullcontext();m.record=lambda _:r;m.atomic=lambda *args:None;m.identity=lambda:{'engineId':'engine','protocolDigest':'protocol'}
+    def docker(args,**kw):
+        if args[0]=='image':return b'image'
+        assert args[0]=='create';captured.extend(args);state['created']=True;return b'a'*64
+    m.docker=docker
+    def inspect(_):
+        if not state['created']:return None
+        visible=uuid if scenario=='gpu' else 'void'
+        env=['NVIDIA_VISIBLE_DEVICES='+visible,'CUDA_VISIBLE_DEVICES='+(uuid if scenario=='gpu' else '-1')]
+        if scenario=='unsafe-created':env=['NVIDIA_VISIBLE_DEVICES=all']
+        return {'Id':'a'*64,'Config':{'Env':env},'HostConfig':{'DeviceRequests':[]},'State':{'Status':'created','Running':False}}
+    m.inspect=inspect;m.stop=lambda _:None
+    def popen(*args,**kwargs):state['started']=True;raise Started()
+    m.subprocess.Popen=popen
+    with tempfile.TemporaryDirectory() as directory:
+        try:m.worker(Path(directory))
+        except Started:pass
+    if scenario=='gpu':
+        assert 'NVIDIA_VISIBLE_DEVICES='+uuid in captured and 'CUDA_VISIBLE_DEVICES='+uuid in captured
+        assert captured[captured.index('--gpus')+1]=='device='+uuid
+    else:
+        assert 'NVIDIA_VISIBLE_DEVICES=void' in captured and 'CUDA_VISIBLE_DEVICES=-1' in captured and '--gpus' not in captured
+    assert state['started']==(scenario!='unsafe-created'),(scenario,r)
+    assert r['startRequested']==(scenario!='unsafe-created'),(scenario,r)
+print('ssh-cpu-gpu-policy-ok')
+`;
+ const checked=spawnSync('python',['-c',script],{encoding:'utf8',windowsHide:true,timeout:15000});assert.equal(checked.status,0,checked.stderr);assert.match(checked.stdout,/ssh-cpu-gpu-policy-ok/);
+});
+
 test('SSH bootstrap changes only copied children of the root-owned work mount, including hidden entries',()=>{
  const parsed=spawnSync('python',['-c',"import ast,json;from pathlib import Path;tree=ast.parse(Path('scripts/ssh-runner.py').read_text());print(json.dumps(next(ast.literal_eval(n.value) for n in ast.walk(tree) if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='bootstrap' for t in n.targets))))"],{encoding:'utf8',windowsHide:true});assert.equal(parsed.status,0,parsed.stderr);const bootstrap=JSON.parse(parsed.stdout);
  const git=process.platform==='win32'?spawnSync('where.exe',['git'],{encoding:'utf8',windowsHide:true}).stdout.trim().split(/\r?\n/)[0]:undefined,shell=git?join(dirname(dirname(git)),'bin','sh.exe'):'/bin/sh';assert.ok(existsSync(shell),'a POSIX shell is required for the bootstrap regression');

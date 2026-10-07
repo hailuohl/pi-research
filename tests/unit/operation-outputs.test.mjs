@@ -21,6 +21,28 @@ import {validateSchema} from '../../dist/packages/contracts/operations/schema.js
 import {SOURCE_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/source-schemas.js';
 import {INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/inputs.js';
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
+import childProcess from 'node:child_process';
+import {syncBuiltinESMExports} from 'node:module';
+import {EventEmitter} from 'node:events';
+import {PassThrough} from 'node:stream';
+import {readFileSync,writeFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {digest} from '../../dist/packages/storage/store.js';
+import {startTeam} from '../support/collaboration.mjs';
+
+async function dockerGpuFixture(fn){
+ const saved=childProcess.spawn;
+ childProcess.spawn=(executable,argv)=>{
+  assert.equal(executable,'docker');assert.deepEqual(argv.slice(0,2),['--context','schema-gpu']);const args=argv.slice(2);let stdout;
+  if(args[0]==='context'&&args[1]==='inspect')stdout=JSON.stringify([{Endpoints:{docker:{Host:'unix:///schema-gpu.sock'}}}]);
+  else if(args[0]==='info')stdout=args.at(-1)==='{{.OSType}}'?'linux':JSON.stringify({OSType:'linux',ID:'schema-engine'});
+  else if(args[0]==='image'&&args[1]==='inspect')stdout='sha256:'+'a'.repeat(64);
+  else if(args[0]==='run'){assert.ok(args.includes('nvidia-smi'));assert.ok(args.includes('--pull'));stdout='GPU-11111111-1111-1111-1111-111111111111, deterministic schema fixture, 1024';}
+  else assert.fail('Unexpected Docker fixture operation: '+JSON.stringify(args));
+  const child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.kill=()=>child.emit('close',null);queueMicrotask(()=>{child.stdout.end(stdout);child.stderr.end();child.emit('close',0);});return child;
+ };
+ syncBuiltinESMExports();try{return await fn();}finally{childProcess.spawn=saved;syncBuiltinESMExports();}
+}
 
 test('Task context output carries the fixed RunGrant reference and intent IDs',()=>{
   validateSchema(OUTPUT_SCHEMAS.task_context_read,{schemaVersion:1,taskId:'task',teamId:'team',goal:'goal',objective:'objective',role:'analyst',planVersion:1,directiveVersion:1,inputEvidenceIds:[],expectedOutputs:[],acceptanceRuleIds:[],upstream:[],reviewOf:null,restrictions:[],stopConditions:[],skillBundleId:'bundle',skillIds:[],runGrant:{id:'grant',digest:'a'.repeat(64),approvalId:'approval'},runIntentIds:['intent']},'output');
@@ -57,6 +79,15 @@ test('all existing public tools have closed, literal success contracts exercised
   const check=(name,value)=>{validateSchema(OUTPUT_SCHEMAS[name],value,'output');seen.add(name);return value;};
   const call=async(name,input={},a=root)=>check(name,await tools.execute(a,name,input,`schema-${++serial}`));
   const hostResult=await call('host_execute',{argv:[process.execPath,'-e','console.log("closed host contract")']});assert.equal(hostResult.state,'succeeded');assert.equal(hostResult.stdout.trim(),'closed host contract');
+  const owner=async(name,input)=>check(name,await s.app.operations.execute(USER,name,input,{projectId:s.project.id,idempotencyKey:`owner-schema-${++serial}`}));
+  await owner('local_runtime_configure',{id:'schema-node',executable:'node',expectedVersion:0});
+  const identityFile=join(s.dir,'schema-identity'),knownHostsFile=join(s.dir,'schema-known-hosts');writeFileSync(identityFile,'deterministic identity fixture');writeFileSync(knownHostsFile,'deterministic known-hosts fixture');
+  await owner('ssh_target_configure',{id:'schema-ssh',host:'schema.invalid',user:'research',identityFile,knownHostsFile,remoteRoot:'/srv/schema/jobs',expectedVersion:0,gpuProtocol:true});
+  const request=s.app.sshTargets.request;s.app.sshTargets.request=async()=>({engineId:'schema-ssh-engine',protocolDigest:digest(readFileSync('scripts/ssh-runner-gpu.py'))});
+  try{await owner('ssh_target_probe',{id:'schema-ssh'});}finally{s.app.sshTargets.request=request;}
+  const gpu=await dockerGpuFixture(()=>owner('gpu_target_probe',{backend:'docker',context:'schema-gpu',image:'python@sha256:'+'a'.repeat(64)}));assert.equal(gpu.devices.length,1);assert.deepEqual(s.app.gpus.list(),[gpu]);
+  const environments=await call('execution_environment_list');assert.equal(environments.local.runtimes[0].id,'schema-node');assert.equal(environments.sshTargets[0].id,'schema-ssh');assert.deepEqual(environments.gpuTargets,[gpu]);assert.equal(JSON.stringify(environments).includes(s.dir),false);
+  for(const [name,value] of [['gpu_target_probe',gpu],['execution_environment_list',environments]])assert.throws(()=>validateSchema(OUTPUT_SCHEMAS[name],{...value,unexpected:true},'output'),{code:'INVALID_OUTPUT'});
   await call('research_skill_list');
   await call('research_skill_read',{skillId:'pi-research-overview'});
   await call('connector_status');
@@ -142,4 +173,17 @@ test('all existing public tools have closed, literal success contracts exercised
   assert.throws(()=>validateSchema(OUTPUT_SCHEMAS.evidence_read,corrupt,'output'),{code:'INVALID_OUTPUT'});
   assert.throws(()=>validateSchema(OUTPUT_SCHEMAS.task_context_read,{taskId:'incomplete'},'output'),{code:'INVALID_OUTPUT'});
  } finally {globalThis.fetch=savedFetch;s.close();}
+});
+
+test('execution environment catalog is read-only for an interactive coordinator; tasks and wakeups cannot configure or probe',async()=>{
+ const s=setup();try{
+  s.app.localRuntimes.configure(USER,{id:'saved-node',executable:'node',expectedVersion:0});const status=s.app.sessionPermissions.status(USER,s.session.id);s.app.sessionPermissions.set(USER,s.session.id,{mode:'readOnly',expectedVersion:status.version});
+  const current=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',current.id,current.version,{state:'running',generation:1,leaseUntil:Date.now()+120000,skillBundleId:s.app.skills.configuration(s.project.id).bundleId});const who={type:'agent',role:'coordinator',projectId:s.project.id,sessionId:s.session.id,generation:1},tools=new ToolDispatcher(s.app);
+  const savedSpawn=childProcess.spawn,savedSpawnSync=childProcess.spawnSync;childProcess.spawn=childProcess.spawnSync=()=>assert.fail('Saved catalog must not launch a process');syncBuiltinESMExports();
+  try{const view=await tools.execute(who,'execution_environment_list',{},'read-catalog');validateSchema(OUTPUT_SCHEMAS.execution_environment_list,view,'output');assert.equal(view.local.runtimes[0].id,'saved-node');}finally{childProcess.spawn=savedSpawn;childProcess.spawnSync=savedSpawnSync;syncBuiltinESMExports();}
+  const taskRoot=s.app.sessions.create(USER,s.project.id,{title:'Owner-approved task fixture'}),team=startTeam({...s,session:taskRoot},[spec('environment-reader')]),claimed=s.app.teams.claim(team.id),taskActor=actor(claimed),taskSession=s.app.sessions.get(USER,taskActor.sessionId);s.app.store.update('session',taskSession.id,taskSession.version,{state:'running',generation:taskActor.generation,leaseUntil:Date.now()+120000});
+  await assert.rejects(tools.execute(taskActor,'execution_environment_list',{},'task-catalog'),{code:'TOOL_DENIED'});const wakeup={...who,wakeupId:'automatic-fixture'};await assert.rejects(tools.execute(wakeup,'execution_environment_list',{},'automatic-catalog'),{code:'AUTOMATION_TOOL_DENIED'});
+  for(const caller of [who,taskActor,wakeup])for(const name of ['local_runtime_configure','gpu_target_probe','ssh_target_configure','ssh_target_probe'])await assert.rejects(tools.execute(caller,name,{},'denied-'+name),{code:'TOOL_DENIED'});
+  assert.equal(s.app.localRuntimes.list().length,1);assert.equal(s.app.gpus.list().length,0);assert.equal(s.app.sshTargets.list(USER).length,0);
+ }finally{s.close();}
 });

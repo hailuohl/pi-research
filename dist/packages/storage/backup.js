@@ -9,7 +9,7 @@ import { teamWakeupSource, wakeupId } from '../scheduler/wakeups.js';
 import { GitCommand } from '../workspace/git-command.js';
 import { DataPaths, readDataLocation, setDataLocation } from './data-paths.js';
 const ROOTS = new Set(['projects', 'experiments', 'workspaces', 'sessions', 'snapshots', 'artifacts', 'skill-blobs', 'jobs', 'sandbox-jobs', 'document-jobs', 'publication-jobs', 'git-worktrees', 'git-operations', 'exports', 'integration-staging', 'state.db.text-writes']);
-const EXCLUDED = new Set(['access.token', 'models.json', 'models-store.json', 'ssh-targets.json', 'ssh-targets.json.tmp', 'state.db-wal', 'state.db-shm', 'state.db-journal']);
+const EXCLUDED = new Set(['access.token', 'models.json', 'models-store.json', 'ssh-targets.json', 'ssh-targets.json.tmp', 'local-runtimes.json', 'local-runtimes.json.tmp', 'state.db-wal', 'state.db-shm', 'state.db-journal']);
 const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'timed_out']);
 const plain = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 function present(path) { try {
@@ -116,12 +116,14 @@ function table(db, name) { return !!db.prepare("SELECT 1 FROM sqlite_master WHER
 function stateCheck(db) {
     ensure(table(db, 'records') && table(db, 'schema_migrations'), 'BACKUP_DATABASE_INVALID', '缺少研究数据库结构', 400);
     const schema = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x => Number(x.version));
-    ensure(schema.length > 0 && schema.every(v => Number.isInteger(v) && v >= 1 && v <= 10), 'BACKUP_SCHEMA_UNSUPPORTED', '备份需要受支持的数据版本', 409);
+    ensure(schema.length > 0 && schema.every(v => Number.isInteger(v) && v >= 1 && v <= 11), 'BACKUP_SCHEMA_UNSUPPORTED', '备份需要受支持的数据版本', 409);
     ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check === 'ok', 'BACKUP_DATABASE_INVALID', '数据库完整性检查失败', 409);
     if (table(db, 'text_write_receipts'))
         ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(), 'BACKUP_RECOVERY_PENDING', '文本写入回执尚未清理', 409);
     if (table(db, 'compute_queue'))
         ensure(!db.prepare("SELECT 1 FROM compute_queue WHERE held<>0 OR phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(), 'BACKUP_BUSY', '还有计算等待、运行或未知结果', 409);
+    if (table(db, 'compute_gpu_claims'))
+        ensure(!db.prepare('SELECT 1 FROM compute_gpu_claims LIMIT 1').get(), 'BACKUP_BUSY', '还有未确认释放的 GPU 占用', 409);
     const rows = db.prepare('SELECT kind,id,project_id,data FROM records ORDER BY rowid').all().map(x => ({ kind: String(x.kind), id: String(x.id), projectId: x.project_id === null ? null : String(x.project_id), value: JSON.parse(String(x.data)) }));
     const sessions = new Map(rows.filter(x => x.kind === 'session').map(x => [x.id, x.value]));
     for (const { kind, id, value: r } of rows) {

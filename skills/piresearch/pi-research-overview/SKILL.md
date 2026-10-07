@@ -53,7 +53,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 - pi-research-experiment-tree：provisional、堆叠小扇形、逐完成循环、四种决策、修复和停止。
 - pi-research-git：受管 worktree、改代码、提交、固定源码比较与历史。
 - pi-research-agent-delegation：自包含简报、权限、独立写域、结果验收与恢复。
-- pi-research-compute：本地 trusted-example/Docker 与 SSH；先确定后端再读一个参考。
+- pi-research-compute：本地 local（含固定示例）、Docker 与 SSH；NVIDIA显式设备选择；先确定后端再读一个参考。
 - pi-research-evidence：输出设计、日志分段、指标/原文与效力。
 - pi-research-reports：持久草稿、固定报告、本地导出与组织。
 - pi-research-figures：写绘图代码前读取，再选择对应图种参考。

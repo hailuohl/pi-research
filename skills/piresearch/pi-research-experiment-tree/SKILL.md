@@ -52,7 +52,7 @@ root                root                   baseline
 方法例子（只适用于实际已有训练runner的config，随包curve-fit不接受这些字段）：从父config复制完整对象，分别把learningRate改成0.00002和0.00003；title分别“LR 2e-5”“LR 3e-5”，hypothesis说明只改LR。若真实结果支持保留3e-5，下一轮从其真实实验ID/revision复制，wider MLP只把已存在的hiddenDim从1024改2048。两轮command/env不变；配置schema不认识的字段不能凭示例添加。Pi具体可执行的二阶拟合例子见pi-research-create。
 
 4. **实现、保存、核对证据输出。** 按pi-research-git保存真实修改，独立审查与用户整合后读子源码。运行前读取pi-research-evidence，使已固定代码输出有效配置、最终指标、summary和必要轨迹；不修改已经回答的父。
-5. **准备并启动批准候选。** run_prepare固定各自intent，用户单独批准后run_submit。共享CPU/RAM/PID/目标/端口/数据都限制并行，不把助手数当GPU数；当前仅本地CPU与SSH受控CPU，不支持云调度。
+5. **准备并启动批准候选。** run_prepare固定各自intent，用户单独批准后run_submit。共享CPU/RAM/PID/目标/端口/数据都限制并行，不把助手数当GPU数；当前为本地/Docker/SSH的CPU或显式NVIDIA设备，不支持云调度；同一UUID在应用作业间共享预留，未知状态不释放。
 6. **每次完成推进，不等整批。** run_submit立即返回。结束回合，由宿主持久化监管和可选唤醒/结果分析；没有orx exp wait/wake工具，不能捏造CLI等待。每次通知后执行下面的对账循环，处理所有尚未处理的终态。
 
 ```text

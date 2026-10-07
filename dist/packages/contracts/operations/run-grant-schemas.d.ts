@@ -495,7 +495,36 @@ export declare const RUN_GRANT_SCHEMA: {
                                 readonly maximum: number;
                             };
                             readonly runner: {
-                                readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                readonly enum: readonly ["trusted-example", "local", "docker", "ssh"];
+                            };
+                            readonly localRuntimeId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly gpu: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly vendor: {
+                                        readonly const: "nvidia";
+                                    };
+                                    readonly deviceIds: {
+                                        readonly maxItems?: number | undefined;
+                                        readonly type: "array";
+                                        readonly items: {
+                                            readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly minItems: number;
+                                    };
+                                };
+                                readonly required: readonly ["vendor", "deviceIds"];
+                                readonly additionalProperties: false;
                             };
                             readonly sshTargetId: {
                                 readonly pattern?: string | undefined;
@@ -549,7 +578,7 @@ export declare const RUN_GRANT_SCHEMA: {
                                 readonly maximum: number;
                             };
                             readonly networkPolicy: {
-                                readonly const: "none";
+                                readonly enum: readonly ["none", "host"];
                             };
                         };
                         readonly required: readonly ["command", "environment", "datasetVersion", "evaluationProtocolVersion", "metrics", "expectedArtifacts", "timeoutSeconds", "runner", "cpus", "memoryMb"];
@@ -1280,7 +1309,36 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                    readonly enum: readonly ["trusted-example", "local", "docker", "ssh"];
+                                };
+                                readonly localRuntimeId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly gpu: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly vendor: {
+                                            readonly const: "nvidia";
+                                        };
+                                        readonly deviceIds: {
+                                            readonly maxItems?: number | undefined;
+                                            readonly type: "array";
+                                            readonly items: {
+                                                readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                                readonly type: "string";
+                                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                                readonly minLength: number;
+                                                readonly maxLength: number;
+                                            };
+                                            readonly minItems: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["vendor", "deviceIds"];
+                                    readonly additionalProperties: false;
                                 };
                                 readonly sshTargetId: {
                                     readonly pattern?: string | undefined;
@@ -1334,7 +1392,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly networkPolicy: {
-                                    readonly const: "none";
+                                    readonly enum: readonly ["none", "host"];
                                 };
                             };
                             readonly required: readonly ["command", "environment", "datasetVersion", "evaluationProtocolVersion", "metrics", "expectedArtifacts", "timeoutSeconds", "runner", "cpus", "memoryMb"];
@@ -1933,7 +1991,36 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                    readonly enum: readonly ["trusted-example", "local", "docker", "ssh"];
+                                };
+                                readonly localRuntimeId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly gpu: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly vendor: {
+                                            readonly const: "nvidia";
+                                        };
+                                        readonly deviceIds: {
+                                            readonly maxItems?: number | undefined;
+                                            readonly type: "array";
+                                            readonly items: {
+                                                readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                                readonly type: "string";
+                                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                                readonly minLength: number;
+                                                readonly maxLength: number;
+                                            };
+                                            readonly minItems: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["vendor", "deviceIds"];
+                                    readonly additionalProperties: false;
                                 };
                                 readonly sshTargetId: {
                                     readonly pattern?: string | undefined;
@@ -1987,7 +2074,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly networkPolicy: {
-                                    readonly const: "none";
+                                    readonly enum: readonly ["none", "host"];
                                 };
                             };
                             readonly required: readonly ["command", "environment", "datasetVersion", "evaluationProtocolVersion", "metrics", "expectedArtifacts", "timeoutSeconds", "runner", "cpus", "memoryMb"];
@@ -2586,7 +2673,36 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                    readonly enum: readonly ["trusted-example", "local", "docker", "ssh"];
+                                };
+                                readonly localRuntimeId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly gpu: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly vendor: {
+                                            readonly const: "nvidia";
+                                        };
+                                        readonly deviceIds: {
+                                            readonly maxItems?: number | undefined;
+                                            readonly type: "array";
+                                            readonly items: {
+                                                readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                                readonly type: "string";
+                                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                                readonly minLength: number;
+                                                readonly maxLength: number;
+                                            };
+                                            readonly minItems: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["vendor", "deviceIds"];
+                                    readonly additionalProperties: false;
                                 };
                                 readonly sshTargetId: {
                                     readonly pattern?: string | undefined;
@@ -2640,7 +2756,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly networkPolicy: {
-                                    readonly const: "none";
+                                    readonly enum: readonly ["none", "host"];
                                 };
                             };
                             readonly required: readonly ["command", "environment", "datasetVersion", "evaluationProtocolVersion", "metrics", "expectedArtifacts", "timeoutSeconds", "runner", "cpus", "memoryMb"];
@@ -3239,7 +3355,36 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly runner: {
-                                    readonly enum: readonly ["trusted-example", "docker", "ssh"];
+                                    readonly enum: readonly ["trusted-example", "local", "docker", "ssh"];
+                                };
+                                readonly localRuntimeId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly gpu: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly vendor: {
+                                            readonly const: "nvidia";
+                                        };
+                                        readonly deviceIds: {
+                                            readonly maxItems?: number | undefined;
+                                            readonly type: "array";
+                                            readonly items: {
+                                                readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                                readonly type: "string";
+                                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                                readonly minLength: number;
+                                                readonly maxLength: number;
+                                            };
+                                            readonly minItems: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["vendor", "deviceIds"];
+                                    readonly additionalProperties: false;
                                 };
                                 readonly sshTargetId: {
                                     readonly pattern?: string | undefined;
@@ -3293,7 +3438,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                                     readonly maximum: number;
                                 };
                                 readonly networkPolicy: {
-                                    readonly const: "none";
+                                    readonly enum: readonly ["none", "host"];
                                 };
                             };
                             readonly required: readonly ["command", "environment", "datasetVersion", "evaluationProtocolVersion", "metrics", "expectedArtifacts", "timeoutSeconds", "runner", "cpus", "memoryMb"];

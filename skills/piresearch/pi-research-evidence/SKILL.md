@@ -42,7 +42,7 @@ STEP <实际步数> <指标名称>=<实际值> <单位>
 SUMMARY <具体变体与结果/限制>
 ```
 
-metrics.json必须由实际程序写入、符合固定contract指标；不能artifact_create自己编一个metrics.json然后声称Run实测。随包curve-fit为固定程序，不修改它绕过trusted-example哈希；新输出代码需Docker开发/整合/正式Run。
+metrics.json必须由实际程序写入、符合固定contract指标；不能artifact_create自己编一个metrics.json然后声称Run实测。随包curve-fit为固定程序，不修改它绕过trusted-example哈希；新输出代码需受管开发/整合并经local、Docker或SSH正式Run；设备探测不能冒充GPU数值实测。
 
 ## 报告前验证
 

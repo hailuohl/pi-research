@@ -63,6 +63,7 @@ export async function superviseSshRun(initial, c, callbacks, request = sshReques
     try {
         await callbacks.verifyTarget?.();
         if (!possible) {
+            targets.assertFrozen(target, true);
             const r = read();
             ensure(!r.cancelRequested, 'RUN_CANCELLED', '运行已取消');
             callbacks.assertGrant(r);

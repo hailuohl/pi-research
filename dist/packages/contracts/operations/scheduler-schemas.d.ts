@@ -174,7 +174,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("targetId" | "context" | "backend" | "observedAt")[];
+        readonly required: ("context" | "targetId" | "backend" | "observedAt")[];
         readonly additionalProperties: false;
     };
     readonly compute_queue_inspect: {
@@ -324,7 +324,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                         readonly backend: {
-                            readonly enum: readonly ["docker", "trusted-example", "ssh"];
+                            readonly enum: readonly ["local", "docker", "trusted-example", "ssh"];
                         };
                         readonly contexts: {
                             readonly type: "array";
@@ -462,7 +462,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("targetId" | "usage" | "available" | "configuration" | "backend" | "contexts")[];
+                    readonly required: ("targetId" | "backend" | "usage" | "available" | "configuration" | "contexts")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -490,7 +490,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "boolean";
                         };
                         readonly backend: {
-                            readonly enum: readonly ["docker", "trusted-example", "ssh"];
+                            readonly enum: readonly ["local", "docker", "trusted-example", "ssh"];
                         };
                         readonly targetId: {
                             readonly anyOf: readonly [{
@@ -508,6 +508,28 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                 readonly memoryMb: {
                                     readonly type: "integer";
                                 };
+                                readonly gpu: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly vendor: {
+                                            readonly const: "nvidia";
+                                        };
+                                        readonly deviceIds: {
+                                            readonly maxItems?: number | undefined;
+                                            readonly type: "array";
+                                            readonly items: {
+                                                readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                                readonly type: "string";
+                                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                                readonly minLength: number;
+                                                readonly maxLength: number;
+                                            };
+                                            readonly minItems: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["vendor", "deviceIds"];
+                                    readonly additionalProperties: false;
+                                };
                             };
                             readonly required: ("cpus" | "memoryMb")[];
                             readonly additionalProperties: false;
@@ -522,10 +544,10 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                         readonly reason: {
-                            readonly enum: readonly ["ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
+                            readonly enum: readonly ["gpu_busy", "ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "state" | "generation" | "leaseUntil" | "kind" | "reason" | "targetId" | "projectId" | "backend" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("id" | "state" | "generation" | "leaseUntil" | "kind" | "reason" | "targetId" | "backend" | "projectId" | "held" | "requested" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };

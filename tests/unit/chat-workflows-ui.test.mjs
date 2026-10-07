@@ -12,6 +12,9 @@ const proposal=(extra={})=>({id:'proposal',rootSessionId:'root-a',title:'Own fix
 const campaign=(extra={})=>({id:'campaign',goal:'Own conversation plan',rootSessionId:'root-a',state:'draft',version:1,baselineExperimentId:'e',focusExperimentId:'e',rootModel:session.model,primaryMetric:'loss',direction:'min',limits:{maxRounds:2},planDigest:'plan',contractDigest:'contract',approvalId:'campaign-approval',autoAnalyze:false,...extra});
 const runIntent=(extra={})=>({id:'run-intent',rootSessionId:'root-a',experimentId:'e',approvalId:'run-approval',status:'prepared',manifestDigest:'fixed-manifest',manifest:{snapshotDigest:'source',contractDigest:'contract',contract:{command:['python','main.py'],metrics:{loss:{unit:'mse'}}}},...extra});
 const view=(data,extra={})=>synchronousState(new ChatWorkflows({data,session,busy:false,perform:fn=>fn(),onSession(){},onExperiment(){},onRun(){},...extra}));
+test('native Run approval visibly states host authority and exact NVIDIA devices outside collapsed details',()=>{
+ const data=base(),uuid='GPU-11111111-1111-1111-1111-111111111111';data.intents=[runIntent({manifest:{contract:{runner:'local',localRuntimeId:'python',gpu:{vendor:'nvidia',deviceIds:[uuid]}}}})];data.approvals=[{id:'run-approval',status:'pending',version:1}];const paragraphs=elements(view(data).render()).filter(n=>n.type==='p').map(text).join('\n');assert.match(paragraphs,/本地执行.*文件和网络不隔离.*python/);assert.ok(paragraphs.includes(uuid));
+});
 
 test('dialogue task cards exclude other main sessions while retaining scoped and unbound history',()=>{
   const data=base();

@@ -1,3 +1,5 @@
+import { LocalRuntimeService } from './local-runtime.js';
+import { GpuService } from './gpu.js';
 import { BudgetService } from '../policy/budget.js';
 import { SshTargetService } from './ssh-targets.js';
 import { assertExperimentSourceCurrent, assertProjectWritable } from '../policy/lifecycle.js';
@@ -104,10 +106,18 @@ export class RunService {
             const snap = snapshotDirectory(this.c.store.paths.physical(e.workspace), join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
             const binding = revision ? this.c.store.maybe('git-source-binding', revision.id) : undefined;
             const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: this.c.store.paths.reference(snap.path), sourceFiles: snap.files, createdAt: now(), ...(analysis ? { analysis } : {}), ...(researchBrief ? { researchBrief } : {}), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
+            if (manifest.contract.runner === 'local') {
+                manifest.localRuntime = new LocalRuntimeService(this.c).frozen(manifest.contract.localRuntimeId);
+                manifest.localExecution = { isolation: 'none', resourceEnforcement: 'advisory', networkIsolation: false };
+            }
+            if (manifest.contract.gpu)
+                manifest.gpuTarget = new GpuService(this.c).saved(manifest.contract);
             if (manifest.contract.runner === 'ssh')
                 manifest.sshTarget = new SshTargetService(this.c).frozen(manifest.contract.sshTargetId, true);
+            if (manifest.contract.gpu && manifest.contract.runner === 'ssh')
+                ensure(manifest.sshTarget?.gpuProtocol === true, 'GPU_UNAVAILABLE', 'SSH GPU 需要独立 GPU 协议目标');
             verifyTrustedExample(manifest, this.c.repoRoot, this.c.store.paths);
-            const id = randomUUID(), hash = digest(manifest), approval = this.approvals.request(e.projectId, 'run-intent', id, hash, 'run.submit', '批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限' + (analysis ? `。该Run终态后在指定对话使用${analysis.model.provider}/${analysis.model.model}最多启动1次Pi结果分析任务，可包含多个模型HTTP/工具往返，只读本次结果、诊断与建议，不批准或启动新计算。` : ''));
+            const id = randomUUID(), hash = digest(manifest), approval = this.approvals.request(e.projectId, 'run-intent', id, hash, 'run.submit', '批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限' + (manifest.contract.runner === 'local' ? '。本地在系统用户权限内执行可信源码；文件与网络不隔离，CPU/内存仅调度记账。' : '') + (analysis ? `。该Run终态后在指定对话使用${analysis.model.provider}/${analysis.model.model}最多启动1次Pi结果分析任务，可包含多个模型HTTP/工具往返，只读本次结果、诊断与建议，不批准或启动新计算。` : ''));
             if (analysis)
                 this.budget.configure(e.projectId, id, 1);
             const result = this.c.store.create('run-intent', e.projectId, { experimentId: e.id, manifest, manifestDigest: hash, approvalId: approval.id, status: 'prepared', ...(rootSessionId ? { rootSessionId } : {}) }, id);
@@ -157,12 +167,14 @@ export class RunService {
                 ensure(intent.manifest.sshTarget, 'SSH_TARGET_REQUIRED', 'SSH 目标未冻结');
                 new SshTargetService(this.c).assertFrozen(intent.manifest.sshTarget, true);
             }
-            this.compute.assertEnqueue('run', intent.projectId, intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.runner === 'docker' ? intent.manifest.contract.dockerContext ?? 'default' : undefined);
+            if (intent.manifest.localRuntime)
+                new LocalRuntimeService(this.c).resolve(intent.manifest.contract.localRuntimeId, intent.manifest.localRuntime);
+            this.compute.assertEnqueue('run', intent.projectId, intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.runner === 'docker' ? intent.manifest.contract.dockerContext ?? 'default' : undefined, intent.manifest.localRuntime?.hostId);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
             consumeRunGrant(this.c.store, intent, runId, actor);
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
-            const execution = intent.manifest.contract.runner !== 'trusted-example' ? { backend: intent.manifest.contract.runner, dockerContext: intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.dockerContext ?? 'default', ...(intent.manifest.contract.runner === 'ssh' ? { sshHandle: `pi-ssh-${runId}` } : {}), containerName: `pi-research-${runId}`, controlDir: this.c.store.paths.reference(join(this.c.dataDir, 'jobs', runId, 'control')), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
+            const execution = intent.manifest.contract.runner !== 'trusted-example' ? { backend: intent.manifest.contract.runner, dockerContext: intent.manifest.contract.runner === 'local' ? 'local' : intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.dockerContext ?? 'default', ...(intent.manifest.contract.runner === 'ssh' ? { sshHandle: `pi-ssh-${runId}` } : {}), containerName: `pi-research-${runId}`, controlDir: this.c.store.paths.reference(join(this.c.dataDir, 'jobs', runId, 'control')), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
             const permission = this.permissionCapture?.(actor, { kind: 'run', subjectId: intent.id, approvalId: intent.approvalId, manifestDigest: intent.manifestDigest });
             const run = this.c.store.create('run', intent.projectId, { permissionOrigin: actor.type === 'user' ? 'owner' : 'agent', ...(permission ? { permission } : {}), experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir: this.c.store.paths.reference(outputDir), cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}), ...(intent.runGrant ? { runGrant: intent.runGrant } : {}) }, runId);
             if (run.manifest.sshTarget) {
@@ -206,7 +218,12 @@ export class RunService {
         }
         ensure(e.revision === run.manifest.experimentRevision && e.contractDigest === run.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
         ensure(digest(run.manifest.contract) === run.manifest.contractDigest && digest(run.manifest.sourceFiles) === run.manifest.snapshotDigest, 'MANIFEST_CORRUPTED', '运行契约或源码清单摘要不符');
-        if (run.execution?.backend === 'ssh') {
+        if (run.execution?.backend === 'local') {
+            ensure(run.manifest.contract.runner === 'local' && run.manifest.localRuntime && run.manifest.localExecution?.isolation === 'none' && run.execution.dockerContext === 'local' && this.c.store.paths.same(run.execution.controlDir, join(this.c.dataDir, 'jobs', run.id, 'control')), 'APPROVAL_STALE', '本地执行身份不符');
+            if (admission)
+                new LocalRuntimeService(this.c).resolve(run.manifest.contract.localRuntimeId, run.manifest.localRuntime);
+        }
+        else if (run.execution?.backend === 'ssh') {
             const t = run.manifest.sshTarget;
             ensure(t && run.manifest.contract.runner === 'ssh' && t.id === run.manifest.contract.sshTargetId && run.execution.sshHandle === `pi-ssh-${run.id}` && run.execution.dockerContext === 'ssh:' + t.id && this.c.store.paths.same(run.execution.controlDir, join(this.c.dataDir, 'jobs', run.id, 'control')), 'APPROVAL_STALE', 'SSH 运行身份与批准契约不符');
             new SshTargetService(this.c).assertFrozen(t, admission);
@@ -241,6 +258,8 @@ export class RunService {
                     this.assertLaunchable(run);
                 }
                 catch (error) {
+                    if (error.code === 'SSH_PROTOCOL_UPGRADE_REQUIRED')
+                        continue;
                     this.cancelBeforeLaunch(run, error);
                 }
             }
@@ -254,7 +273,7 @@ export class RunService {
         mkdirSync(logDir, { recursive: true, mode: 0o700 });
         const fd = openSync(join(logDir, 'supervisor.log'), 'a', 0o600);
         try {
-            const env = Object.fromEntries(['PATH', 'SystemRoot', 'WINDIR', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'ProgramData'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
+            const env = Object.fromEntries(['PATH', 'SystemRoot', 'WINDIR', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'ProgramData', 'ProgramFiles'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
             const child = spawn(process.execPath, [join(this.c.repoRoot, 'dist', 'apps', 'runner-supervisor', 'index.js'), this.c.dataDir, this.c.repoRoot, run.id], { detached: true, stdio: ['ignore', fd, fd], env, windowsHide: true });
             child.on('error', () => { this.launching.delete(run.id); });
             child.unref();
@@ -332,7 +351,7 @@ export class RunService {
             if (errors.length)
                 error = [error, ...errors].filter(Boolean).join('; ').slice(0, 8000);
             if (r.execution) {
-                const report = { runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit, command: r.manifest.contract.command, image: r.manifest.contract.image, imageId: r.execution.imageId, containerId: r.execution.containerId, ...(r.execution.backend === 'ssh' ? { backend: 'ssh', sshHandle: r.execution.sshHandle, sshTarget: r.manifest.sshTarget } : {}), exitCode, state, integrity, error, artifactIds: [...artifactIds], scientificConclusion: false }, a = this.evidence.put(r.projectId, 'execution.json', Buffer.from(JSON.stringify(report, null, 2)), 'application/json', 'run', { runId: r.id });
+                const report = { runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit, command: r.manifest.contract.command, ...(r.manifest.localRuntime ? { backend: 'local', localRuntime: r.manifest.localRuntime, localExecution: r.manifest.localExecution } : {}), ...(r.manifest.contract.gpu ? { gpu: r.manifest.contract.gpu, gpuTarget: r.manifest.gpuTarget } : {}), image: r.manifest.contract.image, imageId: r.execution.imageId, containerId: r.execution.containerId, ...(r.execution.backend === 'ssh' ? { backend: 'ssh', sshHandle: r.execution.sshHandle, sshTarget: r.manifest.sshTarget } : {}), exitCode, state, integrity, error, artifactIds: [...artifactIds], scientificConclusion: false }, a = this.evidence.put(r.projectId, 'execution.json', Buffer.from(JSON.stringify(report, null, 2)), 'application/json', 'run', { runId: r.id });
                 artifactIds.push(a.id);
             }
             r = this.c.store.update('run', id, r.version, { state, integrity, judgment: 'pending', answerDisposition: metrics && evidenceIds.length ? 'answered' : 'needs_review', exitCode, endedAt: now(), heartbeat: Date.now(), metrics, artifactIds, evidenceIds, ...(error ? { error } : {}), ...(r.execution ? { execution: { ...r.execution, leaseUntil: 0, logTruncated: facts?.logTruncated ?? r.execution.logTruncated, outputExceeded: facts?.outputExceeded ?? r.execution.outputExceeded } } : {}) });

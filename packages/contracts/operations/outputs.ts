@@ -1,3 +1,4 @@
+import {EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS,GPU_SCHEMA,LOCAL_RUNTIME_SCHEMA,LOCAL_EXECUTION_SCHEMA,GPU_TARGET_SCHEMA} from './execution-environment-schemas.js';
 import {HOST_EXECUTION_OUTPUT_SCHEMA} from './host-access-schemas.js';
 import {RESEARCH_BRIEF_OUTPUT_SCHEMAS} from './research-brief-schemas.js';
 import {SESSION_HISTORY_OUTPUT_SCHEMAS} from './session-schemas.js';
@@ -36,24 +37,26 @@ const row = <const K extends string, const P extends Record<string, JsonSchema>,
 const sourceFile = object({ path: string, size: integer, digest: string,mode:enumeration('100644','100755') },['mode']);
 const snapshot = object({ digest: string, path: string, files: array(sourceFile) });
 const contract = object({
+    localRuntimeId:string,gpu:GPU_SCHEMA,
     command: strings,
     environment: { type: 'object', additionalProperties: string },
     datasetVersion: string, evaluationProtocolVersion: string,
     metrics: { type: 'object', additionalProperties: object({ unit: string, direction: enumeration('min', 'max') }) },
-    expectedArtifacts: strings, timeoutSeconds: integer, runner: enumeration('trusted-example', 'docker', 'ssh'),
-    sshTargetId:string,image: string, cpus: integer, memoryMb: integer,dockerContext:string,pids:integer,workMb:integer,logBytes:integer,outputBytes:integer,networkPolicy:{const:'none'}
-}, ['sshTargetId','image','dockerContext','pids','workMb','logBytes','outputBytes','networkPolicy']);
-const sshTarget=object({id:string,version:integer,hostKeyDigest:string,configDigest:string,engineId:string,protocolDigest:string,targetId:string});
+    expectedArtifacts: strings, timeoutSeconds: integer, runner: enumeration('trusted-example', 'local', 'docker', 'ssh'),
+    sshTargetId:string,image: string, cpus: integer, memoryMb: integer,dockerContext:string,pids:integer,workMb:integer,logBytes:integer,outputBytes:integer,networkPolicy:{enum:['none','host']}
+}, ['localRuntimeId','gpu','sshTargetId','image','dockerContext','pids','workMb','logBytes','outputBytes','networkPolicy']);
+const sshTarget=object({id:string,version:integer,hostKeyDigest:string,configDigest:string,engineId:string,protocolDigest:string,targetId:string,gpuProtocol:boolean},['gpuProtocol']);
 const researchBriefRef=object({id:string,digest:string,revision:integer,rootSessionId:string});
 const runAnalysis=object({rootSessionId:string,model:object({provider:string,model:string,thinking:enumeration('off','minimal','low','medium','high','xhigh')}),maxAttempts:{const:1}});
 const manifest = object({
+    localRuntime:LOCAL_RUNTIME_SCHEMA,localExecution:LOCAL_EXECUTION_SCHEMA,gpuTarget:GPU_TARGET_SCHEMA,
     analysis:runAnalysis,
     researchBrief:researchBriefRef,
     experimentId: string, experimentVersion: integer, experimentRevision: integer,
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
     sourceFiles: array(sourceFile), createdAt: string,sourceRevisionId:string,gitCommit:string,sshTarget
-},['sourceRevisionId','gitCommit','sshTarget','researchBrief','analysis']);
-const runnerExecution=object({backend:enumeration('docker','ssh'),sshHandle:string,dockerContext:string,containerName:string,containerId:string,imageId:string,controlDir:string,generation:integer,leaseUntil:number,startRequested:boolean,recoveryCount:integer,logTruncated:boolean,logsIncomplete:boolean,outputExceeded:boolean},['sshHandle','containerId','imageId','logTruncated','logsIncomplete','outputExceeded']);
+},['localRuntime','localExecution','gpuTarget','sourceRevisionId','gitCommit','sshTarget','researchBrief','analysis']);
+const runnerExecution=object({backend:enumeration('local','docker','ssh'),sshHandle:string,dockerContext:string,containerName:string,containerId:string,imageId:string,controlDir:string,generation:integer,leaseUntil:number,startRequested:boolean,recoveryCount:integer,logTruncated:boolean,logsIncomplete:boolean,outputExceeded:boolean},['sshHandle','containerId','imageId','logTruncated','logsIncomplete','outputExceeded']);
 const taskResult = object({
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,
     claims: array(object({ statement: string, evidenceIds: strings, limitations: strings })),
@@ -67,6 +70,7 @@ const campaign = row('campaign', {
 
 /** Success payloads are the existing service records, including durable replay fields. */
 const CORE_OUTPUT_SCHEMAS = {
+    ...EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS,
     run_prepare: row('run-intent', {
         experimentId: string, manifest, manifestDigest: string, approvalId: string,
         status: enumeration('prepared', 'submitted'), runId: string,runGrant:RUN_GRANT_REFERENCE_SCHEMA,rootSessionId:string

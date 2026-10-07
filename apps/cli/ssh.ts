@@ -8,7 +8,7 @@ export async function sshTargetCli(args:string[],root:string,dataDir:string):Pro
  if(args[0]!=='ssh-target')return false;
  const sub=args[1]??'help',option=(name:string)=>{const i=args.indexOf(name);return i<0?undefined:args[i+1];};
  if(sub==='help'){
-  console.log('ssh-target configure --id <id> --host <host> --user <user> --identity-file <path> --known-hosts-file <path> --remote-root <absolute Linux path> [--port <n>] [--expected-version <n>] [--data <dir>]\nssh-target probe|get --id <id> [--data <dir>]\nssh-target list [--data <dir>]');
+  console.log('ssh-target configure --id <id> --host <host> --user <user> --identity-file <path> --known-hosts-file <path> --remote-root <absolute Linux path> [--port <n>] [--expected-version <n>] [--data <dir>]\n新配置使用独立 ssh-runner-gpu.py 协议，服务 CPU/NVIDIA；旧目标仅保留已有作业对账。\nssh-target probe|get --id <id> [--data <dir>]\nssh-target list [--data <dir>]');
   return true;
  }
  ensure(['configure','probe','get','list'].includes(sub),'INVALID_INPUT','未知 SSH 目标命令');
@@ -18,7 +18,7 @@ export async function sshTargetCli(args:string[],root:string,dataDir:string):Pro
   let result:unknown;
   if(sub==='configure'){
    const port=option('--port'),expectedVersion=option('--expected-version');
-   result=app.sshTargets.configure(USER,{id:required('--id'),host:required('--host'),user:required('--user'),identityFile:resolve(required('--identity-file')),knownHostsFile:resolve(required('--known-hosts-file')),remoteRoot:required('--remote-root'),...(port===undefined?{}:{port:Number(port)}),...(expectedVersion===undefined?{}:{expectedVersion:Number(expectedVersion)})});
+   result=app.sshTargets.configure(USER,{id:required('--id'),host:required('--host'),user:required('--user'),identityFile:resolve(required('--identity-file')),knownHostsFile:resolve(required('--known-hosts-file')),remoteRoot:required('--remote-root'),gpuProtocol:true,...(port===undefined?{}:{port:Number(port)}),...(expectedVersion===undefined?{}:{expectedVersion:Number(expectedVersion)})});
   }else if(sub==='probe')result=await app.sshTargets.probe(USER,required('--id'));
   else if(sub==='get')result=app.sshTargets.get(USER,required('--id'));
   else result=app.sshTargets.list(USER);

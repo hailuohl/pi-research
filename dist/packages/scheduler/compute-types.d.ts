@@ -26,7 +26,7 @@ export interface ComputeAvailable {
     cpus: number | null;
     memoryMb: number | null;
 }
-export type ComputeWaitReason = 'ready' | 'worker_active' | 'recovery_due' | 'target_unresolved' | 'target_unavailable' | 'target_changed' | 'legacy_target_unknown' | 'request_too_large' | 'host_capacity' | 'target_capacity' | 'earlier_job' | 'recovery_backoff' | 'manual_recovery_required';
+export type ComputeWaitReason = 'gpu_busy' | 'ready' | 'worker_active' | 'recovery_due' | 'target_unresolved' | 'target_unavailable' | 'target_changed' | 'legacy_target_unknown' | 'request_too_large' | 'host_capacity' | 'target_capacity' | 'earlier_job' | 'recovery_backoff' | 'manual_recovery_required';
 export interface ComputeQueueItem {
     kind: ComputeKind;
     id: string;
@@ -34,11 +34,12 @@ export interface ComputeQueueItem {
     sequence: number;
     state: string;
     held: boolean;
-    backend: 'docker' | 'trusted-example' | 'ssh';
+    backend: 'local' | 'docker' | 'trusted-example' | 'ssh';
     targetId: string | null;
     requested: {
         cpus: number;
         memoryMb: number;
+        gpu?: import('../runners/gpu.js').GpuRequest;
     };
     generation: number;
     leaseUntil: number;
@@ -64,7 +65,7 @@ export interface ComputeQueueInspection {
     queued: number;
     targets: Array<{
         targetId: string;
-        backend: 'docker' | 'trusted-example' | 'ssh';
+        backend: 'local' | 'docker' | 'trusted-example' | 'ssh';
         contexts: string[];
         configuration: ComputeConfiguration;
         usage: ComputeUsage;

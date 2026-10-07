@@ -1,10 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createArgs, BOOTSTRAP, dockerEnv, preflight, stageInputs, retireUncertainStart, docker, inspect} from '../../dist/packages/execution/docker.js';
+import {assertContainerStartPolicy,createArgs, BOOTSTRAP, dockerEnv, preflight, stageInputs, retireUncertainStart, docker, inspect} from '../../dist/packages/execution/docker.js';
 import {mkdtempSync, mkdirSync, writeFileSync, readFileSync, statSync, chmodSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {digest} from '../../dist/packages/storage/store.js';
+import childProcess from 'node:child_process';
+import {syncBuiltinESMExports} from 'node:module';
+import {EventEmitter} from 'node:events';
+import {PassThrough} from 'node:stream';
 
 const job = {id: 'job-1', containerName: 'pi-sandbox-job-1', manifestDigest: 'abc', controlDir: 'D:/control', outputDir: 'D:/output', manifest: {
  inputSnapshot: {path: 'D:/immutable source', files: []}, dataArtifacts: [{id: 'data-1', path: 'D:/data.csv'}], command: ['python', '-c', 'print("$(host)")'],
@@ -12,6 +16,7 @@ const job = {id: 'job-1', containerName: 'pi-sandbox-job-1', manifestDigest: 'ab
 }};
 test('Docker argv confines mounts, privileges and shell bootstrap to container', () => {
  const args = createArgs(job);
+ assert.ok(args.includes('NVIDIA_VISIBLE_DEVICES=void'));assert.ok(args.includes('CUDA_VISIBLE_DEVICES=-1'));assert.ok(!args.includes('--gpus'));
  for (const flag of ['--read-only', '--cap-drop', '--security-opt', '--pids-limit', '--cpus', '--memory', '--user']) assert.ok(args.includes(flag));
  assert.equal(args[args.indexOf('--network') + 1], 'none');
  assert.equal(args[args.indexOf('--user') + 1], '65532:65532');
@@ -27,6 +32,18 @@ test('Docker argv confines mounts, privileges and shell bootstrap to container',
  assert.ok(!args.some(arg => arg === `type=bind,src=${job.controlDir},dst=/control,readonly`));
  assert.ok(!args.includes('--rm'));
  assert.throws(() => createArgs({...job, outputDir: 'x,dst=/host'}), /Unsupported/);
+});
+
+test('created CPU containers must override inherited image GPU visibility before starting',()=>{
+ const container={Config:{Labels:{},Env:['NVIDIA_VISIBLE_DEVICES=all']},HostConfig:{DeviceRequests:[]},State:{Status:'created'}};
+ assert.throws(()=>assertContainerStartPolicy(job,container),/GPU_POLICY_MISMATCH/);container.Config.Env=['NVIDIA_VISIBLE_DEVICES=void','CUDA_VISIBLE_DEVICES=-1'];assert.doesNotThrow(()=>assertContainerStartPolicy(job,container));container.HostConfig.DeviceRequests=[{DeviceIDs:['GPU-11111111-1111-1111-1111-111111111111']}];assert.throws(()=>assertContainerStartPolicy(job,container),/GPU_POLICY_MISMATCH/);
+ const gpuJob={...job,manifest:{...job.manifest,resources:{...job.manifest.resources,gpu:{vendor:'nvidia',deviceIds:['GPU-11111111-1111-1111-1111-111111111111']}}}},args=createArgs(gpuJob);assert.ok(args.includes('NVIDIA_VISIBLE_DEVICES=GPU-11111111-1111-1111-1111-111111111111'));assert.ok(args.includes('CUDA_VISIBLE_DEVICES=GPU-11111111-1111-1111-1111-111111111111'));assert.equal(args[args.indexOf('--gpus')+1],'device=GPU-11111111-1111-1111-1111-111111111111');
+});
+
+test('new-start inspection rejects a legacy created container but observes an already running container unchanged',async()=>{
+ const original=childProcess.spawn,calls=[],container={Id:'owned',Config:{Labels:{'pi-research.sandbox-job':job.id,'pi-research.manifest':job.manifestDigest},Env:['NVIDIA_VISIBLE_DEVICES=all']},HostConfig:{DeviceRequests:[]},State:{Status:'created',Running:false}};
+ childProcess.spawn=(program,args)=>{assert.equal(program,'docker');assert.equal(args[2],'inspect');calls.push(args);const child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.kill=()=>assert.fail('inspection must not kill a workload');queueMicrotask(()=>{child.stdout.end(JSON.stringify([container]));child.stderr.end();child.emit('close',0);});return child;};syncBuiltinESMExports();
+ try{const live={...job,startRequested:false,manifest:{...job.manifest,dockerContext:'fixture'}};await assert.rejects(inspect(live),/GPU_POLICY_MISMATCH/);container.State={Status:'running',Running:true};assert.deepEqual(await inspect({...live,startRequested:true}),container);assert.equal(calls.length,2);}finally{childProcess.spawn=original;syncBuiltinESMExports();}
 });
 test('optional real Docker preserves ordinary and executable source modes', {skip: process.env.PI_TEST_DOCKER_MODES !== '1'}, async () => {
  const validation = join(process.cwd(), '.validation'); mkdirSync(validation, {recursive: true});

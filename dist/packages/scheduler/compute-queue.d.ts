@@ -30,6 +30,7 @@ export declare class ComputeQueue {
     private effectiveAvailable;
     private tooLarge;
     private capacity;
+    private gpuBusy;
     private bindCachedQueued;
     /** Earliest non-oversized job per target: temporarily blocked large jobs cannot be overtaken there. */
     private heads;
@@ -39,7 +40,7 @@ export declare class ComputeQueue {
     queued(kind: ComputeKind, limit?: number): string[];
     active(kind: ComputeKind, limit?: number): string[];
     withAdmission<T>(kind: ComputeKind, id: string, fn: () => T): T | null;
-    assertEnqueue(kind: ComputeKind, _projectId: string, context?: string): void;
+    assertEnqueue(kind: ComputeKind, _projectId: string, context?: string, localTargetId?: string): void;
     /** Owner-only identity discovery; does not create a job, bind old jobs or grant execution. */
     probeContext(actor: Actor, context: string, validate?: () => void): Promise<ComputeTargetProbe>;
     private remember;

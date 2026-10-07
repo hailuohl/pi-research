@@ -35,6 +35,28 @@ test('offline backup excludes SSH private target configuration and retains suppo
  }finally{s.close();}
 });
 
+test('schema 11 backup excludes local runtime configuration and preserves terminal GPU fixture history after relocation',async()=>{
+ const s=fixture();let restored;
+ try{
+  const runtime=s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:0}),uuid='GPU-11111111-1111-1111-1111-111111111111';
+  // Storage fixture only: this test neither probes a GPU nor represents measured GPU output.
+  s.app.store.create('gpu-target',null,{target:{backend:'local',targetId:runtime.hostId,observedAt:new Date().toISOString(),devices:[{uuid,name:'storage fixture',memoryMb:1024}]}},'backup-gpu-fixture');
+  const experiment=s.app.experiments.create(USER,s.project.id,{title:'GPU storage fixture',contract:{runner:'local',localRuntimeId:'node',command:['node','experiment.mjs'],environment:{},datasetVersion:'storage-fixture',evaluationProtocolVersion:'storage-fixture',metrics:{value:{unit:'fixture',direction:'max'}},expectedArtifacts:['metrics.json'],networkPolicy:'host',gpu:{vendor:'nvidia',deviceIds:[uuid]},timeoutSeconds:10,cpus:1,memoryMb:128}});
+  const intent=s.app.runs.prepare(USER,experiment.id);approve(s.app,intent.approvalId);const queued=s.app.runs.submit(USER,intent.id);
+  const claimed=s.app.compute.withAdmission('run',queued.id,()=>s.app.store.update('run',queued.id,queued.version,{state:'running',execution:{...queued.execution,generation:1,startRequested:true,leaseUntil:Date.now()+60000}}));
+  assert.equal(s.app.store.db.prepare('SELECT count(*) n FROM compute_gpu_claims').get().n,1);
+  const control=physical(s,claimed.execution.controlDir);mkdirSync(control,{recursive:true});writeFileSync(join(control,'stdout.log'),'storage fixture, no GPU executed\n');writeFileSync(join(control,'stderr.log'),'');writeFileSync(join(physical(s,claimed.outputDir),'metrics.json'),'{"value":42}');
+  const done=s.app.runs.finalize(claimed.id,0,'succeeded','storage fixture',{generation:1,state:'succeeded',exitCode:0,incomplete:false,logTruncated:false,outputExceeded:false});assert.equal(done.integrity,'complete');assert.equal(s.app.store.db.prepare('SELECT count(*) n FROM compute_gpu_claims').get().n,0);
+  const frozen=JSON.stringify(done.manifest),artifacts=done.artifactIds.map(id=>({id,bytes:s.app.evidence.read(USER,id).bytes}));writeFileSync(join(s.data,'local-runtimes.json.tmp'),'private pending path');s.app.close();
+  const created=await createDataBackup(s.data,s.backup,{offline:true});assert.ok(created.schema.includes(11));for(const path of ['local-runtimes.json','local-runtimes.json.tmp']){assert.ok(created.excluded.includes(path));assert.equal(existsSync(join(s.backup,'data',path)),false);}
+  const destination=join(s.parent,'relocated');await restoreDataBackup(s.backup,destination,{offline:true,relocate:true});restored=new ResearchApp(destination,process.cwd());assert.deepEqual(restored.localRuntimes.list(),[]);const historical=restored.runs.get(USER,done.id);assert.equal(JSON.stringify(historical.manifest),frozen);assert.equal(historical.manifestDigest,done.manifestDigest);assert.deepEqual(historical.metrics,{value:42});assert.ok(restored.runs.sourceList(USER,done.id).files.length);assert.match(restored.runs.logs(USER,done.id).content,/storage fixture/);for(const a of artifacts)assert.deepEqual(restored.evidence.read(USER,a.id).bytes,a.bytes);assert.equal(restored.store.db.prepare('SELECT count(*) n FROM compute_gpu_claims').get().n,0);
+ }finally{restored?.close();s.close();}
+});
+
+test('offline backup refuses an unreconciled GPU claim without deleting it or publishing a backup',async()=>{
+ const s=fixture();try{s.app.store.db.prepare('INSERT INTO compute_gpu_claims(uuid,kind,id) VALUES(?,?,?)').run('GPU-11111111-1111-1111-1111-111111111111','run','unreconciled-fixture');await assert.rejects(createDataBackup(s.data,s.backup,{offline:true}),{code:'BACKUP_BUSY'});assert.equal(s.app.store.db.prepare('SELECT count(*) n FROM compute_gpu_claims').get().n,1);assert.equal(existsSync(s.backup),false);}finally{s.close();}
+});
+
 test('offline backup resolves report figure inputs from their fixed artifact IDs',async()=>{
  const s=fixture();try{figureReportFixture(s);s.app.close();const created=await createDataBackup(s.data,s.backup,{offline:true});assert.equal((await verifyDataBackup(s.backup)).manifestDigest,created.manifestDigest);}finally{s.close();}
 });

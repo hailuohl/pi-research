@@ -21,6 +21,7 @@ export interface DockerJob {
         environmentImageDigest: string;
         dockerContext: string;
         resources: {
+            gpu?: import('../runners/gpu.js').GpuRequest;
             pids: number;
             cpus: number;
             memoryMb: number;
@@ -51,6 +52,12 @@ export interface Container {
     Image: string;
     Config: {
         Labels: Record<string, string>;
+        Env?: string[];
+    };
+    HostConfig?: {
+        DeviceRequests?: Array<{
+            DeviceIDs?: string[];
+        }>;
     };
     State: {
         Status: string;
@@ -61,6 +68,8 @@ export interface Container {
         Error?: string;
     };
 }
+/** Inspect only before a new start; legacy running containers retain their existing lifecycle. */
+export declare function assertContainerStartPolicy(job: DockerJob, container: Container): void;
 export declare function inspect(job: DockerJob): Promise<Container | null>;
 /** Retire an ambiguous prior start without ever issuing another start request. */
 export declare function retireUncertainStart(job: DockerJob, fence: () => unknown, run?: typeof docker, read?: typeof inspect): Promise<Container | null>;

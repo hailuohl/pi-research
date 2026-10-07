@@ -1,3 +1,4 @@
+import { EXECUTION_ENVIRONMENT_INPUT_SCHEMAS, GPU_SCHEMA } from './execution-environment-schemas.js';
 import { HOST_EXECUTION_INPUT_SCHEMA } from './host-access-schemas.js';
 import { RESEARCH_BRIEF_INPUT_SCHEMAS } from './research-brief-schemas.js';
 import { SESSION_HISTORY_INPUT_SCHEMAS } from './session-schemas.js';
@@ -21,12 +22,13 @@ const sources = s.enum(['alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref']
 const campaignLimits = s.object({ maxRounds: s.integer(1, 20), maxCandidatesPerRound: s.integer(1, 24), maxUnansweredRunsPerNode: s.integer(1, 5), maxConsecutiveRegressions: s.integer(1, 10), maxAnalysisAttempts: s.integer(0, 100), deadline: s.string(80) });
 const config = { type: 'object', additionalProperties: s.json('Experiment-specific configuration values; arbitrary keys and nested JSON are intentional because each runner owns its configuration contract.'), description: 'Runner-specific experiment configuration; schema validation does not apply defaults or coerce values.' };
 const contract = s.object({
-    runner: s.enum(['trusted-example', 'docker', 'ssh']), sshTargetId: id, image: s.string(250), command: s.array({ ...s.string(1000, 0), pattern: '^[^\u0000]*$' }, 30, 1),
+    runner: s.enum(['trusted-example', 'local', 'docker', 'ssh']), sshTargetId: id, image: s.string(250), command: s.array({ ...s.string(1000, 0), pattern: '^[^\u0000]*$' }, 30, 1),
+    localRuntimeId: id, gpu: GPU_SCHEMA,
     environment: s.object({}),
     datasetVersion: s.string(200), evaluationProtocolVersion: s.string(200),
     metrics: { type: 'object', minProperties: 1, propertyNames: s.string(80), additionalProperties: s.object({ unit: s.string(100), direction: s.enum(['min', 'max']) }, ['unit', 'direction']) },
     expectedArtifacts: strings(30), timeoutSeconds: s.nullable(s.integer(1, 86400)), cpus: s.nullable(s.integer(1, 64)), memoryMb: s.nullable(s.integer(64, 65536)),
-    dockerContext: { ...s.string(100), pattern: '^[A-Za-z0-9][A-Za-z0-9_.-]*$' }, pids: s.integer(16, 512), workMb: s.integer(16, 1024), logBytes: s.integer(1, 16 * 1024 * 1024), outputBytes: s.integer(1, 128 * 1024 * 1024), networkPolicy: { const: 'none' },
+    dockerContext: { ...s.string(100), pattern: '^[A-Za-z0-9][A-Za-z0-9_.-]*$' }, pids: s.integer(16, 512), workMb: s.integer(16, 1024), logBytes: s.integer(1, 16 * 1024 * 1024), outputBytes: s.integer(1, 128 * 1024 * 1024), networkPolicy: { enum: ['none', 'host'] },
 }, ['runner', 'command', 'datasetVersion', 'evaluationProtocolVersion', 'metrics', 'expectedArtifacts']);
 const output = s.object({
     kind: s.enum(['report', 'dataset', 'patch', 'analysis', 'review', 'code', 'text']),
@@ -44,6 +46,7 @@ const plan = s.object({ goal: s.string(8000), tasks: s.array(task, 24, 1), budge
 const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...EXECUTION_ENVIRONMENT_INPUT_SCHEMAS,
     host_execute: HOST_EXECUTION_INPUT_SCHEMA,
     ...RESEARCH_BRIEF_INPUT_SCHEMAS,
     ...RESEARCH_PLAN_INPUT_SCHEMAS,

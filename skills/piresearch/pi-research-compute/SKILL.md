@@ -9,7 +9,7 @@ description: "Use before preparing or launching a run, relaunching, sizing, canc
 
 ## 入口及通用合同
 
-先connector_status、project_inspect；使用真实experimentId/revision读源码/配置和合同。implemented只说明能力实现，目标连接、镜像、资源和本次成功都须实际观察。凭据存在不能自动改用另一后端。
+先connector_status、project_inspect，并用execution_environment_list读取用户已保存的运行环境/设备目录（只读，不启动探测进程）；使用真实experimentId/revision读源码/配置和合同。implemented只说明能力实现，目标连接、镜像、资源和本次成功都须实际观察。凭据存在不能自动改用另一后端。
 
 1. **正式研究计算只走run_prepare/run_submit。** 不从worktree直接训练、不调用原始SSH、provider CLI或外部scheduler代替正式Run；它们无正式清单、来源或审批记录。host_execute即使主会话已全访问，也不能绕过领域审批。
 2. **合同固定。** 基线首次明确command argv、environment、镜像摘要、数据/评价版本、metrics单位/方向和expectedArtifacts。子实验继承；变体只改版本化代码/config。不用env-prefixed命令或host环境传参。
@@ -35,12 +35,13 @@ autoAnalyze:true可同时准备终态后最多一次Pi结果分析任务，模�
 | runner | 当前已实现能力 | 按需参考 |
 |---|---|---|
 | trusted-example | 随包固定曲线拟合、入口哈希校验，不执行任意宿主代码 | references/local.md |
-| docker | 本机Linux Docker CPU正式Run及独立开发检查、日志、取消、固定容器恢复 | references/local.md |
-| ssh | 用户配置/探测的固定SSH目标，经受信Linux Docker监管器执行CPU容器 | references/ssh.md |
+| local | 用户配置的本地运行环境，固定源码正式Run；CPU或明确NVIDIA设备，当前用户权限、无文件/网络隔离 | references/local.md |
+| docker | Linux Docker CPU/NVIDIA正式Run及CPU独立开发检查、日志、取消、固定容器恢复 | references/local.md |
+| ssh | 用户配置/探测的固定SSH目标，经版本化受信Linux Docker监管器执行CPU/NVIDIA容器 | references/ssh.md |
 
 调用research_skill_read，skillId:"pi-research-compute"，resource:"references/local.md"或"references/ssh.md"。只读所选指南，不自动执行资源或安装依赖。若不可读报具体资源/完整性错误，不退回任意路径/ORX指南。
 
-其他云/集群后端、托管资源目录与实例生命周期已从当前范围移除，不加载这些参考，也不把配置凭据当恢复它们的授权。GPU资源分配尚未接入，扩展规划保留；“CPU限制”不意味着GPU隔离。本机 Linux CPU和SSH→Linux Docker回环已有项目验证记录，不能外推所有外部主机、镜像/GPU或本次运行成功；本次目标仍单独探测/批准。
+其他云/集群后端、托管资源目录与实例生命周期已从当前范围移除，不加载这些参考，也不把配置凭据当恢复它们的授权。NVIDIA以完整UUID显式选择，先由用户在资源与调度核对目标；Agent只能读取已保存目录，不能探测设备/改运行环境。设备查询不等于运算成功，已有本机或SSH回环记录不外推所有主机、镜像或本次运行。“CPU限制”不意味着GPU隔离；AMD/Metal尚未支持，不得把GPU请求静默改为CPU。
 
 ## 等待、唤醒与终态对账
 
@@ -52,9 +53,9 @@ autoAnalyze:true可同时准备终态后最多一次Pi结果分析任务，模�
 
 ## 大小与预算
 
-先判断任务是否需要GPU：API评价/数据准备通常CPU足够；当前支持CPU，GPU需求应说明缺口而非安排未接入机器。选择能装下实际模型和最小batch的最小CPU/内存形状。只有真实OOM或不可接受时长证据才考虑更大资源；超时只为确实长作业提高。资源变更是contract/比较边界变更，不能无说明改变同树合同。
+先判断任务是否需要GPU：API评价/数据准备通常CPU足够；NVIDIA需求在contract.gpu中声明vendor:"nvidia"及deviceIds完整UUID列表，不允许索引、all或重复值。不带gpu保持CPU合同。选择能装下实际模型和最小batch的已核对设备及CPU/内存。只有真实OOM或不可接受时长证据才考虑更大资源；超时只为确实长作业提高。资源变更是contract/比较边界变更，不能无说明改变同树合同。
 
-CPU/RAM/PID/时间/工作空间/日志/输出是独立上限；数据版本、固定镜像、禁止网络也不是可牺牲的优化。共享目标并行额度由真实队列控制，未知作业预留不能手工当空闲。资源估计带假设，不报虚构吞吐；达到修复/回退/预算/期限边界就停下交用户。
+Docker/SSH的CPU/RAM/PID/时间/工作空间/日志/输出受各自约束；local的CPU/RAM只调度记账、networkPolicy必须host，不宣称宿主硬限制或禁网。数据版本、固定来源和各后端声明的隔离不能悄悄改变。同一共享数据目录内，本地/Docker/SSH按NVIDIA UUID原子预留，unknown或租约到期不释放，确认终态才释放；不覆盖应用之外的程序。升级兼容期间，新GPU等待全部非终态CPU Docker和旧版SSH作业结束，queued/unknown也包括；不为腾位删除旧记录。新SSH的CPU/GPU运行均需独立新版helper，旧已启动handle仍按原协议核对。共享目标并行额度由真实队列控制，未知作业预留不能手工当空闲。资源估计带假设，不报虚构吞吐；达到修复/回退/预算/期限边界就停下交用户。
 
 ## 开发测试不是正式Run
 
