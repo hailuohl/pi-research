@@ -1,11 +1,23 @@
 ---
 name: pi-research-reports
-description: "Use before writing or organizing durable reports, comparisons, figures, exported data, or end-of-work research handoffs."
+description: "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports."
 ---
 
-# 持久报告与成果组织
+# 研究分析报告与成果交付
 
-交付真实文件或已登记产物，不能只在聊天写“已保存”。Pi没有上游“往任意artifacts目录写文件立即成为项目成果”的隐式行为：私有工作区草稿、不可变artifact、固定用户report、文稿构建及本地导出各有明确入口。
+用户要求研究报告时，默认交付可打开、包含比较与解释的完整 Markdown 正文及实际来源。只返回日志、指标表、报告 ID 或聊天中的“已保存”不足以完成任务。先按报告用途和现有证据决定结构与篇幅，不机械规定章节、字数或图数量。
+
+区分三个对象：**原始日志**记录程序输出；**Agent 分析报告**是根据实际证据撰写并保存的正文；**系统固定报告**是用户选择来源后生成的确定性历史记录，不会重新调用模型写分析。Agent 正文不会自动合并进固定报告列表或成果导出包；保存正文不表示固定报告已创建。
+
+## 默认流程：从问题到正文
+
+1. 根据用户问题明确报告用途、比较对象和判断标准；已有信息足够就继续，不为固定格式追加提问。
+2. 用 project_inspect 或 task_result_read 找到获准的真实输入，按 pi-research-evidence 读取 run_inspect、run_logs、artifact_read、evidence_read 和运行时固定源码。任务总结、Run 状态和最新工作区不能替代原始证据。
+3. 比较实际结果，核对数据/切分版本、固定合同、评价协议、单位和指标方向。差值或相对变化注明计算依据；跨合同结果写清不可比条件，不直接当同条件排名。没有对照、关键数据或验证时，继续写现有证据支持的内容，准确列出缺口，不补造数值或结论。
+4. 撰写研究问题、方法、实际结果、分析、局限和来源，按任务调整组织。保留实际 Run ID、源码摘要、指标单位及原始产物/证据 ID；区分本项目实测、论文报告值、图片观察和模型解释。解释应连接结果与问题，说明支持程度、替代解释和下一步，而非复述日志。运行成功不等于假设成立。
+5. 保存实际正文，回读确认内容与摘要，再交付正文入口、主要结论与限制。分别说明 Agent 正文的保存状态和系统固定报告的创建/导出状态；没有执行的操作明确未执行。
+
+失败、没测、没编译、停止理由及矛盾结果应进入适用的正文限制。科学数值来自实际读取的来源，不从模型记忆填；图注明实际数据、脚本、版本及来源。Sandbox 图形执行证明固定作业来源，不证明逐点科学数值，更不能冒充正式 Run。
 
 ## 先看已有组织再写
 
@@ -30,39 +42,35 @@ transformer-sweep/
 
 脚本、实际数据和图保留一起便于复验；图形技能的assets/pi_figstyle.py是随技能静态资源，不自动执行/安装。日志/临时scratch不混入最终产物；当前Run日志由原处持久化，只引用无需重复复制。已有发布/交付输出保留原路径，只有用户请求才重排旧文件，同时更新引用并检查能解析。
 
-## Agent草稿：实际内容与限制
+## 保存分析正文与草稿
 
-主协调者/writer用workspace_write在**自己的**获准工作区写Markdown/CSV/脚本；新文件expectedDigest:null，修改填旧digest。artifact_create可登记实际UTF-8正文，返回真实artifactId/digest，记录用途。草稿登记不会采纳Claim，不会自动生成固定report或发布PDF。
-
-```json
-{"input":{"title":"curve-fit-comparison-draft.md","content":"<根据实际读取结果写成的完整正文，含证据ID和限制>","mediaType":"text/markdown"}}
-```
-
-这是artifact_create输入，placeholder必须替换真实内容。writer先task_result_read/evidence_read/artifact_read读授权输入，不从他人措辞猜测Claim已accepted；没有claim_read工具时按任务固定交付范围与用户选择，尚未核验标候选。
-
-报告正文写研究问题、数据/切分版本、固定合同、实际Run/源码摘要、指标单位与比较、失败/没测/没编译项、解释、停止理由和限制。科学数值来自原始证据，不从模型记忆填。图注明数据/脚本/版本及来源；Sandbox图形执行证明固定作业来源，不证明逐点科学数值，更不能冒充正式Run。
-
-## 用户固定报告与本地导出
-
-以下report_*均是**user-only**；Agent可交付草稿和具体来源，不能调用最终报告/导出，也不能用host_execute替代。
-
-用户在“报告与成果”显式选择真实终态Run、已采纳且有效Claim、成功完整且来源有效的固定文稿结果，可选Campaign。report_create输入示例：
+主协调者/writer 可用 workspace_write 在**自己的**获准工作区写 Markdown/CSV/脚本；新文件 expectedDigest:null，修改填旧 digest。无需编辑工作区时，直接用 artifact_create 保存实际 UTF-8 正文，返回 Artifact 的 id/digest。登记分析报告不会采纳 Claim，不会自动生成固定 report 或发布 PDF。
 
 ```json
-{"input":{"title":"曲线拟合：同协议候选比较","runIds":["<真实终态Run ID>"],"claimIds":[],"publicationResultIds":[],"campaignIds":[]}}
+{"tool":"artifact_create","input":{"title":"curve-fit-comparison-draft.md","content":"<根据实际读取结果写成的完整正文，含证据ID和限制>","mediaType":"text/markdown"}}
 ```
 
-用户操作返回报告正文Artifact，不要将artifact.id当reportId。通过report_list/工作台对应报告读取真正reportId；report_inspect输入reportId，核对integrity、validity、reasons、references、Run指标单位与固定源；report_reference_read用真实referenceId前向分页回读。report_export输入reportId生成本地tar.gz，并依据实际返回链接/路径交付。失败/取消Run可作为明确失败记录，不伪称科学支持；非终态Run、未采纳Claim、无完整PDF或失效绑定不能绕过校验。
+示例的 tool 标明 artifact_create，Pi 调用参数为 `{input: ...}`；占位内容必须替换为实际写好的完整正文。用返回的 id 作为 artifact_read 的 artifactId 回读，分页至完整正文，核对 digest 和内容；工作区文件用 workspace_read 核对实际路径与 digest。回读确认保存成功，不代替科学证据核验。writer 先读授权输入，不从他人措辞猜测 Claim 已 accepted；没有 claim_read 工具时按任务固定交付范围与用户选择，尚未核验标候选。
 
-报告是固定历史记录，包含真实Run/source/evidence/开发审查/文稿/研究方案等可回读引用；ancestry关系仅说明祖先来源，不表示当前源码通过了祖先测试。跨contract结果须写比较限制，不直接同条件排名。固定文稿来源按pi-research-paper核查；主协调者manuscript_create/publication_prepare可准备，提交构建仍用户批准入口。
+## 固定报告、引用回查与本地导出
+
+用户需要固定报告、回查其引用、重开核对来源或导出本地成果包时，先读取 [references/fixed-report.md](references/fixed-report.md)：
+
+```json
+{"tool":"research_skill_read","input":{"skillId":"pi-research-reports","resource":"references/fixed-report.md"}}
+```
+
+示例的 tool 标明工具名，Pi 调用参数为 `{input: ...}`。report_* 均为 **user-only**；Agent 交付完整分析正文和具体来源，不调用用户固定报告/导出，也不能用 host_execute 替代。固定报告用于冻结历史来源、引用回读和本地导出；其操作参数与有效性状态只在参考文件中维护。
+
+固定文稿来源按 pi-research-paper 核查；主协调者 manuscript_create/publication_prepare 可准备，提交构建仍用户批准入口。ancestry 关系仅说明祖先来源，不表示当前源码通过了祖先测试。
 
 ## 链接、重开与产品差异
 
 工作区报告可用真实相对链接，如 `![Patch size](figures/patch-size.svg)`，前提文件已生成且可随交付解析；不可变artifact之间没有自动目录相对解析保证，应引用真实artifact/evidence ID。固定报告使用服务生成的reference链接，不自造其URL。聊天交付给返回的真实嵌套路径/下载入口或ID及用途，本项目不保证上游 `<file path="…"/>` 富引用渲染。
 
-重开可回读固定旧报告正文和引用，但使用结论/新导出前重新核对来源效力。stale/invalid不能隐藏；新成果写新版本，保留历史。只有已批准且成功的真实绘图/文稿构建才说图/PDF已生成；只保存.tex/.py仍是源码草稿。
+分析正文修改形成新产物版本；旧正文、旧固定报告及其原绑定保留，不用最新来源替换历史。重开后使用结论或新导出前按参考文件核对来源效力。只有已批准且成功的真实绘图/文稿构建才说图/PDF已生成；只保存 .tex/.py 仍是源码草稿。
 
-已实现：实际草稿/文本产物、用户固定Markdown报告、引用回读、本地tar.gz导出及有效性检查。与上游差异：任意artifacts路径不自动登记；外部成果发布和Overleaf等外部目标未实现；不为这些缺口新增流程或借默认Shell开放。
+已实现：实际分析正文/文本产物、用户固定 Markdown 报告、引用回读、本地 tar.gz 导出及有效性检查。Pi 没有上游“往任意 artifacts 目录写文件立即成为项目成果”的隐式行为；Agent 正文接入固定报告与成果导出、外部成果发布和 Overleaf 等外部目标尚未实现，不用技能文字或默认 Shell 绕过这些缺口。
 
 ## 记录视觉验收范围
 

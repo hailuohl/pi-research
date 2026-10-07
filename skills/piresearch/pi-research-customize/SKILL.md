@@ -1,6 +1,6 @@
 ---
 name: pi-research-customize
-description: "Use when preparing or importing a reusable research skill, inspecting fixed skill versions/resources, or adapting a LaTeX template."
+description: "准备可复用研究技能、读取固定技能资源，或选择、生成、入库与复用LaTeX个人模板；保留配套文件和旧版本。"
 ---
 
 # 受管技能、用户上传与模板
@@ -51,15 +51,17 @@ enable/configure/delete用真实expectedVersion防配置陈旧；VERSION_CONFLIC
 
 ## LaTeX个人模板库与Agent生成
 
-设置中的“文稿模板库”接受单个.tex或包含.cls/.sty/.bst/.bib及配套图像的ZIP；无需先创建项目。个人模板可跨项目选用。同名上传产生独立不可变ID，不覆盖旧模板；已有稿件固定自己的文件，后续上传不改变论文历史。这与上游templates add的同名替换语义不同。
+1. **选择真实模板**。`publication_templates`（`{"input":{}}`）列出内置和跨项目个人模板。用户已指定一套时直接沿用；未指定且多套可选时展示实际名称供选择。设置中的“文稿模板库”接受单个 `.tex` 或包含 `.cls/.sty/.bst/.bib` 及配套图像的 ZIP，无需先创建项目。
+2. **读取入口和完整配套**。`publication_template_inspect` 用 `{"input":{"templateId":"actual-template-id"}}` 核对固定 ID、引擎、mainFile、bibliography 和 files。再逐一用 `publication_template_read`（例如 `{"input":{"templateId":"actual-template-id","path":"main.tex"}}`）读取入口所需的类、样式、参考文献和图像。每份文件有 `contentBase64`，文本另有 `content`；目录清单不能代替字节。按需读取完整使用集合，保留路径和依赖，不悄悄换默认类。缺文件或摘要不符时停止并报告。模板可读不扩大其他项目证据权限。
+3. **按需生成并入库**。用户要新模板时，交互主协调 Agent 先保存完整 TeX 及实际使用的配套文件，再调用 `publication_template_import`，提供 title、engine（pdflatex/xelatex/lualatex）、mainFile、bibliography（none/auto/bibtex/biber）以及 `files:[{path,contentBase64}]` 或 zipBase64（二选一）。所有参数置于 `input`，contentBase64 必须是实际文件的规范 Base64，不能传磁盘路径、其他项目 artifactId 或占位符。工具返回真实 id/contentDigest/files 才表示入库成功；再 inspect/read 核对实际保存内容。
+4. **在当前稿件中复用**。从真实入口开始，沿用类、样式、字体和配套文件；把使用的完整文件集合保存到获准文稿相对路径。`manuscript_create` 可记录 templateId，但仍需提供实际 files，不会自动补模板字节。固定、编译和交付按 `pi-research-paper`，执行前读其 [references/build-and-review.md](../pi-research-paper/references/build-and-review.md)。导入成功不表示已经编译。
+5. **保留旧版本**。同名上传产生独立不可变 ID，不覆盖旧模板；更新返回的新 ID 要与旧 ID 分别记录。旧模板用原 templateId inspect/read 回读。已有稿件固定自己的文件，后续上传不改变论文历史；修订稿件用 previousRevisionId 建新版本，旧稿按原 revisionId 回读。这与上游 templates add 的同名替换语义不同。
 
-交互主协调Agent可生成完整TeX及配套文件，然后调用publication_template_import，提供title、engine（pdflatex/xelatex/lualatex）、mainFile、bibliography（none/auto/bibtex/biber），以及files:[{path,contentBase64}]或zipBase64（二选一）。contentBase64必须是实际文件的规范Base64，不能传磁盘路径、其他项目artifactId或示例占位符。工具返回真实id/contentDigest/files才表示入库成功；保存无需研究计划，但仍遵守当前会话动作策略，readOnly不可写，confirm/autoEdit沿固定动作批准，Task与自动唤醒无模板写入权。
-
-publication_templates列出内置和个人模板；publication_template_inspect({templateId})读取元数据，publication_template_read({templateId,path})读取一份文件的contentBase64，文本另有content。目录不返回自定义模板全部字节。只按需要读取，缺失或摘要不符时停止。模板库可读不扩大其他项目证据权限。
+模板入库无需研究计划，但仍遵守当前会话动作策略：readOnly 不可写，confirm/autoEdit 沿固定动作批准；收到 APPROVAL_REQUIRED 停止该动作，等待准确操作卡后按原参数继续。Task 与自动唤醒无模板写入权。模板选择/读取不运行代码，也不授予编译或外发批准。
 
 模板最多64文件、展开总量16 MiB；文本每个2 MiB，PNG/JPG/PDF每个8 MiB，ZIP输入最多17 MiB。路径沿文稿规范，主.tex必须存在；遍历、符号链接、冲突和无效ZIP拒绝。模板导入和查看不运行代码、不安装依赖、不自动编译；PDF仍走pi-research-paper的固定稿件及批准构建流程。不借host_execute或Overleaf绕过模板入口。
 
-选用时保留模板类、样式与配套文件，在当前项目创建自己的稿件文件。个人模板属于本机应用数据目录；迁移使用已有备份恢复，不绑定开发机路径。用户技能仍是项目内持久修订，与个人模板库的跨项目范围不同。
+个人模板属于本机应用数据目录；迁移使用已有备份恢复，不绑定开发机路径。用户技能仍是项目内持久修订，与个人模板库的跨项目范围不同。交付模板时给出真实 ID、摘要和文件清单，并分别说明入库、稿件固定与编译状态。
 
 ## 来源与适配声明
 

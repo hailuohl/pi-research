@@ -17,6 +17,8 @@ Pi助手是同项目Team里的独立Task/Attempt/Session，收到不可变最小
 
 助手初始看不到当前全部对话。objective写明当前项目语境、真实实验ID/revision/来源摘要、具体问题/指标/单位、获准证据、可编辑文件、计算/网络约束、预期实际输出、失败/停止条件与完成定义。只传必要内容，不复制.env、密钥、私有研究库或所有聊天。task_context_read用于助手读取自己的冻结简报，task_progress_report只记录进展，不能变成完成验收。
 
+简报围绕本轮已有输入与缺少的产物：源码任务固定父来源和允许文件、交付真实差异及检查证据；分析任务固定终态Run/证据、交付比较和限制；写作任务固定已验收结论、交付可读取的正文。沿用主协调者确定的验收条件，缺必要输入时报告blocked，不让助手自行扩批或用示例数据填缺口。
+
 collaboration_plan_submit（或同义agent_delegate）输入有goal、tasks、budget、autoSummarize；任务字段key、role、objective及可选dependencies、required、critical、inputEvidenceIds、reviewOf、expectedOutputs、acceptanceRuleIds、skillIds。skillIds用完整pi-research-*名称。模型/harness不能靠上游--model/--harness旗标指定；当前计划schema没有这些字段，模型按用户项目角色设置，缺配置由用户补齐。
 
 下面示例是对已完成且已授权结果的“分析→独立审查→写作”计划；需先把placeholder替换为真实输入证据ID、在objective补上具体对照/指标，budget按用户实际额度调整：
@@ -44,6 +46,8 @@ autoSummarize:true预留一次原主会话综合额度，批准后结束可唤�
 依赖的是**结果验收**，不是助手execution已结束。reviewOf指向已提交的固定结果，不能要求被审任务先accepted造成死锁；审查/依赖图须无环。所有必需审查通过且前提当前才采纳；相反意见是disputed，不靠多数票/最后写入获胜。
 
 助手task_result_submit只提交结构化summary、outcome:completed/partial/blocked、真实evidenceIds/artifactIds、claims（statement+evidenceIds+limitations）、unresolvedQuestions；reviewer必须verdict:accept/reject/disputed，提交后结束任务。completed是声明，服务仍核查实际文件、非空类型、证据定位与审查条件。主协调者读取原始证据，不把实施者总结当独立验证。
+
+主协调者先回读task_result_read的验收状态，再用artifact_read/evidence_read核对实际内容、来源与缺口；源码成果另外核对固定差异及开发检查。非空/格式验收不证明科学结论正确。文件缺失、证据失效或结果partial/blocked时，保留可回读材料与未决项，补齐必需验收前不用于后续结论；未经核对的助手总结不能据以选赢家、准备正式Run或写入报告结论。
 
 ## 失败、恢复与关闭
 

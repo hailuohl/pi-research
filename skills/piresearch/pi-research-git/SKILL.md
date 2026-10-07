@@ -5,6 +5,16 @@ description: "Use before reading, editing, committing or comparing experiment co
 
 # 受管 Git、工作区与实验源码
 
+本轮交付分别核对三个对象：
+
+| 动作 | 可核查产物 | 完成判断 |
+|---|---|---|
+| 私有提交 | 原operation的gitCommit/sourceDigest | operation.state=complete，工作区与该快照一致；未进入正式实验 |
+| 正式整合 | 用户批准后生成的子实验及固定源码 | 重读子实验ID/revision，核对预期差异，再准备正式Run |
+| GitHub同步 | 准确SHA及目标ref的保存回执 | queued仅已入队；synced仅证明recordedAt时该ref回读了准确SHA |
+
+汇报时分别给出本地完成、整合状态和同步状态；没有回执或仍等待时保留未确认项，不把任一阶段代替另外两阶段。
+
 Git记录精确源码历史，不负责计算运输。每个正式 Run 冻结本地源码归档；不需要 GitHub push。不要为了启动计算 fetch/push 论文作者上游仓库。若用户已另行授权项目交付仓库，按项目约定交付。
 
 项目默认本地保存。用户在创建时可明确勾选“创建GitHub私密仓库并自动同步已提交源码及其Git历史”；宿主通过本机已登录的GitHub CLI，把初始源码及后续完成的受管source/commit操作同步到固定账号/仓库/分支。中文项目名转拼音，确定重名才加-1/-2；创建和推送结果未知时按原目标对账，不盲建另一仓库。数据库、会话和独立科研产物不是同步对象；所有可达源码历史仍核对来源、敏感内容和容量。

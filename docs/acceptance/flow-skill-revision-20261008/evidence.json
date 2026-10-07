@@ -1,0 +1,230 @@
+{
+  "date": "2026-10-08",
+  "baselineCommit": "e9349cec181956eba4aa86997aa46411c6465fa8",
+  "bundleId": "cffee2e2842e5cb4c849f99f81f855043ef49237f531ba681f29e99f46ece406",
+  "scope": {
+    "skills": 13,
+    "newReferences": 4,
+    "managedResources": 29,
+    "newReleases": 1,
+    "backendChanges": false,
+    "frontendChanges": false,
+    "generatedSkillArtifacts": 8
+  },
+  "review": {
+    "status": "no-blocking-findings",
+    "anchor": {
+      "path": ".validation/skills-revision-20261008-80o9_xql/review-anchor.json",
+      "sha256": "5490248e57ec4c8d027541957a0af94de8544c907f5cb1328750d4f9754ef860"
+    },
+    "files": 101,
+    "report": {
+      "path": ".validation/skills-revision-20261008-80o9_xql/review.md",
+      "sha256": "27f75c32ae60bb510a8323d88e06993846bdac8f92b8d4fb69148fa8bd2bb69a"
+    },
+    "nonBlocking": [
+      {
+        "file": "skills/piresearch/pi-research-paper/SKILL.md",
+        "line": 16,
+        "issue": "writer/reviewer can read paper but cannot read mandatory customize guidance for personal-template reuse; coordinator path works; clarify role routing later without widening permissions"
+      }
+    ]
+  },
+  "checks": {
+    "quickValidate": {
+      "command": "python -X utf8 <skill-creator>/scripts/quick_validate.py <each of 13 builtin skill directories>",
+      "pass": 13,
+      "fail": 0
+    },
+    "focused": {
+      "tests": 36,
+      "pass": 36,
+      "fail": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": {
+        "path": ".validation/skills-revision-20261008-80o9_xql/skills-focused.log",
+        "sha256": "62b61e6e16ce7da09d7396fe80f13eb2fa622c5816902e995a2c49a69902c868"
+      }
+    },
+    "full": {
+      "status": "passed-with-explicit-skips",
+      "command": "npm run test:core",
+      "exitCode": 0,
+      "tests": 1237,
+      "pass": 1214,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 23,
+      "todo": 0,
+      "durationMs": 779513.6503,
+      "log": {
+        "path": ".validation/skills-revision-20261008-80o9_xql/full.log",
+        "sha256": "fbf5a59d35c793561ed11420fd1194205e0f21a5d53ac78c2fc0bdd39bf7f3c0"
+      },
+      "skips": [
+        "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.1029ms) # SKIP",
+        "﹣ isolated compiler: pdflatex (1.422ms) # SKIP",
+        "﹣ isolated compiler: xelatex (0.1012ms) # SKIP",
+        "﹣ isolated compiler: lualatex (0.0722ms) # SKIP",
+        "﹣ isolated compiler: chinese (0.0619ms) # SKIP",
+        "﹣ isolated compiler: lua-chinese-budget (0.079ms) # SKIP",
+        "﹣ isolated compiler: bibtex (0.0856ms) # SKIP",
+        "﹣ isolated compiler: biber (0.0777ms) # SKIP",
+        "﹣ isolated compiler: missing-image (0.0617ms) # SKIP",
+        "﹣ isolated compiler: missing-package (0.0884ms) # SKIP",
+        "﹣ isolated compiler: undefined-reference (0.1378ms) # SKIP",
+        "﹣ isolated compiler: shell-blocked (0.0746ms) # SKIP",
+        "﹣ isolated compiler: lua-blocked (0.054ms) # SKIP",
+        "﹣ isolated compiler: forged-result (0.0632ms) # SKIP",
+        "﹣ isolated compiler: lua-forged-host-result (0.0579ms) # SKIP",
+        "﹣ isolated compiler: pdf-before-error (0.0752ms) # SKIP",
+        "﹣ isolated compiler: absolute-write-blocked (0.1582ms) # SKIP",
+        "﹣ isolated compiler: biber-remote-blocked (0.0438ms) # SKIP",
+        "﹣ isolated compiler: biber-nonutf8-control (0.0762ms) # SKIP",
+        "﹣ isolated compiler: timeout (0.0498ms) # SKIP",
+        "﹣ optional real Docker preserves ordinary and executable source modes (0.0796ms) # SKIP",
+        "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.0965ms) # SKIP",
+        "﹣ SSH start keeps nested source directories traversable under umask 077 (0.1346ms) # POSIX permission modes are unavailable on Windows"
+      ]
+    },
+    "cleanBuild": {
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 557,
+      "distManifestSha256": "675bee117de103bd9b7b3d73ff2c6f93bf2b62ddd30e978044b01fb3cdd4a7ac",
+      "summary": {
+        "path": ".validation/skills-revision-20261008-80o9_xql/source/.validation/clean-build-Z1eflx/summary.json",
+        "sha256": "49b0dab1fbf1a1ad5d11a52fdeea45130e7dbffdc487d7f9e619240c99d9598b"
+      }
+    },
+    "historicalPreservation": {
+      "files": 444,
+      "byteIdentical": true,
+      "inFlightFiles": 5,
+      "inFlightByteIdentical": true
+    },
+    "independentPureChecks": {
+      "releases": 14,
+      "bodyAndResourceReads": 472,
+      "allowedRoleReads": 181,
+      "taggedPiExamples": 24,
+      "dispatches": 0,
+      "sourceAndGeneratedDeclarationsPreservedRoleBoundaries": true
+    },
+    "workerIpc": {
+      "path": ".validation/skills-revision-20261008-80o9_xql/worker-ipc.json",
+      "sha256": "6fec6145ace5e9936e102752eb59e4cc955d908a7487053d8a6aa270f570f4b5",
+      "fixture": "real-child-ipc-no-sdk-no-model",
+      "modelRequests": 0
+    }
+  },
+  "forwardTrials": {
+    "environment": "isolated Codex subagents; actual files and historical fixture data; not external-model Pi application end-to-end",
+    "files": [
+      {
+        "path": ".validation/skills-revision-20261008-80o9_xql/forward-report/comparison-report.md",
+        "sha256": "64cb5612af7506c0b855493af3343ebcec056197ee81dcaf77dbb49799aa140c"
+      },
+      {
+        "path": ".validation/skills-revision-20261008-80o9_xql/forward-report/candidate-only-report.md",
+        "sha256": "e4295cb56293c0315096a2a8fa2cfe2d7b6fbc960a802764492f79dee11d272c"
+      },
+      {
+        "path": ".validation/skills-revision-20261008-80o9_xql/document-reading-trial.md",
+        "sha256": "7405e165c88e3746263131a7a16a3c99f058049601a1d331780a2e81bcb5bda5"
+      },
+      {
+        "path": ".validation/skills-revision-20261008-80o9_xql/forward-paper/draft-v1/main.tex",
+        "sha256": "6a3e29bf38f88731d4c4974e48264836a0357f57abac2b5d3b37c5372868f732"
+      },
+      {
+        "path": ".validation/skills-revision-20261008-80o9_xql/forward-paper/draft-v1/delivery.md",
+        "sha256": "cf05cf97e9f8179a7a25b2b29b4ed7ea2eca4e6d03cab3bd52f99bcdf8b71d83"
+      },
+      {
+        "path": ".validation/skills-revision-20261008-80o9_xql/forward-paper/draft-v1/verification.json",
+        "sha256": "fe1633c450b4bc52d36c43d021fcbd0e7e9526c0513c0bbb1321f9cdfb50150a"
+      },
+      {
+        "path": ".validation/skills-revision-20261008-80o9_xql/experiment-trial.md",
+        "sha256": "34d639902ffc7215026d5bc7080f6217f2f5db773880f52d5ad48436783e3848"
+      }
+    ],
+    "reports": {
+      "comparisonSavedAndReadBack": true,
+      "csvRowsPerRun": 11,
+      "candidateToBaselineLoocvMseRatio": 1.4116835343430134e-06,
+      "missingComparatorNotInvented": true,
+      "piArtifactCreate": false,
+      "fixedReportCreate": false
+    },
+    "literature": {
+      "abstractScanAndExhaustedCrossrefCases": "passed-scenario-response",
+      "newPdfParse": false,
+      "newOcr": false,
+      "newDocumentPixelsRead": false
+    },
+    "paper": {
+      "templateClassAndStylePreserved": true,
+      "supportingCopies": 8,
+      "actualImageSize": [
+        900,
+        640
+      ],
+      "actualImageViewed": true,
+      "compiledManuscriptPagesViewed": 0,
+      "manuscriptCompilation": false,
+      "failedBuildScenario": "passed-scenario-response"
+    },
+    "experiment": {
+      "missingContractQueuedUnknownAndMissingOutputs": "passed-scenario-response",
+      "newFormalResearchRun": false
+    }
+  },
+  "configurationRequests": {
+    "implementation": {
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high"
+    },
+    "forwardTrials": {
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high"
+    },
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "reasoningEffort": "xhigh"
+    },
+    "runtimeVerification": "requested and accepted by tool; runtime model/effort not echoed; no identity inference from subagent self-report",
+    "mainConfigurationChanged": false
+  },
+  "notExecuted": [
+    "new external-model Pi four-flow end-to-end",
+    "new real manuscript Docker compile or fixed PDF parse",
+    "application GitHub automatic write",
+    "external SSH/GPU target",
+    "parity/live suites with their separately documented environment/path gaps"
+  ],
+  "deferredBackend": [
+    "analysis body in fixed reports",
+    "fixed-page crop",
+    "scanned-document OCR"
+  ],
+  "validationNotes": [
+    "Independent JS exact float equality initially differed by about 4.44e-16; explicit relative tolerance 1e-12 passed, no product assertion changed",
+    "Initial Windows default-encoding skill validation corrected by per-process python -X utf8; no global configuration changed"
+  ]
+}

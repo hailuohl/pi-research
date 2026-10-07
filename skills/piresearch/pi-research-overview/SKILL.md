@@ -1,6 +1,6 @@
 ---
 name: pi-research-overview
-description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference."
+description: "Use when starting, resuming, or handing over research in Pi Research; choose the workflow for the user's goal and preserve the cardinal research rules."
 ---
 
 # Pi Research 科研入口
@@ -22,45 +22,34 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 
 先 `connector_status({input:{}})` 查看实际连接授权和观察；implemented 不是目标实测成功。再 `project_inspect({input:{}})` 获取当前授权项目、实验 revision、运行、证据、活动和本主会话意向。Agent 不能用它切换项目。Project、Experiment、Run、Session、Task、Artifact、Evidence ID 不能互换，全部来自真实返回。
 
-## 工具速查
+## 按用户目标选择技能
 
-下列 JSON 均是当前 Pi 工具的 `input` 对象；有写操作时请求键/身份由宿主协议管理，不放入 input。示例的占位 ID 必须替换为真实上一步输出，不能将示例当成功回执。
+先确定用户本轮要交付什么，再读取对应模块；不必为简单任务加载全部技能。
 
-| 工作 | 入口与边界 |
+| 用户目标 | 技能与预期产物 |
 |---|---|
-| 探索项目 | `project_inspect({input:{}})`；`workspace_list({input:{source:"session"}})`；主协调者可显式读 project 来源 |
-| 读取固定实验 | `experiment_source_list` / `experiment_source_read`，必须 experimentId+revision 或 snapshotId；workspace source=project 不是所选实验 |
-| 查 Run | project_inspect / run_inspect；交互主协调者用 includeScheduling:true 解释单 Run 当前排队与恢复，不读全局队列；分页 run_list 是用户入口 |
-| 日志与证据 | run_logs(runId,cursor,stream,identity)、artifact_read、evidence_read；详情读 pi-research-evidence |
-| 创建变体 | experiment_plan_submit(title,hypothesis,parentId,expectedParentRevision,config)；新代码走 change_proposal_prepare / reviewed_change_prepare 及用户整合 |
-| Git | workspace_prepare_from_revision、workspace_history_inspect/diff/commit/operation/set_mode；受管会话分支。项目默认本地，用户创建时可选GitHub私密源码同步，由宿主管理；本地提交完成不等于远端成功；交互主协调者可用project_inspect(githubCommit)读准确SHA/ref保存回执，详情读pi-research-git |
-| 正式运行 | run_prepare 固定意向 → 用户单独批准 → run_submit → run_inspect/run_logs；取消由用户运行面板 |
-| 开发检查 | development_prepare/submit/inspect/logs/cancel；单独开发授权，不能替代正式 Run |
-| 协作 | collaboration_plan_submit 或同义 agent_delegate 提交有界计划；task_inspect/task_result_read；主协调者专用 |
-| 文献 | literature_discover、paper_read、literature_search；先读 pi-research-lit-review，主协调者保留主检索排序策略；用户可带入固定成功解析上下文，原文页图需另行目的模型/页范围批准；Task 网络需 DiscoveryGrant |
-| 文稿 | publication_templates、manuscript_create、publication_prepare 等按 pi-research-paper；交互主协调者可准备，成功固定页可经准确页面/目的模型批准交由主协调者视觉读取；提交构建及最终报告仍用户入口 |
-| 技能与模板 | research_skill_list/read；用户 skill_package_upload 原子上传并开启；publication_templates及publication_template_import/inspect/read提供跨项目个人模板，用户设置上传/查看，交互主协调者生成入库仍遵守动作批准 |
-| 成果 | Agent artifact_create 保存草稿；用户 report_create/inspect/reference_read/export 固定报告与本地成果包；外部成果发布是产品缺口 |
-| 产品反馈 | 按 pi-research-feedback 保存脱敏草稿；没有自动发送维护团队入口 |
+| 新建、导入或复现项目 | `pi-research-create`：核对真实任务和来源，建立基线与固定合同；随包曲线拟合仅是示例 |
+| 改进已有实验 | `pi-research-experiment-tree`：读取正确父修订，完成一轮同父比较，再决定修复、补选、保留或停止 |
+| 实现代码、保存或核对来源 | `pi-research-git`：私有工作区、提交及正式整合；本地完成、GitHub同步入队与准确SHA/ref确认分别报告 |
+| 运行、开发检查或处理等待/恢复 | `pi-research-compute`：先确定本地/Docker/SSH执行位置，再读对应参考；开发检查和正式Run分别批准，unknown不重跑 |
+| 委派独立工作 | `pi-research-agent-delegation`：真实输入、输出和验收简报；主协调者核对文件与证据后才使用助手结论 |
+| 查找或阅读文献、原文与图表 | `pi-research-lit-review`：主协调者保留检索排序；固定解析、获准页图与Task DiscoveryGrant按相应参考处理 |
+| 核查日志、指标和证据效力 | `pi-research-evidence`：真实来源、完整性与限制；项目源码不能替代固定实验或运行快照 |
+| 交付研究报告 | `pi-research-reports`：Agent 读取真实证据、比较解释并保存完整 Markdown 正文；系统固定报告和本地成果包仍由用户入口生成，正文不会自动并入；操作前读取其 `references/fixed-report.md` |
+| 制作科研图表 | `pi-research-figures`：先读取技能及对应图种参考，交付真实图形、代码与数据来源 |
+| 撰写、构建或修订论文 | `pi-research-paper`：沿真实模板保存正文/资产、固定稿件并核查构建；提交构建仍用户入口，页图读取需准确页范围/目的模型批准 |
+| 使用个人技能或模板 | `pi-research-customize`：用户技能上传开启与固定版本；跨项目模板上传/查看或获准的Agent生成入库 |
+| 记录实际产品问题 | `pi-research-feedback`：可复现的脱敏描述及本地保存状态；没有自动发送维护团队入口 |
 
 `host_execute` 仅限用户明确开启本机完全访问的交互主协调会话，argv 原样执行、不自动 Shell 拼接。它不是默认 Shell；所有领域审批、正式 Run、网络发现/证据/发布动作仍走领域入口，不能借它绕过工具拒绝。
 
-## 模块与按需资源
+## 按需读取与调用边界
 
 `research_skill_read({input:{skillId:"pi-research-experiment-tree"}})` 读取一个模块；资源用完整相对路径，例如 `{input:{skillId:"pi-research-compute",resource:"references/local.md"}}`。资源只读，不自动执行代码或安装依赖，版本摘要不符就停止。缺失资源不能回退为任意磁盘文件。
 
-- pi-research-create：新项目、论文复现、根/父节点与固定合同。
-- pi-research-experiment-tree：provisional、堆叠小扇形、逐完成循环、四种决策、修复和停止。
-- pi-research-git：受管 worktree、改代码、提交、固定源码比较与历史。
-- pi-research-agent-delegation：自包含简报、权限、独立写域、结果验收与恢复。
-- pi-research-compute：本地 local（含固定示例）、Docker 与 SSH；NVIDIA显式设备选择；先确定后端再读 local、docker、ssh 中一个参考，依据当前 Run 观察解释等待/恢复。
-- pi-research-evidence：输出设计、日志分段、指标/原文与效力。
-- pi-research-reports：持久草稿、固定报告、本地导出与组织。
-- pi-research-figures：写绘图代码前读取，再选择对应图种参考。
-- pi-research-paper：固定文稿、模板、LaTeX 构建与论文审查。
-- pi-research-customize：用户技能导入/上传开启、固定版本，以及跨项目个人模板上传/查看和Agent生成入库。
-- pi-research-feedback：有意义问题的脱敏、本地记录、重复和发送边界。
-- pi-research-lit-review：主协调者跨来源检索、排序、定向阅读。
+实际 Pi 调用使用 `{input: ...}` 包装；模块示例的 `tool` 只是名称标签，不是参数。请求键/身份由宿主管理，示例占位 ID 换为真实返回，不能当成功回执。
+
+固定实验读取必须用 experimentId+revision 或 snapshotId；主协调者可显式读取 project 输入，`workspace` 的 project 来源不是所选实验。Run按真实ID回查；交互主协调者才可使用 `includeScheduling:true` 解释单Run已保存观察，分页 `run_list` 是用户入口。正式运行准备、用户批准和提交分开，取消由用户运行面板；停止聊天不取消Run。
 
 ## 典型流程
 

@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "50e285cf2ea51e8dfa1543894bfce13e14969ff3924f9dfd0ed6599377bb6664";
+export declare const BUNDLE_ID = "cffee2e2842e5cb4c849f99f81f855043ef49237f531ba681f29e99f46ece406";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
-    readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
+    readonly description: "Use when starting, resuming, or handing over research in Pi Research; choose the workflow for the user's goal and preserve the cardinal research rules.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "281e10f71e0910c100c197721f5c04856a9aa02a2062a7a9f3bae507be54d7a4";
+    readonly digest: "c7074be92ec9bfc86f455d5310bf037b3fbde7bcb6af784f7e9b7baa172b4f50";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -19,7 +19,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when starting or importing a project, selecting a baseline/parent, defining a fixed run contract, or creating a reproduction experiment.";
     readonly roles: readonly ["coordinator", "designer"];
     readonly path: "skills/piresearch/pi-research-create/SKILL.md";
-    readonly digest: "472161f2c32eea89141294333d6398a40b08879c8b68d728078f417d315d8286";
+    readonly digest: "b787b1b6053155cc860027b720494c73adc41f474c4588bab807250d2bd8bb07";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -33,7 +33,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before the first launch, planning or changing experiments, shaping rounds, interpreting completions, repairing, promoting, stopping, or reporting progress.";
     readonly roles: readonly ["coordinator", "designer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-experiment-tree/SKILL.md";
-    readonly digest: "9699b2e29f9ae7748b202889d08ff6ace49d69b0c9cf9587d430e3f4b3e7b05a";
+    readonly digest: "5dce809cbfd343c334c44f3a7f60c89af110257b5d2bdafb2a474b7bd3941526";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -47,7 +47,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before reading, editing, committing or comparing experiment code, coordinating worktree ownership, or diagnosing stale source.";
     readonly roles: readonly ["coordinator", "implementer", "reviewer", "designer"];
     readonly path: "skills/piresearch/pi-research-git/SKILL.md";
-    readonly digest: "8293f65371e9cbadf5c08b11f75b20f3bd7cc1ac89101fa79d2d1b910454514a";
+    readonly digest: "0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -61,7 +61,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before proposing helpers or a team, writing standalone briefs, protecting source/compute, or interpreting task results; main-agent retrieval stays local.";
     readonly roles: readonly ["coordinator"];
     readonly path: "skills/piresearch/pi-research-agent-delegation/SKILL.md";
-    readonly digest: "e7494bb3780e578ad575d4c7ea4d1a1c0ae021506ec80cb6dea76eb7236ed03d";
+    readonly digest: "075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -75,7 +75,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/Docker/SSH reference.";
     readonly roles: readonly ["coordinator", "designer", "implementer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-compute/SKILL.md";
-    readonly digest: "83876eb1ab092dc06348f71f403fe0736a466dffbb701eb27c2677f236a024a0";
+    readonly digest: "e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491";
     readonly resources: readonly [{
         readonly path: "references/local.md";
         readonly digest: "1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121";
@@ -95,10 +95,10 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-evidence";
     readonly name: "pi-research-evidence";
-    readonly description: "Use before launching a run whose output must be judged, reading logs or numerical evidence, validating run-derived claims, or reporting results.";
+    readonly description: "Design verifiable run outputs and check logs or source evidence before judging claims or writing results; distinguish measurements, reported values, image observations, and interpretation.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
-    readonly digest: "cf2d86e86496177c7bb25d6ffbbe8757eff5be8bf8cc62fbf10b401593144bf2";
+    readonly digest: "60cbce9cf923348e0adc58213067b33ec2443033e3878f321bc3dfc694682ec1";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -109,11 +109,14 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-reports";
     readonly name: "pi-research-reports";
-    readonly description: "Use before writing or organizing durable reports, comparisons, figures, exported data, or end-of-work research handoffs.";
+    readonly description: "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-reports/SKILL.md";
-    readonly digest: "780305096db188625ef38e5c5dfd291b87da4b19529602a881395eacee3f458f";
-    readonly resources: readonly [];
+    readonly digest: "c434396140dd6b5ca2b08992c8e4dd8378fdad13dab2b1544778c20200b37ff7";
+    readonly resources: readonly [{
+        readonly path: "references/fixed-report.md";
+        readonly digest: "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc";
+    }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
         readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
@@ -123,10 +126,10 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-figures";
     readonly name: "pi-research-figures";
-    readonly description: "用于论文级 matplotlib/TikZ 图：学习曲线、尺度律、基准与消融、Pareto、矩阵及方法图；保留尺寸、区间、矢量导出与自动审查。按图的问题读取一个参考。";
+    readonly description: "用真实数据制作论文级 matplotlib/TikZ 图，保留打印尺寸、统计区间、矢量输出及来源；分别执行脚本自检、获准视觉检查与科学论证核查，按图的问题读取参考。";
     readonly roles: readonly ["coordinator", "analyst", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-figures/SKILL.md";
-    readonly digest: "ac06e5dec2d774140ad74bb44eac2cdcd6c443dec2183bfca7002d38a8bcd6cf";
+    readonly digest: "fccd118364bb0dad4ab83b0ebdd3d11513c9374c8ce990c6de31f111e1f0dded";
     readonly resources: readonly [{
         readonly path: "references/curves.md";
         readonly digest: "767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df";
@@ -197,16 +200,19 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-paper";
     readonly name: "pi-research-paper";
-    readonly description: "创建真实LaTeX论文、预印本或章节草稿；模板、公式、图、引用、引擎和固定文稿构建，按当前角色与用户审批执行。普通报告使用reports。";
+    readonly description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿用模板和配套资产，固定稿件，构建、检查并交付源码与实际结果。普通研究报告使用reports。";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
-    readonly digest: "f2c5a1ea072459d744546362cf4876e8d9d9f947540340d21137310f65fa1355";
+    readonly digest: "2879ddda256e1d9e599c7463852ecca6dddfc668c74d2797185b797f69d87cc4";
     readonly resources: readonly [{
         readonly path: "assets/starter-main.tex";
         readonly digest: "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974";
     }, {
         readonly path: "assets/starter-refs.bib";
         readonly digest: "c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9";
+    }, {
+        readonly path: "references/build-and-review.md";
+        readonly digest: "6ce6fd9d700b039cb0801fc6928b63b732e29634a397189f30fc8cdf108c54c2";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -217,10 +223,10 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-customize";
     readonly name: "pi-research-customize";
-    readonly description: "Use when preparing or importing a reusable research skill, inspecting fixed skill versions/resources, or adapting a LaTeX template.";
+    readonly description: "准备可复用研究技能、读取固定技能资源，或选择、生成、入库与复用LaTeX个人模板；保留配套文件和旧版本。";
     readonly roles: readonly ["coordinator"];
     readonly path: "skills/piresearch/pi-research-customize/SKILL.md";
-    readonly digest: "8f145970a35028f76b72842dd130d4206a323593656129b0e83b3915f43e7f0d";
+    readonly digest: "1ade7cc681e0cce6a56fb2c594010eda2107a6bf8de2556bc58382ef25ed1832";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -234,7 +240,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when identifying a meaningful Pi Research product bug, limitation, feature request or user frustration; protect research and distinguish local facts from external feedback.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-feedback/SKILL.md";
-    readonly digest: "2b73d9777a60beb30cc2100495512cd458427745a8bb2e99c26f8fed140e3546";
+    readonly digest: "4eea38878fa93e91f050601e4e889355558c9b6947e5ce65db7505a69a912814";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -248,8 +254,14 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索。";
     readonly roles: readonly ["coordinator", "literature", "designer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-lit-review/SKILL.md";
-    readonly digest: "5186f5aa17c2986014900aaf9783b4097dfe8c9d8de37aec8db0b15d1f54803b";
-    readonly resources: readonly [];
+    readonly digest: "4070d5e0ffe1e437e80aa993a488b614c44fd191e0f3dfdabf586b8b35084b65";
+    readonly resources: readonly [{
+        readonly path: "references/document-reading.md";
+        readonly digest: "4a62eae072f09ba2aa48d95baf5f1388ebc334130c49c159be7c9518551cfc6f";
+    }, {
+        readonly path: "references/discovery-permissions.md";
+        readonly digest: "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193";
+    }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
         readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";

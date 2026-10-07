@@ -45,6 +45,15 @@ root                root                   baseline
 
 ## 研究循环：从假设到逐完成决策
 
+每轮交付一个可回查的候选比较与有限结论；以下产物必须来自真实读取或返回，不能用计划描述代替：
+
+| 阶段输入 | 本步产物 | 下一步条件 |
+|---|---|---|
+| 真实父实验、固定revision和合同 | 完整父config、源码及本轮单一问题 | 同轮候选显式继承同一父修订；已回答父保持冻结 |
+| 候选配置或私有实现 | 配置子实验，或开发证据、审查和整合后的子实验 | 重读子源码确认预期变化，私有commit不作正式来源 |
+| 已整合实验与固定合同 | 精确intent、批准清单及实际Run ID | 只提交获准意向；queued/running/unknown等待原Run |
+| 原Run的真实终态 | 日志、产物、有效指标和相对父的比较 | 按证据决定repair/refill/promote/stop，再保存结论与限制 |
+
 1. **读基线源码。** experiment_source_list/read固定experimentId+revision，读config/模型及运行契约，确认参数在哪。需实现代码时按pi-research-git准备私有来源工作区，不假设当前工作区就是实验分支。
 2. **只拟一轮一个决策。** 例如学习率、schedule或init选其一；每个备选说明具体改动、可测量结果和同轮对照，不混多个决策。
 3. **有意选父。** 第一轮用baseline，后续用前轮确认赢家。同轮siblings从同一固定revision派生，config完整替换，expectedParentRevision防陈旧；新代码先开发/审查/整合。

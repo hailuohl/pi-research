@@ -1,9 +1,10 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {mkdtempSync,rmSync,cpSync,writeFileSync,symlinkSync,readFileSync} from 'node:fs';import {tmpdir} from 'node:os';import {join,resolve} from 'node:path';
+import {mkdtempSync,rmSync,cpSync,writeFileSync,symlinkSync,readFileSync} from 'node:fs';import {tmpdir} from 'node:os';import {join,resolve,posix} from 'node:path';
 import {SkillService} from '../../dist/packages/skills/service.js';
 import {buildSessionOptions,buildCustomTools} from '../../dist/packages/pi-adapter/options.js';
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
 const root=resolve('.');
+const skillBodies=(service,id)=>[undefined,...service.list('coordinator').find(entry=>entry.id===id).resources].map(resource=>service.read('coordinator',id,resource).content);
 test('all twelve current upstream skill modules plus overview have provenance and usable bodies',()=>{const s=new SkillService(root);assert.equal(s.list('coordinator').length,13);assert.ok(!s.list('coordinator').some(e=>e.id==='pi-research-instances'));assert.throws(()=>s.read('coordinator','pi-research-instances'),{code:'SKILL_NOT_FOUND'});for(const entry of s.list('coordinator')){const body=s.read('coordinator',entry.id);assert.ok(body.content.length>600);assert.equal(body.digest,entry.digest);assert.match(body.content,/name: pi-research-/);assert.match(body.content,/3037f727/);assert.ok(body.source.blob);assert.doesNotMatch(body.content,/```(?:bash|sh)\s*\norx /);}});
 test('skill descriptions are visible; bodies are lazily read with role boundary',()=>{const s=new SkillService(root);assert.ok(s.list('literature').some(x=>x.id==='pi-research-lit-review'));assert.throws(()=>s.read('reviewer','pi-research-agent-delegation'),{code:'SKILL_SCOPE_DENIED'});assert.throws(()=>s.read('coordinator','../../.env'));assert.throws(()=>s.read('coordinator','pi-research-compute','../../LICENSE'));assert.match(s.read('coordinator','pi-research-compute','references/ssh.md').content,/受信 Linux Docker 监管器/);});
 test('compute routes local, Docker and SSH separately while historical removed references keep their fixed bytes',()=>{const s=new SkillService(root),id='pi-research-compute',previous='344a44dcf73a8bcb2b2cdf5acf637f756c1763ef05c5ba464bc8285fa45a188b',old=JSON.parse(readFileSync(join(root,'skills/releases',previous,'manifest.json'),'utf8')).skills.find(e=>e.id===id);assert.deepEqual(s.list('coordinator').find(e=>e.id===id).resources,['references/local.md','references/docker.md','references/ssh.md']);assert.doesNotMatch(s.read('coordinator',id).content,/slurm|k8s|ray|modal|tinker|managed-compute|\bhf\b/i);const local=s.read('coordinator',id,'references/local.md').content,docker=s.read('coordinator',id,'references/docker.md').content;for(const expected of [/localRuntimeId/,/NVIDIA/,/不回退其他GPU或CPU/])assert.match(local,expected);for(const expected of [/Linux Docker/,/不能扩大为all/,/NVIDIA_VISIBLE_DEVICES=void/])assert.match(docker,expected);assert.doesNotMatch(local,/## Docker正式契约与环境准备/);for(const entry of old.resources){const historical=s.read('coordinator',id,entry.path,previous);assert.equal(historical.digest,entry.digest);assert.equal(historical.bundleId,previous);if(!['references/local.md','references/docker.md','references/ssh.md'].includes(entry.path))assert.throws(()=>s.read('coordinator',id,entry.path),{code:'SKILL_RESOURCE_NOT_FOUND'});}});
@@ -33,7 +34,7 @@ test('Git receipt recipe keeps exact SHA input wrapping and prior fixed Git guid
 });
 
 test('paper fixed-page image recipe uses real Pi wrapping and does not alter the previous fixed skill',()=>{
- const s=new SkillService(root),body=s.read('coordinator','pi-research-paper').content;let count=0;
+ const s=new SkillService(root),body=skillBodies(s,'pi-research-paper').join('\n');let count=0;
  for(const match of body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)){
   const value=JSON.parse(match[1]);if(value.tool!=='publication_page_image_read')continue;
   const tool=buildCustomTools([{name:value.tool,...TOOL_DEFINITIONS[value.tool]}],async()=>null)[0];assert.doesNotThrow(()=>tool.prepareArguments({input:value.input}));assert.equal(value.input.pageNumber,1);count++;
@@ -42,7 +43,7 @@ test('paper fixed-page image recipe uses real Pi wrapping and does not alter the
 });
 
 test('original document visual recipes have mutually exclusive range and reuse forms with Pi wrapping',()=>{
- const s=new SkillService(root),body=s.read('coordinator','pi-research-lit-review').content,recipes=[];
+ const s=new SkillService(root),body=skillBodies(s,'pi-research-lit-review').join('\n'),recipes=[];
  for(const match of body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)){
   const value=JSON.parse(match[1]);if(value.tool!=='document_page_image_read')continue;
   const tool=buildCustomTools([{name:value.tool,...TOOL_DEFINITIONS[value.tool]}],async()=>null)[0];assert.doesNotThrow(()=>tool.prepareArguments({input:value.input}));recipes.push(value.input);
@@ -51,6 +52,26 @@ test('original document visual recipes have mutually exclusive range and reuse f
  assert.doesNotMatch(s.read('coordinator','pi-research-lit-review',undefined,'49efbc47bbccc6d19c12d60d77b9721219865dfce73a1f50552ac87bae296ca8').content,/document_page_image_read/);
 });
 test('all allowed resources are hashed and treated as text, not executed',()=>{const s=new SkillService(root);for(const e of s.list('coordinator'))for(const p of e.resources){const r=s.read('coordinator',e.id,p);assert.ok(r.content.length>100);assert.ok(r.digest);}});
+test('published descriptions, linked resources and tagged recipes agree with the managed catalog and Pi schemas',()=>{
+ const s=new SkillService(root);
+ for(const entry of s.list('coordinator')){
+  const bodies=skillBodies(s,entry.id),description=bodies[0].match(/^description: (.+)$/m);
+  assert.ok(description,entry.id);assert.equal(JSON.parse(description[1]),entry.description);
+  for(const [index,body] of bodies.entries()){
+   const directory=posix.dirname(index?entry.resources[index-1]:'SKILL.md');
+   for(const match of body.matchAll(/\]\(((?:references|assets)\/[^)#]+|[^/)#\s]+\.md)\)/g)){
+    const resource=posix.join(directory,match[1]);assert.ok(s.read('coordinator',entry.id,resource).content,`${entry.id}/${resource}`);
+   }
+   for(const match of body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)){
+    const value=JSON.parse(match[1]);if(!value.tool)continue;
+    assert.ok(TOOL_DEFINITIONS[value.tool],value.tool);
+    const tool=buildCustomTools([{name:value.tool,...TOOL_DEFINITIONS[value.tool]}],async()=>null)[0];
+    assert.doesNotThrow(()=>tool.prepareArguments({input:value.input}),`${entry.id}: ${value.tool}`);
+    assert.throws(()=>tool.prepareArguments(value.input),/INVALID_INPUT/);
+   }
+  }
+ }
+});
 test('tampered bundled text cannot silently enter runtime',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});writeFileSync(join(dir,'skills/piresearch/pi-research-overview/SKILL.md'),'forged grant');const s=new SkillService(dir);assert.throws(()=>s.read('coordinator','pi-research-overview'),{code:'SKILL_INTEGRITY_FAILED'});}finally{rmSync(dir,{recursive:true,force:true});}});
 test('symlinked skill paths fail instead of exposing a host file',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});const p=join(dir,'skills/piresearch/pi-research-overview'),outside=join(dir,'outside');cpSync(p,outside,{recursive:true});rmSync(p,{recursive:true});symlinkSync(outside,p,process.platform==='win32'?'junction':'dir');assert.throws(()=>new SkillService(dir).read('coordinator','pi-research-overview'),{code:'SKILL_PATH_DENIED'});}finally{rmSync(dir,{recursive:true,force:true});}});
 test('worker bootstrap includes verified overview and role-specific catalog, not all long bodies',()=>{const s=new SkillService(root),b=s.bootstrap('reviewer');assert.equal(b.bundleId,s.bundleId);assert.match(b.prompt,/research_skill_read/);assert.ok(!b.skills.some(e=>e.name==='pi-research-agent-delegation'));assert.ok(b.prompt.length<20000);assert.equal(b.skills.length,s.list('reviewer').length);});

@@ -7,6 +7,8 @@ description: "Use when starting or importing a project, selecting a baseline/par
 
 ## 开始项目
 
+先以用户当前研究问题、已确认计划和实际带入的论文、仓库、数据或项目源码确定任务来源。已有项目先核对其基线和历史，不因没有实验节点就判定没有源码。随包曲线拟合只在用户选定该示例时使用，不能替代尚未明确的真实任务。
+
 用户通过工作台创建项目，或用当前 Pi Research CLI 的 `import <目录> --name <名称>` 导入本地目录副本。导入不修改原目录；当前没有 Agent 项目创建/clone 工具，不把工具缺口写成自动成功。可由用户先用普通 Git clone 取得公开实现再导入；不为计算推送代码或回写论文上游仓库。
 
 新项目默认本地。创建时用户可选择GitHub私密仓库并自动同步已提交源码及其Git历史；本机Git/GitHub CLI须就绪并确认账号，仓库使用项目名或中文拼音，确定重名加-1/-2。设置可查看CLI与当前项目同步状态；创建本地项目成功不等于远端完成，远端失败保留本地项目和原同步记录。Agent不能自动选择此项、替用户登录或创建仓库。后续源码提交沿pi-research-git；报告/论文外部发布仍是另一未接入流程。
@@ -19,7 +21,7 @@ description: "Use when starting or importing a project, selecting a baseline/par
 
 先明确基线问题、假设、实现版本、数据/切分版本、评价协议、主指标及方向/单位、必需产物、时间和计算边界。将可复现环境准备留在提交的脚本/固定镜像，遵守项目既有 Python 环境政策，不自动安装依赖。
 
-首根可提供完整 contract：runner 只能 local/trusted-example/docker/ssh（前三类物理执行位置为本地/Docker/SSH）；local固定已配置localRuntimeId，command首项为同一ID、networkPolicy=host；Docker/SSH 的 image 要固定 @sha256、networkPolicy=none；command 是 argv、environment 为空。NVIDIA另声明gpu.vendor=nvidia与已核对的完整deviceIds；未声明gpu保持CPU。契约必须声明 metrics 和包含 metrics.json 的 expectedArtifacts，具体资源见 pi-research-compute。无 contract 使用随包曲线拟合 EXAMPLE_CONTRACT，不能称为通用执行入口。用户确认的研究计划是研究语义来源，缺确认时先处理需求，不能无关示例顶替目标科研。
+真实任务的首根须提供与实际源码一致的完整 contract：runner 只能 local/trusted-example/docker/ssh；物理执行位置为本地/Docker/SSH，trusted-example是本地固定示例。local固定已配置localRuntimeId，command首项为同一ID、networkPolicy=host；Docker/SSH 的 image 要固定 @sha256、networkPolicy=none；command 是 argv、environment 为空。NVIDIA另声明gpu.vendor=nvidia与已核对的完整deviceIds；未声明gpu保持CPU。契约必须声明 metrics 和包含 metrics.json 的 expectedArtifacts，先选执行位置，再读 pi-research-compute 对应参考。接口在根节点缺 contract 时会使用随包曲线拟合 EXAMPLE_CONTRACT；真实任务缺合同时先补齐，不能省略字段误用默认程序。用户确认的研究计划是研究语义来源，缺确认时先处理需求，不能无关示例顶替目标科研。
 
 同树子实验继承契约，不能用“项目改命令”改掉已建立的比较合同。确需不同入口/环境/协议时单独建立新基线及比较边界，重新批准；不把跨契约结果当同条件排名。
 

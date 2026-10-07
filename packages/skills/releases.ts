@@ -4669,5 +4669,398 @@ export const BUILTIN_RELEASES = [
       }
     ],
     "manifestDigest": "50e285cf2ea51e8dfa1543894bfce13e14969ff3924f9dfd0ed6599377bb6664"
+  },
+  {
+    "bundleId": "cffee2e2842e5cb4c849f99f81f855043ef49237f531ba681f29e99f46ece406",
+    "skills": [
+      {
+        "id": "pi-research-overview",
+        "name": "pi-research-overview",
+        "description": "Use when starting, resuming, or handing over research in Pi Research; choose the workflow for the user's goal and preserve the cardinal research rules.",
+        "roles": [
+          "coordinator",
+          "literature",
+          "designer",
+          "implementer",
+          "analyst",
+          "reviewer",
+          "writer"
+        ],
+        "path": "skills/piresearch/pi-research-overview/SKILL.md",
+        "digest": "c7074be92ec9bfc86f455d5310bf037b3fbde7bcb6af784f7e9b7baa172b4f50",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "SKILL.md",
+          "blob": "904b26802cf62d7ba84fa99f3c2c804026cd9e46"
+        }
+      },
+      {
+        "id": "pi-research-create",
+        "name": "pi-research-create",
+        "description": "Use when starting or importing a project, selecting a baseline/parent, defining a fixed run contract, or creating a reproduction experiment.",
+        "roles": [
+          "coordinator",
+          "designer"
+        ],
+        "path": "skills/piresearch/pi-research-create/SKILL.md",
+        "digest": "b787b1b6053155cc860027b720494c73adc41f474c4588bab807250d2bd8bb07",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-create/SKILL.md",
+          "blob": "6d502f794f82a124cdd93723e2676d8cf0f8861b"
+        }
+      },
+      {
+        "id": "pi-research-experiment-tree",
+        "name": "pi-research-experiment-tree",
+        "description": "Use before the first launch, planning or changing experiments, shaping rounds, interpreting completions, repairing, promoting, stopping, or reporting progress.",
+        "roles": [
+          "coordinator",
+          "designer",
+          "analyst",
+          "reviewer"
+        ],
+        "path": "skills/piresearch/pi-research-experiment-tree/SKILL.md",
+        "digest": "5dce809cbfd343c334c44f3a7f60c89af110257b5d2bdafb2a474b7bd3941526",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-experiment-tree/SKILL.md",
+          "blob": "e888fc9d179ddfae87c4a0732224cf354a9c5430"
+        }
+      },
+      {
+        "id": "pi-research-git",
+        "name": "pi-research-git",
+        "description": "Use before reading, editing, committing or comparing experiment code, coordinating worktree ownership, or diagnosing stale source.",
+        "roles": [
+          "coordinator",
+          "implementer",
+          "reviewer",
+          "designer"
+        ],
+        "path": "skills/piresearch/pi-research-git/SKILL.md",
+        "digest": "0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-git/SKILL.md",
+          "blob": "13af3bae031a9434c111c9c5ef77bbb8c80cc3bf"
+        }
+      },
+      {
+        "id": "pi-research-agent-delegation",
+        "name": "pi-research-agent-delegation",
+        "description": "Use before proposing helpers or a team, writing standalone briefs, protecting source/compute, or interpreting task results; main-agent retrieval stays local.",
+        "roles": [
+          "coordinator"
+        ],
+        "path": "skills/piresearch/pi-research-agent-delegation/SKILL.md",
+        "digest": "075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-agent-delegation/SKILL.md",
+          "blob": "2cb9938569dca476c99c108df491835eadc19b65"
+        }
+      },
+      {
+        "id": "pi-research-compute",
+        "name": "pi-research-compute",
+        "description": "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/Docker/SSH reference.",
+        "roles": [
+          "coordinator",
+          "designer",
+          "implementer",
+          "analyst",
+          "reviewer"
+        ],
+        "path": "skills/piresearch/pi-research-compute/SKILL.md",
+        "digest": "e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491",
+        "resources": [
+          {
+            "path": "references/local.md",
+            "digest": "1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121"
+          },
+          {
+            "path": "references/docker.md",
+            "digest": "ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6"
+          },
+          {
+            "path": "references/ssh.md",
+            "digest": "d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6"
+          }
+        ],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-compute/SKILL.md",
+          "blob": "60566d92cd5e86f1d6684d731444af512531ea0c"
+        }
+      },
+      {
+        "id": "pi-research-evidence",
+        "name": "pi-research-evidence",
+        "description": "Design verifiable run outputs and check logs or source evidence before judging claims or writing results; distinguish measurements, reported values, image observations, and interpretation.",
+        "roles": [
+          "coordinator",
+          "literature",
+          "designer",
+          "implementer",
+          "analyst",
+          "reviewer",
+          "writer"
+        ],
+        "path": "skills/piresearch/pi-research-evidence/SKILL.md",
+        "digest": "60cbce9cf923348e0adc58213067b33ec2443033e3878f321bc3dfc694682ec1",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-evidence/SKILL.md",
+          "blob": "2b15de716916abceb5cbf6a40e2cff75abc37cb1"
+        }
+      },
+      {
+        "id": "pi-research-reports",
+        "name": "pi-research-reports",
+        "description": "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports.",
+        "roles": [
+          "coordinator",
+          "literature",
+          "designer",
+          "implementer",
+          "analyst",
+          "reviewer",
+          "writer"
+        ],
+        "path": "skills/piresearch/pi-research-reports/SKILL.md",
+        "digest": "c434396140dd6b5ca2b08992c8e4dd8378fdad13dab2b1544778c20200b37ff7",
+        "resources": [
+          {
+            "path": "references/fixed-report.md",
+            "digest": "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc"
+          }
+        ],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-reports/SKILL.md",
+          "blob": "313d3ca61372e5f2e101cac6e78828393d03ad87"
+        }
+      },
+      {
+        "id": "pi-research-figures",
+        "name": "pi-research-figures",
+        "description": "用真实数据制作论文级 matplotlib/TikZ 图，保留打印尺寸、统计区间、矢量输出及来源；分别执行脚本自检、获准视觉检查与科学论证核查，按图的问题读取参考。",
+        "roles": [
+          "coordinator",
+          "analyst",
+          "writer",
+          "reviewer"
+        ],
+        "path": "skills/piresearch/pi-research-figures/SKILL.md",
+        "digest": "fccd118364bb0dad4ab83b0ebdd3d11513c9374c8ce990c6de31f111e1f0dded",
+        "resources": [
+          {
+            "path": "references/curves.md",
+            "digest": "767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df"
+          },
+          {
+            "path": "references/scaling.md",
+            "digest": "f61dce7691b5aead2fe5c296d480f4bc85b5037026ecda6cf6f95c21589480a9"
+          },
+          {
+            "path": "references/comparison.md",
+            "digest": "f871360e181f4e50513d9ce2a26846d9dd341779b4eede7c76ad14ed0b22b1b7"
+          },
+          {
+            "path": "references/pareto.md",
+            "digest": "6fbf9c102ed78c525d714657c401ee704067d2e73bfcd4b4efef2a23cd15600a"
+          },
+          {
+            "path": "references/matrix.md",
+            "digest": "95f5d38d28360e4a74da1cbd9c673cf91ac8195c91805985e5dba60394d10823"
+          },
+          {
+            "path": "references/diagram.md",
+            "digest": "8a344e384560508b45df77f537c8a104ba6cf5419912fdec36132e64c8109a18"
+          },
+          {
+            "path": "assets/pi_figstyle.py",
+            "digest": "205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f"
+          },
+          {
+            "path": "assets/pi-tikz-preamble.tex",
+            "digest": "4ade8f750ab24cfe9d19b1e7d72695f4bcc450d5fe885a32950210d833c95917"
+          },
+          {
+            "path": "examples/README.md",
+            "digest": "554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71"
+          },
+          {
+            "path": "examples/loss_curve.py",
+            "digest": "45650778bba66dba9088db083dd899ae745a037ae6966c631dfd7dc05eec64af"
+          },
+          {
+            "path": "examples/scaling.py",
+            "digest": "7d752a66966a28121d584afdd7a80e44830c5f982ea27169b81d72490f0c954d"
+          },
+          {
+            "path": "examples/benchmarks.py",
+            "digest": "7827d755d20f87b92fe768650378acb99a265864943cc8fa7b47db750a8f08d3"
+          },
+          {
+            "path": "examples/ablation.py",
+            "digest": "525c7bdc434bc2ef0295ee95afa706afb7bcd16a4a3812d97e19e05c14e769b4"
+          },
+          {
+            "path": "examples/pareto.py",
+            "digest": "3cd6bbd9f5492b06ef73f6148222be91ab75271bcd11c55f8f4f6368c102373d"
+          },
+          {
+            "path": "examples/sweep.py",
+            "digest": "b0c6b3ed17d2e5bba2550b4683fc6905b65df553bd46b1ca5c2a825557dad08e"
+          },
+          {
+            "path": "examples/confusion.py",
+            "digest": "ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae"
+          },
+          {
+            "path": "examples/method.tex",
+            "digest": "ba4da34a1fae6379559a79657e4ab1a890b86335ba9937a9d4c932604eaf80c2"
+          },
+          {
+            "path": "examples/software-demo-data.py",
+            "digest": "21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3"
+          },
+          {
+            "path": "PROVENANCE.md",
+            "digest": "0660ff2bd55da3851a44b871028b4482a1b19a2852cf6881e02406487c425bfe"
+          },
+          {
+            "path": "LICENSE",
+            "digest": "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7"
+          }
+        ],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-figures/SKILL.md",
+          "blob": "611c11b12c395789d3aa0d2c015cf4ce0594a345"
+        }
+      },
+      {
+        "id": "pi-research-paper",
+        "name": "pi-research-paper",
+        "description": "创建或修订真实LaTeX论文、预印本或章节草稿；沿用模板和配套资产，固定稿件，构建、检查并交付源码与实际结果。普通研究报告使用reports。",
+        "roles": [
+          "coordinator",
+          "writer",
+          "reviewer"
+        ],
+        "path": "skills/piresearch/pi-research-paper/SKILL.md",
+        "digest": "2879ddda256e1d9e599c7463852ecca6dddfc668c74d2797185b797f69d87cc4",
+        "resources": [
+          {
+            "path": "assets/starter-main.tex",
+            "digest": "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974"
+          },
+          {
+            "path": "assets/starter-refs.bib",
+            "digest": "c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9"
+          },
+          {
+            "path": "references/build-and-review.md",
+            "digest": "6ce6fd9d700b039cb0801fc6928b63b732e29634a397189f30fc8cdf108c54c2"
+          }
+        ],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-paper/SKILL.md",
+          "blob": "46fdc3e4207e1ca9c3c8ec51649bc1b242c6ecaa"
+        }
+      },
+      {
+        "id": "pi-research-customize",
+        "name": "pi-research-customize",
+        "description": "准备可复用研究技能、读取固定技能资源，或选择、生成、入库与复用LaTeX个人模板；保留配套文件和旧版本。",
+        "roles": [
+          "coordinator"
+        ],
+        "path": "skills/piresearch/pi-research-customize/SKILL.md",
+        "digest": "1ade7cc681e0cce6a56fb2c594010eda2107a6bf8de2556bc58382ef25ed1832",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-customize/SKILL.md",
+          "blob": "51d608098dc24df19518bea4f6fc71963a26c2b4"
+        }
+      },
+      {
+        "id": "pi-research-feedback",
+        "name": "pi-research-feedback",
+        "description": "Use when identifying a meaningful Pi Research product bug, limitation, feature request or user frustration; protect research and distinguish local facts from external feedback.",
+        "roles": [
+          "coordinator",
+          "literature",
+          "designer",
+          "implementer",
+          "analyst",
+          "reviewer",
+          "writer"
+        ],
+        "path": "skills/piresearch/pi-research-feedback/SKILL.md",
+        "digest": "4eea38878fa93e91f050601e4e889355558c9b6947e5ce65db7505a69a912814",
+        "resources": [],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-feedback/SKILL.md",
+          "blob": "82a729e681bb9fe361589aa953d92769b698196f"
+        }
+      },
+      {
+        "id": "pi-research-lit-review",
+        "name": "pi-research-lit-review",
+        "description": "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索。",
+        "roles": [
+          "coordinator",
+          "literature",
+          "designer",
+          "analyst",
+          "reviewer",
+          "writer"
+        ],
+        "path": "skills/piresearch/pi-research-lit-review/SKILL.md",
+        "digest": "4070d5e0ffe1e437e80aa993a488b614c44fd191e0f3dfdabf586b8b35084b65",
+        "resources": [
+          {
+            "path": "references/document-reading.md",
+            "digest": "4a62eae072f09ba2aa48d95baf5f1388ebc334130c49c159be7c9518551cfc6f"
+          },
+          {
+            "path": "references/discovery-permissions.md",
+            "digest": "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193"
+          }
+        ],
+        "source": {
+          "repository": "alphaXiv/OpenResearch",
+          "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+          "path": "agent-skills/orx-lit-review/SKILL.md",
+          "blob": "a64ea8d7f3ec04b4f325979951ba072bd74db3f8"
+        }
+      }
+    ],
+    "manifestDigest": "cffee2e2842e5cb4c849f99f81f855043ef49237f531ba681f29e99f46ece406"
   }
 ] as const;

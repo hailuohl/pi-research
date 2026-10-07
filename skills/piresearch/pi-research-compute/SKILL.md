@@ -11,6 +11,8 @@ description: "Use before preparing or launching a run, relaunching, sizing, canc
 
 先connector_status、project_inspect，并用execution_environment_list读取用户已保存的运行环境/设备目录（只读，不启动探测进程）；使用真实experimentId/revision读源码/配置和合同。implemented只说明能力实现，目标连接、镜像、资源和本次成功都须实际观察。凭据存在不能自动改用另一后端。
 
+已有实验沿固定contract确定执行位置；新基线按用户要求与已保存环境选择本地、Docker或SSH，并在准备运行前读取下表对应参考。产物应是该实验的精确Run及终态证据；环境目录、排队观察和开发作业都不替代正式结果。
+
 1. **正式研究计算只走run_prepare/run_submit。** 不从worktree直接训练、不调用原始SSH、provider CLI或外部scheduler代替正式Run；它们无正式清单、来源或审批记录。host_execute即使主会话已全访问，也不能绕过领域审批。
 2. **合同固定。** 基线首次明确command argv、environment、镜像摘要、数据/评价版本、metrics单位/方向和expectedArtifacts。子实验继承；变体只改版本化代码/config。不用env-prefixed命令或host环境传参。
 3. **先保存并整合。** 私有Git提交不自动进入实验；整合后的实验固定源码才用于run_prepare。各后端以实际manifest源清单为准；不要求GitHub push，不捏造gitCommit。
@@ -91,6 +93,8 @@ autoAnalyze:true可同时准备终态后最多一次Pi结果分析任务，模�
 每次通知后重新project_inspect，有活动则campaign_inspect；对全部尚未处理的终态run_inspect、日志/产物验证后逐一决策，不等整批排空才分析。Agent不调用user-only run_list。空队列且无待启动候选就退出；通知只包含一次观察，不能据此遗漏分析期间已完成的Run。不要同一个Run再叠加不存在的wait/wake注册。
 
 观察超时表示尚未得到新状态，不是执行timeout/failed。unknown或SSH传输断开先保留原作业/预留，按原handle、容器身份、固定目标/引擎/监管协议对账；不得按旧PID猜测取消，也不得重复运行。失败后读取reason/error和stderr，容量/环境问题可在边界内补前置条件，但每次重跑仍需合法意向/批准。运行启动后失败不能只改机器跳过根因；是否修同节点按pi-research-experiment-tree。
+
+回合交付按实际状态区分：queued/running报告原Run、等待原因与已知进展后结束；unknown报告尚未确认及原记录恢复入口；failed/cancelled保留日志和已有产物，先判断节点是否已回答；succeeded核查完整性和证据后交比较分析。等待或恢复过程中不重复提交、不换目标、不增加额外Run。
 
 ## 大小与预算
 

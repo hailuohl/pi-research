@@ -25,7 +25,7 @@ test('real IPC keeps historical builtin reads through an upgrade and host restar
   const configured=s.app.skills.configure(USER,s.project.id,{expectedVersion:old.version,revisionIds:[],builtinBundleId:BUNDLE_ID});assert.equal(configured.bundleId,BUNDLE_ID);
   await finish(s.session.id,1);const second=replies(s.session.id).find(r=>r.phase==='second');assert.deepEqual(second.reads[0],second.reads[1]);
   const fresh=s.app.sessions.create(USER,s.project.id,{});select(fresh);s.app.sessions.send(USER,fresh.id,{content:'Read selected new builtin paper'});await until(host,()=>replies(fresh.id).some(r=>r.phase==='first'));
-  const current=replies(fresh.id)[0];assert.equal(current.bundleId,BUNDLE_ID);assert.notEqual(current.reads[0].digest,first.reads[0].digest);assert.match(current.reads[0].content,/已有固定文稿和隔离编译/);await finish(fresh.id,1);
+  const current=replies(fresh.id)[0],expected=s.app.skills.read('coordinator','pi-research-paper');assert.equal(current.bundleId,BUNDLE_ID);assert.notEqual(current.reads[0].digest,first.reads[0].digest);assert.deepEqual(current.reads[0],{bundleId:BUNDLE_ID,digest:expected.digest,content:expected.content});await finish(fresh.id,1);
   await host.stop();host=new AgentHost(s.app,options);
   s.app.sessions.send(USER,s.session.id,{content:'Resume original fixed builtin after host restart'});await until(host,()=>replies(s.session.id).filter(r=>r.phase==='first').length===2);await finish(s.session.id,2);
   const resumed=replies(s.session.id).filter(r=>r.phase==='second').at(-1);assert.equal(resumed.bundleId,legacy);assert.deepEqual(resumed.reads[0],first.reads[0]);
