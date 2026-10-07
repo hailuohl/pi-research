@@ -1,4 +1,5 @@
 import {operationRoute} from './operation-routes.js';
+import {inspectModelConnections} from '../../packages/pi-adapter/model-connections.js';
 import {randomUUID} from 'node:crypto';
 import {readIntegrationRoute,writeIntegrationRoute} from './integration-routes.js';
 import { readCampaignRoute, writeCampaignRoute } from './campaign-routes.js';
@@ -12,6 +13,7 @@ import { object, text, integer, bool, strings, oneOf } from '../../packages/cont
 import { CAPABILITIES } from '../../packages/contracts/capabilities.js';
 import {eventQuery} from './event-stream.js';
 export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: URL): unknown {
+    if(path==='/settings/model-connections'){ensure(url.search==='','INVALID_INPUT','模型连接目录不接受查询参数',400);return inspectModelConnections(app.context,USER);}
     if(path==='/publication-templates') {ensure(url.search==='','INVALID_INPUT','模板目录不接受查询参数');return app.publicationTemplates.list(USER);}
     const template=path.match(/^\/publication-templates\/([^/]+)(\/files)?$/);
     if(template){ensure([...url.searchParams.keys()].every(k=>template[2]&&k==='path')&&url.searchParams.getAll('path').length<=1,'INVALID_INPUT','模板文件接口只接受一个 path');return template[2]?app.publicationTemplates.read(USER,template[1],text(url.searchParams.get('path'),'path',240)):app.publicationTemplates.inspect(USER,template[1]);}
@@ -24,7 +26,7 @@ export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: 
     if(kind==='sessions'&&id&&action==='host-access')return app.hostAccess.status(USER,id);
     if(kind==='sessions'&&id&&action==='permissions')return app.sessionPermissions.status(USER,id);
     if (path === '/bootstrap')
-        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), models:app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
+        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), modelVersion:app.store.maybe('app-settings','global')?.version??0, models:app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
     if (path === '/capabilities')
         return CAPABILITIES;
     if (path === '/events') {

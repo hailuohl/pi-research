@@ -2,12 +2,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { ensure } from '../domain/errors.js';
 import { PI_VERSION } from './runtime.js';
+import { dirname } from 'node:path';
+import { modelConnectionCatalog } from './model-connections.js';
 export const PUBLICATION_IMAGE_TOOL = 'publication_page_image_read';
 export const DOCUMENT_IMAGE_TOOL = 'document_page_image_read';
 export const PAGE_IMAGE_BYTES = 4 * 1024 * 1024, CONTEXT_IMAGE_BYTES = 16 * 1024 * 1024;
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 /** Only a digest leaves the credential-bearing catalog. Missing catalog means SDK built-ins. */
-export function publicationImageCatalog(path) { return hash(JSON.stringify({ sdk: PI_VERSION, catalog: existsSync(path) ? hash(readFileSync(path)) : null })); }
+export function publicationImageCatalog(path, connections = modelConnectionCatalog(dirname(path))) { return hash(JSON.stringify({ sdk: PI_VERSION, catalog: existsSync(path) ? hash(readFileSync(path)) : null, ...(connections.length ? { connections } : {}) })); }
 export function assertPublicationPng(bytes, width, height) {
     ensure(bytes.length >= 33 && bytes.length <= PAGE_IMAGE_BYTES && Number.isInteger(width) && Number.isInteger(height) && width >= 1 && height >= 1 && width <= 1600 && height <= 1600, 'MODEL_IMAGE_LIMIT', '固定页须为不超过4 MiB、1600px的PNG');
     ensure(bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) && bytes.toString('ascii', 12, 16) === 'IHDR' && bytes.readUInt32BE(16) === width && bytes.readUInt32BE(20) === height, 'MODEL_IMAGE_INVALID', '固定PNG头或尺寸不符');

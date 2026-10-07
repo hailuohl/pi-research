@@ -44,7 +44,7 @@ function managedTree(root:string,destination?:string) {
  const entries:Entry[]=[],excluded:string[]=[];
  function walk(path:string) {
   const source=join(root,path),info=lstatSync(source);ensure(!info.isSymbolicLink(),'BACKUP_PATH_DENIED','管理树不能含链接',403);
-  if(path&&EXCLUDED.has(path)){excluded.push(path);return;}
+  if(path&&(EXCLUDED.has(path)||/^model-connections\.json(?:\.[\w-]+\.tmp)?$/i.test(path))){excluded.push(path);return;}
   const parts=path.split('/');
   if(parts[0]==='sessions'&&parts.length===3&&parts[2]==='agent'){excluded.push(path+'/');return;}
   ensure(!/\.text-write-(pending|stage-|backup-)/.test(path),'BACKUP_RECOVERY_PENDING','有未解决的文件恢复，请先对账',409);

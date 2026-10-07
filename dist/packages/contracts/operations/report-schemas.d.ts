@@ -283,7 +283,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("pageNumber" | "documentVersionId" | "parseResultId" | "end" | "textArtifactDigest" | "rawDigest" | "start" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                            readonly required: ("start" | "pageNumber" | "documentVersionId" | "parseResultId" | "end" | "textArtifactDigest" | "rawDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
                         readonly providerText: {
@@ -317,7 +317,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("documentVersionId" | "end" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "start" | "rawArtifactId")[];
+                            readonly required: ("start" | "documentVersionId" | "end" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -372,7 +372,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("value" | "name" | "unit" | "referenceId")[];
+                                readonly required: ("name" | "value" | "unit" | "referenceId")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -515,7 +515,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: readonly [...("publicationResultId" | "digest" | "id" | "sourceDigest" | "teamId" | "taskId" | "status" | "approvalId" | "rootSessionId" | "revisionId" | "jobId" | "requiredEvidenceIds" | "validity" | "artifactIds" | "pdfDigest")[], "referenceId"];
+                                readonly required: readonly [...("id" | "status" | "publicationResultId" | "digest" | "sourceDigest" | "teamId" | "taskId" | "approvalId" | "rootSessionId" | "revisionId" | "jobId" | "requiredEvidenceIds" | "validity" | "artifactIds" | "pdfDigest")[], "referenceId"];
                                 readonly type: "object";
                                 readonly additionalProperties: false;
                             };
@@ -641,7 +641,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("pageNumber" | "documentVersionId" | "parseResultId" | "end" | "textArtifactDigest" | "rawDigest" | "start" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
+                        readonly required: ("start" | "pageNumber" | "documentVersionId" | "parseResultId" | "end" | "textArtifactDigest" | "rawDigest" | "pageLabel" | "imageArtifactId" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                     readonly providerText: {
@@ -675,7 +675,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("documentVersionId" | "end" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "start" | "rawArtifactId")[];
+                        readonly required: ("start" | "documentVersionId" | "end" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                 };

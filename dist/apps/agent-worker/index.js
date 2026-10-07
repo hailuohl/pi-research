@@ -1,4 +1,5 @@
 import { imageContextReferences, publicationImageCatalog, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL } from '../../packages/pi-adapter/publication-image.js';
+import { applyModelConnection, connectionFetch, safeConnectionStream } from '../../packages/pi-adapter/model-connections.js';
 import { managedModelFetch } from '../../packages/pi-adapter/model-fetch.js';
 import { MANAGED_HTTP_APIS } from '../../packages/scheduler/model-http.js';
 import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
@@ -78,14 +79,17 @@ process.on('message', async (message) => {
         mkdirSync(raw.agentDir, { recursive: true, mode: 0o700 });
         mkdirSync(raw.sessionDir, { recursive: true, mode: 0o700 });
         const catalogBefore = publicationImageCatalog(raw.modelsPath);
-        const modelRuntime = await sdk.ModelRuntime.create({ authPath: join(raw.agentDir, 'auth.json'), modelsPath: raw.modelsPath });
+        const authPath = join(raw.agentDir, 'auth.json');
+        let modelRuntime = await sdk.ModelRuntime.create({ authPath, modelsPath: raw.modelsPath, ...(raw.connection ? { refreshOnCreate: false } : {}) });
+        if (raw.connection)
+            modelRuntime = await applyModelConnection(sdk, modelRuntime, raw.model, raw.connection, process.env.PI_API_KEY ?? '', authPath);
         const catalogAfter = publicationImageCatalog(raw.modelsPath);
         const checkCatalog = () => { if (raw.managedHttp && (!raw.catalogFingerprint || catalogBefore !== raw.catalogFingerprint || catalogAfter !== raw.catalogFingerprint || publicationImageCatalog(raw.modelsPath) !== raw.catalogFingerprint))
             throw new Error('MODEL_IMAGE_CATALOG_CHANGED: 模型目录已变化，请停止并重新核对授权'); };
         const model = modelRuntime.getModel(raw.model.provider, raw.model.model);
         if (!model)
             throw new Error('MODEL_NOT_FOUND: 模型目录中不存在此供应商/模型，请核对 models.json 和模型 ID');
-        if (process.env.PI_API_KEY)
+        if (process.env.PI_API_KEY && !raw.connection)
             await modelRuntime.setRuntimeApiKey(raw.model.provider, process.env.PI_API_KEY);
         if (!modelRuntime.hasConfiguredAuth(raw.model.provider))
             throw new Error('AUTH_MISSING: 请为所选供应商配置凭据');
@@ -109,18 +113,21 @@ process.on('message', async (message) => {
         if (raw.managedHttp && !MANAGED_HTTP_APIS.includes(model.api))
             throw new Error('MODEL_HTTP_UNSUPPORTED: 所选SDK传输尚未接入受管HTTP，不会绕过限流');
         const stream = session.agent.streamFunction;
-        session.agent.streamFunction = (chosen, context, options) => {
+        session.agent.streamFunction = async (chosen, context, options) => {
             if (chosen.provider !== raw.model.provider || chosen.id !== raw.model.model || chosen.api !== model.api)
                 throw new Error('MODEL_FALLBACK_REFUSED: 请求模型或传输已改变');
             const refs = imageContextReferences(context, chosen.input?.includes('image') === true, raw.managedHttp === true);
-            if (!raw.managedHttp)
-                return stream(chosen, context, options);
+            if (!raw.managedHttp) {
+                const response = await stream(chosen, context, options);
+                return raw.connection ? safeConnectionStream(response) : response;
+            }
             if (refs.length)
                 checkCatalog();
             // Each transport closure owns this exact context, including all historical images.
-            const fetcher = managedModelFetch(globalThis.fetch, key => { if (refs.length)
+            const fetcher = managedModelFetch(raw.connection ? connectionFetch(globalThis.fetch, raw.connection.baseUrl) : globalThis.fetch, key => { if (refs.length)
                 checkCatalog(); return httpRpc('model_http_acquire', key, undefined, refs); }, (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal);
-            return stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher });
+            const response = await stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher });
+            return raw.connection ? safeConnectionStream(response) : response;
         };
         const finishTurn = session.agent.finishTurn;
         session.agent.finishTurn = async (turn, signal) => {

@@ -1,4 +1,5 @@
 import { operationRoute } from './operation-routes.js';
+import { inspectModelConnections } from '../../packages/pi-adapter/model-connections.js';
 import { randomUUID } from 'node:crypto';
 import { readIntegrationRoute, writeIntegrationRoute } from './integration-routes.js';
 import { readCampaignRoute, writeCampaignRoute } from './campaign-routes.js';
@@ -10,6 +11,10 @@ import { object, text, integer, bool, strings, oneOf } from '../../packages/cont
 import { CAPABILITIES } from '../../packages/contracts/capabilities.js';
 import { eventQuery } from './event-stream.js';
 export function readRoute(app, host, path, url) {
+    if (path === '/settings/model-connections') {
+        ensure(url.search === '', 'INVALID_INPUT', '模型连接目录不接受查询参数', 400);
+        return inspectModelConnections(app.context, USER);
+    }
     if (path === '/publication-templates') {
         ensure(url.search === '', 'INVALID_INPUT', '模板目录不接受查询参数');
         return app.publicationTemplates.list(USER);
@@ -34,7 +39,7 @@ export function readRoute(app, host, path, url) {
     if (kind === 'sessions' && id && action === 'permissions')
         return app.sessionPermissions.status(USER, id);
     if (path === '/bootstrap')
-        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), models: app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
+        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), modelVersion: app.store.maybe('app-settings', 'global')?.version ?? 0, models: app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
     if (path === '/capabilities')
         return CAPABILITIES;
     if (path === '/events') {

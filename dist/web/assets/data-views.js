@@ -1,10 +1,8 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
-import { TemplateLibraryView } from "./template-library-view.js";
-import { GitHubSettings } from "./github-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
-import { Icon, Badge, Empty, SectionTitle, nativeSelectButton } from "./ui.js";
+import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
 class WorkspaceView extends React.Component {
   constructor() {
     super(...arguments);
@@ -222,132 +220,7 @@ class EvidenceView extends React.Component {
 }
 import { ReportsView } from "./report-view.js";
 import { LiteratureView } from "./literature-view.js";
-const settingsModelKey = (model) => JSON.stringify([model.provider, model.model]);
-class SettingsView extends React.Component {
-  constructor() {
-    super(...arguments);
-    this.state = { provider: this.props.boot.model.provider, model: this.props.boot.model.model, thinking: this.props.boot.model.thinking, savedChoice: settingsModelKey(this.props.boot.model) };
-  }
-  render() {
-    const { boot, perform } = this.props;
-    const models = [...new Map([...boot.models ?? [], boot.model].filter((model) => model.provider && model.model).map((model) => [settingsModelKey(model), model])).values()];
-    return /* @__PURE__ */ jsxs("div", { className: "page-scroll settings-page", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u8BBE\u7F6E\u4E0E\u80FD\u529B\u72B6\u6001", sub: "\u914D\u7F6E\u4E0D\u4EE3\u8868\u9A8C\u6536\u901A\u8FC7\u3002\u6240\u6709\u672A\u9A8C\u8BC1\u6216\u672A\u5B9E\u73B0\u7684\u80FD\u529B\u90FD\u4F1A\u660E\u786E\u4FDD\u7559\u3002" }),
-      /* @__PURE__ */ jsxs("section", { className: "surface settings-model", children: [
-        /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-          /* @__PURE__ */ jsx("h2", { children: "Pi \u6A21\u578B\u914D\u7F6E" }),
-          /* @__PURE__ */ jsxs("span", { className: "connection-state " + (boot.runtime.ready ? "ready" : ""), children: [
-            /* @__PURE__ */ jsx("span", { className: "status-dot " + (boot.runtime.ready ? "" : "amber") }),
-            boot.runtime.ready ? "\u5DF2\u914D\u7F6E \xB7 \u5F85\u771F\u5B9E\u9A8C\u8BC1" : "\u5C1A\u672A\u5C31\u7EEA"
-          ] })
-        ] }),
-        /* @__PURE__ */ jsx("p", { className: "muted", children: boot.runtime.message }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6B64\u5904\u4FDD\u5B58\u9ED8\u8BA4\u6A21\u578B\uFF0C\u4F9B\u65B0\u4F1A\u8BDD\u4F7F\u7528\uFF1B\u5F53\u524D\u4F1A\u8BDD\u53EF\u5728 Chat \u8F93\u5165\u6846\u5DE5\u5177\u680F\u5355\u72EC\u9009\u62E9\u3002" }),
-        /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
-          e.preventDefault();
-          const model = { provider: this.state.provider, model: this.state.model, thinking: this.state.thinking };
-          perform(async () => {
-            await api("/settings/model", model);
-            this.setState({ savedChoice: settingsModelKey(model) });
-          }, "\u5DF2\u4FDD\u5B58\u9ED8\u8BA4\u6A21\u578B\uFF1B\u4FDD\u5B58\u4E0D\u4EE3\u8868\u4F9B\u5E94\u5546\u8FDE\u63A5\u6210\u529F");
-        }, children: [
-          /* @__PURE__ */ jsxs("label", { className: "settings-saved-model", children: [
-            "\u5DF2\u6709\u6A21\u578B",
-            /* @__PURE__ */ jsxs("select", { "aria-label": "\u9009\u62E9\u5DF2\u6709\u6A21\u578B", value: this.state.savedChoice, onChange: (e) => {
-              const model = models.find((item) => settingsModelKey(item) === e.target.value);
-              if (model) this.setState({ provider: model.provider, model: model.model, thinking: model.thinking, savedChoice: e.target.value });
-            }, children: [
-              nativeSelectButton,
-              /* @__PURE__ */ jsx("option", { value: "", children: "\u624B\u52A8\u914D\u7F6E" }),
-              models.map((model) => /* @__PURE__ */ jsxs("option", { value: settingsModelKey(model), children: [
-                model.provider,
-                " / ",
-                model.model,
-                " \xB7 ",
-                model.thinking
-              ] }, settingsModelKey(model)))
-            ] })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
-            /* @__PURE__ */ jsxs("label", { children: [
-              "\u4F9B\u5E94\u5546\u6807\u8BC6",
-              /* @__PURE__ */ jsx("input", { required: true, "aria-label": "\u4F9B\u5E94\u5546\u6807\u8BC6", placeholder: "Pi \u4E2D\u7684 provider ID", value: this.state.provider, onChange: (e) => this.setState({ provider: e.target.value, savedChoice: "" }) })
-            ] }),
-            /* @__PURE__ */ jsxs("label", { children: [
-              "\u6A21\u578B ID",
-              /* @__PURE__ */ jsx("input", { required: true, "aria-label": "\u6A21\u578B ID", placeholder: "\u5B9E\u9645\u53EF\u7528\u7684\u6A21\u578B\u6807\u8BC6", value: this.state.model, onChange: (e) => this.setState({ model: e.target.value, savedChoice: "" }) })
-            ] }),
-            /* @__PURE__ */ jsxs("label", { children: [
-              "\u601D\u8003\u914D\u7F6E",
-              /* @__PURE__ */ jsxs("select", { "aria-label": "\u601D\u8003\u914D\u7F6E", value: this.state.thinking, onChange: (e) => this.setState({ thinking: e.target.value, savedChoice: "" }), children: [
-                nativeSelectButton,
-                ["off", "minimal", "low", "medium", "high", "xhigh"].map((v) => /* @__PURE__ */ jsx("option", { value: v, children: v }, v))
-              ] })
-            ] })
-          ] }),
-          /* @__PURE__ */ jsx("button", { className: "primary", type: "submit", children: "\u4FDD\u5B58\u4E3A\u9ED8\u8BA4\u6A21\u578B\uFF08\u7528\u4E8E\u65B0\u4F1A\u8BDD\uFF09" })
-        ] }),
-        /* @__PURE__ */ jsxs("div", { className: "setup-notes", children: [
-          /* @__PURE__ */ jsx("h3", { children: "\u672C\u5730\u63A5\u5165" }),
-          /* @__PURE__ */ jsxs("p", { children: [
-            "1. \u4F7F\u7528 Node.js \u226522.19.0\uFF08\u5EFA\u8BAE 24\uFF09\u3002\u5F53\u524D\u5185\u6838\uFF1A",
-            /* @__PURE__ */ jsx("code", { children: boot.runtime.node }),
-            "\u3002"
-          ] }),
-          /* @__PURE__ */ jsxs("p", { children: [
-            "2. \u5728\u9879\u76EE\u76EE\u5F55\u6267\u884C ",
-            /* @__PURE__ */ jsx("code", { children: "npm run setup:pi" }),
-            "\uFF0C\u5B89\u88C5\u56FA\u5B9A Pi ",
-            boot.runtime.expectedVersion,
-            "\u3002"
-          ] }),
-          /* @__PURE__ */ jsxs("p", { children: [
-            "3. \u5C06\u6240\u9009\u4F9B\u5E94\u5546\u5BC6\u94A5\u5199\u5165\u672C\u5730 ",
-            /* @__PURE__ */ jsx("code", { children: ".env" }),
-            " \u7684 ",
-            /* @__PURE__ */ jsx("code", { children: "PI_API_KEY" }),
-            "\uFF0C\u518D\u91CD\u542F\u670D\u52A1\u3002\u4E0D\u8981\u628A\u5BC6\u94A5\u53D1\u5230\u804A\u5929\u3001\u653E\u8FDB\u7814\u7A76\u4ED3\u5E93\u6216\u62A5\u544A\u3002"
-          ] }),
-          /* @__PURE__ */ jsxs("p", { children: [
-            "4. \u81EA\u5B9A\u4E49\u6A21\u578B\u53EF\u7531\u7528\u6237\u914D\u7F6E\u6570\u636E\u76EE\u5F55\u4E0B\u7684 ",
-            /* @__PURE__ */ jsx("code", { children: "models.json" }),
-            "\u3002\u771F\u5B9E\u8C03\u7528\u4ECD\u9700\u9A8C\u8BC1\u63A5\u53E3\u517C\u5BB9\u6027\u3002"
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsx(GitHubSettings, { projectId: this.props.projectId }),
-      /* @__PURE__ */ jsx(TemplateLibraryView, {}),
-      /* @__PURE__ */ jsxs("section", { className: "surface", children: [
-        /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-          /* @__PURE__ */ jsx("h2", { children: "\u80FD\u529B\u4E0E\u9A8C\u6536\u77E9\u9635" }),
-          /* @__PURE__ */ jsx("span", { className: "small muted", children: "v0.2 \xB7 \u672A\u5B8C\u6210 M0\u2014M9 \u5168\u91CF\u590D\u523B" })
-        ] }),
-        /* @__PURE__ */ jsx("div", { className: "table-wrap", children: /* @__PURE__ */ jsxs("table", { className: "capability-table", children: [
-          /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
-            /* @__PURE__ */ jsx("th", { children: "\u80FD\u529B" }),
-            /* @__PURE__ */ jsx("th", { children: "\u72B6\u6001" }),
-            /* @__PURE__ */ jsx("th", { children: "\u9A8C\u8BC1\u4E0E\u8303\u56F4" })
-          ] }) }),
-          /* @__PURE__ */ jsx("tbody", { children: boot.capabilities.map((c) => /* @__PURE__ */ jsxs("tr", { children: [
-            /* @__PURE__ */ jsxs("td", { children: [
-              /* @__PURE__ */ jsx("strong", { children: c.name }),
-              /* @__PURE__ */ jsx("small", { children: c.stage })
-            ] }),
-            /* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx(Badge, { value: c.status }) }),
-            /* @__PURE__ */ jsxs("td", { children: [
-              /* @__PURE__ */ jsx("span", { children: c.verification }),
-              /* @__PURE__ */ jsx("small", { children: c.notes })
-            ] })
-          ] }, c.id)) })
-        ] }) })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { className: "notice", children: [
-        /* @__PURE__ */ jsx(Icon, { name: "settings" }),
-        /* @__PURE__ */ jsx("p", { children: "\u5F53\u524D\u90E8\u7F72\u662F\u56DE\u73AF\u5730\u5740\u3001\u5355\u7528\u6237\u672C\u5730\u5DE5\u4F5C\u53F0\u3002\u672A\u5B9E\u73B0\u591A\u79DF\u6237\u8BA4\u8BC1\u3001\u8FDC\u7A0B\u6258\u7BA1\u670D\u52A1\u4E0E\u6574\u673A\u7EA7 Agent \u6C99\u7BB1\uFF1B\u8BF7\u52FF\u76F4\u63A5\u66B4\u9732\u5230\u516C\u7F51\u3002" })
-      ] })
-    ] });
-  }
-}
+import { SettingsView } from "./settings-view.js";
 export {
   EvidenceView,
   LiteratureView,

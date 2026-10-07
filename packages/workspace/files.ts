@@ -9,7 +9,7 @@ import {assertTextWriteSettled,captureWritePreimage} from './text-write-recovery
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024;
 export type SourceMode = '100644' | '100755';
 const EXCLUDED = new Set(['.git', 'node_modules', '.pi', '.env', '.DS_Store', '.pi-research', '.pi-runtime', '.npmrc', '.pypirc']);
-const excluded = (name: string) => EXCLUDED.has(name) || name.startsWith('.env.');
+const excluded = (name: string) => EXCLUDED.has(name) || name.startsWith('.env.') || /^model-connections\.json(?:\.[\w-]+\.tmp)?$/i.test(name);
 function assertNotSymlink(path: string) {
     try {
         ensure(!lstatSync(path).isSymbolicLink(), 'PATH_DENIED', '不允许通过符号链接访问文件', 403);

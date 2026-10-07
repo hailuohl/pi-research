@@ -1,4 +1,5 @@
 import {publicationImageCatalog,imageReference,documentImageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
+import {modelConnectionSnapshot} from '../pi-adapter/model-connections.js';
 import {canSteerSession} from '../pi-adapter/session-history.js';
 import {messageInput} from '../pi-adapter/attachments.js';
 import {prepareSessionSkills} from '../skills/runtime.js';
@@ -224,13 +225,15 @@ export class AgentHost {
         const bundleId=prepareSessionSkills(this.app,claimed,actor);
         const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId!,claimed.role,bundleId);
         this.ensureReady(claimed);
-        const catalogFingerprint=publicationImageCatalog(join(this.app.context.dataDir,'models.json'));
+        const connectionSnapshot=modelConnectionSnapshot(this.app.context.dataDir,claimed.model.provider),configuredConnection=connectionSnapshot.connection;
+        const catalogFingerprint=publicationImageCatalog(join(this.app.context.dataDir,'models.json'),connectionSnapshot.catalog);
         const toolDefinitions=this.tools.definitions(claimed.role,!!wakeupId,claimed.id);
         const isolatedRunAnalysis=!!wakeupId&&this.app.wakeups.get(SYSTEM,wakeupId).sourceKind==='run-result';
         const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = isolatedRunAnalysis?join(home,'pi-analysis',wakeupId!):join(home, 'pi');
         mkdirSync(agentDir, { recursive: true, mode: 0o700 });
         mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
-        const env: NodeJS.ProcessEnv = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: home, USERPROFILE: home, PI_API_KEY: process.env.PI_API_KEY, NO_COLOR: '1' };
+        const connection=configuredConnection?(({apiKey,...publicConfig})=>publicConfig)(configuredConnection):undefined;
+        const env: NodeJS.ProcessEnv = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: home, USERPROFILE: home, PI_API_KEY: configuredConnection?.apiKey??process.env.PI_API_KEY, NO_COLOR: '1' };
         // Only the selected model credential enters a worker. No SSH/cloud credentials or inherited Node flags.
         const child = store.transaction(()=>{
             // Serialize the final revocation check with process creation across controllers.
@@ -254,7 +257,7 @@ export class AgentHost {
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
         worker.contextMessageIds = hostMessages.map(m => m.id);
         const history = !isolatedRunAnalysis&&!claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
-        this.sendInput(worker,{ type: 'start', managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
+        this.sendInput(worker,{ type: 'start', ...(connection?{connection}:{}), managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             const failure=asError(error),startError=`${failure.code} — ${failure.message}`;

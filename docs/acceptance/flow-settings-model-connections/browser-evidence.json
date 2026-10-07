@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-08",
+  "scope": "Isolated local preview; synthetic connection and manuscript only; no real provider call",
+  "preview": "http://127.0.0.1:4796/",
+  "viewports": [
+    {
+      "clientWidth": 1440,
+      "height": 1000,
+      "pageOverflow": false,
+      "rootOverflow": false,
+      "scrollWidth": 1440,
+      "width": 1440
+    },
+    {
+      "clientWidth": 375,
+      "height": 844,
+      "pageOverflow": false,
+      "rootOverflow": false,
+      "scrollWidth": 375,
+      "width": 390
+    },
+    {
+      "clientWidth": 305,
+      "height": 760,
+      "keyBlank": true,
+      "pageOverflow": false,
+      "rootOverflow": false,
+      "scrollWidth": 305,
+      "width": 320
+    }
+  ],
+  "keyboard": {
+    "keyboardFocus": {
+      "label": "settings-github",
+      "text": "GitHub 状态"
+    },
+    "keyboardSelected": {
+      "githubVisible": true,
+      "modelsHidden": true
+    }
+  },
+  "flows": {
+    "connectionSave": true,
+    "defaultSave": true,
+    "invalidHttpUrlRejectedAndDraftRetained": true,
+    "reloadSavedConnectionAndDefault": true,
+    "storedKeyInputBlank": true,
+    "texNativeUpload": true,
+    "templateReopen": {
+      "overflow": false,
+      "readonly": true,
+      "retained": true
+    },
+    "githubCliReady": true
+  },
+  "screenshots": [
+    "models-desktop.jpg",
+    "models-mobile-390.jpg",
+    "models-mobile-320.jpg",
+    "github-desktop.jpg",
+    "templates-desktop.jpg"
+  ]
+}

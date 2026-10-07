@@ -174,9 +174,9 @@ test('settings save the default only, and persisted message history exposes down
     const select = find(settings.render(), node => node.type === 'select' && node.props['aria-label'] === '选择已有模型');
     const option = elements(select.props.children).find(child => child.type === 'option' && child.props.value === JSON.stringify(['other', 'large']));
     select.props.onChange({ target: { value: option.props.value } });
-    find(settings.render(), node => node.type === 'form').props.onSubmit({ preventDefault() {} });
+    find(settings.render(), node => node.type === 'form' && node.props.className === 'settings-model-form').props.onSubmit({ preventDefault() {} });
     await pending[0];
-    assert.deepEqual(calls, [{ url: '/api/settings/model', body: { provider: 'other', model: 'large', thinking: 'high' } }]);
+    assert.deepEqual(calls, [{ url: '/api/settings/model', body: { provider: 'other', model: 'large', thinking: 'high', expectedVersion: 0 } }]);
     const history = synchronousState(new SessionHistory({ projectId: 'p', sessionId: 's', messages: [{ id: 'm', version: 1, role: 'user', status: 'completed', content: 'see this', attachments: [{ ...attachment('doc-1', 'paper.pdf'), mediaType: 'application/pdf' }] }], history: null, historyAnchor: null, onNavigate() {}, perform() {} }));
     const tree = history.render();
     assert.match(JSON.stringify(tree), /paper\.pdf/);

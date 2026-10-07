@@ -75,7 +75,7 @@ function managedTree(root, destination) {
     function walk(path) {
         const source = join(root, path), info = lstatSync(source);
         ensure(!info.isSymbolicLink(), 'BACKUP_PATH_DENIED', '管理树不能含链接', 403);
-        if (path && EXCLUDED.has(path)) {
+        if (path && (EXCLUDED.has(path) || /^model-connections\.json(?:\.[\w-]+\.tmp)?$/i.test(path))) {
             excluded.push(path);
             return;
         }
