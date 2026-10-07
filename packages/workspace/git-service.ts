@@ -181,7 +181,7 @@ export class GitService {
                     store.update<GitWorkspace>('git-workspace',w.id,w.version,{state:'ready',head:commit,snapshot:base});
                     leases.acquire(pid,w.branch,`session:${s.id}`);
                 }
-                store.update<GitOperation>('git-operation',job.id,job.version,{state:'complete',gitCommit:commit,leaseUntil:0});store.event(pid,'git.operation_completed',{operationId:job.id,gitCommit:commit,sessionId:job.sessionId});
+                const completed=store.update<GitOperation>('git-operation',job.id,job.version,{state:'complete',gitCommit:commit,leaseUntil:0});this.app.github.completed(completed);store.event(pid,'git.operation_completed',{operationId:job.id,gitCommit:commit,sessionId:job.sessionId});
             });
         } catch(error) {
             const e=asError(error);

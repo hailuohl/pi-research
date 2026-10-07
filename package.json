@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "marked": "18.0.11",
+    "pinyin-pro": "3.29.4",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   }

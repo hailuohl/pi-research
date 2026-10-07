@@ -5,6 +5,7 @@ import {randomUUID} from 'node:crypto';
 import {digest} from '../storage/store.js';
 import {readStableFile} from './stable-file.js';
 import {safePath, readSourceMode, setSourceModes} from './files.js';
+import {ensure} from '../domain/errors.js';
 
 export interface GitSnapshot {path: string; files: Array<{path: string; size: number; digest: string; mode?: '100644' | '100755'}>;}
 export interface GitTreeEntry {path: string; mode: '100644' | '100755'; oid: string;}
@@ -121,16 +122,24 @@ export class GitCommand {
         return parseTree((await this.bare(['ls-tree', '-rz', '--full-tree', oid(commit)])).stdout);
     }
     /** Read-only check on a copied bare repository; never follow worktree paths into the live source. */
-    async verifyHistory(commits:string[]) {
+    async verifyHistory(commits:string[],forUpload=false) {
         for(const name of ['objects/info/alternates','objects/info/http-alternates','commondir'])
             if(existsSync(join(this.repoPath,name))&&readFileSync(join(this.repoPath,name),'utf8').trim())throw Error('Managed Git backup must be self-contained');
         const config=join(this.repoPath,'config');
         if(existsSync(config)&&/^\s*\[\s*include(?:if)?(?:\s|\])/im.test(readFileSync(config,'utf8')))throw Error('Managed Git backup cannot include external configuration');
+        if(forUpload){const entries=(await this.bare(['config','--local','--no-includes','--null','--list'])).stdout.toString().split('\0').filter(Boolean);ensure(entries.every(e=>/^core\.(?:repositoryformatversion|filemode|bare|logallrefupdates|symlinks|ignorecase|precomposeunicode)\n/.test(e)),'GITHUB_CONFIG_DENIED','受管 Git 配置含额外网络、凭据或执行设置，拒绝上传');}
         await this.bare(['fsck','--full']);
         const ids=[...new Set(commits.map(oid))];
         if(ids.length){const output=(await this.bare(['cat-file','--batch-check=%(objectname) %(objecttype)'],{input:Buffer.from(ids.join('\n')+'\n')})).stdout.toString().trim().split(/\r?\n/);if(output.length!==ids.length||output.some((line,i)=>line!==ids[i]+' commit'))throw Error('Recorded Git commit is missing');}
     }
     async readBlob(objectId: string): Promise<Buffer> {return (await this.bare(['cat-file', 'blob', oid(objectId)])).stdout;}
+    async history(commit:string) {
+        const lines=(await this.bare(['rev-list','--max-count=201',oid(commit)])).stdout.toString().trim().split(/\r?\n/);
+        ensure(lines.length<=200,'GITHUB_HISTORY_LIMIT','源码上传最多核对200个祖先提交');
+        const result:Array<{commit:string;parents:string[];message:Buffer}>=[];
+        for(const id of lines){const raw=(await this.bare(['cat-file','commit',oid(id)])).stdout,split=raw.indexOf('\n\n');if(split<0)throw Error('Invalid commit');result.push({commit:id,parents:[...raw.subarray(0,split).toString().matchAll(/^parent ([a-f0-9]{40})$/gm)].map(m=>m[1]),message:raw.subarray(split+2)});}
+        return result;
+    }
     async inspectWorktree(path: string): Promise<{head: string; branch: string; dirty: boolean; repoPath: string}> {
         path = resolve(path);
         if (!existsSync(path) || lstatSync(path).isSymbolicLink()) throw new Error('Worktree does not exist or is a symlink');

@@ -52,6 +52,7 @@ export class AgentHost {
         this.ticking = true;
         try {
             this.app.git.tick();
+            this.app.github.tick();
             this.app.runs.reconcile();
             this.app.runs.launchPending();
             this.app.execution.launchPending();
@@ -588,6 +589,7 @@ export class AgentHost {
         }
         await Promise.all(exits);
         await this.app.git.stop();
+        await this.app.github.stop();
         await this.app.documentParsing.stop();
         await this.app.publicationBuilds.stop();
         await this.app.compute.stop();

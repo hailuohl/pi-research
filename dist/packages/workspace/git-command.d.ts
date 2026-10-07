@@ -35,8 +35,13 @@ export declare class GitCommand {
     ref(ref: string): Promise<string | null>;
     tree(commit: string): Promise<GitTreeEntry[]>;
     /** Read-only check on a copied bare repository; never follow worktree paths into the live source. */
-    verifyHistory(commits: string[]): Promise<void>;
+    verifyHistory(commits: string[], forUpload?: boolean): Promise<void>;
     readBlob(objectId: string): Promise<Buffer>;
+    history(commit: string): Promise<{
+        commit: string;
+        parents: string[];
+        message: Buffer;
+    }[]>;
     inspectWorktree(path: string): Promise<{
         head: string;
         branch: string;

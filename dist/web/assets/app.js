@@ -8,6 +8,7 @@ import { short } from "./models.js";
 import { Icon, Modal, nativeSelectButton } from "./ui.js";
 import { Chat, Experiments, Inspector } from "./workbench.js";
 import { SessionList } from "./session-list.js";
+import { ProjectCreationModal } from "./github-controls.js";
 import { WorkspaceView, EvidenceView, ReportsView, LiteratureView, SettingsView } from "./data-views.js";
 const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["scheduler", "\u8D44\u6E90\u4E0E\u8C03\u5EA6", "resources"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u8BBE\u7F6E\u4E0E\u80FD\u529B", "settings"]];
 const navigationGroups = [
@@ -257,30 +258,12 @@ class App extends React.Component {
     const base = { onClose: this.close, busy };
     const done = () => this.setState({ modal: "", modalData: null });
     if (modal === "project")
-      return /* @__PURE__ */ jsxs(Modal, { ...base, title: "\u65B0\u5EFA\u672C\u5730\u9879\u76EE", submitLabel: "\u521B\u5EFA\u9879\u76EE", onSubmit: (fd) => this.perform(async () => {
-        const p = await api("/projects", { name: fd.get("name"), description: fd.get("description"), template: fd.get("template") });
-        const s = await api("/sessions", { projectId: p.id, title: "\u7814\u7A76\u4E3B\u4F1A\u8BDD" });
+      return /* @__PURE__ */ jsx(ProjectCreationModal, { ...base, onCreate: (input, key) => this.perform(async () => {
+        const p = await api("/projects", input, "POST", void 0, key);
+        const s = await api("/sessions", { projectId: p.id, title: "\u7814\u7A76\u4E3B\u4F1A\u8BDD" }, "POST", void 0, key + "-session");
         await new Promise((resolve) => this.setState({ ...this.sessionSelection(s.id, "chat"), projectId: p.id, selectedExp: "", selectedRun: "", selectedReport: "", selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, data: null }, resolve));
         done();
-      }), children: [
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u9879\u76EE\u540D\u79F0",
-          /* @__PURE__ */ jsx("input", { "aria-label": "\u9879\u76EE\u540D\u79F0", name: "name", required: true, maxLength: 120, placeholder: "\u4F8B\u5982\uFF1A\u6750\u6599\u7B5B\u9009\u7814\u7A76" })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u9879\u76EE\u8BF4\u660E",
-          /* @__PURE__ */ jsx("textarea", { name: "description", placeholder: "\u7814\u7A76\u76EE\u6807\u3001\u8303\u56F4\u6216\u8F93\u5165\u8D44\u6599" })
-        ] }),
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u9879\u76EE\u6A21\u677F",
-          /* @__PURE__ */ jsxs("select", { "aria-label": "\u9879\u76EE\u6A21\u677F", name: "template", defaultValue: "curve-fit", children: [
-            nativeSelectButton,
-            /* @__PURE__ */ jsx("option", { value: "curve-fit", children: "\u771F\u5B9E\u66F2\u7EBF\u62DF\u5408\u793A\u4F8B \xB7 \u53EF\u76F4\u63A5\u8FD0\u884C" }),
-            /* @__PURE__ */ jsx("option", { value: "empty", children: "\u7A7A\u9879\u76EE \xB7 \u81EA\u884C\u51C6\u5907\u6587\u4EF6" })
-          ] })
-        ] }),
-        /* @__PURE__ */ jsx("div", { className: "notice", children: /* @__PURE__ */ jsx("p", { children: "\u66F2\u7EBF\u62DF\u5408\u4F7F\u7528\u56FA\u5B9A\u5408\u6210\u6570\u636E\uFF0C\u771F\u5B9E\u6267\u884C\u6570\u503C\u8BA1\u7B97\u3002\u5B83\u7528\u4E8E\u9A8C\u8BC1\u7CFB\u7EDF\uFF0C\u4E0D\u662F\u6750\u6599\u7814\u7A76\u6216 LLM \u6A21\u62DF\u3002" }) })
-      ] });
+      }, input.github ? "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA\uFF1BGitHub \u540C\u6B65\u72B6\u6001\u53EF\u5728\u8BBE\u7F6E\u4E2D\u67E5\u770B\u3002" : "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA") });
     if (modal === "config")
       return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u5B9E\u9A8C\u53EA\u8BFB\u914D\u7F6E", submitLabel: "\u5173\u95ED\u914D\u7F6E", onSubmit: () => done(), children: [
         /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u914D\u7F6E\u7531\u7814\u7A76\u5BF9\u8BDD\u4E2D\u7684\u667A\u80FD\u4F53\u7BA1\u7406\u3002" }),
@@ -461,7 +444,7 @@ class App extends React.Component {
         /* @__PURE__ */ jsxs("div", { className: "workbench-content " + (["chat", "experiments"].includes(tab) && data ? "with-inspector" : ""), children: [
           /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
             boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
-            !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, session: currentSession, perform: this.perform }) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
+            !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
               /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
               /* @__PURE__ */ jsxs("h1", { children: [
                 "\u6BCF\u4E00\u4E2A\u7814\u7A76\uFF0C",

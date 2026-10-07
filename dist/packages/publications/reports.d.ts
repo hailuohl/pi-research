@@ -3,6 +3,8 @@ import type { AppContext } from '../domain/context.js';
 import type { Actor, Row, Artifact } from '../domain/types.js';
 import type { EvidenceService } from '../evidence/service.js';
 import type { ReportReference, ReportInspection, ReportExportCollection } from './report-types.js';
+export declare const excluded: (path: string) => boolean;
+export declare function safeExportBytes(bytes: Buffer, context: Pick<AppContext, 'dataDir' | 'repoRoot' | 'store'>): void;
 export declare class ReportService {
     private c;
     private evidence;

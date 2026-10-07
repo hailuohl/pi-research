@@ -32,6 +32,8 @@ export function createHttpServer(options) {
             if (path.startsWith('/api/')) {
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    if (route === '/github/status')
+                        return json(await app.github.status({ type: 'user' }));
                     if (route === '/events/stream') {
                         const query = eventQuery(url, true, req.headers['last-event-id']);
                         if (query.projectId)
@@ -84,6 +86,8 @@ export function createHttpServer(options) {
                     controller.abort(); };
                 res.on('close', cancel);
                 try {
+                    if (route === '/projects' && req.method === 'POST' && body && typeof body === 'object' && 'github' in body)
+                        return json(await app.github.createProject({ type: 'user' }, body, key));
                     const operation = operationRoute(app, route, body, key, controller.signal, req.method, url.search);
                     if (operation)
                         return json(await operation.result);

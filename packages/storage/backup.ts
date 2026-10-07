@@ -82,6 +82,7 @@ function stateCheck(db:DatabaseSync) {
   if(kind==='message')busy=r.status==='running'||r.status==='queued'&&(!sessions.has(String(r.sessionId))||['queued','running'].includes(String(sessions.get(String(r.sessionId))!.state)));
   if(kind==='task-attempt')busy=['running','unknown'].includes(state);
   if(kind==='literature-task'||kind==='git-operation')busy=['queued','running'].includes(state);
+  if(kind==='github-upload-job')busy=['queued','creating','uploading','unknown'].includes(state);
   if(kind==='workspace-lease')busy=Number(r.until)>Date.now();
   if(kind==='team')busy=['active','draining'].includes(state);
   if(kind==='team'&&r.autoSummarize===true&&['completed','partial','failed','cancelled'].includes(state)) {
@@ -133,9 +134,9 @@ async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entr
   if(kind==='artifact')blob(r);
   if(kind==='publication-template') {ensure(projectId===null&&Array.isArray(r.files),'BACKUP_REFERENCE_INVALID','个人模板归属或文件清单无效',409);for(const file of r.files){ensure(plain(file)&&typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest)&&typeof file.blobPath==='string'&&logical.key(file.blobPath)==='artifacts/'+file.digest,'BACKUP_REFERENCE_INVALID','模板资源引用无效',409);blob({path:file.blobPath,digest:file.digest,size:file.size});}}
   if(kind==='skill-package-revision') {ensure(Array.isArray(r.files),'BACKUP_REFERENCE_INVALID','技能修订缺少文件清单',409);for(const file of r.files){ensure(plain(file)&&typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'BACKUP_REFERENCE_INVALID','技能正文摘要无效',409);blob({path:join(sourceRoot,'skill-blobs',file.digest),digest:file.digest,size:file.size});}}
-  if(['git-source-binding','git-workspace','git-operation'].includes(kind)) {
+  if(['git-source-binding','git-workspace','git-operation','github-upload-job'].includes(kind)) {
    const pid=String(r.projectId);ensure(/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(pid),'BACKUP_REFERENCE_INVALID','Git 项目标识无效',409);
-   const commits=git.get(pid)??[];for(const key of ['gitCommit','head','expectedHead'])if(typeof r[key]==='string')commits.push(r[key]);git.set(pid,commits);
+   const commits=git.get(pid)??[];for(const key of ['gitCommit','head','expectedHead','commit'])if(typeof r[key]==='string')commits.push(r[key]);if(commits.length||kind!=='github-upload-job')git.set(pid,commits);
   }
   if(kind==='git-workspace') {
    ref(r.path,'directory','git-worktrees/');const original=join(sourceRoot,logical.key(String(r.path))),repository=join(sourceRoot,'projects',String(r.projectId),'git','repository.git');

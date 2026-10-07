@@ -14,6 +14,7 @@ import { DocumentService } from './documents/service.js';
 import { DocumentParsingService } from './documents/parse-service.js';
 import { LiteratureTaskService } from './literature/tasks.js';
 import { ExportService } from './publications/export.js';
+import { GitHubUploadService } from './workspace/github-upload.js';
 import { ComputeQueue } from './scheduler/compute-queue.js';
 import { AgentAdmissionService } from './scheduler/agent-admission.js';
 import { GitService } from './workspace/git-service.js';
@@ -58,6 +59,7 @@ export declare class ResearchApp {
     readonly agentAdmission: AgentAdmissionService;
     readonly modelHttp: ModelHttpService;
     readonly exports: ExportService;
+    readonly github: GitHubUploadService;
     readonly git: GitService;
     readonly development: DevelopmentService;
     readonly developmentReviews: DevelopmentReviewService;

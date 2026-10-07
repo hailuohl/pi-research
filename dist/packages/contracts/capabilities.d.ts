@@ -127,11 +127,11 @@ export declare const CAPABILITIES: readonly [{
     readonly notes: "父来源、测试/审查与CAS绑定进入新子实验，受管Git历史已接入。产品不自动推送成果，其他恢复/并发组合按实际阻断补验。";
 }, {
     readonly id: "publish";
-    readonly name: "Git发布 / Overleaf";
+    readonly name: "GitHub源码同步 / 成果发布 / Overleaf";
     readonly stage: "M8";
-    readonly status: "not_implemented";
-    readonly verification: "本地可编辑TeX/PDF/成果包已验；产品远端发布与同步未验";
-    readonly notes: "明确内容、目标、可见性及授权后按需启动；开发代码的授权Git备份不等于科研成果发布。";
+    readonly status: "partial";
+    readonly verification: "本地TeX/PDF/成果包及GitHub隔离同步检查通过；CLI与账号只读状态已实测，真实远端创建/推送未验证";
+    readonly notes: "项目默认本地；创建时明确选择后向固定个人私密仓库同步已提交源码及Git历史。科研成果发布和Overleaf仍未实现。";
 }, {
     readonly id: "desktop";
     readonly name: "桌面安装 / 团队协作";

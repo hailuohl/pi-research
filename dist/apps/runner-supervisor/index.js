@@ -6,7 +6,7 @@ import { TERMINAL } from '../../packages/runners/service.js';
 import { ResearchApp } from '../../packages/research-app.js';
 import { TrustedExampleAdapter } from '../../packages/runners/trusted-example.js';
 import { superviseDockerRun } from '../../packages/runners/docker-supervisor.js';
-import { ensure } from '../../packages/domain/errors.js';
+import { DomainError, ensure } from '../../packages/domain/errors.js';
 const [dataDir, repoRoot, runId] = process.argv.slice(2);
 if (!dataDir || !repoRoot || !runId)
     throw new Error('Usage: supervisor DATA REPO RUN');
@@ -81,7 +81,8 @@ try {
             await adapter.stage();
             const log = join(store.paths.physical(run.outputDir), 'stdout.log');
             writeFileSync(log, '', { mode: 0o600 });
-            store.transaction(() => { const current = store.get('run', runId); ensure(current.state === 'submitting' && current.supervisorPid === process.pid && !current.startRequested && !current.childPid && !current.cancelRequested, 'RUN_NOT_LAUNCHABLE', '运行不再允许启动'); service.assertExecutionGrant(current, true); store.update('run', current.id, current.version, { startRequested: true, startedAt: now() }); });
+            store.transaction(() => { const current = store.get('run', runId); if (current.state === 'cancelling' && current.supervisorPid === process.pid && !current.startRequested && !current.childPid && current.cancelRequested)
+                throw new DomainError('RUN_CANCELLED', '运行在启动前已取消'); ensure(current.state === 'submitting' && current.supervisorPid === process.pid && !current.startRequested && !current.childPid && !current.cancelRequested, 'RUN_NOT_LAUNCHABLE', '运行不再允许启动'); service.assertExecutionGrant(current, true); store.update('run', current.id, current.version, { startRequested: true, startedAt: now() }); });
             processHandle = await adapter.start((_stream, chunk) => { const remaining = Math.max(0, 16 * 1024 * 1024 - bytes); bytes += chunk.length; if (remaining)
                 appendFileSync(log, chunk.subarray(0, remaining)); if (chunk.length > remaining) {
                 truncated = true;
@@ -107,7 +108,7 @@ try {
             receipt(result.exitCode, observedCancel ? 'cancelled' : error ? 'failed' : result.exitCode === 0 ? 'succeeded' : 'failed', error);
         }
         catch (error) {
-            receipt(null, 'failed', error.message);
+            receipt(null, error instanceof DomainError && error.code === 'RUN_CANCELLED' && !processHandle ? 'cancelled' : 'failed', error.message);
         }
         finally {
             if (timer)

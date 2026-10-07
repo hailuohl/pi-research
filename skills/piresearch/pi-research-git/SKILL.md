@@ -5,11 +5,15 @@ description: "Use before reading, editing, committing or comparing experiment co
 
 # 受管 Git、工作区与实验源码
 
-Git记录精确源码历史，不负责计算运输。每个正式 Run 冻结本地源码归档；不需要 GitHub push。不要为了启动计算 fetch/push 论文作者上游仓库。若用户已另行授权项目交付仓库，按项目约定交付；本技能不自动发布代码。
+Git记录精确源码历史，不负责计算运输。每个正式 Run 冻结本地源码归档；不需要 GitHub push。不要为了启动计算 fetch/push 论文作者上游仓库。若用户已另行授权项目交付仓库，按项目约定交付。
+
+项目默认本地保存。用户在创建时可明确勾选“创建GitHub私密仓库并自动同步已提交源码及其Git历史”；宿主通过本机已登录的GitHub CLI，把初始源码及后续完成的受管source/commit操作同步到固定账号/仓库/分支。中文项目名转拼音，确定重名才加-1/-2；创建和推送结果未知时按原目标对账，不盲建另一仓库。数据库、会话和独立科研产物不是同步对象；所有可达源码历史仍核对来源、敏感内容和容量。
+
+GitHub配置、暂停/恢复/重试与状态是用户设置入口，不是Agent新权限。Agent按已有授权正常提交即可，不另执行gh/git push，不把本地operation.complete说成远端已同步；远端成功须由宿主核对准确SHA。暂停不撤回已发送内容；恢复不单独回填旧任务，但未来准确SHA仍包含其所依赖的Git历史。来源失效、账号/仓库身份变化或冲突应停止并交用户处理，不通过强推、改写历史或换目标绕过。
 
 ## 先确认来源与写域
 
-其他会话可能在同项目独立工作区处理相邻任务。先读 project_inspect、相关任务结果/实验备注及固定源码索引，避免重复实现。受管 Git 是真实实现，不再写“没有 Git 工具”。用户先启用项目本地历史；Agent 不代替用户调用 history-enable。
+其他会话可能在同项目独立工作区处理相邻任务。先读 project_inspect、相关任务结果/实验备注及固定源码索引，避免重复实现。受管 Git 是真实实现，不再写“没有 Git 工具”。用户启用项目本地历史；创建时选择GitHub同步的项目会同时启用受管历史，其他项目仍沿既有入口。Agent不代替用户调用history-enable或更改同步设置。
 
 每个 Session 有自己的受管分支（服务返回 branch，如 refs/heads/session-…）及 worktree，源码由固定 sourceRevisionId 绑定。不沿用上游 orx/<slug> 分支、不随意 checkout 任意分支。不占用另一会话 worktree；branch/worktree 所有权不等于能读任意数据或改共享项目。
 

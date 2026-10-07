@@ -1,5 +1,5 @@
 {
-  "bundleId": "4370f31787be05fc8687303c0ca0ca7052378d45de72e08d9562ab9783f855fc",
+  "bundleId": "ce58da58ca468628efe224f196f4fa9b756095484847de5f253e78f2fe0bbc3a",
   "skills": [
     {
       "id": "pi-research-overview",
@@ -15,7 +15,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-overview/SKILL.md",
-      "digest": "6c0774405234125ebe6380eb9a5162c4a39aebf3fde272a98ff3864ea03b4ce1",
+      "digest": "69b11f26e0ff1120bc9868b60d3da2feeced0ad68d33da1a1d4c4045353f6c70",
       "resources": [],
       "source": {
         "repository": "alphaXiv/OpenResearch",
@@ -33,7 +33,7 @@
         "designer"
       ],
       "path": "skills/piresearch/pi-research-create/SKILL.md",
-      "digest": "434e8ef80ff38899bc9fc00e1d065cd2860e3b415dce9828f871ada63576e708",
+      "digest": "a24dac45022b2de3a376cbedb4bac0c43410344c5072e218a5b9e1a1da639742",
       "resources": [],
       "source": {
         "repository": "alphaXiv/OpenResearch",
@@ -73,7 +73,7 @@
         "designer"
       ],
       "path": "skills/piresearch/pi-research-git/SKILL.md",
-      "digest": "4b7f5b525d6cb00353909b672eae3674f4d83523965f3d946ca0c13e3c0e85cf",
+      "digest": "faf3f7254996a0dda1ab063c3fad9f0f4ad2d1b3e96357707fd879d919d14783",
       "resources": [],
       "source": {
         "repository": "alphaXiv/OpenResearch",

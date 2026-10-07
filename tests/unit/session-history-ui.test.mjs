@@ -154,7 +154,7 @@ test('project and session creation clear the prior history selection',async t=>{
     globalThis.fetch=async url=>response(url.endsWith('/projects')?{id:'new-project'}:url.endsWith('/projects/new-project')?{id:'new-project',archived:false}:url.endsWith('/sessions')?{id:'new-session'}:url.endsWith('/session_list')?{items:[],nextCursor:null}:url.endsWith('/sessions/new-session')?{id:'new-session',projectId:'new-project',role:'coordinator',state:'idle',generation:1}:{});
     const app=synchronousState(new App({}));app.perform=async fn=>fn();app.refresh=async()=>true;
     Object.assign(app.state,{projectId:'old-project',sessionId:'old-session',modal:'project',messages:[{id:'old-body'}],pendingMessages:[{id:'old-queue'}],pendingTotal:1,pendingNextCursor:'q',canSteer:true,historyAnchor:{direction:'before',id:'old-cursor'}});
-    await app.modalView().props.onSubmit({get:()=>''});
+    await app.modalView().props.onCreate({name:'New project',description:'',template:'empty'},'new-project-request');
     assert.equal(app.state.projectId,'new-project');assert.equal(app.state.sessionId,'new-session');assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.historyAnchor,null);
     Object.assign(app.state,{messages:[{id:'old-body'}],pendingMessages:[{id:'old-queue'}],pendingTotal:1,pendingNextCursor:'q',canSteer:true,historyAnchor:{direction:'before',id:'old-cursor'}});
     await app.newSession();assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.pendingNextCursor,null);assert.equal(app.state.canSteer,false);assert.equal(app.state.historyAnchor,null);

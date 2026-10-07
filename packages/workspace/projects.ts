@@ -22,6 +22,7 @@ export class ProjectService {
     create(actor: Actor, input: unknown) {
         userOnly(actor);
         const x = object(input);
+        ensure(x.github===undefined,'GITHUB_PREFLIGHT_REQUIRED','GitHub 项目需通过宿主异步预检入口创建',400);
         const name = text(x.name, 'name', 120);
         return this.c.store.transaction(() => {
             const id = randomUUID();

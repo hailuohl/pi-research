@@ -25,4 +25,13 @@ export declare const CONNECTOR_CAPABILITIES: ({
     limitation: string;
     credential?: undefined;
     content?: undefined;
+} | {
+    id: string;
+    category: string;
+    operations: string[];
+    implementation: string;
+    verification: string;
+    credential: string;
+    limitation: string;
+    content?: undefined;
 })[];

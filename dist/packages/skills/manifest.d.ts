@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "4370f31787be05fc8687303c0ca0ca7052378d45de72e08d9562ab9783f855fc";
+export declare const BUNDLE_ID = "ce58da58ca468628efe224f196f4fa9b756095484847de5f253e78f2fe0bbc3a";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "6c0774405234125ebe6380eb9a5162c4a39aebf3fde272a98ff3864ea03b4ce1";
+    readonly digest: "69b11f26e0ff1120bc9868b60d3da2feeced0ad68d33da1a1d4c4045353f6c70";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -19,7 +19,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when starting or importing a project, selecting a baseline/parent, defining a fixed run contract, or creating a reproduction experiment.";
     readonly roles: readonly ["coordinator", "designer"];
     readonly path: "skills/piresearch/pi-research-create/SKILL.md";
-    readonly digest: "434e8ef80ff38899bc9fc00e1d065cd2860e3b415dce9828f871ada63576e708";
+    readonly digest: "a24dac45022b2de3a376cbedb4bac0c43410344c5072e218a5b9e1a1da639742";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -47,7 +47,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before reading, editing, committing or comparing experiment code, coordinating worktree ownership, or diagnosing stale source.";
     readonly roles: readonly ["coordinator", "implementer", "reviewer", "designer"];
     readonly path: "skills/piresearch/pi-research-git/SKILL.md";
-    readonly digest: "4b7f5b525d6cb00353909b672eae3674f4d83523965f3d946ca0c13e3c0e85cf";
+    readonly digest: "faf3f7254996a0dda1ab063c3fad9f0f4ad2d1b3e96357707fd879d919d14783";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

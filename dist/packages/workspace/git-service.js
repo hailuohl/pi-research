@@ -295,7 +295,8 @@ export class GitService {
                     store.update('git-workspace', w.id, w.version, { state: 'ready', head: commit, snapshot: base });
                     leases.acquire(pid, w.branch, `session:${s.id}`);
                 }
-                store.update('git-operation', job.id, job.version, { state: 'complete', gitCommit: commit, leaseUntil: 0 });
+                const completed = store.update('git-operation', job.id, job.version, { state: 'complete', gitCommit: commit, leaseUntil: 0 });
+                this.app.github.completed(completed);
                 store.event(pid, 'git.operation_completed', { operationId: job.id, gitCommit: commit, sessionId: job.sessionId });
             });
         }

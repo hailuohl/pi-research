@@ -82,6 +82,15 @@ export declare class ConnectorService {
             limitation: string;
             credential?: undefined;
             content?: undefined;
+        } | {
+            id: string;
+            category: string;
+            operations: string[];
+            implementation: string;
+            verification: string;
+            credential: string;
+            limitation: string;
+            content?: undefined;
         })[];
         budgetUnit: string;
         defaults: string;
@@ -132,6 +141,15 @@ export declare class ConnectorService {
             verification: string;
             limitation: string;
             credential?: undefined;
+            content?: undefined;
+        } | {
+            id: string;
+            category: string;
+            operations: string[];
+            implementation: string;
+            verification: string;
+            credential: string;
+            limitation: string;
             content?: undefined;
         })[];
         budgetUnit: string;

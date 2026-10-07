@@ -31,7 +31,7 @@ import type {ReportBindings,ReportReference,ReportRun,ReportRecord,ReportInspect
 
 const clean=<T>(value:T):T=>JSON.parse(JSON.stringify(value));
 const escaped=(value:string)=>value.replace(/([\\`*_{}\[\]()<>#!|])/g,'\\$1').replace(/\r?\n/g,' ');
-const excluded=(path:string)=>path.split(/[\\/]/).some(p=>/^(\.git|\.git-credentials|\.ssh|\.aws|\.kube|\.docker|\.pi|\.pi-research|\.pi-runtime|\.npmrc|\.pypirc|\.env(?:\..*)?|access\.token|auth\.json|id_rsa|id_ed25519|credentials(?:\..*)?|diagnostic\.log|supervisor\.log)$/i.test(p));
+export const excluded=(path:string)=>path.split(/[\\/]/).some(p=>/^(\.git|\.git-credentials|\.ssh|\.aws|\.kube|\.docker|\.pi|\.pi-research|\.pi-runtime|\.npmrc|\.pypirc|\.env(?:\..*)?|access\.token|auth\.json|id_rsa|id_ed25519|credentials(?:\..*)?|diagnostic\.log|supervisor\.log)$/i.test(p));
 const claimContent=(c:Claim)=>clean({statement:c.statement,evidenceIds:c.evidenceIds,limitations:c.limitations,taskId:c.taskId,sourceAttemptId:c.sourceAttemptId,sourceResultDigest:c.sourceResultDigest,sourceAcceptanceId:c.sourceAcceptanceId,sourceAcceptanceIds:c.sourceAcceptanceIds});
 const payload=(r:ReportRecord)=>clean({artifactId:r.artifactId,artifactDigest:r.artifactDigest,title:r.title,formatVersion:r.formatVersion,runIds:r.runIds,claimIds:r.claimIds,evidenceIds:r.evidenceIds,references:r.references,runs:r.runs,bindings:r.bindings});
 function plainPng(bytes:Buffer) {
@@ -56,7 +56,7 @@ function plainPng(bytes:Buffer) {
     }
     return false;
 }
-function safeExportBytes(bytes:Buffer,context:Pick<AppContext,'dataDir'|'repoRoot'|'store'>) {
+export function safeExportBytes(bytes:Buffer,context:Pick<AppContext,'dataDir'|'repoRoot'|'store'>) {
     const value=bytes.toString('utf8');
     const roots=[context.dataDir,context.repoRoot,...context.store.paths.legacyRoots].map(path=>path.replaceAll('\\','/').replace(/\/+$/,'').toLowerCase());
     ensure(!roots.some(root=>root.length>1&&value.replaceAll('\\','/').toLowerCase().includes(root)),'EXPORT_HOST_PATH_DETECTED','导出内容包含宿主路径；请检查原始运行记录，文件不会被自动改写',400);

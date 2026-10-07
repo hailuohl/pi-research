@@ -1,6 +1,6 @@
 # 当前功能、技能适配与 OpenResearch 差异
 
-2026-10-07。技能适配批次只覆盖已完成能力；后续用户明确要求的个人模板库已另批接入。保留13项技能和本地受信示例、Docker、SSH；云算力、实例与完整远程工作台仍移除，Overleaf和成果远端发布尚未接入。
+2026-10-07。技能适配批次只覆盖已完成能力；后续用户明确要求的个人模板库与可选GitHub源码同步已另批接入。保留13项技能和本地受信示例、Docker、SSH；云算力、实例与完整远程工作台仍移除，Overleaf和报告/论文成果远端发布尚未接入。
 
 对照固定上游 `alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835`，不是移动的main。23份原始文件已按Git blob和SHA-256核验。完整方法与示例按当前工具改写；接口不同、用户主动排除和未完成产品功能分别记录，不能把技能文字当作新增运行能力。
 
@@ -11,7 +11,7 @@
 | 研究工作流 overview | 项目/会话/研究计划、当前目录、工具参数和实体ID；保留固定合同、已回答节点保护、代码变体和按轮次向下推进 | ORX命令表换为Pi工具及用户入口；无ORX登录、组织和托管服务 |
 | 研究启动 create | 本地项目创建/源码导入、已确认研究计划、基线/子实验提案、固定源码和完整config | 后续候选显式parentId与expectedParentRevision，config整体替换；不自动选旧根或自动clone，创建提案不等于实现/运行 |
 | 实验与运行 experiment-tree | Campaign轮次/候选、真实观测、Repair/Refill/Promote/Stop、冻结历史、运行通知与状态回查 | 每个决定、整合与正式Run沿现有批准；主协调用project_inspect/campaign_inspect/run_inspect对账，用户run_list另有入口；不照抄ORX阻塞等待命令 |
-| 代码与版本 git | 受管私有Git工作树、就绪状态、源码读取/差异、提交、开发测试、独立审查与批准整合 | 通过workspace_history等接口管理Git；异步回执及固定父来源须核对；不任意checkout/rebase或自动push，整合创建新子实验 |
+| 代码与版本 git | 受管私有Git工作树、源码差异/提交、开发测试、独立审查与整合；创建项目可选GitHub私密源码同步、设置CLI状态与恢复 | 默认本地；只有用户明确选择才由宿主同步准确提交及其历史，不授予Agent任意checkout/rebase/push；本地完成与远端SHA回查分开 |
 | 协作方法 agent-delegation | 协作开关、有界任务图、角色、独立工作区/尝试、成果验收、Reviewer和恢复 | 委派提案先批准；依赖成果验收而非助手结束；联网和计算各有独立授权，不把原版spawn命令直接当本地API |
 | 计算环境 compute | 固定RunIntent、本地受信示例、CPU Docker、受控SSH、日志/产物、取消、恢复与共享队列 | 仅保留三类后端；本地不是任意宿主代码执行器；Docker有本机CPU证据，SSH有隔离回环证据，外部目标另验；GPU尚未接入 |
 | 证据与引用 evidence | 分页日志、配置/指标、不可变Artifact/Evidence、文本UTF-16定位、原始文档与派生内容、来源失效历史 | 字节日志与UTF-16文本位置分开；不仅依赖stdout；原件取得、解析、阅读和科学验证分开，PDF/PMC入口和授权按当前角色执行 |
@@ -27,7 +27,7 @@
 - 既有项目导入、受管Git、开发测试、正式CPU Docker、研究活动、文稿/图表、文献原件及备份恢复记录见[后端入口](../BACKEND-READINESS.zh-CN.md)。已有记录只证明其具体环境和范围，不代表每个输入或供应商均通过。
 - 本批验证技能读取/资源摘要、真实接口示例、历史绑定，并在已有宿主Python环境实际执行图形模板。两个输出变量均做实际绘图检查；Docker只执行明确的向量文件复制/归档/重开检查，不声称其镜像运行了Matplotlib。TikZ与论文模板经既有固定Docker编译。具体通过、失败修复与环境限制见[本批结果](../acceptance/flow-skill-adaptation/RESULT.md)。
 - 自动root唤醒的真实Pi路径、外部SSH目标、GPU、部分原PDF来源和复杂表图/OCR仍各有既有边界；本次不把文本更新算作补齐这些能力。
-- 当前13项的完整章节/规则映射见[覆盖清单](../acceptance/flow-skill-adaptation/coverage.json)，源身份见[上游来源清单](../../third_party/openresearch/source-manifest.json)。旧发行和原会话固定绑定保留，不自动切换版本。
+- 此前13项技能适配批次的章节/规则与当时文件摘要见[覆盖清单](../acceptance/flow-skill-adaptation/coverage.json)，源身份见[上游来源清单](../../third_party/openresearch/source-manifest.json)。后续新增能力以本表和对应功能验收为准；旧发行和原会话固定绑定保留，不自动切换版本。
 
 ## 配套资源及必要纠错
 

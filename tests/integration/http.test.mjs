@@ -10,7 +10,7 @@ test('capability reads expose verified local paths and retain unverified scope w
  assert.equal(byId.get('runner-docker').status,'verified');assert.match(byId.get('runner-docker').notes,/CPU.*不证明GPU/);
  assert.equal(byId.get('latex').status,'partial');assert.match(byId.get('latex').notes,/单独批准/);
  assert.equal(byId.get('root-wakeup').status,'integration_unverified');assert.match(byId.get('remote').notes,/回环不代替真实远端/);
- assert.match(byId.get('workbench').notes,/暂缓/);assert.equal(byId.get('publish').status,'not_implemented');
+ assert.match(byId.get('workbench').notes,/暂缓/);assert.equal(byId.get('publish').status,'partial');assert.match(byId.get('publish').notes,/默认本地.*私密仓库.*源码.*Git历史/);assert.match(byId.get('publish').notes,/成果发布和Overleaf仍未实现/);assert.match(byId.get('publish').verification,/真实远端创建\/推送未验证/);
  assert.equal(s.server.app.store.list('project').length,0);assert.equal(s.server.app.store.list('session').length,0);assert.equal(s.server.app.store.list('run').length,0);assert.equal(s.server.app.store.list('model-usage').length,0);
 }finally{await s.close();}});
 test('API rejects DNS rebinding Host header without token authentication',async()=>{const s=await setup();try{const status=await new Promise((resolve,reject)=>{const req=httpRequest(s.base+'/api/bootstrap',{headers:{Host:'evil.example',}},res=>{res.resume();resolve(res.statusCode);});req.on('error',reject);req.end();});assert.equal(status,403);}finally{await s.close();}});

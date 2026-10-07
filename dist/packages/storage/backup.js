@@ -144,6 +144,8 @@ function stateCheck(db) {
             busy = ['running', 'unknown'].includes(state);
         if (kind === 'literature-task' || kind === 'git-operation')
             busy = ['queued', 'running'].includes(state);
+        if (kind === 'github-upload-job')
+            busy = ['queued', 'creating', 'uploading', 'unknown'].includes(state);
         if (kind === 'workspace-lease')
             busy = Number(r.until) > Date.now();
         if (kind === 'team')
@@ -256,14 +258,15 @@ async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
                 blob({ path: join(sourceRoot, 'skill-blobs', file.digest), digest: file.digest, size: file.size });
             }
         }
-        if (['git-source-binding', 'git-workspace', 'git-operation'].includes(kind)) {
+        if (['git-source-binding', 'git-workspace', 'git-operation', 'github-upload-job'].includes(kind)) {
             const pid = String(r.projectId);
             ensure(/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(pid), 'BACKUP_REFERENCE_INVALID', 'Git 项目标识无效', 409);
             const commits = git.get(pid) ?? [];
-            for (const key of ['gitCommit', 'head', 'expectedHead'])
+            for (const key of ['gitCommit', 'head', 'expectedHead', 'commit'])
                 if (typeof r[key] === 'string')
                     commits.push(r[key]);
-            git.set(pid, commits);
+            if (commits.length || kind !== 'github-upload-job')
+                git.set(pid, commits);
         }
         if (kind === 'git-workspace') {
             ref(r.path, 'directory', 'git-worktrees/');

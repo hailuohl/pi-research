@@ -20,6 +20,7 @@ export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: 
     if (research !== undefined) return research;
     const parts = path.split('/').filter(Boolean);
     const [kind, id, action] = parts;
+    if(kind==='projects'&&id&&action==='github'&&parts.length===3)return app.github.inspect(USER,id);
     if(kind==='sessions'&&id&&action==='host-access')return app.hostAccess.status(USER,id);
     if(kind==='sessions'&&id&&action==='permissions')return app.sessionPermissions.status(USER,id);
     if (path === '/bootstrap')
@@ -105,6 +106,7 @@ export function writeRoute(app: ResearchApp, host: AgentHost, path: string, body
     }
     const integration=writeIntegrationRoute(app,path,body); if(integration!==undefined)return integration;
     const x = object(body), [kind, id, action] = path.split('/').filter(Boolean);
+    if(kind==='projects'&&id&&action==='github'){ensure(method==='POST','METHOD_NOT_ALLOWED','GitHub 设置需要 POST',405);const parts=path.split('/').filter(Boolean);ensure(parts.length===3||parts.length===4&&parts[3]==='retry','NOT_FOUND','GitHub 路径不存在',404);return parts[3]==='retry'?app.github.retry(USER,id,x):app.github.configure(USER,id,x);}
     if(kind==='sessions'&&id&&action==='permissions'){ensure(method==='POST','METHOD_NOT_ALLOWED','权限设置只接受 POST',405);return app.sessionPermissions.set(USER,id,x);}
     if(kind==='sessions'&&id&&action==='permission-actions'){const parts=path.split('/').filter(Boolean);ensure(method==='POST'&&parts.length===5&&parts[4]==='decide','METHOD_NOT_ALLOWED','审批只接受 decide POST',405);return app.sessionPermissions.decide(USER,id,parts[3],x);}
     if(kind==='sessions'&&id&&action==='host-access'){ensure(method==='POST','METHOD_NOT_ALLOWED','宿主权限设置只接受 POST',405);const {enabled,...input}=x;ensure(typeof enabled==='boolean','INVALID_INPUT','enabled 必须为布尔值');return enabled?app.hostAccess.enable(USER,id,input):app.hostAccess.revoke(USER,id,input);}

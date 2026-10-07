@@ -38,6 +38,7 @@ export function createHttpServer(options: ServerOptions) {
             if (path.startsWith('/api/')) {
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    if(route==='/github/status')return json(await app.github.status({type:'user'}));
                     if(route==='/events/stream'){const query=eventQuery(url,true,req.headers['last-event-id'] as string|undefined);if(query.projectId)app.projects.get(USER,query.projectId);events.open(req,res,query);return;}
                     if (route === '/operations') return json(app.operations.specs());
                     const files = route.match(/^\/projects\/([^/]+)\/files$/);
@@ -77,6 +78,7 @@ export function createHttpServer(options: ServerOptions) {
                 const cancel = () => { if (!res.writableEnded) controller.abort(); };
                 res.on('close', cancel);
                 try {
+                    if(route==='/projects'&&req.method==='POST'&&body&&typeof body==='object'&&'github' in body)return json(await app.github.createProject({type:'user'},body,key!));
                     const operation = operationRoute(app, route, body, key, controller.signal, req.method!, url.search);
                     if (operation) return json(await operation.result);
                 } finally { res.off('close', cancel); }

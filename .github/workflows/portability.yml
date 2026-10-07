@@ -5,7 +5,7 @@ on:
 permissions:
   contents: read
 jobs:
-  templates:
+  portable-features:
     strategy:
       fail-fast: false
       matrix:
@@ -21,3 +21,5 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: node --test --test-concurrency=1 tests/integration/publication-template-library.test.mjs tests/unit/publication-template-library.test.mjs tests/unit/publication-template-ui.test.mjs tests/unit/publication-ui.test.mjs tests/unit/skill-archive.test.mjs
+      - run: node --test --test-concurrency=1 tests/integration/github-project.test.mjs tests/unit/github-ui.test.mjs tests/unit/session-history-ui.test.mjs
+      - run: node --test --test-concurrency=1 tests/integration/runner.test.mjs

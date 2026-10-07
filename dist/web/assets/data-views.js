@@ -1,6 +1,7 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { TemplateLibraryView } from "./template-library-view.js";
+import { GitHubSettings } from "./github-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
 import { Icon, Badge, Empty, SectionTitle, nativeSelectButton } from "./ui.js";
@@ -314,6 +315,7 @@ class SettingsView extends React.Component {
           ] })
         ] })
       ] }),
+      /* @__PURE__ */ jsx(GitHubSettings, { projectId: this.props.projectId }),
       /* @__PURE__ */ jsx(TemplateLibraryView, {}),
       /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [

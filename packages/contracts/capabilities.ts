@@ -18,7 +18,7 @@ export const CAPABILITIES = [
     { id: 'latex', name: 'LaTeX / PDF 编译预览', stage: 'M6', status: 'partial', verification: '隔离三引擎/Bib、真实PDF、固定图形来源及论文审查/导出已验', notes: '需已配置固定Docker镜像及单独批准，禁shell escape和网络。编译成功不等于排版或科学审查通过；缺包/错误/超限明确失败，新模板按需。' },
     { id: 'remote', name: 'SSH', stage: 'M7', status: 'partial', verification: 'SSH→Linux Docker隔离回环及嵌套源码修复已实测', notes: '限用户配置并探测的SSH目标与受信Linux Docker监管器；外部SSH主机仍需目标验收，GPU资源分配尚未接入。回环不代替真实远端目标，当前可用性另看目标探测与队列。' },
     {id:'code-handoff',name:'受控代码产物交接',stage:'M3/M5',status:'verified',verification:'真实Pi私有实现、Docker测试、独立审查及批准差异整合已验',notes:'父来源、测试/审查与CAS绑定进入新子实验，受管Git历史已接入。产品不自动推送成果，其他恢复/并发组合按实际阻断补验。'},
-    { id: 'publish', name: 'Git发布 / Overleaf', stage: 'M8', status: 'not_implemented', verification: '本地可编辑TeX/PDF/成果包已验；产品远端发布与同步未验', notes: '明确内容、目标、可见性及授权后按需启动；开发代码的授权Git备份不等于科研成果发布。' },
+    { id: 'publish', name: 'GitHub源码同步 / 成果发布 / Overleaf', stage: 'M8', status: 'partial', verification: '本地TeX/PDF/成果包及GitHub隔离同步检查通过；CLI与账号只读状态已实测，真实远端创建/推送未验证', notes: '项目默认本地；创建时明确选择后向固定个人私密仓库同步已提交源码及Git历史。科研成果发布和Overleaf仍未实现。' },
     { id: 'desktop', name: '桌面安装 / 团队协作', stage: 'M8', status: 'not_implemented', verification: '当前阶段暂缓', notes: '桌面/更新/应用回滚及团队协作暂缓。当前本地服务为单用户回环鉴权。' },
     { id: 'parity', name: '完整对齐与科研能力评测', stage: 'M0/M9', status: 'not_implemented', verification: '固定上游与历史能力矩阵保留；完整对齐未证明', notes: 'PR01–14长期范围保留，当前按后端收口和指定真实任务试用完成；完整前端、多Agent收益与扩展矩阵按需求验收。' }
 ] as const;
