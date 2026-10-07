@@ -34,4 +34,8 @@
 
 技能源文本规范为LF，发布工具拒绝CRLF源，防止Git跨平台检出后摘要失配；原8份已发布归档字节不变，本批只有1份最终发行。未发布草稿留本机验证目录。
 
-最终独立 Astra/xhigh 复核通过：7项隔离检查通过，CPU可见性与LF发行阻断关闭，无剩余代码阻断。最新干净构建554个产物一致；最后技能/界面49项通过。三平台CI随本批提交运行，真实NVIDIA硬件不由通用CI代替。
+最终独立 Astra/xhigh 复核通过：7项隔离检查通过，CPU可见性与LF发行阻断关闭，无剩余代码阻断。最新干净构建554个产物一致；最后技能/界面49项通过。运行代码提交 `fa26bcd88855c7aaa294408f7014b545e5bdb93a` 的 Windows、macOS、Linux CI 已全部通过（[运行记录](https://github.com/hailuohl/pi-research/actions/runs/37586643026)）；真实NVIDIA硬件由前述本机/回环实测覆盖，不以通用CI替代。
+
+跨平台CI另外闭合了两类环境差异：测试先规范化系统临时目录而不放松存储链接保护；Windows helper限定并显式加载系统模块，旧C#编译器在Unicode目录中使用固定相对输入/输出名。编译位置、科研工作区和任务环境均留在原Run，C#定义字节不变，不提高等待时限。新增非BMP路径先复现失败后通过，最终本地15/15及独立Sol/high定向复核通过；各次原失败记录保留。系统模块加载机制参考[Microsoft文档](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath)。
+
+代码沿 `implementation/pr01-reproducible-baseline` 推送至私密仓库 `hailuohl/pi-research`；原5个在途文件未改动或纳入提交。正式研究服务未重启，现有运行和数据保留。

@@ -8,8 +8,8 @@
     {
       "backend": "local",
       "scope": "actual host GPU",
-      "runId": "80682449-c1d2-4357-9baa-40c5e2ebc8a6",
-      "manifestDigest": "6d1e236fd9abe9b78728667dda8d657350cbe671d51506c22acd55fe26689c1e",
+      "runId": "42f864ac-e4bc-44ce-9905-f83705c6a1c5",
+      "manifestDigest": "e84513f15cf0318c463166d277b50759c659ba2a36259c7141fa273dad169ed9",
       "selected": [
         "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067"
       ],
@@ -18,7 +18,7 @@
       "metrics": {
         "max_abs_error": 0,
         "elements_checked": 4096,
-        "elapsed_seconds": 0.1982709001749754
+        "elapsed_seconds": 0.11587839992716908
       },
       "kernel": {
         "runtime": "cuda-driver",
@@ -31,7 +31,7 @@
       "claimReleased": true,
       "historyReopened": true,
       "unapprovedRejected": true,
-      "raw": "nvidia-live-local-unicode-fixed.json"
+      "raw": "nvidia-live-local-relative-compiler-final.json"
     },
     {
       "backend": "docker",
@@ -272,14 +272,62 @@
       "changed": []
     },
     "portabilityCI": {
-      "status": "runs after push",
-      "workflow": ".github/workflows/portability.yml",
-      "platforms": [
-        "ubuntu-latest",
-        "windows-latest",
-        "macos-latest"
+      "status": "success",
+      "runId": 37586643026,
+      "headSha": "fa26bcd88855c7aaa294408f7014b545e5bdb93a",
+      "url": "https://github.com/hailuohl/pi-research/actions/runs/37586643026",
+      "jobs": [
+        {
+          "name": "portable-features (ubuntu-latest)",
+          "conclusion": "success"
+        },
+        {
+          "name": "portable-features (windows-latest)",
+          "conclusion": "success"
+        },
+        {
+          "name": "portable-features (macos-latest)",
+          "conclusion": "success"
+        }
       ],
       "gpuHardwareOnHostedCI": false
+    },
+    "portabilityRepairs": {
+      "priorRuns": [
+        {
+          "id": 37580182394,
+          "result": "Linux passed; macOS fixture symlink paths and Windows startup failed"
+        },
+        {
+          "id": 37581645491,
+          "result": "macOS native execution passed; remaining skill fixture and Windows startup failed"
+        },
+        {
+          "id": 37582939233,
+          "result": "Linux and macOS passed; Windows trace stopped before spec-ready"
+        },
+        {
+          "id": 37584461717,
+          "result": "Windows startup fixed: 42 of 43 checks passed; Unicode compiler path failed"
+        }
+      ],
+      "changes": [
+        "Test temporary roots canonicalized; production symlink rejection retained",
+        "Windows helper loads only PSHOME system command modules",
+        "System C# compiler uses fixed ASCII relative filenames inside the original Unicode control directory; C# definitions unchanged",
+        "Original assertion/time limits retained; bounded diagnostic observations added"
+      ],
+      "finalLocal": {
+        "passed": 15,
+        "log": "nvidia-windows-relative-compiler-final.log"
+      },
+      "independentReviews": {
+        "model": "gpt-6.1-sol",
+        "reasoningEffort": "high",
+        "status": "passed",
+        "runtimeVerification": "requested; runtime not echoed"
+      },
+      "compilerSourceSha256": "8a764ece610ddcbda08514ac821ee3d495fdc77ba3a9f5b306bddec52f61c2a5"
     }
   },
   "delegation": [
@@ -291,6 +339,18 @@
     },
     {
       "task": "nvidia_integration_fix",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "verification": "requested; runtime not echoed"
+    },
+    {
+      "task": "portable_test_temp",
+      "model": "gpt-6-luna",
+      "reasoningEffort": "max",
+      "verification": "requested; runtime not echoed"
+    },
+    {
+      "task": "ci_fixture_review",
       "model": "gpt-6.1-sol",
       "reasoningEffort": "high",
       "verification": "requested; runtime not echoed"
