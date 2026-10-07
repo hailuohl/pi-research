@@ -6,7 +6,7 @@ Import-Module ([IO.Path]::Combine($env:PSModulePath,'Microsoft.PowerShell.Manage
 Import-Module ([IO.Path]::Combine($env:PSModulePath,'Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop
 $spec=Get-Content -LiteralPath $SpecPath -Raw -Encoding UTF8 | ConvertFrom-Json
 [Console]::Error.WriteLine('PI_LOCAL_STAGE:spec-ready')
-Add-Type -TypeDefinition @'
+$interopSource=@'
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -33,6 +33,24 @@ public static class PiNativeJob {
  public static string Quote(string value) {var s=new StringBuilder("\"");int slash=0;foreach(char c in value){if(c=='\\'){slash++;continue;}if(c=='"'){s.Append('\\',slash*2+1);s.Append(c);}else{s.Append('\\',slash);s.Append(c);}slash=0;}s.Append('\\',slash*2);return s.Append('"').ToString();}
 }
 '@
+$interopTemp=[IO.Path]::Combine($spec.control,'tmp')
+[IO.Directory]::CreateDirectory($interopTemp)|Out-Null
+[IO.File]::WriteAllText([IO.Path]::Combine($interopTemp,'interop.cs'),$interopSource,[Text.UTF8Encoding]::new($false))
+$compilerStart=[Diagnostics.ProcessStartInfo]::new()
+$compilerStart.FileName=[IO.Path]::Combine([Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(),'csc.exe')
+$compilerStart.Arguments='/nologo /target:library /out:interop.dll interop.cs'
+$compilerStart.WorkingDirectory=$interopTemp
+$compilerStart.UseShellExecute=$false
+$compilerStart.CreateNoWindow=$true
+$compilerStart.RedirectStandardOutput=$true
+$compilerStart.RedirectStandardError=$true
+$compiler=[Diagnostics.Process]::Start($compilerStart)
+try{
+ $compilerOutput=$compiler.StandardOutput.ReadToEndAsync();$compilerError=$compiler.StandardError.ReadToEndAsync()
+ $compiler.WaitForExit();[Console]::Out.Write($compilerOutput.GetAwaiter().GetResult());[Console]::Error.Write($compilerError.GetAwaiter().GetResult())
+ if($compiler.ExitCode -ne 0){throw 'INTEROP_COMPILE_FAILED'}
+}finally{$compiler.Dispose()}
+Add-Type -Path ([IO.Path]::Combine($interopTemp,'interop.dll'))
 [Console]::Error.WriteLine('PI_LOCAL_STAGE:interop-ready')
 function Write-Receipt($name,$value){$path=Join-Path $spec.control $name;$json=$value|ConvertTo-Json -Compress;[IO.File]::WriteAllText($path+'.tmp',$json,[Text.UTF8Encoding]::new($false));Move-Item -LiteralPath ($path+'.tmp') -Destination $path -Force}
 $job=[IntPtr]::Zero;$pi=[PiNativeJob+PROCESSINFO]::new();$handles=@();$envp=[IntPtr]::Zero

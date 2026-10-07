@@ -23,7 +23,7 @@ function diagnose(app,id,reason){
   }
  }catch(error){console.error(`local Run ${id} diagnostics unavailable: ${error.code??error.message}`);}
 }
-async function wait(app,id,timeout){const end=Date.now()+timeout;while(Date.now()<end){app.runs.reconcile();app.runs.launchPending();const run=app.runs.get(USER,id);if(['succeeded','failed','cancelled','unknown'].includes(run.state))return run;await new Promise(r=>setTimeout(r,50));}diagnose(app,id,'wait timeout');throw new Error('Run timeout: '+JSON.stringify(app.runs.get(USER,id)));}
+async function wait(app,id,timeout){const end=Date.now()+timeout;while(Date.now()<end){app.runs.reconcile();app.runs.launchPending();const run=app.runs.get(USER,id);if(['succeeded','failed','cancelled','unknown'].includes(run.state)){if(run.state==='unknown')diagnose(app,id,'unknown result');return run;}await new Promise(r=>setTimeout(r,50));}diagnose(app,id,'wait timeout');throw new Error('Run timeout: '+JSON.stringify(app.runs.get(USER,id)));}
 const contract={runner:'local',localRuntimeId:'node',command:['node','main.mjs'],environment:{},datasetVersion:'local-test-v1',evaluationProtocolVersion:'fixed-v1',metrics:{value:{unit:'count',direction:'max'}},expectedArtifacts:['metrics.json'],networkPolicy:'host',timeoutSeconds:15,cpus:1,memoryMb:128};
 function prepared(s,code='import {writeFileSync} from "node:fs";if(process.platform==="win32"&&!process.env.ProgramFiles)throw Error("NVML_SYSTEM_ENV_MISSING");writeFileSync(process.env.PI_OUTPUT_DIR+"/metrics.json",JSON.stringify({value:42}));',gpu,timeoutSeconds=15){
  if(!s.app.localRuntimes.list().length)s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:0});
@@ -46,9 +46,22 @@ test('local approved CPU source executes from a Unicode and space data path with
  }finally{s.close();}
 });
 
+test('local approved CPU source and receipts support a non-BMP data path',async()=>{
+ const s=setup();try{s.app.close();s.app=new ResearchApp(join(s.dir,'中文 数据目录 🧪'),root);s.project=s.app.projects.create(USER,{name:'Non-BMP local',template:'curve-fit'});
+  const run=prepared(s),done=await wait(s.app,run.id,20000);assert.equal(done.state,'succeeded',JSON.stringify(done));assert.equal(done.integrity,'complete');assert.equal(done.metrics.value,42);
+  const control=s.app.store.paths.physical(run.execution.controlDir),start=JSON.parse(readFileSync(join(control,'native-start.json'),'utf8')),result=JSON.parse(readFileSync(join(control,'native-result.json'),'utf8'));assert.equal(start.manifestDigest,run.manifestDigest);assert.equal(result.manifestDigest,run.manifestDigest);assert.equal(result.exitCode,0);if(process.platform==='win32')assert.equal(result.stopped,true);
+ }finally{s.close();}
+});
+
 test('Windows helper failure records diagnostics and retains uncertain execution resources', {skip:process.platform!=='win32'},async()=>{
  const s=setup();try{const run=prepared(s),control=s.app.store.paths.physical(run.execution.controlDir);mkdirSync(join(control,'stdout.log'),{recursive:true});
   const done=await wait(s.app,run.id,20000);assert.equal(done.state,'unknown');assert.equal(done.execution.startRequested,true);assert.equal(s.app.store.db.prepare('SELECT held FROM compute_queue WHERE id=?').get(run.id).held,1);assert.equal(existsSync(join(control,'native-result.json')),false);assert.match(readFileSync(join(control,'supervisor.log'),'utf8'),/LOG_OPEN_FAILED/);
+ }finally{s.close();}
+});
+
+test('Windows interop compiler errors stay in supervisor diagnostics and retain unknown resources', {skip:process.platform!=='win32'},async()=>{
+ const s=setup();try{const run=prepared(s),control=s.app.store.paths.physical(run.execution.controlDir);mkdirSync(join(control,'tmp','interop.dll'),{recursive:true});
+  const done=await wait(s.app,run.id,20000);assert.equal(done.state,'unknown');assert.equal(done.execution.startRequested,true);assert.equal(s.app.store.db.prepare('SELECT held FROM compute_queue WHERE id=?').get(run.id).held,1);for(const name of ['stdout.log','stderr.log','native-start.json','native-result.json'])assert.equal(existsSync(join(control,name)),false);const log=readFileSync(join(control,'supervisor.log'),'utf8');assert.match(log,/CS\d{4}/);assert.match(log,/INTEROP_COMPILE_FAILED/);
  }finally{s.close();}
 });
 
