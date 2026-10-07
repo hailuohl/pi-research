@@ -1,3 +1,5 @@
+import {join} from 'node:path';
+import {publicationImageCatalog,PUBLICATION_IMAGE_TOOL,imageReference} from '../pi-adapter/publication-image.js';
 import type {Actor,Approval,Message,Row,Session,Team} from '../domain/types.js';
 import type {ResearchApp} from '../research-app.js';
 import {ensure,DomainError} from '../domain/errors.js';
@@ -5,7 +7,7 @@ import {object,integer,oneOf} from '../contracts/validation.js';
 import {digest} from '../storage/store.js';
 import {readText,listFiles,readSourceMode} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
-import {scope,userOnly} from './permissions.js';
+import {scope,userOnly,interactiveCoordinator} from './permissions.js';
 import type {GitOperation} from '../workspace/git-types.js';
 
 export type RestrictedMode='readOnly'|'confirm'|'autoEdit';
@@ -20,7 +22,7 @@ interface ActionCall {actionId:string;operation:string;inputDigest:string;}
 // Explicit effects: idempotency receipts do not make an operation a pure read.
 const READ=new Set(['execution_environment_list','development_review_inspect','development_review_source_list','development_review_source_read','run_source_list','run_source_read','workspace_history_inspect','workspace_history_diff','workspace_history_operation','development_inspect','development_logs','experiment_source_list','experiment_source_read','experiment_source_diff','research_skill_list','research_skill_read','connector_status','project_inspect','workspace_list','workspace_read','evidence_read','artifact_read','run_inspect','run_logs','task_inspect','task_result_read','task_context_read','session_notice_read','research_brief_inspect','session_attachment_read','campaign_inspect','publication_templates','publication_template_inspect','publication_template_read','manuscript_list','manuscript_inspect','manuscript_source_read','publication_status','publication_inspect','publication_result','publication_build_list','publication_review_inspect','publication_review_list','approval_request']);
 const EDIT=new Set(['workspace_write','workspace_history_set_mode','workspace_prepare_from_revision']);
-const WRITE=new Set(['research_brief_save','development_review_prepare','reviewed_change_prepare','development_prepare','development_cancel','change_proposal_prepare','artifact_create','evidence_register','experiment_plan_submit','run_prepare','collaboration_plan_submit','agent_delegate','campaign_prepare','campaign_enroll','campaign_decision_submit','publication_template_import','manuscript_create','publication_prepare','publication_review_prepare','text_evidence_search','task_result_submit']);
+const WRITE=new Set([PUBLICATION_IMAGE_TOOL,'research_brief_save','development_review_prepare','reviewed_change_prepare','development_prepare','development_cancel','change_proposal_prepare','artifact_create','evidence_register','experiment_plan_submit','run_prepare','collaboration_plan_submit','agent_delegate','campaign_prepare','campaign_enroll','campaign_decision_submit','publication_template_import','manuscript_create','publication_prepare','publication_review_prepare','text_evidence_search','task_result_submit']);
 const EXECUTE=new Set(['host_execute','workspace_history_commit','development_submit','run_submit']);
 export const TASK_PERMISSION_EFFECTS=['workspace_write','workspace_history_set_mode','workspace_prepare_from_revision','artifact_create','evidence_register','text_evidence_search','experiment_plan_submit','task_result_submit'];
 const NETWORK=new Set(['literature_search','literature_discover','paper_read']);
@@ -51,7 +53,9 @@ export class SessionPermissionService {
         let workspaceFiles:unknown[]|undefined;if(sourceWorkspace){const root=this.app.store.paths.physical(sourceWorkspace),files=listFiles(root);ensure(files.reduce((n,f)=>n+f.size,0)<=64*1024*1024,'SESSION_SOURCE_TOO_LARGE','审批源码总量最多64 MiB',413);workspaceFiles=files.map(f=>({path:f.path,digest:digest(readStableFile(root,f.path,64*1024*1024)),mode:readSourceMode(root,f.path)}));}
         const brief=['experiment_plan_submit','run_prepare','manuscript_create'].includes(operation)&&s.role==='coordinator'&&s.researchBriefId?this.app.store.get<{digest:string;revision:number;status:string;rootSessionId:string}>('research-brief',s.researchBriefId,s.projectId!):undefined;
         const researchBrief=brief?{id:brief.id,digest:brief.digest,revision:brief.revision,status:brief.status,rootSessionId:brief.rootSessionId}:null;
-        return {fingerprint:digest({workspace:s.workspace,sourceWorkspace,workspaceFiles,researchBrief,model:s.model,role:s.role,taskId:s.taskId,attemptId:task?.attemptId,sourceRevisionId:s.sourceRevisionId,sourceDigest:s.sourceDigest,refs,targets,before,connectors:settings?{version:settings.version,enabled:settings.enabled,requestLimit:settings.requestLimit}:null}),before};
+        let publicationImage:unknown;
+        if(operation===PUBLICATION_IMAGE_TOOL){const {data,...page}=this.app.publicationBuilds.pageImage({type:'user'},s.projectId!,input.publicationResultId as string,input.pageNumber as number);ensure(this.app.store.get<{rootSessionId?:string}>('manuscript-revision',page.revisionId,s.projectId!).rootSessionId===sessionId,'SCOPE_DENIED','固定文稿不属于当前会话',403);publicationImage={...page,catalog:publicationImageCatalog(join(this.app.context.dataDir,'models.json'))};}
+        return {fingerprint:digest({...(publicationImage?{publicationImage}:{}),workspace:s.workspace,sourceWorkspace,workspaceFiles,researchBrief,model:s.model,role:s.role,taskId:s.taskId,attemptId:task?.attemptId,sourceRevisionId:s.sourceRevisionId,sourceDigest:s.sourceDigest,refs,targets,before,connectors:settings?{version:settings.version,enabled:settings.enabled,requestLimit:settings.requestLimit}:null}),before};
     }
     guard(actor:Actor,operation:string,input:Record<string,unknown>,callId:string|undefined){
         if(actor.type!=='agent')return undefined;
@@ -62,7 +66,7 @@ export class SessionPermissionService {
         ensure(current.mode!=='readOnly','SESSION_READ_ONLY','只读会话禁止修改、联网或执行',403);
         if(actor.taskId){const taskSession=this.app.store.get<Session>('session',actor.sessionId!);if(taskSession.teamId){const team=this.app.store.get<Team>('team',taskSession.teamId,taskSession.projectId!);if(team.permission)this.assert(team.permission,false);}}
         const preciseGit=current.mode==='fullAccess'&&this.capture(actor.sessionId!,true).mode==='readOnly'&&(operation==='workspace_history_commit'||operation==='workspace_prepare_from_revision'&&!!this.app.store.get('project',actor.projectId!).gitHistoryEnabled);
-        if(current.mode==='legacy'||current.mode==='fullAccess'&&!preciseGit&&!actor.wakeupId&&!actor.taskId&&this.root(actor.sessionId!).id===actor.sessionId)return {reference:ref};
+        if(operation!==PUBLICATION_IMAGE_TOOL&&(current.mode==='legacy'||current.mode==='fullAccess'&&!preciseGit&&!actor.wakeupId&&!actor.taskId&&this.root(actor.sessionId!).id===actor.sessionId))return {reference:ref};
         const s=this.app.store.get<Session>('session',actor.sessionId!);
         ensure(!actor.wakeupId,'SESSION_AUTOMATION_ACTION_UNAPPROVED','自动唤醒仅可读取固定资料；写入须由用户交互主会话处理',403);
         if(actor.taskId&&s.teamId){
@@ -83,8 +87,16 @@ export class SessionPermissionService {
         if(approved){if(callRef)this.app.store.transaction(()=>{if(!this.app.store.maybe('permission-call',callRef))this.app.store.create<ActionCall>('permission-call',s.projectId,{actionId:approved.id,operation,inputDigest:digest(input)},callRef);});return {reference:ref,actionId:approved.id,key:`permission-action:${approved.id}`};}
         const old=matching.find(a=>['executing','completed'].includes(a.state));if(old)return {reference:ref,actionId:old.id,key:`permission-action:${old.id}`,consumed:true};
         let pending=matching.find(a=>a.state==='pending');
-        if(!pending)this.app.store.transaction(()=>{const id=digest({sessionId:s.id,operation,input,policy:ref,source:source.fingerprint,callId,generation:actor.generation}),approval=this.app.approvals.request(s.projectId!,'session-action',id,digest({operation,input,policy:ref,source:source.fingerprint}),'session.action','批准本次准确参数、来源和权限版本的操作');pending=this.app.store.create<Action>('session-action',s.projectId,{sessionId:s.id,operation,input,epoch:ref.epoch,policy:ref,source:source.fingerprint,approvalId:approval.id,generation:actor.generation,state:'pending',...(source.before?{before:source.before}:{})},id);});
+        if(!pending)this.app.store.transaction(()=>{const id=digest({sessionId:s.id,operation,input,policy:ref,source:source.fingerprint,callId,generation:actor.generation}),approval=this.app.approvals.request(s.projectId!,'session-action',id,digest({operation,input,policy:ref,source:source.fingerprint}),'session.action',operation===PUBLICATION_IMAGE_TOOL?`允许固定文稿 ${input.publicationResultId} 第 ${input.pageNumber} 页加入当前会话并发送给 ${s.model.provider}/${s.model.model}；后续请求及重开可能再次发送。权限或来源失效时停止；已发送内容无法撤回。仅检查布局，不证明科学结论。`:'批准本次准确参数、来源和权限版本的操作');pending=this.app.store.create<Action>('session-action',s.projectId,{sessionId:s.id,operation,input,epoch:ref.epoch,policy:ref,source:source.fingerprint,approvalId:approval.id,generation:actor.generation,state:'pending',...(source.before?{before:source.before}:{})},id);});
         throw new DomainError('APPROVAL_REQUIRED','需要用户批准此项具体操作',409,{actionId:pending!.id,operation});
+    }
+    assertImageAction(actor:Actor,value:unknown){
+        const ref=imageReference(value),s=this.app.store.get<Session>('session',actor.sessionId!,actor.projectId!);interactiveCoordinator(actor,s.projectId!,s);
+        const a=this.app.store.get<Action>('session-action',ref.actionId,s.projectId!);ensure(a.operation===PUBLICATION_IMAGE_TOOL&&a.sessionId===s.id&&['executing','completed'].includes(a.state)&&a.input.publicationResultId===ref.publicationResultId&&a.input.pageNumber===ref.pageNumber,'PERMISSION_IMAGE_UNAPPROVED','图片未绑定当前会话的已批准准确操作',403);
+        this.assert(a.policy);ensure(a.source===this.source(s.id,a.operation,a.input).fingerprint,'MODEL_IMAGE_SOURCE_STALE','图片批准的来源、模型或目录已变化');
+        this.app.approvals.assert(a.approvalId,s.projectId!,a.id,digest({operation:a.operation,input:a.input,policy:a.policy,source:a.source}),'session.action');
+        const page=this.app.publicationBuilds.pageImage(actor,s.projectId!,ref.publicationResultId,ref.pageNumber);
+        ensure(['digest','bytes','width','height'].every(k=>ref[k as keyof typeof ref]===page[k as keyof typeof page]),'MODEL_IMAGE_INVALID','历史图片引用与当前固定资产不符');
     }
     validate(ref:PermissionReference,sessionId:string,operation:string,input:Record<string,unknown>,actionId?:string){this.assert(ref);if(actionId){const a=this.app.store.get<Action>('session-action',actionId);ensure(a.sessionId===sessionId&&a.operation===operation&&digest(a.input)===digest(input)&&a.source===this.source(sessionId,operation,input).fingerprint&&['approved','executing'].includes(a.state),'APPROVAL_STALE','审批来源、参数或状态已失效');this.app.approvals.assert(a.approvalId,a.projectId!,a.id,digest({operation,input,policy:ref,source:a.source}),'session.action');}}
     begin(id:string){const a=this.app.store.get<Action>('session-action',id);ensure(a.state==='approved','SESSION_ACTION_CONSUMED','批准已被消费，禁止再次执行');this.app.store.update<Action>('session-action',id,a.version,{state:'executing'});}

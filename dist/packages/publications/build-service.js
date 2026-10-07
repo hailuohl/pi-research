@@ -1,3 +1,4 @@
+import { assertPublicationPng } from '../pi-adapter/publication-image.js';
 import { assertDiscoveryArtifact } from '../policy/discovery-grant-validation.js';
 import { assertRunGrantRun } from '../policy/run-grant-validation.js';
 import { spawn } from 'node:child_process';
@@ -316,6 +317,25 @@ export class PublicationBuildService {
         sourceValidity = 'stale';
         sourceError = e instanceof DomainError ? e.code : 'PUBLICATION_SOURCE_STALE';
     } return { ...r, sourceValidity, ...(sourceError ? { sourceError } : {}) }; }
+    /** Resolve only archived output while retaining existing source/grant restrictions. */
+    pageImage(actor, pid, resultId, pageNumber) {
+        const r = this.result(actor, pid, resultId);
+        ensure(r.sourceValidity === 'current' && r.status === 'succeeded' && r.pdf && !r.hadErrors && r.converged, 'MODEL_IMAGE_SOURCE_STALE', '图片需要来源有效的完整成功文稿');
+        this.assertCurrent(this.app.store.get('publication-build-job', r.jobId, pid), true);
+        const page = r.previews.find(p => p.pageNumber === integer(pageNumber, 'pageNumber', 1, 100));
+        ensure(page, 'MODEL_IMAGE_PAGE_MISSING', '固定文稿页不存在', 404);
+        const { artifact, bytes } = this.app.evidence.read(actor, page.artifactId);
+        ensure(artifact.mediaType === 'image/png' && bytes.length === page.bytes && digest(bytes) === page.digest, 'MODEL_IMAGE_INVALID', '固定页PNG资产改变');
+        assertPublicationPng(bytes, page.width, page.height);
+        return { publicationResultId: r.id, pageNumber: page.pageNumber, digest: page.digest, bytes: page.bytes, width: page.width, height: page.height, manifestDigest: r.manifestDigest, sourceDigest: r.sourceDigest, revisionId: r.revisionId, data: bytes.toString('base64') };
+    }
+    readPageImage(actor, pid, resultId, pageNumber) {
+        interactiveCoordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid));
+        ensure(actor.permissionActionId, 'PERMISSION_IMAGE_UNAPPROVED', '固定页需要准确操作批准', 403);
+        const page = this.pageImage(actor, pid, resultId, pageNumber), reference = { actionId: actor.permissionActionId, publicationResultId: resultId, pageNumber, digest: page.digest, bytes: page.bytes, width: page.width, height: page.height };
+        this.app.sessionPermissions.assertImageAction(actor, reference);
+        return { reference, mimeType: 'image/png', data: page.data };
+    }
     finalize(id, outcome) {
         let before = this.app.store.get('publication-build-job', id);
         if (terminal(before.state))

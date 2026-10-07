@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "deacf6d3accce4602e8c28974a85dbebf56dd021e4d48672a2ddf0b0b6ce5715";
+export declare const BUNDLE_ID = "49efbc47bbccc6d19c12d60d77b9721219865dfce73a1f50552ac87bae296ca8";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "e761291278715604063c5ebf3f3ea2211c02094a3a3b6b658247e540cbf992bb";
+    readonly digest: "6bc4ce36371d4d0a8137e0630c5865a89bdb9c80c9eaaa0f7ed15956166ef7f5";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -112,7 +112,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before writing or organizing durable reports, comparisons, figures, exported data, or end-of-work research handoffs.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-reports/SKILL.md";
-    readonly digest: "174b4dbaf9d177d11ba45c513563c3832f587284ea83555dda609096ba6b318a";
+    readonly digest: "780305096db188625ef38e5c5dfd291b87da4b19529602a881395eacee3f458f";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -126,7 +126,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "用于论文级 matplotlib/TikZ 图：学习曲线、尺度律、基准与消融、Pareto、矩阵及方法图；保留尺寸、区间、矢量导出与自动审查。按图的问题读取一个参考。";
     readonly roles: readonly ["coordinator", "analyst", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-figures/SKILL.md";
-    readonly digest: "e7bc0704c5254c8451153f1a8fbaf8c60ec1927df8e808b43cff404b897f8f6e";
+    readonly digest: "ac06e5dec2d774140ad74bb44eac2cdcd6c443dec2183bfca7002d38a8bcd6cf";
     readonly resources: readonly [{
         readonly path: "references/curves.md";
         readonly digest: "767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df";
@@ -200,7 +200,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "创建真实LaTeX论文、预印本或章节草稿；模板、公式、图、引用、引擎和固定文稿构建，按当前角色与用户审批执行。普通报告使用reports。";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
-    readonly digest: "683f75255ae9eb282631a221f0ff4f1000c4c69a2be603a1d5b3c81774091c98";
+    readonly digest: "c001003a1f00d1092036dd7dd7c8e8f8383a083a03c67a9796519a3fed1b2558";
     readonly resources: readonly [{
         readonly path: "assets/starter-main.tex";
         readonly digest: "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974";

@@ -203,6 +203,7 @@ const SPECS = [
     make('publication_submit', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.submit(c.actor, c.projectId, x.jobId) }),
     make('publication_inspect', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_inspect'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.inspect(c.actor, c.projectId, x.jobId) }),
     make('publication_cancel', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.cancel(c.actor, c.projectId, x.jobId) }),
+    make('publication_page_image_read', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'publication_page_image_read')), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.readPageImage(c.actor, c.projectId, x.publicationResultId, x.pageNumber) }),
     make('publication_result', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_result'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.result(c.actor, c.projectId, x.resultId) }),
     make('publication_build_list', { idempotencyPolicy: 'read-only', authorize: c => publicationAccess(c, 'publication_build_list'), preconditions: noPrecondition, execute: (c, x) => c.app.publicationBuilds.jobs(c.actor, c.projectId, x) }),
     make('skill_package_import', { asynchronous: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.skills.import(c.actor, c.projectId, x, c.idempotencyKey) }),
@@ -630,6 +631,10 @@ export class OperationRegistry {
                     spec.authorize(context, input);
                 const previous = lookup();
                 if (previous) {
+                    if (id === 'publication_page_image_read') {
+                        context.actor = { ...actor, permissionActionId: permission?.actionId };
+                        return output(spec.execute(context, input));
+                    }
                     if (actor.type === 'agent' && id === 'run_inspect' && input.includeScheduling === true) {
                         spec.authorize(context, input);
                         return output(spec.execute(context, input));

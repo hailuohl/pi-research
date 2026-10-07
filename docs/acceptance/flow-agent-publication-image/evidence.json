@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "baseline": "2f10b5d57ec6a7e44c38d648b5eceaafdc82d50f",
+  "platform": "win32",
+  "node": "24.19.0",
+  "bundleId": "49efbc47bbccc6d19c12d60d77b9721219865dfce73a1f50552ac87bae296ca8",
+  "acceptance": "ACCEPTANCE.md",
+  "checks": {
+    "full": {
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "--test-concurrency=1",
+        "tests/unit/*.test.mjs",
+        "tests/integration/*.test.mjs"
+      ],
+      "startedAt": "2026-10-07T13:19:55.427Z",
+      "durationMs": 765484,
+      "exitCode": 0,
+      "counts": {
+        "tests": 1225,
+        "pass": 1202,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 23
+      },
+      "log": ".validation/agent-publication-image/full.log",
+      "logSha256": "e96e71999eb2eb0f87f415b8a0ecb6c402d0f4b5186d48a263effd8291e2f8b0"
+    },
+    "focused": {
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "--test-concurrency=1",
+        "tests/unit/publication-image.test.mjs",
+        "tests/integration/publication-image-pi-http.test.mjs",
+        "tests/unit/session-permissions.test.mjs",
+        "tests/unit/publication-build.test.mjs",
+        "tests/integration/session-permissions-pi-http.test.mjs",
+        "tests/integration/model-http-ipc.test.mjs",
+        "tests/unit/operation-schema.test.mjs",
+        "tests/unit/permission-actions-ui.test.mjs",
+        "tests/unit/openresearch-skills.test.mjs"
+      ],
+      "startedAt": "2026-10-07T13:15:17.518Z",
+      "durationMs": 38151,
+      "exitCode": 0,
+      "counts": {
+        "tests": 48,
+        "pass": 48,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "log": ".validation/agent-publication-image/focused.log",
+      "logSha256": "3247aad4bd75590ab8cbbcece1ba94e35a1d516c510b0732c725891111ed6808",
+      "note": "nonexistent unit/session-permissions path was ignored by Node; original integration permissions separately ran 16/16"
+    },
+    "originalPermissions": {
+      "command": "node --test --test-concurrency=1 tests/integration/session-permissions.test.mjs",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "alsoInFull": true
+    },
+    "sdk": {
+      "version": "0.87.1",
+      "transport": "actual production Worker/Host + scripted localhost Completions",
+      "image": "explicit synthetic fixed PNG",
+      "nativeReopenBytePreserved": true,
+      "queuedRevocationNewFetches": 0,
+      "textOnlyCatalogRejection": true,
+      "noImageCatalogCompatibility": true,
+      "semanticVisionTest": false
+    },
+    "clean": {
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 557,
+      "distManifestSha256": "5f480978e89f9c98bf356c09235e7e324b99e7bb3b9d8f61ac4474eaead99680"
+    }
+  },
+  "review": {
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoning": "xhigh",
+    "runtimeEcho": "not available",
+    "patchSha256": "a41ec89d2c35cce674c7d100e95918b9e34898d2cb805477ec78e174427459f2",
+    "verifiedFiles": 112,
+    "blockingFindings": 0,
+    "independentFocusedTests": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "implementation": {
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoning": "high",
+    "runtimeEcho": "not available",
+    "isolation": "17 files integrated only after base and final hashes matched",
+    "parentIntegrationReceipt": ".validation/visual-read-implementation/integration.json"
+  },
+  "limits": {
+    "pageBytes": 4194304,
+    "pageSidePixels": 1600,
+    "contextImageBytes": 16777216,
+    "duplicateImagesCounted": true
+  },
+  "preservation": {
+    "preexistingFiveFilesUnchanged": true,
+    "historicalReleases": 11,
+    "nativeHistoryRetained": true,
+    "normalActionValidateNotRelaxed": true
+  },
+  "notRun": [
+    "actual external-model visual reasoning",
+    "new live Docker compilation or hardware exercise"
+  ],
+  "knownPreexistingGap": "parity baseline historical old-directory evidence path, unchanged",
+  "ci": "image/permission-card/SDK/IPC checks added to existing three-OS workflow; outcome recorded after push"
+}

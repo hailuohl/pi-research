@@ -1,3 +1,4 @@
+import { imageContextReferences, publicationImageCatalog, PUBLICATION_IMAGE_TOOL } from '../../packages/pi-adapter/publication-image.js';
 import { managedModelFetch } from '../../packages/pi-adapter/model-fetch.js';
 import { MANAGED_HTTP_APIS } from '../../packages/scheduler/model-http.js';
 import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
@@ -8,6 +9,7 @@ import { buildSessionOptions, buildCustomTools, systemInstruction, assistantFail
 import { locatePi, inspectPi, piFailure } from '../../packages/pi-adapter/runtime.js';
 let session;
 let providerFailure;
+let imageFailure;
 let started = false, stopping = false, taskSubmitted = false, turns = 0;
 const httpStop = new AbortController();
 let seq = 0;
@@ -18,7 +20,7 @@ function send(value) {
     if (process.connected)
         process.send?.(value);
 }
-function httpRpc(type, key, result) { return new Promise((resolve, reject) => { const requestId = ++seq, timer = setTimeout(() => { pending.delete(requestId); reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type, requestId, key, result }); }); }
+function httpRpc(type, key, result, imageRefs) { return new Promise((resolve, reject) => { const requestId = ++seq, timer = setTimeout(() => { pending.delete(requestId); reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type, requestId, key, result, ...(imageRefs ? { imageRefs } : {}) }); }); }
 function rpc(tool, input, toolCallId) { return new Promise((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('受控工具请求超时')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 process.on('message', async (message) => {
     const raw = message;
@@ -28,6 +30,8 @@ process.on('message', async (message) => {
             return;
         clearTimeout(p.timer);
         pending.delete(raw.requestId);
+        if (raw.type === 'model_http_response' && raw.error?.code.startsWith('MODEL_IMAGE_'))
+            imageFailure = `${raw.error.code}: ${raw.error.message}`;
         raw.error ? p.reject(new Error(`${raw.error.code}: ${raw.error.message}`)) : p.resolve(raw.result);
         return;
     }
@@ -73,7 +77,11 @@ process.on('message', async (message) => {
         const sdk = await import(pathToFileURL(installed.sdkPath).href);
         mkdirSync(raw.agentDir, { recursive: true, mode: 0o700 });
         mkdirSync(raw.sessionDir, { recursive: true, mode: 0o700 });
+        const catalogBefore = publicationImageCatalog(raw.modelsPath);
         const modelRuntime = await sdk.ModelRuntime.create({ authPath: join(raw.agentDir, 'auth.json'), modelsPath: raw.modelsPath });
+        const catalogAfter = publicationImageCatalog(raw.modelsPath);
+        const checkCatalog = () => { if (raw.managedHttp && (!raw.catalogFingerprint || catalogBefore !== raw.catalogFingerprint || catalogAfter !== raw.catalogFingerprint || publicationImageCatalog(raw.modelsPath) !== raw.catalogFingerprint))
+            throw new Error('MODEL_IMAGE_CATALOG_CHANGED: 模型目录已变化，请停止并重新核对授权'); };
         const model = modelRuntime.getModel(raw.model.provider, raw.model.model);
         if (!model)
             throw new Error('MODEL_NOT_FOUND: 模型目录中不存在此供应商/模型，请核对 models.json 和模型 ID');
@@ -84,6 +92,13 @@ process.on('message', async (message) => {
         if (raw.tools.some(t => !t.inputSchema || t.inputSchema.type !== 'object'))
             throw new Error('SDK_CONTRACT_MISMATCH: 工具缺少精确输入 Schema');
         const customTools = buildCustomTools(raw.tools, async (name, input, callId) => {
+            if (name === PUBLICATION_IMAGE_TOOL) {
+                if (!raw.managedHttp)
+                    throw new Error('MODEL_IMAGE_UNMANAGED: 图片需要受管HTTP');
+                if (!model.input?.includes('image'))
+                    throw new Error('MODEL_IMAGE_UNSUPPORTED: 当前模型目录未声明图片能力');
+                checkCatalog();
+            }
             const result = await rpc(name, input, callId);
             if (name === 'task_result_submit')
                 taskSubmitted = true;
@@ -91,16 +106,22 @@ process.on('message', async (message) => {
         });
         const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role, raw.tools.some(tool => tool.name === 'host_execute'), raw.permissionMode) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
-        if (raw.managedHttp) {
-            if (!MANAGED_HTTP_APIS.includes(model.api))
-                throw new Error('MODEL_HTTP_UNSUPPORTED: 所选SDK传输尚未接入受管HTTP，不会绕过限流');
-            const fetcher = managedModelFetch(globalThis.fetch, key => httpRpc('model_http_acquire', key), (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal), stream = session.agent.streamFunction;
-            session.agent.streamFunction = (chosen, context, options) => {
-                if (chosen.provider !== raw.model.provider || chosen.id !== raw.model.model || chosen.api !== model.api)
-                    throw new Error('MODEL_FALLBACK_REFUSED: 请求模型或传输已改变');
-                return stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher });
-            };
-        }
+        if (raw.managedHttp && !MANAGED_HTTP_APIS.includes(model.api))
+            throw new Error('MODEL_HTTP_UNSUPPORTED: 所选SDK传输尚未接入受管HTTP，不会绕过限流');
+        const stream = session.agent.streamFunction;
+        session.agent.streamFunction = (chosen, context, options) => {
+            if (chosen.provider !== raw.model.provider || chosen.id !== raw.model.model || chosen.api !== model.api)
+                throw new Error('MODEL_FALLBACK_REFUSED: 请求模型或传输已改变');
+            const refs = imageContextReferences(context, chosen.input?.includes('image') === true, raw.managedHttp === true);
+            if (!raw.managedHttp)
+                return stream(chosen, context, options);
+            if (refs.length)
+                checkCatalog();
+            // Each transport closure owns this exact context, including all historical images.
+            const fetcher = managedModelFetch(globalThis.fetch, key => { if (refs.length)
+                checkCatalog(); return httpRpc('model_http_acquire', key, undefined, refs); }, (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal);
+            return stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher });
+        };
         const finishTurn = session.agent.finishTurn;
         session.agent.finishTurn = async (turn, signal) => {
             const decision = await finishTurn?.(turn, signal);
@@ -132,10 +153,10 @@ process.on('message', async (message) => {
             if (e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
                 send({ type: 'delta', text: e.assistantMessageEvent.delta });
             if (e.type === 'message_end' && e.message?.role === 'assistant') {
-                providerFailure = e.message.stopReason === 'aborted' && stopping ? providerFailure : assistantFailure(e.message) ?? providerFailure;
+                providerFailure = imageFailure ?? (e.message.stopReason === 'aborted' && stopping ? providerFailure : assistantFailure(e.message) ?? providerFailure);
                 const content = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'text').map(p => p.text).join('') : '';
                 const toolCalls = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'toolCall').map(p => p.name).slice(0, 64) : [];
-                send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: assistantFailure(e.message) ?? null });
+                send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: imageFailure ?? assistantFailure(e.message) ?? null });
             }
             if (e.type === 'turn_start' && ++turns > 12) {
                 stopping = true;
@@ -149,13 +170,15 @@ process.on('message', async (message) => {
             await session.prompt(buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []));
         if (!providerFailure && !stopping && raw.hostMessages?.length)
             send({ type: 'context_ack', messageIds: raw.hostMessages.map((m) => m.id) });
+        providerFailure = imageFailure ?? providerFailure;
         if (providerFailure)
             send({ type: 'failure', error: providerFailure });
         else
             send({ type: 'done', aborted: stopping, sessionFile: session.sessionFile });
     }
     catch (error) {
-        send({ type: 'failure', error: piFailure(error) });
+        const code = error?.code;
+        send({ type: 'failure', error: imageFailure ?? piFailure(code?.startsWith('MODEL_IMAGE_') ? `${code}: ${error.message}` : error) });
     }
     finally {
         session?.dispose();

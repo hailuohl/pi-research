@@ -1,3 +1,4 @@
+import {publicationImageCatalog,imageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
 import {canSteerSession} from '../pi-adapter/session-history.js';
 import {messageInput} from '../pi-adapter/attachments.js';
 import {prepareSessionSkills} from '../skills/runtime.js';
@@ -15,6 +16,7 @@ import {assertWorkspaceReady} from '../workspace/git-service.js';
 import {randomUUID} from 'node:crypto';
 import {AgentAdmissionService,type AgentAdmission} from './agent-admission.js';
 interface Active {
+    catalogFingerprint:string;
     admissionId: string;
     child: ChildProcess;
     sessionId: string;
@@ -222,6 +224,7 @@ export class AgentHost {
         const bundleId=prepareSessionSkills(this.app,claimed,actor);
         const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId!,claimed.role,bundleId);
         this.ensureReady(claimed);
+        const catalogFingerprint=publicationImageCatalog(join(this.app.context.dataDir,'models.json'));
         const toolDefinitions=this.tools.definitions(claimed.role,!!wakeupId,claimed.id);
         const isolatedRunAnalysis=!!wakeupId&&this.app.wakeups.get(SYSTEM,wakeupId).sourceKind==='run-result';
         const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = isolatedRunAnalysis?join(home,'pi-analysis',wakeupId!):join(home, 'pi');
@@ -235,7 +238,7 @@ export class AgentHost {
             const marked=this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);store.update('agent-admission',marked.id,marked.version,{httpManagedVersion:1});requested=true;
             const spawned = (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
             // Retain the child before commit: a commit failure is not proof of zero model use.
-            active = {admissionId:slot.id,child:spawned,sessionId:claimed.id,generation:claimed.generation,actor,messageIds:messageId?[messageId]:[],consumedIds:new Set(messageId?[messageId]:[]),attemptId:attempt?.id,started:Date.now(),lastHeartbeat:Date.now(),sent:new Set(),ended:false,advertisedTools:new Set(toolDefinitions.map(tool=>tool.name))};
+            active = {catalogFingerprint,admissionId:slot.id,child:spawned,sessionId:claimed.id,generation:claimed.generation,actor,messageIds:messageId?[messageId]:[],consumedIds:new Set(messageId?[messageId]:[]),attemptId:attempt?.id,started:Date.now(),lastHeartbeat:Date.now(),sent:new Set(),ended:false,advertisedTools:new Set(toolDefinitions.map(tool=>tool.name))};
             this.active.set(claimed.id,active);
             spawned.on('error',error=>this.finish(active!,clean(error.message)));
             spawned.once('exit',code=>{active!.exitObserved=true;if(active!.ended)this.exited(active!,code);});
@@ -251,7 +254,7 @@ export class AgentHost {
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
         worker.contextMessageIds = hostMessages.map(m => m.id);
         const history = !isolatedRunAnalysis&&!claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
-        this.sendInput(worker,{ type: 'start', managedHttp:true, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
+        this.sendInput(worker,{ type: 'start', managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             const failure=asError(error),startError=`${failure.code} — ${failure.message}`;
@@ -291,6 +294,9 @@ export class AgentHost {
                 if(m.type==='model_http_acquire'){
                     result=this.app.store.transaction(()=>{
                         ensure(!a.ended&&!a.exitObserved&&!a.stopError&&this.valid(a),'MODEL_HTTP_SCOPE_EXPIRED','会话已停止，不能外发模型请求');
+                        const refs=m.imageRefs===undefined?[]:m.imageRefs;ensure(Array.isArray(refs)&&refs.length<=Math.floor(CONTEXT_IMAGE_BYTES/33),'MODEL_IMAGE_UNBOUND','模型图片引用无效');
+                        if(refs.length)ensure(publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_IMAGE_CATALOG_CHANGED','模型目录已改变，禁止继续发送图片');
+                        let imageBytes=0;const checked=new Set<string>();for(const value of refs){const ref=imageReference(value);imageBytes+=ref.bytes;ensure(imageBytes<=CONTEXT_IMAGE_BYTES,'MODEL_IMAGE_LIMIT','实际图片总量超过16 MiB');const key=JSON.stringify(ref);if(!checked.has(key)){try{this.app.sessionPermissions.assertImageAction(a.actor,ref);}catch(error){const e=asError(error);throw new DomainError('MODEL_IMAGE_BLOCKED',`${e.code}: ${e.message}`,403);}checked.add(key);}}
                         if(a.actor.taskId)this.app.teams.active(a.actor);
                         return this.app.modelHttp.acquire(identity,m.key);
                     });
@@ -307,6 +313,7 @@ export class AgentHost {
                 ensure(!a.stopError && this.valid(a), 'LEASE_EXPIRED', '会话已中止');
                 // Cached reads also require current inputs while a task is running; finished submit receipts may drain.
                 if (a.attemptId && this.app.store.get<TaskAttempt>('task-attempt', a.attemptId).state === 'running') this.app.teams.active(a.actor);
+                if(m.tool===PUBLICATION_IMAGE_TOOL)ensure(publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_IMAGE_CATALOG_CHANGED','模型目录已改变，图片不能读取');
                 const result = await this.tools.execute(a.actor, String(m.tool), m.input, String(m.toolCallId));
                 if (!a.exitObserved && a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, result });

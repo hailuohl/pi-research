@@ -3851,6 +3851,25 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["jobId"];
         readonly additionalProperties: false;
     };
+    readonly publication_page_image_read: {
+        readonly type: "object";
+        readonly properties: {
+            readonly publicationResultId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly pageNumber: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["publicationResultId", "pageNumber"];
+        readonly additionalProperties: false;
+    };
     readonly publication_review_prepare: {
         readonly type: "object";
         readonly properties: {
@@ -4284,7 +4303,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor" | "revisionId")[];
+        readonly required: readonly ("revisionId" | "limit" | "cursor")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_import: {

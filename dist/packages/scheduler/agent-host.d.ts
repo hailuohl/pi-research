@@ -3,6 +3,7 @@ import type { ResearchApp } from '../research-app.js';
 import type { Actor, Session, Row, ModelConfig } from '../domain/types.js';
 import { ToolDispatcher } from '../research-tools/dispatcher.js';
 interface Active {
+    catalogFingerprint: string;
     admissionId: string;
     child: ChildProcess;
     sessionId: string;

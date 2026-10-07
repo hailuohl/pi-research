@@ -1,12 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
+import {writeFileSync} from 'node:fs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
 import {setup,USER} from '../support/research.mjs';
 import {startTeam,spec} from '../support/collaboration.mjs';
 const pause=ms=>new Promise(r=>setTimeout(r,ms)),deps={inspect:()=>({ready:true,code:'IPC_FIXTURE',message:'No model/network'}),workerEntry:resolve('tests/fixtures/model-http-worker.mjs')};
 async function until(fn){const end=Date.now()+10000;while(Date.now()<end){if(fn())return;await pause(20);}throw Error('IPC fixture did not settle');}
+
+test('a catalog edit does not impose image authorization on a queued text-only request',async()=>{
+ const s=setup(),h=new AgentHost(s.app,deps);try{s.app.modelHttp.configure(USER,{expectedVersion:1,maxRequests:0});s.app.sessions.send(USER,s.session.id,{content:'text-only catalog control'});h.tick();await until(()=>s.app.modelHttp.inspect(USER,s.project.id).counts.queued===1);writeFileSync(resolve(s.dir,'models.json'),JSON.stringify({providers:{}}));s.app.modelHttp.configure(USER,{expectedVersion:2,maxRequests:1});await until(()=>h.active.size===0);assert.equal(s.app.modelHttp.inspect(USER,s.project.id).items[0].state,'succeeded');assert.equal(s.app.sessions.get(USER,s.session.id).lastError,undefined);}finally{await h.stop();s.close();}
+});
 
 for(const crash of [false,true])test(`real IPC shares one HTTP slot across two Hosts and ${crash?'recovers a confirmed child exit':'retains streamed ownership until completion'}`,async()=>{
  const s=setup(),other=new ResearchApp(s.dir,process.cwd()),a=new AgentHost(s.app,deps),b=new AgentHost(other,deps);try{

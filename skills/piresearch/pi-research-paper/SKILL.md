@@ -152,6 +152,24 @@ Kaplan et al. Scaling laws for neural language models. 2020.
 
 多人编辑先读当前源码摘要，冲突不覆盖。Pi Research没有上游Overleaf双向同步或成果远端自动发布/投稿；用户可自行在授权范围导出并另行使用外部工具，这不是本技能已实现的自动流程。跨项目个人模板库已提供固定版本复用，区别于上游同名替换。
 
+## 读取固定编译页做视觉检查
+
+交互主协调者先用 publication_result 取得实际成功、完整且 sourceValidity=current 的固定结果，再选实际 pageNumber。新工具只接受自己当前会话文稿的固定结果页；以下 tool 仅标明名字，实际参数保留 {input:…} 封装。占位 ID 必须替换为真实结果 ID。
+
+```json
+{"tool":"publication_page_image_read","input":{"publicationResultId":"<实际publication-build-result.id>","pageNumber":1}}
+```
+
+所有可执行模式均需用户批准这个准确页送给当前目的模型并加入本会话；之后的模型请求及合法重开可能重复发送这页。readOnly 不执行此动作。收到 APPROVAL_REQUIRED 就结束回合，等原准确卡批准后按原参数重试；不能从批准编译推断批准图片外发。
+
+只有工具成功并将真实 PNG 送达支持 image 的所选模型，才写该页的视觉观察。逐页核对裁切、图注/图例遮挡、字体、轴标签/单位、面板次序及版心。编译成功不是已视觉检查，单页意见不是看过整份 PDF；缺信息或模型不支持时明确未看。视觉意见也不替代原始数据、引用和独立审查的科学核对。
+
+固定 PNG 原始字节保留，不自动缩放/重渲染；单页 <=4 MiB、两边 <=1600px，会话实际图片合计 <=16 MiB。Task/wakeup 不使用此工具。原文 PDF/PMC 页的视觉权限仍是独立范围，不能把这项当原文查看入口。
+
+每次后续模型请求都会重新核对准确批准、当前会话/目的模型、权限版本、模型目录摘要和来源/CAS。模型目录变化、撤权、来源失效、历史缺引用或字节损坏时停止新的外发，保留原始 native history，不删图或自动重新授权；需要新的会话与准确批准。已经发送的内容不能撤回，不能承诺远端回收。目录中的其他模型变化也会使旧图片批准失效。
+
+修正版必须保存为新的固定稿并重新实际编译，再看新结果对应页；旧页图不能当新稿布局。最终报告引用这个固定结果以及明确的已看页与未看范围。
+
 ## 来源
 
 基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835，`agent-skills/orx-paper/SKILL.md`，blob `46fdc3e4207e1ca9c3c8ec51649bc1b242c6ecaa`，MIT，Copyright (c) 2026 alphaXiv。保留模板、结构、图/引用、引擎与错误方法，替换实际工具、存储、角色和构建状态；版权完整文本见 figures/LICENSE 与仓库third_party/openresearch/LICENSE。技能与软件示例不授予权限。

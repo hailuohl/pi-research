@@ -6,10 +6,10 @@ import {digest} from '../../dist/packages/storage/store.js';
 import {USER,approve} from './research.mjs';
 export const publicationPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j2qkAAAAASUVORK5CYII=','base64');
 // UNIT fixture only: no Docker, model, network or real compiler execution.
-export function publicationFixture(app,pid,{files=[],title='UNIT fixed manuscript',rootSessionId}={}) {
+export function publicationFixture(app,pid,{files=[],title='UNIT fixed manuscript',rootSessionId,actor=USER}={}) {
  const imageId='sha256:'+'a'.repeat(64);
  if(!app.store.maybe('publication-compiler-settings','global'))app.store.create('publication-compiler-settings',null,{...compilerProfile(process.cwd()),dockerContext:'default',imageDigest:imageId,imageId},'global');
- const revision=app.publicationBuilds.createRevision(USER,pid,{title,engine:'pdflatex',mainFile:'main.tex',bibliography:'none',files:[{path:'main.tex',contentBase64:Buffer.from('UNIT manuscript source; not a compiled scientific document').toString('base64')},...files]},undefined,undefined,rootSessionId);
+ const revision=app.publicationBuilds.createRevision(actor,pid,{title,engine:'pdflatex',mainFile:'main.tex',bibliography:'none',files:[{path:'main.tex',contentBase64:Buffer.from('UNIT manuscript source; not a compiled scientific document').toString('base64')},...files]},undefined,undefined,rootSessionId);
  const prepared=app.publicationBuilds.prepare(USER,pid,{revisionId:revision.id});approve(app,prepared.approvalId);
  let job=app.store.get('publication-build-job',prepared.id),controlDir=app.store.paths.physical(job.controlDir);writeFileSync(join(controlDir,'stdout.log'),'UNIT');writeFileSync(join(controlDir,'stderr.log'),'');
  job=app.store.update('publication-build-job',job.id,job.version,{state:'running',startRequested:true,containerId:'unit-container',imageId});

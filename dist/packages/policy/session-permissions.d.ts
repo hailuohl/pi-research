@@ -181,6 +181,7 @@ export declare class SessionPermissionService {
         key: string;
         consumed?: undefined;
     } | undefined;
+    assertImageAction(actor: Actor, value: unknown): void;
     validate(ref: PermissionReference, sessionId: string, operation: string, input: Record<string, unknown>, actionId?: string): void;
     begin(id: string): void;
     complete(id: string): void;

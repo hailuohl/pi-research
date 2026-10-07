@@ -64,6 +64,12 @@ transformer-sweep/
 
 已实现：实际草稿/文本产物、用户固定Markdown报告、引用回读、本地tar.gz导出及有效性检查。与上游差异：任意artifacts路径不自动登记；外部成果发布和Overleaf等外部目标未实现；不为这些缺口新增流程或借默认Shell开放。
 
+## 记录视觉验收范围
+
+引用文稿时分别写明固定 publicationResultId、成功完整构建、实际看过的 pageNumber，以及未看/失败原因。交互主协调者可沿 pi-research-paper 的准确页批准和图片读取做布局观察；不能以结果目录有 PNG 或编译成功就填“已视觉检查”。科学数字仍回读原始 Run/数据/证据，单页布局意见不等于全文或科学结论验收。
+
+模型不支持图片、图片超限、来源/授权失效时明确缺口；原固定成果和历史保留，新修订另行编译与核对。报告与本地导出仍由已有用户流程选择固定结果，不因图片批准而自动发布。
+
 ## 来源与适配声明
 
 基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-reports/SKILL.md`（blob `313d3ca61372e5f2e101cac6e78828393d03ad87`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。

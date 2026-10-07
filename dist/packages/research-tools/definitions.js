@@ -27,6 +27,7 @@ const TOOL_METADATA = {
     publication_submit: { description: '仅用户可用：提交已单独批准的固定文稿构建。', example: { jobId: 'publication-job-id' } },
     publication_inspect: { description: '用户或同主会话协调者入口：回查固定文稿作业状态与结果标识。', example: { jobId: 'publication-job-id' } },
     publication_cancel: { description: '仅用户可用：请求取消固定构建，只作用于已核对归属的容器。', example: { jobId: 'publication-job-id' } },
+    publication_page_image_read: { description: '仅交互主协调者：准确批准后将自己固定成功文稿的一页PNG发送给当前模型；所有模式收到APPROVAL_REQUIRED都停止并等待用户处理准确操作卡。后续会话及重开可能重发，来源或权限失效停止。仅检查布局，不证明科学结论。', example: { publicationResultId: 'publication-result-id', pageNumber: 1 } },
     publication_result: { description: '用户或同主会话协调者入口：读取固定编译诊断、PDF及页图；错误PDF不能冒充成功。', example: { resultId: 'publication-result-id' } },
     publication_build_list: { description: '用户或同主会话协调者入口：有界回查当前项目或指定文稿的构建历史。', example: { cursor: 0, limit: 30 } },
     skill_package_import: { description: '用户入口：导入固定 UTF-8 技能/资源或受限 ZIP，形成待审版本，不执行脚本。', example: { packageId: 'local-method', revisionTag: 'v1', description: '用户方法', roles: ['coordinator'], license: null, requirements: { tools: [], backends: [], artifactIds: [] }, files: [{ path: 'SKILL.md', contentBase64: 'IyBNZXRob2Q=' }] } },

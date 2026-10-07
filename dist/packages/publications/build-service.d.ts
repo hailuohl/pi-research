@@ -347,6 +347,32 @@ export declare class PublicationBuildService {
         converged: boolean;
         passes: number;
     };
+    /** Resolve only archived output while retaining existing source/grant restrictions. */
+    pageImage(actor: Actor, pid: string, resultId: string, pageNumber: number): {
+        publicationResultId: string;
+        pageNumber: number;
+        digest: string;
+        bytes: number;
+        width: number;
+        height: number;
+        manifestDigest: string;
+        sourceDigest: string;
+        revisionId: string;
+        data: string;
+    };
+    readPageImage(actor: Actor, pid: string, resultId: string, pageNumber: number): {
+        reference: {
+            actionId: string;
+            publicationResultId: string;
+            pageNumber: number;
+            digest: string;
+            bytes: number;
+            width: number;
+            height: number;
+        };
+        mimeType: string;
+        data: string;
+    };
     finalize(id: string, outcome: {
         state: 'succeeded' | 'failed' | 'cancelled' | 'timed_out';
         exitCode: number | null;

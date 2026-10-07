@@ -31,6 +31,15 @@ test('Git receipt recipe keeps exact SHA input wrapping and prior fixed Git guid
  }
  assert.equal(count,1);assert.doesNotMatch(s.read('coordinator','pi-research-git',undefined,'8f766452c9ab9af8b19245b323cfad8bfb5f04fd5e0ba08c321946073e96ef52').content,/githubCommit/);
 });
+
+test('paper fixed-page image recipe uses real Pi wrapping and does not alter the previous fixed skill',()=>{
+ const s=new SkillService(root),body=s.read('coordinator','pi-research-paper').content;let count=0;
+ for(const match of body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)){
+  const value=JSON.parse(match[1]);if(value.tool!=='publication_page_image_read')continue;
+  const tool=buildCustomTools([{name:value.tool,...TOOL_DEFINITIONS[value.tool]}],async()=>null)[0];assert.doesNotThrow(()=>tool.prepareArguments({input:value.input}));assert.equal(value.input.pageNumber,1);count++;
+ }
+ assert.equal(count,1);assert.doesNotMatch(s.read('coordinator','pi-research-paper',undefined,'deacf6d3accce4602e8c28974a85dbebf56dd021e4d48672a2ddf0b0b6ce5715').content,/publication_page_image_read/);
+});
 test('all allowed resources are hashed and treated as text, not executed',()=>{const s=new SkillService(root);for(const e of s.list('coordinator'))for(const p of e.resources){const r=s.read('coordinator',e.id,p);assert.ok(r.content.length>100);assert.ok(r.digest);}});
 test('tampered bundled text cannot silently enter runtime',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});writeFileSync(join(dir,'skills/piresearch/pi-research-overview/SKILL.md'),'forged grant');const s=new SkillService(dir);assert.throws(()=>s.read('coordinator','pi-research-overview'),{code:'SKILL_INTEGRITY_FAILED'});}finally{rmSync(dir,{recursive:true,force:true});}});
 test('symlinked skill paths fail instead of exposing a host file',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});const p=join(dir,'skills/piresearch/pi-research-overview'),outside=join(dir,'outside');cpSync(p,outside,{recursive:true});rmSync(p,{recursive:true});symlinkSync(outside,p,process.platform==='win32'?'junction':'dir');assert.throws(()=>new SkillService(dir).read('coordinator','pi-research-overview'),{code:'SKILL_PATH_DENIED'});}finally{rmSync(dir,{recursive:true,force:true});}});
