@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,realpathSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
@@ -13,7 +13,7 @@ import {superviseSshRun} from '../../dist/packages/runners/ssh-supervisor.js';
 import {SshTargetService} from '../../dist/packages/runners/ssh-targets.js';
 const contract={runner:'ssh',sshTargetId:'fixture',image:`python@sha256:${'a'.repeat(64)}`,command:['python','main.py'],environment:{},datasetVersion:'v1',evaluationProtocolVersion:'v1',metrics:{score:{unit:'ratio',direction:'max'}},expectedArtifacts:['metrics.json'],cpus:1,memoryMb:128,timeoutSeconds:10};
 function setup(){
- const dir=mkdtempSync(join(tmpdir(),'pi-ssh-unit-')),app=new ResearchApp(dir,process.cwd()),identityFile=join(dir,'identity'),knownHostsFile=join(dir,'known_hosts');writeFileSync(identityFile,'private-key-fixture');writeFileSync(knownHostsFile,'fixed-host-key');
+ const dir=mkdtempSync(join(realpathSync.native(tmpdir()),'pi-ssh-unit-')),app=new ResearchApp(dir,process.cwd()),identityFile=join(dir,'identity'),knownHostsFile=join(dir,'known_hosts');writeFileSync(identityFile,'private-key-fixture');writeFileSync(knownHostsFile,'fixed-host-key');
  const config={id:'fixture',host:'localhost',port:2222,user:'runner',identityFile,knownHostsFile,remoteRoot:'/srv/pi-research',gpuProtocol:true};app.sshTargets.configure(USER,config);
  // No SSH or Docker in unit tests. Seed exactly the private result of a successful probe.
  const all=JSON.parse(readFileSync(join(dir,'ssh-targets.json'),'utf8')),t=all.fixture;
@@ -123,7 +123,7 @@ test('legacy queued SSH CPU is retained without startup, while v1 active cancell
 });
 
 test('SSH owner CLI configures the new CPU/NVIDIA helper and validates required arguments',()=>{
- const dir=mkdtempSync(join(tmpdir(),'pi-ssh-cli-'));try{const identity=join(dir,'key'),hosts=join(dir,'known-hosts');writeFileSync(identity,'fixture');writeFileSync(hosts,'fixture');const base=['dist/apps/cli/index.js','ssh-target','configure','--data',join(dir,'data')];const missing=spawnSync(process.execPath,base,{encoding:'utf8',windowsHide:true});assert.notEqual(missing.status,0);assert.match(missing.stderr,/INVALID_INPUT/);const result=spawnSync(process.execPath,[...base,'--id','cpu-host','--host','fixture.invalid','--user','research','--identity-file',identity,'--known-hosts-file',hosts,'--remote-root','/srv/pi/jobs'],{encoding:'utf8',windowsHide:true});assert.equal(result.status,0,result.stderr);const saved=JSON.parse(readFileSync(join(dir,'data','ssh-targets.json'),'utf8'));assert.equal(saved['cpu-host'].gpuProtocol,true);assert.equal(sshArgs(saved['cpu-host']).at(-1),'python3 /usr/local/lib/pi-research/ssh-runner-gpu.py');}finally{rmSync(dir,{recursive:true,force:true});}
+ const dir=mkdtempSync(join(realpathSync.native(tmpdir()),'pi-ssh-cli-'));try{const identity=join(dir,'key'),hosts=join(dir,'known-hosts');writeFileSync(identity,'fixture');writeFileSync(hosts,'fixture');const base=['dist/apps/cli/index.js','ssh-target','configure','--data',join(dir,'data')];const missing=spawnSync(process.execPath,base,{encoding:'utf8',windowsHide:true});assert.notEqual(missing.status,0);assert.match(missing.stderr,/INVALID_INPUT/);const result=spawnSync(process.execPath,[...base,'--id','cpu-host','--host','fixture.invalid','--user','research','--identity-file',identity,'--known-hosts-file',hosts,'--remote-root','/srv/pi/jobs'],{encoding:'utf8',windowsHide:true});assert.equal(result.status,0,result.stderr);const saved=JSON.parse(readFileSync(join(dir,'data','ssh-targets.json'),'utf8'));assert.equal(saved['cpu-host'].gpuProtocol,true);assert.equal(sshArgs(saved['cpu-host']).at(-1),'python3 /usr/local/lib/pi-research/ssh-runner-gpu.py');}finally{rmSync(dir,{recursive:true,force:true});}
 });
 
 test('null remote exit preserves the supervisor failure in Run and archived execution receipt before missing artifact diagnostics',async()=>{

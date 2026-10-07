@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync,existsSync,mkdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,existsSync,mkdirSync,lstatSync,openSync,readSync,closeSync} from 'node:fs';
 import {join} from 'node:path';
 import {setup,USER,approve} from '../support/research.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
@@ -13,7 +13,16 @@ import {createArgs} from '../../dist/packages/execution/docker.js';
 import {superviseLocalRun} from '../../dist/packages/runners/local-supervisor.js';
 const UUID='GPU-11111111-1111-1111-1111-111111111111';
 const root=process.cwd();
-async function wait(app,id,timeout){const end=Date.now()+timeout;while(Date.now()<end){app.runs.reconcile();app.runs.launchPending();const run=app.runs.get(USER,id);if(['succeeded','failed','cancelled','unknown'].includes(run.state))return run;await new Promise(r=>setTimeout(r,50));}throw new Error('Run timeout: '+JSON.stringify(app.runs.get(USER,id)));}
+function diagnose(app,id,reason){
+ try{const run=app.runs.get(USER,id);console.error('local Run failure: '+JSON.stringify({id,reason,state:run.state,execution:run.execution,supervisorPid:run.supervisorPid,heartbeat:run.heartbeat,startedAt:run.startedAt,error:run.error}));
+  const control=app.store.paths.physical(run.execution.controlDir);
+  for(const name of ['supervisor.log','stdout.log','stderr.log','native-start.json','native-result.json']){
+   let fd;try{const path=join(control,name);assert.ok(lstatSync(path).isFile(),'not a regular file');fd=openSync(path,'r');const bytes=Buffer.alloc(4096),count=readSync(fd,bytes,0,bytes.length,0);console.error(`local Run ${id} ${name}: ${bytes.subarray(0,count).toString('utf8')}`);}
+   catch(error){console.error(`local Run ${id} ${name}: ${error.code??error.message}`);}finally{if(fd!==undefined)closeSync(fd);}
+  }
+ }catch(error){console.error(`local Run ${id} diagnostics unavailable: ${error.code??error.message}`);}
+}
+async function wait(app,id,timeout){const end=Date.now()+timeout;while(Date.now()<end){app.runs.reconcile();app.runs.launchPending();const run=app.runs.get(USER,id);if(['succeeded','failed','cancelled','unknown'].includes(run.state))return run;await new Promise(r=>setTimeout(r,50));}diagnose(app,id,'wait timeout');throw new Error('Run timeout: '+JSON.stringify(app.runs.get(USER,id)));}
 const contract={runner:'local',localRuntimeId:'node',command:['node','main.mjs'],environment:{},datasetVersion:'local-test-v1',evaluationProtocolVersion:'fixed-v1',metrics:{value:{unit:'count',direction:'max'}},expectedArtifacts:['metrics.json'],networkPolicy:'host',timeoutSeconds:15,cpus:1,memoryMb:128};
 function prepared(s,code='import {writeFileSync} from "node:fs";if(process.platform==="win32"&&!process.env.ProgramFiles)throw Error("NVML_SYSTEM_ENV_MISSING");writeFileSync(process.env.PI_OUTPUT_DIR+"/metrics.json",JSON.stringify({value:42}));',gpu,timeoutSeconds=15){
  if(!s.app.localRuntimes.list().length)s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:0});
@@ -38,6 +47,12 @@ test('local approved CPU source executes from a Unicode and space data path with
 test('Windows helper failure records diagnostics and retains uncertain execution resources', {skip:process.platform!=='win32'},async()=>{
  const s=setup();try{const run=prepared(s),control=s.app.store.paths.physical(run.execution.controlDir);mkdirSync(join(control,'stdout.log'),{recursive:true});
   const done=await wait(s.app,run.id,20000);assert.equal(done.state,'unknown');assert.equal(done.execution.startRequested,true);assert.equal(s.app.store.db.prepare('SELECT held FROM compute_queue WHERE id=?').get(run.id).held,1);assert.equal(existsSync(join(control,'native-result.json')),false);assert.match(readFileSync(join(control,'supervisor.log'),'utf8'),/LOG_OPEN_FAILED/);
+ }finally{s.close();}
+});
+
+test('local failure diagnostics read only bounded approved control files',t=>{
+ const s=setup();try{const run=prepared(s),control=s.app.store.paths.physical(run.execution.controlDir),lines=[];mkdirSync(control,{recursive:true});writeFileSync(join(control,'supervisor.log'),'x'.repeat(8192));writeFileSync(join(control,'native-spec.json'),'PRIVATE_SPEC_MUST_NOT_BE_READ');t.mock.method(console,'error',line=>lines.push(line));
+  diagnose(s.app,run.id,'test timeout');assert.equal(lines.length,6);assert.match(lines[0],/"state":"queued"/);assert.match(lines[0],/"execution":/);assert.equal(lines[1].split(': ')[1].length,4096);assert.match(lines[2],/stdout.log: ENOENT/);assert.match(lines[5],/native-result.json: ENOENT/);assert.ok(!lines.join('\n').includes('PRIVATE_SPEC_MUST_NOT_BE_READ'));
  }finally{s.close();}
 });
 test('local configuration changes reject pending intent and active Run; historical public data survives configuration removal',()=>{
@@ -81,7 +96,7 @@ test('upgrade admission holds new GPU work behind every CPU Docker kind and lega
  }finally{s.close();}
 });
 test('local managed process tree cancellation is observed, not inferred from request, and survives controller reopen',async()=>{
- const s=setup();try{const code='import {spawn} from "node:child_process";import {writeFileSync} from "node:fs";spawn(process.execPath,["-e","setInterval(()=>{},1000)"],{stdio:"ignore"});writeFileSync(process.env.PI_OUTPUT_DIR+"/ready","yes");setInterval(()=>{},1000);',run=prepared(s,code);s.app.runs.launchPending();const ready=join(s.app.store.paths.physical(run.outputDir),'ready');const deadline=Date.now()+15000;while(!existsSync(ready)&&Date.now()<deadline)await new Promise(r=>setTimeout(r,50));assert.ok(existsSync(ready),JSON.stringify(s.app.runs.get(USER,run.id)));s.app.close();s.app=new ResearchApp(s.dir,root);s.app.runs.cancel(USER,run.id);const done=await wait(s.app,run.id,15000);assert.equal(done.state,'cancelled',JSON.stringify(done));assert.equal(s.app.store.db.prepare('SELECT held FROM compute_queue WHERE id=?').get(run.id).held,0);
+ const s=setup();try{const code='import {spawn} from "node:child_process";import {writeFileSync} from "node:fs";spawn(process.execPath,["-e","setInterval(()=>{},1000)"],{stdio:"ignore"});writeFileSync(process.env.PI_OUTPUT_DIR+"/ready","yes");setInterval(()=>{},1000);',run=prepared(s,code);s.app.runs.launchPending();const ready=join(s.app.store.paths.physical(run.outputDir),'ready');const deadline=Date.now()+15000;while(!existsSync(ready)&&Date.now()<deadline)await new Promise(r=>setTimeout(r,50));if(!existsSync(ready))diagnose(s.app,run.id,'ready marker missing');assert.ok(existsSync(ready),JSON.stringify(s.app.runs.get(USER,run.id)));s.app.close();s.app=new ResearchApp(s.dir,root);s.app.runs.cancel(USER,run.id);const done=await wait(s.app,run.id,15000);assert.equal(done.state,'cancelled',JSON.stringify(done));assert.equal(s.app.store.db.prepare('SELECT held FROM compute_queue WHERE id=?').get(run.id).held,0);
  }finally{s.close();}
 });
 test('local prior uncertain start stays unknown without relaunching or signalling its stored PID',async()=>{

@@ -1,11 +1,11 @@
-import {mkdtempSync,rmSync,writeFileSync} from 'node:fs';
+import {mkdtempSync,realpathSync,rmSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {USER} from '../../dist/packages/domain/types.js';
 export {USER};
 export function setup(){
- const dir=mkdtempSync(join(tmpdir(),'pi-v02-'));const app=new ResearchApp(dir,process.cwd());
+ const dir=mkdtempSync(join(realpathSync.native(tmpdir()),'pi-v02-'));const app=new ResearchApp(dir,process.cwd());
  const project=app.projects.create(USER,{name:'Campaign测试',template:'curve-fit'});
  const session=app.sessions.create(USER,project.id,{title:'主协调者'});
  const baseline=app.experiments.create(USER,project.id,{title:'基线',hypothesis:'固定数值协议测试'});
