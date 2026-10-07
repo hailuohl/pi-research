@@ -64,8 +64,8 @@ export function createHttpServer(options) {
                 const chunks = [];
                 for await (const chunk of req) {
                     size += chunk.length;
-                    const maximum = route === '/operations/document_import' ? 48 * 1024 * 1024 : route === '/operations/manuscript_create' ? 24 * 1024 * 1024 : 3 * 1024 * 1024;
-                    ensure(size <= maximum, 'BODY_TOO_LARGE', route === '/operations/document_import' ? '文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB' : route === '/operations/manuscript_create' ? '文稿输入 JSON 最多 24 MiB；原始文件合计最多 16 MiB' : '请求最多 3 MiB', 413);
+                    const maximum = route === '/operations/document_import' ? 48 * 1024 * 1024 : ['/operations/manuscript_create', '/operations/publication_template_import', '/publication-templates'].includes(route) ? 24 * 1024 * 1024 : 3 * 1024 * 1024;
+                    ensure(size <= maximum, 'BODY_TOO_LARGE', route === '/operations/document_import' ? '文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB' : ['/operations/manuscript_create', '/operations/publication_template_import', '/publication-templates'].includes(route) ? '文稿或模板输入 JSON 最多 24 MiB；原始文件合计最多 16 MiB' : '请求最多 3 MiB', 413);
                     chunks.push(Buffer.from(chunk));
                 }
                 let body;
@@ -76,6 +76,10 @@ export function createHttpServer(options) {
                     throw new DomainError('INVALID_JSON', '请求不是有效 JSON', 400);
                 }
                 const controller = new AbortController();
+                if (route === '/publication-templates') {
+                    ensure(req.method === 'POST' && url.search === '', 'METHOD_NOT_ALLOWED', '模板导入只接受无查询参数的 POST', 405);
+                    return json(app.publicationTemplates.import(USER, body, key));
+                }
                 const cancel = () => { if (!res.writableEnded)
                     controller.abort(); };
                 res.on('close', cancel);

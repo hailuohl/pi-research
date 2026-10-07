@@ -1,9 +1,9 @@
 import { crc32, inflateRawSync } from 'node:zlib';
 import { ensure } from '../domain/errors.js';
 /** Bounded ZIP reader, never a filesystem extractor. Only ordinary stored/deflated entries. */
-export function decodeSkillArchive(zip) {
-    const valid = (ok, message = 'ZIP 结构无效或使用不支持的格式') => ensure(ok, 'SKILL_ARCHIVE_INVALID', message, 400);
-    valid(zip.length >= 22 && zip.length <= 2 * 1024 * 1024, 'ZIP 文件需在 2 MiB 以内');
+export function decodeSkillArchive(zip, limits = { zipBytes: 2 * 1024 * 1024, totalBytes: 2 * 1024 * 1024, fileBytes: 128 * 1024, nameBytes: 200, errorCode: 'SKILL_ARCHIVE_INVALID' }) {
+    const valid = (ok, message = 'ZIP 结构无效或使用不支持的格式') => ensure(ok, limits.errorCode, message, 400);
+    valid(zip.length >= 22 && zip.length <= limits.zipBytes, 'ZIP 文件超过大小上限');
     let end = -1;
     for (let p = zip.length - 22; p >= Math.max(0, zip.length - 65557); p--)
         if (zip.readUInt32LE(p) === 0x06054b50 && p + 22 + zip.readUInt16LE(p + 20) === zip.length) {
@@ -24,8 +24,8 @@ export function decodeSkillArchive(zip) {
     for (let index = 0; index < count; index++) {
         valid(p + 46 <= end && zip.readUInt32LE(p) === 0x02014b50);
         const flags = zip.readUInt16LE(p + 8), method = zip.readUInt16LE(p + 10), checksum = zip.readUInt32LE(p + 16), compressed = zip.readUInt32LE(p + 20), size = zip.readUInt32LE(p + 24), nameLength = zip.readUInt16LE(p + 28), extraLength = zip.readUInt16LE(p + 30), commentLength = zip.readUInt16LE(p + 32), attributes = zip.readUInt32LE(p + 38), local = zip.readUInt32LE(p + 42);
-        valid(p + 46 + nameLength + extraLength + commentLength <= end && nameLength > 0 && nameLength <= 200);
-        valid((flags & ~0x080e) === 0 && (method === 0 || method === 8) && zip.readUInt16LE(p + 34) === 0 && compressed !== 0xffffffff && size <= 128 * 1024, '只支持未加密的 stored/deflate ZIP，每个资源最多 128 KiB');
+        valid(p + 46 + nameLength + extraLength + commentLength <= end && nameLength > 0 && nameLength <= limits.nameBytes);
+        valid((flags & ~0x080e) === 0 && (method === 0 || method === 8) && zip.readUInt16LE(p + 34) === 0 && compressed !== 0xffffffff && size <= limits.fileBytes, '只支持未加密的 stored/deflate ZIP，资源不能超过单文件上限');
         const rawName = zip.subarray(p + 46, p + 46 + nameLength);
         let path = '';
         try {
@@ -59,10 +59,10 @@ export function decodeSkillArchive(zip) {
         valid(!ranges.some(([a, b]) => local < b && rangeEnd > a), 'ZIP 条目数据区重叠');
         ranges.push([local, rangeEnd]);
         total += size;
-        valid(total <= 2 * 1024 * 1024, 'ZIP 展开内容超过 2 MiB');
+        valid(total <= limits.totalBytes, 'ZIP 展开内容超过总量上限');
         let bytes;
         try {
-            bytes = method === 0 ? Buffer.from(zip.subarray(start, finish)) : inflateRawSync(zip.subarray(start, finish), { maxOutputLength: 128 * 1024 });
+            bytes = method === 0 ? Buffer.from(zip.subarray(start, finish)) : inflateRawSync(zip.subarray(start, finish), { maxOutputLength: limits.fileBytes });
         }
         catch {
             valid(false, 'ZIP 解压失败或超过大小上限');
@@ -72,7 +72,7 @@ export function decodeSkillArchive(zip) {
         if (directory)
             valid(size === 0, '目录条目不能包含文件内容');
         else {
-            valid(files.length < 64, '技能包最多 64 个文件');
+            valid(files.length < 64, 'ZIP 最多 64 个文件');
             files.push({ path, bytes });
         }
         p += 46 + nameLength + extraLength + commentLength;

@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "5593bebb6fff813b6024746fee602370931e1da9961121c9feebaf244fea2326";
+export declare const BUNDLE_ID = "4370f31787be05fc8687303c0ca0ca7052378d45de72e08d9562ab9783f855fc";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "171c8c52a3f6c6030186a7012b458deae1b32cabad5e7be21fa1c7119360de8b";
+    readonly digest: "6c0774405234125ebe6380eb9a5162c4a39aebf3fde272a98ff3864ea03b4ce1";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -197,7 +197,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "创建真实LaTeX论文、预印本或章节草稿；模板、公式、图、引用、引擎和固定文稿构建，按当前角色与用户审批执行。普通报告使用reports。";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
-    readonly digest: "0512c87bb2dea06aaee360aae8a27fd09c0fa899823ebf212d7b708d801a5860";
+    readonly digest: "683f75255ae9eb282631a221f0ff4f1000c4c69a2be603a1d5b3c81774091c98";
     readonly resources: readonly [{
         readonly path: "assets/starter-main.tex";
         readonly digest: "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974";
@@ -217,7 +217,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when preparing or importing a reusable research skill, inspecting fixed skill versions/resources, or adapting a LaTeX template.";
     readonly roles: readonly ["coordinator"];
     readonly path: "skills/piresearch/pi-research-customize/SKILL.md";
-    readonly digest: "c85db475aee1b461f91d86ac598bbe3a270b485c5f4194de84907d4846d5de94";
+    readonly digest: "8f145970a35028f76b72842dd130d4206a323593656129b0e83b3915f43e7f0d";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

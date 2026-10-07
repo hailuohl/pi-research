@@ -8,8 +8,7 @@ import type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignD
 export type {ManuscriptRevision,PublicationBuildResult,PublicationEngine,BibliographyMode} from '../../../dist/packages/publications/build-types.js';
 import type {ManuscriptRevision} from '../../../dist/packages/publications/build-types.js';
 import type {PublicationReviewInspection} from '../../../dist/packages/publications/reviews-types.js';
-import type {MANUSCRIPT_TEMPLATES} from '../../../dist/packages/publications/templates.js';
-export type ManuscriptTemplate=typeof MANUSCRIPT_TEMPLATES[number];
+export type {PublicationTemplate as ManuscriptTemplate,PublicationTemplateContent} from '../../../dist/packages/publications/templates.js';
 import type {PublicationBuildService} from '../../../dist/packages/publications/build-service.js';
 export type PublicationCompilerStatus=ReturnType<PublicationBuildService['status']>;
 export type PublicationBuildJobDTO=ReturnType<PublicationBuildService['inspect']>;

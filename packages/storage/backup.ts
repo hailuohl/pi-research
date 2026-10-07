@@ -131,6 +131,7 @@ async function references(db:DatabaseSync,sourceRoot:string,dataRoot:string,entr
   if(['project','session','experiment','task-attempt'].includes(kind))ref(r.workspace,'directory');
   if(kind==='session'&&r.piSessionPath)ref(r.piSessionPath,'file',`sessions/${r.id}/pi/`);
   if(kind==='artifact')blob(r);
+  if(kind==='publication-template') {ensure(projectId===null&&Array.isArray(r.files),'BACKUP_REFERENCE_INVALID','个人模板归属或文件清单无效',409);for(const file of r.files){ensure(plain(file)&&typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest)&&typeof file.blobPath==='string'&&logical.key(file.blobPath)==='artifacts/'+file.digest,'BACKUP_REFERENCE_INVALID','模板资源引用无效',409);blob({path:file.blobPath,digest:file.digest,size:file.size});}}
   if(kind==='skill-package-revision') {ensure(Array.isArray(r.files),'BACKUP_REFERENCE_INVALID','技能修订缺少文件清单',409);for(const file of r.files){ensure(plain(file)&&typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'BACKUP_REFERENCE_INVALID','技能正文摘要无效',409);blob({path:join(sourceRoot,'skill-blobs',file.digest),digest:file.digest,size:file.size});}}
   if(['git-source-binding','git-workspace','git-operation'].includes(kind)) {
    const pid=String(r.projectId);ensure(/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(pid),'BACKUP_REFERENCE_INVALID','Git 项目标识无效',409);

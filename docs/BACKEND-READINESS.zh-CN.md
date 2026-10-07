@@ -12,7 +12,7 @@
 
 - `GET /api/health`：源包身份 `0.3.1-experimental` 与 `local-owner-only`，不代表功能全范围或新发布。
 - 直接访问本机的 `GET /api/bootstrap`、`GET /api/capabilities`：运行时状态与已保存的能力验证范围；能力清单不是当前模型/计算目标探测。
-- `GET /api/operations`：当前 **132** 项精确输入/输出契约。owner 使用 `POST /api/operations/<id>`，请求为 `{projectId, sessionId?, input}`；写操作提供 `Idempotency-Key`。这里的 `sessionId` 只选择工作区，不授予 Agent 身份。
+- `GET /api/operations`：当前 **144** 项精确输入/输出契约。owner 使用 `POST /api/operations/<id>`，请求为 `{projectId, sessionId?, input}`；写操作提供 `Idempotency-Key`。这里的 `sessionId` 只选择工作区，不授予 Agent 身份。
 - CLI：`node dist/apps/cli/index.js operation <id> --project <id> --input-file <JSON文件> [--session <id>] [--key <id>] [--data <数据目录>]`。Pi 使用同一 Registry，由 Host 派发真实角色、Task/Attempt 与租约，无法通过 owner HTTP 请求伪造。
 
 服务限本地回环、Host 白名单、同源 Origin 与 Fetch Metadata 边界；工作台无需访问令牌。科研数据、数据库、原生会话和认证文件保留本机；源码远端备份不等于科研成果对外发布。
@@ -30,6 +30,7 @@
 | 可用 | `campaign_plan_inspect`、`campaign_candidate_prepare`、`campaign_candidate_attach`、`campaign_comparison`、`campaign_decision_submit` | 固定方案、实测比较、失败保留与明确停止；[Wine](acceptance/flow-wine-iteration/RESULTS.zh-CN.md)、[Anscombe](acceptance/flow-anscombe-comparison/RESULTS.zh-CN.md)。Wine固定拆分存在重复记录；Anscombe只有11点留一评估，不能据此声称外部泛化或科学发现 |
 | 可用（有限） | `skill_package_import`、`skill_package_review`、`skill_bundle_configure`、`skill_package_revoke`、`research_skill_read` | 固定技能版本、声明依赖、启用/回滚及历史保留；[技能生命周期](acceptance/flow-skills/RESULTS.zh-CN.md)、[内置升级](acceptance/flow-builtin-skills/RESULTS.zh-CN.md)、[二进制资源](acceptance/flow-skill-binary/RESULTS.zh-CN.md)、[diagram](acceptance/flow-diagram/RESULTS.zh-CN.md)。资源审阅不授予脚本执行权限 |
 | 可用（有限） | `manuscript_create`、`publication_prepare/submit/result`、`publication_review_prepare/inspect/list`、`report_create/inspect/reference_read/export` | 固定Docker镜像的三引擎/Bib编译、图表与可编辑TeX/PDF、独立文本审查和本地成果包；[Anscombe交付](acceptance/flow-anscombe-paper/RESULTS.zh-CN.md)、[真实Pi审查](acceptance/flow-anscombe-paper-review/RESULTS.zh-CN.md)。编译成功/accept不证明排版与科学正确；失效来源禁止新交付，旧字节保留 |
+| 可用 | 设置文稿模板库、`publication_template_import/inspect/read`、`publication_templates` | 无项目上传TeX/ZIP、查看、跨项目选用和交互主协调Agent生成入库；同名不覆盖，稿件独立冻结，异址备份恢复保留。详见[模板库验收](acceptance/flow-template-library/ACCEPTANCE.md) |
 | 可用（有界入口） | `session_list`、`session_view`、`session_message_read`、`run_list`→`run_inspect`、`report_list`→`report_inspect`；`model_http_inspect/configure`、`compute_queue_inspect`、`compute_capacity_configure`、`agent_capacity_inspect/configure` | 会话/Run/报告稳定分页、UTF-8日志窗口、事件恢复、模型HTTP/Worker/计算分别计量；[会话](acceptance/flow-session-history/RESULTS.zh-CN.md)、[Run分页](acceptance/flow-run-history-page/RESULT.md)、[报告分页](acceptance/flow-report-history-page/RESULT.md)、[HTTP配额](acceptance/flow-model-http/RESULTS.zh-CN.md)、[调度](acceptance/flow-scheduler/RESULTS.zh-CN.md) |
 | 可用（离线同平台） | CLI `backup create --data <dir> --out <backup> --offline`、`backup verify --from <backup>`、`backup restore --data <new-dir> --from <backup> --offline --relocate` | 全库/CAS/原生Pi/Git历史校验与异址重开；目标必须不存在，迁移后仅新副本活动。[原址恢复](acceptance/flow-data-backup/RESULTS.zh-CN.md)、[异址续研](acceptance/flow-data-relocation/RESULTS.zh-CN.md)、[新增实体恢复](acceptance/flow-rich-backup-restore/RESULT.md) |
 | 受限 | `GET /api/projects/:id/state` 与连接器历史总览 | 多类历史仍全量读取；文档/连接器部分列表仅最近30项，不能据此判断旧ID不存在。有界Run/报告入口不等于总览已分页，实际大项目阻断再修 |

@@ -23,17 +23,7 @@ export declare class PublicationBuildService {
     private coordinator;
     private assertAgentEvidence;
     private assertAgentRevision;
-    templates(actor: Actor, pid: string): {
-        id: string;
-        title: string;
-        engine: PublicationEngine;
-        mainFile: string;
-        bibliography: "none";
-        files: {
-            path: string;
-            content: string;
-        }[];
-    }[];
+    templates(actor: Actor, pid: string): import("./templates.js").PublicationTemplate[];
     revisions(actor: Actor, pid: string, cursor?: number, limit?: number): {
         items: Row<ManuscriptRevision>[];
         nextCursor: number | null;

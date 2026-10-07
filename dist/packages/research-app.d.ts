@@ -3,6 +3,7 @@ import { SessionPermissionService } from './policy/session-permissions.js';
 import { SshTargetService } from './runners/ssh-targets.js';
 import { ModelHttpService } from './scheduler/model-http.js';
 import { PublicationBuildService } from './publications/build-service.js';
+import { PublicationTemplateLibrary } from './publications/template-library.js';
 import { DiscoveryGrantService } from './policy/discovery-grants.js';
 import { TextCorpusGrantService } from './policy/text-corpus-grants.js';
 import { WorkingGrantService } from './policy/working-grants.js';
@@ -48,6 +49,7 @@ export declare class ResearchApp {
     readonly workingGrants: WorkingGrantService;
     readonly runGrants: RunGrantService;
     readonly publicationBuilds: PublicationBuildService;
+    readonly publicationTemplates: PublicationTemplateLibrary;
     readonly publicationReviews: PublicationReviewService;
     readonly documents: DocumentService;
     readonly documentParsing: DocumentParsingService;

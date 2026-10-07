@@ -242,6 +242,13 @@ async function references(db, sourceRoot, dataRoot, entries, legacyRoots = []) {
             ref(r.piSessionPath, 'file', `sessions/${r.id}/pi/`);
         if (kind === 'artifact')
             blob(r);
+        if (kind === 'publication-template') {
+            ensure(projectId === null && Array.isArray(r.files), 'BACKUP_REFERENCE_INVALID', '个人模板归属或文件清单无效', 409);
+            for (const file of r.files) {
+                ensure(plain(file) && typeof file.digest === 'string' && /^[a-f0-9]{64}$/.test(file.digest) && typeof file.blobPath === 'string' && logical.key(file.blobPath) === 'artifacts/' + file.digest, 'BACKUP_REFERENCE_INVALID', '模板资源引用无效', 409);
+                blob({ path: file.blobPath, digest: file.digest, size: file.size });
+            }
+        }
         if (kind === 'skill-package-revision') {
             ensure(Array.isArray(r.files), 'BACKUP_REFERENCE_INVALID', '技能修订缺少文件清单', 409);
             for (const file of r.files) {

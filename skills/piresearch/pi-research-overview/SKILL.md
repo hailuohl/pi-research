@@ -39,7 +39,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 | 协作 | collaboration_plan_submit 或同义 agent_delegate 提交有界计划；task_inspect/task_result_read；主协调者专用 |
 | 文献 | literature_discover、paper_read、literature_search；先读 pi-research-lit-review，主协调者保留主检索排序策略；Task 网络需 DiscoveryGrant |
 | 文稿 | publication_templates、manuscript_create、publication_prepare 等按 pi-research-paper；交互主协调者可准备，提交构建及最终报告仍用户入口 |
-| 技能与模板 | research_skill_list/read；用户 skill_package_upload 原子上传并开启；全局 LaTeX 模板注册是产品缺口 |
+| 技能与模板 | research_skill_list/read；用户 skill_package_upload 原子上传并开启；publication_templates及publication_template_import/inspect/read提供跨项目个人模板，用户设置上传/查看，交互主协调者生成入库仍遵守动作批准 |
 | 成果 | Agent artifact_create 保存草稿；用户 report_create/inspect/reference_read/export 固定报告与本地成果包；外部成果发布是产品缺口 |
 | 产品反馈 | 按 pi-research-feedback 保存脱敏草稿；没有自动发送维护团队入口 |
 
@@ -58,7 +58,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 - pi-research-reports：持久草稿、固定报告、本地导出与组织。
 - pi-research-figures：写绘图代码前读取，再选择对应图种参考。
 - pi-research-paper：固定文稿、模板、LaTeX 构建与论文审查。
-- pi-research-customize：用户技能导入/上传开启、版本与模板缺口。
+- pi-research-customize：用户技能导入/上传开启、固定版本，以及跨项目个人模板上传/查看和Agent生成入库。
 - pi-research-feedback：有意义问题的脱敏、本地记录、重复和发送边界。
 - pi-research-lit-review：主协调者跨来源检索、排序、定向阅读。
 

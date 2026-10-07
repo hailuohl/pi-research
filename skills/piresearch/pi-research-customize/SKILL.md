@@ -49,11 +49,17 @@ ZIP例子保留同样头字段，删除files改用zipBase64:"<实际ZIP规范Bas
 
 enable/configure/delete用真实expectedVersion防配置陈旧；VERSION_CONFLICT先读取最新配置再决定。撤销/删除阻止未来加载，历史文件、旧报告和绑定按原版本保留，不能复活新授权。旧发行文件缺失或摘要不同报错，不回退新版本。默认内置技能仍必需，disabledBuiltinIds不能关掉它们。没有改主会话全局模型/思考配置的步骤。
 
-## LaTeX模板：已有复用与未完成差异
+## LaTeX个人模板库与Agent生成
 
-上游templates add接受单.tex或含.cls/.sty的ZIP，并跨项目同名替换。当前**全局模板库注册/跨项目模板上传未实现**，不要声称把.tex保存在工作区就完成模板注册。用户授权模板可作为真实文本源复用；publication_templates给固定基础模板，manuscript_create冻结具体文稿/资产，publication_prepare等构建入口按pi-research-paper既有流程，源/编译/审查/成果各有边界。
+设置中的“文稿模板库”接受单个.tex或包含.cls/.sty/.bst/.bib及配套图像的ZIP；无需先创建项目。个人模板可跨项目选用。同名上传产生独立不可变ID，不覆盖旧模板；已有稿件固定自己的文件，后续上传不改变论文历史。这与上游templates add的同名替换语义不同。
 
-不创建不存在的模板API、不为了注册调用host_execute或外部Overleaf。保留用户模板与原设计，写新版本说明差异；模板保存不是成功编译，真正PDF以成功完整publication结果为准。用户技能是项目内持久修订，区别于上游活跃数据目录跨项目全局技能。以上方法只适配当前能力，未完成部分只作为差异。
+交互主协调Agent可生成完整TeX及配套文件，然后调用publication_template_import，提供title、engine（pdflatex/xelatex/lualatex）、mainFile、bibliography（none/auto/bibtex/biber），以及files:[{path,contentBase64}]或zipBase64（二选一）。contentBase64必须是实际文件的规范Base64，不能传磁盘路径、其他项目artifactId或示例占位符。工具返回真实id/contentDigest/files才表示入库成功；保存无需研究计划，但仍遵守当前会话动作策略，readOnly不可写，confirm/autoEdit沿固定动作批准，Task与自动唤醒无模板写入权。
+
+publication_templates列出内置和个人模板；publication_template_inspect({templateId})读取元数据，publication_template_read({templateId,path})读取一份文件的contentBase64，文本另有content。目录不返回自定义模板全部字节。只按需要读取，缺失或摘要不符时停止。模板库可读不扩大其他项目证据权限。
+
+模板最多64文件、展开总量16 MiB；文本每个2 MiB，PNG/JPG/PDF每个8 MiB，ZIP输入最多17 MiB。路径沿文稿规范，主.tex必须存在；遍历、符号链接、冲突和无效ZIP拒绝。模板导入和查看不运行代码、不安装依赖、不自动编译；PDF仍走pi-research-paper的固定稿件及批准构建流程。不借host_execute或Overleaf绕过模板入口。
+
+选用时保留模板类、样式与配套文件，在当前项目创建自己的稿件文件。个人模板属于本机应用数据目录；迁移使用已有备份恢复，不绑定开发机路径。用户技能仍是项目内持久修订，与个人模板库的跨项目范围不同。
 
 ## 来源与适配声明
 

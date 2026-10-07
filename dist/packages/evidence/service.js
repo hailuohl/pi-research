@@ -4,8 +4,8 @@ import { verifyDocumentLink } from './document-link.js';
 import { assertPmcArtifactRead, pmcOwner, verifyPmcText } from '../documents/pmc-text.js';
 import { captureAcceptance, assertAcceptanceCurrent } from './acceptance.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { prepareArtifactBlob } from '../storage/artifact-blob.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
@@ -20,14 +20,8 @@ export class EvidenceService {
         this.c.store.get('project', projectId);
         text(title, 'title', 200);
         ensure(bytes.length <= 32 * 1024 * 1024, 'ARTIFACT_TOO_LARGE', '产物超过 32 MiB', 413);
-        const hash = digest(bytes), dir = join(this.c.dataDir, 'artifacts');
-        mkdirSync(dir, { recursive: true, mode: 0o700 });
-        const physical = join(dir, hash);
-        if (!existsSync(physical))
-            writeFileSync(physical, bytes, { mode: 0o444, flag: 'wx' });
-        else
-            ensure(digest(readFileSync(physical)) === hash, 'ARTIFACT_CORRUPTED', '产物库校验失败', 500);
-        return { ...extra, title, digest: hash, size: bytes.length, path: this.c.store.paths.reference(physical), mediaType, origin };
+        const blob = prepareArtifactBlob(this.c.store, bytes);
+        return { ...extra, title, digest: blob.digest, size: blob.size, path: blob.blobPath, mediaType, origin };
     }
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId, prepared) { this.c.store.get('project', projectId); return this.c.store.create('artifact', projectId, prepared); }

@@ -11,13 +11,15 @@ description: "创建真实LaTeX论文、预印本或章节草稿；模板、公�
 
 ## 写preamble前先找模板
 
-先 `publication_templates`（`{"input":{}}`），本项目已实现三种基础入口：`article-pdflatex`、`article-xelatex`、`article-lualatex`，都以 `main.tex` 为主文件且默认 `bibliography:none`。它们不是会议/期刊模板全集。再用 `workspace_list/read` 检查用户明确上传并授权的cls/sty/bst/入口TeX，不假定有 `.orx/latex-templates/`。
+先 `publication_templates`（`{"input":{}}`），查看个人模板库及三种内置基础入口：`article-pdflatex`、`article-xelatex`、`article-lualatex`。内置入口以 `main.tex` 为主文件且默认 `bibliography:none`，不是会议/期刊模板全集。个人模板由设置上传或交互主协调Agent通过 `publication_template_import` 保存，跨项目可选用；每次导入有独立固定ID，同名不覆盖。要生成或保存模板，先读pi-research-customize。
+
+选定后用 `publication_template_inspect({templateId})` 核对引擎、主文件和文件清单，再按需 `publication_template_read({templateId,path})` 读取实际文件。文本有content及contentBase64，二进制使用contentBase64；纳入当前稿件的完整files，不传其他项目artifactId。`manuscript_create` 可记录该templateId并冻结实际文件；历史稿件不依赖模板后续状态。用户仅在工作区提供模板时，仍用 `workspace_list/read` 读取明确授权的cls/sty/bst/入口TeX，不假定有 `.orx/latex-templates/`。
 
 - 用户仅提供一套明确模板：直接沿用，不重复确认。
 - 多套且请求未指定：列出名称让用户选；可以继续整理已知正文。
 - 未提供专用模板：按所需引擎选择基础入口或以下起始模板。
 
-用户模板的类、样式、bst与依赖文件一起复制到获准文稿相对路径并纳入 `files`；从它自己的入口TeX开始。保留documentclass、包、章节、页边距、字体和匿名规则，只替换占位正文。缺包/文件应明确诊断，不能为了编译成功悄悄改成默认article。跨项目全局模板库尚未实现；项目中授权的模板文件可使用，技能文本不自动安装class。
+用户模板的类、样式、bst与依赖文件一起复制到获准文稿相对路径并纳入 `files`；从它自己的入口TeX开始。保留documentclass、包、章节、页边距、字体和匿名规则，只替换占位正文。缺包/文件应明确诊断，不能为了编译成功悄悄改成默认article。个人模板库和项目中授权的模板文件均可使用，技能文本不自动安装class。
 
 ## 可复制的起始TeX
 
@@ -148,7 +150,7 @@ Kaplan et al. Scaling laws for neural language models. 2020.
 
 未构建交付“真实草稿，尚未编译”；构建失败保留源码与诊断，不称成稿。有引擎/镜像缺口明确报告，不声称存在Overleaf按钮。成功后仍打开实际PDF及页图检查打印尺寸、缺字、图/表位置和引用。来源stale时保留历史PDF，但不可当当前有效成果纳入新报告；manuscript_list/inspect/source_read和build_list回查原版本，不悄悄换最新文件。
 
-多人编辑先读当前源码摘要，冲突不覆盖。Pi Research没有上游Overleaf双向同步、成果远端自动发布/投稿或跨项目模板库；用户可自行在授权范围导出并另行使用外部工具，这不是本技能已实现的自动流程。
+多人编辑先读当前源码摘要，冲突不覆盖。Pi Research没有上游Overleaf双向同步或成果远端自动发布/投稿；用户可自行在授权范围导出并另行使用外部工具，这不是本技能已实现的自动流程。跨项目个人模板库已提供固定版本复用，区别于上游同名替换。
 
 ## 来源
 

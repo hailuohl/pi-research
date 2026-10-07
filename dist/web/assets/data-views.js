@@ -1,5 +1,6 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { TemplateLibraryView } from "./template-library-view.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
 import { Icon, Badge, Empty, SectionTitle, nativeSelectButton } from "./ui.js";
@@ -313,6 +314,7 @@ class SettingsView extends React.Component {
           ] })
         ] })
       ] }),
+      /* @__PURE__ */ jsx(TemplateLibraryView, {}),
       /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
           /* @__PURE__ */ jsx("h2", { children: "\u80FD\u529B\u4E0E\u9A8C\u6536\u77E9\u9635" }),

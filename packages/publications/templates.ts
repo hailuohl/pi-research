@@ -1,2 +1,5 @@
-import type {PublicationEngine} from './build-types.js';
+import type {PublicationEngine,BibliographyMode} from './build-types.js';
+export interface PublicationTemplateFile {path:string;digest:string;size:number;mediaType:string;content?:string;}
+export interface PublicationTemplate {id:string;title:string;engine:PublicationEngine;mainFile:string;bibliography:BibliographyMode;contentDigest:string;files:PublicationTemplateFile[];builtin:boolean;}
+export interface PublicationTemplateContent {path:string;digest:string;size:number;mediaType:string;contentBase64:string;content?:string;}
 export const MANUSCRIPT_TEMPLATES=(['pdflatex','xelatex','lualatex'] as PublicationEngine[]).map(engine=>({id:'article-'+engine,title:'Article · '+engine,engine,mainFile:'main.tex',bibliography:'none' as const,files:[{path:'main.tex',content:`\\documentclass{article}\n${engine==='pdflatex'?'\\usepackage[utf8]{inputenc}':'\\usepackage{fontspec}'}\n\\title{Research manuscript}\n\\author{}\n\\date{}\n\\begin{document}\n\\maketitle\n\\begin{abstract}\nDescribe the question, evidence, and limitations.\n\\end{abstract}\n\\section{Introduction}\nWrite your manuscript here.\n\\end{document}\n`}]}));

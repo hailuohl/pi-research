@@ -14,7 +14,6 @@ import { digest } from '../storage/store.js';
 import { snapshotDirectory, verifySnapshot, safePath } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { docker, preflight, dockerEnv } from '../execution/docker.js';
-import { MANUSCRIPT_TEMPLATES } from './templates.js';
 import { PUBLICATION_PROFILE, PUBLICATION_RESOURCES, PUBLICATION_TERMINAL } from './build-types.js';
 const terminal = (state) => PUBLICATION_TERMINAL.includes(state);
 const closed = (x, keys, optional = []) => { const v = object(x); ensure(keys.every(k => k in v) && Object.keys(v).every(k => keys.includes(k) || optional.includes(k)), 'PUBLICATION_INVALID', '字段不符'); return v; };
@@ -113,7 +112,7 @@ export class PublicationBuildService {
     } }
     assertAgentRevision(actor, pid, r) { const root = this.coordinator(actor, pid); if (!root)
         return; ensure(r.rootSessionId === root.id, 'SCOPE_DENIED', '文稿不属于当前主会话', 403); ensure(r.researchBrief, 'BRIEF_NOT_CONFIRMED', 'Agent 文稿缺少固定已确认研究计划', 403); this.app.researchBriefs.assertReference(actor, pid, root.id, r.researchBrief); const brief = this.app.store.get('research-brief', r.researchBrief.id, pid), ids = r.evidenceIds ?? []; ensure(Array.isArray(ids) && ids.every(id => brief.evidenceIds.includes(id)), 'BRIEF_REFERENCE_MISMATCH', '文稿引用必须来自固定研究计划'); this.assertAgentEvidence(actor, pid, root.id, ids); r.files.forEach(file => this.assertSource(actor, pid, file, true, false, r)); }
-    templates(actor, pid) { this.coordinator(actor, pid); return structuredClone(MANUSCRIPT_TEMPLATES); }
+    templates(actor, pid) { this.coordinator(actor, pid); return this.app.publicationTemplates.list(actor, pid); }
     revisions(actor, pid, cursor = 0, limit = 30) { const root = this.coordinator(actor, pid); integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER); integer(limit, 'limit', 1, 100); const rows = this.app.store.db.prepare("SELECT rowid,data FROM records WHERE kind='manuscript-revision' AND project_id=? AND rowid>? " + (root ? "AND json_extract(data,'$.rootSessionId')=? " : '') + 'ORDER BY rowid LIMIT ?').all(pid, cursor, ...(root ? [root.id] : []), limit + 1); return { items: rows.slice(0, limit).map(r => { const revision = JSON.parse(r.data); this.assertAgentRevision(actor, pid, revision); return revision; }), nextCursor: rows.length > limit ? Number(rows[limit - 1].rowid) : null }; }
     revision(actor, pid, id) { this.coordinator(actor, pid); const r = this.app.store.get('manuscript-revision', id, pid); this.assertRevision(r, true); this.assertAgentRevision(actor, pid, r); return r; }
     readSource(actor, pid, id, path, cursor = 0, limit = 64000) { const r = this.revision(actor, pid, id), file = r.files.find(f => f.path === path); ensure(file, 'NOT_FOUND', '文稿文件不存在', 404); ensure(file.mediaType.startsWith('text/'), 'PUBLICATION_BINARY_FILE', '二进制文件请使用资产下载'); const { artifact, bytes } = this.app.evidence.read(actor, file.artifactId); ensure(artifact.projectId === pid && artifact.digest === file.digest && bytes.length === file.size, 'PUBLICATION_SOURCE_CORRUPTED', '文稿文件摘要不符'); const content = new TextDecoder('utf-8', { fatal: true }).decode(bytes); integer(cursor, 'cursor', 0, content.length); integer(limit, 'limit', 1, 64000); let end = Math.min(content.length, cursor + limit); if (end < content.length && /[\uD800-\uDBFF]/.test(content[end - 1])) {
@@ -194,7 +193,7 @@ export class PublicationBuildService {
         if (previous)
             ensure(previous.rootSessionId === rootSessionId, 'SCOPE_DENIED', '前一修订不属于当前文稿会话', 403);
         if (templateId)
-            ensure(MANUSCRIPT_TEMPLATES.some(t => t.id === templateId), 'PUBLICATION_INVALID', '未知模板');
+            this.app.publicationTemplates.inspect(actor, templateId, pid);
         const researchBrief = owner ? this.app.researchBriefs.capture(actor, pid, owner.id) : undefined, evidenceIds = owner ? strings(x.evidenceIds ?? [], 'evidenceIds', 60) : [];
         if (!owner)
             ensure(x.evidenceIds === undefined, 'INVALID_INPUT', '固定证据引用只适用于 Agent 文稿');

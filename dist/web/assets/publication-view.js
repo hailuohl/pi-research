@@ -246,7 +246,7 @@ class PublicationView extends React.Component {
   render() {
     const s = this.state, r = s.revision, j = s.job, approval = this.props.data.approvals.find((a) => a.id === j?.approvalId);
     return /* @__PURE__ */ jsxs("div", { "aria-label": "\u6587\u7A3F\u6784\u5EFA\u5DE5\u4F5C\u533A", children: [
-      /* @__PURE__ */ jsx(ManuscriptEditor, { seed: s.seed, templates: s.templates, data: this.props.data, busy: s.busy, onFreeze: (draft) => void this.freeze(draft) }, s.seedVersion),
+      /* @__PURE__ */ jsx(ManuscriptEditor, { seed: s.seed, readTemplate: (id, path) => this.call("publication_template_read", { templateId: id, path }), templates: s.templates, data: this.props.data, busy: s.busy, onFreeze: (draft) => void this.freeze(draft) }, s.seedVersion),
       /* @__PURE__ */ jsxs("section", { className: "surface report-builder", tabIndex: -1, ref: (node) => {
         this.workspaceElement = node;
       }, "aria-label": "\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\u56DE\u67E5", children: [
@@ -507,7 +507,7 @@ class ManuscriptEditor extends React.Component {
     this.epoch++;
     this.setState((previous) => ({ ...previous, ...patch, checking: false, preview: "", previewComplete: false, error: "" }));
   }
-  template(id) {
+  async template(id) {
     this.changeAsset({});
     const t = this.props.templates.find((t2) => t2.id === id);
     if (!t) return;
@@ -515,7 +515,23 @@ class ManuscriptEditor extends React.Component {
       this.setState({ error: "\u6A21\u677F\u4E0E\u56FA\u5B9A\u6587\u4EF6\u8DEF\u5F84\u51B2\u7A81\uFF1B\u8BF7\u5148\u79FB\u9664\u51B2\u7A81\u5F15\u7528\uFF0C\u73B0\u6709\u8349\u7A3F\u672A\u6539\u53D8\u3002" });
       return;
     }
-    this.setState({ templateId: t.id, engine: t.engine, mainFile: t.mainFile, bibliography: t.bibliography, files: t.files.map((f) => ({ ...f })), selected: t.mainFile, error: "" });
+    if (t.files.every((f) => f.content !== void 0)) {
+      this.setState({ templateId: t.id, engine: t.engine, mainFile: t.mainFile, bibliography: t.bibliography, files: t.files.map((f) => ({ path: f.path, content: f.content })), selected: t.mainFile, error: "" });
+      return;
+    }
+    const epoch = this.epoch, projectId = this.props.data.project.id, draft = JSON.stringify([this.state.files, this.state.assets, this.state.engine, this.state.mainFile, this.state.bibliography, this.state.templateId]);
+    this.setState({ checking: true, error: "" });
+    try {
+      const loaded = await Promise.all(t.files.map((f) => this.props.readTemplate(t.id, f.path)));
+      if (!this.mounted || epoch !== this.epoch || projectId !== this.props.data.project.id || draft !== JSON.stringify([this.state.files, this.state.assets, this.state.engine, this.state.mainFile, this.state.bibliography, this.state.templateId])) return;
+      if (loaded.some((f, i) => f.path !== t.files[i].path || f.digest !== t.files[i].digest || f.size !== t.files[i].size || f.mediaType !== t.files[i].mediaType)) throw Error("\u6A21\u677F\u6587\u4EF6\u4E0E\u56FA\u5B9A\u76EE\u5F55\u4E0D\u5339\u914D");
+      if (t.files.some((f) => !publicationPathAvailable(f.path, this.state.assets))) throw Error("\u6A21\u677F\u4E0E\u56FA\u5B9A\u6587\u4EF6\u8DEF\u5F84\u51B2\u7A81\uFF1B\u73B0\u6709\u8349\u7A3F\u672A\u6539\u53D8\u3002");
+      this.setState({ templateId: t.id, engine: t.engine, mainFile: t.mainFile, bibliography: t.bibliography, files: loaded.filter((f) => f.content !== void 0).map((f) => ({ path: f.path, content: f.content })), assets: [...this.state.assets, ...loaded.filter((f) => f.content === void 0).map((f) => ({ path: f.path, contentBase64: f.contentBase64 }))], selected: t.mainFile, error: "" });
+    } catch (e) {
+      if (this.mounted && epoch === this.epoch) this.setState({ error: String(e) });
+    } finally {
+      if (this.mounted && epoch === this.epoch) this.setState({ checking: false });
+    }
   }
   addFile() {
     const path = this.state.newPath.trim();
@@ -563,7 +579,7 @@ class ManuscriptEditor extends React.Component {
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9009\u62E9\u5DF2\u5F52\u6863 TeX \u56FA\u5B9A\u5F15\u7528\uFF0C\u6216\u4ECE\u53D7\u7BA1\u6A21\u677F\u7F16\u8F91\uFF1B\u51BB\u7ED3\u65F6\u521B\u5EFA\u65B0\u4FEE\u8BA2\uFF0C\u65E7\u6E90\u6587\u4EF6\u4E0E PDF \u4FDD\u7559\u3002\u7F16\u8BD1\u901A\u8FC7\u4E0D\u4EE3\u8868\u79D1\u5B66\u5BA1\u67E5\u901A\u8FC7\u3002" }),
       /* @__PURE__ */ jsxs("label", { children: [
         "\u57FA\u7840\u6A21\u677F",
-        /* @__PURE__ */ jsxs("select", { "aria-label": "\u6587\u7A3F\u57FA\u7840\u6A21\u677F", value: s.templateId, onChange: (e) => this.template(e.target.value), children: [
+        /* @__PURE__ */ jsxs("select", { "aria-label": "\u6587\u7A3F\u57FA\u7840\u6A21\u677F", value: s.templateId, onChange: (e) => void this.template(e.target.value), children: [
           nativeSelectButton,
           /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u6A21\u677F" }),
           this.props.templates.map((t) => /* @__PURE__ */ jsx("option", { value: t.id, children: t.title }, t.id))
@@ -679,13 +695,10 @@ class ManuscriptEditor extends React.Component {
       ] }) : null,
       /* @__PURE__ */ jsx("ul", { children: s.assets.map((a) => /* @__PURE__ */ jsxs("li", { children: [
         a.path,
-        /* @__PURE__ */ jsxs("code", { className: "digest code-wrap", style: { display: "block" }, children: [
-          "\u4EA7\u7269 ID ",
-          a.artifactId
-        ] }),
+        /* @__PURE__ */ jsx("code", { className: "digest code-wrap", style: { display: "block" }, children: a.artifactId ? `\u4EA7\u7269 ID ${a.artifactId}` : "\u4E2A\u4EBA\u6A21\u677F\u914D\u5957\u8D44\u4EA7\uFF08\u51BB\u7ED3\u65F6\u5F52\u6863\u5230\u5F53\u524D\u9879\u76EE\uFF09" }),
         /* @__PURE__ */ jsxs("code", { className: "digest code-wrap", style: { display: "block" }, children: [
           "SHA-256 ",
-          this.props.data.artifacts.find((row) => row.id === a.artifactId)?.digest ?? "\u4EA7\u7269\u8BB0\u5F55\u4E0D\u53EF\u7528"
+          this.props.data.artifacts.find((row) => row.id === a.artifactId)?.digest ?? (a.contentBase64 ? "\u968F\u65B0\u4FEE\u8BA2\u56FA\u5B9A" : "\u4EA7\u7269\u8BB0\u5F55\u4E0D\u53EF\u7528")
         ] }),
         " ",
         /* @__PURE__ */ jsxs("button", { className: "text-button danger", disabled: a.path === s.mainFile || s.checking, onClick: () => this.setState({ assets: s.assets.filter((f) => f.path !== a.path) }), children: [
