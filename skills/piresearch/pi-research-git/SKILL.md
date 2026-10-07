@@ -51,11 +51,35 @@ GitHub配置、暂停/恢复/重试与状态是用户设置入口，不是Agent�
 
 ## 开发验证与正式整合
 
-读 pi-research-compute 的本地参考，使用 development_prepare 固定当前私有源码、真实镜像摘要、command、有限资源与expectedArtifacts，另行用户开发批准再 development_submit。开发作业输出及完整性是真实检查证据；退出码0或助手自报“完成”不够。WorkingGrant 若适用仍限定源/文件/镜像/命令，不因有 Shell 文本就可执行。
+读 pi-research-compute 的 references/docker.md（开发检查只使用 Docker），使用 development_prepare 固定当前私有源码、真实镜像摘要、command、有限资源与expectedArtifacts，另行用户开发批准再 development_submit。开发作业输出及完整性是真实检查证据；退出码0或助手自报“完成”不够。WorkingGrant 若适用仍限定源/文件/镜像/命令，不因有 Shell 文本就可执行。
 
 主协调者可 development_review_prepare({input:{jobId:"<成功完整的实际jobId>"}}) 准备独立检查，用户批准后调度；审查读其固定来源及日志，不用被继续修改的当前工作区。passed及依赖仍有效时 reviewed_change_prepare 输入 `{"reviewId":"<真实reviewId>","title":"已审实现","hypothesis":"具体变化与测量"}` 准备整合；或按允许范围 change_proposal_prepare 明列 baseExperimentId/expectedRevision/changes，其中 artifactId 是实际产物，expectedDigest 是父对应文件摘要，新文件为null、删除文件 artifactId:null。整合仍由用户批准执行。
 
 commit只保存私有历史，不自动合并、不批准开发检查/正式运行。正式run_prepare使用**实验**固定源码而不是会话HEAD；整合成子实验后读取新源码索引再准备Run，防止跑到旧版本。
+
+## 准确提交的 GitHub 同步回执
+
+workspace_history_operation.state=complete 且返回 gitCommit，才说明本地受管操作完成。同步只在用户创建项目时选择 GitHub 并且设置仍启用时由宿主继续；私有提交不是正式整合，远端同步也不批准 Run。
+
+交互主协调者可查询 project_inspect 的 githubCommit。以下 tool 只是名称标签，实际调用保留 {input:…}、去掉 tool 字段。示意 SHA 只展示格式，必须替换为刚完成的原 operation.gitCommit；不能从项目名、最新分支或上次记忆猜 SHA。
+
+```json
+{"tool":"project_inspect","input":{"githubCommit":"0123456789abcdef0123456789abcdef01234567"}}
+```
+
+返回 github.commit 必须等于请求 SHA。receipts 逐个按 ref 核对，不能把同 SHA 的一个已同步分支当作其他分支也已同步。最多20条；hasMore=true只说明裁剪，没出现在当前页不等于不存在。
+
+| 保存的结果 | 可以说明什么及下一步 |
+|---|---|
+| receipts为空 | 本项目没有该准确 SHA 的回执；可能默认本地、未生成记录或尚未保存提交，不能说上传失败 |
+| queued / creating / uploading | 已保存等待/创建/上传状态；宿主继续处理，当前轮报告观察并结束，不另行 push 或重建任务 |
+| synced | recordedAt 时已回读该 ref 的准确 SHA；不是当前远端实时检查，也不证明其他 ref 或新提交已同步 |
+| unknown | 外部响应未确认；保留原任务和候选目标，用户从现有 GitHub 状态入口恢复，不重推或换名 |
+| failed / paused | 读取 errorCode，说明实际阻碍或暂停；由用户核对 CLI/账号/固定目标及同步设置，不能自行登录、改可见性或配置 |
+
+observedAt 是本次读取时间，recordedAt 是回执更新记录时间；不要混称刚联网确认。enabled=false 不会抹掉旧 synced 回执。查询不会调用 gh/git、联网或推送；Task/wakeup/其他角色不请求此扩展。下一次用户继续时重查同一准确 SHA，当前观察可刷新，旧操作与回执保留。没有自动 GitHub 同步唤醒 Agent 的承诺。
+
+已有源码发布不等于报告/PDF成果远端发布；后者仍未接入。原本地工作区、冻结来源、独立审查和用户整合边界不变。
 
 ## 比较子节点和父节点
 

@@ -3546,6 +3546,56 @@ export declare const OUTPUT_SCHEMAS: {
     readonly project_inspect: {
         readonly type: "object";
         readonly properties: {
+            readonly github: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly commit: {
+                        readonly pattern: "^[0-9a-f]{40}$";
+                        readonly type: "string";
+                    };
+                    readonly enabled: {
+                        readonly type: "boolean";
+                    };
+                    readonly observedAt: {
+                        readonly type: "string";
+                    };
+                    readonly receipts: {
+                        readonly maxItems: 20;
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly jobId: {
+                                    readonly type: "string";
+                                };
+                                readonly operationId: {
+                                    readonly type: "string";
+                                };
+                                readonly ref: {
+                                    readonly type: "string";
+                                };
+                                readonly state: {
+                                    readonly type: "string";
+                                    readonly enum: ["queued", "creating", "uploading", "synced", "failed", "unknown", "paused"];
+                                };
+                                readonly errorCode: {
+                                    readonly type: "string";
+                                };
+                                readonly recordedAt: {
+                                    readonly type: "string";
+                                };
+                            };
+                            readonly required: ("state" | "jobId" | "ref" | "recordedAt")[];
+                            readonly additionalProperties: false;
+                        };
+                    };
+                    readonly hasMore: {
+                        readonly type: "boolean";
+                    };
+                };
+                readonly required: ("commit" | "enabled" | "observedAt" | "hasMore" | "receipts")[];
+                readonly additionalProperties: false;
+            };
             readonly textCorpus: {
                 readonly type: "object";
                 readonly properties: {

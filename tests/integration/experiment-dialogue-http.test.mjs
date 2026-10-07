@@ -66,3 +66,25 @@ test('actual pinned Pi reads the compute skill and current scheduling before and
   assert.deepEqual(toolNames,['research_skill_read','research_skill_read','execution_environment_list','run_inspect','run_inspect']);assert.equal(service.app.store.list('run',project.id).length,1);
  } finally {if(savedKey===undefined)delete process.env.PI_API_KEY;else process.env.PI_API_KEY=savedKey;if(service)await service.close();fixture.closeAllConnections();await new Promise(resolve=>fixture.close(resolve));rmSync(dir,{recursive:true,force:true});}
 });
+
+test('actual pinned Pi receives exact SHA/ref saved GitHub receipts without a GitHub request',async()=>{
+ const dir=mkdtempSync(join(realpathSync.native(tmpdir()),'pi-github-receipt-dialogue-')),requests=[],sha='1234567890abcdef1234567890abcdef12345678',privateCanary='private-job-path-and-stderr-canary';let service,project,job,phase=0;
+ const steps=[['research_skill_read',{skillId:'pi-research-git'}],['project_inspect',{githubCommit:sha}],null,['project_inspect',{githubCommit:sha}],null];
+ const fixture=createServer(async(req,res)=>{
+  let body='';for await(const chunk of req)body+=chunk;const request=JSON.parse(body);requests.push(request);
+  res.writeHead(200,{'content-type':'text/event-stream'});const chunk=(delta,finish_reason=null)=>res.write(`data: ${JSON.stringify({id:'github-receipt-'+phase,object:'chat.completion.chunk',created:1,model:request.model,choices:[{index:0,delta,finish_reason}]})}\n\n`);
+  const action=steps[phase++];if(action){const [name,input]=action;chunk({role:'assistant',tool_calls:[{index:0,id:'github-receipt-call-'+phase,type:'function',function:{name,arguments:JSON.stringify({input})}}]});chunk({},'tool_calls');}
+  else {chunk({role:'assistant',content:'离线供应商夹具：读取保存的同步观察，不声称远端实时实测。'});chunk({},'stop');}res.end('data: [DONE]\n\n');
+ });await new Promise(resolve=>fixture.listen(0,'127.0.0.1',resolve));
+ writeFileSync(join(dir,'models.json'),JSON.stringify({providers:{'offline-github-receipt':{api:'openai-completions',baseUrl:`http://127.0.0.1:${fixture.address().port}/v1`,apiKey:'offline-dummy',models:[{id:'fixture',contextWindow:65536,maxTokens:1024}]}}}));
+ const savedKey=process.env.PI_API_KEY;delete process.env.PI_API_KEY;
+ try {
+  service=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});service.app.sessions.configure(USER,{provider:'offline-github-receipt',model:'fixture',thinking:'off'});
+  service.app.github.client.status=service.app.github.client.connect=async()=>assert.fail('Receipt inspection cannot contact GitHub');
+  project=service.app.projects.create(USER,{name:'Saved GitHub receipt fixture',template:'curve-fit'});job=service.app.store.create('github-upload-job',project.id,{state:'queued',commit:sha,ref:'refs/heads/source-fixture',operationId:'fixture-operation',snapshot:{path:privateCanary},workerPid:999,error:{code:'FIXTURE_PENDING',message:privateCanary}});
+  const session=service.app.sessions.create(USER,project.id,{title:'GitHub receipt reader'}),port=await service.listen(),url=`http://127.0.0.1:${port}/api`;
+  const message=async content=>{const response=await fetch(url+`/sessions/${session.id}/messages`,{method:'POST',headers:{'content-type':'application/json','idempotency-key':crypto.randomUUID()},body:JSON.stringify({content})});const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));await until(()=>service.app.store.get('message',data.id).status==='completed'&&service.host.active.size===0);};
+  await message('只读 Git 技能和已保存回执，查询准确SHA '+sha+'，不联网或推送。');const first=JSON.stringify(requests.at(-1).messages);assert.ok(first.includes(sha));assert.ok(first.includes('refs/heads/source-fixture'));assert.ok(first.includes('queued'));assert.ok(first.includes('recordedAt'));assert.ok(!first.includes(privateCanary));
+  service.app.store.update('github-upload-job',job.id,job.version,{state:'synced',error:undefined});await message('重新查询同一SHA已保存的同步状态，仍不联网。');const latest=JSON.stringify(requests.at(-1).messages);assert.ok(latest.includes('synced'));assert.ok(!latest.includes(privateCanary));assert.equal(service.app.store.list('github-upload-job',project.id).length,1);
+ } finally {if(savedKey===undefined)delete process.env.PI_API_KEY;else process.env.PI_API_KEY=savedKey;if(service)await service.close();fixture.closeAllConnections();await new Promise(resolve=>fixture.close(resolve));rmSync(dir,{recursive:true,force:true});}
+});

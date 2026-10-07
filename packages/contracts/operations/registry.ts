@@ -130,6 +130,7 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
                 return {messageId: m.id, content: m.content.slice(cursor, end), cursor: end, complete: end === m.content.length};
             }
             case 'project_inspect': {
+                const inspect=()=>{
                 const project = app.projects.get(actor, pid);
                 const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId ? app.wakeups.resources(actor) : null;
                 const runs = app.store.list('run', pid).filter(r => !grant || grant.runIds.has(r.id));
@@ -141,7 +142,8 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
                 const runIntents={items:intentRows.slice(0,20).map(i=>({id:String(i.id),experimentId:String(i.experimentId),approvalId:String(i.approvalId),manifestDigest:String(i.manifestDigest),status:i.status,approvalStatus:i.approvalStatus,...(i.runId?{runId:String(i.runId)}:{}),...(i.runGrant?{runGrant:JSON.parse(String(i.runGrant))}:{})})),hasMore:intentRows.length>20};
                 const projectFiles=interactive?listFiles(app.store.paths.physical(project.workspace)):null;
                 const projectSource=projectFiles?{files:projectFiles.slice(0,50).map(f=>({path:f.path,size:f.size})),hasMore:projectFiles.length>50}:null;
-                return {projectSource, textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns, runIntents };
+                return {projectSource, textCorpus: app.textEvidence.status(actor,pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: (r.evidenceIds as string[]).filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns, runIntents,...(x.githubCommit!==undefined?{github:app.github.inspectCommit(actor,pid,x.githubCommit as string)}:{}) };
+                };return x.githubCommit!==undefined?app.store.readSnapshot(inspect):inspect();
             }
             case 'workspace_list': return listFiles(ownOrProject());
             case 'artifact_read': {
@@ -299,7 +301,7 @@ const SPECS: OperationSpec[] = [
     make('research_skill_read', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'research_skill_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'research_skill_read', x)}),
     make('connector_status', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'connector_status', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'connector_status', x)}),
     make('session_notice_read', {idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'session_notice_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'session_notice_read', x)}),
-    make('project_inspect', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'project_inspect', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'project_inspect', x)}),
+    make('project_inspect', {idempotencyPolicy: 'read-only', authorize: (c, x) => {if(x.githubCommit!==undefined&&c.actor.type==='agent')interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'project_inspect'));else authorizeRegistered(c,'project_inspect',x);}, preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'project_inspect', x)}),
     make('workspace_list', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'workspace_list', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'workspace_list', x)}),
     make('artifact_read', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'artifact_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'artifact_read', x)}),
     make('artifact_create', {idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'artifact_create', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'artifact_create', x)}),
@@ -534,6 +536,7 @@ export class OperationRegistry {
             const previous = lookup();
             if (previous) {
                 if(actor.type==='agent'&&id==='run_inspect'&&input.includeScheduling===true){spec.authorize(context,input);return output(spec.execute(context,input));}
+                if(actor.type==='agent'&&id==='project_inspect'&&input.githubCommit!==undefined){spec.authorize(context,input);return output(spec.execute(context,input));}
                 if(id==='experiment_plan_submit'&&actor.type==='agent') {
                     this.authorizeAgent(actor,id);
                     const created=previous.value as {researchBrief?:ResearchBriefRef};

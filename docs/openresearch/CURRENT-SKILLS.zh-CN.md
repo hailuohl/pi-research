@@ -11,7 +11,7 @@
 | 研究工作流 overview | 项目/会话/研究计划、当前目录、工具参数和实体ID；保留固定合同、已回答节点保护、代码变体和按轮次向下推进 | ORX命令表换为Pi工具及用户入口；无ORX登录、组织和托管服务 |
 | 研究启动 create | 本地项目创建/源码导入、已确认研究计划、基线/子实验提案、固定源码和完整config | 后续候选显式parentId与expectedParentRevision，config整体替换；不自动选旧根或自动clone，创建提案不等于实现/运行 |
 | 实验与运行 experiment-tree | Campaign轮次/候选、真实观测、Repair/Refill/Promote/Stop、冻结历史、运行通知与状态回查 | 每个决定、整合与正式Run沿现有批准；主协调用project_inspect/campaign_inspect/run_inspect对账，用户run_list另有入口；不照抄ORX阻塞等待命令 |
-| 代码与版本 git | 受管私有Git工作树、源码差异/提交、开发测试、独立审查与整合；创建项目可选GitHub私密源码同步、设置CLI状态与恢复 | 默认本地；只有用户明确选择才由宿主同步准确提交及其历史，不授予Agent任意checkout/rebase/push；本地完成与远端SHA回查分开 |
+| 代码与版本 git | 受管私有Git工作树、源码差异/提交、开发测试、独立审查与整合；创建项目可选GitHub私密源码同步、设置CLI状态与恢复；交互Agent可查询准确SHA的各ref保存回执 | 默认本地；用户选择后宿主同步，不授予Agent任意checkout/rebase/push；本地完成与保存时远端确认分开，回执读取不联网，无记录不等于失败 |
 | 协作方法 agent-delegation | 协作开关、有界任务图、角色、独立工作区/尝试、成果验收、Reviewer和恢复 | 委派提案先批准；依赖成果验收而非助手结束；联网和计算各有独立授权，不把原版spawn命令直接当本地API |
 | 计算环境 compute | 固定RunIntent、可配置本地CPU/NVIDIA、Docker/受控SSH、日志/产物、取消、恢复及UUID共享预留；交互主协调者可读单Run当前排队/预留/恢复原因，local/Docker/SSH分别按需读取 | 仅保留三类执行位置；状态来自保存的调度观察，不实时探测或开放全局队列；本地无文件/网络隔离，CPU/RAM为预算；Docker/SSH使用固定容器；NVIDIA须已有驱动和环境，AMD/Metal未接入；外部目标另验 |
 | 证据与引用 evidence | 分页日志、配置/指标、不可变Artifact/Evidence、文本UTF-16定位、原始文档与派生内容、来源失效历史 | 字节日志与UTF-16文本位置分开；不仅依赖stdout；原件取得、解析、阅读和科学验证分开，PDF/PMC入口和授权按当前角色执行 |

@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "8f766452c9ab9af8b19245b323cfad8bfb5f04fd5e0ba08c321946073e96ef52";
+export declare const BUNDLE_ID = "deacf6d3accce4602e8c28974a85dbebf56dd021e4d48672a2ddf0b0b6ce5715";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "b62948f162bb359282b24925818a5b5661460934043a56c1f5fda860b7f3094b";
+    readonly digest: "e761291278715604063c5ebf3f3ea2211c02094a3a3b6b658247e540cbf992bb";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -47,7 +47,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before reading, editing, committing or comparing experiment code, coordinating worktree ownership, or diagnosing stale source.";
     readonly roles: readonly ["coordinator", "implementer", "reviewer", "designer"];
     readonly path: "skills/piresearch/pi-research-git/SKILL.md";
-    readonly digest: "faf3f7254996a0dda1ab063c3fad9f0f4ad2d1b3e96357707fd879d919d14783";
+    readonly digest: "8293f65371e9cbadf5c08b11f75b20f3bd7cc1ac89101fa79d2d1b910454514a";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

@@ -33,7 +33,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 | 查 Run | project_inspect / run_inspect；交互主协调者用 includeScheduling:true 解释单 Run 当前排队与恢复，不读全局队列；分页 run_list 是用户入口 |
 | 日志与证据 | run_logs(runId,cursor,stream,identity)、artifact_read、evidence_read；详情读 pi-research-evidence |
 | 创建变体 | experiment_plan_submit(title,hypothesis,parentId,expectedParentRevision,config)；新代码走 change_proposal_prepare / reviewed_change_prepare 及用户整合 |
-| Git | workspace_prepare_from_revision、workspace_history_inspect/diff/commit/operation/set_mode；受管会话分支。项目默认本地，用户创建时可选GitHub私密源码同步，由宿主管理；本地提交完成不等于远端成功，详情读pi-research-git |
+| Git | workspace_prepare_from_revision、workspace_history_inspect/diff/commit/operation/set_mode；受管会话分支。项目默认本地，用户创建时可选GitHub私密源码同步，由宿主管理；本地提交完成不等于远端成功；交互主协调者可用project_inspect(githubCommit)读准确SHA/ref保存回执，详情读pi-research-git |
 | 正式运行 | run_prepare 固定意向 → 用户单独批准 → run_submit → run_inspect/run_logs；取消由用户运行面板 |
 | 开发检查 | development_prepare/submit/inspect/logs/cancel；单独开发授权，不能替代正式 Run |
 | 协作 | collaboration_plan_submit 或同义 agent_delegate 提交有界计划；task_inspect/task_result_read；主协调者专用 |

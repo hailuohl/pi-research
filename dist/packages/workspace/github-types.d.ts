@@ -63,3 +63,17 @@ export interface GitHubUploadJob {
         message: string;
     };
 }
+export interface GitHubCommitStatus {
+    commit: string;
+    enabled: boolean;
+    observedAt: string;
+    receipts: {
+        jobId: string;
+        operationId?: string;
+        ref: string;
+        state: GitHubUploadJob['state'];
+        errorCode?: string;
+        recordedAt: string;
+    }[];
+    hasMore: boolean;
+}

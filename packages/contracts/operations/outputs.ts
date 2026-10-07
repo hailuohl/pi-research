@@ -223,13 +223,14 @@ export const OUTPUT_SCHEMAS = {
     literature_search: row('literature-search', { query: string, source: { const: 'crossref' }, retrievedAt: string, coverage: { const: 'metadata-only' }, items: array(object({ doi: string, title: string, authors: strings, date: array(integer), journal: string, url: string, fullTextRead: { const: false }, source: { const: 'crossref' } })),discoveryGrant:DISCOVERY_GRANT_REFERENCE_SCHEMA,discoveryCallIds:strings,discoveryRequestDigest:string,scopeSessionId:string,scopeTaskId:string,scopeAttemptId:string },['discoveryGrant','discoveryCallIds','discoveryRequestDigest','scopeSessionId','scopeTaskId','scopeAttemptId']),
     literature_discover: DISCOVERY_OUTPUT_SCHEMA,
     project_inspect: object({
+        github:object({commit:{...string,pattern:'^[0-9a-f]{40}$'},enabled:boolean,observedAt:string,receipts:{...array(object({jobId:string,operationId:string,ref:string,state:enumeration('queued','creating','uploading','synced','failed','unknown','paused'),errorCode:string,recordedAt:string},['operationId','errorCode'])),maxItems:20},hasMore:boolean}),
         textCorpus: object({ enabled: boolean, version: integer, corpusId: nullableString, sources: array(corpusSource), documents: array(corpusDocument),pmcDocuments:array(pmcDocument), method: string, parserVersion: string, limits: object({ files: integer, fileBytes: integer, totalBytes: integer, chunks: integer }), networkCalls: { const: 0 }, modelCalls: { const: 0 } }, ['documents','pmcDocuments']),
         project: object({ id: string, name: string, collaborationEnabled: boolean }), experiments: array(object({ id: string, title: string, lifecycle: enumeration('provisional', 'frozen', 'archived'), revision: integer }, ['revision'])),
         projectSource: {anyOf:[object({files:array(object({path:string,size:integer})),hasMore:boolean}),{type:'null'}]},
         runs: array(object({ id: string, state: CORE_OUTPUT_SCHEMAS.run_submit.properties.state, integrity: CORE_OUTPUT_SCHEMAS.run_submit.properties.integrity, evidenceIds: strings })), evidenceIds: strings,
         campaigns: array(object({ id: string, goal: string, state: enumeration('draft', 'active', 'paused', 'stopped') })),
         runIntents:object({items:array(object({id:string,experimentId:string,approvalId:string,manifestDigest:string,status:enumeration('prepared','submitted'),approvalStatus:enumeration('pending','approved','rejected','stale','missing'),runId:string,runGrant:RUN_GRANT_REFERENCE_SCHEMA},['runId','runGrant'])),hasMore:boolean})
-    },['projectSource']),
+    },['projectSource','github']),
     text_evidence_search:textEvidenceSearch,
     campaign_enroll: member,
     campaign_decision_submit: decision,

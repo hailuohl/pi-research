@@ -25,4 +25,4 @@ jobs:
       - run: node --test --test-concurrency=1 tests/integration/runner.test.mjs tests/unit/store-startup.test.mjs
       - run: node --test --test-concurrency=1 tests/integration/local-gpu-runner.test.mjs tests/unit/execution-environments-ui.test.mjs tests/unit/scheduler-ui.test.mjs tests/unit/ssh-runner.test.mjs tests/unit/operation-schema.test.mjs
       - run: node --test --test-concurrency=1 tests/integration/data-backup.test.mjs tests/integration/data-relocation.test.mjs tests/unit/operation-outputs.test.mjs tests/unit/builtin-skill-releases.test.mjs
-      - run: node --test --test-concurrency=1 tests/unit/run-scheduling.test.mjs tests/unit/openresearch-skills.test.mjs tests/integration/experiment-dialogue-http.test.mjs
+      - run: node --test --test-concurrency=1 tests/unit/run-scheduling.test.mjs tests/unit/github-commit-inspect.test.mjs tests/unit/openresearch-skills.test.mjs tests/integration/experiment-dialogue-http.test.mjs

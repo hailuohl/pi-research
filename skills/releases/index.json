@@ -38,5 +38,9 @@
   {
     "bundleId": "8f766452c9ab9af8b19245b323cfad8bfb5f04fd5e0ba08c321946073e96ef52",
     "manifestDigest": "8f766452c9ab9af8b19245b323cfad8bfb5f04fd5e0ba08c321946073e96ef52"
+  },
+  {
+    "bundleId": "deacf6d3accce4602e8c28974a85dbebf56dd021e4d48672a2ddf0b0b6ce5715",
+    "manifestDigest": "deacf6d3accce4602e8c28974a85dbebf56dd021e4d48672a2ddf0b0b6ce5715"
   }
 ]

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { asError, ensure } from '../domain/errors.js';
 import { object, integer, text } from '../contracts/validation.js';
-import { userOnly, scope } from '../policy/permissions.js';
+import { userOnly, scope, interactiveCoordinator } from '../policy/permissions.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { assertWorkingGrantReference } from '../policy/working-grant-validation.js';
 import { digest, now } from '../storage/store.js';
@@ -61,6 +61,20 @@ export class GitHubUploadService {
             return { version: 0, enabled: false, state: 'local', pendingCount: 0, retryable: false };
         const jobs = this.app.store.list('github-upload-job', pid), pending = jobs.filter(j => j.state !== 'synced'), first = this.next(s, pending), current = pending.filter(j => j.epoch === s.epoch || active(j) || j.state === 'unknown' || !s.repository && !j.operationId), state = !s.enabled || project.archived ? 'paused' : first?.state ?? (s.repository ? 'synced' : 'queued');
         return { version: s.version, enabled: s.enabled, state, account: s.account, ...(s.repository ? { repository: s.repository } : {}), pendingCount: current.length, ...(s.lastCommit ? { lastCommit: s.lastCommit } : {}), ...(first?.error ? { error: first.error } : {}), retryable: s.enabled && !project.archived && !!first && ['failed', 'unknown', 'paused'].includes(first.state) && !alive(first.workerPid) };
+    }
+    inspectCommit(actor, pid, commit) {
+        scope(actor, pid);
+        ensure(typeof commit === 'string' && commit.length === 40 && /^[0-9a-f]{40}$/.test(commit), 'INVALID_INPUT', 'githubCommit 需要40位小写完整 SHA', 400);
+        return this.app.store.readSnapshot(() => {
+            if (actor.type === 'agent')
+                interactiveCoordinator(actor, pid, this.app.operations.authorizeAgent(actor, 'project_inspect'));
+            else
+                userOnly(actor);
+            this.app.store.get('project', pid);
+            const setting = this.app.store.maybe('github-setting', pid);
+            const jobs = this.app.store.db.prepare("SELECT id,json_extract(data,'$.operationId') operationId,json_extract(data,'$.ref') ref,json_extract(data,'$.state') state,json_extract(data,'$.error.code') errorCode,json_extract(data,'$.updatedAt') recordedAt FROM records WHERE kind='github-upload-job' AND project_id=? AND json_extract(data,'$.commit')=? ORDER BY rowid DESC LIMIT 21").all(pid, commit);
+            return { commit, enabled: setting?.enabled ?? false, observedAt: now(), receipts: jobs.slice(0, 20).map(j => ({ jobId: String(j.id), ...(j.operationId ? { operationId: String(j.operationId) } : {}), ref: String(j.ref), state: j.state, ...(j.errorCode ? { errorCode: String(j.errorCode) } : {}), recordedAt: String(j.recordedAt) })), hasMore: jobs.length > 20 };
+        });
     }
     configure(actor, pid, input) {
         userOnly(actor);

@@ -650,8 +650,15 @@ export declare const INPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly githubCommit: {
+                readonly pattern: "^[0-9a-f]{40}$";
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
         };
-        readonly required: readonly "runIntentId"[];
+        readonly required: readonly ("githubCommit" | "runIntentId")[];
         readonly additionalProperties: false;
     };
     readonly workspace_list: {

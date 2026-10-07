@@ -21,6 +21,16 @@ test('tagged compute recipes satisfy actual tool inputs and retain the previous 
  assert.doesNotMatch(s.read('coordinator',id,undefined,'14e1170adc7bf3ab02a4b37a44172082d5853732fc1df1bd0aac9fbde70479cb').content,/includeScheduling/);
  assert.throws(()=>s.read('coordinator',id,'references/docker.md','14e1170adc7bf3ab02a4b37a44172082d5853732fc1df1bd0aac9fbde70479cb'),{code:'SKILL_RESOURCE_NOT_FOUND'});
 });
+
+test('Git receipt recipe keeps exact SHA input wrapping and prior fixed Git guidance',()=>{
+ const s=new SkillService(root),body=s.read('coordinator','pi-research-git').content;let count=0;
+ for(const match of body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)){
+  const value=JSON.parse(match[1]);if(!value.tool)continue;
+  assert.equal(value.tool,'project_inspect');assert.match(value.input.githubCommit,/^[a-f0-9]{40}$/);
+  const tool=buildCustomTools([{name:value.tool,...TOOL_DEFINITIONS[value.tool]}],async()=>null)[0];assert.doesNotThrow(()=>tool.prepareArguments({input:value.input}));count++;
+ }
+ assert.equal(count,1);assert.doesNotMatch(s.read('coordinator','pi-research-git',undefined,'8f766452c9ab9af8b19245b323cfad8bfb5f04fd5e0ba08c321946073e96ef52').content,/githubCommit/);
+});
 test('all allowed resources are hashed and treated as text, not executed',()=>{const s=new SkillService(root);for(const e of s.list('coordinator'))for(const p of e.resources){const r=s.read('coordinator',e.id,p);assert.ok(r.content.length>100);assert.ok(r.digest);}});
 test('tampered bundled text cannot silently enter runtime',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});writeFileSync(join(dir,'skills/piresearch/pi-research-overview/SKILL.md'),'forged grant');const s=new SkillService(dir);assert.throws(()=>s.read('coordinator','pi-research-overview'),{code:'SKILL_INTEGRITY_FAILED'});}finally{rmSync(dir,{recursive:true,force:true});}});
 test('symlinked skill paths fail instead of exposing a host file',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});const p=join(dir,'skills/piresearch/pi-research-overview'),outside=join(dir,'outside');cpSync(p,outside,{recursive:true});rmSync(p,{recursive:true});symlinkSync(outside,p,process.platform==='win32'?'junction':'dir');assert.throws(()=>new SkillService(dir).read('coordinator','pi-research-overview'),{code:'SKILL_PATH_DENIED'});}finally{rmSync(dir,{recursive:true,force:true});}});

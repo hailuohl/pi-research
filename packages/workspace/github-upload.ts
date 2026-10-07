@@ -5,7 +5,7 @@ import type {ResearchApp} from '../research-app.js';
 import type {Actor,Project,Row} from '../domain/types.js';
 import {asError,ensure} from '../domain/errors.js';
 import {object,integer,text} from '../contracts/validation.js';
-import {userOnly,scope} from '../policy/permissions.js';
+import {userOnly,scope,interactiveCoordinator} from '../policy/permissions.js';
 import {assertProjectWritable} from '../policy/lifecycle.js';
 import {assertWorkingGrantReference} from '../policy/working-grant-validation.js';
 import {digest,now} from '../storage/store.js';
@@ -16,7 +16,7 @@ import {WorkspaceLeases} from './leases.js';
 import type {GitOperation} from './git-types.js';
 import {excluded,safeExportBytes} from '../publications/reports.js';
 import {GitHubCommand,type GitHubClient,type GitHubConnection,type RemoteRepository} from './github-command.js';
-import type {GitHubSetting,GitHubUploadJob,ProjectGitHubStatus,GitHubAccount} from './github-types.js';
+import type {GitHubSetting,GitHubUploadJob,ProjectGitHubStatus,GitHubAccount,GitHubCommitStatus} from './github-types.js';
 
 export function githubSlug(name:string){const {pinyin}=createRequire(import.meta.url)('pinyin-pro') as typeof import('pinyin-pro');return pinyin(name,{toneType:'none',nonZh:'consecutive',separator:'-'}).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9._-]+/g,'-').replace(/-+/g,'-').replace(/^[^A-Za-z0-9]+|[.-]+$/g,'').slice(0,90).replace(/[.-]+$/g,'')||'project';}
 const active=(j:GitHubUploadJob)=>['creating','uploading'].includes(j.state);
@@ -40,6 +40,15 @@ export class GitHubUploadService {
   userOnly(actor);scope(actor,pid);const project=this.app.store.get<Project>('project',pid),s=this.app.store.maybe<GitHubSetting>('github-setting',pid);if(!s)return {version:0,enabled:false,state:'local',pendingCount:0,retryable:false};
   const jobs=this.app.store.list<GitHubUploadJob>('github-upload-job',pid),pending=jobs.filter(j=>j.state!=='synced'),first=this.next(s,pending),current=pending.filter(j=>j.epoch===s.epoch||active(j)||j.state==='unknown'||!s.repository&&!j.operationId),state=!s.enabled||project.archived?'paused':first?.state??(s.repository?'synced':'queued');
   return {version:s.version,enabled:s.enabled,state,account:s.account,...(s.repository?{repository:s.repository}:{}),pendingCount:current.length,...(s.lastCommit?{lastCommit:s.lastCommit}:{}),...(first?.error?{error:first.error}:{}),retryable:s.enabled&&!project.archived&&!!first&&['failed','unknown','paused'].includes(first.state)&&!alive(first.workerPid)};
+ }
+ inspectCommit(actor:Actor,pid:string,commit:string):GitHubCommitStatus {
+  scope(actor,pid);ensure(typeof commit==='string'&&commit.length===40&&/^[0-9a-f]{40}$/.test(commit),'INVALID_INPUT','githubCommit 需要40位小写完整 SHA',400);
+  return this.app.store.readSnapshot(()=>{
+   if(actor.type==='agent')interactiveCoordinator(actor,pid,this.app.operations.authorizeAgent(actor,'project_inspect'));else userOnly(actor);
+   this.app.store.get<Project>('project',pid);const setting=this.app.store.maybe<GitHubSetting>('github-setting',pid);
+   const jobs=this.app.store.db.prepare("SELECT id,json_extract(data,'$.operationId') operationId,json_extract(data,'$.ref') ref,json_extract(data,'$.state') state,json_extract(data,'$.error.code') errorCode,json_extract(data,'$.updatedAt') recordedAt FROM records WHERE kind='github-upload-job' AND project_id=? AND json_extract(data,'$.commit')=? ORDER BY rowid DESC LIMIT 21").all(pid,commit);
+   return {commit,enabled:setting?.enabled??false,observedAt:now(),receipts:jobs.slice(0,20).map(j=>({jobId:String(j.id),...(j.operationId?{operationId:String(j.operationId)}:{}),ref:String(j.ref),state:j.state as GitHubUploadJob['state'],...(j.errorCode?{errorCode:String(j.errorCode)}:{}),recordedAt:String(j.recordedAt)})),hasMore:jobs.length>20};
+  });
  }
  configure(actor:Actor,pid:string,input:unknown){userOnly(actor);scope(actor,pid);const x=object(input);ensure(Object.keys(x).every(k=>['expectedVersion','enabled'].includes(k))&&typeof x.enabled==='boolean','INVALID_INPUT','需要 expectedVersion 和 enabled',400);const expected=integer(x.expectedVersion,'expectedVersion',1);
   this.app.store.transaction(()=>{assertProjectWritable(this.app.store,pid);const s=this.app.store.get<GitHubSetting>('github-setting',pid);ensure(s.version===expected,'VERSION_CONFLICT','GitHub 设置已变化');if(s.enabled===x.enabled)return;this.app.store.update<GitHubSetting>('github-setting',pid,s.version,{enabled:x.enabled as boolean,epoch:s.epoch+1,eventCursor:this.app.store.eventCursor(pid)});for(const j of this.app.store.list<GitHubUploadJob>('github-upload-job',pid))if(j.state==='queued')this.app.store.update<GitHubUploadJob>('github-upload-job',j.id,j.version,{state:'paused'});this.app.store.event(pid,'github.configured',{enabled:x.enabled});});return this.inspect(actor,pid);

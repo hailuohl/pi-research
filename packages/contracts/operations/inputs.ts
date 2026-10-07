@@ -69,7 +69,7 @@ export const INPUT_SCHEMAS = {
     reviewed_change_prepare:s.object({reviewId:id,title:s.string(200),hypothesis:s.string()},['reviewId','title','hypothesis']),
     artifact_read: s.object({ artifactId: id, cursor: s.nullable(s.integer(0, 2 * 1024 * 1024)) }, ['artifactId']),
     session_notice_read: s.object({ messageId: id, cursor: s.nullable(s.integer(0, Number.MAX_SAFE_INTEGER)) }, ['messageId']),
-    project_inspect: s.object({runIntentId:id}),
+    project_inspect: s.object({runIntentId:id,githubCommit:{...s.string(40,40),pattern:'^[0-9a-f]{40}$'}}),
     workspace_list: s.object({ source }),
     text_evidence_search: s.object({ query: s.string(1000), artifactIds: strings(30),
         pmcDocuments:s.array(s.object({documentVersionId:id},['documentVersionId']),30),
