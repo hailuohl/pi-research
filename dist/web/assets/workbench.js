@@ -6,7 +6,7 @@ import { LogView } from "./log-view.js";
 import { ConversationActivity } from "./session-history.js";
 import { ScrollHistory } from "./scroll-history.js";
 import { MessageQueue } from "./message-queue.js";
-import { ComputeWait } from "./scheduler-view.js";
+import { ComputeWait } from "./compute-wait.js";
 import { WakeupPanel } from "./campaigns.js";
 import { comparableRuns, comparisonMetric } from "./models.js";
 import { ExperimentGraph } from "./experiment-graph.js";
@@ -422,7 +422,7 @@ class Inspector extends React.Component {
             /* @__PURE__ */ jsx("dt", { children: k }),
             /* @__PURE__ */ jsx("dd", { className: "numeric", children: number(v) })
           ] }, k)) }) : null,
-          ["queued", "submitting", "running", "cancelling", "unknown"].includes(run.state) ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "run", id: run.id, onScheduler: this.props.onScheduler }) : null,
+          ["queued", "submitting", "running", "cancelling", "unknown"].includes(run.state) ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "run", id: run.id }) : null,
           /* @__PURE__ */ jsx(OutcomeReview, { run, perform }),
           /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
             "\u79D1\u7814\u5224\u65AD\uFF1A",
@@ -438,10 +438,7 @@ class Inspector extends React.Component {
           "\u534F\u4F5C\u8BA1\u5212\u4E0E\u7ED3\u679C",
           /* @__PURE__ */ jsx("span", { children: pendingTeams.length ? "\u5F85\u5BA1\u6279" : team ? label(team.state) : "\u6682\u65E0\u4EFB\u52A1" })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-          this.props.tab === "chat" ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }),
-          this.props.onScheduler ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: this.props.onScheduler, children: "\u67E5\u770B\u8D44\u6E90\u4E0E\u8C03\u5EA6" }) : null
-        ] }),
+        /* @__PURE__ */ jsx("div", { className: "inspector-section", children: this.props.tab === "chat" ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }) }),
         pendingTeams.map((a) => {
           const pendingTeam = teams.find((t) => t.id === a.subjectId), canStart = data.project.settings.enabled && pendingTeam?.state === "awaiting_approval" && pendingTeam.delegationEnabled;
           return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [

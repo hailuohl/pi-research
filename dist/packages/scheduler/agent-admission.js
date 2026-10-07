@@ -1,7 +1,6 @@
 import { digest } from '../storage/store.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { ensure } from '../domain/errors.js';
-import { integer, object } from '../contracts/validation.js';
 import { assertWorkspaceReady } from '../workspace/git-service.js';
 import { inspectPi } from '../pi-adapter/runtime.js';
 const held = (slot) => slot.state !== 'released';
@@ -15,7 +14,7 @@ export class AgentAdmissionService {
         c.store.transaction(() => {
             c.store.db.exec("CREATE INDEX IF NOT EXISTS agent_admission_state ON records(kind,json_extract(data,'$.state')) WHERE kind='agent-admission'");
             if (!c.store.maybe('agent-capacity', 'global'))
-                c.store.create('agent-capacity', null, { maxWorkers: 2 }, 'global');
+                c.store.create('agent-capacity', null, { maxWorkers: null }, 'global');
             if (!c.store.db.prepare('SELECT 1 FROM schema_migrations WHERE version=3').get()) {
                 for (const session of c.store.list('session').filter(s => s.state === 'running'))
                     c.store.create('agent-admission', session.projectId, { sessionId: session.id, generation: session.generation, ownerHost: 'legacy-unverified', role: session.role, ...(session.teamId ? { teamId: session.teamId } : {}), state: 'unknown', leaseUntil: 0, spawnRequested: true }, digest({ sessionId: session.id, generation: session.generation }));
@@ -27,12 +26,12 @@ export class AgentAdmissionService {
     sessionHeld(sessionId) { return this.slots().some(slot => slot.sessionId === sessionId); }
     snapshot(pid) {
         const setting = this.c.store.get('agent-capacity', 'global'), all = this.slots(), global = counts(all);
-        const result = { version: setting.version, maxWorkers: setting.maxWorkers, available: Math.max(0, setting.maxWorkers - global.held), unit: 'pi-worker', httpConcurrencyMeasured: false, counts: global };
+        const result = { version: setting.version, maxWorkers: null, available: null, unit: 'pi-worker', httpConcurrencyMeasured: false, counts: global };
         if (pid) {
-            const project = this.c.store.get('project', pid), slots = all.filter(s => s.projectId === pid), assistantHeld = slots.filter(s => s.role !== 'coordinator').length, available = Math.max(0, Math.min(setting.maxWorkers - all.length, project.settings.maxActiveAgents - slots.length)), byRole = {};
+            const project = this.c.store.get('project', pid), slots = all.filter(s => s.projectId === pid), assistantHeld = slots.filter(s => s.role !== 'coordinator').length, available = Math.max(0, project.settings.maxActiveAgents - slots.length), byRole = {};
             for (const slot of slots)
                 byRole[slot.role] = (byRole[slot.role] ?? 0) + 1;
-            result.project = { projectId: pid, maxActiveAgents: project.settings.maxActiveAgents, maxConcurrentAssistants: project.settings.maxConcurrentAssistants, effectiveMaxAgents: Math.min(setting.maxWorkers, project.settings.maxActiveAgents), counts: counts(slots), assistantHeld, available, assistantAvailable: Math.max(0, Math.min(available, project.settings.maxConcurrentAssistants - assistantHeld)), byRole, blockedBy: [...(global.held >= setting.maxWorkers ? ['global-capacity'] : []), ...(slots.length >= project.settings.maxActiveAgents ? ['project-capacity'] : []), ...(assistantHeld >= project.settings.maxConcurrentAssistants ? ['project-assistant-capacity'] : []), ...(slots.some(s => s.state === 'unknown') ? ['unknown-worker-held'] : [])] };
+            result.project = { projectId: pid, maxActiveAgents: project.settings.maxActiveAgents, maxConcurrentAssistants: project.settings.maxConcurrentAssistants, effectiveMaxAgents: project.settings.maxActiveAgents, counts: counts(slots), assistantHeld, available, assistantAvailable: Math.max(0, Math.min(available, project.settings.maxConcurrentAssistants - assistantHeld)), byRole, blockedBy: [...(slots.length >= project.settings.maxActiveAgents ? ['project-capacity'] : []), ...(assistantHeld >= project.settings.maxConcurrentAssistants ? ['project-assistant-capacity'] : []), ...(slots.some(s => s.state === 'unknown') ? ['unknown-worker-held'] : [])] };
         }
         return result;
     }
@@ -44,7 +43,7 @@ export class AgentAdmissionService {
         reasons.push({ code: 'git-not-ready', message: '私有 Git 工作区尚未就绪' });
     } if (!inspectPi(this.c.repoRoot, s.model).ready)
         reasons.push({ code: 'pi-not-ready', message: 'Pi 本地运行时或模型配置尚未就绪' }); return { sessionId: s.id, role: s.role, reasons }; }); return view; }
-    configure(actor, value) { userOnly(actor); const x = object(value); ensure(Object.keys(x).every(k => ['expectedVersion', 'maxWorkers'].includes(k)), 'INVALID_INPUT', '容量设置字段无效', 400); return this.c.store.transaction(() => { this.c.store.update('agent-capacity', 'global', integer(x.expectedVersion, 'expectedVersion', 1), { maxWorkers: integer(x.maxWorkers, 'maxWorkers', 1, 32) }); return this.snapshot(); }); }
+    configure(actor, _value) { userOnly(actor); ensure(false, 'HOST_CAPACITY_DISABLED', '本地 Pi 不设置宿主 Worker 上限', 409); }
     check(pid, role, teamId) { const view = this.snapshot(pid); if (!view.project.available)
         return false; if (role !== 'coordinator') {
         if (!view.project.assistantAvailable)

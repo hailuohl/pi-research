@@ -1,4 +1,5 @@
 import type {DiscoveryContext,DiscoveryGrantReference} from '../policy/discovery-grant-types.js';
+import {environmentVariables} from '../runtime/environment.js';
 import {discoveryContext,assertDiscoveryContext,discoveryScope,reserveConnectorCall,discoveryProof,ownerSearchNextPage} from '../policy/discovery-grant-validation.js';
 /** Bounded, host-owned literature adapters. No ORX CLI, hosted account or model calls. */
 import type {AppContext} from '../domain/context.js';
@@ -15,7 +16,7 @@ import {searchProvider,searchOpenAlexPage,searchPubmedPage,searchCrossrefPage,re
 import {parsePubmedPmcid,parsePmcFullText} from './pmc.js';
 import {connectorSettings,DEFAULT_CONNECTORS,type ConnectorSettings,assertSourceEnabled} from './settings.js';
 import {CONNECTOR_CAPABILITIES} from './catalog.js';
-const envCredentials=():Credentials=>({openalexKey:process.env.OPENALEX_API_KEY,ncbiKey:process.env.NCBI_API_KEY,email:process.env.NCBI_EMAIL});
+const envCredentials=(dataDir:string):Credentials=>{const configured=environmentVariables(dataDir);return {openalexKey:configured.OPENALEX_API_KEY??process.env.OPENALEX_API_KEY,ncbiKey:configured.NCBI_API_KEY??process.env.NCBI_API_KEY,email:configured.NCBI_EMAIL??process.env.NCBI_EMAIL};};
 const PAGE_CURSOR_TTL_MS=4*60*1000;
 export interface SearchPageRequest {number:number;previousSearchId:string|null;cursor:string;expiresAt:string|null;}
 export interface SearchPageRecord extends SearchPageRequest {nextCursor:string|null;nextCursorExpiresAt:string|null;rawItemCount:number;}
@@ -24,7 +25,7 @@ function parsePageRequest(value:unknown):SearchPageRequest{const x=object(value)
 export class ConnectorService {
  private transport:ConnectorTransport;private credentials:()=>Credentials;
  private inFlight=new Map<string,{hash:string;promise:Promise<any>}>();
- constructor(private c:AppContext,private evidence:EvidenceService,options:{transport?:ConnectorTransport;credentials?:()=>Credentials}={}){this.transport=options.transport??new ConnectorTransport();this.credentials=options.credentials??envCredentials;}
+ constructor(private c:AppContext,private evidence:EvidenceService,options:{transport?:ConnectorTransport;credentials?:()=>Credentials}={}){this.transport=options.transport??new ConnectorTransport();this.credentials=options.credentials??(()=>envCredentials(c.dataDir));}
  settings(actor:Actor,pid:string){scope(actor,pid);this.c.store.get('project',pid);const cfg=connectorSettings(this.c.store,pid),creds=this.credentials();return {...cfg,requestsUsed:this.c.store.list('connector-call',pid).length,credentials:{openalexKeyConfigured:!!creds.openalexKey,ncbiKeyConfigured:!!creds.ncbiKey,ncbiEmailConfigured:!!creds.email},capabilities:CONNECTOR_CAPABILITIES,budgetUnit:'HTTP request attempts; not currency',defaults:'New remote sources disabled; existing Crossref retained'};}
  observations(actor:Actor,pid:string){scope(actor,pid);this.c.store.get('project',pid);return this.c.store.db.prepare("SELECT data FROM records WHERE kind='connector-call' AND project_id=? ORDER BY rowid DESC LIMIT 50").all(pid).map(r=>{const x=JSON.parse(r.data as string);return {id:x.id,source:x.source,host:x.host,status:x.status,startedAt:x.startedAt,httpStatus:x.httpStatus??null,retryAfter:x.retryAfter??null,error:x.error??null};});}
  configure(actor:Actor,pid:string,value:unknown){userOnly(actor);scope(actor,pid);const x=object(value);return this.c.store.transaction(()=>{assertProjectWritable(this.c.store,pid);const current=connectorSettings(this.c.store,pid);ensure(integer(x.expectedVersion,'expectedVersion',0)===current.version,'VERSION_CONFLICT','连接器设置已经变更');const enabled={...current.enabled};if(x.enabled!==undefined)for(const [key,v]of Object.entries(object(x.enabled))){ensure(SOURCES.includes(key as SourceId),'INVALID_INPUT','未知来源',400);enabled[key as SourceId]=bool(v,key);}const requestLimit=x.requestLimit===undefined?current.requestLimit:integer(x.requestLimit,'requestLimit',1,10000);const previous=this.c.store.list<ConnectorSettings>('connector-settings',pid)[0];const fields={enabled,requestLimit};if(previous)this.c.store.update('connector-settings',previous.id,previous.version,fields);else this.c.store.create('connector-settings',pid,fields);this.c.store.event(pid,'connectors.settings_changed',{enabled,requestLimit});return this.settings(actor,pid);});}

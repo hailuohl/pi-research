@@ -2,7 +2,7 @@ import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { WorkingGrants } from "./working-grants.js";
 import { LogView } from "./log-view.js";
-import { ComputeWait } from "./scheduler-view.js";
+import { ComputeWait } from "./compute-wait.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, label } from "./models.js";
 import { SectionTitle, Badge, Empty, nativeSelectButton } from "./ui.js";
@@ -199,7 +199,7 @@ class DevelopmentJob extends React.Component {
         short(job.manifest.workingGrant.approvalId),
         "\uFF1B\u6B64\u63D0\u4EA4\u5DF2\u8BA1\u6B21\u3002"
       ] }) : null,
-      !terminal ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "development", id: job.id, onScheduler: this.props.onScheduler }) : null,
+      !terminal ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "development", id: job.id }) : null,
       job.error ? /* @__PURE__ */ jsx("p", { className: "error-text", children: job.error }) : null,
       /* @__PURE__ */ jsxs("details", { open: this.state.expanded, onToggle: (e) => {
         const expanded = e.currentTarget.open;
@@ -382,7 +382,7 @@ class ImplementationView extends React.Component {
             !t.jobId && !oldTemplate && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: busy || this.state.dirty || !canSubmit, onClick: () => perform(() => this.call("development_submit", { developmentTaskId: t.id }), "\u5DF2\u63D0\u4EA4\u72EC\u7ACB\u5F00\u53D1\u6D4B\u8BD5"), children: derived ? "\u63D0\u4EA4\u6388\u6743\u5185\u56FA\u5B9A\u6D4B\u8BD5\uFF08\u8BA1\u4E00\u6B21\uFF09" : "\u63D0\u4EA4\u5DF2\u6279\u51C6\u5F00\u53D1\u6D4B\u8BD5" }) : null
           ] }, t.id);
         }) : /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u6B64\u4F1A\u8BDD\u5C1A\u672A\u8BF7\u6C42\u5F00\u53D1\u6D4B\u8BD5\u3002\u53EF\u56DE\u5230\u804A\u5929\u8BA9 Pi \u5B8C\u6210\u5B9E\u73B0\u5E76\u8BF7\u6C42\u6D4B\u8BD5\u3002" }),
-        jobs.slice().reverse().map((j) => /* @__PURE__ */ jsx(DevelopmentJob, { onScheduler: this.props.onScheduler, job: j, data, sessionId: session.id, perform }, j.id))
+        jobs.slice().reverse().map((j) => /* @__PURE__ */ jsx(DevelopmentJob, { job: j, data, sessionId: session.id, perform }, j.id))
       ] }) : null,
       session ? /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsx("div", { className: "surface-heading", children: /* @__PURE__ */ jsx("h2", { children: "\u72EC\u7ACB\u5BA1\u67E5" }) }),

@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { StringDecoder } from 'node:string_decoder';
 import { existsSync, statSync } from 'node:fs';
 import { resolve, isAbsolute } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -6,6 +7,7 @@ import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { object, text, integer } from '../contracts/validation.js';
 import { userOnly, scope } from './permissions.js';
+import { environmentVariables, environmentSecrets, redactEnvironment, redactEnvironmentChunk } from '../runtime/environment.js';
 const clean = (value) => value.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]');
 /** Trusted same-user host execution, deliberately NOT an OS sandbox or owner-auth boundary. */
 export class HostAccessService {
@@ -119,17 +121,17 @@ export class HostAccessService {
         let row;
         this.c.store.transaction(() => {
             this.assertAgent(actor, grant.epoch);
-            row = this.c.store.create('host-command', session.projectId, { sessionId: session.id, generation: actor.generation, epoch: grant.epoch, runtimeId: this.runtimeId, requestDigest, argv, cwd: resolve(cwd), timeoutMs, state: 'starting', stdout: '', stderr: '', outputTruncated: false }, id);
+            row = this.c.store.create('host-command', session.projectId, { sessionId: session.id, generation: actor.generation, epoch: grant.epoch, runtimeId: this.runtimeId, requestDigest, argv: argv.map(value => redactEnvironment(this.c.dataDir, value)), cwd: resolve(cwd), timeoutMs, state: 'starting', stdout: '', stderr: '', outputTruncated: false }, id);
         });
         try {
             this.c.store.transaction(() => {
                 this.assertAgent(actor, grant.epoch);
-                // Do not automatically copy PI/model credentials or NODE_OPTIONS into arbitrary commands.
+                // Only explicitly saved local variables join the base environment.
                 const env = {};
                 for (const [name, value] of Object.entries(process.env))
                     if (/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|HOME|USERPROFILE|LOCALAPPDATA|APPDATA|PROGRAMFILES|PROGRAMFILES\(X86\)|SYSTEMDRIVE|NUMBER_OF_PROCESSORS|PROCESSOR_ARCHITECTURE|LANG|LC_ALL)$/i.test(name))
                         env[name] = value;
-                child = spawn(argv[0], argv.slice(1), { cwd: resolve(cwd), env, shell: false, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
+                child = spawn(argv[0], argv.slice(1), { cwd: resolve(cwd), env: { ...environmentVariables(this.c.dataDir), ...env }, shell: false, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] });
                 row = this.c.store.update('host-command', id, row.version, { state: 'running', ...(child.pid ? { pid: child.pid } : {}) });
                 this.c.store.event(session.projectId, 'host_command.started', { sessionId: session.id, jobId: id, epoch: grant.epoch });
             });
@@ -158,18 +160,15 @@ export class HostAccessService {
             throw error;
         }
         let stdout = '', stderr = '', truncated = false, done = false, cancelReason;
+        const decoders = { stdout: new StringDecoder('utf8'), stderr: new StringDecoder('utf8') }, rawCut = { stdout: false, stderr: false }, tail = Math.max(0, ...environmentSecrets(this.c.dataDir).map(value => value.length));
         let resolveResult;
         const promise = new Promise(resolvePromise => { resolveResult = resolvePromise; });
-        const append = (target, chunk) => { const content = chunk.toString('utf8'); if (target === 'stdout') {
-            if (stdout.length + content.length > 65536)
-                truncated = true;
-            stdout = (stdout + content).slice(0, 65536);
-        }
-        else {
-            if (stderr.length + content.length > 65536)
-                truncated = true;
-            stderr = (stderr + content).slice(0, 65536);
-        } };
+        const append = (target, chunk, flush = false) => { const content = flush ? decoders[target].end() : decoders[target].write(chunk), value = (target === 'stdout' ? stdout : stderr) + content; if (value.length > 65536)
+            truncated = true; if (value.length > 65536 + tail)
+            rawCut[target] = true; if (target === 'stdout')
+            stdout = value.slice(0, 65536 + tail);
+        else
+            stderr = value.slice(0, 65536 + tail); };
         child.stdout.on('data', chunk => append('stdout', chunk));
         child.stderr.on('data', chunk => append('stderr', chunk));
         const finish = (state, exitCode, error) => {
@@ -179,7 +178,12 @@ export class HostAccessService {
             clearInterval(fence);
             clearTimeout(deadline);
             clearTimeout(stopDeadline);
-            const result = { state, exitCode, stdout: clean(stdout), stderr: clean(stderr), outputTruncated: truncated, ...(error ? { error: clean(error).slice(0, 32000) } : {}) };
+            append('stdout', Buffer.alloc(0), true);
+            append('stderr', Buffer.alloc(0), true);
+            const mask = (value) => redactEnvironment(this.c.dataDir, clean(value));
+            // A raw cutoff can leave a credential prefix even when redaction shrinks output below the public limit.
+            const output = (target, value) => mask(rawCut[target] ? redactEnvironmentChunk(this.c.dataDir, value).text : value).slice(0, 65536);
+            const result = { state, exitCode, stdout: output('stdout', stdout), stderr: output('stderr', stderr), outputTruncated: truncated, ...(error ? { error: mask(error).slice(0, 32000) } : {}) };
             if (state === 'unknown')
                 this.uncertain.set(id, result);
             try {

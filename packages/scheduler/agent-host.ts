@@ -1,4 +1,5 @@
 import {publicationImageCatalog,imageReference,documentImageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
+import {environmentVariables,redactEnvironment,redactEnvironmentChunk} from '../runtime/environment.js';
 import {canSteerSession} from '../pi-adapter/session-history.js';
 import {messageInput} from '../pi-adapter/attachments.js';
 import {prepareSessionSkills} from '../skills/runtime.js';
@@ -36,9 +37,10 @@ interface Active {
     failedToolCalls?: Set<string>;
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;
+    deltaTail?:string;
 }
 const redact = (s: string) => s.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]');
-const clean = (s: string) => redact(s).slice(0, 32000);
+
 /** Dependency injection is in-process test infrastructure only; HTTP/config never select a replacement worker. */
 interface HostDependencies {
     inspect?: (repoRoot: string, model: ModelConfig) => {ready: boolean; code: string; message: string};
@@ -46,6 +48,8 @@ interface HostDependencies {
     fork?: typeof fork;
 }
 export class AgentHost {
+    private redact(value:string){return redactEnvironment(this.app.context.dataDir,redact(value));}
+    private clean(value:string){return this.redact(value).slice(0,32000);}
     readonly tools: ToolDispatcher;
     readonly active = new Map<string, Active>();
     private timer?: NodeJS.Timeout;
@@ -106,7 +110,7 @@ export class AgentHost {
                     // Fixed inputs are verified at tool boundaries and once per heartbeat, not per text delta.
                     if (a?.state === 'running') {
                         try { this.app.teams.active(active.actor); }
-                        catch (error) { this.abortProcess(active, clean(asError(error).message)); continue; }
+                        catch (error) { this.abortProcess(active, this.clean(asError(error).message)); continue; }
                     }
                     this.app.store.transaction(()=>{this.admission.heartbeat(active.admissionId,this.ownerHost,active.generation);const latest=this.app.store.get<Session>('session',s.id);ensure(latest.generation===active.generation,'LEASE_EXPIRED','会话已失效');this.app.store.update<Session>('session',latest.id,latest.version,{leaseUntil:Date.now()+30000});if(a)this.app.teams.heartbeat(a.id);});
                     active.lastHeartbeat = Date.now();
@@ -139,11 +143,7 @@ export class AgentHost {
                 });
             }
             this.app.wakeups.reconcile();
-            if (!this.admission.snapshot().available)
-                return;
             for (const s of this.app.store.list<Session>('session').filter(s => !s.taskId && s.state === 'queued')) {
-                if (!this.admission.snapshot().available)
-                    break;
                 if(this.active.has(s.id))continue;
                 if (!this.inspect(s.model).ready)
                     continue;
@@ -155,7 +155,6 @@ export class AgentHost {
                 }
             }
             for (const w of this.app.store.list<Wakeup>('wakeup').filter(w => w.state === 'pending')) {
-                if (!this.admission.snapshot().available) break;
                 const root = this.app.sessions.get(SYSTEM, w.rootSessionId);
                 try{assertWorkspaceReady(this.app.context,root.id);}catch{continue;}
                 try {
@@ -164,8 +163,6 @@ export class AgentHost {
                 } catch(error) {const e=asError(error),latest=this.app.store.get<Wakeup>('wakeup',w.id);if(latest.blockReason!==`${e.code} — ${e.message}`)this.app.store.update<Wakeup>('wakeup',w.id,latest.version,{blockReason:`${e.code} — ${e.message}`});}
             }
             for (const team of this.app.store.list<Team>('team').filter(t => t.state === 'active')) {
-                if (!this.admission.snapshot().available)
-                    break;
                 const root = this.app.store.get<Session>('session', team.rootSessionId);
                 const dispatch=this.app.store.transaction(()=>{
                     if(!this.admission.check(team.projectId!,'implementer',team.id))return null;
@@ -231,7 +228,10 @@ export class AgentHost {
         mkdirSync(agentDir, { recursive: true, mode: 0o700 });
         mkdirSync(sessionDir, { recursive: true, mode: 0o700 });
         const env: NodeJS.ProcessEnv = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, HOME: home, USERPROFILE: home, PI_API_KEY: process.env.PI_API_KEY, NO_COLOR: '1' };
-        // Only the selected model credential enters a worker. No SSH/cloud credentials or inherited Node flags.
+        const configuredEnvironment=environmentVariables(this.app.context.dataDir);
+        for(const [name,value] of Object.entries(configuredEnvironment))if(env[name]===undefined)env[name]=value;
+        env.PI_API_KEY=configuredEnvironment.PI_API_KEY??process.env.PI_API_KEY;
+        // Explicit local variables only; never inherit host credentials or interpreter options.
         const child = store.transaction(()=>{
             // Serialize the final revocation check with process creation across controllers.
             this.app.skills.ensureBundleStartAllowed(claimed.projectId!,bundleId);
@@ -240,7 +240,7 @@ export class AgentHost {
             // Retain the child before commit: a commit failure is not proof of zero model use.
             active = {catalogFingerprint,admissionId:slot.id,child:spawned,sessionId:claimed.id,generation:claimed.generation,actor,messageIds:messageId?[messageId]:[],consumedIds:new Set(messageId?[messageId]:[]),attemptId:attempt?.id,started:Date.now(),lastHeartbeat:Date.now(),sent:new Set(),ended:false,advertisedTools:new Set(toolDefinitions.map(tool=>tool.name))};
             this.active.set(claimed.id,active);
-            spawned.on('error',error=>this.finish(active!,clean(error.message)));
+            spawned.on('error',error=>this.finish(active!,this.clean(error.message)));
             spawned.once('exit',code=>{active!.exitObserved=true;if(active!.ended)this.exited(active!,code);});
             spawned.once('close',code=>{if(this.active.get(claimed.id)===active)this.exited(active!,code);});
             return spawned;
@@ -248,7 +248,7 @@ export class AgentHost {
         const worker = active!;
         child.stdout?.on('data', () => { });
         child.stderr?.on('data', () => { });
-        child.on('message', raw => { void this.onMessage(worker, raw as any, sessionDir).catch(e => this.finish(worker, clean(asError(e).message))); });
+        child.on('message', raw => { void this.onMessage(worker, raw as any, sessionDir).catch(e => this.finish(worker, this.clean(asError(e).message))); });
         // exit can precede buffered IPC messages; close confirms those messages have drained.
         this.admission.markRunning(slot.id,this.ownerHost,claimed.generation,child.pid);
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
@@ -257,11 +257,11 @@ export class AgentHost {
         this.sendInput(worker,{ type: 'start', managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
-            const failure=asError(error),startError=`${failure.code} — ${failure.message}`;
+            const failure=asError(error),startError=this.clean(`${failure.code} — ${failure.message}`);
             if(active){
                 try {
                     store.transaction(()=>{const held=this.admission.assertOwned(slot.id,this.ownerHost,claimed.generation);store.update<AgentAdmission>('agent-admission',held.id,held.version,{spawnRequested:true,workerPid:active!.child.pid,httpManagedVersion:1});});
-                    this.finish(active,clean((error as Error).message));
+                    this.finish(active,this.clean((error as Error).message));
                 } finally {if(!active.exitObserved){if(active.child.connected)active.child.disconnect();active.child.kill('SIGTERM');}}
                 return;
             }
@@ -302,7 +302,7 @@ export class AgentHost {
                     });
                 }else result=this.app.modelHttp.finish(identity,m.key,m.result);
                 if(!a.exitObserved&&a.child.connected)a.child.send({type:'model_http_response',requestId:m.requestId,result:result??null});
-            }catch(error){if(!a.exitObserved&&a.child.connected){const e=asError(error);a.child.send({type:'model_http_response',requestId:m.requestId,error:{code:e.code,message:clean(e.message)}});}}
+            }catch(error){if(!a.exitObserved&&a.child.connected){const e=asError(error);a.child.send({type:'model_http_response',requestId:m.requestId,error:{code:e.code,message:this.clean(e.message)}});}}
             return;
         }
         if (a.ended)
@@ -321,7 +321,7 @@ export class AgentHost {
             catch (e) {
                 const error = asError(e);
                 if (!a.exitObserved && a.child.connected)
-                    a.child.send({ type: 'tool_response', requestId: m.requestId, error: { code: error.code, message: clean(error.message) } });
+                    a.child.send({ type: 'tool_response', requestId: m.requestId, error: { code: error.code, message: this.clean(error.message) } });
             }
             return;
         }
@@ -332,7 +332,7 @@ export class AgentHost {
             return;
         }
         if (m?.type === 'failure') {
-            this.finish(a, clean(String(m.error)));
+            this.finish(a, this.clean(String(m.error)));
             return;
         }
         if (!this.valid(a))
@@ -369,23 +369,25 @@ export class AgentHost {
                 this.savePath(a, String(m.sessionFile), sessionDir);
         }
         if (m?.type === 'assistant_message') {
-            if (m.error) a.providerError = clean(String(m.error));
+            a.deltaTail='';
+            if (m.error) a.providerError = this.clean(String(m.error));
             else if (typeof m.content === 'string' && m.content.trim()) a.assistantOutput = true;
-            const content=redact(String(m.content??''));
+            const content=this.redact(String(m.content??''));
             this.app.store.transaction(()=>{
                 ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');
                 const allowed = a.advertisedTools??new Set(this.tools.definitions(a.actor.role!, !!a.actor.wakeupId,a.sessionId).map(definition => definition.name));
                 const toolCalls = Array.isArray(m.toolCalls) ? m.toolCalls.filter((name:unknown):name is string => typeof name === 'string' && allowed.has(name)).slice(0,64) : [];
-                const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, generation:a.generation,phase:toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer',...(toolCalls.length ? {toolCalls} : {}), ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? clean(String(m.error)) : undefined, usage: m.usage });
+                const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, generation:a.generation,phase:toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer',...(toolCalls.length ? {toolCalls} : {}), ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? this.clean(String(m.error)) : undefined, usage: m.usage });
                 this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, generation:s.generation,messageId: record.id });
                 this.app.store.create('model-usage', s.projectId, { sessionId: s.id, attemptId: a.attemptId ?? null, provider: s.model.provider, model: s.model.model, usage: m.usage, status: m.usage ? 'reported' : 'unknown', stopReason: m.stopReason ?? null });
             });
         }
         if (m?.type === 'delta' && typeof m.text === 'string') {
-            const text=redact(m.text);this.app.store.transaction(()=>{ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');this.app.store.event(s.projectId, 'session.delta', { sessionId: s.id, generation:a.generation,text:text.slice(0,4000),truncated:text.length>4000 });});
+            const chunk=redactEnvironmentChunk(this.app.context.dataDir,(a.deltaTail??'')+m.text);a.deltaTail=chunk.tail;
+            const text=redact(chunk.text);if(text)this.app.store.transaction(()=>{ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');this.app.store.event(s.projectId, 'session.delta', { sessionId: s.id, generation:a.generation,text:text.slice(0,4000),truncated:text.length>4000 });});
         }
         if(m?.type==='input_consumed'&&a.messageIds.includes(m.messageId)&&a.sent.has(m.messageId))a.consumedIds.add(m.messageId);
-        if(m?.type==='control_error'&&a.messageIds.includes(m.messageId))this.failInput(a,m.messageId,clean(String(m.error??'Worker 未接受输入')));
+        if(m?.type==='control_error'&&a.messageIds.includes(m.messageId))this.failInput(a,m.messageId,this.clean(String(m.error??'Worker 未接受输入')));
         if (m?.type === 'message_ack' && !a.messageIds.includes(m.messageId) && a.actor.taskId && a.sent.has(m.messageId)) {
             const d=this.app.store.maybe<any>('directive',m.messageId);
             if(d&&d.projectId===s.projectId&&d.taskIds.includes(s.taskId)&&!d.deliveredSessionIds.includes(s.id))this.app.store.update('directive',d.id,d.version,{deliveredSessionIds:[...d.deliveredSessionIds,s.id]});
@@ -395,7 +397,7 @@ export class AgentHost {
         this.app.store.transaction(()=>{const m=this.app.store.get<Message>('message',id);if(m.sessionId===a.sessionId&&m.status==='running')this.app.store.update<Message>('message',id,m.version,{status:'failed',error});});
     }
     private sendInput(a:Active,payload:Record<string,unknown>,messageId?:string){
-        const failed=(error:Error|null)=>{if(!error)return;if(messageId)this.failInput(a,messageId,clean(error.message));if(payload.type==='start')this.finish(a,clean(error.message));};
+        const failed=(error:Error|null)=>{if(!error)return;if(messageId)this.failInput(a,messageId,this.clean(error.message));if(payload.type==='start')this.finish(a,this.clean(error.message));};
         try{a.child.send(payload,failed);}catch(error){failed(error as Error);}
     }
     private savePath(a: Active, file: string, root: string) { const rel = relative(resolve(root), resolve(file)); ensure(rel !== '' && !rel.startsWith('..') && !isAbsolute(rel) && file.endsWith('.jsonl'), 'SESSION_PATH_INVALID', 'Pi Session 路径超出受控目录'); const s = this.app.store.get<Session>('session', a.sessionId); if(a.actor?.wakeupId){const w=this.app.wakeups.get(SYSTEM,a.actor.wakeupId);if(w.sourceKind==='run-result'){this.app.store.update<Wakeup>('wakeup',w.id,w.version,{analysisSessionPath:this.app.store.paths.reference(resolve(file))});return;}} if(s.piSessionPath&&this.app.store.paths.same(s.piSessionPath,resolve(file)))return;this.app.store.update<Session>('session', s.id, s.version, { piSessionPath: this.app.store.paths.reference(resolve(file)) }); }

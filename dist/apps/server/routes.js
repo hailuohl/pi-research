@@ -1,4 +1,5 @@
 import { operationRoute } from './operation-routes.js';
+import { readEnvironment } from './environment-routes.js';
 import { randomUUID } from 'node:crypto';
 import { readIntegrationRoute, writeIntegrationRoute } from './integration-routes.js';
 import { readCampaignRoute, writeCampaignRoute } from './campaign-routes.js';
@@ -10,6 +11,8 @@ import { object, text, integer, bool, strings, oneOf } from '../../packages/cont
 import { CAPABILITIES } from '../../packages/contracts/capabilities.js';
 import { eventQuery } from './event-stream.js';
 export function readRoute(app, host, path, url) {
+    if (path === '/settings/environment')
+        return readEnvironment(app, url);
     if (path === '/publication-templates') {
         ensure(url.search === '', 'INVALID_INPUT', '模板目录不接受查询参数');
         return app.publicationTemplates.list(USER);

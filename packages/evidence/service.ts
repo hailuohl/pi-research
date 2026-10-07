@@ -14,11 +14,21 @@ import { scope, userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { text, integer, strings } from '../contracts/validation.js';
+import {environmentSecrets,redactEnvironment} from '../runtime/environment.js';
 export class EvidenceService {
     constructor(private c: AppContext) { }
     /** Host-only staging: immutable CAS bytes, without publishing any database record. */
     prepareArtifact(projectId: string, title: string, bytes: Buffer, mediaType = 'text/plain', origin = 'user', extra: Partial<Artifact> = {}):Artifact {
         this.c.store.get('project', projectId);
+        if(origin.startsWith('agent:')) {
+            const secrets=environmentSecrets(this.c.dataDir);
+            ensure(!secrets.some(secret=>mediaType.includes(secret)),'ARTIFACT_SECRET_METADATA','产物格式包含环境变量敏感值，未创建',409);
+            title=redactEnvironment(this.c.dataDir,title);
+            if(secrets.some(secret=>bytes.includes(Buffer.from(secret)))) {
+                let content:string;try{content=new TextDecoder('utf-8',{fatal:true}).decode(bytes);ensure(!content.includes('\0'),'ARTIFACT_SECRET_BINARY','二进制产物包含环境变量敏感值，未创建',409);}catch{ensure(false,'ARTIFACT_SECRET_BINARY','二进制产物包含环境变量敏感值，未创建',409);}
+                bytes=Buffer.from(redactEnvironment(this.c.dataDir,content));
+            }
+        }
         text(title, 'title', 200);
         ensure(bytes.length <= 32 * 1024 * 1024, 'ARTIFACT_TOO_LARGE', '产物超过 32 MiB', 413);
         const blob=prepareArtifactBlob(this.c.store,bytes);

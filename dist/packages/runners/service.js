@@ -8,15 +8,16 @@ import { object, text, integer, oneOf } from '../contracts/validation.js';
 import { collectRunArtifacts } from './artifacts.js';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, existsSync, openSync, closeSync, chmodSync } from 'node:fs';
+import { mkdirSync, readFileSync, existsSync, writeFileSync, openSync, closeSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { ensure, asError } from '../domain/errors.js';
 import { scope, userOnly, toolAllowed } from '../policy/permissions.js';
 import { digest, now } from '../storage/store.js';
-import { snapshotDirectory, verifySnapshot } from '../workspace/files.js';
+import { snapshotDirectory, verifySnapshot, safePath } from '../workspace/files.js';
 import { verifyTrustedExample, validateContract } from './contracts.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { readLogPage } from '../execution/log-page.js';
+import { hasEnvironmentSecrets, redactEnvironment } from '../runtime/environment.js';
 import { ComputeQueue } from '../scheduler/compute-queue.js';
 import { assertRunGrantActor, assertRunGrantIntent, assertRunGrantRun, consumeRunGrant } from '../policy/run-grant-validation.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
@@ -299,7 +300,28 @@ export class RunService {
     logs(actor, id, cursor = 0, stream = 'stdout', identity) {
         const run = this.get(actor, id);
         oneOf(stream, ['stdout', 'stderr'], 'stream');
-        return readLogPage(this.c.store.paths.physical(run.execution?.controlDir ?? run.outputDir), `${stream}.log`, cursor, { terminal: TERMINAL.includes(run.state), identity });
+        const root = this.c.store.paths.physical(run.execution?.controlDir ?? run.outputDir), terminal = TERMINAL.includes(run.state);
+        if (run.execution?.backend === 'local' && terminal && !existsSync(safePath(root, `${stream}.log`))) {
+            const archived = run.artifactIds.map(id => this.c.store.get('artifact', id)).find(a => a.title === `${stream}.log`);
+            if (archived) {
+                const { bytes } = this.evidence.read(actor, archived.id), name = `public-${digest(bytes)}-${stream}.log`, path = safePath(root, name);
+                if (!existsSync(path))
+                    writeFileSync(path, bytes, { flag: 'wx', mode: 0o600 });
+                return readLogPage(root, name, cursor, { terminal: true, identity });
+            }
+        }
+        if (run.execution?.backend === 'local' && hasEnvironmentSecrets(this.c.dataDir)) {
+            integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER);
+            // No partial bytes leave a live log: a value may span pages or writes.
+            if (!terminal)
+                return { content: '', cursor: 0, complete: false, start: 0, size: 0, identity: null };
+            const file = `${stream}.log`, raw = existsSync(safePath(root, file)) ? readStableFile(root, file, run.manifest.contract.logBytes ?? 16 * 1024 * 1024) : Buffer.alloc(0);
+            const masked = Buffer.from(redactEnvironment(this.c.dataDir, new TextDecoder('utf-8', { fatal: true }).decode(raw))), name = `public-${digest(masked)}-${stream}.log`, path = safePath(root, name);
+            if (!existsSync(path))
+                writeFileSync(path, masked, { flag: 'wx', mode: 0o600 });
+            return readLogPage(root, name, cursor, { terminal: true, identity });
+        }
+        return readLogPage(root, `${stream}.log`, cursor, { terminal, identity });
     }
     sourceList(actor, id) { const r = this.get(actor, id); verifySnapshot(this.c.store.paths.physical(r.manifest.snapshotPath), r.manifest.sourceFiles); const revisionId = r.manifest.sourceRevisionId ?? digest({ projectId: r.projectId, experimentId: r.experimentId, revision: r.manifest.experimentRevision }), binding = this.c.store.maybe('git-source-binding', revisionId); return { runId: r.id, experimentId: r.experimentId, revision: r.manifest.experimentRevision, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit ?? (binding?.sourceDigest === r.manifest.snapshotDigest ? binding.gitCommit : undefined), files: r.manifest.sourceFiles }; }
     sourceRead(actor, id, value) {

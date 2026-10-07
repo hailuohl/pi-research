@@ -1,7 +1,7 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { ProjectEventFeed } from "./event-feed.js";
-import { SchedulerView } from "./scheduler-view.js";
+import { EnvironmentView } from "./environment-view.js";
 import { IntegrationsView } from "./integrations.js";
 import { api } from "./api.js";
 import { short } from "./models.js";
@@ -10,12 +10,12 @@ import { Chat, Experiments, Inspector } from "./workbench.js";
 import { SessionList } from "./session-list.js";
 import { ProjectCreationModal } from "./github-controls.js";
 import { WorkspaceView, EvidenceView, ReportsView, LiteratureView, SettingsView } from "./data-views.js";
-const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["scheduler", "\u8D44\u6E90\u4E0E\u8C03\u5EA6", "resources"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u8BBE\u7F6E\u4E0E\u80FD\u529B", "settings"]];
+const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["environment", "\u73AF\u5883", "settings"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u8BBE\u7F6E\u4E0E\u80FD\u529B", "settings"]];
 const navigationGroups = [
   { name: "\u7814\u7A76", ids: ["chat", "experiments"] },
-  { name: "\u7BA1\u7406", ids: ["integrations", "scheduler", "settings"] }
+  { name: "\u7BA1\u7406", ids: ["integrations", "environment", "settings"] }
 ];
-const normalizeView = (tab) => ["campaigns", "implementation", "changes"].includes(tab) ? "chat" : tab;
+const normalizeView = (tab) => tab === "scheduler" ? "environment" : ["campaigns", "implementation", "changes"].includes(tab) ? "chat" : tab;
 function saved() {
   try {
     return JSON.parse(localStorage.getItem("pi-research-ui-v1") ?? "{}");
@@ -457,7 +457,7 @@ class App extends React.Component {
         /* @__PURE__ */ jsxs("div", { className: "workbench-content " + (["chat", "experiments"].includes(tab) && data ? "with-inspector" : ""), children: [
           /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
             boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
-            !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
+            !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : tab === "environment" ? /* @__PURE__ */ jsx(EnvironmentView, {}) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
               /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
               /* @__PURE__ */ jsxs("h1", { children: [
                 "\u6BCF\u4E00\u4E2A\u7814\u7A76\uFF0C",
@@ -474,7 +474,7 @@ class App extends React.Component {
                 /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
               ] }),
               /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002" })
-            ] }) : tab === "chat" ? null : tab === "scheduler" ? /* @__PURE__ */ jsx(SchedulerView, { data, perform: this.perform }, data.project.id) : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { onSession: (id) => this.selectSession(id), onChat: () => this.setState({ tab: "chat" }), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
+            ] }) : tab === "chat" ? null : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { onSession: (id) => this.selectSession(id), onChat: () => this.setState({ tab: "chat" }), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
               this.invalidateRead();
               this.setState({ selectedExp, selectedRun: "" });
             }, onRun: (selectedRun, selectedExp) => {
@@ -505,7 +505,7 @@ class App extends React.Component {
               this.setState({ selectedRun, selectedExp, tab: "experiments" });
             } }, data.project.id) : null
           ] }),
-          data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { onScheduler: () => this.setState({ tab: "scheduler" }), data, boot, tab, sessionId: collaborationSessionId, inlineWorkflows: tab === "chat" && currentSession?.role === "coordinator" && !currentSession.taskId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onConfig: () => {
+          data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { data, boot, tab, sessionId: collaborationSessionId, inlineWorkflows: tab === "chat" && currentSession?.role === "coordinator" && !currentSession.taskId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onConfig: () => {
             if (experiment)
               this.perform(async () => {
                 const file = await api(`/experiments/${experiment.id}/files?path=config.json`);

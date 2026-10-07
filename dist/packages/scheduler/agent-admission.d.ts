@@ -22,8 +22,8 @@ export interface AgentCounts {
 }
 export interface AgentCapacityDTO {
     version: number;
-    maxWorkers: number;
-    available: number;
+    maxWorkers: null;
+    available: null;
     unit: 'pi-worker';
     httpConcurrencyMeasured: false;
     counts: AgentCounts;
@@ -55,7 +55,7 @@ export declare class AgentAdmissionService {
     sessionHeld(sessionId: string): boolean;
     snapshot(pid?: string): AgentCapacityDTO;
     inspect(actor: Actor, pid?: string): AgentCapacityDTO;
-    configure(actor: Actor, value: unknown): AgentCapacityDTO;
+    configure(actor: Actor, _value: unknown): AgentCapacityDTO;
     check(pid: string, role: Role, teamId?: string): boolean;
     tryAcquire(session: Row<Session>, generation: number, ownerHost: string, teamId?: string): Row<AgentAdmission> | null;
     private owned;

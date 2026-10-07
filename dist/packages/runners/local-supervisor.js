@@ -8,6 +8,7 @@ import { verifySnapshot, safePath } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { ensure } from '../domain/errors.js';
 import { digest } from '../storage/store.js';
+import { environmentVariables } from '../runtime/environment.js';
 export async function superviseLocalRun(initial, c, callbacks) {
     const generation = initial.execution.generation, control = c.store.paths.physical(initial.execution.controlDir), output = c.store.paths.physical(initial.outputDir), work = join(control, 'work');
     let possible = initial.execution.startRequested, lost = false;
@@ -42,8 +43,13 @@ export async function superviseLocalRun(initial, c, callbacks) {
         }
         const temp = join(control, 'tmp');
         mkdirSync(temp, { recursive: true });
-        const specPath = join(control, 'native-spec.json');
-        writeFileSync(specPath, JSON.stringify({ executable: runtime.executable, argv: run.manifest.contract.command.slice(1), env: localEnvironment(temp, output, run.manifest.contract.gpu?.deviceIds), work, control, manifestDigest: run.manifestDigest }), { mode: 0o600 });
+        const specPath = join(control, 'native-spec.json'), baseEnvironment = localEnvironment(temp, output, run.manifest.contract.gpu?.deviceIds), spec = { executable: runtime.executable, argv: run.manifest.contract.command.slice(1), env: { ...environmentVariables(c.dataDir), ...baseEnvironment }, work, control, manifestDigest: run.manifestDigest };
+        writeFileSync(specPath, JSON.stringify(spec), { mode: 0o600 });
+        let cleared = false;
+        const clearEnvironment = () => { if (!cleared) {
+            writeFileSync(specPath, JSON.stringify({ ...spec, env: baseEnvironment }), { mode: 0o600 });
+            cleared = true;
+        } };
         callbacks.assertGrant(read());
         ensure(!read().cancelRequested, 'RUN_CANCELLED', '作业已取消');
         patch({ startedAt: new Date().toISOString(), execution: { ...read().execution, startRequested: true } });
@@ -91,10 +97,14 @@ export async function superviseLocalRun(initial, c, callbacks) {
                 }
             if (stopping)
                 writeFileSync(join(control, 'native-cancel'), 'cancel', { mode: 0o600 });
-            if (r.state === 'submitting' && existsSync(join(control, 'native-start.json')))
-                patch({ state: r.cancelRequested ? 'cancelling' : 'running' });
+            if (existsSync(join(control, 'native-start.json'))) {
+                clearEnvironment();
+                if (r.state === 'submitting')
+                    patch({ state: r.cancelRequested ? 'cancelling' : 'running' });
+            }
             await pause(100);
         }
+        clearEnvironment();
         if (spawnError) {
             await finish('failed', null, 'LOCAL_HELPER_UNAVAILABLE', true);
             return;

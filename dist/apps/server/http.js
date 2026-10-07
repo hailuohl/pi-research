@@ -1,4 +1,5 @@
 import { operationRoute } from './operation-routes.js';
+import { writeEnvironment } from './environment-routes.js';
 import http from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
@@ -77,6 +78,8 @@ export function createHttpServer(options) {
                 catch {
                     throw new DomainError('INVALID_JSON', '请求不是有效 JSON', 400);
                 }
+                if (route === '/settings/environment')
+                    return json(writeEnvironment(app, url, req.method, body, key));
                 const controller = new AbortController();
                 if (route === '/publication-templates') {
                     ensure(req.method === 'POST' && url.search === '', 'METHOD_NOT_ALLOWED', '模板导入只接受无查询参数的 POST', 405);

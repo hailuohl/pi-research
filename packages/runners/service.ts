@@ -25,6 +25,7 @@ import { verifyTrustedExample, validateContract } from './contracts.js';
 import { finiteMetrics } from '../contracts/validation.js';
 import {readStableFile} from '../workspace/stable-file.js';
 import {readLogPage} from '../execution/log-page.js';
+import {hasEnvironmentSecrets,redactEnvironment} from '../runtime/environment.js';
 import {ComputeQueue} from '../scheduler/compute-queue.js';
 import {assertRunGrantActor,assertRunGrantIntent,assertRunGrantRun,consumeRunGrant} from '../policy/run-grant-validation.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
@@ -229,7 +230,21 @@ export class RunService {
     }
     logs(actor: Actor, id: string, cursor = 0, stream:'stdout'|'stderr'='stdout',identity?:string|null) {
         const run=this.get(actor,id);oneOf(stream,['stdout','stderr'] as const,'stream');
-        return readLogPage(this.c.store.paths.physical(run.execution?.controlDir??run.outputDir),`${stream}.log`,cursor,{terminal:TERMINAL.includes(run.state),identity});
+        const root=this.c.store.paths.physical(run.execution?.controlDir??run.outputDir),terminal=TERMINAL.includes(run.state);
+        if(run.execution?.backend==='local'&&terminal&&!existsSync(safePath(root,`${stream}.log`))){
+            const archived=run.artifactIds.map(id=>this.c.store.get<import('../domain/types.js').Artifact>('artifact',id)).find(a=>a.title===`${stream}.log`);
+            if(archived){const {bytes}=this.evidence.read(actor,archived.id),name=`public-${digest(bytes)}-${stream}.log`,path=safePath(root,name);if(!existsSync(path))writeFileSync(path,bytes,{flag:'wx',mode:0o600});return readLogPage(root,name,cursor,{terminal:true,identity});}
+        }
+        if(run.execution?.backend==='local'&&hasEnvironmentSecrets(this.c.dataDir)){
+            integer(cursor,'cursor',0,Number.MAX_SAFE_INTEGER);
+            // No partial bytes leave a live log: a value may span pages or writes.
+            if(!terminal)return {content:'',cursor:0,complete:false,start:0,size:0,identity:null};
+            const file=`${stream}.log`,raw=existsSync(safePath(root,file))?readStableFile(root,file,run.manifest.contract.logBytes??16*1024*1024):Buffer.alloc(0);
+            const masked=Buffer.from(redactEnvironment(this.c.dataDir,new TextDecoder('utf-8',{fatal:true}).decode(raw))),name=`public-${digest(masked)}-${stream}.log`,path=safePath(root,name);
+            if(!existsSync(path))writeFileSync(path,masked,{flag:'wx',mode:0o600});
+            return readLogPage(root,name,cursor,{terminal:true,identity});
+        }
+        return readLogPage(root,`${stream}.log`,cursor,{terminal,identity});
     }
     sourceList(actor:Actor,id:string) {const r=this.get(actor,id);verifySnapshot(this.c.store.paths.physical(r.manifest.snapshotPath),r.manifest.sourceFiles);const revisionId=r.manifest.sourceRevisionId??digest({projectId:r.projectId,experimentId:r.experimentId,revision:r.manifest.experimentRevision}),binding=this.c.store.maybe<GitSourceBinding>('git-source-binding',revisionId);return {runId:r.id,experimentId:r.experimentId,revision:r.manifest.experimentRevision,sourceDigest:r.manifest.snapshotDigest,gitCommit:r.manifest.gitCommit??(binding?.sourceDigest===r.manifest.snapshotDigest?binding.gitCommit:undefined),files:r.manifest.sourceFiles};}
     sourceRead(actor:Actor,id:string,value:unknown) {

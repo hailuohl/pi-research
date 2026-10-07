@@ -1,3 +1,4 @@
+import { environmentVariables } from '../runtime/environment.js';
 import { discoveryContext, assertDiscoveryContext, discoveryScope, reserveConnectorCall, discoveryProof, ownerSearchNextPage } from '../policy/discovery-grant-validation.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
@@ -10,7 +11,7 @@ import { searchProvider, searchOpenAlexPage, searchPubmedPage, searchCrossrefPag
 import { parsePubmedPmcid, parsePmcFullText } from './pmc.js';
 import { connectorSettings, assertSourceEnabled } from './settings.js';
 import { CONNECTOR_CAPABILITIES } from './catalog.js';
-const envCredentials = () => ({ openalexKey: process.env.OPENALEX_API_KEY, ncbiKey: process.env.NCBI_API_KEY, email: process.env.NCBI_EMAIL });
+const envCredentials = (dataDir) => { const configured = environmentVariables(dataDir); return { openalexKey: configured.OPENALEX_API_KEY ?? process.env.OPENALEX_API_KEY, ncbiKey: configured.NCBI_API_KEY ?? process.env.NCBI_API_KEY, email: configured.NCBI_EMAIL ?? process.env.NCBI_EMAIL }; };
 const PAGE_CURSOR_TTL_MS = 4 * 60 * 1000;
 function parsePageRequest(value) { const x = object(value), keys = ['number', 'previousSearchId', 'cursor', 'expiresAt']; ensure(Object.keys(x).length === keys.length && keys.every(k => Object.hasOwn(x, k)), 'INVALID_INPUT', '分页请求结构无效', 400); const number = integer(x.number, 'page number', 1, Number.MAX_SAFE_INTEGER), previousSearchId = x.previousSearchId === null ? null : text(x.previousSearchId, 'previousSearchId', 100), cursor = text(x.cursor, 'cursor', 5000), expiresAt = x.expiresAt === null ? null : text(x.expiresAt, 'expiresAt', 40); if (expiresAt !== null)
     ensure(Number.isFinite(Date.parse(expiresAt)), 'INVALID_INPUT', '分页期限无效', 400); if (number === 1)
@@ -27,7 +28,7 @@ export class ConnectorService {
         this.c = c;
         this.evidence = evidence;
         this.transport = options.transport ?? new ConnectorTransport();
-        this.credentials = options.credentials ?? envCredentials;
+        this.credentials = options.credentials ?? (() => envCredentials(c.dataDir));
     }
     settings(actor, pid) { scope(actor, pid); this.c.store.get('project', pid); const cfg = connectorSettings(this.c.store, pid), creds = this.credentials(); return { ...cfg, requestsUsed: this.c.store.list('connector-call', pid).length, credentials: { openalexKeyConfigured: !!creds.openalexKey, ncbiKeyConfigured: !!creds.ncbiKey, ncbiEmailConfigured: !!creds.email }, capabilities: CONNECTOR_CAPABILITIES, budgetUnit: 'HTTP request attempts; not currency', defaults: 'New remote sources disabled; existing Crossref retained' }; }
     observations(actor, pid) { scope(actor, pid); this.c.store.get('project', pid); return this.c.store.db.prepare("SELECT data FROM records WHERE kind='connector-call' AND project_id=? ORDER BY rowid DESC LIMIT 50").all(pid).map(r => { const x = JSON.parse(r.data); return { id: x.id, source: x.source, host: x.host, status: x.status, startedAt: x.startedAt, httpStatus: x.httpStatus ?? null, retryAfter: x.retryAfter ?? null, error: x.error ?? null }; }); }

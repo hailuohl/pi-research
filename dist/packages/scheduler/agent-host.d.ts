@@ -23,6 +23,7 @@ interface Active {
     failedToolCalls?: Set<string>;
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;
+    deltaTail?: string;
 }
 /** Dependency injection is in-process test infrastructure only; HTTP/config never select a replacement worker. */
 interface HostDependencies {
@@ -37,6 +38,8 @@ interface HostDependencies {
 export declare class AgentHost {
     private app;
     private dependencies;
+    private redact;
+    private clean;
     readonly tools: ToolDispatcher;
     readonly active: Map<string, Active>;
     private timer?;
@@ -48,7 +51,7 @@ export declare class AgentHost {
     private inspect;
     status(): {
         activeWorkers: number;
-        maxModelWorkers: number;
+        maxModelWorkers: null;
         workerCapacity: import("./agent-admission.js").AgentCapacityDTO;
         workerUnit: string;
         httpConcurrencyMeasured: boolean;

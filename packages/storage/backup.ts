@@ -9,6 +9,7 @@ import type {SourceSnapshot,Row,Team,Task} from '../domain/types.js';
 import {teamWakeupSource,wakeupId} from '../scheduler/wakeups.js';
 import {GitCommand} from '../workspace/git-command.js';
 import {DataPaths,readDataLocation,setDataLocation} from './data-paths.js';
+import {hasEnvironmentSecrets,environmentSecrets,redactEnvironment} from '../runtime/environment.js';
 
 type Entry={path:string;type:'directory';mode:number}|{path:string;type:'file';mode:number;size:number;digest:string};
 interface Manifest {format:'pi-research-backup-v1'|'pi-research-backup-v2';sourceRoot:string;legacyRoots?:string[];platform:string;createdAt:string;schema:number[];entries:Entry[];excluded:string[];manifestDigest:string;}
@@ -40,12 +41,16 @@ function fileBytes(path:string,destination?:string) {
   return {size,digest:hash.digest('hex')};
  }finally{closeSync(fd);if(output!==undefined)closeSync(output);}
 }
-function managedTree(root:string,destination?:string) {
+function managedTree(root:string,destination?:string,privateLocalJobs:ReadonlySet<string>=new Set()) {
  const entries:Entry[]=[],excluded:string[]=[];
+ const secrets=environmentSecrets(root);
+ const sensitiveNarrative=(value:unknown,active=false):boolean=>typeof value==='string'?active&&secrets.some(secret=>value.includes(secret)):Array.isArray(value)?value.some(item=>sensitiveNarrative(item,active)):plain(value)?Object.entries(value).some(([key,item])=>sensitiveNarrative(item,active||['text','thinking','errorMessage','summary','arguments','error'].includes(key)||['message','content'].includes(key)&&typeof item==='string')):false;
  function walk(path:string) {
   const source=join(root,path),info=lstatSync(source);ensure(!info.isSymbolicLink(),'BACKUP_PATH_DENIED','管理树不能含链接',403);
-  if(path&&EXCLUDED.has(path)){excluded.push(path);return;}
+  if(path&&(EXCLUDED.has(path)||/^environment-variables\.json(?:\.[\w-]+\.tmp)?$/i.test(path)||/^jobs\/[^/]+\/control\/native-spec\.json$/.test(path))){excluded.push(path);return;}
   const parts=path.split('/');
+  const privateJob=parts[0]==='jobs'&&privateLocalJobs.has(parts[1]);
+  if(privateJob&&parts.length>3&&!(parts.length===4&&parts[2]==='control'&&/^(?:native-(?:start|result)|terminal(?:-\d+)?)\.json$/.test(parts[3]))){excluded.push(redactEnvironment(root,path));return;}
   if(parts[0]==='sessions'&&parts.length===3&&parts[2]==='agent'){excluded.push(path+'/');return;}
   ensure(!/\.text-write-(pending|stage-|backup-)/.test(path),'BACKUP_RECOVERY_PENDING','有未解决的文件恢复，请先对账',409);
   if(parts.length===1&&path){ensure(path==='state.db'||ROOTS.has(path),'BACKUP_UNKNOWN_CONTENT','发现未知顶层内容：'+path,409);if(path==='state.db')return;}
@@ -55,8 +60,16 @@ function managedTree(root:string,destination?:string) {
    if(path==='state.db.text-writes')ensure(readdirSync(source).length===0,'BACKUP_RECOVERY_PENDING','文本写入日志尚未清理',409);
    if(destination&&path)mkdirSync(join(destination,path),{mode:0o700});
    entries.push({path,type:'directory',mode:info.mode&0o777});
-   for(const name of readdirSync(source).sort())walk(path?path+'/'+name:name);
-  }else {entries.push({path,type:'file',mode:info.mode&0o777,...fileBytes(source,destination?join(destination,path):undefined)});if(destination)chmodSync(join(destination,path),info.mode&0o777);}
+   if(privateJob&&parts.length===3&&parts[2]==='output')excluded.push(path+'/*');
+   else for(const name of readdirSync(source).sort())walk(path?path+'/'+name:name);
+  }else {
+   if(secrets.length&&/^sessions\/[^/]+\/pi(?:-analysis)?\/.+\.jsonl$/i.test(path)){
+    const raw=readFileSync(source,'utf8');let containsSecret:boolean;
+    try{containsSecret=raw.split(/\r?\n/).filter(line=>line.trim()).some(line=>sensitiveNarrative(JSON.parse(line)));}catch{containsSecret=secrets.some(secret=>raw.includes(secret));}
+    ensure(!containsSecret,'BACKUP_SECRET_TRACE','原生会话记录包含环境变量敏感值；备份未创建，原始会话保留',409);
+   }
+   entries.push({path,type:'file',mode:info.mode&0o777,...fileBytes(source,destination?join(destination,path):undefined)});if(destination)chmodSync(join(destination,path),info.mode&0o777);
+  }
   // ponytail: one bounded manifest; introduce chunked manifests only for larger real data sets.
   ensure(entries.length<=100000,'BACKUP_TOO_LARGE','备份清单最多100000项',413);
  }
@@ -162,7 +175,7 @@ function manifestAt(backupDir:string):Manifest {
  ensure(m.format==='pi-research-backup-v1'?m.legacyRoots===undefined:Array.isArray(m.legacyRoots),'BACKUP_INVALID','备份位置清单无效',400);new DataPaths(m.sourceRoot,(m.legacyRoots??[]) as string[]);
  const {manifestDigest,...body}=m;ensure(digest(body)===manifestDigest,'BACKUP_CONTENT_MISMATCH','备份清单摘要不符',409);
  const names=new Set<string>();let roots=0;
- for(const raw of m.entries){ensure(plain(raw)&&typeof raw.path==='string'&&(raw.type==='file'||raw.type==='directory')&&Number.isInteger(raw.mode)&&Number(raw.mode)>=0&&Number(raw.mode)<=0o777,'BACKUP_INVALID','备份条目无效',400);const name=relativeName(raw.path,true),fold=name.toLowerCase(),parts=name.split('/');ensure(!names.has(fold),'BACKUP_INVALID','备份有重复或大小写冲突条目',400);names.add(fold);ensure(name===''||name==='state.db'||ROOTS.has(parts[0]),'BACKUP_INVALID','备份包含未知管理树',400);ensure(!EXCLUDED.has(name)&&!(parts[0]==='sessions'&&parts[2]==='agent')&&!/\.text-write-(pending|stage-|backup-)/.test(name)&&!name.startsWith('state.db.text-writes/'),'BACKUP_INVALID','备份包含认证文件或未解决恢复',400);if(name===''){ensure(raw.type==='directory','BACKUP_INVALID','数据根无效',400);roots++;}if(raw.type==='file')ensure(name!==''&&Number.isSafeInteger(raw.size)&&Number(raw.size)>=0&&typeof raw.digest==='string'&&/^[a-f0-9]{64}$/.test(raw.digest),'BACKUP_INVALID','文件摘要或大小无效',400);}
+ for(const raw of m.entries){ensure(plain(raw)&&typeof raw.path==='string'&&(raw.type==='file'||raw.type==='directory')&&Number.isInteger(raw.mode)&&Number(raw.mode)>=0&&Number(raw.mode)<=0o777,'BACKUP_INVALID','备份条目无效',400);const name=relativeName(raw.path,true),fold=name.toLowerCase(),parts=name.split('/');ensure(!names.has(fold),'BACKUP_INVALID','备份有重复或大小写冲突条目',400);names.add(fold);ensure(name===''||name==='state.db'||ROOTS.has(parts[0]),'BACKUP_INVALID','备份包含未知管理树',400);ensure(!EXCLUDED.has(name)&&!/^jobs\/[^/]+\/control\/native-spec\.json$/.test(name)&&!(parts[0]==='sessions'&&parts[2]==='agent')&&!/\.text-write-(pending|stage-|backup-)/.test(name)&&!name.startsWith('state.db.text-writes/'),'BACKUP_INVALID','备份包含认证文件或未解决恢复',400);if(name===''){ensure(raw.type==='directory','BACKUP_INVALID','数据根无效',400);roots++;}if(raw.type==='file')ensure(name!==''&&Number.isSafeInteger(raw.size)&&Number(raw.size)>=0&&typeof raw.digest==='string'&&/^[a-f0-9]{64}$/.test(raw.digest),'BACKUP_INVALID','文件摘要或大小无效',400);}
  ensure(roots===1&&names.has('state.db'),'BACKUP_INVALID','缺少数据根或数据库',400);
  return m as unknown as Manifest;
 }
@@ -187,14 +200,15 @@ export async function createDataBackup(source:string,path:string,options:{offlin
  try {
   // This lock blocks database writers; --offline remains necessary for filesystem-only preparation.
   db=new DatabaseSync(join(root,'state.db'));db.exec('PRAGMA busy_timeout=1000; BEGIN IMMEDIATE');stateCheck(db);
-  mkdirSync(join(stage,'data'),{mode:0o700});const tree=managedTree(root,join(stage,'data'));
+  const privateLocalJobs=new Set(hasEnvironmentSecrets(root)?db.prepare("SELECT id FROM records WHERE kind='run' AND json_extract(data,'$.execution.backend')='local'").all().map(row=>String(row.id)):[]);
+  mkdirSync(join(stage,'data'),{mode:0o700});const tree=managedTree(root,join(stage,'data'),privateLocalJobs);
   const reader=new DatabaseSync(join(root,'state.db'),{readOnly:true});try{await backup(reader,join(stage,'data','state.db'));}finally{reader.close();}
   const copy=new DatabaseSync(join(stage,'data','state.db'));try{copy.exec('PRAGMA journal_mode=DELETE');}finally{copy.close();}chmodSync(join(stage,'data','state.db'),0o600);
   const dbEntry:Entry={path:'state.db',type:'file',mode:lstatSync(join(root,'state.db')).mode&0o777,...fileBytes(join(stage,'data','state.db'))};
   const entries=[...tree.entries,dbEntry].sort((a,b)=>a.path.localeCompare(b.path));
   const location=readDataLocation(db),legacyRoots=location?.legacyRoots??[];ensure(!location||location.activeRoot===root,'BACKUP_LOCATION_MISMATCH','数据目录需要受控迁移，不能直接复制后备份',409);
   const schema=await references(db,root,join(stage,'data'),entries,legacyRoots);
-  ensure(digest(managedTree(root))===digest(tree),'BACKUP_SOURCE_CHANGED','复制期间管理文件发生变化，备份未发布',409);
+  ensure(digest(managedTree(root,undefined,privateLocalJobs))===digest(tree),'BACKUP_SOURCE_CHANGED','复制期间管理文件发生变化，备份未发布',409);
   const body={format:'pi-research-backup-v2' as const,sourceRoot:root,legacyRoots,platform:process.platform,createdAt:new Date().toISOString(),schema,entries,excluded:tree.excluded},m={...body,manifestDigest:digest(body)};
   writeFileSync(join(stage,'manifest.json'),JSON.stringify(m,null,2)+'\n',{mode:0o600,flag:'wx'});await verifyDataBackup(stage);
   destination(target);renameSync(stage,target);return summary(target,m);

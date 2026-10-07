@@ -4462,7 +4462,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "approvalId" | "inputDigest" | "reason" | "projectId" | "updatedAt" | "action" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
+        readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "approvalId" | "inputDigest" | "reason" | "action" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
         readonly additionalProperties: false;
     };
     readonly campaign_inspect: {
@@ -5365,7 +5365,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "approvalId" | "inputDigest" | "reason" | "projectId" | "updatedAt" | "action" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
+                    readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "approvalId" | "inputDigest" | "reason" | "action" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -13739,10 +13739,10 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "integer";
             };
             readonly maxWorkers: {
-                readonly type: "integer";
+                readonly type: "null";
             };
             readonly available: {
-                readonly type: "integer";
+                readonly type: "null";
             };
             readonly unit: {
                 readonly const: "pi-worker";
@@ -13866,7 +13866,7 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "effectiveMaxAgents" | "counts" | "assistantAvailable")[];
+                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "counts" | "assistantAvailable")[];
                 readonly additionalProperties: false;
             };
         };
@@ -13880,10 +13880,10 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "integer";
             };
             readonly maxWorkers: {
-                readonly type: "integer";
+                readonly type: "null";
             };
             readonly available: {
-                readonly type: "integer";
+                readonly type: "null";
             };
             readonly unit: {
                 readonly const: "pi-worker";
@@ -14007,7 +14007,7 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "effectiveMaxAgents" | "counts" | "assistantAvailable")[];
+                readonly required: ("projectId" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "assistantHeld" | "available" | "byRole" | "blockedBy" | "counts" | "assistantAvailable")[];
                 readonly additionalProperties: false;
             };
         };
@@ -14024,7 +14024,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                     readonly maxRequests: {
-                        readonly type: "integer";
+                        readonly type: "null";
                     };
                 };
                 readonly required: ("version" | "maxRequests")[];
@@ -14053,7 +14053,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly available: {
-                readonly type: "integer";
+                readonly type: "null";
             };
             readonly coverage: {
                 readonly enum: readonly ["managed-fetch", "legacy-workers-present"];
@@ -14131,7 +14131,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                     readonly maxRequests: {
-                        readonly type: "integer";
+                        readonly type: "null";
                     };
                 };
                 readonly required: ("version" | "maxRequests")[];
@@ -14160,7 +14160,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly available: {
-                readonly type: "integer";
+                readonly type: "null";
             };
             readonly coverage: {
                 readonly enum: readonly ["managed-fetch", "legacy-workers-present"];

@@ -12,7 +12,7 @@ export class ModelHttpService {
     constructor(store) {
         this.store = store;
         store.transaction(() => { store.db.exec("CREATE INDEX IF NOT EXISTS model_http_state ON records(kind,json_extract(data,'$.state')) WHERE kind='model-http-request'"); if (!store.maybe('model-http-capacity', 'global'))
-            store.create('model-http-capacity', null, { maxRequests: 2 }, 'global'); });
+            store.create('model-http-capacity', null, { maxRequests: null }, 'global'); });
     }
     live() { return this.store.db.prepare("SELECT rowid,data FROM records WHERE kind='model-http-request' AND json_extract(data,'$.state') IN ('queued','active','unknown') ORDER BY rowid").all().map(r => ({ sequence: Number(r.rowid), ...JSON.parse(r.data) })); }
     legacy() { return Number(this.store.db.prepare("SELECT count(*) n FROM records WHERE kind='agent-admission' AND json_extract(data,'$.state')<>'released' AND COALESCE(json_extract(data,'$.httpManagedVersion'),0)<>1").get().n); }
@@ -30,17 +30,12 @@ export class ModelHttpService {
                     return { allowed: true, requestId: r.id };
             }
             else {
-                ensure(this.live().length < 256, 'MODEL_HTTP_QUEUE_FULL', '共享HTTP请求等待数量达到上限');
                 r = this.store.create('model-http-request', session.projectId, { ...w, provider: session.model.provider, model: session.model.model, state: 'queued', queuedAt: now() }, prior.id);
                 this.store.event(session.projectId, 'model-http.queued', { requestId: r.id, sessionId: r.sessionId });
             }
-            const live = this.live(), limit = this.store.get('model-http-capacity', 'global').maxRequests;
-            const ready = !this.legacy() && live.filter(v => v.state === 'active' || v.state === 'unknown').length < limit && live.find(v => v.state === 'queued')?.id === r.id;
-            if (ready) {
-                r = this.store.update('model-http-request', r.id, r.version, { state: 'active', startedAt: now() });
-                this.store.event(r.projectId, 'model-http.started', { requestId: r.id, sessionId: r.sessionId });
-            }
-            return { allowed: ready, requestId: r.id };
+            r = this.store.update('model-http-request', r.id, r.version, { state: 'active', startedAt: now() });
+            this.store.event(r.projectId, 'model-http.started', { requestId: r.id, sessionId: r.sessionId });
+            return { allowed: true, requestId: r.id };
         });
     }
     finish(w, key, value) {
@@ -86,8 +81,8 @@ export class ModelHttpService {
         const cursor = integer(input.cursor ?? 0, 'cursor', 0, Number.MAX_SAFE_INTEGER), limit = integer(input.limit ?? 30, 'limit', 1, 100), setting = this.store.get('model-http-capacity', 'global'), live = this.live(), legacyWorkerCount = this.legacy(), counts = { queued: live.filter(r => r.state === 'queued').length, active: live.filter(r => r.state === 'active').length, unknown: live.filter(r => r.state === 'unknown').length };
         const rows = pid ? this.store.db.prepare("SELECT rowid,data FROM records WHERE kind='model-http-request' AND project_id=? AND (?=0 OR rowid<?) ORDER BY rowid DESC LIMIT ?").all(pid, cursor, cursor, limit + 1) : [];
         const items = rows.slice(0, limit).map(raw => { const { id, sessionId, provider, model, state, queuedAt, startedAt, endedAt, httpStatus, receivedBytes, outcome } = JSON.parse(raw.data); return { id, sessionId, provider, model, state, queuedAt, startedAt, endedAt, httpStatus, receivedBytes, outcome }; });
-        return { configuration: { version: setting.version, maxRequests: setting.maxRequests }, scope: 'shared-data-directory', unit: 'pi-http-request', counts, available: legacyWorkerCount ? 0 : Math.max(0, setting.maxRequests - counts.active - counts.unknown), coverage: legacyWorkerCount ? 'legacy-workers-present' : 'managed-fetch', legacyWorkerCount, supportedApis: [...MANAGED_HTTP_APIS], items, nextCursor: rows.length > limit ? Number(rows[limit - 1].rowid) : null };
+        return { configuration: { version: setting.version, maxRequests: null }, scope: 'shared-data-directory', unit: 'pi-http-request', counts, available: null, coverage: legacyWorkerCount ? 'legacy-workers-present' : 'managed-fetch', legacyWorkerCount, supportedApis: [...MANAGED_HTTP_APIS], items, nextCursor: rows.length > limit ? Number(rows[limit - 1].rowid) : null };
     }
-    configure(actor, value, pid) { userOnly(actor); const x = object(value); ensure(Object.keys(x).every(k => ['expectedVersion', 'maxRequests'].includes(k)), 'INVALID_INPUT', 'HTTP容量字段无效'); return this.store.transaction(() => { this.store.update('model-http-capacity', 'global', integer(x.expectedVersion, 'expectedVersion', 1), { maxRequests: integer(x.maxRequests, 'maxRequests', 0, 32) }); return this.inspect(actor, pid); }); }
+    configure(actor, _value, _pid) { userOnly(actor); ensure(false, 'HOST_CAPACITY_DISABLED', '本地 Pi 不设置宿主 HTTP 并发上限', 409); }
 }
 //# sourceMappingURL=model-http.js.map

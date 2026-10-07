@@ -10,14 +10,22 @@ import {setup,USER,campaign,enroll,submit,fixtureFinish} from '../support/resear
 import {startTeam,spec} from '../support/collaboration.mjs';
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 const deps={inspect:()=>({ready:true,code:'UNIT_FIXTURE',message:'No model calls'}),workerEntry:resolve('tests/fixtures/ipc-worker.mjs')};
-const config=(s,maxWorkers)=>s.app.agentAdmission.configure(USER,{expectedVersion:s.app.agentAdmission.inspect(USER).version,maxWorkers});
+const config=(s,maxWorkers)=>{const project=s.app.projects.get(USER,s.project.id);s.app.projects.settings(USER,project.id,{expectedVersion:project.version,maxActiveAgents:Math.max(2,maxWorkers),maxConcurrentAssistants:Math.min(project.settings.maxConcurrentAssistants,Math.max(1,maxWorkers-1))});};
 async function until(fn){for(let n=0;n<150;n++){if(fn())return;await pause(20);}throw new Error('Fixture condition timed out');}
 
-test('two Hosts with independent Store connections share a global worker limit and release only on child exit',async()=>{
+test('legacy host cap cannot limit multiple local sessions but project quota and duplicate fencing remain',()=>{
+ const s=setup();try{config(s,4);const legacy=s.app.store.get('agent-capacity','global');s.app.store.update('agent-capacity',legacy.id,legacy.version,{maxWorkers:1});
+  const sessions=[s.session,...Array.from({length:4},(_,i)=>s.app.sessions.create(USER,s.project.id,{title:'unlimited '+i}))];
+  for(const session of sessions.slice(0,4))assert.ok(s.app.agentAdmission.tryAcquire(session,1,'fixture'));
+  assert.equal(s.app.agentAdmission.tryAcquire(sessions[4],1,'fixture'),null);assert.equal(s.app.agentAdmission.tryAcquire(sessions[0],2,'other'),null);assert.equal(s.app.agentAdmission.snapshot().maxWorkers,null);assert.equal(s.app.agentAdmission.snapshot(s.project.id).project.available,0);
+ }finally{s.close();}
+});
+
+test('two Hosts with independent Store connections share project worker limits and release only on child exit',async()=>{
  const s=setup(),other=new ResearchApp(s.dir,process.cwd()),a=new AgentHost(s.app,deps),b=new AgentHost(other,deps);
  try {
-  for(let n=0;n<4;n++){const session=n===0?s.session:s.app.sessions.create(USER,s.project.id,{title:'parallel '+n});s.app.sessions.send(USER,session.id,{content:'UNIT real-fork fixture '+n});}
-  a.tick();b.tick();assert.equal(s.app.agentAdmission.inspect(USER).counts.held,2);assert.equal(a.active.size+b.active.size,2);assert.equal(b.status().maxModelWorkers,2);assert.equal(b.status().httpConcurrencyMeasured,false);
+  config(s,2);for(let n=0;n<4;n++){const session=n===0?s.session:s.app.sessions.create(USER,s.project.id,{title:'parallel '+n});s.app.sessions.send(USER,session.id,{content:'UNIT real-fork fixture '+n});}
+  a.tick();b.tick();assert.equal(s.app.agentAdmission.inspect(USER).counts.held,2);assert.equal(a.active.size+b.active.size,2);assert.equal(b.status().maxModelWorkers,null);assert.equal(b.status().httpConcurrencyMeasured,false);
   await a.stop();assert.equal(s.app.agentAdmission.inspect(USER).counts.held,0);b.tick();assert.equal(s.app.agentAdmission.inspect(USER).counts.held,2);
  }finally{await a.stop();await b.stop();other.close();s.close();}
 });
@@ -35,7 +43,7 @@ test('project total, project assistant and team assistant quotas count durable w
   service.release(root.id,'host',1,'not-forked');assert.equal(service.check(s.project.id,'coordinator'),true);assert.equal(service.check(s.project.id,'implementer',one.id),false);
   assert.equal(JSON.stringify(service.inspect(USER,s.project.id)).includes('workerPid'),false);assert.equal(JSON.stringify(service.inspect(USER,s.project.id)).includes('ownerHost'),false);
   assert.throws(()=>service.configure({type:'agent',projectId:s.project.id},{expectedVersion:service.snapshot().version,maxWorkers:32}),{code:'PERMISSION_DENIED'});
-  assert.throws(()=>service.configure(USER,{expectedVersion:1,maxWorkers:32}),{code:'VERSION_CONFLICT'});
+  assert.throws(()=>service.configure(USER,{expectedVersion:1,maxWorkers:32}),{code:'HOST_CAPACITY_DISABLED'});
  }finally{s.close();}
 });
 
@@ -75,7 +83,7 @@ test('expired admission before any fork request releases capacity and fences the
   config(s,1);const team=startTeam(s,[spec('not-forked')]),claimed=s.app.teams.claim(team.id),session=s.app.store.get('session',claimed.attempt.sessionId),service=s.app.agentAdmission;
   const slot=service.tryAcquire(session,1,'crashed-before-fork',team.id),budget=s.app.budget.summary(team.id);
   s.app.store.update('agent-admission',slot.id,slot.version,{leaseUntil:0});service.recover();
-  assert.equal(service.snapshot().counts.held,0);assert.equal(service.snapshot().available,1);assert.deepEqual(s.app.budget.summary(team.id),budget);
+  assert.equal(service.snapshot().counts.held,0);assert.equal(service.snapshot().available,null);assert.deepEqual(s.app.budget.summary(team.id),budget);
   assert.throws(()=>service.markSpawnRequested(slot.id,'crashed-before-fork',1),{code:'LEASE_EXPIRED'});
  }finally{s.close();}
 });

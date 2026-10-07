@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {ProjectEventFeed} from './event-feed.js';
-import {SchedulerView} from './scheduler-view.js';
+import {EnvironmentView} from './environment-view.js';
 import {IntegrationsView} from './integrations.js';
 import { api } from './api.js';
 import type { Bootstrap, Project, ProjectState, Row, Session, SessionCatalogItem, SessionCatalogPage, DocumentLocation, SessionHistoryPage, SessionView } from './models.js';
@@ -44,12 +44,12 @@ interface State {
     navigationOpen: boolean;
     sessionCreationSignal:number;
 }
-const navigation = [['chat', '研究会话', 'chat'], ['scheduler','资源与调度','resources'], ['experiments', '实验与运行', 'experiment'], ['workspace', '项目工作区', 'folder'], ['literature', '文献检索', 'search'], ['integrations', '技能与连接器', 'skills'], ['evidence', '资料与证据', 'evidence'], ['reports', '报告与成果', 'report'], ['settings', '设置与能力', 'settings']];
+const navigation = [['chat', '研究会话', 'chat'], ['environment','环境','settings'], ['experiments', '实验与运行', 'experiment'], ['workspace', '项目工作区', 'folder'], ['literature', '文献检索', 'search'], ['integrations', '技能与连接器', 'skills'], ['evidence', '资料与证据', 'evidence'], ['reports', '报告与成果', 'report'], ['settings', '设置与能力', 'settings']];
 const navigationGroups = [
     { name: '研究', ids: ['chat', 'experiments'] },
-    { name: '管理', ids: ['integrations', 'scheduler', 'settings'] },
+    { name: '管理', ids: ['integrations', 'environment', 'settings'] },
 ];
-const normalizeView = (tab:string) => ['campaigns','implementation','changes'].includes(tab) ? 'chat' : tab;
+const normalizeView = (tab:string) => tab==='scheduler'?'environment':['campaigns','implementation','changes'].includes(tab) ? 'chat' : tab;
 function saved() {
     try {
         return JSON.parse(localStorage.getItem('pi-research-ui-v1') ?? '{}');
@@ -247,16 +247,15 @@ export class App extends React.Component<{}, State> {
  <div className={'workbench-content ' + (['chat', 'experiments'].includes(tab) && data ? 'with-inspector' : '')}>
  <main className={'main-pane page-' + tab + (tab === 'chat' ? ' chat-pane' : '')}>
 {boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} busy={this.state.busy} messages={this.state.messages} pendingMessages={this.state.pendingMessages} pendingTotal={this.state.pendingTotal} pendingNextCursor={this.state.pendingNextCursor} canSteer={this.state.canSteer} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} activity={this.state.activity} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
- {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} projectId={this.state.projectId} session={currentSession} perform={this.perform}/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
+ {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} projectId={this.state.projectId} session={currentSession} perform={this.perform}/> : tab === 'environment' ? <EnvironmentView/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
                 tab === 'chat' ? null :
-                    tab === 'scheduler' ? <SchedulerView key={data.project.id} data={data} perform={this.perform}/> :
                     tab === 'experiments' ? <Experiments key={data.project.id} onSession={id=>this.selectSession(id)} onChat={()=>this.setState({tab:'chat'})} data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.invalidateRead(); this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp});}}/> :
                         tab === 'workspace' ? <WorkspaceView key={data.project.id} data={data} perform={this.perform}/> :
                             tab === 'integrations' ? <IntegrationsView key={data.project.id} projectId={data.project.id} sessionId={this.state.sessionId} refreshToken={data} readOnly={data.project.archived} onLiterature={()=>this.setState({tab:'literature'})}/> :
                             tab === 'literature' ? <LiteratureView key={data.project.id} data={data} perform={this.perform} session={currentSession} onUseDocument={this.useParsedDocument} selectedDiscoveryGrant={this.state.selectedDiscoveryGrant} onSelectDiscoveryGrant={selectedDiscoveryGrant=>this.setState({selectedDiscoveryGrant})} onSession={id=>this.selectSession(id)} selectedDocument={this.state.selectedDocument??undefined} onDocument={selectedDocument=>this.setState({selectedDocument})} onSources={()=>this.setState({tab:'integrations'})}/> :
                                 tab === 'evidence' ? <EvidenceView onDocument={selectedDocument=>this.setState({selectedDocument,tab:'literature'})} key={data.project.id} data={data} perform={this.perform} onRegister={(artifactId, content) => this.open('evidence', { artifactId, content })} onClaim={() => this.open('claim')}/> :
                                     tab === 'reports' ? <ReportsView onCampaign={selectedCampaign=>{const clearHistory={messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false};const campaign=data.campaigns.find(c=>c.id===selectedCampaign);if(!campaign){this.setState({...clearHistory,error:'指定研究活动不在当前项目中，未跳转到其他活动。'});return;}if(!campaign.rootSessionId){this.setState({...clearHistory,error:'指定研究活动没有可打开的主会话。'});return;}this.setState({selectedCampaign},()=>this.selectSession(campaign.rootSessionId));}} onSession={id=>this.selectSession(id)} onDocument={selectedDocument=>this.setState({selectedDocument,tab:'literature'})} key={data.project.id} data={data} perform={this.perform} selectedReport={this.state.selectedReport} onSelect={selectedReport=>this.setState({selectedReport})} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定报告 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp,tab:'experiments'});}}/> : null}
- </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector onScheduler={()=>this.setState({tab:'scheduler'})} data={data} boot={boot} tab={tab} sessionId={collaborationSessionId} inlineWorkflows={tab==='chat'&&currentSession?.role==='coordinator'&&!currentSession.taskId} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onConfig={() => {
+ </main>{data && boot && ['chat', 'experiments'].includes(tab) ? <Inspector data={data} boot={boot} tab={tab} sessionId={collaborationSessionId} inlineWorkflows={tab==='chat'&&currentSession?.role==='coordinator'&&!currentSession.taskId} experiment={experiment} selectedRun={this.state.selectedRun} onRun={selectedRun=>this.setState({selectedRun})} perform={this.perform} onConfig={() => {
                     if (experiment)
                         this.perform(async () => { const file = await api(`/experiments/${experiment.id}/files?path=config.json`); this.open('config', { ...file }); });
                 }} onDirective={teamId => this.open('directive', teamId)}/> : null}</div></div>{this.modalView()}</div>;

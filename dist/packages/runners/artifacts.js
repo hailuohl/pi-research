@@ -4,8 +4,24 @@ import { readStableFile } from '../workspace/stable-file.js';
 import { safePath } from '../workspace/files.js';
 import { finiteMetrics } from '../contracts/validation.js';
 import { asError, ensure } from '../domain/errors.js';
+import { environmentSecrets, redactEnvironment } from '../runtime/environment.js';
 /** Collect first, then derive completeness exclusively from the immutable archive. */
 export function collectRunArtifacts(run, evidence, paths) {
+    const secretValues = paths && run.execution?.backend === 'local' ? environmentSecrets(paths.dataDir) : [];
+    const mask = (value) => paths && secretValues.length ? redactEnvironment(paths.dataDir, value) : value;
+    const publicBytes = (bytes) => {
+        if (!secretValues.some(secret => bytes.includes(Buffer.from(secret))))
+            return bytes;
+        let value;
+        try {
+            value = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+            ensure(!value.includes('\0'), 'RUN_SECRET_BINARY', '二进制产物包含环境变量值，未归档', 409);
+        }
+        catch {
+            ensure(false, 'RUN_SECRET_BINARY', '二进制产物包含环境变量值，未归档', 409);
+        }
+        return Buffer.from(mask(value));
+    };
     if (paths)
         run = { ...run, outputDir: paths.physical(run.outputDir), ...(run.execution ? { execution: { ...run.execution, controlDir: paths.physical(run.execution.controlDir) } } : {}) };
     const artifacts = new Map(), errors = [], evidenceIds = [];
@@ -17,6 +33,7 @@ export function collectRunArtifacts(run, evidence, paths) {
             ensure(++entries <= 5000, 'OUTPUT_COUNT_LIMIT', '产物数量超过5000项');
             const path = relative ? `${relative}/${entry.name}` : entry.name;
             try {
+                ensure(!secretValues.some(secret => path.includes(secret)), 'RUN_SECRET_PATH', '产物路径包含环境变量值，未归档', 409);
                 ensure(!entry.isSymbolicLink(), 'PATH_DENIED', `${path}: 不接受符号链接`);
                 if (entry.isDirectory()) {
                     walk(path, depth + 1);
@@ -27,8 +44,16 @@ export function collectRunArtifacts(run, evidence, paths) {
                 total += bytes.length;
                 const type = path.endsWith('.json') ? 'application/json' : path.endsWith('.csv') ? 'text/csv' : 'text/plain';
                 const reserved = !!run.execution && ['stdout.log', 'stderr.log', 'execution.json'].includes(path);
+                let archived = bytes;
+                if (path === 'metrics.json' && secretValues.length) {
+                    const numeric = finiteMetrics(JSON.parse(bytes.toString('utf8')));
+                    ensure(!Object.keys(numeric).some(key => secretValues.some(secret => key.includes(secret))), 'RUN_SECRET_METRIC', '指标名称包含环境变量值，未归档', 409);
+                    // Numeric measurements are typed data, not credential-bearing narrative.
+                }
+                else
+                    archived = publicBytes(bytes);
                 const title = reserved ? `output/${path}` : path;
-                artifacts.set(title, evidence.put(run.projectId, title, bytes, type, 'run', { runId: run.id }));
+                artifacts.set(title, evidence.put(run.projectId, title, archived, type, 'run', { runId: run.id }));
                 if (reserved) {
                     unsafe = true;
                     errors.push(`${path}: 输出占用了宿主日志或回执名称`);
@@ -36,9 +61,9 @@ export function collectRunArtifacts(run, evidence, paths) {
             }
             catch (error) {
                 const e = asError(error);
-                if (e.code === 'PATH_DENIED' || e.code === 'ARTIFACT_CHANGED')
+                if (e.code === 'PATH_DENIED' || e.code === 'ARTIFACT_CHANGED' || e.code.startsWith('RUN_SECRET_'))
                     unsafe = true;
-                errors.push(`${path}: ${e.message}`);
+                errors.push(mask(`${path}: ${e.message}`));
             }
         }
     };
@@ -56,7 +81,7 @@ export function collectRunArtifacts(run, evidence, paths) {
                 continue;
             try {
                 const bytes = !existsSync(path) && !run.execution.startRequested ? Buffer.alloc(0) : readStableFile(run.execution.controlDir, name, name === 'diagnostic.log' ? 65536 : run.manifest.contract.logBytes ?? 16 * 1024 * 1024);
-                artifacts.set(name, evidence.put(run.projectId, name, bytes, 'text/plain', 'run', { runId: run.id }));
+                artifacts.set(name, evidence.put(run.projectId, name, publicBytes(bytes), 'text/plain', 'run', { runId: run.id }));
             }
             catch (error) {
                 errors.push(`${name}: ${asError(error).message}`);

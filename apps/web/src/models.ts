@@ -119,7 +119,7 @@ export interface Bootstrap {
         expectedVersion: string;
         installedVersion: string | null;
         node: string;
-        maxModelWorkers: number;
+        maxModelWorkers: null;
         hostAccess?:{available:boolean;boundary:'trusted-host';requiresExplicitSessionEnable:boolean;revokedOnRestart:boolean};
     };
     capabilities: Array<{

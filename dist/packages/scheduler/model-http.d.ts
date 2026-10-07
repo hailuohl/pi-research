@@ -23,7 +23,7 @@ export type ModelHttpItem = Pick<Row<HttpRequest>, 'id' | 'sessionId' | 'provide
 export interface ModelHttpDTO {
     configuration: {
         version: number;
-        maxRequests: number;
+        maxRequests: null;
     };
     scope: 'shared-data-directory';
     unit: 'pi-http-request';
@@ -32,7 +32,7 @@ export interface ModelHttpDTO {
         active: number;
         unknown: number;
     };
-    available: number;
+    available: null;
     coverage: 'managed-fetch' | 'legacy-workers-present';
     legacyWorkerCount: number;
     supportedApis: string[];
@@ -59,6 +59,6 @@ export declare class ModelHttpService {
         cursor?: number;
         limit?: number;
     }): ModelHttpDTO;
-    configure(actor: Actor, value: unknown, pid?: string): ModelHttpDTO;
+    configure(actor: Actor, _value: unknown, _pid?: string): ModelHttpDTO;
 }
 export {};

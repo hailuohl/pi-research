@@ -8,6 +8,7 @@ import { verifySnapshot } from '../workspace/files.js';
 import { teamWakeupSource, wakeupId } from '../scheduler/wakeups.js';
 import { GitCommand } from '../workspace/git-command.js';
 import { DataPaths, readDataLocation, setDataLocation } from './data-paths.js';
+import { hasEnvironmentSecrets, environmentSecrets, redactEnvironment } from '../runtime/environment.js';
 const ROOTS = new Set(['projects', 'experiments', 'workspaces', 'sessions', 'snapshots', 'artifacts', 'skill-blobs', 'jobs', 'sandbox-jobs', 'document-jobs', 'publication-jobs', 'git-worktrees', 'git-operations', 'exports', 'integration-staging', 'state.db.text-writes']);
 const EXCLUDED = new Set(['access.token', 'models.json', 'models-store.json', 'ssh-targets.json', 'ssh-targets.json.tmp', 'local-runtimes.json', 'local-runtimes.json.tmp', 'state.db-wal', 'state.db-shm', 'state.db-journal']);
 const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'timed_out']);
@@ -70,16 +71,23 @@ function fileBytes(path, destination) {
             closeSync(output);
     }
 }
-function managedTree(root, destination) {
+function managedTree(root, destination, privateLocalJobs = new Set()) {
     const entries = [], excluded = [];
+    const secrets = environmentSecrets(root);
+    const sensitiveNarrative = (value, active = false) => typeof value === 'string' ? active && secrets.some(secret => value.includes(secret)) : Array.isArray(value) ? value.some(item => sensitiveNarrative(item, active)) : plain(value) ? Object.entries(value).some(([key, item]) => sensitiveNarrative(item, active || ['text', 'thinking', 'errorMessage', 'summary', 'arguments', 'error'].includes(key) || ['message', 'content'].includes(key) && typeof item === 'string')) : false;
     function walk(path) {
         const source = join(root, path), info = lstatSync(source);
         ensure(!info.isSymbolicLink(), 'BACKUP_PATH_DENIED', '管理树不能含链接', 403);
-        if (path && EXCLUDED.has(path)) {
+        if (path && (EXCLUDED.has(path) || /^environment-variables\.json(?:\.[\w-]+\.tmp)?$/i.test(path) || /^jobs\/[^/]+\/control\/native-spec\.json$/.test(path))) {
             excluded.push(path);
             return;
         }
         const parts = path.split('/');
+        const privateJob = parts[0] === 'jobs' && privateLocalJobs.has(parts[1]);
+        if (privateJob && parts.length > 3 && !(parts.length === 4 && parts[2] === 'control' && /^(?:native-(?:start|result)|terminal(?:-\d+)?)\.json$/.test(parts[3]))) {
+            excluded.push(redactEnvironment(root, path));
+            return;
+        }
         if (parts[0] === 'sessions' && parts.length === 3 && parts[2] === 'agent') {
             excluded.push(path + '/');
             return;
@@ -98,10 +106,24 @@ function managedTree(root, destination) {
             if (destination && path)
                 mkdirSync(join(destination, path), { mode: 0o700 });
             entries.push({ path, type: 'directory', mode: info.mode & 0o777 });
-            for (const name of readdirSync(source).sort())
-                walk(path ? path + '/' + name : name);
+            if (privateJob && parts.length === 3 && parts[2] === 'output')
+                excluded.push(path + '/*');
+            else
+                for (const name of readdirSync(source).sort())
+                    walk(path ? path + '/' + name : name);
         }
         else {
+            if (secrets.length && /^sessions\/[^/]+\/pi(?:-analysis)?\/.+\.jsonl$/i.test(path)) {
+                const raw = readFileSync(source, 'utf8');
+                let containsSecret;
+                try {
+                    containsSecret = raw.split(/\r?\n/).filter(line => line.trim()).some(line => sensitiveNarrative(JSON.parse(line)));
+                }
+                catch {
+                    containsSecret = secrets.some(secret => raw.includes(secret));
+                }
+                ensure(!containsSecret, 'BACKUP_SECRET_TRACE', '原生会话记录包含环境变量敏感值；备份未创建，原始会话保留', 409);
+            }
             entries.push({ path, type: 'file', mode: info.mode & 0o777, ...fileBytes(source, destination ? join(destination, path) : undefined) });
             if (destination)
                 chmodSync(join(destination, path), info.mode & 0o777);
@@ -324,7 +346,7 @@ function manifestAt(backupDir) {
         ensure(!names.has(fold), 'BACKUP_INVALID', '备份有重复或大小写冲突条目', 400);
         names.add(fold);
         ensure(name === '' || name === 'state.db' || ROOTS.has(parts[0]), 'BACKUP_INVALID', '备份包含未知管理树', 400);
-        ensure(!EXCLUDED.has(name) && !(parts[0] === 'sessions' && parts[2] === 'agent') && !/\.text-write-(pending|stage-|backup-)/.test(name) && !name.startsWith('state.db.text-writes/'), 'BACKUP_INVALID', '备份包含认证文件或未解决恢复', 400);
+        ensure(!EXCLUDED.has(name) && !/^jobs\/[^/]+\/control\/native-spec\.json$/.test(name) && !(parts[0] === 'sessions' && parts[2] === 'agent') && !/\.text-write-(pending|stage-|backup-)/.test(name) && !name.startsWith('state.db.text-writes/'), 'BACKUP_INVALID', '备份包含认证文件或未解决恢复', 400);
         if (name === '') {
             ensure(raw.type === 'directory', 'BACKUP_INVALID', '数据根无效', 400);
             roots++;
@@ -382,8 +404,9 @@ export async function createDataBackup(source, path, options) {
         db = new DatabaseSync(join(root, 'state.db'));
         db.exec('PRAGMA busy_timeout=1000; BEGIN IMMEDIATE');
         stateCheck(db);
+        const privateLocalJobs = new Set(hasEnvironmentSecrets(root) ? db.prepare("SELECT id FROM records WHERE kind='run' AND json_extract(data,'$.execution.backend')='local'").all().map(row => String(row.id)) : []);
         mkdirSync(join(stage, 'data'), { mode: 0o700 });
-        const tree = managedTree(root, join(stage, 'data'));
+        const tree = managedTree(root, join(stage, 'data'), privateLocalJobs);
         const reader = new DatabaseSync(join(root, 'state.db'), { readOnly: true });
         try {
             await backup(reader, join(stage, 'data', 'state.db'));
@@ -404,7 +427,7 @@ export async function createDataBackup(source, path, options) {
         const location = readDataLocation(db), legacyRoots = location?.legacyRoots ?? [];
         ensure(!location || location.activeRoot === root, 'BACKUP_LOCATION_MISMATCH', '数据目录需要受控迁移，不能直接复制后备份', 409);
         const schema = await references(db, root, join(stage, 'data'), entries, legacyRoots);
-        ensure(digest(managedTree(root)) === digest(tree), 'BACKUP_SOURCE_CHANGED', '复制期间管理文件发生变化，备份未发布', 409);
+        ensure(digest(managedTree(root, undefined, privateLocalJobs)) === digest(tree), 'BACKUP_SOURCE_CHANGED', '复制期间管理文件发生变化，备份未发布', 409);
         const body = { format: 'pi-research-backup-v2', sourceRoot: root, legacyRoots, platform: process.platform, createdAt: new Date().toISOString(), schema, entries, excluded: tree.excluded }, m = { ...body, manifestDigest: digest(body) };
         writeFileSync(join(stage, 'manifest.json'), JSON.stringify(m, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
         await verifyDataBackup(stage);

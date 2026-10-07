@@ -11,7 +11,6 @@ for(const hasDone of [true,false])test(`host drains exited worker IPC ${hasDone?
  writeFileSync(worker,`process.on('message',m=>{if(m.type!=='start')return;process.send({type:'delta',text:'fixture preview'});setTimeout(()=>{process.send({type:'tool',tool:'artifact_create',requestId:1,toolCallId:'after-exit',input:{title:'must-not-exist.txt',content:'late side effect'}});process.send({type:'assistant_message',content:'complete fixture answer',stopReason:'stop',usage:{fixture:true}});${hasDone?"process.send({type:'done'});":''}setTimeout(()=>process.exit(0),50);},20);});`);
  const h=new AgentHost(s.app,{inspect:()=>({ready:true,code:'IPC_FIXTURE',message:'No SDK or model'}),workerEntry:worker}),events=[];let exitState;
  try{
-  s.app.agentAdmission.configure(USER,{expectedVersion:s.app.agentAdmission.inspect(USER).version,maxWorkers:1});
   const input=s.app.sessions.send(USER,s.session.id,{content:'offline IPC drain fixture'});h.tick();
   const active=h.active.get(s.session.id),child=active.child;
   let blocked=false;
