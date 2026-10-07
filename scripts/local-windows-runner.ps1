@@ -1,6 +1,9 @@
 param([Parameter(Mandatory=$true)][string]$SpecPath)
 $ErrorActionPreference='Stop'
 [Console]::Error.WriteLine('PI_LOCAL_STAGE:boot')
+$env:PSModulePath=[IO.Path]::Combine($PSHOME,'Modules')
+Import-Module ([IO.Path]::Combine($env:PSModulePath,'Microsoft.PowerShell.Management','Microsoft.PowerShell.Management.psd1')) -ErrorAction Stop
+Import-Module ([IO.Path]::Combine($env:PSModulePath,'Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')) -ErrorAction Stop
 $spec=Get-Content -LiteralPath $SpecPath -Raw -Encoding UTF8 | ConvertFrom-Json
 [Console]::Error.WriteLine('PI_LOCAL_STAGE:spec-ready')
 Add-Type -TypeDefinition @'

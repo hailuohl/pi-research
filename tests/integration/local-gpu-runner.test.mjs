@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,existsSync,mkdirSync,lstatSync,openSync,readSync,closeSync} from 'node:fs';
 import {join} from 'node:path';
+import {spawnSync} from 'node:child_process';
 import {setup,USER,approve} from '../support/research.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {validateContract} from '../../dist/packages/runners/contracts.js';
@@ -48,6 +49,22 @@ test('local approved CPU source executes from a Unicode and space data path with
 test('Windows helper failure records diagnostics and retains uncertain execution resources', {skip:process.platform!=='win32'},async()=>{
  const s=setup();try{const run=prepared(s),control=s.app.store.paths.physical(run.execution.controlDir);mkdirSync(join(control,'stdout.log'),{recursive:true});
   const done=await wait(s.app,run.id,20000);assert.equal(done.state,'unknown');assert.equal(done.execution.startRequested,true);assert.equal(s.app.store.db.prepare('SELECT held FROM compute_queue WHERE id=?').get(run.id).held,1);assert.equal(existsSync(join(control,'native-result.json')),false);assert.match(readFileSync(join(control,'supervisor.log'),'utf8'),/LOG_OPEN_FAILED/);
+ }finally{s.close();}
+});
+
+test('Windows helper resolves only PSHOME system modules despite external same-name modules', {skip:process.platform!=='win32'},()=>{
+ const s=setup();try{const control=join(s.dir,'module-control'),work=join(control,'work'),external=join(s.dir,'external-modules'),marker=join(s.dir,'external-module-loaded');mkdirSync(work,{recursive:true});
+  for(const name of ['Microsoft.PowerShell.Management','Microsoft.PowerShell.Utility']){const path=join(external,name);mkdirSync(path,{recursive:true});writeFileSync(join(path,name+'.psm1'),'[IO.File]::WriteAllText($env:PI_MODULE_SENTINEL,"loaded");throw "EXTERNAL_MODULE_LOADED"');}
+  const spec=join(control,'native-spec.json'),wrapper=join(s.dir,'verify-modules.ps1');writeFileSync(spec,JSON.stringify({executable:process.execPath,argv:['-e','console.log(42)'],env:localEnvironment(control,control),work,control,manifestDigest:'module-isolation-check'}));
+  writeFileSync(wrapper,`param($HelperPath,$SpecPath)
+$ErrorActionPreference='Stop'
+& $HelperPath $SpecPath
+$expected=[IO.Path]::Combine($PSHOME,'Modules')
+if($env:PSModulePath -ne $expected){throw 'MODULE_SEARCH_NOT_SYSTEM_ONLY'}
+foreach($name in @('Microsoft.PowerShell.Management','Microsoft.PowerShell.Utility')){if((Get-Module -Name $name).Path -ne [IO.Path]::Combine($expected,$name,$name+'.psd1')){throw 'MODULE_SOURCE_NOT_PSHOME'}}
+`);
+  const result=spawnSync('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',wrapper,join(root,'scripts','local-windows-runner.ps1'),spec],{windowsHide:true,encoding:'utf8',timeout:20000,env:{...localEnvironment(control,control),PSModulePath:external,PI_MODULE_SENTINEL:marker}});
+  assert.equal(result.status,0,result.stderr||result.error?.message);assert.equal(existsSync(marker),false);assert.equal(readFileSync(join(control,'stdout.log'),'utf8').trim(),'42');const receipt=JSON.parse(readFileSync(join(control,'native-result.json'),'utf8'));assert.equal(receipt.exitCode,0);assert.equal(receipt.stopped,true);assert.equal(receipt.manifestDigest,'module-isolation-check');
  }finally{s.close();}
 });
 
