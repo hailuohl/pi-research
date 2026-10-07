@@ -134,5 +134,36 @@
     "external-model visual reasoning"
   ],
   "knownPreexistingGap": "parity historical old-directory path, unchanged",
-  "ci": "document metadata/range/SDK/HTTP contract checks in existing three-OS workflow; outcome recorded after push"
+  "ci": {
+    "codeSha": "aed870e768ccd5c05f2adf256241a559bbce8e34",
+    "url": "https://github.com/hailuohl/pi-research/actions/runs/37642576366",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "portable-features (macos-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/hailuohl/pi-research/actions/runs/37642576366/job/112865321401",
+        "startedAt": "2026-10-07T15:18:38Z",
+        "completedAt": "2026-10-07T15:20:36Z"
+      },
+      {
+        "name": "portable-features (windows-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/hailuohl/pi-research/actions/runs/37642576366/job/112865321890",
+        "startedAt": "2026-10-07T15:18:32Z",
+        "completedAt": "2026-10-07T15:24:10Z"
+      },
+      {
+        "name": "portable-features (ubuntu-latest)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/hailuohl/pi-research/actions/runs/37642576366/job/112865321967",
+        "startedAt": "2026-10-07T15:18:33Z",
+        "completedAt": "2026-10-07T15:20:51Z"
+      }
+    ]
+  }
 }

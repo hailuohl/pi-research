@@ -22,6 +22,19 @@
 | 评价与反馈 feedback | 识别重要产品问题、复现步骤、实际/预期差异、限制与脱敏；可保存本地反馈草稿 | 没有原版向OpenResearch团队提交反馈的外发接口，不静默发消息、不声称已提交issue |
 | 文献研究 lit-review | 五源发现/读取、有界跟进、PDF/PMC与固定语料证据；用户可从成功固定解析结果带入会话，独立批准目的模型/页范围后逐页复用图片授权 | 文本/图片权限独立；元数据附件不含原文或像素。Task仍限已完成发现范围且不授视觉；无通用Web、自动裁图/OCR或alphaXiv report/full切换 |
 
+## 本轮计划执行结果
+
+| 批次 | 已走通的流程 | 配套技能 | 验收记录 |
+|---|---|---|---|
+| 运行调度观察 | 交互主协调者查询单个 Run 当前保存的排队、预留和恢复原因 | overview、compute；本地/Docker/SSH 按需参考 | [结果](../acceptance/flow-agent-run-scheduling/RESULT.md) |
+| GitHub 同步回执 | 本地受管提交后按准确 SHA 查询各 ref 的保存回执 | git、overview | [结果](../acceptance/flow-agent-github-receipt/RESULT.md) |
+| 文稿页面视觉输入 | 准确批准固定成功文稿页与目的模型，真实 Pi 图片输入，历史重发复验 | paper、figures、reports、overview | [结果](../acceptance/flow-agent-publication-image/RESULT.md) |
+| 固定原文页面视觉输入 | 成功固定解析结果带入当前会话元数据，单独批准页范围，范围内逐页复用 | lit-review、evidence、paper、overview | [结果](../acceptance/flow-agent-document-image/RESULT.md) |
+
+最后代码提交 `aed870e768ccd5c05f2adf256241a559bbce8e34` 的[三平台 CI](https://github.com/hailuohl/pi-research/actions/runs/37642576366) 在 Windows/macOS/Linux 全部通过。本地最终集中回归 1236 项：1213 通过、0 失败、23 跳过；干净安装、构建和类型检查通过，独立权限复核无阻断。两次平台夹具修复仅改变测试目录或进程收尾，产品保护与断言保留。三平台 CI 覆盖本批关键流程，不代表每个平台已实测外部 SSH、GPU 硬件或外部模型视觉理解。
+
+新增视觉链路使用合成固定页及 localhost 脚本化供应商验证；未执行新的实际 PDF 解析或外部模型视觉推理。旧 parity 基线仍引用已迁移的技能目录，文档路径缺口按首批验收记录保留。
+
 ## 实测与边界
 
 - 既有项目导入、受管Git、开发测试、正式CPU Docker、研究活动、文稿/图表、文献原件及备份恢复记录见[后端入口](../BACKEND-READINESS.zh-CN.md)。已有记录只证明其具体环境和范围，不代表每个输入或供应商均通过。
