@@ -35,8 +35,8 @@ export class Store {
         assertPhysicalDataRoot(dirname(path));
         mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
         this.db = new DatabaseSync(path);
-        try {this.paths=loadDataPaths(this.db,dirname(path));}catch(error){this.db.close();throw error;}
-        this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;
+        try {this.db.exec('PRAGMA busy_timeout=5000');this.paths=loadDataPaths(this.db,dirname(path));}catch(error){this.db.close();throw error;}
+        this.db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
  CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY,applied_at TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS records(kind TEXT NOT NULL,id TEXT NOT NULL,project_id TEXT,version INTEGER NOT NULL,data TEXT NOT NULL,PRIMARY KEY(kind,id));
  CREATE INDEX IF NOT EXISTS records_project ON records(kind,project_id);

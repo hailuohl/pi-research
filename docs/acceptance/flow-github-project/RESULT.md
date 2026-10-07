@@ -20,6 +20,8 @@
 
 三平台 CI 随本批提交运行模板、GitHub 与 runner 检查；状态以该提交的 GitHub Actions 结果为准。原始日志在 `.validation/product-options-20261007/`，最终构建在 `.validation/clean-build-Jb5PHn/`。
 
+首次三平台 CI 中 macOS/Linux 通过，Windows 在控制器重开时暴露首次查询早于 SQLite busy handler 的真实锁竞争。后续仅把原有 5000ms busy timeout 前移到首次数据位置查询之前，路径校验和失败关闭句柄保持；新增独立锁与首查询屏障在修前复现同一栈，修后相关 14 项通过，原 700ms 等待与取消断言未改。修复后的三平台状态仍以对应提交的 Actions 为准。
+
 ## 已知边界
 
 每次历史核对上限为 200 个提交、64 MiB 不同源码 blob。PID 被无关进程复用时，同步恢复会保守停滞，避免重复外发；后续需加入进程出生身份核验。此项为独立复核的非阻断待办，本批不扩展恢复框架。
