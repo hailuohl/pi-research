@@ -16,6 +16,27 @@ function add(s,kind='run',{context='A',cpus=1,memoryMb=256,state='queued',truste
 function configure(s,limits,targetId){const view=s.queue.inspect(USER),current=targetId?view.targets.find(t=>t.targetId===targetId)?.configuration:view.configuration;return s.queue.configure(USER,{expectedVersion:current?.version??0,...(targetId?{targetId}:{}),limits});}
 function claim(s,kind,id){return s.queue.withAdmission(kind,id,()=>{const r=s.store.get(kind==='run'?'run':kind==='document'?'document-parse-job':kind==='publication'?'publication-build-job':'sandbox-job',id);return s.store.update(r.kind,id,r.version,{state:'running',...(kind==='run'?r.execution?{execution:{...r.execution,generation:r.execution.generation+1,leaseUntil:Date.now()+60000}}:{heartbeat:Date.now()}:{generation:r.generation+1,leaseUntil:Date.now()+60000})});});}
 function terminal(s,id,kind='run'){const r=s.store.get(kind==='run'?'run':kind==='document'?'document-parse-job':kind==='publication'?'publication-build-job':'sandbox-job',id);s.store.update(r.kind,id,r.version,{state:'failed'});}
+function schedulingReason(s,r,expected){const snapshot=s.store.db.prepare('SELECT * FROM compute_queue').all(),view=s.queue.inspectRun(USER,'p',r.id);assert.equal(view.queue.reason,expected);assert.equal(view.queue.reason,s.queue.inspect(USER,'p').items.find(i=>i.id===r.id).reason);assert.deepEqual(s.store.db.prepare('SELECT * FROM compute_queue').all(),snapshot);return view;}
+
+test('single Run scheduling reuses target, capacity, GPU and recovery reasons without binding or probing',async()=>{
+ const s=setup();try{
+  const r=add(s);schedulingReason(s,r,'target_unresolved');await s.queue.verifyTarget('run',r.id);schedulingReason(s,r,'ready');
+  s.store.db.prepare("UPDATE compute_contexts SET status='unavailable' WHERE context='A'").run();schedulingReason(s,r,'target_unavailable');
+  s.store.db.prepare("UPDATE compute_contexts SET status='ready',engine_id='changed' WHERE context='A'").run();schedulingReason(s,r,'target_changed');
+  await s.queue.verifyTarget('run',r.id);configure(s,{maxRuns:4,maxJobs:4,cpus:1});const blocker=add(s,'run',{trusted:true,state:'running'});schedulingReason(s,r,'host_capacity');terminal(s,blocker.id);
+  configure(s,{cpus:4});configure(s,{maxJobs:1},identity('A').targetId);const sameTarget=add(s);await s.queue.verifyTarget('run',sameTarget.id);s.store.update('run',sameTarget.id,sameTarget.version,{state:'running'});schedulingReason(s,r,'target_capacity');terminal(s,sameTarget.id);
+  const later=add(s);await s.queue.verifyTarget('run',later.id);schedulingReason(s,later,'earlier_job');configure(s,{cpus:0});schedulingReason(s,r,'request_too_large');configure(s,{cpus:4});
+  const gpu={vendor:'nvidia',deviceIds:['GPU-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa']},current=s.store.get('run',r.id);s.store.update('run',r.id,current.version,{manifest:{...current.manifest,contract:{...current.manifest.contract,gpu}}});
+  s.store.db.prepare('INSERT INTO compute_gpu_claims(uuid,kind,id) VALUES(?,?,?)').run(gpu.deviceIds[0],'run',blocker.id);assert.deepEqual(schedulingReason(s,r,'gpu_busy').queue.requested.gpu,gpu);s.store.db.prepare('DELETE FROM compute_gpu_claims').run();
+  const q=s.store.get('run',r.id);s.store.update('run',r.id,q.version,{state:'unknown',execution:{...q.execution,leaseUntil:Date.now()+60000}});schedulingReason(s,r,'worker_active');
+  s.store.db.prepare('UPDATE compute_queue SET lease_until=0,next_attempt_at=? WHERE id=?').run(Date.now()+60000,r.id);schedulingReason(s,r,'recovery_backoff');
+  s.store.db.prepare('UPDATE compute_queue SET next_attempt_at=0 WHERE id=?').run(r.id);schedulingReason(s,r,'recovery_due');
+  s.store.db.prepare('UPDATE compute_queue SET bound=0 WHERE id=?').run(r.id);schedulingReason(s,r,'legacy_target_unknown');
+  const local=add(s,'run',{trusted:true,state:'unknown'});schedulingReason(s,local,'manual_recovery_required');
+  s.store.create('project','other',{name:'Other'},'other');assert.throws(()=>s.queue.inspectRun(USER,'other',r.id),{code:'SCOPE_DENIED'});assert.throws(()=>s.queue.inspectRun({type:'agent',projectId:'other'},'p',r.id),{code:'SCOPE_DENIED'});
+  const untouched=s.store.db.prepare('SELECT * FROM compute_queue WHERE id=?').get(r.id);s.queue.candidates=s.queue.verifyTarget=s.queue.probeContext=()=>assert.fail('inspection must not bind or probe');schedulingReason(s,r,'legacy_target_unknown');assert.deepEqual(s.store.db.prepare('SELECT * FROM compute_queue WHERE id=?').get(r.id),untouched);
+ }finally{await s.close();}
+});
 test('publication jobs reserve one slot, compete with all compute kinds and keep unknown occupancy',async()=>{
  const s=setup();try{
   configure(s,{maxJobs:3,maxRuns:3,maxDevelopment:3,cpus:2,memoryMb:2048});

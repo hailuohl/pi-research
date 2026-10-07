@@ -140,7 +140,7 @@ const TOOL_METADATA = {
     run_prepare: { description: '固定实验快照及原对话审批卡。autoAnalyze=true可同时准备终态后最多一次Pi结果分析任务，模型/目的地/额度纳入固定批准；任务可含多个HTTP往返，不批准后续计算。默认false。', example: { experimentId: 'record-id', autoAnalyze: true } },
     run_submit: { description: '只提交当前对话已获批准的固定 RunIntent，不以新清单替代拒绝或失效意向；analyst Task 只能提交上下文 RunGrant 清单中的 RunIntent，不能准备新清单。', example: { intentId: 'record-id' } },
     run_list: { description: '按稳定游标分页读取当前项目 Run 摘要；完整结果继续用 run_inspect 读取。', example: { cursor: 0, limit: 20 } },
-    run_inspect: { description: '读取真实 Run 的状态、指标和证据；结束 Agent 不能当作实验完成。', example: { runId: 'record-id' } },
+    run_inspect: { description: '读取真实 Run 的状态、指标和证据；结束 Agent 不能当作实验完成。用户或交互主协调者可设 includeScheduling=true 读取此 Run 当前排队原因、预留资源和恢复状态；不探测或启动作业。任务及自动通知只使用默认读取。', example: { runId: 'record-id', includeScheduling: true } },
     run_logs: { description: '读取真实运行日志。cursor 为字节位置。', example: { runId: 'record-id', cursor: 0 } },
     approval_request: { description: '列出当前项目待用户审批事项，不允许 Agent 自己批准。', example: {} },
     collaboration_plan_submit: { description: '从当前对话的用户任务生成并提交完整有界协作计划，等待用户确认。主协调者专用；不自动开启开关。设置 autoSummarize=true 可在结束后唤醒原主会话综合真实结果，需预留一次综合额度。', example: { goal: '核查证据并写报告', budget: 8, autoSummarize: true, tasks: [{ key: 'analysis', role: 'analyst', objective: '核查已有指标', dependencies: [], critical: true }, { key: 'review', role: 'reviewer', objective: '核对分析', dependencies: [], reviewOf: 'analysis' }, { key: 'write', role: 'writer', objective: '整理已验收成果', dependencies: ['analysis', 'review'] }] } },

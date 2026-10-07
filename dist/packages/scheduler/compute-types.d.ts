@@ -46,6 +46,11 @@ export interface ComputeQueueItem {
     nextAttemptAt: number;
     reason: ComputeWaitReason;
 }
+export interface RunSchedulingInspection {
+    observedAt: string;
+    queue: Pick<ComputeQueueItem, 'state' | 'held' | 'backend' | 'targetId' | 'requested' | 'nextAttemptAt' | 'reason'> | null;
+    unavailableReason?: 'terminal' | 'not_recorded';
+}
 export interface ComputeConfiguration {
     version: number;
     targetId: string;

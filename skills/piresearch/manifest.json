@@ -1,5 +1,5 @@
 {
-  "bundleId": "14e1170adc7bf3ab02a4b37a44172082d5853732fc1df1bd0aac9fbde70479cb",
+  "bundleId": "8f766452c9ab9af8b19245b323cfad8bfb5f04fd5e0ba08c321946073e96ef52",
   "skills": [
     {
       "id": "pi-research-overview",
@@ -15,7 +15,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-overview/SKILL.md",
-      "digest": "7acc3e3fc42e09575add132a0b4d85ae626e3ea8fabd68988129ab410e964151",
+      "digest": "b62948f162bb359282b24925818a5b5661460934043a56c1f5fda860b7f3094b",
       "resources": [],
       "source": {
         "repository": "alphaXiv/OpenResearch",
@@ -102,7 +102,7 @@
     {
       "id": "pi-research-compute",
       "name": "pi-research-compute",
-      "description": "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/SSH reference.",
+      "description": "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/Docker/SSH reference.",
       "roles": [
         "coordinator",
         "designer",
@@ -111,15 +111,19 @@
         "reviewer"
       ],
       "path": "skills/piresearch/pi-research-compute/SKILL.md",
-      "digest": "b0ce03bd9dedea3fd3fb2cdc55ad8edab8043c153bcd58e9dc0a3bcc7b4fd680",
+      "digest": "83876eb1ab092dc06348f71f403fe0736a466dffbb701eb27c2677f236a024a0",
       "resources": [
         {
           "path": "references/local.md",
-          "digest": "d345d7977a3c9393b554cb7210ec8ea88d5859393c800ad16bc635bd21f0cafb"
+          "digest": "1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121"
+        },
+        {
+          "path": "references/docker.md",
+          "digest": "ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6"
         },
         {
           "path": "references/ssh.md",
-          "digest": "b9b52c318cea1a61849601f2f0eb373c176f4787bb22ce5d2d5298a4aeb56764"
+          "digest": "d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6"
         }
       ],
       "source": {

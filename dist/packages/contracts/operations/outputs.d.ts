@@ -75,8 +75,89 @@ declare const nullable: <const S extends JsonSchema>(schema: S) => {
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export declare const OUTPUT_SCHEMAS: {
     readonly run_inspect: {
-        readonly type: "object";
         readonly properties: {
+            readonly scheduling: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly observedAt: {
+                        readonly type: "string";
+                    };
+                    readonly queue: {
+                        readonly anyOf: readonly [{
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly state: {
+                                    readonly type: "string";
+                                };
+                                readonly held: {
+                                    readonly type: "boolean";
+                                };
+                                readonly backend: {
+                                    readonly enum: readonly ["local", "docker", "trusted-example", "ssh"];
+                                };
+                                readonly targetId: {
+                                    readonly anyOf: readonly [{
+                                        readonly type: "string";
+                                    }, {
+                                        readonly type: "null";
+                                    }];
+                                };
+                                readonly requested: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly cpus: {
+                                            readonly type: "number";
+                                        };
+                                        readonly memoryMb: {
+                                            readonly type: "integer";
+                                        };
+                                        readonly gpu: {
+                                            readonly type: "object";
+                                            readonly properties: {
+                                                readonly vendor: {
+                                                    readonly const: "nvidia";
+                                                };
+                                                readonly deviceIds: {
+                                                    readonly maxItems?: number | undefined;
+                                                    readonly type: "array";
+                                                    readonly items: {
+                                                        readonly pattern: "^GPU-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$";
+                                                        readonly type: "string";
+                                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                                        readonly minLength: number;
+                                                        readonly maxLength: number;
+                                                    };
+                                                    readonly minItems: number;
+                                                };
+                                            };
+                                            readonly required: readonly ["vendor", "deviceIds"];
+                                            readonly additionalProperties: false;
+                                        };
+                                    };
+                                    readonly required: ("cpus" | "memoryMb")[];
+                                    readonly additionalProperties: false;
+                                };
+                                readonly nextAttemptAt: {
+                                    readonly type: "integer";
+                                };
+                                readonly reason: {
+                                    readonly enum: readonly ["gpu_busy", "ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
+                                };
+                            };
+                            readonly required: ("state" | "reason" | "targetId" | "backend" | "held" | "requested" | "nextAttemptAt")[];
+                            readonly additionalProperties: false;
+                        }, {
+                            readonly type: "null";
+                        }];
+                    };
+                    readonly unavailableReason: {
+                        readonly type: "string";
+                        readonly enum: ["terminal", "not_recorded"];
+                    };
+                };
+                readonly required: ("observedAt" | "queue")[];
+                readonly additionalProperties: false;
+            };
             readonly id: {
                 readonly type: "string";
             };
@@ -99,7 +180,6 @@ export declare const OUTPUT_SCHEMAS: {
             readonly updatedAt: {
                 readonly type: "string";
             };
-        } & {
             readonly experimentId: {
                 readonly type: "string";
             };
@@ -666,6 +746,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
+        readonly type: "object";
         readonly required: ("id" | "state" | "createdAt" | "experimentId" | "kind" | "version" | "manifestDigest" | "projectId" | "updatedAt" | "artifactIds" | "evidenceIds" | "manifest" | "integrity" | "cancelRequested" | "outputDir" | "intentId" | "judgment")[];
         readonly additionalProperties: false;
     };

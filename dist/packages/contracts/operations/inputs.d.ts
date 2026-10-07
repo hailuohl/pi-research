@@ -1343,6 +1343,9 @@ export declare const INPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly includeScheduling: {
+                readonly type: "boolean";
+            };
         };
         readonly required: readonly ["runId"];
         readonly additionalProperties: false;

@@ -31,6 +31,8 @@ const row = (kind, properties, optional) => object({
     id: string, kind: { const: kind }, projectId: nullableString, version: integer, createdAt: string, updatedAt: string,
     ...properties
 }, optional);
+const queueItem = SCHEDULER_OUTPUT_SCHEMAS.compute_queue_inspect.properties.items.items.properties;
+const runScheduling = object({ observedAt: string, queue: { anyOf: [object({ state: queueItem.state, held: queueItem.held, backend: queueItem.backend, targetId: queueItem.targetId, requested: queueItem.requested, nextAttemptAt: queueItem.nextAttemptAt, reason: queueItem.reason }), { type: 'null' }] }, unavailableReason: enumeration('terminal', 'not_recorded') }, ['unavailableReason']);
 const sourceFile = object({ path: string, size: integer, digest: string, mode: enumeration('100644', '100755') }, ['mode']);
 const snapshot = object({ digest: string, path: string, files: array(sourceFile) });
 const contract = object({
@@ -180,7 +182,7 @@ export const OUTPUT_SCHEMAS = {
     ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...RUN_GRANT_OUTPUT_SCHEMAS, ...DISCOVERY_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS, ...SCHEDULER_OUTPUT_SCHEMAS, ...SESSION_HISTORY_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS, ...DOCUMENT_OUTPUT_SCHEMAS,
-    run_inspect: CORE_OUTPUT_SCHEMAS.run_submit,
+    run_inspect: { ...CORE_OUTPUT_SCHEMAS.run_submit, properties: { ...CORE_OUTPUT_SCHEMAS.run_submit.properties, scheduling: runScheduling } },
     reviewed_change_prepare: CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
     artifact_read: object({ artifactId: string, digest: string, title: string, mediaType: string, content: string, cursor: integer, complete: boolean }),

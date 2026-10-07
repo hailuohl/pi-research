@@ -87,7 +87,7 @@ export const INPUT_SCHEMAS = {
     experiment_plan_submit: s.object({ title: s.string(200), hypothesis: s.nullable(s.string()), parentId: s.nullable(s.string()), expectedParentRevision: s.integer(1), config, contract: s.nullable(contract) }, ['title']),
     run_prepare: s.object({ experimentId: id, autoAnalyze: s.boolean() }, ['experimentId']),
     run_submit: s.object({ intentId: id }, ['intentId']),
-    run_inspect: s.object({ runId: id }, ['runId']),
+    run_inspect: s.object({ runId: id, includeScheduling: s.boolean() }, ['runId']),
     run_list: s.object({ cursor: s.integer(0, Number.MAX_SAFE_INTEGER), limit: s.integer(1, 100) }),
     run_logs: s.object({ runId: id, cursor: s.nullable(s.integer(0, Number.MAX_SAFE_INTEGER)), stream: s.enum(['stdout', 'stderr']), identity: s.nullable(s.string(100)) }, ['runId']),
     run_source_list: s.object({ runId: id }, ['runId']),

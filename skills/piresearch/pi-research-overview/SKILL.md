@@ -30,7 +30,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 |---|---|
 | 探索项目 | `project_inspect({input:{}})`；`workspace_list({input:{source:"session"}})`；主协调者可显式读 project 来源 |
 | 读取固定实验 | `experiment_source_list` / `experiment_source_read`，必须 experimentId+revision 或 snapshotId；workspace source=project 不是所选实验 |
-| 查 Run | Agent 用 project_inspect / run_inspect；分页 run_list 是用户入口，不能假设 Agent 可用 |
+| 查 Run | project_inspect / run_inspect；交互主协调者用 includeScheduling:true 解释单 Run 当前排队与恢复，不读全局队列；分页 run_list 是用户入口 |
 | 日志与证据 | run_logs(runId,cursor,stream,identity)、artifact_read、evidence_read；详情读 pi-research-evidence |
 | 创建变体 | experiment_plan_submit(title,hypothesis,parentId,expectedParentRevision,config)；新代码走 change_proposal_prepare / reviewed_change_prepare 及用户整合 |
 | Git | workspace_prepare_from_revision、workspace_history_inspect/diff/commit/operation/set_mode；受管会话分支。项目默认本地，用户创建时可选GitHub私密源码同步，由宿主管理；本地提交完成不等于远端成功，详情读pi-research-git |
@@ -53,7 +53,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 - pi-research-experiment-tree：provisional、堆叠小扇形、逐完成循环、四种决策、修复和停止。
 - pi-research-git：受管 worktree、改代码、提交、固定源码比较与历史。
 - pi-research-agent-delegation：自包含简报、权限、独立写域、结果验收与恢复。
-- pi-research-compute：本地 local（含固定示例）、Docker 与 SSH；NVIDIA显式设备选择；先确定后端再读一个参考。
+- pi-research-compute：本地 local（含固定示例）、Docker 与 SSH；NVIDIA显式设备选择；先确定后端再读 local、docker、ssh 中一个参考，依据当前 Run 观察解释等待/恢复。
 - pi-research-evidence：输出设计、日志分段、指标/原文与效力。
 - pi-research-reports：持久草稿、固定报告、本地导出与组织。
 - pi-research-figures：写绘图代码前读取，再选择对应图种参考。

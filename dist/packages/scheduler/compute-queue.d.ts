@@ -1,7 +1,7 @@
 import type { AppContext } from '../domain/context.js';
 import type { Actor } from '../domain/types.js';
 import { probeDockerTarget } from '../execution/docker.js';
-import type { ComputeKind, ComputeConfiguration, ComputeQueueInspection, ComputeTargetProbe } from './compute-types.js';
+import type { ComputeKind, ComputeConfiguration, ComputeQueueInspection, ComputeTargetProbe, RunSchedulingInspection } from './compute-types.js';
 interface Dependencies {
     probe?: typeof probeDockerTarget;
     inspect?: (context: string, id: string) => Promise<{
@@ -51,6 +51,7 @@ export declare class ComputeQueue {
     stop(): Promise<void>;
     configure(actor: Actor, value: unknown): ComputeConfiguration;
     private reason;
+    inspectRun(actor: Actor, pid: string, id: string): RunSchedulingInspection;
     inspect(actor: Actor, pid?: string, options?: {
         cursor?: number;
         limit?: number;

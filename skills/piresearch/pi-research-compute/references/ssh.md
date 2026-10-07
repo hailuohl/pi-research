@@ -36,6 +36,8 @@ CPU容器显式NVIDIA_VISIBLE_DEVICES=void、CUDA_VISIBLE_DEVICES=-1，不继承
 
 ## 通知、取消与恢复
 
+交互主协调者使用 run_inspect(includeScheduling:true) 读取单 Run：worker_active 表示有效监管租约；recovery_backoff/due 表示按原 handle 恢复对账；target_changed 或 legacy_target_unknown 需要用户核实固定身份。Agent不调用探测；Task/wakeup仍用无标志查询。完整工具例子和原因表见主技能。
+
 run_submit返回不是远端完成；宿主监管器观察/持久化，再通知或按批准autoAnalyze分析。不要杀监管器、不要用新SSH会话/新目标重复启动同作业。
 
 正式取消由用户运行面板请求，按原SSH handle与确认containerId取消受管容器；不是按全局进程组误伤无关作业。不承诺上游固定TERM五秒/KILL细节；Pi由监管实现确认状态，网络失败/paused/引擎不可用先保留cancelling/unknown，用户恢复目标条件后对账。容器停止/丢失/身份变更读真实错误，不自动重建已启动容器或声称取消完成。

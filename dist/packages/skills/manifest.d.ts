@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "14e1170adc7bf3ab02a4b37a44172082d5853732fc1df1bd0aac9fbde70479cb";
+export declare const BUNDLE_ID = "8f766452c9ab9af8b19245b323cfad8bfb5f04fd5e0ba08c321946073e96ef52";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "7acc3e3fc42e09575add132a0b4d85ae626e3ea8fabd68988129ab410e964151";
+    readonly digest: "b62948f162bb359282b24925818a5b5661460934043a56c1f5fda860b7f3094b";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -72,16 +72,19 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-compute";
     readonly name: "pi-research-compute";
-    readonly description: "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/SSH reference.";
+    readonly description: "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/Docker/SSH reference.";
     readonly roles: readonly ["coordinator", "designer", "implementer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-compute/SKILL.md";
-    readonly digest: "b0ce03bd9dedea3fd3fb2cdc55ad8edab8043c153bcd58e9dc0a3bcc7b4fd680";
+    readonly digest: "83876eb1ab092dc06348f71f403fe0736a466dffbb701eb27c2677f236a024a0";
     readonly resources: readonly [{
         readonly path: "references/local.md";
-        readonly digest: "d345d7977a3c9393b554cb7210ec8ea88d5859393c800ad16bc635bd21f0cafb";
+        readonly digest: "1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121";
+    }, {
+        readonly path: "references/docker.md";
+        readonly digest: "ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6";
     }, {
         readonly path: "references/ssh.md";
-        readonly digest: "b9b52c318cea1a61849601f2f0eb373c176f4787bb22ce5d2d5298a4aeb56764";
+        readonly digest: "d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

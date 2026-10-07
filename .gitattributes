@@ -11,4 +11,5 @@ docs/acceptance/flow-paper-writing/*.tar.gz binary
 docs/acceptance/flow-publication-review/*.tar.gz binary
 docs/acceptance/flow-bounded-research/*.tar.gz binary
 docs/acceptance/flow-bounded-research/run-artifacts/**/*.csv -text whitespace=cr-at-eol
-skills/releases/*/blobs/* -text
+# Release blobs retain exact licensed bytes; integrity is checked by digest.
+skills/releases/*/blobs/* -text -whitespace

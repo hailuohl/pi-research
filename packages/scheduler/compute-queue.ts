@@ -8,7 +8,7 @@ import {userOnly,scope} from '../policy/permissions.js';
 import {object,integer,text} from '../contracts/validation.js';
 import {ensure,DomainError} from '../domain/errors.js';
 import {docker,probeDockerTarget,JOB_LABEL,MANIFEST_LABEL} from '../execution/docker.js';
-import type {ComputeKind,ComputeLimits,ComputeUsage,ComputeAvailable,ComputeConfiguration,ComputeQueueInspection,ComputeWaitReason,ComputeTargetProbe} from './compute-types.js';
+import type {ComputeKind,ComputeLimits,ComputeUsage,ComputeAvailable,ComputeConfiguration,ComputeQueueInspection,ComputeWaitReason,ComputeTargetProbe,RunSchedulingInspection} from './compute-types.js';
 
 interface QueueRow {sequence:number;kind:ComputeKind;id:string;project_id:string;backend:'local'|'docker'|'trusted-example'|'ssh';context_name:string|null;phase:string;held:number;cpu_millis:number;memory_mb:number;target_id:string|null;engine_id:string|null;endpoint:string|null;bound:number;generation:number;lease_until:number;next_attempt_at:number;last_error:string|null;source_version:number;}
 interface ContextRow {context:string;target_id:string|null;engine_id:string|null;endpoint:string|null;status:string;next_probe_at:number;probe_until:number;failures:number;}
@@ -161,6 +161,14 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         if(r.held)return !['trusted-example','local'].includes(r.backend)?'recovery_due':'manual_recovery_required';
         if(this.tooLarge(r))return 'request_too_large';const capacity=this.capacity(r);if(capacity)return capacity;
         return heads.some(h=>h.target_id===r.target_id&&h.sequence<r.sequence)||next&&next.sequence<r.sequence?'earlier_job':'ready';
+    }
+    inspectRun(actor:Actor,pid:string,id:string):RunSchedulingInspection {
+        scope(actor,pid);const run=this.c.store.get<Run>('run',id,pid),observedAt=new Date().toISOString();
+        if(TERMINAL.includes(run.state))return {observedAt,queue:null,unavailableReason:'terminal'};
+        const r=this.c.store.db.prepare("SELECT * FROM compute_queue WHERE kind='run' AND id=? AND project_id=?").get(id,pid) as unknown as QueueRow|undefined;
+        if(!r)return {observedAt,queue:null,unavailableReason:'not_recorded'};
+        const heads=this.heads(),next=heads.find(h=>!this.capacity(h));
+        return {observedAt,queue:{state:r.phase,held:!!r.held,backend:r.backend,targetId:r.bound?r.target_id:null,requested:{cpus:r.cpu_millis/1000,memoryMb:r.memory_mb,...(run.manifest.contract.gpu?{gpu:run.manifest.contract.gpu}:{})},nextAttemptAt:r.next_attempt_at,reason:this.reason(r,heads,next)}};
     }
     inspect(actor:Actor,pid?:string,options:{cursor?:number;limit?:number}={}):ComputeQueueInspection {
         userOnly(actor);if(pid){scope(actor,pid);this.c.store.get('project',pid);}const cursor=integer(options.cursor??0,'cursor',0,Number.MAX_SAFE_INTEGER),limit=integer(options.limit??50,'limit',1,256);

@@ -1,6 +1,6 @@
 ---
 name: pi-research-compute
-description: "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/SSH reference."
+description: "Use before preparing or launching a run, relaunching, sizing, cancellation, recovery, or completion reconciliation; read one local/Docker/SSH reference."
 ---
 
 # 固定快照与受控计算
@@ -18,14 +18,26 @@ description: "Use before preparing or launching a run, relaunching, sizing, canc
 5. **返回是排队而不是完成。** run_submit即刻返回真实Run，随后按run_inspect/run_logs与宿主通知推进。当前没有上游--force允许同节点任意并发的工具，不能用重复意向绕过节点在途保护。
 6. **取消与会话分开。** 正式Run取消由用户在运行面板发起；没有Agent run_cancel工具。停止Agent/关闭聊天不会取消Run。development_cancel仅自己的开发检查，不取消正式Run。要确认实际cancelled及资源收尾，不能把“已请求取消”报成终止。
 
-示例依次用于run_prepare和获批后的run_submit，ID均来自实际输出：
+以下例子用 `tool` 标明工具名；实际 Pi 参数保留 `{input: ...}` 封装，只去掉 `tool` 字段。ID 均来自实际输出；前两步没有运行副作用：
 
 ```json
-{"input":{"experimentId":"<真实实验ID>","autoAnalyze":false}}
+{"tool":"execution_environment_list","input":{}}
 ```
 
 ```json
-{"input":{"intentId":"<实际RunIntent.id>"}}
+{"tool":"project_inspect","input":{}}
+```
+
+确认固定实验和已保存环境后，准备运行：
+
+```json
+{"tool":"run_prepare","input":{"experimentId":"<真实实验ID>","autoAnalyze":false}}
+```
+
+用户批准该精确意向后，由原交互主协调者提交；未批准时停止在准备阶段：
+
+```json
+{"tool":"run_submit","input":{"intentId":"<实际RunIntent.id>"}}
 ```
 
 autoAnalyze:true可同时准备终态后最多一次Pi结果分析任务，模型/目的地/额度进入批准；不是免费等待，也不批准后续计算。任务可有多个HTTP往返。原意向状态不明时用project_inspect的runIntentId精确回查原主会话意向；不准备新清单顶替拒绝或失效意向。
@@ -36,12 +48,41 @@ autoAnalyze:true可同时准备终态后最多一次Pi结果分析任务，模�
 |---|---|---|
 | trusted-example | 随包固定曲线拟合、入口哈希校验，不执行任意宿主代码 | references/local.md |
 | local | 用户配置的本地运行环境，固定源码正式Run；CPU或明确NVIDIA设备，当前用户权限、无文件/网络隔离 | references/local.md |
-| docker | Linux Docker CPU/NVIDIA正式Run及CPU独立开发检查、日志、取消、固定容器恢复 | references/local.md |
+| docker | Linux Docker CPU/NVIDIA正式Run及CPU独立开发检查、日志、取消、固定容器恢复 | references/docker.md |
 | ssh | 用户配置/探测的固定SSH目标，经版本化受信Linux Docker监管器执行CPU/NVIDIA容器 | references/ssh.md |
 
-调用research_skill_read，skillId:"pi-research-compute"，resource:"references/local.md"或"references/ssh.md"。只读所选指南，不自动执行资源或安装依赖。若不可读报具体资源/完整性错误，不退回任意路径/ORX指南。
+调用research_skill_read，skillId:"pi-research-compute"，resource:"references/local.md"、"references/docker.md"或"references/ssh.md"。只读所选指南，不自动执行资源或安装依赖。若不可读报具体资源/完整性错误，不退回任意路径/ORX指南。
 
 其他云/集群后端、托管资源目录与实例生命周期已从当前范围移除，不加载这些参考，也不把配置凭据当恢复它们的授权。NVIDIA以完整UUID显式选择，先由用户在资源与调度核对目标；Agent只能读取已保存目录，不能探测设备/改运行环境。设备查询不等于运算成功，已有本机或SSH回环记录不外推所有主机、镜像或本次运行。“CPU限制”不意味着GPU隔离；AMD/Metal尚未支持，不得把GPU请求静默改为CPU。
+
+## 读取当前调度观察
+
+交互主协调者对实际 `Run.id` 查询（Task/wakeup 和其他角色保持旧的 `run_inspect`，不加标志）：
+
+```json
+{"tool":"run_inspect","input":{"runId":"<实际Run.id>","includeScheduling":true}}
+```
+
+使用返回的 `state`、完整性和 `scheduling.observedAt`；`scheduling.queue` 是该 Run 当前的已保存调度观察，不是硬件实时探测。queue 为 null 时，`unavailableReason:terminal` 表示已终态，`not_recorded` 表示旧记录没有队列信息；缺信息不能猜成 ready、空闲或失败。相同 callId 重查会刷新观察，但旧回执/运行清单仍保留。`execution_environment_list` 也是已保存目录，检查各条 observedAt，不能声称刚探测设备。
+
+| queue.reason | 含义及下一步 |
+|---|---|
+| ready / earlier_job | 当前具备候选资格 / 等先前作业；交给宿主调度，不直接启动或重复提交 |
+| gpu_busy | 应用内 UUID 预留或旧容器兼容保护仍占用；等待原作业确认终态，unknown 不等于空闲；不猜其他项目占用者 |
+| host_capacity / target_capacity | 共享预算 / 所选目标预算不足；等待释放，必要时用户核对配额；不擅自改目标或资源 |
+| request_too_large | 固定请求超过配额；交用户核对合同和配额，不能静默缩小或另建运行 |
+| target_unresolved / target_unavailable / target_changed / legacy_target_unknown | 缺已核对目标、不可用、固定身份变更或旧归属未确认；用户恢复原环境并核对，不能切换目标顶替 |
+| worker_active | 监管租约有效；读日志和宿主通知，不能当结果完成 |
+| recovery_backoff / recovery_due | 恢复退避 / 允许监管器对账；原作业与预留仍存在，不能重跑 |
+| manual_recovery_required | 本地旧租约结束但尚未确认停止；用户恢复原作业，不能按旧 PID 杀进程或释放 GPU |
+
+有日志时按返回游标和 identity 分页；stdout/stderr 与队列观察分开判断：
+
+```json
+{"tool":"run_logs","input":{"runId":"<实际Run.id>","stream":"stderr","cursor":0}}
+```
+
+终态仍须核对退出码、integrity、metrics、声明产物与固定源码，不能把 succeeded 或 queue=null 当科学结论。相关用户操作只有现有运行面板/资源与调度入口；本工具不会探测、配置、恢复或取消作业。
 
 ## 等待、唤醒与终态对账
 

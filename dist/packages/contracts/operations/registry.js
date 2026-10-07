@@ -141,7 +141,12 @@ function executeRegistered(c, name, x) {
         case 'evidence_register': return app.evidence.register(actor, pid, text(x.artifactId, 'artifactId', 100), integer(x.start, 'start', 0), integer(x.end, 'end', 1), text(x.description, 'description', 2000));
         case 'evidence_read': return app.evidence.verify(pid, text(x.evidenceId, 'evidenceId', 100), false);
         case 'experiment_plan_submit': return app.experiments.create(actor, pid, x, session?.id);
-        case 'run_inspect': return app.store.get('run', text(x.runId, 'runId', 100), pid);
+        case 'run_inspect': {
+            const runId = text(x.runId, 'runId', 100);
+            if (x.includeScheduling === true)
+                return app.store.readSnapshot(() => ({ ...app.store.get('run', runId, pid), scheduling: app.compute.inspectRun(actor, pid, runId) }));
+            return app.store.get('run', runId, pid);
+        }
         case 'run_logs':
             app.store.get('run', text(x.runId, 'runId', 100), pid);
             return app.runs.logs(actor, x.runId, integer(x.cursor ?? 0, 'cursor', 0, Number.MAX_SAFE_INTEGER), x.stream, x.identity);
@@ -296,7 +301,10 @@ const SPECS = [
     make('evidence_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'evidence_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'evidence_read', x) }),
     make('experiment_plan_submit', { idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'experiment_plan_submit', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'experiment_plan_submit', x) }),
     make('run_list', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.runs.list(c.actor, c.projectId, x.cursor, x.limit) }),
-    make('run_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'run_inspect', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'run_inspect', x) }),
+    make('run_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { if (x.includeScheduling === true && c.actor.type === 'agent')
+            interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'run_inspect'));
+        else
+            authorizeRegistered(c, 'run_inspect', x); }, preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'run_inspect', x) }),
     make('run_logs', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'run_logs', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'run_logs', x) }),
     make('approval_request', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'approval_request', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'approval_request', x) }),
     make('collaboration_plan_submit', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'collaboration_plan_submit', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'collaboration_plan_submit', x) }),
@@ -616,6 +624,10 @@ export class OperationRegistry {
                     spec.authorize(context, input);
                 const previous = lookup();
                 if (previous) {
+                    if (actor.type === 'agent' && id === 'run_inspect' && input.includeScheduling === true) {
+                        spec.authorize(context, input);
+                        return output(spec.execute(context, input));
+                    }
                     if (id === 'experiment_plan_submit' && actor.type === 'agent') {
                         this.authorizeAgent(actor, id);
                         const created = previous.value;
