@@ -40,6 +40,16 @@ test('paper fixed-page image recipe uses real Pi wrapping and does not alter the
  }
  assert.equal(count,1);assert.doesNotMatch(s.read('coordinator','pi-research-paper',undefined,'deacf6d3accce4602e8c28974a85dbebf56dd021e4d48672a2ddf0b0b6ce5715').content,/publication_page_image_read/);
 });
+
+test('original document visual recipes have mutually exclusive range and reuse forms with Pi wrapping',()=>{
+ const s=new SkillService(root),body=s.read('coordinator','pi-research-lit-review').content,recipes=[];
+ for(const match of body.matchAll(/```json\s*\n([\s\S]*?)\n```/g)){
+  const value=JSON.parse(match[1]);if(value.tool!=='document_page_image_read')continue;
+  const tool=buildCustomTools([{name:value.tool,...TOOL_DEFINITIONS[value.tool]}],async()=>null)[0];assert.doesNotThrow(()=>tool.prepareArguments({input:value.input}));recipes.push(value.input);
+ }
+ assert.equal(recipes.length,2);assert.ok('firstPage' in recipes[0]&&'lastPage' in recipes[0]);assert.ok(!('authorizationActionId' in recipes[0]));assert.ok('authorizationActionId' in recipes[1]&&!('firstPage' in recipes[1])&&!('lastPage' in recipes[1]));
+ assert.doesNotMatch(s.read('coordinator','pi-research-lit-review',undefined,'49efbc47bbccc6d19c12d60d77b9721219865dfce73a1f50552ac87bae296ca8').content,/document_page_image_read/);
+});
 test('all allowed resources are hashed and treated as text, not executed',()=>{const s=new SkillService(root);for(const e of s.list('coordinator'))for(const p of e.resources){const r=s.read('coordinator',e.id,p);assert.ok(r.content.length>100);assert.ok(r.digest);}});
 test('tampered bundled text cannot silently enter runtime',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});writeFileSync(join(dir,'skills/piresearch/pi-research-overview/SKILL.md'),'forged grant');const s=new SkillService(dir);assert.throws(()=>s.read('coordinator','pi-research-overview'),{code:'SKILL_INTEGRITY_FAILED'});}finally{rmSync(dir,{recursive:true,force:true});}});
 test('symlinked skill paths fail instead of exposing a host file',()=>{const dir=mkdtempSync(join(tmpdir(),'pi-skills-'));try{cpSync(join(root,'skills/piresearch'),join(dir,'skills/piresearch'),{recursive:true});const p=join(dir,'skills/piresearch/pi-research-overview'),outside=join(dir,'outside');cpSync(p,outside,{recursive:true});rmSync(p,{recursive:true});symlinkSync(outside,p,process.platform==='win32'?'junction':'dir');assert.throws(()=>new SkillService(dir).read('coordinator','pi-research-overview'),{code:'SKILL_PATH_DENIED'});}finally{rmSync(dir,{recursive:true,force:true});}});

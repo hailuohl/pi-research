@@ -5,11 +5,12 @@ import {mkdirSync,writeFileSync,readFileSync,chmodSync,readdirSync,lstatSync,exi
 import {join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import type {ResearchApp} from '../research-app.js';
-import type {Actor,Row} from '../domain/types.js';
+import type {Actor,Row,Session,MessageAttachment} from '../domain/types.js';
+import {assertPublicationPng} from '../pi-adapter/publication-image.js';
 import type {DocumentVersion} from './types.js';
 import {object,text,integer} from '../contracts/validation.js';
 import {ensure,DomainError} from '../domain/errors.js';
-import {userOnly,scope} from '../policy/permissions.js';
+import {userOnly,scope,interactiveCoordinator} from '../policy/permissions.js';
 import {assertProjectWritable} from '../policy/lifecycle.js';
 import {digest} from '../storage/store.js';
 import {snapshotDirectory,verifySnapshot,safePath} from '../workspace/files.js';
@@ -62,12 +63,13 @@ export class DocumentParsingService {
  submit(actor:Actor,pid:string,id:string){return this.app.store.transaction(()=>{const job=this.get(actor,pid,id);if(job.state!=='prepared')return this.inspect(actor,pid,id);this.assertCurrent(job,false);this.app.compute.assertEnqueue('document',pid,job.manifest.dockerContext);this.app.store.update<DocumentParseJob>('document-parse-job',id,job.version,{state:'queued'});return this.inspect(actor,pid,id);});}
  inspect(actor:Actor,pid:string,id:string){const j=this.get(actor,pid,id);return {id:j.id,jobId:j.id,documentVersionId:j.documentVersionId,approvalId:j.approvalId,state:j.state,integrity:j.integrity,manifestDigest:j.manifestDigest,rawDigest:j.manifest.rawDigest,profileId:j.manifest.profileId,profileDigest:j.manifest.profileDigest,imageDigest:j.manifest.environmentImageDigest,dockerContext:j.manifest.dockerContext,resources:j.manifest.resources,generation:j.generation,startRequested:j.startRequested,cancelRequested:j.cancelRequested,exitCode:j.exitCode??null,artifactIds:j.artifactIds,...(j.imageId?{imageId:j.imageId}:{}),...(j.resultId?{resultId:j.resultId}:{}),...(j.error?{error:j.error}:{}),...(j.startedAt?{startedAt:j.startedAt}:{}),...(j.endedAt?{endedAt:j.endedAt}:{})};}
  cancel(actor:Actor,pid:string,id:string){return this.app.store.transaction(()=>{const j=this.get(actor,pid,id);if(!terminal(j.state)){this.app.store.update<DocumentParseJob>('document-parse-job',id,j.version,{cancelRequested:true});if(['prepared','queued'].includes(j.state)&&!j.startRequested&&!j.containerId)this.finalize(id,{state:'cancelled',exitCode:null,incomplete:true});}return this.inspect(actor,pid,id);});}
- result(actor:Actor,pid:string,id:string){
-  userOnly(actor);scope(actor,pid);
-  const result=this.app.store.get<DocumentParseResult>('document-parse-result',id,pid),job=this.app.store.get<DocumentParseJob>('document-parse-job',result.jobId,pid),document=this.app.documents.get(actor,pid,result.documentVersionId);
+ result(actor:Actor,pid:string,id:string){userOnly(actor);scope(actor,pid);return this.fixedResult(pid,id);}
+ /** Internal integrity check, not an owner-tool impersonation or an Agent content endpoint. */
+ private fixedResult(pid:string,id:string){
+  const result=this.app.store.get<DocumentParseResult>('document-parse-result',id,pid),job=this.app.store.get<DocumentParseJob>('document-parse-job',result.jobId,pid),document=this.app.store.get<DocumentVersion>('document-version',result.documentVersionId,pid);
   ensure(job.state==='succeeded'&&job.integrity==='complete'&&job.resultId===id&&job.manifestDigest===result.manifestDigest&&digest(job.manifest)===job.manifestDigest&&digest(document)===job.manifest.documentDigest&&document.original.digest===result.rawDigest,'DOCUMENT_RESULT_INVALID','解析结果绑定失效');
-  const raw=this.app.evidence.read(actor,document.original.artifactId);ensure(raw.artifact.digest===result.rawDigest,'DOCUMENT_CORRUPTED','原PDF已改变');
-  const archived=this.app.evidence.read(actor,result.manifestArtifactId);ensure(archived.artifact.projectId===pid&&archived.artifact.digest===result.manifestArtifactDigest,'DOCUMENT_RESULT_INVALID','固定解析清单已改变');
+  const raw=this.app.evidence.read({type:'system'},document.original.artifactId);ensure(raw.artifact.digest===result.rawDigest,'DOCUMENT_CORRUPTED','原PDF已改变');
+  const archived=this.app.evidence.read({type:'system'},result.manifestArtifactId);ensure(archived.artifact.projectId===pid&&archived.artifact.digest===result.manifestArtifactDigest,'DOCUMENT_RESULT_INVALID','固定解析清单已改变');
   const fixed=JSON.parse(archived.bytes.toString('utf8')) as ParserOutput;
   ensure(fixed.rawDigest===result.rawDigest&&digest(result.quality)===digest(fixed.quality)&&fixed.profileId===result.profileId&&fixed.formatVersion===(result.profileId===DOCUMENT_PARSER_LEGACY_PROFILE?1:2)&&result.profileId===job.manifest.profileId&&result.profileDigest===job.manifest.profileDigest&&result.imageId===job.imageId&&fixed.pageCount===result.pageCount&&fixed.pages.length===result.pages.length,'DOCUMENT_RESULT_INVALID','页清单绑定不符');
   for(const [index,page] of result.pages.entries()){
@@ -75,6 +77,28 @@ export class DocumentParsingService {
    ensure(f.pageNumber===page.pageNumber&&f.textDigest===page.textArtifactDigest&&f.imageDigest===page.imageArtifactDigest&&t.digest===f.textDigest&&i.digest===f.imageDigest&&t.size===f.textBytes&&i.size===f.imageBytes&&digest(f.paragraphs)===digest(page.paragraphs)&&f.textStatus===page.textStatus&&f.pageLabel===page.pageLabel&&f.width===page.width&&f.height===page.height&&f.imageWidth===page.imageWidth&&f.imageHeight===page.imageHeight&&Object.hasOwn(f,'imageCandidates')===Object.hasOwn(page,'imageCandidates')&&digest(f.imageCandidates??[])===digest(page.imageCandidates??[]),'DOCUMENT_RESULT_INVALID','页关联与固定清单不符');
   }
   return result;
+ }
+ /** Fixed source proof shared by metadata selection and narrowly approved visual reads. */
+ visualSource(pid:string,documentVersionId:string,parseResultId:string,firstPage:number,lastPage:number){
+  const r=this.fixedResult(pid,parseResultId),j=this.app.store.get<DocumentParseJob>('document-parse-job',r.jobId,pid),d=this.assertCurrent(j,true);
+  ensure(d.id===documentVersionId&&r.documentVersionId===d.id&&j.documentVersionId===d.id&&j.manifest.documentVersionId===d.id&&d.contentKind==='original-pdf'&&d.original.mediaType==='application/pdf'&&j.manifest.rawArtifactId===d.original.artifactId,'DOCUMENT_RESULT_INVALID','固定文档与解析结果不匹配');
+  const approval=this.app.approvals.assert(j.approvalId,pid,j.id,j.manifestDigest,'document.parse');ensure(approval.subjectKind==='document-parse-job'&&!approval.runGrant&&!approval.workingGrant,'APPROVAL_STALE','解析批准类型改变');
+  ensure(r.pageCount===r.pages.length&&r.pages.every((p,i)=>p.pageNumber===i+1)&&j.artifactIds.includes(r.manifestArtifactId),'DOCUMENT_RESULT_INVALID','固定解析页列表或清单归属失效');
+  integer(firstPage,'firstPage',1,r.pageCount);integer(lastPage,'lastPage',firstPage,r.pageCount);
+  const pages=r.pages.slice(firstPage-1,lastPage).map(p=>{ensure(j.artifactIds.includes(p.imageArtifactId)&&j.artifactIds.includes(p.textArtifactId),'DOCUMENT_RESULT_INVALID','解析页不属于固定任务');const {artifact,bytes}=this.app.evidence.read({type:'system'},p.imageArtifactId);ensure(artifact.projectId===pid&&artifact.mediaType==='image/png'&&artifact.digest===p.imageArtifactDigest&&bytes.length===artifact.size,'DOCUMENT_RESULT_INVALID','固定页资产改变');return {pageNumber:p.pageNumber,artifactId:artifact.id,digest:artifact.digest,bytes:bytes.length,width:p.imageWidth,height:p.imageHeight};});
+  return {documentVersionId,parseResultId,documentDigest:digest(d),resultDigest:digest(r),rawDigest:r.rawDigest,jobId:j.id,manifestDigest:j.manifestDigest,manifestArtifactDigest:r.manifestArtifactDigest,approvalId:j.approvalId,firstPage,lastPage,pageCount:r.pageCount,pages};
+ }
+ attachmentMetadata(actor:Actor,session:Row<Session>,pair:{documentVersionId:string;parseResultId:string}):Required<Pick<MessageAttachment,'parseResultId'|'resultDigest'|'pageCount'>>{
+  scope(actor,session.projectId!);ensure(session.role==='coordinator'&&!session.taskId&&!session.teamId&&session.state!=='archived','ATTACHMENT_SCOPE_DENIED','固定解析资料只可带入主协调会话',403);if(actor.type==='agent')interactiveCoordinator(actor,session.projectId!,this.app.store.get<Session>('session',session.id,session.projectId!));else userOnly(actor);
+  const r=this.app.store.get<DocumentParseResult>('document-parse-result',pair.parseResultId,session.projectId!),source=this.visualSource(session.projectId!,pair.documentVersionId,pair.parseResultId,1,r.pageCount);return {parseResultId:pair.parseResultId,resultDigest:source.resultDigest,pageCount:source.pageCount};
+ }
+ pageImage(pid:string,documentVersionId:string,parseResultId:string,pageNumber:number,firstPage:number,lastPage:number){
+  const source=this.visualSource(pid,documentVersionId,parseResultId,firstPage,lastPage);integer(pageNumber,'pageNumber',firstPage,lastPage);const p=source.pages.find(p=>p.pageNumber===pageNumber)!;
+  const {bytes}=this.app.evidence.read({type:'system'},p.artifactId);ensure(bytes.length===p.bytes&&digest(bytes)===p.digest,'MODEL_IMAGE_INVALID','固定页字节改变');assertPublicationPng(bytes,p.width,p.height);return {...p,data:bytes.toString('base64')};
+ }
+ readPageImage(actor:Actor,pid:string,input:Record<string,unknown>){
+  scope(actor,pid);const scopeRef=this.app.sessionPermissions.documentImageScope(actor,input),page=this.pageImage(pid,input.documentVersionId as string,input.parseResultId as string,input.pageNumber as number,scopeRef.firstPage,scopeRef.lastPage);
+  return {reference:{kind:'document-page',...scopeRef,documentVersionId:input.documentVersionId,parseResultId:input.parseResultId,pageNumber:page.pageNumber,digest:page.digest,bytes:page.bytes,width:page.width,height:page.height},mimeType:'image/png',data:page.data};
  }
  pages(actor:Actor,pid:string,id:string,cursor=0,limit=20){const r=this.result(actor,pid,id);integer(cursor,'cursor',0,r.pageCount);integer(limit,'limit',1,100);const end=Math.min(r.pageCount,cursor+limit);return {resultId:r.id,documentVersionId:r.documentVersionId,rawDigest:r.rawDigest,pageCount:r.pageCount,quality:r.quality,versionAssurance:r.versionAssurance,requestedVersion:r.requestedVersion,observedVersion:r.observedVersion,items:r.pages.slice(cursor,end),cursor,end,complete:end===r.pageCount};}
  readPage(actor:Actor,pid:string,resultId:string,pageNumber:number,cursor=0,limit=16000){const r=this.result(actor,pid,resultId),page=r.pages.find(p=>p.pageNumber===integer(pageNumber,'pageNumber',1,r.pageCount));ensure(page,'NOT_FOUND','PDF页不存在',404);verifyDocumentLink(this.app.context,pid,{documentVersionId:r.documentVersionId,rawDigest:r.rawDigest,parseResultId:r.id,pageNumber:page.pageNumber,textArtifactDigest:page.textArtifactDigest},page.textArtifactId);const {bytes,artifact}=this.app.evidence.read(actor,page.textArtifactId);ensure(artifact.projectId===pid&&artifact.digest===page.textArtifactDigest,'DOCUMENT_RESULT_INVALID','页文本绑定已改变');const content=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);integer(cursor,'cursor',0,content.length);integer(limit,'limit',1,64000);const end=Math.min(content.length,cursor+limit);return {resultId,documentVersionId:r.documentVersionId,rawDigest:r.rawDigest,...page,content:content.slice(cursor,end),cursor,end,complete:end===content.length};}

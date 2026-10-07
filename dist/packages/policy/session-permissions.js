@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { publicationImageCatalog, PUBLICATION_IMAGE_TOOL, imageReference } from '../pi-adapter/publication-image.js';
+import { publicationImageCatalog, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL, imageReference, documentImageReference } from '../pi-adapter/publication-image.js';
 import { ensure, DomainError } from '../domain/errors.js';
 import { object, integer, oneOf } from '../contracts/validation.js';
 import { digest } from '../storage/store.js';
@@ -10,7 +10,7 @@ const gitTuple = (job) => ({ id: job.id, action: job.action, sessionId: job.sess
 // Explicit effects: idempotency receipts do not make an operation a pure read.
 const READ = new Set(['execution_environment_list', 'development_review_inspect', 'development_review_source_list', 'development_review_source_read', 'run_source_list', 'run_source_read', 'workspace_history_inspect', 'workspace_history_diff', 'workspace_history_operation', 'development_inspect', 'development_logs', 'experiment_source_list', 'experiment_source_read', 'experiment_source_diff', 'research_skill_list', 'research_skill_read', 'connector_status', 'project_inspect', 'workspace_list', 'workspace_read', 'evidence_read', 'artifact_read', 'run_inspect', 'run_logs', 'task_inspect', 'task_result_read', 'task_context_read', 'session_notice_read', 'research_brief_inspect', 'session_attachment_read', 'campaign_inspect', 'publication_templates', 'publication_template_inspect', 'publication_template_read', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list', 'approval_request']);
 const EDIT = new Set(['workspace_write', 'workspace_history_set_mode', 'workspace_prepare_from_revision']);
-const WRITE = new Set([PUBLICATION_IMAGE_TOOL, 'research_brief_save', 'development_review_prepare', 'reviewed_change_prepare', 'development_prepare', 'development_cancel', 'change_proposal_prepare', 'artifact_create', 'evidence_register', 'experiment_plan_submit', 'run_prepare', 'collaboration_plan_submit', 'agent_delegate', 'campaign_prepare', 'campaign_enroll', 'campaign_decision_submit', 'publication_template_import', 'manuscript_create', 'publication_prepare', 'publication_review_prepare', 'text_evidence_search', 'task_result_submit']);
+const WRITE = new Set([PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL, 'research_brief_save', 'development_review_prepare', 'reviewed_change_prepare', 'development_prepare', 'development_cancel', 'change_proposal_prepare', 'artifact_create', 'evidence_register', 'experiment_plan_submit', 'run_prepare', 'collaboration_plan_submit', 'agent_delegate', 'campaign_prepare', 'campaign_enroll', 'campaign_decision_submit', 'publication_template_import', 'manuscript_create', 'publication_prepare', 'publication_review_prepare', 'text_evidence_search', 'task_result_submit']);
 const EXECUTE = new Set(['host_execute', 'workspace_history_commit', 'development_submit', 'run_submit']);
 export const TASK_PERMISSION_EFFECTS = ['workspace_write', 'workspace_history_set_mode', 'workspace_prepare_from_revision', 'artifact_create', 'evidence_register', 'text_evidence_search', 'experiment_plan_submit', 'task_result_submit'];
 const NETWORK = new Set(['literature_search', 'literature_discover', 'paper_read']);
@@ -119,7 +119,13 @@ export class SessionPermissionService {
             ensure(this.app.store.get('manuscript-revision', page.revisionId, s.projectId).rootSessionId === sessionId, 'SCOPE_DENIED', '固定文稿不属于当前会话', 403);
             publicationImage = { ...page, catalog: publicationImageCatalog(join(this.app.context.dataDir, 'models.json')) };
         }
-        return { fingerprint: digest({ ...(publicationImage ? { publicationImage } : {}), workspace: s.workspace, sourceWorkspace, workspaceFiles, researchBrief, model: s.model, role: s.role, taskId: s.taskId, attemptId: task?.attemptId, sourceRevisionId: s.sourceRevisionId, sourceDigest: s.sourceDigest, refs, targets, before, connectors: settings ? { version: settings.version, enabled: settings.enabled, requestLimit: settings.requestLimit } : null }), before };
+        let documentImage;
+        if (operation === DOCUMENT_IMAGE_TOOL) {
+            const source = this.app.documentParsing.visualSource(s.projectId, input.documentVersionId, input.parseResultId, input.firstPage, input.lastPage);
+            integer(input.pageNumber, 'pageNumber', source.firstPage, source.lastPage);
+            documentImage = { ...source, catalog: publicationImageCatalog(join(this.app.context.dataDir, 'models.json')) };
+        }
+        return { fingerprint: digest({ ...(publicationImage ? { publicationImage } : {}), ...(documentImage ? { documentImage } : {}), workspace: s.workspace, sourceWorkspace, workspaceFiles, researchBrief, model: s.model, role: s.role, taskId: s.taskId, attemptId: task?.attemptId, sourceRevisionId: s.sourceRevisionId, sourceDigest: s.sourceDigest, refs, targets, before, connectors: settings ? { version: settings.version, enabled: settings.enabled, requestLimit: settings.requestLimit } : null }), before };
     }
     guard(actor, operation, input, callId) {
         if (actor.type !== 'agent')
@@ -130,6 +136,16 @@ export class SessionPermissionService {
         if (READ.has(operation) || operation === 'task_progress_report')
             return { reference: ref };
         ensure(current.mode !== 'readOnly', 'SESSION_READ_ONLY', '只读会话禁止修改、联网或执行', 403);
+        if (operation === DOCUMENT_IMAGE_TOOL) {
+            const s = this.app.store.get('session', actor.sessionId);
+            interactiveCoordinator(actor, s.projectId, s);
+            ensure(typeof callId === 'string' && callId.length > 0, 'OPERATION_ID_REQUIRED', '图片读取需要原始调用标识');
+            const mapped = this.app.store.maybe('permission-call', digest({ sessionId: s.id, callId }));
+            if (mapped)
+                ensure(mapped.operation === operation && mapped.inputDigest === digest(input) && (!input.authorizationActionId || mapped.actionId === input.authorizationActionId), 'IDEMPOTENCY_CONFLICT', '同一调用标识不能改变图片请求');
+            if (input.authorizationActionId)
+                return this.app.store.transaction(() => { const approved = this.documentImageScope(actor, input); this.bindDocumentCall(s.id, callId, input, approved.actionId); return { reference: ref }; });
+        }
         if (actor.taskId) {
             const taskSession = this.app.store.get('session', actor.sessionId);
             if (taskSession.teamId) {
@@ -139,7 +155,7 @@ export class SessionPermissionService {
             }
         }
         const preciseGit = current.mode === 'fullAccess' && this.capture(actor.sessionId, true).mode === 'readOnly' && (operation === 'workspace_history_commit' || operation === 'workspace_prepare_from_revision' && !!this.app.store.get('project', actor.projectId).gitHistoryEnabled);
-        if (operation !== PUBLICATION_IMAGE_TOOL && (current.mode === 'legacy' || current.mode === 'fullAccess' && !preciseGit && !actor.wakeupId && !actor.taskId && this.root(actor.sessionId).id === actor.sessionId))
+        if (operation !== PUBLICATION_IMAGE_TOOL && operation !== DOCUMENT_IMAGE_TOOL && (current.mode === 'legacy' || current.mode === 'fullAccess' && !preciseGit && !actor.wakeupId && !actor.taskId && this.root(actor.sessionId).id === actor.sessionId))
             return { reference: ref };
         const s = this.app.store.get('session', actor.sessionId);
         ensure(!actor.wakeupId, 'SESSION_AUTOMATION_ACTION_UNAPPROVED', '自动唤醒仅可读取固定资料；写入须由用户交互主会话处理', 403);
@@ -178,12 +194,48 @@ export class SessionPermissionService {
             return { reference: ref, actionId: approved.id, key: `permission-action:${approved.id}` };
         }
         const old = matching.find(a => ['executing', 'completed'].includes(a.state));
-        if (old)
+        if (old) {
+            if (operation === DOCUMENT_IMAGE_TOOL)
+                this.bindDocumentCall(s.id, callId, input, old.id);
             return { reference: ref, actionId: old.id, key: `permission-action:${old.id}`, consumed: true };
+        }
         let pending = matching.find(a => a.state === 'pending');
         if (!pending)
-            this.app.store.transaction(() => { const id = digest({ sessionId: s.id, operation, input, policy: ref, source: source.fingerprint, callId, generation: actor.generation }), approval = this.app.approvals.request(s.projectId, 'session-action', id, digest({ operation, input, policy: ref, source: source.fingerprint }), 'session.action', operation === PUBLICATION_IMAGE_TOOL ? `允许固定文稿 ${input.publicationResultId} 第 ${input.pageNumber} 页加入当前会话并发送给 ${s.model.provider}/${s.model.model}；后续请求及重开可能再次发送。权限或来源失效时停止；已发送内容无法撤回。仅检查布局，不证明科学结论。` : '批准本次准确参数、来源和权限版本的操作'); pending = this.app.store.create('session-action', s.projectId, { sessionId: s.id, operation, input, epoch: ref.epoch, policy: ref, source: source.fingerprint, approvalId: approval.id, generation: actor.generation, state: 'pending', ...(source.before ? { before: source.before } : {}) }, id); });
+            this.app.store.transaction(() => { const id = digest({ sessionId: s.id, operation, input, policy: ref, source: source.fingerprint, callId, generation: actor.generation }), approval = this.app.approvals.request(s.projectId, 'session-action', id, digest({ operation, input, policy: ref, source: source.fingerprint }), 'session.action', operation === PUBLICATION_IMAGE_TOOL ? `允许固定文稿 ${input.publicationResultId} 第 ${input.pageNumber} 页加入当前会话并发送给 ${s.model.provider}/${s.model.model}；后续请求及重开可能再次发送。权限或来源失效时停止；已发送内容无法撤回。仅检查布局，不证明科学结论。` : operation === DOCUMENT_IMAGE_TOOL ? `允许固定原文 ${input.documentVersionId} / ${input.parseResultId} 的物理页 ${input.firstPage}–${input.lastPage} 加入当前会话并发送给 ${s.model.provider}/${s.model.model}；本次只返回第 ${input.pageNumber} 页，后续可逐页读取批准范围并在请求或重开时重发。权限或来源失效时停止；许可沿原记录，未知不代表获许可，已发送内容无法撤回。` : '批准本次准确参数、来源和权限版本的操作'); pending = this.app.store.create('session-action', s.projectId, { sessionId: s.id, operation, input, epoch: ref.epoch, policy: ref, source: source.fingerprint, approvalId: approval.id, generation: actor.generation, state: 'pending', ...(source.before ? { before: source.before } : {}) }, id); if (operation === DOCUMENT_IMAGE_TOOL)
+                this.bindDocumentCall(s.id, callId, input, pending.id); });
+        if (operation === DOCUMENT_IMAGE_TOOL)
+            this.bindDocumentCall(s.id, callId, input, pending.id);
         throw new DomainError('APPROVAL_REQUIRED', '需要用户批准此项具体操作', 409, { actionId: pending.id, operation });
+    }
+    bindDocumentCall(sessionId, callId, input, actionId) { return this.app.store.transaction(() => { const id = digest({ sessionId, callId }), old = this.app.store.maybe('permission-call', id), inputDigest = digest(input); if (old)
+        ensure(old.operation === DOCUMENT_IMAGE_TOOL && old.inputDigest === inputDigest && old.actionId === actionId, 'IDEMPOTENCY_CONFLICT', '同一调用标识不能改变图片请求');
+    else
+        this.app.store.create('permission-call', this.app.store.get('session', sessionId).projectId, { actionId, operation: DOCUMENT_IMAGE_TOOL, inputDigest }, id); }); }
+    documentAction(actor, actionId, input, states) {
+        const s = this.app.store.get('session', actor.sessionId, actor.projectId);
+        interactiveCoordinator(actor, s.projectId, s);
+        const a = this.app.store.get('session-action', actionId, s.projectId);
+        ensure(a.operation === DOCUMENT_IMAGE_TOOL && a.sessionId === s.id && states.includes(a.state) && !a.input.authorizationActionId && a.input.documentVersionId === input.documentVersionId && a.input.parseResultId === input.parseResultId, 'PERMISSION_IMAGE_UNAPPROVED', '原文页未绑定当前会话的有效范围批准', 403);
+        const firstPage = integer(a.input.firstPage, 'firstPage', 1, 100), lastPage = integer(a.input.lastPage, 'lastPage', firstPage, 100);
+        integer(input.pageNumber, 'pageNumber', firstPage, lastPage);
+        this.assert(a.policy);
+        ensure(a.source === this.source(s.id, a.operation, a.input).fingerprint, 'MODEL_IMAGE_SOURCE_STALE', '原文范围批准的来源、模型或目录已改变');
+        this.app.approvals.assert(a.approvalId, s.projectId, a.id, digest({ operation: a.operation, input: a.input, policy: a.policy, source: a.source }), 'session.action');
+        return a;
+    }
+    documentImageScope(actor, input) {
+        const reused = input.authorizationActionId !== undefined, id = reused ? input.authorizationActionId : actor.permissionActionId;
+        ensure(typeof id === 'string' && id.length > 0, 'PERMISSION_IMAGE_UNAPPROVED', '原文图片需要准确范围批准', 403);
+        const a = this.documentAction(actor, id, input, reused ? ['completed'] : ['executing', 'completed']);
+        if (!reused)
+            ensure(digest(a.input) === digest(input), 'PERMISSION_IMAGE_UNAPPROVED', '首次图片请求必须与准确批准参数一致', 403);
+        return { actionId: a.id, firstPage: a.input.firstPage, lastPage: a.input.lastPage };
+    }
+    assertDocumentImageAction(actor, value) {
+        const ref = documentImageReference(value), a = this.documentAction(actor, ref.actionId, { documentVersionId: ref.documentVersionId, parseResultId: ref.parseResultId, pageNumber: ref.pageNumber }, ['completed']);
+        ensure(a.input.firstPage === ref.firstPage && a.input.lastPage === ref.lastPage, 'MODEL_IMAGE_UNBOUND', '历史图片的批准范围改变');
+        const page = this.app.documentParsing.pageImage(actor.projectId, ref.documentVersionId, ref.parseResultId, ref.pageNumber, ref.firstPage, ref.lastPage);
+        ensure(['digest', 'bytes', 'width', 'height'].every(k => ref[k] === page[k]), 'MODEL_IMAGE_INVALID', '历史原文图片与固定资产不符');
     }
     assertImageAction(actor, value) {
         const ref = imageReference(value), s = this.app.store.get('session', actor.sessionId, actor.projectId);

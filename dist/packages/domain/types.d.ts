@@ -92,6 +92,9 @@ export interface Message {
     usage?: unknown;
 }
 export interface MessageAttachment {
+    parseResultId?: string;
+    resultDigest?: string;
+    pageCount?: number;
     documentVersionId: string;
     artifactId: string;
     digest: string;

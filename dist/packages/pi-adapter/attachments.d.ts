@@ -1,9 +1,33 @@
 import type { Actor, Message, MessageAttachment, Row, Session } from '../domain/types.js';
 import { type Store } from '../storage/store.js';
+export type ParsedAttachmentPair = {
+    documentVersionId: string;
+    parseResultId: string;
+};
+export type ParsedAttachmentMetadata = Required<Pick<MessageAttachment, 'parseResultId' | 'resultDigest' | 'pageCount'>>;
+type ParsedResolver = (pair: ParsedAttachmentPair) => ParsedAttachmentMetadata;
 /** Reuse owner-imported project documents; attaching does not grant access to connector or parsed corpus data. */
-export declare function attachmentReferences(store: Store, session: Row<Session>, value: unknown): MessageAttachment[];
-export declare function attachmentScope(store: Store, actor: Actor, session: Row<Session>, value: unknown): MessageAttachment;
-export declare function readAttachment(store: Store, actor: Actor, session: Row<Session>, value: unknown): {
+export declare function attachmentReferences(store: Store, session: Row<Session>, value: unknown, parsed?: boolean, resolveParsed?: ParsedResolver): MessageAttachment[];
+export declare function attachmentScope(store: Store, actor: Actor, session: Row<Session>, value: unknown, resolveParsed?: ParsedResolver): MessageAttachment;
+export declare function readAttachment(store: Store, actor: Actor, session: Row<Session>, value: unknown, resolveParsed?: ParsedResolver): {
+    messageId: unknown;
+    content: string;
+    cursor: number;
+    end: number;
+    total: number;
+    complete: boolean;
+    status: "fixed_parse_metadata";
+    cursorUnit: "utf16";
+    parseResultId?: string;
+    resultDigest?: string;
+    pageCount?: number;
+    documentVersionId: string;
+    artifactId: string;
+    digest: string;
+    title: string;
+    mediaType: string;
+    size: number;
+} | {
     messageId: unknown;
     content: string;
     cursor: number;
@@ -12,6 +36,9 @@ export declare function readAttachment(store: Store, actor: Actor, session: Row<
     complete: boolean;
     status: "requires_parse";
     cursorUnit: "utf16";
+    parseResultId?: string;
+    resultDigest?: string;
+    pageCount?: number;
     documentVersionId: string;
     artifactId: string;
     digest: string;
@@ -27,6 +54,9 @@ export declare function readAttachment(store: Store, actor: Actor, session: Row<
     complete: boolean;
     status: "text";
     cursorUnit: "utf16";
+    parseResultId?: string;
+    resultDigest?: string;
+    pageCount?: number;
     documentVersionId: string;
     artifactId: string;
     digest: string;
@@ -35,3 +65,4 @@ export declare function readAttachment(store: Store, actor: Actor, session: Row<
     size: number;
 };
 export declare function messageInput(message: Pick<Row<Message>, 'id' | 'content' | 'attachments'>): string;
+export {};

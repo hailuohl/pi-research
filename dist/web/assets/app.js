@@ -74,6 +74,19 @@ class App extends React.Component {
       if (!this.state.busy)
         this.setState({ modal: "", modalData: null });
     };
+    this.useParsedDocument = (target) => {
+      const projectId = this.state.projectId, sessionId = this.state.sessionId, epoch = this.projectSelectionEpoch;
+      const current = () => {
+        const s = this.state.data?.sessions.find((s2) => s2.id === sessionId);
+        return this.mounted && this.state.projectId === projectId && this.state.sessionId === sessionId && this.projectSelectionEpoch === epoch && !this.state.data?.project.archived && s?.role === "coordinator" && !s.taskId && !s.teamId && s.state !== "archived";
+      };
+      if (this.state.busy || !current()) return;
+      void this.perform(async () => {
+        if (!current()) return;
+        await api(`/sessions/${encodeURIComponent(sessionId)}/messages`, { content: "\u6211\u9009\u62E9\u5C06\u8FD9\u4EFD\u56FA\u5B9A\u89E3\u6790\u8D44\u6599\u5E26\u5165\u5F53\u524D\u4F1A\u8BDD\u3002\u8BF7\u5148\u6838\u5BF9\u8D44\u6599\uFF0C\u518D\u4E0E\u6211\u660E\u786E\u9700\u8981\u89C6\u89C9\u8BFB\u53D6\u7684\u7269\u7406\u9875\u8303\u56F4\uFF1B\u8D44\u6599\u9644\u4EF6\u672C\u8EAB\u4E0D\u6388\u4E88\u539F\u6587\u6216\u56FE\u7247\u8BFB\u53D6\u6743\u9650\u3002", parsedDocumentAttachments: [target] });
+        if (current()) this.selectSession(sessionId, "chat");
+      }, "\u5DF2\u5E26\u5165\u56FA\u5B9A\u89E3\u6790\u8D44\u6599\uFF1B\u89C6\u89C9\u9875\u8303\u56F4\u4ECD\u9700\u51C6\u786E\u6279\u51C6");
+    };
     this.selectTab = (tab) => {
       const returnFocus = this.state.navigationOpen;
       this.setState({ tab: normalizeView(tab), navigationOpen: false }, () => {
@@ -471,7 +484,7 @@ class App extends React.Component {
               }
               this.invalidateRead();
               this.setState({ selectedRun, selectedExp });
-            } }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
+            } }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, session: currentSession, onUseDocument: this.useParsedDocument, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
               const clearHistory = { messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false };
               const campaign = data.campaigns.find((c) => c.id === selectedCampaign);
               if (!campaign) {

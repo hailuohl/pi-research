@@ -1,4 +1,4 @@
-import { imageContextReferences, publicationImageCatalog, PUBLICATION_IMAGE_TOOL } from '../../packages/pi-adapter/publication-image.js';
+import { imageContextReferences, publicationImageCatalog, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL } from '../../packages/pi-adapter/publication-image.js';
 import { managedModelFetch } from '../../packages/pi-adapter/model-fetch.js';
 import { MANAGED_HTTP_APIS } from '../../packages/scheduler/model-http.js';
 import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
@@ -92,7 +92,7 @@ process.on('message', async (message) => {
         if (raw.tools.some(t => !t.inputSchema || t.inputSchema.type !== 'object'))
             throw new Error('SDK_CONTRACT_MISMATCH: 工具缺少精确输入 Schema');
         const customTools = buildCustomTools(raw.tools, async (name, input, callId) => {
-            if (name === PUBLICATION_IMAGE_TOOL) {
+            if (name === PUBLICATION_IMAGE_TOOL || name === DOCUMENT_IMAGE_TOOL) {
                 if (!raw.managedHttp)
                     throw new Error('MODEL_IMAGE_UNMANAGED: 图片需要受管HTTP');
                 if (!model.input?.includes('image'))

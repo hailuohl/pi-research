@@ -1,8 +1,10 @@
 import { type SessionView } from './session-history.js';
+import { type ParsedAttachmentPair, type ParsedAttachmentMetadata } from './attachments.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Session, Message, ModelConfig, Role, Row } from '../domain/types.js';
 export declare class SessionService {
     private c;
+    parsedAttachmentMetadata?: (actor: Actor, session: Row<Session>, pair: ParsedAttachmentPair) => ParsedAttachmentMetadata;
     permissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
     taskPermissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
     permissionBranch?: (originalId: string, branchId: string) => void;

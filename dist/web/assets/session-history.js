@@ -139,7 +139,7 @@ class SessionHistory extends React.Component {
           message.attachments?.length ? /* @__PURE__ */ jsx("div", { className: "message-attachments", "aria-label": "\u6D88\u606F\u9644\u4EF6", children: message.attachments.map((attachment) => /* @__PURE__ */ jsxs("div", { className: "message-attachment", children: [
             /* @__PURE__ */ jsx(Icon, { name: "evidence", size: 15 }),
             /* @__PURE__ */ jsx("span", { title: attachment.title, children: attachment.title }),
-            /* @__PURE__ */ jsx("small", { children: attachment.mediaType === "application/pdf" ? "PDF \u539F\u4EF6 \xB7 \u9700\u663E\u5F0F\u89E3\u6790" : "\u6587\u672C\u539F\u4EF6" }),
+            /* @__PURE__ */ jsx("small", { children: attachment.mediaType === "application/pdf" ? attachment.parseResultId ? "\u56FA\u5B9A\u89E3\u6790 \xB7 \u89C6\u89C9\u8BFB\u53D6\u987B\u53E6\u6279" : "PDF \u539F\u4EF6 \xB7 \u9700\u663E\u5F0F\u89E3\u6790" : "\u6587\u672C\u539F\u4EF6" }),
             /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", "aria-label": `\u4E0B\u8F7D\u9644\u4EF6\u539F\u4EF6 ${attachment.title}`, onClick: () => perform(() => downloadArtifact(attachment.artifactId, attachment.title)), children: "\u4E0B\u8F7D\u539F\u4EF6" })
           ] }, attachment.documentVersionId)) }) : null,
           message.error ? /* @__PURE__ */ jsx("p", { className: "error-text", children: message.error }) : null,

@@ -11,6 +11,7 @@ import { ensure } from '../domain/errors.js';
 import { object, text, oneOf, integer } from '../contracts/validation.js';
 export class SessionService {
     c;
+    parsedAttachmentMetadata;
     permissionCapture;
     taskPermissionCapture;
     permissionBranch;
@@ -83,7 +84,8 @@ export class SessionService {
             ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
             ensure(!s.taskId, 'TASK_MESSAGE_REQUIRED', '请通过任务引导发送消息');
             assertProjectWritable(this.c.store, s.projectId);
-            const attachments = x.attachmentDocumentIds === undefined ? [] : attachmentReferences(this.c.store, s, x.attachmentDocumentIds);
+            ensure(x.attachmentDocumentIds === undefined || x.parsedDocumentAttachments === undefined, 'INVALID_INPUT', '上传附件与固定解析附件必须使用互斥入口');
+            const attachments = x.parsedDocumentAttachments !== undefined ? attachmentReferences(this.c.store, s, x.parsedDocumentAttachments, true, pair => { ensure(this.parsedAttachmentMetadata, 'ATTACHMENT_INVALID', '固定解析校验未配置'); return this.parsedAttachmentMetadata(actor, s, pair); }) : x.attachmentDocumentIds === undefined ? [] : attachmentReferences(this.c.store, s, x.attachmentDocumentIds);
             const pending = this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND json_extract(data,'$.status') IN ('queued','running') LIMIT 1").get(s.projectId, id);
             const mode = oneOf(x.mode ?? (s.state === 'running' || pending ? 'follow_up' : 'prompt'), ['prompt', 'steer', 'follow_up'], 'mode');
             const permission = this.permissionCapture?.(id);
@@ -216,6 +218,6 @@ export class SessionService {
             return branch;
         });
     }
-    retry(actor, id, messageId) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.send(actor, id, { content: m.content, mode: 'prompt', ...(m.attachments ? { attachmentDocumentIds: m.attachments.map(a => a.documentVersionId) } : {}) }); }
+    retry(actor, id, messageId) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.send(actor, id, { content: m.content, mode: 'prompt', ...(m.attachments ? (m.attachments.some(a => a.parseResultId) ? { parsedDocumentAttachments: m.attachments.map(a => ({ documentVersionId: a.documentVersionId, parseResultId: a.parseResultId })) } : { attachmentDocumentIds: m.attachments.map(a => a.documentVersionId) }) : {}) }); }
 }
 //# sourceMappingURL=sessions.js.map

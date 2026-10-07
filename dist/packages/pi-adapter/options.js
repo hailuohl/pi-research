@@ -1,5 +1,5 @@
 import { validateSchema, s as schema } from '../contracts/operations/schema.js';
-import { publicationImageResult, PUBLICATION_IMAGE_TOOL } from './publication-image.js';
+import { publicationImageResult, PUBLICATION_IMAGE_TOOL, documentImageResult, DOCUMENT_IMAGE_TOOL } from './publication-image.js';
 import { piFailure } from './runtime.js';
 import { readFileSync, existsSync } from 'node:fs';
 /** Validate raw model arguments before Pi's optional-null normalization and primitive coercion. */
@@ -23,7 +23,7 @@ export function buildCustomTools(definitions, dispatch) {
                 if (++calls > 40)
                     throw new Error('TOOL_CALL_LIMIT: 每次会话最多40次工具调用');
                 const result = await dispatch(definition.name, args.input, callId);
-                return definition.name === PUBLICATION_IMAGE_TOOL ? publicationImageResult(result) : { content: [{ type: 'text', text: JSON.stringify(result) }], details: {} };
+                return definition.name === PUBLICATION_IMAGE_TOOL ? publicationImageResult(result) : definition.name === DOCUMENT_IMAGE_TOOL ? documentImageResult(result) : { content: [{ type: 'text', text: JSON.stringify(result) }], details: {} };
             }
         };
     });

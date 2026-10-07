@@ -1,4 +1,4 @@
-import {imageContextReferences,publicationImageCatalog,PUBLICATION_IMAGE_TOOL} from '../../packages/pi-adapter/publication-image.js';
+import {imageContextReferences,publicationImageCatalog,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../../packages/pi-adapter/publication-image.js';
 import {managedModelFetch} from '../../packages/pi-adapter/model-fetch.js';
 import {MANAGED_HTTP_APIS} from '../../packages/scheduler/model-http.js';
 import type {JsonSchema} from '../../packages/contracts/operations/schema.js';
@@ -92,7 +92,7 @@ process.on('message', async (message) => {
         if (!modelRuntime.hasConfiguredAuth(raw.model.provider)) throw new Error('AUTH_MISSING: 请为所选供应商配置凭据');
         if (raw.tools.some(t => !t.inputSchema || t.inputSchema.type !== 'object')) throw new Error('SDK_CONTRACT_MISMATCH: 工具缺少精确输入 Schema');
         const customTools = buildCustomTools(raw.tools, async (name, input, callId) => {
-            if(name===PUBLICATION_IMAGE_TOOL){if(!raw.managedHttp)throw new Error('MODEL_IMAGE_UNMANAGED: 图片需要受管HTTP');if(!model.input?.includes('image'))throw new Error('MODEL_IMAGE_UNSUPPORTED: 当前模型目录未声明图片能力');checkCatalog();}
+            if(name===PUBLICATION_IMAGE_TOOL||name===DOCUMENT_IMAGE_TOOL){if(!raw.managedHttp)throw new Error('MODEL_IMAGE_UNMANAGED: 图片需要受管HTTP');if(!model.input?.includes('image'))throw new Error('MODEL_IMAGE_UNSUPPORTED: 当前模型目录未声明图片能力');checkCatalog();}
             const result = await rpc(name, input, callId);
             if (name === 'task_result_submit') taskSubmitted = true;
             return result;

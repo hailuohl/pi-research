@@ -232,6 +232,7 @@ const SPECS = [
     make('document_parse_submit', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.submit(c.actor, c.projectId, x.jobId) }),
     make('document_parse_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.inspect(c.actor, c.projectId, x.jobId) }),
     make('document_parse_cancel', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.cancel(c.actor, c.projectId, x.jobId) }),
+    make('document_page_image_read', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'document_page_image_read')), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.readPageImage(c.actor, c.projectId, x) }),
     make('document_pages', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.pages(c.actor, c.projectId, x.parseResultId, x.cursor, x.limit) }),
     make('document_page_read', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.readPage(c.actor, c.projectId, x.parseResultId, x.pageNumber, x.cursor, x.limit) }),
     make('document_evidence_register', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.evidence.registerDocument(c.actor, c.projectId, x) }),
@@ -252,7 +253,7 @@ const SPECS = [
     make('session_view', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: recordScope('session', 'sessionId'), execute: (c, x) => { const { sessionId, ...paging } = x; return c.app.sessions.view(c.actor, sessionId, paging); } }),
     make('session_message_read', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: recordScope('session', 'sessionId'), execute: (c, x) => { const { sessionId, ...paging } = x; return c.app.sessions.messageRead(c.actor, sessionId, paging); } }),
     make('session_attachment_read', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c, x) => { if (c.actor.type === 'agent')
-            c.app.operations.authorizeAgent(c.actor, 'session_attachment_read'); attachmentScope(c.app.store, c.actor, c.session, x); }, preconditions: noPrecondition, execute: (c, x) => readAttachment(c.app.store, c.actor, c.session, x) }),
+            c.app.operations.authorizeAgent(c.actor, 'session_attachment_read'); attachmentScope(c.app.store, c.actor, c.session, x, pair => c.app.documentParsing.attachmentMetadata(c.actor, c.session, pair)); }, preconditions: noPrecondition, execute: (c, x) => readAttachment(c.app.store, c.actor, c.session, x, pair => c.app.documentParsing.attachmentMetadata(c.actor, c.session, pair)) }),
     make('model_http_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.modelHttp.inspect(c.actor, c.projectId, x) }),
     make('model_http_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.modelHttp.configure(c.actor, x, c.projectId) }),
     make('report_create', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.reports.create(c.actor, c.projectId, x) }),
@@ -631,6 +632,10 @@ export class OperationRegistry {
                     spec.authorize(context, input);
                 const previous = lookup();
                 if (previous) {
+                    if (id === 'document_page_image_read') {
+                        context.actor = { ...actor, ...(permission?.actionId ? { permissionActionId: permission.actionId } : {}) };
+                        return output(spec.execute(context, input));
+                    }
                     if (id === 'publication_page_image_read') {
                         context.actor = { ...actor, permissionActionId: permission?.actionId };
                         return output(spec.execute(context, input));

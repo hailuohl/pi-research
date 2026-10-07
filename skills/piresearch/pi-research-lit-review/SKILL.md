@@ -113,7 +113,30 @@ description: "用原始研究证据解释、比较科学或技术概念，适用
 5. **保存证据**：用户document_evidence_register以documentVersionId、parseResultId、pageNumber、start/end和description建立精确页文本证据，绑定原件与解析版本。不从PDF任意字节创建普通evidence_register伪定位。
 6. **交给主会话**：用户通过现有原文授权将固定PDF/PMC文档交给指定主会话；text_corpus_grant_prepare/approve/activate固定语料和模型。Agent从project_inspect.textCorpus读取真实documents或单份pmcDocuments、corpusId、configurationVersion，在有限次数内text_evidence_search并evidence_read。不把PDF/PMC受管全文用artifact_read绕过授权，不混选PDF和PMC；现有授权可能最多2次新词项检索，MMR默认mmrLambda=1（0.65仅可选实验）。没有命中不证明没有答案。远程来源启用不自动加入本地全文语料。
 
-用户页图入口可查看原图；当前Agent没有通用二进制查看/裁剪项目工具。需要原图解释时明确请用户交接选定页图/原图和页码，或在现有会话附件路径提供可见图。保持轴、panel标题、图例、表头；裁剪除正文/印刷图注但不丢这些信息。**只能裁核验原PDF，不用缩略图、重画或生成相似图**。查看实际裁剪是否可读；受阻时检查真实错误/用户可用工具，交付未解决障碍，而非悄悄丢图。
+用户在已成功完整的固定解析结果上点“带入当前会话”，选择当前主会话；附件只传固定 documentVersionId/parseResultId/摘要/页数与标题元数据，session_attachment_read 不因此返回原文或PNG。不要从 latest 或标题猜解析对。用户仍可本地查看原图；下列视觉页范围另行准确批准，不依赖或扩大文本检索授权。
+
+## 准确视觉页范围
+
+只有交互主协调者可申请固定原文范围；Task/wakeup不使用。先根据问题和真实页数选择最小页范围，物理页号从1开始，印刷标签另记。以下 tool 仅标明工具，Pi实际参数保留 {input:…}，ID都取已选固定附件 metadata：
+
+```json
+{"tool":"document_page_image_read","input":{"documentVersionId":"<附件固定文档版本ID>","parseResultId":"<附件固定解析结果ID>","pageNumber":1,"firstPage":1,"lastPage":1}}
+```
+
+首次请求必须显式 firstPage/lastPage（单页也填写），批准固定文档/解析、页范围、当前目的模型及此会话后续重发；APPROVAL_REQUIRED 时结束回合等准确卡。编译/解析批准、textCorpusGrant或用户上传文件都不代替这个批准。多页仅在确实需要且页数支持时扩大范围，不默认请求全文。
+
+批准后返回真实 image 及 text 中的授权 actionId/范围；范围内后续页用授权ID复用 completed 视觉动作，不能同时再传 firstPage/lastPage：
+
+```json
+{"tool":"document_page_image_read","input":{"documentVersionId":"<同一固定文档版本ID>","parseResultId":"<同一固定解析结果ID>","pageNumber":1,"authorizationActionId":"<成功图片返回的actionId>"}}
+```
+
+新范围、新文档/解析或新会话需要新准确批准；同 callId 不能改参数。逐页报告真正看过的物理页及限制；只有模型收到PNG后才有视觉观察，不用截图记忆补作者图/表。原话证据仍按UTF-16定位和原文上下文核对，图片观察不伪装机器文本证据。
+
+沿既有固定解析PNG读取，保留轴、panel标题、图例、表头。没有任意裁剪、重渲染、OCR或下载功能；不能生成相似图代替原图。原件/解析/CAS或来源实际撤销、视觉授权失效、模型目录变化时阻新外发，raw history保留，不删图或偷偷重授权。provider关闭和获取授权过期沿本地资料既有语义阻新取得，不自动抹去已保存资料的明确范围批准；未知许可保留未知。
+
+单页4MiB/1600px、会话实际图合计16MiB（重复也计），目录须声明image并使用受管HTTP；模型不支持、超限、无绑定、缺页/损坏都明确未看。已发内容无法撤回。旧含图会话的失效许可不会因切回权限模式自行恢复。
+
 
 ## 原图展示与定位
 

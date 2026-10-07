@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "baseline": "eff3a2997eb9ad6165cffb08713651bc80f3d4ed",
+  "platform": "win32",
+  "node": "24.19.0",
+  "bundleId": "50e285cf2ea51e8dfa1543894bfce13e14969ff3924f9dfd0ed6599377bb6664",
+  "acceptance": "ACCEPTANCE.md",
+  "checks": {
+    "full": {
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "--test-concurrency=1",
+        "tests/unit/*.test.mjs",
+        "tests/integration/*.test.mjs"
+      ],
+      "startedAt": "2026-10-07T14:37:06.487Z",
+      "durationMs": 779152,
+      "exitCode": 0,
+      "counts": {
+        "tests": 1236,
+        "pass": 1213,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 23
+      },
+      "log": ".validation/agent-document-image/full.log",
+      "logSha256": "390d6cf9d2734f62e068310c9c711404dd2239bb1fc582f964fe87d206c402a5"
+    },
+    "initialParentFocused": {
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "--test-concurrency=1",
+        "tests/unit/document-image.test.mjs",
+        "tests/unit/document-image-ui.test.mjs",
+        "tests/integration/document-image-pi-http.test.mjs",
+        "tests/unit/publication-image.test.mjs",
+        "tests/integration/publication-image-pi-http.test.mjs",
+        "tests/unit/openresearch-skills.test.mjs",
+        "tests/unit/operation-schema.test.mjs",
+        "tests/unit/operation-outputs.test.mjs",
+        "tests/integration/operations-http-cli.test.mjs"
+      ],
+      "startedAt": "2026-10-07T14:15:14.243Z",
+      "durationMs": 59983,
+      "exitCode": 1,
+      "counts": {
+        "tests": 47,
+        "pass": 46,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "log": ".validation/agent-document-image/focused.log",
+      "logSha256": "8f6f5e919da65df6de159eb9dd6d35a9acaacfb3e97d1a6d982395f95690d172",
+      "failure": "old owner-only document_* fixture misclassified exact new coordinator image tool"
+    },
+    "implementationFocused": {
+      "passed": 53,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".validation/document-visual-design/focused-v1.log",
+      "logSha256": "a163ebc4aea256f41e8bc4e85d43bd9d1ffe3a1ec34d60d82d89124009e023af"
+    },
+    "targetedFixtureRepair": {
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "log": ".validation/document-visual-design/operations-http-cli-fixed.log",
+      "logSha256": "bc33ae1de75d63a4a942cb57a3ef277d6728294a243ad157f12e08cb7c614b9d",
+      "retained": "old owner-only classifications and three-transport invalid-input equality; six valid-role denial checks added"
+    },
+    "sdk": {
+      "version": "0.87.1",
+      "transport": "actual Worker/Host + local scripted supplier",
+      "pages": "literal synthetic PDF and explicitly seeded parser PNGs",
+      "page1And2DifferentBytes": true,
+      "metadataOnlyAttachment": true,
+      "explicitCompletedRangeReuse": true,
+      "nativeReopenPreserved": true,
+      "queuedParseRevocationNewFetches": 0,
+      "semanticVision": false
+    },
+    "browser": "browser-evidence.json",
+    "clean": {
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 557,
+      "distManifestSha256": "5f087387d426b81554c23031d9d4a7b1de936ead5f154658f2e1abaf02c3df54"
+    }
+  },
+  "review": {
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoning": "xhigh",
+    "runtimeEcho": "not available",
+    "patchSha256": "e1720f6c2642ad4b46897e7606fbe0c06fda039b739de7034e3596d2418ccf82",
+    "verifiedFiles": 136,
+    "blockingFindings": 0,
+    "independentFocusedTests": {
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "implementation": {
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoning": "high",
+    "runtimeEcho": "not available"
+  },
+  "preservation": {
+    "preexistingFiveFilesUnchanged": true,
+    "historicalReleases": 12,
+    "publicationImageReferenceCompatible": true,
+    "nativeHistoryRetained": true,
+    "ordinaryActionValidateUnchanged": true,
+    "ownerOnlyDocumentBodyToolsUnchanged": true
+  },
+  "notRun": [
+    "new real PDF parsing",
+    "external-model visual reasoning"
+  ],
+  "knownPreexistingGap": "parity historical old-directory path, unchanged",
+  "ci": "document metadata/range/SDK/HTTP contract checks in existing three-OS workflow; outcome recorded after push"
+}

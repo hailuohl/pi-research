@@ -181,6 +181,14 @@ export declare class SessionPermissionService {
         key: string;
         consumed?: undefined;
     } | undefined;
+    private bindDocumentCall;
+    private documentAction;
+    documentImageScope(actor: Actor, input: Record<string, unknown>): {
+        actionId: string;
+        firstPage: number;
+        lastPage: number;
+    };
+    assertDocumentImageAction(actor: Actor, value: unknown): void;
     assertImageAction(actor: Actor, value: unknown): void;
     validate(ref: PermissionReference, sessionId: string, operation: string, input: Record<string, unknown>, actionId?: string): void;
     begin(id: string): void;

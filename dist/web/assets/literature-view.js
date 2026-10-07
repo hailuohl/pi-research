@@ -1,4 +1,4 @@
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api, artifactBlob, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
@@ -283,7 +283,7 @@ class LiteratureView extends React.Component {
         ] }) }, document2.id)),
         !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u56FA\u5B9A DocumentVersion\u3002" }) : null
       ] }),
-      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { document: s.document, data, perform, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: "\u539F\u59CB\u6587\u4EF6\u53D6\u5F97\u3001\u6587\u672C\u63D0\u53D6\u548C\u79D1\u5B66\u6838\u9A8C\u662F\u4E0D\u540C\u9636\u6BB5\u3002" }) }),
+      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: "\u539F\u59CB\u6587\u4EF6\u53D6\u5F97\u3001\u6587\u672C\u63D0\u53D6\u548C\u79D1\u5B66\u6838\u9A8C\u662F\u4E0D\u540C\u9636\u6BB5\u3002" }) }),
       /* @__PURE__ */ jsx(TextEvidencePanel, { data, perform, onDocument: (target) => this.selectDocument(target, true), onSession: this.props.onSession })
     ] });
   }
@@ -309,7 +309,7 @@ class DocumentPane extends React.Component {
     }
   }
   render() {
-    const { document: d, data, perform } = this.props;
+    const { document: d, data, perform, session } = this.props, canUse = !!this.props.onUseDocument && session?.projectId === data.project.id && session.role === "coordinator" && !session.taskId && !session.teamId && session.state !== "archived" && !data.project.archived;
     return /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
       /* @__PURE__ */ jsx("h2", { children: d.title }),
       /* @__PURE__ */ jsxs("p", { children: [
@@ -428,7 +428,13 @@ class DocumentPane extends React.Component {
           ] }) : null,
           job.state === "prepared" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", onClick: () => perform(() => call(data.project.id, "document_parse_submit", { jobId: job.id }), "\u89E3\u6790\u5DF2\u8FDB\u5165\u5171\u4EAB\u8BA1\u7B97\u961F\u5217"), children: "\u63D0\u4EA4\u5DF2\u6279\u51C6\u89E3\u6790" }) : null,
           ["prepared", "queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => call(data.project.id, "document_parse_cancel", { jobId: job.id })), children: "\u8BF7\u6C42\u53D6\u6D88\u89E3\u6790" }) : null,
-          job.state === "succeeded" && job.integrity === "complete" && job.resultId ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => this.props.onLocation({ documentVersionId: d.id, parseResultId: job.resultId, pageNumber: 1 }), children: "\u67E5\u770B\u6B64\u56FA\u5B9A\u89E3\u6790\u7ED3\u679C" }) : null
+          job.state === "succeeded" && job.integrity === "complete" && job.resultId ? /* @__PURE__ */ jsxs(Fragment, { children: [
+            /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => this.props.onLocation({ documentVersionId: d.id, parseResultId: job.resultId, pageNumber: 1 }), children: "\u67E5\u770B\u6B64\u56FA\u5B9A\u89E3\u6790\u7ED3\u679C" }),
+            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !canUse, title: canUse ? `\u53D1\u9001\u56FA\u5B9A\u8D44\u6599\u5230 ${session.title}\uFF1B\u89C6\u89C9\u9875\u8303\u56F4\u4ECD\u9700\u53E6\u6279` : "\u8BF7\u5148\u9009\u62E9\u53EF\u7528\u7684\u4E3B\u534F\u8C03\u4F1A\u8BDD", onClick: () => {
+              if (canUse) this.props.onUseDocument({ documentVersionId: d.id, parseResultId: job.resultId });
+            }, children: "\u5E26\u5165\u5F53\u524D\u4F1A\u8BDD" }),
+            !canUse ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8BF7\u5148\u9009\u62E9\u53EF\u7528\u7684\u4E3B\u534F\u8C03\u4F1A\u8BDD\uFF0C\u518D\u5E26\u5165\u6B64\u56FA\u5B9A\u89E3\u6790\u7ED3\u679C\u3002" }) : null
+          ] }) : null
         ] }, job.id);
       }),
       this.props.location?.parseResultId ? /* @__PURE__ */ jsx(DocumentPages, { document: d, projectId: data.project.id, resultId: this.props.location.parseResultId, pageNumber: this.props.location.pageNumber ?? 1, start: this.props.location.start, end: this.props.location.end, onPage: (pageNumber) => this.props.onLocation({ documentVersionId: d.id, parseResultId: this.props.location.parseResultId, pageNumber }), perform }, this.props.location.parseResultId) : null

@@ -53,8 +53,14 @@ test('HTTP and CLI operations share strict contracts, owner scope and idempotenc
             assert.equal(command.status, 1);
             assert.deepEqual(JSON.parse(command.stderr).error, http.value.error, spec.id);
             // Owner-only operations reject Agents before validating inputs; other tools retain HTTP/CLI schema parity.
-            if(/^(text_corpus_grant_|discovery_grant_|run_grant_|working_grant_|report_|compute_|agent_capacity_|session_(list|view|message_read)$|model_http_|document_|literature_task_|skill_|publication_(configure|submit|cancel)$)/.test(spec.id)||spec.id==='research_brief_confirm'||spec.id==='run_list'||['campaign_plan_inspect','campaign_candidate_prepare','campaign_candidate_attach','campaign_comparison','local_runtime_configure','gpu_target_probe','ssh_target_configure','ssh_target_probe'].includes(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
+            if(/^(text_corpus_grant_|discovery_grant_|run_grant_|working_grant_|report_|compute_|agent_capacity_|session_(list|view|message_read)$|model_http_|document_(?!page_image_read$)|literature_task_|skill_|publication_(configure|submit|cancel)$)/.test(spec.id)||spec.id==='research_brief_confirm'||spec.id==='run_list'||['campaign_plan_inspect','campaign_candidate_prepare','campaign_candidate_attach','campaign_comparison','local_runtime_configure','gpu_target_probe','ssh_target_configure','ssh_target_probe'].includes(spec.id))assert.equal(toolError.code,'TOOL_DENIED',spec.id);
             else assert.deepEqual(toolError, http.value.error, spec.id);
+        }
+        // Use valid arguments and matching, live role identities to test the permission boundary.
+        for (const role of ['literature','designer','implementer','analyst','reviewer','writer']) {
+            const restricted = app.sessions.create(USER, project.id, {}, {role});
+            app.store.update('session', restricted.id, restricted.version, {state:'running',generation:1,leaseUntil:Date.now()+60000});
+            await assert.rejects(tools.execute({...agent,sessionId:restricted.id,role}, 'document_page_image_read', TOOL_DEFINITIONS.document_page_image_read.example, 'restricted-document-image-'+role), {code:'TOOL_DENIED'});
         }
         const key = randomUUID(), input = { source: 'project', path: 'operation.txt', content: 'shared', expectedDigest: null };
         const envelope = { projectId: project.id, input };

@@ -1,4 +1,4 @@
-import {publicationImageCatalog,imageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
+import {publicationImageCatalog,imageReference,documentImageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
 import {canSteerSession} from '../pi-adapter/session-history.js';
 import {messageInput} from '../pi-adapter/attachments.js';
 import {prepareSessionSkills} from '../skills/runtime.js';
@@ -296,7 +296,7 @@ export class AgentHost {
                         ensure(!a.ended&&!a.exitObserved&&!a.stopError&&this.valid(a),'MODEL_HTTP_SCOPE_EXPIRED','会话已停止，不能外发模型请求');
                         const refs=m.imageRefs===undefined?[]:m.imageRefs;ensure(Array.isArray(refs)&&refs.length<=Math.floor(CONTEXT_IMAGE_BYTES/33),'MODEL_IMAGE_UNBOUND','模型图片引用无效');
                         if(refs.length)ensure(publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_IMAGE_CATALOG_CHANGED','模型目录已改变，禁止继续发送图片');
-                        let imageBytes=0;const checked=new Set<string>();for(const value of refs){const ref=imageReference(value);imageBytes+=ref.bytes;ensure(imageBytes<=CONTEXT_IMAGE_BYTES,'MODEL_IMAGE_LIMIT','实际图片总量超过16 MiB');const key=JSON.stringify(ref);if(!checked.has(key)){try{this.app.sessionPermissions.assertImageAction(a.actor,ref);}catch(error){const e=asError(error);throw new DomainError('MODEL_IMAGE_BLOCKED',`${e.code}: ${e.message}`,403);}checked.add(key);}}
+                        let imageBytes=0;const checked=new Set<string>();for(const value of refs){const ref=value?.kind==='document-page'?documentImageReference(value):imageReference(value);imageBytes+=ref.bytes;ensure(imageBytes<=CONTEXT_IMAGE_BYTES,'MODEL_IMAGE_LIMIT','实际图片总量超过16 MiB');const key=JSON.stringify(ref);if(!checked.has(key)){try{if('kind'in ref)this.app.sessionPermissions.assertDocumentImageAction(a.actor,ref);else this.app.sessionPermissions.assertImageAction(a.actor,ref);}catch(error){const e=asError(error);throw new DomainError('MODEL_IMAGE_BLOCKED',`${e.code}: ${e.message}`,403);}checked.add(key);}}
                         if(a.actor.taskId)this.app.teams.active(a.actor);
                         return this.app.modelHttp.acquire(identity,m.key);
                     });
@@ -313,7 +313,7 @@ export class AgentHost {
                 ensure(!a.stopError && this.valid(a), 'LEASE_EXPIRED', '会话已中止');
                 // Cached reads also require current inputs while a task is running; finished submit receipts may drain.
                 if (a.attemptId && this.app.store.get<TaskAttempt>('task-attempt', a.attemptId).state === 'running') this.app.teams.active(a.actor);
-                if(m.tool===PUBLICATION_IMAGE_TOOL)ensure(publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_IMAGE_CATALOG_CHANGED','模型目录已改变，图片不能读取');
+                if(m.tool===PUBLICATION_IMAGE_TOOL||m.tool===DOCUMENT_IMAGE_TOOL)ensure(publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_IMAGE_CATALOG_CHANGED','模型目录已改变，图片不能读取');
                 const result = await this.tools.execute(a.actor, String(m.tool), m.input, String(m.toolCallId));
                 if (!a.exitObserved && a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, result });

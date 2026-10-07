@@ -37,7 +37,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 | 正式运行 | run_prepare 固定意向 → 用户单独批准 → run_submit → run_inspect/run_logs；取消由用户运行面板 |
 | 开发检查 | development_prepare/submit/inspect/logs/cancel；单独开发授权，不能替代正式 Run |
 | 协作 | collaboration_plan_submit 或同义 agent_delegate 提交有界计划；task_inspect/task_result_read；主协调者专用 |
-| 文献 | literature_discover、paper_read、literature_search；先读 pi-research-lit-review，主协调者保留主检索排序策略；Task 网络需 DiscoveryGrant |
+| 文献 | literature_discover、paper_read、literature_search；先读 pi-research-lit-review，主协调者保留主检索排序策略；用户可带入固定成功解析上下文，原文页图需另行目的模型/页范围批准；Task 网络需 DiscoveryGrant |
 | 文稿 | publication_templates、manuscript_create、publication_prepare 等按 pi-research-paper；交互主协调者可准备，成功固定页可经准确页面/目的模型批准交由主协调者视觉读取；提交构建及最终报告仍用户入口 |
 | 技能与模板 | research_skill_list/read；用户 skill_package_upload 原子上传并开启；publication_templates及publication_template_import/inspect/read提供跨项目个人模板，用户设置上传/查看，交互主协调者生成入库仍遵守动作批准 |
 | 成果 | Agent artifact_create 保存草稿；用户 report_create/inspect/reference_read/export 固定报告与本地成果包；外部成果发布是产品缺口 |

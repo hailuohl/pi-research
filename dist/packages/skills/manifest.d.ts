@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "49efbc47bbccc6d19c12d60d77b9721219865dfce73a1f50552ac87bae296ca8";
+export declare const BUNDLE_ID = "50e285cf2ea51e8dfa1543894bfce13e14969ff3924f9dfd0ed6599377bb6664";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; cardinal rules and scoped tool reference.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "6bc4ce36371d4d0a8137e0630c5865a89bdb9c80c9eaaa0f7ed15956166ef7f5";
+    readonly digest: "281e10f71e0910c100c197721f5c04856a9aa02a2062a7a9f3bae507be54d7a4";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -98,7 +98,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before launching a run whose output must be judged, reading logs or numerical evidence, validating run-derived claims, or reporting results.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
-    readonly digest: "ff0703e9013deecedf2088715af99f9fa481783d09d425c52e173f1039866e09";
+    readonly digest: "cf2d86e86496177c7bb25d6ffbbe8757eff5be8bf8cc62fbf10b401593144bf2";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -200,7 +200,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "创建真实LaTeX论文、预印本或章节草稿；模板、公式、图、引用、引擎和固定文稿构建，按当前角色与用户审批执行。普通报告使用reports。";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
-    readonly digest: "c001003a1f00d1092036dd7dd7c8e8f8383a083a03c67a9796519a3fed1b2558";
+    readonly digest: "f2c5a1ea072459d744546362cf4876e8d9d9f947540340d21137310f65fa1355";
     readonly resources: readonly [{
         readonly path: "assets/starter-main.tex";
         readonly digest: "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974";
@@ -248,7 +248,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索。";
     readonly roles: readonly ["coordinator", "literature", "designer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-lit-review/SKILL.md";
-    readonly digest: "c8b442130033810709d1b553e9f704fefe453a94da935e9c3ef917d0c1f63a50";
+    readonly digest: "5186f5aa17c2986014900aaf9783b4097dfe8c9d8de37aec8db0b15d1f54803b";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
