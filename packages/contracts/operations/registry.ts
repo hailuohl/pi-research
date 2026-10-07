@@ -16,6 +16,8 @@ import {validateSchema, type JsonSchema} from './schema.js';
 import {assertWorkspaceReady} from '../../workspace/git-service.js';
 import {discoveryContext,discoveryScope} from '../../policy/discovery-grant-validation.js';
 import {assertRunGrantActor,assertRunGrantTaskSubmission} from '../../policy/run-grant-validation.js';
+import {ComputeConnectionService,localHardware} from '../../runners/compute-connections.js';
+import {currentDockerContext} from '../../runners/gpu.js';
 
 export interface OperationScope {
     projectId: string;
@@ -89,7 +91,7 @@ function authorizeRegistered(c: OperationContext, name: string, x: Record<string
 }
 function externalReplay(c: OperationContext, name: string, x: Record<string, unknown>) {
     // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
-    if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(name)) return {key:c.idempotencyKey!,completed:true};
+    if (['report_export','compute_target_probe','docker_connection_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(name)) return {key:c.idempotencyKey!,completed:true};
     if (name === 'paper_read') return paperReplay(c, x);
     const discover = name === 'literature_discover';
     const serviceScope = discover ? `connector-search:${c.projectId}:${c.actor.sessionId ?? 'user'}:${c.actor.attemptId ?? 'root'}` : `literature:${c.projectId}`;
@@ -249,7 +251,10 @@ const SPECS: OperationSpec[] = [
     make('document_page_read',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.documentParsing.readPage(c.actor,c.projectId,x.parseResultId as string,x.pageNumber as number,x.cursor as number|undefined,x.limit as number|undefined)}),
     make('document_evidence_register',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.evidence.registerDocument(c.actor,c.projectId,x as unknown as Parameters<typeof c.app.evidence.registerDocument>[2])}),
     make('local_runtime_configure',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.localRuntimes.configure(c.actor,x)}),
-    make('execution_environment_list',{idempotencyPolicy:'read-only',authorize:c=>{if(c.actor.type==='agent')interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'execution_environment_list'));else userOnly(c.actor);},preconditions:noPrecondition,execute:c=>{const runtimes=c.app.localRuntimes.list();return {local:{platform:process.platform,hostId:runtimes[0]?.hostId??'unconfigured',runtimes,isolation:'none',resourceEnforcement:'advisory',networkIsolation:false},gpuTargets:c.app.gpus.list(),sshTargets:c.app.sshTargets.list({type:'user'})};}}),
+    make('execution_environment_list',{idempotencyPolicy:'read-only',authorize:c=>{if(c.actor.type==='agent')interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'execution_environment_list'));else userOnly(c.actor);},preconditions:noPrecondition,execute:c=>{const runtimes=c.app.localRuntimes.list();return {local:{platform:process.platform,hostId:runtimes[0]?.hostId??'unconfigured',runtimes,hardware:localHardware(),isolation:'none',resourceEnforcement:'advisory',networkIsolation:false},connections:new ComputeConnectionService(c.app.context).list(c.actor,c.app.sshTargets),gpuTargets:c.app.gpus.list(),sshTargets:c.app.sshTargets.list({type:'user'})};}}),
+    make('docker_connection_probe',{idempotencyPolicy:'key-required',asynchronous:true,authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:async(c,x)=>{const connections=new ComputeConnectionService(c.app.context);let context=x.context as string|undefined;try{context??=currentDockerContext();await c.app.compute.probeContext(c.actor,context,c.validate);}catch(error){if((error as {code?:string}).code!=='COMPUTE_TARGET_UNAVAILABLE')throw error;if(!context){context='current';const attempt=connections.begin('docker:'+context);connections.finish('docker:'+context,attempt,{status:'unavailable',errorCode:'COMPUTE_TARGET_UNAVAILABLE'});}}return connections.docker(context);}}),
+    make('ssh_target_inspect',{idempotencyPolicy:'read-only',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.sshTargets.inspect(c.actor,x.id as string)}),
+    make('ssh_target_preferences_configure',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>new ComputeConnectionService(c.app.context).configurePreferences(c.actor,x,c.app.sshTargets)}),
     make('gpu_target_probe',{idempotencyPolicy:'key-required',asynchronous:true,authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.gpus.probe(c.actor,x)}),
     make('ssh_target_configure',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.sshTargets.configure(c.actor,x)}),
     make('ssh_target_probe',{idempotencyPolicy:'key-required',asynchronous:true,authorize:c=>userOnly(c.actor),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.sshTargets.probe(c.actor,x.id as string)}),
@@ -486,7 +491,7 @@ export class OperationRegistry {
         if (spec.asynchronous) {
             // Owner receipts remain readable after archival; only new effects require a writable project.
             if(actor.type==='agent')context.validate();
-            if (['report_export','compute_target_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(id)) {
+            if (['report_export','compute_target_probe','docker_connection_probe','document_import','document_parser_configure','document_parse_prepare','skill_package_import','manuscript_create','publication_configure','publication_prepare','publication_submit'].includes(id)) {
                 const previous=this.app.store.transaction(()=>{if(actor.type==='agent')context.validate();const found=lookup();if(found&&actor.type==='agent'){
                     if(id==='manuscript_create')this.app.publicationBuilds.revision(actor,pid,(found.value as {id:string}).id);
                     if(id==='publication_prepare')this.app.publicationBuilds.inspect(actor,pid,(found.value as {jobId:string}).jobId);

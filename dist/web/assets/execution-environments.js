@@ -125,7 +125,7 @@ class ExecutionEnvironments extends React.Component {
             /* @__PURE__ */ jsxs("p", { children: [
               /* @__PURE__ */ jsx("code", { children: t.id }),
               " \xB7 ",
-              "verified" in t ? "\u5F85\u6838\u5BF9" : t.gpuProtocol ? "\u5DF2\u6838\u5BF9 \xB7 CPU / NVIDIA" : "\u65E7\u7248\u534F\u8BAE \xB7 \u4EC5\u5DF2\u6709\u4F5C\u4E1A"
+              "verified" in t ? "\u5F85\u6838\u5BF9" : t.gpuProtocol ? "\u5DF2\u6709\u534F\u8BAE\u6838\u9A8C\u8BB0\u5F55 \xB7 GPU \u9700\u53E6\u884C\u6838\u9A8C" : "\u65E7\u7248\u534F\u8BAE \xB7 \u4EC5\u5DF2\u6709\u4F5C\u4E1A"
             ] }),
             /* @__PURE__ */ jsxs("button", { className: "text-button", disabled: busy, onClick: () => void this.mutate("ssh_target_probe", { id: t.id }, "SSH \u76EE\u6807\u5DF2\u6838\u5BF9\u3002"), children: [
               "\u6838\u5BF9 ",

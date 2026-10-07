@@ -38,6 +38,21 @@ export declare class SshTargetService {
         verified: boolean;
     };
     private configDigest;
+    directory(): {
+        target: PrivateSshTarget;
+        configurationDigest: string;
+    }[];
+    inspect(actor: Actor, id: string): {
+        id: string;
+        version: number;
+        host: string;
+        port: number;
+        user: string;
+        identityFile: string;
+        knownHostsFile: string;
+        remoteRoot: string;
+        gpuProtocol: boolean;
+    };
     privateTarget(id: string): PrivateSshTarget;
     frozen(id: string, currentProtocol?: boolean): SshTarget;
     assertFrozen(target: SshTarget, currentProtocol?: boolean): void;

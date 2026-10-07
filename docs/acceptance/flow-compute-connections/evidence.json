@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-08",
+  "baseline": "b50fdcca06a8d13ec4447fd5146257e39ad397c6",
+  "checks": {
+    "coreInitial": {
+      "total": 1243,
+      "passed": 1218,
+      "failed": 2,
+      "skipped": 23
+    },
+    "affectedV2": {
+      "passed": 28,
+      "failed": 0
+    },
+    "uiV3": {
+      "passed": 8,
+      "failed": 0
+    },
+    "cleanBuild": {
+      "log": ".validation/compute-connections/clean-build-v3.log",
+      "passed": true,
+      "identical": true
+    },
+    "parity": {
+      "missingBaselineEvidence": "skills/openresearch/manifest.json",
+      "preexisting": true,
+      "passed": 3,
+      "failed": 1
+    },
+    "externalSshGpu": "not-run"
+  },
+  "review": {
+    "sourceManifestSha256": "24804B9AFC31DA844321A657FCB36D24945CA09FD6901F517B53F4E38341DBD7",
+    "blockingFindingsAfterRequiredRepairs": 0
+  },
+  "localRuntime": {
+    "oldService": "http://127.0.0.1:4794/",
+    "preview": "http://127.0.0.1:4795/",
+    "deployment": "updated-after-explicit-user-authorization",
+    "approvalRejection": "Stopping old idle service was blocked by policy; no specific reason returned",
+    "currentServicePid": 207796,
+    "historyIdsRetained": true,
+    "previewStoppedAfterValidation": true
+  },
+  "delivery": {
+    "branch": "implementation/pr01-reproducible-baseline",
+    "status": "accepted-commit-and-push-to-be-recorded-in-final-response"
+  }
+}

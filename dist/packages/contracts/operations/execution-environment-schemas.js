@@ -5,18 +5,28 @@ export const LOCAL_RUNTIME_SCHEMA = s.object({ id: str, version: int, executable
 export const LOCAL_EXECUTION_SCHEMA = s.object({ isolation: { const: 'none' }, resourceEnforcement: { const: 'advisory' }, networkIsolation: { const: false } }, ['isolation', 'resourceEnforcement', 'networkIsolation']);
 export const GPU_TARGET_SCHEMA = s.object({ backend: s.enum(['local', 'docker', 'ssh']), targetId: str, context: str, sshTargetId: str, localRuntimeId: str, observedAt: str, devices: arr(s.object({ uuid: str, name: str, memoryMb: int }, ['uuid', 'name', 'memoryMb'])) }, ['backend', 'targetId', 'observedAt', 'devices']);
 export const SSH_TARGET_SCHEMA = s.object({ id: str, version: int, hostKeyDigest: str, configDigest: str, engineId: str, protocolDigest: str, targetId: str, gpuProtocol: s.boolean() }, ['id', 'version', 'hostKeyDigest', 'configDigest', 'engineId', 'protocolDigest', 'targetId']);
+const CONNECTION_STATE = { status: s.enum(['unverified', 'verified', 'stale', 'unavailable']), targetId: str, checkedAt: str, validUntil: str, errorCode: s.string(100) };
+const PREFERENCES_SCHEMA = s.object({ version: int, cpu: s.boolean(), gpu: s.boolean() }, ['version', 'cpu', 'gpu']);
+export const DOCKER_CONNECTION_SCHEMA = s.object({ ...CONNECTION_STATE, context: s.string(100), serverVersion: s.string(200), cpus: int, memoryMb: s.integer(0, Number.MAX_SAFE_INTEGER) }, ['context', 'status']);
+export const SSH_CONNECTION_SCHEMA = s.object({ ...CONNECTION_STATE, id: str, configurationVersion: int, preferences: PREFERENCES_SCHEMA, capabilities: s.object({ cpu: s.boolean(), gpu: s.boolean() }, ['cpu', 'gpu']), gpuValidUntil: str, gpuDevices: arr(s.object({ uuid: str, name: str, memoryMb: int }, ['uuid', 'name', 'memoryMb'])), host: s.string(253), port: s.integer(1, 65535), user: s.string(64), remoteRoot: s.string(500) }, ['id', 'configurationVersion', 'status', 'preferences', 'capabilities', 'gpuDevices']);
 export const EXECUTION_ENVIRONMENT_INPUT_SCHEMAS = {
     local_runtime_configure: s.object({ id: s.string(80), executable: str, expectedVersion: int }, ['id', 'executable', 'expectedVersion']),
     execution_environment_list: s.object({}),
     gpu_target_probe: s.object({ backend: s.enum(['local', 'docker', 'ssh']), context: s.string(100), sshTargetId: s.string(80), localRuntimeId: s.string(80), image: s.string(250) }, ['backend']),
     ssh_target_configure: s.object({ id: s.string(80), host: s.string(253), port: s.integer(1, 65535), user: s.string(64), identityFile: str, knownHostsFile: str, remoteRoot: s.string(500), expectedVersion: int, gpuProtocol: s.boolean() }, ['id', 'host', 'user', 'identityFile', 'knownHostsFile', 'remoteRoot', 'expectedVersion']),
     ssh_target_probe: s.object({ id: s.string(80) }, ['id']),
+    docker_connection_probe: s.object({ context: s.string(100) }),
+    ssh_target_inspect: s.object({ id: s.string(80) }, ['id']),
+    ssh_target_preferences_configure: s.object({ id: s.string(80), expectedVersion: int, cpu: s.boolean(), gpu: s.boolean() }, ['id', 'expectedVersion', 'cpu', 'gpu']),
 };
 export const EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS = {
     local_runtime_configure: LOCAL_RUNTIME_SCHEMA,
-    execution_environment_list: s.object({ local: s.object({ platform: str, hostId: str, runtimes: arr(LOCAL_RUNTIME_SCHEMA), isolation: { const: 'none' }, resourceEnforcement: { const: 'advisory' }, networkIsolation: { const: false } }, ['platform', 'hostId', 'runtimes', 'isolation', 'resourceEnforcement', 'networkIsolation']), gpuTargets: arr(GPU_TARGET_SCHEMA), sshTargets: arr({ anyOf: [SSH_TARGET_SCHEMA, s.object({ id: str, version: int, verified: { const: false } }, ['id', 'version', 'verified'])] }) }, ['local', 'gpuTargets', 'sshTargets']),
+    execution_environment_list: s.object({ local: s.object({ platform: str, hostId: str, runtimes: arr(LOCAL_RUNTIME_SCHEMA), hardware: s.object({ cpuModel: str, logicalCpus: int, totalMemoryMb: s.integer(0, Number.MAX_SAFE_INTEGER), freeMemoryMb: s.integer(0, Number.MAX_SAFE_INTEGER), arch: str }, ['cpuModel', 'logicalCpus', 'totalMemoryMb', 'freeMemoryMb', 'arch']), isolation: { const: 'none' }, resourceEnforcement: { const: 'advisory' }, networkIsolation: { const: false } }, ['platform', 'hostId', 'runtimes', 'hardware', 'isolation', 'resourceEnforcement', 'networkIsolation']), connections: s.object({ docker: arr(DOCKER_CONNECTION_SCHEMA), ssh: arr(SSH_CONNECTION_SCHEMA) }, ['docker', 'ssh']), gpuTargets: arr(GPU_TARGET_SCHEMA), sshTargets: arr({ anyOf: [SSH_TARGET_SCHEMA, s.object({ id: str, version: int, verified: { const: false } }, ['id', 'version', 'verified'])] }) }, ['local', 'gpuTargets', 'sshTargets', 'connections']),
     gpu_target_probe: GPU_TARGET_SCHEMA,
     ssh_target_configure: s.object({ id: str, version: int, verified: { const: false } }, ['id', 'version', 'verified']),
     ssh_target_probe: SSH_TARGET_SCHEMA,
+    docker_connection_probe: DOCKER_CONNECTION_SCHEMA,
+    ssh_target_inspect: s.object({ id: str, version: int, host: s.string(253), port: s.integer(1, 65535), user: s.string(64), identityFile: str, knownHostsFile: str, remoteRoot: s.string(500), gpuProtocol: s.boolean() }, ['id', 'version', 'host', 'port', 'user', 'identityFile', 'knownHostsFile', 'remoteRoot', 'gpuProtocol']),
+    ssh_target_preferences_configure: s.object({ id: str, version: int, cpu: s.boolean(), gpu: s.boolean() }, ['id', 'version', 'cpu', 'gpu']),
 };
 //# sourceMappingURL=execution-environment-schemas.js.map

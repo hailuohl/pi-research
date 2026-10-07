@@ -46,6 +46,9 @@ export declare function probeDockerTarget(context: string): Promise<{
     targetId: string;
     engineId: string;
     endpoint: string;
+    serverVersion?: string;
+    cpus?: number;
+    memoryMb?: number;
 }>;
 export interface Container {
     Id: string;

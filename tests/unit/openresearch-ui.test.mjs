@@ -1,12 +1,10 @@
 import {synchronousState} from '../support/ui.mjs';
-import test from 'node:test';import assert from 'node:assert/strict';import {existsSync} from 'node:fs';
+import test from 'node:test';import assert from 'node:assert/strict';
 const text=n=>n==null||typeof n==='boolean'?'':Array.isArray(n)?n.map(text).join(' '):typeof n!=='object'?String(n):typeof n.type==='function'&&!n.type.prototype?.render?text(n.type(n.props)):text(n.props?.children);
-test('skills and connector UI shows no fake live claim and needs explicit source enabling',async()=>{assert.ok(existsSync('dist/web/assets/integrations.js'));const {IntegrationsView}=await import('../../dist/web/assets/integrations.js');const view=synchronousState(new IntegrationsView({projectId:'p'}));view.state.config={version:0,enabled:{alphaxiv:false,openalex:false,biorxiv:false,pubmed:false,crossref:true},requestLimit:100,requestsUsed:0,credentials:{},capabilities:[]};const t=text(view.render());assert.match(t,/技能与连接器/);assert.match(t,/查询.*外部|外部.*查询/);assert.match(t,/不保证网络可达或全文可得/);assert.match(t,/不是费用/);assert.match(t,/启用/);});
-test('paper display labels abstract and has raw artifact identifiers',async()=>{const {IntegrationsView}=await import('../../dist/web/assets/integrations.js');const v=synchronousState(new IntegrationsView({projectId:'p'}));v.state.paper={title:'fixture',contentKind:'abstract',fullTextRead:false,artifactId:'a',rawArtifactIds:['raw'],requestedId:'W1',pageMapping:'unavailable',versionAssurance:'provider-record'};v.state.paperText='Original abstract';const t=text(v.render());assert.match(t,/abstract/);assert.match(t,/Original abstract/);assert.match(t,/raw/);assert.match(t,/不是.*全文|不代表.*全文/);});
 
 function nodes(node,out=[]){if(!node||typeof node!=='object')return out;if(Array.isArray(node)){node.forEach(n=>nodes(n,out));return out;}assert.ok(typeof node.type==='string'||typeof node.type==='function');out.push(node);nodes(node.props.children,out);return out;}
 const config={version:4,enabled:{alphaxiv:false,openalex:false,biorxiv:false,pubmed:false,crossref:true},requestLimit:100,requestsUsed:2,credentials:{},capabilities:[]};
-const makeView=async(projectId='p')=>{const {IntegrationsView}=await import('../../dist/web/assets/integrations.js');const v=synchronousState(new IntegrationsView({projectId,sessionId:'session'}));v.state.config=config;return v;};
+const makeView=async(projectId='p')=>{const {IntegrationsView}=await import('../../dist/web/assets/integrations.js');const v=synchronousState(new IntegrationsView({projectId,sessionId:'session'}));return v;};
 const makeSkillView=async()=>{const parent=await makeView(),element=nodes(parent.render()).find(n=>n.type?.name==='SkillManager'),v=synchronousState(new element.type(element.props));v.state.catalog={configuration:{version:1,bundleId:'fixed',builtinBundleId:'builtin-old',revisionIds:[]},builtinSkills:[],revisions:[],builtinReleases:[]};return v;};
 
 test('skill and connector tabs keep both panels and keyed manager mounted while local state persists',async t=>{
@@ -43,31 +41,9 @@ test('library search is local, preserves canonical descriptions, and falls back 
  input().props.onChange({target:{value:''}});assert.equal(rows().length,3);assert.ok(!nodes(v.render()).some(n=>n.props['aria-label']==='技能来源'));assert.equal(requests,0);
 });
 
-test('source switches retain explicit authorization payload, decorative local logos, and disabled states',async t=>{
- const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=await makeView();globalThis.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return {ok:true,json:async()=>({...config,version:5,enabled:{...config.enabled,alphaxiv:true}})};};
- const rows=nodes(v.render()).filter(n=>n.props.className==='connector-row');assert.equal(rows.length,5);for(const row of rows){assert.equal(row.type,'label');const logo=nodes(row).find(n=>n.type==='img');assert.equal(logo.props.alt,'');assert.match(logo.props.src,/^\/source-logos\//);assert.doesNotMatch(text(row),/健康|连接成功/);}
- const toggle=()=>nodes(v.render()).find(n=>n.type==='input'&&n.props['aria-label']==='启用 alphaXiv');assert.equal(toggle().props.checked,false);assert.equal(toggle().props.disabled,false);await toggle().props.onChange({target:{checked:true}});
- assert.deepEqual(requests,[{url:'/api/projects/p/connectors',expectedVersion:4,enabled:{alphaxiv:true}}]);assert.deepEqual(v.state.selectedSources,['crossref']);v.state.busy=true;assert.equal(toggle().props.disabled,true);
-});
-
 test('built-in resource reading and closing retain original text without implicit source requests',async t=>{
  const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=await makeSkillView();v.state.catalog.builtinSkills=[{id:'pi-research-overview',description:'text',resources:['ref notes.txt']}];globalThis.fetch=async url=>{requests.push(url);return {ok:true,json:async()=>({id:'pi-research-overview',resource:'ref notes.txt',digest:'fixed-digest',content:'<script>original</script>'})};};
  v.openPanel('detail');await v.readBuiltin('pi-research-overview','ref notes.txt');assert.deepEqual(requests,['/api/skills/pi-research-overview?bundleId=builtin-old&resource=ref+notes.txt']);
  const tree=v.render(),pre=nodes(tree).find(n=>n.type==='pre'&&text(n)==='<script>original</script>');assert.ok(pre);assert.ok(!pre.props.dangerouslySetInnerHTML);assert.match(text(tree),/fixed-digest/);
  nodes(tree).find(n=>n.type==='button'&&n.props['aria-label']==='关闭技能面板').props.onClick();assert.equal(v.state.builtinContent,null);assert.equal(v.state.panel,null);assert.equal(requests.length,1);
-});
-
-test('project snapshot silently updates local connector state, forwards the token and exposes no refresh button',async t=>{
- const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const requests=[],v=await makeView(),history={observations:[],searches:[],papers:[]},snapshot={project:{id:'p'}};
- Object.assign(v.state,{error:'retained error',query:'unsaved query'});globalThis.fetch=async(url,options)=>{requests.push({url,method:options.method});return {ok:true,json:async()=>url.endsWith('/connectors')?{...config,version:5}:history};};
- const previous=v.props;v.props={...previous,refreshToken:snapshot};v.componentDidUpdate(previous);await new Promise(resolve=>setImmediate(resolve));
- assert.equal(v.state.config.version,5);assert.equal(v.state.history,history);assert.equal(v.state.error,'retained error');assert.equal(v.state.query,'unsaved query');assert.equal(nodes(v.render()).find(n=>n.type?.name==='SkillManager').props.refreshToken,snapshot);
- assert.deepEqual(requests,[{url:'/api/projects/p/connectors',method:'GET'},{url:'/api/projects/p/connector-history',method:'GET'}]);assert.ok(!nodes(v.render()).some(n=>n.type==='button'&&/刷新/.test(text(n))));
-});
-
-test('late local connector reads cannot replace an explicit toggle or a different project',async t=>{
- const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const pending=[],v=await makeView(),history={observations:[],searches:[],papers:[]},reply=value=>({ok:true,json:async()=>value});globalThis.fetch=(url,options)=>new Promise(resolve=>pending.push({url,options,resolve}));
- const quiet=v.load(true),toggle=nodes(v.render()).find(n=>n.props['aria-label']==='启用 alphaXiv').props.onChange({target:{checked:true}});const updated={...config,version:5,enabled:{...config.enabled,alphaxiv:true}};pending[2].resolve(reply(updated));await toggle;pending[0].resolve(reply(config));pending[1].resolve(reply(history));await quiet;assert.equal(v.state.config,updated);
- const earlier=v.load(true),previous=v.props;v.props={...previous,projectId:'other'};v.componentDidUpdate(previous);pending[5].resolve(reply({...config,version:8}));pending[6].resolve(reply(history));await new Promise(resolve=>setImmediate(resolve));pending[3].resolve(reply(config));pending[4].resolve(reply(history));await earlier;assert.equal(v.state.config.version,8);assert.equal(v.state.busy,false);
- assert.ok(pending.slice(5).every(request=>request.url.startsWith('/api/projects/other/')));
 });

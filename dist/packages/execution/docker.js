@@ -114,7 +114,7 @@ export async function probeDockerTarget(context) {
     const info = JSON.parse(await docker(context, ['info', '--format', '{{json .}}']));
     if (info.OSType !== 'linux' || typeof info.ID !== 'string' || !/^[A-Za-z0-9._:-]{1,200}$/.test(info.ID))
         throw new Error('A Linux Docker engine identity is required');
-    return { targetId: 'docker-' + digest(info.ID), engineId: info.ID, endpoint: endpoint.startsWith('npipe:') ? endpoint.toLowerCase() : endpoint };
+    return { targetId: 'docker-' + digest(info.ID), engineId: info.ID, endpoint: endpoint.startsWith('npipe:') ? endpoint.toLowerCase() : endpoint, ...(typeof info.ServerVersion === 'string' && info.ServerVersion.length <= 200 ? { serverVersion: info.ServerVersion } : {}), ...(Number.isSafeInteger(info.NCPU) && info.NCPU > 0 ? { cpus: info.NCPU } : {}), ...(Number.isFinite(info.MemTotal) && info.MemTotal > 0 ? { memoryMb: Math.floor(info.MemTotal / 1048576) } : {}) };
 }
 /** Inspect only before a new start; legacy running containers retain their existing lifecycle. */
 export function assertContainerStartPolicy(job, container) {

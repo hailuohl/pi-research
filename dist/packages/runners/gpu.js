@@ -6,6 +6,7 @@ import { docker, dockerEnv, preflight, probeDockerTarget } from '../execution/do
 import { hostIdentity, localEnvironment, LocalRuntimeService } from './local-runtime.js';
 import { SshTargetService } from './ssh-targets.js';
 import { sshRequest } from './ssh.js';
+import { ComputeConnectionService } from './compute-connections.js';
 export function validateGpu(value) {
     const x = object(value);
     ensure(Object.keys(x).every(k => k === 'vendor' || k === 'deviceIds') && x.vendor === 'nvidia' && Array.isArray(x.deviceIds) && x.deviceIds.length > 0 && x.deviceIds.length <= 16, 'GPU_INVALID', 'GPU 必须声明 NVIDIA 完整 UUID 列表', 400);
@@ -43,39 +44,59 @@ export class GpuService {
         userOnly(actor);
         const x = object(value), backend = oneOf(x.backend, ['local', 'docker', 'ssh'], 'backend');
         let target;
+        const connections = new ComputeConnectionService(this.c);
+        let observationId, attempt, configurationDigest, connectionAttempt, sshFrozen;
         ensure(backend === 'local' ? x.context === undefined && x.sshTargetId === undefined && x.image === undefined : backend === 'docker' ? x.sshTargetId === undefined && x.localRuntimeId === undefined : x.context === undefined && x.localRuntimeId === undefined, 'GPU_PROBE_INVALID', 'GPU 目标参数与后端不符', 400);
-        if (backend === 'local') {
-            const runtimes = new LocalRuntimeService(this.c), id = x.localRuntimeId === undefined ? runtimes.list().find(r => /^Python\s/i.test(r.runtimeVersion))?.id : text(x.localRuntimeId, 'localRuntimeId', 80);
-            ensure(id, 'GPU_RUNTIME_UNAVAILABLE', '请先配置已有 Python 运行时用于 NVIDIA 验证', 409);
-            const runtime = runtimes.resolve(id);
-            ensure(/^Python\s/i.test(runtime.runtimeVersion), 'GPU_RUNTIME_UNAVAILABLE', 'NVIDIA 验证需要已配置的 Python 运行时', 409);
-            const check = spawnSync(runtime.executable, ['-I', '-c', "import ctypes,os; d=ctypes.WinDLL('nvcuda.dll') if os.name=='nt' else ctypes.CDLL('libcuda.so.1'); assert d.cuInit(0)==0; n=ctypes.c_int(); assert d.cuDeviceGetCount(ctypes.byref(n))==0 and n.value>0"], { windowsHide: true, timeout: 10000, maxBuffer: 65536, env: { ...localEnvironment(this.c.dataDir, this.c.dataDir), CUDA_VISIBLE_DEVICES: undefined } });
-            ensure(check.status === 0, 'GPU_RUNTIME_UNAVAILABLE', '所选 Python 无法访问 NVIDIA CUDA Driver；不自动安装或切回 CPU', 409);
-            target = { backend, targetId: hostIdentity(), localRuntimeId: id, observedAt: new Date().toISOString(), devices: await nativeGpuInventory() };
+        try {
+            if (backend === 'local') {
+                const runtimes = new LocalRuntimeService(this.c), id = x.localRuntimeId === undefined ? runtimes.list().find(r => /^Python\s/i.test(r.runtimeVersion))?.id : text(x.localRuntimeId, 'localRuntimeId', 80);
+                ensure(id, 'GPU_RUNTIME_UNAVAILABLE', '请先配置已有 Python 运行时用于 NVIDIA 验证', 409);
+                const runtime = runtimes.resolve(id);
+                ensure(/^Python\s/i.test(runtime.runtimeVersion), 'GPU_RUNTIME_UNAVAILABLE', 'NVIDIA 验证需要已配置的 Python 运行时', 409);
+                const check = spawnSync(runtime.executable, ['-I', '-c', "import ctypes,os; d=ctypes.WinDLL('nvcuda.dll') if os.name=='nt' else ctypes.CDLL('libcuda.so.1'); assert d.cuInit(0)==0; n=ctypes.c_int(); assert d.cuDeviceGetCount(ctypes.byref(n))==0 and n.value>0"], { windowsHide: true, timeout: 10000, maxBuffer: 65536, env: { ...localEnvironment(this.c.dataDir, this.c.dataDir), CUDA_VISIBLE_DEVICES: undefined } });
+                ensure(check.status === 0, 'GPU_RUNTIME_UNAVAILABLE', '所选 Python 无法访问 NVIDIA CUDA Driver；不自动安装或切回 CPU', 409);
+                target = { backend, targetId: hostIdentity(), localRuntimeId: id, observedAt: new Date().toISOString(), devices: await nativeGpuInventory() };
+            }
+            else if (backend === 'docker') {
+                const context = text(x.context ?? currentDockerContext(), 'context', 100), image = text(x.image, 'image', 250);
+                await preflight(context, image);
+                const identity = await probeDockerTarget(context);
+                const output = await docker(context, ['run', '--rm', '--pull', 'never', '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--gpus', 'all', '--env', 'NVIDIA_DRIVER_CAPABILITIES=compute,utility', '--entrypoint', 'nvidia-smi', image, '--query-gpu=uuid,name,memory.total', '--format=csv,noheader,nounits'], 30000);
+                const after = await probeDockerTarget(context);
+                ensure(after.engineId === identity.engineId && after.endpoint === identity.endpoint, 'COMPUTE_TARGET_CHANGED', 'GPU 探测期间目标变化');
+                target = { backend, targetId: identity.targetId, context, observedAt: new Date().toISOString(), devices: parseGpuInventory(output) };
+            }
+            else {
+                const targets = new SshTargetService(this.c), id = text(x.sshTargetId, 'sshTargetId', 80);
+                configurationDigest = targets.directory().find(t => t.target.id === id)?.configurationDigest;
+                observationId = 'ssh:' + id;
+                connectionAttempt = connections.observation(observationId)?.attempt;
+                attempt = connections.begin(observationId, configurationDigest, 'compute-gpu-observation');
+                const frozen = sshFrozen = targets.frozen(id, true);
+                ensure(frozen.gpuProtocol === true, 'GPU_UNAVAILABLE', '此 SSH 目标尚未配置独立 GPU 协议');
+                const result = await sshRequest(targets.privateTarget(id), { op: 'gpu-probe', image: text(x.image, 'image', 250) });
+                targets.assertFrozen(frozen);
+                ensure(result.engineId === frozen.engineId && result.protocolDigest === frozen.protocolDigest, 'SSH_TARGET_CHANGED', 'GPU 探测回复目标与固定身份不符');
+                target = { backend, targetId: frozen.targetId, sshTargetId: id, observedAt: new Date().toISOString(), devices: parseGpuInventory(result.inventory) };
+            }
+            const id = target.backend + ':' + (target.context ?? target.sshTargetId ?? target.targetId);
+            this.c.store.transaction(() => { if (sshFrozen) {
+                new SshTargetService(this.c).assertFrozen(sshFrozen, true);
+                ensure(connections.finish(observationId, attempt, { configurationDigest, status: 'verified', targetId: target.targetId, devices: target.devices }, 'compute-gpu-observation'), 'SSH_TARGET_CHANGED', 'GPU 核验期间观察已变化');
+                const previous = connections.observation(observationId), context = this.c.store.db.prepare('SELECT status,target_id,endpoint FROM compute_contexts WHERE context=?').get(observationId);
+                if (previous && previous.attempt === connectionAttempt && previous.status === 'verified' && previous.configurationDigest === configurationDigest && context?.status === 'ready' && context.target_id === target.targetId && context.endpoint === configurationDigest + ':' + sshFrozen.protocolDigest)
+                    connections.finish(observationId, connectionAttempt, { configurationDigest, status: 'verified', targetId: target.targetId });
+            } const old = this.c.store.maybe('gpu-target', id); if (old)
+                this.c.store.update('gpu-target', id, old.version, { target });
+            else
+                this.c.store.create('gpu-target', null, { target }, id); });
+            return target;
         }
-        else if (backend === 'docker') {
-            const context = text(x.context ?? currentDockerContext(), 'context', 100), image = text(x.image, 'image', 250);
-            await preflight(context, image);
-            const identity = await probeDockerTarget(context);
-            const output = await docker(context, ['run', '--rm', '--pull', 'never', '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--gpus', 'all', '--env', 'NVIDIA_DRIVER_CAPABILITIES=compute,utility', '--entrypoint', 'nvidia-smi', image, '--query-gpu=uuid,name,memory.total', '--format=csv,noheader,nounits'], 30000);
-            const after = await probeDockerTarget(context);
-            ensure(after.engineId === identity.engineId && after.endpoint === identity.endpoint, 'COMPUTE_TARGET_CHANGED', 'GPU 探测期间目标变化');
-            target = { backend, targetId: identity.targetId, context, observedAt: new Date().toISOString(), devices: parseGpuInventory(output) };
+        catch (error) {
+            if (observationId && attempt)
+                connections.finish(observationId, attempt, { configurationDigest, status: 'unavailable', errorCode: 'GPU_UNAVAILABLE' }, 'compute-gpu-observation');
+            throw error;
         }
-        else {
-            const targets = new SshTargetService(this.c), id = text(x.sshTargetId, 'sshTargetId', 80), frozen = targets.frozen(id, true);
-            ensure(frozen.gpuProtocol === true, 'GPU_UNAVAILABLE', '此 SSH 目标尚未配置独立 GPU 协议');
-            const result = await sshRequest(targets.privateTarget(id), { op: 'gpu-probe', image: text(x.image, 'image', 250) });
-            targets.assertFrozen(frozen);
-            ensure(result.engineId === frozen.engineId && result.protocolDigest === frozen.protocolDigest, 'SSH_TARGET_CHANGED', 'GPU 探测回复目标与固定身份不符');
-            target = { backend, targetId: frozen.targetId, sshTargetId: id, observedAt: new Date().toISOString(), devices: parseGpuInventory(result.inventory) };
-        }
-        const id = target.backend + ':' + (target.context ?? target.sshTargetId ?? target.targetId);
-        this.c.store.transaction(() => { const old = this.c.store.maybe('gpu-target', id); if (old)
-            this.c.store.update('gpu-target', id, old.version, { target });
-        else
-            this.c.store.create('gpu-target', null, { target }, id); });
-        return target;
     }
 }
 //# sourceMappingURL=gpu.js.map

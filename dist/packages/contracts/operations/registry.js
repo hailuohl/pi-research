@@ -14,6 +14,8 @@ import { validateSchema } from './schema.js';
 import { assertWorkspaceReady } from '../../workspace/git-service.js';
 import { discoveryContext, discoveryScope } from '../../policy/discovery-grant-validation.js';
 import { assertRunGrantActor, assertRunGrantTaskSubmission } from '../../policy/run-grant-validation.js';
+import { ComputeConnectionService, localHardware } from '../../runners/compute-connections.js';
+import { currentDockerContext } from '../../runners/gpu.js';
 const recordScope = (kind, field) => (c, x) => { c.app.store.get(kind, x[field], c.projectId); };
 const workspaceScope = (c, x) => {
     if (x.source === 'project') {
@@ -68,7 +70,7 @@ function authorizeRegistered(c, name, x) {
 }
 function externalReplay(c, name, x) {
     // Local archive reconstruction is safe; ExportService publishes once using its durable receipt.
-    if (['report_export', 'compute_target_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare', 'skill_package_import', 'manuscript_create', 'publication_configure', 'publication_prepare', 'publication_submit'].includes(name))
+    if (['report_export', 'compute_target_probe', 'docker_connection_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare', 'skill_package_import', 'manuscript_create', 'publication_configure', 'publication_prepare', 'publication_submit'].includes(name))
         return { key: c.idempotencyKey, completed: true };
     if (name === 'paper_read')
         return paperReplay(c, x);
@@ -240,7 +242,22 @@ const SPECS = [
     make('execution_environment_list', { idempotencyPolicy: 'read-only', authorize: c => { if (c.actor.type === 'agent')
             interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'execution_environment_list'));
         else
-            userOnly(c.actor); }, preconditions: noPrecondition, execute: c => { const runtimes = c.app.localRuntimes.list(); return { local: { platform: process.platform, hostId: runtimes[0]?.hostId ?? 'unconfigured', runtimes, isolation: 'none', resourceEnforcement: 'advisory', networkIsolation: false }, gpuTargets: c.app.gpus.list(), sshTargets: c.app.sshTargets.list({ type: 'user' }) }; } }),
+            userOnly(c.actor); }, preconditions: noPrecondition, execute: c => { const runtimes = c.app.localRuntimes.list(); return { local: { platform: process.platform, hostId: runtimes[0]?.hostId ?? 'unconfigured', runtimes, hardware: localHardware(), isolation: 'none', resourceEnforcement: 'advisory', networkIsolation: false }, connections: new ComputeConnectionService(c.app.context).list(c.actor, c.app.sshTargets), gpuTargets: c.app.gpus.list(), sshTargets: c.app.sshTargets.list({ type: 'user' }) }; } }),
+    make('docker_connection_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: async (c, x) => { const connections = new ComputeConnectionService(c.app.context); let context = x.context; try {
+            context ??= currentDockerContext();
+            await c.app.compute.probeContext(c.actor, context, c.validate);
+        }
+        catch (error) {
+            if (error.code !== 'COMPUTE_TARGET_UNAVAILABLE')
+                throw error;
+            if (!context) {
+                context = 'current';
+                const attempt = connections.begin('docker:' + context);
+                connections.finish('docker:' + context, attempt, { status: 'unavailable', errorCode: 'COMPUTE_TARGET_UNAVAILABLE' });
+            }
+        } return connections.docker(context); } }),
+    make('ssh_target_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.sshTargets.inspect(c.actor, x.id) }),
+    make('ssh_target_preferences_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => new ComputeConnectionService(c.app.context).configurePreferences(c.actor, x, c.app.sshTargets) }),
     make('gpu_target_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.gpus.probe(c.actor, x) }),
     make('ssh_target_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.sshTargets.configure(c.actor, x) }),
     make('ssh_target_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.sshTargets.probe(c.actor, x.id) }),
@@ -562,7 +579,7 @@ export class OperationRegistry {
             // Owner receipts remain readable after archival; only new effects require a writable project.
             if (actor.type === 'agent')
                 context.validate();
-            if (['report_export', 'compute_target_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare', 'skill_package_import', 'manuscript_create', 'publication_configure', 'publication_prepare', 'publication_submit'].includes(id)) {
+            if (['report_export', 'compute_target_probe', 'docker_connection_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare', 'skill_package_import', 'manuscript_create', 'publication_configure', 'publication_prepare', 'publication_submit'].includes(id)) {
                 const previous = this.app.store.transaction(() => {
                     if (actor.type === 'agent')
                         context.validate();

@@ -92,7 +92,7 @@ export declare const SCHEDULER_INPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: readonly ("maxRuns" | "cpus" | "memoryMb" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
+                readonly required: readonly ("cpus" | "memoryMb" | "maxRuns" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
                 readonly additionalProperties: false;
             };
         };
@@ -238,7 +238,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                 }];
                             };
                         };
-                        readonly required: ("maxRuns" | "cpus" | "memoryMb" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
+                        readonly required: ("cpus" | "memoryMb" | "maxRuns" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -387,7 +387,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                             }];
                                         };
                                     };
-                                    readonly required: ("maxRuns" | "cpus" | "memoryMb" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
+                                    readonly required: ("cpus" | "memoryMb" | "maxRuns" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
                                     readonly additionalProperties: false;
                                 };
                             };
@@ -617,7 +617,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: ("maxRuns" | "cpus" | "memoryMb" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
+                readonly required: ("cpus" | "memoryMb" | "maxRuns" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
                 readonly additionalProperties: false;
             };
         };

@@ -2985,7 +2985,7 @@ export declare const INPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: readonly ("maxRuns" | "cpus" | "memoryMb" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
+                readonly required: readonly ("cpus" | "memoryMb" | "maxRuns" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
                 readonly additionalProperties: false;
             };
         };
@@ -5307,6 +5307,59 @@ export declare const INPUT_SCHEMAS: {
             };
         };
         readonly required: readonly ["id"];
+        readonly additionalProperties: false;
+    };
+    readonly docker_connection_probe: {
+        readonly type: "object";
+        readonly properties: {
+            readonly context: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly [];
+        readonly additionalProperties: false;
+    };
+    readonly ssh_target_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["id"];
+        readonly additionalProperties: false;
+    };
+    readonly ssh_target_preferences_configure: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly cpu: {
+                readonly type: "boolean";
+            };
+            readonly gpu: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: readonly ["id", "expectedVersion", "cpu", "gpu"];
         readonly additionalProperties: false;
     };
 };

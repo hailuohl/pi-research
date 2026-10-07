@@ -1,6 +1,7 @@
 import { LocalRuntimeService } from '../runners/local-runtime.js';
 import { nativeGpuInventory, assertGpuDevices } from '../runners/gpu.js';
 import { SshTargetService } from '../runners/ssh-targets.js';
+import { ComputeConnectionService } from '../runners/compute-connections.js';
 import { userOnly, scope } from '../policy/permissions.js';
 import { object, integer, text } from '../contracts/validation.js';
 import { ensure, DomainError } from '../domain/errors.js';
@@ -159,15 +160,18 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         text(context, 'context', 100);
         ensure(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(context), 'INVALID_INPUT', 'Docker context 名称无效', 400);
         validate();
+        const connections = new ComputeConnectionService(this.c), attempt = connections.begin('docker:' + context);
         let identity;
         try {
             identity = await this.probe(context);
         }
         catch {
+            this.c.store.transaction(() => { if (connections.finish('docker:' + context, attempt, { status: 'unavailable', errorCode: 'COMPUTE_TARGET_UNAVAILABLE' }))
+                this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now() + 5000, context); });
             throw new DomainError('COMPUTE_TARGET_UNAVAILABLE', '无法核对本机 Docker 目标身份', 409);
         }
         validate();
-        return this.c.store.transaction(() => { validate(); this.remember(context, identity); return { context, targetId: identity.targetId, backend: 'docker', observedAt: new Date().toISOString() }; });
+        return this.c.store.transaction(() => { validate(); ensure(connections.finish('docker:' + context, attempt, { status: 'verified', targetId: identity.targetId, ...(identity.serverVersion ? { serverVersion: identity.serverVersion } : {}), ...(identity.cpus !== undefined ? { cpus: identity.cpus } : {}), ...(identity.memoryMb !== undefined ? { memoryMb: identity.memoryMb } : {}) }), 'COMPUTE_TARGET_CHANGED', '核验期间已有更新的 Docker 观察'); this.remember(context, identity); return { context, targetId: identity.targetId, backend: 'docker', observedAt: new Date().toISOString() }; });
     }
     remember(context, identity) {
         this.c.store.db.prepare("INSERT INTO compute_contexts(context,target_id,engine_id,endpoint,status,next_probe_at) VALUES(?,?,?,?,'ready',?) ON CONFLICT(context) DO UPDATE SET target_id=excluded.target_id,engine_id=excluded.engine_id,endpoint=excluded.endpoint,status='ready',next_probe_at=excluded.next_probe_at,probe_until=0,failures=0,last_error=NULL").run(context, identity.targetId, identity.engineId, identity.endpoint, Date.now() + 30000);
