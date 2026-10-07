@@ -51,13 +51,13 @@ enable/configure/delete用真实expectedVersion防配置陈旧；VERSION_CONFLIC
 
 ## LaTeX个人模板库与Agent生成
 
-1. **选择真实模板**。`publication_templates`（`{"input":{}}`）列出内置和跨项目个人模板。用户已指定一套时直接沿用；未指定且多套可选时展示实际名称供选择。设置中的“文稿模板库”接受单个 `.tex` 或包含 `.cls/.sty/.bst/.bib` 及配套图像的 ZIP，无需先创建项目。
+1. **选择真实模板**。交互主协调者用 `publication_templates`（`{"input":{}}`）列出内置和跨项目个人模板，按用户模板/投稿样式、正文语言和引擎要求筛选。已指定就沿用；实际不兼容或环境缺口须说明并保留用户选择，不自动换模板。未指定时，唯一适用个人模板直接使用，没有适用个人模板就选匹配 builtin；仅多个真实适用且样式未定的候选才展示实际名称请用户选择。builtin 的三种 article 引擎入口不自动构成样式歧义，语言/字体兼容仍需检查实际文件和环境。设置中的“文稿模板库”接受单个 `.tex` 或包含 `.cls/.sty/.bst/.bib` 及配套图像的 ZIP，无需先创建项目。
 2. **读取入口和完整配套**。`publication_template_inspect` 用 `{"input":{"templateId":"actual-template-id"}}` 核对固定 ID、引擎、mainFile、bibliography 和 files。再逐一用 `publication_template_read`（例如 `{"input":{"templateId":"actual-template-id","path":"main.tex"}}`）读取入口所需的类、样式、参考文献和图像。每份文件有 `contentBase64`，文本另有 `content`；目录清单不能代替字节。按需读取完整使用集合，保留路径和依赖，不悄悄换默认类。缺文件或摘要不符时停止并报告。模板可读不扩大其他项目证据权限。
 3. **按需生成并入库**。用户要新模板时，交互主协调 Agent 先保存完整 TeX 及实际使用的配套文件，再调用 `publication_template_import`，提供 title、engine（pdflatex/xelatex/lualatex）、mainFile、bibliography（none/auto/bibtex/biber）以及 `files:[{path,contentBase64}]` 或 zipBase64（二选一）。所有参数置于 `input`，contentBase64 必须是实际文件的规范 Base64，不能传磁盘路径、其他项目 artifactId 或占位符。工具返回真实 id/contentDigest/files 才表示入库成功；再 inspect/read 核对实际保存内容。
 4. **在当前稿件中复用**。从真实入口开始，沿用类、样式、字体和配套文件；把使用的完整文件集合保存到获准文稿相对路径。`manuscript_create` 可记录 templateId，但仍需提供实际 files，不会自动补模板字节。固定、编译和交付按 `pi-research-paper`，执行前读其 [references/build-and-review.md](../pi-research-paper/references/build-and-review.md)。导入成功不表示已经编译。
 5. **保留旧版本**。同名上传产生独立不可变 ID，不覆盖旧模板；更新返回的新 ID 要与旧 ID 分别记录。旧模板用原 templateId inspect/read 回读。已有稿件固定自己的文件，后续上传不改变论文历史；修订稿件用 previousRevisionId 建新版本，旧稿按原 revisionId 回读。这与上游 templates add 的同名替换语义不同。
 
-模板入库无需研究计划，但仍遵守当前会话动作策略：readOnly 不可写，confirm/autoEdit 沿固定动作批准；收到 APPROVAL_REQUIRED 停止该动作，等待准确操作卡后按原参数继续。Task 与自动唤醒无模板写入权。模板选择/读取不运行代码，也不授予编译或外发批准。
+模板入库无需研究计划，但仍遵守当前会话动作策略：readOnly 不可写，confirm/autoEdit 沿固定动作批准；收到 APPROVAL_REQUIRED 停止该动作，等待准确操作卡后按原参数继续。模板工具属于用户或交互主协调者，writer/Task 与自动唤醒无此入口。需要 writer 起草时由主协调者通过既有获准任务输入交接已经读取的真实模板文件及 ID/引擎/路径，不要求 writer 读取本技能或自行列目录。模板选择/读取不运行代码，也不授予编译或外发批准。
 
 模板最多64文件、展开总量16 MiB；文本每个2 MiB，PNG/JPG/PDF每个8 MiB，ZIP输入最多17 MiB。路径沿文稿规范，主.tex必须存在；遍历、符号链接、冲突和无效ZIP拒绝。模板导入和查看不运行代码、不安装依赖、不自动编译；PDF仍走pi-research-paper的固定稿件及批准构建流程。不借host_execute或Overleaf绕过模板入口。
 

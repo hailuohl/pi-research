@@ -67,7 +67,7 @@ metrics.json必须由实际程序写入、符合固定contract指标；不能art
 
 artifact_read只读获准不可变UTF-8产物，响应digest/content/cursor/complete；不是PDF或二进制图形读取器。paper_read所得metadata/abstract/full_text必须据实际contentKind/fullTextRead和返回正文判断。检索元数据、摘要、服务生成概述和全文分别标注；摘要不是全篇，生成概述不是作者原文。fullTextRead表示取得提取文本，不证明已读全部段落、PDF页或图；只有实际阅读的范围支持相应结论。版本不能证实一致就保存未核验状态，不虚构页码或数值出处。
 
-取得、解析或读取固定PDF/页图前，先读pi-research-lit-review的references/document-reading.md；涉及联网或固定全文授权时，先读其references/discovery-permissions.md。当前固定解析OCR=false，textStatus=no-text-layer表示未提取到可用文字，不证明页面空白或论文没有相关内容。OCR派生文字若由用户另行提供，记录原件、页、识别来源和限制并核对；不冒充原始文字层，也不声称本项目执行了OCR。
+取得、解析或读取固定PDF/页图前，先读pi-research-lit-review的references/document-reading.md；涉及联网或固定全文授权时，先读其references/discovery-permissions.md。当前固定解析OCR=false，textStatus=no-text-layer表示未提取到可用文字，不证明页面空白或论文没有相关内容。默认模型具备图片识别能力，获准真实页图到达后直接视觉阅读，no-text-layer 不触发OCR需求或额外OCR实现。用户另行提供OCR文字时保留原件、页、识别来源和限制；不冒充原始文字层或项目OCR产物。
 
 普通文本用evidence_register建立稳定片段：
 
@@ -83,9 +83,9 @@ artifact_read只读获准不可变UTF-8产物，响应digest/content/cursor/comp
 
 主协调者可按 pi-research-lit-review 的固定文档/解析页范围准确批准使用 document_page_image_read，或按 pi-research-paper 读取自己固定文稿页。用户把成功解析结果带入会话仅提供元数据，不赋原文或视觉权限；textCorpusGrant不赋视觉，视觉范围也不增加词项检索额度。
 
-整页PNG读取、固定页裁图和OCR分别处理；后两项尚未接入，不构造占位调用。附件元数据、页图引用或解析成功都不等于已看图；只有模型实际收到并读取像素，才记录视觉观察。
+获准整页PNG实际到达后直接阅读；固定页裁图尚未接入，不构造占位调用，也不为扫描件增加OCR动作。附件元数据、页图引用或解析成功都不等于已看图；模型能看图也不等于已经读取像素，只有实际阅读后才记录视觉观察。
 
-记录固定文档版本、解析结果、授权范围、实际看过的物理页及观察范围。印刷页标签与1起始物理页分开，未知页不补造。图/表像素可支持布局/图形观察，但不能直接伪造具有UTF-16原话定位的文本Evidence、作者引语或精确数值；视觉估读注明估读，精确数字与引语回到真实原文/数据。缺页、超限、模型不支持或来源/权限失效明确未看或未验证，不将单页观察扩大成全文审读。每次模型发送重新验证历史页权限，原结果保留不等于当前可外发。
+记录固定文档版本、解析结果、授权范围、实际看过的物理页及观察范围。印刷页标签与1起始物理页分开，未知页不补造。图/表像素可支持布局/图形观察，但不能直接伪造具有UTF-16原话定位的文本Evidence、作者引语或精确数值；视觉估读注明估读，精确数字与引语回到真实原文/数据。工具实际拒绝、缺页、超限或来源/权限失效明确未看或未验证，不绕过目录或权限校验，不将单页观察扩大成全文审读。每次模型发送重新验证历史页权限，原结果保留不等于当前可外发。
 
 ## 解释、权限与历史效力
 

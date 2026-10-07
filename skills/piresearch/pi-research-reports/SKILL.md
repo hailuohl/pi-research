@@ -12,16 +12,16 @@ description: "Write and save evidence-backed research reports and run comparison
 ## 默认流程：从问题到正文
 
 1. 根据用户问题明确报告用途、比较对象和判断标准；已有信息足够就继续，不为固定格式追加提问。
-2. 用 project_inspect 或 task_result_read 找到获准的真实输入，按 pi-research-evidence 读取 run_inspect、run_logs、artifact_read、evidence_read 和运行时固定源码。任务总结、Run 状态和最新工作区不能替代原始证据。
+2. 用当前可用的 project_inspect 或 task_result_read 找到获准真实输入，按 pi-research-evidence 使用实际工具读取 run_inspect、run_logs、artifact_read、evidence_read 和运行时固定源码。自动分析缺 artifact_read/源码读取工具时使用获准日志与证据并标未覆盖范围，交由交互主协调者补核；任务总结、Run 状态和最新工作区不能替代原始证据。
 3. 比较实际结果，核对数据/切分版本、固定合同、评价协议、单位和指标方向。差值或相对变化注明计算依据；跨合同结果写清不可比条件，不直接当同条件排名。没有对照、关键数据或验证时，继续写现有证据支持的内容，准确列出缺口，不补造数值或结论。
 4. 撰写研究问题、方法、实际结果、分析、局限和来源，按任务调整组织。保留实际 Run ID、源码摘要、指标单位及原始产物/证据 ID；区分本项目实测、论文报告值、图片观察和模型解释。解释应连接结果与问题，说明支持程度、替代解释和下一步，而非复述日志。运行成功不等于假设成立。
-5. 保存实际正文，回读确认内容与摘要，再交付正文入口、主要结论与限制。分别说明 Agent 正文的保存状态和系统固定报告的创建/导出状态；没有执行的操作明确未执行。
+5. 由具备保存和回读工具的执行者保存实际正文并核对内容与摘要，再交付正文入口、主要结论与限制。只读 Task 先用既有 `task_result_submit` 交回意见、分析与来源，由获准主协调者/writer 保存和回读；没有保存工具时交回正文及缺口，不声称已保存，有保存但缺回读工具时区分已保存与尚未回读。分别说明 Agent 正文的保存状态和系统固定报告的创建/导出状态；没有执行的操作明确未执行。
 
 失败、没测、没编译、停止理由及矛盾结果应进入适用的正文限制。科学数值来自实际读取的来源，不从模型记忆填；图注明实际数据、脚本、版本及来源。Sandbox 图形执行证明固定作业来源，不证明逐点科学数值，更不能冒充正式 Run。
 
 ## 先看已有组织再写
 
-用workspace_list/read查看自己的相关源文件，project_inspect/task_result_read查看获准产物索引。报告按研究主题/交付物分组，优先复用已有相关目录；描述性名称，不在根不断积累report1/report2，不为空目录提前搭架子。绘图前读pi-research-figures，论文读pi-research-paper，运行结论读pi-research-evidence。
+当前工具包含 workspace_list/read 时查看自己的相关源文件，用可用的 project_inspect/task_result_read 查看获准产物索引；自动分析不假设拥有工作区或 artifact_read。报告按研究主题/交付物分组，优先复用已有相关目录；描述性名称，不在根不断积累report1/report2，不为空目录提前搭架子。绘图前读pi-research-figures，论文读pi-research-paper，运行结论读pi-research-evidence。
 
 私有草稿目录可以保留上游的组织示例（仅当这些实际输出存在）：
 
@@ -44,13 +44,15 @@ transformer-sweep/
 
 ## 保存分析正文与草稿
 
-主协调者/writer 可用 workspace_write 在**自己的**获准工作区写 Markdown/CSV/脚本；新文件 expectedDigest:null，修改填旧 digest。无需编辑工作区时，直接用 artifact_create 保存实际 UTF-8 正文，返回 Artifact 的 id/digest。登记分析报告不会采纳 Claim，不会自动生成固定 report 或发布 PDF。
+主协调者/writer 可用 workspace_write 在**自己的**获准工作区写 Markdown/CSV/脚本；新文件 expectedDigest:null，修改填旧 digest。analyst 没有工作区写入/绘图执行工具，但可用获准的 artifact_create 保存实际 UTF-8 分析正文；reviewer 没有保存工具，通过 task_result_submit 的 summary、evidenceIds、unresolvedQuestions 与 verdict 等现有字段交回意见，由获准主协调者/writer 保存并回读，不新增交接字段。任务实际权限和会话动作策略仍须满足；只读模式不因技能要求变成可写。登记分析报告不会采纳 Claim，不会自动生成固定 report 或发布 PDF。
+
+自动结果分析的工具集合更窄：可用本次获准 run_inspect/run_logs/evidence_read 等完成分析，有 artifact_create 时可保存文本产物；没有 workspace_*、artifact_read 或执行工具时不要求创建目录、绘图或自行回读。交回返回的真实 id/digest 和正文，明确“已保存，尚未回读”，由后续获准交互主协调者回读核对；无保存工具则仅交回正文与限制。
 
 ```json
 {"tool":"artifact_create","input":{"title":"curve-fit-comparison-draft.md","content":"<根据实际读取结果写成的完整正文，含证据ID和限制>","mediaType":"text/markdown"}}
 ```
 
-示例的 tool 标明 artifact_create，Pi 调用参数为 `{input: ...}`；占位内容必须替换为实际写好的完整正文。用返回的 id 作为 artifact_read 的 artifactId 回读，分页至完整正文，核对 digest 和内容；工作区文件用 workspace_read 核对实际路径与 digest。回读确认保存成功，不代替科学证据核验。writer 先读授权输入，不从他人措辞猜测 Claim 已 accepted；没有 claim_read 工具时按任务固定交付范围与用户选择，尚未核验标候选。
+示例的 tool 标明 artifact_create，Pi 调用参数为 `{input: ...}`；占位内容必须替换为实际写好的完整正文。具备回读工具的执行者用返回的 id 作为 artifact_read 的 artifactId，分页至完整正文核对 digest 和内容；工作区文件用 workspace_read 核对实际路径与 digest。没有回读工具时沿上面的交接处理。回读确认保存成功，不代替科学证据核验。writer 先读授权输入，不从他人措辞猜测 Claim 已 accepted；没有 claim_read 工具时按任务固定交付范围与用户选择，尚未核验标候选。
 
 ## 固定报告、引用回查与本地导出
 
@@ -76,7 +78,7 @@ transformer-sweep/
 
 引用文稿时分别写明固定 publicationResultId、成功完整构建、实际看过的 pageNumber，以及未看/失败原因。交互主协调者可沿 pi-research-paper 的准确页批准和图片读取做布局观察；不能以结果目录有 PNG 或编译成功就填“已视觉检查”。科学数字仍回读原始 Run/数据/证据，单页布局意见不等于全文或科学结论验收。
 
-模型不支持图片、图片超限、来源/授权失效时明确缺口；原固定成果和历史保留，新修订另行编译与核对。报告与本地导出仍由已有用户流程选择固定结果，不因图片批准而自动发布。
+默认模型具备图片识别能力，获准真实图片到达后直接视觉阅读；工具实际拒绝、图片超限、来源/授权失效时明确未看或未验证，不绕过校验。原固定成果和历史保留，新修订另行编译与核对。报告与本地导出仍由已有用户流程选择固定结果，不因图片批准而自动发布。
 
 ## 来源与适配声明
 

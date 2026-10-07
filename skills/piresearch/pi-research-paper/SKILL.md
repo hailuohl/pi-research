@@ -9,11 +9,13 @@ description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿�
 
 ## 1. 先选模板
 
-先用 `publication_templates`（`{"input":{}}`）查看真实目录。用户已经指定一套模板时直接沿用；多套且未指定时请用户选择，并继续整理已知正文。没有专用模板时选择所需引擎的基础入口：`article-pdflatex`、`article-xelatex` 或 `article-lualatex`，它们的主文件是 `main.tex`，默认 `bibliography:none`，不是会议/期刊模板全集。
+交互主协调者先用 `publication_templates`（`{"input":{}}`）查看真实目录，按用户指定的模板/投稿样式、正文语言和引擎约束筛选。已有明确选择就沿用；发现实际不兼容或环境缺口时保留该选择并说明问题，不自动替换模板。未指定时，只有一套适用个人模板就直接使用，没有适用个人模板就选择匹配引擎的 builtin。仅有多个真实适用且样式仍需用户决定的候选时询问，并继续整理已知正文。内置基础入口为 `article-pdflatex`、`article-xelatex` 或 `article-lualatex`，主文件均为 `main.tex`、默认 `bibliography:none`；三种引擎入口不自动构成三种待选投稿样式，也不是会议/期刊模板全集。语言/字体要求仍须核对实际文件和环境，不能因选了引擎就称兼容。
 
-用 `publication_template_inspect` 核对固定 ID、引擎、主文件和清单，再用 `publication_template_read` 读取入口及实际需要的完整配套文件。参数均放在 `input` 中，例如 `{"input":{"templateId":"actual-template-id","path":"main.tex"}}`。正文文本有 `content`，所有文件有 `contentBase64`。目录清单不能代替真实文件字节。
+主协调者用 `publication_template_inspect` 核对固定 ID、引擎、主文件和清单，再用 `publication_template_read` 读取入口及实际需要的完整配套文件。参数均放在 `input` 中，例如 `{"input":{"templateId":"actual-template-id","path":"main.tex"}}`。正文文本有 `content`，所有文件有 `contentBase64`。目录清单不能代替真实文件字节。
 
-从模板自己的入口 TeX 开始，沿用 `documentclass`、cls/sty/bst、包、页边距、字体和匿名规则；只替换占位正文。配套文件保留相对路径并一并冻结。用户在工作区提供的模板用 `workspace_list/read` 读取明确授权的入口和配套文件。缺包或文件应诊断，不为得到 PDF 悄悄改成默认 article。生成、入库或复用个人模板前读 `pi-research-customize`。
+从模板自己的入口 TeX 开始，沿用 `documentclass`、cls/sty/bst、包、页边距、字体和匿名规则；只替换占位正文。配套文件保留相对路径并一并冻结。用户在工作区提供的模板用 `workspace_list/read` 读取明确授权的入口和配套文件。缺包或文件应诊断，不为得到 PDF 悄悄改成默认 article。交互主协调者生成、入库或复用个人模板前读 `pi-research-customize`。
+
+writer 没有 `publication_templates`、`publication_template_inspect/read`，也不能读取 coordinator-only 的 `pi-research-customize`。由主协调者完成选择与字节核对，通过既有获准任务输入交接真实入口、配套文件产物和固定模板 ID/引擎/路径；writer 用 `task_context_read` 核对交接、`artifact_read` 读取获准文本文件，再保存草稿。二进制配套由主协调者保留真实字节与路径供固定稿件使用，不要求 writer 用文本工具读图。缺入口或依赖就交回具体缺口，不自行调用模板工具、按清单重造文件或退回 starter。下述固定稿件、构建及页图动作也由具备相应权限的交互主协调者处理。
 
 ## 2. 写正文并保存源码
 
@@ -49,7 +51,7 @@ description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿�
 
 ## 6. 检查并修订
 
-按参考中的准确页批准流程，让实际成功结果的 PNG 到达支持图片的模型后检查版面；记录固定 result ID 和实际看过的页，单页观察不能扩大为全文验收。视觉检查不证明数据、引用、统计或结论正确。
+默认模型具备图片识别能力。按参考中的准确页批准流程，让实际成功结果的 PNG 到达当前目的模型后直接检查版面；记录固定 result ID 和实际看过的页，单页观察不能扩大为全文验收。实际工具拒绝或图片未到达时如实记录未看，不绕过校验。视觉检查不证明数据、引用、统计或结论正确。
 
 独立审查使用精确成功结果，另行批准并读取真实意见；执行完成不等于通过。修订后创建新固定稿、重新实际编译，再看新结果对应页；旧 PDF/页图不能代表新稿。旧模板、稿件、作业和意见按原 ID 回读，来源 stale 的历史结果保留但不能冒充当前有效成果。
 

@@ -7,6 +7,8 @@ description: "Use before the first launch, planning or changing experiments, sha
 
 项目是一棵问题树。根建立基线，子节点继承父代码与固定运行契约，以不同的版本化代码/配置回答一个新问题。运行入口 command 为 argv，环境、数据版本和评价协议同树固定；每个节点只有明确的研究问题才能判断是否回答。先遵守 pi-research-overview 的四条规则。
 
+仅当计划中的 Run 要建立基线或检验项目相关研究假设时创建节点；节点上的代码改动必须服务于该基线或假设。无关清理、重构、bug 修复或依赖更新留在既有开发流程，不为它们创建实验节点。必要的 provisional 修复仍按下节受控处理；若研究问题本身是内存、运行时间或稳定性，相关测量可构成节点目的，不把例外泛化成任意维护节点。
+
 ## 首次执行前
 
 遵守当前项目 Python/依赖政策，核对实际训练/评价命令、已存在镜像及所选本地/SSH环境；只有仍未明确的执行要求才交用户补齐。持久环境准备和执行配方写进版本化脚本/固定镜像，首次基线contract固定入口，不在命令或env上扫描参数。先读pi-research-create及pi-research-compute选定后端参考。
@@ -104,3 +106,5 @@ root                root                   baseline
 ## 来源与适配声明
 
 基于 alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835 的 `agent-skills/orx-experiment-tree/SKILL.md`（blob `e888fc9d179ddfae87c4a0732224cf354a9c5430`），MIT，Copyright (c) 2026 alphaXiv。Pi Research 改写了命令、存储、权限、返回状态和不可用能力；并非上游逐字文本或原版运行认证。技能不会授予权限。
+
+本轮节点用途边界另参考 alphaXiv/OpenResearch@a243fa5da6a884ed11d64bf502ab62c86ff13b0b 的同源文件（blob `d7611fa4d5834f68243b3b0246470b54f8266549`），沿用 MIT；未改变既有冻结、父关系和停止规则。
