@@ -84,3 +84,33 @@ Fonts/typography、colors/tokens、asset quality: 沿用原主题、字体、图
 Browser interactions: 普通意向确认可见，点击后只有当前根普通消息入队，Pi调用后出现真实Run与指标；实验页无手工创建/派生/准备/提交，配置只读且保存按钮0。完成后重开卡仍可查结果，确认按钮0，不重复提交。390/1280px无横向溢出，控制台0错误。首次观察完成卡已折叠，展开后结果链接可用，属于正常历史收起而非丢失。旧会话回跳兼容已恢复且原断言通过。无剩余P0/P1/P2。
 
 final result: passed
+
+
+## 2026-10-08 模型管理：方案 2 概览与侧栏编辑
+
+Source visual truth: 用户在三张设计中选择的第 2 张“概览与侧栏编辑”：`C:/Users/hailuohpc/.codex/generated_images/01a1180f-fd71-7b92-93e1-a681d2e5dbfa/exec-744d2d78-22a5-4a3a-b89d-c643c5122604.png`；配套 JSON 子视图 `exec-f3c67848-966f-4481-a56e-0a3ef7b52990.png`。两图实际均 1487×1058。选定记录保留在本机 `.validation/model-settings-design-20261008/design-choices.json`。
+
+Implementation: 独立合成数据服务 `http://127.0.0.1:4807/`；主项目交付入口 `http://127.0.0.1:4794/`。桌面 CSS viewport 1487×1058，捕获像素 1487×1058，实际捕获与 CSS 1:1，无重采样；手机 390×844／320×844，实际捕获亦 1:1。合成数据中的提供商数量、会话名称、已保存状态和 temperature=0.8 与参考不同，只比较布局和同一目标的编辑状态，不据此判为设计漂移。
+
+Same-state evidence: [思考编辑](docs/acceptance/flow-model-settings-sheet/reasoning-desktop.jpg)选中 high，列表＋单条编辑＋参数入口；[JSON 编辑](docs/acceptance/flow-model-settings-sheet/json-desktop.jpg)只呈现 high 的参数。参考与实现同时置于同一 HTML 输入，完整对照 [reasoning-comparison-final.jpg](docs/acceptance/flow-model-settings-sheet/reasoning-comparison-final.jpg)、[json-comparison-final.jpg](docs/acceptance/flow-model-settings-sheet/json-comparison-final.jpg) 已打开检查；原像素局部对照 [reasoning-focused-final.jpg](docs/acceptance/flow-model-settings-sheet/reasoning-focused-final.jpg)、[json-focused-final.jpg](docs/acceptance/flow-model-settings-sheet/json-focused-final.jpg) 再检查列表、标签、输入和 JSON。局部对照只用 CSS 裁切图片（source x997/y125、actual x966/y125，各 520×900），不改变位图；页脚完整性以全图及手机截图为准。
+
+Comparison history:
+
+- [P2，已修复] 初版侧栏遮住概览，字号偏小。桌面为 520px 编辑栏保留 548px 空间；标题 18px、输入及编辑器 14px、字段标签 13px。最终 overviewRight=922.67、sheetLeft=967.33，1487px 无横向溢出；最新全图与局部对照确认层级及表单可读。
+- [P2，已修复] 提供商名称与排序挤成窄列、编辑按钮换行。桌面提供商列固定 200px，排序放下一行，模型表的操作保持横排；最新桌面截图不再出现单字纵排。
+- [P1，已修复] JSON Apply 按钮被 React 复用成父表单 submit，点击局部应用曾实际意外保存。为两组动作设置不同 key，并先阻止事件默认动作；真实浏览器修后 Apply 前后台状态完全相同，显式 Save 才 version4→5，默认选择不变。不是仅以 handler 单测宣称修复。
+- [P2，已修复] 手机 390px 页面存在滚动条时 100vw 使 dialog 左侧 x=-15.33 被裁。改用 inset0/width:auto/max-width100%；[390px 思考](docs/acceptance/flow-model-settings-sheet/reasoning-mobile-390.jpg)、[320px JSON](docs/acceptance/flow-model-settings-sheet/json-mobile-320.jpg)均 x0、right<=clientWidth，保存／应用页脚完整可见。
+
+Required fidelity surfaces:
+
+- Fonts/typography: 沿用项目系统中文字体、Consolas JSON 字体与现有原生选择器。重点是清楚的主标题、页签、列表、单条表单；未另载字体。
+- Spacing/layout: 520px 右编辑栏，概览保留左侧；四个短页签，三条紧凑等级列表只展开一条。JSON 替换栏内主体，不在长表单中再堆编辑器。固定页脚、独立中间滚动；手机全宽。
+- Colors/tokens: 沿用项目浅灰背景、细分隔线、深色主按钮与现有选中灰色。参考图浅蓝选中色采用项目已有中性色以保持同页统一；没有新增主题、渐变或重阴影。
+- Asset fidelity/image quality: 沿用现有 Icon 与 Pi Research 品牌，不新增位图。提供商首字母／排序箭头为既有控件；没有把整张参考图当运行 UI。参考中的头像、额外会话和模型仅为示例数据，不扩批实现。
+- Copy/content: 明确“模型默认思考等级”与“新会话全局默认”分别保存；JSON 明确目标和“应用到模型草稿”，始终说明保存后才生效。取消本次编辑与关闭保留草稿语义区分清楚。
+
+Interactions: 列表切换、JSON 错误与类型校验、局部应用、明确保存、重开读取、关闭保留、键盘 Tab／Escape 已验；异步目标与版本边界由相关 46 项检查覆盖。全量 1378 通过／0 失败／24 环境项跳过，最后手机 CSS 修后干净安装／构建／类型检查和 622 文件一致。浏览器控制台错误及警告 0，无真实供应商调用。
+
+Follow-up polish: 原生 textarea 暂不提供语法着色；320px 下标题及“已保存配置”会自然换行，操作和内容未裁切。均为 P3，无剩余 P0/P1/P2。不新增编辑器依赖。
+
+final result: passed

@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-08",
+  "selectedDesign": {
+    "option": 2,
+    "name": "概览与侧栏编辑",
+    "sourcePixels": [
+      1487,
+      1058
+    ],
+    "implementationPixels": [
+      1487,
+      1058
+    ],
+    "density": "1:1 CSS pixels; no resampling"
+  },
+  "baseline": "58568b9e9d152fbda8f2a88fc7809d1e33da4a3b",
+  "sourcePatchSha256": "1ecbcbd8dc3967f0abaa91dfd5cc75c0a297410a7809f35658c2f075eab5f50d",
+  "sourceFiles": [
+    {
+      "path": "apps/web/public/settings-page.css",
+      "sha256": "21b993f6ea83e72144401b01b3693ac43ac7af6b508a94aa59812566332814f4"
+    },
+    {
+      "path": "apps/web/src/model-management-view.tsx",
+      "sha256": "fce2d436b1e80d18010f025fcfc9d391533b290dd393948991d2340ad8e0a6e5"
+    },
+    {
+      "path": "tests/unit/composer-controls.test.mjs",
+      "sha256": "5d811be6bdf110a7a740f4777834557152e6c9da4ac77a289916f347c112deda"
+    },
+    {
+      "path": "tests/unit/settings-management-ui.test.mjs",
+      "sha256": "8ac624009e95a18f6fb88fe940fa2fbff7f466dea23a4957862943c4b48d480c"
+    }
+  ],
+  "checks": {
+    "build": "passed",
+    "related": {
+      "total": 46,
+      "passed": 46,
+      "failed": 0,
+      "skipped": 0
+    },
+    "fullRegression": {
+      "total": 1402,
+      "passed": 1378,
+      "failed": 0,
+      "skipped": 24,
+      "scope": "58568b9 integrated source before the last one-line mobile CSS repair; affected mobile/browser and clean build rechecked afterward"
+    },
+    "finalCleanBuild": {
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 622,
+      "distManifestSha256": "037dcf7fecc26a37e82b28ca3be4caec51121ba6f11378d9cbaf5061b860e5e4"
+    }
+  },
+  "browser": {
+    "jsonSaveBoundary": {
+      "baseline": "58568b9e9d152fbda8f2a88fc7809d1e33da4a3b",
+      "before": {
+        "version": 4,
+        "highParameters": {},
+        "globalDefault": {
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3",
+          "thinking": "low"
+        },
+        "globalDefaultVersion": 1
+      },
+      "afterLocalApply": {
+        "version": 4,
+        "highParameters": {},
+        "globalDefault": {
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3",
+          "thinking": "low"
+        },
+        "globalDefaultVersion": 1
+      },
+      "localApply": "passed-backend-unchanged",
+      "afterExplicitSave": {
+        "version": 5,
+        "highParameters": {
+          "temperature": 0.8
+        },
+        "globalDefault": {
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3",
+          "thinking": "low"
+        },
+        "globalDefaultVersion": 1
+      },
+      "explicitSave": "passed-single-version-step",
+      "providerCalls": 0
+    },
+    "mobile": {
+      "reasoning390": {
+        "client": 375,
+        "dialog": {
+          "right": 374.6666870117187,
+          "width": 374.6666870117187,
+          "x": 0
+        },
+        "editors": 1,
+        "footer": {
+          "bottom": 844.0000457763672,
+          "top": 745.7396240234375
+        },
+        "scroll": 375,
+        "width": 390
+      },
+      "json320": {
+        "width": 320,
+        "client": 305,
+        "scroll": 305,
+        "x": 0,
+        "right": 304.66668701171875,
+        "footerBottom": 844.0000457763672,
+        "savedJson": "{\"temperature\":0.8}"
+      },
+      "keyboardInSheet": {
+        "inside": true,
+        "tag": "BUTTON",
+        "text": "取消本次编辑"
+      },
+      "escape": {
+        "openDialogs": 0,
+        "active": "编辑模型 glm-5.3"
+      }
+    },
+    "desktop": {
+      "viewport": [
+        1487,
+        1058
+      ],
+      "scrollWidth": 1487,
+      "overviewRight": 922.6666870117188,
+      "sheetLeft": 967.3333740234376,
+      "headingFont": "18px",
+      "inputFont": "14px"
+    },
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "synthetic": true,
+    "providerCalls": 0
+  },
+  "review": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeEcho": "unavailable",
+    "independent": true,
+    "blockers": 0,
+    "nonblockers": 0,
+    "followupScope": "only final mobile CSS and completed browser evidence; unchanged JS/tests hashes verified"
+  },
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeEcho": "unavailable"
+  },
+  "images": [
+    {
+      "path": "reasoning-desktop.jpg",
+      "sha256": "ef915573d0a93ed565385599acbb2320e8a3186cdfbec13866d497a285cf0843",
+      "bytes": 100578
+    },
+    {
+      "path": "json-desktop.jpg",
+      "sha256": "d3fb631499ddd526571ce21a9d61d6175a1ca82627358ec13b5e8abe00b331ed",
+      "bytes": 90544
+    },
+    {
+      "path": "reasoning-mobile-390.jpg",
+      "sha256": "31589ecca0679585f73f97d780952a5b9745699c697b8f83075954b29a185dca",
+      "bytes": 31654
+    },
+    {
+      "path": "json-mobile-320.jpg",
+      "sha256": "36209915c5736fd2f048b253791366d36329df8e15f92ac543ef96ef382e4f5b",
+      "bytes": 24947
+    },
+    {
+      "path": "reasoning-comparison-final.jpg",
+      "sha256": "ae21b75ab575e2b6b663e65d7c7a230a125f1c54ccb81a996e46bcab09fe372e",
+      "bytes": 210745
+    },
+    {
+      "path": "json-comparison-final.jpg",
+      "sha256": "b2f77fbfb450eebbb0af6259970c9c221236600a35cc4f7f4bd9a3228094a743",
+      "bytes": 189776
+    },
+    {
+      "path": "reasoning-focused-final.jpg",
+      "sha256": "bbe16560c6b585fdf7325f7093f116159f6580e6b720aeecebf655e0d3235e9d",
+      "bytes": 81193
+    },
+    {
+      "path": "json-focused-final.jpg",
+      "sha256": "f8b9d7151af881e07580459937236cf23520e2222df92cf748e3691816dcdd9f",
+      "bytes": 64032
+    }
+  ],
+  "remaining": [
+    "24 environment-specific checks skipped; not counted as passing",
+    "No paid supplier call",
+    "P3: native textarea has no syntax colors; header text wraps naturally at 320px"
+  ],
+  "result": "passed"
+}
