@@ -1,5 +1,6 @@
 import { LocalRuntimeService } from './runners/local-runtime.js';
 import { ComputeConnectionMonitor } from './runners/compute-connections.js';
+import { NativeRequestService } from './pi-adapter/native-requests.js';
 import { GpuService } from './runners/gpu.js';
 import { HostAccessService } from './policy/host-access.js';
 import { SessionPermissionService } from './policy/session-permissions.js';
@@ -47,6 +48,7 @@ import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
     readonly computeMonitor: ComputeConnectionMonitor;
+    readonly nativeRequests: NativeRequestService;
     readonly localRuntimes: LocalRuntimeService;
     readonly gpus: GpuService;
     readonly sessionPermissions: SessionPermissionService;
@@ -99,6 +101,7 @@ export declare class ResearchApp {
         repoRoot: string;
     };
     private closed;
+    private closing?;
     constructor(dataDir: string, repoRoot: string);
-    close(): void;
+    close(): void | Promise<void>;
 }

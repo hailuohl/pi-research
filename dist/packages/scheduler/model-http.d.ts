@@ -9,6 +9,7 @@ export interface ModelHttpIdentity {
 }
 export type ModelHttpState = 'queued' | 'active' | 'unknown' | 'succeeded' | 'failed' | 'cancelled' | 'interrupted';
 interface HttpRequest extends ModelHttpIdentity {
+    ownerKind?: 'owner-native';
     provider: string;
     model: string;
     state: ModelHttpState;

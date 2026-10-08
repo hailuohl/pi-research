@@ -20,9 +20,40 @@ export interface DocumentImageReference extends Omit<PublicationImageReference, 
 export type ImageReference = PublicationImageReference | DocumentImageReference;
 /** Only a digest leaves the credential-bearing catalog. Missing catalog means SDK built-ins. */
 export declare function publicationImageCatalog(path: string, connections?: {
+    models?: ({
+        model: string;
+        enabled: boolean;
+        deletedAt: string | null;
+    } | {
+        reasoning: {
+            defaultLevel: string;
+            levels: {
+                id: string;
+                piLevel: import("./model-management-types.js").PiThinking;
+                parameters: Record<string, import("./model-management-types.js").JsonValue>;
+            }[];
+        };
+        enabled: boolean;
+        deletedAt: string | null;
+        controlOnly?: boolean;
+        model: string;
+        nativeProfile: import("./model-management-types.js").NativeProfile;
+        contextWindow: number;
+        maxTokens: number;
+        capabilities: import("./model-management-types.js").ModelCapabilities;
+        parameters: Record<string, import("./model-management-types.js").JsonValue>;
+        structuredOutput: null | {
+            name: string;
+            schema: Record<string, import("./model-management-types.js").JsonValue>;
+            strict: boolean;
+        };
+    })[] | undefined;
+    enabled?: boolean | undefined;
+    deletedAt?: string | null | undefined;
+    requiresCredential?: boolean | undefined;
+    baseUrl?: string | undefined;
+    api?: "openai-completions" | "openai-responses" | "anthropic-messages" | undefined;
     provider: string;
-    baseUrl: string;
-    api: "openai-completions" | "openai-responses" | "anthropic-messages";
 }[]): string;
 export declare function assertPublicationPng(bytes: Buffer, width: number, height: number): void;
 export declare function imageReference(value: unknown): PublicationImageReference;

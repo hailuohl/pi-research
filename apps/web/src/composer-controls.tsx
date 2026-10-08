@@ -108,7 +108,7 @@ export class ComposerControls extends React.Component<Props, State> {
     }
 
     private modelOptions() {
-        const { boot, session } = this.props, models = [...(boot.models ?? []), boot.model, ...(session ? [session.model] : [])];
+        const { boot } = this.props, models = boot.models ?? [boot.model];
         const unique = new Map<string, ModelConfig>();
         for (const model of models) if (model?.provider && model.model) unique.set(modelKey(model), model);
         return [...unique.values()];

@@ -1,6 +1,9 @@
 import {operationRoute} from './operation-routes.js';
+import {readNativeRoute,writeNativeRoute} from './native-routes.js';
 import {writeEnvironment} from './environment-routes.js';
 import {configureModelConnection} from '../../packages/pi-adapter/model-connections.js';
+import {inspectModelManagement,configureModelManagement,recommendModel} from '../../packages/pi-adapter/model-management.js';
+import {probeModel} from '../../packages/pi-adapter/model-probe.js';
 import http from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
@@ -41,6 +44,9 @@ export function createHttpServer(options: ServerOptions) {
             if (path.startsWith('/api/')) {
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    const native=readNativeRoute(app.nativeRequests,route,url);if(native!==undefined)return json(native);
+                    if(route==='/settings/model-management'){ensure(url.search==='','INVALID_INPUT','模型管理目录不接受查询参数',400);return json(await inspectModelManagement(app.context,USER));}
+                    if(route==='/settings/model-recommendations'){ensure([...url.searchParams.keys()].every(k=>['provider','model'].includes(k))&&url.searchParams.getAll('provider').length===1&&url.searchParams.getAll('model').length===1,'INVALID_INPUT','推荐只接受一个供应商与模型ID',400);return json(await recommendModel(app.context,USER,text(url.searchParams.get('provider'),'provider',100),text(url.searchParams.get('model'),'model',160)));}
                     if(route==='/github/status')return json(await app.github.status({type:'user'}));
                     if(route==='/events/stream'){const query=eventQuery(url,true,req.headers['last-event-id'] as string|undefined);if(query.projectId)app.projects.get(USER,query.projectId);events.open(req,res,query);return;}
                     if (route === '/operations') return json(app.operations.specs());
@@ -65,7 +71,7 @@ export function createHttpServer(options: ServerOptions) {
                 const chunks: Buffer[] = [];
                 for await (const chunk of req) {
                     size += chunk.length;
-                    const maximum=route==='/operations/document_import'?48*1024*1024:['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?24*1024*1024:3*1024*1024;
+                    const maximum=/^\/sessions\/[^/]+\/native-media$/.test(route)?32*1024*1024:route==='/operations/document_import'?48*1024*1024:['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?24*1024*1024:3*1024*1024;
                     ensure(size <= maximum, 'BODY_TOO_LARGE', route==='/operations/document_import'?'文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB':['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?'文稿或模板输入 JSON 最多 24 MiB；原始文件合计最多 16 MiB':'请求最多 3 MiB', 413);
                     chunks.push(Buffer.from(chunk));
                 }
@@ -81,11 +87,13 @@ export function createHttpServer(options: ServerOptions) {
                     ensure(req.method==='POST'&&url.search==='','METHOD_NOT_ALLOWED','模型连接保存仅接受无查询参数的 POST',405);
                     return json(configureModelConnection(app.context,USER,body,key!));
                 }
+                if(route==='/settings/model-management'||route==='/settings/model-tests'){ensure(req.method==='POST'&&url.search==='','METHOD_NOT_ALLOWED','模型管理与测试仅接受无查询参数的POST',405);return json(route==='/settings/model-management'?await configureModelManagement(app.context,USER,body,key!):await probeModel(app.context,USER,body,key!));}
                 const controller = new AbortController();
                 if(route==='/publication-templates'){ensure(req.method==='POST'&&url.search==='','METHOD_NOT_ALLOWED','模板导入只接受无查询参数的 POST',405);return json(app.publicationTemplates.import(USER,body,key!));}
                 const cancel = () => { if (!res.writableEnded) controller.abort(); };
                 res.on('close', cancel);
                 try {
+                    const native=writeNativeRoute(app.nativeRequests,route,body,key!,controller.signal,req.method!,url.search);if(native)return json(await native.result);
                     if(route==='/projects'&&req.method==='POST'&&body&&typeof body==='object'&&'github' in body)return json(await app.github.createProject({type:'user'},body,key!));
                     const operation = operationRoute(app, route, body, key, controller.signal, req.method!, url.search);
                     if (operation) return json(await operation.result);
@@ -127,6 +135,6 @@ export function createHttpServer(options: ServerOptions) {
     server.headersTimeout = 10000;
     server.maxHeadersCount = 50;
     let closing:Promise<void>|undefined;
-    return { app, host, server, listen: () => new Promise<number>((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = (server.address() as AddressInfo).port; host.start(); if(options.computeMonitoring)app.computeMonitor.start(); resolve(port); }); }), close: () => closing??=(async()=>{events.close();await Promise.all([app.computeMonitor.stop(),host.stop()]);await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise<void>(resolve => server.close(() => resolve())); app.close();})() };
+    return { app, host, server, listen: () => new Promise<number>((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = (server.address() as AddressInfo).port; host.start(); if(options.computeMonitoring)app.computeMonitor.start(); resolve(port); }); }), close: () => closing??=(async()=>{await app.nativeRequests.shutdown();events.close();await Promise.all([app.computeMonitor.stop(),host.stop()]);await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise<void>(resolve => server.close(() => resolve())); app.close();})() };
 }
 import {publicRecords} from '../../packages/domain/public-record.js';

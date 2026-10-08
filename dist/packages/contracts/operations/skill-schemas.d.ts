@@ -593,7 +593,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly enum: readonly ["text-only", "text-with-static-assets"];
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+        readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_upload: {
@@ -701,7 +701,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["text-only", "text-with-static-assets"];
                     };
                 };
-                readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly configuration: {
@@ -733,7 +733,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("revision" | "configuration")[];
+        readonly required: ("configuration" | "revision")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_enable: {
@@ -841,7 +841,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["text-only", "text-with-static-assets"];
                     };
                 };
-                readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly configuration: {
@@ -873,7 +873,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("revision" | "configuration")[];
+        readonly required: ("configuration" | "revision")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_list: {
@@ -1014,7 +1014,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                     readonly enum: readonly ["text-only", "text-with-static-assets"];
                                 };
                             };
-                            readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                            readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
                             readonly additionalProperties: false;
                         };
                         readonly reviews: {
@@ -1281,7 +1281,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["text-only", "text-with-static-assets"];
                     };
                 };
-                readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "contentDigest" | "roles" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("version" | "id" | "createdAt" | "kind" | "files" | "license" | "projectId" | "updatedAt" | "description" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly reviews: {
@@ -1597,7 +1597,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("kind" | "reason" | "value" | "skillId")[];
+                    readonly required: ("value" | "kind" | "reason" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1648,7 +1648,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("kind" | "reason" | "value" | "skillId")[];
+                    readonly required: ("value" | "kind" | "reason" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };

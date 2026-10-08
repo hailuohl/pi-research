@@ -4,6 +4,7 @@ import {publicationImageResult,PUBLICATION_IMAGE_TOOL,documentImageResult,DOCUME
 import { piFailure } from './runtime.js';
 import { readFileSync, existsSync } from 'node:fs';
 import type { Role, ModelConfig } from '../domain/types.js';
+import type {PiThinking} from './model-management-types.js';
 /** Validate raw model arguments before Pi's optional-null normalization and primitive coercion. */
 export function buildCustomTools(definitions: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[], dispatch: (name: string, input: unknown, callId: string) => Promise<unknown>): ToolDefinition[] {
     let calls = 0;
@@ -31,7 +32,7 @@ export interface SessionSetup {
     sessionDir: string;
     sessionFile: string | null;
     systemPrompt: string;
-    thinking: ModelConfig['thinking'];
+    thinking: PiThinking;
     skills?: Skill[];
 }
 /** Compile against the pinned SDK; imports stay type-only for dependency-free core startup. */

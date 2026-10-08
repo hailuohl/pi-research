@@ -119,6 +119,7 @@ export interface ModelConnections {
     supportedApis: string[];
     liveVerified: false;
 }
+export type {ModelManagementView,ModelManagementCommand,ManagedProvider,ManagedModel,ModelDefinitionInput,ModelCapabilities,ModelSelection,ModelRecommendation,ModelProbeInput,ModelProbeResult,ModelApi,ReasoningLevel,PiThinking,NativeProfile,JsonValue} from '../../../dist/packages/pi-adapter/model-management-types.js';
 export interface Bootstrap {
     version: string;
     projects: Row<Project>[];

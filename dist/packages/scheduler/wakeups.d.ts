@@ -43,7 +43,7 @@ export declare class WakeupService {
         team: {
             id: string;
             goal: string;
-            state: "failed" | "cancelled" | "partial" | "completed" | "active" | "awaiting_approval" | "paused" | "draining";
+            state: "failed" | "cancelled" | "completed" | "partial" | "active" | "awaiting_approval" | "paused" | "draining";
         };
         tasks: {
             id: string;
@@ -75,7 +75,7 @@ export declare class WakeupService {
         run: {
             id: string;
             state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
-            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            integrity: "incomplete" | "pending" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
             metrics: Record<string, number> | null;

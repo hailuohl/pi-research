@@ -11,8 +11,8 @@ catch { }
 export class ApiError extends Error {
     constructor(public code: string, message: string, public status: number) { super(message); }
 }
-export async function api<T = any>(path: string, body?: unknown, method = 'POST', signal?:AbortSignal, idempotencyKey?:string): Promise<T> {
-    const timeout=AbortSignal.timeout(22000);
+export async function api<T = any>(path: string, body?: unknown, method = 'POST', signal?:AbortSignal, idempotencyKey?:string, timeoutMs=22000): Promise<T> {
+    const timeout=AbortSignal.timeout(timeoutMs);
     const response = await fetch('/api' + path, { method: body === undefined ? 'GET' : method, headers: { ...(body === undefined ? {} : { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey??crypto.randomUUID() }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal:signal?AbortSignal.any([signal,timeout]):timeout });
     const data = await response.json();
     if (!response.ok)

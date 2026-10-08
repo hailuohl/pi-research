@@ -8,7 +8,7 @@ export declare class DevelopmentReviewService {
         verdict?: "disputed" | "accept" | "reject" | undefined;
         reviewerSessionId?: string | undefined;
         digest: string;
-        status: "failed" | "running" | "pending" | "rejected" | "stale" | "disputed" | "awaiting_approval" | "passed";
+        status: "failed" | "running" | "passed" | "stale" | "pending" | "rejected" | "disputed" | "awaiting_approval";
         teamId: string;
         taskId: string;
         approvalId: string;
@@ -26,7 +26,7 @@ export declare class DevelopmentReviewService {
         verdict?: "disputed" | "accept" | "reject" | undefined;
         reviewerSessionId?: string | undefined;
         digest: string;
-        status: "failed" | "running" | "pending" | "rejected" | "stale" | "disputed" | "awaiting_approval" | "passed";
+        status: "failed" | "running" | "passed" | "stale" | "pending" | "rejected" | "disputed" | "awaiting_approval";
         teamId: string;
         taskId: string;
         approvalId: string;

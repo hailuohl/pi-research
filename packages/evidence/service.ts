@@ -37,10 +37,11 @@ export class EvidenceService {
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId:string,prepared:Artifact){this.c.store.get('project',projectId);return this.c.store.create<Artifact>('artifact',projectId,prepared);}
     put(projectId:string,title:string,bytes:Buffer,mediaType='text/plain',origin='user',extra:Partial<Artifact>={}){return this.publishPrepared(projectId,this.prepareArtifact(projectId,title,bytes,mediaType,origin,extra));}
-    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); assertPmcArtifactRead(this.c.store,actor,a.projectId!,id); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); ensure(a.origin!=='native-continuation'||actor.type!=='agent','NATIVE_CONTINUATION_PRIVATE','原生续跑材料不向普通助手提供',403); assertPmcArtifactRead(this.c.store,actor,a.projectId!,id); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
     register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type: Evidence['type'] = 'artifact', runId?: string) {
         scope(actor, projectId);
         const a = this.c.store.get<Artifact>('artifact', artifactId, projectId);
+        ensure(a.origin!=='native-continuation','NATIVE_CONTINUATION_PRIVATE','原生续跑协议材料不能登记为科研证据或导出来源',403);
         assertDiscoveryArtifact(this.c.store,projectId,a);
         const { bytes } = this.read(actor, a.id);
         ensure(bytes.length <= 2 * 1024 * 1024 && !bytes.includes(0), 'EVIDENCE_TEXT_REQUIRED', '需要可定位的文本产物', 400);

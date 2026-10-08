@@ -131,7 +131,11 @@ export declare const RUN_GRANT_SCHEMA: {
                     readonly maxLength: number;
                 };
                 readonly thinking: {
-                    readonly enum: readonly ["off", "minimal", "low", "medium", "high", "xhigh"];
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
                 };
             };
             readonly required: readonly ["provider", "model", "thinking"];
@@ -705,7 +709,7 @@ export declare const RUN_GRANT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("version" | "entries" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+    readonly required: ("version" | "entries" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
     readonly additionalProperties: false;
 };
 export declare const RUN_GRANT_INPUT_SCHEMAS: {
@@ -945,7 +949,11 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                     readonly thinking: {
-                        readonly enum: readonly ["off", "minimal", "low", "medium", "high", "xhigh"];
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];
@@ -1519,7 +1527,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("version" | "entries" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_inspect: {
@@ -1627,7 +1635,11 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                     readonly thinking: {
-                        readonly enum: readonly ["off", "minimal", "low", "medium", "high", "xhigh"];
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];
@@ -2201,7 +2213,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("version" | "entries" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_activate: {
@@ -2309,7 +2321,11 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                     readonly thinking: {
-                        readonly enum: readonly ["off", "minimal", "low", "medium", "high", "xhigh"];
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];
@@ -2883,7 +2899,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("version" | "entries" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_revoke: {
@@ -2991,7 +3007,11 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                     readonly thinking: {
-                        readonly enum: readonly ["off", "minimal", "low", "medium", "high", "xhigh"];
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];
@@ -3565,7 +3585,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "model" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "usage" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("version" | "entries" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
 };

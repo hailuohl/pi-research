@@ -175,7 +175,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly type: "integer";
                         };
                     };
-                    readonly required: ("id" | "createdAt" | "title" | "formatVersion" | "artifactId" | "projectId" | "updatedAt" | "runCount" | "claimCount")[];
+                    readonly required: ("id" | "title" | "createdAt" | "formatVersion" | "artifactId" | "projectId" | "updatedAt" | "runCount" | "claimCount")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -321,7 +321,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "targetId" | "label" | "type")[];
+                    readonly required: ("type" | "id" | "label" | "targetId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -377,7 +377,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("state" | "experimentId" | "sourceDigest" | "revision" | "runId" | "integrity" | "metrics" | "judgment")[];
+                    readonly required: ("revision" | "state" | "experimentId" | "sourceDigest" | "runId" | "integrity" | "metrics" | "judgment")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -414,7 +414,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("sourceDigest" | "title" | "revisionId" | "jobId" | "pages" | "resultId" | "pdfDigest" | "pdfArtifactId" | "referenceId")[];
+                    readonly required: ("title" | "sourceDigest" | "revisionId" | "jobId" | "pages" | "resultId" | "pdfDigest" | "pdfArtifactId" | "referenceId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -679,7 +679,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("id" | "targetId" | "label" | "type")[];
+                readonly required: ("type" | "id" | "label" | "targetId")[];
                 readonly additionalProperties: false;
             };
             readonly content: {
@@ -698,7 +698,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("complete" | "content" | "end" | "cursor" | "reference" | "mediaType")[];
+        readonly required: ("content" | "complete" | "end" | "cursor" | "reference" | "mediaType")[];
         readonly additionalProperties: false;
     };
 };

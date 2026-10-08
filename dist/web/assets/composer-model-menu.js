@@ -3,7 +3,7 @@ import * as React from "react";
 import { Icon } from "./ui.js";
 const key = (model) => JSON.stringify([model.provider, model.model, model.thinking]);
 const sameModel = (a, b) => a.provider === b.provider && a.model === b.model;
-const thinkingLabels = { off: "\u9ED8\u8BA4", minimal: "\u6700\u4F4E", low: "\u4F4E", medium: "\u4E2D", high: "\u9AD8", xhigh: "\u8D85\u9AD8" };
+const thinkingLabels = { off: "\u9ED8\u8BA4", minimal: "\u6700\u4F4E", low: "\u4F4E", medium: "\u4E2D", high: "\u9AD8", xhigh: "\u8D85\u9AD8", max: "\u9876\u7EA7" };
 class ComposerModelMenu extends React.Component {
   constructor() {
     super(...arguments);
@@ -68,9 +68,9 @@ class ComposerModelMenu extends React.Component {
   render() {
     const { current, options, disabled, locked } = this.props, id = "composer-model-menu-" + this.props.sessionId, models = options.filter((model, index) => options.findIndex((option) => sameModel(option, model)) === index), variants = current ? options.filter((option) => sameModel(option, current)) : [];
     return /* @__PURE__ */ jsxs("div", { className: "composer-model-control composer-model-picker", children: [
-      /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "composer-model-trigger", popoverTarget: id, "aria-haspopup": "menu", "aria-controls": id, "aria-expanded": this.state.open, "aria-label": "\u4F1A\u8BDD\u6A21\u578B\u4E0E\u601D\u8003\u7B49\u7EA7", disabled, title: locked ? "\u5F53\u524D\u4F1A\u8BDD\u5DF2\u7ED1\u5B9A\u56FA\u5B9A\u6388\u6743\uFF0C\u6A21\u578B\u4E0D\u80FD\u66F4\u6539" : current ? current.provider + " / " + current.model + " \xB7 " + thinkingLabels[current.thinking] : "\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E\u6A21\u578B", children: [
+      /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "composer-model-trigger", popoverTarget: id, "aria-haspopup": "menu", "aria-controls": id, "aria-expanded": this.state.open, "aria-label": "\u4F1A\u8BDD\u6A21\u578B\u4E0E\u601D\u8003\u7B49\u7EA7", disabled, title: locked ? "\u5F53\u524D\u4F1A\u8BDD\u5DF2\u7ED1\u5B9A\u56FA\u5B9A\u6388\u6743\uFF0C\u6A21\u578B\u4E0D\u80FD\u66F4\u6539" : current ? current.provider + " / " + current.model + " \xB7 " + (thinkingLabels[current.thinking] ?? current.thinking) : "\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E\u6A21\u578B", children: [
         /* @__PURE__ */ jsx("span", { className: "composer-model-name", children: current?.model || "\u9009\u62E9\u6A21\u578B" }),
-        current && current.thinking !== "off" ? /* @__PURE__ */ jsx("span", { className: "composer-thinking-value", children: thinkingLabels[current.thinking] }) : null,
+        current && current.thinking !== "off" ? /* @__PURE__ */ jsx("span", { className: "composer-thinking-value", children: thinkingLabels[current.thinking] ?? current.thinking }) : null,
         /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 11 })
       ] }),
       /* @__PURE__ */ jsxs("div", { ref: this.menu, id, popover: "auto", role: "menu", "aria-label": "\u9009\u62E9\u4F1A\u8BDD\u6A21\u578B", className: "composer-model-menu", onKeyDown: this.keys, onToggle: (event) => {
@@ -95,7 +95,7 @@ class ComposerModelMenu extends React.Component {
         variants.length > 1 ? /* @__PURE__ */ jsxs("div", { role: "group", "aria-label": "\u601D\u8003\u5F3A\u5EA6", className: "composer-reasoning-group", children: [
           /* @__PURE__ */ jsx("strong", { children: "\u601D\u8003\u5F3A\u5EA6" }),
           /* @__PURE__ */ jsx("div", { children: variants.map((model) => /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": model.thinking === current?.thinking, disabled, onClick: () => this.choose(model), children: [
-            thinkingLabels[model.thinking],
+            thinkingLabels[model.thinking] ?? model.thinking,
             model.thinking === current?.thinking ? /* @__PURE__ */ jsx(Icon, { name: "check", size: 12 }) : null
           ] }, key(model))) })
         ] }) : null,

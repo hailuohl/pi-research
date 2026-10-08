@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {setup,USER} from '../support/research.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
-import {configureModelConnection,inspectModelConnections,selectedModelConnection,applyModelConnection,connectionFetch,safeConnectionStream} from '../../dist/packages/pi-adapter/model-connections.js';
+import {configureModelConnection,inspectModelConnections,selectedModelConnection,applyModelConnection,connectionFetch,safeConnectionStream,readModelState} from '../../dist/packages/pi-adapter/model-connections.js';
 import {publicationImageCatalog} from '../../dist/packages/pi-adapter/publication-image.js';
 import {safePath,listFiles} from '../../dist/packages/workspace/files.js';
 import {excluded} from '../../dist/packages/publications/reports.js';
@@ -80,6 +80,6 @@ test('private connection files and abandoned temp writes stay out of snapshots, 
   for(const name of ['model-connections.json','model-connections.json.fixture.tmp','MODEL-CONNECTIONS.JSON','MODEL-CONNECTIONS.JSON.UPPER.TMP']){assert.throws(()=>safePath(dir,name),{code:'PATH_DENIED'});assert.equal(excluded('nested/'+name),true);}
   assert.ok(!listFiles(dir).some(f=>f.path.toLowerCase().includes('model-connections')));
   app.close();closed=true;const backup=join(parent,'backup'),result=await createDataBackup(dir,backup,{offline:true});assert.ok(result.excluded.includes('model-connections.json'));assert.ok(result.excluded.includes('model-connections.json.fixture.tmp'));assert.ok(result.excluded.includes('MODEL-CONNECTIONS.JSON.UPPER.TMP'));assert.equal(existsSync(join(backup,'data','model-connections.json')),false);
-  const restored=join(parent,'restored');await restoreDataBackup(backup,restored,{offline:true,relocate:true});assert.equal(existsSync(join(restored,'model-connections.json')),false);
+  const restored=join(parent,'restored');await restoreDataBackup(backup,restored,{offline:true,relocate:true});assert.equal(existsSync(join(restored,'model-connections.json')),true);const state=readModelState(restored);assert.equal(state.connections[0].apiKey,'');assert.equal(state.connections[0].requiresCredential,true);assert.ok(!readFileSync(join(restored,'model-connections.json'),'utf8').includes(key));
  }finally{if(!closed)app.close();rmSync(parent,{recursive:true,force:true});}
 });

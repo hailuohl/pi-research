@@ -149,7 +149,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;
@@ -204,7 +204,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;
@@ -269,7 +269,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;
@@ -333,7 +333,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;

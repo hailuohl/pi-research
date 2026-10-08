@@ -95,6 +95,54 @@ html:has(.settings-page), body:has(.settings-page) { min-width: 0; }
 .settings-page .settings-template-empty h3 { font-size: 14px; color: var(--ink); }
 .settings-page .settings-template-empty p { margin: 0; }
 .settings-page .code-wrap { overflow-wrap: anywhere; }
+.settings-page .management-loading { padding: 24px; }
+.settings-page .management-loading h2 { font-size: 16px; margin-bottom: 12px; }
+.settings-page .management-loading p { margin-bottom: 16px; }
+.settings-page .management-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.settings-page .management-toolbar p { margin: 0; }
+.settings-page .management-provider-group > h3 { color: var(--muted); font-size: 11px; font-weight: 500; padding: 12px 10px 6px; }
+.settings-page .management-provider-row, .settings-page .management-model-row { display: flex; align-items: center; gap: 4px; min-width: 0; border: 1px solid transparent; border-radius: 7px; }
+.settings-page .management-provider-row:hover, .settings-page .management-model-row:hover { background: var(--quiet); }
+.settings-page .management-provider-row > button, .settings-page .management-model-row > button { display: flex; align-items: center; flex: 1; gap: 10px; padding: 12px 10px; background: transparent; text-align: left; border-radius: 7px; }
+.settings-page .management-provider-row > button[aria-pressed="true"], .settings-page .management-model-row > button[aria-pressed="true"] { background: var(--soft); }
+.settings-page .management-model-row { border-bottom: 1px solid var(--line); border-radius: 0; }
+.settings-page .management-model-row > button > span:first-of-type { flex: 1; }
+.settings-page .management-order { display: flex; flex-shrink: 0; }
+.settings-page .management-order button { width: 25px; height: 32px; min-height: 32px; font-size: 15px; color: var(--muted); }
+.settings-page .management-sort-hint { font-size: 11px; line-height: 1.8; margin: 12px 10px; }
+.settings-page .management-inline-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+.settings-page .management-inline-actions .text-button { min-height: 36px; }
+.settings-page label.management-check, .settings-page label.management-override { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 12px; line-height: 1.8; }
+.settings-page label.management-check > input, .settings-page label.management-override > input { width: 15px; height: 15px; flex-shrink: 0; padding: 0; margin: 0; }
+.settings-page label.management-override { color: var(--muted); font-size: 11px; margin: -6px 0 16px; }
+.settings-page .management-probe { display: grid; justify-items: start; gap: 10px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.settings-page .management-test-result { font-size: 12px; color: var(--muted); line-height: 1.8; overflow-wrap: anywhere; margin: 0; }
+.settings-page .management-test-result[data-state="passed"] { color: var(--success); }
+.settings-page .management-test-result[data-state="failed"] { color: var(--danger); }
+.settings-page .management-advanced { margin: 4px 0 20px; }
+.settings-page .management-advanced .form-columns > label:last-child { max-width: none; grid-column: auto; }
+.settings-page .management-advanced .management-inline-actions { margin-bottom: 14px; }
+.settings-page .management-advanced textarea { font-family: Consolas, monospace; font-size: 12px; line-height: 1.8; resize: vertical; }
+.settings-page .management-recommendation { margin: 16px 0; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--quiet); font-size: 12px; overflow-wrap: anywhere; }
+.settings-page .management-recommendation ul { margin: 8px 0 0; padding-left: 18px; line-height: 1.9; }
+.settings-page .management-capabilities { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin: 6px 0 20px; }
+.settings-page .management-capabilities > div > small { display: block; font-size: 11px; color: var(--muted); line-height: 1.8; margin-top: 4px; overflow-wrap: anywhere; }
+.settings-page .management-capabilities label.management-override { margin: 5px 0; }
+.settings-page .management-reasoning { margin: 16px 0 24px; }
+.settings-page .management-reasoning-body { padding-top: 16px; }
+.settings-page .management-level { padding: 16px 0; border-top: 1px solid var(--line); }
+.settings-page .management-default { padding: 24px; margin-top: 24px; }
+.settings-page .management-default h2 { font-size: 15px; margin: 0; }
+.settings-page .management-default > p { margin: 0 0 20px; line-height: 1.8; }
+.settings-page .management-default .settings-list-heading { flex-wrap: wrap; }
+.settings-page .management-default .settings-list-heading > span { overflow-wrap: anywhere; }
+.settings-page .management-history { margin-top: 20px; }
+@media(max-width:420px){
+ .settings-page .management-capabilities { grid-template-columns: minmax(0,1fr); }
+ .settings-page .management-default { padding: 16px; }
+ .settings-page .management-inline-actions { gap: 8px 12px; }
+ .settings-page .management-toolbar { align-items: stretch; }
+}
 @media (max-width: 1000px) {
   .settings-page .settings-model-workspace { grid-template-columns: 190px minmax(0, 1fr); gap: 16px; }
   .settings-page .settings-detail-heading { flex-wrap: wrap; gap: 10px; }

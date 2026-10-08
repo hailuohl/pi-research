@@ -1,6 +1,7 @@
 import { type JsonSchema } from '../contracts/operations/schema.js';
 import type { CreateAgentSessionOptions, ToolDefinition, Skill } from '@earendil-works/pi-coding-agent';
-import type { Role, ModelConfig } from '../domain/types.js';
+import type { Role } from '../domain/types.js';
+import type { PiThinking } from './model-management-types.js';
 /** Validate raw model arguments before Pi's optional-null normalization and primitive coercion. */
 export declare function buildCustomTools(definitions: {
     name: string;
@@ -14,7 +15,7 @@ export interface SessionSetup {
     sessionDir: string;
     sessionFile: string | null;
     systemPrompt: string;
-    thinking: ModelConfig['thinking'];
+    thinking: PiThinking;
     skills?: Skill[];
 }
 /** Compile against the pinned SDK; imports stay type-only for dependency-free core startup. */

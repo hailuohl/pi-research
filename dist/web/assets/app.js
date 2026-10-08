@@ -10,7 +10,7 @@ import { Chat, Experiments, Inspector } from "./workbench.js";
 import { SessionList } from "./session-list.js";
 import { ProjectCreationModal } from "./github-controls.js";
 import { WorkspaceView, EvidenceView, ReportsView, LiteratureView, SettingsView } from "./data-views.js";
-const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["environment", "\u73AF\u5883", "settings"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u8BBE\u7F6E\u4E0E\u80FD\u529B", "settings"]];
+const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["environment", "\u73AF\u5883", "settings"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u6A21\u578B\u4E0E\u6A21\u677F", "settings"]];
 const navigationGroups = [
   { name: "\u7814\u7A76", ids: ["chat", "experiments"] },
   { name: "\u7BA1\u7406", ids: ["integrations", "environment", "settings"] }

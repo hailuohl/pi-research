@@ -1,3 +1,5 @@
+import { recoverOwnerNativeHttp } from '../pi-adapter/native-http.js';
+import { assertModelEnabled } from '../pi-adapter/model-connections.js';
 import { digest, now } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { integer, object, text } from '../contracts/validation.js';
@@ -23,6 +25,8 @@ export class ModelHttpService {
         return this.store.transaction(() => {
             const session = this.current(w), prior = this.owned(w, key);
             let r = prior.row;
+            if (r?.state !== 'active')
+                assertModelEnabled(this.store.paths.dataDir, session.model);
             if (r) {
                 ensure(!terminal(r.state) && r.state !== 'unknown', 'MODEL_HTTP_ALREADY_FINISHED', '已结束或未知的请求不能重新发送');
                 ensure(r.provider === session.model.provider && r.model === session.model.model, 'MODEL_HTTP_MODEL_CHANGED', '请求的固定模型已改变');
@@ -62,6 +66,8 @@ export class ModelHttpService {
     closeLost(r, gone) { const state = r.state === 'queued' ? 'cancelled' : gone ? 'interrupted' : 'unknown'; if (r.state === state)
         return; this.store.update('model-http-request', r.id, r.version, { state, ...(gone || r.state === 'queued' ? { endedAt: now() } : {}), outcome: r.state === 'queued' ? 'cancelled-before-dispatch' : gone ? 'worker-exit-provider-outcome-unknown' : 'worker-unconfirmed-capacity-held' }); this.store.event(r.projectId, 'model-http.reconciled', { requestId: r.id, sessionId: r.sessionId, state }); }
     recover() { this.store.transaction(() => { for (const r of this.live()) {
+        if (r.ownerKind === 'owner-native')
+            continue;
         const a = this.store.maybe('agent-admission', r.admissionId);
         let current = false;
         try {
@@ -71,7 +77,7 @@ export class ModelHttpService {
         catch { }
         if (!current)
             this.closeLost(r, a?.state === 'released');
-    } }); }
+    } recoverOwnerNativeHttp(this.store); }); }
     inspect(actor, pid, input = {}) {
         userOnly(actor);
         if (pid) {

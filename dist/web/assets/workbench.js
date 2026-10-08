@@ -12,6 +12,7 @@ import { comparableRuns, comparisonMetric } from "./models.js";
 import { ExperimentGraph } from "./experiment-graph.js";
 import { ChatWorkflows } from "./chat-workflows.js";
 import { ComposerControls } from "./composer-controls.js";
+import { NativeModelRequests } from "./native-model-requests.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
 import { Icon, Badge, SectionTitle, nativeSelectButton } from "./ui.js";
@@ -26,7 +27,9 @@ class Chat extends React.Component {
   }
   render() {
     const { data, boot, session, messages } = this.props;
-    const canSend = boot.runtime.ready && !this.props.busy && !data.project.archived && !!session && !!session.model.provider && !!session.model.model && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
+    const runtimeAvailable = boot.runtime.ready || boot.runtime.code === "MODEL_NOT_CONFIGURED";
+    const sessionModelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking));
+    const canSend = runtimeAvailable && sessionModelAvailable && !this.props.busy && !data.project.archived && !!session && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
     const hasDraft = !!this.state.draft.trim() || this.state.attachments.length > 0;
     return /* @__PURE__ */ jsxs("div", { className: "chat-page", children: [
       /* @__PURE__ */ jsxs("div", { className: "chat-heading", children: [
@@ -35,6 +38,7 @@ class Chat extends React.Component {
           /* @__PURE__ */ jsx("span", { className: "muted", children: session ? `${session.model.provider || "\u672A\u914D\u7F6E\u4F9B\u5E94\u5546"} / ${session.model.model || "\u672A\u914D\u7F6E\u6A21\u578B"}` : "\u6BCF\u4E2A\u4E3B\u4F1A\u8BDD\u90FD\u6709\u72EC\u7ACB\u5386\u53F2\u548C\u5DE5\u4F5C\u533A" })
         ] }),
         session ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
+          session.role === "coordinator" && !session.taskId && !session.teamId ? /* @__PURE__ */ jsx(NativeModelRequests, { projectId: data.project.id, session, attachments: this.state.attachments, busy: this.props.busy, archived: data.project.archived, perform: this.props.perform }, data.project.id + ":" + session.id) : null,
           /* @__PURE__ */ jsx(Badge, { value: session.state }),
           /* @__PURE__ */ jsx("button", { className: "icon-button", title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: () => {
             const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title);
@@ -43,7 +47,7 @@ class Chat extends React.Component {
           }, children: /* @__PURE__ */ jsx(Icon, { name: "edit" }) })
         ] }) : null
       ] }),
-      !boot.runtime.ready ? /* @__PURE__ */ jsxs("div", { className: "notice runtime-notice", children: [
+      !runtimeAvailable ? /* @__PURE__ */ jsxs("div", { className: "notice runtime-notice", children: [
         /* @__PURE__ */ jsx("span", { className: "status-dot amber" }),
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("strong", { children: "Pi \u5C1A\u672A\u5C31\u7EEA" }),
@@ -52,7 +56,7 @@ class Chat extends React.Component {
             " \u9879\u76EE\u3001\u5FEB\u7167\u3001\u771F\u5B9E\u6570\u503C\u5B9E\u9A8C\u548C\u8BC1\u636E\u7BA1\u7406\u4ECD\u53EF\u4F7F\u7528\u3002"
           ] })
         ] })
-      ] }) : null,
+      ] }) : runtimeAvailable && session && !sessionModelAvailable ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u9009\u62E9\u5DF2\u542F\u7528\u914D\u7F6E\u6216\u65B0\u5EFA\u4F1A\u8BDD\u3002" }) : null,
       session?.taskId ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u8FD9\u662F\u56E2\u961F\u4EFB\u52A1\u4F1A\u8BDD\u3002\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u53D1\u9001\u6307\u4EE4\u6216\u7BA1\u7406\u4EFB\u52A1\u3002" }) : session?.state === "archived" ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u6B64\u4F1A\u8BDD\u5DF2\u5F52\u6863\uFF0C\u4E0D\u80FD\u53D1\u9001\u6D88\u606F\u3002" }) : null,
       /* @__PURE__ */ jsxs("div", { className: "conversation", "aria-live": "polite", children: [
         messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsxs("div", { className: "welcome", children: [

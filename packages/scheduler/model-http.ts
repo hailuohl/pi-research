@@ -1,4 +1,6 @@
 import type {Store} from '../storage/store.js';
+import {recoverOwnerNativeHttp} from '../pi-adapter/native-http.js';
+import {assertModelEnabled} from '../pi-adapter/model-connections.js';
 import {digest,now} from '../storage/store.js';
 import type {Actor,Row,Session} from '../domain/types.js';
 import type {AgentAdmission} from './agent-admission.js';
@@ -11,7 +13,7 @@ import {assertProjectWritable} from '../policy/lifecycle.js';
 export const MANAGED_HTTP_APIS=['openai-completions','openai-responses','azure-openai-responses','anthropic-messages'] as const;
 export interface ModelHttpIdentity {admissionId:string;ownerHost:string;sessionId:string;generation:number;}
 export type ModelHttpState='queued'|'active'|'unknown'|'succeeded'|'failed'|'cancelled'|'interrupted';
-interface HttpRequest extends ModelHttpIdentity {provider:string;model:string;state:ModelHttpState;queuedAt:string;startedAt?:string;endedAt?:string;httpStatus?:number;receivedBytes?:number;outcome?:string;}
+interface HttpRequest extends ModelHttpIdentity {ownerKind?:'owner-native';provider:string;model:string;state:ModelHttpState;queuedAt:string;startedAt?:string;endedAt?:string;httpStatus?:number;receivedBytes?:number;outcome?:string;}
 export type ModelHttpItem=Pick<Row<HttpRequest>,'id'|'sessionId'|'provider'|'model'|'state'|'queuedAt'|'startedAt'|'endedAt'|'httpStatus'|'receivedBytes'|'outcome'>;
 export interface ModelHttpDTO {configuration:{version:number;maxRequests:null};scope:'shared-data-directory';unit:'pi-http-request';counts:{queued:number;active:number;unknown:number};available:null;coverage:'managed-fetch'|'legacy-workers-present';legacyWorkerCount:number;supportedApis:string[];items:ModelHttpItem[];nextCursor:number|null;}
 const terminal=(state:ModelHttpState)=>!['queued','active','unknown'].includes(state);
@@ -24,6 +26,7 @@ export class ModelHttpService {
  private owned(w:ModelHttpIdentity,key:string){const id=digest({admissionId:w.admissionId,key:text(key,'requestKey',100)}),r=this.store.maybe<HttpRequest>('model-http-request',id);if(r)ensure(identityKeys.every(k=>r[k]===w[k]),'MODEL_HTTP_SCOPE_DENIED','请求不属于原Worker');return {id,row:r};}
  acquire(w:ModelHttpIdentity,key:string):{allowed:boolean;requestId:string} {return this.store.transaction(()=>{
   const session=this.current(w),prior=this.owned(w,key);let r=prior.row;
+  if(r?.state!=='active')assertModelEnabled(this.store.paths.dataDir,session.model);
   if(r){ensure(!terminal(r.state)&&r.state!=='unknown','MODEL_HTTP_ALREADY_FINISHED','已结束或未知的请求不能重新发送');ensure(r.provider===session.model.provider&&r.model===session.model.model,'MODEL_HTTP_MODEL_CHANGED','请求的固定模型已改变');if(r.state==='active')return {allowed:true,requestId:r.id};}
   else {r=this.store.create<HttpRequest>('model-http-request',session.projectId,{...w,provider:session.model.provider,model:session.model.model,state:'queued',queuedAt:now()},prior.id);this.store.event(session.projectId,'model-http.queued',{requestId:r.id,sessionId:r.sessionId});}
   r=this.store.update<HttpRequest>('model-http-request',r.id,r.version,{state:'active',startedAt:now()});this.store.event(r.projectId,'model-http.started',{requestId:r.id,sessionId:r.sessionId});
@@ -35,7 +38,7 @@ export class ModelHttpService {
  /** Called only after a child exit/close event proves the local HTTP connection cannot continue. */
  workerExited(admissionId:string,ownerHost:string,generation:number){this.store.transaction(()=>{for(const r of this.live().filter(r=>r.admissionId===admissionId)){ensure(r.ownerHost===ownerHost&&r.generation===generation,'MODEL_HTTP_SCOPE_DENIED','退出回执不属于原Worker');this.closeLost(r,true);}});}
  private closeLost(r:Row<HttpRequest>,gone:boolean){const state=r.state==='queued'?'cancelled':gone?'interrupted':'unknown';if(r.state===state)return;this.store.update<HttpRequest>('model-http-request',r.id,r.version,{state,...(gone||r.state==='queued'?{endedAt:now()}:{}),outcome:r.state==='queued'?'cancelled-before-dispatch':gone?'worker-exit-provider-outcome-unknown':'worker-unconfirmed-capacity-held'});this.store.event(r.projectId,'model-http.reconciled',{requestId:r.id,sessionId:r.sessionId,state});}
- recover(){this.store.transaction(()=>{for(const r of this.live()){const a=this.store.maybe<AgentAdmission>('agent-admission',r.admissionId);let current=false;try{this.current(r);current=true;}catch{}if(!current)this.closeLost(r,a?.state==='released');}});}
+ recover(){this.store.transaction(()=>{for(const r of this.live()){if(r.ownerKind==='owner-native')continue;const a=this.store.maybe<AgentAdmission>('agent-admission',r.admissionId);let current=false;try{this.current(r);current=true;}catch{}if(!current)this.closeLost(r,a?.state==='released');}recoverOwnerNativeHttp(this.store);});}
  inspect(actor:Actor,pid?:string,input:{cursor?:number;limit?:number}={}):ModelHttpDTO {userOnly(actor);if(pid){scope(actor,pid);this.store.get('project',pid);}const cursor=integer(input.cursor??0,'cursor',0,Number.MAX_SAFE_INTEGER),limit=integer(input.limit??30,'limit',1,100),setting=this.store.get<{maxRequests:number}>('model-http-capacity','global'),live=this.live(),legacyWorkerCount=this.legacy(),counts={queued:live.filter(r=>r.state==='queued').length,active:live.filter(r=>r.state==='active').length,unknown:live.filter(r=>r.state==='unknown').length};
   const rows=pid?this.store.db.prepare("SELECT rowid,data FROM records WHERE kind='model-http-request' AND project_id=? AND (?=0 OR rowid<?) ORDER BY rowid DESC LIMIT ?").all(pid,cursor,cursor,limit+1):[];
   const items=rows.slice(0,limit).map(raw=>{const {id,sessionId,provider,model,state,queuedAt,startedAt,endedAt,httpStatus,receivedBytes,outcome}=JSON.parse(raw.data as string) as Row<HttpRequest>;return {id,sessionId,provider,model,state,queuedAt,startedAt,endedAt,httpStatus,receivedBytes,outcome};});

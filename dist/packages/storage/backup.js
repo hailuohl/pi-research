@@ -9,6 +9,7 @@ import { teamWakeupSource, wakeupId } from '../scheduler/wakeups.js';
 import { GitCommand } from '../workspace/git-command.js';
 import { DataPaths, readDataLocation, setDataLocation } from './data-paths.js';
 import { hasEnvironmentSecrets, environmentSecrets, redactEnvironment } from '../runtime/environment.js';
+import { createModelManagementSnapshot, validateModelManagementSnapshot, restoreModelManagementSnapshot } from './model-management-backup.js';
 const ROOTS = new Set(['projects', 'experiments', 'workspaces', 'sessions', 'snapshots', 'artifacts', 'skill-blobs', 'jobs', 'sandbox-jobs', 'document-jobs', 'publication-jobs', 'git-worktrees', 'git-operations', 'exports', 'integration-staging', 'state.db.text-writes']);
 const EXCLUDED = new Set(['access.token', 'models.json', 'models-store.json', 'ssh-targets.json', 'ssh-targets.json.tmp', 'ssh-private', 'local-runtimes.json', 'local-runtimes.json.tmp', 'state.db-wal', 'state.db-shm', 'state.db-journal']);
 const TERMINAL = new Set(['succeeded', 'failed', 'cancelled', 'timed_out']);
@@ -159,7 +160,7 @@ function stateCheck(db) {
         if (kind === 'agent-admission')
             busy = state !== 'released';
         if (kind === 'model-http-request')
-            busy = ['queued', 'active', 'unknown'].includes(state);
+            busy = ['queued', 'active', 'unknown'].includes(state) || (r.ownerKind === 'owner-native' && state === 'interrupted' && r.transportEnded !== true);
         if (kind === 'session')
             busy = ['queued', 'running'].includes(state);
         // A failed/idle session's old queued message is retained history, not a startup dispatch.
@@ -339,6 +340,10 @@ function manifestAt(backupDir) {
     new DataPaths(m.sourceRoot, (m.legacyRoots ?? []));
     const { manifestDigest, ...body } = m;
     ensure(digest(body) === manifestDigest, 'BACKUP_CONTENT_MISMATCH', '备份清单摘要不符', 409);
+    if (m.modelManagement !== undefined) {
+        ensure(m.format === 'pi-research-backup-v2', 'BACKUP_MODEL_MANAGEMENT_INVALID', '旧格式备份不支持模型目录快照', 409);
+        validateModelManagementSnapshot(m.modelManagement);
+    }
     const names = new Set();
     let roots = 0;
     for (const raw of m.entries) {
@@ -405,6 +410,7 @@ export async function createDataBackup(source, path, options) {
         db = new DatabaseSync(join(root, 'state.db'));
         db.exec('PRAGMA busy_timeout=1000; BEGIN IMMEDIATE');
         stateCheck(db);
+        const modelManagement = createModelManagementSnapshot(root);
         const privateLocalJobs = new Set(hasEnvironmentSecrets(root) ? db.prepare("SELECT id FROM records WHERE kind='run' AND json_extract(data,'$.execution.backend')='local'").all().map(row => String(row.id)) : []);
         mkdirSync(join(stage, 'data'), { mode: 0o700 });
         const tree = managedTree(root, join(stage, 'data'), privateLocalJobs);
@@ -429,7 +435,8 @@ export async function createDataBackup(source, path, options) {
         ensure(!location || location.activeRoot === root, 'BACKUP_LOCATION_MISMATCH', '数据目录需要受控迁移，不能直接复制后备份', 409);
         const schema = await references(db, root, join(stage, 'data'), entries, legacyRoots);
         ensure(digest(managedTree(root, undefined, privateLocalJobs)) === digest(tree), 'BACKUP_SOURCE_CHANGED', '复制期间管理文件发生变化，备份未发布', 409);
-        const body = { format: 'pi-research-backup-v2', sourceRoot: root, legacyRoots, platform: process.platform, createdAt: new Date().toISOString(), schema, entries, excluded: tree.excluded }, m = { ...body, manifestDigest: digest(body) };
+        ensure(digest(createModelManagementSnapshot(root) ?? null) === digest(modelManagement ?? null), 'BACKUP_SOURCE_CHANGED', '复制期间模型管理目录发生变化，备份未发布', 409);
+        const body = { format: 'pi-research-backup-v2', sourceRoot: root, legacyRoots, platform: process.platform, createdAt: new Date().toISOString(), schema, entries, excluded: tree.excluded, ...(modelManagement ? { modelManagement } : {}) }, m = { ...body, manifestDigest: digest(body) };
         writeFileSync(join(stage, 'manifest.json'), JSON.stringify(m, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
         await verifyDataBackup(stage);
         destination(target);
@@ -501,6 +508,8 @@ export async function restoreDataBackup(path, targetPath, options) {
             const relocated = { ...m, format: 'pi-research-backup-v2', sourceRoot: target, legacyRoots: roots, schema, entries };
             await verifyTree(stage, relocated);
         }
+        if (m.modelManagement)
+            restoreModelManagementSnapshot(stage, m.modelManagement);
         for (const entry of m.entries.filter(x => x.type === 'directory').sort((a, b) => b.path.length - a.path.length))
             chmodSync(join(stage, entry.path), entry.mode);
         destination(target);

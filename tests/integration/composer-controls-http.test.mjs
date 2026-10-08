@@ -27,7 +27,7 @@ test('HTTP composer configuration and actual pinned Pi read a bound text attachm
   const call=async(path,body)=>{const response=await fetch(url+'/api'+path,{method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'content-type':'application/json','idempotency-key':crypto.randomUUID()},...(body===undefined?{}:{body:JSON.stringify(body)})});const data=await response.json();assert.equal(response.status,200,JSON.stringify(data));return data;};
   const first={provider:'offline-composer',model:'fixture',thinking:'off'},second={...first,model:'alternate'};
   await call('/settings/model',first);await call('/settings/model',second);
-  const boot=await call('/bootstrap');assert.deepEqual(boot.models,[second,first]);assert.equal(boot.runtime.ready,true);
+  const boot=await call('/bootstrap');assert.deepEqual(boot.model,second);assert.deepEqual([...new Set(boot.models.map(m=>JSON.stringify([m.provider,m.model])))],[second,first].map(m=>JSON.stringify([m.provider,m.model])));assert.ok([second,first].every(saved=>boot.models.some(m=>m.provider===saved.provider&&m.model===saved.model&&m.thinking===saved.thinking)));assert.equal(boot.runtime.ready,true);
   const project=await call('/projects',{name:'Composer HTTP fixture'}),session=await call('/sessions',{projectId:project.id,title:'Actual Pi local fixture'});
   const selected=await call(`/sessions/${session.id}/model`,{expectedVersion:session.version,model:first});assert.deepEqual(selected.model,first);assert.deepEqual((await call('/bootstrap')).model,second);
   const settings=await call(`/projects/${project.id}/connectors`),enabled=await call(`/projects/${project.id}/connectors`,{expectedVersion:settings.version,enabled:{openalex:true}});assert.equal(enabled.enabled.openalex,true);

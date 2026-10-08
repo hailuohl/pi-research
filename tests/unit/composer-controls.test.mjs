@@ -6,6 +6,7 @@ import {ComposerModelMenu} from '../../dist/web/assets/composer-model-menu.js';
 import {HostAccessControl} from '../../dist/web/assets/host-access-control.js';
 import { Chat } from '../../dist/web/assets/workbench.js';
 import { SettingsView } from '../../dist/web/assets/data-views.js';
+import {ModelManagementPanel} from '../../dist/web/assets/model-management-view.js';
 import { SessionHistory } from '../../dist/web/assets/session-history.js';
 
 const elements = node => Array.isArray(node) ? node.flatMap(elements) : !node || typeof node !== 'object' ? [] : [node, ...elements(node.props?.children)];
@@ -170,11 +171,13 @@ test('attachment-only send uses the short prompt; send failure keeps its draft a
 test('settings save the default only, and persisted message history exposes downloadable originals', async t => {
     const oldFetch = globalThis.fetch; t.after(() => { globalThis.fetch = oldFetch; });
     const calls = []; globalThis.fetch = async (url, init) => { calls.push({ url, body: init?.body ? JSON.parse(init.body) : undefined }); return response({}); };
-    const pending = [], settings = synchronousState(new SettingsView({ boot, session, perform: fn => { const task = fn(); pending.push(task); return task; } }));
+    const pending = [], shell = synchronousState(new SettingsView({ boot, session, perform: fn => { const task = fn(); pending.push(task); return task; } })), panel = find(shell.render(), node => node.type === ModelManagementPanel), settings = synchronousState(new ModelManagementPanel(panel.props));
+    const capabilities={text:true,image:false,pdf:false,video:false,structuredOutput:false,nativeWebSearch:false,midConversationSystem:false};
+    settings.observe({schemaVersion:2,version:0,defaultModel:boot.model,defaultModelVersion:0,defaultUsable:true,presets:[],supportedApis:['openai-responses'],providers:boot.models.map((config,index)=>({provider:config.provider,name:config.provider,enabled:true,deletedAt:null,order:index,source:'managed',baseUrl:'https://api.example.com/v1',api:'openai-responses',hasApiKey:true,test:null,models:[{...config,name:config.model,nativeProfile:'none',contextWindow:32768,maxTokens:4096,capabilities,reasoning:{defaultLevel:config.thinking,levels:[{id:config.thinking,label:config.thinking,piLevel:config.thinking,parameters:{}}]},parameters:{},structuredOutput:null,configuration:{mode:'manual',overrides:[]},enabled:true,deletedAt:null,order:0,revision:1,source:'managed',effectiveCapabilities:{},test:null}]}))});
     const select = find(settings.render(), node => node.type === 'select' && node.props['aria-label'] === '选择已有模型');
     const option = elements(select.props.children).find(child => child.type === 'option' && child.props.value === JSON.stringify(['other', 'large']));
     select.props.onChange({ target: { value: option.props.value } });
-    find(settings.render(), node => node.type === 'form' && node.props.className === 'settings-model-form').props.onSubmit({ preventDefault() {} });
+    find(settings.render(), node => node.type === 'form' && node.props.className === 'settings-default-form').props.onSubmit({ preventDefault() {} });
     await pending[0];
     assert.deepEqual(calls, [{ url: '/api/settings/model', body: { provider: 'other', model: 'large', thinking: 'high', expectedVersion: 0 } }]);
     const history = synchronousState(new SessionHistory({ projectId: 'p', sessionId: 's', messages: [{ id: 'm', version: 1, role: 'user', status: 'completed', content: 'see this', attachments: [{ ...attachment('doc-1', 'paper.pdf'), mediaType: 'application/pdf' }] }], history: null, historyAnchor: null, onNavigate() {}, perform() {} }));
@@ -182,4 +185,10 @@ test('settings save the default only, and persisted message history exposes down
     assert.match(JSON.stringify(tree), /paper\.pdf/);
     assert.match(JSON.stringify(tree), /PDF 原件 · 需显式解析/);
     assert.ok(find(tree, node => node.type === 'button' && node.props['aria-label'] === '下载附件原件 paper.pdf'));
+});
+
+test('disabled or deleted current/default models remain visible only as current and never resurrect as selectable options',()=>{
+    const active={provider:'enabled',model:'live',thinking:'deep-research'},removed={provider:'removed',model:'old',thinking:'max'};
+    for(const models of [[],[active]]){const view=synchronousState(new ComposerControls(controlsProps({boot:{...boot,model:removed,models},session:{...session,model:removed}})));const menu=find(view.render(),node=>node.type===ComposerModelMenu);assert.deepEqual(menu.props.options,models);assert.deepEqual(menu.props.current,removed);}
+    const legacy=synchronousState(new ComposerControls(controlsProps({boot:{...boot,models:undefined}})));assert.deepEqual(find(legacy.render(),node=>node.type===ComposerModelMenu).props.options,[model]);
 });

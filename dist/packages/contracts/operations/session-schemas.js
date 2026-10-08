@@ -1,7 +1,7 @@
 import { s } from './schema.js';
 const id = s.string(100), str = s.string(10000, 0), time = s.string(50), int = s.integer(0, Number.MAX_SAFE_INTEGER), bool = s.boolean(), role = s.enum(['coordinator', 'literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer']);
 const metadata = { id, kind: s.string(80), projectId: id, version: s.integer(1), createdAt: time, updatedAt: time };
-const model = s.object({ provider: s.string(100, 0), model: s.string(160, 0), thinking: s.enum(['off', 'minimal', 'low', 'medium', 'high', 'xhigh']) }, ['provider', 'model', 'thinking']);
+const model = s.object({ provider: s.string(100, 0), model: s.string(160, 0), thinking: s.string(64) }, ['provider', 'model', 'thinking']);
 const catalogFields = { ...metadata, kind: { const: 'session' }, title: s.string(160), role, state: s.enum(['idle', 'queued', 'running', 'interrupted', 'failed', 'waiting', 'archived']), model, teamId: id, taskId: id };
 const catalogRequired = ['id', 'kind', 'projectId', 'version', 'createdAt', 'updatedAt', 'title', 'role', 'state', 'model'];
 const catalog = s.object(catalogFields, catalogRequired);
@@ -10,7 +10,7 @@ const session = s.object(sessionFields, [...catalogRequired, 'workspace', 'piSes
 const attachmentFields = { documentVersionId: id, artifactId: id, digest: s.string(64), title: s.string(200), mediaType: s.enum(['application/pdf', 'text/plain', 'text/markdown']), size: s.integer(1, 33554432) };
 const parsedAttachmentFields = { parseResultId: id, resultDigest: s.string(64), pageCount: s.integer(1, 100) };
 const attachment = s.object({ ...attachmentFields, ...parsedAttachmentFields }, Object.keys(attachmentFields));
-const messageFields = { ...metadata, kind: { const: 'message' }, sessionId: id, role: s.enum(['user', 'assistant', 'system']), content: s.string(4000, 0), mode: s.enum(['prompt', 'steer', 'follow_up']), status: s.enum(['queued', 'running', 'completed', 'failed', 'cancelled']), contentTruncated: bool, previewTruncated: bool, contentBytes: int, error: str, origin: s.enum(['user', 'automation']), wakeupId: id, queueRemoved: bool, steerGeneration: int, generation: int, phase: s.enum(['commentary', 'final_answer']), toolCalls: s.array(s.string(100), 64), attachments: s.array(attachment, 5) };
+const messageFields = { ...metadata, kind: { const: 'message' }, sessionId: id, role: s.enum(['user', 'assistant', 'system']), content: s.string(4000, 0), mode: s.enum(['prompt', 'steer', 'follow_up']), status: s.enum(['queued', 'running', 'completed', 'failed', 'cancelled']), contentTruncated: bool, previewTruncated: bool, contentBytes: int, error: str, origin: s.enum(['user', 'automation']), wakeupId: id, queueRemoved: bool, steerGeneration: int, generation: int, phase: s.enum(['commentary', 'final_answer']), toolCalls: s.array(s.string(100), 64), nativeRequestId: id, attachments: s.array(attachment, 5) };
 const message = s.object(messageFields, ['id', 'kind', 'projectId', 'version', 'createdAt', 'updatedAt', 'sessionId', 'role', 'content', 'mode', 'status', 'contentTruncated', 'previewTruncated', 'contentBytes']);
 export const SESSION_HISTORY_INPUT_SCHEMAS = {
     session_list: s.object({ query: s.string(160, 0), beforeSessionId: id, role: s.enum(['all', 'coordinator', 'literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer']), stateFilter: s.enum(['active', 'archived', 'all']), limit: s.integer(1, 50) }),

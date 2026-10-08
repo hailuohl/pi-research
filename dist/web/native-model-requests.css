@@ -1,0 +1,80 @@
+/* The native request panel is independent of the ordinary Agent composer. */
+html:has(.native-model-requests),body:has(.native-model-requests) { min-width: 0; }
+.native-model-requests { min-width: 0; }
+.native-model-requests .native-panel-trigger { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; }
+.native-model-requests .native-panel:not([open]) { display: none; }
+.native-model-requests .native-panel { width: min(920px,calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: 85dvh; margin: auto; padding: 24px; box-sizing: border-box; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); min-width: 0; }
+.native-model-requests .native-panel::backdrop { background: #252a3455; }
+.native-model-requests .native-header-actions { display: flex; align-items: center; flex-shrink: 0; gap: 10px; }
+.native-model-requests .native-panel > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+.native-model-requests h2 { font-size: 15px; margin: 0; }
+.native-model-requests h3, .native-model-requests h4 { font-size: 13px; margin: 0 0 10px; }
+.native-model-requests .native-panel > header p { font-size: 11px; line-height: 1.8; color: var(--muted); margin: 5px 0 0; overflow-wrap: anywhere; }
+.native-model-requests .native-availability { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.native-model-requests .native-availability > div { min-width: 0; font-size: 12px; }
+.native-model-requests .native-availability strong, .native-model-requests .native-availability span, .native-model-requests .native-availability small { display: block; }
+.native-model-requests .native-availability strong { font-weight: 500; margin-bottom: 5px; }
+.native-model-requests .native-availability span { color: var(--muted); font-size: 11px; }
+.native-model-requests .native-availability small { color: var(--muted); font-size: 11px; line-height: 1.8; margin-top: 5px; overflow-wrap: anywhere; }
+.native-model-requests .native-note { margin: 10px 0; font-size: 11px; line-height: 1.8; color: var(--muted); overflow-wrap: anywhere; }
+.native-model-requests .native-error, .native-model-requests .native-message { margin: 14px 0; padding: 10px 12px; font-size: 12px; line-height: 1.8; border-radius: 6px; overflow-wrap: anywhere; }
+.native-model-requests .native-error { color: var(--danger); background: var(--danger-bg); }
+.native-model-requests .native-message { color: var(--success); background: var(--success-bg); }
+.native-model-requests .native-prepare-form { padding: 18px 0; border-bottom: 1px solid var(--line); }
+.native-model-requests label { display: grid; gap: 7px; font-size: 12px; color: var(--muted); min-width: 0; }
+.native-model-requests textarea, .native-model-requests input[type="number"] { width: 100%; min-width: 0; padding: 10px 11px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); color: var(--ink); font-size: 12px; }
+.native-model-requests textarea { resize: vertical; line-height: 1.8; }
+.native-model-requests .native-source-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.native-model-requests .native-source-heading h3 { margin: 0; }
+.native-model-requests label.native-file-upload { display: inline-flex; position: relative; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; }
+.native-model-requests .native-file-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.native-model-requests .native-file-upload:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.native-model-requests label.native-source { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.native-model-requests .native-source > input, .native-model-requests .native-check > input { width: 15px; height: 15px; flex-shrink: 0; margin: 3px 0 0; padding: 0; }
+.native-model-requests .native-source > span { flex: 1; min-width: 0; }
+.native-model-requests .native-source strong { display: block; color: var(--ink); font-size: 12px; font-weight: 500; overflow-wrap: anywhere; }
+.native-model-requests .native-source small { display: block; font-size: 11px; line-height: 1.7; margin-top: 4px; }
+.native-model-requests .native-options { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 18px; }
+.native-model-requests label.native-check { display: flex; align-items: flex-start; gap: 8px; margin: 0; line-height: 1.8; }
+.native-model-requests .native-options > label:last-child { width: 170px; }
+.native-model-requests .primary, .native-model-requests .secondary { min-height: 36px; font-size: 12px; padding: 8px 12px; white-space: normal; }
+.native-model-requests .text-button { min-height: 34px; font-size: 11px; }
+.native-model-requests .native-history-heading, .native-model-requests .native-review-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 20px 0 12px; }
+.native-model-requests .native-history-heading h3, .native-model-requests .native-review-heading h3 { margin: 0; }
+.native-model-requests .native-history-heading > span { font-size: 11px; color: var(--muted); }
+.native-model-requests .native-history { max-height: 240px; overflow: auto; }
+.native-model-requests .native-history > button { display: block; width: 100%; text-align: left; padding: 11px 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; }
+.native-model-requests .native-history > button[aria-pressed="true"] { background: var(--soft); border-color: var(--line); }
+.native-model-requests .native-history strong, .native-model-requests .native-history small { display: block; overflow-wrap: anywhere; }
+.native-model-requests .native-history strong { font-weight: 500; font-size: 12px; }
+.native-model-requests .native-history small { margin-top: 5px; font-size: 11px; line-height: 1.8; color: var(--muted); }
+.native-model-requests .native-request-review { border-top: 1px solid var(--line); margin-top: 18px; }
+.native-model-requests .native-fixed-prompt { padding: 12px; background: var(--quiet); border: 1px solid var(--line); border-radius: 6px; font-size: 12px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.native-model-requests dl { display: grid; gap: 9px; margin: 16px 0; font-size: 12px; line-height: 1.8; }
+.native-model-requests dl > div { display: grid; grid-template-columns: 82px minmax(0,1fr); gap: 12px; }
+.native-model-requests dt { color: var(--muted); }
+.native-model-requests dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.native-model-requests code { font-family: Consolas, monospace; font-size: 11px; overflow-wrap: anywhere; }
+.native-model-requests .native-fixed-sources { list-style: none; padding: 0; margin: 0 0 16px; }
+.native-model-requests .native-fixed-sources li { display: grid; gap: 5px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.native-model-requests .native-fixed-sources strong { color: var(--ink); font-weight: 500; font-size: 12px; }
+.native-model-requests .native-review-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.native-model-requests .native-response { margin-top: 20px; }
+.native-model-requests .native-response-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.9; margin-bottom: 18px; }
+.native-model-requests .native-response ul { padding-left: 18px; line-height: 1.9; font-size: 12px; overflow-wrap: anywhere; }
+.native-model-requests a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.native-model-requests blockquote { margin: 8px 0; padding-left: 12px; border-left: 2px solid var(--line); font-size: 11px; color: var(--muted); }
+.native-model-requests details { margin-top: 16px; font-size: 12px; }
+.native-model-requests summary { cursor: pointer; line-height: 1.8; }
+.native-model-requests .native-search-call { padding: 12px 0; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.8; overflow-wrap: anywhere; }
+.native-model-requests .native-receipt { margin-top: 16px; font-size: 11px; color: var(--muted); line-height: 1.8; overflow-wrap: anywhere; }
+@media(max-width:520px){
+ .native-model-requests .native-panel { padding: 16px; }
+ .native-model-requests .native-panel > header { flex-wrap: wrap; }
+ .native-model-requests .native-availability { grid-template-columns: minmax(0,1fr); gap: 12px; }
+ .native-model-requests .native-availability > div { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+ .native-model-requests dl > div { grid-template-columns: minmax(0,1fr); gap: 3px; }
+ .native-model-requests .native-options > label:last-child { width: 100%; }
+ .chat-heading:has(.native-model-requests) { flex-wrap: wrap; gap: 12px; }
+ .chat-heading:has(.native-model-requests) > .actions { width: 100%; flex-wrap: wrap; }
+}

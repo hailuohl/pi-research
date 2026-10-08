@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {api,downloadArtifact} from './api.js';
 import type {SessionHistoryPage,SessionMessageContent} from './models.js';
-import {date} from './models.js';
+import {date,short} from './models.js';
 import {Badge,Icon} from './ui.js';
 import type {QueueMessage} from './message-queue.js';
 import type {Perform} from './workbench.js';
@@ -9,7 +9,7 @@ import {MessageMarkdown} from './message-markdown.js';
 
 type Anchor={direction:'before'|'after';id:string}|null;
 type MessagePhase='commentary'|'final_answer';
-type ConversationMessage=QueueMessage&{generation?:number;phase?:MessagePhase;toolCalls?:string[]};
+type ConversationMessage=QueueMessage&{generation?:number;phase?:MessagePhase;toolCalls?:string[];nativeRequestId?:string};
 interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;}
 interface State {messageId:string;page:SessionMessageContent|null;busy:boolean;error:string;}
 interface ActivityTool {tool:string;status:'running'|'completed'|'failed';}
@@ -81,7 +81,7 @@ export class SessionHistory extends React.Component<Props,State> {
         const card=(message:QueueMessage)=>{
             const current=conversationMessage(message),summary=toolSummary(current);
             const author=message.role==='user'?'你':message.role==='assistant'?(message.wakeupId?'Pi · 结果分析':'Pi'):(message.wakeupId?'持久化结果通知':'工作台状态通知');
-            return <article className={'message message-'+message.role} key={message.id} aria-label={author} data-notification={message.wakeupId?'wakeup':undefined} data-history-anchor-id={message.id}><div className="message-avatar" aria-hidden="true">{message.role==='user'?'我':message.role==='assistant'?'π':'·'}</div><div className="message-body"><div className="message-meta"><strong>{author}</strong><time dateTime={message.createdAt} title={message.createdAt}>{date(message.createdAt)}</time>{message.queueRemoved?<span className="badge s-cancelled">已移出队列</span>:message.status&&message.status!=='completed'?<Badge value={message.status}/>:null}</div>{message.queueRemoved?<details className="removed-message-content"><summary>查看已移出队列的原消息</summary>{content(message)}</details>:content(message)}{summary?<p className="message-tool-summary">涉及工具：{summary}</p>:null}{message.attachments?.length?<div className="message-attachments" aria-label="消息附件">{message.attachments.map(attachment=><div className="message-attachment" key={attachment.documentVersionId}><Icon name="evidence" size={15}/><span title={attachment.title}>{attachment.title}</span><small>{attachment.mediaType==='application/pdf'?(attachment.parseResultId?'固定解析 · 视觉读取须另批':'PDF 原件 · 需显式解析'):'文本原件'}</small><button type="button" className="text-button" aria-label={`下载附件原件 ${attachment.title}`} onClick={()=>perform(()=>downloadArtifact(attachment.artifactId,attachment.title))}>下载原件</button></div>)}</div>:null}
+            return <article className={'message message-'+message.role} key={message.id} aria-label={author} data-notification={message.wakeupId?'wakeup':undefined} data-history-anchor-id={message.id}><div className="message-avatar" aria-hidden="true">{message.role==='user'?'我':message.role==='assistant'?'π':'·'}</div><div className="message-body"><div className="message-meta"><strong>{author}</strong>{current.nativeRequestId?<span className="badge" title={'原生请求 '+current.nativeRequestId}>原生请求 · {short(current.nativeRequestId)}</span>:null}<time dateTime={message.createdAt} title={message.createdAt}>{date(message.createdAt)}</time>{message.queueRemoved?<span className="badge s-cancelled">已移出队列</span>:message.status&&message.status!=='completed'?<Badge value={message.status}/>:null}</div>{message.queueRemoved?<details className="removed-message-content"><summary>查看已移出队列的原消息</summary>{content(message)}</details>:content(message)}{summary?<p className="message-tool-summary">涉及工具：{summary}</p>:null}{message.attachments?.length?<div className="message-attachments" aria-label="消息附件">{message.attachments.map(attachment=><div className="message-attachment" key={attachment.documentVersionId}><Icon name="evidence" size={15}/><span title={attachment.title}>{attachment.title}</span><small>{attachment.mediaType==='application/pdf'?(attachment.parseResultId?'固定解析 · 视觉读取须另批':'PDF 原件 · 需显式解析'):'文本原件'}</small><button type="button" className="text-button" aria-label={`下载附件原件 ${attachment.title}`} onClick={()=>perform(()=>downloadArtifact(attachment.artifactId,attachment.title))}>下载原件</button></div>)}</div>:null}
                 {message.error?<p className="error-text">{message.error}</p>:null}<div className="message-tools"><button className="message-branch-button" onClick={()=>perform(()=>api(`/sessions/${sessionId}/branch`,{messageId:message.id}),'已创建对话分支；实验记录保持不变')}>从此处分支</button>{!message.queueRemoved&&message.role==='user'&&['failed','cancelled'].includes(message.status)?<button onClick={()=>perform(()=>api(`/sessions/${sessionId}/retry`,{messageId:message.id}))}>重试此消息</button>:null}</div></div></article>;
         };
         const assistantGroup=(group:QueueMessage[])=>{

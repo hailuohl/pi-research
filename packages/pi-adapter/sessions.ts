@@ -1,4 +1,7 @@
 import {sessionCatalog,sessionMessagePage,sessionMessageContent,sessionQueue,canSteerSession,type SessionView} from './session-history.js';
+import {availableSelections} from './model-management.js';
+import {assertModelEnabled} from './model-connections.js';
+import {resolvedThinking} from './model-definition.js';
 import {publicRecord} from '../domain/public-record.js';
 import {attachmentReferences,type ParsedAttachmentPair,type ParsedAttachmentMetadata} from './attachments.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
@@ -23,20 +26,22 @@ export class SessionService {
         }>('app-settings', 'global')?.model ?? { provider: process.env.PI_PROVIDER ?? '', model: process.env.PI_MODEL ?? '', thinking: 'off' };
     }
     models():ModelConfig[] {
-        const settings=this.c.store.maybe<{models?:ModelConfig[]}>('app-settings','global'),current=this.model();
-        return [current,...(settings?.models??[])].filter((m,i,all)=>!!m.provider&&!!m.model&&all.findIndex(v=>v.provider===m.provider&&v.model===m.model)===i);
+        return availableSelections(this.c);
     }
     configure(actor: Actor, value: unknown) {
         userOnly(actor);
         const x = object(value);
-        ensure(Object.keys(x).every(k=>['provider','model','thinking','expectedVersion'].includes(k)),'INVALID_INPUT','模型配置包含未知字段');
-        const model: ModelConfig = { provider: text(x.provider, 'provider', 100), model: text(x.model, 'model', 160), thinking: oneOf(x.thinking ?? 'off', ['off', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const, 'thinking') };
+        ensure(Object.keys(x).every(k=>['provider','model','thinking','expectedVersion','clear'].includes(k)),'INVALID_INPUT','模型配置包含未知字段');
+        if(x.clear!==undefined)ensure(x.clear===true&&Object.keys(x).every(k=>['clear','expectedVersion'].includes(k))&&x.expectedVersion!==undefined,'INVALID_INPUT','清空默认需要明确版本且不能混入模型字段');
+        const model:ModelConfig=x.clear===true?{provider:'',model:'',thinking:'off'}:{provider:text(x.provider,'provider',100),model:text(x.model,'model',160),thinking:text(x.thinking??'off','thinking',64)};
         return this.c.store.transaction(()=>{const old = this.c.store.maybe<{
             model: ModelConfig;
+            models?:ModelConfig[];
         }>('app-settings', 'global');
         if(x.expectedVersion!==undefined)ensure((old?.version??0)===integer(x.expectedVersion,'expectedVersion',0),'VERSION_CONFLICT','默认模型已变化，请刷新后核对草稿');
-        const models=[model,...this.models().filter(m=>m.provider!==model.provider||m.model!==model.model)];
-        ensure(models.length<=20,'MODEL_LIMIT','最多保存20个模型');
+        const managed=model.provider?assertModelEnabled(this.c.dataDir,model):undefined;if(model.provider)resolvedThinking(managed,model.thinking);
+        const models=managed||x.clear===true?(old?.models??[]):[model,...(old?.models??[]).filter(m=>m.provider!==model.provider||m.model!==model.model)];
+        ensure(managed||models.length<=20,'MODEL_LIMIT','旧接口最多保存20个模型；更多模型请用独立模型管理');
         if (old)
             return this.c.store.update('app-settings', 'global', old.version, { model,models });
         return this.c.store.create('app-settings', null, { model,models }, 'global');});
@@ -57,7 +62,8 @@ export class SessionService {
             ensure(!grant&&!team,'MODEL_BOUND','此会话已有固定授权或协作计划，请用所选默认模型新建会话');
             const raw=x.model===undefined?this.model():object(x.model);
             ensure(Object.keys(raw).every(k=>['provider','model','thinking'].includes(k)),'INVALID_INPUT','模型选择包含未知字段');
-            const model:ModelConfig={provider:text(raw.provider,'provider',100),model:text(raw.model,'model',160),thinking:oneOf(raw.thinking??'off',['off','minimal','low','medium','high','xhigh'] as const,'thinking')};
+            const model:ModelConfig={provider:text(raw.provider,'provider',100),model:text(raw.model,'model',160),thinking:text(raw.thinking??'off','thinking',64)};
+            resolvedThinking(assertModelEnabled(this.c.dataDir,model),model.thinking);
             ensure(this.models().some(m=>m.provider===model.provider&&m.model===model.model&&m.thinking===model.thinking),'MODEL_NOT_CONFIGURED','先在设置中保存该模型');
             const updated=this.c.store.update<Session>('session',id,s.version,{model});
             this.c.store.event(s.projectId,'session.model_changed',{sessionId:id,model});return updated;

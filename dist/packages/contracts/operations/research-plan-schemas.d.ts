@@ -201,7 +201,7 @@ export declare const PLAN_SOURCE_SCHEMA: {
             readonly type: "string";
         };
     };
-    readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+    readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_CANDIDATE_SCHEMA: {
@@ -280,7 +280,7 @@ export declare const RESEARCH_CANDIDATE_SCHEMA: {
                     readonly type: "string";
                 };
             };
-            readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+            readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
             readonly additionalProperties: false;
         };
         readonly state: {
@@ -380,7 +380,7 @@ export declare const EXPERIMENT_PLAN_SCHEMA: {
                     readonly type: "string";
                 };
             };
-            readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+            readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
             readonly additionalProperties: false;
         };
         readonly contractDigest: {
@@ -686,7 +686,7 @@ export declare const RESEARCH_PLAN_INSPECTION_SCHEMA: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                    readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                     readonly additionalProperties: false;
                 };
                 readonly contractDigest: {
@@ -1016,7 +1016,7 @@ export declare const RESEARCH_PLAN_INSPECTION_SCHEMA: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                        readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                         readonly additionalProperties: false;
                     };
                     readonly state: {
@@ -1153,7 +1153,7 @@ export declare const RESEARCH_COMPARISON_SCHEMA: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                                readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly contractDigest: {
@@ -1483,7 +1483,7 @@ export declare const RESEARCH_COMPARISON_SCHEMA: {
                                             readonly type: "string";
                                         };
                                     };
-                                    readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                                    readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly state: {
@@ -1758,7 +1758,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                        readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                         readonly additionalProperties: false;
                     };
                     readonly contractDigest: {
@@ -2088,7 +2088,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                            readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                             readonly additionalProperties: false;
                         };
                         readonly state: {
@@ -2227,7 +2227,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                 readonly additionalProperties: false;
             };
             readonly state: {
@@ -2352,7 +2352,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                 readonly additionalProperties: false;
             };
             readonly state: {
@@ -2475,7 +2475,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                                             readonly type: "string";
                                         };
                                     };
-                                    readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                                    readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                                     readonly additionalProperties: false;
                                 };
                                 readonly contractDigest: {
@@ -2805,7 +2805,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                                                 readonly type: "string";
                                             };
                                         };
-                                        readonly required: ("experimentId" | "sourceDigest" | "snapshotId" | "revision")[];
+                                        readonly required: ("revision" | "experimentId" | "sourceDigest" | "snapshotId")[];
                                         readonly additionalProperties: false;
                                     };
                                     readonly state: {

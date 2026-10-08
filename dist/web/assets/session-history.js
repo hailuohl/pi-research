@@ -1,7 +1,7 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api, downloadArtifact } from "./api.js";
-import { date } from "./models.js";
+import { date, short } from "./models.js";
 import { Badge, Icon } from "./ui.js";
 import { MessageMarkdown } from "./message-markdown.js";
 const READ_LIMIT = 16e3;
@@ -125,6 +125,10 @@ class SessionHistory extends React.Component {
         /* @__PURE__ */ jsxs("div", { className: "message-body", children: [
           /* @__PURE__ */ jsxs("div", { className: "message-meta", children: [
             /* @__PURE__ */ jsx("strong", { children: author }),
+            current.nativeRequestId ? /* @__PURE__ */ jsxs("span", { className: "badge", title: "\u539F\u751F\u8BF7\u6C42 " + current.nativeRequestId, children: [
+              "\u539F\u751F\u8BF7\u6C42 \xB7 ",
+              short(current.nativeRequestId)
+            ] }) : null,
             /* @__PURE__ */ jsx("time", { dateTime: message.createdAt, title: message.createdAt, children: date(message.createdAt) }),
             message.queueRemoved ? /* @__PURE__ */ jsx("span", { className: "badge s-cancelled", children: "\u5DF2\u79FB\u51FA\u961F\u5217" }) : message.status && message.status !== "completed" ? /* @__PURE__ */ jsx(Badge, { value: message.status }) : null
           ] }),

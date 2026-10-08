@@ -44,7 +44,7 @@ interface State {
     navigationOpen: boolean;
     sessionCreationSignal:number;
 }
-const navigation = [['chat', '研究会话', 'chat'], ['environment','环境','settings'], ['experiments', '实验与运行', 'experiment'], ['workspace', '项目工作区', 'folder'], ['literature', '文献检索', 'search'], ['integrations', '技能与连接器', 'skills'], ['evidence', '资料与证据', 'evidence'], ['reports', '报告与成果', 'report'], ['settings', '设置与能力', 'settings']];
+const navigation = [['chat', '研究会话', 'chat'], ['environment','环境','settings'], ['experiments', '实验与运行', 'experiment'], ['workspace', '项目工作区', 'folder'], ['literature', '文献检索', 'search'], ['integrations', '技能与连接器', 'skills'], ['evidence', '资料与证据', 'evidence'], ['reports', '报告与成果', 'report'], ['settings', '模型与模板', 'settings']];
 const navigationGroups = [
     { name: '研究', ids: ['chat', 'experiments'] },
     { name: '管理', ids: ['integrations', 'environment', 'settings'] },

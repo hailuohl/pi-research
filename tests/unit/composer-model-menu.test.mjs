@@ -14,3 +14,10 @@ test('already-open choices cannot write after locking, removal, or unmount',t=>{
  const {view,selected}=picker(),row=elements(view.render()).find(e=>e.props?.role==='menuitemradio'&&e.props['aria-checked']===false);view.props={...view.props,disabled:true};row.props.onClick();assert.equal(selected.length,0);
  view.props={...view.props,disabled:false,options:[]};view.chooseModel(other);view.choose(low);assert.equal(selected.length,0);view.props={...view.props,options:[low,high,other]};view.componentWillUnmount();view.choose(other);assert.equal(selected.length,0);
 });
+
+test('custom reasoning aliases and max remain visible without an undefined fixed label',()=>{
+ const custom={...low,thinking:'deep-research'},maximum={...low,thinking:'max'},selected=[];
+ const view=synchronousState(new ComposerModelMenu({sessionId:'custom',current:custom,options:[custom,maximum],disabled:false,locked:false,onSelect:model=>selected.push(model)}));
+ const tree=JSON.stringify(view.render());assert.match(tree,/deep-research/);assert.match(tree,/顶级/);assert.doesNotMatch(tree,/undefined/);
+ view.choose(maximum);assert.deepEqual(selected,[maximum]);
+});

@@ -28,7 +28,7 @@ export declare const SESSION_HISTORY_INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("role" | "query" | "limit" | "stateFilter" | "beforeSessionId")[];
+        readonly required: readonly ("query" | "role" | "limit" | "stateFilter" | "beforeSessionId")[];
         readonly additionalProperties: false;
     };
     readonly session_view: {
@@ -176,7 +176,11 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                                 readonly thinking: {
-                                    readonly enum: readonly ["off", "minimal", "low", "medium", "high", "xhigh"];
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
                                 };
                             };
                             readonly required: readonly ["provider", "model", "thinking"];
@@ -418,7 +422,11 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                             readonly thinking: {
-                                readonly enum: readonly ["off", "minimal", "low", "medium", "high", "xhigh"];
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
                             };
                         };
                         readonly required: readonly ["provider", "model", "thinking"];
@@ -563,6 +571,13 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                             };
                             readonly minItems: number;
                         };
+                        nativeRequestId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
@@ -625,7 +640,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("digest" | "size" | "title" | "documentVersionId" | "artifactId" | "mediaType")[];
+                                readonly required: ("title" | "digest" | "size" | "documentVersionId" | "artifactId" | "mediaType")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -773,6 +788,13 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                             };
                             readonly minItems: number;
                         };
+                        nativeRequestId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
@@ -835,7 +857,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("digest" | "size" | "title" | "documentVersionId" | "artifactId" | "mediaType")[];
+                                readonly required: ("title" | "digest" | "size" | "documentVersionId" | "artifactId" | "mediaType")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1134,7 +1156,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly [...("digest" | "size" | "title" | "documentVersionId" | "artifactId" | "mediaType")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
+        readonly required: readonly [...("title" | "digest" | "size" | "documentVersionId" | "artifactId" | "mediaType")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
         readonly additionalProperties: false;
     };
 };

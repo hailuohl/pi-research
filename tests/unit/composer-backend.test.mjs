@@ -16,8 +16,9 @@ test('saved model choices survive reopening and select only the idle root withou
   assert.throws(()=>s.app.sessions.selectModel(USER,session.id,{expectedVersion:selected.version,model:{...first,model:'not-saved'}}),{code:'MODEL_NOT_CONFIGURED'});
   assert.throws(()=>s.app.sessions.configure(USER,{...first,apiKey:'must-not-enter-settings'}),{code:'INVALID_INPUT'});
   s.app.close();s.app=new ResearchApp(s.dir,process.cwd());
-  assert.deepEqual(s.app.sessions.model(),second);assert.deepEqual(s.app.sessions.models(),[second,first]);assert.deepEqual(current(s).model,first);
-  s.app.sessions.configure(USER,{...first,thinking:'low'});assert.equal(s.app.sessions.models().length,2);assert.equal(s.app.sessions.models()[0].thinking,'low');
+  assert.deepEqual(s.app.sessions.model(),second);assert.deepEqual(s.app.store.get('app-settings','global').models,[second,first]);assert.deepEqual([...new Set(s.app.sessions.models().map(m=>m.provider+'/'+m.model))],[second.provider+'/'+second.model,first.provider+'/'+first.model]);assert.deepEqual(current(s).model,first);
+  assert.ok(s.app.sessions.models().some(m=>m.provider===first.provider&&m.thinking==='max'));
+  s.app.sessions.configure(USER,{...first,thinking:'low'});assert.equal(new Set(s.app.sessions.models().map(m=>m.provider+'/'+m.model)).size,2);assert.equal(s.app.sessions.model().thinking,'low');
  }finally{s.close();}
 });
 

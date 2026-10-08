@@ -1,5 +1,5 @@
 import {publicationImageCatalog,imageReference,documentImageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
-import {modelConnectionSnapshot} from '../pi-adapter/model-connections.js';
+import {modelConnectionSnapshot,assertModelEnabled} from '../pi-adapter/model-connections.js';
 import {environmentVariables,redactEnvironment,redactEnvironmentChunk} from '../runtime/environment.js';
 import {canSteerSession} from '../pi-adapter/session-history.js';
 import {messageInput} from '../pi-adapter/attachments.js';
@@ -73,6 +73,7 @@ export class AgentHost {
         this.timer.unref();
     }
     ensureReady(session: Row<Session>) {
+        assertModelEnabled(this.app.context.dataDir,session.model);
         const state = this.inspect(session.model);
         if (!state.ready)
             throw new DomainError(state.code, state.message, 503);
@@ -223,6 +224,7 @@ export class AgentHost {
         const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId!,claimed.role,bundleId);
         this.ensureReady(claimed);
         const connectionSnapshot=modelConnectionSnapshot(this.app.context.dataDir,claimed.model.provider),configuredConnection=connectionSnapshot.connection;
+        if(configuredConnection)assertModelEnabled(this.app.context.dataDir,claimed.model,configuredConnection);
         const catalogFingerprint=publicationImageCatalog(join(this.app.context.dataDir,'models.json'),connectionSnapshot.catalog);
         const toolDefinitions=this.tools.definitions(claimed.role,!!wakeupId,claimed.id);
         const isolatedRunAnalysis=!!wakeupId&&this.app.wakeups.get(SYSTEM,wakeupId).sourceKind==='run-result';

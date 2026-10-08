@@ -46,7 +46,7 @@ export interface Project {
 export interface ModelConfig {
     provider: string;
     model: string;
-    thinking: 'off' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh';
+    thinking: string;
 }
 export interface Session {
     executionPermission?: import('../policy/session-permissions.js').PermissionReference;
@@ -73,6 +73,7 @@ export interface Session {
     parentSessionId?: string;
 }
 export interface Message {
+    nativeRequestId?:string;
     permission?: import('../policy/session-permissions.js').PermissionReference;
     generation?: number;
     phase?: 'commentary' | 'final_answer';

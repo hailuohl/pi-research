@@ -1,0 +1,96 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {synchronousState} from '../support/ui.mjs';
+import {ModelManagementPanel} from '../../dist/web/assets/model-management-view.js';
+const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children)];
+const find=(tree,predicate)=>elements(tree).find(predicate);
+const response=data=>({ok:true,json:async()=>data});
+const failed=(status,message)=>({ok:false,status,json:async()=>({error:{message}})});
+const selection={provider:'first',model:'default',thinking:'low'};
+const capabilities={text:true,image:false,pdf:false,video:false,structuredOutput:false,nativeWebSearch:false,midConversationSystem:false};
+const definition=(model='default')=>({model,name:model,nativeProfile:'none',contextWindow:32768,maxTokens:4096,capabilities:{...capabilities},reasoning:{defaultLevel:'low',levels:['off','low','high','xhigh','max'].map(id=>({id,label:id,piLevel:id,parameters:{}}))},parameters:{},structuredOutput:null,configuration:{mode:'manual',overrides:[]}});
+const managed=(model='default',order=0)=>({...definition(model),enabled:true,deletedAt:null,order,revision:1,source:'managed',effectiveCapabilities:Object.fromEntries(Object.keys(capabilities).map(key=>[key,{declared:capabilities[key],state:capabilities[key]?'available':'disabled',reason:'Observed adapter state'}])),test:null});
+const provider=(id='first',models=[managed(),managed('large',1)])=>({provider:id,name:id,enabled:true,deletedAt:null,order:id==='first'?0:1,source:'managed',baseUrl:'https://api.example.com/v1',api:'openai-responses',hasApiKey:true,models,test:null});
+const data=(version=1,providers=[provider(),provider('second',[managed('fast')])],defaultModelVersion=1)=>({version,schemaVersion:2,defaultModel:{...selection},defaultModelVersion,defaultUsable:true,providers,presets:[{id:'openai',name:'OpenAI',group:'全球',providerBrand:'openai',baseUrl:'https://api.openai.com/v1',api:'openai-responses'}],supportedApis:['openai-completions','openai-responses','anthropic-messages']});
+const boot={model:selection,models:[selection],modelVersion:1,runtime:{ready:true}};
+const panel=()=>{const view=synchronousState(new ModelManagementPanel({boot,perform:async fn=>fn()}));view.observe(data());return view;};
+function mock(t,fetch){const previous=globalThis.fetch;globalThis.fetch=fetch;t.after(()=>globalThis.fetch=previous);}
+
+test('provider grouping and saved model selection retain stable identifiers and native required limits',()=>{
+ const view=panel();assert.equal(view.providers().length,2);view.chooseProvider('second');assert.equal(view.state.model,'fast');assert.equal(view.models().length,1);assert.equal(view.definitionDraft().defaultLevel,'low');
+ const tree=view.render();assert.match(JSON.stringify(tree),/fast/);for(const [label,max] of [['连接提供商 ID',100],['模型 ID',160]]){const input=find(tree,n=>n.type==='input'&&n.props['aria-label']===label);assert.equal(input.props.required,true);assert.equal(input.props.maxLength,max);assert.equal(input.props.disabled,true);}
+ assert.match(JSON.stringify(tree),/预览本地推荐/);assert.doesNotMatch(JSON.stringify(tree),/连接成功/);
+});
+
+test('restored keyless catalog survives the real load whitelist, remains editable, requires credentials and cannot enter default choices',async t=>{
+ mock(t,async()=>response({...data(2,[{...provider(),hasApiKey:false,requiresCredential:true,apiKey:'DO_NOT_ECHO_RESTORE_KEY'}]),defaultUsable:false}));
+ const view=panel();await view.load(false);assert.equal(view.state.data.providers[0].requiresCredential,true);assert.doesNotMatch(JSON.stringify(view.state),/DO_NOT_ECHO_RESTORE_KEY/);
+ const tree=view.render();assert.match(JSON.stringify(tree),/此连接从备份恢复/);
+ assert.equal(find(tree,n=>n.props['aria-label']==='连接 API Key').props.required,true);
+ const select=find(tree,n=>n.props['aria-label']==='选择已有模型');assert.equal(elements(select).filter(n=>n.type==='option'&&n.props.value!==JSON.stringify(['',''])).length,0);assert.equal(find(tree,n=>n.type==='button'&&n.props.type==='submit'&&JSON.stringify(n.props.children).includes('保存为默认模型')).props.disabled,true);
+ assert.equal(view.managedModel().model,'default');assert.equal(view.definitionDraft().contextWindow,'32768');
+});
+
+test('management load errors remain retryable instead of falling back to old connection writes',async t=>{
+ const urls=[];mock(t,async url=>{urls.push(url);throw Error('management unavailable');});const view=synchronousState(new ModelManagementPanel({boot,perform:async fn=>fn()}));await view.load(false);
+ assert.match(view.state.error,/management unavailable/);assert.equal(find(view.render(),n=>n.type==='button').props.disabled,false);assert.deepEqual(urls,['/api/settings/model-management']);
+});
+
+test('provider reads strip API keys and explicit saving clears only submitted credentials, blank preserves',async t=>{
+ const posts=[];mock(t,async(_url,init)=>{if(!init?.body)return response(data(7,[{...provider(),apiKey:'must-not-return'}]));posts.push(JSON.parse(init.body));return response(data(8));});const view=panel();await view.load(false);assert.equal(view.providerDraft().apiKey,'');assert.doesNotMatch(JSON.stringify(view.state.data),/must-not-return/);
+ const field=find(view.render(),n=>n.props['aria-label']==='连接 API Key');assert.equal(field.props.type,'password');assert.equal(field.props.required,false);assert.equal(field.props.value,'');view.updateProvider({apiKey:'FAKE_private_key'});await view.saveProvider();
+ assert.deepEqual(posts[0],{expectedVersion:7,action:'provider.upsert',provider:'first',value:{name:'first',baseUrl:'https://api.example.com/v1',api:'openai-responses',apiKey:'FAKE_private_key'}});assert.equal(view.providerDraft().apiKey,'');assert.equal(view.state.data.version,8);assert.doesNotMatch(JSON.stringify(view.render()),/FAKE_private_key|must-not-return/);await view.saveProvider();assert.equal(Object.hasOwn(posts[1].value,'apiKey'),false);
+});
+
+test('provider CAS conflict preserves all fields, keys and a connection with no models across switches',async t=>{
+ let version=2,fail=true;const posts=[];mock(t,async(_url,init)=>{if(!init?.body)return response(data(version,[provider(),provider('no-model',[])]));posts.push(JSON.parse(init.body));return fail?failed(409,'version conflict'):response(data(4));});const view=panel();await view.load(false);view.updateProvider({name:'Unsaved name',baseUrl:'https://draft.example.com/v1',apiKey:'FAKE_retain_key'});view.chooseProvider('no-model');assert.equal(view.state.model,'');assert.equal(view.models().length,0);view.chooseProvider('first');await view.saveProvider();
+ assert.equal(view.providerDraft().name,'Unsaved name');assert.equal(view.providerDraft().apiKey,'FAKE_retain_key');assert.match(view.state.error,/刷新当前版本.*保留/);assert.equal(view.state.busy,false);version=3;await view.load(true);assert.equal(view.providerDraft().baseUrl,'https://draft.example.com/v1');assert.equal(view.providerDraft().apiKey,'FAKE_retain_key');fail=false;await view.saveProvider();assert.equal(posts.length,2);assert.equal(posts[1].expectedVersion,3);assert.equal(view.providerDraft().apiKey,'');
+});
+
+test('new providers are local drafts until explicit save, and first credentials are required',async t=>{
+ let posts=0;mock(t,async(_url,init)=>{if(init?.body)posts++;return response(data());});const view=panel();view.chooseProvider('');view.updateProvider({provider:'new-provider',name:'New',baseUrl:'http://localhost:8080/v1'});view.chooseProvider('first');view.chooseProvider('');assert.equal(view.providerDraft().provider,'new-provider');assert.equal(posts,0);await view.saveProvider();assert.match(view.state.error,/API Key/);assert.equal(posts,0);assert.equal(find(view.render(),n=>n.props['aria-label']==='连接 API Key').props.required,true);
+});
+
+test('default CAS failure preserves selection and explicit refresh accepts its version before retry',async t=>{
+ const posts=[];let fail=true;mock(t,async(_url,init)=>{if(!init?.body)return response(data(2,undefined,11));const body=JSON.parse(init.body);posts.push(body);return fail?failed(409,'model version conflict'):response({version:12,model:body});});const view=panel();view.updateSelection({model:'large',thinking:'xhigh'});await view.saveDefault();assert.equal(view.state.selection.model,'large');assert.match(view.state.error,/刷新默认模型版本.*保留/);assert.equal(view.state.busy,false);await view.load(false,true);assert.equal(view.state.selection.thinking,'xhigh');assert.equal(view.state.defaultVersion,11);fail=false;await view.saveDefault();assert.deepEqual(posts.at(-1),{provider:'first',model:'large',thinking:'xhigh',expectedVersion:11});assert.equal(view.state.defaultVersion,12);assert.equal(view.state.data.defaultModel.model,'large');
+});
+
+test('unchanged provider and default retries retain separate stable idempotency keys after lost response',async t=>{
+ const posts=[];mock(t,async(url,init)=>{posts.push({url,key:init.headers['Idempotency-Key'],body:JSON.parse(init.body)});throw Error('response lost');});const view=panel();view.updateProvider({apiKey:'FAKE_retry_key'});await view.saveProvider();await view.saveProvider();assert.equal(posts[0].key,posts[1].key);assert.equal(view.providerDraft().apiKey,'FAKE_retry_key');view.updateProvider({name:'Changed'});await view.saveProvider();assert.notEqual(posts[1].key,posts[2].key);await view.saveDefault();await view.saveDefault();assert.equal(posts[3].key,posts[4].key);assert.notEqual(posts[2].key,posts[3].key);view.updateSelection({thinking:'high'});await view.saveDefault();assert.notEqual(posts[4].key,posts[5].key);
+});
+
+test('inherited object property provider IDs retain their own safe drafts and literal key error redaction',async t=>{
+ mock(t,async()=>{throw Error('reject FAKE_$&.key');});for(const id of ['constructor','toString','__proto__']){const view=panel();view.chooseProvider(id);assert.equal(view.providerDraft().provider,id);assert.equal(view.providerDraft().apiKey,'');view.updateProvider({name:'Own',apiKey:'FAKE_$&.key'});view.chooseProvider('first');view.chooseProvider(id);assert.equal(view.providerDraft().name,'Own');assert.equal(view.providerDraft().apiKey,'FAKE_$&.key');await view.saveProvider();assert.match(view.state.error,/[已隐藏]/);assert.doesNotMatch(view.state.error,/FAKE_/);}
+});
+
+test('background bootstrap observes defaults without lifting a dirty default selection CAS baseline',async t=>{
+ const posts=[],latest={...data(2,undefined,2),defaultModel:{provider:'second',model:'fast',thinking:'high'}};mock(t,async(_url,init)=>{if(!init?.body)return response(latest);const body=JSON.parse(init.body);posts.push(body);return body.expectedVersion===2?response({version:3,model:body}):failed(409,'model version conflict');});const view=panel();find(view.render(),n=>n.props['aria-label']==='选择已有模型').props.onChange({target:{value:JSON.stringify(['first','large'])}});assert.equal(view.state.defaultDirty,true);const previous=view.props;view.props={...previous,boot:{...boot,modelVersion:2,model:latest.defaultModel}};view.componentDidUpdate(previous);
+ assert.equal(view.state.data.defaultModelVersion,2);assert.equal(view.state.data.defaultModel.model,'fast');assert.equal(view.state.defaultVersion,1);assert.equal(view.state.selection.model,'large');await view.saveDefault();assert.equal(posts[0].expectedVersion,1);assert.match(view.state.error,/version conflict/);await view.load(false,true);assert.equal(view.state.selection.model,'large');assert.equal(view.state.defaultVersion,2);await view.saveDefault();assert.equal(posts[1].expectedVersion,2);assert.equal(view.state.defaultVersion,3);assert.equal(view.state.defaultDirty,false);
+ const pristine=panel(),old=pristine.props;pristine.props={...old,boot:{...boot,modelVersion:2,model:latest.defaultModel}};pristine.componentDidUpdate(old);assert.equal(pristine.state.defaultVersion,2);assert.equal(pristine.state.selection.model,'fast');assert.equal(pristine.state.selection.thinking,'high');assert.equal(pristine.state.defaultDirty,false);
+});
+
+test('refreshing provider B does not upgrade dirty provider A or model A baselines',async t=>{
+ let version=1;const posts=[],first=provider(),second=provider('second');mock(t,async(_url,init)=>{if(!init?.body)return response(data(version,[first,second]));const body=JSON.parse(init.body);posts.push(body);if(body.expectedVersion!==version)return failed(409,'connection version conflict');version++;return response(data(version,[first,second]));});const view=panel();view.updateProvider({baseUrl:'https://draft-first.example.com/v1',apiKey:'FAKE_first_key'});view.updateDefinition({name:'Unsaved model A'});view.chooseProvider('second');view.updateProvider({name:'Unsaved B'});version=2;await view.load(true);assert.equal(view.providerDraft().version,2);view.chooseProvider('first');assert.equal(view.providerDraft().version,1);assert.equal(view.definitionDraft().version,1);await view.saveProvider();assert.equal(posts[0].expectedVersion,1);assert.match(view.state.error,/version conflict/);assert.equal(view.providerDraft().apiKey,'FAKE_first_key');await view.load(true);assert.equal(view.providerDraft().version,2);assert.equal(view.definitionDraft().name,'Unsaved model A');await view.saveProvider();assert.equal(posts[1].expectedVersion,2);assert.equal(view.providerDraft().apiKey,'');view.chooseProvider('second');assert.equal(view.providerDraft().version,2);assert.equal(view.providerDraft().name,'Unsaved B');
+});
+
+test('model configuration save uses only management API, retaining metadata and custom reasoning without changing default',async t=>{
+ const posts=[];mock(t,async(url,init)=>{posts.push({url,body:JSON.parse(init.body)});return response(data(2));});const view=panel();view.chooseModel('');view.updateDefinition({model:'new-model',name:'Research',nativeProfile:'openai',contextWindow:'128000',maxTokens:'8192',capabilities:{...capabilities,image:true,pdf:true},defaultLevel:'deep',levels:[{id:'deep',label:'深入',piLevel:'max',parameters:'{"effort":"max"}'}],parameters:'{"temperature":0.2}',structuredOutput:'{"name":"answer","schema":{"type":"object"},"strict":true}'});await view.saveDefinition();
+ assert.equal(posts.length,1);assert.equal(posts[0].url,'/api/settings/model-management');assert.equal(posts[0].body.action,'model.upsert');assert.equal(posts[0].body.model,'new-model');assert.equal(posts[0].body.value.reasoning.defaultLevel,'deep');assert.equal(posts[0].body.value.reasoning.levels[0].piLevel,'max');assert.deepEqual(posts[0].body.value.parameters,{temperature:0.2});assert.equal(view.state.data.defaultModel.model,'default');assert.match(view.state.message,/默认模型未改变/);
+});
+
+test('default stop/delete are blocked until explicit clear, while tombstone history is retained',async t=>{
+ const posts=[],previousConfirm=globalThis.confirm;globalThis.confirm=()=>true;t.after(()=>{if(previousConfirm===undefined)delete globalThis.confirm;else globalThis.confirm=previousConfirm;});mock(t,async(url,init)=>{const body=JSON.parse(init.body);posts.push({url,body});if(url==='/api/settings/model')return response({version:2,model:{provider:'',model:'',thinking:'off'}});const next=data(2);next.defaultModel={provider:'',model:'',thinking:'off'};next.providers[0].deletedAt='2026-10-08T00:00:00Z';next.providers[0].enabled=false;return response(next);});const view=panel();await view.setEnabled('provider',false);await view.remove('model');assert.equal(posts.length,0);assert.match(view.state.error,/默认模型/);await view.saveDefault(true);assert.deepEqual(posts[0].body,{clear:true,expectedVersion:1});await view.remove('provider');assert.equal(posts[1].body.action,'provider.delete');assert.equal(view.state.data.providers[0].deletedAt,'2026-10-08T00:00:00Z');assert.match(JSON.stringify(view.render()),/删除历史/);
+});
+
+test('keyboard and native drag sorting issue the same complete order command',async t=>{
+ const posts=[];mock(t,async(_url,init)=>{posts.push(JSON.parse(init.body));return response(data(2));});const view=panel();find(view.render(),n=>n.props['aria-label']==='下移 first').props.onClick();await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(posts[0],{expectedVersion:1,action:'providers.reorder',value:{providers:['second','first']}});
+ const row=find(view.render(),n=>n.props?.className==='management-provider-row'&&elements(n).some(child=>child.props?.['aria-pressed']===false));assert.ok(row);row.props.onDragStart();const target=find(view.render(),n=>n.props?.className==='management-provider-row'&&elements(n).some(child=>child.props?.['aria-pressed']===true));target.props.onDrop({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));assert.equal(posts[1].action,'providers.reorder');assert.deepEqual(posts[1].value.providers,['second','first']);
+});
+
+test('local recommendation preview writes nothing and applying it preserves explicit field overrides',async t=>{
+ const urls=[],recommended={...definition(),contextWindow:128000,maxTokens:8192,configuration:{mode:'matched',overrides:[]}};mock(t,async(url,init)=>{urls.push({url,body:init?.body});return response({matched:true,source:{provider:'first',model:'default',sdkVersion:'0.87.1'},value:recommended,changes:[{field:'contextWindow',current:32768,recommended:128000}]});});const view=panel();view.updateDefinition({maxTokens:'2048',overrides:['maxTokens']});await view.previewRecommendation();assert.equal(urls.length,1);assert.equal(urls[0].body,undefined);assert.match(urls[0].url,/model-recommendations/);view.applyRecommendation();assert.equal(view.definitionDraft().contextWindow,'128000');assert.equal(view.definitionDraft().maxTokens,'2048');assert.equal(view.definitionDraft().mode,'matched');assert.equal(urls.length,1);assert.equal(view.editable('contextWindow'),false);view.toggleOverride('contextWindow',true);assert.equal(view.editable('contextWindow'),true);
+});
+
+test('one explicit acknowledged model test sends once and edits immediately make its displayed result stale',async t=>{
+ const posts=[];mock(t,async(url,init)=>{posts.push({url,body:JSON.parse(init.body)});return response({state:'passed',category:'success',checkedAt:'2026-10-08T00:00:00Z',durationMs:10,requests:1,httpStatus:200});});const view=panel();await view.runTest('model');assert.equal(posts.length,0);view.setState({acknowledgedCost:true});await view.runTest('model');assert.deepEqual(posts,[{url:'/api/settings/model-tests',body:{expectedVersion:1,provider:'first',model:'default',kind:'model',acknowledgedCost:true}}]);assert.equal(view.state.acknowledgedCost,false);assert.match(JSON.stringify(view.render()),/测试通过/);view.updateDefinition({maxTokens:'1234'});assert.match(JSON.stringify(view.render()),/配置已修改，结果失效/);await view.runTest('model');assert.equal(posts.length,1);
+});

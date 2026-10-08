@@ -1,5 +1,6 @@
 import {imageContextReferences,publicationImageCatalog,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../../packages/pi-adapter/publication-image.js';
 import {applyModelConnection,connectionFetch,safeConnectionStream,type ModelConnection} from '../../packages/pi-adapter/model-connections.js';
+import {resolvedThinking,modelPayload} from '../../packages/pi-adapter/model-definition.js';
 import {managedModelFetch} from '../../packages/pi-adapter/model-fetch.js';
 import {MANAGED_HTTP_APIS} from '../../packages/scheduler/model-http.js';
 import type {JsonSchema} from '../../packages/contracts/operations/schema.js';
@@ -100,7 +101,8 @@ process.on('message', async (message) => {
             if (name === 'task_result_submit') taskSubmitted = true;
             return result;
         });
-        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role,raw.tools.some(tool=>tool.name==='host_execute'),raw.permissionMode) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking: raw.model.thinking }, customTools, modelRuntime, model);
+        const definition=raw.connection?.models?.find(m=>m.model===raw.model.model&&!m.controlOnly),thinking=resolvedThinking(definition,raw.model.thinking);
+        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role,raw.tools.some(tool=>tool.name==='host_execute'),raw.permissionMode) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
         if(raw.managedHttp&&!(MANAGED_HTTP_APIS as readonly string[]).includes(model.api))throw new Error('MODEL_HTTP_UNSUPPORTED: 所选SDK传输尚未接入受管HTTP，不会绕过限流');
         const stream=session.agent.streamFunction;
@@ -111,7 +113,7 @@ process.on('message', async (message) => {
             if(refs.length)checkCatalog();
             // Each transport closure owns this exact context, including all historical images.
             const fetcher=managedModelFetch(raw.connection?connectionFetch(globalThis.fetch,raw.connection.baseUrl):globalThis.fetch,key=>{if(refs.length)checkCatalog();return httpRpc('model_http_acquire',key,undefined,refs) as Promise<{allowed:boolean}>;},(key,result)=>httpRpc('model_http_finish',key,result),httpStop.signal);
-            const response=await stream(chosen,context,{...options,transport:'sse',fetch:fetcher});
+            const response=await stream(chosen,context,{...options,transport:'sse',fetch:fetcher,...(definition?{onPayload:(body:unknown)=>modelPayload(body,definition,raw.model.thinking,raw.connection!.api)}:{})});
             return raw.connection?safeConnectionStream(response):response;
         };
         const finishTurn = session.agent.finishTurn;

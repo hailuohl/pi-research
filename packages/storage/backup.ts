@@ -10,9 +10,10 @@ import {teamWakeupSource,wakeupId} from '../scheduler/wakeups.js';
 import {GitCommand} from '../workspace/git-command.js';
 import {DataPaths,readDataLocation,setDataLocation} from './data-paths.js';
 import {hasEnvironmentSecrets,environmentSecrets,redactEnvironment} from '../runtime/environment.js';
+import {createModelManagementSnapshot,validateModelManagementSnapshot,restoreModelManagementSnapshot,type ModelManagementSnapshot} from './model-management-backup.js';
 
 type Entry={path:string;type:'directory';mode:number}|{path:string;type:'file';mode:number;size:number;digest:string};
-interface Manifest {format:'pi-research-backup-v1'|'pi-research-backup-v2';sourceRoot:string;legacyRoots?:string[];platform:string;createdAt:string;schema:number[];entries:Entry[];excluded:string[];manifestDigest:string;}
+interface Manifest {format:'pi-research-backup-v1'|'pi-research-backup-v2';sourceRoot:string;legacyRoots?:string[];platform:string;createdAt:string;schema:number[];entries:Entry[];excluded:string[];modelManagement?:ModelManagementSnapshot;manifestDigest:string;}
 export interface BackupSummary {backupDir:string;sourceRoot:string;files:number;bytes:number;manifestDigest:string;schema:number[];excluded:string[];restoredTo?:string;relocated?:boolean;}
 const ROOTS=new Set(['projects','experiments','workspaces','sessions','snapshots','artifacts','skill-blobs','jobs','sandbox-jobs','document-jobs','publication-jobs','git-worktrees','git-operations','exports','integration-staging','state.db.text-writes']);
 const EXCLUDED=new Set(['access.token','models.json','models-store.json','ssh-targets.json','ssh-targets.json.tmp','ssh-private','local-runtimes.json','local-runtimes.json.tmp','state.db-wal','state.db-shm','state.db-journal']);
@@ -91,7 +92,7 @@ function stateCheck(db:DatabaseSync) {
   if(['run','sandbox-job'].includes(kind))busy=!TERMINAL.has(state);
   if(['document-parse-job','publication-build-job'].includes(kind))busy=state!=='prepared'&&!TERMINAL.has(state);
   if(kind==='agent-admission')busy=state!=='released';
-  if(kind==='model-http-request')busy=['queued','active','unknown'].includes(state);
+  if(kind==='model-http-request')busy=['queued','active','unknown'].includes(state)||(r.ownerKind==='owner-native'&&state==='interrupted'&&r.transportEnded!==true);
   if(kind==='session')busy=['queued','running'].includes(state);
   // A failed/idle session's old queued message is retained history, not a startup dispatch.
   if(kind==='message')busy=r.status==='running'||r.status==='queued'&&(!sessions.has(String(r.sessionId))||['queued','running'].includes(String(sessions.get(String(r.sessionId))!.state)));
@@ -175,6 +176,7 @@ function manifestAt(backupDir:string):Manifest {
  const m:unknown=JSON.parse(readFileSync(file,'utf8'));ensure(plain(m)&&['pi-research-backup-v1','pi-research-backup-v2'].includes(String(m.format))&&typeof m.sourceRoot==='string'&&isAbsolute(m.sourceRoot)&&resolve(m.sourceRoot)===m.sourceRoot&&typeof m.platform==='string'&&Array.isArray(m.schema)&&Array.isArray(m.entries)&&m.entries.length<=100000&&Array.isArray(m.excluded)&&m.excluded.every(x=>typeof x==='string')&&typeof m.manifestDigest==='string','BACKUP_INVALID','备份格式无效',400);
  ensure(m.format==='pi-research-backup-v1'?m.legacyRoots===undefined:Array.isArray(m.legacyRoots),'BACKUP_INVALID','备份位置清单无效',400);new DataPaths(m.sourceRoot,(m.legacyRoots??[]) as string[]);
  const {manifestDigest,...body}=m;ensure(digest(body)===manifestDigest,'BACKUP_CONTENT_MISMATCH','备份清单摘要不符',409);
+ if(m.modelManagement!==undefined){ensure(m.format==='pi-research-backup-v2','BACKUP_MODEL_MANAGEMENT_INVALID','旧格式备份不支持模型目录快照',409);validateModelManagementSnapshot(m.modelManagement);}
  const names=new Set<string>();let roots=0;
  for(const raw of m.entries){ensure(plain(raw)&&typeof raw.path==='string'&&(raw.type==='file'||raw.type==='directory')&&Number.isInteger(raw.mode)&&Number(raw.mode)>=0&&Number(raw.mode)<=0o777,'BACKUP_INVALID','备份条目无效',400);const name=relativeName(raw.path,true),fold=name.toLowerCase(),parts=name.split('/');ensure(!names.has(fold),'BACKUP_INVALID','备份有重复或大小写冲突条目',400);names.add(fold);ensure(name===''||name==='state.db'||ROOTS.has(parts[0]),'BACKUP_INVALID','备份包含未知管理树',400);ensure(!EXCLUDED.has(name)&&!/^jobs\/[^/]+\/control\/native-spec\.json$/.test(name)&&!(parts[0]==='sessions'&&parts[2]==='agent')&&!/\.text-write-(pending|stage-|backup-)/.test(name)&&!name.startsWith('state.db.text-writes/'),'BACKUP_INVALID','备份包含认证文件或未解决恢复',400);if(name===''){ensure(raw.type==='directory','BACKUP_INVALID','数据根无效',400);roots++;}if(raw.type==='file')ensure(name!==''&&Number.isSafeInteger(raw.size)&&Number(raw.size)>=0&&typeof raw.digest==='string'&&/^[a-f0-9]{64}$/.test(raw.digest),'BACKUP_INVALID','文件摘要或大小无效',400);}
  ensure(roots===1&&names.has('state.db'),'BACKUP_INVALID','缺少数据根或数据库',400);
@@ -201,6 +203,7 @@ export async function createDataBackup(source:string,path:string,options:{offlin
  try {
   // This lock blocks database writers; --offline remains necessary for filesystem-only preparation.
   db=new DatabaseSync(join(root,'state.db'));db.exec('PRAGMA busy_timeout=1000; BEGIN IMMEDIATE');stateCheck(db);
+  const modelManagement=createModelManagementSnapshot(root);
   const privateLocalJobs=new Set(hasEnvironmentSecrets(root)?db.prepare("SELECT id FROM records WHERE kind='run' AND json_extract(data,'$.execution.backend')='local'").all().map(row=>String(row.id)):[]);
   mkdirSync(join(stage,'data'),{mode:0o700});const tree=managedTree(root,join(stage,'data'),privateLocalJobs);
   const reader=new DatabaseSync(join(root,'state.db'),{readOnly:true});try{await backup(reader,join(stage,'data','state.db'));}finally{reader.close();}
@@ -210,7 +213,8 @@ export async function createDataBackup(source:string,path:string,options:{offlin
   const location=readDataLocation(db),legacyRoots=location?.legacyRoots??[];ensure(!location||location.activeRoot===root,'BACKUP_LOCATION_MISMATCH','数据目录需要受控迁移，不能直接复制后备份',409);
   const schema=await references(db,root,join(stage,'data'),entries,legacyRoots);
   ensure(digest(managedTree(root,undefined,privateLocalJobs))===digest(tree),'BACKUP_SOURCE_CHANGED','复制期间管理文件发生变化，备份未发布',409);
-  const body={format:'pi-research-backup-v2' as const,sourceRoot:root,legacyRoots,platform:process.platform,createdAt:new Date().toISOString(),schema,entries,excluded:tree.excluded},m={...body,manifestDigest:digest(body)};
+  ensure(digest(createModelManagementSnapshot(root)??null)===digest(modelManagement??null),'BACKUP_SOURCE_CHANGED','复制期间模型管理目录发生变化，备份未发布',409);
+  const body={format:'pi-research-backup-v2' as const,sourceRoot:root,legacyRoots,platform:process.platform,createdAt:new Date().toISOString(),schema,entries,excluded:tree.excluded,...(modelManagement?{modelManagement}:{})},m={...body,manifestDigest:digest(body)};
   writeFileSync(join(stage,'manifest.json'),JSON.stringify(m,null,2)+'\n',{mode:0o600,flag:'wx'});await verifyDataBackup(stage);
   destination(target);renameSync(stage,target);return summary(target,m);
  }finally{if(db){if(db.isTransaction)db.exec('ROLLBACK');db.close();}removeOwnStage(stage,owner);}
@@ -253,6 +257,7 @@ export async function restoreDataBackup(path:string,targetPath:string,options:{o
    const relocated:Manifest={...m,format:'pi-research-backup-v2',sourceRoot:target,legacyRoots:roots,schema,entries};
    await verifyTree(stage,relocated);
   }
+  if(m.modelManagement)restoreModelManagementSnapshot(stage,m.modelManagement);
   for(const entry of m.entries.filter(x=>x.type==='directory').sort((a,b)=>b.path.length-a.path.length))chmodSync(join(stage,entry.path),entry.mode);
   destination(target);renameSync(stage,target);return {...result,restoredTo:target,...(relocating?{relocated:true}:{})};
  }finally{removeOwnStage(stage,owner);}

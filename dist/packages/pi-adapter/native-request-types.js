@@ -1,0 +1,7 @@
+/** One protocol/profile matrix shared by model management and owner request preparation. */
+export function nativeAvailability(api, model) {
+    const profile = model?.nativeProfile ?? 'none';
+    const status = (name, supported, reason) => ({ declared: model?.capabilities[name] ?? false, state: !model?.capabilities[name] ? 'disabled' : supported ? 'available' : 'unsupported', reason: !model?.capabilities[name] ? '模型未声明此输入或搜索能力' : supported ? '仅支持整原件及逐请求显式批准；配置不代表真实接口已验证' : reason });
+    return { api, profile, ...(model ? { maxOutputTokens: Math.min(8192, model.maxTokens) } : {}), pdf: status('pdf', profile === 'openai' && api !== 'anthropic-messages' && api !== null || profile === 'anthropic' && api === 'anthropic-messages' || profile === 'openrouter' && api === 'openai-completions', '此原生适配/API未接入PDF；OpenRouter PDF仅Chat且强制native解析'), video: status('video', profile === 'qwen' && api === 'openai-completions' || profile === 'openrouter' && (api === 'openai-completions' || api === 'openai-responses'), '视频仅支持Qwen Chat或OpenRouter Chat/Responses的明确兼容模型'), nativeWebSearch: status('nativeWebSearch', profile === 'openai' && api === 'openai-responses' || profile === 'anthropic' && api === 'anthropic-messages', '原生搜索仅支持OpenAI Responses或Anthropic Messages；Chat无法保证一次搜索回执/预算，OpenRouter不得回退第三方搜索') };
+}
+//# sourceMappingURL=native-request-types.js.map

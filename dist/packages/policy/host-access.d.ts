@@ -56,7 +56,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -79,7 +79,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -101,7 +101,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;

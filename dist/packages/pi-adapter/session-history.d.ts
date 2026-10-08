@@ -79,6 +79,7 @@ export declare function sessionQueue(store: Store, session: Row<Session>, value?
         version: number;
         createdAt: string;
         updatedAt: string;
+        nativeRequestId?: string;
         permission?: import("../policy/session-permissions.js").PermissionReference;
         generation?: number;
         phase?: "commentary" | "final_answer";
