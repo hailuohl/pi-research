@@ -514,7 +514,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly enum: readonly ["none", "host"];
                             };
                         };
-                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion" | "runner")[];
+                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "runner" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
                     };
                     readonly contractDigest: {
@@ -1894,7 +1894,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["none", "host"];
                     };
                 };
-                readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion" | "runner")[];
+                readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "runner" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                 readonly additionalProperties: false;
             };
             readonly contractDigest: {
@@ -8348,7 +8348,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly document_parser_configure: {
@@ -8429,7 +8429,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly document_parse_prepare: {
@@ -9922,7 +9922,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly enum: readonly ["none", "host"];
                             };
                         };
-                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion" | "runner")[];
+                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "runner" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
                     };
                     readonly contractDigest: {
@@ -10409,7 +10409,7 @@ export declare const OUTPUT_SCHEMAS: {
                                 readonly enum: readonly ["none", "host"];
                             };
                         };
-                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion" | "runner")[];
+                        readonly required: ("cpus" | "memoryMb" | "command" | "expectedArtifacts" | "timeoutSeconds" | "runner" | "metrics" | "environment" | "datasetVersion" | "evaluationProtocolVersion")[];
                         readonly additionalProperties: false;
                     };
                     readonly contractDigest: {
@@ -11515,6 +11515,31 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                         readonly minItems: number;
                     };
+                    readonly runTargets: {
+                        readonly maxItems?: number | undefined;
+                        readonly type: "array";
+                        readonly items: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly runner: {
+                                    readonly const: "local";
+                                };
+                                readonly localRuntimeId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                            };
+                            readonly required: readonly ["runner", "localRuntimeId"];
+                            readonly additionalProperties: false;
+                        };
+                        readonly minItems: number;
+                    };
+                    readonly status: {
+                        readonly enum: readonly ["configured", "unconfigured"];
+                    };
                     readonly hardware: {
                         readonly type: "object";
                         readonly properties: {
@@ -11561,7 +11586,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly const: false;
                     };
                 };
-                readonly required: readonly ["platform", "hostId", "runtimes", "hardware", "isolation", "resourceEnforcement", "networkIsolation"];
+                readonly required: readonly ["platform", "hostId", "runtimes", "hardware", "runTargets", "status", "isolation", "resourceEnforcement", "networkIsolation"];
                 readonly additionalProperties: false;
             };
             readonly connections: {
@@ -11579,6 +11604,23 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                                     readonly minLength: number;
                                     readonly maxLength: number;
+                                };
+                                readonly runTarget: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly runner: {
+                                            readonly const: "docker";
+                                        };
+                                        readonly dockerContext: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["runner", "dockerContext"];
+                                    readonly additionalProperties: false;
                                 };
                                 readonly serverVersion: {
                                     readonly pattern?: string | undefined;
@@ -11629,7 +11671,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: readonly ["context", "status"];
+                            readonly required: readonly ["context", "status", "runTarget"];
                             readonly additionalProperties: false;
                         };
                         readonly minItems: number;
@@ -11651,6 +11693,36 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                     readonly minimum: number;
                                     readonly maximum: number;
+                                };
+                                readonly runTarget: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly runner: {
+                                            readonly const: "ssh";
+                                        };
+                                        readonly sshTargetId: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                    };
+                                    readonly required: readonly ["runner", "sshTargetId"];
+                                    readonly additionalProperties: false;
+                                };
+                                readonly cpus: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly memoryMb: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly gpuStatus: {
+                                    readonly enum: readonly ["unverified", "verified", "stale", "unavailable"];
                                 };
                                 readonly preferences: {
                                     readonly type: "object";
@@ -11794,10 +11866,17 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: readonly ["id", "configurationVersion", "status", "preferences", "capabilities", "gpuDevices"];
+                            readonly required: readonly ["id", "configurationVersion", "status", "preferences", "capabilities", "gpuDevices", "runTarget", "gpuStatus"];
                             readonly additionalProperties: false;
                         };
                         readonly minItems: number;
+                    };
+                    readonly currentDockerContext: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                 };
                 readonly required: readonly ["docker", "ssh"];
@@ -12264,6 +12343,23 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly minLength: number;
                 readonly maxLength: number;
             };
+            readonly runTarget: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly runner: {
+                        readonly const: "docker";
+                    };
+                    readonly dockerContext: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                };
+                readonly required: readonly ["runner", "dockerContext"];
+                readonly additionalProperties: false;
+            };
             readonly serverVersion: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -12313,7 +12409,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: readonly ["context", "status"];
+        readonly required: readonly ["context", "status", "runTarget"];
         readonly additionalProperties: false;
     };
     readonly ssh_target_inspect: {
@@ -27149,7 +27245,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly publication_configure: {
@@ -27233,7 +27329,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly publication_prepare: {

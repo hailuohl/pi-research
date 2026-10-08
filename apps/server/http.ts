@@ -17,6 +17,7 @@ export interface ServerOptions {
     dataDir: string;
     repoRoot: string;
     port?: number;
+    computeMonitoring?: boolean;
 }
 export function createHttpServer(options: ServerOptions) {
     const app = new ResearchApp(options.dataDir, options.repoRoot), host = new AgentHost(app);
@@ -126,6 +127,6 @@ export function createHttpServer(options: ServerOptions) {
     server.headersTimeout = 10000;
     server.maxHeadersCount = 50;
     let closing:Promise<void>|undefined;
-    return { app, host, server, listen: () => new Promise<number>((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = (server.address() as AddressInfo).port; host.start(); resolve(port); }); }), close: () => closing??=(async()=>{events.close();await host.stop();await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise<void>(resolve => server.close(() => resolve())); app.close();})() };
+    return { app, host, server, listen: () => new Promise<number>((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = (server.address() as AddressInfo).port; host.start(); if(options.computeMonitoring)app.computeMonitor.start(); resolve(port); }); }), close: () => closing??=(async()=>{events.close();await Promise.all([app.computeMonitor.stop(),host.stop()]);await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise<void>(resolve => server.close(() => resolve())); app.close();})() };
 }
 import {publicRecords} from '../../packages/domain/public-record.js';

@@ -54,17 +54,21 @@ export function parseHostKeys(output) {
 function bounded(executable, args, input, timeout) {
     return new Promise((resolve, reject) => {
         const child = spawn(executable, args, { shell: false, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: sshEnvironment() });
-        let stdout = '', stderr = '', failed = false;
+        let stdout = '', stderr = '', failed = false, terminationTimer;
         const fail = () => { if (failed)
-            return; failed = true; clearTimeout(timer); child.kill(); reject(new DomainError('SSH_TARGET_UNAVAILABLE', 'SSH 连接未完成，请重新检测', 409)); };
+            return; failed = true; clearTimeout(timer); terminationTimer = setTimeout(() => child.kill('SIGKILL'), 1000); child.kill(); };
         const timer = setTimeout(fail, timeout);
-        child.stdout.on('data', (b) => { stdout += b.toString(); if (Buffer.byteLength(stdout) > 512 * 1024)
+        child.stdout.on('data', (b) => { if (failed)
+            return; stdout += b.toString(); if (Buffer.byteLength(stdout) > 512 * 1024)
             fail(); });
-        child.stderr.on('data', (b) => { stderr += b.toString(); if (Buffer.byteLength(stderr) > 64 * 1024)
+        child.stderr.on('data', (b) => { if (failed)
+            return; stderr += b.toString(); if (Buffer.byteLength(stderr) > 64 * 1024)
             fail(); });
         child.stdin.on('error', () => { });
         child.on('error', fail);
-        child.on('close', code => { clearTimeout(timer); if (!failed)
+        child.on('close', code => { clearTimeout(timer); clearTimeout(terminationTimer); if (failed)
+            reject(new DomainError('SSH_TARGET_UNAVAILABLE', 'SSH 连接未完成，请重新检测', 409));
+        else
             resolve({ code, stdout, stderr }); });
         child.stdin.end(input);
     });
@@ -93,6 +97,9 @@ export async function sshOnboardingRequest(c, t, action) {
         ensure(typeof value.engineId === 'string' && /^[A-Za-z0-9._:-]{1,200}$/.test(value.engineId), 'SSH_PROTOCOL_INVALID', 'Docker 身份无效');
     if (value.protocolDigest !== undefined)
         ensure(value.protocolDigest === digest(helper), 'SSH_PROTOCOL_MISMATCH', '监管器版本不符');
-    return { supervisor: value.supervisor, docker: value.docker, workspace: value.workspace, ...(value.errorCode ? { errorCode: value.errorCode } : {}), ...(value.engineId ? { engineId: value.engineId } : {}), ...(value.protocolDigest ? { protocolDigest: value.protocolDigest } : {}) };
+    for (const key of ['cpus', 'memoryMb'])
+        if (value[key] !== undefined)
+            ensure(Number.isSafeInteger(value[key]) && value[key] > 0, 'SSH_PROTOCOL_INVALID', 'SSH 资源信息无效');
+    return { supervisor: value.supervisor, docker: value.docker, workspace: value.workspace, ...(value.errorCode ? { errorCode: value.errorCode } : {}), ...(value.engineId ? { engineId: value.engineId } : {}), ...(value.protocolDigest ? { protocolDigest: value.protocolDigest } : {}), ...(value.cpus !== undefined ? { cpus: value.cpus } : {}), ...(value.memoryMb !== undefined ? { memoryMb: value.memoryMb } : {}) };
 }
 //# sourceMappingURL=ssh-onboarding.js.map

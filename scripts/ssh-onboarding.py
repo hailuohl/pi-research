@@ -73,6 +73,10 @@ def inspect(q, uid):
             state['docker'] = 'unsupported' if info and info.get('OSType') != 'linux' else 'ready' if re.fullmatch(r'[A-Za-z0-9._:-]{1,200}', info.get('ID', '')) else 'unavailable'
             if state['docker'] == 'ready':
                 state['engineId'] = info['ID']
+                if type(info.get('NCPU')) is int and info['NCPU'] > 0:
+                    state['cpus'] = info['NCPU']
+                if type(info.get('MemTotal')) is int and info['MemTotal'] >= 1048576:
+                    state['memoryMb'] = info['MemTotal'] // 1048576
         except (OSError, ValueError, subprocess.TimeoutExpired):
             state['docker'] = 'unavailable'
     if state['docker'] != 'ready':

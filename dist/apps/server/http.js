@@ -147,7 +147,8 @@ export function createHttpServer(options) {
     server.headersTimeout = 10000;
     server.maxHeadersCount = 50;
     let closing;
-    return { app, host, server, listen: () => new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = server.address().port; host.start(); resolve(port); }); }), close: () => closing ??= (async () => { events.close(); await host.stop(); await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise(resolve => server.close(() => resolve())); app.close(); })() };
+    return { app, host, server, listen: () => new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', () => { port = server.address().port; host.start(); if (options.computeMonitoring)
+            app.computeMonitor.start(); resolve(port); }); }), close: () => closing ??= (async () => { events.close(); await Promise.all([app.computeMonitor.stop(), host.stop()]); await app.hostAccess.stop(); server.closeIdleConnections(); await new Promise(resolve => server.close(() => resolve())); app.close(); })() };
 }
 import { publicRecords } from '../../packages/domain/public-record.js';
 //# sourceMappingURL=http.js.map

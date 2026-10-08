@@ -8,6 +8,8 @@ import { ensure, DomainError } from '../domain/errors.js';
 import { docker, probeDockerTarget, JOB_LABEL, MANIFEST_LABEL } from '../execution/docker.js';
 const TERMINAL = ['succeeded', 'failed', 'cancelled', 'timed_out'];
 const DEFAULTS = { maxRuns: 1, maxDevelopment: 1, maxJobs: 2, cpus: null, memoryMb: null, maxQueued: null };
+// ponytail: commit-order exclusion is per AppContext/context; cross-process probes keep the existing SQLite lease and CAS.
+const dockerObservations = new WeakMap();
 const sourceKind = (kind) => kind === 'publication' ? 'publication-build-job' : kind === 'document' ? 'document-parse-job' : kind === 'development' ? 'sandbox-job' : 'run';
 const LEGACY_SSH_QUEUED_SQL = "q.backend='ssh' AND EXISTS(SELECT 1 FROM records legacy WHERE legacy.kind='run' AND legacy.id=q.id AND COALESCE(json_extract(legacy.data,'$.manifest.sshTarget.gpuProtocol'),0)<>1)";
 // ponytail: CPU Docker and new GPU jobs do not overlap during upgrades; add per-job isolation proof only if concurrent CPU/GPU scheduling is needed.
@@ -155,17 +157,45 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         ensure(used < targetLimit, 'COMPUTE_TARGET_QUEUE_FULL', '目标等待队列已满；若 context 已更换引擎，请先重新核对目标', 409);
     }
     /** Owner-only identity discovery; does not create a job, bind old jobs or grant execution. */
-    async probeContext(actor, context, validate = () => { }) {
+    async probeContext(actor, context, validate = () => { }, background = false) {
         userOnly(actor);
         text(context, 'context', 100);
         ensure(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(context), 'INVALID_INPUT', 'Docker context 名称无效', 400);
         validate();
+        return this.observeDocker(context, () => this.probeContextCurrent(context, validate), background, validate);
+    }
+    async observeDocker(context, observe, background = false, validate = () => { }) {
+        let locks = dockerObservations.get(this.c);
+        if (!locks) {
+            locks = new Map();
+            dockerObservations.set(this.c, locks);
+        }
+        while (locks.has(context)) {
+            ensure(!background, 'COMPUTE_TARGET_BUSY', 'Docker 目标正在核验', 409);
+            await locks.get(context);
+            validate();
+        }
+        validate();
+        let release;
+        const pending = new Promise(resolve => { release = resolve; });
+        locks.set(context, pending);
+        try {
+            return await observe();
+        }
+        finally {
+            if (locks.get(context) === pending)
+                locks.delete(context);
+            release();
+        }
+    }
+    async probeContextCurrent(context, validate) {
         const connections = new ComputeConnectionService(this.c), attempt = connections.begin('docker:' + context);
         let identity;
         try {
             identity = await this.probe(context);
         }
         catch {
+            validate();
             this.c.store.transaction(() => { if (connections.finish('docker:' + context, attempt, { status: 'unavailable', errorCode: 'COMPUTE_TARGET_UNAVAILABLE' }))
                 this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now() + 5000, context); });
             throw new DomainError('COMPUTE_TARGET_UNAVAILABLE', '无法核对本机 Docker 目标身份', 409);
@@ -182,7 +212,15 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         return !!(container && (!id || container.Id === id) && container.Config?.Labels?.[JOB_LABEL] === q.id && container.Config?.Labels?.[MANIFEST_LABEL] === record.manifestDigest);
     }
     async verifyTarget(kind, id) {
+        const route = this.row(kind, id);
+        if (route.backend === 'docker')
+            return this.observeDocker(route.context_name, () => this.verifyTargetCurrent(kind, id, route.context_name));
+        return this.verifyTargetCurrent(kind, id);
+    }
+    async verifyTargetCurrent(kind, id, context) {
         const before = this.row(kind, id);
+        if (context)
+            ensure(before.backend === 'docker' && before.context_name === context, 'COMPUTE_TARGET_CHANGED', '等待期间作业目标已变化', 409);
         if (before.backend === 'trusted-example')
             return;
         if (before.backend === 'local') {
@@ -244,22 +282,32 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
     tick() { if (!this.stopped && !this.pending)
         this.pending = this.probeNext().catch(() => { }).finally(() => { this.pending = undefined; }); }
     async probeNext() {
-        const context = this.c.store.transaction(() => { const row = this.c.store.db.prepare("SELECT c.* FROM compute_contexts c WHERE c.next_probe_at<=? AND c.probe_until<=? AND EXISTS(SELECT 1 FROM compute_queue q WHERE q.context_name=c.context AND q.phase NOT IN ('succeeded','failed','cancelled','timed_out')) ORDER BY c.next_probe_at,c.context LIMIT 1").get(Date.now(), Date.now()); if (!row)
-            return; this.c.store.db.prepare('UPDATE compute_contexts SET probe_until=? WHERE context=?').run(Date.now() + 120000, row.context); return row; });
-        if (!context)
+        const selected = this.c.store.db.prepare("SELECT c.* FROM compute_contexts c WHERE c.next_probe_at<=? AND c.probe_until<=? AND EXISTS(SELECT 1 FROM compute_queue q WHERE q.context_name=c.context AND q.phase NOT IN ('succeeded','failed','cancelled','timed_out')) ORDER BY c.next_probe_at,c.context LIMIT 1").get(Date.now(), Date.now());
+        if (!selected)
             return;
-        try {
-            const identity = await this.probe(context.context);
-            this.c.store.transaction(() => { this.remember(context.context, identity); this.bindCachedQueued(); });
-            const legacy = this.c.store.db.prepare("SELECT kind,id FROM compute_queue WHERE context_name=? AND held=1 AND bound=0 ORDER BY sequence LIMIT 8").all(context.context);
+        const observe = async () => {
+            const context = this.c.store.transaction(() => { const row = this.context(selected.context); if (!row || row.next_probe_at > Date.now() || row.probe_until > Date.now() || !this.c.store.db.prepare("SELECT 1 FROM compute_queue WHERE context_name=? AND phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(selected.context))
+                return; this.c.store.db.prepare('UPDATE compute_contexts SET probe_until=? WHERE context=?').run(Date.now() + 120000, row.context); return row; });
+            if (!context)
+                return false;
+            try {
+                const identity = await this.probe(context.context);
+                this.c.store.transaction(() => { this.remember(context.context, identity); this.bindCachedQueued(); });
+                return true;
+            }
+            catch {
+                this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',failures=failures+1,probe_until=0,next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now() + Math.min(60000, 1000 * 2 ** Math.min(context.failures + 1, 6)), context.context);
+                return false;
+            }
+        };
+        const verified = selected.context.startsWith('ssh:') ? await observe() : await this.observeDocker(selected.context, observe);
+        if (verified) {
+            const legacy = this.c.store.db.prepare("SELECT kind,id FROM compute_queue WHERE context_name=? AND held=1 AND bound=0 ORDER BY sequence LIMIT 8").all(selected.context);
             for (const job of legacy)
                 try {
                     await this.verifyTarget(job.kind, String(job.id));
                 }
                 catch { /* Unproven old workloads retain host and possible-target reservations. */ }
-        }
-        catch {
-            this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',failures=failures+1,probe_until=0,next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now() + Math.min(60000, 1000 * 2 ** Math.min(context.failures + 1, 6)), context.context);
         }
     }
     async stop() { this.stopped = true; await this.pending; }

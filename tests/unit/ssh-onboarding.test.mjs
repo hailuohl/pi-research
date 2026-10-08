@@ -12,7 +12,7 @@ import {ResearchApp} from '../../dist/packages/research-app.js';
 import {digest} from '../../dist/packages/storage/store.js';
 import {DomainError} from '../../dist/packages/domain/errors.js';
 import {parseHostKeys,sshOnboardingRequest} from '../../dist/packages/runners/ssh-onboarding.js';
-import {sshArgs} from '../../dist/packages/runners/ssh.js';
+import {sshArgs,sshRequest} from '../../dist/packages/runners/ssh.js';
 import {ComputeConnectionService} from '../../dist/packages/runners/compute-connections.js';
 import {createDataBackup,verifyDataBackup} from '../../dist/packages/storage/backup.js';
 import {ToolDispatcher} from '../../dist/packages/research-tools/dispatcher.js';
@@ -20,6 +20,20 @@ import {OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/outputs.j
 import {validateSchema} from '../../dist/packages/contracts/operations/schema.js';
 
 const wire=n=>Buffer.concat([Buffer.from([0,0,0,11]),Buffer.from('ssh-ed25519'),Buffer.from([0,0,0,32]),Buffer.alloc(32,n)]).toString('base64');
+
+test('SSH transport failure waits for observed child exit and escalates ignored termination',async()=>{
+ const s=setup(),saved=childProcess.spawn;let child;
+ try{
+  const target={id:'fixture',host:'fixture.invalid',port:22,user:'research',remoteRoot:'/srv/pi/jobs',identityFile:join(s.dir,'key'),knownHostsFile:join(s.dir,'hosts')};
+  for(const request of [()=>sshOnboardingRequest(s.app.context,target,'inspect'),()=>sshRequest(target,{op:'probe'},32)]){
+   const signals=[];let exited=false,settled=false;
+   childProcess.spawn=()=>{child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.stdin=new PassThrough();child.kill=signal=>{signals.push(signal);if(signal==='SIGKILL'){exited=true;child.emit('close',null);}return true;};queueMicrotask(()=>child.stdout.write(Buffer.alloc(512*1024+1)));return child;};syncBuiltinESMExports();
+   const pending=request().then(()=>{settled=true;assert.fail('oversized response must fail');},error=>{settled=true;return error;});
+   await new Promise(resolve=>setTimeout(resolve,20));assert.equal(signals.length,1);assert.equal(settled,false);assert.equal(exited,false);
+   const error=await pending;assert.ok(['SSH_TARGET_UNAVAILABLE','SSH_STATE_UNKNOWN'].includes(error.code));assert.equal(exited,true);assert.deepEqual(signals,[undefined,'SIGKILL']);
+  }
+ }finally{child?.emit('close',null);childProcess.spawn=saved;syncBuiltinESMExports();s.close();}
+});
 const key=n=>parseHostKeys('untrusted.example ssh-ed25519 '+wire(n))[0];
 const healthy=()=>({supervisor:'ready',workspace:'ready',docker:'ready',engineId:'onboarding-fixture',protocolDigest:digest(readFileSync('scripts/ssh-runner-gpu.py'))});
 function fixture(){const s=setup(),identityFile=join(s.dir,'fixture-key');writeFileSync(identityFile,'fake identity for offline test');s.config={id:'fixture',host:'fixture.invalid',user:'research',identityFile,remoteRoot:'/srv/pi/jobs',expectedVersion:0};s.calls=[];s.app.sshTargets.scan=async()=>[key(7)];s.app.sshTargets.onboarding=async(t,action)=>{s.calls.push(action);return healthy();};return s;}

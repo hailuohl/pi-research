@@ -9,20 +9,20 @@ export async function sshRequest(t, request, limit = 200 * 1024 * 1024) {
     return new Promise((resolve, reject) => {
         const child = spawn('ssh', sshArgs(t), { shell: false, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'], env: sshEnvironment() });
         const chunks = [];
-        let bytes = 0, failed = false;
+        let bytes = 0, failed = false, terminationTimer;
         const fail = () => { if (failed)
-            return; failed = true; child.kill(); reject(new DomainError('SSH_STATE_UNKNOWN', 'SSH 观察中断；须按原 handle 对账', 409)); };
+            return; failed = true; clearTimeout(timer); terminationTimer = setTimeout(() => child.kill('SIGKILL'), 1000); child.kill(); };
         const timer = setTimeout(fail, 60000);
-        child.stdout.on('data', (b) => { bytes += b.length; if (bytes > limit)
+        child.stdout.on('data', (b) => { if (failed)
+            return; bytes += b.length; if (bytes > limit)
             fail();
         else
             chunks.push(b); });
         child.stderr.on('data', () => { });
         child.stdin.on('error', () => { });
         child.on('error', fail);
-        child.on('close', code => { clearTimeout(timer); if (failed)
-            return; if (code !== 0) {
-            fail();
+        child.on('close', code => { clearTimeout(timer); clearTimeout(terminationTimer); if (failed || code !== 0) {
+            reject(new DomainError('SSH_STATE_UNKNOWN', 'SSH 观察中断；须按原 handle 对账', 409));
             return;
         } try {
             const r = JSON.parse(Buffer.concat(chunks).toString('utf8'));

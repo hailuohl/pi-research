@@ -3,6 +3,8 @@ import type { Actor } from '../domain/types.js';
 import type { SshTargetService } from './ssh-targets.js';
 import type { GpuDevice } from './gpu.js';
 import type { SshHealth } from './ssh-onboarding.js';
+import type { ResearchApp } from '../research-app.js';
+import { currentDockerContext } from './gpu.js';
 export declare const CONNECTION_TTL_MS = 30000;
 export interface ConnectionObservation {
     attempt: string;
@@ -47,6 +49,13 @@ export interface SshConnection extends ConnectionState {
         gpu: boolean;
     };
     gpuDevices: GpuDevice[];
+    gpuStatus: ConnectionState['status'];
+    runTarget: {
+        runner: 'ssh';
+        sshTargetId: string;
+    };
+    cpus?: number;
+    memoryMb?: number;
     gpuValidUntil?: string;
     host?: string;
     port?: number;
@@ -76,7 +85,12 @@ export declare class ComputeConnectionService {
     };
     private state;
     private contextState;
-    docker(context: string): DockerConnection;
+    docker(context: string): DockerConnection & {
+        runTarget: {
+            runner: 'docker';
+            dockerContext: string;
+        };
+    };
     list(actor: Actor, targets: SshTargetService): {
         docker: DockerConnection[];
         ssh: SshConnection[];
@@ -90,3 +104,20 @@ export declare function localHardware(): {
     freeMemoryMb: number;
     arch: NodeJS.Architecture;
 };
+/** Explicit HTTP lifecycle only; each target progresses independently and never overlaps itself. */
+export declare class ComputeConnectionMonitor {
+    private app;
+    private intervalMs;
+    private currentContext;
+    private timer?;
+    private pending;
+    private stopped;
+    private detectedContext?;
+    get currentDockerContext(): string | undefined;
+    constructor(app: ResearchApp, intervalMs?: number, currentContext?: typeof currentDockerContext);
+    start(): void;
+    private launch;
+    private validate;
+    private tick;
+    stop(): Promise<void>;
+}

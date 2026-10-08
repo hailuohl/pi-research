@@ -7,6 +7,8 @@ export interface SshHealth {
     errorCode?: string;
     engineId?: string;
     protocolDigest?: string;
+    cpus?: number;
+    memoryMb?: number;
 }
 export interface HostKey {
     keyType: string;

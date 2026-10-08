@@ -3939,7 +3939,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly document_parser_configure: {
@@ -4020,7 +4020,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly document_parse_prepare: {

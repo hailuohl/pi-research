@@ -42,10 +42,13 @@ export declare class ComputeQueue {
     withAdmission<T>(kind: ComputeKind, id: string, fn: () => T): T | null;
     assertEnqueue(kind: ComputeKind, _projectId: string, context?: string, localTargetId?: string): void;
     /** Owner-only identity discovery; does not create a job, bind old jobs or grant execution. */
-    probeContext(actor: Actor, context: string, validate?: () => void): Promise<ComputeTargetProbe>;
+    probeContext(actor: Actor, context: string, validate?: () => void, background?: boolean): Promise<ComputeTargetProbe>;
+    private observeDocker;
+    private probeContextCurrent;
     private remember;
     private ownsLegacy;
     verifyTarget(kind: ComputeKind, id: string): Promise<void>;
+    private verifyTargetCurrent;
     tick(): void;
     private probeNext;
     stop(): Promise<void>;

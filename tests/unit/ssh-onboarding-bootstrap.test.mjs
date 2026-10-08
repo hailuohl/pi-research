@@ -21,8 +21,9 @@ m.subprocess.run=docker
 state=m.request(q);assert state['docker']=='unavailable' and state['errorCode']=='SSH_DOCKER_UNAVAILABLE'
 m.subprocess.run=lambda *a,**k:types.SimpleNamespace(returncode=0,stdout=b'{"OSType":"windows","ID":"engine"}')
 assert m.request(q)['docker']=='unsupported'
-m.subprocess.run=lambda *a,**k:types.SimpleNamespace(returncode=0,stdout=b'{"OSType":"linux","ID":"engine"}')
+m.subprocess.run=lambda *a,**k:types.SimpleNamespace(returncode=0,stdout=b'{"OSType":"linux","ID":"engine","NCPU":6,"MemTotal":12884901888}')
 state=m.request(q);assert state['docker']=='ready' and state['engineId']=='engine' and 'errorCode' not in state
+assert state['cpus']==6 and state['memoryMb']==12288
 assert calls[0][1]['env']['DOCKER_HOST']=='unix:///var/run/docker.sock'
 installed=[];m.install_root=lambda *a:installed.append(a)
 for supervisor,workspace,error in [('mismatch','ready','SSH_PROTOCOL_MISMATCH'),('unsafe','ready','SSH_SUPERVISOR_UNSAFE'),('ready','invalid','SSH_WORKSPACE_INVALID')]:

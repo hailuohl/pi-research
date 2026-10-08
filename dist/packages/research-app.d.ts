@@ -1,4 +1,5 @@
 import { LocalRuntimeService } from './runners/local-runtime.js';
+import { ComputeConnectionMonitor } from './runners/compute-connections.js';
 import { GpuService } from './runners/gpu.js';
 import { HostAccessService } from './policy/host-access.js';
 import { SessionPermissionService } from './policy/session-permissions.js';
@@ -45,6 +46,7 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly computeMonitor: ComputeConnectionMonitor;
     readonly localRuntimes: LocalRuntimeService;
     readonly gpus: GpuService;
     readonly sessionPermissions: SessionPermissionService;

@@ -67,7 +67,9 @@ export declare class SshTargetService {
     })[];
     get(actor: Actor, id: string): SshTarget;
     probe(actor: Actor, id: string): Promise<SshTarget>;
-    verify(id: string): Promise<SshTarget>;
+    observe(id: string, validate?: () => void): Promise<SshTarget>;
+    verify(id: string, background?: boolean, validate?: () => void): Promise<SshTarget>;
+    private verifyUnlocked;
     private assertSetupIdle;
     private assertAvailable;
     private assertTrust;

@@ -10,6 +10,7 @@ import {Store,digest} from '../../dist/packages/storage/store.js';
 import {ComputeQueue} from '../../dist/packages/scheduler/compute-queue.js';
 const USER={type:'user'},exec=promisify(execFile);
 const identity=engine=>({engineId:engine,targetId:'docker-'+digest(engine),endpoint:`unix:///fixture/${engine}.sock`});
+const pause=()=>new Promise(resolve=>setTimeout(resolve,5));
 function setup(dependencies={}){const dir=mkdtempSync(join(tmpdir(),'compute-queue-')),store=new Store(join(dir,'state.db')),c={store,dataDir:dir,repoRoot:process.cwd()},queue=new ComputeQueue(c,{probe:async context=>identity(context==='alias-A'?'A':context),...dependencies});store.create('project','p',{name:'Queue unit fixture'},'p');return {dir,store,c,queue,async close(){await queue.stop();store.close();rmSync(dir,{recursive:true,force:true});}};}
 let serial=0;
 function add(s,kind='run',{context='A',cpus=1,memoryMb=256,state='queued',trusted=false}={}){const id='fixture-'+(++serial),manifest=kind==='run'?{contract:{runner:trusted?'trusted-example':'docker',dockerContext:context,cpus,memoryMb}}:{dockerContext:context,resources:{cpus,memoryMb}};return s.store.create(kind==='run'?'run':kind==='document'?'document-parse-job':kind==='publication'?'publication-build-job':'sandbox-job','p',{state,manifest,manifestDigest:digest(manifest),...(kind==='run'?trusted?{}:{execution:{dockerContext:context,generation:0,leaseUntil:0,startRequested:false}}:{generation:0,leaseUntil:0,startRequested:false,containerName:`pi-development-${id}`})},id);}
@@ -17,6 +18,31 @@ function configure(s,limits,targetId){const view=s.queue.inspect(USER),current=t
 function claim(s,kind,id){return s.queue.withAdmission(kind,id,()=>{const r=s.store.get(kind==='run'?'run':kind==='document'?'document-parse-job':kind==='publication'?'publication-build-job':'sandbox-job',id);return s.store.update(r.kind,id,r.version,{state:'running',...(kind==='run'?r.execution?{execution:{...r.execution,generation:r.execution.generation+1,leaseUntil:Date.now()+60000}}:{heartbeat:Date.now()}:{generation:r.generation+1,leaseUntil:Date.now()+60000})});});}
 function terminal(s,id,kind='run'){const r=s.store.get(kind==='run'?'run':kind==='document'?'document-parse-job':kind==='publication'?'publication-build-job':'sandbox-job',id);s.store.update(r.kind,id,r.version,{state:'failed'});}
 function schedulingReason(s,r,expected){const snapshot=s.store.db.prepare('SELECT * FROM compute_queue').all(),view=s.queue.inspectRun(USER,'p',r.id);assert.equal(view.queue.reason,expected);assert.equal(view.queue.reason,s.queue.inspect(USER,'p').items.find(i=>i.id===r.id).reason);assert.deepEqual(s.store.db.prepare('SELECT * FROM compute_queue').all(),snapshot);return view;}
+
+test('Docker observations serialize through complete commit while an independent context progresses',async()=>{
+ let active=0,maxActive=0,calls=0;const releases=[],pending=[];
+ const s=setup({probe:async context=>{if(context==='B')return identity('B');calls++;active++;maxActive=Math.max(maxActive,active);await new Promise(resolve=>releases.push(resolve));active--;return identity('A');}}),other=new ComputeQueue(s.c,{probe:s.queue.probe});
+ try{
+  const first=s.queue.probeContext(USER,'A');pending.push(first);const second=other.probeContext(USER,'A');pending.push(second);await pause();
+  await other.probeContext(USER,'B');assert.equal(s.store.db.prepare("SELECT status FROM compute_contexts WHERE context='B'").get().status,'ready');assert.equal(calls,1);assert.equal(maxActive,1);
+  releases.shift()();await first;await pause();assert.equal(calls,2);assert.equal(s.store.db.prepare("SELECT status FROM compute_contexts WHERE context='A'").get().status,'ready');releases.shift()();await second;assert.equal(maxActive,1);
+ }finally{releases.splice(0).forEach(resolve=>resolve());await Promise.allSettled(pending);await other.stop();await s.close();}
+});
+
+test('legacy ownership suspension cannot commit old ready after a newer failed Docker observation',async()=>{
+ let releaseInspect,row;const s=setup({inspect:async()=>{await new Promise(resolve=>{releaseInspect=resolve;});return {Id:'old-container',Config:{Labels:{'pi-research.sandbox-job':row.id,'pi-research.manifest':row.manifestDigest}}};}}),other=new ComputeQueue(s.c,{probe:async()=>{throw new Error('new failed engine observation');}});
+ try{
+  row=add(s,'run',{state:'unknown'});const old=s.queue.verifyTarget('run',row.id);await pause();assert.equal(typeof releaseInspect,'function');const later=other.probeContext(USER,'A').catch(error=>error);await pause();releaseInspect();await old;assert.equal((await later).code,'COMPUTE_TARGET_UNAVAILABLE');assert.equal(s.store.db.prepare("SELECT status FROM compute_contexts WHERE context='A'").get().status,'unavailable');assert.equal(s.queue.inspect(USER).usage.jobs,1);
+ }finally{releaseInspect?.();await other.stop();await s.close();}
+});
+
+test('queue refresh rechecks due claim after waiting for Docker commit, then verifies legacy outside the gate',async()=>{
+ let releaseOwner,queueCalls=0,legacy;const s=setup(),other=new ComputeQueue(s.c,{probe:async()=>{queueCalls++;return identity('A');},inspect:async()=>({Id:'legacy',Config:{Labels:{'pi-research.sandbox-job':legacy.id,'pi-research.manifest':legacy.manifestDigest}}})});
+ try{
+  await s.queue.probeContext(USER,'A');add(s);s.store.db.prepare("UPDATE compute_contexts SET next_probe_at=0 WHERE context='A'").run();s.queue.probe=()=>new Promise(resolve=>{releaseOwner=()=>resolve(identity('A'));});const owner=s.queue.probeContext(USER,'A');other.tick();await pause();releaseOwner();await owner;await other.pending;assert.equal(queueCalls,0);
+  legacy=add(s,'run',{state:'unknown'});s.store.db.prepare("UPDATE compute_contexts SET next_probe_at=0,probe_until=0 WHERE context='A'").run();other.tick();await other.pending;assert.equal(s.store.db.prepare('SELECT bound FROM compute_queue WHERE id=?').get(legacy.id).bound,1);assert.equal(queueCalls,3);
+ }finally{releaseOwner?.();await other.stop();await s.close();}
+});
 
 test('single Run scheduling reuses target, capacity, GPU and recovery reasons without binding or probing',async()=>{
  const s=setup();try{

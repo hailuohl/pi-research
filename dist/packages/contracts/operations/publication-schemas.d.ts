@@ -1563,7 +1563,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly publication_configure: {
@@ -1647,7 +1647,7 @@ export declare const PUBLICATION_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "profileId" | "limits" | "configured")[];
+        readonly required: ("version" | "profileId" | "configured" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly publication_prepare: {

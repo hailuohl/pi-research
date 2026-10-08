@@ -5,6 +5,7 @@ export interface ServerOptions {
     dataDir: string;
     repoRoot: string;
     port?: number;
+    computeMonitoring?: boolean;
 }
 export declare function createHttpServer(options: ServerOptions): {
     app: ResearchApp;

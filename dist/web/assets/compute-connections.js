@@ -16,12 +16,11 @@ function Status({ connection, pending = false }) {
 class ComputeConnections extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { challenge: null, fingerprintConfirmed: false, checking: "", catalog: null, context: "", busy: "", error: "", notice: "", editor: null, gpuTarget: null };
+    this.state = { challenge: null, fingerprintConfirmed: false, catalog: null, context: "", busy: "", error: "", notice: "", editor: null, gpuTarget: null };
     this.mounted = false;
     this.epoch = 0;
     this.readEpoch = 0;
     this.locked = false;
-    this.checking = false;
     this.editorDialog = React.createRef();
     this.gpuDialog = React.createRef();
     this.onFocus = () => {
@@ -53,7 +52,7 @@ class ComputeConnections extends React.Component {
       this.readEpoch++;
       this.editorDialog.current?.close();
       this.gpuDialog.current?.close();
-      this.setState({ catalog: null, context: "", error: "", notice: "", editor: null, gpuTarget: null, challenge: null, fingerprintConfirmed: false, checking: "" });
+      this.setState({ catalog: null, context: "", error: "", notice: "", editor: null, gpuTarget: null, challenge: null, fingerprintConfirmed: false });
       void this.refresh();
     } else if (this.props.active && (prev.refreshToken !== this.props.refreshToken || !prev.active) && !this.locked) void this.load();
   }
@@ -72,13 +71,8 @@ class ComputeConnections extends React.Component {
       if (this.current(epoch) && read === this.readEpoch) this.setState({ error: e instanceof Error ? e.message : String(e) });
     }
   }
-  async refresh() {
-    const epoch = this.epoch;
-    await this.load();
-    if (this.current(epoch) && this.props.active && !this.props.readOnly && !this.locked && !this.state.editor && !this.state.gpuTarget) {
-      await this.probeDocker();
-      if (this.current(epoch)) await this.checkSsh();
-    }
+  refresh() {
+    return this.load();
   }
   withdraw(name, input) {
     const c = this.state.catalog;
@@ -203,27 +197,6 @@ class ComputeConnections extends React.Component {
       this.locked = false;
     }
   }
-  async checkSsh() {
-    if (this.checking || this.locked || this.props.readOnly || !this.props.active || this.state.editor || this.state.gpuTarget) return;
-    const epoch = this.epoch;
-    this.checking = true;
-    const targets = this.state.catalog?.connections.ssh.filter((t) => t.managed && t.setup !== "installing") ?? [];
-    try {
-      for (const target of targets) {
-        if (!this.current(epoch) || !this.props.active || this.props.readOnly || this.locked || this.state.editor || this.state.gpuTarget) break;
-        this.withdraw("ssh_target_probe", { id: target.id });
-        this.setState({ checking: target.id });
-        try {
-          await this.call("ssh_target_probe", { id: target.id });
-        } catch {
-        }
-        if (this.current(epoch)) await this.load();
-      }
-    } finally {
-      this.checking = false;
-      if (this.current(epoch)) this.setState({ checking: "" });
-    }
-  }
   openGpu(id) {
     this.setState({ gpuTarget: id, error: "", notice: "" }, () => {
       this.gpuDialog.current?.showModal();
@@ -240,7 +213,7 @@ class ComputeConnections extends React.Component {
     }
   }
   render() {
-    const s = this.state, c = s.catalog, disabled = !!s.busy || !!this.props.readOnly, h = c?.local.hardware, ssh = c?.connections.ssh ?? [], docker = c?.connections.docker.find((d) => d.context === s.context || !s.context && d.context === "current"), localGpu = c?.gpuTargets.filter((t) => t.backend === "local") ?? [];
+    const s = this.state, c = s.catalog, disabled = !!s.busy || !!this.props.readOnly, h = c?.local.hardware, ssh = c?.connections.ssh ?? [], docker = c?.connections.docker.find((d) => d.context === (s.context || c.connections.currentDockerContext || "current")), localGpu = c?.gpuTargets.filter((t) => t.backend === "local") ?? [];
     return /* @__PURE__ */ jsxs("div", { className: "compute-connections", "aria-busy": !!s.busy, children: [
       s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "compute-alert", children: s.error }) : null,
       s.notice ? /* @__PURE__ */ jsx("p", { role: "status", className: "compute-notice", children: s.notice }) : null,
@@ -319,7 +292,7 @@ class ComputeConnections extends React.Component {
             }, children: [
               /* @__PURE__ */ jsx("label", { htmlFor: "compute-docker-context", children: "Docker context" }),
               /* @__PURE__ */ jsxs("div", { children: [
-                /* @__PURE__ */ jsx("input", { id: "compute-docker-context", "aria-label": "Docker context", value: s.context, onChange: (e) => this.setState({ context: e.target.value }), disabled, maxLength: 100, pattern: "[A-Za-z0-9][A-Za-z0-9_.-]*", placeholder: "\u4F7F\u7528\u5F53\u524D context" }),
+                /* @__PURE__ */ jsx("input", { id: "compute-docker-context", "aria-label": "Docker context", value: s.context, onChange: (e) => this.setState({ context: e.target.value }), disabled, maxLength: 100, pattern: "[A-Za-z0-9][A-Za-z0-9_.-]*", placeholder: c?.connections.currentDockerContext && c.connections.currentDockerContext !== "current" ? c.connections.currentDockerContext : "\u4F7F\u7528\u5F53\u524D context" }),
                 /* @__PURE__ */ jsx("button", { type: "submit", className: "secondary", disabled, children: s.busy === "docker" ? "\u68C0\u6D4B\u4E2D\u2026" : "\u68C0\u6D4B\u8FDE\u63A5" })
               ] })
             ] }),
@@ -342,7 +315,7 @@ class ComputeConnections extends React.Component {
             ] }),
             /* @__PURE__ */ jsx("p", { className: "compute-observed", children: checked(docker?.checkedAt) })
           ] }),
-          /* @__PURE__ */ jsx("footer", { className: "compute-card-footer", children: "\u6253\u5F00\u6B64\u9875\u65F6\u81EA\u52A8\u68C0\u6D4B\uFF1B\u8BA1\u7B97\u4EFB\u52A1\u6309\u65E2\u6709\u5BA1\u6279\u6267\u884C\u3002" })
+          /* @__PURE__ */ jsx("footer", { className: "compute-card-footer", children: "\u670D\u52A1\u540E\u53F0\u6BCF 20 \u79D2\u81EA\u52A8\u68C0\u6D4B\uFF1B\u8BA1\u7B97\u4EFB\u52A1\u6309\u65E2\u6709\u5BA1\u6279\u6267\u884C\u3002" })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("section", { className: "compute-card compute-ssh", "aria-labelledby": "ssh-compute-title", children: [
@@ -368,7 +341,7 @@ class ComputeConnections extends React.Component {
           /* @__PURE__ */ jsx("p", { children: "\u6DFB\u52A0\u670D\u52A1\u5668\uFF0C\u786E\u8BA4\u6307\u7EB9\u540E\u81EA\u52A8\u68C0\u67E5\u5E76\u51C6\u5907 SSH \u8BA1\u7B97\u73AF\u5883\u3002" }),
           /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled, onClick: () => void this.edit(), children: "\u65B0\u5EFA SSH \u8FDE\u63A5" })
         ] }) : /* @__PURE__ */ jsx("div", { className: "compute-ssh-list", children: ssh.map((t) => {
-          const pending = s.busy === `ssh:${t.id}` || s.busy === `setup:${t.id}` || s.checking === t.id, usable = !pending && t.status === "verified" && !!t.validUntil && Date.parse(t.validUntil) > Date.now(), gpuUsable = usable && s.busy !== `gpu:${t.id}` && t.capabilities.gpu && !!t.gpuValidUntil && Date.parse(t.gpuValidUntil) > Date.now();
+          const pending = s.busy === `ssh:${t.id}` || s.busy === `setup:${t.id}`, usable = !pending && t.status === "verified" && !!t.validUntil && Date.parse(t.validUntil) > Date.now(), gpuUsable = usable && s.busy !== `gpu:${t.id}` && t.capabilities.gpu && !!t.gpuValidUntil && Date.parse(t.gpuValidUntil) > Date.now();
           return /* @__PURE__ */ jsxs("article", { className: "compute-ssh-row", children: [
             /* @__PURE__ */ jsxs("div", { className: "compute-ssh-identity", children: [
               /* @__PURE__ */ jsxs("div", { className: "compute-ssh-heading", children: [
@@ -394,6 +367,10 @@ class ComputeConnections extends React.Component {
                 " \xB7 GPU ",
                 gpuUsable ? `${t.gpuDevices.length} \u5757\u5DF2\u6838\u9A8C` : "\u5C1A\u672A\u786E\u8BA4"
               ] }),
+              usable && t.capabilities.cpu && (t.cpus !== void 0 || t.memoryMb !== void 0) ? /* @__PURE__ */ jsxs("p", { className: "compute-device-names", children: [
+                t.cpus !== void 0 ? `${t.cpus} \u6838 CPU` : "",
+                t.memoryMb !== void 0 ? `${t.cpus !== void 0 ? " \xB7 " : "\u5185\u5B58 "}${gb(t.memoryMb)}` : ""
+              ] }) : null,
               gpuUsable && t.gpuDevices.length ? /* @__PURE__ */ jsx("p", { className: "compute-device-names", children: t.gpuDevices.map((d) => d.name).join("\u3001") }) : null
             ] }),
             /* @__PURE__ */ jsxs("fieldset", { className: "compute-preferences", disabled, children: [
@@ -413,16 +390,16 @@ class ComputeConnections extends React.Component {
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "compute-ssh-actions", children: [
-              /* @__PURE__ */ jsx("button", { className: "secondary", type: "button", disabled: disabled || s.checking === t.id || t.setup === "installing", onClick: () => void this.mutate("ssh_target_probe", { id: t.id }, `ssh:${t.id}`, "SSH \u8FDE\u63A5\u5DF2\u6838\u9A8C\u3002"), children: s.busy === `ssh:${t.id}` ? "\u6838\u9A8C\u4E2D\u2026" : "\u6838\u9A8C\u8FDE\u63A5" }),
-              t.managed && t.status !== "verified" ? /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || s.checking === t.id || t.setup === "installing", onClick: () => void this.mutate("ssh_target_setup", { id: t.id, expectedVersion: t.configurationVersion }, `setup:${t.id}`, "\u73AF\u5883\u51C6\u5907\u5DF2\u8FD4\u56DE\uFF0C\u8BF7\u67E5\u770B\u8FDE\u63A5\u72B6\u6001\u3002"), children: s.busy === `setup:${t.id}` ? "\u51C6\u5907\u4E2D\u2026" : "\u91CD\u8BD5\u73AF\u5883\u51C6\u5907" }) : null,
-              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || s.checking === t.id, onClick: () => void this.openGpu(t.id), children: "\u6838\u9A8C GPU" }),
-              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || s.checking === t.id || t.setup === "installing" || t.setup === "unknown", onClick: () => void this.edit(t.id), children: "\u7F16\u8F91" })
+              /* @__PURE__ */ jsx("button", { className: "secondary", type: "button", disabled: disabled || t.setup === "installing", onClick: () => void this.mutate("ssh_target_probe", { id: t.id }, `ssh:${t.id}`, "SSH \u8FDE\u63A5\u5DF2\u6838\u9A8C\u3002"), children: s.busy === `ssh:${t.id}` ? "\u6838\u9A8C\u4E2D\u2026" : "\u6838\u9A8C\u8FDE\u63A5" }),
+              t.managed && t.status !== "verified" ? /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || t.setup === "installing", onClick: () => void this.mutate("ssh_target_setup", { id: t.id, expectedVersion: t.configurationVersion }, `setup:${t.id}`, "\u73AF\u5883\u51C6\u5907\u5DF2\u8FD4\u56DE\uFF0C\u8BF7\u67E5\u770B\u8FDE\u63A5\u72B6\u6001\u3002"), children: s.busy === `setup:${t.id}` ? "\u51C6\u5907\u4E2D\u2026" : "\u91CD\u8BD5\u73AF\u5883\u51C6\u5907" }) : null,
+              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled, onClick: () => void this.openGpu(t.id), children: "\u6838\u9A8C GPU" }),
+              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || t.setup === "installing" || t.setup === "unknown", onClick: () => void this.edit(t.id), children: "\u7F16\u8F91" })
             ] })
           ] }, t.id);
         }) }) }),
         /* @__PURE__ */ jsxs("footer", { className: "compute-card-footer", children: [
           /* @__PURE__ */ jsx(Icon, { name: "check", size: 15 }),
-          /* @__PURE__ */ jsx("span", { children: "\u9875\u9762\u6253\u5F00\u65F6\u5B9A\u671F\u68C0\u6D4B\u5DF2\u786E\u8BA4\u8FDE\u63A5\uFF1B\u4E3B Agent \u53EF\u8BFB\u53D6\u6838\u9A8C\u72B6\u6001\u4E0E\u8D44\u6E90\u504F\u597D\u3002" })
+          /* @__PURE__ */ jsx("span", { children: "\u670D\u52A1\u540E\u53F0\u5B9A\u671F\u68C0\u6D4B\u5DF2\u4FE1\u4EFB\u8FDE\u63A5\uFF1B\u4E3B Agent \u53EF\u8BFB\u53D6\u6838\u9A8C\u72B6\u6001\u3001\u8BBE\u5907\u4FE1\u606F\u4E0E\u8D44\u6E90\u504F\u597D\u3002" })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("dialog", { ref: this.editorDialog, className: "compute-dialog", "aria-labelledby": "ssh-editor-title", onCancel: () => this.setState({ editor: null, challenge: null, fingerprintConfirmed: false }), onClose: () => {

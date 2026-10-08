@@ -43,10 +43,10 @@ test('unknown current Docker context stays empty after failure, so a retry redis
 test('local expiry updates while a probe is locked and pending probes withdraw earlier availability',async t=>{
  const beforeWindow=global.window,beforeInterval=global.setInterval,beforeClear=global.clearInterval,beforeNow=Date.now;t.after(()=>{global.window=beforeWindow;global.setInterval=beforeInterval;global.clearInterval=beforeClear;Date.now=beforeNow;});
  const callbacks=[];global.window={addEventListener(){},removeEventListener(){}};global.setInterval=(fn,ms)=>{callbacks.push({fn,ms});return callbacks.length;};global.clearInterval=()=>{};
- const v=view(),start=Date.now();Date.now=()=>start;v.refresh=async()=>{};const fresh={...ssh('fresh','verified'),managed:true,supervisor:'ready',docker:'ready',workspace:'ready',validUntil:new Date(start+30000).toISOString(),gpuValidUntil:new Date(start+15000).toISOString(),capabilities:{cpu:true,gpu:true},gpuDevices:[{uuid:'fixture',name:'Device',memoryMb:1024}]};v.state.catalog={...catalog,connections:{docker:[],ssh:[fresh]}};v.componentDidMount();
- assert.match(text(v.render()),/1 块已核验/);assert.match(text(v.render()),/Docker 已连接/);v.state.busy='ssh:fresh';assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验|1 块已核验|Docker 已连接/);v.state.busy='';
+ const v=view(),start=Date.now();Date.now=()=>start;v.refresh=async()=>{};const fresh={...ssh('fresh','verified'),managed:true,supervisor:'ready',docker:'ready',workspace:'ready',cpus:16,memoryMb:65536,validUntil:new Date(start+30000).toISOString(),gpuValidUntil:new Date(start+15000).toISOString(),capabilities:{cpu:true,gpu:true},gpuDevices:[{uuid:'fixture',name:'Device',memoryMb:1024}]};v.state.catalog={...catalog,connections:{docker:[],ssh:[fresh]}};v.componentDidMount();
+ assert.match(text(v.render()),/1 块已核验/);assert.match(text(v.render()),/Docker 已连接/);assert.match(text(v.render()),/16 核 CPU.*64\.0 GB/);v.state.busy='ssh:fresh';assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验|1 块已核验|Docker 已连接|16 核 CPU/);v.state.busy='';
  let updates=0;const set=v.setState;v.setState=(...args)=>{updates++;set(...args);};v.locked=true;Date.now=()=>start+16000;callbacks.find(c=>c.ms===1000).fn();assert.equal(updates,1);assert.match(text(v.render()),/连接正常/);assert.doesNotMatch(text(v.render()),/1 块已核验|Device/);
- Date.now=()=>start+31000;callbacks.find(c=>c.ms===1000).fn();assert.equal(updates,2);assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验/);assert.match(text(v.render()),/待重新核验/);assert.doesNotMatch(text(v.render()),/Docker 已连接/);v.componentWillUnmount();
+ Date.now=()=>start+31000;callbacks.find(c=>c.ms===1000).fn();assert.equal(updates,2);assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验|16 核 CPU|64\.0 GB/);assert.match(text(v.render()),/待重新核验/);assert.doesNotMatch(text(v.render()),/Docker 已连接/);v.componentWillUnmount();
 });
 
 test('failed rechecks and failed catalog refreshes cannot revive cached SSH, Docker or GPU availability',async t=>{
@@ -68,10 +68,21 @@ test('saving SSH only requests a fixed fingerprint challenge and confirmation ca
  await v.confirmFingerprint();assert.equal(requests.length,1);v.state.fingerprintConfirmed=true;await v.confirmFingerprint();assert.deepEqual(requests[1].input,{challengeId:'fixed-challenge',fingerprint:'SHA256:fixed'});assert.equal(v.state.editor,null);assert.equal(v.state.challenge,null);assert.match(v.state.notice,/身份已保存/);
 });
 
-test('SSH periodic checks are read-only, exclude legacy profiles and persist unavailable observations',async t=>{
+test('connector polling reads backend observations without starting Docker or SSH probes',async t=>{
  const original=global.fetch;t.after(()=>global.fetch=original);const requests=[],v=view();v.state.catalog={...catalog,connections:{docker:[],ssh:[{...ssh('managed','verified'),managed:true,setup:'unknown'},ssh('legacy','verified')]}};
- global.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return url.endsWith('ssh_target_probe')?new Response(JSON.stringify({error:{message:'unavailable'}}),{status:409}):new Response(JSON.stringify({...catalog,connections:{docker:[],ssh:[{...ssh('managed','unavailable'),managed:true,setup:'unknown'}]}}));};
- await v.checkSsh();assert.deepEqual(requests.map(r=>r.url),['/api/operations/ssh_target_probe','/api/operations/execution_environment_list']);assert.deepEqual(requests[0].input,{id:'managed'});assert.equal(v.state.catalog.connections.ssh[0].status,'unavailable');assert.equal(v.state.checking,'');
+ const unavailable={...catalog,connections:{docker:[{context:'fixture',status:'unavailable'}],ssh:[{...ssh('managed','unavailable'),managed:true,setup:'unknown'}]}};
+ global.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return new Response(JSON.stringify(unavailable));};
+ await v.refresh();assert.deepEqual(requests.map(r=>r.url),['/api/operations/execution_environment_list']);assert.equal(v.state.catalog.connections.ssh[0].status,'unavailable');assert.match(text(v.render()),/连接失败/);
+ await v.refresh();assert.deepEqual(requests.map(r=>r.url),['/api/operations/execution_environment_list','/api/operations/execution_environment_list']);assert.match(text(v.render()),/后台/);
+});
+
+test('pure catalog reads display the explicit current Docker target rather than a historical context',async t=>{
+ const original=global.fetch;t.after(()=>global.fetch=original);const requests=[],v=view(),deadline=new Date(Date.now()+30000).toISOString();
+ let currentCatalog={...catalog,connections:{...catalog.connections,currentDockerContext:'desktop-linux',docker:[{context:'historical',status:'verified',validUntil:deadline,serverVersion:'wrong-history',cpus:99,memoryMb:1024},{context:'desktop-linux',status:'verified',validUntil:deadline,serverVersion:'28.9-test',cpus:8,memoryMb:4096}]}};
+ global.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return new Response(JSON.stringify(currentCatalog));};
+ await v.load();assert.equal(v.state.context,'');assert.match(text(v.render()),/28\.9-test/);assert.match(text(v.render()),/8 核 CPU.*4\.0 GB/);assert.doesNotMatch(text(v.render()),/wrong-history/);
+ currentCatalog={...catalog,connections:{...catalog.connections,currentDockerContext:'current',docker:[{context:'historical',status:'verified',validUntil:deadline,serverVersion:'wrong-history'},{context:'current',status:'unavailable'}]}};
+ await v.load();assert.doesNotMatch(text(v.render()),/wrong-history|28\.9-test/);assert.deepEqual(requests.map(r=>r.url),['/api/operations/execution_environment_list','/api/operations/execution_environment_list']);
 });
 
 test('SSH form hides known_hosts paths and requires an unexpired explicit fingerprint confirmation',()=>{

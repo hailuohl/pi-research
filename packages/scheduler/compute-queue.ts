@@ -17,6 +17,8 @@ type Identity=Awaited<ReturnType<typeof probeDockerTarget>>;
 interface Dependencies {probe?:typeof probeDockerTarget;inspect?:(context:string,id:string)=>Promise<{Id:string;Config:{Labels?:Record<string,string>}}|null>;}
 const TERMINAL=['succeeded','failed','cancelled','timed_out'];
 const DEFAULTS:ComputeLimits={maxRuns:1,maxDevelopment:1,maxJobs:2,cpus:null,memoryMb:null,maxQueued:null};
+// ponytail: commit-order exclusion is per AppContext/context; cross-process probes keep the existing SQLite lease and CAS.
+const dockerObservations=new WeakMap<AppContext,Map<string,Promise<void>>>();
 const sourceKind=(kind:ComputeKind)=>kind==='publication'?'publication-build-job':kind==='document'?'document-parse-job':kind==='development'?'sandbox-job':'run';
 const LEGACY_SSH_QUEUED_SQL="q.backend='ssh' AND EXISTS(SELECT 1 FROM records legacy WHERE legacy.kind='run' AND legacy.id=q.id AND COALESCE(json_extract(legacy.data,'$.manifest.sshTarget.gpuProtocol'),0)<>1)";
 // ponytail: CPU Docker and new GPU jobs do not overlap during upgrades; add per-job isolation proof only if concurrent CPU/GPU scheduling is needed.
@@ -108,10 +110,19 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         ensure(used<targetLimit,'COMPUTE_TARGET_QUEUE_FULL','目标等待队列已满；若 context 已更换引擎，请先重新核对目标',409);
     }
     /** Owner-only identity discovery; does not create a job, bind old jobs or grant execution. */
-    async probeContext(actor:Actor,context:string,validate:()=>void=()=>{}):Promise<ComputeTargetProbe> {
+    async probeContext(actor:Actor,context:string,validate:()=>void=()=>{},background=false):Promise<ComputeTargetProbe> {
         userOnly(actor);text(context,'context',100);ensure(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(context),'INVALID_INPUT','Docker context 名称无效',400);validate();
+        return this.observeDocker(context,()=>this.probeContextCurrent(context,validate),background,validate);
+    }
+    private async observeDocker<T>(context:string,observe:()=>Promise<T>,background=false,validate:()=>void=()=>{}):Promise<T> {
+        let locks=dockerObservations.get(this.c);if(!locks){locks=new Map();dockerObservations.set(this.c,locks);}
+        while(locks.has(context)){ensure(!background,'COMPUTE_TARGET_BUSY','Docker 目标正在核验',409);await locks.get(context);validate();}
+        validate();let release!:()=>void;const pending=new Promise<void>(resolve=>{release=resolve;});locks.set(context,pending);
+        try{return await observe();}finally{if(locks.get(context)===pending)locks.delete(context);release();}
+    }
+    private async probeContextCurrent(context:string,validate:()=>void):Promise<ComputeTargetProbe> {
         const connections=new ComputeConnectionService(this.c),attempt=connections.begin('docker:'+context);
-        let identity:Identity;try{identity=await this.probe(context);}catch{this.c.store.transaction(()=>{if(connections.finish('docker:'+context,attempt,{status:'unavailable',errorCode:'COMPUTE_TARGET_UNAVAILABLE'}))this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now()+5000,context);});throw new DomainError('COMPUTE_TARGET_UNAVAILABLE','无法核对本机 Docker 目标身份',409);}validate();
+        let identity:Identity;try{identity=await this.probe(context);}catch{validate();this.c.store.transaction(()=>{if(connections.finish('docker:'+context,attempt,{status:'unavailable',errorCode:'COMPUTE_TARGET_UNAVAILABLE'}))this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now()+5000,context);});throw new DomainError('COMPUTE_TARGET_UNAVAILABLE','无法核对本机 Docker 目标身份',409);}validate();
         return this.c.store.transaction(()=>{validate();ensure(connections.finish('docker:'+context,attempt,{status:'verified',targetId:identity.targetId,...(identity.serverVersion?{serverVersion:identity.serverVersion}:{}),...(identity.cpus!==undefined?{cpus:identity.cpus}:{}),...(identity.memoryMb!==undefined?{memoryMb:identity.memoryMb}:{})}),'COMPUTE_TARGET_CHANGED','核验期间已有更新的 Docker 观察');this.remember(context,identity);return {context,targetId:identity.targetId,backend:'docker' as const,observedAt:new Date().toISOString()};});
     }
     private remember(context:string,identity:Identity) {
@@ -123,7 +134,11 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         return !!(container&&(!id||container.Id===id)&&container.Config?.Labels?.[JOB_LABEL]===q.id&&container.Config?.Labels?.[MANIFEST_LABEL]===record.manifestDigest);
     }
     async verifyTarget(kind:ComputeKind,id:string):Promise<void> {
-        const before=this.row(kind,id);if(before.backend==='trusted-example')return;
+        const route=this.row(kind,id);if(route.backend==='docker')return this.observeDocker(route.context_name!,()=>this.verifyTargetCurrent(kind,id,route.context_name!));
+        return this.verifyTargetCurrent(kind,id);
+    }
+    private async verifyTargetCurrent(kind:ComputeKind,id:string,context?:string):Promise<void> {
+        const before=this.row(kind,id);if(context)ensure(before.backend==='docker'&&before.context_name===context,'COMPUTE_TARGET_CHANGED','等待期间作业目标已变化',409);if(before.backend==='trusted-example')return;
         if(before.backend==='local'){try{const run=this.c.store.get<Run>('run',id);new LocalRuntimeService(this.c).resolve(run.manifest.contract.localRuntimeId!,run.manifest.localRuntime);if(run.manifest.contract.gpu)assertGpuDevices(run.manifest.contract.gpu,await nativeGpuInventory());this.c.store.db.prepare('UPDATE compute_queue SET last_error=NULL WHERE kind=? AND id=?').run(kind,id);}catch(error){this.c.store.db.prepare('UPDATE compute_queue SET last_error=?,next_attempt_at=? WHERE kind=? AND id=?').run((error as {code?:string}).code??'LOCAL_TARGET_UNAVAILABLE',Date.now()+5000,kind,id);throw error;}return;}
         let identity:Identity;
         try{identity=await this.probe(before.context_name!);}catch{this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now()+5000,before.context_name!);throw new DomainError('COMPUTE_TARGET_UNAVAILABLE','不能确认原计算目标身份；保持资源预留',409);}
@@ -141,11 +156,16 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
     }
     tick():void {if(!this.stopped&&!this.pending)this.pending=this.probeNext().catch(()=>{}).finally(()=>{this.pending=undefined;});}
     private async probeNext() {
-        const context=this.c.store.transaction(()=>{const row=this.c.store.db.prepare("SELECT c.* FROM compute_contexts c WHERE c.next_probe_at<=? AND c.probe_until<=? AND EXISTS(SELECT 1 FROM compute_queue q WHERE q.context_name=c.context AND q.phase NOT IN ('succeeded','failed','cancelled','timed_out')) ORDER BY c.next_probe_at,c.context LIMIT 1").get(Date.now(),Date.now()) as unknown as ContextRow|undefined;if(!row)return;this.c.store.db.prepare('UPDATE compute_contexts SET probe_until=? WHERE context=?').run(Date.now()+120000,row.context);return row;});
-        if(!context)return;
-        try{const identity=await this.probe(context.context);this.c.store.transaction(()=>{this.remember(context.context,identity);this.bindCachedQueued();});
-            const legacy=this.c.store.db.prepare("SELECT kind,id FROM compute_queue WHERE context_name=? AND held=1 AND bound=0 ORDER BY sequence LIMIT 8").all(context.context);for(const job of legacy)try{await this.verifyTarget(job.kind as ComputeKind,String(job.id));}catch{/* Unproven old workloads retain host and possible-target reservations. */}
-        }catch{this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',failures=failures+1,probe_until=0,next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now()+Math.min(60000,1000*2**Math.min(context.failures+1,6)),context.context);}
+        const selected=this.c.store.db.prepare("SELECT c.* FROM compute_contexts c WHERE c.next_probe_at<=? AND c.probe_until<=? AND EXISTS(SELECT 1 FROM compute_queue q WHERE q.context_name=c.context AND q.phase NOT IN ('succeeded','failed','cancelled','timed_out')) ORDER BY c.next_probe_at,c.context LIMIT 1").get(Date.now(),Date.now()) as unknown as ContextRow|undefined;
+        if(!selected)return;
+        const observe=async()=>{
+            const context=this.c.store.transaction(()=>{const row=this.context(selected.context);if(!row||row.next_probe_at>Date.now()||row.probe_until>Date.now()||!this.c.store.db.prepare("SELECT 1 FROM compute_queue WHERE context_name=? AND phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(selected.context))return;this.c.store.db.prepare('UPDATE compute_contexts SET probe_until=? WHERE context=?').run(Date.now()+120000,row.context);return row;});
+            if(!context)return false;
+            try{const identity=await this.probe(context.context);this.c.store.transaction(()=>{this.remember(context.context,identity);this.bindCachedQueued();});return true;}
+            catch{this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',failures=failures+1,probe_until=0,next_probe_at=?,last_error='COMPUTE_TARGET_UNAVAILABLE' WHERE context=?").run(Date.now()+Math.min(60000,1000*2**Math.min(context.failures+1,6)),context.context);return false;}
+        };
+        const verified=selected.context.startsWith('ssh:')?await observe():await this.observeDocker(selected.context,observe);
+        if(verified){const legacy=this.c.store.db.prepare("SELECT kind,id FROM compute_queue WHERE context_name=? AND held=1 AND bound=0 ORDER BY sequence LIMIT 8").all(selected.context);for(const job of legacy)try{await this.verifyTarget(job.kind as ComputeKind,String(job.id));}catch{/* Unproven old workloads retain host and possible-target reservations. */}}
     }
     async stop():Promise<void> {this.stopped=true;await this.pending;}
     configure(actor:Actor,value:unknown):ComputeConfiguration {

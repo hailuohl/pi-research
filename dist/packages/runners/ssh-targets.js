@@ -8,6 +8,8 @@ import { sshRequest } from './ssh.js';
 import { ComputeConnectionService } from './compute-connections.js';
 import { randomUUID } from 'node:crypto';
 import { challengeName, endpoint, hostToken, parseHostKeys, privateJson, savePrivateJson, scanHostKeys, setupError, sshOnboardingRequest, sshPrivateDir, trustName } from './ssh-onboarding.js';
+// ponytail: serialize one AppContext's probes; add a durable lease only if multi-server monitoring needs exclusion.
+const inFlight = new WeakMap();
 export class SshTargetService {
     c;
     request;
@@ -56,14 +58,46 @@ export class SshTargetService {
     list(actor) { userOnly(actor); return Object.values(this.read()).map(t => t.verified ?? { id: t.id, version: t.version, verified: false }); }
     get(actor, id) { userOnly(actor); return this.frozen(id); }
     async probe(actor, id) { userOnly(actor); return this.verify(id); }
-    async verify(id) {
+    async observe(id, validate = () => { }) { return this.verify(id, true, validate); }
+    async verify(id, background = false, validate = () => { }) {
+        let locks = inFlight.get(this.c);
+        if (!locks) {
+            locks = new Map();
+            inFlight.set(this.c, locks);
+        }
+        while (locks.has(id)) {
+            ensure(!background, 'SSH_TARGET_BUSY', 'SSH 目标正在核验');
+            await locks.get(id);
+            validate();
+        }
+        validate();
+        let release;
+        const pending = new Promise(resolve => { release = resolve; });
+        locks.set(id, pending);
+        try {
+            return await this.verifyUnlocked(id, background, validate);
+        }
+        finally {
+            if (locks.get(id) === pending)
+                locks.delete(id);
+            release();
+        }
+    }
+    async verifyUnlocked(id, background, validate) {
         const saved = this.read()[id];
         ensure(saved, 'SSH_TARGET_NOT_FOUND', 'SSH 目标未配置', 404);
+        if (background) {
+            validate();
+            const reservation = this.c.store.maybe('ssh-setup', id);
+            ensure(reservation?.state !== 'installing', 'SSH_TARGET_BUSY', 'SSH 环境准备正在执行');
+        }
         const configurationDigest = this.configDigest(saved), connections = new ComputeConnectionService(this.c), attempt = connections.begin('ssh:' + id, configurationDigest);
         try {
             const t = this.privateTarget(id);
             let health;
-            const reply = t.managed ? (health = await this.onboarding(t, 'inspect')) : await this.request(t, { op: 'probe' });
+            const reply = t.managed || background && t.gpuProtocol ? (health = await this.onboarding(t, 'inspect')) : await this.request(t, { op: 'probe' });
+            if (background)
+                validate();
             if (health?.errorCode) {
                 this.healthFailure(id, configurationDigest, attempt, health);
                 throw new DomainError(health.errorCode, 'SSH 环境需要处理：' + health.errorCode, 409);
@@ -74,12 +108,35 @@ export class SshTargetService {
             const protocolDigest = active && t.verified ? t.verified.protocolDigest : digest(readFileSync(join(this.c.repoRoot, 'scripts', t.gpuProtocol ? 'ssh-runner-gpu.py' : 'ssh-runner.py')));
             ensure(reply.protocolDigest === protocolDigest && typeof reply.engineId === 'string' && /^[A-Za-z0-9._:-]{1,200}$/.test(reply.engineId), 'SSH_PROTOCOL_MISMATCH', '远端监管器或 Linux Docker 引擎身份不符');
             const target = { id: t.id, ...(t.gpuProtocol ? { gpuProtocol: true } : {}), version: t.version, hostKeyDigest: t.hostKeyDigest, configDigest: this.configDigest(t), engineId: reply.engineId, protocolDigest, targetId: 'ssh-' + digest(reply.engineId) };
-            this.c.store.transaction(() => { const all = this.read(); ensure(all[id] && this.configDigest(all[id]) === target.configDigest && target.configDigest === configurationDigest && connections.observation('ssh:' + id)?.attempt === attempt, 'SSH_TARGET_CHANGED', '验证期间 SSH 配置或观察发生变化'); all[id].verified = target; this.write(all); connections.finish('ssh:' + id, attempt, { configurationDigest, status: 'verified', targetId: target.targetId, ...(health ? { supervisor: health.supervisor, docker: health.docker, workspace: health.workspace } : {}) }); this.c.store.db.prepare("INSERT INTO compute_contexts(context,target_id,engine_id,endpoint,status,next_probe_at) VALUES(?,?,?,?,'ready',?) ON CONFLICT(context) DO UPDATE SET target_id=excluded.target_id,engine_id=excluded.engine_id,endpoint=excluded.endpoint,status='ready',next_probe_at=excluded.next_probe_at,probe_until=0,failures=0,last_error=NULL").run('ssh:' + id, target.targetId, target.engineId, target.configDigest + ':' + target.protocolDigest, Date.now() + 30000); });
-            this.c.store.transaction(() => { const reservation = this.c.store.maybe('ssh-setup', id); if (reservation && reservation.configurationDigest === configurationDigest && (reservation.state === 'unknown' || reservation.until <= Date.now()))
-                this.c.store.db.prepare("DELETE FROM records WHERE kind='ssh-setup' AND id=?").run(id); });
+            this.c.store.transaction(() => {
+                if (background)
+                    validate();
+                const all = this.read();
+                ensure(all[id] && all[id].version === target.version && this.configDigest(all[id]) === target.configDigest && target.configDigest === configurationDigest && connections.observation('ssh:' + id)?.attempt === attempt, 'SSH_TARGET_CHANGED', '验证期间 SSH 配置或观察发生变化');
+                if (background) {
+                    this.privateTarget(id);
+                    const reservation = this.c.store.maybe('ssh-setup', id);
+                    ensure(reservation?.state !== 'installing', 'SSH_TARGET_BUSY', '检测期间开始了环境准备');
+                    if (all[id].verified)
+                        ensure(digest(all[id].verified) === digest(target), 'SSH_TARGET_CHANGED', '当前观察与已固定 SSH 身份不同');
+                    else
+                        ensure(!reservation && !this.c.store.db.prepare("SELECT 1 FROM compute_queue WHERE context_name=? AND phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get('ssh:' + id), 'SSH_TARGET_BUSY', '有在途作业或环境准备，不能首次固定身份');
+                }
+                if (!background || !all[id].verified) {
+                    all[id].verified = target;
+                    this.write(all);
+                }
+                connections.finish('ssh:' + id, attempt, { configurationDigest, status: 'verified', targetId: target.targetId, ...(health ? { supervisor: health.supervisor, docker: health.docker, workspace: health.workspace, ...(health.cpus !== undefined ? { cpus: health.cpus } : {}), ...(health.memoryMb !== undefined ? { memoryMb: health.memoryMb } : {}) } : {}) });
+                this.c.store.db.prepare("INSERT INTO compute_contexts(context,target_id,engine_id,endpoint,status,next_probe_at) VALUES(?,?,?,?,'ready',?) ON CONFLICT(context) DO UPDATE SET target_id=excluded.target_id,engine_id=excluded.engine_id,endpoint=excluded.endpoint,status='ready',next_probe_at=excluded.next_probe_at,probe_until=0,failures=0,last_error=NULL").run('ssh:' + id, target.targetId, target.engineId, target.configDigest + ':' + target.protocolDigest, Date.now() + 30000);
+            });
+            if (!background)
+                this.c.store.transaction(() => { const reservation = this.c.store.maybe('ssh-setup', id); if (reservation && reservation.configurationDigest === configurationDigest && (reservation.state === 'unknown' || reservation.until <= Date.now()))
+                    this.c.store.db.prepare("DELETE FROM records WHERE kind='ssh-setup' AND id=?").run(id); });
             return target;
         }
         catch (error) {
+            if (background)
+                validate();
             const code = error instanceof DomainError && ['SSH_PROTOCOL_INVALID', 'SSH_REMOTE_REJECTED'].includes(error.code) ? error.code : setupError(error);
             this.c.store.transaction(() => { const current = this.read()[id], prior = connections.observation('ssh:' + id); if (current && this.configDigest(current) === configurationDigest && connections.finish('ssh:' + id, attempt, { configurationDigest, status: 'unavailable', errorCode: code, ...(prior?.attempt === attempt ? { supervisor: prior.supervisor, docker: prior.docker, workspace: prior.workspace } : {}) }))
                 this.c.store.db.prepare("UPDATE compute_contexts SET status='unavailable',next_probe_at=?,last_error=? WHERE context=?").run(Date.now() + 5000, code, 'ssh:' + id); });
