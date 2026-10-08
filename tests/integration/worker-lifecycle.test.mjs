@@ -13,10 +13,10 @@ const result = outcome => ({summary: 'Offline lifecycle fixture', outcome, evide
 
 // Exercise the actual pinned SDK and production worker over child IPC. The only
 // model is this loopback SSE server; keys, user config and network refresh are absent.
-async function runWorker({outcome = 'completed', rejectFirst = false, controls = false, mode = 'submit'} = {}) {
+async function runWorker({outcome = 'completed', rejectFirst = false, controls = false, mode = 'submit', continueAfterLimit = false} = {}) {
     const home = mkdtempSync(join(tmpdir(), 'pi-worker-lifecycle-'));
     const events = [], requests = [], toolCalls = [];
-    let child, stderr = '', timer;
+    let child, stderr = '', timer, continuing = false;
     const server = createServer(async (req, res) => {
         let body = '';
         for await (const chunk of req) body += chunk;
@@ -24,6 +24,10 @@ async function runWorker({outcome = 'completed', rejectFirst = false, controls =
         if (mode === 'error') { res.writeHead(503, {'content-type': 'application/json'}); res.end(JSON.stringify({error: {message: 'Offline provider failure'}})); return; }
         if (mode === 'abort') { child.send({type: 'abort'}); return; }
         res.writeHead(200, {'content-type': 'text/event-stream'});
+        if (continuing) {
+            res.end(`data: ${JSON.stringify({id: 'continued', object: 'chat.completion.chunk', created: 1, model: 'fixture', choices: [{index: 0, delta: {role: 'assistant', content: 'Continued from saved history.'}, finish_reason: 'stop'}]})}\n\ndata: [DONE]\n\n`);
+            return;
+        }
         const tool = mode === 'limit' ? 'task_context_read' : 'task_result_submit';
         const input = mode === 'limit' ? {} : {...result(outcome), ...(rejectFirst && requests.length > 1 ? {summary: 'Corrected offline submission'} : {})};
         const chunk = (delta, finish_reason = null) => res.write(`data: ${JSON.stringify({id: `fixture-${requests.length}`, object: 'chat.completion.chunk', created: 1, model: 'fixture', choices: [{index: 0, delta, finish_reason}]})}\n\n`);
@@ -38,6 +42,8 @@ async function runWorker({outcome = 'completed', rejectFirst = false, controls =
         writeFileSync(modelsPath, JSON.stringify({providers: {'offline-fixture': {api: 'openai-completions', baseUrl: `http://127.0.0.1:${server.address().port}/v1`, apiKey: 'offline-dummy', models: [{id: 'fixture', contextWindow: 32768, maxTokens: 1024}]}}}));
         const env = {PI_OFFLINE: '1', HOME: home, USERPROFILE: home, APPDATA: home, LOCALAPPDATA: home};
         for (const key of ['SystemRoot', 'WINDIR', 'PATH', 'TEMP', 'TMP']) if (process.env[key]) env[key] = process.env[key];
+        const execute = async (piSessionPath = null) => {
+        const requestStart = requests.length, eventStart = events.length, toolStart = toolCalls.length;
         child = fork(join(repoRoot, 'dist/apps/agent-worker/index.js'), [], {cwd: repoRoot, env, silent: true});
         child.stderr.on('data', chunk => { stderr += chunk; });
         child.stdout.resume();
@@ -61,11 +67,19 @@ async function runWorker({outcome = 'completed', rejectFirst = false, controls =
                 child.send({type: 'follow_up', content: 'late follow-up fixture', messageId: 'after-follow'});
             }
         });
-        child.send({type: 'start', repoRoot, workspace: join(home, 'workspace'), agentDir: join(home, 'agent'), sessionDir: join(home, 'sessions'), modelsPath, piSessionPath: null, role: 'implementer', model: {provider: 'offline-fixture', model: 'fixture', thinking: 'off'}, prompt: 'Offline fixture: submit a result.', history: null, tools: ['task_result_submit', 'task_context_read'].map(name => ({name, ...TOOL_DEFINITIONS[name]}))});
+        child.send({type: 'start', repoRoot, workspace: join(home, 'workspace'), agentDir: join(home, 'agent'), sessionDir: join(home, 'sessions'), modelsPath, piSessionPath, role: 'implementer', model: {provider: 'offline-fixture', model: 'fixture', thinking: 'off'}, prompt: continuing ? 'Continue from the saved history.' : 'Offline fixture: submit a result.', history: null, tools: ['task_result_submit', 'task_context_read'].map(name => ({name, ...TOOL_DEFINITIONS[name]}))});
         await ended;
-        const ready = events.find(e => e.type === 'ready');
+        clearTimeout(timer);
+        const ready = events.slice(eventStart).find(e => e.type === 'ready');
         const native = ready ? readFileSync(ready.sessionFile, 'utf8').trim().split(/\r?\n/).map(line => JSON.parse(line)) : [];
-        return {events, requests, toolCalls, native};
+        return {events: events.slice(eventStart), requests: requests.slice(requestStart), toolCalls: toolCalls.slice(toolStart), native};
+        };
+        const run = await execute();
+        if (continueAfterLimit) {
+            continuing = true;
+            return {...run, resumed: await execute(run.events.find(e => e.type === 'ready').sessionFile)};
+        }
+        return run;
     } finally {
         clearTimeout(timer);
         if (child && child.exitCode === null) { child.kill(); await new Promise(resolve => child.once('exit', resolve)); }
@@ -115,9 +129,22 @@ test('host abort remains aborted and cannot become successful completion', async
     assert.equal(run.toolCalls.length, 0);
 });
 
-test('worker turn limit never reports normal successful completion', async () => {
-    const run = await runWorker({mode: 'limit'});
-    assert.equal(run.events.some(e => e.type === 'done' && !e.aborted), false, JSON.stringify(run.events));
-    assert.ok(run.events.some(e => e.type === 'failure' || (e.type === 'done' && e.aborted)));
-    assert.ok(run.requests.length >= 12 && run.requests.length <= 13);
+test('worker turn limit reports its local cause and preserves history for explicit continuation', async () => {
+    const run = await runWorker({mode: 'limit', continueAfterLimit: true});
+    assert.equal(run.events.some(e => e.type === 'done'), false, JSON.stringify(run.events));
+    assert.match(run.events.find(e => e.type === 'failure')?.error ?? '', /^AGENT_TURN_LIMIT:/);
+    const failedMessages = run.events.filter(e => e.type === 'assistant_message' && e.error);
+    assert.equal(failedMessages.length, 1);
+    assert.match(failedMessages[0].error, /^AGENT_TURN_LIMIT:/);
+    assert.doesNotMatch(JSON.stringify(run.events), /PROVIDER_FAILED/);
+    assert.equal(run.requests.length, 12);
+    const receipts = run.native.filter(e => e.message?.role === 'toolResult');
+    assert.equal(receipts.length, 12);
+    assert.ok(receipts.every(e => e.message.isError === false));
+    assert.deepEqual(run.resumed.events.filter(e => ['done', 'failure'].includes(e.type)).map(e => ({type: e.type, aborted: e.aborted})), [{type: 'done', aborted: false}]);
+    assert.equal(run.resumed.requests.length, 1);
+    assert.equal(run.resumed.toolCalls.length, 0);
+    assert.deepEqual(run.resumed.native.slice(0, run.native.length), run.native);
+    assert.match(JSON.stringify(run.resumed.requests[0]), /call-12/);
+    assert.equal(run.resumed.events.find(e => e.type === 'ready').sessionFile, run.events.find(e => e.type === 'ready').sessionFile);
 });

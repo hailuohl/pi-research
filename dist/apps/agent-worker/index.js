@@ -13,6 +13,7 @@ import { locatePi, inspectPi, piFailure } from '../../packages/pi-adapter/runtim
 let session;
 let providerFailure;
 let imageFailure;
+let turnLimitFailure;
 let started = false, stopping = false, taskSubmitted = false, turns = 0;
 const httpStop = new AbortController();
 let seq = 0;
@@ -168,12 +169,13 @@ process.on('message', async (message) => {
             if (e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
                 send({ type: 'delta', text: e.assistantMessageEvent.delta });
             if (e.type === 'message_end' && e.message?.role === 'assistant') {
-                providerFailure = imageFailure ?? (e.message.stopReason === 'aborted' && stopping ? providerFailure : assistantFailure(e.message) ?? providerFailure);
+                providerFailure = imageFailure ?? turnLimitFailure ?? (e.message.stopReason === 'aborted' && stopping ? providerFailure : assistantFailure(e.message) ?? providerFailure);
                 const content = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'text').map(p => p.text).join('') : '';
                 const toolCalls = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'toolCall').map(p => p.name).slice(0, 64) : [];
-                send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: imageFailure ?? assistantFailure(e.message) ?? null });
+                send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: imageFailure ?? turnLimitFailure ?? assistantFailure(e.message) ?? null });
             }
-            if (e.type === 'turn_start' && ++turns > 12) {
+            if (e.type === 'turn_start' && ++turns > 12 && !stopping) {
+                turnLimitFailure = providerFailure ?? 'AGENT_TURN_LIMIT: 本轮已达到12轮处理上限；已保存内容保留，可在原会话发送“继续”。';
                 stopping = true;
                 httpStop.abort();
                 void session?.abort();
@@ -185,7 +187,7 @@ process.on('message', async (message) => {
             await session.prompt(buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []));
         if (!providerFailure && !stopping && raw.hostMessages?.length)
             send({ type: 'context_ack', messageIds: raw.hostMessages.map((m) => m.id) });
-        providerFailure = imageFailure ?? providerFailure;
+        providerFailure = imageFailure ?? turnLimitFailure ?? providerFailure;
         if (providerFailure)
             send({ type: 'failure', error: providerFailure });
         else
@@ -193,7 +195,7 @@ process.on('message', async (message) => {
     }
     catch (error) {
         const code = error?.code;
-        send({ type: 'failure', error: imageFailure ?? piFailure(code?.startsWith('MODEL_IMAGE_') ? `${code}: ${error.message}` : error) });
+        send({ type: 'failure', error: imageFailure ?? turnLimitFailure ?? piFailure(code?.startsWith('MODEL_IMAGE_') ? `${code}: ${error.message}` : error) });
     }
     finally {
         session?.dispose();
