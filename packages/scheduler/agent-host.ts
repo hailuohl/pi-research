@@ -2,7 +2,8 @@ import {publicationImageCatalog,imageReference,documentImageReference,CONTEXT_IM
 import {modelConnectionSnapshot,assertModelEnabled} from '../pi-adapter/model-connections.js';
 import {environmentVariables,redactEnvironment,redactEnvironmentChunk} from '../runtime/environment.js';
 import {canSteerSession} from '../pi-adapter/session-history.js';
-import {messageInput} from '../pi-adapter/attachments.js';
+import {messageInput,nativeMessageFiles,nativeInputFiles,nativeAttachmentFile} from '../pi-adapter/attachments.js';
+import {inputEnvelope,NATIVE_ATTACHMENT_BYTES,type NativeAttachmentReference,type AttachmentManifest} from '../pi-adapter/attachment-input.js';
 import {prepareSessionSkills} from '../skills/runtime.js';
 import { fork, type ChildProcess } from 'node:child_process';
 import { mkdirSync, existsSync } from 'node:fs';
@@ -126,14 +127,14 @@ export class AgentHost {
                         });
                         if(!m)continue;
                         active.messageIds.push(m.id);active.sent.add(m.id);
-                        this.sendInput(active,{type:'steer',content:messageInput(m),messageId:m.id},m.id);
+                        try{const manifest:AttachmentManifest={envelope:inputEnvelope(m.id),files:nativeMessageFiles(this.app.store,s,m)};this.sendInput(active,{type:'steer',content:messageInput(m),messageId:m.id,attachmentManifest:manifest},m.id);}catch(error){this.finish(active,this.clean(asError(error).message));}
                     }
                 if (s.taskId && a?.state === 'running')
                     for (const d of this.app.store.list<any>('directive', s.projectId!).filter(d => d.kind !== 'revise' && d.taskIds.includes(s.taskId) && !d.deliveredSessionIds.includes(s.id))) {
                         if (active.sent.has(d.id))
                             continue;
                         active.sent.add(d.id);
-                        active.child.send({ type: d.kind, content: d.content, messageId: d.id });
+                        active.child.send({ type: d.kind, content: messageInput({id:d.id,content:d.content}), messageId: d.id,attachmentManifest:{envelope:inputEnvelope(d.id),files:[]} });
                     }
             }
             // Recover abandoned single writers, but never retry a possibly paid request automatically.
@@ -258,8 +259,13 @@ export class AgentHost {
         this.admission.markRunning(slot.id,this.ownerHost,claimed.generation,child.pid);
         const hostMessages = !wakeupId && !attempt ? this.app.sessions.pendingNotices(claimed.id) : [];
         worker.contextMessageIds = hostMessages.map(m => m.id);
-        const history = !isolatedRunAnalysis&&!claimed.piSessionPath ? this.app.sessions.messages(SYSTEM, claimed.id).filter(m => m.status === 'completed' && (m.role !== 'system' || m.origin === 'automation')).map(m => ({ role: m.role, content: messageInput(m) })) : [];
-        this.sendInput(worker,{ type: 'start', ...(connection?{connection}:{}), managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
+        const {completed,input}=store.transaction(()=>{const completed=this.app.sessions.messages(SYSTEM,claimed.id).filter(m=>m.status==='completed'&&(m.role!=='system'||m.origin==='automation'));let input=reservation.message?store.get<Message>('message',reservation.message.id,claimed.projectId!):undefined;if(input&&input.role==='user'&&input.origin!=='automation'&&!input.wakeupId&&input.nativeAttachmentContextIds===undefined&&!claimed.piSessionPath&&!wakeupId&&!attempt){const ids=completed.filter(m=>m.role==='user'&&!m.queueRemoved&&!m.nativeAttachmentsDisabled&&m.attachments?.some(a=>a.inputMode==='native')).map(m=>m.id);input=store.update<Message>('message',input.id,input.version,{nativeAttachmentContextIds:ids});}return {completed,input};});
+        const history = !isolatedRunAnalysis&&!claimed.piSessionPath ? completed.map(m => ({ role: m.role, content: messageInput(m) })) : [];
+        const attachmentManifests:AttachmentManifest[]=!wakeupId&&!attempt?completed.filter(m=>m.role==='user'&&!m.queueRemoved&&!m.nativeAttachmentsDisabled).map(m=>({envelope:inputEnvelope(m.id),files:nativeInputFiles(store,claimed,m)})):[];
+        const currentEnvelope=inputEnvelope(messageId??randomUUID());if(!messageId)prompt+=currentEnvelope;
+        const currentFiles=input&&!wakeupId&&!attempt?nativeInputFiles(store,claimed,input):[];
+        attachmentManifests.push({envelope:currentEnvelope,files:currentFiles});
+        this.sendInput(worker,{ type: 'start', ...(connection?{connection}:{}), attachmentManifests,managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             const failure=asError(error),startError=this.clean(`${failure.code} — ${failure.message}`);
@@ -299,6 +305,8 @@ export class AgentHost {
                 if(m.type==='model_http_acquire'){
                     result=this.app.store.transaction(()=>{
                         ensure(!a.ended&&!a.exitObserved&&!a.stopError&&this.valid(a),'MODEL_HTTP_SCOPE_EXPIRED','会话已停止，不能外发模型请求');
+                        const attachmentRefs=m.attachmentRefs??[];ensure(Array.isArray(attachmentRefs),'MODEL_ATTACHMENT_UNBOUND','模型附件引用无效');
+                        if(attachmentRefs.length){if(a.actor.permission)this.app.sessionPermissions.assert(a.actor.permission,false);ensure(!a.actor.taskId&&!a.actor.wakeupId&&publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_ATTACHMENT_CATALOG_CHANGED','模型或目录已改变，原生附件不能继续发送');let bytes=0;const session=this.app.sessions.get(SYSTEM,a.sessionId);for(const ref of attachmentRefs as NativeAttachmentReference[]){bytes+=nativeAttachmentFile(this.app.store,session,ref).reference.size;ensure(bytes<=NATIVE_ATTACHMENT_BYTES,'MODEL_ATTACHMENT_LIMIT','实际原生附件合计最多20 MiB');}}
                         const refs=m.imageRefs===undefined?[]:m.imageRefs;ensure(Array.isArray(refs)&&refs.length<=Math.floor(CONTEXT_IMAGE_BYTES/33),'MODEL_IMAGE_UNBOUND','模型图片引用无效');
                         if(refs.length)ensure(publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_IMAGE_CATALOG_CHANGED','模型目录已改变，禁止继续发送图片');
                         let imageBytes=0;const checked=new Set<string>();for(const value of refs){const ref=value?.kind==='document-page'?documentImageReference(value):imageReference(value);imageBytes+=ref.bytes;ensure(imageBytes<=CONTEXT_IMAGE_BYTES,'MODEL_IMAGE_LIMIT','实际图片总量超过16 MiB');const key=JSON.stringify(ref);if(!checked.has(key)){try{if('kind'in ref)this.app.sessionPermissions.assertDocumentImageAction(a.actor,ref);else this.app.sessionPermissions.assertImageAction(a.actor,ref);}catch(error){const e=asError(error);throw new DomainError('MODEL_IMAGE_BLOCKED',`${e.code}: ${e.message}`,403);}checked.add(key);}}

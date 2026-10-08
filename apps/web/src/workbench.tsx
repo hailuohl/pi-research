@@ -11,7 +11,6 @@ import { comparableRuns, comparisonMetric } from './models.js';
 import { ExperimentGraph } from './experiment-graph.js';
 import {ChatWorkflows} from './chat-workflows.js';
 import {ComposerControls} from './composer-controls.js';
-import {NativeModelRequests} from './native-model-requests.js';
 import { api, artifactText, downloadArtifact } from './api.js';
 import type { Bootstrap, MessageAttachment, ModelConfig, ProjectState, Row, Session, Experiment, Run, SessionHistoryPage,SessionView } from './models.js';
 import { short, number, date, label } from './models.js';
@@ -51,7 +50,7 @@ export class Chat extends React.Component<{
         const sessionModelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking));
         const canSend = runtimeAvailable && sessionModelAvailable && !this.props.busy && !data.project.archived && !!session && !session.taskId && session.state!=='archived' && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
         const hasDraft=!!this.state.draft.trim()||this.state.attachments.length>0;
-        return <div className="chat-page"><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions">{session.role==='coordinator'&&!session.taskId&&!session.teamId?<NativeModelRequests key={data.project.id+':'+session.id} projectId={data.project.id} session={session} attachments={this.state.attachments} busy={this.props.busy} archived={data.project.archived} perform={this.props.perform}/>:null}<Badge value={session.state}/><button className="icon-button" title="重命名会话" aria-label="重命名会话" onClick={() => {
+        return <div className="chat-page"><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions"><Badge value={session.state}/><button className="icon-button" title="重命名会话" aria-label="重命名会话" onClick={() => {
                     const title = prompt('会话名称', session.title);
                     if (title)
                         this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));

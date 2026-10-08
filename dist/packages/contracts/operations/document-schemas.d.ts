@@ -713,7 +713,7 @@ export declare const DOCUMENT_INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
             readonly mediaType: {
-                readonly enum: readonly ["application/pdf", "text/plain", "text/markdown"];
+                readonly enum: readonly ["application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4"];
             };
             readonly contentBase64: {
                 readonly pattern?: string | undefined;
@@ -3183,7 +3183,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
-                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
             };
             readonly acquiredAt: {
                 readonly type: "string";
@@ -3376,7 +3376,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
-                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
             };
             readonly acquiredAt: {
                 readonly type: "string";
@@ -3569,7 +3569,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
-                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
             };
             readonly acquiredAt: {
                 readonly type: "string";
@@ -3767,7 +3767,7 @@ export declare const DOCUMENT_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                         readonly contentKind: {
-                            readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                            readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
                         };
                         readonly acquiredAt: {
                             readonly type: "string";

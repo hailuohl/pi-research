@@ -14,7 +14,7 @@ test('HTTP composer configuration and actual pinned Pi read a bound text attachm
   res.writeHead(200,{'content-type':'text/event-stream'});const chunk=(delta,finish_reason=null)=>res.write(`data: ${JSON.stringify({id:'fixture-'+requests.length,object:'chat.completion.chunk',created:1,model:input.model,choices:[{index:0,delta,finish_reason}]})}\n\n`);
   const user=input.messages.filter(m=>m.role==='user').at(-1),prompt=typeof user?.content==='string'?user.content:(user?.content??[]).filter(p=>p.type==='text').map(p=>p.text).join('\n');
   if(input.messages.at(-1)?.role!=='tool'&&prompt?.includes('attachments')){
-   const refs=JSON.parse(prompt.slice(prompt.lastIndexOf('\n')+1));
+   const refs=JSON.parse(prompt.replace(/\n\n<pi-research-input:[A-Za-z0-9_-]+>$/, '').split('\n').at(-1));
    chunk({role:'assistant',tool_calls:[{index:0,id:'read-attached-'+requests.length,type:'function',function:{name:'session_attachment_read',arguments:JSON.stringify({input:{messageId:refs.messageId,documentVersionId:refs.attachments[0].documentVersionId,cursor:0,limit:64000}})}}]});chunk({},'tool_calls');
   }else{chunk({role:'assistant',content:'本机验收夹具回执'});chunk({},'stop');}
   res.end('data: [DONE]\n\n');

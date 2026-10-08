@@ -6,7 +6,7 @@ import { SectionTitle, Badge, Empty, nativeSelectButton } from "./ui.js";
 import { TextEvidencePanel } from "./text-evidence.js";
 import { DiscoveryGrants } from "./discovery-grants.js";
 const sources = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
-const contentNames = { metadata: "\u4EC5\u5143\u6570\u636E", abstract: "\u4EC5\u6458\u8981", "provider-text": "\u6765\u6E90\u5168\u6587\u6587\u672C\uFF08\u65E0 PDF \u9875\u6620\u5C04\uFF09", "original-pdf": "\u5DF2\u56FA\u5B9A\u539F\u59CB PDF \u5B57\u8282", "user-text": "\u7528\u6237\u5BFC\u5165\u6587\u672C" };
+const contentNames = { metadata: "\u4EC5\u5143\u6570\u636E", abstract: "\u4EC5\u6458\u8981", "provider-text": "\u6765\u6E90\u5168\u6587\u6587\u672C\uFF08\u65E0 PDF \u9875\u6620\u5C04\uFF09", "original-pdf": "\u5DF2\u56FA\u5B9A\u539F\u59CB PDF \u5B57\u8282", "user-text": "\u7528\u6237\u5BFC\u5165\u6587\u672C", "user-media": "\u7528\u6237\u5BFC\u5165\u5A92\u4F53\u539F\u4EF6" };
 const call = (projectId, name, input = {}) => api(`/operations/${name}`, { projectId, input });
 function literatureRequestedVersion(target) {
   if (target.requestedVersion) return `\u8BF7\u6C42\u7248\u672C ${target.requestedVersion}`;

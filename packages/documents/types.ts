@@ -7,7 +7,7 @@ export interface DocumentVersion {
  derivedText?:{artifactId:string;digest:string;size:number;mediaType:string};
  pmcTextProfile?:import('../connectors/pmc.js').PmcTextProfile;
  source:{kind:'connector'|'upload';provider?:SourceId;requestedId?:string;resolvedId?:string;requestedVersion:string|null;reportedVersion:string|null;versionAssurance:string;sourceUrl?:string};
- contentKind:'metadata'|'abstract'|'provider-text'|'original-pdf'|'user-text';
+ contentKind:'metadata'|'abstract'|'provider-text'|'original-pdf'|'user-text'|'user-media';
  acquiredAt:string;
  license:{value:string|null;assurance:'provider-reported'|'user-declared'|'unknown'};
  rawResponseArtifactIds?:string[];

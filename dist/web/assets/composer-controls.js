@@ -10,7 +10,8 @@ const configCopy = (config) => Object.fromEntries(SOURCES.map((source) => [sourc
 const modelKey = (model) => JSON.stringify([model.provider, model.model, model.thinking]);
 function fileType(file) {
   const name = file.name.toLowerCase();
-  return name.endsWith(".pdf") ? "application/pdf" : name.endsWith(".txt") ? "text/plain" : name.endsWith(".md") ? "text/markdown" : void 0;
+  const extensions = { pdf: "application/pdf", txt: "text/plain", md: "text/markdown", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", mp4: "video/mp4" };
+  return extensions[name.slice(name.lastIndexOf(".") + 1)];
 }
 function toBase64(bytes) {
   let binary = "";
@@ -21,19 +22,38 @@ function toBase64(bytes) {
 class ComposerControls extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { config: null, sourceDraft: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: false }, sourcesOpen: false, loading: true, loadingError: "", saving: false, uploadError: "", uploading: false };
+    this.state = { config: null, sourceDraft: { alphaxiv: false, openalex: false, biorxiv: false, pubmed: false, crossref: false }, sourcesOpen: false, loading: true, loadingError: "", saving: false, uploadError: "", uploading: false, attachmentTypes: null };
     this.mounted = true;
     this.request = 0;
+    this.attachmentRequest = 0;
   }
   componentDidMount() {
     void this.loadSources();
+    void this.loadAttachmentTypes();
   }
   componentDidUpdate(previous) {
     if (previous.projectId !== this.props.projectId) void this.loadSources();
+    if (previous.boot !== this.props.boot || previous.session?.id !== this.props.session?.id || JSON.stringify(previous.session?.model) !== JSON.stringify(this.props.session?.model)) void this.loadAttachmentTypes();
   }
   componentWillUnmount() {
     this.mounted = false;
     this.request++;
+    this.attachmentRequest++;
+  }
+  async loadAttachmentTypes() {
+    const session = this.props.session, request = ++this.attachmentRequest;
+    this.setState({ attachmentTypes: null });
+    if (!session) return;
+    try {
+      const types = await api(`/sessions/${session.id}/attachment-types`);
+      if (this.mounted && request === this.attachmentRequest && this.props.session?.id === session.id && modelKey(this.props.session.model) === modelKey(session.model)) this.setState({ attachmentTypes: types, uploadError: "" });
+    } catch (error) {
+      if (this.mounted && request === this.attachmentRequest) this.setState({ uploadError: error instanceof Error ? error.message : String(error) });
+    }
+  }
+  allowedTypes() {
+    const available = this.state.attachmentTypes, model = this.props.session?.model;
+    return available && available.model.provider === model?.provider && available.model.model === model?.model ? available.types : [{ mediaType: "text/plain", extensions: [".txt"], maxBytes: 32 * 1024 * 1024, native: false }, { mediaType: "text/markdown", extensions: [".md"], maxBytes: 32 * 1024 * 1024, native: false }];
   }
   async loadSources() {
     const request = ++this.request, projectId = this.props.projectId;
@@ -77,10 +97,14 @@ class ComposerControls extends React.Component {
       this.setState({ uploadError: "\u8349\u7A3F\u6700\u591A\u9644\u52A0 5 \u4E2A\u6587\u4EF6\uFF1B\u5DF2\u4E0A\u4F20\u7684\u9644\u4EF6\u5F15\u7528\u5DF2\u4FDD\u7559\u3002" });
       return;
     }
-    const typed = files.map((file) => ({ file, mediaType: fileType(file) }));
-    const invalid = typed.find((item) => !item.mediaType || !item.file.size || item.file.size > 32 * 1024 * 1024);
+    const typed = files.map((file) => ({ file, mediaType: fileType(file) })), allowed = this.allowedTypes();
+    const invalid = typed.find((item) => !allowed.some((t) => t.mediaType === item.mediaType) || !item.file.size || item.file.size > allowed.find((t) => t.mediaType === item.mediaType).maxBytes);
     if (invalid) {
-      this.setState({ uploadError: !invalid.mediaType ? "\u4EC5\u652F\u6301 PDF\u3001TXT\u3001MD \u6587\u4EF6\uFF1B\u5DF2\u4E0A\u4F20\u7684\u9644\u4EF6\u5F15\u7528\u5DF2\u4FDD\u7559\u3002" : "\u6587\u4EF6\u987B\u4E3A 1 byte\u201332 MiB\uFF1B\u5DF2\u4E0A\u4F20\u7684\u9644\u4EF6\u5F15\u7528\u5DF2\u4FDD\u7559\u3002" });
+      this.setState({ uploadError: "\u6587\u4EF6\u7C7B\u578B\u6216\u5927\u5C0F\u4E0D\u7B26\u5408\u5F53\u524D\u786E\u8BA4\u7684\u9644\u4EF6\u80FD\u529B\uFF1B\u5DF2\u4E0A\u4F20\u7684\u9644\u4EF6\u5F15\u7528\u5DF2\u4FDD\u7559\u3002" + (this.state.attachmentTypes?.fileCapabilityReason ?? "\u6B63\u5728\u8BFB\u53D6\u5F53\u524D\u6A21\u578B\u9644\u4EF6\u80FD\u529B\u3002") });
+      return;
+    }
+    if (attachments.filter((a) => !a.mediaType.startsWith("text/")).reduce((n, a) => n + a.size, 0) + typed.filter((a) => !a.mediaType.startsWith("text/")).reduce((n, a) => n + a.file.size, 0) > 20 * 1024 * 1024) {
+      this.setState({ uploadError: "\u8349\u7A3F\u539F\u751F\u9644\u4EF6\u5408\u8BA1\u6700\u591A20 MiB\uFF1B\u5DF2\u4E0A\u4F20\u7684\u9644\u4EF6\u5F15\u7528\u5DF2\u4FDD\u7559\u3002" });
       return;
     }
     const sessionId = session.id;
@@ -88,7 +112,8 @@ class ComposerControls extends React.Component {
     try {
       for (const { file, mediaType } of typed) {
         const bytes = new Uint8Array(await file.arrayBuffer());
-        const document = await api("/operations/document_import", { projectId, input: { title: file.name, mediaType, contentBase64: toBase64(bytes) } });
+        if (this.props.session?.id !== sessionId || modelKey(this.props.session.model) !== modelKey(session.model)) return;
+        const document = await api(`/sessions/${sessionId}/attachments`, { title: file.name, mediaType, contentBase64: toBase64(bytes) });
         if (!this.mounted || this.props.projectId !== projectId || this.props.session?.id !== sessionId) return;
         this.props.onAddAttachment({ documentVersionId: document.id, artifactId: document.original.artifactId, digest: document.original.digest, title: document.title, mediaType: document.original.mediaType, size: document.original.size });
       }
@@ -115,14 +140,19 @@ class ComposerControls extends React.Component {
     const currentModel = session?.model, options = this.modelOptions(), modelDisabled = !session || projectArchived || busy || modelLocked || !!session.taskId || session.role !== "coordinator" || ["running", "queued", "archived"].includes(session.state);
     const uploadDisabled = !session || projectArchived || !!session.taskId || session.state === "archived" || uploading || attachments.length >= 5;
     const sourceCount = SOURCES.filter((source) => sourceDraft[source]).length;
+    const allowed = this.allowedTypes(), unsupported = attachments.some((a) => !allowed.some((t) => t.mediaType === a.mediaType)), accept = allowed.flatMap((t) => [...t.extensions, t.mediaType]).join(",");
     const executing = !!session && !session.taskId && ["running", "queued"].includes(session.state), showStop = executing && !hasDraft;
     return /* @__PURE__ */ jsxs(Fragment, { children: [
       attachments.length ? /* @__PURE__ */ jsx("div", { className: "composer-attachment-list", "aria-label": "\u5F85\u53D1\u9001\u9644\u4EF6", children: attachments.map((attachment) => /* @__PURE__ */ jsxs("span", { className: "composer-attachment", children: [
         /* @__PURE__ */ jsx(Icon, { name: "evidence", size: 14 }),
         /* @__PURE__ */ jsx("span", { title: `\u5DF2\u4FDD\u5B58\u9879\u76EE\u8D44\u6599\uFF1A${attachment.title}`, children: attachment.title }),
-        /* @__PURE__ */ jsx("small", { children: attachment.mediaType === "application/pdf" ? "\u9879\u76EE\u8D44\u6599 \xB7 PDF \u539F\u4EF6 \xB7 \u9700\u663E\u5F0F\u89E3\u6790" : "\u9879\u76EE\u8D44\u6599 \xB7 \u6587\u672C\u539F\u4EF6" }),
+        /* @__PURE__ */ jsx("small", { children: attachment.mediaType.startsWith("text/") ? "\u9879\u76EE\u8D44\u6599 \xB7 \u6587\u672C\u539F\u4EF6" : "\u9879\u76EE\u8D44\u6599 \xB7 \u6574\u6587\u4EF6\u968F\u6D88\u606F\u53D1\u9001" }),
         /* @__PURE__ */ jsx("button", { type: "button", "aria-label": `\u4ECE\u8349\u7A3F\u79FB\u9664 ${attachment.title}`, title: "\u53EA\u79FB\u9664\u8349\u7A3F\u5F15\u7528\uFF0C\u4E0D\u5220\u9664\u9879\u76EE\u539F\u4EF6", disabled: busy, onClick: () => this.props.onRemoveAttachment(attachment.documentVersionId), children: /* @__PURE__ */ jsx(Icon, { name: "close", size: 13 }) })
       ] }, attachment.documentVersionId)) }) : null,
+      unsupported ? /* @__PURE__ */ jsxs("p", { className: "error-text composer-control-error", role: "alert", children: [
+        "\u8349\u7A3F\u9644\u4EF6\u8D85\u51FA\u5F53\u524D\u786E\u8BA4\u7684\u8F93\u5165\u80FD\u529B\uFF1B\u9644\u4EF6\u5DF2\u4FDD\u7559\uFF0C\u8BF7\u5207\u6362\u652F\u6301\u7684\u6A21\u578B\u6216\u79FB\u9664\u5F15\u7528\u3002",
+        this.state.attachmentTypes?.fileCapabilityReason
+      ] }) : null,
       uploadError ? /* @__PURE__ */ jsx("p", { className: "error-text composer-control-error", role: "alert", children: uploadError }) : null,
       /* @__PURE__ */ jsxs("div", { className: "composer-toolbar", children: [
         /* @__PURE__ */ jsxs("div", { className: "composer-control-left", children: [
@@ -157,11 +187,11 @@ class ComposerControls extends React.Component {
               ] }, source))
             ] }) : null
           ] }),
-          /* @__PURE__ */ jsxs("label", { className: "composer-tool-button composer-file-button" + (uploadDisabled ? " disabled" : ""), "aria-label": "\u6DFB\u52A0 PDF\u3001TXT \u6216 MD \u9644\u4EF6", children: [
+          /* @__PURE__ */ jsxs("label", { className: "composer-tool-button composer-file-button" + (uploadDisabled ? " disabled" : ""), "aria-label": "\u6DFB\u52A0\u5F53\u524D\u6A21\u578B\u652F\u6301\u7684\u9644\u4EF6", children: [
             /* @__PURE__ */ jsx(Icon, { name: "paperclip", size: 16 }),
             /* @__PURE__ */ jsx("span", { children: "\u9644\u4EF6" }),
             attachments.length ? /* @__PURE__ */ jsx("small", { children: attachments.length }) : null,
-            /* @__PURE__ */ jsx("input", { type: "file", multiple: true, accept: ".pdf,.txt,.md,application/pdf,text/plain,text/markdown", disabled: uploadDisabled, onChange: (event) => {
+            /* @__PURE__ */ jsx("input", { type: "file", multiple: true, accept, disabled: uploadDisabled, onChange: (event) => {
               const files = Array.from(event.currentTarget.files ?? []);
               event.currentTarget.value = "";
               void this.addFiles(files);
@@ -172,7 +202,7 @@ class ComposerControls extends React.Component {
         /* @__PURE__ */ jsx("div", { className: "grow" }),
         /* @__PURE__ */ jsx(ComposerModelMenu, { sessionId: session?.id ?? "none", current: currentModel, options, disabled: modelDisabled, locked: modelLocked, onSelect: this.props.onSendModel }),
         this.props.permissionControl,
-        /* @__PURE__ */ jsxs("button", { className: "primary compact composer-submit-control", type: showStop ? "button" : "submit", "aria-label": showStop ? "\u505C\u6B62\u6A21\u578B" : executing ? "\u6392\u961F\u53D1\u9001" : "\u53D1\u9001", title: showStop ? "\u505C\u6B62\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1" : executing ? "\u53D1\u9001\u5230\u961F\u5217" : "\u53D1\u9001\u6D88\u606F", "data-action": showStop ? "stop" : "send", disabled: showStop ? busy || projectArchived : !canSend || !hasDraft || !session, onClick: showStop ? () => this.stopSession(session.id) : void 0, children: [
+        /* @__PURE__ */ jsxs("button", { className: "primary compact composer-submit-control", type: showStop ? "button" : "submit", "aria-label": showStop ? "\u505C\u6B62\u6A21\u578B" : executing ? "\u6392\u961F\u53D1\u9001" : "\u53D1\u9001", title: showStop ? "\u505C\u6B62\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1" : executing ? "\u53D1\u9001\u5230\u961F\u5217" : "\u53D1\u9001\u6D88\u606F", "data-action": showStop ? "stop" : "send", disabled: showStop ? busy || projectArchived : !canSend || !hasDraft || !session || unsupported, onClick: showStop ? () => this.stopSession(session.id) : void 0, children: [
           /* @__PURE__ */ jsx(Icon, { name: showStop ? "stop" : "arrow", size: 16 }),
           showStop ? "\u505C\u6B62" : "\u53D1\u9001"
         ] })

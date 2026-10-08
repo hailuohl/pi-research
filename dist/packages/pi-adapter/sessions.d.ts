@@ -1,7 +1,7 @@
 import { type SessionView } from './session-history.js';
 import { type ParsedAttachmentPair, type ParsedAttachmentMetadata } from './attachments.js';
 import type { AppContext } from '../domain/context.js';
-import type { Actor, Session, Message, ModelConfig, Role, Row } from '../domain/types.js';
+import type { Actor, Session, Message, ModelConfig, Role, Row, MessageAttachment } from '../domain/types.js';
 export declare class SessionService {
     private c;
     parsedAttachmentMetadata?: (actor: Actor, session: Row<Session>, pair: ParsedAttachmentPair) => ParsedAttachmentMetadata;
@@ -24,6 +24,7 @@ export declare class SessionService {
         workspace?: string;
     }): Row<Session>;
     send(actor: Actor, id: string, value: unknown): Row<Message>;
+    private sendMessage;
     queue(actor: Actor, id: string, input?: unknown): {
         items: {
             contentTruncated: boolean;
@@ -35,12 +36,14 @@ export declare class SessionService {
             version: number;
             createdAt: string;
             updatedAt: string;
+            nativeAttachmentContextIds?: string[];
+            nativeAttachmentsDisabled?: boolean;
             nativeRequestId?: string;
             permission?: import("../policy/session-permissions.js").PermissionReference;
             generation?: number;
             phase?: "commentary" | "final_answer";
             toolCalls?: string[];
-            attachments?: import("../domain/types.js").MessageAttachment[];
+            attachments?: MessageAttachment[];
             sessionId: string;
             role: "user" | "assistant" | "system";
             content: string;

@@ -2,6 +2,7 @@ import {imageContextReferences,publicationImageCatalog,PUBLICATION_IMAGE_TOOL,DO
 import {applyModelConnection,connectionFetch,safeConnectionStream,type ModelConnection} from '../../packages/pi-adapter/model-connections.js';
 import {resolvedThinking,modelPayload} from '../../packages/pi-adapter/model-definition.js';
 import {managedModelFetch} from '../../packages/pi-adapter/model-fetch.js';
+import {attachmentPayload,type AttachmentManifest,type NativeAttachmentReference} from '../../packages/pi-adapter/attachment-input.js';
 import {MANAGED_HTTP_APIS} from '../../packages/scheduler/model-http.js';
 import type {JsonSchema} from '../../packages/contracts/operations/schema.js';
 import {buildWorkerPrompt} from '../../packages/pi-adapter/prompt.js';
@@ -17,8 +18,8 @@ import type { HostNotice } from '../../packages/pi-adapter/prompt.js';
 type WorkerMessage =
     | {type: 'tool_response'|'model_http_response'; requestId: number; error?: {code: string; message: string}; result?: unknown}
     | {type: 'abort'}
-    | {type: 'steer' | 'follow_up'; content: string; messageId: string}
-    | {type: 'start'; connection?:Omit<ModelConnection,'apiKey'>; managedHttp?:boolean; catalogFingerprint?:string; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
+    | {type: 'steer' | 'follow_up'; content: string; messageId: string;attachmentManifest?:AttachmentManifest}
+    | {type: 'start'; attachmentManifests?:AttachmentManifest[];connection?:Omit<ModelConnection,'apiKey'>; managedHttp?:boolean; catalogFingerprint?:string; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
 let session: AgentSession | undefined;
 let providerFailure: string | undefined;
 let imageFailure: string | undefined;
@@ -26,17 +27,19 @@ let started = false, stopping = false, taskSubmitted = false, turns = 0;
 const httpStop=new AbortController();
 let seq = 0;
 const queuedInputs:Array<{id:string;content:string}>=[];
+const attachmentManifests:AttachmentManifest[]=[];
 let initialUserSeen=false;
 const pending = new Map<number, {
     resolve: (value: unknown) => void;
     reject: (e: Error) => void;
     timer: NodeJS.Timeout;
+    attachmentRequest?:boolean;
 }>();
 function send(value: unknown) {
     if (process.connected)
         process.send?.(value);
 }
-function httpRpc(type:'model_http_acquire'|'model_http_finish',key:string,result?:unknown,imageRefs?:unknown[]){return new Promise<unknown>((resolve,reject)=>{const requestId=++seq,timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应'));},30000);pending.set(requestId,{resolve,reject,timer});send({type,requestId,key,result,...(imageRefs?{imageRefs}:{})});});}
+function httpRpc(type:'model_http_acquire'|'model_http_finish',key:string,result?:unknown,imageRefs?:unknown[],attachmentRefs?:NativeAttachmentReference[]){return new Promise<unknown>((resolve,reject)=>{const requestId=++seq,timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应'));},30000);pending.set(requestId,{resolve,reject,timer,attachmentRequest:!!attachmentRefs?.length});send({type,requestId,key,result,...(imageRefs?{imageRefs}:{}),...(attachmentRefs?{attachmentRefs}:{})});});}
 function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('受控工具请求超时')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 process.on('message', async (message) => {
     const raw = message as WorkerMessage;
@@ -46,7 +49,7 @@ process.on('message', async (message) => {
             return;
         clearTimeout(p.timer);
         pending.delete(raw.requestId);
-        if(raw.type==='model_http_response'&&raw.error?.code.startsWith('MODEL_IMAGE_'))imageFailure=`${raw.error.code}: ${raw.error.message}`;
+        if(raw.type==='model_http_response'&&raw.error&&(p.attachmentRequest||raw.error.code.startsWith('MODEL_IMAGE_')||raw.error.code.startsWith('MODEL_ATTACHMENT_')))imageFailure=`${raw.error.code}: ${raw.error.message}`;
         raw.error ? p.reject(new Error(`${raw.error.code}: ${raw.error.message}`)) : p.resolve(raw.result);
         return;
     }
@@ -59,6 +62,7 @@ process.on('message', async (message) => {
         if (session && !taskSubmitted && !stopping) {
             try {
                 queuedInputs.push({id:raw.messageId,content:raw.content});
+                if(raw.attachmentManifest)attachmentManifests.push(raw.attachmentManifest);
                 raw.type === 'steer' ? await session.steer(raw.content) : await session.followUp(raw.content);
                 if (taskSubmitted || stopping) { session.clearQueue(); send({type:'control_error',messageId:raw.messageId,error:'Worker 已停止接收输入'}); return; }
                 send({ type: 'message_ack', messageId: raw.messageId });
@@ -73,6 +77,7 @@ process.on('message', async (message) => {
     if (raw?.type !== 'start' || started)
         return;
     started = true;
+    attachmentManifests.push(...(raw.attachmentManifests??[]));
     try {
         const inspection = inspectPi(raw.repoRoot, raw.model);
         if (!inspection.ready) throw new Error(`${inspection.code}: ${inspection.message}`);
@@ -112,8 +117,9 @@ process.on('message', async (message) => {
             if(!raw.managedHttp){const response=await stream(chosen,context,options);return raw.connection?safeConnectionStream(response):response;}
             if(refs.length)checkCatalog();
             // Each transport closure owns this exact context, including all historical images.
-            const fetcher=managedModelFetch(raw.connection?connectionFetch(globalThis.fetch,raw.connection.baseUrl):globalThis.fetch,key=>{if(refs.length)checkCatalog();return httpRpc('model_http_acquire',key,undefined,refs) as Promise<{allowed:boolean}>;},(key,result)=>httpRpc('model_http_finish',key,result),httpStop.signal);
-            const response=await stream(chosen,context,{...options,transport:'sse',fetch:fetcher,...(definition?{onPayload:(body:unknown)=>modelPayload(body,definition,raw.model.thinking,raw.connection!.api)}:{})});
+            let attachmentRefs:NativeAttachmentReference[]=[];
+            const fetcher=managedModelFetch(raw.connection?connectionFetch(globalThis.fetch,raw.connection.baseUrl):globalThis.fetch,key=>{if(refs.length||attachmentRefs.length)checkCatalog();return httpRpc('model_http_acquire',key,undefined,refs,attachmentRefs) as Promise<{allowed:boolean}>;},(key,result)=>httpRpc('model_http_finish',key,result),httpStop.signal);
+            const response=await stream(chosen,context,{...options,transport:'sse',fetch:fetcher,onPayload:(body:unknown)=>{const configured=definition?modelPayload(body,definition,raw.model.thinking,raw.connection!.api):body;const attached=attachmentPayload(configured,context,model.api as import('../../packages/pi-adapter/model-management-types.js').ModelApi,definition,attachmentManifests,chosen.input?.includes('image')===true);attachmentRefs=attached.references;return attached.payload;}});
             return raw.connection?safeConnectionStream(response):response;
         };
         const finishTurn = session.agent.finishTurn;

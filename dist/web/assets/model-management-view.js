@@ -6,7 +6,7 @@ const identity = (provider, model) => JSON.stringify([provider, model ?? null]);
 const sameSelection = (a, b) => a.provider === b.provider && a.model === b.model && a.thinking === b.thinking;
 const own = (rows, key) => Object.prototype.hasOwnProperty.call(rows, key) ? rows[key] : void 0;
 const apiNames = { "openai-completions": "OpenAI Chat Completions", "openai-responses": "OpenAI Responses", "anthropic-messages": "Anthropic Messages" };
-const capabilityNames = { text: "\u6587\u672C", image: "\u56FE\u7247", pdf: "\u539F\u751F PDF", video: "\u539F\u751F\u89C6\u9891", structuredOutput: "\u7ED3\u6784\u5316\u8F93\u51FA", nativeWebSearch: "\u539F\u751F\u8054\u7F51\u641C\u7D22", midConversationSystem: "\u4F1A\u8BDD\u4E2D\u7CFB\u7EDF\u6D88\u606F" };
+const capabilityNames = { text: "\u6587\u672C", image: "\u56FE\u7247", pdf: "\u539F\u751F PDF", video: "\u539F\u751F\u89C6\u9891", structuredOutput: "\u7ED3\u6784\u5316\u8F93\u51FA", midConversationSystem: "\u4F1A\u8BDD\u4E2D\u7CFB\u7EDF\u6D88\u606F" };
 const effectiveNames = { available: "\u53EF\u7528", disabled: "\u672A\u58F0\u660E", unsupported: "\u6682\u4E0D\u652F\u6301" };
 const piLevels = ["off", "minimal", "low", "medium", "high", "xhigh", "max"];
 const defaultCapabilities = { text: true, image: false, pdf: false, video: false, structuredOutput: false, nativeWebSearch: false, midConversationSystem: false };
@@ -341,7 +341,7 @@ class ModelManagementPanel extends React.Component {
         names[state] ?? state,
         result && !dirty ? ` \xB7 ${categories[result.category] ?? result.category} \xB7 ${result.requests} \u6B21\u8BF7\u6C42${result.httpStatus ? ` \xB7 HTTP ${result.httpStatus}` : ""} \xB7 ${new Date(result.checkedAt).toLocaleString()}` : ""
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u9A8C\u8BC1\u8FDE\u63A5\u6216\u6A21\u578B\u7684\u6700\u5C0F\u8BF7\u6C42\uFF0C\u4E0D\u9A8C\u8BC1\u63A8\u7406\u6620\u5C04\u3001\u7ED3\u6784\u5316\u8F93\u51FA\u3001\u539F\u4EF6\u6216\u539F\u751F\u8054\u7F51\u80FD\u529B\u3002" })
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u9A8C\u8BC1\u8FDE\u63A5\u6216\u6A21\u578B\u7684\u6700\u5C0F\u8BF7\u6C42\uFF0C\u4E0D\u9A8C\u8BC1\u63A8\u7406\u6620\u5C04\u3001\u7ED3\u6784\u5316\u8F93\u51FA\u3001\u5177\u4F53\u6587\u4EF6\u8F93\u5165\u80FD\u529B\u3002" })
     ] });
   }
   renderOverride(field) {
@@ -609,7 +609,7 @@ class ModelManagementPanel extends React.Component {
                   this.renderOverride(`capabilities.${key}`),
                   /* @__PURE__ */ jsx("small", { children: definition.dirty ? "\u58F0\u660E\u5DF2\u4FEE\u6539\uFF0C\u4FDD\u5B58\u540E\u6838\u5BF9\u6709\u6548\u72B6\u6001" : model?.effectiveCapabilities[key] ? effectiveNames[model.effectiveCapabilities[key].state] + " \xB7 " + model.effectiveCapabilities[key].reason : "\u4FDD\u5B58\u540E\u7531\u9002\u914D\u5668\u6838\u5BF9\u6709\u6548\u72B6\u6001" })
                 ] }, key)) }),
-                /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u80FD\u529B\u58F0\u660E\u4E0E\u5B9E\u9645\u9002\u914D\u72B6\u6001\u5206\u522B\u8BB0\u5F55\u3002\u539F\u751F PDF\u3001\u89C6\u9891\u548C\u8054\u7F51\u641C\u7D22\u4EE5\u6709\u6548\u72B6\u6001\u53CA\u5B9E\u9645\u6D4B\u8BD5\u7ED3\u679C\u4E3A\u51C6\u3002" }),
+                /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u80FD\u529B\u58F0\u660E\u4E0E\u5B9E\u9645\u9002\u914D\u72B6\u6001\u5206\u522B\u8BB0\u5F55\u3002\u56FE\u7247\u3001PDF\u548C\u89C6\u9891\u9644\u4EF6\u4EE5\u6709\u6548\u72B6\u6001\u53CA\u5B9E\u9645\u6D4B\u8BD5\u7ED3\u679C\u4E3A\u51C6\u3002" }),
                 /* @__PURE__ */ jsxs("div", { children: [
                   /* @__PURE__ */ jsxs("label", { children: [
                     "\u539F\u751F\u9002\u914D profile",

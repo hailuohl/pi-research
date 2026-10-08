@@ -11,6 +11,8 @@ import type {EvidenceService} from '../evidence/service.js';
 import type {ConnectorService} from '../connectors/service.js';
 import {routePaperId} from '../connectors/contracts.js';
 import type {DocumentVersion,DocumentAcquireInput,LiteratureDocumentAcquireInput} from './types.js';
+import {assertUploadedMedia} from './uploaded-media.js';
+import {ATTACHMENT_MEDIA_TYPES,NATIVE_ATTACHMENT_BYTES} from '../pi-adapter/attachment-input.js';
 export class DocumentService {
  constructor(private c:AppContext,private evidence:EvidenceService,private connectors:ConnectorService){}
  get(actor:Actor,pid:string,id:string){userOnly(actor);scope(actor,pid);return this.c.store.get<DocumentVersion>('document-version',id,pid);}
@@ -23,17 +25,17 @@ export class DocumentService {
  }
  import(actor:Actor,pid:string,value:{title:string;mediaType:string;contentBase64:string;license?:string},key:string) {
   userOnly(actor);scope(actor,pid);assertProjectWritable(this.c.store,pid);text(key,'Idempotency-Key',200);
-  const title=text(value.title,'title',200),mediaType=oneOf(value.mediaType,['application/pdf','text/plain','text/markdown'] as const,'mediaType');
+  const title=text(value.title,'title',200),mediaType=oneOf(value.mediaType,ATTACHMENT_MEDIA_TYPES,'mediaType');
   const encoded=text(value.contentBase64,'contentBase64',Math.ceil(32*1024*1024/3)*4);
   ensure(encoded.length%4===0&&/^[A-Za-z0-9+/]*={0,2}$/.test(encoded),'INVALID_INPUT','需要标准 Base64',400);
   const bytes=Buffer.from(encoded,'base64');ensure(bytes.toString('base64')===encoded,'INVALID_INPUT','需要标准 Base64',400);ensure(bytes.length>0&&bytes.length<=32*1024*1024,'ARTIFACT_TOO_LARGE','文档必须在 1 byte–32 MiB 范围',413);
-  if(mediaType==='application/pdf')ensure(bytes.subarray(0,5).toString('ascii')==='%PDF-','DOCUMENT_FORMAT_INVALID','原始 PDF 缺少 PDF 标识',400);
+  if(!mediaType.startsWith('text/')){if(mediaType!=='application/pdf')ensure(bytes.length<=NATIVE_ATTACHMENT_BYTES,'ARTIFACT_TOO_LARGE','图片或视频原件最多20 MiB',413);assertUploadedMedia(bytes,mediaType);}
   else{try{new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch{ensure(false,'DOCUMENT_FORMAT_INVALID','文本必须是有效 UTF-8',400);}ensure(!bytes.includes(0),'DOCUMENT_FORMAT_INVALID','文本含无效字符',400);}
   const license=value.license===undefined?null:text(value.license,'license',1000);
   const request={title,mediaType,license,digest:digest(bytes)},op=`document-import:${pid}`;
   const old=this.c.store.operationResult<Row<DocumentVersion>>(op,key,request);if(old.found)return old.value;
   const prepared=this.evidence.prepareArtifact(pid,title,bytes,mediaType,'document:user-upload');
-  return this.c.store.operation(op,key,request,()=>{scope(actor,pid);assertProjectWritable(this.c.store,pid);const a=this.evidence.publishPrepared(pid,prepared);return this.publish(pid,{title,original:this.descriptor(a),source:{kind:'upload',requestedVersion:null,reportedVersion:null,versionAssurance:'user-supplied'},contentKind:mediaType==='application/pdf'?'original-pdf':'user-text',acquiredAt:new Date().toISOString(),license:{value:license,assurance:license?'user-declared':'unknown'},limitations:['User-supplied content is untrusted data','Acquisition does not verify scientific claims or publication identity']});});
+  return this.c.store.operation(op,key,request,()=>{scope(actor,pid);assertProjectWritable(this.c.store,pid);const a=this.evidence.publishPrepared(pid,prepared);return this.publish(pid,{title,original:this.descriptor(a),source:{kind:'upload',requestedVersion:null,reportedVersion:null,versionAssurance:'user-supplied'},contentKind:mediaType==='application/pdf'?'original-pdf':mediaType.startsWith('text/')?'user-text':'user-media',acquiredAt:new Date().toISOString(),license:{value:license,assurance:license?'user-declared':'unknown'},limitations:['User-supplied content is untrusted data','Acquisition does not verify scientific claims or publication identity']});});
  }
  createFromPaper(actor:Actor,pid:string,paperReadId:string,key:string) {
   userOnly(actor);scope(actor,pid);assertProjectWritable(this.c.store,pid);text(key,'Idempotency-Key',200);

@@ -9,7 +9,7 @@ import {DiscoveryGrants} from './discovery-grants.js';
 
 const sources=['alphaxiv','openalex','biorxiv','pubmed','crossref'] as const;
 type Source=typeof sources[number];
-const contentNames:Record<DocumentVersion['contentKind'],string>={metadata:'仅元数据',abstract:'仅摘要','provider-text':'来源全文文本（无 PDF 页映射）','original-pdf':'已固定原始 PDF 字节','user-text':'用户导入文本'};
+const contentNames:Record<DocumentVersion['contentKind'],string>={metadata:'仅元数据',abstract:'仅摘要','provider-text':'来源全文文本（无 PDF 页映射）','original-pdf':'已固定原始 PDF 字节','user-text':'用户导入文本','user-media':'用户导入媒体原件'};
 const call=<T=any>(projectId:string,name:string,input:unknown={})=>api<T>(`/operations/${name}`,{projectId,input});
 export function literatureRequestedVersion(target:{source:string;id:string;requestedVersion?:string}){
     if(target.requestedVersion)return `请求版本 ${target.requestedVersion}`;

@@ -12,5 +12,6 @@ export function readNativeRoute(service:NativeRequestService,path:string,url:URL
 export function writeNativeRoute(service:NativeRequestService,path:string,value:unknown,key:string,signal:AbortSignal,method:string,query:string){
  const prepare=path.match(/^\/sessions\/([^/]+)\/native-requests$/),media=path.match(/^\/sessions\/([^/]+)\/native-media$/),action=path.match(/^\/native-requests\/([^/]+)\/(decide|execute|cancel)$/);if(!prepare&&!media&&!action)return undefined;
  ensure(method==='POST'&&query==='','METHOD_NOT_ALLOWED','原生请求仅接受无查询参数POST',405);
- return {result:prepare?service.prepare(USER,prepare[1],value,key):media?service.importMedia(USER,media[1],value,key):action![2]==='decide'?service.decide(USER,action![1],value):action![2]==='cancel'?service.cancel(USER,action![1],value):service.execute(USER,action![1],value,key,signal)};
+ ensure(action?.[2]==='cancel','NATIVE_REQUEST_RETIRED','独立原生分析与原生联网已停用，请通过当前会话附件发送支持的文件。',410);
+ return {result:service.cancel(USER,action[1],value)};
 }

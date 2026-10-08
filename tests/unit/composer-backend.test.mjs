@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setup,USER} from '../support/research.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
-import {messageInput} from '../../dist/packages/pi-adapter/attachments.js';
+import {messageInput,attachmentReferences} from '../../dist/packages/pi-adapter/attachments.js';
 const first={provider:'fixture-a',model:'a',thinking:'off'},second={provider:'fixture-b',model:'b',thinking:'high'};
 const current=s=>s.app.sessions.get(USER,s.session.id);
 
@@ -40,7 +40,8 @@ test('message attachments retain fixed references through queues, retry, branch 
  const s=setup();try{
   const content='研究🧪\n'.repeat(5000),importDoc=(pid,title,body,mediaType='text/plain')=>s.app.operations.execute(USER,'document_import',{title,mediaType,contentBase64:Buffer.from(body).toString('base64')},{projectId:pid,idempotencyKey:title});
   const doc=await importDoc(s.project.id,'notes.txt',content),pdf=await importDoc(s.project.id,'reference.pdf','%PDF-1.7\nfixture','application/pdf');
-  const message=s.app.sessions.send(USER,s.session.id,{content:'查看附件',attachmentDocumentIds:[doc.id,pdf.id]});
+  assert.throws(()=>s.app.sessions.send(USER,s.session.id,{content:'新附件须符合当前模型',attachmentDocumentIds:[pdf.id]}),{code:'MODEL_ATTACHMENT_UNSUPPORTED'});
+  const message=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'user',content:'查看附件',mode:'prompt',status:'queued',attachments:attachmentReferences(s.app.store,current(s),[doc.id,pdf.id])});
   assert.equal(message.attachments.length,2);assert.ok(messageInput(message).includes(message.id));assert.ok(!messageInput(message).includes(content));
   const page=s.app.operations.execute(USER,'session_view',{sessionId:s.session.id},{projectId:s.project.id});assert.deepEqual(page.messages[0].attachments,message.attachments);assert.deepEqual(page.pendingMessages[0].attachments,message.attachments);
   const edited=s.app.sessions.queueAction(USER,s.session.id,{messageId:message.id,expectedVersion:message.version,action:'edit',content:'修改正文'});assert.deepEqual(edited.attachments,message.attachments);

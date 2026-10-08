@@ -3,7 +3,7 @@ let mode, output, committedId;
 const send=value=>process.connected&&process.send(value);
 process.on('message',m=>{
  if(m.type==='start'){
-  const parts=m.prompt.match(/HOST_FINISH (\w+) (\w+)/),context=JSON.parse(m.prompt);mode=parts?.[1]??(context.publicationReview?'stream':undefined);
+  const parts=m.prompt.match(/HOST_FINISH (\w+) (\w+)/),context=JSON.parse(m.prompt.replace(/\n\n<pi-research-input:[A-Za-z0-9_-]+>$/,''));mode=parts?.[1]??(context.publicationReview?'stream':undefined);
   output={summary:'Host lifecycle fixture',outcome:parts?.[2]??'completed',artifactIds:[],evidenceIds:context.inputEvidenceIds??[],claims:[],unresolvedQuestions:[],...(m.role==='reviewer'?{verdict:'accept'}:{})};
   send({type:'ready',model:{provider:m.model.provider,id:m.model.model}});
   if(mode==='hold')return;

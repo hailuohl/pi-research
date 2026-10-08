@@ -7,6 +7,7 @@ import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 import {setup,USER} from '../support/research.mjs';
 import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
+import {inputEnvelope} from '../../dist/packages/pi-adapter/attachment-input.js';
 async function until(predicate){const end=Date.now()+20000;while(Date.now()<end){if(predicate())return;await delay(10);}assert.fail('queue fixture timed out');}
 
 test('Host launches writer-claimed edited body; queued follow-up stays editable and ACK alone is not consumption',async()=>{
@@ -17,7 +18,7 @@ test('Host launches writer-claimed edited body; queued follow-up stays editable 
   const initial=s.app.sessions.send(USER,s.session.id,{content:'stale body'}),claim=host.claimSession.bind(host);let edited=false;
   host.claimSession=(...args)=>{if(!edited){edited=true;s.app.sessions.queueAction(USER,s.session.id,{messageId:initial.id,expectedVersion:initial.version,action:'edit',content:'writer latest body'});}return claim(...args);};
   host.tick();await until(()=>s.app.sessions.messages(USER,s.session.id).some(m=>m.role==='assistant'));
-  assert.equal(s.app.sessions.messages(USER,s.session.id).find(m=>m.role==='assistant').content,'writer latest body');
+  assert.equal(s.app.sessions.messages(USER,s.session.id).find(m=>m.role==='assistant').content,'writer latest body'+inputEnvelope(initial.id));
   const follow=s.app.sessions.send(USER,s.session.id,{content:'durable FIFO'});host.tick();assert.equal(s.app.store.get('message',follow.id).status,'queued');
   const edit=s.app.sessions.queueAction(USER,s.session.id,{messageId:follow.id,expectedVersion:follow.version,action:'edit',content:'FIFO edited'});assert.equal(edit.content,'FIFO edited');
   const immediate=s.app.sessions.send(USER,s.session.id,{content:'ACK does not prove consumption'}),steer=s.app.sessions.queueAction(USER,s.session.id,{messageId:immediate.id,expectedVersion:immediate.version,action:'steer'});host.tick();
@@ -49,7 +50,7 @@ test('actual Host and pinned SDK consume duplicate and slash-prefix steers in or
   for(const m of [initial,...steers])assert.equal(s.app.store.get('message',m.id).status,'completed');
   assert.equal(s.app.store.get('message',follow.id).status,'queued');assert.equal(s.app.agentAdmission.snapshot().counts.held,0);
   const current=s.app.sessions.get(USER,row.id),native=readFileSync(s.app.store.paths.physical(current.piSessionPath),'utf8').trim().split(/\r?\n/).map(JSON.parse),users=native.filter(e=>e.message?.role==='user').map(e=>e.message.content.filter(p=>p.type==='text').map(p=>p.text).join(''));
-  assert.deepEqual(users.slice(-4),['duplicate','duplicate','/skill:missing args','/missing-template args']);
+  assert.deepEqual(users.slice(-4),['duplicate','duplicate','/skill:missing args','/missing-template args'].map((content,i)=>content+inputEnvelope(steers[i].id)));
   host.tick();assert.notEqual(host.active.get(row.id)?.child.pid,initialPid);await until(()=>host.active.size===0);assert.equal(s.app.store.get('message',follow.id).status,'completed');
  }finally{releaseFirst();await host.stop();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));s.close();}
 });

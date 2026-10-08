@@ -144,7 +144,7 @@ export declare const OUTPUT_SCHEMAS: {
                                     readonly enum: readonly ["gpu_busy", "ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                                 };
                             };
-                            readonly required: ("requested" | "state" | "reason" | "targetId" | "backend" | "held" | "nextAttemptAt")[];
+                            readonly required: ("requested" | "reason" | "state" | "targetId" | "backend" | "held" | "nextAttemptAt")[];
                             readonly additionalProperties: false;
                         }, {
                             readonly type: "null";
@@ -1719,7 +1719,7 @@ export declare const OUTPUT_SCHEMAS: {
                     readonly additionalProperties: false;
                 };
             };
-            readonly required: ("version" | "id" | "status" | "digest" | "createdAt" | "kind" | "subjectKind" | "subjectId" | "scope" | "reason" | "projectId" | "updatedAt")[];
+            readonly required: ("version" | "id" | "status" | "reason" | "digest" | "createdAt" | "kind" | "subjectKind" | "subjectId" | "scope" | "projectId" | "updatedAt")[];
             readonly additionalProperties: false;
         };
     };
@@ -4463,7 +4463,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "action" | "id" | "status" | "createdAt" | "kind" | "approvalId" | "inputDigest" | "reason" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
+        readonly required: ("version" | "action" | "id" | "status" | "reason" | "createdAt" | "kind" | "approvalId" | "inputDigest" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
         readonly additionalProperties: false;
     };
     readonly campaign_inspect: {
@@ -5367,7 +5367,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("version" | "action" | "id" | "status" | "createdAt" | "kind" | "approvalId" | "inputDigest" | "reason" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
+                    readonly required: ("version" | "action" | "id" | "status" | "reason" | "createdAt" | "kind" | "approvalId" | "inputDigest" | "projectId" | "updatedAt" | "campaignId" | "roundId" | "observationIds" | "candidates" | "decisionDigest")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -7594,7 +7594,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
-                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
             };
             readonly acquiredAt: {
                 readonly type: "string";
@@ -7787,7 +7787,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
-                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
             };
             readonly acquiredAt: {
                 readonly type: "string";
@@ -7980,7 +7980,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
             readonly contentKind: {
-                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
             };
             readonly acquiredAt: {
                 readonly type: "string";
@@ -8178,7 +8178,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                         readonly contentKind: {
-                            readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text"];
+                            readonly enum: readonly ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
                         };
                         readonly acquiredAt: {
                             readonly type: "string";
@@ -12952,12 +12952,18 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        nativeAttachmentsDisabled: {
+                            readonly type: "boolean";
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
                             readonly items: {
                                 readonly type: "object";
                                 readonly properties: {
+                                    readonly inputMode: {
+                                        readonly const: "native";
+                                    };
                                     readonly parseResultId: {
                                         readonly pattern?: string | undefined;
                                         readonly type: "string";
@@ -13006,7 +13012,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                     readonly mediaType: {
-                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown"];
+                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4"];
                                     };
                                     readonly size: {
                                         readonly type: "integer";
@@ -13169,12 +13175,18 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        nativeAttachmentsDisabled: {
+                            readonly type: "boolean";
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
                             readonly items: {
                                 readonly type: "object";
                                 readonly properties: {
+                                    readonly inputMode: {
+                                        readonly const: "native";
+                                    };
                                     readonly parseResultId: {
                                         readonly pattern?: string | undefined;
                                         readonly type: "string";
@@ -13223,7 +13235,7 @@ export declare const OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                     readonly mediaType: {
-                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown"];
+                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4"];
                                     };
                                     readonly size: {
                                         readonly type: "integer";
@@ -13436,6 +13448,9 @@ export declare const OUTPUT_SCHEMAS: {
     readonly session_attachment_read: {
         readonly type: "object";
         readonly properties: {
+            readonly inputMode: {
+                readonly const: "native";
+            };
             readonly messageId: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -13469,7 +13484,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
             readonly status: {
-                readonly enum: readonly ["text", "requires_parse", "fixed_parse_metadata"];
+                readonly enum: readonly ["text", "requires_parse", "fixed_parse_metadata", "native_file"];
             };
             readonly cursorUnit: {
                 readonly const: "utf16";
@@ -13522,7 +13537,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
             readonly mediaType: {
-                readonly enum: readonly ["application/pdf", "text/plain", "text/markdown"];
+                readonly enum: readonly ["application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4"];
             };
             readonly size: {
                 readonly type: "integer";
@@ -13922,7 +13937,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["gpu_busy", "ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "requested" | "state" | "generation" | "leaseUntil" | "kind" | "reason" | "targetId" | "backend" | "projectId" | "held" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("id" | "requested" | "reason" | "state" | "generation" | "leaseUntil" | "kind" | "targetId" | "backend" | "projectId" | "held" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -29366,7 +29381,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("value" | "kind" | "reason" | "skillId")[];
+                    readonly required: ("value" | "reason" | "kind" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -29417,7 +29432,7 @@ export declare const OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("value" | "kind" | "reason" | "skillId")[];
+                    readonly required: ("value" | "reason" | "kind" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };

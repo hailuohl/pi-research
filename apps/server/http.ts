@@ -1,5 +1,6 @@
 import {operationRoute} from './operation-routes.js';
 import {readNativeRoute,writeNativeRoute} from './native-routes.js';
+import {attachmentRoute} from './attachment-routes.js';
 import {writeEnvironment} from './environment-routes.js';
 import {configureModelConnection} from '../../packages/pi-adapter/model-connections.js';
 import {inspectModelManagement,configureModelManagement,recommendModel} from '../../packages/pi-adapter/model-management.js';
@@ -44,6 +45,7 @@ export function createHttpServer(options: ServerOptions) {
             if (path.startsWith('/api/')) {
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    const attachment=attachmentRoute(app,route,url,req.method!);if(attachment)return json(attachment.result);
                     const native=readNativeRoute(app.nativeRequests,route,url);if(native!==undefined)return json(native);
                     if(route==='/settings/model-management'){ensure(url.search==='','INVALID_INPUT','模型管理目录不接受查询参数',400);return json(await inspectModelManagement(app.context,USER));}
                     if(route==='/settings/model-recommendations'){ensure([...url.searchParams.keys()].every(k=>['provider','model'].includes(k))&&url.searchParams.getAll('provider').length===1&&url.searchParams.getAll('model').length===1,'INVALID_INPUT','推荐只接受一个供应商与模型ID',400);return json(await recommendModel(app.context,USER,text(url.searchParams.get('provider'),'provider',100),text(url.searchParams.get('model'),'model',160)));}
@@ -71,7 +73,7 @@ export function createHttpServer(options: ServerOptions) {
                 const chunks: Buffer[] = [];
                 for await (const chunk of req) {
                     size += chunk.length;
-                    const maximum=/^\/sessions\/[^/]+\/native-media$/.test(route)?32*1024*1024:route==='/operations/document_import'?48*1024*1024:['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?24*1024*1024:3*1024*1024;
+                    const maximum=/^\/sessions\/[^/]+\/attachments$/.test(route)||route==='/operations/document_import'?48*1024*1024:/^\/sessions\/[^/]+\/native-media$/.test(route)?32*1024*1024:['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?24*1024*1024:3*1024*1024;
                     ensure(size <= maximum, 'BODY_TOO_LARGE', route==='/operations/document_import'?'文档导入 JSON 最多 48 MiB；原始文件最多 32 MiB':['/operations/manuscript_create','/operations/publication_template_import','/publication-templates'].includes(route)?'文稿或模板输入 JSON 最多 24 MiB；原始文件合计最多 16 MiB':'请求最多 3 MiB', 413);
                     chunks.push(Buffer.from(chunk));
                 }
@@ -83,6 +85,7 @@ export function createHttpServer(options: ServerOptions) {
                     throw new DomainError('INVALID_JSON', '请求不是有效 JSON', 400);
                 }
                 if(route==='/settings/environment')return json(writeEnvironment(app,url,req.method!,body,key!));
+                const attachment=attachmentRoute(app,route,url,req.method!,body,key);if(attachment)return json(attachment.result);
                 if(route==='/settings/model-connections'){
                     ensure(req.method==='POST'&&url.search==='','METHOD_NOT_ALLOWED','模型连接保存仅接受无查询参数的 POST',405);
                     return json(configureModelConnection(app.context,USER,body,key!));

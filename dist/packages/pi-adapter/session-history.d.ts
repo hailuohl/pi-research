@@ -79,6 +79,8 @@ export declare function sessionQueue(store: Store, session: Row<Session>, value?
         version: number;
         createdAt: string;
         updatedAt: string;
+        nativeAttachmentContextIds?: string[];
+        nativeAttachmentsDisabled?: boolean;
         nativeRequestId?: string;
         permission?: import("../policy/session-permissions.js").PermissionReference;
         generation?: number;

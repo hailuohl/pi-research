@@ -2,6 +2,7 @@ import { imageContextReferences, publicationImageCatalog, PUBLICATION_IMAGE_TOOL
 import { applyModelConnection, connectionFetch, safeConnectionStream } from '../../packages/pi-adapter/model-connections.js';
 import { resolvedThinking, modelPayload } from '../../packages/pi-adapter/model-definition.js';
 import { managedModelFetch } from '../../packages/pi-adapter/model-fetch.js';
+import { attachmentPayload } from '../../packages/pi-adapter/attachment-input.js';
 import { MANAGED_HTTP_APIS } from '../../packages/scheduler/model-http.js';
 import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
 import { mkdirSync } from 'node:fs';
@@ -16,13 +17,14 @@ let started = false, stopping = false, taskSubmitted = false, turns = 0;
 const httpStop = new AbortController();
 let seq = 0;
 const queuedInputs = [];
+const attachmentManifests = [];
 let initialUserSeen = false;
 const pending = new Map();
 function send(value) {
     if (process.connected)
         process.send?.(value);
 }
-function httpRpc(type, key, result, imageRefs) { return new Promise((resolve, reject) => { const requestId = ++seq, timer = setTimeout(() => { pending.delete(requestId); reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type, requestId, key, result, ...(imageRefs ? { imageRefs } : {}) }); }); }
+function httpRpc(type, key, result, imageRefs, attachmentRefs) { return new Promise((resolve, reject) => { const requestId = ++seq, timer = setTimeout(() => { pending.delete(requestId); reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应')); }, 30000); pending.set(requestId, { resolve, reject, timer, attachmentRequest: !!attachmentRefs?.length }); send({ type, requestId, key, result, ...(imageRefs ? { imageRefs } : {}), ...(attachmentRefs ? { attachmentRefs } : {}) }); }); }
 function rpc(tool, input, toolCallId) { return new Promise((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('受控工具请求超时')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 process.on('message', async (message) => {
     const raw = message;
@@ -32,7 +34,7 @@ process.on('message', async (message) => {
             return;
         clearTimeout(p.timer);
         pending.delete(raw.requestId);
-        if (raw.type === 'model_http_response' && raw.error?.code.startsWith('MODEL_IMAGE_'))
+        if (raw.type === 'model_http_response' && raw.error && (p.attachmentRequest || raw.error.code.startsWith('MODEL_IMAGE_') || raw.error.code.startsWith('MODEL_ATTACHMENT_')))
             imageFailure = `${raw.error.code}: ${raw.error.message}`;
         raw.error ? p.reject(new Error(`${raw.error.code}: ${raw.error.message}`)) : p.resolve(raw.result);
         return;
@@ -47,6 +49,8 @@ process.on('message', async (message) => {
         if (session && !taskSubmitted && !stopping) {
             try {
                 queuedInputs.push({ id: raw.messageId, content: raw.content });
+                if (raw.attachmentManifest)
+                    attachmentManifests.push(raw.attachmentManifest);
                 raw.type === 'steer' ? await session.steer(raw.content) : await session.followUp(raw.content);
                 if (taskSubmitted || stopping) {
                     session.clearQueue();
@@ -69,6 +73,7 @@ process.on('message', async (message) => {
     if (raw?.type !== 'start' || started)
         return;
     started = true;
+    attachmentManifests.push(...(raw.attachmentManifests ?? []));
     try {
         const inspection = inspectPi(raw.repoRoot, raw.model);
         if (!inspection.ready)
@@ -126,9 +131,10 @@ process.on('message', async (message) => {
             if (refs.length)
                 checkCatalog();
             // Each transport closure owns this exact context, including all historical images.
-            const fetcher = managedModelFetch(raw.connection ? connectionFetch(globalThis.fetch, raw.connection.baseUrl) : globalThis.fetch, key => { if (refs.length)
-                checkCatalog(); return httpRpc('model_http_acquire', key, undefined, refs); }, (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal);
-            const response = await stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher, ...(definition ? { onPayload: (body) => modelPayload(body, definition, raw.model.thinking, raw.connection.api) } : {}) });
+            let attachmentRefs = [];
+            const fetcher = managedModelFetch(raw.connection ? connectionFetch(globalThis.fetch, raw.connection.baseUrl) : globalThis.fetch, key => { if (refs.length || attachmentRefs.length)
+                checkCatalog(); return httpRpc('model_http_acquire', key, undefined, refs, attachmentRefs); }, (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal);
+            const response = await stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher, onPayload: (body) => { const configured = definition ? modelPayload(body, definition, raw.model.thinking, raw.connection.api) : body; const attached = attachmentPayload(configured, context, model.api, definition, attachmentManifests, chosen.input?.includes('image') === true); attachmentRefs = attached.references; return attached.payload; } });
             return raw.connection ? safeConnectionStream(response) : response;
         };
         const finishTurn = session.agent.finishTurn;

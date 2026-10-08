@@ -134,10 +134,22 @@ test('document imports add each successful project reference and keep it if a la
     const view = synchronousState(new ComposerControls(controlsProps({ onAddAttachment: item => imported.push(item) })));
     const file = (name, value) => ({ name, size: value.length, arrayBuffer: async () => new TextEncoder().encode(value).buffer });
     await view.addFiles([file('notes.txt', 'hello'), file('bad.txt', 'world')]);
-    assert.deepEqual(calls.map(call => call.url), ['/api/operations/document_import', '/api/operations/document_import']);
-    assert.deepEqual(calls[0].body, { projectId: 'p', input: { title: 'notes.txt', mediaType: 'text/plain', contentBase64: 'aGVsbG8=' } });
+    assert.deepEqual(calls.map(call => call.url), ['/api/sessions/s/attachments', '/api/sessions/s/attachments']);
+    assert.deepEqual(calls[0].body, { title: 'notes.txt', mediaType: 'text/plain', contentBase64: 'aGVsbG8=' });
     assert.deepEqual(imported, [{ documentVersionId: 'doc-1', artifactId: 'art-1', digest: 'd1', title: 'notes.txt', mediaType: 'text/plain', size: 5 }]);
     assert.match(view.state.uploadError, /invalid UTF-8/);
+});
+
+test('attachment types follow the saved model, reject forged types and retain unsupported draft references',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const posts=[];globalThis.fetch=async(url,init)=>{posts.push({url,body:JSON.parse(init.body)});return response({id:'image',title:'image.png',original:{artifactId:'image-art',digest:'image-digest',size:4,mediaType:'image/png'}});};
+ const refs=[],view=synchronousState(new ComposerControls(controlsProps({onAddAttachment:item=>refs.push(item)})));assert.equal(find(view.render(),n=>n.type==='input'&&n.props.type==='file').props.accept,'.txt,text/plain,.md,text/markdown');
+ const file={name:'image.png',size:4,arrayBuffer:async()=>new Uint8Array([1,2,3,4]).buffer};await view.addFiles([file]);assert.equal(posts.length,0);
+ view.setState({attachmentTypes:{model,types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:33554432,native:false},{mediaType:'image/png',extensions:['.png'],maxBytes:20971520,native:true}],maxFiles:5,nativeBytes:20971520}});assert.match(find(view.render(),n=>n.type==='input'&&n.props.type==='file').props.accept,/image\/png/);await view.addFiles([file]);assert.equal(posts[0].url,'/api/sessions/s/attachments');assert.equal(refs[0].mediaType,'image/png');
+ view.props={...view.props,attachments:refs,session:{...session,model:{provider:'other',model:'text',thinking:'off'}}};const tree=view.render();assert.doesNotMatch(find(tree,n=>n.type==='input'&&n.props.type==='file').props.accept,/image\/png/);assert.equal(find(tree,n=>n.props['data-action']==='send').props.disabled,true);assert.match(JSON.stringify(tree),/附件已保留/);assert.equal(view.props.attachments.length,1);
+});
+
+test('late attachment-type responses cannot revive the previous model capabilities',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const pending=[];globalThis.fetch=async()=>new Promise(resolve=>pending.push(resolve));const view=synchronousState(new ComposerControls(controlsProps()));const first=view.loadAttachmentTypes();view.props={...view.props,session:{...session,model:{provider:'other',model:'text',thinking:'off'}}};const second=view.loadAttachmentTypes();pending[1](response({model:view.props.session.model,types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:33554432,native:false}]}));await second;pending[0](response({model,types:[{mediaType:'application/pdf',extensions:['.pdf'],maxBytes:20971520,native:true}]}));await first;assert.equal(view.state.attachmentTypes.model.provider,'other');assert.doesNotMatch(find(view.render(),n=>n.type==='input'&&n.props.type==='file').props.accept,/pdf/);
 });
 
 test('attachment send preserves new typing and attachments added while the request is pending', async t => {

@@ -12,7 +12,6 @@ import { comparableRuns, comparisonMetric } from "./models.js";
 import { ExperimentGraph } from "./experiment-graph.js";
 import { ChatWorkflows } from "./chat-workflows.js";
 import { ComposerControls } from "./composer-controls.js";
-import { NativeModelRequests } from "./native-model-requests.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
 import { Icon, Badge, SectionTitle, nativeSelectButton } from "./ui.js";
@@ -38,7 +37,6 @@ class Chat extends React.Component {
           /* @__PURE__ */ jsx("span", { className: "muted", children: session ? `${session.model.provider || "\u672A\u914D\u7F6E\u4F9B\u5E94\u5546"} / ${session.model.model || "\u672A\u914D\u7F6E\u6A21\u578B"}` : "\u6BCF\u4E2A\u4E3B\u4F1A\u8BDD\u90FD\u6709\u72EC\u7ACB\u5386\u53F2\u548C\u5DE5\u4F5C\u533A" })
         ] }),
         session ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-          session.role === "coordinator" && !session.taskId && !session.teamId ? /* @__PURE__ */ jsx(NativeModelRequests, { projectId: data.project.id, session, attachments: this.state.attachments, busy: this.props.busy, archived: data.project.archived, perform: this.props.perform }, data.project.id + ":" + session.id) : null,
           /* @__PURE__ */ jsx(Badge, { value: session.state }),
           /* @__PURE__ */ jsx("button", { className: "icon-button", title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: () => {
             const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title);

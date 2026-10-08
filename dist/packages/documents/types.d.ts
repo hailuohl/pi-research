@@ -26,7 +26,7 @@ export interface DocumentVersion {
         versionAssurance: string;
         sourceUrl?: string;
     };
-    contentKind: 'metadata' | 'abstract' | 'provider-text' | 'original-pdf' | 'user-text';
+    contentKind: 'metadata' | 'abstract' | 'provider-text' | 'original-pdf' | 'user-text' | 'user-media';
     acquiredAt: string;
     license: {
         value: string | null;

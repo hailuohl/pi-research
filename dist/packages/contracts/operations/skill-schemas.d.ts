@@ -1597,7 +1597,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("value" | "kind" | "reason" | "skillId")[];
+                    readonly required: ("value" | "reason" | "kind" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1648,7 +1648,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("value" | "kind" | "reason" | "skillId")[];
+                    readonly required: ("value" | "reason" | "kind" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };

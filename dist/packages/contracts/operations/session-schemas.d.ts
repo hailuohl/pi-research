@@ -578,12 +578,18 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        nativeAttachmentsDisabled: {
+                            readonly type: "boolean";
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
                             readonly items: {
                                 readonly type: "object";
                                 readonly properties: {
+                                    readonly inputMode: {
+                                        readonly const: "native";
+                                    };
                                     readonly parseResultId: {
                                         readonly pattern?: string | undefined;
                                         readonly type: "string";
@@ -632,7 +638,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                     readonly mediaType: {
-                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown"];
+                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4"];
                                     };
                                     readonly size: {
                                         readonly type: "integer";
@@ -795,12 +801,18 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                             readonly minLength: number;
                             readonly maxLength: number;
                         };
+                        nativeAttachmentsDisabled: {
+                            readonly type: "boolean";
+                        };
                         attachments: {
                             readonly maxItems?: number | undefined;
                             readonly type: "array";
                             readonly items: {
                                 readonly type: "object";
                                 readonly properties: {
+                                    readonly inputMode: {
+                                        readonly const: "native";
+                                    };
                                     readonly parseResultId: {
                                         readonly pattern?: string | undefined;
                                         readonly type: "string";
@@ -849,7 +861,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                     readonly mediaType: {
-                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown"];
+                                        readonly enum: readonly ["application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4"];
                                     };
                                     readonly size: {
                                         readonly type: "integer";
@@ -1062,6 +1074,9 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
     readonly session_attachment_read: {
         readonly type: "object";
         readonly properties: {
+            readonly inputMode: {
+                readonly const: "native";
+            };
             readonly messageId: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -1095,7 +1110,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
             readonly status: {
-                readonly enum: readonly ["text", "requires_parse", "fixed_parse_metadata"];
+                readonly enum: readonly ["text", "requires_parse", "fixed_parse_metadata", "native_file"];
             };
             readonly cursorUnit: {
                 readonly const: "utf16";
@@ -1148,7 +1163,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
             readonly mediaType: {
-                readonly enum: readonly ["application/pdf", "text/plain", "text/markdown"];
+                readonly enum: readonly ["application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "image/webp", "image/gif", "video/mp4"];
             };
             readonly size: {
                 readonly type: "integer";

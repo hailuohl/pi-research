@@ -3,13 +3,13 @@ import {availableSelections} from './model-management.js';
 import {assertModelEnabled} from './model-connections.js';
 import {resolvedThinking} from './model-definition.js';
 import {publicRecord} from '../domain/public-record.js';
-import {attachmentReferences,type ParsedAttachmentPair,type ParsedAttachmentMetadata} from './attachments.js';
+import {attachmentReferences,nativeAttachments,type ParsedAttachmentPair,type ParsedAttachmentMetadata} from './attachments.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { AppContext } from '../domain/context.js';
-import type { Actor, Session, Message, ModelConfig, Role, Row } from '../domain/types.js';
+import type { Actor, Session, Message, ModelConfig, Role, Row,MessageAttachment } from '../domain/types.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
@@ -87,6 +87,9 @@ export class SessionService {
         return s;
     }
     send(actor: Actor, id: string, value: unknown) {
+        return this.sendMessage(actor,id,value);
+    }
+    private sendMessage(actor: Actor, id: string, value: unknown,legacyAttachments?:MessageAttachment[],nativeAttachmentContextIds?:string[]) {
         userOnly(actor);
         const x = object(value);
         return this.c.store.transaction(() => {
@@ -95,11 +98,12 @@ export class SessionService {
             ensure(!s.taskId, 'TASK_MESSAGE_REQUIRED', '请通过任务引导发送消息');
             assertProjectWritable(this.c.store,s.projectId!);
             ensure(x.attachmentDocumentIds===undefined||x.parsedDocumentAttachments===undefined,'INVALID_INPUT','上传附件与固定解析附件必须使用互斥入口');
-            const attachments=x.parsedDocumentAttachments!==undefined?attachmentReferences(this.c.store,s,x.parsedDocumentAttachments,true,pair=>{ensure(this.parsedAttachmentMetadata,'ATTACHMENT_INVALID','固定解析校验未配置');return this.parsedAttachmentMetadata(actor,s,pair);}):x.attachmentDocumentIds===undefined?[]:attachmentReferences(this.c.store,s,x.attachmentDocumentIds);
+            const attachments=legacyAttachments?attachmentReferences(this.c.store,s,legacyAttachments.map(a=>a.documentVersionId)):x.parsedDocumentAttachments!==undefined?attachmentReferences(this.c.store,s,x.parsedDocumentAttachments,true,pair=>{ensure(this.parsedAttachmentMetadata,'ATTACHMENT_INVALID','固定解析校验未配置');return this.parsedAttachmentMetadata(actor,s,pair);}):x.attachmentDocumentIds===undefined?[]:nativeAttachments(this.c.store,s,attachmentReferences(this.c.store,s,x.attachmentDocumentIds));
+            if(legacyAttachments)ensure(digest(attachments)===digest(legacyAttachments),'ATTACHMENT_INVALID','旧附件固定引用已变化');
             const pending=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND json_extract(data,'$.status') IN ('queued','running') LIMIT 1").get(s.projectId!,id);
             const mode=oneOf(x.mode ?? (s.state==='running'||pending?'follow_up':'prompt'), ['prompt','steer','follow_up'] as const,'mode');
             const permission=this.permissionCapture?.(id);
-            const msg=this.c.store.create<Message>('message',s.projectId,{sessionId:id,role:'user',content:text(x.content,'content',32000),mode,status:'queued',...(permission?{permission}:{}),...(attachments.length?{attachments}:{}),...(mode==='steer'?{steerGeneration:s.generation}:{})});
+            const msg=this.c.store.create<Message>('message',s.projectId,{sessionId:id,role:'user',content:text(x.content,'content',32000),mode,status:'queued',...(permission?{permission}:{}),...(attachments.length?{attachments}:{}),...(nativeAttachmentContextIds!==undefined?{nativeAttachmentContextIds:nativeAttachmentContextIds.slice()}:{}),...(mode==='steer'?{steerGeneration:s.generation}:{})});
             if(s.state!=='running')this.c.store.update<Session>('session',id,s.version,{state:'queued',lastError:undefined});
             this.c.store.event(s.projectId,'session.message_queued',{sessionId:id,messageId:msg.id,mode});
             return msg;
@@ -206,10 +210,10 @@ export class SessionService {
             const branch = this.c.store.update<Session>('session', s.id, s.version, { parentSessionId: id, model: original.model });
             this.permissionBranch?.(id,s.id);
             for (const m of messages.slice(0, index + 1))
-                this.c.store.create<Message>('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved?'cancelled':'completed',...(m.attachments?{attachments:m.attachments}:{}),...(m.queueRemoved?{queueRemoved:true}:{}) });
+                this.c.store.create<Message>('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved?'cancelled':'completed',...(m.attachments?{attachments:m.attachments}:{}),...(m.queueRemoved?{queueRemoved:true}:{}),...(m.nativeAttachmentsDisabled||m.status!=='completed'&&m.attachments?.some(a=>a.inputMode==='native')?{nativeAttachmentsDisabled:true}:{}) });
             this.c.store.event(s.projectId, 'session.branched', { parentId: id, sessionId: s.id, throughMessageId });
             return branch;
         });
     }
-    retry(actor: Actor, id: string, messageId: string) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.send(actor, id, { content: m.content, mode: 'prompt',...(m.attachments?(m.attachments.some(a=>a.parseResultId)?{parsedDocumentAttachments:m.attachments.map(a=>({documentVersionId:a.documentVersionId,parseResultId:a.parseResultId}))}:{attachmentDocumentIds:m.attachments.map(a=>a.documentVersionId)}):{}) }); }
+    retry(actor: Actor, id: string, messageId: string) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.sendMessage(actor, id, { content: m.content, mode: 'prompt',...(m.attachments?(m.attachments.some(a=>a.parseResultId)?{parsedDocumentAttachments:m.attachments.map(a=>({documentVersionId:a.documentVersionId,parseResultId:a.parseResultId}))}:{attachmentDocumentIds:m.attachments.map(a=>a.documentVersionId)}):{}) },m.attachments?.every(a=>!a.inputMode&&!a.parseResultId)?m.attachments:undefined,m.nativeAttachmentContextIds); }
 }

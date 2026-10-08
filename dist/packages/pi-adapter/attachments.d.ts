@@ -1,11 +1,17 @@
 import type { Actor, Message, MessageAttachment, Row, Session } from '../domain/types.js';
 import { type Store } from '../storage/store.js';
+import { type AttachmentTypes, type NativeAttachmentFile, type NativeAttachmentReference } from './attachment-input.js';
 export type ParsedAttachmentPair = {
     documentVersionId: string;
     parseResultId: string;
 };
 export type ParsedAttachmentMetadata = Required<Pick<MessageAttachment, 'parseResultId' | 'resultDigest' | 'pageCount'>>;
 type ParsedResolver = (pair: ParsedAttachmentPair) => ParsedAttachmentMetadata;
+export declare function attachmentTypes(dataDir: string, session: Row<Session>): AttachmentTypes;
+export declare function nativeAttachments(store: Store, session: Row<Session>, attachments: MessageAttachment[]): MessageAttachment[];
+export declare function nativeAttachmentFile(store: Store, session: Row<Session>, ref: NativeAttachmentReference): NativeAttachmentFile;
+export declare function nativeMessageFiles(store: Store, session: Row<Session>, message: Row<Message>): NativeAttachmentFile[];
+export declare function nativeInputFiles(store: Store, session: Row<Session>, message: Row<Message>): NativeAttachmentFile[];
 /** Reuse owner-imported project documents; attaching does not grant access to connector or parsed corpus data. */
 export declare function attachmentReferences(store: Store, session: Row<Session>, value: unknown, parsed?: boolean, resolveParsed?: ParsedResolver): MessageAttachment[];
 export declare function attachmentScope(store: Store, actor: Actor, session: Row<Session>, value: unknown, resolveParsed?: ParsedResolver): MessageAttachment;
@@ -18,6 +24,26 @@ export declare function readAttachment(store: Store, actor: Actor, session: Row<
     complete: boolean;
     status: "fixed_parse_metadata";
     cursorUnit: "utf16";
+    inputMode?: "native";
+    parseResultId?: string;
+    resultDigest?: string;
+    pageCount?: number;
+    documentVersionId: string;
+    artifactId: string;
+    digest: string;
+    title: string;
+    mediaType: string;
+    size: number;
+} | {
+    messageId: unknown;
+    content: string;
+    cursor: number;
+    end: number;
+    total: number;
+    complete: boolean;
+    status: "native_file";
+    cursorUnit: "utf16";
+    inputMode?: "native";
     parseResultId?: string;
     resultDigest?: string;
     pageCount?: number;
@@ -36,6 +62,7 @@ export declare function readAttachment(store: Store, actor: Actor, session: Row<
     complete: boolean;
     status: "requires_parse";
     cursorUnit: "utf16";
+    inputMode?: "native";
     parseResultId?: string;
     resultDigest?: string;
     pageCount?: number;
@@ -54,6 +81,7 @@ export declare function readAttachment(store: Store, actor: Actor, session: Row<
     complete: boolean;
     status: "text";
     cursorUnit: "utf16";
+    inputMode?: "native";
     parseResultId?: string;
     resultDigest?: string;
     pageCount?: number;

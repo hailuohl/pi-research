@@ -73,6 +73,9 @@ export interface Session {
     parentSessionId?: string;
 }
 export interface Message {
+    /** Host-only binding for the history folded into one persisted Pi user input. */
+    nativeAttachmentContextIds?:string[];
+    nativeAttachmentsDisabled?:boolean;
     nativeRequestId?:string;
     permission?: import('../policy/session-permissions.js').PermissionReference;
     generation?: number;
@@ -93,6 +96,7 @@ export interface Message {
     usage?: unknown;
 }
 export interface MessageAttachment {
+    inputMode?:'native';
     parseResultId?:string;
     resultDigest?:string;
     pageCount?:number;
