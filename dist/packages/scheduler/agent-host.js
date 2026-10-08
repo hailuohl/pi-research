@@ -94,7 +94,7 @@ export class AgentHost {
                         this.app.teams.heartbeat(a.id); });
                     active.lastHeartbeat = Date.now();
                 }
-                if (!s.taskId && !active.actor.wakeupId)
+                if (!s.taskId && !active.actor.wakeupId && !this.app.hostAccess.status({ type: 'user' }, s.id).pending)
                     for (const queued of this.app.sessions.messages(SYSTEM, s.id).filter(m => m.role === 'user' && m.origin !== 'automation' && !m.wakeupId && m.status === 'queued' && m.mode === 'steer')) {
                         const m = this.app.store.transaction(() => {
                             const latest = this.app.store.get('session', s.id), input = this.app.store.get('message', queued.id, latest.projectId);
@@ -133,9 +133,12 @@ export class AgentHost {
                         this.app.store.update('message', m.id, m.version, { status: 'failed', error: '进程中断，用量待对账' });
                 });
             }
+            for (const grant of this.app.store.list('host-access').filter(g => g.state === 'pending'))
+                if (!this.active.has(grant.sessionId))
+                    this.app.hostAccess.activatePending(grant.sessionId);
             this.app.wakeups.reconcile();
             for (const s of this.app.store.list('session').filter(s => !s.taskId && s.state === 'queued')) {
-                if (this.active.has(s.id))
+                if (this.active.has(s.id) || this.app.hostAccess.status({ type: 'user' }, s.id).pending)
                     continue;
                 if (!this.inspect(s.model).ready)
                     continue;
@@ -171,7 +174,7 @@ export class AgentHost {
                     continue;
                 }
                 try {
-                    const dispatch = this.app.store.transaction(() => { if (this.admission.sessionHeld(root.id) || !this.admission.check(root.projectId, root.role))
+                    const dispatch = this.app.store.transaction(() => { if (this.app.hostAccess.status({ type: 'user' }, root.id).pending || this.admission.sessionHeld(root.id) || !this.admission.check(root.projectId, root.role))
                         return null; const dispatched = this.app.wakeups.dispatch(w.id, this.inspect(root.model)); if (!dispatched)
                         return null; const prepared = this.claimSession(this.app.sessions.get(SYSTEM, root.id), dispatched.message.id); ensure(prepared, 'AGENT_CAPACITY_CHANGED', 'Worker 准入未完成'); return { dispatched, prepared }; });
                     if (dispatch)
@@ -209,7 +212,7 @@ export class AgentHost {
         return store.transaction(() => {
             const latest = store.get('session', session.id);
             assertWorkspaceReady(this.app.context, latest.id);
-            if (['running', 'archived'].includes(latest.state))
+            if (['running', 'archived'].includes(latest.state) || this.app.hostAccess.status({ type: 'user' }, latest.id).pending)
                 return null;
             const input = messageId ? store.get('message', messageId, latest.projectId) : undefined;
             if (input) {

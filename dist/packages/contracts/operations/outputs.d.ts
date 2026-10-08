@@ -5963,7 +5963,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "projectId" | "updatedAt" | "settingsVersion" | "phase" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "phase" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_inspect: {
@@ -6469,7 +6469,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "projectId" | "updatedAt" | "settingsVersion" | "phase" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "phase" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_cancel: {
@@ -6975,7 +6975,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "projectId" | "updatedAt" | "settingsVersion" | "phase" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "phase" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly literature_task_retry: {
@@ -7481,7 +7481,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "projectId" | "updatedAt" | "settingsVersion" | "phase" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
+        readonly required: ("version" | "id" | "state" | "generation" | "createdAt" | "kind" | "phase" | "projectId" | "updatedAt" | "settingsVersion" | "cancelRequested" | "request" | "kindOfTask" | "searchResult")[];
         readonly additionalProperties: false;
     };
     readonly document_import: {

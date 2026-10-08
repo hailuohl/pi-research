@@ -58,6 +58,7 @@ export declare class SessionPermissionService {
             epoch: number;
             available: boolean;
             enabled: boolean;
+            pending: boolean;
             boundary: "trusted-host";
             osSandboxVerified: boolean;
             reason: string;
@@ -101,6 +102,7 @@ export declare class SessionPermissionService {
         }[];
     };
     initialize(id: string, mode?: RestrictedMode): Row<Permission>;
+    hostAccessEnabled(id: string, previousHostEpoch: number): void;
     set(actor: Actor, id: string, value: unknown): {
         sessionId: string;
         mode: string;
@@ -114,6 +116,7 @@ export declare class SessionPermissionService {
             epoch: number;
             available: boolean;
             enabled: boolean;
+            pending: boolean;
             boundary: "trusted-host";
             osSandboxVerified: boolean;
             reason: string;
@@ -207,6 +210,7 @@ export declare class SessionPermissionService {
             epoch: number;
             available: boolean;
             enabled: boolean;
+            pending: boolean;
             boundary: "trusted-host";
             osSandboxVerified: boolean;
             reason: string;

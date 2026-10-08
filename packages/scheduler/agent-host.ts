@@ -113,7 +113,7 @@ export class AgentHost {
                     this.app.store.transaction(()=>{this.admission.heartbeat(active.admissionId,this.ownerHost,active.generation);const latest=this.app.store.get<Session>('session',s.id);ensure(latest.generation===active.generation,'LEASE_EXPIRED','会话已失效');this.app.store.update<Session>('session',latest.id,latest.version,{leaseUntil:Date.now()+30000});if(a)this.app.teams.heartbeat(a.id);});
                     active.lastHeartbeat = Date.now();
                 }
-                if (!s.taskId && !active.actor.wakeupId)
+                if (!s.taskId && !active.actor.wakeupId && !this.app.hostAccess.status({type:'user'},s.id).pending)
                     for (const queued of this.app.sessions.messages(SYSTEM, s.id).filter(m=>m.role==='user'&&m.origin!=='automation'&&!m.wakeupId&&m.status==='queued'&&m.mode==='steer')) {
                         const m=this.app.store.transaction(()=>{
                             const latest=this.app.store.get<Session>('session',s.id),input=this.app.store.get<Message>('message',queued.id,latest.projectId!);
@@ -140,9 +140,10 @@ export class AgentHost {
                     this.app.store.update<Message>('message', m.id, m.version, { status: 'failed', error: '进程中断，用量待对账' });
                 });
             }
+            for(const grant of this.app.store.list<{sessionId:string;state:string}>('host-access').filter(g=>g.state==='pending'))if(!this.active.has(grant.sessionId))this.app.hostAccess.activatePending(grant.sessionId);
             this.app.wakeups.reconcile();
             for (const s of this.app.store.list<Session>('session').filter(s => !s.taskId && s.state === 'queued')) {
-                if(this.active.has(s.id))continue;
+                if(this.active.has(s.id)||this.app.hostAccess.status({type:'user'},s.id).pending)continue;
                 if (!this.inspect(s.model).ready)
                     continue;
                 try{assertWorkspaceReady(this.app.context,s.id);}catch{continue;}
@@ -156,7 +157,7 @@ export class AgentHost {
                 const root = this.app.sessions.get(SYSTEM, w.rootSessionId);
                 try{assertWorkspaceReady(this.app.context,root.id);}catch{continue;}
                 try {
-                const dispatch=this.app.store.transaction(()=>{if(this.admission.sessionHeld(root.id)||!this.admission.check(root.projectId!,root.role))return null;const dispatched=this.app.wakeups.dispatch(w.id,this.inspect(root.model));if(!dispatched)return null;const prepared=this.claimSession(this.app.sessions.get(SYSTEM,root.id),dispatched.message.id);ensure(prepared,'AGENT_CAPACITY_CHANGED','Worker 准入未完成');return {dispatched,prepared};});
+                const dispatch=this.app.store.transaction(()=>{if(this.app.hostAccess.status({type:'user'},root.id).pending||this.admission.sessionHeld(root.id)||!this.admission.check(root.projectId!,root.role))return null;const dispatched=this.app.wakeups.dispatch(w.id,this.inspect(root.model));if(!dispatched)return null;const prepared=this.claimSession(this.app.sessions.get(SYSTEM,root.id),dispatched.message.id);ensure(prepared,'AGENT_CAPACITY_CHANGED','Worker 准入未完成');return {dispatched,prepared};});
                 if(dispatch)this.launch(dispatch.prepared.session,dispatch.dispatched.message.content,dispatch.dispatched.message.id,undefined,dispatch.prepared);
                 } catch(error) {const e=asError(error),latest=this.app.store.get<Wakeup>('wakeup',w.id);if(latest.blockReason!==`${e.code} — ${e.message}`)this.app.store.update<Wakeup>('wakeup',w.id,latest.version,{blockReason:`${e.code} — ${e.message}`});}
             }
@@ -182,7 +183,7 @@ export class AgentHost {
         return store.transaction(() => {
             const latest = store.get<Session>('session', session.id);
             assertWorkspaceReady(this.app.context,latest.id);
-            if(['running','archived'].includes(latest.state))return null;
+            if(['running','archived'].includes(latest.state)||this.app.hostAccess.status({type:'user'},latest.id).pending)return null;
             const input=messageId?store.get<Message>('message',messageId,latest.projectId!):undefined;
             if(input){ensure(input.sessionId===latest.id,'SCOPE_DENIED','消息不属于此会话',403);if(input.status!=='queued')return null;}
             const permission=this.app.sessionPermissions.capture(latest.id,!!input?.wakeupId);

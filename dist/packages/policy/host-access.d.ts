@@ -4,7 +4,7 @@ export interface HostAccessGrant {
     sessionId: string;
     epoch: number;
     runtimeId: string;
-    state: 'enabled' | 'revoked';
+    state: 'pending' | 'enabled' | 'revoked';
     boundary: 'trusted-host';
     acknowledgedSameUserAccess: true;
     acknowledgedUnknownJobIds?: string[];
@@ -29,7 +29,7 @@ export interface HostCommand {
 /** Trusted same-user host execution, deliberately NOT an OS sandbox or owner-auth boundary. */
 export declare class HostAccessService {
     private c;
-    onChanged?: (sessionId: string) => void;
+    onChanged?: (sessionId: string, previousHostEpoch?: number) => void;
     private readonly runtimeId;
     private readonly active;
     private readonly uncertain;
@@ -39,6 +39,7 @@ export declare class HostAccessService {
         store: Store;
         dataDir: string;
         repoRoot: string;
+        sessionHeld: (sessionId: string) => boolean;
     });
     private jobs;
     private hasUnreviewed;
@@ -48,6 +49,7 @@ export declare class HostAccessService {
         epoch: number;
         available: boolean;
         enabled: boolean;
+        pending: boolean;
         boundary: "trusted-host";
         osSandboxVerified: boolean;
         reason: string;
@@ -65,12 +67,14 @@ export declare class HostAccessService {
         }[];
     };
     private session;
+    private executionActive;
     enable(actor: Actor, id: string, input: unknown): {
         sessionId: string;
         version: number;
         epoch: number;
         available: boolean;
         enabled: boolean;
+        pending: boolean;
         boundary: "trusted-host";
         osSandboxVerified: boolean;
         reason: string;
@@ -87,12 +91,14 @@ export declare class HostAccessService {
             epoch: number;
         }[];
     };
+    activatePending(id: string): boolean;
     revoke(actor: Actor, id: string, input: unknown): {
         sessionId: string;
         version: number;
         epoch: number;
         available: boolean;
         enabled: boolean;
+        pending: boolean;
         boundary: "trusted-host";
         osSandboxVerified: boolean;
         reason: string;

@@ -11,21 +11,21 @@ import {object,text,integer} from '../contracts/validation.js';
 import {userOnly,scope} from './permissions.js';
 import {environmentVariables,environmentSecrets,redactEnvironment,redactEnvironmentChunk} from '../runtime/environment.js';
 
-export interface HostAccessGrant {sessionId:string;epoch:number;runtimeId:string;state:'enabled'|'revoked';boundary:'trusted-host';acknowledgedSameUserAccess:true;acknowledgedUnknownJobIds?:string[];}
+export interface HostAccessGrant {sessionId:string;epoch:number;runtimeId:string;state:'pending'|'enabled'|'revoked';boundary:'trusted-host';acknowledgedSameUserAccess:true;acknowledgedUnknownJobIds?:string[];}
 export interface HostCommand {sessionId:string;generation:number;epoch:number;runtimeId:string;requestDigest:string;argv:string[];cwd:string;timeoutMs:number;state:'starting'|'running'|'succeeded'|'failed'|'cancelled'|'unknown';pid?:number;stdout:string;stderr:string;outputTruncated:boolean;exitCode?:number|null;error?:string;}
 interface ActiveCommand {child:ChildProcess;sessionId:string;epoch:number;generation:number;promise:Promise<Row<HostCommand>>;cancel:(reason:string)=>void;}
 const clean=(value:string)=>value.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g,'[REDACTED]').replace(/Bearer\s+[^\s"']+/gi,'Bearer [REDACTED]');
 
 /** Trusted same-user host execution, deliberately NOT an OS sandbox or owner-auth boundary. */
 export class HostAccessService {
-    onChanged?: (sessionId:string)=>void;
+    onChanged?: (sessionId:string,previousHostEpoch?:number)=>void;
     private readonly runtimeId=randomUUID();
     private readonly active=new Map<string,ActiveCommand>();
     private readonly uncertain=new Map<string,Partial<HostCommand>>();
     private stopping=false;
     private closing=false;
     // Background workers and CLI construct ResearchApp too. Connecting must never rewrite a live owner's facts.
-    constructor(private c:{store:Store;dataDir:string;repoRoot:string}) {}
+    constructor(private c:{store:Store;dataDir:string;repoRoot:string;sessionHeld:(sessionId:string)=>boolean}) {}
     private jobs(session:Row<Session>) {return this.c.store.list<HostCommand>('host-command',session.projectId!).filter(j=>j.sessionId===session.id).map(j=>{
         const uncertain=this.uncertain.get(j.id);
         return uncertain?{...j,...uncertain,state:'unknown' as const}:['starting','running'].includes(j.state)&&j.runtimeId!==this.runtimeId?{...j,state:'unknown' as const,error:'此命令不属于当前执行端；退出与外部效果未确认，不自动重试'}:j;
@@ -37,13 +37,14 @@ export class HostAccessService {
         const eligible=session.role==='coordinator'&&!session.taskId&&!session.teamId&&!session.parentSessionId&&!bound&&session.state!=='archived'&&!this.c.store.get<Project>('project',session.projectId!).archived;
         const enabled=eligible&&!!grant&&grant.state==='enabled'&&grant.runtimeId===this.runtimeId&&!this.closing&&!this.stopping&&!this.hasUnreviewed(session,grant);
         const jobs=this.jobs(session);
-        return {sessionId,version:grant?.version??0,epoch:grant?.epoch??0,available:eligible&&!this.closing&&!this.stopping,enabled,boundary:'trusted-host' as const,osSandboxVerified:false,
+        return {sessionId,version:grant?.version??0,epoch:grant?.epoch??0,available:eligible&&!this.closing&&!this.stopping,enabled,pending:grant?.state==='pending'&&grant.runtimeId===this.runtimeId&&!this.closing&&!this.stopping,boundary:'trusted-host' as const,osSandboxVerified:false,
             reason:eligible?'本机可信模式：命令可接触当前系统用户的应用数据、凭据与第三方权限，不提供同用户隔离。':bound?'此会话已有固定范围授权，请使用新的普通主协调会话开启本机完全访问。':'仅未归档的交互主协调会话可启用；子任务和自动唤醒不继承。',
-            revokedOnRestart:!!grant&&grant.state==='enabled'&&grant.runtimeId!==this.runtimeId,
+            revokedOnRestart:!!grant&&grant.state!=='revoked'&&grant.runtimeId!==this.runtimeId,
             activeCommands:jobs.filter(j=>['starting','running'].includes(j.state)).length,unknownCommands:jobs.filter(j=>j.state==='unknown').length,
             jobs:jobs.slice(-20).map(({id,state,pid,exitCode,error,createdAt,epoch})=>({id,state,pid,exitCode,error,createdAt,epoch}))};
     }
     private session(actor:Actor,id:string) {const session=this.c.store.get<Session>('session',id);scope(actor,session.projectId!);ensure(actor.type==='user'||actor.sessionId===id,'SCOPE_DENIED','只能查看自己的宿主权限',403);return session;}
+    private executionActive(session:Row<Session>) {return session.state==='running'||this.c.sessionHeld(session.id)||[...this.active.values()].some(job=>job.sessionId===session.id);}
     enable(actor:Actor,id:string,input:unknown) {
         userOnly(actor);const x=object(input);
         ensure(Object.keys(x).every(k=>['expectedVersion','acknowledgedSameUserAccess','acknowledgedUnknownEffects'].includes(k))&&x.acknowledgedSameUserAccess===true&&(x.acknowledgedUnknownEffects===undefined||typeof x.acknowledgedUnknownEffects==='boolean'),'HOST_ACCESS_ACK_REQUIRED','需要明确接受本机未隔离、同用户应用数据和凭据可达',400);
@@ -51,22 +52,34 @@ export class HostAccessService {
         this.c.store.transaction(()=>{
             const session=this.session(actor,id),state=this.status(actor,id),prior=this.c.store.maybe<HostAccessGrant>('host-access',id);
             ensure(state.available,'HOST_ACCESS_UNAVAILABLE',state.reason,403);ensure(!this.c.store.get<Project>('project',session.projectId!).archived&&session.state!=='archived','SESSION_ARCHIVED','归档会话不可启用');
-            ensure(!['running','queued'].includes(session.state),'SESSION_BUSY','等待当前执行与队列结束后再启用完全访问');
             ensure(state.version===expected,'VERSION_CONFLICT','权限已变化，请刷新后重试');
             const unknown=this.jobs(session).filter(j=>j.state==='unknown');
             ensure(!unknown.length||x.acknowledgedUnknownEffects===true,'HOST_EFFECTS_REVIEW_REQUIRED','存在退出或记录状态未确认的命令，需用户核对旧进程和外部效果后重新启用',409);
+            if(state.enabled)return;
             for(const job of unknown){const raw=this.c.store.get<HostCommand>('host-command',job.id);if(raw.state!=='unknown')this.c.store.update<HostCommand>('host-command',raw.id,raw.version,{...this.uncertain.get(job.id),state:'unknown',error:job.error});}
-            const grant:HostAccessGrant={sessionId:id,epoch:(prior?.epoch??0)+1,runtimeId:this.runtimeId,state:'enabled',boundary:'trusted-host',acknowledgedSameUserAccess:true,acknowledgedUnknownJobIds:unknown.map(j=>j.id)};
+            const pending=this.executionActive(session),previousHostEpoch=prior?.epoch??0;
+            const grant:HostAccessGrant={sessionId:id,epoch:previousHostEpoch+(pending?0:1),runtimeId:this.runtimeId,state:pending?'pending':'enabled',boundary:'trusted-host',acknowledgedSameUserAccess:true,acknowledgedUnknownJobIds:unknown.map(j=>j.id)};
             if(prior)this.c.store.update<HostAccessGrant>('host-access',id,prior.version,grant);else this.c.store.create('host-access',session.projectId,grant,id);
-            this.c.store.event(session.projectId,'host_access.enabled',{sessionId:id,epoch:grant.epoch,boundary:grant.boundary,osSandboxVerified:false});
-            this.onChanged?.(id);
+            this.c.store.event(session.projectId,pending?'host_access.requested':'host_access.enabled',{sessionId:id,epoch:grant.epoch,boundary:grant.boundary,osSandboxVerified:false});
+            if(!pending)this.onChanged?.(id,previousHostEpoch);
         });for(const job of this.jobs(this.session(actor,id)))if(job.state==='unknown')this.uncertain.delete(job.id);return this.status(actor,id);
+    }
+    activatePending(id:string) {
+        return this.c.store.transaction(()=>{
+            const grant=this.c.store.maybe<HostAccessGrant>('host-access',id);
+            if(grant?.state!=='pending'||grant.runtimeId!==this.runtimeId)return false;
+            const session=this.c.store.get<Session>('session',id),state=this.status({type:'user'},id);
+            if(!state.available||this.executionActive(session)||this.hasUnreviewed(session,grant))return false;
+            this.c.store.update<HostAccessGrant>('host-access',id,grant.version,{state:'enabled',epoch:grant.epoch+1});
+            this.c.store.event(session.projectId,'host_access.enabled',{sessionId:id,epoch:grant.epoch+1,boundary:grant.boundary,osSandboxVerified:false});
+            this.onChanged?.(id,grant.epoch);
+            return true;
+        });
     }
     revoke(actor:Actor,id:string,input:unknown) {
         userOnly(actor);const x=object(input);ensure(Object.keys(x).every(k=>k==='expectedVersion'),'INVALID_INPUT','撤销只接受 expectedVersion');
         const expected=integer(x.expectedVersion,'expectedVersion',0),session=this.session(actor,id);
-        this.c.store.transaction(()=>{const prior=this.c.store.maybe<HostAccessGrant>('host-access',id);ensure((prior?.version??0)===expected,'VERSION_CONFLICT','权限已变化，请刷新后重试');if(prior)this.c.store.update<HostAccessGrant>('host-access',id,prior.version,{state:'revoked',epoch:prior.epoch+1});this.c.store.event(session.projectId,'host_access.revoked',{sessionId:id,epoch:(prior?.epoch??0)+1});});
-        this.onChanged?.(id);
+        this.c.store.transaction(()=>{const prior=this.c.store.maybe<HostAccessGrant>('host-access',id);ensure((prior?.version??0)===expected,'VERSION_CONFLICT','权限已变化，请刷新后重试');const epoch=(prior?.epoch??0)+(prior?.state==='pending'?0:1);if(prior)this.c.store.update<HostAccessGrant>('host-access',id,prior.version,{state:'revoked',epoch});this.c.store.event(session.projectId,'host_access.revoked',{sessionId:id,epoch});if(prior?.state!=='pending')this.onChanged?.(id);});
         for(const job of this.active.values())if(job.sessionId===id)job.cancel('完全访问已撤销；已发出的网络和文件变更无法撤回');
         return this.status(actor,id);
     }

@@ -5,7 +5,7 @@ import {HostAccessControl} from '../../dist/web/assets/host-access-control.js';
 import {Modal} from '../../dist/web/assets/ui.js';
 const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children)];
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'?node:'';
-const status=(patch={})=>({version:2,epoch:2,available:true,enabled:false,reason:'trusted host',revokedOnRestart:false,activeCommands:0,unknownCommands:0,jobs:[],...patch});
+const status=(patch={})=>({version:2,epoch:2,available:true,enabled:false,pending:false,reason:'trusted host',revokedOnRestart:false,activeCommands:0,unknownCommands:0,jobs:[],...patch});
 function control(patch={}){const view=synchronousState(new HostAccessControl({sessionId:'session-fixture',archived:false,busy:false,perform:fn=>fn()}));view.state.status=status(patch);view.state.permission={mode:patch.enabled?'fullAccess':'confirm',version:4,epoch:4,available:true,reason:'Session tools',hostAccess:view.state.status};return view;}
 const modal=view=>elements(view.render()).find(node=>node.type===Modal);
 
@@ -32,4 +32,19 @@ test('restricted mode changes send both versions and selection changes only afte
 
 test('the permission modal prevents its form submit from bubbling into the message composer',()=>{
  const view=control();view.showDetails();const boundary=elements(view.render()).find(node=>node.type==='div'&&node.props.onSubmit);assert.ok(boundary);assert.ok(elements(boundary).some(node=>node.type===Modal));let stopped=false;boundary.props.onSubmit({stopPropagation(){stopped=true;}});assert.equal(stopped,true);
+});
+
+test('accepted pending enable stays visible, blocks duplicate enable and allows versioned cancellation',async()=>{
+ const view=control(),saved=globalThis.fetch,requests=[],notices=[];let current=status({version:3,pending:true});view.props.perform=async(fn,notice)=>{await fn();notices.push(notice);};
+ globalThis.fetch=async(url,opts)=>{requests.push({url,opts});if(opts?.method==='POST'&&!JSON.parse(opts.body).enabled)current=status({version:4});return {ok:true,json:async()=>url.endsWith('/permissions')?{...view.state.permission,hostAccess:current}:current};};
+ try{
+  view.showDetails();await view.save(true);assert.equal(view.state.open,true);assert.equal(view.state.status.pending,true);assert.equal(view.state.permission.mode,'confirm');assert.match(text(view.render()),/完全访问待启用/);assert.match(text(modal(view).props.children),/无需再次操作/);assert.equal(modal(view).props.submitLabel,'取消启用');assert.equal(elements(modal(view).props.children).filter(n=>n.type==='input').length,0);assert.doesNotMatch(notices[0],/已启用/);
+  await view.save(true);assert.equal(requests.filter(r=>r.opts?.method==='POST').length,1);view.showDetails();await view.save(false);assert.deepEqual(JSON.parse(requests.filter(r=>r.opts?.method==='POST')[1].opts.body),{enabled:false,expectedVersion:3});assert.equal(view.state.status.pending,false);assert.match(notices.at(-1),/已取消/);
+ }finally{globalThis.fetch=saved;}
+});
+
+test('pending cancellation remains available when eligibility is lost and selecting the current restricted mode cancels pending',async()=>{
+ const view=control({pending:true,available:false}),saved=globalThis.fetch,requests=[];view.showDetails();assert.equal(modal(view).props.busy,false);assert.equal(modal(view).props.submitLabel,'取消启用');
+ globalThis.fetch=async(url,opts)=>{requests.push({url,opts});return {ok:true,json:async()=>url.endsWith('/permissions')?{...view.state.permission,hostAccess:status({version:3})}:status({version:3})};};
+ try{await view.saveMode('confirm');assert.equal(requests.filter(r=>r.opts?.method==='POST').length,1);assert.equal(requests[0].url,'/api/sessions/session-fixture/host-access');assert.deepEqual(JSON.parse(requests[0].opts.body),{enabled:false,expectedVersion:2});assert.equal(view.state.status.pending,false);assert.equal(view.state.permission.mode,'confirm');assert.equal(view.state.permission.epoch,4);}finally{globalThis.fetch=saved;}
 });

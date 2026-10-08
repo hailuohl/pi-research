@@ -19,7 +19,7 @@ test('host full requires explicit owner acknowledgement/CAS and never exposes it
  enable(s);assert.equal(tools.definitions('coordinator',false,s.session.id).some(t=>t.name==='host_execute'),true);assert.equal(tools.definitions('coordinator',true,s.session.id).some(t=>t.name==='host_execute'),false);assert.equal(s.app.hostAccess.status(USER,s.session.id).osSandboxVerified,false);
  const a=actor(s);for(const bad of [{...a,wakeupId:'fake'},{...a,taskId:'fake',attemptId:'fake'},{...a,generation:0},{...a,role:'reviewer'}])assert.throws(()=>s.app.hostAccess.assertAgent(bad));
  const child=s.app.sessions.create(USER,s.project.id,{title:'Child'},{role:'implementer',teamId:'fake',taskId:'fake'});assert.throws(()=>s.app.hostAccess.enable(USER,child.id,{expectedVersion:0,acknowledgedSameUserAccess:true}),{code:'HOST_ACCESS_UNAVAILABLE'});
- assert.throws(()=>enable(s),/等待当前/);
+ const current=s.app.hostAccess.status(USER,s.session.id);assert.deepEqual(enable(s),current,'already enabled CAS does not invalidate a running grant');
  }finally{await s.close();}
 });
 
