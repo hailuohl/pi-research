@@ -13,7 +13,7 @@ const result = outcome => ({summary: 'Offline lifecycle fixture', outcome, evide
 
 // Exercise the actual pinned SDK and production worker over child IPC. The only
 // model is this loopback SSE server; keys, user config and network refresh are absent.
-async function runWorker({outcome = 'completed', rejectFirst = false, controls = false, mode = 'submit', continueAfterLimit = false} = {}) {
+async function runWorker({outcome = 'completed', rejectFirst = false, controls = false, mode = 'submit', contextReads = 0, reopen = false} = {}) {
     const home = mkdtempSync(join(tmpdir(), 'pi-worker-lifecycle-'));
     const events = [], requests = [], toolCalls = [];
     let child, stderr = '', timer, continuing = false;
@@ -28,8 +28,8 @@ async function runWorker({outcome = 'completed', rejectFirst = false, controls =
             res.end(`data: ${JSON.stringify({id: 'continued', object: 'chat.completion.chunk', created: 1, model: 'fixture', choices: [{index: 0, delta: {role: 'assistant', content: 'Continued from saved history.'}, finish_reason: 'stop'}]})}\n\ndata: [DONE]\n\n`);
             return;
         }
-        const tool = mode === 'limit' ? 'task_context_read' : 'task_result_submit';
-        const input = mode === 'limit' ? {} : {...result(outcome), ...(rejectFirst && requests.length > 1 ? {summary: 'Corrected offline submission'} : {})};
+        const tool = requests.length <= contextReads ? 'task_context_read' : 'task_result_submit';
+        const input = tool === 'task_context_read' ? {} : {...result(outcome), ...(rejectFirst && requests.length > 1 ? {summary: 'Corrected offline submission'} : {})};
         const chunk = (delta, finish_reason = null) => res.write(`data: ${JSON.stringify({id: `fixture-${requests.length}`, object: 'chat.completion.chunk', created: 1, model: 'fixture', choices: [{index: 0, delta, finish_reason}]})}\n\n`);
         chunk({role: 'assistant', tool_calls: [{index: 0, id: `call-${requests.length}`, type: 'function', function: {name: tool, arguments: JSON.stringify({input})}}]});
         chunk({}, 'tool_calls');
@@ -75,7 +75,7 @@ async function runWorker({outcome = 'completed', rejectFirst = false, controls =
         return {events: events.slice(eventStart), requests: requests.slice(requestStart), toolCalls: toolCalls.slice(toolStart), native};
         };
         const run = await execute();
-        if (continueAfterLimit) {
+        if (reopen) {
             continuing = true;
             return {...run, resumed: await execute(run.events.find(e => e.type === 'ready').sessionFile)};
         }
@@ -129,22 +129,25 @@ test('host abort remains aborted and cannot become successful completion', async
     assert.equal(run.toolCalls.length, 0);
 });
 
-test('worker turn limit reports its local cause and preserves history for explicit continuation', async () => {
-    const run = await runWorker({mode: 'limit', continueAfterLimit: true});
-    assert.equal(run.events.some(e => e.type === 'done'), false, JSON.stringify(run.events));
-    assert.match(run.events.find(e => e.type === 'failure')?.error ?? '', /^AGENT_TURN_LIMIT:/);
-    const failedMessages = run.events.filter(e => e.type === 'assistant_message' && e.error);
-    assert.equal(failedMessages.length, 1);
-    assert.match(failedMessages[0].error, /^AGENT_TURN_LIMIT:/);
-    assert.doesNotMatch(JSON.stringify(run.events), /PROVIDER_FAILED/);
-    assert.equal(run.requests.length, 12);
+test('actual worker completes beyond 12 turns and 40 tools, then reopens the same native history', async () => {
+    const run = await runWorker({contextReads: 45, reopen: true});
+    assert.deepEqual(run.events.filter(e => ['done', 'failure'].includes(e.type)).map(e => ({type: e.type, aborted: e.aborted})), [{type: 'done', aborted: false}], JSON.stringify(run.events));
+    assert.equal(run.requests.length, 46, '45 context reads and accepted submit must all reach the provider');
+    assert.deepEqual(run.toolCalls.map(e => e.tool), [...Array(45).fill('task_context_read'), 'task_result_submit']);
+    assert.equal(run.events.filter(e => e.type === 'tool_execution_end').length, 46);
+    assert.ok(run.events.filter(e => e.type === 'tool_execution_end').every(e => e.isError === false));
+    assert.equal(run.events.some(e => e.type === 'assistant_message' && e.error), false);
     const receipts = run.native.filter(e => e.message?.role === 'toolResult');
-    assert.equal(receipts.length, 12);
+    assert.equal(receipts.length, 46);
     assert.ok(receipts.every(e => e.message.isError === false));
+    assert.deepEqual(receipts.map(e => e.message.toolCallId), run.toolCalls.map(e => e.toolCallId));
+    assert.equal(JSON.parse(receipts.at(-1).message.content[0].text).accepted, true);
     assert.deepEqual(run.resumed.events.filter(e => ['done', 'failure'].includes(e.type)).map(e => ({type: e.type, aborted: e.aborted})), [{type: 'done', aborted: false}]);
     assert.equal(run.resumed.requests.length, 1);
     assert.equal(run.resumed.toolCalls.length, 0);
     assert.deepEqual(run.resumed.native.slice(0, run.native.length), run.native);
-    assert.match(JSON.stringify(run.resumed.requests[0]), /call-12/);
+    assert.match(JSON.stringify(run.resumed.requests[0]), /call-45/);
+    assert.match(JSON.stringify(run.resumed.requests[0]), /call-46/);
     assert.equal(run.resumed.events.find(e => e.type === 'ready').sessionFile, run.events.find(e => e.type === 'ready').sessionFile);
+    assert.equal(run.resumed.events.find(e => e.type === 'ready').sessionId, run.events.find(e => e.type === 'ready').sessionId);
 });

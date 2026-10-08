@@ -79,10 +79,6 @@ export class AgentHost {
                     this.abortProcess(active);
                     continue;
                 }
-                if (Date.now() - active.started > 300000) {
-                    this.abortProcess(active, 'Agent 超过五分钟执行上限');
-                    continue;
-                }
                 if (Date.now() - active.lastHeartbeat > 3000) {
                     // Fixed inputs are verified at tool boundaries and once per heartbeat, not per text delta.
                     if (a?.state === 'running') {
@@ -296,7 +292,7 @@ export class AgentHost {
                 requested = true;
                 const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
                 // Retain the child before commit: a commit failure is not proof of zero model use.
-                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, started: Date.now(), lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)) };
+                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)) };
                 this.active.set(claimed.id, active);
                 spawned.on('error', error => this.finish(active, this.clean(error.message)));
                 spawned.once('exit', code => { active.exitObserved = true; if (active.ended)

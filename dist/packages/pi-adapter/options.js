@@ -4,7 +4,6 @@ import { piFailure } from './runtime.js';
 import { readFileSync, existsSync } from 'node:fs';
 /** Validate raw model arguments before Pi's optional-null normalization and primitive coercion. */
 export function buildCustomTools(definitions, dispatch) {
-    let calls = 0;
     return definitions.map(definition => {
         const parameters = schema.object({ input: definition.inputSchema }, ['input']);
         return {
@@ -20,8 +19,6 @@ export function buildCustomTools(definitions, dispatch) {
                 return args;
             },
             execute: async (callId, args) => {
-                if (++calls > 40)
-                    throw new Error('TOOL_CALL_LIMIT: 每次会话最多40次工具调用');
                 const result = await dispatch(definition.name, args.input, callId);
                 return definition.name === PUBLICATION_IMAGE_TOOL ? publicationImageResult(result) : definition.name === DOCUMENT_IMAGE_TOOL ? documentImageResult(result) : { content: [{ type: 'text', text: JSON.stringify(result) }], details: {} };
             }

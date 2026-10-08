@@ -12,7 +12,6 @@ interface Active {
     messageIds: string[];
     consumedIds: Set<string>;
     attemptId?: string;
-    started: number;
     lastHeartbeat: number;
     sent: Set<string>;
     ended: boolean;

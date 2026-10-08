@@ -101,20 +101,33 @@ test('a settled helper with no result fails the session without turning known us
  }finally{await h.stop();s.close();}
 });
 
-test('cancel, newer session generation and timeout cannot be revived by late IPC',async t=>{
- for(const action of ['cancel','interrupt','timeout'])await t.test(action,async()=>{
+test('cancel and manual interruption fence late IPC, while elapsed runtime alone keeps a valid worker alive',async t=>{
+ for(const action of ['cancel','interrupt','elapsed'])await t.test(action,async()=>{
   const s=setup(),h=new AgentHost(s.app,deps);
   try{
    const task=start(s,h,'hold');await until(h,()=>h.active.get(task.sessionId)?.child.connected);
-   // The timeout path keeps its valid generation; cancellation paths must fence late output.
    if(action==='cancel')s.app.teams.cancel(USER,task.id);
    else if(action==='interrupt')s.app.sessions.interrupt(USER,task.sessionId);
-   else h.active.get(task.sessionId).started=Date.now()-300001;
+   else {
+    const active=h.active.get(task.sessionId),before=s.app.store.get('session',task.sessionId);
+    // Simulate elapsed runtime for the former cutoff without aging the live ownership leases.
+    active.started=Date.now()-300001;active.lastHeartbeat=Date.now()-3001;h.tick();
+    assert.equal(h.active.get(task.sessionId),active);
+    assert.equal(active.stopError,undefined,'elapsed runtime must not send an abort');
+    assert.equal(active.ended,false);assert.equal(active.child.connected,true);
+    const session=s.app.store.get('session',task.sessionId);
+    assert.equal(session.state,'running');assert.equal(session.generation,before.generation);
+    assert.ok(session.version>before.version,'the real tick must renew a valid session lease');
+    assert.ok(session.leaseUntil>Date.now());assert.ok(s.app.store.get('task-attempt',task.attemptId).leaseUntil>Date.now());
+    assert.equal(s.app.store.get('agent-admission',active.admissionId).state,'running');
+    assert.equal(s.app.store.list('task-result').length,0);
+    s.app.sessions.interrupt(USER,task.sessionId);
+   }
    await until(h,()=>h.active.size===0);
-   assert.equal(s.app.sessions.get(USER,task.sessionId).state,action==='interrupt'?'interrupted':'failed');
+   assert.equal(s.app.sessions.get(USER,task.sessionId).state,action==='cancel'?'failed':'interrupted');
    assert.equal(s.app.store.list('task-result').length,0);assert.equal(s.app.budget.summary(task.teamId).unknown,1);
    assert.equal(s.app.agentAdmission.snapshot().counts.held,0);
-   if(action!=='timeout')assert.equal(s.app.sessions.messages(USER,task.sessionId).length,0,'stale generation output must not persist');
+   assert.equal(s.app.sessions.messages(USER,task.sessionId).length,0,'stale generation output must not persist');
    assert.equal(s.app.store.events().some(e=>e.type==='task.progress'&&JSON.stringify(e.payload).includes('LATE_ABORT_WRITE')),false);
   }finally{await h.stop();s.close();}
  });

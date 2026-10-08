@@ -26,6 +26,19 @@ test('Pi receives exact tool schemas and raw validation blocks SDK coercion befo
     assert.equal(calls, 0);
 });
 
+test('controlled tools dispatch more than 40 validated calls without a per-run cutoff', async () => {
+    const calls = [];
+    const [tool] = buildCustomTools([{name: 'task_context_read', ...TOOL_DEFINITIONS.task_context_read}], async (name, input, callId) => {
+        calls.push({name, input, callId});
+        return {accepted: true, callId};
+    });
+    for (let index = 1; index <= 45; index++) {
+        const callId = `context-${index}`, receipt = await tool.execute(callId, tool.prepareArguments({input: {}}));
+        assert.deepEqual(JSON.parse(receipt.content[0].text), {accepted: true, callId});
+    }
+    assert.deepEqual(calls, Array.from({length: 45}, (_, index) => ({name: 'task_context_read', input: {}, callId: `context-${index + 1}`})));
+});
+
 test('installed real SDK creates isolated session and reopens the exact native file offline', {skip: !locatePi(repoRoot) && 'SDK absent; install locked dependencies for offline SDK contract'}, async () => {
     const installed = locatePi(repoRoot);
     const sdk = await import(pathToFileURL(installed.sdkPath).href);
