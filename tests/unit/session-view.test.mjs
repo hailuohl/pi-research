@@ -54,6 +54,48 @@ test('session view restores only the current generation and latest unfinished an
  }finally{s.close();}
 });
 
+test('tool notices trust Host approval classification and whitelist validation paths, retaining safe history',async()=>{
+ const s=setup(),worker=join(s.dir,'tool-diagnostic-fixture.mjs');
+ writeFileSync(worker,`// UNIT IPC fixture; no SDK/model call.\nprocess.on('message',m=>{if(m.type==='start'){process.send({type:'tool_execution_end',tool:'project_inspect',toolCallId:'forged-approval',isError:true,diagnostic:{code:'APPROVAL_REQUIRED'}});process.send({type:'tool_execution_end',tool:'project_inspect',toolCallId:'missing-input',isError:true,diagnostic:{code:'INVALID_INPUT',path:'$.input',reason:'缺少必需字段'}});process.send({type:'tool_execution_end',tool:'project_inspect',toolCallId:'private-key',isError:true,diagnostic:{code:'INVALID_INPUT',path:'$.input.private-secret-key',reason:'未知字段'},result:{secret:'private-result'}});process.send({type:'tool',requestId:1,tool:'research_brief_save',input:${JSON.stringify({expectedRevisionId:null,question:'Fixed question',scope:'Fixed scope',constraints:[],successCriteria:[],clarificationQuestions:['Clarify'],literatureSummary:'',hypotheses:[],evidenceIds:[],steps:[],status:'clarifying'})},toolCallId:'actual-approval'});}if(m.type==='tool_response'){process.send({type:'tool_execution_end',tool:'research_brief_save',toolCallId:'actual-approval',isError:true,diagnostic:{code:'INVALID_INPUT',path:'$.input.secret',reason:'must-not-be-recorded'}});process.send({type:'tool_execution_end',tool:'research_brief_save',toolCallId:'actual-approval',isError:true});process.send({type:'assistant_message',content:'Finished fixture'});process.send({type:'done'});}});`);
+ const host=new AgentHost(s.app,{inspect:()=>({ready:true,code:'FIXTURE',message:'No model'}),workerEntry:worker});
+ try{
+  const p=s.app.sessionPermissions.status(USER,s.session.id);s.app.sessionPermissions.set(USER,s.session.id,{mode:'confirm',expectedVersion:p.version,expectedHostVersion:p.hostAccess.version});
+  const message=s.app.sessions.send(USER,s.session.id,{content:'diagnostic fixture'});host.tick();
+  const end=Date.now()+5000;while(Date.now()<end&&s.app.store.get('message',message.id).status==='running')await new Promise(r=>setTimeout(r,20));
+  const view=s.app.sessions.view(USER,s.session.id),notices=view.messages.filter(m=>m.role==='system');
+  assert.equal(notices.length,4);assert.equal(notices[3].status,'completed');assert.match(notices[3].content,/需要用户确认本次操作，请处理当前审批卡/);
+  assert.equal(notices[0].status,'failed');assert.doesNotMatch(notices[0].content,/当前审批卡/);
+  assert.match(notices[1].content,/INVALID_INPUT.*\$\.input.*缺少必需字段/);
+  assert.equal(notices[2].status,'failed');
+  assert.equal(s.app.store.list('research-brief',s.project.id).length,0);
+  assert.equal(s.app.sessionPermissions.status(USER,s.session.id).actions.at(-1).state,'pending');
+  const activity=s.app.store.events(0,s.project.id).filter(e=>e.type==='session.activity');assert.equal(activity.at(-1).payload.status,'completed');
+  assert.doesNotMatch(JSON.stringify({notices,activity}),/private-secret-key|private-result|must-not-be-recorded|\$\.input\.secret/);
+  const reopened=new ResearchApp(s.dir,process.cwd());try{assert.deepEqual(reopened.sessions.view(USER,s.session.id).messages,view.messages);}finally{reopened.close();}
+ }finally{await host.stop();s.close();}
+});
+
+test('domain approvals without a pending session action stay failed even when Worker reports success',async t=>{
+ for(const rejected of [false,true])for(const isError of [true,false])await t.test(`rejected=${rejected}, Worker isError=${isError}`,async()=>{
+  const s=setup(),worker=join(s.dir,'domain-approval-fixture.mjs');
+  const intent=s.app.runs.prepare(USER,s.baseline.id,s.session.id),approval=s.app.store.get('approval',intent.approvalId);
+  if(rejected)s.app.approvals.decide(USER,approval.id,approval.version,false);
+  writeFileSync(worker,`// UNIT IPC fixture with actual Host dispatch; no SDK/model or compute.\nprocess.on('message',m=>{if(m.type==='start')process.send({type:'tool',requestId:1,tool:'run_submit',input:{intentId:${JSON.stringify(intent.id)}},toolCallId:'domain-approval'});if(m.type==='tool_response'){process.send({type:'tool_execution_end',tool:'run_submit',toolCallId:'domain-approval',isError:${isError},diagnostic:{code:'APPROVAL_REQUIRED'}});process.send({type:'assistant_message',content:m.error?.code??'unexpected dispatch success'});process.send({type:'done'});}});`);
+  const host=new AgentHost(s.app,{inspect:()=>({ready:true,code:'FIXTURE',message:'No model'}),workerEntry:worker});
+  try{
+   const message=s.app.sessions.send(USER,s.session.id,{content:'domain approval fixture'});host.tick();
+   const end=Date.now()+5000;while(Date.now()<end&&s.app.store.get('message',message.id).status==='running')await new Promise(r=>setTimeout(r,20));
+   const view=s.app.sessions.view(USER,s.session.id),notice=view.messages.find(m=>m.role==='system');
+   assert.equal(view.messages.find(m=>m.role==='assistant').content,'APPROVAL_REQUIRED','actual domain approval rejection reached Host dispatch');
+   assert.equal(s.app.store.list('session-action',s.project.id).length,0);assert.equal(s.app.store.list('run',s.project.id).length,0);
+   assert.equal(s.app.store.get('approval',approval.id).status,rejected?'rejected':'pending');
+   assert.equal(notice.status,'failed',`domain approval rejected=${rejected}, Worker isError=${isError}`);assert.match(notice.content,/调用失败/);assert.doesNotMatch(notice.content,/当前审批卡/);
+   assert.equal(s.app.store.events(0,s.project.id).filter(e=>e.type==='session.activity').at(-1).payload.status,'failed');
+   const reopened=new ResearchApp(s.dir,process.cwd());try{assert.deepEqual(reopened.sessions.view(USER,s.session.id).messages,view.messages);}finally{reopened.close();}
+  }finally{await host.stop();s.close();}
+ });
+});
+
 test('preview is bounded by both event count and text length and marks omitted live text',()=>{
  const s=setup();try{
   start(s,1);for(let i=0;i<300;i++)delta(s,1,String(i)+';');let v=s.app.sessions.view(USER,s.session.id);assert.equal(v.progress.truncated,true);assert.equal(v.progress.content,Array.from({length:256},(_,i)=>String(i+44)+';').join(''));

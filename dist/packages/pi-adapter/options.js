@@ -7,7 +7,7 @@ export function buildCustomTools(definitions, dispatch) {
     return definitions.map(definition => {
         const parameters = schema.object({ input: definition.inputSchema }, ['input']);
         return {
-            name: definition.name, label: definition.name, description: `${definition.description}\ninput 示例：${JSON.stringify(definition.example)}`,
+            name: definition.name, label: definition.name, description: `${definition.description}\n完整调用示例：${JSON.stringify({ input: definition.example })}`,
             parameters: parameters,
             prepareArguments: (args) => {
                 try {

@@ -4,6 +4,8 @@ import { resolvedThinking, modelPayload } from '../../packages/pi-adapter/model-
 import { managedModelFetch } from '../../packages/pi-adapter/model-fetch.js';
 import { attachmentPayload } from '../../packages/pi-adapter/attachment-input.js';
 import { MANAGED_HTTP_APIS } from '../../packages/scheduler/model-http.js';
+import { s as schema } from '../../packages/contracts/operations/schema.js';
+import { toolResultDiagnostic } from '../../packages/pi-adapter/tool-diagnostic.js';
 import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -163,8 +165,11 @@ process.on('message', async (message) => {
                     }
                 }
             }
-            if (e.type === 'tool_execution_start' || e.type === 'tool_execution_end')
-                send({ type: e.type, tool: e.toolName, toolCallId: e.toolCallId, ...(e.type === 'tool_execution_end' ? { isError: e.isError } : {}) });
+            if (e.type === 'tool_execution_start' || e.type === 'tool_execution_end') {
+                const definition = raw.tools.find(tool => tool.name === e.toolName);
+                const diagnostic = e.type === 'tool_execution_end' && e.isError && definition ? toolResultDiagnostic(schema.object({ input: definition.inputSchema }, ['input']), e.result) : undefined;
+                send({ type: e.type, tool: e.toolName, toolCallId: e.toolCallId, ...(e.type === 'tool_execution_end' ? { isError: e.isError, ...(diagnostic ? { diagnostic } : {}) } : {}) });
+            }
             if (e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
                 send({ type: 'delta', text: e.assistantMessageEvent.delta });
             if (e.type === 'message_end' && e.message?.role === 'assistant') {

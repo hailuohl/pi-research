@@ -9,9 +9,12 @@ import { fork, type ChildProcess } from 'node:child_process';
 import { mkdirSync, existsSync } from 'node:fs';
 import { join, resolve, relative, isAbsolute } from 'node:path';
 import type { ResearchApp } from '../research-app.js';
-import type { Actor, Session, Message, Task, TaskAttempt, Team, Row, ModelConfig } from '../domain/types.js';
+import type { Actor, Session, Message, Task, TaskAttempt, Team, Row, ModelConfig, Approval } from '../domain/types.js';
 import { SYSTEM } from '../domain/types.js';
 import { ToolDispatcher } from '../research-tools/dispatcher.js';
+import {TOOL_DEFINITIONS} from '../research-tools/definitions.js';
+import {s as schema} from '../contracts/operations/schema.js';
+import {safeToolDiagnostic,type ToolDiagnostic} from '../pi-adapter/tool-diagnostic.js';
 import type { Wakeup } from './wakeups.js';
 import { inspectPi } from '../pi-adapter/runtime.js';
 import { asError, ensure, DomainError } from '../domain/errors.js';
@@ -36,6 +39,7 @@ interface Active {
     stopError?: string;
     assistantOutput?: boolean;
     failedToolCalls?: Set<string>;
+    toolErrors?: Map<string,{tool:string;code:string;pendingActionId?:string;diagnostic?:ToolDiagnostic}>;
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;
     deltaTail?:string;
@@ -293,6 +297,14 @@ export class AgentHost {
         if (a.actor.wakeupId) { try { this.app.wakeups.assertActive(a.actor); } catch { return false; } }
         return true;
     }
+    private pendingSessionAction(a:Active,tool:string,details:unknown) {
+        const ref=details as {actionId?:unknown;operation?:unknown}|null;
+        if(typeof ref?.actionId!=='string'||ref.operation!==tool)return;
+        const action=this.app.store.maybe<{sessionId:string;operation:string;state:string;approvalId:string}>('session-action',ref.actionId);
+        if(!action||action.projectId!==a.actor.projectId||action.sessionId!==a.sessionId||action.operation!==tool||action.state!=='pending')return;
+        const approval=this.app.store.maybe<Approval>('approval',action.approvalId);
+        if(approval?.projectId===a.actor.projectId&&approval.subjectKind==='session-action'&&approval.subjectId===action.id&&approval.scope==='session.action'&&approval.status==='pending')return action.id;
+    }
     private async onMessage(a: Active, m: any, sessionDir: string) {
         if(m?.type==='model_http_acquire'||m?.type==='model_http_finish'){
             const identity={admissionId:a.admissionId,ownerHost:this.ownerHost,sessionId:a.sessionId,generation:a.generation};
@@ -318,6 +330,8 @@ export class AgentHost {
             return;
         if (m?.type === 'tool') {
             if (a.exitObserved) return;
+            const tool=String(m.tool),callId=String(m.toolCallId);
+            a.toolErrors?.delete(callId);
             try {
                 ensure(!a.stopError && this.valid(a), 'LEASE_EXPIRED', '会话已中止');
                 // Cached reads also require current inputs while a task is running; finished submit receipts may drain.
@@ -329,6 +343,9 @@ export class AgentHost {
             }
             catch (e) {
                 const error = asError(e);
+                const definition=TOOL_DEFINITIONS[tool];
+                const pendingActionId=error.code==='APPROVAL_REQUIRED'?this.pendingSessionAction(a,tool,error.details):undefined;
+                (a.toolErrors??=new Map()).set(callId,{tool,code:error.code,pendingActionId,diagnostic:definition?safeToolDiagnostic(definition.inputSchema,error.code,error.message):undefined});
                 if (!a.exitObserved && a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, error: { code: error.code, message: this.clean(error.message) } });
             }
@@ -355,15 +372,21 @@ export class AgentHost {
             const tool = String(m.tool ?? '');
             // Revocation fences effects, but must not erase the final failure event for an already advertised tool.
             if (!(a.advertisedTools??new Set(this.tools.definitions(a.actor.role!,!!a.actor.wakeupId,a.sessionId).map(definition=>definition.name))).has(tool)) return;
-            const failedCallId=m.type === 'tool_execution_end' && m.isError ? String(m.toolCallId ?? tool).slice(0,200) : null;
+            const callId=String(m.toolCallId??tool),record=a.toolErrors?.get(callId),error=record?.tool===tool?record:undefined;
+            const failed=m.type==='tool_execution_end'&&(m.isError||error);
+            const reported=safeToolDiagnostic(schema.object({input:TOOL_DEFINITIONS[tool].inputSchema},['input']),m.diagnostic?.code,`${m.diagnostic?.path}: ${m.diagnostic?.reason}`);
+            const diagnostic=error?error.diagnostic:reported?.code==='INVALID_INPUT'?reported:undefined;
+            const failedCallId=failed?callId.slice(0,200):null;
             const seen=a.failedToolCalls ??= new Set<string>();
             let noticeSaved=false;
             this.app.store.transaction(() => {
                 ensure(this.valid(a), 'LEASE_EXPIRED', '旧 Worker 不能保存当前工具状态');
-                this.app.store.event(s.projectId, 'session.activity', {sessionId:s.id,generation:a.generation,tool,status:m.type === 'tool_execution_start' ? 'running' : m.isError ? 'failed' : 'completed'});
+                const approvalRequired=failed&&error?.pendingActionId&&this.pendingSessionAction(a,tool,{actionId:error.pendingActionId,operation:tool})===error.pendingActionId;
+                this.app.store.event(s.projectId, 'session.activity', {sessionId:s.id,generation:a.generation,tool,status:m.type === 'tool_execution_start' ? 'running' : failed&&!approvalRequired ? 'failed' : 'completed'});
                 if (failedCallId !== null) {
                     if (!seen.has(failedCallId)) {
-                        const notice = this.app.store.create<Message>('message', s.projectId, {sessionId:s.id,generation:a.generation,role:'system',content:`工具 ${tool} 调用失败。请查看智能体说明或对应任务的诊断。`,mode:'follow_up',status:'failed'});
+                        const content=approvalRequired?`工具 ${tool} 需要用户确认本次操作，请处理当前审批卡。`:diagnostic?.code==='INVALID_INPUT'?`工具 ${tool} 调用失败（INVALID_INPUT${diagnostic.path?` — ${diagnostic.path}: ${diagnostic.reason}`:'：输入不符合工具要求'}）。请按完整调用示例核对参数。`:`工具 ${tool} 调用失败。请查看智能体说明或对应任务的诊断。`;
+                        const notice = this.app.store.create<Message>('message', s.projectId, {sessionId:s.id,generation:a.generation,role:'system',content,mode:'follow_up',status:approvalRequired?'completed':'failed'});
                         this.app.store.event(s.projectId, 'session.message_completed', {sessionId:s.id,messageId:notice.id});
                         noticeSaved=true;
                     }

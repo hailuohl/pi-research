@@ -7,7 +7,22 @@ import {pathToFileURL, fileURLToPath} from 'node:url';
 import {buildSessionOptions, buildCustomTools} from '../../dist/packages/pi-adapter/options.js';
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
 import {inspectPi, locatePi, piFailure} from '../../dist/packages/pi-adapter/runtime.js';
+import {safeToolDiagnostic,toolResultDiagnostic} from '../../dist/packages/pi-adapter/tool-diagnostic.js';
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
+
+test('tool diagnostics expose only fixed reasons and static schema paths from the pinned SDK text result',()=>{
+ const [tool]=buildCustomTools([{name:'research_brief_save',...TOOL_DEFINITIONS.research_brief_save}],async()=>{});
+ const result=text=>({content:[{type:'text',text}],details:{secret:'never public'}});
+ assert.deepEqual(toolResultDiagnostic(tool.parameters,result('INVALID_INPUT: $.input.expectedRevisionId: 缺少必需字段')),{code:'INVALID_INPUT',path:'$.input.expectedRevisionId',reason:'缺少必需字段'});
+ assert.deepEqual(toolResultDiagnostic(tool.parameters,result('INVALID_INPUT: $.input.steps[0].title: 文本长度超出范围')),{code:'INVALID_INPUT',path:'$.input.steps[0].title',reason:'文本长度超出范围'});
+ for(const index of ['16','999999999999999999999999999999999999999999', '1'.repeat(260)])assert.deepEqual(toolResultDiagnostic(tool.parameters,result(`INVALID_INPUT: $.input.steps[${index}].title: 文本长度超出范围`)),{code:'INVALID_INPUT'});
+ assert.deepEqual(toolResultDiagnostic(tool.parameters,result('APPROVAL_REQUIRED: private approval details')),{code:'APPROVAL_REQUIRED'});
+ for(const text of ['$.input.private-secret-key: 未知字段','$.input.steps[0].private-secret-key: 类型不正确','$.input.expectedRevisionId: private parameter value','$.input.expectedRevisionId\nprivate-secret: 缺少必需字段','$.input.steps[private-secret].title: 文本格式不正确'])assert.deepEqual(toolResultDiagnostic(tool.parameters,result('INVALID_INPUT: '+text)),{code:'INVALID_INPUT'});
+ const [dynamic]=buildCustomTools([{name:'run_prepare',...TOOL_DEFINITIONS.run_prepare}],async()=>{});
+ assert.deepEqual(safeToolDiagnostic(dynamic.parameters,'INVALID_INPUT','$.input.config.private-secret: 类型不正确'),{code:'INVALID_INPUT'});
+ for(const text of ['VERSION_CONFLICT: private values','INVALID_INPUTsuffix','APPROVAL_REQUIREDsuffix','private error text'])assert.equal(toolResultDiagnostic(tool.parameters,result(text)),undefined);
+ assert.equal(toolResultDiagnostic(tool.parameters,{content:[{type:'text',text:'INVALID_INPUT: $.input: 类型不正确'},{type:'text',text:'private values'}]}),undefined);
+});
 
 test('Pi receives exact tool schemas and raw validation blocks SDK coercion before dispatch', async () => {
     const installed = locatePi(repoRoot), sdk = await import(pathToFileURL(installed.aiPath).href);
@@ -15,6 +30,9 @@ test('Pi receives exact tool schemas and raw validation blocks SDK coercion befo
     const tools = buildCustomTools(Object.entries(TOOL_DEFINITIONS).map(([name, definition]) => ({name, ...definition})), async () => {calls++; return {};});
     for (const tool of tools) {
         const valid = {input: TOOL_DEFINITIONS[tool.name].example};
+        const example = JSON.parse(tool.description.split('\n完整调用示例：')[1]);
+        assert.deepEqual(example, valid, tool.name);
+        assert.deepEqual(tool.prepareArguments(example), example);
         assert.deepEqual(tool.prepareArguments(valid), valid);
         assert.deepEqual(sdk.validateToolArguments(tool, {id: 'example', name: tool.name, arguments: valid}), valid);
         assert.throws(() => tool.prepareArguments({...valid, actor: 'forged'}), /INVALID_INPUT/);
@@ -23,6 +41,12 @@ test('Pi receives exact tool schemas and raw validation blocks SDK coercion befo
     assert.throws(() => run.prepareArguments({input: {experimentId: 123}}), /INVALID_INPUT/);
     const read = tools.find(tool => tool.name === 'run_logs');
     assert.throws(() => read.prepareArguments({input: {runId: 'run', cursor: '12'}}), /INVALID_INPUT/);
+    const brief = tools.find(tool => tool.name === 'research_brief_save');
+    assert.match(brief.description, /初次.*expectedRevisionId.*null/);
+    assert.match(brief.description, /research_brief_inspect\.latestId/);
+    assert.throws(() => brief.prepareArguments({}), /\$\.input: 缺少必需字段/);
+    const {expectedRevisionId, ...missingRevision} = TOOL_DEFINITIONS.research_brief_save.example;
+    assert.throws(() => brief.prepareArguments({input: missingRevision}), /\$\.input\.expectedRevisionId: 缺少必需字段/);
     assert.equal(calls, 0);
 });
 

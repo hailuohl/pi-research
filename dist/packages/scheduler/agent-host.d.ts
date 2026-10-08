@@ -2,6 +2,7 @@ import { fork, type ChildProcess } from 'node:child_process';
 import type { ResearchApp } from '../research-app.js';
 import type { Actor, Session, Row, ModelConfig } from '../domain/types.js';
 import { ToolDispatcher } from '../research-tools/dispatcher.js';
+import { type ToolDiagnostic } from '../pi-adapter/tool-diagnostic.js';
 interface Active {
     catalogFingerprint: string;
     admissionId: string;
@@ -20,6 +21,12 @@ interface Active {
     stopError?: string;
     assistantOutput?: boolean;
     failedToolCalls?: Set<string>;
+    toolErrors?: Map<string, {
+        tool: string;
+        code: string;
+        pendingActionId?: string;
+        diagnostic?: ToolDiagnostic;
+    }>;
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;
     deltaTail?: string;
@@ -73,6 +80,7 @@ export declare class AgentHost {
     private launch;
     private exited;
     private valid;
+    private pendingSessionAction;
     private onMessage;
     private failInput;
     private sendInput;
