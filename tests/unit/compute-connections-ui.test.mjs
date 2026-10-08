@@ -43,19 +43,38 @@ test('unknown current Docker context stays empty after failure, so a retry redis
 test('local expiry updates while a probe is locked and pending probes withdraw earlier availability',async t=>{
  const beforeWindow=global.window,beforeInterval=global.setInterval,beforeClear=global.clearInterval,beforeNow=Date.now;t.after(()=>{global.window=beforeWindow;global.setInterval=beforeInterval;global.clearInterval=beforeClear;Date.now=beforeNow;});
  const callbacks=[];global.window={addEventListener(){},removeEventListener(){}};global.setInterval=(fn,ms)=>{callbacks.push({fn,ms});return callbacks.length;};global.clearInterval=()=>{};
- const v=view(),start=Date.now();Date.now=()=>start;v.refresh=async()=>{};const fresh={...ssh('fresh','verified'),validUntil:new Date(start+30000).toISOString(),gpuValidUntil:new Date(start+15000).toISOString(),capabilities:{cpu:true,gpu:true},gpuDevices:[{uuid:'fixture',name:'Device',memoryMb:1024}]};v.state.catalog={...catalog,connections:{docker:[],ssh:[fresh]}};v.componentDidMount();
- assert.match(text(v.render()),/1 块已核验/);v.state.busy='ssh:fresh';assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验|1 块已核验/);v.state.busy='';
+ const v=view(),start=Date.now();Date.now=()=>start;v.refresh=async()=>{};const fresh={...ssh('fresh','verified'),managed:true,supervisor:'ready',docker:'ready',workspace:'ready',validUntil:new Date(start+30000).toISOString(),gpuValidUntil:new Date(start+15000).toISOString(),capabilities:{cpu:true,gpu:true},gpuDevices:[{uuid:'fixture',name:'Device',memoryMb:1024}]};v.state.catalog={...catalog,connections:{docker:[],ssh:[fresh]}};v.componentDidMount();
+ assert.match(text(v.render()),/1 块已核验/);assert.match(text(v.render()),/Docker 已连接/);v.state.busy='ssh:fresh';assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验|1 块已核验|Docker 已连接/);v.state.busy='';
  let updates=0;const set=v.setState;v.setState=(...args)=>{updates++;set(...args);};v.locked=true;Date.now=()=>start+16000;callbacks.find(c=>c.ms===1000).fn();assert.equal(updates,1);assert.match(text(v.render()),/连接正常/);assert.doesNotMatch(text(v.render()),/1 块已核验|Device/);
- Date.now=()=>start+31000;callbacks.find(c=>c.ms===1000).fn();assert.equal(updates,2);assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验/);assert.match(text(v.render()),/待重新核验/);v.componentWillUnmount();
+ Date.now=()=>start+31000;callbacks.find(c=>c.ms===1000).fn();assert.equal(updates,2);assert.doesNotMatch(text(v.render()),/连接正常|CPU\s+已核验/);assert.match(text(v.render()),/待重新核验/);assert.doesNotMatch(text(v.render()),/Docker 已连接/);v.componentWillUnmount();
 });
 
 test('failed rechecks and failed catalog refreshes cannot revive cached SSH, Docker or GPU availability',async t=>{
  const original=global.fetch;t.after(()=>global.fetch=original);global.fetch=async()=>new Response(JSON.stringify({error:{message:'unavailable'}}),{status:503});
  for(const operation of ['ssh_target_probe','ssh_target_configure','gpu_target_probe','docker_connection_probe']){
-  const v=view(),deadline=new Date(Date.now()+30000).toISOString();v.state.context='fixture';v.state.catalog={...catalog,connections:{docker:[{context:'fixture',status:'verified',validUntil:deadline}],ssh:[{...ssh('fresh','verified'),gpuValidUntil:deadline,capabilities:{cpu:true,gpu:true},gpuDevices:[{uuid:'fixture',name:'Device',memoryMb:1024}]}]}};
+  const v=view(),deadline=new Date(Date.now()+30000).toISOString();v.state.context='fixture';v.state.catalog={...catalog,connections:{docker:[{context:'fixture',status:'verified',validUntil:deadline}],ssh:[{...ssh('fresh','verified'),managed:true,supervisor:'ready',docker:'ready',workspace:'ready',gpuValidUntil:deadline,capabilities:{cpu:true,gpu:true},gpuDevices:[{uuid:'fixture',name:'Device',memoryMb:1024}]}]}};
   if(operation==='docker_connection_probe')await v.probeDocker();else await v.mutate(operation,operation==='gpu_target_probe'?{backend:'ssh',sshTargetId:'fresh'}:{id:'fresh'},'probe');
   assert.equal(v.state.busy,'');assert.match(v.state.error,/unavailable/);
   if(operation==='docker_connection_probe')assert.equal(v.state.catalog.connections.docker[0].status,'unverified');
-  else{assert.equal(v.state.catalog.connections.ssh[0].capabilities.gpu,false);assert.deepEqual(v.state.catalog.connections.ssh[0].gpuDevices,[]);if(operation!=='gpu_target_probe')assert.equal(v.state.catalog.connections.ssh[0].status,'unverified');}
+  else{assert.equal(v.state.catalog.connections.ssh[0].capabilities.gpu,false);assert.deepEqual(v.state.catalog.connections.ssh[0].gpuDevices,[]);if(operation!=='gpu_target_probe'){assert.equal(v.state.catalog.connections.ssh[0].status,'unverified');assert.doesNotMatch(text(v.render()),/Docker 已连接/);}}
  }
+});
+
+test('saving SSH only requests a fixed fingerprint challenge and confirmation cannot submit mutable configuration',async t=>{
+ const original=global.fetch,oldForm=global.FormData;t.after(()=>{global.fetch=original;global.FormData=oldForm;});global.FormData=class{constructor(values){this.values=values;}get(key){return this.values[key]??null;}};
+ const requests=[],v=view(),challenge={challengeId:'fixed-challenge',id:'new-server',host:'server.invalid',port:22,user:'research',remoteRoot:'/srv/pi/jobs',keyType:'ssh-ed25519',fingerprint:'SHA256:fixed',expiresAt:new Date(Date.now()+600000).toISOString()};v.state.editor={id:'',version:0};v.editorDialog.current={close(){}};
+ global.fetch=async(url,options)=>{const body=JSON.parse(options.body);requests.push({url,...body});return new Response(JSON.stringify(url.endsWith('ssh_target_challenge')?challenge:url.endsWith('ssh_target_confirm')?{id:'new-server',version:1,verified:false,errorCode:'SSH_DOCKER_MISSING'}:catalog));};
+ await v.save({id:'new-server',host:'server.invalid',port:'22',user:'research',remoteRoot:'/srv/pi/jobs',identityFile:'/private/key',knownHostsFile:'must-not-submit'});assert.equal(requests[0].url,'/api/operations/ssh_target_challenge');assert.equal(Object.hasOwn(requests[0].input,'knownHostsFile'),false);assert.equal(v.state.challenge.challengeId,'fixed-challenge');
+ await v.confirmFingerprint();assert.equal(requests.length,1);v.state.fingerprintConfirmed=true;await v.confirmFingerprint();assert.deepEqual(requests[1].input,{challengeId:'fixed-challenge',fingerprint:'SHA256:fixed'});assert.equal(v.state.editor,null);assert.equal(v.state.challenge,null);assert.match(v.state.notice,/身份已保存/);
+});
+
+test('SSH periodic checks are read-only, exclude legacy profiles and persist unavailable observations',async t=>{
+ const original=global.fetch;t.after(()=>global.fetch=original);const requests=[],v=view();v.state.catalog={...catalog,connections:{docker:[],ssh:[{...ssh('managed','verified'),managed:true,setup:'unknown'},ssh('legacy','verified')]}};
+ global.fetch=async(url,options)=>{requests.push({url,...JSON.parse(options.body)});return url.endsWith('ssh_target_probe')?new Response(JSON.stringify({error:{message:'unavailable'}}),{status:409}):new Response(JSON.stringify({...catalog,connections:{docker:[],ssh:[{...ssh('managed','unavailable'),managed:true,setup:'unknown'}]}}));};
+ await v.checkSsh();assert.deepEqual(requests.map(r=>r.url),['/api/operations/ssh_target_probe','/api/operations/execution_environment_list']);assert.deepEqual(requests[0].input,{id:'managed'});assert.equal(v.state.catalog.connections.ssh[0].status,'unavailable');assert.equal(v.state.checking,'');
+});
+
+test('SSH form hides known_hosts paths and requires an unexpired explicit fingerprint confirmation',()=>{
+ const v=view();v.state.editor={id:'new-server',version:0,host:'',user:'',port:22,remoteRoot:'/srv/pi/jobs',identityFile:''};assert.ok(!nodes(v.render()).some(n=>n.type==='input'&&n.props.name==='knownHostsFile'));
+ v.state.challenge={challengeId:'fixed',id:'new-server',host:'server.invalid',port:22,user:'research',remoteRoot:'/srv/pi/jobs',keyType:'ssh-ed25519',fingerprint:'SHA256:fixed',expiresAt:new Date(Date.now()+60000).toISOString()};const confirm=()=>nodes(v.render()).find(n=>n.type==='button'&&text(n)==='确认指纹并连接');assert.equal(confirm().props.disabled,true);v.state.fingerprintConfirmed=true;assert.equal(confirm().props.disabled,false);v.state.challenge.expiresAt=new Date(0).toISOString();assert.equal(confirm().props.disabled,true);assert.match(text(v.render()),/已过期/);
 });

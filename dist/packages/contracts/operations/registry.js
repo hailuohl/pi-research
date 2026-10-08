@@ -260,6 +260,9 @@ const SPECS = [
     make('ssh_target_preferences_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => new ComputeConnectionService(c.app.context).configurePreferences(c.actor, x, c.app.sshTargets) }),
     make('gpu_target_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.gpus.probe(c.actor, x) }),
     make('ssh_target_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.sshTargets.configure(c.actor, x) }),
+    make('ssh_target_challenge', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.sshTargets.challenge(c.actor, x) }),
+    make('ssh_target_confirm', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.sshTargets.confirm(c.actor, x) }),
+    make('ssh_target_setup', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.sshTargets.setup(c.actor, x) }),
     make('ssh_target_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.sshTargets.probe(c.actor, x.id) }),
     make('compute_target_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.compute.probeContext(c.actor, x.context, c.validate) }),
     make('compute_queue_inspect', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.compute.inspect(c.actor, c.projectId, x) }),
@@ -579,6 +582,16 @@ export class OperationRegistry {
             // Owner receipts remain readable after archival; only new effects require a writable project.
             if (actor.type === 'agent')
                 context.validate();
+            if (['ssh_target_challenge', 'ssh_target_confirm', 'ssh_target_setup'].includes(id)) {
+                const prior = this.app.store.transaction(lookup);
+                if (prior) {
+                    if (id === 'ssh_target_confirm')
+                        return Promise.resolve(invoke()).then(output);
+                    if (id === 'ssh_target_setup')
+                        ensure(this.app.sshTargets.inspect(actor, input.id).version === input.expectedVersion, 'SSH_TARGET_CHANGED', '环境准备回执属于旧配置');
+                    return output(prior.value);
+                }
+            }
             if (['report_export', 'compute_target_probe', 'docker_connection_probe', 'document_import', 'document_parser_configure', 'document_parse_prepare', 'skill_package_import', 'manuscript_create', 'publication_configure', 'publication_prepare', 'publication_submit'].includes(id)) {
                 const previous = this.app.store.transaction(() => {
                     if (actor.type === 'agent')

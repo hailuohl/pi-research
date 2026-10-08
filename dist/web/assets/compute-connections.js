@@ -5,6 +5,7 @@ import { Icon } from "./ui.js";
 const statusLabels = { unverified: "\u5F85\u6838\u9A8C", verified: "\u8FDE\u63A5\u6B63\u5E38", stale: "\u5F85\u91CD\u65B0\u6838\u9A8C", unavailable: "\u8FDE\u63A5\u5931\u8D25" };
 const gb = (mb) => `${(mb / 1024).toFixed(1)} GB`;
 const checked = (at) => at ? `\u4E0A\u6B21\u6838\u9A8C ${new Date(at).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}` : "\u5C1A\u672A\u6838\u9A8C";
+const sshMessages = { SSH_PYTHON_REQUIRED: "\u670D\u52A1\u5668\u9700\u8981\u5148\u5B89\u88C5 Python 3\u3002", SSH_LINUX_REQUIRED: "\u5F53\u524D\u8BA1\u7B97\u8FDE\u63A5\u9700\u8981 Linux \u670D\u52A1\u5668\u3002", SSH_AUTHENTICATION_FAILED: "SSH \u8EAB\u4EFD\u8BA4\u8BC1\u5931\u8D25\uFF0C\u8BF7\u68C0\u67E5\u8D26\u53F7\u4E0E\u79C1\u94A5\u3002", SSH_HOST_KEY_CHANGED: "\u670D\u52A1\u5668\u6307\u7EB9\u4E0E\u5DF2\u786E\u8BA4\u8EAB\u4EFD\u4E0D\u7B26\uFF0C\u8BF7\u6838\u5B9E\u670D\u52A1\u5668\u8EAB\u4EFD\u3002", SSH_SETUP_PERMISSION_REQUIRED: "\u5B89\u88C5\u76D1\u7BA1\u5668\u9700\u8981 root \u6216\u514D\u4EA4\u4E92 sudo \u6743\u9650\uFF0C\u8BF7\u8054\u7CFB\u670D\u52A1\u5668\u7BA1\u7406\u5458\u3002", SSH_SUPERVISOR_MISSING: "\u76D1\u7BA1\u5668\u5C1A\u672A\u5B89\u88C5\uFF0C\u53EF\u4EE5\u91CD\u8BD5\u73AF\u5883\u51C6\u5907\u3002", SSH_PROTOCOL_MISMATCH: "\u5DF2\u6709\u76D1\u7BA1\u5668\u7248\u672C\u4E0D\u5339\u914D\uFF0C\u5E94\u7528\u4F1A\u4FDD\u7559\u5B83\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458\u5904\u7406\u3002", SSH_SUPERVISOR_UNSAFE: "\u76D1\u7BA1\u5668\u8DEF\u5F84\u6216\u6743\u9650\u4E0D\u7B26\u5408\u8981\u6C42\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458\u68C0\u67E5\u3002", SSH_WORKSPACE_MISSING: "\u8FDC\u7AEF\u5DE5\u4F5C\u76EE\u5F55\u5C1A\u672A\u51C6\u5907\u597D\uFF0C\u53EF\u4EE5\u91CD\u8BD5\u73AF\u5883\u51C6\u5907\u3002", SSH_WORKSPACE_INVALID: "\u5DF2\u6709\u5DE5\u4F5C\u76EE\u5F55\u7684\u5F52\u5C5E\u6216\u6743\u9650\u4E0D\u7B26\u5408\u8981\u6C42\uFF0C\u8BF7\u8054\u7CFB\u7BA1\u7406\u5458\u5904\u7406\u3002", SSH_DOCKER_MISSING: "\u670D\u52A1\u5668\u5C1A\u672A\u5B89\u88C5 Docker\uFF0C\u8BF7\u5B89\u88C5\u540E\u91CD\u65B0\u68C0\u6D4B\u8FDE\u63A5\u3002", SSH_DOCKER_UNAVAILABLE: "Docker \u5DF2\u5B89\u88C5\u4F46\u65E0\u6CD5\u8BBF\u95EE\uFF0C\u8BF7\u68C0\u67E5\u670D\u52A1\u72B6\u6001\u548C\u5F53\u524D\u7528\u6237\u6743\u9650\u3002", SSH_DOCKER_UNSUPPORTED: "\u9700\u8981\u53EF\u7528\u7684 Linux Docker \u5F15\u64CE\u3002", SSH_SETUP_UNKNOWN: "\u4E0A\u6B21\u73AF\u5883\u51C6\u5907\u7ED3\u679C\u5C1A\u672A\u786E\u8BA4\uFF0C\u6B63\u5728\u901A\u8FC7\u53EA\u8BFB\u68C0\u67E5\u6838\u5BF9\u3002", SSH_TARGET_CHANGED: "\u8FDE\u63A5\u914D\u7F6E\u6216\u8EAB\u4EFD\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u6838\u9A8C\u3002", SSH_TARGET_BUSY: "\u8BE5\u76EE\u6807\u6B63\u5728\u51C6\u5907\u6216\u4ECD\u6709\u4F5C\u4E1A\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002" };
 function Status({ connection, pending = false }) {
   const status = pending ? "unverified" : connection?.status === "verified" && (!connection.validUntil || !Number.isFinite(Date.parse(connection.validUntil)) || Date.parse(connection.validUntil) <= Date.now()) ? "stale" : connection?.status ?? "unverified";
   return /* @__PURE__ */ jsxs("span", { className: "compute-status", "data-state": status, children: [
@@ -15,11 +16,12 @@ function Status({ connection, pending = false }) {
 class ComputeConnections extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { catalog: null, context: "", busy: "", error: "", notice: "", editor: null, gpuTarget: null };
+    this.state = { challenge: null, fingerprintConfirmed: false, checking: "", catalog: null, context: "", busy: "", error: "", notice: "", editor: null, gpuTarget: null };
     this.mounted = false;
     this.epoch = 0;
     this.readEpoch = 0;
     this.locked = false;
+    this.checking = false;
     this.editorDialog = React.createRef();
     this.gpuDialog = React.createRef();
     this.onFocus = () => {
@@ -51,7 +53,7 @@ class ComputeConnections extends React.Component {
       this.readEpoch++;
       this.editorDialog.current?.close();
       this.gpuDialog.current?.close();
-      this.setState({ catalog: null, context: "", error: "", notice: "", editor: null, gpuTarget: null });
+      this.setState({ catalog: null, context: "", error: "", notice: "", editor: null, gpuTarget: null, challenge: null, fingerprintConfirmed: false, checking: "" });
       void this.refresh();
     } else if (this.props.active && (prev.refreshToken !== this.props.refreshToken || !prev.active) && !this.locked) void this.load();
   }
@@ -73,7 +75,10 @@ class ComputeConnections extends React.Component {
   async refresh() {
     const epoch = this.epoch;
     await this.load();
-    if (this.current(epoch) && this.props.active && !this.props.readOnly && !this.locked && !this.state.editor && !this.state.gpuTarget) await this.probeDocker();
+    if (this.current(epoch) && this.props.active && !this.props.readOnly && !this.locked && !this.state.editor && !this.state.gpuTarget) {
+      await this.probeDocker();
+      if (this.current(epoch)) await this.checkSsh();
+    }
   }
   withdraw(name, input) {
     const c = this.state.catalog;
@@ -92,7 +97,7 @@ class ComputeConnections extends React.Component {
     const epoch = this.epoch;
     this.locked = true;
     this.readEpoch++;
-    if (["ssh_target_probe", "ssh_target_configure", "gpu_target_probe"].includes(name)) this.withdraw(name, input);
+    if (["ssh_target_probe", "ssh_target_configure", "ssh_target_setup", "gpu_target_probe"].includes(name)) this.withdraw(name, input);
     this.setState({ busy, error: "", notice: "" });
     let succeeded = false;
     try {
@@ -155,19 +160,68 @@ class ComputeConnections extends React.Component {
         if (this.current(epoch)) this.setState({ busy: "" });
       }
     }
-    if (this.current(epoch)) this.setState({ editor, error: "", notice: "" }, () => {
+    if (this.current(epoch)) this.setState({ editor, challenge: null, fingerprintConfirmed: false, error: "", notice: "" }, () => {
       this.editorDialog.current?.showModal();
       this.editorDialog.current?.querySelector(editor.version ? "input[name=host]" : "input[name=id]")?.focus();
     });
   }
   async save(form) {
     const editor = this.state.editor;
-    if (!editor) return;
-    const fd = new FormData(form), value = (key) => String(fd.get(key) ?? "").trim();
-    const saved = await this.mutate("ssh_target_configure", { id: value("id"), host: value("host"), port: Number(fd.get("port")), user: value("user"), remoteRoot: value("remoteRoot"), identityFile: value("identityFile"), knownHostsFile: value("knownHostsFile"), expectedVersion: editor.version, gpuProtocol: true }, "save", "SSH \u8FDE\u63A5\u5DF2\u4FDD\u5B58\uFF0C\u6838\u9A8C\u540E\u53EF\u7528\u4E8E\u8BA1\u7B97\u3002");
-    if (saved) {
-      this.editorDialog.current?.close();
-      this.setState({ editor: null });
+    if (!editor || this.locked || this.props.readOnly) return;
+    const fd = new FormData(form), value = (key) => String(fd.get(key) ?? "").trim(), epoch = this.epoch;
+    this.locked = true;
+    this.setState({ busy: "challenge", error: "", notice: "" });
+    try {
+      const challenge = await this.call("ssh_target_challenge", { id: value("id"), host: value("host"), port: Number(fd.get("port")), user: value("user"), remoteRoot: value("remoteRoot"), identityFile: value("identityFile"), expectedVersion: editor.version });
+      if (this.current(epoch)) this.setState({ challenge, fingerprintConfirmed: false });
+    } catch (e) {
+      if (this.current(epoch)) this.setState({ error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      this.locked = false;
+      if (this.current(epoch)) this.setState({ busy: "" });
+    }
+  }
+  async confirmFingerprint() {
+    const challenge = this.state.challenge;
+    if (!challenge || !this.state.fingerprintConfirmed || Date.parse(challenge.expiresAt) <= Date.now() || this.locked || this.props.readOnly) return;
+    const epoch = this.epoch;
+    this.locked = true;
+    this.setState({ busy: "confirm", error: "", notice: "" });
+    try {
+      const result = await this.call("ssh_target_confirm", { challengeId: challenge.challengeId, fingerprint: challenge.fingerprint });
+      if (this.current(epoch)) {
+        this.editorDialog.current?.close();
+        this.setState({ editor: null, challenge: null, fingerprintConfirmed: false, notice: result.verified ? "SSH \u8FDE\u63A5\u4E0E\u8BA1\u7B97\u73AF\u5883\u5DF2\u5C31\u7EEA\u3002" : "\u670D\u52A1\u5668\u8EAB\u4EFD\u5DF2\u4FDD\u5B58\uFF0C\u8BF7\u5728\u8FDE\u63A5\u5361\u7247\u67E5\u770B\u73AF\u5883\u51C6\u5907\u72B6\u6001\u3002" });
+      }
+    } catch (e) {
+      if (this.current(epoch)) this.setState({ error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      if (this.current(epoch)) {
+        await this.load();
+        this.setState({ busy: "" });
+      }
+      this.locked = false;
+    }
+  }
+  async checkSsh() {
+    if (this.checking || this.locked || this.props.readOnly || !this.props.active || this.state.editor || this.state.gpuTarget) return;
+    const epoch = this.epoch;
+    this.checking = true;
+    const targets = this.state.catalog?.connections.ssh.filter((t) => t.managed && t.setup !== "installing") ?? [];
+    try {
+      for (const target of targets) {
+        if (!this.current(epoch) || !this.props.active || this.props.readOnly || this.locked || this.state.editor || this.state.gpuTarget) break;
+        this.withdraw("ssh_target_probe", { id: target.id });
+        this.setState({ checking: target.id });
+        try {
+          await this.call("ssh_target_probe", { id: target.id });
+        } catch {
+        }
+        if (this.current(epoch)) await this.load();
+      }
+    } finally {
+      this.checking = false;
+      if (this.current(epoch)) this.setState({ checking: "" });
     }
   }
   openGpu(id) {
@@ -311,10 +365,10 @@ class ComputeConnections extends React.Component {
         /* @__PURE__ */ jsx("div", { className: "compute-card-content", children: !c ? /* @__PURE__ */ jsx("p", { className: "compute-empty", children: "\u6B63\u5728\u8BFB\u53D6 SSH \u8FDE\u63A5\u2026" }) : !ssh.length ? /* @__PURE__ */ jsxs("div", { className: "compute-ssh-empty", children: [
           /* @__PURE__ */ jsx(Icon, { name: "network", size: 30 }),
           /* @__PURE__ */ jsx("h3", { children: "\u6DFB\u52A0\u7B2C\u4E00\u53F0\u8FDC\u7A0B\u8BA1\u7B97\u673A" }),
-          /* @__PURE__ */ jsx("p", { children: "\u8FDE\u63A5\u5DF2\u914D\u7F6E SSH \u4E0E\u8BA1\u7B97\u76D1\u7BA1\u5668\u7684\u670D\u52A1\u5668\uFF0C\u6838\u9A8C\u540E\u4F9B\u4E3B Agent \u9009\u7528\u3002" }),
+          /* @__PURE__ */ jsx("p", { children: "\u6DFB\u52A0\u670D\u52A1\u5668\uFF0C\u786E\u8BA4\u6307\u7EB9\u540E\u81EA\u52A8\u68C0\u67E5\u5E76\u51C6\u5907 SSH \u8BA1\u7B97\u73AF\u5883\u3002" }),
           /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled, onClick: () => void this.edit(), children: "\u65B0\u5EFA SSH \u8FDE\u63A5" })
         ] }) : /* @__PURE__ */ jsx("div", { className: "compute-ssh-list", children: ssh.map((t) => {
-          const pending = s.busy === `ssh:${t.id}`, usable = !pending && t.status === "verified" && !!t.validUntil && Date.parse(t.validUntil) > Date.now(), gpuUsable = usable && s.busy !== `gpu:${t.id}` && t.capabilities.gpu && !!t.gpuValidUntil && Date.parse(t.gpuValidUntil) > Date.now();
+          const pending = s.busy === `ssh:${t.id}` || s.busy === `setup:${t.id}` || s.checking === t.id, usable = !pending && t.status === "verified" && !!t.validUntil && Date.parse(t.validUntil) > Date.now(), gpuUsable = usable && s.busy !== `gpu:${t.id}` && t.capabilities.gpu && !!t.gpuValidUntil && Date.parse(t.gpuValidUntil) > Date.now();
           return /* @__PURE__ */ jsxs("article", { className: "compute-ssh-row", children: [
             /* @__PURE__ */ jsxs("div", { className: "compute-ssh-identity", children: [
               /* @__PURE__ */ jsxs("div", { className: "compute-ssh-heading", children: [
@@ -322,7 +376,18 @@ class ComputeConnections extends React.Component {
                 /* @__PURE__ */ jsx(Status, { connection: t, pending })
               ] }),
               /* @__PURE__ */ jsx("p", { className: "compute-address", children: t.user && t.host ? `${t.user}@${t.host}:${t.port ?? 22}` : "\u8FDC\u7A0B\u8BA1\u7B97\u76EE\u6807" }),
-              /* @__PURE__ */ jsx("p", { className: "compute-observed", children: checked(t.checkedAt) }),
+              /* @__PURE__ */ jsxs("p", { className: "compute-observed", children: [
+                checked(t.checkedAt),
+                pending ? " \xB7 \u6B63\u5728\u68C0\u6D4B" : ""
+              ] }),
+              /* @__PURE__ */ jsx("p", { className: "compute-remote-health", children: t.managed ? /* @__PURE__ */ jsxs(Fragment, { children: [
+                t.supervisor === "ready" ? "\u76D1\u7BA1\u5668\u5DF2\u5C31\u7EEA" : t.supervisor === "missing" ? "\u76D1\u7BA1\u5668\u5C1A\u672A\u5B89\u88C5" : t.supervisor === "mismatch" ? "\u76D1\u7BA1\u5668\u7248\u672C\u4E0D\u5339\u914D" : t.supervisor === "unsafe" ? "\u76D1\u7BA1\u5668\u6743\u9650\u9700\u8981\u68C0\u67E5" : "\u76D1\u7BA1\u5668\u5F85\u68C0\u67E5",
+                " \xB7 ",
+                t.docker === "ready" ? usable ? "Docker \u5DF2\u8FDE\u63A5" : "Docker \u4E0A\u6B21\u68C0\u67E5\u6B63\u5E38" : t.docker === "missing" ? "\u9700\u8981\u5728\u670D\u52A1\u5668\u5B89\u88C5 Docker" : t.docker === "unavailable" ? "Docker \u65E0\u6CD5\u8BBF\u95EE\uFF0C\u8BF7\u68C0\u67E5\u670D\u52A1\u4E0E\u6743\u9650" : t.docker === "unsupported" ? "\u9700\u8981 Linux Docker" : "Docker \u5F85\u68C0\u67E5",
+                t.workspace === "invalid" ? " \xB7 \u5DE5\u4F5C\u76EE\u5F55\u6743\u9650\u9700\u8981\u68C0\u67E5" : "",
+                t.setup === "installing" ? " \xB7 \u73AF\u5883\u6B63\u5728\u51C6\u5907" : t.setup === "unknown" ? " \xB7 \u4E0A\u6B21\u51C6\u5907\u7ED3\u679C\u5F85\u6838\u5BF9" : ""
+              ] }) : null }),
+              t.errorCode && sshMessages[t.errorCode] ? /* @__PURE__ */ jsx("p", { className: "compute-setup-message", children: sshMessages[t.errorCode] }) : null,
               /* @__PURE__ */ jsxs("p", { className: "compute-capability", children: [
                 "CPU ",
                 usable && t.capabilities.cpu ? "\u5DF2\u6838\u9A8C" : "\u5F85\u6838\u9A8C",
@@ -348,28 +413,29 @@ class ComputeConnections extends React.Component {
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "compute-ssh-actions", children: [
-              /* @__PURE__ */ jsx("button", { className: "secondary", type: "button", disabled, onClick: () => void this.mutate("ssh_target_probe", { id: t.id }, `ssh:${t.id}`, "SSH \u8FDE\u63A5\u5DF2\u6838\u9A8C\u3002"), children: s.busy === `ssh:${t.id}` ? "\u6838\u9A8C\u4E2D\u2026" : "\u6838\u9A8C\u8FDE\u63A5" }),
-              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled, onClick: () => void this.openGpu(t.id), children: "\u6838\u9A8C GPU" }),
-              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled, onClick: () => void this.edit(t.id), children: "\u7F16\u8F91" })
+              /* @__PURE__ */ jsx("button", { className: "secondary", type: "button", disabled: disabled || s.checking === t.id || t.setup === "installing", onClick: () => void this.mutate("ssh_target_probe", { id: t.id }, `ssh:${t.id}`, "SSH \u8FDE\u63A5\u5DF2\u6838\u9A8C\u3002"), children: s.busy === `ssh:${t.id}` ? "\u6838\u9A8C\u4E2D\u2026" : "\u6838\u9A8C\u8FDE\u63A5" }),
+              t.managed && t.status !== "verified" ? /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || s.checking === t.id || t.setup === "installing", onClick: () => void this.mutate("ssh_target_setup", { id: t.id, expectedVersion: t.configurationVersion }, `setup:${t.id}`, "\u73AF\u5883\u51C6\u5907\u5DF2\u8FD4\u56DE\uFF0C\u8BF7\u67E5\u770B\u8FDE\u63A5\u72B6\u6001\u3002"), children: s.busy === `setup:${t.id}` ? "\u51C6\u5907\u4E2D\u2026" : "\u91CD\u8BD5\u73AF\u5883\u51C6\u5907" }) : null,
+              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || s.checking === t.id, onClick: () => void this.openGpu(t.id), children: "\u6838\u9A8C GPU" }),
+              /* @__PURE__ */ jsx("button", { className: "text-button", type: "button", disabled: disabled || s.checking === t.id || t.setup === "installing" || t.setup === "unknown", onClick: () => void this.edit(t.id), children: "\u7F16\u8F91" })
             ] })
           ] }, t.id);
         }) }) }),
         /* @__PURE__ */ jsxs("footer", { className: "compute-card-footer", children: [
           /* @__PURE__ */ jsx(Icon, { name: "check", size: 15 }),
-          /* @__PURE__ */ jsx("span", { children: "\u8FDE\u63A5\u72B6\u6001\u3001\u8D44\u6E90\u504F\u597D\u4E0E\u5DF2\u6838\u9A8C\u8BBE\u5907\u4F1A\u63D0\u4F9B\u7ED9\u4E3B Agent\uFF1B\u504F\u597D\u53EA\u7528\u4E8E\u9009\u578B\u3002" })
+          /* @__PURE__ */ jsx("span", { children: "\u9875\u9762\u6253\u5F00\u65F6\u5B9A\u671F\u68C0\u6D4B\u5DF2\u786E\u8BA4\u8FDE\u63A5\uFF1B\u4E3B Agent \u53EF\u8BFB\u53D6\u6838\u9A8C\u72B6\u6001\u4E0E\u8D44\u6E90\u504F\u597D\u3002" })
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("dialog", { ref: this.editorDialog, className: "compute-dialog", "aria-labelledby": "ssh-editor-title", onCancel: () => this.setState({ editor: null }), onClose: () => {
-        if (this.state.editor) this.setState({ editor: null });
+      /* @__PURE__ */ jsxs("dialog", { ref: this.editorDialog, className: "compute-dialog", "aria-labelledby": "ssh-editor-title", onCancel: () => this.setState({ editor: null, challenge: null, fingerprintConfirmed: false }), onClose: () => {
+        if (this.state.editor) this.setState({ editor: null, challenge: null, fingerprintConfirmed: false });
       }, children: [
         /* @__PURE__ */ jsxs("header", { children: [
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("h2", { id: "ssh-editor-title", children: s.editor?.version ? "\u7F16\u8F91 SSH \u8FDE\u63A5" : "\u65B0\u5EFA SSH \u8FDE\u63A5" }),
-            /* @__PURE__ */ jsx("p", { children: "\u4F7F\u7528\u672C\u673A\u5DF2\u6709\u5BC6\u94A5\uFF0C\u8FDE\u63A5\u53D7\u4FE1\u4EFB\u7684\u8FDC\u7A0B\u8BA1\u7B97\u73AF\u5883\u3002" })
+            /* @__PURE__ */ jsx("h2", { id: "ssh-editor-title", children: s.challenge ? "\u786E\u8BA4\u670D\u52A1\u5668\u8EAB\u4EFD" : s.editor?.version ? "\u7F16\u8F91 SSH \u8FDE\u63A5" : "\u65B0\u5EFA SSH \u8FDE\u63A5" }),
+            /* @__PURE__ */ jsx("p", { children: s.challenge ? "\u6838\u5BF9\u6307\u7EB9\u540E\u8FDE\u63A5\uFF0C\u5E76\u5728\u9700\u8981\u65F6\u5B89\u88C5\u56FA\u5B9A SSH \u76D1\u7BA1\u5668\u3002" : "\u586B\u5199\u670D\u52A1\u5668\u4FE1\u606F\uFF0C\u4E3B\u673A\u8EAB\u4EFD\u8BB0\u5F55\u7531\u5E94\u7528\u81EA\u52A8\u7BA1\u7406\u3002" })
           ] }),
           /* @__PURE__ */ jsx("button", { type: "button", className: "icon-button", "aria-label": "\u5173\u95ED SSH \u8FDE\u63A5\u8868\u5355", onClick: () => this.editorDialog.current?.close(), children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
         ] }),
-        s.editor ? /* @__PURE__ */ jsx("form", { onSubmit: (e) => {
+        s.editor && !s.challenge ? /* @__PURE__ */ jsx("form", { onSubmit: (e) => {
           e.preventDefault();
           void this.save(e.currentTarget);
         }, children: /* @__PURE__ */ jsxs("fieldset", { disabled, children: [
@@ -398,19 +464,46 @@ class ComputeConnections extends React.Component {
             /* @__PURE__ */ jsxs("label", { className: "compute-field-wide", children: [
               "\u672C\u673A\u79C1\u94A5\u6587\u4EF6\u8DEF\u5F84",
               /* @__PURE__ */ jsx("input", { name: "identityFile", defaultValue: s.editor.identityFile, required: true, maxLength: 2e3, autoComplete: "off", placeholder: "\u5DF2\u6709\u79C1\u94A5\u6587\u4EF6\u7684\u5B8C\u6574\u8DEF\u5F84" })
-            ] }),
-            /* @__PURE__ */ jsxs("label", { className: "compute-field-wide", children: [
-              "\u672C\u673A known_hosts \u6587\u4EF6\u8DEF\u5F84",
-              /* @__PURE__ */ jsx("input", { name: "knownHostsFile", defaultValue: s.editor.knownHostsFile, required: true, maxLength: 2e3, autoComplete: "off", placeholder: "\u5DF2\u56FA\u5B9A\u670D\u52A1\u5668\u4E3B\u673A\u5BC6\u94A5\u7684\u6587\u4EF6\u8DEF\u5F84" })
             ] })
           ] }),
-          /* @__PURE__ */ jsx("p", { className: "compute-form-hint", children: "\u8FDC\u7AEF\u9700\u5B89\u88C5 Docker \u548C\u5F53\u524D SSH \u76D1\u7BA1\u5668\u3002\u5BC6\u94A5\u6587\u4EF6\u7559\u5728\u672C\u673A\uFF0C\u4E3B Agent \u4E0D\u4F1A\u6536\u5230\u5BC6\u94A5\u6216\u6587\u4EF6\u8DEF\u5F84\u3002" }),
+          /* @__PURE__ */ jsx("p", { className: "compute-form-hint", children: "\u9996\u6B21\u8FDE\u63A5\u5148\u6838\u5BF9\u670D\u52A1\u5668\u6307\u7EB9\uFF1B\u7F3A\u5C11\u76D1\u7BA1\u5668\u65F6\u81EA\u52A8\u5B89\u88C5\uFF0C\u7F3A\u5C11 Docker \u65F6\u63D0\u793A\u4F60\u5B89\u88C5\u3002\u79C1\u94A5\u7559\u5728\u672C\u673A\u3002" }),
           s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "compute-alert", children: s.error }) : null,
           /* @__PURE__ */ jsxs("footer", { children: [
             /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", onClick: () => this.editorDialog.current?.close(), children: "\u53D6\u6D88" }),
-            /* @__PURE__ */ jsx("button", { className: "primary", type: "submit", children: s.busy === "save" ? "\u4FDD\u5B58\u4E2D\u2026" : "\u4FDD\u5B58\u8FDE\u63A5" })
+            /* @__PURE__ */ jsx("button", { className: "primary", type: "submit", children: s.busy === "challenge" ? "\u83B7\u53D6\u6307\u7EB9\u4E2D\u2026" : "\u83B7\u53D6\u670D\u52A1\u5668\u6307\u7EB9" })
           ] })
-        ] }) }) : null
+        ] }) }) : null,
+        s.challenge ? /* @__PURE__ */ jsxs("form", { className: "compute-trust-form", onSubmit: (e) => {
+          e.preventDefault();
+          void this.confirmFingerprint();
+        }, children: [
+          /* @__PURE__ */ jsxs("div", { className: "compute-trust-target", children: [
+            /* @__PURE__ */ jsx("strong", { children: s.challenge.id }),
+            /* @__PURE__ */ jsxs("p", { children: [
+              s.challenge.user,
+              "@",
+              s.challenge.host,
+              ":",
+              s.challenge.port
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs("label", { children: [
+            "\u670D\u52A1\u5668\u516C\u94A5\u6307\u7EB9 ",
+            /* @__PURE__ */ jsx("small", { children: s.challenge.keyType }),
+            /* @__PURE__ */ jsx("code", { className: "compute-fingerprint", children: s.challenge.fingerprint })
+          ] }),
+          /* @__PURE__ */ jsx("p", { className: "compute-form-hint", children: "\u8BF7\u901A\u8FC7\u670D\u52A1\u5668\u7BA1\u7406\u5458\u6216\u53EF\u4FE1\u6E20\u9053\u6838\u5BF9\u6307\u7EB9\u3002\u786E\u8BA4\u540E\u4F1A\u81EA\u52A8\u4FDD\u5B58\u8EAB\u4EFD\u8BB0\u5F55\uFF0C\u4EC5\u5728\u76D1\u7BA1\u5668\u7F3A\u5931\u65F6\u5B89\u88C5\uFF0C\u5E76\u521B\u5EFA\u7F3A\u5931\u7684\u5DE5\u4F5C\u76EE\u5F55\uFF1B\u5DF2\u6709\u6587\u4EF6\u548C\u76EE\u5F55\u4E0D\u4F1A\u88AB\u8986\u76D6\u3002Docker \u9700\u4F60\u81EA\u884C\u5B89\u88C5\u3002" }),
+          /* @__PURE__ */ jsxs("label", { className: "compute-trust-check", children: [
+            /* @__PURE__ */ jsx("input", { type: "checkbox", checked: s.fingerprintConfirmed, disabled, onChange: (e) => this.setState({ fingerprintConfirmed: e.target.checked }) }),
+            "\u6211\u5DF2\u6838\u5BF9\u670D\u52A1\u5668\u6307\u7EB9\uFF0C\u786E\u8BA4\u4FE1\u4EFB\u6B64\u670D\u52A1\u5668"
+          ] }),
+          Date.parse(s.challenge.expiresAt) <= Date.now() ? /* @__PURE__ */ jsx("p", { role: "alert", className: "compute-alert", children: "\u6307\u7EB9\u786E\u8BA4\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u83B7\u53D6\u3002" }) : null,
+          s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "compute-alert", children: s.error }) : null,
+          /* @__PURE__ */ jsxs("footer", { children: [
+            /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled, onClick: () => this.setState({ challenge: null, fingerprintConfirmed: false }), children: "\u8FD4\u56DE\u4FEE\u6539" }),
+            /* @__PURE__ */ jsx("button", { type: "submit", className: "primary", disabled: disabled || !s.fingerprintConfirmed || Date.parse(s.challenge.expiresAt) <= Date.now(), children: s.busy === "confirm" ? "\u8FDE\u63A5\u4E0E\u51C6\u5907\u4E2D\u2026" : "\u786E\u8BA4\u6307\u7EB9\u5E76\u8FDE\u63A5" })
+          ] })
+        ] }) : null
       ] }),
       /* @__PURE__ */ jsxs("dialog", { ref: this.gpuDialog, className: "compute-dialog compute-gpu-dialog", "aria-labelledby": "ssh-gpu-title", onCancel: () => this.setState({ gpuTarget: null }), onClose: () => {
         if (this.state.gpuTarget) this.setState({ gpuTarget: null });

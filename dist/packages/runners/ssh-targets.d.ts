@@ -23,12 +23,15 @@ export interface PrivateSshTarget {
     identityDigest: string;
     hostKeyDigest: string;
     gpuProtocol?: boolean;
+    managed?: boolean;
     verified?: SshTarget;
 }
 export declare class SshTargetService {
     private c;
     private request;
     constructor(c: AppContext, request?: typeof sshRequest);
+    private scan;
+    private onboarding;
     private file;
     private read;
     private write;
@@ -52,6 +55,7 @@ export declare class SshTargetService {
         knownHostsFile: string;
         remoteRoot: string;
         gpuProtocol: boolean;
+        managed: boolean;
     };
     privateTarget(id: string): PrivateSshTarget;
     frozen(id: string, currentProtocol?: boolean): SshTarget;
@@ -64,4 +68,35 @@ export declare class SshTargetService {
     get(actor: Actor, id: string): SshTarget;
     probe(actor: Actor, id: string): Promise<SshTarget>;
     verify(id: string): Promise<SshTarget>;
+    private assertSetupIdle;
+    private assertAvailable;
+    private assertTrust;
+    challenge(actor: Actor, value: unknown): Promise<{
+        challengeId: string;
+        id: string;
+        host: string;
+        port: number;
+        user: string;
+        remoteRoot: string;
+        keyType: string;
+        fingerprint: string;
+        expiresAt: string;
+    }>;
+    confirm(actor: Actor, value: unknown): Promise<{
+        errorCode?: string | undefined;
+        id: string;
+        version: number;
+        verified: boolean;
+    }>;
+    private reserveSetup;
+    private setupTarget;
+    private setupResult;
+    setup(actor: Actor, value: unknown): Promise<{
+        errorCode?: string | undefined;
+        id: string;
+        version: number;
+        verified: boolean;
+    }>;
+    private healthFailure;
+    private runSetup;
 }

@@ -2,6 +2,7 @@ import type { AppContext } from '../domain/context.js';
 import type { Actor } from '../domain/types.js';
 import type { SshTargetService } from './ssh-targets.js';
 import type { GpuDevice } from './gpu.js';
+import type { SshHealth } from './ssh-onboarding.js';
 export declare const CONNECTION_TTL_MS = 30000;
 export interface ConnectionObservation {
     attempt: string;
@@ -15,6 +16,9 @@ export interface ConnectionObservation {
     cpus?: number;
     memoryMb?: number;
     devices?: GpuDevice[];
+    supervisor?: SshHealth['supervisor'];
+    docker?: SshHealth['docker'];
+    workspace?: SshHealth['workspace'];
 }
 export interface ConnectionState {
     status: 'unverified' | 'verified' | 'stale' | 'unavailable';
@@ -48,6 +52,11 @@ export interface SshConnection extends ConnectionState {
     port?: number;
     user?: string;
     remoteRoot?: string;
+    managed?: boolean;
+    supervisor?: SshHealth['supervisor'];
+    docker?: SshHealth['docker'];
+    workspace?: SshHealth['workspace'];
+    setup?: 'idle' | 'installing' | 'unknown';
 }
 /** Observations are separate from frozen execution identities and never contain stderr or credentials. */
 export declare class ComputeConnectionService {
