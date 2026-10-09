@@ -93,7 +93,7 @@ export function validateSchema(schema, value, mode = 'input') {
                 if (rule.properties && Object.hasOwn(rule.properties, key))
                     check(rule.properties[key], object[key], `${path}.${key}`);
                 else if (rule.additionalProperties === false)
-                    fail(`${path}.${key}`, '未知字段');
+                    fail(path, '未知字段');
                 else if (typeof rule.additionalProperties === 'object')
                     check(rule.additionalProperties, object[key], `${path}.${key}`);
             }

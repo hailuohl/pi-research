@@ -24,6 +24,20 @@ test('tool diagnostics expose only fixed reasons and static schema paths from th
  assert.equal(toolResultDiagnostic(tool.parameters,{content:[{type:'text',text:'INVALID_INPUT: $.input: 类型不正确'},{type:'text',text:'private values'}]}),undefined);
 });
 
+test('unknown brief fields identify only their containing object in safe tool diagnostics',()=>{
+ const [tool]=buildCustomTools([{name:'research_brief_save',...TOOL_DEFINITIONS.research_brief_save}],async()=>assert.fail('invalid input must not dispatch'));
+ for(const key of ['ready','private-secret-key','private.key: value\n[0]']){
+  const input=TOOL_DEFINITIONS.research_brief_save.example;
+  for(const [args,path] of [[{input,[key]:'private-value'},'$'],[{input:{...input,[key]:'private-value'}},'$.input'],[{input:{...input,steps:[{title:'Step',description:'Fixed description',[key]:'private-value'}]}},'$.input.steps[0]']]){
+   assert.throws(()=>tool.prepareArguments(args),error=>{
+    assert.equal(error.message,`INVALID_INPUT: ${path}: 未知字段`);
+    assert.deepEqual(toolResultDiagnostic(tool.parameters,{content:[{type:'text',text:error.message}]}),{code:'INVALID_INPUT',path,reason:'未知字段'});
+    return true;
+   });
+  }
+ }
+});
+
 test('Pi receives exact tool schemas and raw validation blocks SDK coercion before dispatch', async () => {
     const installed = locatePi(repoRoot), sdk = await import(pathToFileURL(installed.aiPath).href);
     let calls = 0;
