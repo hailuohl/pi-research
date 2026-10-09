@@ -14,6 +14,7 @@ export interface SandboxResources {
     logBytes: number;
 }
 export interface SandboxManifest {
+    approvalResumeDigest?: string;
     workingGrant?: WorkingGrantReference;
     purpose: 'development-test';
     sessionId: string;
@@ -39,6 +40,8 @@ export interface SandboxManifest {
     sessionGeneration?: number;
 }
 export interface DevelopmentTask {
+    originMessageId?: string;
+    resume?: import('../policy/research-automation.js').ApprovalResumeBinding;
     title: string;
     sessionId: string;
     sourceDigest: string;

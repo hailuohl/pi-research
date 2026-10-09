@@ -28,6 +28,7 @@ export class RunService {
     compute;
     briefs;
     budget;
+    automation;
     permissionCapture;
     permissionGuard;
     permissionForSession;
@@ -70,6 +71,8 @@ export class RunService {
         });
     }
     prepare(actor, experimentId, selectedRootSessionId, autoAnalyze = false) {
+        if (actor.continuationId)
+            this.automation.assertActor(actor);
         ensure(typeof autoAnalyze === 'boolean', 'INVALID_INPUT', 'autoAnalyze必须为布尔值');
         if (actor.type !== 'user')
             toolAllowed(actor, 'run_prepare');
@@ -91,7 +94,7 @@ export class RunService {
             const rootSessionId = actor.type === 'agent' ? actor.sessionId : selectedRootSessionId;
             const root = rootSessionId ? this.c.store.get('session', rootSessionId, e.projectId) : undefined;
             if (rootSessionId)
-                ensure(root.role === 'coordinator' && !root.taskId && !root.teamId && root.state !== 'archived' && !actor.taskId && !actor.wakeupId, 'RUN_SESSION_REQUIRED', '运行准备只支持交互主会话');
+                ensure(root.role === 'coordinator' && !root.taskId && !root.teamId && root.state !== 'archived' && !actor.taskId && (!actor.wakeupId || !!actor.continuationId), 'RUN_SESSION_REQUIRED', '运行准备只支持交互主会话');
             else
                 ensure(!requiresBrief, 'RUN_SESSION_REQUIRED', '绑定了研究计划的实验需要主会话才能准备运行');
             ensure(root?.researchBriefId === undefined || this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
@@ -119,18 +122,23 @@ export class RunService {
                 ensure(manifest.sshTarget?.gpuProtocol === true, 'GPU_UNAVAILABLE', 'SSH GPU 需要独立 GPU 协议目标');
             verifyTrustedExample(manifest, this.c.repoRoot, this.c.store.paths);
             const id = randomUUID(), hash = digest(manifest), approval = this.approvals.request(e.projectId, 'run-intent', id, hash, 'run.submit', '批准此不可变快照、固定运行契约及计算资源；不授予其他实验权限' + (manifest.contract.runner === 'local' ? '。本地在系统用户权限内执行可信源码；文件与网络不隔离，CPU/内存仅调度记账。' : '') + (analysis ? `。该Run终态后在指定对话使用${analysis.model.provider}/${analysis.model.model}最多启动1次Pi结果分析任务，可包含多个模型HTTP/工具往返，只读本次结果、诊断与建议，不批准或启动新计算。` : ''));
+            this.automation?.authorize(actor, approval, undefined, manifest.contract.runner, e.id);
             if (analysis)
                 this.budget.configure(e.projectId, id, 1);
             const result = this.c.store.create('run-intent', e.projectId, { experimentId: e.id, manifest, manifestDigest: hash, approvalId: approval.id, status: 'prepared', ...(rootSessionId ? { rootSessionId } : {}) }, id);
             this.c.store.event(e.projectId, 'run.prepared', { intentId: id, experimentId: e.id, approvalId: approval.id, snapshotDigest: snap.digest, ...(rootSessionId ? { sessionId: rootSessionId } : {}) });
-            return result;
+            return { ...result, approval: this.c.store.get('approval', approval.id) };
         });
     }
     assertIntentActor(actor, intent) {
+        if (actor.continuationId) {
+            this.automation.assertActor(actor);
+            ensure(intent.rootSessionId === actor.sessionId, 'RUN_SESSION_DENIED', '持续任务只能读取本根会话的运行意向', 403);
+        }
         scope(actor, intent.projectId);
         assertRunGrantActor(this.c.store, actor, intent);
         if (actor.type === 'agent' && !intent.runGrant && intent.rootSessionId)
-            ensure(actor.role === 'coordinator' && !actor.taskId && !actor.wakeupId && actor.sessionId === intent.rootSessionId, 'RUN_SESSION_DENIED', '此运行意向属于另一个研究对话', 403);
+            ensure(actor.role === 'coordinator' && !actor.taskId && (!actor.wakeupId || !!actor.continuationId) && actor.sessionId === intent.rootSessionId, 'RUN_SESSION_DENIED', '此运行意向属于另一个研究对话', 403);
     }
     submit(actor, id) {
         if (actor.type !== 'user')
@@ -138,8 +146,12 @@ export class RunService {
         return this.c.store.transaction(() => {
             const intent = this.c.store.get('run-intent', id);
             this.assertIntentActor(actor, intent);
-            if (intent.runId)
-                return this.c.store.get('run', intent.runId);
+            if (intent.runId) {
+                const run = this.c.store.get('run', intent.runId, intent.projectId);
+                ensure(run.intentId === intent.id && run.experimentId === intent.experimentId && run.manifestDigest === intent.manifestDigest, 'APPROVAL_STALE', '历史 Run 与准确意向不匹配');
+                return run;
+            }
+            this.automation?.assertSubmission(actor, this.c.store.get('approval', intent.approvalId, intent.projectId));
             assertProjectWritable(this.c.store, intent.projectId);
             assertRunGrantIntent(this.c.store, intent, true);
             ensure(digest(intent.manifest) === intent.manifestDigest, 'MANIFEST_CORRUPTED', '运行意向快照摘要不符');
@@ -148,7 +160,7 @@ export class RunService {
                 ensure(intent.rootSessionId === ref.rootSessionId, 'BRIEF_REFERENCE_MISMATCH', '运行意向主会话与固定研究简报不一致');
                 ensure(this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
                 const teamId = actor.teamId;
-                const ownRoot = actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.attemptId && !actor.wakeupId && !teamId && actor.sessionId === ref.rootSessionId;
+                const ownRoot = actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.attemptId && (!actor.wakeupId || !!actor.continuationId) && !teamId && actor.sessionId === ref.rootSessionId;
                 if (actor.type === 'user' || ownRoot)
                     this.briefs.assertReference(actor, intent.projectId, ref.rootSessionId, ref);
                 else {
@@ -172,6 +184,7 @@ export class RunService {
                 new LocalRuntimeService(this.c).resolve(intent.manifest.contract.localRuntimeId, intent.manifest.localRuntime);
             this.compute.assertEnqueue('run', intent.projectId, intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.runner === 'docker' ? intent.manifest.contract.dockerContext ?? 'default' : undefined, intent.manifest.localRuntime?.hostId);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
+            this.automation?.consume(actor, this.c.store.get('approval', intent.approvalId), runId);
             consumeRunGrant(this.c.store, intent, runId, actor);
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
@@ -204,6 +217,7 @@ export class RunService {
     /** Also used just before Docker start and while supervising a running immutable job. */
     assertExecutionGrant(run, admission = !TERMINAL.includes(run.state) && (run.execution ? !run.execution.startRequested : !run.startRequested)) {
         this.assertPermission(run);
+        this.automation?.assertApproval(this.c.store.get('approval', this.c.store.get('run-intent', run.intentId).approvalId), true);
         assertRunGrantRun(this.c.store, run, admission);
         this.researchSourceGuard?.(run.experimentId, 'execute', run.intentId);
         assertProjectWritable(this.c.store, run.projectId);

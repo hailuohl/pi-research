@@ -28,7 +28,7 @@ export declare const SESSION_HISTORY_INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("query" | "role" | "limit" | "stateFilter" | "beforeSessionId")[];
+        readonly required: readonly ("role" | "query" | "limit" | "stateFilter" | "beforeSessionId")[];
         readonly additionalProperties: false;
     };
     readonly session_view: {
@@ -646,7 +646,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("title" | "digest" | "size" | "documentVersionId" | "artifactId" | "mediaType")[];
+                                readonly required: ("digest" | "size" | "title" | "documentVersionId" | "artifactId" | "mediaType")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -869,7 +869,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("title" | "digest" | "size" | "documentVersionId" | "artifactId" | "mediaType")[];
+                                readonly required: ("digest" | "size" | "title" | "documentVersionId" | "artifactId" | "mediaType")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1171,7 +1171,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly [...("title" | "digest" | "size" | "documentVersionId" | "artifactId" | "mediaType")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
+        readonly required: readonly [...("digest" | "size" | "title" | "documentVersionId" | "artifactId" | "mediaType")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
         readonly additionalProperties: false;
     };
 };

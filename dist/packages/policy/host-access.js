@@ -14,6 +14,7 @@ export class HostAccessService {
     c;
     onChanged;
     runtimeId = randomUUID();
+    researchRuntimeId() { return this.runtimeId; }
     active = new Map();
     uncertain = new Map();
     stopping = false;
@@ -35,7 +36,7 @@ export class HostAccessService {
         const eligible = session.role === 'coordinator' && !session.taskId && !session.teamId && !session.parentSessionId && !bound && session.state !== 'archived' && !this.c.store.get('project', session.projectId).archived;
         const enabled = eligible && !!grant && grant.state === 'enabled' && grant.runtimeId === this.runtimeId && !this.closing && !this.stopping && !this.hasUnreviewed(session, grant);
         const jobs = this.jobs(session);
-        return { sessionId, version: grant?.version ?? 0, epoch: grant?.epoch ?? 0, available: eligible && !this.closing && !this.stopping, enabled, pending: grant?.state === 'pending' && grant.runtimeId === this.runtimeId && !this.closing && !this.stopping, boundary: 'trusted-host', osSandboxVerified: false,
+        return { researchAutomation: enabled && grant?.researchAutomationScope === 1, researchAutomationScope: grant?.researchAutomationScope ?? 0, sessionId, version: grant?.version ?? 0, epoch: grant?.epoch ?? 0, available: eligible && !this.closing && !this.stopping, enabled, pending: grant?.state === 'pending' && grant.runtimeId === this.runtimeId && !this.closing && !this.stopping, boundary: 'trusted-host', osSandboxVerified: false,
             reason: eligible ? '本机可信模式：命令可接触当前系统用户的应用数据、凭据与第三方权限，不提供同用户隔离。' : bound ? '此会话已有固定范围授权，请使用新的普通主协调会话开启本机完全访问。' : '仅未归档的交互主协调会话可启用；子任务和自动唤醒不继承。',
             revokedOnRestart: !!grant && grant.state !== 'revoked' && grant.runtimeId !== this.runtimeId,
             activeCommands: jobs.filter(j => ['starting', 'running'].includes(j.state)).length, unknownCommands: jobs.filter(j => j.state === 'unknown').length,
@@ -46,7 +47,8 @@ export class HostAccessService {
     enable(actor, id, input) {
         userOnly(actor);
         const x = object(input);
-        ensure(Object.keys(x).every(k => ['expectedVersion', 'acknowledgedSameUserAccess', 'acknowledgedUnknownEffects'].includes(k)) && x.acknowledgedSameUserAccess === true && (x.acknowledgedUnknownEffects === undefined || typeof x.acknowledgedUnknownEffects === 'boolean'), 'HOST_ACCESS_ACK_REQUIRED', '需要明确接受本机未隔离、同用户应用数据和凭据可达', 400);
+        ensure(Object.keys(x).every(k => ['expectedVersion', 'acknowledgedSameUserAccess', 'acknowledgedUnknownEffects', 'acknowledgedResearchAutomation'].includes(k)) && x.acknowledgedSameUserAccess === true && (x.acknowledgedUnknownEffects === undefined || typeof x.acknowledgedUnknownEffects === 'boolean'), 'HOST_ACCESS_ACK_REQUIRED', '需要明确接受本机未隔离、同用户应用数据和凭据可达', 400);
+        ensure(x.acknowledgedResearchAutomation === undefined || x.acknowledgedResearchAutomation === true, 'INVALID_INPUT', '自主计算范围需要显式确认');
         const expected = integer(x.expectedVersion, 'expectedVersion', 0);
         this.c.store.transaction(() => {
             const session = this.session(actor, id), state = this.status(actor, id), prior = this.c.store.maybe('host-access', id);
@@ -55,17 +57,19 @@ export class HostAccessService {
             ensure(state.version === expected, 'VERSION_CONFLICT', '权限已变化，请刷新后重试');
             const unknown = this.jobs(session).filter(j => j.state === 'unknown');
             ensure(!unknown.length || x.acknowledgedUnknownEffects === true, 'HOST_EFFECTS_REVIEW_REQUIRED', '存在退出或记录状态未确认的命令，需用户核对旧进程和外部效果后重新启用', 409);
-            if (state.enabled)
+            if (state.enabled) {
+                ensure(x.acknowledgedResearchAutomation !== true || prior?.researchAutomationScope === 1, 'HOST_ACCESS_REENABLE_REQUIRED', '新增自主计算范围需要先撤销，再明确重新启用');
                 return;
+            }
             for (const job of unknown) {
                 const raw = this.c.store.get('host-command', job.id);
                 if (raw.state !== 'unknown')
                     this.c.store.update('host-command', raw.id, raw.version, { ...this.uncertain.get(job.id), state: 'unknown', error: job.error });
             }
             const pending = this.executionActive(session), previousHostEpoch = prior?.epoch ?? 0;
-            const grant = { sessionId: id, epoch: previousHostEpoch + (pending ? 0 : 1), runtimeId: this.runtimeId, state: pending ? 'pending' : 'enabled', boundary: 'trusted-host', acknowledgedSameUserAccess: true, acknowledgedUnknownJobIds: unknown.map(j => j.id) };
+            const grant = { ...(x.acknowledgedResearchAutomation === true ? { researchAutomationScope: 1, researchAutomationAcknowledgedAt: new Date().toISOString() } : {}), sessionId: id, epoch: previousHostEpoch + (pending ? 0 : 1), runtimeId: this.runtimeId, state: pending ? 'pending' : 'enabled', boundary: 'trusted-host', acknowledgedSameUserAccess: true, acknowledgedUnknownJobIds: unknown.map(j => j.id) };
             if (prior)
-                this.c.store.update('host-access', id, prior.version, grant);
+                this.c.store.update('host-access', id, prior.version, { researchAutomationScope: undefined, researchAutomationAcknowledgedAt: undefined, ...grant });
             else
                 this.c.store.create('host-access', session.projectId, grant, id);
             this.c.store.event(session.projectId, pending ? 'host_access.requested' : 'host_access.enabled', { sessionId: id, epoch: grant.epoch, boundary: grant.boundary, osSandboxVerified: false });

@@ -37,7 +37,7 @@ export declare class ResearchPlanService {
         campaignId: string;
         state: "draft" | "active" | "paused" | "stopped";
         primaryMetric: string;
-        direction: "max" | "min";
+        direction: "min" | "max";
         unit: string;
         plans: {
             plan: Row<ExperimentPlanRevision>;
@@ -108,13 +108,13 @@ export declare class ResearchPlanService {
             subjectId: string;
             digest: string;
             scope: string;
-            status: "stale" | "pending" | "approved" | "rejected";
+            status: "pending" | "approved" | "rejected" | "stale";
         }[];
         decisions: Row<CampaignDecision>[];
         campaignId: string;
         state: "draft" | "active" | "paused" | "stopped";
         primaryMetric: string;
-        direction: "max" | "min";
+        direction: "min" | "max";
         unit: string;
         results: {
             validation: "incomplete" | "invalid" | "verified";

@@ -2789,7 +2789,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("query" | "role" | "limit" | "stateFilter" | "beforeSessionId")[];
+        readonly required: readonly ("role" | "query" | "limit" | "stateFilter" | "beforeSessionId")[];
         readonly additionalProperties: false;
     };
     readonly session_view: {

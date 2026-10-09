@@ -24,8 +24,8 @@ export function resolveSkillBinding(app:ResearchApp,actor:Actor,pid:string) {
 }
 export function readCatalog(app:ResearchApp,actor:Actor,pid:string) {const {session,bundleId}=resolveSkillBinding(app,actor,pid);return app.skills.bundleCatalog(pid,session.role,bundleId);}
 export function readSkill(app:ResearchApp,actor:Actor,pid:string,id:string,resource?:string) {const {session,bundleId}=resolveSkillBinding(app,actor,pid);return app.skills.bundleRead(pid,session.role,bundleId,id,resource);}
-function missingSkills(app:ResearchApp,pid:string,role:Session['role'],bundleId:string,skillIds:string[],automation=false,allowedArtifacts?:Set<string>):SkillMissing[] {
-    const missing:SkillMissing[]=[],catalog=app.skills.bundleCatalog(pid,role,bundleId),tools=new Set(new ToolDispatcher(app).definitions(role,automation).map(t=>t.name));
+function missingSkills(app:ResearchApp,pid:string,role:Session['role'],bundleId:string,skillIds:string[],automation=false,allowedArtifacts?:Set<string>,continuation=false):SkillMissing[] {
+    const missing:SkillMissing[]=[],catalog=app.skills.bundleCatalog(pid,role,bundleId),tools=new Set(new ToolDispatcher(app).definitions(role,automation,undefined,continuation).map(t=>t.name));
     try{app.skills.ensureBundleStartAllowed(pid,bundleId);}catch(e){const x=asError(e);missing.push({skillId:'',kind:'binding',value:bundleId,reason:`${x.code} — ${x.message}`});}
     for(const id of skillIds){const entry=catalog.skills.find(s=>s.id===id);if(!entry){missing.push({skillId:id,kind:'binding',value:id,reason:'技能不在固定包或当前角色可选目录中'});continue;}
         for(const tool of entry.requirements?.tools??[])if(!tools.has(tool))missing.push({skillId:id,kind:'tool',value:tool,reason:'当前角色/自动化实际工具列表未提供此工具'});
@@ -43,7 +43,7 @@ export function prepareTaskSkills(app:ResearchApp,task:Row<Task>):string {
 }
 export function prepareSessionSkills(app:ResearchApp,s:Row<Session>,actor?:Actor):string {
     const bundleId=sessionSkillBundle(app,s),allowed=actor?.taskId?app.teams.resources(actor).artifactIds:actor?.wakeupId?app.wakeups.resources(actor).artifactIds:undefined;
-    requireReady(missingSkills(app,s.projectId!,s.role,bundleId,s.skillIds??[],!!actor?.wakeupId,allowed));return bundleId;
+    requireReady(missingSkills(app,s.projectId!,s.role,bundleId,s.skillIds??[],!!actor?.wakeupId,allowed,!!actor?.continuationId));return bundleId;
 }
 export function inspectSessionSkills(app:ResearchApp,actor:Actor,pid:string,sessionId:string) {
     scope(actor,pid);const s=app.store.get<Session>('session',sessionId,pid);let bundleId=s.skillBundleId??null,missing:SkillMissing[]=[];

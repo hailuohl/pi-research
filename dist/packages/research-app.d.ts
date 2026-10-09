@@ -1,3 +1,4 @@
+import { ResearchAutomationService } from './policy/research-automation.js';
 import { LocalRuntimeService } from './runners/local-runtime.js';
 import { ComputeConnectionMonitor } from './runners/compute-connections.js';
 import { NativeRequestService } from './pi-adapter/native-requests.js';
@@ -102,6 +103,7 @@ export declare class ResearchApp {
     };
     private closed;
     private closing?;
+    readonly researchAutomation: ResearchAutomationService;
     constructor(dataDir: string, repoRoot: string);
     close(): void | Promise<void>;
 }

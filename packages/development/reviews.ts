@@ -14,7 +14,8 @@ import {assertDevelopmentReviewTarget,developmentReviewAcceptanceBasis,reviewPay
 export class DevelopmentReviewService {
     constructor(private app:ResearchApp) {}
     private access(actor:Actor,pid:string,r:Row<DevelopmentReview>,current=false) {
-        scope(actor,pid);ensure(actor.type==='user'||actor.type==='agent','PERMISSION_DENIED','需要用户或助手身份',403);
+        scope(actor,pid);if(actor.continuationId)this.app.researchAutomation.assertActor(actor);
+            ensure(actor.type==='user'||actor.type==='agent','PERMISSION_DENIED','需要用户或助手身份',403);
         if(actor.type==='agent') {
             const s=this.app.store.get<Session>('session',text(actor.sessionId,'sessionId',100),pid);
             ensure(s.role===actor.role&&s.taskId===actor.taskId,'SCOPE_DENIED','会话身份不匹配',403);
@@ -28,7 +29,8 @@ export class DevelopmentReviewService {
             scope(actor,pid);const x=object(value);ensure(Object.keys(x).every(k=>k==='jobId'),'INVALID_INPUT','审查准备只接受 jobId',400);
             const job=this.app.store.get<SandboxJob>('sandbox-job',text(x.jobId,'jobId',100),pid),producer=this.app.store.get<Session>('session',job.sessionId,pid);
             ensure(producer.role==='coordinator'&&!producer.taskId&&!job.manifest.scopeTaskId,'DEVELOPMENT_REVIEW_PRODUCER_REQUIRED','此流程要求主协调者会话生产候选源码');
-            ensure(actor.type==='user'||actor.type==='agent'&&actor.sessionId===producer.id&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId,'TASK_SCOPE_DENIED','只能为自己的主会话测试准备审查',403);
+            if(actor.continuationId)this.app.researchAutomation.assertActor(actor);
+            ensure(actor.type==='user'||actor.type==='agent'&&actor.sessionId===producer.id&&actor.role==='coordinator'&&!actor.taskId&&(!actor.wakeupId||!!actor.continuationId),'TASK_SCOPE_DENIED','只能为自己的主会话测试准备审查',403);
             const id=digest({projectId:pid,jobId:job.id,purpose:'development-review'}),old=this.app.store.maybe<DevelopmentReview>('development-review',id);if(old)return this.inspect(actor,pid,old.id);
             assertProjectWritable(this.app.store,pid);
             if(actor.type==='agent')ensure(producer.state==='running'&&producer.generation===actor.generation&&producer.leaseUntil>Date.now(),'LEASE_EXPIRED','会话写入租约失效');

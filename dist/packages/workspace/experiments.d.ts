@@ -6,6 +6,7 @@ export declare class ExperimentService {
     private c;
     private projects;
     private briefs?;
+    automation?: import('../policy/research-automation.js').ResearchAutomationService;
     constructor(c: AppContext, projects: ProjectService, briefs?: ResearchBriefService | undefined);
     get(actor: Actor, id: string): Row<Experiment>;
     /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */

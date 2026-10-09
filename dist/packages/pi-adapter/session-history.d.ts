@@ -96,6 +96,7 @@ export declare function sessionQueue(store: Store, session: Row<Session>, value?
         status: "queued" | "running" | "completed" | "failed" | "cancelled";
         error?: string;
         origin?: "user" | "automation";
+        approvalNoticeId?: string;
         wakeupId?: string;
         usage?: unknown;
     }[];

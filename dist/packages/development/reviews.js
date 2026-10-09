@@ -14,6 +14,8 @@ export class DevelopmentReviewService {
     }
     access(actor, pid, r, current = false) {
         scope(actor, pid);
+        if (actor.continuationId)
+            this.app.researchAutomation.assertActor(actor);
         ensure(actor.type === 'user' || actor.type === 'agent', 'PERMISSION_DENIED', '需要用户或助手身份', 403);
         if (actor.type === 'agent') {
             const s = this.app.store.get('session', text(actor.sessionId, 'sessionId', 100), pid);
@@ -38,7 +40,9 @@ export class DevelopmentReviewService {
             ensure(Object.keys(x).every(k => k === 'jobId'), 'INVALID_INPUT', '审查准备只接受 jobId', 400);
             const job = this.app.store.get('sandbox-job', text(x.jobId, 'jobId', 100), pid), producer = this.app.store.get('session', job.sessionId, pid);
             ensure(producer.role === 'coordinator' && !producer.taskId && !job.manifest.scopeTaskId, 'DEVELOPMENT_REVIEW_PRODUCER_REQUIRED', '此流程要求主协调者会话生产候选源码');
-            ensure(actor.type === 'user' || actor.type === 'agent' && actor.sessionId === producer.id && actor.role === 'coordinator' && !actor.taskId && !actor.wakeupId, 'TASK_SCOPE_DENIED', '只能为自己的主会话测试准备审查', 403);
+            if (actor.continuationId)
+                this.app.researchAutomation.assertActor(actor);
+            ensure(actor.type === 'user' || actor.type === 'agent' && actor.sessionId === producer.id && actor.role === 'coordinator' && !actor.taskId && (!actor.wakeupId || !!actor.continuationId), 'TASK_SCOPE_DENIED', '只能为自己的主会话测试准备审查', 403);
             const id = digest({ projectId: pid, jobId: job.id, purpose: 'development-review' }), old = this.app.store.maybe('development-review', id);
             if (old)
                 return this.inspect(actor, pid, old.id);

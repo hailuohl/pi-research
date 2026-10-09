@@ -10,6 +10,7 @@ import { GIT_OUTPUT_SCHEMAS } from './git-schemas.js';
 import { REPORT_OUTPUT_SCHEMAS } from './report-schemas.js';
 import { SCHEDULER_OUTPUT_SCHEMAS } from './scheduler-schemas.js';
 import { REVIEW_OUTPUT_SCHEMAS } from './review-schemas.js';
+import { AUTOMATION_APPROVAL_SCHEMA, FULL_ACCESS_REFERENCE_SCHEMA } from './research-automation-schemas.js';
 import { DEVELOPMENT_OUTPUT_SCHEMAS } from './development-schemas.js';
 import { WORKING_GRANT_OUTPUT_SCHEMAS, WORKING_GRANT_REFERENCE_SCHEMA } from './working-grant-schemas.js';
 import { RUN_GRANT_OUTPUT_SCHEMAS, RUN_GRANT_REFERENCE_SCHEMA } from './run-grant-schemas.js';
@@ -70,9 +71,9 @@ const campaign = row('campaign', {
 const CORE_OUTPUT_SCHEMAS = {
     ...EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS,
     run_prepare: row('run-intent', {
-        experimentId: string, manifest, manifestDigest: string, approvalId: string,
+        experimentId: string, manifest, manifestDigest: string, approvalId: string, approval: AUTOMATION_APPROVAL_SCHEMA,
         status: enumeration('prepared', 'submitted'), runId: string, runGrant: RUN_GRANT_REFERENCE_SCHEMA, rootSessionId: string
-    }, ['runId', 'runGrant', 'rootSessionId']),
+    }, ['runId', 'runGrant', 'rootSessionId', 'approval']),
     run_submit: row('run', {
         experimentId: string, intentId: string, manifest, manifestDigest: string,
         state: enumeration('queued', 'submitting', 'running', 'cancelling', 'succeeded', 'failed', 'cancelled', 'unknown'),
@@ -195,7 +196,7 @@ export const OUTPUT_SCHEMAS = {
     run_logs: object({ content: string, cursor: integer, complete: boolean, start: integer, size: integer, identity: nullableString }),
     run_source_list: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, files: array(sourceFile) }, ['gitCommit']),
     run_source_read: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, path: string, size: integer, digest: string, mode: enumeration('100644', '100755'), cursor: integer, end: integer, complete: boolean, content: string }, ['gitCommit', 'mode']),
-    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string, workingGrant: WORKING_GRANT_REFERENCE_SCHEMA, runGrant: RUN_GRANT_REFERENCE_SCHEMA }, ['decidedAt', 'workingGrant', 'runGrant'])),
+    approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string, fullAccess: FULL_ACCESS_REFERENCE_SCHEMA, workingGrant: WORKING_GRANT_REFERENCE_SCHEMA, runGrant: RUN_GRANT_REFERENCE_SCHEMA }, ['decidedAt', 'workingGrant', 'runGrant', 'fullAccess'])),
     experiment_plan_submit: row('experiment', { researchBrief: researchBriefRef, title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId', 'researchBrief']),
     collaboration_plan_submit: team,
     agent_delegate: team,

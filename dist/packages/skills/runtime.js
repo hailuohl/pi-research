@@ -26,8 +26,8 @@ export function resolveSkillBinding(app, actor, pid) {
 }
 export function readCatalog(app, actor, pid) { const { session, bundleId } = resolveSkillBinding(app, actor, pid); return app.skills.bundleCatalog(pid, session.role, bundleId); }
 export function readSkill(app, actor, pid, id, resource) { const { session, bundleId } = resolveSkillBinding(app, actor, pid); return app.skills.bundleRead(pid, session.role, bundleId, id, resource); }
-function missingSkills(app, pid, role, bundleId, skillIds, automation = false, allowedArtifacts) {
-    const missing = [], catalog = app.skills.bundleCatalog(pid, role, bundleId), tools = new Set(new ToolDispatcher(app).definitions(role, automation).map(t => t.name));
+function missingSkills(app, pid, role, bundleId, skillIds, automation = false, allowedArtifacts, continuation = false) {
+    const missing = [], catalog = app.skills.bundleCatalog(pid, role, bundleId), tools = new Set(new ToolDispatcher(app).definitions(role, automation, undefined, continuation).map(t => t.name));
     try {
         app.skills.ensureBundleStartAllowed(pid, bundleId);
     }
@@ -73,7 +73,7 @@ export function prepareTaskSkills(app, task) {
 }
 export function prepareSessionSkills(app, s, actor) {
     const bundleId = sessionSkillBundle(app, s), allowed = actor?.taskId ? app.teams.resources(actor).artifactIds : actor?.wakeupId ? app.wakeups.resources(actor).artifactIds : undefined;
-    requireReady(missingSkills(app, s.projectId, s.role, bundleId, s.skillIds ?? [], !!actor?.wakeupId, allowed));
+    requireReady(missingSkills(app, s.projectId, s.role, bundleId, s.skillIds ?? [], !!actor?.wakeupId, allowed, !!actor?.continuationId));
     return bundleId;
 }
 export function inspectSessionSkills(app, actor, pid, sessionId) {

@@ -1,5 +1,5 @@
 import type { ResearchApp } from '../research-app.js';
-import type { Actor, Row } from '../domain/types.js';
+import type { Actor, Approval, Row } from '../domain/types.js';
 import type { SandboxJob, SandboxResources, SandboxState } from '../execution/contracts.js';
 /** Development tests have their own approval and immutable result; they never create a scientific Run. */
 export declare class DevelopmentService {
@@ -8,6 +8,7 @@ export declare class DevelopmentService {
     private access;
     private data;
     prepare(actor: Actor, pid: string, sessionId: string, value: unknown): {
+        blockedReason?: string | undefined;
         developmentTaskId: string;
         manifest: {
             inputSnapshot: {
@@ -25,6 +26,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
@@ -41,12 +43,16 @@ export declare class DevelopmentService {
             scopeGeneration?: number;
             sessionGeneration?: number;
         };
+        approval: Row<Approval>;
+        effectiveState: string;
+        canSubmit: boolean;
         id: string;
         kind: string;
         projectId: string | null;
         version: number;
         createdAt: string;
         updatedAt: string;
+        originMessageId?: string;
         title: string;
         sessionId: string;
         sourceDigest: string;
@@ -56,6 +62,7 @@ export declare class DevelopmentService {
         jobId?: string;
     };
     get(actor: Actor, pid: string, id: string): {
+        blockedReason?: string | undefined;
         developmentTaskId: string;
         manifest: {
             inputSnapshot: {
@@ -73,6 +80,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
@@ -89,12 +97,16 @@ export declare class DevelopmentService {
             scopeGeneration?: number;
             sessionGeneration?: number;
         };
+        approval: Row<Approval>;
+        effectiveState: string;
+        canSubmit: boolean;
         id: string;
         kind: string;
         projectId: string | null;
         version: number;
         createdAt: string;
         updatedAt: string;
+        originMessageId?: string;
         title: string;
         sessionId: string;
         sourceDigest: string;
@@ -103,10 +115,15 @@ export declare class DevelopmentService {
         state: "prepared" | "submitted";
         jobId?: string;
     };
+    private assertSubmittable;
+    private workspaceCurrent;
     private current;
     assertCurrent(job: Row<SandboxJob>, verifyFiles?: boolean): void;
     private assertPermission;
     submit(actor: Actor, pid: string, id: string): {
+        approval: Row<Approval>;
+        effectiveState: "submitted";
+        canSubmit: boolean;
         id: string;
         jobId: string;
         developmentTaskId: string;
@@ -130,6 +147,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
@@ -149,7 +167,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "incomplete" | "pending" | "complete" | "invalid";
+        integrity: "pending" | "complete" | "incomplete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;
@@ -162,6 +180,9 @@ export declare class DevelopmentService {
         cancelRequested: boolean;
     };
     inspect(actor: Actor, pid: string, id: string): {
+        approval: Row<Approval>;
+        effectiveState: "submitted";
+        canSubmit: boolean;
         id: string;
         jobId: string;
         developmentTaskId: string;
@@ -185,6 +206,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
@@ -204,7 +226,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "incomplete" | "pending" | "complete" | "invalid";
+        integrity: "pending" | "complete" | "incomplete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;
@@ -227,6 +249,9 @@ export declare class DevelopmentService {
         stream: string;
     };
     cancel(actor: Actor, pid: string, id: string): {
+        approval: Row<Approval>;
+        effectiveState: "submitted";
+        canSubmit: boolean;
         id: string;
         jobId: string;
         developmentTaskId: string;
@@ -250,6 +275,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
@@ -269,7 +295,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "incomplete" | "pending" | "complete" | "invalid";
+        integrity: "pending" | "complete" | "incomplete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;
@@ -291,6 +317,9 @@ export declare class DevelopmentService {
         generation?: number;
     }): Row<SandboxJob>;
     assertResultMatches(actor: Actor, pid: string, id: string, candidateDigest: string): {
+        approval: Row<Approval>;
+        effectiveState: "submitted";
+        canSubmit: boolean;
         id: string;
         jobId: string;
         developmentTaskId: string;
@@ -314,6 +343,7 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
             purpose: "development-test";
             sessionId: string;
@@ -333,7 +363,7 @@ export declare class DevelopmentService {
         imageId: string | undefined;
         grantId: string;
         state: SandboxState;
-        integrity: "incomplete" | "pending" | "complete" | "invalid";
+        integrity: "pending" | "complete" | "incomplete" | "invalid";
         exitCode: number | null;
         error: string | undefined;
         startedAt: string | undefined;

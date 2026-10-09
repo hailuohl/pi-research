@@ -15,6 +15,7 @@ import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { object, text, oneOf, integer } from '../contracts/validation.js';
 export class SessionService {
+    onStop?:(sessionId:string,reason:string)=>void;
     parsedAttachmentMetadata?: (actor:Actor,session:Row<Session>,pair:ParsedAttachmentPair)=>ParsedAttachmentMetadata;
     permissionCapture?: (sessionId:string)=>import('../policy/session-permissions.js').PermissionReference;
     taskPermissionCapture?: (sessionId:string)=>import('../policy/session-permissions.js').PermissionReference;
@@ -89,7 +90,8 @@ export class SessionService {
     send(actor: Actor, id: string, value: unknown) {
         return this.sendMessage(actor,id,value);
     }
-    private sendMessage(actor: Actor, id: string, value: unknown,legacyAttachments?:MessageAttachment[],nativeAttachmentContextIds?:string[]) {
+    sendApprovalNotice(actor:Actor,id:string,value:unknown,approvalNoticeId:string){return this.sendMessage(actor,id,value,undefined,undefined,approvalNoticeId);}
+    private sendMessage(actor: Actor, id: string, value: unknown,legacyAttachments?:MessageAttachment[],nativeAttachmentContextIds?:string[],approvalNoticeId?:string) {
         userOnly(actor);
         const x = object(value);
         return this.c.store.transaction(() => {
@@ -103,7 +105,7 @@ export class SessionService {
             const pending=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND json_extract(data,'$.status') IN ('queued','running') LIMIT 1").get(s.projectId!,id);
             const mode=oneOf(x.mode ?? (s.state==='running'||pending?'follow_up':'prompt'), ['prompt','steer','follow_up'] as const,'mode');
             const permission=this.permissionCapture?.(id);
-            const msg=this.c.store.create<Message>('message',s.projectId,{sessionId:id,role:'user',content:text(x.content,'content',32000),mode,status:'queued',...(permission?{permission}:{}),...(attachments.length?{attachments}:{}),...(nativeAttachmentContextIds!==undefined?{nativeAttachmentContextIds:nativeAttachmentContextIds.slice()}:{}),...(mode==='steer'?{steerGeneration:s.generation}:{})});
+            const msg=this.c.store.create<Message>('message',s.projectId,{...(approvalNoticeId?{approvalNoticeId}:{}),sessionId:id,role:'user',content:text(x.content,'content',32000),mode,status:'queued',...(permission?{permission}:{}),...(attachments.length?{attachments}:{}),...(nativeAttachmentContextIds!==undefined?{nativeAttachmentContextIds:nativeAttachmentContextIds.slice()}:{}),...(mode==='steer'?{steerGeneration:s.generation}:{})});
             if(s.state!=='running')this.c.store.update<Session>('session',id,s.version,{state:'queued',lastError:undefined});
             this.c.store.event(s.projectId,'session.message_queued',{sessionId:id,messageId:msg.id,mode});
             return msg;
@@ -130,11 +132,12 @@ export class SessionService {
         });
     }
     rename(actor: Actor, id: string, title: string, expectedVersion: number) { userOnly(actor); this.get(actor, id); return this.c.store.update<Session>('session', id, expectedVersion, { title: text(title, 'title', 160) }); }
-    archive(actor: Actor, id: string, expectedVersion: number) { userOnly(actor); const s = this.get(actor, id); ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '运行中或任务会话不能归档'); return this.c.store.update<Session>('session', id, expectedVersion, { state: 'archived' }); }
+    archive(actor: Actor, id: string, expectedVersion: number) { userOnly(actor);return this.c.store.transaction(()=>{ const s = this.get(actor, id); ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '运行中或任务会话不能归档'); this.onStop?.(id,'会话已归档');return this.c.store.update<Session>('session', id, expectedVersion, { state: 'archived' });}); }
     interrupt(actor: Actor, id: string) {
         userOnly(actor);
         const s = this.get(actor, id);
         return this.c.store.transaction(() => {
+            this.onStop?.(id,'用户中止了会话');
             for (const m of this.messages(actor, id).filter(m => (m.role === 'user' || m.origin === 'automation') && ['queued', 'running'].includes(m.status)))
                 this.c.store.update<Message>('message', m.id, m.version, { status: 'cancelled' });
             const next = this.c.store.update<Session>('session', id, s.version, { state: 'interrupted', generation: s.generation + 1, leaseUntil: 0 });
@@ -169,11 +172,11 @@ export class SessionService {
         });
     }
     /** Host-only persisted input; never masquerades as a user-authored message. */
-    automation(id: string, wakeupId: string, content: string) {
+    automation(id: string, wakeupId: string, content: string,permission?:import('../policy/session-permissions.js').PermissionReference) {
         const s = this.c.store.get<Session>('session', id);
         ensure(!s.taskId && s.role === 'coordinator' && !['running', 'archived'].includes(s.state), 'SESSION_BUSY', '主会话不能接收新的自动输入');
         const message = this.c.store.create<Message>('message', s.projectId, { sessionId: id, role: 'system', origin: 'automation', wakeupId,
-            content, mode: 'prompt', status: 'queued',...(this.taskPermissionCapture?{permission:this.taskPermissionCapture(id)}:{}) });
+            content, mode: 'prompt', status: 'queued',...(permission?{permission}:this.taskPermissionCapture?{permission:this.taskPermissionCapture(id)}:{}) });
         this.c.store.update<Session>('session', id, s.version, { state: 'queued', lastError: undefined });
         this.c.store.event(s.projectId, 'session.automation_queued', { sessionId: id, messageId: message.id, wakeupId });
         return message;
@@ -215,5 +218,5 @@ export class SessionService {
             return branch;
         });
     }
-    retry(actor: Actor, id: string, messageId: string) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.sendMessage(actor, id, { content: m.content, mode: 'prompt',...(m.attachments?(m.attachments.some(a=>a.parseResultId)?{parsedDocumentAttachments:m.attachments.map(a=>({documentVersionId:a.documentVersionId,parseResultId:a.parseResultId}))}:{attachmentDocumentIds:m.attachments.map(a=>a.documentVersionId)}):{}) },m.attachments?.every(a=>!a.inputMode&&!a.parseResultId)?m.attachments:undefined,m.nativeAttachmentContextIds); }
+    retry(actor: Actor, id: string, messageId: string) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.sendMessage(actor, id, { content: m.content, mode: 'prompt',...(m.attachments?(m.attachments.some(a=>a.parseResultId)?{parsedDocumentAttachments:m.attachments.map(a=>({documentVersionId:a.documentVersionId,parseResultId:a.parseResultId}))}:{attachmentDocumentIds:m.attachments.map(a=>a.documentVersionId)}):{}) },m.attachments?.every(a=>!a.inputMode&&!a.parseResultId)?m.attachments:undefined,m.nativeAttachmentContextIds,m.approvalNoticeId); }
 }

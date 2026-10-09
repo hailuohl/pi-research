@@ -12,7 +12,7 @@ import {object, text, integer, strings} from '../contracts/validation.js';
 import {scope, ROLE_TOOLS} from '../policy/permissions.js';
 import {assertProjectWritable,assertExperimentSourceCurrent} from '../policy/lifecycle.js';
 import {digest, now} from '../storage/store.js';
-import {safePath, snapshotDirectory, verifySnapshot} from '../workspace/files.js';
+import {safePath, snapshotDirectory, verifySnapshot,listFiles,readSourceMode} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
 import {validateSourceRevision} from '../workspace/source-access.js';
 import {captureAcceptance,assertAcceptanceCurrent} from '../evidence/acceptance.js';
@@ -41,8 +41,10 @@ export class DevelopmentService {
             const own=this.app.store.get<Session>('session',text(actor.sessionId,'sessionId',100),pid);
             ensure(own.role===actor.role&&own.taskId===actor.taskId,'SCOPE_DENIED','会话身份不匹配',403);
             ensure(own.id===s.id||!write&&own.role==='coordinator'&&!own.taskId,'TASK_SCOPE_DENIED','只能访问自己的开发测试',403);
+            if(actor.continuationId||actor.approvalResumeId)ensure(own.id===s.id,'TASK_SCOPE_DENIED','自动回合只能读取当前根会话的私有开发测试',403);
             if(write) {
-                ensure(!actor.wakeupId&&ROLE_TOOLS[own.role].includes('workspace_write'),'TOOL_DENIED','此会话不能准备开发测试',403);
+                if(actor.continuationId)this.app.researchAutomation.assertActor(actor);if(actor.approvalResumeId)this.app.wakeups.assertApprovalResume(actor);
+                ensure((!actor.wakeupId||!!actor.continuationId||!!actor.approvalResumeId)&&ROLE_TOOLS[own.role].includes('workspace_write'),'TOOL_DENIED','此会话不能准备开发测试',403);
                 if(own.taskId)this.app.teams.active(actor);
                 else ensure(own.generation===actor.generation&&own.state==='running'&&own.leaseUntil>Date.now(),'LEASE_EXPIRED','会话执行租约失效');
             }
@@ -67,8 +69,9 @@ export class DevelopmentService {
         return {id:a.id,digest:a.digest,size:a.size,path:a.path,...(sourceAcceptanceId?{sourceAcceptanceId}:{})};
     }
     prepare(actor:Actor,pid:string,sessionId:string,value:unknown) {
+        ensure(!actor.approvalResumeId,'AUTOMATION_SCOPE_DENIED','批准恢复不能准备新测试',403);
         return this.app.store.transaction(()=>{
-            const s=this.access(actor,pid,sessionId,true),x=object(value);
+            const s=this.access(actor,pid,sessionId,true),x=object(value),resume=this.app.researchAutomation.captureResume(actor);
             const working=this.app.workingGrants.forPreparation(actor,pid,sessionId);
             ensure(Object.keys(x).every(k=>['title','command','environmentImageDigest','dockerContext','resources','deadline','expectedArtifacts','dataArtifactIds'].includes(k)),'INVALID_INPUT','开发测试参数包含未授权字段',400);
             ensure(Array.isArray(x.command)&&x.command.length>0&&x.command.length<=64,'INVALID_INPUT','需要 1–64 个 argv',400);
@@ -86,24 +89,38 @@ export class DevelopmentService {
             const dataArtifacts=ids.map(id=>this.data({...actor,taskId:s.taskId},pid,id));ensure(dataArtifacts.reduce((n,a)=>n+a.size,0)<=128*MiB,'ARTIFACT_TOO_LARGE','输入数据超过 128 MiB',413);
             if(s.sourceRevisionId)validateSourceRevision(this.app.context,pid,s.sourceRevisionId);
             const inputSnapshot=this.app.store.paths.referenceSnapshot(snapshotDirectory(this.app.store.paths.physical(s.workspace),join(this.app.context.dataDir,'snapshots')));
-            const manifest:SandboxManifest={purpose:'development-test',sessionId:s.id,inputSnapshot,command,environmentImageDigest:image,dockerContext,resources,networkPolicy:'none',deadline,expectedArtifacts,dataArtifacts,
+            const manifest:SandboxManifest={...(resume?{approvalResumeDigest:digest(resume)}:{}),purpose:'development-test',sessionId:s.id,inputSnapshot,command,environmentImageDigest:image,dockerContext,resources,networkPolicy:'none',deadline,expectedArtifacts,dataArtifacts,
                 ...(s.sourceRevisionId?{sourceRevisionId:s.sourceRevisionId}:{}),...(s.taskId?{scopeTaskId:s.taskId,scopeAttemptId:actor.attemptId,scopeGeneration:actor.generation}:{sessionGeneration:s.generation})};
             // A user may approve an assistant workspace, but cannot invent its attempt identity.
             if(s.taskId&&actor.type==='user') {const t=this.app.store.get<Task>('task',s.taskId,pid);const a=this.app.store.get<TaskAttempt>('task-attempt',text(t.attemptId,'attemptId',100),pid);ensure(a.sessionId===s.id&&a.state==='running'&&t.execution==='running','LEASE_EXPIRED','任务不在执行');manifest.scopeAttemptId=a.id;manifest.scopeGeneration=a.generation;}
             if(working)manifest.workingGrant=this.app.workingGrants.authorizeManifest(working,manifest);
             const id=randomUUID(),manifestDigest=digest(manifest),approval=this.app.approvals.request(pid,'development-task',id,manifestDigest,'development.test','只批准本次固定源码、argv、镜像、数据与资源限制的开发测试');
             if(working)this.app.store.update<Approval>('approval',approval.id,approval.version,{status:'approved',workingGrant:manifest.workingGrant,decidedAt:now(),reason:'由固定私有实现授权派生的单次测试批准；提交时原子计次，不批准正式Run'});
-            this.app.store.create<DevelopmentTask>('development-task',pid,{title:text(x.title??'开发测试','title',200),sessionId:s.id,sourceDigest:inputSnapshot.digest,manifest,manifestDigest,grantId:approval.id,state:'prepared'},id);
+            if(!working)this.app.researchAutomation.authorize(actor,approval,dockerContext);
+            this.app.store.create<DevelopmentTask>('development-task',pid,{...(actor.messageId?{originMessageId:actor.messageId}:{}),resume,title:text(x.title??'开发测试','title',200),sessionId:s.id,sourceDigest:inputSnapshot.digest,manifest,manifestDigest,grantId:approval.id,state:'prepared'},id);
             this.app.store.event(pid,'development.prepared',{developmentTaskId:id,sourceDigest:inputSnapshot.digest,grantId:approval.id});
             return this.get(actor,pid,id);
         });
     }
-    get(actor:Actor,pid:string,id:string) {const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);return {...t,developmentTaskId:t.id,manifest:publicManifest(t.manifest)};}
+    get(actor:Actor,pid:string,id:string) {if(actor.approvalResumeId)this.app.wakeups.assertApprovalResume(actor,id);const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);const approval=this.app.store.get<Approval>('approval',t.grantId,pid);let blockedReason:string|undefined;try{if(!t.jobId){this.assertSubmittable(actor,pid,t);}}catch(error){blockedReason=asError(error).code;}const effectiveState=t.jobId?'submitted':blockedReason==='DEVELOPMENT_EXPIRED'?'expired':blockedReason&&approval.status==='approved'?'stale':approval.status;const {resume,...publicTask}=t;return {...publicTask,developmentTaskId:t.id,manifest:publicManifest(t.manifest),approval,effectiveState,canSubmit:!t.jobId&&!blockedReason,...(blockedReason?{blockedReason}:{})};}
+    private assertSubmittable(actor:Actor,pid:string,t:Row<DevelopmentTask>){
+        this.access(actor,pid,t.sessionId,true);
+        ensure(Date.parse(t.manifest.deadline)>Date.now(),'DEVELOPMENT_EXPIRED','开发测试授权已过期');
+        this.app.researchAutomation.assertSubmission(actor,this.app.store.get<Approval>('approval',t.grantId,pid));
+        this.current(t,pid,true,true);
+        this.workspaceCurrent(t,pid);
+        this.app.compute.assertEnqueue('development',pid,t.manifest.dockerContext);
+    }
+    private workspaceCurrent(t:DevelopmentTask,pid:string){
+        const s=this.app.store.get<Session>('session',t.sessionId,pid),root=this.app.store.paths.physical(s.workspace),legacy=t.manifest.inputSnapshot.files.every(f=>f.mode===undefined);let total=0;
+        const files=listFiles(root).map(f=>{const bytes=readStableFile(root,f.path,64*MiB);total+=bytes.length;ensure(total<=64*MiB,'SNAPSHOT_TOO_LARGE','工作区超过测试快照上限');return {path:f.path,size:bytes.length,digest:digest(bytes),...(!legacy?{mode:readSourceMode(root,f.path)}:{})};}).sort((a,b)=>a.path.localeCompare(b.path));
+        ensure(digest(files)===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备测试');
+    }
     private current(t:DevelopmentTask|SandboxJob,pid:string,active:boolean,deadline:boolean,verifyFiles=true) {
-        if('developmentTaskId' in t)this.assertPermission(t as Row<SandboxJob>);
+        if('developmentTaskId' in t&&(active||!this.app.store.get<Approval>('approval',t.grantId,pid).fullAccess))this.assertPermission(t as Row<SandboxJob>);
         ensure(digest(t.manifest)===t.manifestDigest&&t.sourceDigest===t.manifest.inputSnapshot.digest&&digest(t.manifest.inputSnapshot.files)===t.sourceDigest,'MANIFEST_CORRUPTED','开发测试清单校验失败');
         const id='developmentTaskId' in t?t.developmentTaskId:(t as Row<DevelopmentTask>).id;
-        const approval=this.app.approvals.assert(t.grantId,pid,id,t.manifestDigest,'development.test');ensure(approval.subjectKind==='development-task','APPROVAL_STALE','审批类型不匹配');
+        const approval=this.app.approvals.assert(t.grantId,pid,id,t.manifestDigest,'development.test');ensure(approval.subjectKind==='development-task','APPROVAL_STALE','审批类型不匹配');if(active)this.app.researchAutomation.assertApproval(approval,true);
         const m=t.manifest,s=this.app.store.get<Session>('session',t.sessionId,pid);
         if(deadline&&s.workingGrantId)ensure(m.workingGrant?.id===s.workingGrantId,'WORKING_GRANT_REQUIRED','会话已绑定授权；旧单次清单不能绕过范围或计次，请重新准备');
         if(m.workingGrant){const g=assertWorkingGrantReference(this.app.store,pid,m.workingGrant,deadline);ensure(digest(approval.workingGrant)===digest(m.workingGrant),'APPROVAL_STALE','单次派生批准依据不符');assertWorkingGrantManifest(g,m);if('developmentTaskId' in t)assertWorkingGrantJob(this.app.store,t as Row<SandboxJob>,deadline);}
@@ -133,13 +150,13 @@ export class DevelopmentService {
     assertCurrent(job:Row<SandboxJob>,verifyFiles=true) {this.current(job,job.projectId!,true,(job.state==='queued'||job.state==='starting')&&!job.startRequested,verifyFiles);}
     private assertPermission(job:Row<SandboxJob>){if(job.permission)this.app.sessionPermissions.assertJob(job.permission,{kind:'development',subjectId:job.developmentTaskId,approvalId:job.grantId,manifestDigest:job.manifestDigest},job.sessionId);else if(job.permissionOrigin!=='owner'){const ref=this.app.sessionPermissions.capture(job.sessionId);ensure(ref.epoch===0&&ref.hostEpoch===0,'SESSION_PERMISSION_STALE','旧测试没有当前会话权限依据');}}
     submit(actor:Actor,pid:string,id:string) {
+        if(actor.approvalResumeId)this.app.wakeups.assertApprovalResume(actor,id);
         return this.app.store.transaction(()=>{
             const t=this.app.store.get<DevelopmentTask>('development-task',id,pid);this.access(actor,pid,t.sessionId);
-            if(t.jobId)return this.inspect(actor,pid,t.jobId);
-            const s=this.access(actor,pid,t.sessionId,true);this.current(t,pid,true,true);
-            ensure(snapshotDirectory(this.app.store.paths.physical(s.workspace),join(this.app.context.dataDir,'snapshots'),{legacy:t.manifest.inputSnapshot.files.every(f=>f.mode===undefined)}).digest===t.sourceDigest,'DEVELOPMENT_SOURCE_STALE','工作区已变化，请重新准备并批准测试');
-            this.app.compute.assertEnqueue('development',pid,t.manifest.dockerContext);
+            if(t.jobId){const j=this.app.store.get<SandboxJob>('sandbox-job',t.jobId,pid);ensure(j.developmentTaskId===t.id&&j.sessionId===t.sessionId&&j.manifestDigest===t.manifestDigest&&j.grantId===t.grantId,'APPROVAL_STALE','历史作业与准确准备单不匹配');return this.inspect(actor,pid,t.jobId);}
+            this.assertSubmittable(actor,pid,t);
             const jobId=randomUUID(),root=join(this.app.context.dataDir,'sandbox-jobs',jobId),outputDir=join(root,'output'),controlDir=join(root,'control');
+            this.app.researchAutomation.consume(actor,this.app.store.get<Approval>('approval',t.grantId,pid),jobId);
             this.app.workingGrants.consume(pid,t,jobId);
             mkdirSync(outputDir,{recursive:true,mode:0o777});chmodSync(outputDir,0o777);mkdirSync(controlDir,{recursive:true,mode:0o700});
             this.app.store.onRollback(()=>{rmdirSync(controlDir);rmdirSync(outputDir);rmdirSync(root);});
@@ -150,8 +167,8 @@ export class DevelopmentService {
         });
     }
     inspect(actor:Actor,pid:string,id:string) {
-        const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);this.access(actor,pid,j.sessionId);
-        return {id:j.id,jobId:j.id,developmentTaskId:j.developmentTaskId,sessionId:j.sessionId,version:j.version,sourceDigest:j.sourceDigest,manifestDigest:j.manifestDigest,manifest:publicManifest(j.manifest),imageId:j.imageId,grantId:j.grantId,state:j.state,integrity:j.integrity,exitCode:j.exitCode??null,error:j.error?diagnostic(j.error,j.startRequested):undefined,startedAt:j.startedAt,endedAt:j.endedAt,artifactIds:j.artifactIds,stdoutArtifactId:j.stdoutArtifactId,stderrArtifactId:j.stderrArtifactId,reportArtifactId:j.reportArtifactId,logTruncated:j.logTruncated,cancelRequested:j.cancelRequested};
+        const j=this.app.store.get<SandboxJob>('sandbox-job',id,pid);if(actor.approvalResumeId)this.app.wakeups.assertApprovalResume(actor,j.developmentTaskId);this.access(actor,pid,j.sessionId);
+        return {approval:this.app.store.get<Approval>('approval',j.grantId,pid),effectiveState:'submitted' as const,canSubmit:false,id:j.id,jobId:j.id,developmentTaskId:j.developmentTaskId,sessionId:j.sessionId,version:j.version,sourceDigest:j.sourceDigest,manifestDigest:j.manifestDigest,manifest:publicManifest(j.manifest),imageId:j.imageId,grantId:j.grantId,state:j.state,integrity:j.integrity,exitCode:j.exitCode??null,error:j.error?diagnostic(j.error,j.startRequested):undefined,startedAt:j.startedAt,endedAt:j.endedAt,artifactIds:j.artifactIds,stdoutArtifactId:j.stdoutArtifactId,stderrArtifactId:j.stderrArtifactId,reportArtifactId:j.reportArtifactId,logTruncated:j.logTruncated,cancelRequested:j.cancelRequested};
     }
     logs(actor:Actor,pid:string,id:string,stream:unknown,cursor:unknown=0,identity?:string|null) {
         this.inspect(actor,pid,id);ensure(stream==='stdout'||stream==='stderr','INVALID_INPUT','日志流必须是 stdout 或 stderr',400);

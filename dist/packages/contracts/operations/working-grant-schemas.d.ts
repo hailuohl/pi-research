@@ -488,7 +488,7 @@ export declare const WORKING_GRANT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("version" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
+    readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "usage" | "developmentTaskId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
     readonly additionalProperties: false;
 };
 export declare const WORKING_GRANT_INPUT_SCHEMAS: {
@@ -1051,7 +1051,7 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "usage" | "developmentTaskId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
     readonly working_grant_inspect: {
@@ -1516,7 +1516,7 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "usage" | "developmentTaskId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
     readonly working_grant_activate: {
@@ -1981,7 +1981,7 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "usage" | "developmentTaskId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
     readonly working_grant_revoke: {
@@ -2446,7 +2446,7 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "developmentTaskId" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "sourceRevisionId" | "kind" | "approvalId" | "usage" | "developmentTaskId" | "expiresAt" | "dataArtifacts" | "baselineSnapshot" | "projectId" | "updatedAt" | "templateManifestDigest" | "command" | "environmentImageDigest" | "dockerContext" | "resources" | "expectedArtifacts" | "editablePaths" | "maxTests" | "maxChangedBytes" | "validity" | "effectiveState" | "reasons" | "uses")[];
         readonly additionalProperties: false;
     };
 };

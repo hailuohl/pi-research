@@ -1,6 +1,8 @@
 import type { Store } from '../storage/store.js';
 import type { Actor, Row } from '../domain/types.js';
 export interface HostAccessGrant {
+    researchAutomationScope?: 1;
+    researchAutomationAcknowledgedAt?: string;
     sessionId: string;
     epoch: number;
     runtimeId: string;
@@ -31,6 +33,7 @@ export declare class HostAccessService {
     private c;
     onChanged?: (sessionId: string, previousHostEpoch?: number) => void;
     private readonly runtimeId;
+    researchRuntimeId(): `${string}-${string}-${string}-${string}-${string}`;
     private readonly active;
     private readonly uncertain;
     private stopping;
@@ -44,6 +47,8 @@ export declare class HostAccessService {
     private jobs;
     private hasUnreviewed;
     status(actor: Actor, sessionId: string): {
+        researchAutomation: boolean;
+        researchAutomationScope: number;
         sessionId: string;
         version: number;
         epoch: number;
@@ -58,7 +63,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -69,6 +74,8 @@ export declare class HostAccessService {
     private session;
     private executionActive;
     enable(actor: Actor, id: string, input: unknown): {
+        researchAutomation: boolean;
+        researchAutomationScope: number;
         sessionId: string;
         version: number;
         epoch: number;
@@ -83,7 +90,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;
@@ -93,6 +100,8 @@ export declare class HostAccessService {
     };
     activatePending(id: string): boolean;
     revoke(actor: Actor, id: string, input: unknown): {
+        researchAutomation: boolean;
+        researchAutomationScope: number;
         sessionId: string;
         version: number;
         epoch: number;
@@ -107,7 +116,7 @@ export declare class HostAccessService {
         unknownCommands: number;
         jobs: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
+            state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
             pid: number | undefined;
             exitCode: number | null | undefined;
             error: string | undefined;

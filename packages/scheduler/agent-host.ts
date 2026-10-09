@@ -1,3 +1,4 @@
+import {digest} from '../storage/store.js';
 import {publicationImageCatalog,imageReference,documentImageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
 import {modelConnectionSnapshot,assertModelEnabled} from '../pi-adapter/model-connections.js';
 import {environmentVariables,redactEnvironment,redactEnvironmentChunk} from '../runtime/environment.js';
@@ -66,6 +67,7 @@ export class AgentHost {
     private inspect(model: ModelConfig) { return (this.dependencies.inspect ?? inspectPi)(this.app.context.repoRoot, model); }
     status() { const capacity=this.admission.snapshot();return { ...this.inspect(this.app.sessions.model()), activeWorkers: capacity.counts.held, maxModelWorkers: capacity.maxWorkers, workerCapacity:capacity,workerUnit:'pi-worker',httpConcurrencyMeasured:false,toolIsolation: 'host-allowlist-explicit-trusted-shell', osSandboxVerified: false,hostAccess:{available:true,boundary:'trusted-host',requiresExplicitSessionEnable:true,revokedOnRestart:true} }; }
     start() {
+        this.app.researchAutomation.startOwner();
         this.timer = setInterval(() => {
             try {
                 this.tick();
@@ -87,6 +89,7 @@ export class AgentHost {
             return;
         this.ticking = true;
         try {
+            this.app.researchAutomation.heartbeatOwner();
             this.app.git.tick();
             this.app.github.tick();
             this.app.runs.reconcile();
@@ -190,7 +193,8 @@ export class AgentHost {
             if(['running','archived'].includes(latest.state)||this.app.hostAccess.status({type:'user'},latest.id).pending)return null;
             const input=messageId?store.get<Message>('message',messageId,latest.projectId!):undefined;
             if(input){ensure(input.sessionId===latest.id,'SCOPE_DENIED','消息不属于此会话',403);if(input.status!=='queued')return null;}
-            const permission=this.app.sessionPermissions.capture(latest.id,!!input?.wakeupId);
+            const continuationId=input?.wakeupId?this.app.wakeups.get(SYSTEM,input.wakeupId).continuationId:undefined;
+            const permission=this.app.sessionPermissions.capture(latest.id,!!input?.wakeupId&&!continuationId);
             if(input&&!input.permission)ensure(permission.epoch===0&&permission.hostEpoch===0,'SESSION_PERMISSION_STALE','旧排队输入没有当前权限依据，请用户明确重试');
             if(input?.permission)ensure(JSON.stringify(input.permission)===JSON.stringify(permission),'SESSION_PERMISSION_STALE','排队消息权限已变化，请用户明确重试');
             if(latest.teamId){const team=store.get<Team>('team',latest.teamId,latest.projectId!);if(team.permission)this.app.sessionPermissions.assert(team.permission,false);else ensure(permission.epoch===0&&permission.hostEpoch===0,'SESSION_PERMISSION_STALE','旧协作计划没有当前权限依据');}
@@ -204,7 +208,8 @@ export class AgentHost {
                 if (m.wakeupId) this.app.wakeups.markStarted(m.wakeupId, next.id, next.generation, m.id);
             }
             const wakeupId=messageId?store.get<Message>('message',messageId).wakeupId:undefined;
-            const actor:Actor={type:'agent',projectId:next.projectId!,sessionId:next.id,role:next.role,generation:attempt?.generation??next.generation,...(attempt?{taskId:attempt.taskId,attemptId:attempt.id}:{}),...(wakeupId?{wakeupId}:{})};
+            const approvalResumeId=wakeupId?this.app.wakeups.get(SYSTEM,wakeupId).approvalId:undefined;
+            const actor:Actor={researchModelDigest:this.app.researchAutomation.modelIdentity(next),...(approvalResumeId?{approvalResumeId}:{}),...(messageId?{messageId}:{}),...(continuationId?{continuationId}:{}),type:'agent',projectId:next.projectId!,sessionId:next.id,role:next.role,generation:attempt?.generation??next.generation,...(attempt?{taskId:attempt.taskId,attemptId:attempt.id}:{}),...(wakeupId?{wakeupId}:{})};
             // Resolve against the pre-claim generation; the whole claim rolls back on missing capability.
             const bundleId=prepareSessionSkills(this.app,latest,actor);
             ensure(!attempt||attempt.skillBundleId===bundleId,'SKILL_BINDING_MISMATCH','任务与会话技能包不一致');
@@ -218,7 +223,9 @@ export class AgentHost {
         const {session:claimed,slot}=reservation,store=this.app.store;
         if(messageId){ensure(reservation.message?.id===messageId,'MESSAGE_STALE','领取正文缺失');prompt=messageInput(reservation.message);}
         const wakeupId = messageId ? store.get<Message>('message', messageId).wakeupId : undefined;
-        const actor: Actor = { permission:claimed.executionPermission,...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId!, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
+        const continuationId=wakeupId?this.app.wakeups.get(SYSTEM,wakeupId).continuationId:undefined;
+        const approvalResumeId=wakeupId?this.app.wakeups.get(SYSTEM,wakeupId).approvalId:undefined;
+        const actor: Actor = { researchModelDigest:this.app.researchAutomation.modelIdentity(claimed),...(approvalResumeId?{approvalResumeId}:{}),...(messageId?{messageId}:{}),...(continuationId?{continuationId}:{}),permission:claimed.executionPermission,...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId!, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
         let active:Active|undefined,requested=false;
         try {
         const bundleId=prepareSessionSkills(this.app,claimed,actor);
@@ -227,7 +234,8 @@ export class AgentHost {
         const connectionSnapshot=modelConnectionSnapshot(this.app.context.dataDir,claimed.model.provider),configuredConnection=connectionSnapshot.connection;
         if(configuredConnection)assertModelEnabled(this.app.context.dataDir,claimed.model,configuredConnection);
         const catalogFingerprint=publicationImageCatalog(join(this.app.context.dataDir,'models.json'),connectionSnapshot.catalog);
-        const toolDefinitions=this.tools.definitions(claimed.role,!!wakeupId,claimed.id);
+        actor.researchModelDigest=digest({model:claimed.model,connectionVersion:connectionSnapshot.version,connectionDigest:digest(connectionSnapshot.connection??null),catalogDigest:catalogFingerprint});
+        const toolDefinitions=this.tools.definitions(claimed.role,!!wakeupId,claimed.id,!!continuationId,!!approvalResumeId);
         const isolatedRunAnalysis=!!wakeupId&&this.app.wakeups.get(SYSTEM,wakeupId).sourceKind==='run-result';
         const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = isolatedRunAnalysis?join(home,'pi-analysis',wakeupId!):join(home, 'pi');
         mkdirSync(agentDir, { recursive: true, mode: 0o700 });
@@ -371,7 +379,7 @@ export class AgentHost {
         if (m?.type === 'tool_execution_start' || m?.type === 'tool_execution_end') {
             const tool = String(m.tool ?? '');
             // Revocation fences effects, but must not erase the final failure event for an already advertised tool.
-            if (!(a.advertisedTools??new Set(this.tools.definitions(a.actor.role!,!!a.actor.wakeupId,a.sessionId).map(definition=>definition.name))).has(tool)) return;
+            if (!(a.advertisedTools??new Set(this.tools.definitions(a.actor.role!,!!a.actor.wakeupId,a.sessionId,!!a.actor.continuationId,!!a.actor.approvalResumeId).map(definition=>definition.name))).has(tool)) return;
             const callId=String(m.toolCallId??tool),record=a.toolErrors?.get(callId),error=record?.tool===tool?record:undefined;
             const failed=m.type==='tool_execution_end'&&(m.isError||error);
             const reported=safeToolDiagnostic(schema.object({input:TOOL_DEFINITIONS[tool].inputSchema},['input']),m.diagnostic?.code,`${m.diagnostic?.path}: ${m.diagnostic?.reason}`);
@@ -407,7 +415,7 @@ export class AgentHost {
             const content=this.redact(String(m.content??''));
             this.app.store.transaction(()=>{
                 ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');
-                const allowed = a.advertisedTools??new Set(this.tools.definitions(a.actor.role!, !!a.actor.wakeupId,a.sessionId).map(definition => definition.name));
+                const allowed = a.advertisedTools??new Set(this.tools.definitions(a.actor.role!, !!a.actor.wakeupId,a.sessionId,!!a.actor.continuationId,!!a.actor.approvalResumeId).map(definition => definition.name));
                 const toolCalls = Array.isArray(m.toolCalls) ? m.toolCalls.filter((name:unknown):name is string => typeof name === 'string' && allowed.has(name)).slice(0,64) : [];
                 const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, generation:a.generation,phase:toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer',...(toolCalls.length ? {toolCalls} : {}), ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? this.clean(String(m.error)) : undefined, usage: m.usage });
                 this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, generation:s.generation,messageId: record.id });
@@ -480,6 +488,7 @@ export class AgentHost {
     }
     async stop() {
         this.stopped = true;
+        this.app.researchAutomation.stopOwner();
         if (this.timer)
             clearInterval(this.timer);
         const stopping=[...this.active.values()];

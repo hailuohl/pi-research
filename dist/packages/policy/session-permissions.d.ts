@@ -53,6 +53,8 @@ export declare class SessionPermissionService {
         available: boolean;
         reason: string;
         hostAccess: {
+            researchAutomation: boolean;
+            researchAutomationScope: number;
             sessionId: string;
             version: number;
             epoch: number;
@@ -67,7 +69,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -111,6 +113,8 @@ export declare class SessionPermissionService {
         available: boolean;
         reason: string;
         hostAccess: {
+            researchAutomation: boolean;
+            researchAutomationScope: number;
             sessionId: string;
             version: number;
             epoch: number;
@@ -125,7 +129,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -205,6 +209,8 @@ export declare class SessionPermissionService {
         available: boolean;
         reason: string;
         hostAccess: {
+            researchAutomation: boolean;
+            researchAutomationScope: number;
             sessionId: string;
             version: number;
             epoch: number;
@@ -219,7 +225,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "unknown" | "starting";
+                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;

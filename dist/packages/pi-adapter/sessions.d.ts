@@ -4,6 +4,7 @@ import type { AppContext } from '../domain/context.js';
 import type { Actor, Session, Message, ModelConfig, Role, Row, MessageAttachment } from '../domain/types.js';
 export declare class SessionService {
     private c;
+    onStop?: (sessionId: string, reason: string) => void;
     parsedAttachmentMetadata?: (actor: Actor, session: Row<Session>, pair: ParsedAttachmentPair) => ParsedAttachmentMetadata;
     permissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
     taskPermissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
@@ -24,6 +25,7 @@ export declare class SessionService {
         workspace?: string;
     }): Row<Session>;
     send(actor: Actor, id: string, value: unknown): Row<Message>;
+    sendApprovalNotice(actor: Actor, id: string, value: unknown, approvalNoticeId: string): Row<Message>;
     private sendMessage;
     queue(actor: Actor, id: string, input?: unknown): {
         items: {
@@ -53,6 +55,7 @@ export declare class SessionService {
             status: "queued" | "running" | "completed" | "failed" | "cancelled";
             error?: string;
             origin?: "user" | "automation";
+            approvalNoticeId?: string;
             wakeupId?: string;
             usage?: unknown;
         }[];
@@ -71,7 +74,7 @@ export declare class SessionService {
     /** Durable messages and the current generation's bounded preview share one read snapshot. */
     view(actor: Actor, id: string, input?: unknown): SessionView;
     /** Host-only persisted input; never masquerades as a user-authored message. */
-    automation(id: string, wakeupId: string, content: string): Row<Message>;
+    automation(id: string, wakeupId: string, content: string, permission?: import('../policy/session-permissions.js').PermissionReference): Row<Message>;
     system(id: string, content: string): Row<Message>;
     /** Host notices are transported as data, never as new system instructions.
      * Delivery is at-least-once until a successful prompt checkpoint is acknowledged. */

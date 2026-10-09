@@ -733,7 +733,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("configuration" | "revision")[];
+        readonly required: ("revision" | "configuration")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_enable: {
@@ -873,7 +873,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("configuration" | "revision")[];
+        readonly required: ("revision" | "configuration")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_list: {
@@ -1168,7 +1168,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("id" | "digest" | "source" | "resources" | "description")[];
+                    readonly required: ("digest" | "id" | "source" | "resources" | "description")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1597,7 +1597,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("value" | "reason" | "kind" | "skillId")[];
+                    readonly required: ("kind" | "reason" | "value" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1648,7 +1648,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("value" | "reason" | "kind" | "skillId")[];
+                    readonly required: ("kind" | "reason" | "value" | "skillId")[];
                     readonly additionalProperties: false;
                 };
             };

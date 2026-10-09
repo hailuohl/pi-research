@@ -480,7 +480,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("version" | "id" | "status" | "error" | "bytes" | "source" | "requestDigest" | "createdAt" | "kind" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                readonly required: ("version" | "bytes" | "id" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -569,7 +569,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                        readonly required: ("query" | "sources" | "limit" | "strategy" | "prioritize")[];
                         readonly additionalProperties: false;
                     };
                     readonly page: {
@@ -699,7 +699,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                                     };
                                 };
                             };
-                            readonly required: ("url" | "id" | "title" | "source" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "publicationDate")[];
+                            readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -721,7 +721,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("status" | "source" | "count")[];
+                            readonly required: ("source" | "status" | "count")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -772,7 +772,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("version" | "sources" | "id" | "status" | "query" | "createdAt" | "kind" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "query" | "sources" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -967,7 +967,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("version" | "id" | "title" | "source" | "createdAt" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                readonly required: ("version" | "id" | "source" | "createdAt" | "title" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                 readonly additionalProperties: false;
             };
             readonly minItems: number;
@@ -1006,7 +1006,7 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("version" | "model" | "usage" | "sources" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+    readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
     readonly additionalProperties: false;
 };
 export declare const DISCOVERY_GRANT_INPUT_SCHEMAS: {
@@ -1697,7 +1697,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "status" | "error" | "bytes" | "source" | "requestDigest" | "createdAt" | "kind" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("version" | "bytes" | "id" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1786,7 +1786,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly required: ("query" | "sources" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
                         readonly page: {
@@ -1916,7 +1916,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("url" | "id" | "title" | "source" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -1938,7 +1938,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("status" | "source" | "count")[];
+                                readonly required: ("source" | "status" | "count")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -1989,7 +1989,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("version" | "sources" | "id" | "status" | "query" | "createdAt" | "kind" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "query" | "sources" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2184,7 +2184,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "title" | "source" | "createdAt" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("version" | "id" | "source" | "createdAt" | "title" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2223,7 +2223,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "sources" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_inspect: {
@@ -2708,7 +2708,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "status" | "error" | "bytes" | "source" | "requestDigest" | "createdAt" | "kind" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("version" | "bytes" | "id" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -2797,7 +2797,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly required: ("query" | "sources" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
                         readonly page: {
@@ -2927,7 +2927,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("url" | "id" | "title" | "source" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -2949,7 +2949,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("status" | "source" | "count")[];
+                                readonly required: ("source" | "status" | "count")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -3000,7 +3000,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("version" | "sources" | "id" | "status" | "query" | "createdAt" | "kind" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "query" | "sources" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3195,7 +3195,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "title" | "source" | "createdAt" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("version" | "id" | "source" | "createdAt" | "title" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3234,7 +3234,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "sources" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_activate: {
@@ -3719,7 +3719,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "status" | "error" | "bytes" | "source" | "requestDigest" | "createdAt" | "kind" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("version" | "bytes" | "id" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -3808,7 +3808,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly required: ("query" | "sources" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
                         readonly page: {
@@ -3938,7 +3938,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("url" | "id" | "title" | "source" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -3960,7 +3960,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("status" | "source" | "count")[];
+                                readonly required: ("source" | "status" | "count")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -4011,7 +4011,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("version" | "sources" | "id" | "status" | "query" | "createdAt" | "kind" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "query" | "sources" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -4206,7 +4206,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "title" | "source" | "createdAt" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("version" | "id" | "source" | "createdAt" | "title" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -4245,7 +4245,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "sources" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
     readonly discovery_grant_revoke: {
@@ -4730,7 +4730,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "status" | "error" | "bytes" | "source" | "requestDigest" | "createdAt" | "kind" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
+                    readonly required: ("version" | "bytes" | "id" | "source" | "requestDigest" | "error" | "createdAt" | "kind" | "status" | "host" | "projectId" | "updatedAt" | "startedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "scopeGeneration" | "operationKeyDigest" | "requestUrlDigest" | "httpStatus" | "retryAfter")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -4819,7 +4819,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("sources" | "query" | "limit" | "strategy" | "prioritize")[];
+                            readonly required: ("query" | "sources" | "limit" | "strategy" | "prioritize")[];
                             readonly additionalProperties: false;
                         };
                         readonly page: {
@@ -4949,7 +4949,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         };
                                     };
                                 };
-                                readonly required: ("url" | "id" | "title" | "source" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "publicationDate")[];
+                                readonly required: ("id" | "source" | "title" | "abstract" | "duplicates" | "contentKind" | "fullTextRead" | "url" | "publicationDate")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -4971,7 +4971,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: ("status" | "source" | "count")[];
+                                readonly required: ("source" | "status" | "count")[];
                                 readonly additionalProperties: false;
                             };
                         };
@@ -5022,7 +5022,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("version" | "sources" | "id" | "status" | "query" | "createdAt" | "kind" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
+                    readonly required: ("version" | "id" | "createdAt" | "kind" | "status" | "query" | "sources" | "coverage" | "projectId" | "updatedAt" | "settingsVersion" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "retrievedAt" | "items" | "request")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -5217,7 +5217,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("version" | "id" | "title" | "source" | "createdAt" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
+                    readonly required: ("version" | "id" | "source" | "createdAt" | "title" | "kind" | "artifactId" | "contentKind" | "requestedId" | "projectId" | "updatedAt" | "discoveryGrant" | "scopeSessionId" | "scopeTaskId" | "scopeAttemptId" | "idInSource" | "artifactDigest" | "rawArtifactIds" | "fullTextRead" | "retrievedAt" | "discoveryCallIds" | "discoveryRequestDigest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -5256,7 +5256,7 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "model" | "usage" | "sources" | "id" | "digest" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
+        readonly required: ("version" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "sources" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "settingsVersion" | "searches" | "targets" | "allowSearchResults" | "formats" | "maxRequests" | "maxResponseBytes" | "effectiveState" | "reasons" | "searchResults" | "calls" | "papers")[];
         readonly additionalProperties: false;
     };
 };

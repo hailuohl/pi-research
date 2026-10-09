@@ -17,6 +17,7 @@ import { verifySnapshot } from './files.js';
 import { readStableFile } from './stable-file.js';
 import { EXAMPLE_CONTRACT, validateContract } from '../runners/contracts.js';
 export class ExperimentService {
+    automation?:import('../policy/research-automation.js').ResearchAutomationService;
     constructor(private c: AppContext, private projects: ProjectService, private briefs?: ResearchBriefService) { }
     get(actor: Actor, id: string) { const e = this.c.store.get<Experiment>('experiment', id); scope(actor, e.projectId!); return e; }
     /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
@@ -35,6 +36,7 @@ export class ExperimentService {
         ensure(x.expectedParentRevision===undefined||!!x.parentId,'INVALID_INPUT','expectedParentRevision需要parentId');
         return this.c.store.transaction(() => {
             assertProjectWritable(this.c.store,projectId);
+            const fixed=actor.continuationId?this.automation!.variantSource(actor,projectId,x):undefined;
             const p=this.projects.get(actor,projectId);
             const parent = x.parentId ? this.c.store.get<Experiment>('experiment', text(x.parentId, 'parentId'), projectId) : undefined;
             const interactiveRoot=actor.type==='user'||actor.type==='agent'&&actor.role==='coordinator';
@@ -52,7 +54,7 @@ export class ExperimentService {
                 ensure(digest(x.contract) === parent.contractDigest, 'CONTRACT_CHANGED', '子实验必须继承固定运行契约', 400);
             const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');
             mkdirSync(workspace, { recursive: true, mode: 0o700 });
-            const source = this.c.store.paths.physical(parent?.workspace ?? p.workspace);
+            const source = this.c.store.paths.physical(fixed?.snapshot.path??parent?.workspace ?? p.workspace);
             for (const f of listFiles(source)) {
                 ensure(f.size <= 16 * 1024 * 1024, 'FILE_TOO_LARGE', '请独立版本化大型数据集', 413);
                 const dest = safePath(workspace, f.path);
@@ -66,6 +68,7 @@ export class ExperimentService {
             }
             const e = this.c.store.create<Experiment>('experiment', projectId, { title: text(x.title, 'title', 200), hypothesis: text(x.hypothesis ?? '尚未填写假设', 'hypothesis', 10000), parentId: parent?.id ?? null, lifecycle: 'provisional', contract, contractDigest: digest(contract), workspace:this.c.store.paths.reference(workspace), notes: [], revision: 1,...(researchBrief?{researchBrief}:{}) }, id);
             captureSourceRevision(this.c,e);
+            if(fixed)this.automation!.recordVariant(actor,e,fixed);
             this.c.store.event(projectId, 'experiment.created', { id, parentId: e.parentId });
             return e;
         });

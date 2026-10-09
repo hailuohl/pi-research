@@ -104,9 +104,10 @@ export class ResearchBriefService {
         ensure(root.role === 'coordinator' && !root.taskId && !root.teamId,
             'INVALID_ROOT_SESSION', '研究简报只属于项目主协调会话', 403);
         if (actor.type === 'agent') {
+            if(actor.continuationId)this.app.researchAutomation.assertActor(actor);
             const teamId = (actor as Actor & {teamId?: string}).teamId;
             ensure(actor.projectId === projectId && actor.sessionId === root.id && actor.role === 'coordinator' &&
-                !actor.taskId && !actor.attemptId && !actor.wakeupId && !teamId, 'TASK_SCOPE_DENIED', '只有本主会话的交互式协调者可操作研究简报', 403);
+                !actor.taskId && !actor.attemptId && (!actor.wakeupId || !!actor.continuationId) && !teamId, 'TASK_SCOPE_DENIED', '只有本主会话的交互式协调者可操作研究简报', 403);
             ensure(root.state === 'running' && root.generation === actor.generation && root.leaseUntil > Date.now(),
                 'LEASE_EXPIRED', '主会话执行租约已失效', 403);
         } else if (writable) ensure(root.state !== 'archived', 'SESSION_ARCHIVED', '主会话已归档');

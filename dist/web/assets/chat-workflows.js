@@ -411,7 +411,7 @@ class ChatWorkflows extends React.Component {
         /* @__PURE__ */ jsx(WorkingGrants, { data, session, busy: disabled, perform, dirty: false })
       ] }) : null,
       tasks.slice().reverse().map((t) => {
-        const a = data.approvals.find((a2) => a2.id === t.grantId), derived = t.manifest.workingGrant, grant = (data.workingGrants ?? []).find((g) => g.id === session.workingGrantId), oldTemplate = !!session.workingGrantId && !derived, grantOpen = !session.workingGrantId || derived?.id === session.workingGrantId && grant?.effectiveState === "active" && grant.validity === "current" && Date.parse(grant.expiresAt) > Date.now(), actionable = !t.jobId && !oldTemplate && !!a && ["pending", "approved"].includes(a.status);
+        const a = data.approvals.find((a2) => a2.id === t.grantId), derived = t.manifest.workingGrant, grant = (data.workingGrants ?? []).find((g) => g.id === session.workingGrantId), oldTemplate = !!session.workingGrantId && !derived, grantOpen = !session.workingGrantId || derived?.id === session.workingGrantId && grant?.effectiveState === "active" && grant.validity === "current" && Date.parse(grant.expiresAt) > Date.now(), expired = Date.parse(t.manifest.deadline) <= Date.now(), actionable = !expired && !t.jobId && !oldTemplate && !!a && ["pending", "approved"].includes(a.status);
         return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: actionable, children: [
           /* @__PURE__ */ jsxs("summary", { children: [
             "\u5F00\u53D1\u6D4B\u8BD5 \xB7 ",
@@ -428,6 +428,7 @@ class ChatWorkflows extends React.Component {
             /* @__PURE__ */ jsx("summary", { children: "\u56FA\u5B9A\u6E90\u7801\u3001\u955C\u50CF\u3001\u8D44\u6E90\u4E0E\u4EA7\u7269" }),
             /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ developmentTaskId: t.id, sourceDigest: t.sourceDigest, manifest: t.manifest }, null, 2) })
           ] }),
+          expired && !t.jobId ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u56FA\u5B9A\u6D4B\u8BD5\u6E05\u5355\u5DF2\u8FC7\u671F\uFF1B\u539F\u6279\u51C6\u4E0E\u6E90\u7801\u4FDD\u7559\u3002\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u51C6\u5907\u6D4B\u8BD5\uFF0C\u4E0D\u4F1A\u5EF6\u957F\u6216\u8865\u8DD1\u6B64\u6E05\u5355\u3002" }) : null,
           oldTemplate ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u5DF2\u7ED1\u5B9A\u6709\u754C\u6388\u6743\uFF0C\u65E7\u5355\u6B21\u6D4B\u8BD5\u6A21\u677F\u4E0D\u53EF\u63D0\u4EA4\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u8981\u6C42\u91CD\u65B0\u51C6\u5907\u3002" }) : null,
           actionable ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
             /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: disabled || !grantOpen, onClick: () => perform(async () => {

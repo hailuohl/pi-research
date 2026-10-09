@@ -10,6 +10,11 @@ export interface Entity {
 export type Row<T = Record<string, unknown>> = Entity & T;
 export type Role = 'coordinator' | 'literature' | 'designer' | 'implementer' | 'analyst' | 'reviewer' | 'writer';
 export interface Actor {
+    /** Host-only current input and validated continuation; never tool arguments. */
+    messageId?:string;
+    researchModelDigest?:string;
+    continuationId?:string;
+    approvalResumeId?:string;
     /** Host-only; never parsed from request/tool input. */
     permissionActionId?:string;
     permission?: import('../policy/session-permissions.js').PermissionReference;
@@ -92,6 +97,8 @@ export interface Message {
     status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
     error?: string;
     origin?: 'user' | 'automation';
+    /** Host-generated approval follow-up, never a new research goal. */
+    approvalNoticeId?:string;
     wakeupId?: string;
     usage?: unknown;
 }
@@ -108,6 +115,7 @@ export interface MessageAttachment {
     size:number;
 }
 export interface Approval {
+    fullAccess?: import('../policy/research-automation.js').FullAccessReference;
     runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
     workingGrant?: import('../execution/contracts.js').WorkingGrantReference;
     subjectKind: string;

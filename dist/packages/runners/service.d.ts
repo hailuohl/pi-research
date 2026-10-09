@@ -1,6 +1,6 @@
 import { BudgetService } from '../policy/budget.js';
 import type { AppContext } from '../domain/context.js';
-import type { Actor, RunIntent, Run, Row } from '../domain/types.js';
+import type { Actor, Approval, RunIntent, Run, Manifest, Row } from '../domain/types.js';
 import type { ResearchBriefService } from '../research-workflows/briefs.js';
 import type { DockerRunResult } from './adapter.js';
 import { ApprovalService } from '../policy/approvals.js';
@@ -14,6 +14,7 @@ export declare class RunService {
     private compute;
     private briefs?;
     private budget;
+    automation?: import('../policy/research-automation.js').ResearchAutomationService;
     permissionCapture?: (actor: Actor, execution: import('../policy/session-permissions.js').ApprovedExecution) => import('../policy/session-permissions.js').JobPermission | undefined;
     permissionGuard?: (permission: import('../policy/session-permissions.js').JobPermission, execution: import('../policy/session-permissions.js').ApprovedExecution, sessionId?: string) => void;
     permissionForSession?: (id: string) => import('../policy/session-permissions.js').PermissionReference;
@@ -31,7 +32,7 @@ export declare class RunService {
             experimentId: string;
             intentId: string;
             state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
-            integrity: "incomplete" | "pending" | "complete" | "invalid";
+            integrity: "pending" | "complete" | "incomplete" | "invalid";
             judgment: "pending" | "supported" | "not_supported" | "inconclusive";
             manifestDigest: string;
             createdAt: string;
@@ -40,7 +41,23 @@ export declare class RunService {
         cursor: number;
         hasMore: boolean;
     };
-    prepare(actor: Actor, experimentId: string, selectedRootSessionId?: string, autoAnalyze?: boolean): Row<RunIntent>;
+    prepare(actor: Actor, experimentId: string, selectedRootSessionId?: string, autoAnalyze?: boolean): {
+        approval: Row<Approval>;
+        id: string;
+        kind: string;
+        projectId: string | null;
+        version: number;
+        createdAt: string;
+        updatedAt: string;
+        rootSessionId?: string;
+        runGrant?: import("../policy/run-grant-types.js").RunGrantReference;
+        experimentId: string;
+        manifest: Manifest;
+        manifestDigest: string;
+        approvalId: string;
+        status: "prepared" | "submitted";
+        runId?: string;
+    };
     assertIntentActor(actor: Actor, intent: Row<RunIntent>): void;
     submit(actor: Actor, id: string): Row<Run>;
     /** Keep the version read and heartbeat write in one inter-process SQLite transaction. */

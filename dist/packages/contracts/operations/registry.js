@@ -5,6 +5,7 @@ import { routePaperId, parseSearch } from '../../connectors/contracts.js';
 import { ensure } from '../../domain/errors.js';
 import { publicRecords } from '../../domain/public-record.js';
 import { text, object, integer } from '../validation.js';
+import { CONTINUATION_TOOLS, APPROVAL_RESUME_TOOLS } from '../../policy/research-automation.js';
 import { interactiveCoordinator, scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
 import { assertProjectWritable } from '../../policy/lifecycle.js';
 import { readText, writeText, listFiles } from '../../workspace/files.js';
@@ -117,11 +118,11 @@ function executeRegistered(c, name, x) {
         case 'project_inspect': {
             const inspect = () => {
                 const project = app.projects.get(actor, pid);
-                const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId ? app.wakeups.resources(actor) : null;
+                const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId && !actor.continuationId ? app.wakeups.resources(actor) : null;
                 const runs = app.store.list('run', pid).filter(r => !grant || grant.runIds.has(r.id));
                 const campaigns = !actor.taskId && !actor.wakeupId && session?.role === 'coordinator' && !session.taskId && session.state !== 'archived'
                     ? app.store.list('campaign', pid).filter(c => c.rootSessionId === session.id).map(({ id, goal, state }) => ({ id, goal, state })) : [];
-                const interactive = !actor.taskId && !actor.wakeupId && session?.role === 'coordinator' && !session.taskId && session.state !== 'archived';
+                const interactive = !actor.taskId && (!actor.wakeupId || !!actor.continuationId) && session?.role === 'coordinator' && !session.taskId && session.state !== 'archived';
                 if (x.runIntentId !== undefined) {
                     ensure(interactive, 'RUN_SESSION_REQUIRED', '运行意向回查需要当前交互主会话');
                     const selected = app.store.get('run-intent', x.runIntentId, pid);
@@ -160,7 +161,7 @@ function executeRegistered(c, name, x) {
         case 'agent_delegate': return app.teams.create(actor, session.id, x);
         case 'task_inspect': {
             const tasks = app.teams.tasks(actor, session?.teamId ?? text(x.teamId, 'teamId', 100));
-            const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId ? app.wakeups.resources(actor) : null;
+            const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId && !actor.continuationId ? app.wakeups.resources(actor) : null;
             return tasks.filter(t => !grant || grant.taskIds.has(t.id));
         }
         case 'task_result_read': {
@@ -239,8 +240,12 @@ const SPECS = [
     make('document_page_read', { idempotencyPolicy: 'read-only', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.documentParsing.readPage(c.actor, c.projectId, x.parseResultId, x.pageNumber, x.cursor, x.limit) }),
     make('document_evidence_register', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.evidence.registerDocument(c.actor, c.projectId, x) }),
     make('local_runtime_configure', { idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.localRuntimes.configure(c.actor, x) }),
-    make('execution_environment_list', { idempotencyPolicy: 'read-only', authorize: c => { if (c.actor.type === 'agent')
-            interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'execution_environment_list'));
+    make('execution_environment_list', { idempotencyPolicy: 'read-only', authorize: c => { if (c.actor.type === 'agent') {
+            if (c.actor.continuationId)
+                c.app.researchAutomation.assertActor(c.actor);
+            else
+                interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'execution_environment_list'));
+        }
         else
             userOnly(c.actor); }, preconditions: noPrecondition, execute: c => { const runtimes = c.app.localRuntimes.list(), currentDockerContext = c.app.computeMonitor.currentDockerContext; return { local: { platform: process.platform, hostId: runtimes[0]?.hostId ?? 'unconfigured', runtimes, runTargets: runtimes.map(r => ({ runner: 'local', localRuntimeId: r.id })), status: runtimes.length ? 'configured' : 'unconfigured', hardware: localHardware(), isolation: 'none', resourceEnforcement: 'advisory', networkIsolation: false }, connections: { ...new ComputeConnectionService(c.app.context).list(c.actor, c.app.sshTargets), ...(currentDockerContext ? { currentDockerContext } : {}) }, gpuTargets: c.app.gpus.list(), sshTargets: c.app.sshTargets.list({ type: 'user' }) }; } }),
     make('docker_connection_probe', { idempotencyPolicy: 'key-required', asynchronous: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: async (c, x) => { const connections = new ComputeConnectionService(c.app.context); let context = x.context; try {
@@ -407,7 +412,7 @@ export class OperationRegistry {
         ensure(s.role === actor.role && s.projectId === actor.projectId && s.taskId === actor.taskId, 'SCOPE_DENIED', '角色或任务与会话归属不一致', 403);
         toolAllowed(actor, name);
         if (actor.wakeupId) {
-            ensure(AUTOMATION_TOOLS.includes(name), 'AUTOMATION_TOOL_DENIED', '自动分析不能执行计算、修改工作区、批准或继续委派', 403);
+            ensure((actor.continuationId ? CONTINUATION_TOOLS : actor.approvalResumeId ? APPROVAL_RESUME_TOOLS : AUTOMATION_TOOLS).includes(name), 'AUTOMATION_TOOL_DENIED', '自动分析不能执行计算、修改工作区、批准或继续委派', 403);
             const w = this.app.wakeups.get(actor, actor.wakeupId);
             ensure(w.rootSessionId === s.id && w.generation === actor.generation, 'SCOPE_DENIED', '通知与会话执行不匹配', 403);
         }
@@ -426,6 +431,10 @@ export class OperationRegistry {
         const s = this.agentIdentity(actor, name);
         if (actor.wakeupId)
             this.app.wakeups.assertActive(actor);
+        if (actor.continuationId)
+            this.app.researchAutomation.assertActor(actor);
+        if (actor.approvalResumeId)
+            this.app.wakeups.assertApprovalResume(actor);
         if (actor.taskId)
             this.app.teams.active(actor);
         else

@@ -96,7 +96,7 @@ try {
                 observedCancel = true;
                 void processHandle.cancel();
             }
-            else if (r.runGrant && !authorityError) {
+            else if ((r.runGrant || app.researchAutomation.authorization(r.intentId)) && !authorityError) {
                 try {
                     service.assertExecutionGrant(r, false);
                 }

@@ -117,8 +117,10 @@ export class SourceAccessService {
             this.app.workingGrants.assertSourcePreparation(actor, projectId, sessionId);
             const s = this.app.store.get('session', sessionId, projectId);
             ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
+            if (actor.continuationId)
+                this.app.researchAutomation.assertActor(actor);
             if (actor.type === 'agent')
-                ensure(actor.sessionId === s.id && ROLE_TOOLS[s.role].includes('workspace_write') && !actor.wakeupId, 'TOOL_DENIED', '只能准备当前有写权限的会话', 403);
+                ensure(actor.sessionId === s.id && ROLE_TOOLS[s.role].includes('workspace_write') && (!actor.wakeupId || !!actor.continuationId), 'TOOL_DENIED', '只能准备当前有写权限的会话', 403);
             else
                 ensure(actor.type === 'user' && s.role === 'coordinator' && !s.taskId, 'PERMISSION_DENIED', '只能准备主协调者工作区', 403);
             const selector = this.selector(value);
@@ -129,6 +131,8 @@ export class SourceAccessService {
                     captureSourceRevision(this.app.context, e, true);
             }
             const r = this.resolve(actor, projectId, selector);
+            if (actor.continuationId)
+                ensure(this.app.researchAutomation.assertActor(actor).sourceRevisionId === r.id, 'AUTOMATION_SOURCE_CHANGED', '续接不能替换冻结的私有源码来源');
             ensure(this.app.store.get('experiment', r.experimentId, projectId).lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能初始化新的工作区');
             ensure(s.state !== 'running' || actor.type === 'agent' && actor.sessionId === s.id, 'SESSION_BUSY', '会话正在运行');
             ensure(!this.app.store.list('task-attempt', projectId).some(a => a.sessionId === s.id && a.state === 'running' && a.id !== actor.attemptId), 'SESSION_BUSY', '另一个任务 Worker 正在使用工作区');
