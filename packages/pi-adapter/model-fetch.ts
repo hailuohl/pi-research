@@ -1,5 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {setTimeout as delay} from 'node:timers/promises';
+import {isProviderTimeout,PROVIDER_TIMEOUT_FAILURE} from './runtime.js';
 
 /** Count the HTTP transport lifetime, including the streamed body, rather than an SDK turn. */
 export function managedModelFetch(fetcher:typeof fetch,acquire:(key:string)=>Promise<{allowed:boolean}>,finish:(key:string,value:{state:'succeeded'|'failed'|'cancelled';httpStatus?:number;receivedBytes?:number})=>Promise<unknown>,stop:AbortSignal):typeof fetch {
@@ -17,7 +18,7 @@ export function managedModelFetch(fetcher:typeof fetch,acquire:(key:string)=>Pro
   const aborted=()=>{void close().catch(()=>{});};signal.addEventListener('abort',aborted,{once:true});
   if(signal.aborted)await close();
   const body=new ReadableStream<Uint8Array>({
-   async pull(controller){try{signal.throwIfAborted();const next=await reader.read();signal.throwIfAborted();if(next.done){signal.removeEventListener('abort',aborted);await end(response.ok?'succeeded':'failed');controller.close();}else{receivedBytes+=next.value.byteLength;controller.enqueue(next.value);}}catch(error){signal.removeEventListener('abort',aborted);try{await reader.cancel();}finally{await end(signal.aborted?'cancelled':'failed');}controller.error(error);}},
+   async pull(controller){try{signal.throwIfAborted();const next=await reader.read();signal.throwIfAborted();if(next.done){signal.removeEventListener('abort',aborted);await end(response.ok?'succeeded':'failed');controller.close();}else{receivedBytes+=next.value.byteLength;controller.enqueue(next.value);}}catch(error){signal.removeEventListener('abort',aborted);try{await reader.cancel();}catch{}finally{await end(signal.aborted?'cancelled':'failed');}controller.error(!signal.aborted&&isProviderTimeout(error)?new Error(PROVIDER_TIMEOUT_FAILURE):error);}},
    async cancel(){signal.removeEventListener('abort',aborted);await close();}
   },{highWaterMark:0});
   const wrapped=new Response(body,{status:response.status,statusText:response.statusText,headers:response.headers});

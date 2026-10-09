@@ -6,6 +6,7 @@ import { integer, object, text, oneOf } from '../contracts/validation.js';
 import { userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { validateModelDefinition, defaultModelDefinition } from './model-definition.js';
+import { isProviderTimeout, PROVIDER_TIMEOUT_FAILURE } from './runtime.js';
 export const CONNECTION_APIS = ['openai-completions', 'openai-responses', 'anthropic-messages'];
 export const CONNECTION_FILE = 'model-connections.json';
 export const EMPTY_MODEL_CREDENTIALS = { read: async () => undefined, list: async () => [], modify: async () => undefined, delete: async () => { } };
@@ -204,7 +205,9 @@ export function connectionFetch(fetcher, endpoint) {
         try {
             response = await fetcher(input, { ...init, redirect: 'error' });
         }
-        catch {
+        catch (error) {
+            if (error?.name === 'AbortError' || isProviderTimeout(error))
+                throw new DOMException('模型请求已中止', 'AbortError');
             throw new Error('PROVIDER_REQUEST_FAILED: 模型连接请求失败或被中止，请核对配置与网络');
         }
         if (!response.ok) {
@@ -217,22 +220,22 @@ export function connectionFetch(fetcher, endpoint) {
 const STREAM_FAILURE = 'PROVIDER_STREAM_FAILED: 模型返回错误或流中断，请核对连接与模型服务';
 /** Sanitize the SDK protocol before the agent sees or persists its final message, including HTTP 200 errors. */
 export function safeConnectionStream(source) {
-    const safe = (message) => message.errorMessage === undefined ? message : { ...message, errorMessage: message.stopReason === 'aborted' ? '模型请求已中止' : STREAM_FAILURE };
+    const safe = (message) => message.errorMessage === undefined ? message : { ...message, errorMessage: message.stopReason === 'aborted' ? '模型请求已中止' : isProviderTimeout(message.errorMessage) ? PROVIDER_TIMEOUT_FAILURE : STREAM_FAILURE };
     const iterate = source[Symbol.asyncIterator].bind(source), result = source.result.bind(source);
     source[Symbol.asyncIterator] = async function* () {
         try {
             for await (const event of { [Symbol.asyncIterator]: iterate })
                 yield event.type === 'error' ? { ...event, error: safe(event.error) } : event.type === 'done' ? { ...event, message: safe(event.message) } : 'partial' in event ? { ...event, partial: safe(event.partial) } : event;
         }
-        catch {
-            throw new Error(STREAM_FAILURE);
+        catch (error) {
+            throw new Error(isProviderTimeout(error) ? PROVIDER_TIMEOUT_FAILURE : STREAM_FAILURE);
         }
     };
     source.result = async () => { try {
         return safe(await result());
     }
-    catch {
-        throw new Error(STREAM_FAILURE);
+    catch (error) {
+        throw new Error(isProviderTimeout(error) ? PROVIDER_TIMEOUT_FAILURE : STREAM_FAILURE);
     } };
     return source;
 }

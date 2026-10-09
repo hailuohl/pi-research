@@ -1,7 +1,7 @@
 import {validateSchema, s as schema, type JsonSchema} from '../contracts/operations/schema.js';
 import type { CreateAgentSessionOptions, ToolDefinition, Skill } from '@earendil-works/pi-coding-agent';
 import {publicationImageResult,PUBLICATION_IMAGE_TOOL,documentImageResult,DOCUMENT_IMAGE_TOOL} from './publication-image.js';
-import { piFailure } from './runtime.js';
+import { piFailure, MODEL_HTTP_TIMEOUT_MS } from './runtime.js';
 import { readFileSync, existsSync } from 'node:fs';
 import type { Role, ModelConfig } from '../domain/types.js';
 import type {PiThinking} from './model-management-types.js';
@@ -55,7 +55,7 @@ export function buildSessionOptions(sdk: Pick<typeof import('@earendil-works/pi-
         // tools:[] would also suppress custom tools on the pinned SDK. Use an explicit allowlist.
         tools: customTools.map(t => t.name), noTools: 'builtin', customTools,
         sessionManager,
-        settingsManager: sdk.SettingsManager.inMemory({ defaultTools: [], images:{autoResize:false}, compaction: { enabled: false }, retry: { enabled: false, maxRetries: 0, provider: { maxRetries: 0 } }, cacheWarming: 'off', enableAnalytics: false, enableInstallTelemetry: false, defaultProjectTrust: 'never', httpIdleTimeoutMs: 120000 }),
+        settingsManager: sdk.SettingsManager.inMemory({ defaultTools: [], images:{autoResize:false}, compaction: { enabled: false }, retry: { enabled: false, maxRetries: 0, provider: { maxRetries: 0 } }, cacheWarming: 'off', enableAnalytics: false, enableInstallTelemetry: false, defaultProjectTrust: 'never', httpIdleTimeoutMs: MODEL_HTTP_TIMEOUT_MS }),
         // Native /skill expansion reads filePath without our digest check. All skill text crosses the controlled tool instead.
         resourceLoader: { getExtensions: () => ({ extensions: [], errors: [], runtime: sdk.createExtensionRuntime() }), getSkills: () => ({ skills: [], diagnostics: [] }), getPrompts: () => ({ prompts: [], diagnostics: [] }), getThemes: () => ({ themes: [], diagnostics: [] }), getAgentsFiles: () => ({ agentsFiles: [] }), getSystemPrompt: () => setup.systemPrompt, getSystemPromptSource: () => undefined, getAppendSystemPrompt: () => [], getAppendSystemPromptSources: () => [], extendResources: () => { }, reload: async () => { } }
     } satisfies CreateAgentSessionOptions;

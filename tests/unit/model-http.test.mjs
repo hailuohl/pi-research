@@ -11,6 +11,11 @@ function configure(s,maxRequests){assert.throws(()=>s.app.modelHttp.configure(US
 const view=s=>s.app.modelHttp.inspect(USER,s.project.id);
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 
+test('managed streamed body retains a typed timeout as a fixed diagnostic without its private cause',async()=>{
+ const receipts=[],error=new TypeError('private provider response',{cause:{code:'UND_ERR_BODY_TIMEOUT',message:'private credential'}}),f=managedModelFetch(async()=>new Response(new ReadableStream({pull(c){c.error(error);}})),async()=>({allowed:true}),async(k,r)=>receipts.push(r),new AbortController().signal);
+ const response=await f('https://fixture.invalid');await assert.rejects(response.text(),e=>e.message.startsWith('PROVIDER_TIMEOUT:')&&!String(e).includes('private')&&e.cause===undefined);assert.equal(receipts.length,1);assert.equal(receipts[0].state,'failed');
+});
+
 test('persisted zero host HTTP limit no longer blocks dispatch or hides unknown request history',()=>{const s=setup();try{
  const w=worker(s),old=s.app.store.get('model-http-capacity','global');s.app.store.update('model-http-capacity',old.id,old.version,{maxRequests:0});
  for(let i=0;i<4;i++)assert.equal(s.app.modelHttp.acquire(w,'unlimited-'+i).allowed,true);assert.equal(view(s).counts.active,4);assert.equal(view(s).configuration.maxRequests,null);

@@ -12,6 +12,7 @@ import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
 import {configureModelConnection} from '../../dist/packages/pi-adapter/model-connections.js';
 import {setup,USER} from '../support/research.mjs';
 import {publicationImageCatalog} from '../../dist/packages/pi-adapter/publication-image.js';
+import {locatePi} from '../../dist/packages/pi-adapter/runtime.js';
 
 test('owner HTTP configuration reaches the real Pi Worker, survives restart and keeps secrets out of history and HTTP output',async()=>{
  const dir=mkdtempSync(join(realpathSync.native(tmpdir()),'pi-connection-http-')),requests=[],fakeKey='!FAKE_literal_key_not_a_command';
@@ -80,7 +81,7 @@ test('owner HTTP configuration reaches the real Pi Worker, survives restart and 
 
 test('real Worker sanitizes a 200 response reader exception before native persistence, DB records and IPC',async()=>{
  const s=setup(),fakeKey='!FAKE_reader_error_key',worker=join(s.dir,'reader-worker.mjs'),out=[];
- writeFileSync(worker,`globalThis.fetch=async()=>new Response(new ReadableStream({pull(controller){controller.error(new Error(process.env.PI_API_KEY));}}),{headers:{'content-type':'text/event-stream'}});await import(${JSON.stringify(pathToFileURL(resolve('dist/apps/agent-worker/index.js')).href)});`);
+ writeFileSync(worker,`await import(${JSON.stringify(new URL('./core/http-dispatcher.js',pathToFileURL(locatePi(process.cwd()).sdkPath)).href)});globalThis.fetch=async()=>new Response(new ReadableStream({pull(controller){controller.error(new Error(process.env.PI_API_KEY));}}),{headers:{'content-type':'text/event-stream'}});await import(${JSON.stringify(pathToFileURL(resolve('dist/apps/agent-worker/index.js')).href)});`);
  const host=new AgentHost(s.app,{workerEntry:worker});
  try{
   configureModelConnection(s.app.context,USER,{expectedVersion:0,provider:'reader-fixture',name:'reader',baseUrl:'http://127.0.0.1:1/v1',api:'openai-completions',apiKey:fakeKey},'reader-config');

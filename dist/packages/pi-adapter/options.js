@@ -1,6 +1,6 @@
 import { validateSchema, s as schema } from '../contracts/operations/schema.js';
 import { publicationImageResult, PUBLICATION_IMAGE_TOOL, documentImageResult, DOCUMENT_IMAGE_TOOL } from './publication-image.js';
-import { piFailure } from './runtime.js';
+import { piFailure, MODEL_HTTP_TIMEOUT_MS } from './runtime.js';
 import { readFileSync, existsSync } from 'node:fs';
 /** Validate raw model arguments before Pi's optional-null normalization and primitive coercion. */
 export function buildCustomTools(definitions, dispatch) {
@@ -56,7 +56,7 @@ export function buildSessionOptions(sdk, setup, customTools, modelRuntime, model
         // tools:[] would also suppress custom tools on the pinned SDK. Use an explicit allowlist.
         tools: customTools.map(t => t.name), noTools: 'builtin', customTools,
         sessionManager,
-        settingsManager: sdk.SettingsManager.inMemory({ defaultTools: [], images: { autoResize: false }, compaction: { enabled: false }, retry: { enabled: false, maxRetries: 0, provider: { maxRetries: 0 } }, cacheWarming: 'off', enableAnalytics: false, enableInstallTelemetry: false, defaultProjectTrust: 'never', httpIdleTimeoutMs: 120000 }),
+        settingsManager: sdk.SettingsManager.inMemory({ defaultTools: [], images: { autoResize: false }, compaction: { enabled: false }, retry: { enabled: false, maxRetries: 0, provider: { maxRetries: 0 } }, cacheWarming: 'off', enableAnalytics: false, enableInstallTelemetry: false, defaultProjectTrust: 'never', httpIdleTimeoutMs: MODEL_HTTP_TIMEOUT_MS }),
         // Native /skill expansion reads filePath without our digest check. All skill text crosses the controlled tool instead.
         resourceLoader: { getExtensions: () => ({ extensions: [], errors: [], runtime: sdk.createExtensionRuntime() }), getSkills: () => ({ skills: [], diagnostics: [] }), getPrompts: () => ({ prompts: [], diagnostics: [] }), getThemes: () => ({ themes: [], diagnostics: [] }), getAgentsFiles: () => ({ agentsFiles: [] }), getSystemPrompt: () => setup.systemPrompt, getSystemPromptSource: () => undefined, getAppendSystemPrompt: () => [], getAppendSystemPromptSources: () => [], extendResources: () => { }, reload: async () => { } }
     };

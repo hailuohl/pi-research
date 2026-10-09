@@ -1,6 +1,15 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 export const PI_VERSION = '0.87.1';
+export const MODEL_HTTP_TIMEOUT_MS = 600000;
+export const PROVIDER_TIMEOUT_FAILURE = 'PROVIDER_TIMEOUT: 模型请求等待超时；已完成的工具操作和历史保留，请在原会话核对后继续，避免重复已完成操作。';
+export function isProviderTimeout(error) {
+    const value = error && typeof error === 'object' ? error : undefined;
+    const message = typeof error === 'string' ? error : value?.message;
+    return ['APIConnectionTimeoutError', 'TimeoutError'].includes(String(value?.name))
+        || [value?.code, value?.cause?.code].some(code => ['UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT'].includes(String(code)))
+        || typeof message === 'string' && (/^Request timed out\.?$/.test(message) || /^PROVIDER_TIMEOUT(?:$|:)/.test(message));
+}
 export function locatePi(repoRoot) {
     for (const base of [repoRoot, join(repoRoot, '.pi-runtime')]) {
         const pkg = join(base, 'node_modules', '@earendil-works', 'pi-coding-agent', 'package.json');
@@ -23,6 +32,8 @@ export function locatePi(repoRoot) {
     return null;
 }
 export function piFailure(error) {
+    if (isProviderTimeout(error))
+        return PROVIDER_TIMEOUT_FAILURE;
     const raw = error instanceof Error ? error.message : String(error);
     const message = process.env.PI_API_KEY ? raw.replaceAll(process.env.PI_API_KEY, '[REDACTED]') : raw;
     if (/^(PI_|MODEL_|SDK_|TOOL_|AUTH_|PROVIDER_|PERMISSION_|REQUEST_ABORTED)/.test(message))

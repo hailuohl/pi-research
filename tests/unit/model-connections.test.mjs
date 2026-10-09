@@ -12,6 +12,16 @@ import {excluded} from '../../dist/packages/publications/reports.js';
 import {createDataBackup,restoreDataBackup} from '../../dist/packages/storage/backup.js';
 const key='!FAKE_literal_key_for_local_test',input={expectedVersion:0,provider:'fixture-provider',name:'Fixture connection',baseUrl:'https://fixture.invalid/v1',api:'openai-completions',apiKey:key};
 
+test('connection transport preserves safe abort identity and stream timeout classification without provider secrets',async()=>{
+ const endpoint='https://fixture.invalid/v1';
+ for(const error of [new DOMException(key,'AbortError'),new TypeError(key,{cause:{code:'UND_ERR_HEADERS_TIMEOUT',message:key}})])await assert.rejects(connectionFetch(async()=>{throw error;},endpoint)(endpoint),e=>e.name==='AbortError'&&!String(e).includes(key)&&e.cause===undefined);
+ const {AssistantMessageEventStream}=await import('@earendil-works/pi-ai');
+ for(const stopReason of ['error','aborted']){
+  const message={role:'assistant',content:[],api:'openai-completions',provider:'fixture',model:'fixture',stopReason,errorMessage:'Request timed out.',timestamp:1,usage:{input:0,output:0,cacheRead:0,cacheWrite:0,totalTokens:0,cost:{input:0,output:0,cacheRead:0,cacheWrite:0,total:0}}},source=new AssistantMessageEventStream();source.push({type:'error',reason:stopReason,error:message});source.end();
+  const result=await safeConnectionStream(source).result();assert.equal(result.errorMessage,stopReason==='aborted'?'模型请求已中止':'PROVIDER_TIMEOUT: 模型请求等待超时；已完成的工具操作和历史保留，请在原会话核对后继续，避免重复已完成操作。');
+ }
+});
+
 test('connection CAS/replay survives reopening without publishing secrets, changing model history, or weakening endpoint provenance',()=>{
  const s=setup();try{
   const original=JSON.stringify(s.app.sessions.get(USER,s.session.id)),catalog=join(s.dir,'models.json');writeFileSync(catalog,'{"providers":{}}');const manual=readFileSync(catalog),before=publicationImageCatalog(catalog);

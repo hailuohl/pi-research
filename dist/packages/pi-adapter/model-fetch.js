@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
+import { isProviderTimeout, PROVIDER_TIMEOUT_FAILURE } from './runtime.js';
 /** Count the HTTP transport lifetime, including the streamed body, rather than an SDK turn. */
 export function managedModelFetch(fetcher, acquire, finish, stop) {
     return async (input, init) => {
@@ -60,10 +61,11 @@ export function managedModelFetch(fetcher, acquire, finish, stop) {
                 try {
                     await reader.cancel();
                 }
+                catch { }
                 finally {
                     await end(signal.aborted ? 'cancelled' : 'failed');
                 }
-                controller.error(error);
+                controller.error(!signal.aborted && isProviderTimeout(error) ? new Error(PROVIDER_TIMEOUT_FAILURE) : error);
             } },
             async cancel() { signal.removeEventListener('abort', aborted); await close(); }
         }, { highWaterMark: 0 });

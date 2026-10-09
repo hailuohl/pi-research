@@ -1,0 +1,243 @@
+{
+  "schemaVersion": 1,
+  "batch": "model-response-repair-20261009",
+  "baselineHead": "3595c042f1f894213231dbb35b24ce13fed48725",
+  "scope": "Model response wait and safe timeout diagnostics; no automatic research replay",
+  "policy": {
+    "sdkResponseHeadersMs": 600000,
+    "workerTransportHeadersMs": 600000,
+    "workerTransportBodyIdleMs": 600000,
+    "autoRetry": false,
+    "modelAndReasoningPreserved": true,
+    "sdkVersion": "0.87.1",
+    "newDependencies": false
+  },
+  "acceptance": {
+    "slowResponseAndStreamIntervals": "passed",
+    "finiteTimeoutPrivacyAndNoRetry": "passed",
+    "cancellationTerminalReceiptsAndNativeHistory": "passed",
+    "strictBriefUnknownFields": "passed"
+  },
+  "validation": {
+    "preFixSdk": {
+      "log": ".validation/model-response-repair-20261009/before-sdk-tests.log",
+      "tests": 3,
+      "passed": 0,
+      "failed": 3,
+      "skipped": 0,
+      "expectedFailure": true,
+      "meaning": "Real SDK response after 130 virtual seconds failed at original 120-second deadline"
+    },
+    "preFixUnit": {
+      "log": ".validation/model-response-repair-20261009/before-tests.log",
+      "meaning": "Unit failures reproduce unsafe body cause, abort identity loss and missing timeout classification; first integration startup fixture failures are not regression evidence"
+    },
+    "developmentIteration": {
+      "initial": {
+        "log": ".validation/model-response-repair-20261009/after-tests.log",
+        "tests": 31,
+        "passed": 25,
+        "failed": 6,
+        "skipped": 0
+      },
+      "intermediateIntegration": {
+        "log": ".validation/model-response-repair-20261009/after-integration-tests.log",
+        "tests": 9,
+        "passed": 6,
+        "failed": 3,
+        "skipped": 0
+      },
+      "resolvedHistory": {
+        "log": ".validation/model-response-repair-20261009/after-history-tests.log",
+        "tests": 3,
+        "passed": 3,
+        "failed": 0,
+        "skipped": 0
+      },
+      "existingReaderAndContracts": {
+        "log": ".validation/model-response-repair-20261009/existing-related-tests.log",
+        "tests": 13,
+        "passed": 13,
+        "failed": 0,
+        "skipped": 0
+      },
+      "meaning": "Early test-only injection/authorization fixture failures are retained in original logs; final integrated full regression covers all resolved cases"
+    },
+    "full": {
+      "command": "npm run test:core",
+      "snapshot": ".validation/model-response-repair-20261009/snapshot",
+      "exitCode": 0,
+      "log": ".validation/model-response-repair-20261009/full-regression.log",
+      "tests": 1490,
+      "passed": 1466,
+      "failed": 0,
+      "skipped": 24,
+      "skipGroups": [
+        "19 optional isolated compiler cases",
+        "2 optional real Docker cases",
+        "3 POSIX/Linux cases"
+      ]
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "exitCode": 0,
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 635,
+      "distManifestSha256": "a426df413f410ad62d2ece5d2af886d099e0437758497d522717a337adba249c",
+      "summary": ".validation/model-response-repair-20261009/snapshot/.validation/clean-build-KkbHoB/summary.json"
+    },
+    "live": {
+      "model": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3",
+        "thinking": "low"
+      },
+      "permissionMode": "readOnly",
+      "status": "completed",
+      "elapsedMs": 8186,
+      "toolCalls": 0,
+      "responseConfirmed": true,
+      "validationProjectArchived": true,
+      "meaning": "Separate read-only request under the current user default; original max session unchanged"
+    },
+    "originalResearchPreservation": {
+      "originalSessionUnchanged": true,
+      "originalBriefUnchanged": true,
+      "originalNativeUnchanged": true,
+      "originalModel": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3",
+        "thinking": "max"
+      },
+      "originalBriefStatus": "confirmed"
+    }
+  },
+  "review": {
+    "result": "no blockers or nonblocking findings",
+    "fullTerminalVerifiedBy": "primary after independent code review",
+    "pureMemoryAssertions": 15,
+    "patchSha256": "771b8e36d3dfff608a396ca03add786232d19646382c1340e6f50eb4f17773e5",
+    "files": [
+      {
+        "path": "apps/agent-worker/index.ts",
+        "sha256": "c5550c5639ec8f6da4d9b97cdcbf0bb268896068c58088fa87d1b22267fd51cc"
+      },
+      {
+        "path": "packages/pi-adapter/options.ts",
+        "sha256": "8c4c5a5cba58d18f948e2e67ae32cb446349f6cd93b88e19e01d20d92b7dd2b8"
+      },
+      {
+        "path": "packages/pi-adapter/runtime.ts",
+        "sha256": "ecbeae9b69844ba38679dceaf65dc0637d310b660f6f2e2d5d5bf571fa658a3b"
+      },
+      {
+        "path": "packages/pi-adapter/model-connections.ts",
+        "sha256": "9c6ee3314253c8561768ad11122730004d6bfae7a79588e9e9a8154cf44f1c67"
+      },
+      {
+        "path": "packages/pi-adapter/model-fetch.ts",
+        "sha256": "6ef191a7d8eff2d24c2e40d3f29db6c4edd0b4f935d5453ca1dd86ee0d7b2c6d"
+      },
+      {
+        "path": "tests/unit/pi-sdk-contract.test.mjs",
+        "sha256": "526c1932d27f8555c78fd382d3a653de9aec55ef237aedd2594e834f56e754b3"
+      },
+      {
+        "path": "tests/unit/model-connections.test.mjs",
+        "sha256": "aeb425dde38442caaab402d2a6623b87cf19fa110788880fb662b2575ac339ee"
+      },
+      {
+        "path": "tests/unit/model-http.test.mjs",
+        "sha256": "63999c0e55b77063b0df0591de11ac4ca8865e0481bc5447988607da66ea4670"
+      },
+      {
+        "path": "tests/integration/provider-timeout-pi-http.test.mjs",
+        "sha256": "b6896b5d0eb587cfbdfdf6f5d0b7a6594b7d5be37d5e17f3e280bea2d0b4baef"
+      },
+      {
+        "path": "tests/fixtures/provider-timeout-clock-worker.mjs",
+        "sha256": "d68e9d8a9230f279e8fa791e55ec88def9a74cdee14281ef1de2a61cf5982634"
+      },
+      {
+        "path": "tests/integration/model-connections-http.test.mjs",
+        "sha256": "3d3362813dceaa22c525a39653e41aa0d32ba089943524396ec41bd9f33b3d79"
+      },
+      {
+        "path": "dist/apps/agent-worker/index.js",
+        "sha256": "7758580c16f24a123e382e383495d6c2659f22d91a40a4f486903bc3f9aba6f6"
+      },
+      {
+        "path": "dist/apps/agent-worker/index.js.map",
+        "sha256": "c0f89cfb83684e4222dc60a5cdda625290cff591d442ca2918281442384fd094"
+      },
+      {
+        "path": "dist/packages/pi-adapter/runtime.js",
+        "sha256": "83be15bcde1532598ec63ce7e0b02ef017b931227ae7672415de28c8c7b641b3"
+      },
+      {
+        "path": "dist/packages/pi-adapter/runtime.js.map",
+        "sha256": "65fc908cd9d012072962d7167569887a1b68d4a688ea8b4b1faa483f0470db15"
+      },
+      {
+        "path": "dist/packages/pi-adapter/runtime.d.ts",
+        "sha256": "7dd4be1b5c73c967632d375ed6766ff28de2bc86d91f982264c64da4feaf1b87"
+      },
+      {
+        "path": "dist/packages/pi-adapter/options.js",
+        "sha256": "9080a6187a49b1c6406050eb981b450a6075bb7bd87962eb25e6a190db7e54e5"
+      },
+      {
+        "path": "dist/packages/pi-adapter/options.js.map",
+        "sha256": "b11c12161f096884c7fd1ca912797c805dff23b7a3835872534d9cb19bcf93e7"
+      },
+      {
+        "path": "dist/packages/pi-adapter/model-connections.js",
+        "sha256": "a3f068a783d3f483e5a54fbf3512f50b7e3689ce65659c285e00eafb1c50f33a"
+      },
+      {
+        "path": "dist/packages/pi-adapter/model-connections.js.map",
+        "sha256": "0cac98a48ea2c303c72b30275981967f68003077656015c0e0ae67673fdd8617"
+      },
+      {
+        "path": "dist/packages/pi-adapter/model-fetch.js",
+        "sha256": "a700b7b50a02cb388a911d5fb64247ee5276efc24b880109ece3a91786bad927"
+      },
+      {
+        "path": "dist/packages/pi-adapter/model-fetch.js.map",
+        "sha256": "654c4c51f32b401f2950331fa8a8d081379792772ff680ec9fc55105187e725c"
+      }
+    ],
+    "implementation": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeVerification": "Requested and accepted; runtime not echoed"
+    },
+    "independentReviewer": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "runtimeVerification": "Requested and accepted; runtime not echoed"
+    }
+  },
+  "limits": {
+    "serviceRestarted": false,
+    "userModelConfigurationChanged": false,
+    "originalResearchTaskReplayed": false,
+    "browserLayoutChanged": false,
+    "pinnedSdkInternalHelperRequiresUpgradeVerification": true
+  },
+  "evidencePolicy": "No credentials, databases, native conversations, private research text or raw logs included; originals remain in ignored local locations"
+}

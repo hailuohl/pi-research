@@ -147,3 +147,8 @@ test('Pi distinguishes incomplete installation, versions, model configuration, a
     } finally { rmSync(home, {recursive: true, force: true}); }
 });
 
+test('provider timeouts have a fixed diagnostic instead of SDK text, credentials or response bodies',()=>{
+ const expected='PROVIDER_TIMEOUT: 模型请求等待超时；已完成的工具操作和历史保留，请在原会话核对后继续，避免重复已完成操作。';
+ for(const error of [new Error('Request timed out.'),Object.assign(new Error('private credential and body'),{name:'APIConnectionTimeoutError'}),Object.assign(new Error('private credential and body'),{name:'TimeoutError'}),new TypeError('private response body',{cause:{code:'UND_ERR_HEADERS_TIMEOUT'}}),new TypeError('private response body',{cause:{code:'UND_ERR_BODY_TIMEOUT'}}),new Error('PROVIDER_TIMEOUT: private response body')])assert.equal(piFailure(error),expected);
+ assert.match(piFailure(new Error('MODEL_NOT_FOUND: absent')),/^MODEL_NOT_FOUND:/);
+});

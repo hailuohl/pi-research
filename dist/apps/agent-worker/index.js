@@ -11,7 +11,7 @@ import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { buildSessionOptions, buildCustomTools, systemInstruction, assistantFailure } from '../../packages/pi-adapter/options.js';
-import { locatePi, inspectPi, piFailure } from '../../packages/pi-adapter/runtime.js';
+import { locatePi, inspectPi, piFailure, MODEL_HTTP_TIMEOUT_MS } from '../../packages/pi-adapter/runtime.js';
 let session;
 let providerFailure;
 let imageFailure;
@@ -84,6 +84,11 @@ process.on('message', async (message) => {
         if (!installed)
             throw new Error('PI_NOT_INSTALLED');
         const sdk = await import(pathToFileURL(installed.sdkPath).href);
+        // The pinned SDK helper also lifts Undici's separate 300-second header/body limit in this Worker only.
+        const { configureHttpDispatcher } = await import(new URL('./core/http-dispatcher.js', pathToFileURL(installed.sdkPath)).href);
+        if (typeof configureHttpDispatcher !== 'function')
+            throw new Error('SDK_HTTP_TIMEOUT_UNAVAILABLE: 固定SDK的HTTP配置接口不可用');
+        configureHttpDispatcher(MODEL_HTTP_TIMEOUT_MS);
         mkdirSync(raw.agentDir, { recursive: true, mode: 0o700 });
         mkdirSync(raw.sessionDir, { recursive: true, mode: 0o700 });
         const catalogBefore = publicationImageCatalog(raw.modelsPath);
