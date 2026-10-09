@@ -133,7 +133,7 @@ test('other workflow buttons preserve project and session while closing mobile n
   Object.assign(app.state,{boot:{projects:[]},projectId:'project',sessionId:'session',navigationOpen:true});
   const buttons=elements(app.render()).filter(node=>node.type==='button'&&node.props.onClick&&node.props.children?.[1]?.type==='span');
   const workflowButtons=buttons.filter(node=>text(node.props.children[1])!=='新建会话');
-  assert.deepEqual(workflowButtons.map(node=>text(node.props.children[1])).sort(),['实验与运行','文献检索','项目工作区','资料与证据','报告与成果','技能与连接器','环境','模型与模板'].sort());
+  assert.deepEqual(workflowButtons.map(node=>text(node.props.children[1])).sort(),['文献检索','项目工作区','资料与证据','报告与成果','技能与连接器','环境','模型与模板'].sort());
   for(const button of workflowButtons){
     app.state.navigationOpen=true;button.props.onClick({currentTarget:{closest:()=>null}});
     assert.equal(app.state.navigationOpen,false);

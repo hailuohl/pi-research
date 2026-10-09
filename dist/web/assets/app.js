@@ -14,7 +14,7 @@ import { ConversationLayout } from "./conversation-panel-layout.js";
 import { ConversationPanel } from "./conversation-panel.js";
 const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["environment", "\u73AF\u5883", "settings"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u6A21\u578B\u4E0E\u6A21\u677F", "settings"]];
 const navigationGroups = [
-  { name: "\u7814\u7A76", ids: ["chat", "experiments"] },
+  { name: "\u7814\u7A76", ids: ["chat", "workspace"] },
   { name: "\u7BA1\u7406", ids: ["integrations", "environment", "settings"] }
 ];
 const normalizeView = (tab) => tab === "scheduler" ? "environment" : ["campaigns", "implementation", "changes"].includes(tab) ? "chat" : tab;
@@ -432,11 +432,11 @@ class App extends React.Component {
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "topbar-right", children: [
             /* @__PURE__ */ jsxs("details", { id: "workspace-tool-menu", className: "workspace-tool-menu", children: [
-              /* @__PURE__ */ jsxs("summary", { "aria-label": "\u5DE5\u4F5C\u533A\u5DE5\u5177", title: "\u67E5\u770B\u6587\u4EF6\u3001\u6587\u732E\u3001\u8BC1\u636E\u4E0E\u6210\u679C", children: [
+              /* @__PURE__ */ jsxs("summary", { "aria-label": "\u5DE5\u4F5C\u533A\u5DE5\u5177", title: "\u67E5\u770B\u6587\u732E\u3001\u8BC1\u636E\u4E0E\u6210\u679C", children: [
                 /* @__PURE__ */ jsx(Icon, { name: "folder", size: 18 }),
                 /* @__PURE__ */ jsx("span", { children: "\u5DE5\u4F5C\u533A" })
               ] }),
-              /* @__PURE__ */ jsx("div", { className: "workspace-tool-items", children: navigation.filter((item) => ["workspace", "literature", "evidence", "reports"].includes(item[0])).map(([id, name, icon]) => /* @__PURE__ */ jsxs("button", { "aria-current": tab === id ? "page" : void 0, className: tab === id ? "active" : "", onClick: (event) => {
+              /* @__PURE__ */ jsx("div", { className: "workspace-tool-items", children: navigation.filter((item) => ["literature", "evidence", "reports"].includes(item[0])).map(([id, name, icon]) => /* @__PURE__ */ jsxs("button", { "aria-current": tab === id ? "page" : void 0, className: tab === id ? "active" : "", onClick: (event) => {
                 const menu = event.currentTarget.closest("details");
                 menu?.removeAttribute("open");
                 menu?.querySelector("summary")?.focus();
