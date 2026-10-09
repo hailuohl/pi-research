@@ -191,17 +191,21 @@ class ExperimentGraph extends React.Component {
     this.viewport = null;
     this.drag = null;
     this.layoutCache = null;
+    this.fittedViewport = false;
     this.measureViewport = () => {
       if (!this.viewport) return;
       const viewportWidth = this.viewport.clientWidth;
       const viewportHeight = this.viewport.clientHeight;
       if (viewportWidth === this.state.viewportWidth && viewportHeight === this.state.viewportHeight) return;
-      this.setState({ viewportWidth, viewportHeight }, this.fitAll);
+      this.setState({ viewportWidth, viewportHeight }, () => {
+        if (!this.props.preserveViewportOnResize || !this.fittedViewport) this.fitAll();
+      });
     };
     this.fitAll = () => {
       const { viewportWidth, viewportHeight } = this.state;
       const layout = this.getLayout();
       if (!layout.nodes.length || !viewportWidth || !viewportHeight) return;
+      this.fittedViewport = true;
       const scale = Math.min(1.2, (viewportWidth - 40) / layout.width, (viewportHeight - 40) / layout.height);
       this.setState({ scale, x: (viewportWidth - layout.width * scale) / 2, y: (viewportHeight - layout.height * scale) / 2 });
     };
@@ -255,6 +259,7 @@ class ExperimentGraph extends React.Component {
   componentDidUpdate(previous) {
     if (previous.data.project.id !== this.props.data.project.id) {
       this.layoutCache = null;
+      this.fittedViewport = false;
       this.setState({ view: readView(this.props.data.project.id), x: GRAPH_PADDING, y: GRAPH_PADDING, scale: 1 }, this.fitAll);
     } else if (structureSignature(previous.data.experiments) !== structureSignature(this.props.data.experiments)) {
       this.layoutCache = null;
@@ -277,10 +282,11 @@ class ExperimentGraph extends React.Component {
     const byExperiment = new Map(data.experiments.map((experiment) => [experiment.id, []]));
     for (const run of data.runs) byExperiment.get(run.experimentId)?.push(run);
     const { view, x, y, scale } = this.state;
-    return /* @__PURE__ */ jsxs("section", { className: "surface experiment-lineage", "aria-labelledby": "experiment-lineage-heading", children: [
+    const headingId = this.props.headingId ?? "experiment-lineage-heading";
+    return /* @__PURE__ */ jsxs("section", { className: "surface experiment-lineage", "aria-labelledby": headingId, children: [
       /* @__PURE__ */ jsxs("div", { className: "experiment-graph-toolbar", children: [
         /* @__PURE__ */ jsxs("div", { className: "experiment-graph-heading", children: [
-          /* @__PURE__ */ jsx("h2", { id: "experiment-lineage-heading", children: "\u5B9E\u9A8C\u8840\u7F18" }),
+          /* @__PURE__ */ jsx("h2", { id: headingId, children: "\u5B9E\u9A8C\u8840\u7F18" }),
           /* @__PURE__ */ jsx("span", { children: "\u62D6\u52A8\u753B\u5E03 \xB7 Home \u9002\u5E94\u5168\u90E8 \xB7 \u65B9\u5411\u952E\u5E73\u79FB" })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "experiment-graph-controls", children: [

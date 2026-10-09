@@ -114,3 +114,30 @@ Interactions: 列表切换、JSON 错误与类型校验、局部应用、明确�
 Follow-up polish: 原生 textarea 暂不提供语法着色；320px 下标题及“已保存配置”会自然换行，操作和内容未裁切。均为 P3，无剩余 P0/P1/P2。不新增编辑器依赖。
 
 final result: passed
+
+## 2026-10-09 会话右栏页签与整列调宽
+
+Source visual truth: [selected.png](docs/design/conversation-right-panel-2026-10-09/selected.png)，用户选择的第2张；具体交互边界以同目录 design.txt 为准。Implementation capture: [desktop.jpg](docs/acceptance/flow-conversation-right-panel/desktop.jpg)、[mobile.jpg](docs/acceptance/flow-conversation-right-panel/mobile.jpg)。
+
+Viewport: desktop 1487×1058、mobile 390×844。源图与桌面捕获均为1487×1058原始像素；不进行缩放或密度换算。源图与实现图在同一次比较输入中以原始尺寸查看；没有将分别展示的图片称为拼接或并排对照。State: 协作空间页签选中、浅色主题。生成图包含模拟协作任务；实现保留真实空任务与未配置模型提示，这些内容差异已被设计范围明确排除。右栏初始320px按已定规范，而非照搬生成图的宽度。
+
+Required fidelity surfaces:
+
+- Fonts/typography: 沿用既有中文/系统字体；三页签12px，选中态650字重，正文沿用原组件。标签均单行可读，不引入字体依赖。
+- Spacing/layout: 三个短页签顶置、细分隔线、原左导航和会话输入保持位置；14px整高拖动区域位于整列之间。空协作保留留白。320px初始宽度、280px下限与620px叠放会话区均为实现规范内的尺寸。
+- Colors/tokens: 白色面板、浅灰画布、石墨文字及原中性选中/聚焦色，使用已有语义变量；无新主题或装饰渐变。
+- Image/asset fidelity: 沿用原品牌与既有Lucide Icon，握柄复用menu并旋转，目录箭头复用chevron；没有将整个设计图栅格化为运行UI，也未新增装饰图像。原图模拟头像不进入实现。
+- Copy/content: 三个正式标签准确；目录标明项目共享工作区，文本预览不执行HTML。工具权限保留“受控工具”，协作审批与结果沿用原语义；未加入原图额外管理入口或模拟实验结论。
+
+Full-view comparison evidence: selected.png与desktop.jpg在同一比较输入中核对整体区域、页签层级、间隙与输入位置。Focused-region comparison: 核对同一原尺寸输入中的右栏顶部三页签、握柄及输入工具行，相关标签均清晰可读，无需另裁切放大。手机截图额外确认页签可达和无横向溢出。
+
+Comparison history:
+
+- [P1，已修复] 独立复核发现1000px窗口下上下布局将历史滚动宿主变为工作台，历史仍按conversation/window操作；真实100条合成历史复现。四行CSS改为有界620px会话，并保留内部conversation滚动。修后初次进入到最新，向上滚动加载更早条目并保持阅读位置；390px下同一宿主可用。
+- 编译阶段两处setState类型错误已修复；它们不是视觉对照结果，不计作视觉迭代。
+
+Interactions: 三页签、目录展开/纯文本预览及状态保留、实际鼠标拖动、键盘调整与双击复位、刷新恢复、项目隔离、无项目提示、1000px上下布局、390px页签均已检查。拖动时实验树视角和草稿保持。浏览器控制台错误0。未测试真实触控或屏幕阅读器；相关ARIA信息与键盘路径已核对。
+
+Follow-up: 成功读取的目录清单在本页面内缓存；工作区新建文件后的目录刷新保留为非阻断待办。无剩余P0/P1/P2。
+
+final result: passed

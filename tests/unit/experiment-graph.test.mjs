@@ -46,6 +46,26 @@ test('deep parent chains lay out iteratively without dropping nodes', async () =
     assert.equal(layout.nodes.at(-1).depth, experiments.length - 1);
 });
 
+test('embedded graph fits on first visible size and retains pan and zoom on later resizing', async () => {
+    const { ExperimentGraph } = await import('../../dist/web/assets/experiment-graph.js');
+    const graph = synchronousState(new ExperimentGraph({ data: project([experiment('root')]), selected: '', onSelect() {}, preserveViewportOnResize: true }));
+    graph.viewport = { clientWidth: 0, clientHeight: 0 }; graph.measureViewport();
+    assert.equal(graph.fittedViewport, false);
+    graph.viewport = { clientWidth: 520, clientHeight: 400 }; graph.measureViewport();
+    assert.equal(graph.fittedViewport, true);
+    Object.assign(graph.state, { x: 73, y: 41, scale: 0.8 });
+    graph.viewport.clientWidth = 320; graph.measureViewport();
+    assert.deepEqual([graph.state.x, graph.state.y, graph.state.scale], [73, 41, 0.8]);
+    graph.viewport.clientWidth = 0; graph.measureViewport();
+    graph.viewport.clientWidth = 560; graph.measureViewport();
+    assert.deepEqual([graph.state.x, graph.state.y, graph.state.scale], [73, 41, 0.8]);
+    const page = synchronousState(new ExperimentGraph({ data: project([experiment('root')]), selected: '', onSelect() {} }));
+    page.viewport = { clientWidth: 520, clientHeight: 400 }; page.measureViewport();
+    Object.assign(page.state, { x: 73, y: 41, scale: 0.8 });
+    page.viewport.clientWidth = 320; page.measureViewport();
+    assert.notDeepEqual([page.state.x, page.state.y, page.state.scale], [73, 41, 0.8]);
+});
+
 test('selecting a graph or list node calls only onSelect and leaves project data intact', async () => {
     const { ExperimentGraph } = await import('../../dist/web/assets/experiment-graph.js');
     const data = project([experiment('root'), experiment('child', 'root'), experiment('orphan', 'missing')], [

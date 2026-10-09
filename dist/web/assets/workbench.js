@@ -363,12 +363,12 @@ class Inspector extends React.Component {
     const teamIds = new Set(teams.map((t) => t.id));
     const inlineReviewTeams = new Set(this.props.inlineWorkflows ? (data.reviews ?? []).filter((r) => r.producerSessionId === this.props.sessionId).map((r) => r.teamId) : []);
     const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending" && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
-    return /* @__PURE__ */ jsxs("aside", { className: "inspector", children: [
-      /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
+    return /* @__PURE__ */ jsxs("aside", { className: "inspector" + (this.props.embedded ? " embedded-inspector" : ""), "aria-label": this.props.embedded ? "\u5F53\u524D\u4F1A\u8BDD\u534F\u4F5C\u7A7A\u95F4" : void 0, children: [
+      !this.props.embedded ? /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
         /* @__PURE__ */ jsx(Icon, { name: this.props.tab === "experiments" ? "experiment" : "branch" }),
         /* @__PURE__ */ jsx("h2", { children: this.props.tab === "experiments" ? "\u5B9E\u9A8C\u8BE6\u60C5" : "\u534F\u4F5C\u7A7A\u95F4" }),
         /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u672C\u5730" })
-      ] }),
+      ] }) : null,
       this.props.tab === "experiments" && e ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
         /* @__PURE__ */ jsxs("div", { className: "detail-title", children: [
           /* @__PURE__ */ jsx("h3", { children: e.title }),

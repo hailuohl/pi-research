@@ -136,7 +136,7 @@ export function layoutExperiments(experiments: Row<Experiment>[]): ExperimentGra
 }
 
 type GraphView = 'graph' | 'list';
-type Props = { data: ProjectState; selected: string; onSelect: (id: string) => void };
+type Props = { data: ProjectState; selected: string; onSelect: (id: string) => void; preserveViewportOnResize?: boolean; headingId?: string };
 type State = { view: GraphView; x: number; y: number; scale: number; viewportWidth: number; viewportHeight: number };
 type Drag = { pointerId: number; clientX: number; clientY: number; x: number; y: number };
 
@@ -216,6 +216,7 @@ export class ExperimentGraph extends React.Component<Props, State> {
     private observer?: ResizeObserver;
     private drag: Drag | null = null;
     private layoutCache: { source: Row<Experiment>[]; layout: ExperimentGraphLayout } | null = null;
+    private fittedViewport = false;
 
     componentDidMount() {
         if (!this.viewport) return;
@@ -229,6 +230,7 @@ export class ExperimentGraph extends React.Component<Props, State> {
     componentDidUpdate(previous: Props) {
         if (previous.data.project.id !== this.props.data.project.id) {
             this.layoutCache = null;
+            this.fittedViewport = false;
             this.setState({ view: readView(this.props.data.project.id), x: GRAPH_PADDING, y: GRAPH_PADDING, scale: 1 }, this.fitAll);
         } else if (structureSignature(previous.data.experiments) !== structureSignature(this.props.data.experiments)) {
             this.layoutCache = null;
@@ -252,13 +254,16 @@ export class ExperimentGraph extends React.Component<Props, State> {
         const viewportWidth = this.viewport.clientWidth;
         const viewportHeight = this.viewport.clientHeight;
         if (viewportWidth === this.state.viewportWidth && viewportHeight === this.state.viewportHeight) return;
-        this.setState({ viewportWidth, viewportHeight }, this.fitAll);
+        this.setState({ viewportWidth, viewportHeight }, () => {
+            if (!this.props.preserveViewportOnResize || !this.fittedViewport) this.fitAll();
+        });
     };
 
     private fitAll = () => {
         const { viewportWidth, viewportHeight } = this.state;
         const layout = this.getLayout();
         if (!layout.nodes.length || !viewportWidth || !viewportHeight) return;
+        this.fittedViewport = true;
         const scale = Math.min(1.2, (viewportWidth - 40) / layout.width, (viewportHeight - 40) / layout.height);
         this.setState({ scale, x: (viewportWidth - layout.width * scale) / 2, y: (viewportHeight - layout.height * scale) / 2 });
     };
@@ -314,10 +319,11 @@ export class ExperimentGraph extends React.Component<Props, State> {
         const byExperiment = new Map<string, Row<Run>[]>(data.experiments.map(experiment => [experiment.id, []]));
         for (const run of data.runs) byExperiment.get(run.experimentId)?.push(run);
         const { view, x, y, scale } = this.state;
-        return <section className="surface experiment-lineage" aria-labelledby="experiment-lineage-heading">
+        const headingId = this.props.headingId ?? 'experiment-lineage-heading';
+        return <section className="surface experiment-lineage" aria-labelledby={headingId}>
             <div className="experiment-graph-toolbar">
                 <div className="experiment-graph-heading">
-                    <h2 id="experiment-lineage-heading">实验血缘</h2>
+                    <h2 id={headingId}>实验血缘</h2>
                     <span>拖动画布 · Home 适应全部 · 方向键平移</span>
                 </div>
                 <div className="experiment-graph-controls">

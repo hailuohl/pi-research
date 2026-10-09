@@ -10,6 +10,8 @@ import { Chat, Experiments, Inspector } from "./workbench.js";
 import { SessionList } from "./session-list.js";
 import { ProjectCreationModal } from "./github-controls.js";
 import { WorkspaceView, EvidenceView, ReportsView, LiteratureView, SettingsView } from "./data-views.js";
+import { ConversationLayout } from "./conversation-panel-layout.js";
+import { ConversationPanel } from "./conversation-panel.js";
 const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["environment", "\u73AF\u5883", "settings"], ["experiments", "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", "experiment"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u6A21\u578B\u4E0E\u6A21\u677F", "settings"]];
 const navigationGroups = [
   { name: "\u7814\u7A76", ids: ["chat", "experiments"] },
@@ -357,6 +359,12 @@ class App extends React.Component {
   render() {
     const { boot, data, tab } = this.state;
     const currentSession = data?.sessions.find((s) => s.id === this.state.sessionId), experiment = data?.experiments.find((e) => e.id === this.state.selectedExp), collaborationSessionId = currentSession?.taskId ? data?.teams.find((t) => t.id === currentSession.teamId)?.rootSessionId ?? "" : this.state.sessionId;
+    const inspector = data && boot ? /* @__PURE__ */ jsx(Inspector, { data, boot, tab: "chat", embedded: true, sessionId: collaborationSessionId, inlineWorkflows: currentSession?.role === "coordinator" && !currentSession.taskId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onConfig: () => {
+      if (experiment) this.perform(async () => {
+        const file = await api(`/experiments/${experiment.id}/files?path=config.json`);
+        this.open("config", { ...file });
+      });
+    }, onDirective: (teamId) => this.open("directive", teamId) }) : null;
     return /* @__PURE__ */ jsxs("div", { className: "app-shell" + (this.state.navigationOpen ? " navigation-open" : ""), onKeyDown: (event) => {
       if (event.key === "Escape" && this.state.navigationOpen) this.toggleNavigation();
     }, children: [
@@ -454,65 +462,60 @@ class App extends React.Component {
           /* @__PURE__ */ jsx(Icon, { name: "check", size: 16 }),
           this.state.notice
         ] }) : null,
-        /* @__PURE__ */ jsxs("div", { className: "workbench-content " + (["chat", "experiments"].includes(tab) && data ? "with-inspector" : ""), children: [
-          /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
-            boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
-            !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : tab === "environment" ? /* @__PURE__ */ jsx(EnvironmentView, {}) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
-              /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
-              /* @__PURE__ */ jsxs("h1", { children: [
-                "\u6BCF\u4E00\u4E2A\u7814\u7A76\uFF0C",
-                /* @__PURE__ */ jsx("br", {}),
-                "\u4ECE\u6E05\u6670\u7684\u8D77\u70B9\u5F00\u59CB\u3002"
-              ] }),
-              /* @__PURE__ */ jsxs("p", { children: [
-                "\u5EFA\u7ACB\u672C\u5730\u9879\u76EE\uFF0C\u4FDD\u5B58\u6E90\u4EE3\u7801\u3001\u5B9E\u9A8C\u5FEB\u7167\u548C\u8BC1\u636E\u3002",
-                /* @__PURE__ */ jsx("br", {}),
-                "\u4E5F\u53EF\u4EE5\u5148\u8FD0\u884C\u968F\u5305\u7684\u771F\u5B9E\u6570\u503C\u793A\u4F8B\uFF0C\u68C0\u67E5\u5B8C\u6574\u6D41\u7A0B\u3002"
-              ] }),
-              /* @__PURE__ */ jsxs("button", { className: "primary", onClick: () => this.open("project"), children: [
-                "\u521B\u5EFA\u7B2C\u4E00\u4E2A\u9879\u76EE ",
-                /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
-              ] }),
-              /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002" })
-            ] }) : tab === "chat" ? null : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { onSession: (id) => this.selectSession(id), onChat: () => this.setState({ tab: "chat" }), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
-              this.invalidateRead();
-              this.setState({ selectedExp, selectedRun: "" });
-            }, onRun: (selectedRun, selectedExp) => {
-              if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
-                this.setState({ error: "\u6307\u5B9A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
-                return;
-              }
-              this.invalidateRead();
-              this.setState({ selectedRun, selectedExp });
-            } }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, session: currentSession, onUseDocument: this.useParsedDocument, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
-              const clearHistory = { messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false };
-              const campaign = data.campaigns.find((c) => c.id === selectedCampaign);
-              if (!campaign) {
-                this.setState({ ...clearHistory, error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u6D3B\u52A8\u3002" });
-                return;
-              }
-              if (!campaign.rootSessionId) {
-                this.setState({ ...clearHistory, error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u6CA1\u6709\u53EF\u6253\u5F00\u7684\u4E3B\u4F1A\u8BDD\u3002" });
-                return;
-              }
-              this.setState({ selectedCampaign }, () => this.selectSession(campaign.rootSessionId));
-            }, onSession: (id) => this.selectSession(id), onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, selectedReport: this.state.selectedReport, onSelect: (selectedReport) => this.setState({ selectedReport }), onRun: (selectedRun, selectedExp) => {
-              if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
-                this.setState({ error: "\u6307\u5B9A\u62A5\u544A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
-                return;
-              }
-              this.invalidateRead();
-              this.setState({ selectedRun, selectedExp, tab: "experiments" });
-            } }, data.project.id) : null
-          ] }),
-          data && boot && ["chat", "experiments"].includes(tab) ? /* @__PURE__ */ jsx(Inspector, { data, boot, tab, sessionId: collaborationSessionId, inlineWorkflows: tab === "chat" && currentSession?.role === "coordinator" && !currentSession.taskId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => this.setState({ selectedRun }), perform: this.perform, onConfig: () => {
-            if (experiment)
-              this.perform(async () => {
-                const file = await api(`/experiments/${experiment.id}/files?path=config.json`);
-                this.open("config", { ...file });
-              });
-          }, onDirective: (teamId) => this.open("directive", teamId) }) : null
-        ] })
+        /* @__PURE__ */ jsx(ConversationLayout, { projectId: this.state.projectId, active: tab === "chat", inspector: tab === "experiments" && inspector ? React.cloneElement(inspector, { tab: "experiments", embedded: false, inlineWorkflows: false }) : null, panel: /* @__PURE__ */ jsx(ConversationPanel, { projectId: this.state.projectId, active: tab === "chat", data, collaboration: inspector, selectedExperiment: this.state.selectedExp, onExperiment: this.selectExperiment, onWorkspace: () => this.selectTab("workspace"), onChooseProject: () => {
+          if (boot?.projects.length) {
+            this.setState({ navigationOpen: true }, () => document.querySelector(".sidebar-project select")?.focus());
+          } else this.open("project");
+        }, onRetry: () => void this.refresh(), error: this.state.error }, this.state.projectId), children: /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
+          boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
+          !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : tab === "environment" ? /* @__PURE__ */ jsx(EnvironmentView, {}) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
+            /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
+            /* @__PURE__ */ jsxs("h1", { children: [
+              "\u6BCF\u4E00\u4E2A\u7814\u7A76\uFF0C",
+              /* @__PURE__ */ jsx("br", {}),
+              "\u4ECE\u6E05\u6670\u7684\u8D77\u70B9\u5F00\u59CB\u3002"
+            ] }),
+            /* @__PURE__ */ jsxs("p", { children: [
+              "\u5EFA\u7ACB\u672C\u5730\u9879\u76EE\uFF0C\u4FDD\u5B58\u6E90\u4EE3\u7801\u3001\u5B9E\u9A8C\u5FEB\u7167\u548C\u8BC1\u636E\u3002",
+              /* @__PURE__ */ jsx("br", {}),
+              "\u4E5F\u53EF\u4EE5\u5148\u8FD0\u884C\u968F\u5305\u7684\u771F\u5B9E\u6570\u503C\u793A\u4F8B\uFF0C\u68C0\u67E5\u5B8C\u6574\u6D41\u7A0B\u3002"
+            ] }),
+            /* @__PURE__ */ jsxs("button", { className: "primary", onClick: () => this.open("project"), children: [
+              "\u521B\u5EFA\u7B2C\u4E00\u4E2A\u9879\u76EE ",
+              /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
+            ] }),
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002" })
+          ] }) : tab === "chat" ? null : tab === "experiments" ? /* @__PURE__ */ jsx(Experiments, { onSession: (id) => this.selectSession(id), onChat: () => this.setState({ tab: "chat" }), data, selected: this.state.selectedExp, onSelect: (selectedExp) => {
+            this.invalidateRead();
+            this.setState({ selectedExp, selectedRun: "" });
+          }, onRun: (selectedRun, selectedExp) => {
+            if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
+              this.setState({ error: "\u6307\u5B9A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
+              return;
+            }
+            this.invalidateRead();
+            this.setState({ selectedRun, selectedExp });
+          } }, data.project.id) : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived, onLiterature: () => this.setState({ tab: "literature" }) }, data.project.id) : tab === "literature" ? /* @__PURE__ */ jsx(LiteratureView, { data, perform: this.perform, session: currentSession, onUseDocument: this.useParsedDocument, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, onSelectDiscoveryGrant: (selectedDiscoveryGrant) => this.setState({ selectedDiscoveryGrant }), onSession: (id) => this.selectSession(id), selectedDocument: this.state.selectedDocument ?? void 0, onDocument: (selectedDocument) => this.setState({ selectedDocument }), onSources: () => this.setState({ tab: "integrations" }) }, data.project.id) : tab === "evidence" ? /* @__PURE__ */ jsx(EvidenceView, { onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim") }, data.project.id) : tab === "reports" ? /* @__PURE__ */ jsx(ReportsView, { onCampaign: (selectedCampaign) => {
+            const clearHistory = { messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false };
+            const campaign = data.campaigns.find((c) => c.id === selectedCampaign);
+            if (!campaign) {
+              this.setState({ ...clearHistory, error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u6D3B\u52A8\u3002" });
+              return;
+            }
+            if (!campaign.rootSessionId) {
+              this.setState({ ...clearHistory, error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u6CA1\u6709\u53EF\u6253\u5F00\u7684\u4E3B\u4F1A\u8BDD\u3002" });
+              return;
+            }
+            this.setState({ selectedCampaign }, () => this.selectSession(campaign.rootSessionId));
+          }, onSession: (id) => this.selectSession(id), onDocument: (selectedDocument) => this.setState({ selectedDocument, tab: "literature" }), data, perform: this.perform, selectedReport: this.state.selectedReport, onSelect: (selectedReport) => this.setState({ selectedReport }), onRun: (selectedRun, selectedExp) => {
+            if (!data.runs.some((r) => r.id === selectedRun && r.experimentId === selectedExp) || !data.experiments.some((e) => e.id === selectedExp)) {
+              this.setState({ error: "\u6307\u5B9A\u62A5\u544A Run \u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u8FD0\u884C\u3002" });
+              return;
+            }
+            this.invalidateRead();
+            this.setState({ selectedRun, selectedExp, tab: "experiments" });
+          } }, data.project.id) : null
+        ] }) })
       ] }),
       this.modalView()
     ] });
