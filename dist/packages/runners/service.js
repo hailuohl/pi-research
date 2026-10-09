@@ -46,6 +46,7 @@ export class RunService {
     list(actor, projectId, cursor = 0, limit = 20) {
         userOnly(actor);
         scope(actor, projectId);
+        assertProjectReadable(this.c.store, projectId, actor);
         integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER);
         integer(limit, 'limit', 1, 100);
         return this.c.store.readSnapshot(() => {
@@ -136,6 +137,7 @@ export class RunService {
             ensure(intent.rootSessionId === actor.sessionId, 'RUN_SESSION_DENIED', '持续任务只能读取本根会话的运行意向', 403);
         }
         scope(actor, intent.projectId);
+        assertProjectReadable(this.c.store, intent.projectId, actor);
         assertRunGrantActor(this.c.store, actor, intent);
         if (actor.type === 'agent' && !intent.runGrant && intent.rootSessionId)
             ensure(actor.role === 'coordinator' && !actor.taskId && (!actor.wakeupId || !!actor.continuationId) && actor.sessionId === intent.rootSessionId, 'RUN_SESSION_DENIED', '此运行意向属于另一个研究对话', 403);

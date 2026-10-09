@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { ensure, asError } from '../domain/errors.js';
 import { object, text } from '../contracts/validation.js';
 import { scope, ROLE_TOOLS } from '../policy/permissions.js';
-import { assertProjectWritable } from '../policy/lifecycle.js';
+import { assertProjectReadable, assertProjectWritable } from '../policy/lifecycle.js';
 import { digest, now } from '../storage/store.js';
 import { listFiles, safePath, snapshotDirectory, sourceManifest, verifySnapshot, setSourceModes, setSourceMode } from './files.js';
 import { readStableFile } from './stable-file.js';
@@ -74,6 +74,7 @@ export class GitService {
     }
     access(actor, pid, sessionId, write = false) {
         scope(actor, pid);
+        assertProjectReadable(this.app.store, pid, actor);
         const s = this.app.store.get('session', sessionId, pid);
         ensure(actor.type === 'user' || actor.type === 'agent', 'PERMISSION_DENIED', '需要用户或助手身份', 403);
         if (actor.type === 'agent') {
@@ -104,6 +105,7 @@ export class GitService {
     }
     operation(actor, pid, id) {
         scope(actor, pid);
+        assertProjectReadable(this.app.store, pid, actor);
         const op = this.app.store.get('git-operation', id, pid);
         if (op.sessionId)
             this.access(actor, pid, op.sessionId);

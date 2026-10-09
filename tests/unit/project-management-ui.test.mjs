@@ -10,7 +10,8 @@ import {Chat,Inspector} from '../../dist/web/assets/workbench.js';
 
 const reply=data=>({ok:true,json:async()=>data});
 const failure=(code,status=409)=>({ok:false,status,json:async()=>({error:{code,message:code}})});
-const project=(id='p',archived=false,version=3)=>({id,name:`Project ${id}`,archived,version,settings:{enabled:false}});
+const project=(id='p',archived=false,version=3)=>({id,name:`Project ${id}`,status:archived?'archived':'active',lifecycleEpoch:0,archived,version,createdAt:'2026-10-09T00:00:00Z',updatedAt:'2026-10-09T00:00:00Z',settings:{enabled:false}});
+const lifecycle=(status='trashed',restoreStatus='active',version=4)=>({id:'p',name:'Project p',status,restoreStatus,version,lifecycleEpoch:2,archived:status!=='active',createdAt:'2026-10-09T00:00:00Z',updatedAt:'2026-10-09T01:00:00Z',deletedAt:'2026-10-09T01:00:00Z'});
 const data=p=>({project:p,sessions:[],experiments:[],runs:[],artifacts:[],evidence:[],claims:[],reports:[],teams:[],tasks:[],budgets:[],approvals:[],wakeups:[],campaigns:[],members:[],observations:[],decisions:[],intents:[],changeProposals:[]});
 const boot=projects=>({projects,runtime:{ready:false,code:'UNAVAILABLE',message:'not configured'},models:[]});
 const nodes=n=>Array.isArray(n)?n.flatMap(nodes):!n||typeof n!=='object'?[]:[n,...nodes(n.props?.children)];
@@ -46,7 +47,7 @@ test('version conflict requires refreshing and confirming target again; busy rej
 
 test('late management list responses cannot replace the latest project catalog',async t=>{
     const pending=[];mockFetch(t,url=>new Promise(resolve=>pending.push({url,resolve})));const v=manager();const first=v.load(),second=v.load();
-    pending[2].resolve(reply([project('new')]));pending[3].resolve(reply([]));await second;pending[0].resolve(reply([project('old')]));pending[1].resolve(reply([project('gone',true)]));await first;
+    pending[3].resolve(reply([project('new')]));pending[4].resolve(reply([]));pending[5].resolve(reply([]));await second;pending[0].resolve(reply([project('old')]));pending[1].resolve(reply([project('gone',true)]));pending[2].resolve(reply([]));await first;
     assert.equal(v.state.active[0].id,'new');assert.deepEqual(v.state.archived,[]);v.componentWillUnmount();
 });
 
@@ -104,4 +105,68 @@ test('archived Inspector approval and rejection stay disabled and direct handler
     assert.equal(approve.props.disabled,true);assert.equal(reject.props.disabled,true);
     approve.props.onClick();reject.props.onClick();assert.deepEqual(performed,[]);
     assert.match(text(view.render()),/retained plan/);
+});
+
+test('recycle bin reload reads only management summaries and never exposes history or permanent deletion',async t=>{
+    const requests=[],v=manager();mockFetch(t,async url=>{requests.push(url);return reply(url.endsWith('status=trashed')?[lifecycle()]:[]);});
+    await v.load();const group=nodes(v.render()).find(n=>n.type==='section'&&n.props['aria-label']==='回收站');
+    assert.match(text(group),/Project p.*删除前：活动.*移入时间/s);assert.equal(button(group,'还原').props.disabled,false);
+    assert.ok(!nodes(group).some(n=>n.type==='button'&&/打开|归档|删除|清空/.test(text(n))));assert.ok(requests.every(url=>url.includes('/projects?status=')));
+    await v.load();assert.equal(v.state.trashed[0].id,'p');assert.equal(requests.filter(url=>url.endsWith('status=trashed')).length,2);
+});
+
+test('moving active or archived projects to trash confirms retained files and retries lost replies with the same request',async t=>{
+    for(const archived of [false,true]){
+        const requests=[],changed=[],v=manager({onChanged:async p=>changed.push(p)});v.choose(project('p',archived),'trash');
+        assert.match(renderToStaticMarkup(v.render()),/文件保留且可还原/);assert.match(renderToStaticMarkup(v.render()),/确认移入回收站/);
+        mockFetch(t,async(url,options)=>{if(url.includes('?status='))return reply([]);requests.push({url,body:options.body,key:options.headers['Idempotency-Key']});if(requests.length===1)throw Error('lost trash reply');return reply(lifecycle('trashed',archived?'archived':'active'));});
+        await v.confirm();assert.ok(v.state.target);assert.deepEqual(changed,[]);await v.confirm();assert.deepEqual(requests[0],requests[1]);assert.ok(requests[0].url.endsWith('/trash'));assert.equal(changed[0].status,'trashed');assert.equal(changed[0].settings,undefined);
+    }
+});
+
+test('restore returns to its recorded active or archived status without reopening old authority',async t=>{
+    for(const status of ['active','archived']){
+        const changed=[],v=manager({onChanged:async p=>changed.push(p)});v.choose(lifecycle('trashed',status),'restore');
+        const markup=renderToStaticMarkup(v.render());assert.match(markup,/旧审批、权限、消息队列和自动化不会重新生效/);assert.match(markup,/确认还原/);
+        mockFetch(t,async url=>url.includes('?status=')?reply([]):reply(lifecycle(status,status,5)));
+        await v.confirm();assert.equal(changed[0].id,'p');assert.equal(changed[0].status,status);assert.equal(v.state.target,null);
+    }
+});
+
+test('restore status mismatch preserves confirmation and a version conflict refreshes through lifecycle only',async t=>{
+    const requests=[],changed=[],v=manager({onChanged:async p=>changed.push(p)});v.choose(lifecycle('trashed','archived'),'restore');let mode='conflict';
+    mockFetch(t,async(url,options)=>{requests.push({url,key:options.headers['Idempotency-Key']});if(url.endsWith('/lifecycle'))return reply(lifecycle('trashed','archived',7));if(url.includes('?status='))return reply([]);return mode==='conflict'?failure('VERSION_CONFLICT'):reply(lifecycle('active','archived',8));});
+    await v.confirm();assert.equal(v.state.conflict,true);await v.reloadTarget();assert.ok(requests.at(-1).url.endsWith('/lifecycle'));assert.equal(v.state.target.project.version,7);assert.equal(requests.length,2);
+    mode='wrong-result';await v.confirm();assert.match(v.state.error,/响应与确认目标不一致/);assert.ok(v.state.target);assert.deepEqual(changed,[]);assert.notEqual(requests[0].key,requests[2].key);
+});
+
+test('a trash summary clears current research data before bootstrap and a late reply does not take over a newer selection',async t=>{
+    const v=app(t,project()),selected=[];Object.assign(v.state,{sessionId:'s',messages:[{id:'secret'}],pendingMessages:[{id:'queue'}],stream:'old stream',selectedRun:'run',selectedReport:'report',selectedDocument:{documentVersionId:'doc'},modal:'projects'});
+    let release;mockFetch(t,url=>new Promise(resolve=>release=()=>resolve(reply(boot([project('a')])))));
+    v.switchProject=id=>{selected.push(id);v.projectSelectionEpoch++;v.state.projectId=id;v.state.data=data(project(id));};
+    const changing=v.projectLifecycleChanged(lifecycle(),0);await tick();assert.equal(v.state.data,null);assert.equal(v.state.projectId,'');assert.equal(v.state.sessionId,'');assert.deepEqual(v.state.messages,[]);assert.deepEqual(v.state.pendingMessages,[]);assert.equal(v.state.stream,'');assert.equal(v.state.selectedDocument,null);assert.equal(v.state.selectedRun,'');assert.equal(v.state.selectedReport,'');assert.equal(v.state.modal,'projects');
+    v.switchProject('q');release();await changing;assert.deepEqual(selected,['q']);assert.equal(v.state.data.project.id,'q');
+});
+
+test('minimal archived lifecycle summaries preserve complete project fields while switching safely',async t=>{
+    const v=app(t,project());let release;mockFetch(t,url=>new Promise(resolve=>release=()=>resolve(reply(boot([])))));v.switchProject=id=>{v.state.projectId=id;v.state.data=null;};
+    const changing=v.projectLifecycleChanged(lifecycle('archived'),0);await tick();assert.ok(v.state.data.project.settings);assert.equal(v.state.data.project.archived,true);assert.doesNotThrow(()=>v.render());release();await changing;assert.equal(v.state.projectId,'');
+});
+
+test('a newer selection made during deleted-view clearing is preserved before bootstrap begins',async t=>{
+    const v=app(t,project());mockFetch(t,async url=>assert.fail('no bootstrap should take over the newer selection: '+url));
+    const originalSetState=v.setState;v.setState=(update,callback)=>originalSetState(update,()=>{if(update.projectId===''){v.projectSelectionEpoch++;v.state.projectId='q';v.state.data=data(project('q'));}callback?.();});
+    await v.projectLifecycleChanged(lifecycle(),0);assert.equal(v.state.projectId,'q');assert.equal(v.state.data.project.id,'q');
+});
+
+test('a deleted cold reopen clears cached research even when the fallback active project cannot be read',async t=>{
+    const v=app(t);v.state.sessionId='old';v.state.messages=[{id:'old'}];v.state.stream='old';v.state.selectedReport='report';
+    mockFetch(t,async url=>url==='/api/bootstrap'?reply(boot([project('q')])):url==='/api/settings/model-management'?reply({schemaVersion:2,providers:[]}):url==='/api/projects/p'?failure('PROJECT_DELETED',410):url.startsWith('/api/projects/q/state')?failure('READ_FAILED',503):assert.fail(url));
+    assert.equal(await v.refresh(),false);assert.equal(v.state.data,null);assert.equal(v.state.sessionId,'');assert.deepEqual(v.state.messages,[]);assert.equal(v.state.stream,'');assert.equal(v.state.selectedReport,'');assert.match(v.state.error,/READ_FAILED/);
+});
+
+test('a delayed deleted-session response clears the old view and safely falls back',async t=>{
+    const v=app(t,project());v.state.sessionId='s';v.state.messages=[{id:'old'}];let release;
+    mockFetch(t,async url=>url==='/api/bootstrap'?reply(boot([project('p'),project('q')])):url==='/api/settings/model-management'?reply({schemaVersion:2,providers:[]}):url.startsWith('/api/projects/p/state')?reply(data(project())):url.startsWith('/api/sessions/s/view')?new Promise(resolve=>release=()=>resolve(failure('PROJECT_DELETED',410))):url.startsWith('/api/projects/q/state')?reply(data(project('q'))):url.startsWith('/api/events')?failure('NO_STREAM',503):assert.fail(url));
+    const reading=v.refresh();await tick();release();assert.equal(await reading,true);assert.equal(v.state.projectId,'q');assert.equal(v.state.data.project.id,'q');assert.equal(v.state.sessionId,'');assert.deepEqual(v.state.messages,[]);
 });

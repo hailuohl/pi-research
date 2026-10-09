@@ -6,7 +6,7 @@ import type {Actor,Project,Row} from '../domain/types.js';
 import {asError,ensure} from '../domain/errors.js';
 import {object,integer,text} from '../contracts/validation.js';
 import {userOnly,scope,interactiveCoordinator} from '../policy/permissions.js';
-import {assertProjectWritable} from '../policy/lifecycle.js';
+import {assertProjectReadable,assertProjectWritable} from '../policy/lifecycle.js';
 import {assertWorkingGrantReference} from '../policy/working-grant-validation.js';
 import {digest,now} from '../storage/store.js';
 import {snapshotDirectory,verifySnapshot} from './files.js';
@@ -37,7 +37,7 @@ export class GitHubUploadService {
   });
  }
  inspect(actor:Actor,pid:string):ProjectGitHubStatus {
-  userOnly(actor);scope(actor,pid);const project=this.app.store.get<Project>('project',pid),s=this.app.store.maybe<GitHubSetting>('github-setting',pid);if(!s)return {version:0,enabled:false,state:'local',pendingCount:0,retryable:false};
+  userOnly(actor);scope(actor,pid);const project=assertProjectReadable(this.app.store,pid,actor),s=this.app.store.maybe<GitHubSetting>('github-setting',pid);if(!s)return {version:0,enabled:false,state:'local',pendingCount:0,retryable:false};
   const jobs=this.app.store.list<GitHubUploadJob>('github-upload-job',pid),pending=jobs.filter(j=>j.state!=='synced'),first=this.next(s,pending),current=pending.filter(j=>j.epoch===s.epoch||active(j)||j.state==='unknown'||!s.repository&&!j.operationId),state=!s.enabled||project.archived?'paused':first?.state??(s.repository?'synced':'queued');
   return {version:s.version,enabled:s.enabled,state,account:s.account,...(s.repository?{repository:s.repository}:{}),pendingCount:current.length,...(s.lastCommit?{lastCommit:s.lastCommit}:{}),...(first?.error?{error:first.error}:{}),retryable:s.enabled&&!project.archived&&!!first&&['failed','unknown','paused'].includes(first.state)&&!alive(first.workerPid)};
  }

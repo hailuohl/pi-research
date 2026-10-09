@@ -1,5 +1,5 @@
 import type { AppContext } from '../domain/context.js';
-import { type Actor, type Project } from '../domain/types.js';
+import { type Actor, type Project, type ProjectLifecycleView } from '../domain/types.js';
 export interface PreparedProjectImport {
     sourceDigest: string;
 }
@@ -19,6 +19,9 @@ export declare class ProjectService {
     update(actor: Actor, id: string, input: unknown): import("../domain/types.js").Row<Project>;
     archive(actor: Actor, id: string, version: number): import("../domain/types.js").Row<Project>;
     unarchive(actor: Actor, id: string, version: number): import("../domain/types.js").Row<Project>;
+    lifecycle(actor: Actor, id: string): ProjectLifecycleView;
+    trash(actor: Actor, id: string, version: number): ProjectLifecycleView;
+    restore(actor: Actor, id: string, version: number): ProjectLifecycleView;
     settings(actor: Actor, id: string, input: unknown): import("../domain/types.js").Row<Project>;
     listFiles(actor: Actor, id: string): {
         path: string;

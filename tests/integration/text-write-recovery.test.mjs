@@ -51,8 +51,8 @@ test('text writes reconcile hard exits, retain conflicts, and fence readers',asy
         } finally {s.close();}
     }
     const root=join(dir,'normal'),db=root+'.sqlite';mkdirSync(root);const s=new Store(db);
-    const input={path:'a.txt',content:'new'};const first=s.operation('text','key',input,()=>writeText(root,'a.txt','new',null,s));
-    assert.deepEqual(s.operation('text','key',input,()=>{throw Error('replayed');}),first);
+    const input={path:'a.txt',content:'new'};const first=s.operation('text','key',input,()=>writeText(root,'a.txt','new',null,s),{kind:'global'});
+    assert.deepEqual(s.operation('text','key',input,()=>{throw Error('replayed');},{kind:'global'}),first);
     assert.throws(()=>s.transaction(()=>{writeText(root,'a.txt','one',digest('new'),s);writeText(root,'a.txt','two',digest('one'),s);throw Error('rollback');}),/rollback/);
     assert.equal(readText(root,'a.txt').content,'new');assert.equal(readdirSync(db+'.text-writes').filter(n=>n.endsWith('.json')).length,0);s.close();
     } finally {rmSync(dir,{recursive:true,force:true});}

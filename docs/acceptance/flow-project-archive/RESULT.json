@@ -31,7 +31,7 @@
   ],
   "remaining_blockers": [],
   "deferred": ["Suppress the disabled composer attachment capability probe on archived projects."],
-  "delivery": {"repository": "https://github.com/hailuohl/pi-research", "private_verified": true, "branch": "implementation/pr01-reproducible-baseline"},
+  "delivery": {"repository": "https://github.com/hailuohl/pi-research", "private_verified": true, "branch": "implementation/pr01-reproducible-baseline", "commit": "a91107d5d23e35d892f29276275a2fb4ae612def", "remote_contains_commit": true, "url": "https://github.com/hailuohl/pi-research/commit/a91107d5d23e35d892f29276275a2fb4ae612def"},
   "preserved_unrelated_changes": [
     "apps/web/public/styles.css",
     "dist/web/styles.css",

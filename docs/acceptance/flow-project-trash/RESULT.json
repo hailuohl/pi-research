@@ -1,0 +1,107 @@
+{
+  "flow": "recoverable project deletion and restore",
+  "status": "accepted",
+  "baseline": "a91107d5d23e35d892f29276275a2fb4ae612def",
+  "acceptance": [
+    "Active and archived projects move to trash without moving or deleting owned files and history; ordinary reads refuse access and management exposes only a summary.",
+    "Busy execution, stale versions and invalid actor scope reject the transition atomically.",
+    "Restore returns the same project to its former active or archived state without reviving prior authority, queued work or automation.",
+    "Direct reads, artifact downloads, old cached replies, global/project event pages and streams cannot expose deleted research content.",
+    "Reopen retains trash; retry and confirmation are keyboard accessible, and stale replies cannot retain deleted views or take over another project."
+  ],
+  "delegation": [
+    {
+      "task": "archive_implementation",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "runtime_configuration": "not echoed"
+    },
+    {
+      "task": "project_management_ui",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "high",
+      "runtime_configuration": "not echoed"
+    },
+    {
+      "task": "trash_independent_review",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "xhigh",
+      "runtime_configuration": "not echoed"
+    }
+  ],
+  "checks": {
+    "build": "passed",
+    "focused": {
+      "tests": 52,
+      "passed": 51,
+      "failed": 1,
+      "failure": "New fixture attempted to scan an absent workspace root before exercising deletion.",
+      "resolution": "Missing roots are recorded as null; an actual workspace file was added; all 8 trash unit checks passed on rerun.",
+      "log": ".validation/project-trash-focused.log",
+      "recheck_log": ".validation/project-trash-fixture-recheck.log"
+    },
+    "full_regression": {
+      "command": "npm run test:core",
+      "tests": 1546,
+      "passed": 1522,
+      "failed": 0,
+      "skipped": 24,
+      "log": ".validation/project-trash-full.log",
+      "final_scoped_recheck": {
+        "tests": 22,
+        "passed": 22,
+        "failed": 0,
+        "log": ".validation/project-trash-path-recheck.log"
+      }
+    },
+    "clean_build": {
+      "status": "passed",
+      "identical_files": 640,
+      "summary": ".validation/clean-build-EvuOmY/summary.json"
+    },
+    "browser": {
+      "status": "passed in isolated in-app preview",
+      "paths": [
+        "keyboard trash confirmation and safe selection fallback",
+        "reopen preserves summary-only trash",
+        "restore active project without changing another selected project",
+        "read original retained source",
+        "archive then trash and restore returns to archived state"
+      ]
+    },
+    "cross_process_lifecycle_contention": "not_run; transaction/CAS design and existing storage concurrency checks support the boundary",
+    "independent_review": {
+      "status": "passed",
+      "initial_blockers": 1,
+      "remaining_blockers": 0,
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "xhigh",
+      "runtime_configuration": "not echoed",
+      "final_patch_sha256": "cf01c2baa21ce1b7fd67776e8aed219f6a2f18f193e1610f210d769fbc26c1d5",
+      "final_snapshot": ".validation/project-trash-repair-review/snapshot.json",
+      "red": {
+        "passed": 4,
+        "failed": 8
+      },
+      "green": {
+        "passed": 22,
+        "failed": 0
+      }
+    }
+  },
+  "changes": [
+    "Trash/restore and lifecycle summary endpoints",
+    "schema13 receipt ownership with project/global/unknown boundaries",
+    "Deleted content guards and filtered durable events/streams",
+    "Summary-safe UI with immediate deletion cleanup and selection fencing"
+  ],
+  "limitations": [
+    "Unprovable legacy receipt ownership refuses replay while retaining original data.",
+    "Permanent purge is implemented separately in the next batch."
+  ],
+  "delivery": {
+    "repository": "https://github.com/hailuohl/pi-research",
+    "private_verified": true,
+    "branch": "implementation/pr01-reproducible-baseline"
+  }
+}

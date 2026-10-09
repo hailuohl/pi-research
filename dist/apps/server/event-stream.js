@@ -34,7 +34,7 @@ export class EventStreamHub {
             if (ended || blocked)
                 return;
             try {
-                const now = Date.now(), latest = this.store.eventCursor(projectId);
+                const now = Date.now(), latest = this.store.visibleEventCursor(projectId);
                 if (initial || latest !== cursor && now - lastWake >= 500) {
                     const reset = cursor > latest;
                     cursor = latest;
@@ -45,8 +45,13 @@ export class EventStreamHub {
                 else if (now - lastWrite >= 15000)
                     write(': heartbeat\n\n');
             }
-            catch {
-                close(true);
+            catch (error) {
+                if (projectId && error.code === 'PROJECT_DELETED') {
+                    close();
+                    res.end(`event: wake\nid: ${cursor}\ndata: ${JSON.stringify({ cursor, reset: true })}\n\n`);
+                }
+                else
+                    close(true);
             }
         };
         const drain = () => { blocked = false; tick(); };

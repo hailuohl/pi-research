@@ -709,7 +709,7 @@ export declare const RUN_GRANT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("version" | "entries" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+    readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "entries" | "digest" | "model" | "state" | "usage" | "maxRuns" | "expiresAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
     readonly additionalProperties: false;
 };
 export declare const RUN_GRANT_INPUT_SCHEMAS: {
@@ -1527,7 +1527,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "entries" | "digest" | "model" | "state" | "usage" | "maxRuns" | "expiresAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_inspect: {
@@ -2213,7 +2213,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "entries" | "digest" | "model" | "state" | "usage" | "maxRuns" | "expiresAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_activate: {
@@ -2899,7 +2899,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "entries" | "digest" | "model" | "state" | "usage" | "maxRuns" | "expiresAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
     readonly run_grant_revoke: {
@@ -3585,7 +3585,7 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: ("version" | "entries" | "digest" | "model" | "id" | "state" | "sessionId" | "createdAt" | "kind" | "approvalId" | "usage" | "maxRuns" | "expiresAt" | "projectId" | "updatedAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
+        readonly required: ("sessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "entries" | "digest" | "model" | "state" | "usage" | "maxRuns" | "expiresAt" | "validity" | "effectiveState" | "reasons" | "uses" | "manifests")[];
         readonly additionalProperties: false;
     };
 };

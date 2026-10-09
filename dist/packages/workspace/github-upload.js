@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { asError, ensure } from '../domain/errors.js';
 import { object, integer, text } from '../contracts/validation.js';
 import { userOnly, scope, interactiveCoordinator } from '../policy/permissions.js';
-import { assertProjectWritable } from '../policy/lifecycle.js';
+import { assertProjectReadable, assertProjectWritable } from '../policy/lifecycle.js';
 import { assertWorkingGrantReference } from '../policy/working-grant-validation.js';
 import { digest, now } from '../storage/store.js';
 import { snapshotDirectory, verifySnapshot } from './files.js';
@@ -56,7 +56,7 @@ export class GitHubUploadService {
     inspect(actor, pid) {
         userOnly(actor);
         scope(actor, pid);
-        const project = this.app.store.get('project', pid), s = this.app.store.maybe('github-setting', pid);
+        const project = assertProjectReadable(this.app.store, pid, actor), s = this.app.store.maybe('github-setting', pid);
         if (!s)
             return { version: 0, enabled: false, state: 'local', pendingCount: 0, retryable: false };
         const jobs = this.app.store.list('github-upload-job', pid), pending = jobs.filter(j => j.state !== 'synced'), first = this.next(s, pending), current = pending.filter(j => j.epoch === s.epoch || active(j) || j.state === 'unknown' || !s.repository && !j.operationId), state = !s.enabled || project.archived ? 'paused' : first?.state ?? (s.repository ? 'synced' : 'queued');

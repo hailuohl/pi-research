@@ -273,7 +273,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
+                readonly required: ("unknown" | "runs" | "development" | "cpus" | "memoryMb" | "documents" | "publications" | "jobs")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -309,7 +309,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: ("development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
+                readonly required: ("runs" | "development" | "cpus" | "memoryMb" | "documents" | "publications" | "jobs")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -422,7 +422,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     readonly type: "integer";
                                 };
                             };
-                            readonly required: ("unknown" | "development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
+                            readonly required: ("unknown" | "runs" | "development" | "cpus" | "memoryMb" | "documents" | "publications" | "jobs")[];
                             readonly additionalProperties: false;
                         };
                         readonly available: {
@@ -458,7 +458,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     }];
                                 };
                             };
-                            readonly required: ("development" | "cpus" | "memoryMb" | "documents" | "runs" | "publications" | "jobs")[];
+                            readonly required: ("runs" | "development" | "cpus" | "memoryMb" | "documents" | "publications" | "jobs")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -547,7 +547,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["gpu_busy", "ready", "worker_active", "recovery_due", "target_unresolved", "target_unavailable", "target_changed", "legacy_target_unknown", "request_too_large", "host_capacity", "target_capacity", "earlier_job", "recovery_backoff", "manual_recovery_required"];
                         };
                     };
-                    readonly required: ("id" | "state" | "generation" | "leaseUntil" | "kind" | "reason" | "targetId" | "backend" | "projectId" | "requested" | "held" | "sequence" | "nextAttemptAt")[];
+                    readonly required: ("kind" | "projectId" | "id" | "state" | "generation" | "leaseUntil" | "reason" | "targetId" | "backend" | "requested" | "held" | "sequence" | "nextAttemptAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -661,7 +661,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                readonly required: ("unknown" | "running" | "reserved" | "stopping" | "held")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -730,7 +730,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                 readonly type: "integer";
                             };
                         };
-                        readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                        readonly required: ("unknown" | "running" | "reserved" | "stopping" | "held")[];
                         readonly additionalProperties: false;
                     };
                     readonly assistantHeld: {
@@ -802,7 +802,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                readonly required: ("unknown" | "running" | "reserved" | "stopping" | "held")[];
                 readonly additionalProperties: false;
             };
             readonly queued: {
@@ -871,7 +871,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                 readonly type: "integer";
                             };
                         };
-                        readonly required: ("running" | "unknown" | "reserved" | "stopping" | "held")[];
+                        readonly required: ("unknown" | "running" | "reserved" | "stopping" | "held")[];
                         readonly additionalProperties: false;
                     };
                     readonly assistantHeld: {
@@ -941,7 +941,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("queued" | "unknown" | "active")[];
+                readonly required: ("unknown" | "active" | "queued")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -998,7 +998,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("model" | "id" | "state" | "sessionId" | "provider" | "queuedAt")[];
+                    readonly required: ("sessionId" | "id" | "model" | "state" | "provider" | "queuedAt")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -1048,7 +1048,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly type: "integer";
                     };
                 };
-                readonly required: ("queued" | "unknown" | "active")[];
+                readonly required: ("unknown" | "active" | "queued")[];
                 readonly additionalProperties: false;
             };
             readonly available: {
@@ -1105,7 +1105,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                             readonly type: "string";
                         };
                     };
-                    readonly required: ("model" | "id" | "state" | "sessionId" | "provider" | "queuedAt")[];
+                    readonly required: ("sessionId" | "id" | "model" | "state" | "provider" | "queuedAt")[];
                     readonly additionalProperties: false;
                 };
             };

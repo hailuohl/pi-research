@@ -161,3 +161,13 @@ test('hard interruption leaves unpublished staging and retry restores without to
   await killed('create');assert.equal(existsSync(s.backup),false);const partial=readdirSync(s.parent).find(x=>x.startsWith('.pi-backup-'));await assert.rejects(verifyDataBackup(join(s.parent,partial)));await createDataBackup(s.data,s.backup,{offline:true});const frozen=readFileSync(join(s.backup,'manifest.json'));renameSync(s.data,join(s.parent,'retained-original'));await killed('restore');assert.equal(existsSync(s.data),false);await restoreDataBackup(s.backup,s.data,{offline:true});assert.deepEqual(readFileSync(join(s.backup,'manifest.json')),frozen);assert.deepEqual(records(s.data),records(join(s.parent,'retained-original')));
  }finally{s.close();}
 });
+
+
+test('schema thirteen backup retains trashed project history and restores through its management lifecycle',async()=>{
+ const s=fixture();try{
+  const project=s.app.store.get('project',s.project.id),deleted=s.app.projects.trash(USER,project.id,project.version),before=records(s.data),bytes=readFileSync(physical(s,s.artifact.path));s.app.close();
+  const saved=await createDataBackup(s.data,s.backup,{offline:true});assert.ok(saved.schema.includes(13));await verifyDataBackup(s.backup);const destination=join(s.parent,'restored');await restoreDataBackup(s.backup,destination,{offline:true,relocate:true});
+  const restored=new ResearchApp(destination,process.cwd());try{assert.equal(restored.projects.lifecycle(USER,project.id).status,'trashed');assert.throws(()=>restored.evidence.read(USER,s.artifact.id),{code:'PROJECT_DELETED'});const active=restored.projects.restore(USER,project.id,deleted.version);assert.equal(active.status,'active');assert.deepEqual(restored.evidence.read(USER,s.artifact.id).bytes,bytes);assert.equal(restored.store.get('session',s.session.id).id,s.session.id);}finally{restored.close();}
+  assert.deepEqual(records(s.data),before);
+ }finally{s.close();}
+});

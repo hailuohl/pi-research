@@ -1,3 +1,4 @@
+import {assertProjectReadable} from '../policy/lifecycle.js';
 import {captureAcceptance,assertAcceptanceCurrent} from '../evidence/acceptance.js';
 import {randomUUID} from 'node:crypto';
 import {mkdirSync,rmSync,writeFileSync} from 'node:fs';
@@ -18,7 +19,7 @@ export function changeProposalPayload(p:ChangeProposal){const {baseExperimentId,
 /** Immutable, explicitly reviewed file handoff. This is NOT a Git merge or a test runner. */
 export class ChangeProposalService {
     constructor(private app:ResearchApp){}
-    get(actor:Actor,id:string){const p=this.app.store.get<ChangeProposal>('change-proposal',id);scope(actor,p.projectId!);return p;}
+    get(actor:Actor,id:string){const p=this.app.store.get<ChangeProposal>('change-proposal',id);scope(actor,p.projectId!);assertProjectReadable(this.app.store,p.projectId!,actor);return p;}
     private ownerSession(actor:Actor,projectId:string,sessionId?:string) {
         if(actor.type==='agent') {
             ensure(actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId&&actor.sessionId&&(!sessionId||sessionId===actor.sessionId),'TOOL_DENIED','变更提案只能绑定当前交互式主协调会话',403);

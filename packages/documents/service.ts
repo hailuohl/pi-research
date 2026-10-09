@@ -4,7 +4,7 @@ import {connectorSettings,assertSourceEnabled} from '../connectors/settings.js';
 import type {AppContext} from '../domain/context.js';
 import type {Actor,Artifact,Row} from '../domain/types.js';
 import {userOnly,scope} from '../policy/permissions.js';
-import {assertProjectWritable} from '../policy/lifecycle.js';
+import {assertProjectWritable,assertProjectReadable} from '../policy/lifecycle.js';
 import {ensure} from '../domain/errors.js';
 import {integer,text,oneOf} from '../contracts/validation.js';
 import type {EvidenceService} from '../evidence/service.js';
@@ -15,11 +15,11 @@ import {assertUploadedMedia} from './uploaded-media.js';
 import {ATTACHMENT_MEDIA_TYPES,NATIVE_ATTACHMENT_BYTES} from '../pi-adapter/attachment-input.js';
 export class DocumentService {
  constructor(private c:AppContext,private evidence:EvidenceService,private connectors:ConnectorService){}
- get(actor:Actor,pid:string,id:string){userOnly(actor);scope(actor,pid);return this.c.store.get<DocumentVersion>('document-version',id,pid);}
+ get(actor:Actor,pid:string,id:string){userOnly(actor);scope(actor,pid);assertProjectReadable(this.c.store,pid,actor);return this.c.store.get<DocumentVersion>('document-version',id,pid);}
  inspect(actor:Actor,pid:string,id:string){const d=this.get(actor,pid,id);this.verify(d);return d;}
  private verify(d:Row<DocumentVersion>){for(const item of [d.original,...(d.derivedText?[d.derivedText]:[])]){const {artifact:a}=this.evidence.read({type:'system'},item.artifactId);ensure(a.projectId===d.projectId&&a.digest===item.digest&&a.size===item.size&&a.mediaType===item.mediaType,'DOCUMENT_INVALID','文档原件或派生文本绑定已失效');}}
  list(actor:Actor,pid:string,input:{cursor?:number;limit?:number}={}) {
-  userOnly(actor);scope(actor,pid);this.c.store.get('project',pid);const cursor=integer(input.cursor??0,'cursor',0,Number.MAX_SAFE_INTEGER),limit=integer(input.limit??50,'limit',1,100);
+  userOnly(actor);scope(actor,pid);assertProjectReadable(this.c.store,pid,actor);const cursor=integer(input.cursor??0,'cursor',0,Number.MAX_SAFE_INTEGER),limit=integer(input.limit??50,'limit',1,100);
   const rows=this.c.store.db.prepare("SELECT rowid,data FROM records WHERE kind='document-version' AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?").all(pid,cursor,limit+1);
   const visible=rows.slice(0,limit);return {items:visible.map(r=>JSON.parse(r.data as string) as Row<DocumentVersion>),cursor:visible.length?Number(visible.at(-1)!.rowid):cursor,hasMore:rows.length>limit};
  }

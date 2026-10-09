@@ -39,7 +39,7 @@ export class RunService {
     constructor(private c: AppContext, private approvals: ApprovalService, private evidence: EvidenceService, private compute = new ComputeQueue(c), private briefs?: ResearchBriefService, private budget = new BudgetService(c.store)) { }
     get(actor: Actor, id: string) { const run = this.c.store.get<Run>('run', id); scope(actor, run.projectId!);assertProjectReadable(this.c.store,run.projectId!,actor); return run; }
     list(actor: Actor, projectId: string, cursor = 0, limit = 20) {
-        userOnly(actor); scope(actor, projectId);
+        userOnly(actor); scope(actor, projectId);assertProjectReadable(this.c.store,projectId,actor);
         integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER); integer(limit, 'limit', 1, 100);
         return this.c.store.readSnapshot(() => {
             const rows = this.c.store.db.prepare('SELECT rowid, data FROM records WHERE kind=? AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?').all('run', projectId, cursor, limit + 1);
@@ -99,7 +99,7 @@ export class RunService {
     }
     assertIntentActor(actor:Actor,intent:Row<RunIntent>){
         if(actor.continuationId){this.automation!.assertActor(actor);ensure(intent.rootSessionId===actor.sessionId,'RUN_SESSION_DENIED','持续任务只能读取本根会话的运行意向',403);}
-        scope(actor,intent.projectId!);assertRunGrantActor(this.c.store,actor,intent);
+        scope(actor,intent.projectId!);assertProjectReadable(this.c.store,intent.projectId!,actor);assertRunGrantActor(this.c.store,actor,intent);
         if(actor.type==='agent'&&!intent.runGrant&&intent.rootSessionId)ensure(actor.role==='coordinator'&&!actor.taskId&&(!actor.wakeupId||!!actor.continuationId)&&actor.sessionId===intent.rootSessionId,'RUN_SESSION_DENIED','此运行意向属于另一个研究对话',403);
     }
     submit(actor: Actor, id: string) {

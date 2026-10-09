@@ -7,7 +7,7 @@ import type {Actor, Row, Session, SourceRevision, SourceSnapshot, Experiment, Pr
 import {ensure, asError} from '../domain/errors.js';
 import {object, text} from '../contracts/validation.js';
 import {scope, ROLE_TOOLS} from '../policy/permissions.js';
-import {assertProjectWritable} from '../policy/lifecycle.js';
+import {assertProjectReadable,assertProjectWritable} from '../policy/lifecycle.js';
 import {digest, now} from '../storage/store.js';
 import {listFiles, safePath, snapshotDirectory, sourceManifest, verifySnapshot, setSourceModes, setSourceMode} from './files.js';
 import {readStableFile} from './stable-file.js';
@@ -63,7 +63,7 @@ export class GitService {
         return this.app.store.transaction(()=>{const p=assertProjectWritable(this.app.store,pid);if(!p.gitHistoryEnabled)this.app.store.update<Project>('project',p.id,p.version,{gitHistoryEnabled:true});const operations=this.migrate(actor,pid);for(const s of this.app.store.list<Session>('session',pid).filter(s=>s.sourceRevisionId&&s.state!=='archived'))queueWorkspaceHistory(this.app.context,s,validateSourceRevision(this.app.context,pid,s.sourceRevisionId!));return {enabled:true as const,...operations};});
     }
     private access(actor:Actor,pid:string,sessionId:string,write=false) {
-        scope(actor,pid);const s=this.app.store.get<Session>('session',sessionId,pid);
+        scope(actor,pid);assertProjectReadable(this.app.store,pid,actor);const s=this.app.store.get<Session>('session',sessionId,pid);
         ensure(actor.type==='user'||actor.type==='agent','PERMISSION_DENIED','需要用户或助手身份',403);
         if(actor.type==='agent') {
             const own=this.app.store.get<Session>('session',text(actor.sessionId,'sessionId',100),pid);ensure(own.role===actor.role&&own.taskId===actor.taskId,'SCOPE_DENIED','会话身份不匹配',403);
@@ -80,7 +80,7 @@ export class GitService {
         return {sessionId:s.id,state:w.state,sourceRevisionId:w.sourceRevisionId,branch:w.branch,head:w.head,operationId:op.id,operationState:op.state,error:op.error,sourceDigest:w.snapshot.digest};
     }
     operation(actor:Actor,pid:string,id:string) {
-        scope(actor,pid);const op=this.app.store.get<GitOperation>('git-operation',id,pid);
+        scope(actor,pid);assertProjectReadable(this.app.store,pid,actor);const op=this.app.store.get<GitOperation>('git-operation',id,pid);
         if(op.sessionId)this.access(actor,pid,op.sessionId);else this.app.sources.resolve(actor,pid,{snapshotId:op.sourceRevisionId},true);
         return {operationId:op.id,action:op.action,state:op.state,sourceRevisionId:op.sourceRevisionId,sessionId:op.sessionId,sourceDigest:op.snapshot.digest,gitCommit:op.gitCommit,error:op.error};
     }

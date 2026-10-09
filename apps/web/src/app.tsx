@@ -3,7 +3,7 @@ import {ProjectEventFeed} from './event-feed.js';
 import {EnvironmentView} from './environment-view.js';
 import {IntegrationsView} from './integrations.js';
 import { api,ApiError } from './api.js';
-import type { Bootstrap, Project, ProjectState, Row, Session, SessionCatalogItem, SessionCatalogPage, DocumentLocation, SessionHistoryPage, SessionView, ModelManagementView } from './models.js';
+import type { Bootstrap, Project, ProjectLifecycleView, ProjectState, Row, Session, SessionCatalogItem, SessionCatalogPage, DocumentLocation, SessionHistoryPage, SessionView, ModelManagementView } from './models.js';
 import { short, label } from './models.js';
 import {Icon, Modal, nativeSelectButton} from './ui.js';
 import { Chat, Experiments, Inspector, type Perform } from './workbench.js';
@@ -53,6 +53,7 @@ const navigationGroups = [
     { name: '管理', ids: ['integrations', 'environment', 'settings'] },
 ];
 const normalizeView = (tab:string) => tab==='scheduler'?'environment':['campaigns','implementation','changes'].includes(tab) ? 'chat' : tab;
+const deletedRead=(error:unknown)=>error instanceof ApiError&&(error.status===404||error.status===410||error.code==='PROJECT_DELETED');
 function saved() {
     try {
         return JSON.parse(localStorage.getItem('pi-research-ui-v1') ?? '{}');
@@ -95,9 +96,12 @@ export class App extends React.Component<{}, State> {
         void reading.finally(()=>{if(this.refreshing===reading)this.refreshing=undefined;});return reading;
     }
     private async readState(quiet:boolean):Promise<boolean>{
-        const epoch=this.refreshEpoch,controller=new AbortController();this.readController=controller;
+        const epoch=this.refreshEpoch,requestedProjectId=this.state.projectId,controller=new AbortController();this.readController=controller;
+        let fallbackProjects:Bootstrap['projects']=[];
+        let recoveringDeleted=false;
         try{
             const boot=await api<Bootstrap>('/bootstrap',undefined,'GET',controller.signal);
+            fallbackProjects=boot.projects;
             const modelManagementRead=api<ModelManagementView>('/settings/model-management',undefined,'GET',controller.signal).then(data=>{
                 if(data.schemaVersion!==2||!Array.isArray(data.providers))throw Error('模型设置目录格式不正确，请刷新后重试');
                 return {data,error:''};
@@ -105,14 +109,16 @@ export class App extends React.Component<{}, State> {
             let projectId=this.state.projectId;
             if(projectId&&!boot.projects.some(p=>p.id===projectId)){
                 try{const project=await api<Row<Project>>(`/projects/${encodeURIComponent(projectId)}`,undefined,'GET',controller.signal);if(project.id!==projectId)throw Error('项目快照与当前选择不一致');if(!project.archived)projectId=boot.projects[0]?.id??'';}
-                catch(error){if(error instanceof ApiError&&(error.status===404||error.code==='PROJECT_DELETED'))projectId=boot.projects[0]?.id??'';else throw error;}
+                catch(error){if(deletedRead(error)){recoveringDeleted=true;if(this.mounted&&epoch===this.refreshEpoch)await this.clearDeletedView(projectId);projectId=boot.projects.find(p=>p.id!==projectId)?.id??'';}else throw error;}
             }
             if(!projectId)projectId=boot.projects[0]?.id??'';
             let requestedSession=projectId===this.state.projectId?this.state.sessionId:'';
             let data:ProjectState|null=null;
             try{data=projectId?await api<ProjectState>(`/projects/${projectId}/state${requestedSession?'?sessionId='+encodeURIComponent(requestedSession):''}`,undefined,'GET',controller.signal):null;}
             catch(error){
-                if(!(error instanceof ApiError&&(error.status===404||error.code==='PROJECT_DELETED')))throw error;
+                if(!deletedRead(error))throw error;
+                recoveringDeleted=true;
+                if(this.mounted&&epoch===this.refreshEpoch)await this.clearDeletedView(projectId);
                 projectId=boot.projects.find(p=>p.id!==projectId)?.id??'';requestedSession='';
                 data=projectId?await api<ProjectState>(`/projects/${projectId}/state`,undefined,'GET',controller.signal):null;
             }
@@ -132,6 +138,12 @@ export class App extends React.Component<{}, State> {
             return true;
         }catch(error){
             if(!this.mounted||epoch!==this.refreshEpoch||controller.signal.aborted)return false;
+            if(deletedRead(error)&&requestedProjectId&&!recoveringDeleted){
+                await this.clearDeletedView(requestedProjectId);
+                if(!this.mounted||epoch!==this.refreshEpoch)return false;
+                this.switchProject(fallbackProjects.find(p=>p.id!==requestedProjectId)?.id??'');
+                return this.refresh();
+            }
             this.setState(previous=>({...previous,connected:false,...(!quiet?{error:error instanceof Error?error.message:String(error)}:{})}));
             return false;
         }finally{if(this.readController===controller)this.readController=undefined;}
@@ -171,13 +183,23 @@ export class App extends React.Component<{}, State> {
         return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,activity:null,error:''};
     }
     switchProject(id: string) { this.projectSelectionEpoch++;if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
-    projectLifecycleChanged=async(project:Row<Project>,selectionEpoch:number)=>{
+    private async clearDeletedView(id:string){
+        if(this.state.projectId!==id)return;
+        const selectionEpoch=++this.projectSelectionEpoch;this.feed?.stop();this.feed=undefined;
+        await new Promise<void>(resolve=>this.setState({...this.sessionSelection(''),projectId:'',data:null,selectedExp:'',selectedRun:'',selectedReport:'',selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'',modal:this.state.modal==='projects'?'projects':'',modalData:null},resolve));
+        return selectionEpoch;
+    }
+    projectLifecycleChanged=async(project:ProjectLifecycleView,selectionEpoch:number)=>{
         if(!this.mounted)return;
         this.invalidateRead();
-        if(this.state.projectId===project.id&&this.projectSelectionEpoch===selectionEpoch&&project.archived){
-            this.setState(current=>current.data?.project.id===project.id?{data:{...current.data,project}}:null);
+        if(this.state.projectId===project.id&&this.projectSelectionEpoch===selectionEpoch&&project.status!=='active'){
+            const deleted=project.status==='trashed'||project.status==='purging';
+            const currentEpoch=deleted?await this.clearDeletedView(project.id):selectionEpoch,currentId=deleted?'':project.id;
+            if(!this.mounted||this.state.projectId!==currentId||this.projectSelectionEpoch!==currentEpoch)return;
+            if(!deleted)
+                this.setState(current=>current.data&&current.data.project.id===project.id?{data:{...current.data,project:{...current.data.project,status:project.status,archived:true,version:project.version,lifecycleEpoch:project.lifecycleEpoch}}}:null);
             const boot=await api<Bootstrap>('/bootstrap');
-            if(!this.mounted||this.state.projectId!==project.id||this.projectSelectionEpoch!==selectionEpoch)return;
+            if(!this.mounted||this.state.projectId!==currentId||this.projectSelectionEpoch!==currentEpoch)return;
             this.switchProject(boot.projects[0]?.id??'');
         }else await this.refresh();
     };

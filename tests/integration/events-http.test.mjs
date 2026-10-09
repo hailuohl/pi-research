@@ -49,7 +49,7 @@ test('SSE opens without a token, sends only coalesced wakeups, reconnects by cur
 
 test('SSE backpressure halts writes until drain, heartbeats are bounded and connection cleanup is complete',t=>{
  t.mock.timers.enable({apis:['setInterval','Date'],now:1000});let cursor=1;
- const hub=new EventStreamHub({eventCursor:()=>cursor});
+ const hub=new EventStreamHub({visibleEventCursor:()=>cursor});
  class Response extends EventEmitter {frames=[];blocked=true;headers={};setHeader(k,v){this.headers[k]=v;}flushHeaders(){}write(frame){this.frames.push(frame);return !this.blocked;}end(){}destroy(){this.emit('close');}}
  const req=new EventEmitter(),res=new Response();hub.open(req,res,{after:0});assert.equal(res.frames.length,1);cursor=20;t.mock.timers.tick(20000);assert.equal(res.frames.length,1,'no buffered write queue while socket is blocked');
  res.blocked=false;res.emit('drain');assert.equal(res.frames.length,2);assert.equal(wake(res.frames[1]).cursor,20);t.mock.timers.tick(15000);assert.equal(res.frames.at(-1),': heartbeat\n\n');
@@ -64,4 +64,12 @@ test('migration four adds read indexes and consistent read snapshots do not rese
   assert.ok(a.db.prepare('SELECT 1 FROM schema_migrations WHERE version=4').get());for(const name of ['events_project_sequence','events_session_type_sequence','records_kind_session'])assert.ok(a.db.prepare("SELECT 1 FROM sqlite_master WHERE type='index' AND name=?").get(name));
   assert.match(JSON.stringify(a.db.prepare('EXPLAIN QUERY PLAN SELECT max(seq) FROM events WHERE project_id=?').all('p')),/events_project_sequence/);
  }finally{b.close();a.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+
+test('a deleted project stream sends one content-free invalidation wake before graceful close',t=>{
+ t.mock.timers.enable({apis:['setInterval','Date'],now:1000});let deleted=false;
+ const hub=new EventStreamHub({visibleEventCursor:()=>{if(deleted)throw Object.assign(Error('deleted'),{code:'PROJECT_DELETED'});return 7;}});
+ class Response extends EventEmitter {frames=[];ended=false;setHeader(){}flushHeaders(){}write(frame){this.frames.push(frame);return true;}end(frame){if(frame)this.frames.push(frame);this.ended=true;}destroy(){this.emit('close');}}
+ const req=new EventEmitter(),res=new Response();hub.open(req,res,{after:0,projectId:'retained-id'});assert.equal(res.frames.length,1);deleted=true;t.mock.timers.tick(500);assert.equal(res.ended,true);assert.equal(res.frames.length,2);assert.deepEqual(wake(res.frames[1]),{cursor:7,reset:true});assert.ok(!res.frames[1].includes('retained-id'));assert.equal(hub.size,0);t.mock.timers.tick(2000);assert.equal(res.frames.length,2);assert.equal(req.listenerCount('aborted'),0);
 });

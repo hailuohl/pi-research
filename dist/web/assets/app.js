@@ -19,6 +19,7 @@ const navigationGroups = [
   { name: "\u7BA1\u7406", ids: ["integrations", "environment", "settings"] }
 ];
 const normalizeView = (tab) => tab === "scheduler" ? "environment" : ["campaigns", "implementation", "changes"].includes(tab) ? "chat" : tab;
+const deletedRead = (error) => error instanceof ApiError && (error.status === 404 || error.status === 410 || error.code === "PROJECT_DELETED");
 function saved() {
   try {
     return JSON.parse(localStorage.getItem("pi-research-ui-v1") ?? "{}");
@@ -71,10 +72,14 @@ class App extends React.Component {
     this.projectLifecycleChanged = async (project, selectionEpoch) => {
       if (!this.mounted) return;
       this.invalidateRead();
-      if (this.state.projectId === project.id && this.projectSelectionEpoch === selectionEpoch && project.archived) {
-        this.setState((current) => current.data?.project.id === project.id ? { data: { ...current.data, project } } : null);
+      if (this.state.projectId === project.id && this.projectSelectionEpoch === selectionEpoch && project.status !== "active") {
+        const deleted = project.status === "trashed" || project.status === "purging";
+        const currentEpoch = deleted ? await this.clearDeletedView(project.id) : selectionEpoch, currentId = deleted ? "" : project.id;
+        if (!this.mounted || this.state.projectId !== currentId || this.projectSelectionEpoch !== currentEpoch) return;
+        if (!deleted)
+          this.setState((current) => current.data && current.data.project.id === project.id ? { data: { ...current.data, project: { ...current.data.project, status: project.status, archived: true, version: project.version, lifecycleEpoch: project.lifecycleEpoch } } } : null);
         const boot = await api("/bootstrap");
-        if (!this.mounted || this.state.projectId !== project.id || this.projectSelectionEpoch !== selectionEpoch) return;
+        if (!this.mounted || this.state.projectId !== currentId || this.projectSelectionEpoch !== currentEpoch) return;
         this.switchProject(boot.projects[0]?.id ?? "");
       } else await this.refresh();
     };
@@ -159,10 +164,13 @@ class App extends React.Component {
     return reading;
   }
   async readState(quiet) {
-    const epoch = this.refreshEpoch, controller = new AbortController();
+    const epoch = this.refreshEpoch, requestedProjectId = this.state.projectId, controller = new AbortController();
     this.readController = controller;
+    let fallbackProjects = [];
+    let recoveringDeleted = false;
     try {
       const boot = await api("/bootstrap", void 0, "GET", controller.signal);
+      fallbackProjects = boot.projects;
       const modelManagementRead = api("/settings/model-management", void 0, "GET", controller.signal).then((data2) => {
         if (data2.schemaVersion !== 2 || !Array.isArray(data2.providers)) throw Error("\u6A21\u578B\u8BBE\u7F6E\u76EE\u5F55\u683C\u5F0F\u4E0D\u6B63\u786E\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
         return { data: data2, error: "" };
@@ -174,8 +182,11 @@ class App extends React.Component {
           if (project.id !== projectId) throw Error("\u9879\u76EE\u5FEB\u7167\u4E0E\u5F53\u524D\u9009\u62E9\u4E0D\u4E00\u81F4");
           if (!project.archived) projectId = boot.projects[0]?.id ?? "";
         } catch (error) {
-          if (error instanceof ApiError && (error.status === 404 || error.code === "PROJECT_DELETED")) projectId = boot.projects[0]?.id ?? "";
-          else throw error;
+          if (deletedRead(error)) {
+            recoveringDeleted = true;
+            if (this.mounted && epoch === this.refreshEpoch) await this.clearDeletedView(projectId);
+            projectId = boot.projects.find((p) => p.id !== projectId)?.id ?? "";
+          } else throw error;
         }
       }
       if (!projectId) projectId = boot.projects[0]?.id ?? "";
@@ -184,7 +195,9 @@ class App extends React.Component {
       try {
         data = projectId ? await api(`/projects/${projectId}/state${requestedSession ? "?sessionId=" + encodeURIComponent(requestedSession) : ""}`, void 0, "GET", controller.signal) : null;
       } catch (error) {
-        if (!(error instanceof ApiError && (error.status === 404 || error.code === "PROJECT_DELETED"))) throw error;
+        if (!deletedRead(error)) throw error;
+        recoveringDeleted = true;
+        if (this.mounted && epoch === this.refreshEpoch) await this.clearDeletedView(projectId);
         projectId = boot.projects.find((p) => p.id !== projectId)?.id ?? "";
         requestedSession = "";
         data = projectId ? await api(`/projects/${projectId}/state`, void 0, "GET", controller.signal) : null;
@@ -215,6 +228,12 @@ class App extends React.Component {
       return true;
     } catch (error) {
       if (!this.mounted || epoch !== this.refreshEpoch || controller.signal.aborted) return false;
+      if (deletedRead(error) && requestedProjectId && !recoveringDeleted) {
+        await this.clearDeletedView(requestedProjectId);
+        if (!this.mounted || epoch !== this.refreshEpoch) return false;
+        this.switchProject(fallbackProjects.find((p) => p.id !== requestedProjectId)?.id ?? "");
+        return this.refresh();
+      }
       this.setState((previous) => ({ ...previous, connected: false, ...!quiet ? { error: error instanceof Error ? error.message : String(error) } : {} }));
       return false;
     } finally {
@@ -233,6 +252,14 @@ class App extends React.Component {
     this.setState({ ...this.sessionSelection(""), projectId: id, selectedExp: this.experimentSelections[id] ?? "", navigationOpen: false, selectedRun: "", selectedReport: "", selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", data: null }, () => {
       void this.refresh();
     });
+  }
+  async clearDeletedView(id) {
+    if (this.state.projectId !== id) return;
+    const selectionEpoch = ++this.projectSelectionEpoch;
+    this.feed?.stop();
+    this.feed = void 0;
+    await new Promise((resolve) => this.setState({ ...this.sessionSelection(""), projectId: "", data: null, selectedExp: "", selectedRun: "", selectedReport: "", selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", modal: this.state.modal === "projects" ? "projects" : "", modalData: null }, resolve));
+    return selectionEpoch;
   }
   selectSession(id, tab = "chat") {
     this.invalidateRead();

@@ -5,7 +5,7 @@ import { crc32, inflateSync } from 'node:zlib';
 import { ensure } from '../domain/errors.js';
 import { object, text, strings, integer, oneOf } from '../contracts/validation.js';
 import { scope, userOnly } from '../policy/permissions.js';
-import { assertProjectWritable } from '../policy/lifecycle.js';
+import { assertProjectWritable, assertProjectReadable } from '../policy/lifecycle.js';
 import { digest } from '../storage/store.js';
 import { SKILL_MANIFEST, BUNDLE_ID } from './manifest.js';
 import { BUILTIN_RELEASES } from './releases.js';
@@ -131,7 +131,7 @@ export class SkillService {
     owner(actor, pid, write = false) { userOnly(actor); scope(actor, pid); if (write)
         assertProjectWritable(this.c.store, pid);
     else
-        this.c.store.get('project', pid); }
+        assertProjectReadable(this.c.store, pid, actor); }
     revision(pid, id) { const r = this.c.store.get('skill-package-revision', id, pid); ensure(digest(revisionBody(r)) === r.contentDigest, 'SKILL_INTEGRITY_FAILED', '技能修订元数据摘要不匹配'); return r; }
     resolveBundle(pid, bundleId) {
         if (bundleId === BUNDLE_ID || BUILTIN_RELEASES.some(r => r.bundleId === bundleId)) {

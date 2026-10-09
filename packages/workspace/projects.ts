@@ -3,7 +3,7 @@ import { mkdirSync, copyFileSync, existsSync, writeFileSync, lstatSync, rmSync }
 import { join, dirname, resolve, relative, isAbsolute } from 'node:path';
 import { randomUUID,createHash } from 'node:crypto';
 import type { AppContext } from '../domain/context.js';
-import { DEFAULT_COLLABORATION, type Actor, type Project, type CollaborationSettings } from '../domain/types.js';
+import { DEFAULT_COLLABORATION, type Actor, type Project, type CollaborationSettings, type ProjectLifecycleView } from '../domain/types.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { bool, integer, object, oneOf, text } from '../contracts/validation.js';
 import { ensure } from '../domain/errors.js';
@@ -103,6 +103,29 @@ export class ProjectService {
             ensure(project.status==='archived','PROJECT_NOT_ARCHIVED','只能取消归档已归档项目');
             const next=this.c.store.update<Project>('project',id,version,{status:'active'});
             this.c.store.event(id,'project.unarchived',{projectId:id,lifecycleEpoch:next.lifecycleEpoch});return next;
+        });
+    }
+
+    lifecycle(actor:Actor,id:string):ProjectLifecycleView {
+        userOnly(actor);const p=this.c.store.get<Project>('project',id);
+        return {id:p.id,name:p.name,version:p.version,status:p.status,lifecycleEpoch:p.lifecycleEpoch,archived:p.status!=='active',createdAt:p.createdAt,updatedAt:p.updatedAt,...(p.deletedAt?{deletedAt:p.deletedAt}:{}),...(p.restoreStatus?{restoreStatus:p.restoreStatus}:{})};
+    }
+    trash(actor:Actor,id:string,version:number) {
+        userOnly(actor);return this.c.store.transaction(()=>{
+            const p=this.c.store.get<Project>('project',id);ensure(p.version===version,'VERSION_CONFLICT','项目已更新，请刷新后重试');
+            this.read(actor,id);assertProjectIdle(this.c.store,id);
+            this.c.store.update<Project>('project',id,version,{status:'trashed',restoreStatus:p.status as 'active'|'archived',deletedAt:new Date().toISOString()});
+            retireProjectAuthority(this.c.store,id);
+            const next=this.lifecycle(actor,id);this.c.store.event(id,'project.trashed',{projectId:id,lifecycleEpoch:next.lifecycleEpoch});return next;
+        });
+    }
+    restore(actor:Actor,id:string,version:number) {
+        userOnly(actor);return this.c.store.transaction(()=>{
+            const p=this.c.store.get<Project>('project',id);ensure(p.version===version,'VERSION_CONFLICT','项目已更新，请刷新后重试');
+            ensure(p.status==='trashed','PROJECT_NOT_TRASHED','只能还原回收站中的项目');
+            ensure(p.restoreStatus==='active'||p.restoreStatus==='archived','PROJECT_RESTORE_INVALID','原项目状态缺失，不能自动还原');assertProjectIdle(this.c.store,id);
+            this.c.store.update<Project>('project',id,version,{status:p.restoreStatus,restoreStatus:undefined,deletedAt:undefined});
+            const next=this.lifecycle(actor,id);this.c.store.event(id,'project.restored',{projectId:id,lifecycleEpoch:next.lifecycleEpoch});return next;
         });
     }
 

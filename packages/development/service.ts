@@ -10,7 +10,7 @@ import {SANDBOX_TERMINAL} from '../execution/contracts.js';
 import {ensure,asError} from '../domain/errors.js';
 import {object, text, integer, strings} from '../contracts/validation.js';
 import {scope, ROLE_TOOLS} from '../policy/permissions.js';
-import {assertProjectWritable,assertExperimentSourceCurrent} from '../policy/lifecycle.js';
+import {assertProjectReadable,assertProjectWritable,assertExperimentSourceCurrent} from '../policy/lifecycle.js';
 import {digest, now} from '../storage/store.js';
 import {safePath, snapshotDirectory, verifySnapshot,listFiles,readSourceMode} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
@@ -34,7 +34,7 @@ function diagnostic(error:string,started:boolean) {
 export class DevelopmentService {
     constructor(private app:ResearchApp) {}
     private access(actor:Actor,pid:string,sessionId:string,write=false) {
-        scope(actor,pid);this.app.store.get('project',pid);
+        scope(actor,pid);assertProjectReadable(this.app.store,pid,actor);
         ensure(actor.type==='user'||actor.type==='agent','PERMISSION_DENIED','需要用户或助手身份',403);
         const s=this.app.store.get<Session>('session',sessionId,pid);
         if(actor.type==='agent') {

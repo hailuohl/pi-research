@@ -60,5 +60,5 @@ test('async connector final acceptance rejects archive-restore ABA despite activ
 }finally{s.close();}});
 
 test('trash and purging states fail closed on direct-ID history routes and operation reads',()=>{const s=setup();try{
- for(const status of ['trashed','purging']){const p=s.app.store.get('project',s.project.id);s.app.store.update('project',p.id,p.version,{status});assert.throws(()=>read(s.app,'/sessions/'+s.session.id),{code:'PROJECT_UNAVAILABLE'});assert.throws(()=>s.app.operations.execute(USER,'workspace_list',{source:'project'},{projectId:p.id}),{code:'PROJECT_UNAVAILABLE'});}
+ for(const status of ['trashed','purging']){const p=s.app.store.get('project',s.project.id);s.app.store.update('project',p.id,p.version,{status});assert.throws(()=>read(s.app,'/sessions/'+s.session.id),{code:'PROJECT_DELETED',status:410});assert.throws(()=>s.app.operations.execute(USER,'workspace_list',{source:'project'},{projectId:p.id}),{code:'PROJECT_DELETED',status:410});}
 }finally{s.close();}});

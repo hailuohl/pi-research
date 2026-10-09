@@ -1,3 +1,4 @@
+import { type OperationOwner } from './operation-ownership.js';
 import { DatabaseSync } from 'node:sqlite';
 import type { Row } from '../domain/types.js';
 import { TextWriteRecovery } from '../workspace/text-write-recovery.js';
@@ -65,9 +66,13 @@ export declare class Store {
         createdAt: import("node:sqlite").SQLOutputValue;
     }[];
     eventCursor(projectId?: string): number;
+    /** User-facing cursors include global events and readable project history only. */
+    visibleEventCursor(projectId?: string): number;
     eventPage(after?: number, projectId?: string, limit?: number): EventPage;
     consume(consumer: string, eventId: string, fn: () => void): boolean;
-    operationResult<T>(scope: string, key: string, input: unknown): {
+    operationResult<T>(scope: string, key: string, input: unknown, trustedOwner?: Exclude<OperationOwner, {
+        kind: 'unknown';
+    }>): {
         found: false;
     } | {
         found: true;
@@ -81,6 +86,8 @@ export declare class Store {
         found: true;
         value: T;
     };
-    operation<T>(scope: string, key: string, input: unknown, fn: () => T): T;
+    operation<T>(scope: string, key: string, input: unknown, fn: () => T, trustedOwner?: Exclude<OperationOwner, {
+        kind: 'unknown';
+    }>): T;
     close(): void;
 }

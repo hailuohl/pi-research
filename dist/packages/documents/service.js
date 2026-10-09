@@ -2,7 +2,7 @@ import { assertDiscoveryArtifact, discoveryContext, discoveryScope } from '../po
 import { digest } from '../storage/store.js';
 import { connectorSettings, assertSourceEnabled } from '../connectors/settings.js';
 import { userOnly, scope } from '../policy/permissions.js';
-import { assertProjectWritable } from '../policy/lifecycle.js';
+import { assertProjectWritable, assertProjectReadable } from '../policy/lifecycle.js';
 import { ensure } from '../domain/errors.js';
 import { integer, text, oneOf } from '../contracts/validation.js';
 import { routePaperId } from '../connectors/contracts.js';
@@ -17,7 +17,7 @@ export class DocumentService {
         this.evidence = evidence;
         this.connectors = connectors;
     }
-    get(actor, pid, id) { userOnly(actor); scope(actor, pid); return this.c.store.get('document-version', id, pid); }
+    get(actor, pid, id) { userOnly(actor); scope(actor, pid); assertProjectReadable(this.c.store, pid, actor); return this.c.store.get('document-version', id, pid); }
     inspect(actor, pid, id) { const d = this.get(actor, pid, id); this.verify(d); return d; }
     verify(d) { for (const item of [d.original, ...(d.derivedText ? [d.derivedText] : [])]) {
         const { artifact: a } = this.evidence.read({ type: 'system' }, item.artifactId);
@@ -26,7 +26,7 @@ export class DocumentService {
     list(actor, pid, input = {}) {
         userOnly(actor);
         scope(actor, pid);
-        this.c.store.get('project', pid);
+        assertProjectReadable(this.c.store, pid, actor);
         const cursor = integer(input.cursor ?? 0, 'cursor', 0, Number.MAX_SAFE_INTEGER), limit = integer(input.limit ?? 50, 'limit', 1, 100);
         const rows = this.c.store.db.prepare("SELECT rowid,data FROM records WHERE kind='document-version' AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?").all(pid, cursor, limit + 1);
         const visible = rows.slice(0, limit);

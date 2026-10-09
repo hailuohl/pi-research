@@ -136,6 +136,39 @@ export class ProjectService {
             return next;
         });
     }
+    lifecycle(actor, id) {
+        userOnly(actor);
+        const p = this.c.store.get('project', id);
+        return { id: p.id, name: p.name, version: p.version, status: p.status, lifecycleEpoch: p.lifecycleEpoch, archived: p.status !== 'active', createdAt: p.createdAt, updatedAt: p.updatedAt, ...(p.deletedAt ? { deletedAt: p.deletedAt } : {}), ...(p.restoreStatus ? { restoreStatus: p.restoreStatus } : {}) };
+    }
+    trash(actor, id, version) {
+        userOnly(actor);
+        return this.c.store.transaction(() => {
+            const p = this.c.store.get('project', id);
+            ensure(p.version === version, 'VERSION_CONFLICT', '项目已更新，请刷新后重试');
+            this.read(actor, id);
+            assertProjectIdle(this.c.store, id);
+            this.c.store.update('project', id, version, { status: 'trashed', restoreStatus: p.status, deletedAt: new Date().toISOString() });
+            retireProjectAuthority(this.c.store, id);
+            const next = this.lifecycle(actor, id);
+            this.c.store.event(id, 'project.trashed', { projectId: id, lifecycleEpoch: next.lifecycleEpoch });
+            return next;
+        });
+    }
+    restore(actor, id, version) {
+        userOnly(actor);
+        return this.c.store.transaction(() => {
+            const p = this.c.store.get('project', id);
+            ensure(p.version === version, 'VERSION_CONFLICT', '项目已更新，请刷新后重试');
+            ensure(p.status === 'trashed', 'PROJECT_NOT_TRASHED', '只能还原回收站中的项目');
+            ensure(p.restoreStatus === 'active' || p.restoreStatus === 'archived', 'PROJECT_RESTORE_INVALID', '原项目状态缺失，不能自动还原');
+            assertProjectIdle(this.c.store, id);
+            this.c.store.update('project', id, version, { status: p.restoreStatus, restoreStatus: undefined, deletedAt: undefined });
+            const next = this.lifecycle(actor, id);
+            this.c.store.event(id, 'project.restored', { projectId: id, lifecycleEpoch: next.lifecycleEpoch });
+            return next;
+        });
+    }
     settings(actor, id, input) {
         userOnly(actor);
         const p = this.get(actor, id), x = object(input);

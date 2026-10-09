@@ -3,6 +3,7 @@ import { assertAcceptanceCurrent } from '../evidence/acceptance.js';
 /** Call inside the write transaction at the point a NEW side effect is authorized. */
 export function assertProjectWritable(store, projectId, expectedEpoch) {
     const project = store.get('project', projectId);
+    ensure(!['trashed', 'purging'].includes(project.status), 'PROJECT_DELETED', '项目已移入回收站；普通内容不可访问', 410);
     ensure(project.status === 'active', 'PROJECT_ARCHIVED', '项目已归档；历史仍可读取，不能开始新操作');
     ensure(expectedEpoch === undefined || project.lifecycleEpoch === expectedEpoch, 'PROJECT_LIFECYCLE_STALE', '项目生命周期已变化；请重新发起操作');
     return project;
@@ -31,6 +32,7 @@ export function assertExperimentSourceCurrent(store, experiment, historical = fa
 /** Owner history is readable, but agents may only enter active projects. */
 export function assertProjectReadable(store, projectId, actor) {
     const project = store.get('project', projectId);
+    ensure(!['trashed', 'purging'].includes(project.status), 'PROJECT_DELETED', '项目已移入回收站；普通内容不可访问', 410);
     ensure(project.status === 'active' || actor.type !== 'agent' && project.status === 'archived', 'PROJECT_UNAVAILABLE', '项目不在可读取状态', 409);
     return project;
 }

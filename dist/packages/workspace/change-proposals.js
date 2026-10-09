@@ -1,3 +1,4 @@
+import { assertProjectReadable } from '../policy/lifecycle.js';
 import { captureAcceptance, assertAcceptanceCurrent } from '../evidence/acceptance.js';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -16,7 +17,7 @@ export class ChangeProposalService {
     constructor(app) {
         this.app = app;
     }
-    get(actor, id) { const p = this.app.store.get('change-proposal', id); scope(actor, p.projectId); return p; }
+    get(actor, id) { const p = this.app.store.get('change-proposal', id); scope(actor, p.projectId); assertProjectReadable(this.app.store, p.projectId, actor); return p; }
     ownerSession(actor, projectId, sessionId) {
         if (actor.type === 'agent') {
             ensure(actor.role === 'coordinator' && !actor.taskId && !actor.wakeupId && actor.sessionId && (!sessionId || sessionId === actor.sessionId), 'TOOL_DENIED', '变更提案只能绑定当前交互式主协调会话', 403);

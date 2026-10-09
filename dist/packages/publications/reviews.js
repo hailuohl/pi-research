@@ -4,7 +4,7 @@ import { readStableFile } from '../workspace/stable-file.js';
 import { interactiveCoordinator, scope, userOnly } from '../policy/permissions.js';
 import { isPdfArtifact } from '../policy/text-corpus-grants.js';
 import { isPmcArtifact } from '../documents/pmc-text.js';
-import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
+import { assertProjectReadable, assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { verifyRunRecord } from '../evidence/run-verifier.js';
 import { verifyDocumentLink } from '../evidence/document-link.js';
 import { verifySnapshot } from '../workspace/files.js';
@@ -50,6 +50,7 @@ export class PublicationReviewService {
     }
     coordinator(actor, pid) { if (actor.type === 'user') {
         scope(actor, pid);
+        assertProjectReadable(this.app.store, pid, actor);
         return undefined;
     } ensure(actor.type === 'agent' && actor.sessionId && actor.generation !== undefined, 'PERMISSION_DENIED', '需要用户或主协调会话身份', 403); scope(actor, pid); ensure(!this.app.store.get('project', pid).archived, 'PROJECT_ARCHIVED', '归档项目不可由 Agent 访问', 403); return interactiveCoordinator(actor, pid, this.app.store.get('session', actor.sessionId, pid)); }
     assertAgentReview(actor, pid, r) { const root = this.coordinator(actor, pid); if (!root)

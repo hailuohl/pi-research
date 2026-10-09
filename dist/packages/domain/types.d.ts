@@ -47,10 +47,19 @@ export interface Project {
     status: 'active' | 'archived' | 'trashed' | 'purging';
     lifecycleEpoch: number;
     restoreStatus?: 'active' | 'archived';
+    deletedAt?: string;
     /** Read-only legacy projection; persistence uses status. */
     readonly archived?: boolean;
     gitHistoryEnabled?: boolean;
     settings: CollaborationSettings;
+}
+export interface ProjectLifecycleView extends Pick<Entity, 'id' | 'version' | 'createdAt' | 'updatedAt'> {
+    name: string;
+    status: Project['status'];
+    lifecycleEpoch: number;
+    archived: boolean;
+    deletedAt?: string;
+    restoreStatus?: 'active' | 'archived';
 }
 export interface ModelConfig {
     provider: string;

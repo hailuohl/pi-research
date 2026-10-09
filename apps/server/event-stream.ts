@@ -29,10 +29,10 @@ export class EventStreamHub {
         const tick=()=>{
             if(ended||blocked)return;
             try {
-                const now=Date.now(),latest=this.store.eventCursor(projectId);
+                const now=Date.now(),latest=this.store.visibleEventCursor(projectId);
                 if(initial||latest!==cursor&&now-lastWake>=500){const reset=cursor>latest;cursor=latest;initial=false;lastWake=now;write(`event: wake\nid: ${cursor}\ndata: ${JSON.stringify({cursor,reset})}\n\n`);}
                 else if(now-lastWrite>=15000)write(': heartbeat\n\n');
-            }catch{close(true);}
+            }catch(error){if(projectId&&(error as {code?:string}).code==='PROJECT_DELETED'){close();res.end(`event: wake\nid: ${cursor}\ndata: ${JSON.stringify({cursor,reset:true})}\n\n`);}else close(true);}
         };
         const drain=()=>{blocked=false;tick();};
         const timer=setInterval(tick,500);timer.unref();

@@ -69,7 +69,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+                state: "unknown" | "succeeded" | "failed" | "cancelled" | "running" | "starting";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -129,7 +129,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+                state: "unknown" | "succeeded" | "failed" | "cancelled" | "running" | "starting";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;
@@ -225,7 +225,7 @@ export declare class SessionPermissionService {
             unknownCommands: number;
             jobs: {
                 id: string;
-                state: "succeeded" | "failed" | "cancelled" | "running" | "starting" | "unknown";
+                state: "unknown" | "succeeded" | "failed" | "cancelled" | "running" | "starting";
                 pid: number | undefined;
                 exitCode: number | null | undefined;
                 error: string | undefined;

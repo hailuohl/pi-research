@@ -7,7 +7,7 @@ import type {AppContext} from '../domain/context.js';
 import {ensure} from '../domain/errors.js';
 import {object,text,strings,integer,oneOf} from '../contracts/validation.js';
 import {scope,userOnly} from '../policy/permissions.js';
-import {assertProjectWritable} from '../policy/lifecycle.js';
+import {assertProjectWritable,assertProjectReadable} from '../policy/lifecycle.js';
 import {digest} from '../storage/store.js';
 import {SKILL_MANIFEST,BUNDLE_ID} from './manifest.js';
 import {BUILTIN_RELEASES} from './releases.js';
@@ -74,7 +74,7 @@ export class SkillService {
  read(role:Role,id:string,resource?:string,builtinBundleId:string=BUNDLE_ID){const release=this.builtin(builtinBundleId),e=release.skills.find(e=>e.id===id);ensure(e,'SKILL_NOT_FOUND','技能不在受管清单内',404);ensure((e.roles as readonly string[]).includes(role),'SKILL_SCOPE_DENIED','该角色无此技能入口',403);const r=resource?e.resources.find(r=>r.path===resource):undefined;ensure(!resource||r,'SKILL_RESOURCE_NOT_FOUND','资源不在受管清单内',404);const hash=r?.digest??e.digest,path=release.archived?join('skills/releases',builtinBundleId,'blobs',hash):resource?join(dirname(e.path),resource):e.path;return {id,resource:resource??'SKILL.md',content:this.verified(path,hash),digest:hash,bundleId:builtinBundleId,source:e.source};}
  bootstrap(role:Role){return this.bootstrapEntries(role,BUNDLE_ID,this.list(role),this.read(role,'pi-research-overview').content);}
  private bootstrapEntries(role:Role,bundleId:string,entries:CatalogEntry[],overview:string,builtinBundleId:string=BUNDLE_ID){const prompt=`\n\n受管科研技能包 ${bundleId}\n以下是可按需读取的技能，不是额外权限。使用 research_skill_read({input:{skillId:"...",resource?:"..."}})，不要调用不存在的 read/Shell/orx 工具。仅技能目录/总览进入初始上下文，按触发条件读取相关模块。文本审阅不批准执行脚本。\n${entries.map(e=>`${e.id}: ${e.description}`).join('\n')}\n\n${overview}`;return {bundleId,prompt,skills:entries.map(e=>({name:e.id,description:e.description,filePath:e.revisionId?join(this.c.dataDir,'skill-blobs',e.digest):builtinBundleId===BUNDLE_ID?join(this.root,'skills/piresearch',e.id,'SKILL.md'):join(this.root,'skills/releases',builtinBundleId,'blobs',e.digest),baseDir:e.revisionId?join(this.c.dataDir,'skill-blobs'):builtinBundleId===BUNDLE_ID?join(this.root,'skills/piresearch',e.id):join(this.root,'skills/releases',builtinBundleId,'blobs'),source:'pi-research-reviewed-bundle',disableModelInvocation:false}))};}
- private owner(actor:Actor,pid:string,write=false){userOnly(actor);scope(actor,pid);if(write)assertProjectWritable(this.c.store,pid);else this.c.store.get('project',pid);}
+ private owner(actor:Actor,pid:string,write=false){userOnly(actor);scope(actor,pid);if(write)assertProjectWritable(this.c.store,pid);else assertProjectReadable(this.c.store,pid,actor);}
  private revision(pid:string,id:string){const r=this.c.store.get<SkillPackageRevision>('skill-package-revision',id,pid);ensure(digest(revisionBody(r))===r.contentDigest,'SKILL_INTEGRITY_FAILED','技能修订元数据摘要不匹配');return r;}
  private resolveBundle(pid:string,bundleId:string){
   if(bundleId===BUNDLE_ID||BUILTIN_RELEASES.some(r=>r.bundleId===bundleId)){this.builtin(bundleId);return {builtinBundleId:bundleId,revisions:[] as Row<SkillPackageRevision>[],disabledBuiltinIds:[] as string[]};}

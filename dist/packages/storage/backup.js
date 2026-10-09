@@ -139,7 +139,7 @@ function table(db, name) { return !!db.prepare("SELECT 1 FROM sqlite_master WHER
 function stateCheck(db) {
     ensure(table(db, 'records') && table(db, 'schema_migrations'), 'BACKUP_DATABASE_INVALID', '缺少研究数据库结构', 400);
     const schema = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x => Number(x.version));
-    ensure(schema.length > 0 && schema.every(v => Number.isInteger(v) && v >= 1 && v <= 12), 'BACKUP_SCHEMA_UNSUPPORTED', '备份需要受支持的数据版本', 409);
+    ensure(schema.length > 0 && schema.every(v => Number.isInteger(v) && v >= 1 && v <= 13), 'BACKUP_SCHEMA_UNSUPPORTED', '备份需要受支持的数据版本', 409);
     ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check === 'ok', 'BACKUP_DATABASE_INVALID', '数据库完整性检查失败', 409);
     if (table(db, 'text_write_receipts'))
         ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(), 'BACKUP_RECOVERY_PENDING', '文本写入回执尚未清理', 409);
@@ -176,7 +176,7 @@ function stateCheck(db) {
             busy = Number(r.until) > Date.now();
         if (kind === 'team')
             busy = ['active', 'draining'].includes(state);
-        if (kind === 'team' && r.autoSummarize === true && ['completed', 'partial', 'failed', 'cancelled'].includes(state)) {
+        if (kind === 'team' && !rows.some(p => p.kind === 'project' && p.id === r.projectId && ['archived', 'trashed', 'purging'].includes(String(p.value.status))) && r.autoSummarize === true && ['completed', 'partial', 'failed', 'cancelled'].includes(state)) {
             const source = teamWakeupSource(r, rows.filter(x => x.kind === 'task' && x.value.teamId === id).map(x => x.value)), existing = rows.find(x => x.kind === 'wakeup' && x.id === wakeupId(source));
             busy = !existing || ['pending', 'queued', 'running'].includes(String(existing.value.state));
         }

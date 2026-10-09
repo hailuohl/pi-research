@@ -1,3 +1,4 @@
+import { inferOperationOwner, assertOperationReceipt, storedOperationOwner } from './operation-ownership.js';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -92,6 +93,20 @@ INSERT INTO schema_migrations VALUES(4,datetime('now'));`);
             if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=12').get())
                 return;
             this.db.exec("UPDATE records SET data=json_remove(json_set(data,'$.status',COALESCE(json_extract(data,'$.status'),CASE WHEN json_extract(data,'$.archived')=1 THEN 'archived' ELSE 'active' END),'$.lifecycleEpoch',COALESCE(json_extract(data,'$.lifecycleEpoch'),0)),'$.archived') WHERE kind='project'; CREATE TABLE project_record_epochs(kind TEXT NOT NULL,id TEXT NOT NULL,project_id TEXT NOT NULL,epoch INTEGER NOT NULL,PRIMARY KEY(kind,id)); INSERT INTO project_record_epochs SELECT r.kind,r.id,r.project_id,COALESCE(json_extract(p.data,'$.lifecycleEpoch'),0) FROM records r JOIN records p ON p.kind='project' AND p.id=r.project_id; CREATE TRIGGER project_record_epoch_insert AFTER INSERT ON records WHEN NEW.project_id IS NOT NULL BEGIN INSERT OR REPLACE INTO project_record_epochs SELECT NEW.kind,NEW.id,NEW.project_id,COALESCE(json_extract(data,'$.lifecycleEpoch'),0) FROM records WHERE kind='project' AND id=NEW.project_id; END; INSERT INTO schema_migrations VALUES(12,datetime('now'));");
+        });
+        this.transaction(() => {
+            if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=13').get())
+                return;
+            this.db.exec("ALTER TABLE operations ADD COLUMN owner_kind TEXT NOT NULL DEFAULT 'unknown'; ALTER TABLE operations ADD COLUMN project_id TEXT; CREATE INDEX operations_project ON operations(project_id);");
+            for (const row of this.db.prepare('SELECT scope,key,response FROM operations').all()) {
+                let owner = { kind: 'unknown' };
+                try {
+                    owner = inferOperationOwner(this.db, String(row.scope), undefined, JSON.parse(String(row.response)));
+                }
+                catch { }
+                this.db.prepare('UPDATE operations SET owner_kind=?,project_id=? WHERE scope=? AND key=?').run(owner.kind, owner.kind === 'project' ? owner.projectId : null, String(row.scope), String(row.key));
+            }
+            this.db.exec("INSERT INTO schema_migrations VALUES(13,datetime('now'))");
         });
         this.transaction(() => { });
     }
@@ -345,15 +360,24 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
     event(projectId, type, payload) { const id = randomUUID(); const at = now(); const result = this.db.prepare('INSERT INTO events(id,project_id,type,payload,created_at) VALUES(?,?,?,?,?)').run(id, projectId, type, JSON.stringify(payload), at); return { seq: Number(result.lastInsertRowid), id, projectId, type, payload, createdAt: at }; }
     events(after = 0, projectId, limit = 500) { const rows = projectId === undefined ? this.db.prepare('SELECT * FROM events WHERE seq>? ORDER BY seq LIMIT ?').all(after, limit) : this.db.prepare('SELECT * FROM events WHERE seq>? AND project_id=? ORDER BY seq LIMIT ?').all(after, projectId, limit); return rows.map(r => ({ seq: Number(r.seq), id: r.id, projectId: r.project_id, type: r.type, payload: JSON.parse(r.payload), createdAt: r.created_at })); }
     eventCursor(projectId) { return Number((projectId === undefined ? this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events').get() : this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events WHERE project_id=?').get(projectId)).cursor); }
+    /** User-facing cursors include global events and readable project history only. */
+    visibleEventCursor(projectId) {
+        if (projectId) {
+            const p = this.get('project', projectId);
+            ensure(!['trashed', 'purging'].includes(p.status), 'PROJECT_DELETED', '项目已移入回收站；普通内容不可访问', 410);
+            return this.eventCursor(projectId);
+        }
+        return Number(this.db.prepare("SELECT COALESCE(max(seq),0) cursor FROM events WHERE project_id IS NULL OR EXISTS(SELECT 1 FROM records p WHERE p.kind='project' AND p.id=events.project_id AND json_extract(p.data,'$.status') IN ('active','archived'))").get().cursor);
+    }
     eventPage(after = 0, projectId, limit = 200) {
         ensure(Number.isSafeInteger(after) && after >= 0, 'INVALID_INPUT', '事件游标必须是非负安全整数', 400);
         ensure(Number.isSafeInteger(limit) && limit >= 1 && limit <= 500, 'INVALID_INPUT', '事件页大小必须为1–500', 400);
         return this.readSnapshot(() => {
-            const latestCursor = this.eventCursor(projectId);
+            const latestCursor = this.visibleEventCursor(projectId);
             if (after > latestCursor)
                 return { items: [], cursor: latestCursor, hasMore: false, latestCursor, reset: true };
             const columns = `seq,id,project_id,type,created_at,length(CAST(payload AS BLOB)) payload_bytes,CASE WHEN length(CAST(payload AS BLOB))<=${EVENT_PAYLOAD_BYTES} THEN payload ELSE NULL END payload`;
-            const rows = projectId === undefined ? this.db.prepare(`SELECT ${columns} FROM events WHERE seq>? AND seq<=? ORDER BY seq LIMIT ?`).iterate(after, latestCursor, limit + 1) : this.db.prepare(`SELECT ${columns} FROM events WHERE project_id=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?`).iterate(projectId, after, latestCursor, limit + 1);
+            const rows = projectId === undefined ? this.db.prepare(`SELECT ${columns} FROM events WHERE seq>? AND seq<=? AND (project_id IS NULL OR EXISTS(SELECT 1 FROM records p WHERE p.kind='project' AND p.id=events.project_id AND json_extract(p.data,'$.status') IN ('active','archived'))) ORDER BY seq LIMIT ?`).iterate(after, latestCursor, limit + 1) : this.db.prepare(`SELECT ${columns} FROM events WHERE project_id=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?`).iterate(projectId, after, latestCursor, limit + 1);
             let bytes = 0, hasMore = false;
             const items = [];
             for (const row of rows) {
@@ -378,36 +402,43 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
             return true;
         });
     }
-    operationResult(scope, key, input) {
-        const old = this.db.prepare('SELECT hash,response FROM operations WHERE scope=? AND key=?').get(scope, key);
+    operationResult(scope, key, input, trustedOwner) {
+        const old = this.db.prepare('SELECT hash,response,owner_kind,project_id FROM operations WHERE scope=? AND key=?').get(scope, key);
         if (!old)
             return { found: false };
         ensure(old.hash === digest(input), 'IDEMPOTENCY_CONFLICT', '相同幂等键不能用于不同请求');
-        return { found: true, value: JSON.parse(old.response) };
+        const value = JSON.parse(old.response);
+        assertOperationReceipt(this.db, scope, input, value, storedOperationOwner(old), trustedOwner);
+        return { found: true, value };
     }
     /** v0.2 stored operations under lease generations. Reuse a unique historic result,
      * but never silently choose between already-duplicated side effects. */
     agentOperationResult(sessionId, key, input) {
         const scope = `agent:${sessionId}`;
-        const rows = this.db.prepare("SELECT hash,response FROM operations WHERE key=? AND (scope=? OR substr(scope,1,?)=?)")
+        const rows = this.db.prepare("SELECT scope,hash,response,owner_kind,project_id FROM operations WHERE key=? AND (scope=? OR substr(scope,1,?)=?)")
             .all(key, scope, scope.length + 1, scope + ':');
         if (!rows.length)
             return { found: false };
         ensure(rows.every(r => r.hash === digest(input)), 'IDEMPOTENCY_CONFLICT', '相同会话工具标识不能复用于不同请求');
         ensure(new Set(rows.map(r => digest(JSON.parse(r.response)))).size === 1, 'LEGACY_OPERATION_AMBIGUOUS', '旧版本已记录多个不同结果；请人工对账，禁止再次执行');
+        for (const row of rows)
+            assertOperationReceipt(this.db, String(row.scope), input, JSON.parse(String(row.response)), storedOperationOwner(row));
         return { found: true, value: JSON.parse(rows[0].response) };
     }
-    operation(scope, key, input, fn) {
+    operation(scope, key, input, fn, trustedOwner) {
         ensure(typeof key === 'string' && key.length > 0 && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         return this.transaction(() => {
             const hash = digest(input);
-            const old = this.db.prepare('SELECT hash,response FROM operations WHERE scope=? AND key=?').get(scope, key);
+            const old = this.db.prepare('SELECT hash,response,owner_kind,project_id FROM operations WHERE scope=? AND key=?').get(scope, key);
             if (old) {
                 ensure(old.hash === hash, 'IDEMPOTENCY_CONFLICT', '相同幂等键不能用于不同请求');
-                return JSON.parse(old.response);
+                const value = JSON.parse(old.response);
+                assertOperationReceipt(this.db, scope, input, value, storedOperationOwner(old), trustedOwner);
+                return value;
             }
             const result = fn();
-            this.db.prepare('INSERT INTO operations VALUES(?,?,?,?,?)').run(scope, key, hash, JSON.stringify(result), now());
+            const owner = inferOperationOwner(this.db, scope, input, result, trustedOwner);
+            this.db.prepare('INSERT INTO operations(scope,key,hash,response,created_at,owner_kind,project_id) VALUES(?,?,?,?,?,?,?)').run(scope, key, hash, JSON.stringify(result), now(), owner.kind, owner.kind === 'project' ? owner.projectId : null);
             return result;
         });
     }
