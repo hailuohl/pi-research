@@ -1,3 +1,4 @@
+import {Store} from '../../dist/packages/storage/store.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fork} from 'node:child_process';
@@ -15,6 +16,7 @@ const result = outcome => ({summary: 'Offline lifecycle fixture', outcome, evide
 // model is this loopback SSE server; keys, user config and network refresh are absent.
 async function runWorker({outcome = 'completed', rejectFirst = false, controls = false, mode = 'submit', contextReads = 0, reopen = false} = {}) {
     const home = mkdtempSync(join(tmpdir(), 'pi-worker-lifecycle-'));
+    const store=new Store(join(home,'state.db'));store.close();
     const events = [], requests = [], toolCalls = [];
     let child, stderr = '', timer, continuing = false;
     const server = createServer(async (req, res) => {
@@ -67,7 +69,7 @@ async function runWorker({outcome = 'completed', rejectFirst = false, controls =
                 child.send({type: 'follow_up', content: 'late follow-up fixture', messageId: 'after-follow'});
             }
         });
-        child.send({type: 'start', repoRoot, workspace: join(home, 'workspace'), agentDir: join(home, 'agent'), sessionDir: join(home, 'sessions'), modelsPath, piSessionPath, role: 'implementer', model: {provider: 'offline-fixture', model: 'fixture', thinking: 'off'}, prompt: continuing ? 'Continue from the saved history.' : 'Offline fixture: submit a result.', history: null, tools: ['task_result_submit', 'task_context_read'].map(name => ({name, ...TOOL_DEFINITIONS[name]}))});
+        child.send({type: 'start', dataDir:home,repoRoot, workspace: join(home, 'workspace'), agentDir: join(home, 'agent'), sessionDir: join(home, 'sessions'), modelsPath, piSessionPath, role: 'implementer', model: {provider: 'offline-fixture', model: 'fixture', thinking: 'off'}, prompt: continuing ? 'Continue from the saved history.' : 'Offline fixture: submit a result.', history: null, tools: ['task_result_submit', 'task_context_read'].map(name => ({name, ...TOOL_DEFINITIONS[name]}))});
         await ended;
         clearTimeout(timer);
         const ready = events.slice(eventStart).find(e => e.type === 'ready');

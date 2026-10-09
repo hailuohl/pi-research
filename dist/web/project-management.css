@@ -10,6 +10,9 @@
 .project-management-group .actions { flex-shrink: 0; }
 .project-confirmation { padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--canvas); }
 .project-confirmation button { margin-top: 12px; }
+.project-confirmation code, .project-purge-status > code { overflow-wrap: anywhere; }
+.project-confirmation label { margin-top: 16px; }
+.project-purge-status textarea { font-family: Consolas, monospace; overflow-wrap: anywhere; }
 .project-readonly-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 18px; color: var(--muted); background: var(--green-soft); border-bottom: 1px solid var(--line); }
 .project-readonly-notice .text-button { margin-left: auto; }
 @media (max-width: 520px) { .project-management-group li { align-items: flex-start; flex-direction: column; gap: 8px; } }

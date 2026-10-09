@@ -102,6 +102,9 @@
   "delivery": {
     "repository": "https://github.com/hailuohl/pi-research",
     "private_verified": true,
-    "branch": "implementation/pr01-reproducible-baseline"
+    "branch": "implementation/pr01-reproducible-baseline",
+    "commit": "5c7975f61426f680b6cee315bd879d04d1cd5775",
+    "remote_contains_commit": true,
+    "url": "https://github.com/hailuohl/pi-research/commit/5c7975f61426f680b6cee315bd879d04d1cd5775"
   }
 }

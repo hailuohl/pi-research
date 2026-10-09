@@ -1,3 +1,4 @@
+import {registerDataProcess} from '../../packages/storage/process-coordination.js';
 import {imageContextReferences,publicationImageCatalog,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../../packages/pi-adapter/publication-image.js';
 import {applyModelConnection,connectionFetch,safeConnectionStream,type ModelConnection} from '../../packages/pi-adapter/model-connections.js';
 import {resolvedThinking,modelPayload} from '../../packages/pi-adapter/model-definition.js';
@@ -20,7 +21,7 @@ type WorkerMessage =
     | {type: 'tool_response'|'model_http_response'; requestId: number; error?: {code: string; message: string}; result?: unknown}
     | {type: 'abort'}
     | {type: 'steer' | 'follow_up'; content: string; messageId: string;attachmentManifest?:AttachmentManifest}
-    | {type: 'start'; attachmentManifests?:AttachmentManifest[];connection?:Omit<ModelConnection,'apiKey'>; managedHttp?:boolean; catalogFingerprint?:string; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
+    | {type: 'start'; dataDir:string; attachmentManifests?:AttachmentManifest[];connection?:Omit<ModelConnection,'apiKey'>; managedHttp?:boolean; catalogFingerprint?:string; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
 let session: AgentSession | undefined;
 let providerFailure: string | undefined;
 let imageFailure: string | undefined;
@@ -80,6 +81,7 @@ process.on('message', async (message) => {
     started = true;
     attachmentManifests.push(...(raw.attachmentManifests??[]));
     try {
+        registerDataProcess(raw.dataDir,'agent-worker');
         const inspection = inspectPi(raw.repoRoot, raw.model);
         if (!inspection.ready) throw new Error(`${inspection.code}: ${inspection.message}`);
         const installed = locatePi(raw.repoRoot);

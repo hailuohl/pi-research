@@ -17,6 +17,12 @@ export function guardProjectRoute(app, path, write = false) {
     const [kind, id, action] = path.split('/').filter(Boolean);
     if (!id || kind === 'operations' || kind === 'settings')
         return;
+    if (kind === 'projects' && action === 'purge') {
+        ensure(path === `/projects/${id}/purge`, 'INVALID_INPUT', '永久清理只接受规范路径');
+        if (!write)
+            app.projects.purgeStatus(USER, id);
+        return;
+    }
     if (kind === 'projects' && ((!write && action === 'lifecycle') || (write && ['trash', 'restore'].includes(action)))) {
         app.projects.lifecycle(USER, id);
         return;
@@ -75,10 +81,14 @@ export function readRoute(app, host, path, url) {
         return action === 'diff' ? app.changes.inspect(USER, id) : app.changes.get(USER, id);
     if (kind === 'projects' && !id) {
         ensure([...url.searchParams.keys()].every(k => k === 'status') && url.searchParams.getAll('status').length <= 1, 'INVALID_INPUT', '项目列表只接受一个 status');
-        const status = oneOf(url.searchParams.get('status') ?? 'active', ['active', 'archived', 'trashed'], 'status');
-        return app.store.list('project').filter(p => p.status === status).map(p => status === 'trashed' ? app.projects.lifecycle(USER, p.id) : p);
+        const status = oneOf(url.searchParams.get('status') ?? 'active', ['active', 'archived', 'trashed', 'purging'], 'status');
+        return app.store.list('project').filter(p => p.status === status).map(p => ['trashed', 'purging'].includes(status) ? app.projects.lifecycle(USER, p.id) : p);
     }
     if (kind === 'projects' && id) {
+        if (action === 'purge') {
+            ensure(url.search === '', 'INVALID_INPUT', '清理进度不接受查询参数');
+            return app.projects.purgeStatus(USER, id);
+        }
         if (action === 'lifecycle') {
             ensure(parts.length === 3 && url.search === '', 'INVALID_INPUT', '生命周期摘要不接受查询参数');
             return app.projects.lifecycle(USER, id);
@@ -206,6 +216,10 @@ export function writeRoute(app, host, path, body, method = 'POST') {
     if (path === '/projects')
         return app.projects.create(USER, x);
     if (kind === 'projects' && id) {
+        if (action === 'purge') {
+            ensure(method === 'POST', 'METHOD_NOT_ALLOWED', '清理请求只接受POST', 405);
+            return app.projects.purge(USER, id, x, randomUUID());
+        }
         if (action === 'collaboration-settings') {
             const p = app.projects.settings(USER, id, x);
             if (!p.settings.enabled)

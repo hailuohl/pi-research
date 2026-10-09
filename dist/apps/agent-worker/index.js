@@ -1,3 +1,4 @@
+import { registerDataProcess } from '../../packages/storage/process-coordination.js';
 import { imageContextReferences, publicationImageCatalog, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL } from '../../packages/pi-adapter/publication-image.js';
 import { applyModelConnection, connectionFetch, safeConnectionStream } from '../../packages/pi-adapter/model-connections.js';
 import { resolvedThinking, modelPayload } from '../../packages/pi-adapter/model-definition.js';
@@ -77,6 +78,7 @@ process.on('message', async (message) => {
     started = true;
     attachmentManifests.push(...(raw.attachmentManifests ?? []));
     try {
+        registerDataProcess(raw.dataDir, 'agent-worker');
         const inspection = inspectPi(raw.repoRoot, raw.model);
         if (!inspection.ready)
             throw new Error(`${inspection.code}: ${inspection.message}`);

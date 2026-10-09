@@ -1,3 +1,4 @@
+import { registerProcess } from './process-coordination.js';
 import { inferOperationOwner, assertOperationReceipt, storedOperationOwner } from './operation-ownership.js';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
@@ -52,12 +53,13 @@ export class Store {
     textWrites;
     constructor(path) {
         this.path = path;
-        assertPhysicalDataRoot(dirname(path));
+        assertPhysicalDataRoot(path);
         mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
         this.db = new DatabaseSync(path);
         try {
             this.db.exec('PRAGMA busy_timeout=5000');
             this.paths = loadDataPaths(this.db, dirname(path));
+            registerProcess(this.db, dirname(path));
         }
         catch (error) {
             this.db.close();
@@ -108,6 +110,7 @@ INSERT INTO schema_migrations VALUES(4,datetime('now'));`);
             }
             this.db.exec("INSERT INTO schema_migrations VALUES(13,datetime('now'))");
         });
+        this.transaction(() => { this.db.exec(`CREATE TABLE IF NOT EXISTS project_purges(id TEXT PRIMARY KEY,project_id TEXT UNIQUE NOT NULL,state TEXT NOT NULL,phase TEXT NOT NULL,completed_paths INTEGER NOT NULL DEFAULT 0,total_paths INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL,name_hash TEXT,plan TEXT,error TEXT,request_key TEXT NOT NULL,request_hash TEXT NOT NULL); INSERT OR IGNORE INTO schema_migrations VALUES(14,datetime('now'));`); });
         this.transaction(() => { });
     }
     migrateLocalGpuQueue() {

@@ -1,3 +1,4 @@
+import { projectPurgeView } from '../storage/project-purge.js';
 import { assertProjectWritable, assertProjectReadable, assertProjectIdle, retireProjectAuthority } from '../policy/lifecycle.js';
 import { mkdirSync, copyFileSync, existsSync, writeFileSync, lstatSync, rmSync } from 'node:fs';
 import { join, dirname, resolve, relative, isAbsolute } from 'node:path';
@@ -167,6 +168,34 @@ export class ProjectService {
             const next = this.lifecycle(actor, id);
             this.c.store.event(id, 'project.restored', { projectId: id, lifecycleEpoch: next.lifecycleEpoch });
             return next;
+        });
+    }
+    purgeStatus(actor, id) { userOnly(actor); return projectPurgeView(this.c.store.db, this.c.dataDir, id); }
+    purge(actor, id, value, key) {
+        userOnly(actor);
+        const x = object(value);
+        ensure(Object.keys(x).length === 2 && 'expectedVersion' in x && 'confirmName' in x, 'INVALID_INPUT', '永久清理只接受版本和精确项目名称');
+        const version = integer(x.expectedVersion, 'expectedVersion', 1), name = text(x.confirmName, 'confirmName', 120);
+        text(key, 'Idempotency-Key', 200);
+        const requestHash = digest(x);
+        return this.c.store.transaction(() => {
+            const old = this.c.store.db.prepare('SELECT request_key,request_hash FROM project_purges WHERE project_id=?').get(id);
+            if (old) {
+                ensure(old.request_key === key, 'PURGE_ALREADY_REQUESTED', '此项目已有永久清理请求，请查看管理进度');
+                ensure(old.request_hash === requestHash, 'IDEMPOTENCY_CONFLICT', '同一清理请求标识不能改变内容');
+                return this.purgeStatus(actor, id);
+            }
+            const p = this.c.store.get('project', id);
+            ensure(p.status === 'trashed', 'PURGE_NOT_TRASHED', '只有回收站项目可以请求永久清理');
+            ensure(p.version === version, 'VERSION_CONFLICT', '项目已更新，请刷新后重试');
+            ensure(name === p.name, 'PURGE_NAME_MISMATCH', '请精确输入项目名称');
+            assertProjectIdle(this.c.store, id);
+            this.c.store.update('project', id, version, { status: 'purging' });
+            retireProjectAuthority(this.c.store, id);
+            const purgeId = randomUUID();
+            this.c.store.db.prepare("INSERT INTO project_purges(id,project_id,state,phase,updated_at,name_hash,request_key,request_hash) VALUES(?,?,'pending','waiting_offline',?,?,?,?)").run(purgeId, id, new Date().toISOString(), digest(name), key, requestHash);
+            this.c.store.event(id, 'project.purge_requested', { projectId: id, purgeId });
+            return this.purgeStatus(actor, id);
         });
     }
     settings(actor, id, input) {

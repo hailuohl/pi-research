@@ -61,6 +61,11 @@ export interface ProjectLifecycleView extends Pick<Entity,'id'|'version'|'create
     deletedAt?:string;
     restoreStatus?:'active'|'archived';
 }
+export interface ProjectPurgeView {
+    projectId:string;purgeId:string;state:'pending'|'running'|'failed'|'completed';
+    phase:'waiting_offline'|'planning'|'files'|'records'|'verify'|'completed';
+    completedPaths:number;totalPaths:number;updatedAt:string;error?:string;dataDir:string;offlineRequired:true;
+}
 export interface ModelConfig {
     provider: string;
     model: string;

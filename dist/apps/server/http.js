@@ -103,6 +103,11 @@ export function createHttpServer(options) {
                 catch {
                     throw new DomainError('INVALID_JSON', '请求不是有效 JSON', 400);
                 }
+                const purge = route.match(/^\/projects\/([^/]+)\/purge$/);
+                if (purge) {
+                    ensure(req.method === 'POST' && url.search === '', 'METHOD_NOT_ALLOWED', '清理请求只接受无查询参数POST', 405);
+                    return json(app.projects.purge(USER, purge[1], body, key));
+                }
                 if (route === '/settings/environment')
                     return json(writeEnvironment(app, url, req.method, body, key));
                 const attachment = attachmentRoute(app, route, url, req.method, body, key);

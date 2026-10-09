@@ -194,7 +194,7 @@ export declare class WakeupService {
         } | {
             id: string;
             experimentId: string;
-            state: "unknown" | "succeeded" | "failed" | "cancelled" | "queued" | "running" | "cancelling" | "submitting";
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "cancelling" | "submitting";
             integrity: "pending" | "complete" | "incomplete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
@@ -220,7 +220,7 @@ export declare class WakeupService {
         team: {
             id: string;
             goal: string;
-            state: "active" | "failed" | "cancelled" | "completed" | "partial" | "paused" | "awaiting_approval" | "draining";
+            state: "failed" | "cancelled" | "completed" | "active" | "partial" | "paused" | "awaiting_approval" | "draining";
         };
         tasks: {
             id: string;
@@ -267,7 +267,7 @@ export declare class WakeupService {
         purpose: string;
         run: {
             id: string;
-            state: "unknown" | "succeeded" | "failed" | "cancelled" | "queued" | "running" | "cancelling" | "submitting";
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "cancelling" | "submitting";
             integrity: "pending" | "complete" | "incomplete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;

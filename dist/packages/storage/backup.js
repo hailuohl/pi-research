@@ -1,3 +1,4 @@
+import { registerDataProcess, registerProcess, clearCopiedCoordination } from './process-coordination.js';
 import { DatabaseSync, backup } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { chmodSync, closeSync, constants, fstatSync, fsyncSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, readSync, renameSync, rmSync, writeFileSync, writeSync } from 'node:fs';
@@ -136,10 +137,11 @@ function managedTree(root, destination, privateLocalJobs = new Set()) {
     return { entries, excluded };
 }
 function table(db, name) { return !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name); }
-function stateCheck(db) {
+/** Destructive maintenance is stricter than the existing history-preserving backup contract. */
+export function stateCheck(db, forPurge = false) {
     ensure(table(db, 'records') && table(db, 'schema_migrations'), 'BACKUP_DATABASE_INVALID', '缺少研究数据库结构', 400);
     const schema = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x => Number(x.version));
-    ensure(schema.length > 0 && schema.every(v => Number.isInteger(v) && v >= 1 && v <= 13), 'BACKUP_SCHEMA_UNSUPPORTED', '备份需要受支持的数据版本', 409);
+    ensure(schema.length > 0 && schema.every(v => Number.isInteger(v) && v >= 1 && v <= 14), 'BACKUP_SCHEMA_UNSUPPORTED', '备份需要受支持的数据版本', 409);
     ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check === 'ok', 'BACKUP_DATABASE_INVALID', '数据库完整性检查失败', 409);
     if (table(db, 'text_write_receipts'))
         ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(), 'BACKUP_RECOVERY_PENDING', '文本写入回执尚未清理', 409);
@@ -149,6 +151,8 @@ function stateCheck(db) {
         ensure(!db.prepare('SELECT 1 FROM compute_gpu_claims LIMIT 1').get(), 'BACKUP_BUSY', '还有未确认释放的 GPU 占用', 409);
     ensure(!db.prepare("SELECT 1 FROM records WHERE kind='ssh-setup' LIMIT 1").get(), 'BACKUP_BUSY', 'SSH 环境准备仍在执行或结果未知；请先核对已固定目标', 409);
     const rows = db.prepare('SELECT kind,id,project_id,data FROM records ORDER BY rowid').all().map(x => ({ kind: String(x.kind), id: String(x.id), projectId: x.project_id === null ? null : String(x.project_id), value: JSON.parse(String(x.data)) }));
+    if (!forPurge)
+        ensure(!rows.some(r => r.kind === 'project' && r.value.status === 'purging') && (!table(db, 'project_purges') || !db.prepare("SELECT 1 FROM project_purges WHERE state<>'completed'").get()), 'BACKUP_PURGE_INCOMPLETE', '数据集存在待清理或部分清理项目，不能声明完整备份');
     const sessions = new Map(rows.filter(x => x.kind === 'session').map(x => [x.id, x.value]));
     for (const { kind, id, value: r } of rows) {
         const state = String(r.state ?? '');
@@ -169,11 +173,21 @@ function stateCheck(db) {
         if (kind === 'task-attempt')
             busy = ['running', 'unknown'].includes(state);
         if (kind === 'literature-task' || kind === 'git-operation')
-            busy = ['queued', 'running'].includes(state);
+            busy = ['queued', 'running'].includes(state) || forPurge && ['unknown', 'cancelling', 'recovering'].includes(state);
+        if (kind === 'task' && forPurge)
+            busy = r.execution === 'running';
         if (kind === 'github-upload-job')
             busy = ['queued', 'creating', 'uploading', 'unknown'].includes(state);
         if (kind === 'workspace-lease')
             busy = Number(r.until) > Date.now();
+        if (kind === 'host-command' && forPurge)
+            busy = ['starting', 'running', 'unknown'].includes(state);
+        if (kind === 'native-request' && forPurge)
+            busy = ['running', 'unknown'].includes(state);
+        if (kind === 'session-action' && forPurge)
+            busy = ['executing', 'unknown'].includes(state);
+        if (kind === 'operation-pending' && forPurge)
+            busy = true;
         if (kind === 'team')
             busy = ['active', 'draining'].includes(state);
         if (kind === 'team' && !rows.some(p => p.kind === 'project' && p.id === r.projectId && ['archived', 'trashed', 'purging'].includes(String(p.value.status))) && r.autoSummarize === true && ['completed', 'partial', 'failed', 'cancelled'].includes(state)) {
@@ -402,6 +416,7 @@ export async function createDataBackup(source, path, options) {
     const root = noLinks(source), target = destination(path);
     disjoint(root, target);
     ensure(present(root)?.isDirectory() && present(join(root, 'state.db'))?.isFile(), 'BACKUP_DATABASE_INVALID', '数据目录或数据库不存在', 404);
+    registerDataProcess(root, 'backup-create');
     const stage = mkdtempSync(join(dirname(target), '.pi-backup-')), owner = lstatSync(stage);
     chmodSync(stage, 0o700);
     let db;
@@ -423,6 +438,7 @@ export async function createDataBackup(source, path, options) {
         }
         const copy = new DatabaseSync(join(stage, 'data', 'state.db'));
         try {
+            clearCopiedCoordination(copy);
             copy.exec('PRAGMA journal_mode=DELETE');
         }
         finally {
@@ -510,6 +526,14 @@ export async function restoreDataBackup(path, targetPath, options) {
         }
         if (m.modelManagement)
             restoreModelManagementSnapshot(stage, m.modelManagement);
+        const publishDb = new DatabaseSync(join(stage, 'state.db'));
+        try {
+            clearCopiedCoordination(publishDb);
+            registerProcess(publishDb, target, 'backup-restore');
+        }
+        finally {
+            publishDb.close();
+        }
         for (const entry of m.entries.filter(x => x.type === 'directory').sort((a, b) => b.path.length - a.path.length))
             chmodSync(join(stage, entry.path), entry.mode);
         destination(target);

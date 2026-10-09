@@ -1,0 +1,38 @@
+{
+  "flow": "manual offline permanent project cleanup and resume",
+  "status": "accepted",
+  "baseline": "5c7975f61426f680b6cee315bd879d04d1cd5775",
+  "acceptance": [
+    "Only the owner can request permanent deletion of a trashed project with its exact name and current version; purging is irreversible and incomplete cleanup is reported honestly.",
+    "Offline maintenance proves normal writer processes have exited and all admitted work is settled; a persistent gate refuses new startup and survives a maintenance crash.",
+    "A verified owned manifest is fixed before deletion, and other projects, referenced shared content, global settings, credentials, original imports, external repositories and backups are retained.",
+    "Cleanup progress survives failure and restart; explicit resume continues the same plan, and completion retains only a minimal receipt with no project research content.",
+    "Isolated process contention, unpublished CAS preparation, crash/resume, resource preservation and confirmation/status UI checks provide evidence for the core path."
+  ],
+  "delegation": [
+    {"task": "archive_implementation", "requested_model": "gpt-6-astra", "requested_effort": "high", "runtime_configuration": "not echoed"},
+    {"task": "project_management_ui", "requested_model": "gpt-6.1-sol", "requested_effort": "high", "runtime_configuration": "not echoed"},
+    {"task": "purge_independent_review", "requested_model": "gpt-6-astra", "requested_effort": "xhigh", "runtime_configuration": "not echoed"}
+  ],
+  "design_decisions": [
+    "Normal process occupancy lasts until OS process exit, not Store.close; only an unambiguous ESRCH permits removal.",
+    "Maintenance permission is a process-local opaque capability backed by a persistent gate; no force unlock or lease-time expiry bypass.",
+    "Backup creation participates as a shared writer occupancy; restore touches its private staging copy and new destination rather than probing the old source dataset.",
+    "Unprovable receipt ownership, unregistered CAS and unowned staging block preflight before any destructive step; no implicit dataset-wide garbage collection.",
+    "Completed cleanup removes full operation replies and keeps only the original purge key/request hash and a minimal completed tombstone for exact replay."
+  ],
+  "checks": {
+    "initial_focused": {"status":"passed_before_final_repair","tests":47,"passed":47,"failed":0,"skipped":0,"log":".validation/project-purge-repair.log"},
+    "initial_related": {"status":"failed_before_compatibility_repair","tests":31,"passed":29,"failed":2,"skipped":0,"log":".validation/project-purge-related.log"},
+    "full_regression": {"status":"completed_before_final_repair","tests":1588,"passed":1558,"failed":6,"skipped":24,"log":".validation/project-purge-full.log","failures":"Three managed sourcePath counterexamples and two backup history compatibility cases repaired; one fake-provider empty-JSON failure passed both isolated original-build and final-build reruns, with root cause unconfirmed."},
+    "final_affected_recheck": {"status":"passed","tests":95,"passed":95,"failed":0,"skipped":0,"log":".validation/project-purge-final-recheck.log","coverage":"Purge request/HTTP/18 process-filesystem cases; management UI; 13 backup-vs-purge state cases; original backup history assertions; backup CLI/restore; data paths; text recovery; real worker lifecycle; native HTTP fixture."},
+    "build": {"status":"passed","log":".validation/project-purge-final-build.log"},
+    "clean_build": {"status":"passed","files":649,"identical":true,"npm_ci":0,"build":0,"typecheck":0,"dist_manifest_sha256":"3353987561a7d8cbdb13fca696d5e16d70f0d48a3ecdaef405d91ff87008061f","summary":".validation/clean-build-ss9ZlQ/summary.json"},
+    "independent_review": {"status":"passed","blockers":0,"closed":["Terminal tombstone race", "RunIntent and owned receipt references", "Resume ownership and cross-reference revalidation", "Regular hardlinks", "Managed sourcePath exception", "Backup compatibility"],"snapshot":".validation/project-purge-repair-review/snapshot.json","files":72,"tracked_source_patch_sha256":"b09e16797cf23d289dfbd0af74dee991b1d3f04c94b0e8e15be8110db72c3581","acceptance_basis":"Unchanged full-regression passing paths reused; all affected paths and original failures covered by final passing recheck."},
+    "browser": {"status":"passed_confirmation_only","environment":"owned temporary preview on 127.0.0.1:52736","verified":["Full project ID displayed", "Empty and incomplete names leave confirmation disabled", "Exact name enables confirmation", "Escape returns to retained recycle-bin project"],"screenshot":".validation/project-lifecycle-preview/purge-confirmation.jpg","not_executed":"Irreversible browser submit; actual request and cleanup are exercised by isolated API/CLI tests"}
+  },
+  "remaining_blockers": [],
+  "deferred": ["Diagnose intermittent empty-JSON input at the fake provider in native-requests-http.test.mjs:13; two reruns passed without changing that fixture."],
+  "limitations": ["Old binaries must be stopped before upgrading the maintenance protocol.", "Cross-host shared datasets, online garbage collection, automatic purge timers and media-level secure erasure are outside this batch.", "Pre-existing backups and external copies remain independent of project deletion.", "24 full-regression cases were skipped: optional real Docker, compiler isolation and POSIX-only filesystem paths. External model calls were not run.", "Unowned resources, ambiguous receipts or a different incomplete fixed purge plan conservatively block cleanup."],
+  "delivery": {"repository": "https://github.com/hailuohl/pi-research", "private_verified": true, "branch": "implementation/pr01-reproducible-baseline"}
+}

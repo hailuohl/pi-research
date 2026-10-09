@@ -1,3 +1,4 @@
+import {registerDataProcess,registerProcess,clearCopiedCoordination} from './process-coordination.js';
 import {DatabaseSync,backup} from 'node:sqlite';
 import {createHash} from 'node:crypto';
 import {chmodSync,closeSync,constants,fstatSync,fsyncSync,lstatSync,mkdirSync,mkdtempSync,openSync,readFileSync,readdirSync,readSync,renameSync,rmSync,writeFileSync,writeSync,type Stats} from 'node:fs';
@@ -77,15 +78,17 @@ function managedTree(root:string,destination?:string,privateLocalJobs:ReadonlySe
  walk('');return {entries,excluded};
 }
 function table(db:DatabaseSync,name:string) {return !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name);}
-function stateCheck(db:DatabaseSync) {
+/** Destructive maintenance is stricter than the existing history-preserving backup contract. */
+export function stateCheck(db:DatabaseSync,forPurge=false) {
  ensure(table(db,'records')&&table(db,'schema_migrations'),'BACKUP_DATABASE_INVALID','缺少研究数据库结构',400);
- const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=13),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
+ const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=14),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
  ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check==='ok','BACKUP_DATABASE_INVALID','数据库完整性检查失败',409);
  if(table(db,'text_write_receipts'))ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(),'BACKUP_RECOVERY_PENDING','文本写入回执尚未清理',409);
  if(table(db,'compute_queue'))ensure(!db.prepare("SELECT 1 FROM compute_queue WHERE held<>0 OR phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(),'BACKUP_BUSY','还有计算等待、运行或未知结果',409);
  if(table(db,'compute_gpu_claims'))ensure(!db.prepare('SELECT 1 FROM compute_gpu_claims LIMIT 1').get(),'BACKUP_BUSY','还有未确认释放的 GPU 占用',409);
  ensure(!db.prepare("SELECT 1 FROM records WHERE kind='ssh-setup' LIMIT 1").get(),'BACKUP_BUSY','SSH 环境准备仍在执行或结果未知；请先核对已固定目标',409);
  const rows=db.prepare('SELECT kind,id,project_id,data FROM records ORDER BY rowid').all().map(x=>({kind:String(x.kind),id:String(x.id),projectId:x.project_id===null?null:String(x.project_id),value:JSON.parse(String(x.data)) as Record<string,unknown>}));
+ if(!forPurge)ensure(!rows.some(r=>r.kind==='project'&&r.value.status==='purging')&&(!table(db,'project_purges')||!db.prepare("SELECT 1 FROM project_purges WHERE state<>'completed'").get()),'BACKUP_PURGE_INCOMPLETE','数据集存在待清理或部分清理项目，不能声明完整备份');
  const sessions=new Map(rows.filter(x=>x.kind==='session').map(x=>[x.id,x.value]));
  for(const {kind,id,value:r} of rows) {
   const state=String(r.state??'');let busy=false;
@@ -97,9 +100,14 @@ function stateCheck(db:DatabaseSync) {
   // A failed/idle session's old queued message is retained history, not a startup dispatch.
   if(kind==='message')busy=r.status==='running'||r.status==='queued'&&(!sessions.has(String(r.sessionId))||['queued','running'].includes(String(sessions.get(String(r.sessionId))!.state)));
   if(kind==='task-attempt')busy=['running','unknown'].includes(state);
-  if(kind==='literature-task'||kind==='git-operation')busy=['queued','running'].includes(state);
+  if(kind==='literature-task'||kind==='git-operation')busy=['queued','running'].includes(state)||forPurge&&['unknown','cancelling','recovering'].includes(state);
+  if(kind==='task'&&forPurge)busy=r.execution==='running';
   if(kind==='github-upload-job')busy=['queued','creating','uploading','unknown'].includes(state);
   if(kind==='workspace-lease')busy=Number(r.until)>Date.now();
+  if(kind==='host-command'&&forPurge)busy=['starting','running','unknown'].includes(state);
+  if(kind==='native-request'&&forPurge)busy=['running','unknown'].includes(state);
+  if(kind==='session-action'&&forPurge)busy=['executing','unknown'].includes(state);
+  if(kind==='operation-pending'&&forPurge)busy=true;
   if(kind==='team')busy=['active','draining'].includes(state);
   if(kind==='team'&&!rows.some(p=>p.kind==='project'&&p.id===r.projectId&&['archived','trashed','purging'].includes(String(p.value.status)))&&r.autoSummarize===true&&['completed','partial','failed','cancelled'].includes(state)) {
    const source=teamWakeupSource(r as unknown as Row<Team>,rows.filter(x=>x.kind==='task'&&x.value.teamId===id).map(x=>x.value as unknown as Row<Task>)),existing=rows.find(x=>x.kind==='wakeup'&&x.id===wakeupId(source));
@@ -199,6 +207,7 @@ function removeOwnStage(stage:string,owner:Stats) {const info=present(stage);if(
 export async function createDataBackup(source:string,path:string,options:{offline:boolean}):Promise<BackupSummary> {
  ensure(options.offline,'BACKUP_OFFLINE_REQUIRED','请先停止控制器和其他CLI，再显式使用 --offline；不会自动停止作业',409);
  const root=noLinks(source),target=destination(path);disjoint(root,target);ensure(present(root)?.isDirectory()&&present(join(root,'state.db'))?.isFile(),'BACKUP_DATABASE_INVALID','数据目录或数据库不存在',404);
+ registerDataProcess(root,'backup-create');
  const stage=mkdtempSync(join(dirname(target),'.pi-backup-')),owner=lstatSync(stage);chmodSync(stage,0o700);let db:DatabaseSync|undefined;
  try {
   // This lock blocks database writers; --offline remains necessary for filesystem-only preparation.
@@ -207,7 +216,7 @@ export async function createDataBackup(source:string,path:string,options:{offlin
   const privateLocalJobs=new Set(hasEnvironmentSecrets(root)?db.prepare("SELECT id FROM records WHERE kind='run' AND json_extract(data,'$.execution.backend')='local'").all().map(row=>String(row.id)):[]);
   mkdirSync(join(stage,'data'),{mode:0o700});const tree=managedTree(root,join(stage,'data'),privateLocalJobs);
   const reader=new DatabaseSync(join(root,'state.db'),{readOnly:true});try{await backup(reader,join(stage,'data','state.db'));}finally{reader.close();}
-  const copy=new DatabaseSync(join(stage,'data','state.db'));try{copy.exec('PRAGMA journal_mode=DELETE');}finally{copy.close();}chmodSync(join(stage,'data','state.db'),0o600);
+  const copy=new DatabaseSync(join(stage,'data','state.db'));try{clearCopiedCoordination(copy);copy.exec('PRAGMA journal_mode=DELETE');}finally{copy.close();}chmodSync(join(stage,'data','state.db'),0o600);
   const dbEntry:Entry={path:'state.db',type:'file',mode:lstatSync(join(root,'state.db')).mode&0o777,...fileBytes(join(stage,'data','state.db'))};
   const entries=[...tree.entries,dbEntry].sort((a,b)=>a.path.localeCompare(b.path));
   const location=readDataLocation(db),legacyRoots=location?.legacyRoots??[];ensure(!location||location.activeRoot===root,'BACKUP_LOCATION_MISMATCH','数据目录需要受控迁移，不能直接复制后备份',409);
@@ -258,6 +267,7 @@ export async function restoreDataBackup(path:string,targetPath:string,options:{o
    await verifyTree(stage,relocated);
   }
   if(m.modelManagement)restoreModelManagementSnapshot(stage,m.modelManagement);
+  const publishDb=new DatabaseSync(join(stage,'state.db'));try{clearCopiedCoordination(publishDb);registerProcess(publishDb,target,'backup-restore');}finally{publishDb.close();}
   for(const entry of m.entries.filter(x=>x.type==='directory').sort((a,b)=>b.path.length-a.path.length))chmodSync(join(stage,entry.path),entry.mode);
   destination(target);renameSync(stage,target);return {...result,restoredTo:target,...(relocating?{relocated:true}:{})};
  }finally{removeOwnStage(stage,owner);}

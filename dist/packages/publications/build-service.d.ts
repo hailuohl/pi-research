@@ -107,7 +107,7 @@ export declare class PublicationBuildService {
         jobId: string;
         revisionId: string;
         approvalId: string;
-        state: "unknown" | "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out";
+        state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out" | "unknown";
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
@@ -147,7 +147,7 @@ export declare class PublicationBuildService {
         jobId: string;
         revisionId: string;
         approvalId: string;
-        state: "unknown" | "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out";
+        state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out" | "unknown";
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
@@ -186,7 +186,7 @@ export declare class PublicationBuildService {
         jobId: string;
         revisionId: string;
         approvalId: string;
-        state: "unknown" | "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out";
+        state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out" | "unknown";
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
@@ -230,7 +230,7 @@ export declare class PublicationBuildService {
             jobId: string;
             revisionId: string;
             approvalId: string;
-            state: "unknown" | "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out";
+            state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out" | "unknown";
             integrity: "pending" | "complete" | "incomplete" | "invalid";
             manifestDigest: string;
             sourceDigest: string;
@@ -271,7 +271,7 @@ export declare class PublicationBuildService {
         jobId: string;
         revisionId: string;
         approvalId: string;
-        state: "unknown" | "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out";
+        state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "prepared" | "starting" | "timed_out" | "unknown";
         integrity: "pending" | "complete" | "incomplete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
@@ -335,9 +335,9 @@ export declare class PublicationBuildService {
             digest: string;
             bytes: number;
         }>;
-        status: "succeeded" | "failed" | "timed_out" | "non_convergent";
         sourceDigest: string;
         diagnostics: import("./build-types.js").BuildDiagnostic[];
+        status: "succeeded" | "failed" | "timed_out" | "non_convergent";
         formatVersion: 1;
         profileId: typeof PUBLICATION_PROFILE;
         engine: PublicationEngine;

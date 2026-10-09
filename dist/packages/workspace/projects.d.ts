@@ -22,6 +22,8 @@ export declare class ProjectService {
     lifecycle(actor: Actor, id: string): ProjectLifecycleView;
     trash(actor: Actor, id: string, version: number): ProjectLifecycleView;
     restore(actor: Actor, id: string, version: number): ProjectLifecycleView;
+    purgeStatus(actor: Actor, id: string): import("../domain/types.js").ProjectPurgeView;
+    purge(actor: Actor, id: string, value: unknown, key: string): import("../domain/types.js").ProjectPurgeView;
     settings(actor: Actor, id: string, input: unknown): import("../domain/types.js").Row<Project>;
     listFiles(actor: Actor, id: string): {
         path: string;

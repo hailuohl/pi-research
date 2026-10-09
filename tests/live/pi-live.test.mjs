@@ -1,3 +1,4 @@
+import {Store} from '../../dist/packages/storage/store.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fork} from 'node:child_process';
@@ -13,6 +14,7 @@ const reason = !enabled ? 'NOT EXECUTED: set PI_LIVE_TEST=1 to authorize real bi
 test('real pinned Pi worker: tools, stream, steer, usage, exact reopen and abort', {skip: reason, timeout: 240000}, async t => {
     const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
     const home = mkdtempSync(join(tmpdir(), 'pi-research-live-'));
+    const store=new Store(join(home,'state.db'));store.close();
     const workspace = join(home, 'workspace'), agentDir = join(home, 'agent'), sessionDir = join(home, 'sessions');
     for (const dir of [workspace, agentDir, sessionDir]) mkdirSync(dir, {mode: 0o700});
     const token = `live-${Date.now()}`;
@@ -63,7 +65,7 @@ test('real pinned Pi worker: tools, stream, steer, usage, exact reopen and abort
                     if (abort && event.type === 'delta' && !aborted) { aborted = true; child.send({type: 'abort'}); }
                     if (event.type === 'done') finish();
                 });
-                child.send({type: 'start', repoRoot, workspace, agentDir, sessionDir, modelsPath: join(home, 'models.json'), piSessionPath,
+                child.send({type: 'start', dataDir:home,repoRoot, workspace, agentDir, sessionDir, modelsPath: join(home, 'models.json'), piSessionPath,
                     role: 'coordinator', model, tools: abort ? [] : tools, history: null, hostMessages: [],
                     prompt: abort ? 'Write a long numbered list of 500 detailed observations about counting. Do not use tools.' : 'Call live_read with input {}, then live_write exactly once with the returned text as input.content. Then answer briefly: what is 2+2? Follow any subsequent user steering.'});
             });
