@@ -1,6 +1,6 @@
 import {captureSourceRevision,validateSourceRevision,copySourceRevision} from './source-access.js';
 import {assertOutcomeBoundary} from '../runners/outcome.js';
-import {assertProjectWritable, assertExperimentSourceCurrent} from '../policy/lifecycle.js';
+import {assertProjectReadable,assertProjectWritable, assertExperimentSourceCurrent} from '../policy/lifecycle.js';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -19,7 +19,7 @@ import { EXAMPLE_CONTRACT, validateContract } from '../runners/contracts.js';
 export class ExperimentService {
     automation?:import('../policy/research-automation.js').ResearchAutomationService;
     constructor(private c: AppContext, private projects: ProjectService, private briefs?: ResearchBriefService) { }
-    get(actor: Actor, id: string) { const e = this.c.store.get<Experiment>('experiment', id); scope(actor, e.projectId!); return e; }
+    get(actor: Actor, id: string) { const e = this.c.store.get<Experiment>('experiment', id); scope(actor, e.projectId!);assertProjectReadable(this.c.store,e.projectId!,actor); return e; }
     /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
     createFromRevision(actor:Actor,projectId:string,snapshotId:string,spec:{title:string;hypothesis:string;config?:Record<string,unknown>}) {
         userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);

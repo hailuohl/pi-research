@@ -36,7 +36,7 @@ class WorkspaceView extends React.Component {
   }
   render() {
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll workspace-page", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u9879\u76EE\u5DE5\u4F5C\u533A", sub: "\u7F16\u8F91\u7684\u662F\u51C6\u5907\u533A\uFF0C\u4E0D\u4F1A\u6539\u53D8\u5DF2\u7ECF\u63D0\u4EA4\u7684\u5B9E\u9A8C\u5FEB\u7167\u3002", children: /* @__PURE__ */ jsxs("button", { className: "secondary", onClick: () => {
+      /* @__PURE__ */ jsx(SectionTitle, { title: "\u9879\u76EE\u5DE5\u4F5C\u533A", sub: this.props.data.project.archived ? "\u5DF2\u5F52\u6863\u9879\u76EE\u6E90\u7801\u53EA\u8BFB\uFF0C\u5B9E\u9A8C\u5FEB\u7167\u4E0E\u51C6\u5907\u533A\u6587\u4EF6\u4FDD\u7559\u3002" : "\u7F16\u8F91\u7684\u662F\u51C6\u5907\u533A\uFF0C\u4E0D\u4F1A\u6539\u53D8\u5DF2\u7ECF\u63D0\u4EA4\u7684\u5B9E\u9A8C\u5FEB\u7167\u3002", children: /* @__PURE__ */ jsxs("button", { className: "secondary", disabled: this.props.data.project.archived, onClick: () => {
         const path = prompt("\u65B0\u6587\u4EF6\u76F8\u5BF9\u8DEF\u5F84\uFF0C\u4F8B\u5982 notes/research.md");
         if (path)
           this.setState({ path, content: "", digest: null, dirty: true });
@@ -59,13 +59,13 @@ class WorkspaceView extends React.Component {
             this.state.dirty ? /* @__PURE__ */ jsx("span", { className: "dirty-dot", title: "\u672A\u4FDD\u5B58" }) : null,
             /* @__PURE__ */ jsx("span", { className: "grow" }),
             /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.state.path && this.open(this.state.path), children: "\u91CD\u65B0\u8BFB\u53D6" }),
-            /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: !this.state.path || !this.state.dirty || this.state.loading, onClick: () => this.props.perform(async () => {
+            /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading, onClick: () => this.props.perform(async () => {
               const f = await api(`/projects/${this.props.data.project.id}/files`, { path: this.state.path, content: this.state.content, expectedDigest: this.state.digest });
               this.setState({ digest: f.digest, dirty: false });
               await this.loadFiles();
             }, "\u6587\u4EF6\u5DF2\u4FDD\u5B58"), children: "\u4FDD\u5B58\u6587\u4EF6" })
           ] }),
-          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u6587\u4EF6\u5185\u5BB9", spellCheck: false, value: this.state.content, onChange: (e) => this.setState({ content: e.target.value, dirty: true }) }),
+          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u6587\u4EF6\u5185\u5BB9", readOnly: this.props.data.project.archived, spellCheck: false, value: this.state.content, onChange: (e) => this.setState({ content: e.target.value, dirty: true }) }),
           /* @__PURE__ */ jsxs("div", { className: "editor-status", children: [
             /* @__PURE__ */ jsx("span", { children: "UTF-8" }),
             /* @__PURE__ */ jsxs("span", { children: [
@@ -106,7 +106,7 @@ class EvidenceView extends React.Component {
       /* @__PURE__ */ jsx(SectionTitle, { title: "\u8D44\u6599\u4E0E\u8BC1\u636E", sub: "\u8D44\u6599\u662F\u539F\u59CB\u8F93\u5165\uFF1B\u53EA\u6709\u660E\u786E\u5B9A\u4F4D\u5E76\u6821\u9A8C\u540E\u7684\u7247\u6BB5\uFF0C\u624D\u662F\u8BC1\u636E\u3002", children: /* @__PURE__ */ jsxs("label", { className: "secondary file-upload", children: [
         /* @__PURE__ */ jsx(Icon, { name: "plus", size: 15 }),
         "\u5BFC\u5165\u6587\u672C\u8D44\u6599",
-        /* @__PURE__ */ jsx("input", { type: "file", accept: ".txt,.md,.csv,.json,.py,.tex,.mjs", onChange: (e) => {
+        /* @__PURE__ */ jsx("input", { type: "file", disabled: data.project.archived, accept: ".txt,.md,.csv,.json,.py,.tex,.mjs", onChange: (e) => {
           const file = e.target.files?.[0];
           if (!file)
             return;
@@ -150,7 +150,7 @@ class EvidenceView extends React.Component {
             /* @__PURE__ */ jsx("h2", { children: artifact?.title ?? "\u4EA7\u7269\u9884\u89C8" }),
             artifact ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
               /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => downloadArtifact(artifact.id, artifact.title)), children: "\u4E0B\u8F7D" }),
-              /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => this.props.onRegister(artifact.id, this.state.content), children: "\u767B\u8BB0\u4E3A\u8BC1\u636E" })
+              /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => this.props.onRegister(artifact.id, this.state.content), children: "\u767B\u8BB0\u4E3A\u8BC1\u636E" })
             ] }) : null
           ] }),
           artifact ? /* @__PURE__ */ jsxs("div", { children: [
@@ -195,7 +195,7 @@ class EvidenceView extends React.Component {
       /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
           /* @__PURE__ */ jsx("h2", { children: "\u7ED3\u8BBA\u5019\u9009\u4E0E\u9A8C\u6536" }),
-          /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !data.evidence.length, onClick: this.props.onClaim, children: "\u63D0\u51FA\u7ED3\u8BBA\u5019\u9009" })
+          /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || !data.evidence.length, onClick: this.props.onClaim, children: "\u63D0\u51FA\u7ED3\u8BBA\u5019\u9009" })
         ] }),
         data.claims.map((c) => /* @__PURE__ */ jsxs("div", { className: "claim-record", children: [
           /* @__PURE__ */ jsx(Badge, { value: c.status }),
@@ -207,7 +207,7 @@ class EvidenceView extends React.Component {
             " \xB7 \u8BC1\u636E ",
             c.evidenceIds.map(short).join(", ")
           ] }),
-          c.status === "proposal" && c.validity !== "stale" ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
+          !data.project.archived && c.status === "proposal" && c.validity !== "stale" ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
             /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/claims/${c.id}/decide`, { expectedVersion: c.version, status: "accepted" }), "\u7ED3\u8BBA\u5DF2\u7531\u7528\u6237\u91C7\u7EB3"), children: "\u4EBA\u5DE5\u786E\u8BA4\u91C7\u7EB3" }),
             /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/claims/${c.id}/decide`, { expectedVersion: c.version, status: "disputed" })), children: "\u6807\u4E3A\u4E89\u8BAE" }),
             /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => api(`/claims/${c.id}/decide`, { expectedVersion: c.version, status: "rejected" })), children: "\u62D2\u7EDD" })

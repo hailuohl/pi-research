@@ -1,0 +1,42 @@
+{
+  "flow": "project archive and unarchive",
+  "status": "accepted",
+  "baseline": "a84a11771b13fb2e5be835ebc44cef668d49cdaf",
+  "acceptance": [
+    "Archived projects leave the active list and remain discoverable with readable history, source, and existing artifacts.",
+    "Archived projects reject new writes and execution; unarchive keeps identity/history without reviving prior permissions or queued work.",
+    "Accepted queued, active, cancelling, unknown, or recovering work and stale versions block lifecycle changes atomically.",
+    "Reopen preserves lifecycle state; stale asynchronous work cannot commit across archive/unarchive.",
+    "Management and confirmation remain keyboard accessible; failures preserve the selection and allow explicit retry."
+  ],
+  "delegation": [
+    {"task": "archive_implementation", "requested_model": "gpt-6-astra", "requested_effort": "high", "runtime_configuration": "not echoed"},
+    {"task": "project_management_ui", "requested_model": "gpt-6.1-sol", "requested_effort": "high", "runtime_configuration": "not echoed"}
+  ],
+  "checks": {
+    "baseline_build": "passed",
+    "focused_regression": {"initial_backend_passed": 75, "initial_integration_passed": 17, "final_affected_tests": 109, "passed": 108, "failed": 0, "skipped": 1, "skip_reason": "POSIX mode bits are not exercised on Windows", "log": ".validation/project-archive-repair.log"},
+    "full_regression": {"command": "npm run test:core", "tests": 1524, "passed": 1495, "failed": 5, "skipped": 24, "log": ".validation/project-archive-full.log", "resolution": "All five failures were corrected and covered by the final affected-suite run. Independent review found no reason to invalidate the unaffected passing checks."},
+    "clean_build": {"command": "npm run verify:build", "status": "passed", "npm_ci": "passed", "build": "passed", "typecheck": "passed", "identical_files": 637, "dist_manifest_sha256": "89c50b69373c0c5328d21212c4aa97a6b550b7ebd9f25a508fae40f9c3140110", "summary": ".validation/clean-build-RxpeGv/summary.json"},
+    "browser": {"status": "passed in isolated in-app preview", "paths": ["keyboard archive confirmation", "switch to another active project", "open original archived session", "read archived source with editing disabled", "reload retains archived selection", "keyboard unarchive retains project identity"], "real_numeric_fixture": "one completed bundled curve-fit Run", "production_data": "not opened or modified"},
+    "independent_review": {"requested_model": "gpt-6-astra", "requested_effort": "xhigh", "runtime_configuration": "not echoed", "initial_blockers": 2, "remaining_blockers": 0, "initial_patch_sha256": "685d591019bdde9802ef80f485169cf307e734d9f8920a720378d5df6ec7e2cd", "final_patch_sha256": "facd03fe126f3c12ae70b4d8dd4c071bf1b30e95a04e51b8aefc110caa6fcf82", "final_snapshot": ".validation/project-archive-repair-review/snapshot.json", "final_verification_gap": "Targeted test completion was subsequently confirmed by the main agent: 108 passed, 0 failed, 1 platform skip."},
+    "live_pi": "not_run; no new model execution is required by this flow",
+    "live_docker": "not_run; lifecycle busy and unknown paths use isolated regression fixtures"
+  },
+  "changes": [
+    "Canonical project status and lifecycle epoch with legacy archived compatibility derived only at the read boundary.",
+    "Archive/unarchive management, readable retained history, atomic busy/version guards, and retirement of execution authority.",
+    "Captured asynchronous epochs and retained source epochs prevent old work and notifications from reviving.",
+    "Owner fixed-source and submitted-Run history stay readable without restoring execution permission; Git diff does not publish snapshots."
+  ],
+  "remaining_blockers": [],
+  "deferred": ["Suppress the disabled composer attachment capability probe on archived projects."],
+  "delivery": {"repository": "https://github.com/hailuohl/pi-research", "private_verified": true, "branch": "implementation/pr01-reproducible-baseline"},
+  "preserved_unrelated_changes": [
+    "apps/web/public/styles.css",
+    "dist/web/styles.css",
+    "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
+    "docs/reference-baseline/capability-matrix.json",
+    "docs/specs/project-design.txt"
+  ]
+}

@@ -137,7 +137,7 @@ class LiteratureView extends React.Component {
             " \xB7 ",
             s.config?.enabled[source] ? "\u5DF2\u6388\u6743" : "\u672A\u6388\u6743"
           ] }, source)) }),
-          /* @__PURE__ */ jsx("button", { className: "primary", disabled: !s.query.trim() || !s.sources.length || !s.config || s.sources.some((source) => !s.config.enabled[source]), children: "\u63D0\u4EA4\u68C0\u7D22\u4EFB\u52A1" })
+          /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || (!s.query.trim() || !s.sources.length || !s.config || s.sources.some((source) => !s.config.enabled[source])), children: "\u63D0\u4EA4\u68C0\u7D22\u4EFB\u52A1" })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("section", { className: "surface", children: [
@@ -166,7 +166,7 @@ class LiteratureView extends React.Component {
           ] }) : null,
           /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
             /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => void this.inspectTask(task), children: "\u67E5\u770B\u56FA\u5B9A\u7ED3\u679C" }),
-            ["queued", "running", "cancelling"].includes(task.state) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => call(data.project.id, "literature_task_cancel", { taskId: task.id })), children: "\u8BF7\u6C42\u53D6\u6D88\u4EFB\u52A1" }) : null,
+            ["queued", "running", "cancelling"].includes(task.state) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => call(data.project.id, "literature_task_cancel", { taskId: task.id })), disabled: data.project.archived, children: "\u8BF7\u6C42\u53D6\u6D88\u4EFB\u52A1" }) : null,
             ["failed", "cancelled", "interrupted"].includes(task.state) ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => call(data.project.id, "literature_task_retry", { taskId: task.id, expectedVersion: task.version }), "\u5DF2\u663E\u5F0F\u8BF7\u6C42\u65B0\u5C1D\u8BD5"), children: "\u663E\u5F0F\u91CD\u8BD5" }) : null
           ] })
         ] }, task.id)),
@@ -191,7 +191,7 @@ class LiteratureView extends React.Component {
             short(page.previousSearchId),
             " \u53EF\u4ECE\u6301\u4E45\u4EFB\u52A1\u56DE\u67E5\u3002"
           ] }) : null,
-          page.nextCursor ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.paging || !!nextTask || pageExpired || !pageSource || !s.config?.enabled[pageSource], onClick: () => {
+          page.nextCursor ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || (s.paging || !!nextTask || pageExpired || !pageSource || !s.config?.enabled[pageSource]), onClick: () => {
             if (s.paging) return;
             this.setState({ paging: true });
             void perform(() => call(data.project.id, "literature_task_create", { kind: "search", previousSearchId: s.result.id }), "\u4E0B\u4E00\u9875\u6301\u4E45\u4EFB\u52A1\u5DF2\u63D0\u4EA4").finally(() => {
@@ -242,7 +242,7 @@ class LiteratureView extends React.Component {
           ] }),
           /* @__PURE__ */ jsx("p", { className: "prose-text", children: hit.abstract ?? "\u672A\u63D0\u4F9B\u6458\u8981" }),
           literatureSourceURL(hit.url) ? /* @__PURE__ */ jsx("a", { href: literatureSourceURL(hit.url), target: "_blank", rel: "noopener noreferrer", children: "\u6253\u5F00\u6765\u6E90\u9875\u9762" }) : null,
-          s.result.discoveryGrant ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !resultGrant || resultGrant.effectiveState !== "active" || resultGrant.validity !== "current" || !resultGrant.allowSearchResults || (s.format === "oa-full-text" || !resultGrant.formats.includes(s.format)) || resultGrant.usage.remaining < 1, onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} }, discoveryGrantId: s.result.discoveryGrant.id }), "\u6388\u6743\u5185\u547D\u4E2D\u8D44\u6599\u83B7\u53D6\u5DF2\u63D0\u4EA4"), children: "\u4EE5\u539F\u68C0\u7D22\u6388\u6743\u83B7\u53D6\u6B64\u547D\u4E2D" }) : /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !s.config?.enabled[hit.source] || s.format === "oa-full-text" && hit.source !== "pubmed", onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} } }), "\u539F\u6587\u83B7\u53D6\u4EFB\u52A1\u5DF2\u63D0\u4EA4"), children: "\u63D0\u4EA4\u6B64\u6587\u732E\u83B7\u53D6\u4EFB\u52A1" })
+          s.result.discoveryGrant ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || (!resultGrant || resultGrant.effectiveState !== "active" || resultGrant.validity !== "current" || !resultGrant.allowSearchResults || (s.format === "oa-full-text" || !resultGrant.formats.includes(s.format)) || resultGrant.usage.remaining < 1), onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} }, discoveryGrantId: s.result.discoveryGrant.id }), "\u6388\u6743\u5185\u547D\u4E2D\u8D44\u6599\u83B7\u53D6\u5DF2\u63D0\u4EA4"), children: "\u4EE5\u539F\u68C0\u7D22\u6388\u6743\u83B7\u53D6\u6B64\u547D\u4E2D" }) : /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || (!s.config?.enabled[hit.source] || s.format === "oa-full-text" && hit.source !== "pubmed"), onClick: () => perform(() => call(data.project.id, "literature_task_create", { kind: "retrieve", target: { source: hit.source, id: hit.id, format: s.format, ...s.requestedVersion.trim() ? { requestedVersion: s.requestedVersion.trim() } : {} } }), "\u539F\u6587\u83B7\u53D6\u4EFB\u52A1\u5DF2\u63D0\u4EA4"), children: "\u63D0\u4EA4\u6B64\u6587\u732E\u83B7\u53D6\u4EFB\u52A1" })
         ] }, hit.source + ":" + hit.id))
       ] }) : null,
       /* @__PURE__ */ jsxs("details", { className: "secondary-section", children: [
@@ -254,7 +254,7 @@ class LiteratureView extends React.Component {
           ] }),
           /* @__PURE__ */ jsxs("label", { className: "secondary file-upload", children: [
             "\u9009\u62E9 PDF \u6216 UTF-8 \u6587\u672C\uFF08\u6700\u591A32 MiB\uFF09",
-            /* @__PURE__ */ jsx("input", { type: "file", accept: ".pdf,.txt,.md,application/pdf,text/plain", onChange: (e) => {
+            /* @__PURE__ */ jsx("input", { type: "file", disabled: data.project.archived, accept: ".pdf,.txt,.md,application/pdf,text/plain", onChange: (e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
               if (file) void perform(async () => {
@@ -396,10 +396,10 @@ class DocumentPane extends React.Component {
             "\u56FA\u5B9A\u89E3\u6790\u955C\u50CF\u6458\u8981",
             /* @__PURE__ */ jsx("input", { required: true, pattern: "(?:.+@)?sha256:[a-f0-9]{64}", value: this.state.image, onChange: (e) => this.setState({ image: e.target.value }) })
           ] }),
-          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !this.state.parser, children: "\u663E\u5F0F\u4FDD\u5B58\u89E3\u6790\u914D\u7F6E" })
+          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || !this.state.parser, children: "\u663E\u5F0F\u4FDD\u5B58\u89E3\u6790\u914D\u7F6E" })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("button", { className: "primary", disabled: d.contentKind !== "original-pdf" || !this.state.parser?.configured, onClick: () => perform(() => call(data.project.id, "document_parse_prepare", { documentVersionId: d.id }), "\u56FA\u5B9A\u89E3\u6790\u4EFB\u52A1\u5DF2\u51C6\u5907\uFF1B\u4ECD\u9700\u7528\u6237\u6279\u51C6"), children: "\u51C6\u5907\u56FA\u5B9A\u6587\u6863\u89E3\u6790" }),
+      /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || (d.contentKind !== "original-pdf" || !this.state.parser?.configured), onClick: () => perform(() => call(data.project.id, "document_parse_prepare", { documentVersionId: d.id }), "\u56FA\u5B9A\u89E3\u6790\u4EFB\u52A1\u5DF2\u51C6\u5907\uFF1B\u4ECD\u9700\u7528\u6237\u6279\u51C6"), children: "\u51C6\u5907\u56FA\u5B9A\u6587\u6863\u89E3\u6790" }),
       (data.documentParseJobs ?? []).filter((job) => job.documentVersionId === d.id).slice().reverse().map((job) => {
         const approval = data.approvals.find((a) => a.id === job.approvalId);
         return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
@@ -423,11 +423,11 @@ class DocumentPane extends React.Component {
           ] }),
           job.error ? /* @__PURE__ */ jsx("p", { className: "error-text", children: job.error }) : null,
           job.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-            /* @__PURE__ */ jsx("button", { className: "primary", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), "\u5DF2\u6279\u51C6\u56FA\u5B9A\u89E3\u6790\uFF0C\u5C1A\u672A\u63D0\u4EA4"), children: "\u6279\u51C6\u56FA\u5B9A\u6587\u6863\u89E3\u6790" }),
-            /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false })), children: "\u62D2\u7EDD\u89E3\u6790" })
+            /* @__PURE__ */ jsx("button", { className: "primary", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), "\u5DF2\u6279\u51C6\u56FA\u5B9A\u89E3\u6790\uFF0C\u5C1A\u672A\u63D0\u4EA4"), disabled: data.project.archived, children: "\u6279\u51C6\u56FA\u5B9A\u6587\u6863\u89E3\u6790" }),
+            /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false })), disabled: data.project.archived, children: "\u62D2\u7EDD\u89E3\u6790" })
           ] }) : null,
-          job.state === "prepared" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", onClick: () => perform(() => call(data.project.id, "document_parse_submit", { jobId: job.id }), "\u89E3\u6790\u5DF2\u8FDB\u5165\u5171\u4EAB\u8BA1\u7B97\u961F\u5217"), children: "\u63D0\u4EA4\u5DF2\u6279\u51C6\u89E3\u6790" }) : null,
-          ["prepared", "queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => call(data.project.id, "document_parse_cancel", { jobId: job.id })), children: "\u8BF7\u6C42\u53D6\u6D88\u89E3\u6790" }) : null,
+          job.state === "prepared" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", onClick: () => perform(() => call(data.project.id, "document_parse_submit", { jobId: job.id }), "\u89E3\u6790\u5DF2\u8FDB\u5165\u5171\u4EAB\u8BA1\u7B97\u961F\u5217"), disabled: data.project.archived, children: "\u63D0\u4EA4\u5DF2\u6279\u51C6\u89E3\u6790" }) : null,
+          ["prepared", "queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => call(data.project.id, "document_parse_cancel", { jobId: job.id })), disabled: data.project.archived, children: "\u8BF7\u6C42\u53D6\u6D88\u89E3\u6790" }) : null,
           job.state === "succeeded" && job.integrity === "complete" && job.resultId ? /* @__PURE__ */ jsxs(Fragment, { children: [
             /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => this.props.onLocation({ documentVersionId: d.id, parseResultId: job.resultId, pageNumber: 1 }), children: "\u67E5\u770B\u6B64\u56FA\u5B9A\u89E3\u6790\u7ED3\u679C" }),
             /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !canUse, title: canUse ? `\u53D1\u9001\u56FA\u5B9A\u8D44\u6599\u5230 ${session.title}\uFF1B\u89C6\u89C9\u9875\u8303\u56F4\u4ECD\u9700\u53E6\u6279` : "\u8BF7\u5148\u9009\u62E9\u53EF\u7528\u7684\u4E3B\u534F\u8C03\u4F1A\u8BDD", onClick: () => {
@@ -437,7 +437,7 @@ class DocumentPane extends React.Component {
           ] }) : null
         ] }, job.id);
       }),
-      this.props.location?.parseResultId ? /* @__PURE__ */ jsx(DocumentPages, { document: d, projectId: data.project.id, resultId: this.props.location.parseResultId, pageNumber: this.props.location.pageNumber ?? 1, start: this.props.location.start, end: this.props.location.end, onPage: (pageNumber) => this.props.onLocation({ documentVersionId: d.id, parseResultId: this.props.location.parseResultId, pageNumber }), perform }, this.props.location.parseResultId) : null
+      this.props.location?.parseResultId ? /* @__PURE__ */ jsx(DocumentPages, { readOnly: data.project.archived, document: d, projectId: data.project.id, resultId: this.props.location.parseResultId, pageNumber: this.props.location.pageNumber ?? 1, start: this.props.location.start, end: this.props.location.end, onPage: (pageNumber) => this.props.onLocation({ documentVersionId: d.id, parseResultId: this.props.location.parseResultId, pageNumber }), perform }, this.props.location.parseResultId) : null
     ] });
   }
 }
@@ -675,7 +675,7 @@ class DocumentPages extends React.Component {
             /* @__PURE__ */ jsx("input", { required: true, "aria-label": "\u9875\u6BB5\u8BC1\u636E\u8BF4\u660E", value: s.description, onChange: (e) => this.setState({ description: e.target.value }) })
           ] }),
           /* @__PURE__ */ jsx("blockquote", { "aria-label": "\u9009\u4E2D\u8BC1\u636E\u539F\u6587", children: s.content.slice(Math.max(0, s.start - s.base), Math.max(0, s.end - s.base)) }),
-          /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.loading || !!s.error || !s.content.slice(s.start - s.base, s.end - s.base).trim() || s.end > s.cursor || s.start < s.base || s.end <= s.start || !s.description.trim(), children: "\u767B\u8BB0\u56FA\u5B9A\u9875\u6BB5\u8BC1\u636E" })
+          /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.readOnly || s.loading || !!s.error || !s.content.slice(s.start - s.base, s.end - s.base).trim() || s.end > s.cursor || s.start < s.base || s.end <= s.start || !s.description.trim(), children: "\u767B\u8BB0\u56FA\u5B9A\u9875\u6BB5\u8BC1\u636E" })
         ] })
       ] }) : null
     ] });

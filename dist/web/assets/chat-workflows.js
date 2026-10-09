@@ -324,7 +324,7 @@ class ChatWorkflows extends React.Component {
       }),
       (data.experimentPlans ?? []).some((p) => p.campaignId === c.id) ? /* @__PURE__ */ jsxs("details", { children: [
         /* @__PURE__ */ jsx("summary", { children: "\u5DF2\u751F\u6210\u7684\u65B9\u6848\u3001\u5019\u9009\u4E0E\u7ED3\u679C\u6BD4\u8F83" }),
-        /* @__PURE__ */ jsx(ResearchPlanPanel, { data, campaign: c, busy: busy || disabled, perform, onExperiment, onImplementation: onSession, onRun })
+        /* @__PURE__ */ jsx(ResearchPlanPanel, { data, campaign: c, busy, perform, onExperiment, onImplementation: onSession, onRun })
       ] }) : null
     ] }, c.id);
   }

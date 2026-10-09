@@ -29,6 +29,16 @@ export declare function listFiles(root: string, sub?: string): Array<{
     size: number;
     digest?: string;
 }>;
+/** Read current bytes and logical modes without publishing CAS files or mode metadata. */
+export declare function sourceManifest(root: string): {
+    digest: string;
+    files: {
+        mode?: SourceMode | undefined;
+        path: string;
+        size: number;
+        digest: string;
+    }[];
+};
 export declare function snapshotDirectory(root: string, store: string, options?: {
     legacy?: boolean;
 }): SourceSnapshot;

@@ -5,7 +5,7 @@ import {assertPmcArtifactRead,pmcOwner,verifyPmcText} from '../documents/pmc-tex
 import type {ProviderTextEvidenceLink} from '../documents/types.js';
 import type {DocumentParseResult} from '../documents/parse-types.js';
 import {captureAcceptance,assertAcceptanceCurrent} from './acceptance.js';
-import {assertProjectWritable} from '../policy/lifecycle.js';
+import {assertProjectReadable,assertProjectWritable} from '../policy/lifecycle.js';
 import { readFileSync } from 'node:fs';
 import {prepareArtifactBlob} from '../storage/artifact-blob.js';
 import type { AppContext } from '../domain/context.js';
@@ -37,7 +37,7 @@ export class EvidenceService {
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId:string,prepared:Artifact){this.c.store.get('project',projectId);return this.c.store.create<Artifact>('artifact',projectId,prepared);}
     put(projectId:string,title:string,bytes:Buffer,mediaType='text/plain',origin='user',extra:Partial<Artifact>={}){return this.publishPrepared(projectId,this.prepareArtifact(projectId,title,bytes,mediaType,origin,extra));}
-    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!); ensure(a.origin!=='native-continuation'||actor.type!=='agent','NATIVE_CONTINUATION_PRIVATE','原生续跑材料不向普通助手提供',403); assertPmcArtifactRead(this.c.store,actor,a.projectId!,id); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!);assertProjectReadable(this.c.store,a.projectId!,actor); ensure(a.origin!=='native-continuation'||actor.type!=='agent','NATIVE_CONTINUATION_PRIVATE','原生续跑材料不向普通助手提供',403); assertPmcArtifactRead(this.c.store,actor,a.projectId!,id); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
     register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type: Evidence['type'] = 'artifact', runId?: string) {
         scope(actor, projectId);
         const a = this.c.store.get<Artifact>('artifact', artifactId, projectId);

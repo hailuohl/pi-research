@@ -23,7 +23,7 @@ export declare class SourceAccessService {
     private app;
     constructor(app: ResearchApp);
     private selector;
-    resolve(actor: Actor, projectId: string, value: unknown): Row<SourceRevision>;
+    resolve(actor: Actor, projectId: string, value: unknown, historical?: boolean): Row<SourceRevision>;
     list(actor: Actor, projectId: string, value: unknown): {
         files: {
             path: string;

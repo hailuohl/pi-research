@@ -95,8 +95,8 @@ export class DocumentService {
         this.connectors.assertAuthorized(actor, pid);
         validate();
         const settingsVersion = connectorSettings(this.c.store, pid).version;
-        const originalValidate = validate;
-        validate = () => { originalValidate(); this.connectors.assertAuthorized(actor, pid); assertSourceEnabled(this.c.store, pid, input.source); ensure(connectorSettings(this.c.store, pid).version === settingsVersion, 'CONNECTOR_SETTINGS_CHANGED', '来源设置已改变'); ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '获取已取消'); };
+        const originalValidate = validate, lifecycleEpoch = assertProjectWritable(this.c.store, pid).lifecycleEpoch;
+        validate = () => { assertProjectWritable(this.c.store, pid, lifecycleEpoch); originalValidate(); this.connectors.assertAuthorized(actor, pid); assertSourceEnabled(this.c.store, pid, input.source); ensure(connectorSettings(this.c.store, pid).version === settingsVersion, 'CONNECTOR_SETTINGS_CHANGED', '来源设置已改变'); ensure(!signal?.aborted, 'CONNECTOR_CANCELLED', '获取已取消'); };
         validate();
         const target = routePaperId(input.id, input.source), format = oneOf(input.format, ['provider-text', 'original-pdf', 'oa-full-text'], 'format');
         if (format === 'oa-full-text') {

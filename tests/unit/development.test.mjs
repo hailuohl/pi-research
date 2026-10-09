@@ -137,10 +137,10 @@ test('empty argv values are preserved after a nonempty executable',()=>{
  }finally{s.close();}
 });
 
-test('coordinator may inspect sibling tests but only the user can cancel them; archival does not prevent user cancellation',()=>{
+test('coordinator may inspect sibling tests but only the user can cancel them; queued tests block archival',()=>{
  const s=setup();try{const d=ready(s),t=approved(s,d),j=d.submit(USER,s.project.id,t.id),other=s.app.sessions.create(USER,s.project.id,{title:'other coordinator'}),actor={type:'agent',projectId:s.project.id,sessionId:other.id,role:'coordinator'};
   assert.equal(d.inspect(actor,s.project.id,j.id).jobId,j.id);assert.throws(()=>d.cancel(actor,s.project.id,j.id),{code:'TASK_SCOPE_DENIED'});
-  const p=s.app.projects.get(USER,s.project.id);s.app.projects.archive(USER,p.id,p.version);assert.equal(d.cancel(USER,s.project.id,j.id).cancelRequested,true);
+  const p=s.app.projects.get(USER,s.project.id);assert.throws(()=>s.app.projects.archive(USER,p.id,p.version),{code:'PROJECT_BUSY'});assert.equal(d.cancel(USER,s.project.id,j.id).cancelRequested,true);assert.equal(d.inspect(USER,s.project.id,j.id).state,'cancelled');assert.equal(s.app.projects.archive(USER,p.id,p.version).status,'archived');
  }finally{s.close();}
 });
 

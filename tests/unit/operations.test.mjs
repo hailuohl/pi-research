@@ -1,3 +1,4 @@
+import {writeRoute} from '../../dist/apps/server/routes.js';
 import {operationRoute} from '../../dist/apps/server/operation-routes.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -65,13 +66,19 @@ test('archive blocks new mutations while preserving historical owner replay and 
     approve(s.app, intent.approvalId);
     const run = s.app.operations.execute(USER, 'run_submit', {intentId: intent.id}, context(s, 'submit'));
     fixtureFinish(s, run);
-    const project = s.app.store.get('project', s.project.id);
+    const foreign=s.app.projects.create(USER,{name:'foreign replay'}),unsubmitted=s.app.runs.prepare(USER,s.baseline.id),project = s.app.store.get('project', s.project.id);
     s.app.projects.archive(USER, project.id, project.version);
+    const snapshot=()=>JSON.stringify({rows:s.app.store.db.prepare('SELECT * FROM records ORDER BY kind,id').all(),events:s.app.store.db.prepare('SELECT * FROM events ORDER BY seq').all(),operations:s.app.store.db.prepare('SELECT * FROM operations ORDER BY scope,key').all()}),before=snapshot();
     assert.equal(s.app.operations.execute(USER, 'run_prepare', input, context(s, 'prepare')).id, intent.id);
     assert.throws(() => s.app.operations.execute(USER, 'run_prepare', input, context(s, 'fresh')), {code: 'PROJECT_ARCHIVED'});
     const history = s.app.operations.execute(USER, 'run_submit', {intentId: intent.id}, context(s, 'history'));
     assert.equal(history.state, 'succeeded');
     validateSchema(OUTPUT_SCHEMAS.run_submit, history, 'output');
+    assert.equal(writeRoute(s.app,{},`/run-intents/${intent.id}/submit`,{}).id,run.id);
+    assert.throws(()=>s.app.operations.execute(USER,'run_submit',{intentId:unsubmitted.id},context(s,'new-submit')),{code:'PROJECT_ARCHIVED'});
+    assert.throws(()=>writeRoute(s.app,{},`/run-intents/${unsubmitted.id}/submit`,{}),{code:'PROJECT_ARCHIVED'});
+    assert.throws(()=>s.app.operations.execute(USER,'run_submit',{intentId:intent.id},{projectId:foreign.id,idempotencyKey:'foreign'}),{code:'SCOPE_DENIED'});
+    assert.equal(snapshot(),before);
   } finally {s.close();}
 });
 

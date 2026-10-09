@@ -88,7 +88,9 @@ export class WakeupService {
         if (!this.app.store.maybe('budget', a.id))
             this.app.budget.configure(a.projectId, a.id, 1);
         this.enqueue(a.projectId, source);
-        const w = this.get(SYSTEM, wakeupId(source));
+        const w = this.app.store.maybe('wakeup', wakeupId(source));
+        if (!w)
+            return;
         this.app.store.update('wakeup', w.id, w.version, { requested: true });
     }
     assertApprovalResume(actor, subjectId) {
@@ -102,6 +104,14 @@ export class WakeupService {
         return { sourceKind: 'task-continuation', sourceId: id, ownerId: c.id, rootSessionId: c.rootSessionId, continuationId: c.id, jobKind: kind, automatic: true, sourceDigest: digest({ id: j.id, manifestDigest: j.manifestDigest, state: j.state, integrity: j.integrity, exitCode: j.exitCode, error: j.error, artifactIds: j.artifactIds, ...('evidenceIds' in j ? { evidenceIds: j.evidenceIds } : {}) }) };
     }
     enqueue(projectId, source) {
+        const project = this.app.store.get('project', projectId);
+        if (project.status !== 'active')
+            return;
+        const kind = source.sourceKind === 'team' ? 'team' : source.sourceKind === 'campaign-result' ? 'run-observation' : source.sourceKind === 'run-result' ? 'run' : source.sourceKind === 'approval-result' ? 'development-task' : 'research-continuation';
+        const sourceId = source.sourceKind === 'task-continuation' ? source.continuationId : source.sourceId;
+        const origin = this.app.store.db.prepare('SELECT epoch FROM project_record_epochs WHERE kind=? AND id=? AND project_id=?').get(kind, sourceId, projectId);
+        if (!origin || origin.epoch !== project.lifecycleEpoch)
+            return;
         const id = wakeupId(source);
         if (this.app.store.maybe('wakeup', id))
             return;
@@ -110,8 +120,9 @@ export class WakeupService {
         this.app.store.event(projectId, 'wakeup.pending', { wakeupId: id, sourceKind: source.sourceKind, sourceId: source.sourceId });
     }
     sourceStatus(w) {
-        if (this.app.store.get('project', w.projectId).archived)
-            return { valid: false, reason: '项目已归档' };
+        const project = this.app.store.get('project', w.projectId), origin = this.app.store.db.prepare('SELECT epoch FROM project_record_epochs WHERE kind=? AND id=? AND project_id=?').get('wakeup', w.id, w.projectId);
+        if (project.status !== 'active' || !origin || origin.epoch !== project.lifecycleEpoch)
+            return { valid: false, reason: '项目生命周期已变化' };
         const root = this.app.store.get('session', w.rootSessionId, w.projectId);
         if (root.state === 'archived')
             return { valid: false, reason: '主会话已归档' };

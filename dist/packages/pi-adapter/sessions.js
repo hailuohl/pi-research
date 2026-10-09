@@ -4,7 +4,7 @@ import { assertModelEnabled } from './model-connections.js';
 import { resolvedThinking } from './model-definition.js';
 import { publicRecord } from '../domain/public-record.js';
 import { attachmentReferences, nativeAttachments } from './attachments.js';
-import { assertProjectWritable } from '../policy/lifecycle.js';
+import { assertProjectReadable, assertProjectWritable } from '../policy/lifecycle.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -75,7 +75,7 @@ export class SessionService {
             return updated;
         });
     }
-    get(actor, id) { const s = this.c.store.get('session', id); scope(actor, s.projectId); return s; }
+    get(actor, id) { const s = this.c.store.get('session', id); scope(actor, s.projectId); assertProjectReadable(this.c.store, s.projectId, actor); return s; }
     createRoot(actor, projectId, input, prepared) {
         userOnly(actor);
         scope(actor, projectId);
@@ -174,8 +174,8 @@ export class SessionService {
             return updated;
         });
     }
-    rename(actor, id, title, expectedVersion) { userOnly(actor); this.get(actor, id); return this.c.store.update('session', id, expectedVersion, { title: text(title, 'title', 160) }); }
-    archive(actor, id, expectedVersion) { userOnly(actor); return this.c.store.transaction(() => { const s = this.get(actor, id); ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '运行中或任务会话不能归档'); this.onStop?.(id, '会话已归档'); return this.c.store.update('session', id, expectedVersion, { state: 'archived' }); }); }
+    rename(actor, id, title, expectedVersion) { userOnly(actor); const s = this.get(actor, id); assertProjectWritable(this.c.store, s.projectId); return this.c.store.update('session', id, expectedVersion, { title: text(title, 'title', 160) }); }
+    archive(actor, id, expectedVersion) { userOnly(actor); return this.c.store.transaction(() => { const s = this.get(actor, id); assertProjectWritable(this.c.store, s.projectId); ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '运行中或任务会话不能归档'); this.onStop?.(id, '会话已归档'); return this.c.store.update('session', id, expectedVersion, { state: 'archived' }); }); }
     interrupt(actor, id) {
         userOnly(actor);
         const s = this.get(actor, id);

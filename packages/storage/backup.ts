@@ -79,7 +79,7 @@ function managedTree(root:string,destination?:string,privateLocalJobs:ReadonlySe
 function table(db:DatabaseSync,name:string) {return !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(name);}
 function stateCheck(db:DatabaseSync) {
  ensure(table(db,'records')&&table(db,'schema_migrations'),'BACKUP_DATABASE_INVALID','缺少研究数据库结构',400);
- const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=11),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
+ const schema=db.prepare('SELECT version FROM schema_migrations ORDER BY version').all().map(x=>Number(x.version));ensure(schema.length>0&&schema.every(v=>Number.isInteger(v)&&v>=1&&v<=12),'BACKUP_SCHEMA_UNSUPPORTED','备份需要受支持的数据版本',409);
  ensure(db.prepare('PRAGMA integrity_check').get()?.integrity_check==='ok','BACKUP_DATABASE_INVALID','数据库完整性检查失败',409);
  if(table(db,'text_write_receipts'))ensure(!db.prepare('SELECT 1 FROM text_write_receipts LIMIT 1').get(),'BACKUP_RECOVERY_PENDING','文本写入回执尚未清理',409);
  if(table(db,'compute_queue'))ensure(!db.prepare("SELECT 1 FROM compute_queue WHERE held<>0 OR phase NOT IN ('succeeded','failed','cancelled','timed_out') LIMIT 1").get(),'BACKUP_BUSY','还有计算等待、运行或未知结果',409);

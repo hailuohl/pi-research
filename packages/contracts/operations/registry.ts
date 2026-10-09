@@ -9,7 +9,7 @@ import {publicRecords} from '../../domain/public-record.js';
 import {text, object, integer} from '../validation.js';
 import {CONTINUATION_TOOLS,APPROVAL_RESUME_TOOLS} from '../../policy/research-automation.js';
 import {interactiveCoordinator,scope, userOnly, toolAllowed, AUTOMATION_TOOLS} from '../../policy/permissions.js';
-import {assertProjectWritable} from '../../policy/lifecycle.js';
+import {assertProjectWritable,assertProjectReadable} from '../../policy/lifecycle.js';
 import {readText, writeText, listFiles} from '../../workspace/files.js';
 import {INPUT_SCHEMAS} from './inputs.js';
 import {OUTPUT_SCHEMAS} from './outputs.js';
@@ -108,7 +108,7 @@ function externalReplay(c: OperationContext, name: string, x: Record<string, unk
 
 function executeRegistered(c: OperationContext, name: string, x: Record<string, unknown>): unknown {
     const {app, actor, session, projectId: pid} = c;
-        const ownOrProject = () => { ensure(!x.source || x.source === 'session' || x.source === 'project' && (session?.role ?? 'coordinator') === 'coordinator', 'SCOPE_DENIED', '助手只能访问自己的工作区', 403); return app.store.paths.physical(x.source === 'project' ? app.projects.get(actor, pid).workspace : session!.workspace); };
+        const ownOrProject = () => { ensure(!x.source || x.source === 'session' || x.source === 'project' && (session?.role ?? 'coordinator') === 'coordinator', 'SCOPE_DENIED', '助手只能访问自己的工作区', 403); return app.store.paths.physical(x.source === 'project' ? app.projects.read(actor, pid).workspace : session!.workspace); };
         if (name.startsWith('campaign_')) {
             const campaignId = text(x.campaignId, 'campaignId', 100);
             if (actor.wakeupId) {
@@ -134,7 +134,7 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
             }
             case 'project_inspect': {
                 const inspect=()=>{
-                const project = app.projects.get(actor, pid);
+                const project = app.projects.read(actor, pid);
                 const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId&&!actor.continuationId ? app.wakeups.resources(actor) : null;
                 const runs = app.store.list('run', pid).filter(r => !grant || grant.runIds.has(r.id));
                 const campaigns = !actor.taskId && !actor.wakeupId && session?.role === 'coordinator' && !session.taskId && session.state !== 'archived'
@@ -303,9 +303,9 @@ const SPECS: OperationSpec[] = [
     make('development_inspect', {idempotencyPolicy:'read-only',authorize:(c,x)=>{x.jobId?c.app.development.inspect(c.actor,c.projectId,x.jobId as string):c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string);},preconditions:noPrecondition,execute:(c,x)=>x.jobId?c.app.development.inspect(c.actor,c.projectId,x.jobId as string):c.app.development.get(c.actor,c.projectId,x.developmentTaskId as string)}),
     make('development_logs', {idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.development.inspect(c.actor,c.projectId,x.jobId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.development.logs(c.actor,c.projectId,x.jobId as string,x.stream??'stdout',x.cursor??0,x.identity as string|null|undefined)}),
     make('development_cancel', {idempotencyPolicy:'key-required',authorize:(c,x)=>{c.app.development.inspect(c.actor,c.projectId,x.jobId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.development.cancel(c.actor,c.projectId,x.jobId as string)}),
-    make('experiment_source_list', {idempotencyPolicy: 'read-only', authorize: (c,x) => {c.app.sources.resolve(c.actor,c.projectId,x); if(c.actor.type==='agent')c.app.operations.authorizeAgent(c.actor,'experiment_source_list');}, preconditions: noPrecondition, execute: (c,x) => c.app.sources.list(c.actor,c.projectId,x)}),
-    make('experiment_source_read', {idempotencyPolicy: 'read-only', authorize: (c,x) => {const {path,cursor,limit,...selector}=x;c.app.sources.resolve(c.actor,c.projectId,selector);if(c.actor.type==='agent')c.app.operations.authorizeAgent(c.actor,'experiment_source_read');}, preconditions: noPrecondition, execute: (c,x) => c.app.sources.read(c.actor,c.projectId,x)}),
-    make('experiment_source_diff', {idempotencyPolicy: 'read-only', authorize: (c,x) => {c.app.sources.resolve(c.actor,c.projectId,x.from);c.app.sources.resolve(c.actor,c.projectId,x.to);if(c.actor.type==='agent')c.app.operations.authorizeAgent(c.actor,'experiment_source_diff');}, preconditions: noPrecondition, execute: (c,x) => c.app.sources.diff(c.actor,c.projectId,x)}),
+    make('experiment_source_list', {idempotencyPolicy: 'read-only', authorize: (c,x) => {c.app.sources.resolve(c.actor,c.projectId,x,true); if(c.actor.type==='agent')c.app.operations.authorizeAgent(c.actor,'experiment_source_list');}, preconditions: noPrecondition, execute: (c,x) => c.app.sources.list(c.actor,c.projectId,x)}),
+    make('experiment_source_read', {idempotencyPolicy: 'read-only', authorize: (c,x) => {const {path,cursor,limit,...selector}=x;c.app.sources.resolve(c.actor,c.projectId,selector,true);if(c.actor.type==='agent')c.app.operations.authorizeAgent(c.actor,'experiment_source_read');}, preconditions: noPrecondition, execute: (c,x) => c.app.sources.read(c.actor,c.projectId,x)}),
+    make('experiment_source_diff', {idempotencyPolicy: 'read-only', authorize: (c,x) => {c.app.sources.resolve(c.actor,c.projectId,x.from,true);c.app.sources.resolve(c.actor,c.projectId,x.to,true);if(c.actor.type==='agent')c.app.operations.authorizeAgent(c.actor,'experiment_source_diff');}, preconditions: noPrecondition, execute: (c,x) => c.app.sources.diff(c.actor,c.projectId,x)}),
     make('workspace_prepare_from_revision', {idempotencyPolicy: 'key-required', requiresSession: true, authorize: noPrecondition, preconditions: noPrecondition, execute: (c,x) => c.app.sources.prepare(c.actor,c.projectId,c.session!.id,x)}),
     make('text_evidence_search', {idempotencyPolicy: 'key-required', authorize: (c, x) => authorizeRegistered(c, 'text_evidence_search', x), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => executeRegistered(c, 'text_evidence_search', x)}),
     make('research_skill_list', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'research_skill_list', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'research_skill_list', x)}),
@@ -413,7 +413,7 @@ export class OperationRegistry {
         const input = object(raw), pid = text(options.projectId, 'projectId', 100);
         ensure(actor.type === 'user' || actor.type === 'agent', 'PERMISSION_DENIED', '操作需要用户或宿主派发的 Agent 身份', 403);
         scope(actor, pid);
-        this.app.store.get('project', pid);
+        const lifecycleEpoch=assertProjectReadable(this.app.store,pid,actor).lifecycleEpoch;
         if (options.sessionId) {
             const selected = this.app.store.get<Session>('session', text(options.sessionId, 'sessionId', 100), pid);
             ensure(!session || selected.id === session.id, 'SCOPE_DENIED', '不能切换 Agent 的会话工作区', 403);
@@ -426,7 +426,7 @@ export class OperationRegistry {
         const context: OperationContext = {...options, app: this.app, actor, session, validate: () => {
             ensure(!options.signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时', 409);
             if (actor.type === 'agent') this.authorizeAgent(actor, id);
-            else assertProjectWritable(this.app.store, pid);
+            assertProjectWritable(this.app.store, pid,lifecycleEpoch);
             if(permission){this.app.sessionPermissions.assert(permission.reference,false);if(permission.actionId&&!permission.consumed)this.app.sessionPermissions.validate(permission.reference,session!.id,id,input,permission.actionId);}
         }};
         if (spec.requiresSession) ensure(session, 'SESSION_REQUIRED', '需要指定项目内的会话', 400);
@@ -486,6 +486,8 @@ export class OperationRegistry {
             return saved;
         };
         const invoke = () => {
+            if(spec.idempotencyPolicy!=='read-only')assertProjectWritable(this.app.store,pid,lifecycleEpoch);
+            else assertProjectReadable(this.app.store,pid,actor);
             if (actor.type === 'agent') this.authorizeAgent(actor, id);
             if(permission){this.app.sessionPermissions.assert(permission.reference,false);if(permission.actionId){this.app.sessionPermissions.validate(permission.reference,session!.id,id,input,permission.actionId);this.app.sessionPermissions.begin(permission.actionId);}}
             spec.preconditions(context, input);
@@ -539,7 +541,7 @@ export class OperationRegistry {
             const clear = () => { if (reserved) this.app.store.db.prepare('DELETE FROM records WHERE kind=? AND id=?').run('operation-pending', pendingId); };
             const promise = Promise.resolve().then(invoke).then(value => {
                 context.validate();
-                return this.app.store.transaction(() => { const result = save(value); clear(); return result; });
+                return this.app.store.transaction(() => { context.validate();const result = save(value); clear(); return result; });
             }).catch(error => { clear();if(permission?.actionId)this.app.sessionPermissions.failed(permission.actionId,error,true);throw error; }).finally(() => { this.pending.delete(pendingId); });
             this.pending.set(pendingId, {hash, promise});
             return promise;
@@ -573,7 +575,13 @@ export class OperationRegistry {
                 if(id==='text_evidence_search')this.app.textEvidence.verifyReplay(actor,pid,input);
                 if(actor.type==='agent'&&id==='publication_review_prepare')return output(spec.execute(context,input));
                 if(actor.type==='agent'&&['publication_templates','publication_template_inspect','publication_template_read','manuscript_list','manuscript_inspect','manuscript_source_read','publication_status','publication_inspect','publication_result','publication_build_list','publication_review_inspect','publication_review_list'].includes(id))return output(spec.execute(context,input));
+                if(actor.type==='user'&&assertProjectReadable(this.app.store,pid,actor).status==='archived')return output(previous.value);
                 return save(previous.value);
+            }
+            // An already submitted intent is owner history, even under a new readback key.
+            if(actor.type==='user'&&id==='run_submit'&&assertProjectReadable(this.app.store,pid,actor).status==='archived') {
+                const intent=this.app.store.get<RunIntent>('run-intent',input.intentId as string,pid);
+                if(intent.runId)return output(this.app.runs.submit(actor,intent.id));
             }
             const pending = this.app.store.maybe<{hash: string}>('operation-pending', digest({scope: operationScope, key}));
             if (pending) {

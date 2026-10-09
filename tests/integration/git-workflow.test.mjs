@@ -1,3 +1,4 @@
+import {WorkspaceLeases} from '../../dist/packages/workspace/leases.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
@@ -170,4 +171,16 @@ test('dirty directory-to-file changes survive an interrupted unpublished checkou
   assert.equal(readFileSync(join(physical(s,s.session.workspace),'pkg'),'utf8'),'user changed a directory into a file\n');
   const changes=operation(s,'workspace_history_diff').files;assert.ok(changes.some(f=>f.path==='pkg'&&f.status==='added'));assert.ok(changes.some(f=>f.path==='pkg/a.py'&&f.status==='deleted'));
  }finally{GitCommand.prototype.addWorktree=add;await close(s);}
+});
+
+
+test('archived workspace history diff sees pending files without publishing snapshots or changing records',async()=>{
+ const s=setup();try{
+  s.app.git.enable(USER,s.project.id);const session=await ready(s),workspace=physical(s,session.workspace);writeFileSync(join(workspace,'pending-note.txt'),'retained local edit');
+  const leases=new WorkspaceLeases(s.app.store);for(const lease of s.app.store.list('workspace-lease',s.project.id).filter(l=>l.until>Date.now()))leases.release(s.project.id,lease.branch,lease.owner,lease.generation);
+  const p=s.app.store.get('project',s.project.id);s.app.projects.archive(USER,p.id,p.version);
+  const tree=(root,relative='')=>readdirSync(join(root,relative),{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name)).flatMap(entry=>{const path=relative?relative+'/'+entry.name:entry.name,full=join(root,path),stat=lstatSync(full);return entry.isDirectory()?[[path,'directory',stat.mode],...tree(root,path)]:[[path,digest(readFileSync(full)),stat.mode,stat.mtimeMs]];});
+  const db=()=>JSON.stringify({records:s.app.store.db.prepare('SELECT * FROM records ORDER BY kind,id').all(),events:s.app.store.db.prepare('SELECT * FROM events ORDER BY seq').all(),operations:s.app.store.db.prepare('SELECT * FROM operations ORDER BY scope,key').all()});
+  const before=db(),files=tree(join(s.dir,'snapshots')),diff=operation(s,'workspace_history_diff');assert.ok(diff.files.some(file=>file.path==='pending-note.txt'&&file.status==='added'));assert.equal(db(),before);assert.deepEqual(tree(join(s.dir,'snapshots')),files);
+ }finally{await close(s);}
 });

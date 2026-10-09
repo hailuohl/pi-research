@@ -303,7 +303,7 @@ class ResearchPlanPanel extends React.Component {
                 ] }, s.id))
               ] })
             ] }),
-            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: busy || c.state !== "active", children: "\u51C6\u5907\u56FA\u5B9A\u6765\u6E90\u7684\u79C1\u6709\u5B9E\u73B0" })
+            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || busy || c.state !== "active", children: "\u51C6\u5907\u56FA\u5B9A\u6765\u6E90\u7684\u79C1\u6709\u5B9E\u73B0" })
           ] }) : null,
           candidate.state === "awaiting_implementation" && candidate.sessionId ? /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
             e.preventDefault();
@@ -322,7 +322,7 @@ class ResearchPlanPanel extends React.Component {
                 ] }, p.id))
               ] })
             ] }),
-            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: busy || !proposals.length || c.state !== "active", children: "\u6838\u5BF9\u53D7\u5BA1\u6765\u6E90\u5E76\u63A5\u5165\u6D3B\u52A8" })
+            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || busy || !proposals.length || c.state !== "active", children: "\u6838\u5BF9\u53D7\u5BA1\u6765\u6E90\u5E76\u63A5\u5165\u6D3B\u52A8" })
           ] }) : null,
           /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
             "\u6D4B\u8BD5 ",

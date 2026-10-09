@@ -105,7 +105,7 @@ export class WakeupService {
         const source:Source={sourceKind:'approval-result',sourceId:t.id,ownerId:a.id,rootSessionId:s.id,approvalId:a.id,automatic:true,resumePermission:t.resume.permission,sourceDigest:digest({taskId:t.id,manifestDigest:t.manifestDigest,approvalId:a.id,resume:t.resume})};
         if(!this.app.store.maybe('budget',a.id))this.app.budget.configure(a.projectId!,a.id,1);
         this.enqueue(a.projectId!,source);
-        const w=this.get(SYSTEM,wakeupId(source));this.app.store.update<Wakeup>('wakeup',w.id,w.version,{requested:true});
+        const w=this.app.store.maybe<Wakeup>('wakeup',wakeupId(source));if(!w)return;this.app.store.update<Wakeup>('wakeup',w.id,w.version,{requested:true});
     }
     assertApprovalResume(actor:Actor,subjectId?:string){
         ensure(actor.approvalResumeId&&actor.wakeupId&&!actor.continuationId&&!actor.taskId,'AUTOMATION_SCOPE_DENIED','缺少准确批准恢复身份',403);
@@ -116,6 +116,12 @@ export class WakeupService {
         return {sourceKind:'task-continuation',sourceId:id,ownerId:c.id,rootSessionId:c.rootSessionId,continuationId:c.id,jobKind:kind,automatic:true,sourceDigest:digest({id:j.id,manifestDigest:j.manifestDigest,state:j.state,integrity:j.integrity,exitCode:j.exitCode,error:j.error,artifactIds:j.artifactIds,...('evidenceIds'in j?{evidenceIds:j.evidenceIds}:{})})};
     }
     private enqueue(projectId: string, source: Source) {
+        const project=this.app.store.get('project',projectId);
+        if(project.status!=='active')return;
+        const kind=source.sourceKind==='team'?'team':source.sourceKind==='campaign-result'?'run-observation':source.sourceKind==='run-result'?'run':source.sourceKind==='approval-result'?'development-task':'research-continuation';
+        const sourceId=source.sourceKind==='task-continuation'?source.continuationId:source.sourceId;
+        const origin=this.app.store.db.prepare('SELECT epoch FROM project_record_epochs WHERE kind=? AND id=? AND project_id=?').get(kind,sourceId!,projectId);
+        if(!origin||origin.epoch!==project.lifecycleEpoch)return;
         const id = wakeupId(source);
         if (this.app.store.maybe('wakeup', id)) return;
         this.app.store.create<Wakeup>('wakeup', projectId, { ...source, requested: false, state: 'pending', attempts: 0,
@@ -124,7 +130,8 @@ export class WakeupService {
     }
 
     private sourceStatus(w: Row<Wakeup>): { valid: boolean; reason?: string; deferred?: boolean } {
-        if (this.app.store.get('project', w.projectId!).archived) return { valid: false, reason: '项目已归档' };
+        const project=this.app.store.get('project',w.projectId!),origin=this.app.store.db.prepare('SELECT epoch FROM project_record_epochs WHERE kind=? AND id=? AND project_id=?').get('wakeup',w.id,w.projectId!);
+        if(project.status!=='active'||!origin||origin.epoch!==project.lifecycleEpoch)return {valid:false,reason:'项目生命周期已变化'};
         const root = this.app.store.get<Session>('session', w.rootSessionId, w.projectId!);
         if (root.state === 'archived') return { valid: false, reason: '主会话已归档' };
         let source: Source;

@@ -47,7 +47,7 @@ export class ConnectorService {
     }
     else
         ensure(s.generation === actor.generation, 'LEASE_EXPIRED', '会话已被替代'); }
-    bound(actor, pid, settingsVersion, callback, ctx) { return () => { this.assertAuthorized(actor, pid); if (ctx)
+    bound(actor, pid, settingsVersion, callback, ctx) { const epoch = assertProjectWritable(this.c.store, pid).lifecycleEpoch; return () => { assertProjectWritable(this.c.store, pid, epoch); this.assertAuthorized(actor, pid); if (ctx)
         assertDiscoveryContext(this.c.store, pid, ctx); ensure(connectorSettings(this.c.store, pid).version === settingsVersion, 'CONNECTOR_SETTINGS_CHANGED', '连接器设置已改变；本次结果未采纳'); callback(); }; }
     request(pid, source, validate, signal, captured, ctx, ownerPage) { return async (url, headers = {}) => { const checkExpiry = () => { if (ownerPage?.expiresAt)
         ensure(Date.now() < Date.parse(ownerPage.expiresAt), 'LITERATURE_PAGE_EXPIRED', '下一游标已过期，请从第一页重新检索'); }; validate(); checkExpiry(); const call = this.c.store.transaction(() => { validate(); checkExpiry(); return reserveConnectorCall(this.c.store, pid, source, url, ctx, ownerPage); }); try {

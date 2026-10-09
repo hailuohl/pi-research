@@ -9,7 +9,7 @@ import {object, text} from '../contracts/validation.js';
 import {scope, ROLE_TOOLS} from '../policy/permissions.js';
 import {assertProjectWritable} from '../policy/lifecycle.js';
 import {digest, now} from '../storage/store.js';
-import {listFiles, safePath, snapshotDirectory, verifySnapshot, setSourceModes, setSourceMode} from './files.js';
+import {listFiles, safePath, snapshotDirectory, sourceManifest, verifySnapshot, setSourceModes, setSourceMode} from './files.js';
 import {readStableFile} from './stable-file.js';
 import {validateSourceRevision} from './source-access.js';
 import {GitCommand} from './git-command.js';
@@ -81,13 +81,13 @@ export class GitService {
     }
     operation(actor:Actor,pid:string,id:string) {
         scope(actor,pid);const op=this.app.store.get<GitOperation>('git-operation',id,pid);
-        if(op.sessionId)this.access(actor,pid,op.sessionId);else this.app.sources.resolve(actor,pid,{snapshotId:op.sourceRevisionId});
+        if(op.sessionId)this.access(actor,pid,op.sessionId);else this.app.sources.resolve(actor,pid,{snapshotId:op.sourceRevisionId},true);
         return {operationId:op.id,action:op.action,state:op.state,sourceRevisionId:op.sourceRevisionId,sessionId:op.sessionId,sourceDigest:op.snapshot.digest,gitCommit:op.gitCommit,error:op.error};
     }
     diff(actor:Actor,pid:string,sessionId:string) {
         const s=this.access(actor,pid,sessionId),w=this.app.store.get<GitWorkspace>('git-workspace',sessionId,pid);
         ensure(w.state==='ready','WORKSPACE_NOT_READY','Git 工作区尚未就绪');
-        const current=snapshot(this.app.context,s.workspace),before=new Map(w.snapshot.files.map(f=>[f.path,f])),after=new Map(current.files.map(f=>[f.path,f]));
+        const current=sourceManifest(this.app.store.paths.physical(s.workspace)),before=new Map(w.snapshot.files.map(f=>[f.path,f])),after=new Map(current.files.map(f=>[f.path,f]));
         const files=[...new Set([...before.keys(),...after.keys()])].sort().filter(p=>{const a=before.get(p),b=after.get(p);return a?.digest!==b?.digest||(a?.mode??'100644')!==(b?.mode??'100644');}).map(path=>({path,status:!before.has(path)?'added' as const:!after.has(path)?'deleted' as const:'modified' as const,beforeDigest:before.get(path)?.digest??null,afterDigest:after.get(path)?.digest??null,beforeMode:before.get(path)?.mode??(before.has(path)?'100644':null),afterMode:after.get(path)?.mode??null}));
         return {sessionId,head:w.head!,sourceDigest:current.digest,files};
     }

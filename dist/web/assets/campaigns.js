@@ -39,9 +39,9 @@ function WakeupPanel({ data, perform, busy, onSession, sessionId }) {
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "actions", children: [
         sessionId === w.rootSessionId ? null : /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onSession(w.rootSessionId), children: "\u67E5\u770B\u4E3B\u4F1A\u8BDD" }),
-        w.state === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy || w.requested, onClick: () => perform(() => api(`/wakeups/${w.id}/request`, {}), "\u8BF7\u6C42\u5DF2\u4FDD\u5B58\uFF1B\u5C31\u7EEA\u540E\u6267\u884C"), children: w.requested ? "\u5DF2\u8BF7\u6C42\u5206\u6790" : "\u8BF7\u6C42\u5206\u6790" }) : null,
-        ["pending", "queued", "running"].includes(w.state) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => api(`/wakeups/${w.id}/cancel`, {}), "\u5DF2\u53D6\u6D88\u6B64\u5206\u6790\uFF0C\u4E0D\u5F71\u54CD\u5B9E\u9A8C"), children: "\u53D6\u6D88\u5206\u6790" }) : null,
-        ["failed", "cancelled"].includes(w.state) && w.attempts < w.maxAttempts ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy, onClick: () => {
+        w.state === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy || w.requested, onClick: () => perform(() => api(`/wakeups/${w.id}/request`, {}), "\u8BF7\u6C42\u5DF2\u4FDD\u5B58\uFF1B\u5C31\u7EEA\u540E\u6267\u884C"), children: w.requested ? "\u5DF2\u8BF7\u6C42\u5206\u6790" : "\u8BF7\u6C42\u5206\u6790" }) : null,
+        ["pending", "queued", "running"].includes(w.state) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived || busy, onClick: () => perform(() => api(`/wakeups/${w.id}/cancel`, {}), "\u5DF2\u53D6\u6D88\u6B64\u5206\u6790\uFF0C\u4E0D\u5F71\u54CD\u5B9E\u9A8C"), children: "\u53D6\u6D88\u5206\u6790" }) : null,
+        ["failed", "cancelled"].includes(w.state) && w.attempts < w.maxAttempts ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy, onClick: () => {
           if (confirm("\u5C06\u589E\u52A0\u4E00\u6B21\u6A21\u578B\u5C1D\u8BD5\uFF1B\u4E4B\u524D\u672A\u77E5\u7684\u7528\u91CF\u4E0D\u4F1A\u81EA\u52A8\u91CA\u653E\u3002\u7EE7\u7EED\uFF1F")) perform(() => api(`/wakeups/${w.id}/retry`, {}));
         }, children: "\u663E\u5F0F\u91CD\u8BD5" }) : null
       ] })
@@ -210,8 +210,8 @@ class CampaignView extends React.Component {
         /* @__PURE__ */ jsx("pre", { children: JSON.stringify(d.candidates, null, 2) })
       ] }) : null,
       d.status === "proposed" ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-        a?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy, onClick: () => perform(() => this.approve(a.id), "\u5DF2\u6279\u51C6\u6B64\u7248\u672C\uFF0C\u5C1A\u672A\u5E94\u7528"), children: "\u6279\u51C6\u6B64\u51B3\u5B9A" }) : null,
-        /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: busy || a?.status !== "approved", onClick: () => perform(() => api(`/campaign-decisions/${d.id}/apply`, { expectedVersion: d.version }), "\u51B3\u5B9A\u5DF2\u5E94\u7528\uFF1B\u65B0\u7684\u6B63\u5F0F Run \u4ECD\u987B\u5355\u72EC\u6279\u51C6"), children: "\u5E94\u7528\u5DF2\u6279\u51C6\u51B3\u5B9A" })
+        a?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy, onClick: () => perform(() => this.approve(a.id), "\u5DF2\u6279\u51C6\u6B64\u7248\u672C\uFF0C\u5C1A\u672A\u5E94\u7528"), children: "\u6279\u51C6\u6B64\u51B3\u5B9A" }) : null,
+        /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: data.project.archived || busy || a?.status !== "approved", onClick: () => perform(() => api(`/campaign-decisions/${d.id}/apply`, { expectedVersion: d.version }), "\u51B3\u5B9A\u5DF2\u5E94\u7528\uFF1B\u65B0\u7684\u6B63\u5F0F Run \u4ECD\u987B\u5355\u72EC\u6279\u51C6"), children: "\u5E94\u7528\u5DF2\u6279\u51C6\u51B3\u5B9A" })
       ] }) : null
     ] }, d.id);
   }
@@ -222,7 +222,7 @@ class CampaignView extends React.Component {
     const budget = data.budgets.find((b) => b.campaignId === c?.id);
     const available = c ? data.intents.filter((i) => !members.some((m) => m.intentId === i.id) && data.experiments.some((e) => e.id === i.experimentId && e.contractDigest === c.contractDigest && (e.id === c.focusExperimentId || e.parentId === c.focusExperimentId))) : [];
     return /* @__PURE__ */ jsxs("div", { className: "campaign-page", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u7814\u7A76\u6D3B\u52A8", sub: "\u6301\u4E45\u5316\u8F6E\u6B21\u3001\u771F\u5B9E\u89C2\u6D4B\u548C\u6709\u754C\u51B3\u7B56\uFF1B\u4E0D\u662F\u65E0\u9650\u8FD0\u884C\u7684\u804A\u5929\u3002", children: /* @__PURE__ */ jsx("button", { className: "primary", disabled: busy || !data.experiments.length || !data.sessions.some((s) => s.role === "coordinator" && s.state !== "archived"), onClick: () => this.setState({ create: true }), children: "\u65B0\u5EFA\u7814\u7A76\u6D3B\u52A8" }) }),
+      /* @__PURE__ */ jsx(SectionTitle, { title: "\u7814\u7A76\u6D3B\u52A8", sub: "\u6301\u4E45\u5316\u8F6E\u6B21\u3001\u771F\u5B9E\u89C2\u6D4B\u548C\u6709\u754C\u51B3\u7B56\uFF1B\u4E0D\u662F\u65E0\u9650\u8FD0\u884C\u7684\u804A\u5929\u3002", children: /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || busy || !data.experiments.length || !data.sessions.some((s) => s.role === "coordinator" && s.state !== "archived"), onClick: () => this.setState({ create: true }), children: "\u65B0\u5EFA\u7814\u7A76\u6D3B\u52A8" }) }),
       !c ? /* @__PURE__ */ jsx(Empty, { title: data.campaigns.length ? "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u4E0D\u53EF\u7528" : "\u5C1A\u672A\u5EFA\u7ACB\u7814\u7A76\u6D3B\u52A8", children: data.campaigns.length ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => {
         this.setState({ selected: data.campaigns[0].id });
         this.props.onSelect?.(data.campaigns[0].id);
@@ -278,16 +278,16 @@ class CampaignView extends React.Component {
           /* @__PURE__ */ jsxs("div", { className: "actions", children: [
             /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onSession(c.rootSessionId), children: "\u6253\u5F00\u4E3B\u534F\u8C03\u4F1A\u8BDD" }),
             /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onExperiment(c.focusExperimentId), children: "\u5F53\u524D\u7236\u5B9E\u9A8C" }),
-            c.state === "draft" ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: busy || !approval || ["rejected", "stale"].includes(approval.status), onClick: () => perform(async () => {
+            c.state === "draft" ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: data.project.archived || busy || !approval || ["rejected", "stale"].includes(approval.status), onClick: () => perform(async () => {
               if (approval?.status === "pending") await this.approve(approval.id);
               return api(`/campaigns/${c.id}/activate`, { expectedVersion: c.version });
             }, "\u6D3B\u52A8\u5DF2\u542F\u52A8\uFF0C\u5C1A\u672A\u6388\u6743\u4EFB\u4F55\u6B63\u5F0F\u8BA1\u7B97"), children: "\u6279\u51C6\u5E76\u542F\u52A8\u6D3B\u52A8" }) : null,
             c.state === "active" ? /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy, onClick: () => perform(() => api(`/campaigns/${c.id}/pause`, { expectedVersion: c.version })), children: "\u6682\u505C\u6D3B\u52A8" }),
-              /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: busy || !obs.some((o) => o.roundId === c.currentRoundId && o.status === "pending"), onClick: () => this.setState({ decision: true }), children: "\u63D0\u4EA4\u51B3\u5B9A" })
+              /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy, onClick: () => perform(() => api(`/campaigns/${c.id}/pause`, { expectedVersion: c.version })), children: "\u6682\u505C\u6D3B\u52A8" }),
+              /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: data.project.archived || busy || !obs.some((o) => o.roundId === c.currentRoundId && o.status === "pending"), onClick: () => this.setState({ decision: true }), children: "\u63D0\u4EA4\u51B3\u5B9A" })
             ] }) : null,
-            c.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: busy, onClick: () => perform(() => api(`/campaigns/${c.id}/resume`, { expectedVersion: c.version })), children: "\u6062\u590D\u6D3B\u52A8" }) : null,
-            c.state !== "stopped" ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => {
+            c.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: data.project.archived || busy, onClick: () => perform(() => api(`/campaigns/${c.id}/resume`, { expectedVersion: c.version })), children: "\u6062\u590D\u6D3B\u52A8" }) : null,
+            c.state !== "stopped" ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived || busy, onClick: () => {
               if (confirm("\u505C\u6B62\u65B0\u589E\u7814\u7A76\u51B3\u7B56\u548C\u81EA\u52A8\u5206\u6790\uFF1F\u5DF2\u6709\u6B63\u5F0F Run \u7EE7\u7EED\u8FD0\u884C\uFF0C\u7ED3\u679C\u4ECD\u4F1A\u4FDD\u7559\u3002")) perform(() => api(`/campaigns/${c.id}/stop`, { expectedVersion: c.version, reason: "\u7528\u6237\u5728\u5DE5\u4F5C\u53F0\u505C\u6B62\u6D3B\u52A8" }));
             }, children: "\u505C\u6B62\u6D3B\u52A8" }) : null
           ] }),
@@ -342,8 +342,8 @@ class CampaignView extends React.Component {
                     ] })
                   ] }) : /* @__PURE__ */ jsx("span", { className: "muted", children: "\u7B49\u5F85\u771F\u5B9E\u7ED3\u679C" }) }),
                   /* @__PURE__ */ jsx("td", { children: !r && i ? /* @__PURE__ */ jsxs("div", { children: [
-                    a?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy, onClick: () => perform(() => this.approve(a.id)), children: "\u5355\u72EC\u6279\u51C6\u6B64\u8FD0\u884C" }) : null,
-                    /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: busy || a?.status !== "approved", onClick: () => perform(() => api(`/run-intents/${i.id}/submit`, {}), "\u6B63\u5F0F Run \u5DF2\u63D0\u4EA4"), children: "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C" })
+                    a?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy, onClick: () => perform(() => this.approve(a.id)), children: "\u5355\u72EC\u6279\u51C6\u6B64\u8FD0\u884C" }) : null,
+                    /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy || a?.status !== "approved", onClick: () => perform(() => api(`/run-intents/${i.id}/submit`, {}), "\u6B63\u5F0F Run \u5DF2\u63D0\u4EA4"), children: "\u63D0\u4EA4\u5DF2\u6279\u51C6\u8FD0\u884C" })
                   ] }) : /* @__PURE__ */ jsx("button", { className: "text-button", disabled: !!r && !this.props.onRun, onClick: () => {
                     if (r) this.props.onRun?.(r.id, m.experimentId);
                     else onExperiment(m.experimentId);
@@ -380,7 +380,7 @@ class CampaignView extends React.Component {
                 ] }, d.id))
               ] })
             ] }),
-            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: busy || !available.length, children: "\u767B\u8BB0\u672C\u8F6E\u5019\u9009" })
+            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || busy || !available.length, children: "\u767B\u8BB0\u672C\u8F6E\u5019\u9009" })
           ] }) : null,
           c.state === "active" && !available.length ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6CA1\u6709\u53EF\u767B\u8BB0\u7684\u8FD0\u884C\u6E05\u5355\u3002\u8BF7\u5230\u300C\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u300D\u9009\u62E9\u5F53\u524D\u7236\u5B9E\u9A8C\u6216\u5176\u5B50\u5B9E\u9A8C\uFF0C\u5148\u51C6\u5907\u4E0D\u53EF\u53D8\u5FEB\u7167\u3002\u65E0\u7ED3\u679C\u8282\u70B9\u91CD\u65B0\u767B\u8BB0\u65F6\uFF0C\u9700\u9009\u62E9\u672C\u8F6E\u5DF2\u5E94\u7528\u7684 Repair \u51B3\u5B9A\u3002" }) : null
         ] }),

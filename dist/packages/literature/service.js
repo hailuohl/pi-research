@@ -16,9 +16,9 @@ export class LiteratureService {
         const ctx = discoveryContext(this.c.store, projectId, actor, { kind: 'search', search: parseSearch({ query, sources: ['crossref'], limit }) }, key);
         ensure(!ctx?.taskId, 'DISCOVERY_TASK_OPERATION_DENIED', '任务级发现授权只允许固定 Connector 检索入口');
         const settingsVersion = connectorSettings(this.c.store, projectId).version;
-        const previousValidate = validate;
+        const previousValidate = validate, lifecycleEpoch = assertProjectWritable(this.c.store, projectId).lifecycleEpoch;
         validate = () => { if (ctx)
-            assertDiscoveryContext(this.c.store, projectId, ctx); assertProjectWritable(this.c.store, projectId); ensure(connectorSettings(this.c.store, projectId).version === settingsVersion, 'CONNECTOR_SETTINGS_CHANGED', '来源设置已改变'); assertSourceEnabled(this.c.store, projectId, 'crossref'); previousValidate(); };
+            assertDiscoveryContext(this.c.store, projectId, ctx); assertProjectWritable(this.c.store, projectId, lifecycleEpoch); ensure(connectorSettings(this.c.store, projectId).version === settingsVersion, 'CONNECTOR_SETTINGS_CHANGED', '来源设置已改变'); assertSourceEnabled(this.c.store, projectId, 'crossref'); previousValidate(); };
         validate();
         const request = { projectId, query, limit }, scope = discoveryScope(`literature:${projectId}`, ctx);
         const previous = this.c.store.operationResult(scope, key, request);
@@ -50,7 +50,7 @@ export class LiteratureService {
         ensure(Array.isArray(data?.message?.items), 'PROVIDER_SCHEMA_INVALID', 'Crossref 响应格式错误', 502);
         const items = data.message.items.map((v) => ({ doi: String(v.DOI ?? ''), title: Array.isArray(v.title) ? String(v.title[0] ?? '') : '', authors: (v.author ?? []).slice(0, 10).map((a) => [a.given, a.family].filter(Boolean).join(' ')), date: v.published?.['date-parts']?.[0] ?? [], journal: v['container-title']?.[0] ?? '', url: typeof v.URL === 'string' && /^https:\/\//.test(v.URL) ? v.URL : '', fullTextRead: false, source: 'crossref' }));
         validate();
-        return this.c.store.operation(scope, key, request, () => { const record = this.c.store.create('literature-search', projectId, { ...discoveryProof(ctx), query, source: 'crossref', retrievedAt: new Date().toISOString(), coverage: 'metadata-only', items }); this.c.store.event(projectId, 'literature.searched', { searchId: record.id, count: items.length, coverage: 'metadata-only' }); return record; });
+        return this.c.store.operation(scope, key, request, () => { validate(); const record = this.c.store.create('literature-search', projectId, { ...discoveryProof(ctx), query, source: 'crossref', retrievedAt: new Date().toISOString(), coverage: 'metadata-only', items }); this.c.store.event(projectId, 'literature.searched', { searchId: record.id, count: items.length, coverage: 'metadata-only' }); return record; });
     }
 }
 //# sourceMappingURL=service.js.map

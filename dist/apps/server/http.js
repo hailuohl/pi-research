@@ -1,3 +1,4 @@
+import { assertProjectWritable } from '../../packages/policy/lifecycle.js';
 import { operationRoute } from './operation-routes.js';
 import { readNativeRoute, writeNativeRoute } from './native-routes.js';
 import { attachmentRoute } from './attachment-routes.js';
@@ -14,7 +15,7 @@ import { asError, DomainError, ensure } from '../../packages/domain/errors.js';
 import { text, object } from '../../packages/contracts/validation.js';
 import { safePath } from '../../packages/workspace/files.js';
 import { USER } from '../../packages/domain/types.js';
-import { readRoute, writeRoute } from './routes.js';
+import { readRoute, writeRoute, guardProjectRoute } from './routes.js';
 import { EventStreamHub, eventQuery } from './event-stream.js';
 export function createHttpServer(options) {
     const app = new ResearchApp(options.dataDir, options.repoRoot), host = new AgentHost(app);
@@ -38,6 +39,7 @@ export function createHttpServer(options) {
             if (path.startsWith('/api/')) {
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    guardProjectRoute(app, route);
                     const attachment = attachmentRoute(app, route, url, req.method);
                     if (attachment)
                         return json(attachment.result);
@@ -61,7 +63,7 @@ export function createHttpServer(options) {
                     if (route === '/events/stream') {
                         const query = eventQuery(url, true, req.headers['last-event-id']);
                         if (query.projectId)
-                            app.projects.get(USER, query.projectId);
+                            app.projects.read(USER, query.projectId);
                         events.open(req, res, query);
                         return;
                     }
@@ -148,8 +150,12 @@ export function createHttpServer(options) {
                     const scope = `${req.method}:${route}`, request = { body, query: url.search }, prior = app.store.operationResult(scope, key, request);
                     if (prior.found)
                         return json(prior.value);
+                    const projectId = route === '/sessions' ? text(object(body).projectId, 'projectId', 100) : route === '/settings/model' ? undefined : app.sessions.get(USER, route.split('/')[2]).projectId;
+                    const lifecycleEpoch = projectId ? assertProjectWritable(app.store, projectId).lifecycleEpoch : undefined;
                     const prepared = await prepareModelSelection(app.context);
                     return json(app.store.operation(scope, key, request, () => {
+                        if (projectId)
+                            assertProjectWritable(app.store, projectId, lifecycleEpoch);
                         prepared.assertCurrent();
                         const x = object(body);
                         if (route === '/sessions') {

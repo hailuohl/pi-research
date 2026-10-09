@@ -2,7 +2,7 @@ import { LocalRuntimeService } from './local-runtime.js';
 import { GpuService } from './gpu.js';
 import { BudgetService } from '../policy/budget.js';
 import { SshTargetService } from './ssh-targets.js';
-import { assertExperimentSourceCurrent, assertProjectWritable } from '../policy/lifecycle.js';
+import { assertExperimentSourceCurrent, assertProjectReadable, assertProjectWritable } from '../policy/lifecycle.js';
 import { answerDisposition, assertOutcomeBoundary } from './outcome.js';
 import { object, text, integer, oneOf } from '../contracts/validation.js';
 import { collectRunArtifacts } from './artifacts.js';
@@ -42,7 +42,7 @@ export class RunService {
         this.briefs = briefs;
         this.budget = budget;
     }
-    get(actor, id) { const run = this.c.store.get('run', id); scope(actor, run.projectId); return run; }
+    get(actor, id) { const run = this.c.store.get('run', id); scope(actor, run.projectId); assertProjectReadable(this.c.store, run.projectId, actor); return run; }
     list(actor, projectId, cursor = 0, limit = 20) {
         userOnly(actor);
         scope(actor, projectId);

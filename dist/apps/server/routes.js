@@ -1,3 +1,4 @@
+import { assertProjectReadable, assertProjectWritable } from '../../packages/policy/lifecycle.js';
 import { operationRoute } from './operation-routes.js';
 import { readEnvironment } from './environment-routes.js';
 import { inspectModelConnections } from '../../packages/pi-adapter/model-connections.js';
@@ -11,7 +12,22 @@ import { DomainError, ensure } from '../../packages/domain/errors.js';
 import { object, text, integer, bool, strings, oneOf } from '../../packages/contracts/validation.js';
 import { CAPABILITIES } from '../../packages/contracts/capabilities.js';
 import { eventQuery } from './event-stream.js';
+/** Apply the lifecycle boundary before by-ID routes reach their individual services. */
+export function guardProjectRoute(app, path, write = false) {
+    const [kind, id, action] = path.split('/').filter(Boolean);
+    if (!id || kind === 'operations' || kind === 'settings')
+        return;
+    const row = kind === 'projects' ? app.store.maybe('project', id) : app.store.db.prepare('SELECT project_id FROM records WHERE id=? AND project_id IS NOT NULL LIMIT 1').get(id);
+    const pid = kind === 'projects' ? row?.id : row?.project_id;
+    if (typeof pid === 'string') {
+        if (write && !(kind === 'projects' && action === 'unarchive'))
+            assertProjectWritable(app.store, pid);
+        else
+            assertProjectReadable(app.store, pid, USER);
+    }
+}
 export function readRoute(app, host, path, url) {
+    guardProjectRoute(app, path);
     if (path === '/settings/environment')
         return readEnvironment(app, url);
     if (path === '/settings/model-connections') {
@@ -42,21 +58,24 @@ export function readRoute(app, host, path, url) {
     if (kind === 'sessions' && id && action === 'permissions')
         return app.sessionPermissions.status(USER, id);
     if (path === '/bootstrap')
-        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => !p.archived), model: app.sessions.model(), modelVersion: app.store.maybe('app-settings', 'global')?.version ?? 0, models: app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
+        return { version: '0.3.1-experimental', projects: app.store.list('project').filter(p => p.status === 'active'), model: app.sessions.model(), modelVersion: app.store.maybe('app-settings', 'global')?.version ?? 0, models: app.sessions.models(), runtime: host.status(), capabilities: CAPABILITIES };
     if (path === '/capabilities')
         return CAPABILITIES;
     if (path === '/events') {
         const query = eventQuery(url);
         if (query.projectId)
-            app.projects.get(USER, query.projectId);
+            app.projects.read(USER, query.projectId);
         return app.store.eventPage(query.after, query.projectId, query.limit);
     }
     if (kind === 'change-proposals' && id)
         return action === 'diff' ? app.changes.inspect(USER, id) : app.changes.get(USER, id);
-    if (kind === 'projects' && !id)
-        return app.store.list('project').filter(p => !p.archived);
+    if (kind === 'projects' && !id) {
+        ensure([...url.searchParams.keys()].every(k => k === 'status') && url.searchParams.getAll('status').length <= 1, 'INVALID_INPUT', '项目列表只接受一个 status');
+        const status = oneOf(url.searchParams.get('status') ?? 'active', ['active', 'archived'], 'status');
+        return app.store.list('project').filter(p => p.status === status);
+    }
     if (kind === 'projects' && id) {
-        const p = app.projects.get(USER, id);
+        const p = app.projects.read(USER, id);
         if (action === 'text-evidence')
             return app.textEvidence.status(USER, id);
         if (action === 'state') {
@@ -133,6 +152,7 @@ export function writeRoute(app, host, path, body, method = 'POST') {
         if (migrated)
             return migrated.result;
     }
+    guardProjectRoute(app, path, true);
     const integration = writeIntegrationRoute(app, path, body);
     if (integration !== undefined)
         return integration;
@@ -185,8 +205,10 @@ export function writeRoute(app, host, path, body, method = 'POST') {
                     app.teams.disable(USER, t.id);
             return p;
         }
-        if (action === 'archive')
-            return app.projects.archive(USER, id, integer(x.expectedVersion, 'expectedVersion', 1));
+        if (action === 'archive' || action === 'unarchive') {
+            ensure(method === 'POST' && Object.keys(x).length === 1 && 'expectedVersion' in x, 'INVALID_INPUT', '生命周期变更只接受 POST expectedVersion');
+            return app.projects[action](USER, id, integer(x.expectedVersion, 'expectedVersion', 1));
+        }
         if (!action)
             return app.projects.update(USER, id, x);
     }

@@ -2,7 +2,7 @@ import {LocalRuntimeService} from './local-runtime.js';
 import {GpuService} from './gpu.js';
 import {BudgetService} from '../policy/budget.js';
 import {SshTargetService} from './ssh-targets.js';
-import { assertExperimentSourceCurrent, assertProjectWritable } from '../policy/lifecycle.js';
+import { assertExperimentSourceCurrent, assertProjectReadable,assertProjectWritable } from '../policy/lifecycle.js';
 import {answerDisposition,assertOutcomeBoundary} from './outcome.js';
 import {object,text,integer,oneOf} from '../contracts/validation.js';
 import {collectRunArtifacts} from './artifacts.js';
@@ -37,7 +37,7 @@ export class RunService {
     researchSourceGuard?: (experimentId:string,stage:'prepare'|'submit'|'execute',intentId?:string)=>void;
     private launching = new Set<string>();
     constructor(private c: AppContext, private approvals: ApprovalService, private evidence: EvidenceService, private compute = new ComputeQueue(c), private briefs?: ResearchBriefService, private budget = new BudgetService(c.store)) { }
-    get(actor: Actor, id: string) { const run = this.c.store.get<Run>('run', id); scope(actor, run.projectId!); return run; }
+    get(actor: Actor, id: string) { const run = this.c.store.get<Run>('run', id); scope(actor, run.projectId!);assertProjectReadable(this.c.store,run.projectId!,actor); return run; }
     list(actor: Actor, projectId: string, cursor = 0, limit = 20) {
         userOnly(actor); scope(actor, projectId);
         integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER); integer(limit, 'limit', 1, 100);

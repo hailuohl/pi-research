@@ -147,13 +147,21 @@ export function listFiles(root: string, sub = ''): Array<{
         walk(start);
     return result;
 }
-export function snapshotDirectory(root: string, store: string, options:{legacy?:boolean}={}):SourceSnapshot {
+function snapshotData(root:string,options:{legacy?:boolean}={}) {
     const files = listFiles(root);
     ensure(!files.some(f => f.path.split('/').includes('.gitmodules')), 'UNSUPPORTED_SUBMODULE', '当前版本不展开 Git 子模块；请明确导入已解析的源码而不是遗漏依赖', 422);
-    ensure(files.length > 0, 'EMPTY_WORKSPACE', '工作区没有可运行文件', 400);
     let total = 0;
     const modes=process.platform==='win32'&&!options.legacy?readModes(root):undefined;
-    const data = files.map(f => { const bytes = readStableFile(root,f.path,64*1024*1024);total+=bytes.length;ensure(total<=64*1024*1024,'SNAPSHOT_TOO_LARGE','当前快照限制为 64 MiB；请将大型数据集独立版本化',413);ensure(!bytes.subarray(0, 150).toString().startsWith('version https://git-lfs.github.com/spec'), 'UNSUPPORTED_LFS', '必须先解析 Git LFS 文件再建立快照', 422); return { path:f.path,size:bytes.length,digest:digest(bytes),bytes,...(!options.legacy?{mode:sourceMode(root,f.path,modes)}:{}) }; });
+    return files.map(f => { const bytes = readStableFile(root,f.path,64*1024*1024);total+=bytes.length;ensure(total<=64*1024*1024,'SNAPSHOT_TOO_LARGE','当前快照限制为 64 MiB；请将大型数据集独立版本化',413);ensure(!bytes.subarray(0, 150).toString().startsWith('version https://git-lfs.github.com/spec'), 'UNSUPPORTED_LFS', '必须先解析 Git LFS 文件再建立快照', 422); return { path:f.path,size:bytes.length,digest:digest(bytes),bytes,...(!options.legacy?{mode:sourceMode(root,f.path,modes)}:{}) }; });
+}
+/** Read current bytes and logical modes without publishing CAS files or mode metadata. */
+export function sourceManifest(root:string) {
+    const files=snapshotData(root).map(({bytes,...file})=>file).sort((a,b)=>a.path.localeCompare(b.path));
+    return {digest:digest(stable(files)),files};
+}
+export function snapshotDirectory(root: string, store: string, options:{legacy?:boolean}={}):SourceSnapshot {
+    const data=snapshotData(root,options);
+    ensure(data.length > 0, 'EMPTY_WORKSPACE', '工作区没有可运行文件', 400);
     const manifest = data.map(({bytes,...file})=>file).sort((a, b) => a.path.localeCompare(b.path));
     const hash = digest(stable(manifest));
     const destination = join(store, hash);

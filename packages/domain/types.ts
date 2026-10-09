@@ -44,7 +44,11 @@ export interface Project {
     name: string;
     description: string;
     workspace: string;
-    archived: boolean;
+    status: 'active' | 'archived' | 'trashed' | 'purging';
+    lifecycleEpoch: number;
+    restoreStatus?: 'active' | 'archived';
+    /** Read-only legacy projection; persistence uses status. */
+    readonly archived?: boolean;
     gitHistoryEnabled?: boolean;
     settings: CollaborationSettings;
 }

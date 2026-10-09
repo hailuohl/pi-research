@@ -38,7 +38,7 @@ class Chat extends React.Component {
         ] }),
         session ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
           /* @__PURE__ */ jsx(Badge, { value: session.state }),
-          /* @__PURE__ */ jsx("button", { className: "icon-button", title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: () => {
+          /* @__PURE__ */ jsx("button", { className: "icon-button", disabled: data.project.archived, title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: () => {
             const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title);
             if (title)
               this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));
@@ -92,12 +92,12 @@ class Chat extends React.Component {
               if (this.mounted && this.props.session?.id === session.id) this.setState((current) => ({ draft: current.draftVersion === draftVersion && current.draft === draft ? "" : current.draft, attachments: current.attachments.filter((attachment) => !sentIds.has(attachment.documentVersionId)) }));
             });
           }, children: [
-            /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState((current) => ({ draft: e.target.value, draftVersion: current.draftVersion + 1 })), onKeyDown: (e) => {
+            /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: data.project.archived ? "\u5DF2\u5F52\u6863\u9879\u76EE\uFF0C\u53EA\u8BFB\u67E5\u770B\u5386\u53F2" : session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: data.project.archived || !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState((current) => ({ draft: e.target.value, draftVersion: current.draftVersion + 1 })), onKeyDown: (e) => {
               if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.nativeEvent?.isComposing || e.keyCode === 229 || e.nativeEvent?.keyCode === 229) return;
               e.preventDefault();
               e.currentTarget.form.requestSubmit();
             } }),
-            /* @__PURE__ */ jsx(ComposerControls, { permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: async (model) => session && this.mounted && this.props.session?.id === session.id ? this.props.perform(async () => {
+            /* @__PURE__ */ jsx(ComposerControls, { permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: !!data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: async (model) => session && this.mounted && this.props.session?.id === session.id ? this.props.perform(async () => {
               const confirmed = await api(`/sessions/${session.id}/model`, { expectedVersion: session.version, model });
               if (this.mounted && this.props.session?.id === session.id && confirmed.id === session.id && confirmed.model.provider === model.provider && confirmed.model.model === model.model && confirmed.model.thinking === model.thinking) this.props.onModelConfirmed?.(confirmed);
               return confirmed;
@@ -211,7 +211,7 @@ function Experiments({ data, selected, onSelect, onChat, onRun }) {
     ] }) : null
   ] });
 }
-function OutcomeReview({ run, perform }) {
+function OutcomeReview({ run, perform, readOnly = false }) {
   if (!["succeeded", "failed", "cancelled"].includes(run.state)) return null;
   const disposition = run.answerDisposition ?? (run.metrics ? "answered" : run.state === "cancelled" && !run.startedAt ? "unanswered" : "needs_review");
   if (disposition !== "needs_review") return /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
@@ -226,8 +226,8 @@ function OutcomeReview({ run, perform }) {
     /* @__PURE__ */ jsx("h4", { children: "\u6B64\u6B21\u8FD0\u884C\u662F\u5426\u56DE\u7B54\u7814\u7A76\u95EE\u9898\uFF1F" }),
     /* @__PURE__ */ jsx("p", { className: "small", children: "\u65E0\u6709\u6548\u6570\u503C\u4E0D\u4E00\u5B9A\u8868\u793A\u6CA1\u6709\u7814\u7A76\u7ED3\u679C\u3002\u8BF7\u7ED3\u5408\u5047\u8BBE\u4E0E\u771F\u5B9E\u65E5\u5FD7\u5224\u65AD\uFF1B\u6B64\u64CD\u4F5C\u4E0D\u4F1A\u4FEE\u6539\u6267\u884C\u72B6\u6001\u3001\u4EA7\u7269\u5B8C\u6574\u6027\u6216\u5047\u8BBE\u7ED3\u8BBA\u3002" }),
     /* @__PURE__ */ jsxs("div", { className: "stack-actions", children: [
-      /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => review("unanswered"), children: "\u672A\u56DE\u7B54\uFF1A\u5141\u8BB8\u51C6\u5907\u4FEE\u590D" }),
-      /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => review("answered"), children: "\u5DF2\u56DE\u7B54\uFF1A\u51BB\u7ED3\u8282\u70B9" })
+      /* @__PURE__ */ jsx("button", { className: "secondary", disabled: readOnly, onClick: () => review("unanswered"), children: "\u672A\u56DE\u7B54\uFF1A\u5141\u8BB8\u51C6\u5907\u4FEE\u590D" }),
+      /* @__PURE__ */ jsx("button", { className: "secondary", disabled: readOnly, onClick: () => review("answered"), children: "\u5DF2\u56DE\u7B54\uFF1A\u51BB\u7ED3\u8282\u70B9" })
     ] })
   ] });
 }
@@ -427,13 +427,13 @@ class Inspector extends React.Component {
             /* @__PURE__ */ jsx("dd", { className: "numeric", children: number(v) })
           ] }, k)) }) : null,
           ["queued", "submitting", "running", "cancelling", "unknown"].includes(run.state) ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "run", id: run.id }) : null,
-          /* @__PURE__ */ jsx(OutcomeReview, { run, perform }),
+          /* @__PURE__ */ jsx(OutcomeReview, { run, perform, readOnly: data.project.archived }),
           /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
             "\u79D1\u7814\u5224\u65AD\uFF1A",
             run.judgment === "pending" ? "\u5C1A\u672A\u5224\u5B9A" : run.judgment
           ] }),
           run.error ? /* @__PURE__ */ jsx("p", { className: "error-text", children: run.error }) : null,
-          ["queued", "running", "submitting"].includes(run.state) ? /* @__PURE__ */ jsx("button", { className: "danger-outline", onClick: () => perform(() => api(`/runs/${run.id}/cancel`, {}), "\u5DF2\u8BF7\u6C42\u53D6\u6D88\u6307\u5B9A\u5B9E\u9A8C"), children: "\u53D6\u6D88\u8FD9\u4E2A\u5B9E\u9A8C" }) : null,
+          ["queued", "running", "submitting"].includes(run.state) ? /* @__PURE__ */ jsx("button", { className: "danger-outline", disabled: data.project.archived, onClick: () => perform(() => api(`/runs/${run.id}/cancel`, {}), "\u5DF2\u8BF7\u6C42\u53D6\u6D88\u6307\u5B9A\u5B9E\u9A8C"), children: "\u53D6\u6D88\u8FD9\u4E2A\u5B9E\u9A8C" }) : null,
           /* @__PURE__ */ jsx(RunFiles, { run, data, perform }, run.id)
         ] }) : null
       ] }) : null,
@@ -450,14 +450,17 @@ class Inspector extends React.Component {
             /* @__PURE__ */ jsx("h3", { children: pendingTeam?.goal }),
             /* @__PURE__ */ jsx("p", { className: "small muted", children: a.reason }),
             !canStart ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u8BA1\u5212\u5DF2\u505C\u6B62\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u63D0\u51FA\u4EFB\u52A1\u3002" }) : null,
-            /* @__PURE__ */ jsx("button", { className: "primary full", disabled: !canStart, onClick: () => {
-              if (!canStart) return;
+            /* @__PURE__ */ jsx("button", { className: "primary full", disabled: data.project.archived || !canStart, onClick: () => {
+              if (this.props.data.project.archived || !canStart) return;
               perform(async () => {
                 await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
                 await api(`/teams/${a.subjectId}/activate`, {});
               }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u6279\u51C6");
             }, children: "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
-            /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false })), children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" })
+            /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived ? true : void 0, onClick: () => {
+              if (this.props.data.project.archived) return;
+              return perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false }));
+            }, children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" })
           ] }, a.id);
         }),
         team ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
@@ -499,8 +502,8 @@ class Inspector extends React.Component {
               /* @__PURE__ */ jsx("span", { children: t.reviewOf ? "\u5BA1\u67E5 " + t.reviewOf : t.dependencies.length ? "\u4F9D\u8D56 " + t.dependencies.join(", ") : "\u65E0\u524D\u7F6E\u4F9D\u8D56" })
             ] }),
             t.blockReason ? /* @__PURE__ */ jsx("p", { className: "small error-text", children: t.blockReason }) : null,
-            ["running", "pending"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => api(`/tasks/${t.id}/cancel`, {})), children: "\u505C\u6B62\u6B64\u52A9\u624B" }) : null,
-            ["failed", "cancelled", "blocked"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(() => api(`/tasks/${t.id}/retry`, {})), children: "\u65B0\u5C1D\u8BD5\u91CD\u8BD5" }) : null,
+            ["running", "pending"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: data.project.archived, onClick: () => perform(() => api(`/tasks/${t.id}/cancel`, {})), children: "\u505C\u6B62\u6B64\u52A9\u624B" }) : null,
+            ["failed", "cancelled", "blocked"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived, onClick: () => perform(() => api(`/tasks/${t.id}/retry`, {})), children: "\u65B0\u5C1D\u8BD5\u91CD\u8BD5" }) : null,
             t.result ? /* @__PURE__ */ jsxs("details", { children: [
               /* @__PURE__ */ jsx("summary", { children: "\u7ED3\u679C\u4E0E\u9650\u5236" }),
               t.role === "reviewer" ? /* @__PURE__ */ jsxs("p", { className: "small", role: "status", children: [
@@ -510,7 +513,7 @@ class Inspector extends React.Component {
               ] }) : null,
               /* @__PURE__ */ jsx("p", { className: "small prose-text", children: t.result.summary })
             ] }) : null,
-            t.execution === "output_submitted" && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => {
+            t.execution === "output_submitted" && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived, onClick: () => {
               const reason = prompt("\u4EBA\u5DE5\u5BA1\u67E5\u4F9D\u636E\uFF08\u5C06\u4FDD\u7559\u8BB0\u5F55\uFF09");
               if (reason)
                 perform(() => api(`/tasks/${t.id}/manual-review`, { verdict: "accepted", reason }));
@@ -530,9 +533,9 @@ class Inspector extends React.Component {
             " \u6B21\u3002\u6B64\u989D\u5EA6\u4E0D\u662F\u4F9B\u5E94\u5546\u8D26\u5355\u4E0A\u9650\u3002"
           ] }) : null,
           /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-            team.state === "active" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/teams/${team.id}/pause`, {})), children: "\u6682\u505C\u5206\u914D" }) : null,
-            team.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => api(`/teams/${team.id}/resume`, {})), children: "\u6062\u590D" }) : null,
-            /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
+            team.state === "active" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => perform(() => api(`/teams/${team.id}/pause`, {})), children: "\u6682\u505C\u5206\u914D" }) : null,
+            team.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => perform(() => api(`/teams/${team.id}/resume`, {})), children: "\u6062\u590D" }) : null,
+            /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
           ] })
         ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: this.props.tab === "chat" ? "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u4E0D\u4F1A\u5728 Inspector \u4E2D\u624B\u52A8\u521B\u5EFA\uFF0C\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" : "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" })
       ] }),

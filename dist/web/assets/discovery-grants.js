@@ -222,7 +222,7 @@ class DiscoveryGrants extends React.Component {
               /* @__PURE__ */ jsx("input", { type: "datetime-local", required: true, value: s.expiresAt, onChange: (e) => this.setState({ expiresAt: e.target.value }) })
             ] })
           ] }),
-          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !s.sessionId, children: "\u4FDD\u5B58\u56FA\u5B9A\u8303\u56F4\u8349\u6848" })
+          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || !s.sessionId, children: "\u4FDD\u5B58\u56FA\u5B9A\u8303\u56F4\u8349\u6848" })
         ] })
       ] }),
       (data.discoveryGrants ?? []).length ? /* @__PURE__ */ jsxs("label", { children: [
@@ -311,7 +311,7 @@ class DiscoveryGrants extends React.Component {
             " ",
             search.publishedBefore ?? ""
           ] }),
-          /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !discoveryUsable(g), onClick: () => this.props.onSearch?.(search, g.id), children: "\u63D0\u4EA4\u6B64\u56FA\u5B9A\u68C0\u7D22" })
+          /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || !discoveryUsable(g), onClick: () => this.props.onSearch?.(search, g.id), children: "\u63D0\u4EA4\u6B64\u56FA\u5B9A\u68C0\u7D22" })
         ] }, i)),
         !g.searches.length ? /* @__PURE__ */ jsx("p", { children: "\u672A\u5305\u542B\u68C0\u7D22\u8BF7\u6C42" }) : null,
         /* @__PURE__ */ jsx("h4", { children: "\u660E\u786E\u8D44\u6599" }),
@@ -325,16 +325,16 @@ class DiscoveryGrants extends React.Component {
             " \xB7 ",
             target.requestedVersion ?? "\u672A\u6307\u5B9A\u7248\u672C"
           ] }),
-          /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: !discoveryUsable(g), onClick: () => this.props.onTarget?.(target, g.id), children: "\u63D0\u4EA4\u6B64\u56FA\u5B9A\u8D44\u6599\u83B7\u53D6" })
+          /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || !discoveryUsable(g), onClick: () => this.props.onTarget?.(target, g.id), children: "\u63D0\u4EA4\u6B64\u56FA\u5B9A\u8D44\u6599\u83B7\u53D6" })
         ] }, i)),
         /* @__PURE__ */ jsxs("p", { children: [
           "\u68C0\u7D22\u547D\u4E2D\u8D44\u6599\uFF1A",
           g.allowSearchResults ? "\u5141\u8BB8\uFF08\u4EC5\u9650\u672C\u6388\u6743\u4EFB\u52A1\u4EA7\u751F\u7684\u547D\u4E2D\uFF09" : "\u4E0D\u5141\u8BB8"
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-          g.state === "draft" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: g.validity !== "current", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), "\u53D1\u73B0\u6388\u6743\u5DF2\u6279\u51C6\uFF0C\u5C1A\u672A\u6FC0\u6D3B"), children: "\u6279\u51C6\u56FA\u5B9A\u8303\u56F4" }) : null,
-          g.state === "draft" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: g.validity !== "current", onClick: () => perform(() => this.call("discovery_grant_activate", { grantId: g.id, expectedVersion: g.version }), "\u53D1\u73B0\u6388\u6743\u5DF2\u6FC0\u6D3B\uFF1B\u672A\u53D1\u7F51\u7EDC\u8BF7\u6C42"), children: "\u6FC0\u6D3B\u5DF2\u6279\u51C6\u6388\u6743" }) : null,
-          g.state !== "revoked" ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => this.call("discovery_grant_revoke", { grantId: g.id, expectedVersion: g.version }), "\u53D1\u73B0\u6388\u6743\u5DF2\u64A4\u9500"), children: "\u64A4\u9500\u6388\u6743" }) : null
+          g.state === "draft" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || g.validity !== "current", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), "\u53D1\u73B0\u6388\u6743\u5DF2\u6279\u51C6\uFF0C\u5C1A\u672A\u6FC0\u6D3B"), children: "\u6279\u51C6\u56FA\u5B9A\u8303\u56F4" }) : null,
+          g.state === "draft" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || g.validity !== "current", onClick: () => perform(() => this.call("discovery_grant_activate", { grantId: g.id, expectedVersion: g.version }), "\u53D1\u73B0\u6388\u6743\u5DF2\u6FC0\u6D3B\uFF1B\u672A\u53D1\u7F51\u7EDC\u8BF7\u6C42"), children: "\u6FC0\u6D3B\u5DF2\u6279\u51C6\u6388\u6743" }) : null,
+          g.state !== "revoked" ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => this.call("discovery_grant_revoke", { grantId: g.id, expectedVersion: g.version }), "\u53D1\u73B0\u6388\u6743\u5DF2\u64A4\u9500"), disabled: data.project.archived, children: "\u64A4\u9500\u6388\u6743" }) : null
         ] }),
         /* @__PURE__ */ jsx("h4", { children: "\u5B9E\u9645 HTTP \u8BF7\u6C42\u8BB0\u5F55" }),
         g.calls.length ? g.calls.map((call) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [

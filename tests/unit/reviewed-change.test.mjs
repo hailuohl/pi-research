@@ -104,3 +104,20 @@ test('review Registry operations and reviewer task context satisfy their adverti
   const reviewed=call('reviewed_change_prepare',{reviewId:f.review.id,title:'Schema-bound reviewed change',hypothesis:'Fixed candidate with real service records'});assert.equal(reviewed.flow,'reviewed-development');assert.equal(reviewed.testJobId,f.job.id);assert.ok(reviewed.reviewAcceptanceId);
  }finally{s.close();}
 });
+
+
+test('archived reviewed source history stays readable without reviving approval or executable authority',()=>{
+ const s=setup();try{
+  const f=testedCandidate(s),claimed=claimReview(s,f);submitReview(s,f,claimed);const change=proposal(s,f);approve(s.app,change.approvalId);const child=s.app.changes.apply(USER,change.id),selector={experimentId:child.id,revision:child.revision};
+  const original=s.app.sources.read(USER,s.project.id,{...selector,path:'analysis.py'});
+  const read=()=>{assert.equal(s.app.sources.read(USER,s.project.id,{...selector,path:'analysis.py'}).digest,original.digest);assert.ok(s.app.sources.list(USER,s.project.id,selector).files.some(f=>f.path==='analysis.py'));assert.equal(s.app.sources.diff(USER,s.project.id,{from:selector,to:selector}).files.length,0);for(const [name,input]of [['experiment_source_read',{...selector,path:'analysis.py'}],['experiment_source_list',selector],['experiment_source_diff',{from:selector,to:selector}]])assert.doesNotThrow(()=>s.app.operations.execute(USER,name,input,{projectId:s.project.id}));};
+  read();let project=s.app.store.get('project',s.project.id);project=s.app.projects.archive(USER,project.id,project.version);
+  const snapshot=()=>JSON.stringify(s.app.store.db.prepare('SELECT * FROM records ORDER BY kind,id').all()),archived=snapshot();read();assert.equal(snapshot(),archived);assert.equal(s.app.store.get('approval',f.review.approvalId).status,'stale');
+  assert.throws(()=>s.app.sources.prepare(USER,s.project.id,s.session.id,selector),{code:'PROJECT_ARCHIVED'});
+  project=s.app.projects.unarchive(USER,project.id,project.version);const restored=snapshot();read();assert.equal(snapshot(),restored);
+  assert.throws(()=>s.app.sources.resolve(USER,s.project.id,selector),{code:'APPROVAL_STALE'});
+  const fresh=s.app.sessions.create(USER,s.project.id,{title:'new authorization required'});assert.throws(()=>s.app.sources.prepare(USER,s.project.id,fresh.id,selector),{code:'APPROVAL_STALE'});assert.throws(()=>s.app.runs.prepare(USER,child.id),{code:'APPROVAL_STALE'});
+  assert.throws(()=>s.app.sources.resolve({...USER,type:'agent',projectId:s.project.id,sessionId:s.session.id,role:'coordinator'},s.project.id,selector,true),{code:'APPROVAL_STALE'});
+  const stale=s.app.store.get('change-proposal',change.id);s.app.store.update('change-proposal',stale.id,stale.version,{sourceValidity:'stale'});assert.throws(()=>s.app.sources.read(USER,s.project.id,{...selector,path:'analysis.py'}),{code:'CHANGE_SOURCE_STALE'});
+ }finally{s.close();}
+});

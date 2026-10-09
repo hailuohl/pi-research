@@ -53,7 +53,7 @@ class PublicationReviewPanel extends React.Component {
   }
   async prepare() {
     const { data, result } = this.props, s = this.state, session = data.sessions.find((row) => row.id === s.rootSessionId && row.role === "coordinator" && !row.taskId && !row.parentSessionId && row.state !== "archived");
-    if (!this.props.ready || s.busy || !session || s.inputEvidenceIds.some((id) => !data.evidence.some((e) => e.id === id))) return;
+    if (data.project.archived || !this.props.ready || s.busy || !session || s.inputEvidenceIds.some((id) => !data.evidence.some((e) => e.id === id))) return;
     const epoch = ++this.preparationEpoch;
     this.epoch++;
     this.setState({ busy: true, loading: false, error: "" });
@@ -117,7 +117,7 @@ class PublicationReviewPanel extends React.Component {
             short(evidence.id)
           ] }, evidence.id))
         ] }),
-        /* @__PURE__ */ jsx("button", { className: "primary", disabled: !this.props.ready || s.busy || !roots.some((r) => r.id === s.rootSessionId), children: "\u51C6\u5907\u6B64\u56FA\u5B9A\u8BBA\u6587\u5BA1\u67E5" })
+        /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || !this.props.ready || s.busy || !roots.some((r) => r.id === s.rootSessionId), children: "\u51C6\u5907\u6B64\u56FA\u5B9A\u8BBA\u6587\u5BA1\u67E5" })
       ] }),
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u51C6\u5907\u4EC5\u521B\u5EFA\u5F85\u6279\u51C6\u56E2\u961F\u8BA1\u5212\uFF0C\u4E0D\u4F1A\u6279\u51C6\u6216\u8C03\u7528\u6A21\u578B\u3002\u968F\u540E\u6253\u5F00\u5BF9\u5E94\u4E3B\u4F1A\u8BDD\uFF0C\u5728\u56E2\u961F\u8BA1\u5212\u4E2D\u5355\u72EC\u6279\u51C6\u3002" }),
       /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy || s.loading, onClick: () => void this.refresh(), children: "\u5237\u65B0\u5168\u90E8\u8BBA\u6587\u5BA1\u67E5" }),

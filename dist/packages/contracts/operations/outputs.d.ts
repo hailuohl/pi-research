@@ -2034,7 +2034,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "settings" | "goal" | "delegationEnabled" | "summarySent")[];
+        readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "delegationEnabled" | "settings" | "goal" | "summarySent")[];
         readonly additionalProperties: false;
     };
     readonly agent_delegate: {
@@ -2133,7 +2133,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "settings" | "goal" | "delegationEnabled" | "summarySent")[];
+        readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "planVersion" | "directiveVersion" | "projectId" | "updatedAt" | "delegationEnabled" | "settings" | "goal" | "summarySent")[];
         readonly additionalProperties: false;
     };
     readonly task_inspect: {
@@ -4607,7 +4607,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "contractDigest" | "projectId" | "updatedAt" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
+                readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "contractDigest" | "projectId" | "updatedAt" | "autoAnalyze" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
                 readonly additionalProperties: false;
             };
             readonly members: {
@@ -11261,7 +11261,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "contractDigest" | "projectId" | "updatedAt" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "autoAnalyze" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
+        readonly required: ("version" | "id" | "state" | "createdAt" | "kind" | "approvalId" | "rootSessionId" | "planDigest" | "contractDigest" | "projectId" | "updatedAt" | "autoAnalyze" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
         readonly additionalProperties: false;
     };
     readonly task_result_submit: {

@@ -246,7 +246,7 @@ class PublicationView extends React.Component {
   render() {
     const s = this.state, r = s.revision, j = s.job, approval = this.props.data.approvals.find((a) => a.id === j?.approvalId);
     return /* @__PURE__ */ jsxs("div", { "aria-label": "\u6587\u7A3F\u6784\u5EFA\u5DE5\u4F5C\u533A", children: [
-      /* @__PURE__ */ jsx(ManuscriptEditor, { seed: s.seed, readTemplate: (id, path) => this.call("publication_template_read", { templateId: id, path }), templates: s.templates, data: this.props.data, busy: s.busy, onFreeze: (draft) => void this.freeze(draft) }, s.seedVersion),
+      !this.props.data.project.archived ? /* @__PURE__ */ jsx(ManuscriptEditor, { seed: s.seed, readTemplate: (id, path) => this.call("publication_template_read", { templateId: id, path }), templates: s.templates, data: this.props.data, busy: s.busy, onFreeze: (draft) => void this.freeze(draft) }, s.seedVersion) : null,
       /* @__PURE__ */ jsxs("section", { className: "surface report-builder", tabIndex: -1, ref: (node) => {
         this.workspaceElement = node;
       }, "aria-label": "\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\u56DE\u67E5", children: [
@@ -272,7 +272,7 @@ class PublicationView extends React.Component {
               "\u56FA\u5B9A\u7F16\u8BD1\u955C\u50CF\u6458\u8981",
               /* @__PURE__ */ jsx("input", { "aria-label": "\u56FA\u5B9A\u7F16\u8BD1\u955C\u50CF\u6458\u8981", required: true, pattern: "(?:.+@)?sha256:[a-f0-9]{64}", value: s.image, onChange: (e) => this.setState({ image: e.target.value }) })
             ] }),
-            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !s.status || s.busy, children: "\u663E\u5F0F\u4FDD\u5B58\u7F16\u8BD1\u914D\u7F6E" })
+            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: this.props.data.project.archived || !s.status || s.busy, children: "\u663E\u5F0F\u4FDD\u5B58\u7F16\u8BD1\u914D\u7F6E" })
           ] })
         ] }),
         /* @__PURE__ */ jsxs("label", { children: [
@@ -306,8 +306,8 @@ class PublicationView extends React.Component {
           ] }),
           /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => this.props.perform(() => downloadArtifact(r.manifestArtifactId, "manuscript-manifest.json")), children: "\u4E0B\u8F7D\u56FA\u5B9A\u6587\u7A3F\u6E05\u5355" }),
           /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => void this.editRevision(), children: "\u590D\u5236\u6587\u672C\u5230\u53EF\u7F16\u8F91\u65B0\u8349\u7A3F\uFF08\u91CD\u65B0\u5F52\u6863\u6587\u672C\uFF09" }),
-            /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.busy || !s.status?.configured, onClick: () => void this.run(async () => {
+            /* @__PURE__ */ jsx("button", { className: "secondary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.editRevision(), children: "\u590D\u5236\u6587\u672C\u5230\u53EF\u7F16\u8F91\u65B0\u8349\u7A3F\uFF08\u91CD\u65B0\u5F52\u6863\u6587\u672C\uFF09" }),
+            /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy || !s.status?.configured, onClick: () => void this.run(async () => {
               const selection = this.selectionEpoch, job = await this.call("publication_prepare", { revisionId: r.id });
               if (this.mounted && selection === this.selectionEpoch) await this.openJob(job.id);
             }), children: "\u51C6\u5907\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA" })
@@ -424,18 +424,18 @@ class PublicationView extends React.Component {
             ] }),
             j.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: j.error }) : null,
             /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-              j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.busy, onClick: () => void this.run(async () => {
+              j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
                 await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true });
               }), children: "\u6279\u51C6\u6B64\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA" }) : null,
-              j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy, onClick: () => void this.run(async () => {
+              j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
                 await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: false });
               }), children: "\u62D2\u7EDD\u6587\u7A3F\u6784\u5EFA" }) : null,
-              j.state === "prepared" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: s.busy, onClick: () => void this.run(async () => {
+              j.state === "prepared" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
                 const epoch = this.jobEpoch, selection = this.selectionEpoch;
                 await this.call("publication_submit", { jobId: j.id });
                 if (this.mounted && epoch === this.jobEpoch && selection === this.selectionEpoch) await this.openJob(j.id);
               }), children: "\u63D0\u4EA4\u5DF2\u6279\u51C6\u6587\u7A3F\u6784\u5EFA" }) : null,
-              ["prepared", "queued", "starting", "running", "unknown"].includes(j.state) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: s.busy, onClick: () => void this.run(async () => {
+              ["prepared", "queued", "starting", "running", "unknown"].includes(j.state) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
                 const epoch = this.jobEpoch, selection = this.selectionEpoch;
                 await this.call("publication_cancel", { jobId: j.id });
                 if (this.mounted && epoch === this.jobEpoch && selection === this.selectionEpoch) await this.openJob(j.id);
@@ -452,7 +452,7 @@ class PublicationView extends React.Component {
                 s.result.sourceError ?? "PUBLICATION_SOURCE_STALE",
                 "\uFF1B\u5386\u53F2 PDF \u4E0E\u56FA\u5B9A\u6E90\u6587\u4EF6\u4ECD\u53EF\u56DE\u67E5\u3002"
               ] }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: s.result.sourceValidity === "current" ? "\u5F53\u524D\u6765\u6E90\u6709\u6548\uFF08\u6700\u8FD1\u4E00\u6B21\u6838\u9A8C\uFF09" : "\u5F53\u524D\u6765\u6E90\u72B6\u6001\u672A\u77E5\uFF0C\u8BF7\u5237\u65B0\u6B64\u6784\u5EFA\u3002" }),
-              this.props.onSelectResult ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !this.selectableResult() || this.props.selectedResultIds?.includes(s.result.id) || (this.props.selectedResultIds?.length ?? 0) >= 20, onClick: () => this.selectResult(), children: this.props.selectedResultIds?.includes(s.result.id) ? "\u5DF2\u7EB3\u5165\u5F85\u751F\u6210\u62A5\u544A" : "\u7EB3\u5165\u6B64\u56FA\u5B9A\u6784\u5EFA" }) : null,
+              this.props.onSelectResult && !this.props.data.project.archived ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !this.selectableResult() || this.props.selectedResultIds?.includes(s.result.id) || (this.props.selectedResultIds?.length ?? 0) >= 20, onClick: () => this.selectResult(), children: this.props.selectedResultIds?.includes(s.result.id) ? "\u5DF2\u7EB3\u5165\u5F85\u751F\u6210\u62A5\u544A" : "\u7EB3\u5165\u6B64\u56FA\u5B9A\u6784\u5EFA" }) : null,
               /* @__PURE__ */ jsx(PublicationReviewPanel, { data: this.props.data, result: s.result, ready: !!this.selectableResult(), perform: this.props.perform, onSession: this.props.onSession, selectedReviewId: s.selectedReviewId }, s.result.id),
               /* @__PURE__ */ jsx("h3", { children: "\u56FA\u5B9A\u6784\u5EFA\u8BCA\u65AD" }),
               s.result.diagnostics.length ? /* @__PURE__ */ jsx("ul", { children: s.result.diagnostics.map((d, i) => /* @__PURE__ */ jsxs("li", { children: [

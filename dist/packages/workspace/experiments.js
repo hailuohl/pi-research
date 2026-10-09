@@ -1,6 +1,6 @@
 import { captureSourceRevision, validateSourceRevision, copySourceRevision } from './source-access.js';
 import { assertOutcomeBoundary } from '../runners/outcome.js';
-import { assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
+import { assertProjectReadable, assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -22,7 +22,7 @@ export class ExperimentService {
         this.projects = projects;
         this.briefs = briefs;
     }
-    get(actor, id) { const e = this.c.store.get('experiment', id); scope(actor, e.projectId); return e; }
+    get(actor, id) { const e = this.c.store.get('experiment', id); scope(actor, e.projectId); assertProjectReadable(this.c.store, e.projectId, actor); return e; }
     /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
     createFromRevision(actor, projectId, snapshotId, spec) {
         userOnly(actor);

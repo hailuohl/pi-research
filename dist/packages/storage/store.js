@@ -22,6 +22,24 @@ function rethrowComputeGate(error) {
             throw new DomainError(code, code === 'COMPUTE_TARGET_PROBE_REQUIRED' ? '请先核对 Docker 目标身份' : code === 'COMPUTE_TARGET_QUEUE_FULL' ? '目标等待队列已满；如已更换引擎，请先重新核对' : '计算等待队列已满', 409);
     throw error;
 }
+function projectData(kind, data, previous) {
+    if (kind !== 'project')
+        return data;
+    const value = { ...data }, hasStatus = Object.hasOwn(value, 'status');
+    if (Object.hasOwn(value, 'archived') && !hasStatus)
+        value.status = value.archived ? 'archived' : 'active';
+    delete value.archived;
+    value.status ??= previous?.status ?? 'active';
+    ensure(['active', 'archived', 'trashed', 'purging'].includes(String(value.status)), 'INVALID_INPUT', '项目状态无效');
+    const epoch = Number(previous?.lifecycleEpoch ?? 0) + (previous && value.status !== previous.status ? 1 : 0);
+    value.lifecycleEpoch = previous ? epoch : Number(value.lifecycleEpoch ?? 0);
+    return value;
+}
+function projectView(kind, row) {
+    if (kind === 'project')
+        Object.defineProperty(row, 'archived', { enumerable: true, get: () => (row.status !== 'active') });
+    return row;
+}
 export class Store {
     path;
     db;
@@ -70,6 +88,11 @@ INSERT INTO schema_migrations VALUES(4,datetime('now'));`);
         this.transaction(() => { if (!readDataLocation(this.db))
             setDataLocation(this.db, dirname(path)); this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(9,datetime('now'));"); });
         this.transaction(() => { this.textWrites = new TextWriteRecovery(this.db, path); this.db.exec("INSERT OR IGNORE INTO schema_migrations VALUES(8,datetime('now'));"); });
+        this.transaction(() => {
+            if (this.db.prepare('SELECT 1 FROM schema_migrations WHERE version=12').get())
+                return;
+            this.db.exec("UPDATE records SET data=json_remove(json_set(data,'$.status',COALESCE(json_extract(data,'$.status'),CASE WHEN json_extract(data,'$.archived')=1 THEN 'archived' ELSE 'active' END),'$.lifecycleEpoch',COALESCE(json_extract(data,'$.lifecycleEpoch'),0)),'$.archived') WHERE kind='project'; CREATE TABLE project_record_epochs(kind TEXT NOT NULL,id TEXT NOT NULL,project_id TEXT NOT NULL,epoch INTEGER NOT NULL,PRIMARY KEY(kind,id)); INSERT INTO project_record_epochs SELECT r.kind,r.id,r.project_id,COALESCE(json_extract(p.data,'$.lifecycleEpoch'),0) FROM records r JOIN records p ON p.kind='project' AND p.id=r.project_id; CREATE TRIGGER project_record_epoch_insert AFTER INSERT ON records WHEN NEW.project_id IS NOT NULL BEGIN INSERT OR REPLACE INTO project_record_epochs SELECT NEW.kind,NEW.id,NEW.project_id,COALESCE(json_extract(data,'$.lifecycleEpoch'),0) FROM records WHERE kind='project' AND id=NEW.project_id; END; INSERT INTO schema_migrations VALUES(12,datetime('now'));");
+        });
         this.transaction(() => { });
     }
     migrateLocalGpuQueue() {
@@ -285,12 +308,12 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
             this.db.exec(`PRAGMA query_only=${queryOnly ? 'ON' : 'OFF'}`);
         }
     }
-    create(kind, projectId, data, id = randomUUID()) { const time = now(); const row = { ...data, id, kind, projectId, version: 1, createdAt: time, updatedAt: time }; try {
+    create(kind, projectId, data, id = randomUUID()) { const time = now(); const row = { ...projectData(kind, data), id, kind, projectId, version: 1, createdAt: time, updatedAt: time }; try {
         this.db.prepare('INSERT INTO records VALUES(?,?,?,?,?)').run(kind, id, projectId, 1, JSON.stringify(row));
     }
     catch (error) {
         rethrowComputeGate(error);
-    } return row; }
+    } return projectView(kind, row); }
     get(kind, id, projectId) {
         const r = this.db.prepare('SELECT data FROM records WHERE kind=? AND id=?').get(kind, id);
         if (!r)
@@ -298,7 +321,7 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
         const row = JSON.parse(r.data);
         if (projectId !== undefined && row.projectId !== projectId)
             throw new DomainError('SCOPE_DENIED', '不能访问其他项目的记录', 403);
-        return row;
+        return projectView(kind, row);
     }
     maybe(kind, id) {
         try {
@@ -310,14 +333,15 @@ INSERT INTO schema_migrations VALUES(2,datetime('now'));`);
             throw e;
         }
     }
-    list(kind, projectId) { const rows = projectId === undefined ? this.db.prepare('SELECT data FROM records WHERE kind=? ORDER BY rowid').all(kind) : this.db.prepare('SELECT data FROM records WHERE kind=? AND project_id=? ORDER BY rowid').all(kind, projectId); return rows.map(x => JSON.parse(x.data)); }
-    update(kind, id, version, patch) { const previous = this.get(kind, id); ensure(previous.version === version, 'VERSION_CONFLICT', '内容已更新，请刷新后重试'); const row = { ...previous, ...patch, id: previous.id, kind: previous.kind, projectId: previous.projectId, createdAt: previous.createdAt, updatedAt: now(), version: version + 1 }; try {
+    list(kind, projectId) { const rows = projectId === undefined ? this.db.prepare('SELECT data FROM records WHERE kind=? ORDER BY rowid').all(kind) : this.db.prepare('SELECT data FROM records WHERE kind=? AND project_id=? ORDER BY rowid').all(kind, projectId); return rows.map(x => projectView(kind, JSON.parse(x.data))); }
+    update(kind, id, version, patch) { const previous = this.get(kind, id); ensure(previous.version === version, 'VERSION_CONFLICT', '内容已更新，请刷新后重试'); const canonicalPatch = projectData(kind, patch, previous); const row = { ...previous, ...canonicalPatch, id: previous.id, kind: previous.kind, projectId: previous.projectId, createdAt: previous.createdAt, updatedAt: now(), version: version + 1 }; if (kind === 'project')
+        delete row.archived; try {
         const result = this.db.prepare('UPDATE records SET data=?,version=? WHERE kind=? AND id=? AND version=?').run(JSON.stringify(row), row.version, kind, id, version);
         ensure(result.changes === 1, 'VERSION_CONFLICT', '并发更新冲突');
     }
     catch (error) {
         rethrowComputeGate(error);
-    } return row; }
+    } return projectView(kind, row); }
     event(projectId, type, payload) { const id = randomUUID(); const at = now(); const result = this.db.prepare('INSERT INTO events(id,project_id,type,payload,created_at) VALUES(?,?,?,?,?)').run(id, projectId, type, JSON.stringify(payload), at); return { seq: Number(result.lastInsertRowid), id, projectId, type, payload, createdAt: at }; }
     events(after = 0, projectId, limit = 500) { const rows = projectId === undefined ? this.db.prepare('SELECT * FROM events WHERE seq>? ORDER BY seq LIMIT ?').all(after, limit) : this.db.prepare('SELECT * FROM events WHERE seq>? AND project_id=? ORDER BY seq LIMIT ?').all(after, projectId, limit); return rows.map(r => ({ seq: Number(r.seq), id: r.id, projectId: r.project_id, type: r.type, payload: JSON.parse(r.payload), createdAt: r.created_at })); }
     eventCursor(projectId) { return Number((projectId === undefined ? this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events').get() : this.db.prepare('SELECT COALESCE(max(seq),0) cursor FROM events WHERE project_id=?').get(projectId)).cursor); }

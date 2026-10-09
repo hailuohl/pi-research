@@ -224,7 +224,7 @@ class DevelopmentJob extends React.Component {
           this.state.artifact ? /* @__PURE__ */ jsx("pre", { className: "logs", children: this.state.artifact }) : null
         ] }) : null
       ] }),
-      !terminal ? /* @__PURE__ */ jsx("button", { className: "text-button danger", onClick: () => perform(() => op(data.project.id, this.props.sessionId, "development_cancel", { jobId: job.id })), children: "\u53D6\u6D88\u5F00\u53D1\u6D4B\u8BD5" }) : null
+      !terminal ? /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: data.project.archived, onClick: () => perform(() => op(data.project.id, this.props.sessionId, "development_cancel", { jobId: job.id })), children: "\u53D6\u6D88\u5F00\u53D1\u6D4B\u8BD5" }) : null
     ] });
   }
 }

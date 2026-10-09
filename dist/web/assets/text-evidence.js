@@ -66,11 +66,11 @@ class TextEvidencePanel extends React.Component {
           ] }, d.documentVersionId))
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !(selected.length + selectedDocuments.length + selectedPmcDocuments.length) || this.state.loading, onClick: () => perform(async () => {
+          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || (!(selected.length + selectedDocuments.length + selectedPmcDocuments.length) || this.state.loading), onClick: () => perform(async () => {
             await api(`/projects/${data.project.id}/text-evidence`, { enabled: true, artifactIds: selected, documents: selectedDocuments, ...selectedPmcDocuments.length ? { pmcDocuments: selectedPmcDocuments.map((documentVersionId) => ({ documentVersionId })) } : {}, expectedVersion: config.version });
             this.setState({ selected: null, selectedDocuments: null, selectedPmcDocuments: null, result: null });
           }, "\u5DF2\u4FDD\u5B58\u56FA\u5B9A\u539F\u6587\u8303\u56F4\uFF1B\u4E0D\u4F1A\u81EA\u52A8\u8C03\u7528\u6A21\u578B"), children: "\u4FDD\u5B58\u8303\u56F4\u5E76\u542F\u7528" }),
-          config.enabled ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: this.state.loading, onClick: () => perform(async () => {
+          config.enabled ? /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || this.state.loading, onClick: () => perform(async () => {
             await api(`/projects/${data.project.id}/text-evidence`, { enabled: false, expectedVersion: config.version });
             this.setState({ result: null });
           }, "\u5DF2\u5173\u95ED\u68C0\u7D22\uFF0C\u5386\u53F2\u6587\u4EF6\u4E0E\u5F15\u7528\u4FDD\u7559"), children: "\u5173\u95ED\u68C0\u7D22" }) : null
@@ -90,7 +90,7 @@ class TextEvidencePanel extends React.Component {
           /* @__PURE__ */ jsx("option", { value: 1, children: "\u7CBE\u786E\u53BB\u91CD\uFF0B\u76F8\u5173\u6027\uFF08\u9ED8\u8BA4\uFF09" }),
           /* @__PURE__ */ jsx("option", { value: 0.65, children: "\u7CBE\u786E\u53BB\u91CD\uFF0BMMR 0.65\uFF08\u8BD5\u9A8C\uFF09" })
         ] }),
-        /* @__PURE__ */ jsx("button", { className: "primary", disabled: !config.enabled || selectionChanged || !this.state.query.trim() || this.state.loading, children: this.state.loading ? "\u68C0\u7D22\u4E2D\u2026" : "\u67E5\u627E\u539F\u6587" })
+        /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || (!config.enabled || selectionChanged || !this.state.query.trim() || this.state.loading), children: this.state.loading ? "\u68C0\u7D22\u4E2D\u2026" : "\u67E5\u627E\u539F\u6587" })
       ] }),
       selectionChanged ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6587\u6863\u9009\u62E9\u5DF2\u6539\u53D8\uFF0C\u8BF7\u5148\u4FDD\u5B58\u8303\u56F4\u3002" }) : null,
       history.length ? /* @__PURE__ */ jsxs("details", { children: [
@@ -246,7 +246,7 @@ class TextCorpusGrantPanel extends React.Component {
               /* @__PURE__ */ jsx("input", { "aria-label": "\u539F\u6587\u6388\u6743\u622A\u6B62", type: "datetime-local", required: true, value: s.expiresAt, onChange: (e) => this.setState({ expiresAt: e.target.value }) })
             ] })
           ] }),
-          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: !config?.enabled || !s.sessionId || !(s.documents.length + s.pmcDocuments.length), children: "\u4FDD\u5B58\u56FA\u5B9A\u6388\u6743\u8349\u6848" })
+          /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || !config?.enabled || !s.sessionId || !(s.documents.length + s.pmcDocuments.length), children: "\u4FDD\u5B58\u56FA\u5B9A\u6388\u6743\u8349\u6848" })
         ] })
       ] }),
       grants.length ? /* @__PURE__ */ jsxs("label", { children: [
@@ -310,9 +310,9 @@ class TextCorpusGrantPanel extends React.Component {
           " \xB7 \u65E0 PDF \u9875\u7801"
         ] }, item.documentVersionId)),
         /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-          g.state === "draft" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: g.validity !== "current", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), "\u56FA\u5B9A\u539F\u6587\u68C0\u7D22\u6388\u6743\u5DF2\u6279\u51C6\uFF0C\u5C1A\u672A\u6FC0\u6D3B"), children: "\u6279\u51C6\u56FA\u5B9A\u539F\u6587\u8303\u56F4" }) : null,
-          g.state === "draft" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: g.validity !== "current", onClick: () => perform(() => this.call("text_corpus_grant_activate", { grantId: g.id, expectedVersion: g.version }), "\u6307\u5B9A\u4F1A\u8BDD\u7684\u56FA\u5B9A\u539F\u6587\u68C0\u7D22\u6388\u6743\u5DF2\u6FC0\u6D3B"), children: "\u6FC0\u6D3B\u5DF2\u6279\u51C6\u6388\u6743" }) : null,
-          g.state !== "revoked" ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => this.call("text_corpus_grant_revoke", { grantId: g.id, expectedVersion: g.version }), "\u56FA\u5B9A\u539F\u6587\u68C0\u7D22\u6388\u6743\u5DF2\u64A4\u9500\uFF0C\u5386\u53F2\u4FDD\u7559"), children: "\u64A4\u9500\u6388\u6743" }) : null
+          g.state === "draft" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || g.validity !== "current", onClick: () => perform(() => api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true }), "\u56FA\u5B9A\u539F\u6587\u68C0\u7D22\u6388\u6743\u5DF2\u6279\u51C6\uFF0C\u5C1A\u672A\u6FC0\u6D3B"), children: "\u6279\u51C6\u56FA\u5B9A\u539F\u6587\u8303\u56F4" }) : null,
+          g.state === "draft" && approval?.status === "approved" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || g.validity !== "current", onClick: () => perform(() => this.call("text_corpus_grant_activate", { grantId: g.id, expectedVersion: g.version }), "\u6307\u5B9A\u4F1A\u8BDD\u7684\u56FA\u5B9A\u539F\u6587\u68C0\u7D22\u6388\u6743\u5DF2\u6FC0\u6D3B"), children: "\u6FC0\u6D3B\u5DF2\u6279\u51C6\u6388\u6743" }) : null,
+          g.state !== "revoked" ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => this.call("text_corpus_grant_revoke", { grantId: g.id, expectedVersion: g.version }), "\u56FA\u5B9A\u539F\u6587\u68C0\u7D22\u6388\u6743\u5DF2\u64A4\u9500\uFF0C\u5386\u53F2\u4FDD\u7559"), disabled: data.project.archived, children: "\u64A4\u9500\u6388\u6743" }) : null
         ] }),
         /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
           "\u6279\u51C6\u8BB0\u5F55 ",

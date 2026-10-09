@@ -1,3 +1,4 @@
+import { assertProjectWritable, assertProjectReadable, assertProjectIdle, retireProjectAuthority } from '../policy/lifecycle.js';
 import { mkdirSync, copyFileSync, existsSync, writeFileSync, lstatSync, rmSync } from 'node:fs';
 import { join, dirname, resolve, relative, isAbsolute } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -22,7 +23,8 @@ export class ProjectService {
     constructor(c) {
         this.c = c;
     }
-    get(actor, id) { scope(actor, id); const p = this.c.store.get('project', id); ensure(!p.archived, 'PROJECT_ARCHIVED', '项目已归档', 409); return p; }
+    get(actor, id) { scope(actor, id); return assertProjectWritable(this.c.store, id); }
+    read(actor, id) { scope(actor, id); return assertProjectReadable(this.c.store, id, actor); }
     create(actor, input) {
         userOnly(actor);
         const x = object(input);
@@ -42,7 +44,7 @@ export class ProjectService {
                 ensure(x.template === undefined || x.template === 'empty', 'INVALID_INPUT', '不支持的模板', 400);
                 writeFileSync(join(workspace, 'README.md'), `# ${name}\n\n项目文件由用户导入。\n`, { mode: 0o600 });
             }
-            const p = this.c.store.create('project', id, { name, description: text(x.description ?? '', 'description', 2000, true), workspace: this.c.store.paths.reference(workspace), archived: false, settings: { ...DEFAULT_COLLABORATION } }, id);
+            const p = this.c.store.create('project', id, { name, description: text(x.description ?? '', 'description', 2000, true), workspace: this.c.store.paths.reference(workspace), status: 'active', lifecycleEpoch: 0, settings: { ...DEFAULT_COLLABORATION } }, id);
             this.c.store.event(id, 'project.created', { id, name });
             return p;
         });
@@ -109,26 +111,28 @@ export class ProjectService {
             return p;
         });
     }
-    update(actor, id, input) { userOnly(actor); const p = this.get(actor, id), x = object(input); const version = integer(x.expectedVersion, 'expectedVersion', 1); return this.c.store.transaction(() => { const next = this.c.store.update('project', id, version, { name: x.name === undefined ? p.name : text(x.name, 'name', 120), description: x.description === undefined ? p.description : text(x.description, 'description', 2000, true) }); this.c.store.event(id, 'project.updated', { id, version: next.version }); return next; }); }
+    update(actor, id, input) { userOnly(actor); const p = this.get(actor, id), x = object(input); const version = integer(x.expectedVersion, 'expectedVersion', 1); return this.c.store.transaction(() => { assertProjectWritable(this.c.store, id, p.lifecycleEpoch); const next = this.c.store.update('project', id, version, { name: x.name === undefined ? p.name : text(x.name, 'name', 120), description: x.description === undefined ? p.description : text(x.description, 'description', 2000, true) }); this.c.store.event(id, 'project.updated', { id, version: next.version }); return next; }); }
     archive(actor, id, version) {
         userOnly(actor);
         return this.c.store.transaction(() => {
-            this.get(actor, id);
-            ensure(this.c.store.list('run', id).every(r => ['succeeded', 'failed', 'cancelled'].includes(r.state)), 'PROJECT_BUSY', '项目仍有未结束运行，不能归档');
-            ensure(!this.c.store.db.prepare("SELECT 1 FROM compute_queue WHERE project_id=? AND kind IN ('document','publication') AND (held=1 OR phase='queued') LIMIT 1").get(id), 'PROJECT_BUSY', '项目仍有未结束文档解析或文稿构建，请取消或核对后归档');
-            ensure(!this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='literature-task' AND project_id=? AND json_extract(data,'$.state') IN ('queued','running') LIMIT 1").get(id), 'PROJECT_BUSY', '项目仍有文献任务，请取消后归档');
-            ensure(this.c.store.list('session', id).every(s => s.state !== 'running'), 'PROJECT_BUSY', '项目仍有活跃 Agent');
-            ensure(this.c.store.list('task', id).every(t => t.execution !== 'running'), 'PROJECT_BUSY', '项目仍有活跃助手');
-            const next = this.c.store.update('project', id, version, { archived: true });
-            for (const a of this.c.store.list('approval', id).filter(a => ['pending', 'approved'].includes(a.status)))
-                this.c.store.update('approval', a.id, a.version, { status: 'stale' });
-            for (const m of this.c.store.list('message', id).filter(m => m.status === 'queued'))
-                this.c.store.update('message', m.id, m.version, { status: 'cancelled', error: '项目已归档，未开始的请求已取消' });
-            for (const s of this.c.store.list('session', id).filter(s => s.state === 'queued'))
-                this.c.store.update('session', s.id, s.version, { state: 'idle' });
-            for (const t of this.c.store.list('team', id).filter(t => ['active', 'paused', 'awaiting_approval'].includes(t.state)))
-                this.c.store.update('team', t.id, t.version, { state: 'paused', blockReason: '项目已归档；禁止新委派' });
-            this.c.store.event(id, 'project.archived', { projectId: id });
+            const project = this.get(actor, id);
+            ensure(project.version === version, 'VERSION_CONFLICT', '项目已更新，请刷新后重试');
+            assertProjectIdle(this.c.store, id);
+            const next = this.c.store.update('project', id, version, { status: 'archived' });
+            retireProjectAuthority(this.c.store, id);
+            this.c.store.event(id, 'project.archived', { projectId: id, lifecycleEpoch: next.lifecycleEpoch });
+            return next;
+        });
+    }
+    unarchive(actor, id, version) {
+        userOnly(actor);
+        scope(actor, id);
+        return this.c.store.transaction(() => {
+            const project = this.c.store.get('project', id);
+            ensure(project.version === version, 'VERSION_CONFLICT', '项目已更新，请刷新后重试');
+            ensure(project.status === 'archived', 'PROJECT_NOT_ARCHIVED', '只能取消归档已归档项目');
+            const next = this.c.store.update('project', id, version, { status: 'active' });
+            this.c.store.event(id, 'project.unarchived', { projectId: id, lifecycleEpoch: next.lifecycleEpoch });
             return next;
         });
     }
@@ -145,10 +149,10 @@ export class ProjectService {
         if (x.maxConcurrentAssistants !== undefined)
             next.maxConcurrentAssistants = integer(x.maxConcurrentAssistants, 'maxConcurrentAssistants', 1, 7);
         ensure(next.maxConcurrentAssistants < next.maxActiveAgents, 'INVALID_INPUT', '必须给主协调者保留一个名额', 400);
-        return this.c.store.transaction(() => { const updated = this.c.store.update('project', id, integer(x.expectedVersion, 'expectedVersion', 1), { settings: next }); this.c.store.event(id, 'project.collaboration_changed', { enabled: next.enabled }); return updated; });
+        return this.c.store.transaction(() => { assertProjectWritable(this.c.store, id, p.lifecycleEpoch); const updated = this.c.store.update('project', id, integer(x.expectedVersion, 'expectedVersion', 1), { settings: next }); this.c.store.event(id, 'project.collaboration_changed', { enabled: next.enabled }); return updated; });
     }
-    listFiles(actor, id) { return listFiles(this.c.store.paths.physical(this.get(actor, id).workspace)); }
-    readFile(actor, id, path) { return readText(this.c.store.paths.physical(this.get(actor, id).workspace), path); }
+    listFiles(actor, id) { return listFiles(this.c.store.paths.physical(this.read(actor, id).workspace)); }
+    readFile(actor, id, path) { return readText(this.c.store.paths.physical(this.read(actor, id).workspace), path); }
     writeFile(actor, id, path, content, expectedDigest) { userOnly(actor); return this.c.store.transaction(() => { const p = this.get(actor, id); const result = writeText(this.c.store.paths.physical(p.workspace), path, content, expectedDigest, this.c.store); this.c.store.event(id, 'workspace.file_changed', { path, digest: result.digest }); return result; }); }
 }
 //# sourceMappingURL=projects.js.map

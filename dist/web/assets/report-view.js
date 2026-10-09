@@ -234,7 +234,7 @@ class ReportsView extends React.Component {
           this.publicationView = view;
         }, data, perform, onSession: this.props.onSession, selectedResultIds: s.publications.map((p) => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }, data.project.id)
       ] }),
-      /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: !s.report, children: [
+      !data.project.archived ? /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: !s.report, children: [
         /* @__PURE__ */ jsx("summary", { children: "\u65B0\u5EFA\u53EF\u8FFD\u6EAF\u62A5\u544A" }),
         /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
           /* @__PURE__ */ jsxs("label", { children: [
@@ -308,7 +308,7 @@ class ReportsView extends React.Component {
             }), children: "\u5237\u65B0\u8BB0\u5F55" })
           ] }) : null
         ] })
-      ] }),
+      ] }) : null,
       /* @__PURE__ */ jsxs("div", { className: "evidence-grid", children: [
         /* @__PURE__ */ jsxs("section", { className: "surface artifact-list", children: [
           /* @__PURE__ */ jsx("div", { className: "surface-heading", children: /* @__PURE__ */ jsx("h2", { children: "\u5DF2\u751F\u6210\u62A5\u544A" }) }),
@@ -343,7 +343,7 @@ class ReportsView extends React.Component {
             report.validity !== "current" || report.integrity !== "verified" ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u4FDD\u7559\u5386\u53F2\u539F\u6587\u4F9B\u56DE\u67E5\uFF1B\u5F53\u524D\u72B6\u6001\u4E0D\u5141\u8BB8\u751F\u6210\u65B0\u7684\u79BB\u7EBF\u4EA4\u4ED8\u5305\u3002" }) : null,
             /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
               /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => downloadArtifact(report.artifactId, data.artifacts.find((a) => a.id === report.artifactId)?.title ?? `${report.title}.md`)), children: "\u4E0B\u8F7D\u539F\u62A5\u544A Markdown" }),
-              /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: s.checking || !!s.verificationError || report.validity !== "current" || report.integrity !== "verified", onClick: () => void this.exportReport(), children: "\u751F\u6210\u79BB\u7EBF\u4EA4\u4ED8\u5305" })
+              /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: data.project.archived || s.checking || !!s.verificationError || report.validity !== "current" || report.integrity !== "verified", onClick: () => void this.exportReport(), children: "\u751F\u6210\u79BB\u7EBF\u4EA4\u4ED8\u5305" })
             ] }),
             s.exported ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
               /* @__PURE__ */ jsx("h3", { children: s.exported.title }),

@@ -1,3 +1,4 @@
+import {assertProjectWritable} from '../../packages/policy/lifecycle.js';
 import {operationRoute} from './operation-routes.js';
 import {readNativeRoute,writeNativeRoute} from './native-routes.js';
 import {attachmentRoute} from './attachment-routes.js';
@@ -15,7 +16,7 @@ import { asError, DomainError, ensure } from '../../packages/domain/errors.js';
 import { text,object } from '../../packages/contracts/validation.js';
 import { safePath } from '../../packages/workspace/files.js';
 import { USER,type ModelConfig } from '../../packages/domain/types.js';
-import { readRoute, writeRoute } from './routes.js';
+import { readRoute, writeRoute,guardProjectRoute } from './routes.js';
 import {EventStreamHub,eventQuery} from './event-stream.js';
 export interface ServerOptions {
     dataDir: string;
@@ -45,13 +46,14 @@ export function createHttpServer(options: ServerOptions) {
             if (path.startsWith('/api/')) {
                 const route = path.slice(4);
                 if (req.method === 'GET') {
+                    guardProjectRoute(app,route);
                     const attachment=attachmentRoute(app,route,url,req.method!);if(attachment)return json(attachment.result);
                     const native=readNativeRoute(app.nativeRequests,route,url);if(native!==undefined)return json(native);
                     if(route==='/settings/model-management'){ensure(url.search==='','INVALID_INPUT','模型管理目录不接受查询参数',400);return json(await inspectModelManagement(app.context,USER));}
                     if(route==='/settings/model-recommendations'){ensure([...url.searchParams.keys()].every(k=>['provider','model'].includes(k))&&url.searchParams.getAll('provider').length===1&&url.searchParams.getAll('model').length===1,'INVALID_INPUT','推荐只接受一个供应商与模型ID',400);return json(await recommendModel(app.context,USER,text(url.searchParams.get('provider'),'provider',100),text(url.searchParams.get('model'),'model',160)));}
                     if(route==='/bootstrap'){const view=await inspectModelManagement(app.context,USER),bootstrap=readRoute(app,host,route,url) as Record<string,unknown>;return json({...bootstrap,models:view.providers.filter(p=>p.enabled&&!p.deletedAt&&!p.requiresCredential).flatMap(p=>p.models.filter(m=>m.enabled&&!m.deletedAt).flatMap(m=>m.reasoning.levels.map(l=>({provider:p.provider,model:m.model,thinking:l.id}))))});}
                     if(route==='/github/status')return json(await app.github.status({type:'user'}));
-                    if(route==='/events/stream'){const query=eventQuery(url,true,req.headers['last-event-id'] as string|undefined);if(query.projectId)app.projects.get(USER,query.projectId);events.open(req,res,query);return;}
+                    if(route==='/events/stream'){const query=eventQuery(url,true,req.headers['last-event-id'] as string|undefined);if(query.projectId)app.projects.read(USER,query.projectId);events.open(req,res,query);return;}
                     if (route === '/operations') return json(app.operations.specs());
                     const files = route.match(/^\/projects\/([^/]+)\/files$/);
                     if (files) ensure([...url.searchParams.keys()].every(key => key === 'path') && url.searchParams.getAll('path').length <= 1, 'INVALID_INPUT', '项目文件接口只接受 path；指定实验版本请使用 experiment_source_read', 400);
@@ -112,8 +114,11 @@ export function createHttpServer(options: ServerOptions) {
                 if(route==='/sessions'||route==='/settings/model'||/^\/sessions\/[^/]+\/model$/.test(route)){
                     ensure(req.method==='POST'&&url.search==='','METHOD_NOT_ALLOWED','会话和模型配置仅接受无查询参数的 POST',405);
                     const scope=`${req.method}:${route}`,request={body,query:url.search},prior=app.store.operationResult(scope,key!,request);if(prior.found)return json(prior.value);
+                    const projectId=route==='/sessions'?text(object(body).projectId,'projectId',100):route==='/settings/model'?undefined:app.sessions.get(USER,route.split('/')[2]).projectId!;
+                    const lifecycleEpoch=projectId?assertProjectWritable(app.store,projectId).lifecycleEpoch:undefined;
                     const prepared=await prepareModelSelection(app.context);
                     return json(app.store.operation(scope,key!,request,()=>{
+                        if(projectId)assertProjectWritable(app.store,projectId,lifecycleEpoch);
                         prepared.assertCurrent();const x=object(body);
                         if(route==='/sessions'){const session=app.sessions.createRoot(USER,text(x.projectId,'projectId',100),x,prepared);if(x.reuseSessionId===undefined)app.sessionPermissions.initialize(session.id);return session;}
                         if(x.clear!==true){const raw=route==='/settings/model'?x:x.model===undefined?prepared.current:object(x.model);const selected:ModelConfig={provider:text(raw.provider,'provider',100),model:text(raw.model,'model',160),thinking:text(raw.thinking??'off','thinking',64)};prepared.resolve(selected);}

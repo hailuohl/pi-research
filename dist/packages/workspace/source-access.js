@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { ensure } from '../domain/errors.js';
 import { integer, object, text } from '../contracts/validation.js';
 import { scope, ROLE_TOOLS } from '../policy/permissions.js';
-import { assertExperimentSourceCurrent, assertProjectWritable } from '../policy/lifecycle.js';
+import { assertExperimentSourceCurrent, assertProjectReadable, assertProjectWritable } from '../policy/lifecycle.js';
 import { digest } from '../storage/store.js';
 import { safePath, snapshotDirectory, verifySnapshot, listFiles, setSourceModes } from './files.js';
 import { queueSourceHistory, queueWorkspaceHistory } from './git-service.js';
@@ -63,13 +63,14 @@ export class SourceAccessService {
         ensure(keys.length === 2 && keys.includes('experimentId') && keys.includes('revision'), 'INVALID_INPUT', '需要 experimentId/revision 或 snapshotId', 400);
         return { experimentId: text(x.experimentId, 'experimentId', 100), revision: integer(x.revision, 'revision', 1) };
     }
-    resolve(actor, projectId, value) {
+    resolve(actor, projectId, value, historical = false) {
         scope(actor, projectId);
-        this.app.store.get('project', projectId);
+        assertProjectReadable(this.app.store, projectId, actor);
         const s = this.selector(value);
         const r = this.app.store.get('source-revision', 'snapshotId' in s ? s.snapshotId : digest({ projectId, experimentId: s.experimentId, revision: s.revision }), projectId);
         const e = this.app.store.get('experiment', r.experimentId, projectId);
-        assertExperimentSourceCurrent(this.app.store, e);
+        // Owner history verifies retained bytes and explicit revocations without renewing execution approval.
+        assertExperimentSourceCurrent(this.app.store, e, historical && actor.type === 'user');
         if (actor.type === 'agent') {
             const session = this.app.store.get('session', text(actor.sessionId, 'sessionId', 100), projectId);
             ensure(session.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
@@ -84,9 +85,9 @@ export class SourceAccessService {
         verifySnapshot(this.app.store.paths.physical(r.snapshot.path), r.snapshot.files);
         return r;
     }
-    list(actor, projectId, value) { const r = this.resolve(actor, projectId, value); return { ...sourceMetadata(r), files: r.snapshot.files }; }
+    list(actor, projectId, value) { const r = this.resolve(actor, projectId, value, true); return { ...sourceMetadata(r), files: r.snapshot.files }; }
     read(actor, projectId, value) {
-        const { path: rawPath, cursor: rawCursor, limit: rawLimit, ...selector } = object(value), r = this.resolve(actor, projectId, selector);
+        const { path: rawPath, cursor: rawCursor, limit: rawLimit, ...selector } = object(value), r = this.resolve(actor, projectId, selector, true);
         const path = text(rawPath, 'path', 1000), source = this.app.store.paths.physical(r.snapshot.path);
         safePath(source, path);
         const f = r.snapshot.files.find(f => f.path === path);
@@ -107,7 +108,7 @@ export class SourceAccessService {
     diff(actor, projectId, value) {
         const x = object(value);
         ensure(Object.keys(x).every(k => k === 'from' || k === 'to'), 'INVALID_INPUT', '差异参数无效', 400);
-        const a = this.resolve(actor, projectId, x.from), b = this.resolve(actor, projectId, x.to), before = new Map(a.snapshot.files.map(f => [f.path, f])), after = new Map(b.snapshot.files.map(f => [f.path, f]));
+        const a = this.resolve(actor, projectId, x.from, true), b = this.resolve(actor, projectId, x.to, true), before = new Map(a.snapshot.files.map(f => [f.path, f])), after = new Map(b.snapshot.files.map(f => [f.path, f]));
         const files = [...new Set([...before.keys(), ...after.keys()])].sort().filter(p => before.get(p)?.digest !== after.get(p)?.digest || (before.get(p)?.mode ?? '100644') !== (after.get(p)?.mode ?? '100644')).map(path => ({ path, status: !before.has(path) ? 'added' : !after.has(path) ? 'deleted' : 'modified', beforeDigest: before.get(path)?.digest ?? null, afterDigest: after.get(path)?.digest ?? null, beforeMode: before.has(path) ? before.get(path)?.mode ?? '100644' : null, afterMode: after.has(path) ? after.get(path)?.mode ?? '100644' : null }));
         return { from: sourceMetadata(a), to: sourceMetadata(b), files };
     }

@@ -155,7 +155,7 @@ class GitHubSettings extends React.Component {
   }
   async change(action) {
     const p = this.state.project, pid = this.props.projectId;
-    if (!p || !pid || this.state.busy) return;
+    if (!p || !pid || this.state.busy || this.props.readOnly) return;
     if (action !== "pause" && !this.state.status?.ready) {
       this.setState({ error: "\u8BF7\u5148\u4F7F\u672C\u673A GitHub CLI \u5C31\u7EEA\u3002" });
       return;
@@ -205,8 +205,8 @@ class GitHubSettings extends React.Component {
         ] }) : null,
         p.error ? /* @__PURE__ */ jsx("p", { role: "alert", children: p.error.message }) : null,
         p.state !== "local" ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: this.state.busy || !p.enabled && (!status?.ready || accountChanged), onClick: () => void this.change(p.enabled ? "pause" : "resume"), children: p.enabled ? "\u6682\u505C GitHub \u540C\u6B65" : "\u6062\u590D GitHub \u540C\u6B65" }),
-          p.retryable && p.enabled ? /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: this.state.busy || !status?.ready || accountChanged, onClick: () => void this.change("retry"), children: "\u91CD\u8BD5\u540C\u6B65" }) : null
+          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: this.props.readOnly || this.state.busy || !p.enabled && (!status?.ready || accountChanged), onClick: () => void this.change(p.enabled ? "pause" : "resume"), children: p.enabled ? "\u6682\u505C GitHub \u540C\u6B65" : "\u6062\u590D GitHub \u540C\u6B65" }),
+          p.retryable && p.enabled ? /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: this.props.readOnly || this.state.busy || !status?.ready || accountChanged, onClick: () => void this.change("retry"), children: "\u91CD\u8BD5\u540C\u6B65" }) : null
         ] }) : null,
         !p.enabled && p.state !== "local" ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6682\u505C\u4E0D\u5220\u9664\u8FDC\u7AEF\u5185\u5BB9\uFF1B\u6062\u590D\u540E\u540C\u6B65\u65B0\u63D0\u4EA4\uFF0C\u65B0\u63D0\u4EA4\u4F1A\u5305\u542B\u5176\u6240\u4F9D\u8D56\u7684 Git \u5386\u53F2\u3002" }) : null
       ] }) : null,

@@ -59,7 +59,7 @@ export declare class GitService {
             beforeDigest: string | null;
             afterDigest: string | null;
             beforeMode: "100644" | "100755" | null;
-            afterMode: "100644" | "100755" | null;
+            afterMode: import("./files.js").SourceMode | null;
         }[];
     };
     commit(actor: Actor, pid: string, sessionId: string, value: unknown): {

@@ -1,3 +1,4 @@
+import {assertProjectWritable} from '../policy/lifecycle.js';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync} from 'node:fs';
@@ -34,6 +35,7 @@ export class ExportService {
             return artifact;
         };
         const existing = cached(); if (existing) return existing;
+        const originalValidate=validate,lifecycleEpoch=assertProjectWritable(this.c.store,pid).lifecycleEpoch;validate=()=>{assertProjectWritable(this.c.store,pid,lifecycleEpoch);originalValidate();};
         const secretValues = [...new Set(Object.entries(process.env).filter(([key, value]) => /token|password|secret|api[_-]?key/i.test(key) && value && value.length >= 8).flatMap(([, value]) => [value!, JSON.stringify(value).slice(1, -1)]))];
         const checkSecrets = (path: string, bytes: Buffer) => {
             const found = secretValues.some(value => bytes.includes(Buffer.from(value)) || path.includes(value));

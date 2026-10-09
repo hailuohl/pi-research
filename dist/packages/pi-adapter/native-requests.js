@@ -121,7 +121,7 @@ export class NativeRequestService {
             this.app.approvals.assert(row.approvalId, row.projectId, row.id, row.tupleDigest, 'native.request');
         return { session, captured, files, ...(previous && blocks ? { previous: { prompt: previous.prompt, blocks } } : {}) };
     }
-    refresh(row) { if (!['pending', 'approved'].includes(row.state))
+    refresh(row) { if (this.app.store.get('project', row.projectId).status !== 'active' || !['pending', 'approved'].includes(row.state))
         return row; try {
         this.validate({ type: 'user' }, row, false);
     }

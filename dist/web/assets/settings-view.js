@@ -18,7 +18,7 @@ class SettingsView extends React.Component {
         section.title
       ] }, section.id)) }),
       /* @__PURE__ */ jsx("div", { id: "settings-models", className: "settings-panel", hidden: this.state.section !== "models", children: /* @__PURE__ */ jsx(ModelManagementPanel, { boot: this.props.boot, perform: this.props.perform }) }),
-      /* @__PURE__ */ jsx("div", { id: "settings-github", className: "settings-panel", hidden: this.state.section !== "github", children: /* @__PURE__ */ jsx(GitHubSettings, { projectId: this.props.projectId }) }),
+      /* @__PURE__ */ jsx("div", { id: "settings-github", className: "settings-panel", hidden: this.state.section !== "github", children: /* @__PURE__ */ jsx(GitHubSettings, { readOnly: this.props.readOnly, projectId: this.props.projectId }) }),
       /* @__PURE__ */ jsx("div", { id: "settings-templates", className: "settings-panel", hidden: this.state.section !== "templates", children: /* @__PURE__ */ jsx(TemplateLibraryView, {}) })
     ] }) });
   }

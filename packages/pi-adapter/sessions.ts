@@ -4,7 +4,7 @@ import {assertModelEnabled} from './model-connections.js';
 import {resolvedThinking} from './model-definition.js';
 import {publicRecord} from '../domain/public-record.js';
 import {attachmentReferences,nativeAttachments,type ParsedAttachmentPair,type ParsedAttachmentMetadata} from './attachments.js';
-import { assertProjectWritable } from '../policy/lifecycle.js';
+import { assertProjectReadable,assertProjectWritable } from '../policy/lifecycle.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -70,7 +70,7 @@ export class SessionService {
             this.c.store.event(s.projectId,'session.model_changed',{sessionId:id,model});return updated;
         });
     }
-    get(actor: Actor, id: string) { const s = this.c.store.get<Session>('session', id); scope(actor, s.projectId!); return s; }
+    get(actor: Actor, id: string) { const s = this.c.store.get<Session>('session', id); scope(actor, s.projectId!);assertProjectReadable(this.c.store,s.projectId!,actor); return s; }
     createRoot(actor:Actor,projectId:string,input:unknown,prepared:PreparedModelSelection){
         userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
         const x=object(input);ensure(Object.keys(x).every(k=>['projectId','title','reuseSessionId','expectedVersion'].includes(k)),'INVALID_INPUT','新会话包含未知字段');
@@ -156,8 +156,8 @@ export class SessionService {
             this.c.store.event(s.projectId,'session.queue_changed',{sessionId:id,messageId:m.id,action});return updated;
         });
     }
-    rename(actor: Actor, id: string, title: string, expectedVersion: number) { userOnly(actor); this.get(actor, id); return this.c.store.update<Session>('session', id, expectedVersion, { title: text(title, 'title', 160) }); }
-    archive(actor: Actor, id: string, expectedVersion: number) { userOnly(actor);return this.c.store.transaction(()=>{ const s = this.get(actor, id); ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '运行中或任务会话不能归档'); this.onStop?.(id,'会话已归档');return this.c.store.update<Session>('session', id, expectedVersion, { state: 'archived' });}); }
+    rename(actor: Actor, id: string, title: string, expectedVersion: number) { userOnly(actor); const s=this.get(actor, id);assertProjectWritable(this.c.store,s.projectId!); return this.c.store.update<Session>('session', id, expectedVersion, { title: text(title, 'title', 160) }); }
+    archive(actor: Actor, id: string, expectedVersion: number) { userOnly(actor);return this.c.store.transaction(()=>{ const s = this.get(actor, id);assertProjectWritable(this.c.store,s.projectId!); ensure(s.state !== 'running' && !s.taskId, 'SESSION_BUSY', '运行中或任务会话不能归档'); this.onStop?.(id,'会话已归档');return this.c.store.update<Session>('session', id, expectedVersion, { state: 'archived' });}); }
     interrupt(actor: Actor, id: string) {
         userOnly(actor);
         const s = this.get(actor, id);
