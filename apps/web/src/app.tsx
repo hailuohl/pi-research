@@ -2,7 +2,7 @@ import * as React from 'react';
 import {ProjectEventFeed} from './event-feed.js';
 import {EnvironmentView} from './environment-view.js';
 import {IntegrationsView} from './integrations.js';
-import { api } from './api.js';
+import { api,ApiError } from './api.js';
 import type { Bootstrap, Project, ProjectState, Row, Session, SessionCatalogItem, SessionCatalogPage, DocumentLocation, SessionHistoryPage, SessionView, ModelManagementView } from './models.js';
 import { short, label } from './models.js';
 import {Icon, Modal, nativeSelectButton} from './ui.js';
@@ -73,6 +73,7 @@ export class App extends React.Component<{}, State> {
     private mounted=true;
     private projectSelectionEpoch=0;
     private creatingSession=false;
+    private pendingSessionCreate?:{projectId:string;epoch:number;body:unknown;key:string};
     private noticeTimer?: number;
     componentDidMount() {
         window.addEventListener('resize',this.closeNavigationOnResize);
@@ -216,9 +217,12 @@ export class App extends React.Component<{}, State> {
                         if(cursors.has(page.nextCursor))throw Error('会话目录游标重复');
                         cursor=page.nextCursor;cursors.add(cursor);
                     }
-                    if(!session){session=await api<Row<Session>>('/sessions',{projectId,title:'新的研究会话'});if(!current())return;}
+                    const body=session?{projectId,reuseSessionId:session.id,expectedVersion:session.version}:{projectId,title:'新的研究会话'};
+                    const pending=this.pendingSessionCreate?.projectId===projectId&&this.pendingSessionCreate.epoch===epoch?this.pendingSessionCreate:{projectId,epoch,body,key:crypto.randomUUID()};this.pendingSessionCreate=pending;
+                    try{session=await api<Row<Session>>('/sessions',pending.body,'POST',undefined,pending.key);this.pendingSessionCreate=undefined;}catch(error){if(error instanceof ApiError&&error.status<500)this.pendingSessionCreate=undefined;throw error;}
+                    if(!current()||this.state.sessionId!==currentSessionId)return;
                     const closeNavigation=this.state.navigationOpen,sessionId=session.id;
-                    await new Promise<void>(resolve=>this.setState({...this.sessionSelection(sessionId,'chat'),navigationOpen:false,sessionCreationSignal:this.state.sessionCreationSignal+1},()=>{if(closeNavigation)this.navigationToggle?.focus();resolve();}));
+                    await new Promise<void>(resolve=>this.setState({...this.sessionSelection(sessionId,'chat'),navigationOpen:false,sessionCreationSignal:this.state.sessionCreationSignal+1},()=>{if(current()&&this.state.sessionId===sessionId&&this.state.data?.sessions.find(item=>item.id===sessionId)!==session)this.confirmSessionModel(session!);if(closeNavigation)this.navigationToggle?.focus();resolve();}));
                 }catch(error){if(current())throw error;}
             });
         }finally{this.creatingSession=false;}

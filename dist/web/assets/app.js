@@ -3,7 +3,7 @@ import * as React from "react";
 import { ProjectEventFeed } from "./event-feed.js";
 import { EnvironmentView } from "./environment-view.js";
 import { IntegrationsView } from "./integrations.js";
-import { api } from "./api.js";
+import { api, ApiError } from "./api.js";
 import { short } from "./models.js";
 import { Icon, Modal, nativeSelectButton } from "./ui.js";
 import { Chat, Experiments, Inspector } from "./workbench.js";
@@ -258,12 +258,20 @@ class App extends React.Component {
             cursor = page.nextCursor;
             cursors.add(cursor);
           }
-          if (!session) {
-            session = await api("/sessions", { projectId, title: "\u65B0\u7684\u7814\u7A76\u4F1A\u8BDD" });
-            if (!current()) return;
+          const body = session ? { projectId, reuseSessionId: session.id, expectedVersion: session.version } : { projectId, title: "\u65B0\u7684\u7814\u7A76\u4F1A\u8BDD" };
+          const pending = this.pendingSessionCreate?.projectId === projectId && this.pendingSessionCreate.epoch === epoch ? this.pendingSessionCreate : { projectId, epoch, body, key: crypto.randomUUID() };
+          this.pendingSessionCreate = pending;
+          try {
+            session = await api("/sessions", pending.body, "POST", void 0, pending.key);
+            this.pendingSessionCreate = void 0;
+          } catch (error) {
+            if (error instanceof ApiError && error.status < 500) this.pendingSessionCreate = void 0;
+            throw error;
           }
+          if (!current() || this.state.sessionId !== currentSessionId) return;
           const closeNavigation = this.state.navigationOpen, sessionId = session.id;
           await new Promise((resolve) => this.setState({ ...this.sessionSelection(sessionId, "chat"), navigationOpen: false, sessionCreationSignal: this.state.sessionCreationSignal + 1 }, () => {
+            if (current() && this.state.sessionId === sessionId && this.state.data?.sessions.find((item) => item.id === sessionId) !== session) this.confirmSessionModel(session);
             if (closeNavigation) this.navigationToggle?.focus();
             resolve();
           }));

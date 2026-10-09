@@ -17,6 +17,13 @@ const edit=(s,action,fields={},key=crypto.randomUUID())=>configureModelManagemen
 const connection={name:'Connection',baseUrl:'https://fixture.invalid/v1',api:'openai-completions',apiKey:secret};
 const definition=(model='one')=>({...defaultModelDefinition(model),reasoning:{defaultLevel:'boost',levels:[{id:'off',label:'Off',piLevel:'off',parameters:{}},{id:'boost',label:'Boost',piLevel:'high',parameters:{reasoning_effort:'ultra'}}]}});
 
+test('generated none labels preserve Pi off and never restore an SDK-disabled off tier',()=>{
+ const source={id:'fixture',name:'fixture',input:['text'],reasoning:true,contextWindow:8192,maxTokens:1024,baseUrl:'https://fixture.invalid'};
+ const supported=recommendedDefinition('fixture',source);assert.equal(supported.reasoning.levels.find(l=>l.id==='off').label,'none');assert.equal(supported.reasoning.levels.find(l=>l.id==='off').piLevel,'off');assert.equal(supported.reasoning.levels.some(l=>l.id==='none'),false);assert.equal(defaultModelDefinition('fixture').reasoning.levels[0].label,'none');
+ const unsupported=recommendedDefinition('fixture',{...source,thinkingLevelMap:{off:null,minimal:null,medium:null,xhigh:null}});assert.deepEqual(unsupported.reasoning.levels.map(l=>l.id),['low','high','max']);assert.equal(unsupported.reasoning.defaultLevel,'low');
+ const noneSupported=recommendedDefinition('fixture',{...source,thinkingLevelMap:Object.fromEntries(['off','minimal','low','medium','high','xhigh','max'].map(id=>[id,null]))});assert.deepEqual(noneSupported.reasoning.levels,[]);assert.equal(noneSupported.reasoning.defaultLevel,'');
+});
+
 test('every mutation rejects the 21st legacy control provider and invalid whole-state writes before changing disk',async()=>{
  const s=setup();try{
   for(let i=0;i<20;i++)s.app.sessions.configure(USER,{provider:'legacy-'+i,model:'legacy-model',thinking:'off'});

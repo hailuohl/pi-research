@@ -7,7 +7,7 @@ const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof no
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'?node:'';
 const response=data=>({ok:true,json:async()=>data});
 const projectResponse=url=>url.startsWith('/api/projects/')?response({id:url.split('/')[3],archived:false}):null;
-const idleSession=(id,extra={})=>({id,projectId:'project',title:'研究主会话',role:'coordinator',state:'idle',piSessionPath:null,generation:0,leaseUntil:0,model:{provider:'test',model:'chosen',thinking:'high'},...extra});
+const idleSession=(id,extra={})=>({id,version:1,projectId:'project',title:'研究主会话',role:'coordinator',state:'idle',piSessionPath:null,generation:0,leaseUntil:0,model:{provider:'test',model:'chosen',thinking:'high'},...extra});
 const catalog=items=>({items,nextCursor:null});
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 function sessionApp(){const app=synchronousState(new App({}));app.refresh=async()=>true;Object.assign(app.state,{projectId:'project',sessionId:'current'});return app;}
@@ -19,13 +19,37 @@ test('repeated new-session clicks reuse the current empty root and keep the moun
   Object.assign(app.state,{boot:{projects:[{id:'project',name:'Project'}],runtime:{ready:true}},navigationOpen:true,data:{project:{id:'project',name:'Project',settings:{enabled:false}},sessions:[session],experiments:[],runs:[],teams:[],campaigns:[],evidence:[],wakeups:[],intents:[]}});
   const chatElement=()=>elements(app.render()).find(node=>node.type?.name==='Chat'),before=chatElement(),chat=synchronousState(new before.type(before.props));
   chat.state.draft='unsent draft';chat.state.attachments=[{artifactId:'attached'}];
-  const requests=[];globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);requests.push({url,method:options.method});if(url==='/api/sessions/current')return response(session);if(url==='/api/sessions/current/messages')return response([]);throw Error('Unexpected create or catalog request');};
+  const requests=[];globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);requests.push({url,method:options.method,...(options.body?{body:JSON.parse(options.body)}:{})});if(url==='/api/sessions/current')return response(session);if(url==='/api/sessions/current/messages')return response([]);if(url==='/api/sessions'){assert.deepEqual(JSON.parse(options.body),{projectId:'project',reuseSessionId:'current',expectedVersion:1});return response(session);}throw Error('Unexpected create or catalog request');};
   await app.newSession();await app.newSession();
   assert.equal(app.state.sessionId,'current');assert.equal(app.state.navigationOpen,false);assert.equal(app.state.sessionCreationSignal,2);
   assert.equal(chatElement().key,before.key);assert.equal(chatElement().props.data,before.props.data);assert.equal(chatElement().props.session.model,session.model);assert.equal(chatElement().props.session.workingGrantId,'grant');
   chat.props=chatElement().props;assert.equal(chat.state.draft,'unsent draft');assert.deepEqual(chat.state.attachments,[{artifactId:'attached'}]);
-  assert.deepEqual(requests.map(r=>r.url),['/api/sessions/current','/api/sessions/current/messages','/api/sessions/current','/api/sessions/current/messages']);assert.ok(requests.every(r=>r.method==='GET'));
+  assert.deepEqual(requests.map(r=>r.url),['/api/sessions/current','/api/sessions/current/messages','/api/sessions','/api/sessions/current','/api/sessions/current/messages','/api/sessions']);assert.deepEqual(requests.map(r=>r.method),['GET','GET','POST','GET','GET','POST']);
   app.componentWillUnmount();
+});
+
+test('a corrected blank receipt updates its model even when the following refresh fails',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});const app=sessionApp(),old=idleSession('current',{model:{provider:'zai-coding-cn',model:'glm-5.3',thinking:'off'}}),confirmed={...old,version:2,model:{...old.model,thinking:'low'}},history=idleSession('history',{generation:1}),posts=[];
+  app.state.data={project:{id:'project'},sessions:[old,history]};app.refresh=async()=>{throw Error('Refresh unavailable');};
+  globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);if(url==='/api/sessions/current')return response(old);if(url.endsWith('/messages'))return response([]);posts.push(JSON.parse(options.body));return response(confirmed);};
+  await app.newSession();assert.deepEqual(posts,[{projectId:'project',reuseSessionId:'current',expectedVersion:1}]);assert.equal(app.state.sessionId,'current');assert.deepEqual(app.state.data.sessions,[confirmed,history]);assert.equal(app.state.sessionCreationSignal,1);assert.match(app.state.error,/Refresh unavailable/);app.componentWillUnmount();
+});
+
+test('confirmed new roots enter the current project while foreign and older receipts cannot replace known rows',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
+  for(const kind of ['created','foreign','older']){
+    const app=sessionApp(),existing=idleSession('current',{version:kind==='older'?3:1,generation:kind==='created'?1:0}),history=idleSession('history',{generation:1}),receipt=idleSession(kind==='created'?'new-root':'current',{version:2,projectId:kind==='foreign'?'foreign':'project',model:{provider:'test',model:'chosen',thinking:'low'}});
+    app.state.data={project:{id:'project'},sessions:[existing,history]};app.refresh=async()=>false;
+    globalThis.fetch=async(url)=>projectResponse(url)??(url==='/api/sessions/current'?response(existing):url.endsWith('/messages')?response([]):url.endsWith('/session_list')?response(catalog([])):response(receipt));
+    await app.newSession();assert.deepEqual(app.state.data.sessions,kind==='created'?[existing,history,receipt]:[existing,history]);app.componentWillUnmount();
+  }
+});
+
+test('a new-session receipt cannot overwrite a different session selected while its request was pending',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});const app=sessionApp(),existing=idleSession('current'),other=idleSession('other');app.state.data={project:{id:'project'},sessions:[existing,other]};let finish;
+  globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/current'?response(existing):url.endsWith('/messages')?response([]):new Promise(resolve=>{finish=resolve;}));
+  const creating=app.newSession();await flush();app.selectSession('other');finish(response({...existing,version:2,model:{...existing.model,thinking:'low'}}));await creating;
+  assert.equal(app.state.sessionId,'other');assert.deepEqual(app.state.data.sessions,[existing,other]);assert.equal(app.state.sessionCreationSignal,0);app.componentWillUnmount();
 });
 
 test('an empty root outside recent state is found through all catalog pages, with fresh metadata',async t=>{
@@ -36,7 +60,7 @@ test('an empty root outside recent state is found through all catalog pages, wit
     if(projectResponse(url))return projectResponse(url);
     if(url.endsWith('/session_list')){const body=JSON.parse(options.body);pages.push(body);return response(body.input.beforeSessionId?catalog([idleSession('older-empty')]):{items:firstPage,nextCursor:'used-49'});}
     if(url.endsWith('/messages')){messageReads.push(url);return response([]);}
-    if(url==='/api/sessions')throw Error('Must reuse the older empty root');
+    if(url==='/api/sessions'){assert.deepEqual(JSON.parse(options.body),{projectId:'project',reuseSessionId:'older-empty',expectedVersion:1});return response(idleSession('older-empty'));}
     const id=url.split('/').at(-1);metadataReads.push(id);return response(idleSession(id,{generation:id==='older-empty'?0:1}));
   };
   await app.newSession();
@@ -81,7 +105,7 @@ test('lookup failures preserve the view and release the lock for retry without a
       throw Error('lookup failed');
     };
     await app.newSession();assert.equal(creates,0,stage);assert.equal(app.state.sessionId,'current');assert.equal(app.state.tab,'reports');assert.equal(app.state.navigationOpen,true);assert.deepEqual(app.state.messages,[{id:'kept'}]);assert.deepEqual(app.state.pendingMessages,[{id:'queued'}]);assert.equal(app.state.historyAnchor.id,'cursor');assert.ok(app.state.error);assert.equal(app.state.busy,false);
-    globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/current'?response(idleSession('current')):url.endsWith('/messages')?response([]):Promise.reject(Error('Retry should reuse current')));
+    globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/current'||url==='/api/sessions'?response(idleSession('current')):url.endsWith('/messages')?response([]):Promise.reject(Error('Retry should reuse current')));
     await app.newSession();assert.equal(app.state.error,'');assert.equal(app.state.sessionId,'current');assert.equal(app.state.sessionCreationSignal,1);app.componentWillUnmount();
   }
 });
@@ -100,6 +124,12 @@ test('same-tick clicks start one creation flow before React applies busy state',
   const app=sessionApp(),setState=app.setState;app.setState=(update,callback)=>{if(typeof update==='object'&&'busy' in update)queueMicrotask(()=>setState(update,callback));else setState(update,callback);};
   let finish,creates=0;globalThis.fetch=async url=>projectResponse(url)??(url==='/api/sessions/current'?response(idleSession('current',{generation:1})):url.endsWith('/session_list')?response(catalog([])):new Promise(resolve=>{creates++;finish=resolve;}));
   const first=app.newSession(),second=app.newSession();await flush();assert.equal(creates,1);finish(response({id:'created'}));await Promise.all([first,second]);assert.equal(app.state.sessionId,'created');assert.equal(app.state.sessionCreationSignal,1);app.componentWillUnmount();
+});
+
+test('a lost new-session response retries the same request and idempotency key',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});const app=sessionApp(),posts=[];let fail=true;
+  globalThis.fetch=async(url,options)=>{if(projectResponse(url))return projectResponse(url);if(url==='/api/sessions/current')return response(idleSession('current',{generation:1}));if(url.endsWith('/session_list'))return response(catalog([]));posts.push({body:JSON.parse(options.body),key:options.headers['Idempotency-Key']});if(fail)throw Error('Response lost');return response({id:'created-once'});};
+  await app.newSession();assert.equal(app.state.sessionId,'current');assert.match(app.state.error,/Response lost/);fail=false;await app.newSession();assert.equal(app.state.sessionId,'created-once');assert.deepEqual(posts[1],posts[0]);assert.equal(posts.length,2);assert.ok(posts[0].key);app.componentWillUnmount();
 });
 
 test('late lookup or create responses cannot take over after A to B to A or unmount',async t=>{

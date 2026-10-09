@@ -3,7 +3,7 @@ import { readNativeRoute, writeNativeRoute } from './native-routes.js';
 import { attachmentRoute } from './attachment-routes.js';
 import { writeEnvironment } from './environment-routes.js';
 import { configureModelConnection } from '../../packages/pi-adapter/model-connections.js';
-import { inspectModelManagement, configureModelManagement, recommendModel } from '../../packages/pi-adapter/model-management.js';
+import { inspectModelManagement, configureModelManagement, recommendModel, prepareModelSelection } from '../../packages/pi-adapter/model-management.js';
 import { probeModel } from '../../packages/pi-adapter/model-probe.js';
 import http from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
@@ -11,7 +11,7 @@ import { join, extname } from 'node:path';
 import { ResearchApp } from '../../packages/research-app.js';
 import { AgentHost } from '../../packages/scheduler/agent-host.js';
 import { asError, DomainError, ensure } from '../../packages/domain/errors.js';
-import { text } from '../../packages/contracts/validation.js';
+import { text, object } from '../../packages/contracts/validation.js';
 import { safePath } from '../../packages/workspace/files.js';
 import { USER } from '../../packages/domain/types.js';
 import { readRoute, writeRoute } from './routes.js';
@@ -51,6 +51,10 @@ export function createHttpServer(options) {
                     if (route === '/settings/model-recommendations') {
                         ensure([...url.searchParams.keys()].every(k => ['provider', 'model'].includes(k)) && url.searchParams.getAll('provider').length === 1 && url.searchParams.getAll('model').length === 1, 'INVALID_INPUT', '推荐只接受一个供应商与模型ID', 400);
                         return json(await recommendModel(app.context, USER, text(url.searchParams.get('provider'), 'provider', 100), text(url.searchParams.get('model'), 'model', 160)));
+                    }
+                    if (route === '/bootstrap') {
+                        const view = await inspectModelManagement(app.context, USER), bootstrap = readRoute(app, host, route, url);
+                        return json({ ...bootstrap, models: view.providers.filter(p => p.enabled && !p.deletedAt && !p.requiresCredential).flatMap(p => p.models.filter(m => m.enabled && !m.deletedAt).flatMap(m => m.reasoning.levels.map(l => ({ provider: p.provider, model: m.model, thinking: l.id })))) });
                     }
                     if (route === '/github/status')
                         return json(await app.github.status({ type: 'user' }));
@@ -138,6 +142,29 @@ export function createHttpServer(options) {
                         return json(prior.value);
                     const prepared = await app.projects.prepareImport(USER, body);
                     return json(app.store.operation(scope, key, request, () => app.projects.importDirectory(USER, body, prepared)));
+                }
+                if (route === '/sessions' || route === '/settings/model' || /^\/sessions\/[^/]+\/model$/.test(route)) {
+                    ensure(req.method === 'POST' && url.search === '', 'METHOD_NOT_ALLOWED', '会话和模型配置仅接受无查询参数的 POST', 405);
+                    const scope = `${req.method}:${route}`, request = { body, query: url.search }, prior = app.store.operationResult(scope, key, request);
+                    if (prior.found)
+                        return json(prior.value);
+                    const prepared = await prepareModelSelection(app.context);
+                    return json(app.store.operation(scope, key, request, () => {
+                        prepared.assertCurrent();
+                        const x = object(body);
+                        if (route === '/sessions') {
+                            const session = app.sessions.createRoot(USER, text(x.projectId, 'projectId', 100), x, prepared);
+                            if (x.reuseSessionId === undefined)
+                                app.sessionPermissions.initialize(session.id);
+                            return session;
+                        }
+                        if (x.clear !== true) {
+                            const raw = route === '/settings/model' ? x : x.model === undefined ? prepared.current : object(x.model);
+                            const selected = { provider: text(raw.provider, 'provider', 100), model: text(raw.model, 'model', 160), thinking: text(raw.thinking ?? 'off', 'thinking', 64) };
+                            prepared.resolve(selected);
+                        }
+                        return writeRoute(app, host, route, body, req.method);
+                    }));
                 }
                 const hostAccessRoute = route.match(/^\/sessions\/([^/]+)\/host-access$/);
                 const permissionRoute = route.match(/^\/sessions\/([^/]+)\/(?:permissions|permission-actions\/[^/]+\/decide)$/);

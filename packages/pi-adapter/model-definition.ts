@@ -20,7 +20,7 @@ export function modelParameters(value:unknown,api:ModelApi){const x=jsonObject(v
  if(api==='openai-completions')ensure(x.output_config===undefined,'INVALID_INPUT','Chat Completions不支持output_config',400);
  return x;
 }
-export function defaultModelDefinition(model:string):ModelDefinitionInput {return {model,name:model,nativeProfile:'none',contextWindow:32768,maxTokens:4096,capabilities:{text:true,image:false,pdf:false,video:false,structuredOutput:false,nativeWebSearch:false,midConversationSystem:false},reasoning:{defaultLevel:'off',levels:PI_THINKING.map(id=>({id,label:id,piLevel:id,parameters:{}}))},parameters:{},structuredOutput:null,configuration:{mode:'manual',overrides:[]}};}
+export function defaultModelDefinition(model:string):ModelDefinitionInput {return {model,name:model,nativeProfile:'none',contextWindow:32768,maxTokens:4096,capabilities:{text:true,image:false,pdf:false,video:false,structuredOutput:false,nativeWebSearch:false,midConversationSystem:false},reasoning:{defaultLevel:'off',levels:PI_THINKING.map(id=>({id,label:id==='off'?'none':id,piLevel:id,parameters:{}}))},parameters:{},structuredOutput:null,configuration:{mode:'manual',overrides:[]}};}
 export function validateModelDefinition(value:unknown,api:ModelApi):ModelDefinitionInput {
  const x=object(value);ensure(Object.keys(x).every(k=>['model','name','nativeProfile','contextWindow','maxTokens','capabilities','reasoning','parameters','structuredOutput','configuration'].includes(k)),'INVALID_INPUT','模型定义包含未知字段',400);
  const model=text(x.model,'model',160),name=text(x.name,'name',160),nativeProfile=oneOf(x.nativeProfile,['none','openai','anthropic','qwen','openrouter'] as const,'nativeProfile');

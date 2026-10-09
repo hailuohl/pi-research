@@ -51,7 +51,7 @@ export function modelParameters(value, api) {
         ensure(x.output_config === undefined, 'INVALID_INPUT', 'Chat Completions不支持output_config', 400);
     return x;
 }
-export function defaultModelDefinition(model) { return { model, name: model, nativeProfile: 'none', contextWindow: 32768, maxTokens: 4096, capabilities: { text: true, image: false, pdf: false, video: false, structuredOutput: false, nativeWebSearch: false, midConversationSystem: false }, reasoning: { defaultLevel: 'off', levels: PI_THINKING.map(id => ({ id, label: id, piLevel: id, parameters: {} })) }, parameters: {}, structuredOutput: null, configuration: { mode: 'manual', overrides: [] } }; }
+export function defaultModelDefinition(model) { return { model, name: model, nativeProfile: 'none', contextWindow: 32768, maxTokens: 4096, capabilities: { text: true, image: false, pdf: false, video: false, structuredOutput: false, nativeWebSearch: false, midConversationSystem: false }, reasoning: { defaultLevel: 'off', levels: PI_THINKING.map(id => ({ id, label: id === 'off' ? 'none' : id, piLevel: id, parameters: {} })) }, parameters: {}, structuredOutput: null, configuration: { mode: 'manual', overrides: [] } }; }
 export function validateModelDefinition(value, api) {
     const x = object(value);
     ensure(Object.keys(x).every(k => ['model', 'name', 'nativeProfile', 'contextWindow', 'maxTokens', 'capabilities', 'reasoning', 'parameters', 'structuredOutput', 'configuration'].includes(k)), 'INVALID_INPUT', '模型定义包含未知字段', 400);

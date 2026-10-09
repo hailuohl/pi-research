@@ -8,6 +8,10 @@ const level=(id,label=id)=>({id,label,piLevel:'high',parameters:{}});
 const model=(id,levels=[level('low','轻量'),level('deep','深入研究')],defaultLevel='deep')=>({model:id,name:id+' configured name',enabled:true,deletedAt:null,reasoning:{levels,defaultLevel}});
 const provider=(id,models)=>({provider:id,name:id+' configured provider',enabled:true,deletedAt:null,models});
 const low={provider:'saved',model:'Research',thinking:'low'},high={...low,thinking:'deep'},other={provider:'second',model:'Code',thinking:'custom-default'};
+test('an empty model selection remains a configure-later state instead of an unavailable model',()=>{
+ const view=synchronousState(new ComposerModelMenu({sessionId:'empty',current:{provider:'',model:'',thinking:'off'},management:{providers:[]},disabled:false,busy:false,locked:false,onSelect:async()=>undefined}));
+ const trigger=elements(view.render()).find(node=>node.props?.['aria-label']==='会话模型与思考等级'),label=elements(trigger).find(node=>node.props?.className==='composer-thinking-value');assert.equal(label,undefined);assert.equal(trigger.props.disabled,true);assert.match(trigger.props.title,/设置/);
+});
 const management=()=>({providers:[provider('saved',[model('Research')]),provider('second',[model('Code',[level('low','Code low'),level('custom-default','Code custom default')],'custom-default')])]});
 function picker(overrides={}){const selected=[],view=synchronousState(new ComposerModelMenu({sessionId:'fixture',current:high,management:management(),busy:false,disabled:false,locked:false,onSelect:async selection=>{selected.push(selection);return {id:'fixture',model:selection};},...overrides}));return {view,selected};}
 

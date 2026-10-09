@@ -1,4 +1,5 @@
 import { type SessionView } from './session-history.js';
+import { type PreparedModelSelection } from './model-management.js';
 import { type ParsedAttachmentPair, type ParsedAttachmentMetadata } from './attachments.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Session, Message, ModelConfig, Role, Row, MessageAttachment } from '../domain/types.js';
@@ -18,6 +19,7 @@ export declare class SessionService {
     }>;
     selectModel(actor: Actor, id: string, value: unknown): Row<Session>;
     get(actor: Actor, id: string): Row<Session>;
+    createRoot(actor: Actor, projectId: string, input: unknown, prepared: PreparedModelSelection): Row<Session>;
     create(actor: Actor, projectId: string, input: unknown, internal?: {
         role: Role;
         teamId?: string;

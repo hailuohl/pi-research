@@ -1,5 +1,5 @@
 import {sessionCatalog,sessionMessagePage,sessionMessageContent,sessionQueue,canSteerSession,type SessionView} from './session-history.js';
-import {availableSelections} from './model-management.js';
+import {availableSelections,type PreparedModelSelection} from './model-management.js';
 import {assertModelEnabled} from './model-connections.js';
 import {resolvedThinking} from './model-definition.js';
 import {publicRecord} from '../domain/public-record.js';
@@ -71,6 +71,31 @@ export class SessionService {
         });
     }
     get(actor: Actor, id: string) { const s = this.c.store.get<Session>('session', id); scope(actor, s.projectId!); return s; }
+    createRoot(actor:Actor,projectId:string,input:unknown,prepared:PreparedModelSelection){
+        userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
+        const x=object(input);ensure(Object.keys(x).every(k=>['projectId','title','reuseSessionId','expectedVersion'].includes(k)),'INVALID_INPUT','新会话包含未知字段');
+        ensure((x.reuseSessionId===undefined)===(x.expectedVersion===undefined),'INVALID_INPUT','复用空白会话需要会话ID和版本');
+        return this.c.store.transaction(()=>{
+            prepared.assertCurrent();const model=prepared.resolve(prepared.current,true);
+            let session:Row<Session>|undefined,next=model;
+            if(x.reuseSessionId!==undefined){
+                session=this.get(actor,text(x.reuseSessionId,'reuseSessionId',100));ensure(session.projectId===projectId,'SCOPE_DENIED','会话不属于此项目',403);
+                ensure(session.version===integer(x.expectedVersion,'expectedVersion',1),'VERSION_CONFLICT','空白会话已变化，请刷新');
+                ensure(session.role==='coordinator'&&session.state==='idle'&&!session.taskId&&!session.teamId&&!session.parentSessionId&&session.piSessionPath===null&&session.generation===0&&session.leaseUntil===0,'SESSION_BUSY','会话已开始工作，不能作为新会话复用');
+                const history=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? LIMIT 1").get(projectId,session.id),worker=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='agent-admission' AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.state')<>'released' LIMIT 1").get(session.id);
+                ensure(!history&&!worker,'SESSION_BUSY','会话已有消息或Worker，不能作为新会话复用');
+                next=!session.model.provider&&!session.model.model?model:prepared.resolve(session.model,true);
+                if(digest(next)!==digest(session.model)){
+                    const binding=session.executionPermission||session.sourceRevisionId||session.sourceDigest||session.textCorpusGrantId||session.discoveryGrantId||session.runGrantId||session.workingGrantId||this.c.store.db.prepare("SELECT 1 FROM records WHERE project_id=? AND ((kind IN ('text-corpus-grant','discovery-grant','run-grant','working-grant','session-action','native-request') AND json_extract(data,'$.sessionId')=?) OR (kind='team' AND json_extract(data,'$.rootSessionId')=?)) LIMIT 1").get(projectId,session.id,session.id);
+                    ensure(!binding,'MODEL_BOUND','此空白会话已有固定授权或来源，不能修正模型；请另建会话');
+                }
+            }
+            if(digest(model)!==digest(prepared.current))this.configure(actor,{...model,expectedVersion:prepared.globalVersion});
+            if(!session)return this.create(actor,projectId,x);
+            if(digest(next)===digest(session.model))return session;
+            const updated=this.c.store.update<Session>('session',session.id,session.version,{model:next});this.c.store.event(projectId,'session.model_changed',{sessionId:session.id,model:next});return updated;
+        });
+    }
     create(actor: Actor, projectId: string, input: unknown, internal?: {
         role: Role;
         teamId?: string;

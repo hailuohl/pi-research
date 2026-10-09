@@ -164,7 +164,7 @@ class ComposerModelMenu extends React.Component {
   render() {
     const { current, disabled, busy, locked, sessionId, management } = this.props, models = this.models(), selected = this.selected(), levels = selected?.model.reasoning.levels ?? [];
     const scope = () => this.props.sessionId === sessionId && key(this.props.current) === key(current) && this.props.management === management;
-    const confirmedIndex = this.confirmedIndex(), valid = confirmedIndex >= 0, label = valid ? levels[confirmedIndex].label : current ? "\u4E0D\u53EF\u7528" : "";
+    const confirmedIndex = this.confirmedIndex(), valid = confirmedIndex >= 0, configured = !!current?.provider && !!current.model, label = valid ? levels[confirmedIndex].label : configured ? "\u4E0D\u53EF\u7528" : "";
     const index = this.state.preview ?? confirmedIndex, level = levels[Math.round(index)], visual = this.state.visual ?? confirmedIndex, progress = levels.length > 1 && visual >= 0 ? visual / (levels.length - 1) * 100 : 0;
     const blocked = this.blocked(), id = "composer-model-menu-" + sessionId, error = this.props.error || this.state.error;
     const style = { "--thinking-progress": progress + "%", "--thinking-fill-width": progress >= 100 ? "100%" : `calc(18px + (100% - 36px) * ${progress / 100})`, "--thinking-violet": progress / 100 };

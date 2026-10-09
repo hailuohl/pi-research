@@ -8,6 +8,14 @@ export declare function modelSdk(c: AppContext): Promise<typeof import("@earendi
 export declare function modelCatalog(c: AppContext): Promise<ModelRuntime>;
 export declare function defaultSelection(c: AppContext): ModelConfig;
 export declare function legacyModels(c: AppContext): ModelConfig[];
+/** SDK preparation stays outside SQLite transactions; the returned guard runs inside the write. */
+export declare function prepareModelSelection(c: AppContext): Promise<{
+    globalVersion: number;
+    current: ModelConfig;
+    assertCurrent(): void;
+    resolve(selected: ModelConfig, repair?: boolean): ModelConfig;
+}>;
+export type PreparedModelSelection = Awaited<ReturnType<typeof prepareModelSelection>>;
 export declare function availableSelections(c: AppContext): ModelConfig[];
 type SdkModel = NonNullable<ReturnType<ModelRuntime['getModel']>>;
 export declare function recommendedDefinition(model: string, source: SdkModel | undefined): ModelDefinitionInput;

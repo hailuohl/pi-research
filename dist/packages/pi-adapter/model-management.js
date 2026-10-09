@@ -1,11 +1,12 @@
 import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { ensure } from '../domain/errors.js';
 import { object, text, integer } from '../contracts/validation.js';
 import { userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { locatePi, PI_VERSION } from './runtime.js';
-import { readModelState, mutateModelState, parseModelConnection, CONNECTION_APIS, EMPTY_MODEL_CREDENTIALS, modelNeedsCredential } from './model-connections.js';
+import { readModelState, mutateModelState, parseModelConnection, CONNECTION_APIS, EMPTY_MODEL_CREDENTIALS, modelNeedsCredential, assertModelEnabled } from './model-connections.js';
 import { defaultModelDefinition, validateModelDefinition, effectiveCapabilities, MODEL_OVERRIDE_FIELDS, PI_THINKING } from './model-definition.js';
 export const MODEL_PRESETS = [
     { id: 'openai', name: 'OpenAI', group: '官方服务', providerBrand: 'openai', baseUrl: 'https://api.openai.com/v1', api: 'openai-responses' },
@@ -17,6 +18,33 @@ export async function modelSdk(c) { const installed = locatePi(c.repoRoot); ensu
 export async function modelCatalog(c) { const sdk = await modelSdk(c); return sdk.ModelRuntime.create({ modelsPath: join(c.dataDir, 'models.json'), credentials: EMPTY_MODEL_CREDENTIALS, refreshOnCreate: false, allowModelNetwork: false }); }
 export function defaultSelection(c) { return c.store.maybe('app-settings', 'global')?.model ?? { provider: process.env.PI_PROVIDER ?? '', model: process.env.PI_MODEL ?? '', thinking: 'off' }; }
 export function legacyModels(c) { const settings = c.store.maybe('app-settings', 'global'); return [defaultSelection(c), ...(settings?.models ?? [])].filter((m, i, all) => m.provider && m.model && all.findIndex(v => v.provider === m.provider && v.model === m.model) === i); }
+/** SDK preparation stays outside SQLite transactions; the returned guard runs inside the write. */
+export async function prepareModelSelection(c) {
+    const state = readModelState(c.dataDir), globalVersion = c.store.maybe('app-settings', 'global')?.version ?? 0, current = defaultSelection(c), path = join(c.dataDir, 'models.json');
+    const catalogDigest = () => existsSync(path) ? digest(readFileSync(path)) : null, signature = catalogDigest();
+    let runtime;
+    try {
+        runtime = await modelCatalog(c);
+    }
+    catch { }
+    return { globalVersion, current,
+        assertCurrent() { ensure(readModelState(c.dataDir).version === state.version && catalogDigest() === signature && (c.store.maybe('app-settings', 'global')?.version ?? 0) === globalVersion && digest(defaultSelection(c)) === digest(current), 'VERSION_CONFLICT', '模型配置或默认模型已变化，请刷新后重试'); },
+        resolve(selected, repair = false) {
+            if (!selected.provider && !selected.model)
+                return selected;
+            ensure(selected.provider && selected.model, 'MODEL_NOT_CONFIGURED', '请完整配置供应商和模型');
+            const managed = assertModelEnabled(c.dataDir, { provider: selected.provider, model: selected.model }), known = runtime?.getModel(selected.provider, selected.model), definition = managed ?? (known ? recommendedDefinition(selected.model, known) : undefined);
+            if (!definition) {
+                ensure(PI_THINKING.includes(selected.thinking), 'MODEL_REASONING_UNAVAILABLE', '无法解析此模型的思考等级，请在设置中明确配置模型');
+                return selected;
+            }
+            if (definition.reasoning.levels.some(level => level.id === selected.thinking))
+                return selected;
+            ensure(repair, 'MODEL_REASONING_UNAVAILABLE', '该模型不支持此思考等级，请选择已配置档位');
+            ensure(definition.reasoning.levels.some(level => level.id === definition.reasoning.defaultLevel), 'MODEL_REASONING_UNAVAILABLE', '模型默认思考等级不可用');
+            return { ...selected, thinking: definition.reasoning.defaultLevel };
+        } };
+}
 export function availableSelections(c) { const state = readModelState(c.dataDir), saved = legacyModels(c), result = []; for (const p of state.connections.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))
     if (!p.deletedAt && p.enabled !== false && !modelNeedsCredential(p))
         for (const m of (p.models ?? []).sort((a, b) => a.order - b.order))
@@ -39,10 +67,8 @@ export function recommendedDefinition(model, source) {
     result.capabilities.image = source.input.includes('image');
     result.capabilities.midConversationSystem = !!source.compat && 'supportsMidConvoSystemMessages' in source.compat && source.compat.supportsMidConvoSystemMessages === true;
     result.capabilities.structuredOutput = false;
-    result.reasoning.levels = (source.reasoning ? PI_THINKING : ['off']).filter(id => source.thinkingLevelMap?.[id] !== null).map(id => ({ id, label: id, piLevel: id, parameters: {} }));
-    if (!result.reasoning.levels.length)
-        result.reasoning.levels = [{ id: 'off', label: 'off', piLevel: 'off', parameters: {} }];
-    result.reasoning.defaultLevel = result.reasoning.levels[0].id;
+    result.reasoning.levels = (source.reasoning ? PI_THINKING : ['off']).filter(id => source.thinkingLevelMap?.[id] !== null).map(id => ({ id, label: id === 'off' ? 'none' : id, piLevel: id, parameters: {} }));
+    result.reasoning.defaultLevel = result.reasoning.levels[0]?.id ?? '';
     try {
         const host = new URL(source.baseUrl).hostname;
         if (host === 'api.openai.com')
@@ -75,7 +101,7 @@ export async function inspectModelManagement(c, actor, state = readModelState(c.
     const providers = [];
     for (const id of [...new Set([...state.connections.map(p => p.provider), ...choices.map(m => m.provider)])]) {
         const stored = state.connections.find(p => p.provider === id), known = runtime?.getModels(id)[0], api = stored?.api ?? (CONNECTION_APIS.includes(known?.api ?? '') ? known.api : 'openai-completions');
-        const p = stored ?? { provider: id, name: id, baseUrl: known?.baseUrl ?? '', api, apiKey: '', enabled: true, deletedAt: null, order: providers.length, models: [] };
+        const p = stored ?? { provider: id, name: id, baseUrl: known?.baseUrl ?? '', api, apiKey: '', controlOnly: true, enabled: true, deletedAt: null, order: providers.length, models: [] };
         const models = (p.models ?? []).map(m => { const { controlOnly, ...saved } = m, v = controlOnly ? { ...recommendedDefinition(m.model, runtime?.getModel(id, m.model)), enabled: m.enabled, deletedAt: m.deletedAt, order: m.order, revision: m.revision } : saved; return { ...v, source: controlOnly ? 'legacy' : 'managed', effectiveCapabilities: effectiveCapabilities(v, p.api), test: probe(c, p, m) }; });
         if (!p.models?.length)
             for (const choice of choices.filter(m => m.provider === id)) {
@@ -85,7 +111,7 @@ export async function inspectModelManagement(c, actor, state = readModelState(c.
         providers.push({ provider: id, name: p.name, baseUrl: p.controlOnly ? known?.baseUrl ?? '' : p.baseUrl, api: p.api, hasApiKey: !!p.apiKey, ...(modelNeedsCredential(p) ? { requiresCredential: true } : {}), enabled: p.enabled !== false, deletedAt: p.deletedAt ?? null, order: p.order ?? providers.length, source: stored && !stored.controlOnly ? 'managed' : 'legacy', models: models.sort((a, b) => a.order - b.order), test: probe(c, p) });
     }
     const current = defaultSelection(c), p = providers.find(p => p.provider === current.provider), m = p?.models.find(m => m.model === current.model);
-    return { schemaVersion: 2, version: state.version, defaultModel: current, defaultModelVersion: c.store.maybe('app-settings', 'global')?.version ?? 0, defaultUsable: !!current.provider && !!current.model && !!p && p.enabled && !p.deletedAt && !p.requiresCredential && !!m && m.enabled && !m.deletedAt && (m.source === 'legacy' || m.reasoning.levels.some(l => l.id === current.thinking)), providers: providers.sort((a, b) => a.order - b.order), presets: MODEL_PRESETS, supportedApis: [...CONNECTION_APIS] };
+    return { schemaVersion: 2, version: state.version, defaultModel: current, defaultModelVersion: c.store.maybe('app-settings', 'global')?.version ?? 0, defaultUsable: !!current.provider && !!current.model && !!p && p.enabled && !p.deletedAt && !p.requiresCredential && !!m && m.enabled && !m.deletedAt && m.reasoning.levels.some(l => l.id === current.thinking), providers: providers.sort((a, b) => a.order - b.order), presets: MODEL_PRESETS, supportedApis: [...CONNECTION_APIS] };
 }
 export async function recommendModel(c, actor, provider, model) { userOnly(actor); text(provider, 'provider', 100); text(model, 'model', 160); const runtime = await modelCatalog(c), state = readModelState(c.dataDir), p = state.connections.find(p => p.provider === provider), existing = p?.models?.find(m => m.model === model); let match = runtime.getModel(provider, model); if (!match) {
     const matches = runtime.getModels().filter(m => m.id === model);
