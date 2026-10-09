@@ -26,7 +26,7 @@ interface Props {
     onRemoveAttachment: (documentVersionId: string) => void;
     canSend: boolean;
     hasDraft: boolean;
-    onSendModel: (model: ModelConfig) => void;
+    onSendModel: (model: ModelConfig) => Promise<Row<Session>|undefined>;
 }
 interface State { config: ConnectorConfig | null; sourceDraft: Record<SourceId, boolean>; sourcesOpen: boolean; loading: boolean; loadingError: string; saving: boolean; uploadError: string; uploading: boolean;attachmentTypes:AttachmentTypes|null }
 
@@ -113,13 +113,6 @@ export class ComposerControls extends React.Component<Props, State> {
         finally { if (this.mounted) this.setState({ uploading: false }); }
     }
 
-    private modelOptions() {
-        const { boot } = this.props, models = boot.models ?? [boot.model];
-        const unique = new Map<string, ModelConfig>();
-        for (const model of models) if (model?.provider && model.model) unique.set(modelKey(model), model);
-        return [...unique.values()];
-    }
-
     stopSession(sessionId:string) {
         const {session,busy,projectArchived}=this.props;
         if(!this.mounted||session?.id!==sessionId||busy||projectArchived||session.taskId||!['running','queued'].includes(session.state))return;
@@ -129,7 +122,7 @@ export class ComposerControls extends React.Component<Props, State> {
     render() {
         const { boot, session, projectArchived, modelLocked, busy, attachments, canSend, hasDraft } = this.props;
         const { config, sourceDraft, sourcesOpen, loading, loadingError, uploadError, uploading } = this.state;
-        const currentModel = session?.model, options = this.modelOptions(), modelDisabled = !session || projectArchived || busy || modelLocked || !!session.taskId || session.role !== 'coordinator' || ['running', 'queued', 'archived'].includes(session.state);
+        const currentModel = session?.model, modelDisabled = !session || projectArchived || modelLocked || !!session.taskId || !!session.teamId || session.role !== 'coordinator' || ['running', 'queued', 'archived'].includes(session.state);
         const uploadDisabled = !session || projectArchived || !!session.taskId || session.state === 'archived' || uploading || attachments.length >= 5;
         const sourceCount = SOURCES.filter(source => sourceDraft[source]).length;
         const allowed=this.allowedTypes(),unsupported=attachments.some(a=>!allowed.some(t=>t.mediaType===a.mediaType)),accept=allowed.flatMap(t=>[...t.extensions,t.mediaType]).join(',');
@@ -148,7 +141,7 @@ export class ComposerControls extends React.Component<Props, State> {
                     {this.props.children}
                 </div>
                 <div className="grow"/>
-                <ComposerModelMenu sessionId={session?.id??'none'} current={currentModel} options={options} disabled={modelDisabled} locked={modelLocked} onSelect={this.props.onSendModel}/>
+                <ComposerModelMenu sessionId={session?.id??'none'} current={currentModel} management={boot.modelManagement} error={boot.modelManagementError} busy={busy} disabled={modelDisabled} locked={modelLocked} onSelect={this.props.onSendModel}/>
                 {this.props.permissionControl}
                 <button className="primary compact composer-submit-control" type={showStop?'button':'submit'} aria-label={showStop?'停止模型':executing?'排队发送':'发送'} title={showStop?'停止当前对话任务':executing?'发送到队列':'发送消息'} data-action={showStop?'stop':'send'} disabled={showStop?busy||projectArchived:!canSend||!hasDraft||!session||unsupported} onClick={showStop?()=>this.stopSession(session!.id):undefined}><Icon name={showStop?'stop':'arrow'} size={16}/>{showStop?'停止':'发送'}</button>
             </div>

@@ -17,6 +17,7 @@ import type { Wakeup } from '../../../dist/packages/scheduler/wakeups.js';
 import type {ComputeQueueInspection} from '../../../dist/packages/scheduler/compute-types.js';
 import type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
 import type {ModelHttpDTO} from '../../../dist/packages/scheduler/model-http.js';
+import type {ModelManagementView} from '../../../dist/packages/pi-adapter/model-management-types.js';
 export type {ComputeQueueInspection,ComputeLimits,ComputeConfiguration,ComputeQueueItem,ComputeWaitReason,ComputeUsage,ComputeAvailable} from '../../../dist/packages/scheduler/compute-types.js';
 export type {AgentCapacityDTO} from '../../../dist/packages/scheduler/agent-admission.js';
 export type {ModelHttpDTO} from '../../../dist/packages/scheduler/model-http.js';
@@ -127,6 +128,8 @@ export interface Bootstrap {
     model: ModelConfig;
     modelVersion?: number;
     models?: ModelConfig[];
+    modelManagement?: ModelManagementView|null;
+    modelManagementError?: string;
     runtime: {
         ready: boolean;
         code: string;

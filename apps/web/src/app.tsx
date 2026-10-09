@@ -3,7 +3,7 @@ import {ProjectEventFeed} from './event-feed.js';
 import {EnvironmentView} from './environment-view.js';
 import {IntegrationsView} from './integrations.js';
 import { api } from './api.js';
-import type { Bootstrap, Project, ProjectState, Row, Session, SessionCatalogItem, SessionCatalogPage, DocumentLocation, SessionHistoryPage, SessionView } from './models.js';
+import type { Bootstrap, Project, ProjectState, Row, Session, SessionCatalogItem, SessionCatalogPage, DocumentLocation, SessionHistoryPage, SessionView, ModelManagementView } from './models.js';
 import { short, label } from './models.js';
 import {Icon, Modal, nativeSelectButton} from './ui.js';
 import { Chat, Experiments, Inspector, type Perform } from './workbench.js';
@@ -96,19 +96,24 @@ export class App extends React.Component<{}, State> {
         const epoch=this.refreshEpoch,controller=new AbortController();this.readController=controller;
         try{
             const boot=await api<Bootstrap>('/bootstrap',undefined,'GET',controller.signal);
+            const modelManagementRead=api<ModelManagementView>('/settings/model-management',undefined,'GET',controller.signal).then(data=>{
+                if(data.schemaVersion!==2||!Array.isArray(data.providers))throw Error('模型设置目录格式不正确，请刷新后重试');
+                return {data,error:''};
+            }).catch(error=>({data:null,error:error instanceof Error?error.message:String(error)}));
             const projectId=boot.projects.some(p=>p.id===this.state.projectId)?this.state.projectId:boot.projects[0]?.id??'';
             const requestedSession=projectId===this.state.projectId?this.state.sessionId:'';
             let data=projectId?await api<ProjectState>(`/projects/${projectId}/state${requestedSession?'?sessionId='+encodeURIComponent(requestedSession):''}`,undefined,'GET',controller.signal):null;
             const sessionId=requestedSession||(data?.sessions.find(s=>s.role==='coordinator'&&s.state!=='archived')?.id??'');
             const anchor=requestedSession?this.state.historyAnchor:null;
             const view=sessionId?await api<CurrentSessionView>(`/sessions/${sessionId}/view${anchor?'?'+(anchor.direction==='before'?'beforeMessageId':'afterMessageId')+'='+encodeURIComponent(anchor.id):''}`,undefined,'GET',controller.signal):null;
+            const modelManagement=await modelManagementRead;
             if(!this.mounted||epoch!==this.refreshEpoch)return false;
             if(view&&view.session.id!==sessionId)throw Error('会话快照与当前选择不一致');
             if(data&&view)data={...data,sessions:data.sessions.some(s=>s.id===sessionId)?data.sessions.map(s=>s.id===sessionId?view.session:s):[...data.sessions,view.session]};
             const active=!!view?.progress.active&&view.progress.generation===view.session.generation;
             const requestedExp=projectId===this.state.projectId?this.state.selectedExp:this.experimentSelections[projectId]??'';
             const selectedExp=data?.experiments.some(e=>e.id===requestedExp)?requestedExp:data?.experiments[0]?.id??'';
-            await new Promise<void>(resolve=>this.setState({boot,data,projectId,sessionId,messages:view?.messages??[],pendingMessages:view?.pendingMessages??[],pendingTotal:view?.pendingTotal??0,pendingNextCursor:view?.pendingNextCursor??null,canSteer:view?.progress?.canSteer??false,history:view?.history??null,historyAnchor:anchor,selectedExp,stream:!anchor&&active?view!.progress.content:'',streamTruncated:!anchor&&active&&!!view?.progress.truncated,activity:!anchor&&active?view?.progress.activity??null:null,connected:true},resolve));
+            await new Promise<void>(resolve=>this.setState({boot:{...boot,modelManagement:modelManagement.data,modelManagementError:modelManagement.error},data,projectId,sessionId,messages:view?.messages??[],pendingMessages:view?.pendingMessages??[],pendingTotal:view?.pendingTotal??0,pendingNextCursor:view?.pendingNextCursor??null,canSteer:view?.progress?.canSteer??false,history:view?.history??null,historyAnchor:anchor,selectedExp,stream:!anchor&&active?view!.progress.content:'',streamTruncated:!anchor&&active&&!!view?.progress.truncated,activity:!anchor&&active?view?.progress.activity??null:null,connected:true},resolve));
             if(!this.mounted||epoch!==this.refreshEpoch)return false;
             if(this.feed?.projectId!==projectId){this.feed?.stop();this.feed=undefined;if(projectId){const feed=new ProjectEventFeed(projectId,()=>this.refresh(true),eventNotice=>{if(this.mounted&&this.feed===feed)this.setState({eventNotice});});this.feed=feed;feed.start();}}
             return true;
@@ -140,6 +145,14 @@ export class App extends React.Component<{}, State> {
         finally {
             this.setState({ busy: false });
         }
+    };
+    private confirmSessionModel=(session:Row<Session>)=>{
+        this.setState(current=>{
+            if(!this.mounted||current.sessionId!==session.id||current.projectId!==session.projectId||current.data?.project.id!==session.projectId)return null;
+            const existing=current.data.sessions.find(item=>item.id===session.id);
+            if(existing&&existing.version>session.version)return null;
+            return {data:{...current.data,sessions:existing?current.data.sessions.map(item=>item.id===session.id?session:item):[...current.data.sessions,session]}};
+        });
     };
     private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'activity'|'error'> {
         return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,activity:null,error:''};
@@ -251,7 +264,7 @@ export class App extends React.Component<{}, State> {
  {this.state.eventNotice?<p className="small muted" role="status">{this.state.eventNotice}</p>:null}{this.state.error ? <div className="global-error" role="alert"><strong>操作未完成</strong><span>{this.state.error}</span><button className="icon-button" aria-label="关闭错误提示" onClick={() => this.setState({ error: '' })}><Icon name="close" size={16}/></button></div> : null}{this.state.notice ? <div className="toast" role="status"><Icon name="check" size={16}/>{this.state.notice}</div> : null}
  <ConversationLayout projectId={this.state.projectId} active={tab==='chat'} inspector={tab==='experiments'&&inspector?React.cloneElement(inspector,{tab:'experiments',embedded:false,inlineWorkflows:false}):null} panel={<ConversationPanel key={this.state.projectId} projectId={this.state.projectId} active={tab==='chat'} data={data} collaboration={inspector} selectedExperiment={this.state.selectedExp} onExperiment={this.selectExperiment} onWorkspace={()=>this.selectTab('workspace')} onChooseProject={()=>{if(boot?.projects.length){this.setState({navigationOpen:true},()=>document.querySelector<HTMLSelectElement>('.sidebar-project select')?.focus());}else this.open('project');}} onRetry={()=>void this.refresh()} error={this.state.error}/>}>
  <main className={'main-pane page-' + tab + (tab === 'chat' ? ' chat-pane' : '')}>
-{boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} busy={this.state.busy} messages={this.state.messages} pendingMessages={this.state.pendingMessages} pendingTotal={this.state.pendingTotal} pendingNextCursor={this.state.pendingNextCursor} canSteer={this.state.canSteer} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} activity={this.state.activity} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
+{boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} onModelConfirmed={this.confirmSessionModel} busy={this.state.busy} messages={this.state.messages} pendingMessages={this.state.pendingMessages} pendingTotal={this.state.pendingTotal} pendingNextCursor={this.state.pendingNextCursor} canSteer={this.state.canSteer} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} activity={this.state.activity} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={() => this.setState({ tab: 'experiments' })} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} projectId={this.state.projectId} session={currentSession} perform={this.perform}/> : tab === 'environment' ? <EnvironmentView/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button><p className="small muted">Pi 是唯一 Agent 执行内核。没有 ORX 运行时依赖。</p></div> :
                 tab === 'chat' ? null :
                     tab === 'experiments' ? <Experiments key={data.project.id} onSession={id=>this.selectSession(id)} onChat={()=>this.setState({tab:'chat'})} data={data} selected={this.state.selectedExp} onSelect={selectedExp => { this.invalidateRead(); this.setState({ selectedExp,selectedRun:'' }); }} onRun={(selectedRun,selectedExp)=>{if(!data.runs.some(r=>r.id===selectedRun&&r.experimentId===selectedExp)||!data.experiments.some(e=>e.id===selectedExp)){this.setState({error:'指定 Run 不在当前项目中，未跳转到其他运行。'});return;}this.invalidateRead();this.setState({selectedRun,selectedExp});}}/> :

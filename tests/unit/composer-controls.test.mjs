@@ -13,7 +13,8 @@ const elements = node => Array.isArray(node) ? node.flatMap(elements) : !node ||
 const find = (tree, predicate) => elements(tree).find(predicate);
 const response = data => ({ ok: true, json: async () => data });
 const model = { provider: 'test', model: 'default', thinking: 'low' };
-const boot = { model, models: [model, { provider: 'other', model: 'large', thinking: 'high' }], runtime: { ready: true, message: '', node: 'v22', expectedVersion: 'pi' }, capabilities: [] };
+const managed=(id,thinking)=>({model:id,name:id+' configured',enabled:true,deletedAt:null,reasoning:{defaultLevel:thinking,levels:[{id:thinking,label:'Configured '+thinking,piLevel:'high',parameters:{}}]}});
+const boot = { model, models: [model, { provider: 'other', model: 'large', thinking: 'high' }], modelManagement:{providers:[{provider:'test',name:'test',enabled:true,deletedAt:null,models:[managed('default','low')]},{provider:'other',name:'other',enabled:true,deletedAt:null,models:[managed('large','high')]}]}, runtime: { ready: true, message: '', node: 'v22', expectedVersion: 'pi' }, capabilities: [] };
 const session = { id: 's', version: 3, role: 'coordinator', state: 'idle', model, title: 'Research' };
 const attachment = (id, title = `${id}.txt`) => ({ documentVersionId: id, artifactId: `${id}-artifact`, digest: 'digest', title, mediaType: 'text/plain', size: 5 });
 function controlsProps(overrides = {}) {
@@ -101,20 +102,38 @@ test('source updates serialize versioned clicks and cannot publish a late respon
     assert.equal(view.state.config.version, 2, 'late completion cannot mutate the unmounted source controller');
 });
 
-test('current-session model menu sends only the selected saved config and respects fixed grants', () => {
+test('current-session model menu sends only the selected saved config and respects fixed grants', async () => {
     const selected = [];
-    const view = synchronousState(new ComposerControls(controlsProps({ onSendModel: value => selected.push(value) })));
+    const view = synchronousState(new ComposerControls(controlsProps({ onSendModel: async value => {selected.push(value);return {id:'s',model:value};} })));
     const menu = find(view.render(), node => node.type === ComposerModelMenu);
     const picker = synchronousState(new ComposerModelMenu(menu.props));
-    picker.choose(menu.props.options.find(option=>option.provider==='other'&&option.model==='large'));
+    assert.equal(menu.props.management,boot.modelManagement);await picker.chooseModel('other','large');
     assert.deepEqual(selected, [{ provider: 'other', model: 'large', thinking: 'high' }]);
-    picker.choose({provider:'unknown',model:'injected',thinking:'high'});assert.equal(selected.length,1);
+    await picker.choose({provider:'unknown',model:'injected',thinking:'high'});assert.equal(selected.length,1);
     const locked = synchronousState(new ComposerControls(controlsProps({ modelLocked: true })));
     assert.equal(find(locked.render(), node => node.type === ComposerModelMenu).props.disabled, true);
-    for(const override of [{session:undefined},{busy:true},{projectArchived:true},{session:{...session,taskId:'task'}},{session:{...session,role:'reviewer'}},...['running','queued','archived'].map(state=>({session:{...session,state}}))]){
+    for(const override of [{session:undefined},{busy:true},{projectArchived:true},{session:{...session,taskId:'task'}},{session:{...session,teamId:'team'}},{session:{...session,role:'reviewer'}},...['running','queued','archived'].map(state=>({session:{...session,state}}))]){
         const disabled=synchronousState(new ComposerControls(controlsProps(override)));
-        assert.equal(find(disabled.render(),node=>node.type===ComposerModelMenu).props.disabled,true);
+        const props=find(disabled.render(),node=>node.type===ComposerModelMenu).props;assert.equal(props.disabled||props.busy,true);
     }
+});
+
+test('model API confirmation is returned and propagated before refresh, and late responses cannot update another session',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const selected={provider:'other',model:'large',thinking:'high'},confirmed={...session,version:4,model:selected},receipts=[],requests=[];
+ globalThis.fetch=async(url,init)=>{requests.push({url,body:JSON.parse(init.body)});return response(confirmed);};
+ const view=synchronousState(new Chat(chatProps({onModelConfirmed:row=>receipts.push(row)}))),controls=find(view.render(),node=>node.type===ComposerControls);
+ assert.equal(await controls.props.onSendModel(selected),confirmed);assert.deepEqual(receipts,[confirmed]);assert.deepEqual(requests,[{url:'/api/sessions/s/model',body:{expectedVersion:3,model:selected}}]);
+ view.props={...view.props,session:{...session,id:'new-session'}};assert.equal(await controls.props.onSendModel(selected),undefined);assert.equal(requests.length,1);
+ view.props=chatProps({onModelConfirmed:row=>receipts.push(row)});let resolve;globalThis.fetch=()=>new Promise(done=>resolve=done);
+ const pending=find(view.render(),node=>node.type===ComposerControls).props.onSendModel(selected);view.props={...view.props,session:{...session,id:'next'}};resolve(response(confirmed));assert.equal(await pending,confirmed);assert.equal(receipts.length,1);
+ view.props=chatProps({onModelConfirmed:row=>receipts.push(row)});globalThis.fetch=async()=>response({...confirmed,model});await find(view.render(),node=>node.type===ComposerControls).props.onSendModel(selected);assert.equal(receipts.length,1,'a mismatched model receipt cannot confirm the requested selection');
+});
+
+test('boot model triples cannot bypass missing or failed configured metadata',async()=>{
+ for(const modelManagement of [undefined,null]){
+  const selected=[],view=synchronousState(new ComposerControls(controlsProps({boot:{...boot,modelManagement},onSendModel:async value=>selected.push(value)}))),menu=find(view.render(),node=>node.type===ComposerModelMenu),picker=synchronousState(new ComposerModelMenu(menu.props));
+  assert.equal(find(picker.render(),node=>node.props?.className==='composer-model-trigger').props.disabled,true);await picker.chooseModel('other','large');assert.equal(selected.length,0);
+ }
 });
 
 test('permissions are inside the composer toolbar and absent from the outside caption',()=>{
@@ -200,8 +219,18 @@ test('settings save the default only, and persisted message history exposes down
     assert.ok(find(tree, node => node.type === 'button' && node.props['aria-label'] === '下载附件原件 paper.pdf'));
 });
 
-test('disabled or deleted current/default models remain visible only as current and never resurrect as selectable options',()=>{
+test('disabled or deleted current/default models remain visible only as current and never resurrect as selectable options',async()=>{
     const active={provider:'enabled',model:'live',thinking:'deep-research'},removed={provider:'removed',model:'old',thinking:'max'};
-    for(const models of [[],[active]]){const view=synchronousState(new ComposerControls(controlsProps({boot:{...boot,model:removed,models},session:{...session,model:removed}})));const menu=find(view.render(),node=>node.type===ComposerModelMenu);assert.deepEqual(menu.props.options,models);assert.deepEqual(menu.props.current,removed);}
-    const legacy=synchronousState(new ComposerControls(controlsProps({boot:{...boot,models:undefined}})));assert.deepEqual(find(legacy.render(),node=>node.type===ComposerModelMenu).props.options,[model]);
+    for(const excluded of ['disabled-model','deleted-model','disabled-provider','deleted-provider'])for(const models of [[],[active]]){
+        const removedModel={...managed('old','max'),...(excluded==='disabled-model'?{enabled:false}:{}),...(excluded==='deleted-model'?{deletedAt:'deleted'}:{})};
+        const modelManagement={providers:[{provider:'removed',name:'removed',enabled:excluded!=='disabled-provider',deletedAt:excluded==='deleted-provider'?'deleted':null,models:[removedModel]},...models.map(config=>({provider:config.provider,name:config.provider,enabled:true,deletedAt:null,models:[managed(config.model,config.thinking)]}))]};
+        const selected=[],view=synchronousState(new ComposerControls(controlsProps({boot:{...boot,model:removed,models:[removed,...models],modelManagement},session:{...session,model:removed},onSendModel:async value=>{selected.push(value);return {...session,model:value};}}))),menu=find(view.render(),node=>node.type===ComposerModelMenu),picker=synchronousState(new ComposerModelMenu(menu.props));
+        assert.equal(menu.props.management,modelManagement);assert.deepEqual(menu.props.current,removed);
+        const tree=picker.render(),rows=elements(tree).filter(node=>node.props?.role==='menuitemradio');assert.deepEqual(rows.map(row=>row.key),models.map(config=>JSON.stringify([config.provider,config.model])));
+        const trigger=find(tree,node=>node.props?.className==='composer-model-trigger');assert.match(JSON.stringify(trigger),/old/);assert.match(JSON.stringify(trigger),/不可用/);
+        await picker.choose(removed);assert.equal(selected.length,0,'history and boot triples cannot revive the excluded model');
+        if(models.length){await picker.choose(active);assert.deepEqual(selected,[active]);}
+    }
+    const legacy=synchronousState(new ComposerControls(controlsProps({boot:{...boot,models:undefined,modelManagement:undefined}}))),legacyMenu=find(legacy.render(),node=>node.type===ComposerModelMenu),legacyPicker=synchronousState(new ComposerModelMenu(legacyMenu.props));
+    assert.equal(elements(legacyPicker.render()).filter(node=>node.props?.role==='menuitemradio').length,0);assert.equal(find(legacyPicker.render(),node=>node.props?.className==='composer-model-trigger').props.disabled,true);
 });

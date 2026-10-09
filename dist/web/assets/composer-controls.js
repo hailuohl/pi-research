@@ -123,12 +123,6 @@ class ComposerControls extends React.Component {
       if (this.mounted) this.setState({ uploading: false });
     }
   }
-  modelOptions() {
-    const { boot } = this.props, models = boot.models ?? [boot.model];
-    const unique = /* @__PURE__ */ new Map();
-    for (const model of models) if (model?.provider && model.model) unique.set(modelKey(model), model);
-    return [...unique.values()];
-  }
   stopSession(sessionId) {
     const { session, busy, projectArchived } = this.props;
     if (!this.mounted || session?.id !== sessionId || busy || projectArchived || session.taskId || !["running", "queued"].includes(session.state)) return;
@@ -137,7 +131,7 @@ class ComposerControls extends React.Component {
   render() {
     const { boot, session, projectArchived, modelLocked, busy, attachments, canSend, hasDraft } = this.props;
     const { config, sourceDraft, sourcesOpen, loading, loadingError, uploadError, uploading } = this.state;
-    const currentModel = session?.model, options = this.modelOptions(), modelDisabled = !session || projectArchived || busy || modelLocked || !!session.taskId || session.role !== "coordinator" || ["running", "queued", "archived"].includes(session.state);
+    const currentModel = session?.model, modelDisabled = !session || projectArchived || modelLocked || !!session.taskId || !!session.teamId || session.role !== "coordinator" || ["running", "queued", "archived"].includes(session.state);
     const uploadDisabled = !session || projectArchived || !!session.taskId || session.state === "archived" || uploading || attachments.length >= 5;
     const sourceCount = SOURCES.filter((source) => sourceDraft[source]).length;
     const allowed = this.allowedTypes(), unsupported = attachments.some((a) => !allowed.some((t) => t.mediaType === a.mediaType)), accept = allowed.flatMap((t) => [...t.extensions, t.mediaType]).join(",");
@@ -200,7 +194,7 @@ class ComposerControls extends React.Component {
           this.props.children
         ] }),
         /* @__PURE__ */ jsx("div", { className: "grow" }),
-        /* @__PURE__ */ jsx(ComposerModelMenu, { sessionId: session?.id ?? "none", current: currentModel, options, disabled: modelDisabled, locked: modelLocked, onSelect: this.props.onSendModel }),
+        /* @__PURE__ */ jsx(ComposerModelMenu, { sessionId: session?.id ?? "none", current: currentModel, management: boot.modelManagement, error: boot.modelManagementError, busy, disabled: modelDisabled, locked: modelLocked, onSelect: this.props.onSendModel }),
         this.props.permissionControl,
         /* @__PURE__ */ jsxs("button", { className: "primary compact composer-submit-control", type: showStop ? "button" : "submit", "aria-label": showStop ? "\u505C\u6B62\u6A21\u578B" : executing ? "\u6392\u961F\u53D1\u9001" : "\u53D1\u9001", title: showStop ? "\u505C\u6B62\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1" : executing ? "\u53D1\u9001\u5230\u961F\u5217" : "\u53D1\u9001\u6D88\u606F", "data-action": showStop ? "stop" : "send", disabled: showStop ? busy || projectArchived : !canSend || !hasDraft || !session || unsupported, onClick: showStop ? () => this.stopSession(session.id) : void 0, children: [
           /* @__PURE__ */ jsx(Icon, { name: showStop ? "stop" : "arrow", size: 16 }),

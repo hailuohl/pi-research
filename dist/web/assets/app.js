@@ -59,6 +59,14 @@ class App extends React.Component {
         this.setState({ busy: false });
       }
     };
+    this.confirmSessionModel = (session) => {
+      this.setState((current) => {
+        if (!this.mounted || current.sessionId !== session.id || current.projectId !== session.projectId || current.data?.project.id !== session.projectId) return null;
+        const existing = current.data.sessions.find((item) => item.id === session.id);
+        if (existing && existing.version > session.version) return null;
+        return { data: { ...current.data, sessions: existing ? current.data.sessions.map((item) => item.id === session.id ? session : item) : [...current.data.sessions, session] } };
+      });
+    };
     this.selectExperiment = (id, runId = "") => {
       const data = this.state.data;
       if (!data?.experiments.some((e) => e.id === id) || runId && !data.runs.some((r) => r.id === runId && r.experimentId === id)) {
@@ -144,19 +152,24 @@ class App extends React.Component {
     this.readController = controller;
     try {
       const boot = await api("/bootstrap", void 0, "GET", controller.signal);
+      const modelManagementRead = api("/settings/model-management", void 0, "GET", controller.signal).then((data2) => {
+        if (data2.schemaVersion !== 2 || !Array.isArray(data2.providers)) throw Error("\u6A21\u578B\u8BBE\u7F6E\u76EE\u5F55\u683C\u5F0F\u4E0D\u6B63\u786E\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
+        return { data: data2, error: "" };
+      }).catch((error) => ({ data: null, error: error instanceof Error ? error.message : String(error) }));
       const projectId = boot.projects.some((p) => p.id === this.state.projectId) ? this.state.projectId : boot.projects[0]?.id ?? "";
       const requestedSession = projectId === this.state.projectId ? this.state.sessionId : "";
       let data = projectId ? await api(`/projects/${projectId}/state${requestedSession ? "?sessionId=" + encodeURIComponent(requestedSession) : ""}`, void 0, "GET", controller.signal) : null;
       const sessionId = requestedSession || (data?.sessions.find((s) => s.role === "coordinator" && s.state !== "archived")?.id ?? "");
       const anchor = requestedSession ? this.state.historyAnchor : null;
       const view = sessionId ? await api(`/sessions/${sessionId}/view${anchor ? "?" + (anchor.direction === "before" ? "beforeMessageId" : "afterMessageId") + "=" + encodeURIComponent(anchor.id) : ""}`, void 0, "GET", controller.signal) : null;
+      const modelManagement = await modelManagementRead;
       if (!this.mounted || epoch !== this.refreshEpoch) return false;
       if (view && view.session.id !== sessionId) throw Error("\u4F1A\u8BDD\u5FEB\u7167\u4E0E\u5F53\u524D\u9009\u62E9\u4E0D\u4E00\u81F4");
       if (data && view) data = { ...data, sessions: data.sessions.some((s) => s.id === sessionId) ? data.sessions.map((s) => s.id === sessionId ? view.session : s) : [...data.sessions, view.session] };
       const active = !!view?.progress.active && view.progress.generation === view.session.generation;
       const requestedExp = projectId === this.state.projectId ? this.state.selectedExp : this.experimentSelections[projectId] ?? "";
       const selectedExp = data?.experiments.some((e) => e.id === requestedExp) ? requestedExp : data?.experiments[0]?.id ?? "";
-      await new Promise((resolve) => this.setState({ boot, data, projectId, sessionId, messages: view?.messages ?? [], pendingMessages: view?.pendingMessages ?? [], pendingTotal: view?.pendingTotal ?? 0, pendingNextCursor: view?.pendingNextCursor ?? null, canSteer: view?.progress?.canSteer ?? false, history: view?.history ?? null, historyAnchor: anchor, selectedExp, stream: !anchor && active ? view.progress.content : "", streamTruncated: !anchor && active && !!view?.progress.truncated, activity: !anchor && active ? view?.progress.activity ?? null : null, connected: true }, resolve));
+      await new Promise((resolve) => this.setState({ boot: { ...boot, modelManagement: modelManagement.data, modelManagementError: modelManagement.error }, data, projectId, sessionId, messages: view?.messages ?? [], pendingMessages: view?.pendingMessages ?? [], pendingTotal: view?.pendingTotal ?? 0, pendingNextCursor: view?.pendingNextCursor ?? null, canSteer: view?.progress?.canSteer ?? false, history: view?.history ?? null, historyAnchor: anchor, selectedExp, stream: !anchor && active ? view.progress.content : "", streamTruncated: !anchor && active && !!view?.progress.truncated, activity: !anchor && active ? view?.progress.activity ?? null : null, connected: true }, resolve));
       if (!this.mounted || epoch !== this.refreshEpoch) return false;
       if (this.feed?.projectId !== projectId) {
         this.feed?.stop();
@@ -467,7 +480,7 @@ class App extends React.Component {
             this.setState({ navigationOpen: true }, () => document.querySelector(".sidebar-project select")?.focus());
           } else this.open("project");
         }, onRetry: () => void this.refresh(), error: this.state.error }, this.state.projectId), children: /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
-          boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
+          boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, onModelConfirmed: this.confirmSessionModel, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: () => this.setState({ tab: "experiments" }), onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
           !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : tab === "environment" ? /* @__PURE__ */ jsx(EnvironmentView, {}) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
             /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
             /* @__PURE__ */ jsxs("h1", { children: [
