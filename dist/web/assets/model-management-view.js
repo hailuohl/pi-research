@@ -966,7 +966,7 @@ class ModelManagementPanel extends React.Component {
           ] }),
           [...new Set(providers.map(brand))].map((group) => /* @__PURE__ */ jsxs("div", { className: "management-provider-group", children: [
             /* @__PURE__ */ jsx("h3", { children: group }),
-            providers.filter((p) => brand(p) === group).map((p) => /* @__PURE__ */ jsxs("div", { className: "management-provider-row", draggable: !locked, onDragStart: () => {
+            providers.filter((p) => brand(p) === group).map((p) => /* @__PURE__ */ jsx("div", { className: "management-provider-row", draggable: !locked, onDragStart: () => {
               this.dragged = { kind: "providers", id: p.provider, provider: p.provider };
             }, onDragEnd: () => {
               this.dragged = void 0;
@@ -975,26 +975,23 @@ class ModelManagementPanel extends React.Component {
             }, onDrop: (e) => {
               e.preventDefault();
               if (this.overviewCurrent(s.provider, data.version)) this.drop("providers", p.provider);
-            }, children: [
-              /* @__PURE__ */ jsxs("button", { type: "button", disabled: locked, "aria-pressed": p.provider === s.provider, onClick: () => this.chooseProvider(p.provider), children: [
-                /* @__PURE__ */ jsx("span", { className: "settings-provider-avatar", "aria-hidden": "true", children: p.name.slice(0, 1).toUpperCase() }),
-                /* @__PURE__ */ jsxs("span", { className: "settings-provider-copy", children: [
-                  /* @__PURE__ */ jsx("strong", { children: p.name }),
-                  /* @__PURE__ */ jsxs("small", { children: [
-                    p.provider,
-                    " \xB7 ",
-                    p.enabled ? "\u542F\u7528" : "\u5DF2\u505C\u7528",
-                    p.requiresCredential ? " \xB7 \u5F85\u6062\u590D\u5BC6\u94A5" : "",
-                    this.isDefault(p.provider) ? " \xB7 \u9ED8\u8BA4" : "",
-                    own(s.providerDrafts, identity(p.provider))?.dirty ? " \xB7 \u672A\u4FDD\u5B58" : ""
-                  ] })
-                ] }),
-                /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 14 })
+            }, children: /* @__PURE__ */ jsxs("button", { type: "button", disabled: locked, "aria-pressed": p.provider === s.provider, onClick: () => this.chooseProvider(p.provider), children: [
+              /* @__PURE__ */ jsx("span", { className: "settings-provider-avatar", "aria-hidden": "true", children: p.name.slice(0, 1).toUpperCase() }),
+              /* @__PURE__ */ jsxs("span", { className: "settings-provider-copy", children: [
+                /* @__PURE__ */ jsx("strong", { children: p.name }),
+                /* @__PURE__ */ jsxs("small", { children: [
+                  p.provider,
+                  " \xB7 ",
+                  p.enabled ? "\u542F\u7528" : "\u5DF2\u505C\u7528",
+                  p.requiresCredential ? " \xB7 \u5F85\u6062\u590D\u5BC6\u94A5" : "",
+                  this.isDefault(p.provider) ? " \xB7 \u9ED8\u8BA4" : "",
+                  own(s.providerDrafts, identity(p.provider))?.dirty ? " \xB7 \u672A\u4FDD\u5B58" : ""
+                ] })
               ] }),
-              orderButtons("providers", providers.map((row) => row.provider), p.provider)
-            ] }, p.provider))
+              /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 14 })
+            ] }) }, p.provider))
           ] }, group)),
-          /* @__PURE__ */ jsx("p", { className: "small muted management-sort-hint", children: "\u53EF\u62D6\u52A8\uFF0C\u6216\u7528\u4E0A\u4E0B\u6309\u94AE\u6392\u5E8F\u3002" })
+          /* @__PURE__ */ jsx("p", { className: "small muted management-sort-hint", children: "\u62D6\u52A8\u63D0\u4F9B\u5546\u53EF\u8C03\u6574\u987A\u5E8F\u3002" })
         ] }),
         /* @__PURE__ */ jsxs("section", { className: "management-overview-main", "aria-label": "\u6A21\u578B\u7BA1\u7406\u6982\u89C8", children: [
           /* @__PURE__ */ jsxs("header", { className: "settings-detail-heading", children: [

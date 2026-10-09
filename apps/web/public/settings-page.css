@@ -228,7 +228,6 @@ html:has(.settings-page), body:has(.settings-page) { min-width: 0; }
  .settings-page:has(.management-editor[open]) .settings-workspace { max-width: none; margin: 0; }
  .settings-page:has(.management-editor[open]) .management-overview { grid-template-columns: 200px minmax(0,1fr); gap: 20px; }
  .settings-page:has(.management-editor[open]) .management-provider-row { display: grid; grid-template-columns: minmax(0,1fr); gap: 0; }
- .settings-page:has(.management-editor[open]) .management-provider-row > .management-order { justify-content: flex-end; padding: 0 8px 4px; }
  .settings-page:has(.management-editor[open]) .settings-detail-heading { flex-wrap: wrap; }
  .settings-page:has(.management-editor[open]) .management-model-table th, .settings-page:has(.management-editor[open]) .management-model-table td { padding-left: 4px; padding-right: 4px; }
  .settings-page:has(.management-editor[open]) .management-model-table th:nth-child(3) { width: 32px; }
