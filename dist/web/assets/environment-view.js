@@ -80,7 +80,7 @@ class EnvironmentView extends React.Component {
         /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
         "\u6DFB\u52A0\u53D8\u91CF"
       ] }) }),
-      /* @__PURE__ */ jsx("p", { className: "environment-description", children: "\u5728\u8FD9\u91CC\u4FDD\u5B58 API \u5BC6\u94A5\u3001\u8BBF\u95EE\u4EE4\u724C\u548C\u8FD0\u884C\u53C2\u6570\u3002\u65B0\u542F\u52A8\u7684\u672C\u5730\u4EFB\u52A1\u4F1A\u8BFB\u53D6\u5DF2\u4FDD\u5B58\u7684\u53D8\u91CF\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "environment-description", children: "\u65B0\u542F\u52A8\u7684\u672C\u5730\u4EFB\u52A1\u8BFB\u53D6\u5DF2\u4FDD\u5B58\u53D8\u91CF\u3002" }),
       /* @__PURE__ */ jsxs("section", { className: "environment-table-wrap surface", "aria-label": "\u73AF\u5883\u53D8\u91CF", children: [
         /* @__PURE__ */ jsxs("div", { className: "environment-table-toolbar", children: [
           /* @__PURE__ */ jsx("span", { children: data ? `${data.variables.length} \u4E2A\u53D8\u91CF` : "\u73AF\u5883\u53D8\u91CF" }),
@@ -108,7 +108,7 @@ class EnvironmentView extends React.Component {
           ] }) }) })
         ] }) : /* @__PURE__ */ jsx("p", { className: "environment-empty", role: "status", children: loading ? "\u6B63\u5728\u8BFB\u53D6\u73AF\u5883\u53D8\u91CF\u2026" : "\u73AF\u5883\u53D8\u91CF\u5C1A\u672A\u52A0\u8F7D\uFF0C\u8BF7\u91CD\u8BD5\u3002" })
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted environment-note", children: "\u9002\u7528\u4E8E\u672C\u673A\u7814\u7A76\u667A\u80FD\u4F53\u3001\u5DF2\u6388\u6743\u7684\u672C\u673A\u547D\u4EE4\u548C\u672C\u5730\u8FD0\u884C\u3002\u4FDD\u5B58\u7684\u503C\u4E0D\u4F1A\u56DE\u663E\uFF1B\u4FEE\u6539\u503C\u65F6\u8BF7\u91CD\u65B0\u8F93\u5165\u3002\u6B63\u5728\u8FD0\u884C\u7684\u4EFB\u52A1\u7EE7\u7EED\u4F7F\u7528\u542F\u52A8\u65F6\u7684\u53D8\u91CF\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted environment-note", children: "\u9002\u7528\u4E8E\u672C\u673A\u7814\u7A76\u667A\u80FD\u4F53\u3001\u5DF2\u6388\u6743\u672C\u673A\u547D\u4EE4\u548C\u672C\u5730\u8FD0\u884C\uFF1B\u503C\u4E0D\u56DE\u663E\uFF0C\u4FEE\u6539\u9700\u91CD\u65B0\u8F93\u5165\u3002\u8FD0\u884C\u4E2D\u7684\u4EFB\u52A1\u6CBF\u7528\u542F\u52A8\u65F6\u7684\u503C\u3002" }),
       error && !editing && !deleting ? /* @__PURE__ */ jsx("p", { className: "error-text", role: "alert", children: error }) : null,
       message ? /* @__PURE__ */ jsxs("p", { className: "environment-message", role: "status", children: [
         /* @__PURE__ */ jsx(Icon, { name: "check", size: 16 }),

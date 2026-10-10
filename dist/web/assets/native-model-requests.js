@@ -435,7 +435,7 @@ class NativeModelRequests extends React.Component {
               row.search ? " \xB7 \u539F\u751F\u8054\u7F51" : ""
             ] })
           ] }, row.id)),
-          !s.requests.length ? /* @__PURE__ */ jsx("p", { className: "native-note", children: "\u6CA1\u6709\u5DF2\u56FA\u5B9A\u8BF7\u6C42\u3002\u91CD\u65B0\u6253\u5F00\u9762\u677F\u4F1A\u8BFB\u53D6\u5DF2\u6709\u56DE\u6267\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u53D1\u9001\u8BF7\u6C42\u3002" }) : null
+          !s.requests.length ? /* @__PURE__ */ jsx("p", { className: "native-note", children: "\u6682\u65E0\u56FA\u5B9A\u8BF7\u6C42\u3002\u91CD\u5F00\u4EC5\u56DE\u67E5\u56DE\u6267\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u53D1\u9001\u3002" }) : null
         ] }),
         s.nextCursor !== null ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: s.loading, onClick: () => void this.load(true), children: "\u8BFB\u53D6\u66F4\u65E9\u8BB0\u5F55" }) : null,
         request ? /* @__PURE__ */ jsxs("article", { className: "native-request-review", "aria-label": "\u56FA\u5B9A\u8BF7\u6C42\u5BA1\u9605", children: [

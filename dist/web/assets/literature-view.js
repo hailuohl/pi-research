@@ -111,7 +111,7 @@ class LiteratureView extends React.Component {
   render() {
     const { data, perform } = this.props, s = this.state, resultGrant = (data.discoveryGrants ?? []).find((g) => g.id === s.result?.discoveryGrant?.id && g.digest === s.result?.discoveryGrant?.digest), nextTask = (data.literatureTasks ?? []).find((task) => task.request.pageRequest?.previousSearchId === s.result?.id), page = s.result?.page, pageExpired = !!page?.nextCursorExpiresAt && Date.now() >= Date.parse(page.nextCursorExpiresAt), pageSource = s.result?.sources.length === 1 ? s.result.sources[0].source : null, pageName = pageSource === "openalex" ? "OpenAlex" : pageSource === "crossref" ? "Crossref" : pageSource === "biorxiv" ? "bioRxiv" : pageSource === "pubmed" ? "PubMed" : "\u672A\u77E5\u6765\u6E90";
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
-      /* @__PURE__ */ jsxs(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u6587\u732E\u4EFB\u52A1\u4E0E\u539F\u6587", sub: "\u663E\u5F0F\u63D0\u4EA4\u3001\u56FA\u5B9A\u53D6\u5F97\u7684\u5B57\u8282\uFF0C\u518D\u6309\u9875\u6BB5\u56DE\u67E5\uFF1B\u6458\u8981\u548C\u4F9B\u5E94\u5546\u6587\u672C\u4E0D\u5192\u5145\u539F PDF\u3002", children: [
+      /* @__PURE__ */ jsxs(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u6587\u732E\u4EFB\u52A1\u4E0E\u539F\u6587", sub: "\u6458\u8981\u53CA\u4F9B\u5E94\u5546\u6587\u672C\u4E0D\u7B49\u4E8E\u539F PDF\u3002", children: [
         !this.props.readOnly && this.props.onSources ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: this.props.onSources, children: "\u7BA1\u7406\u6765\u6E90\u6388\u6743" }) : null,
         /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => void this.loadConfig(), children: "\u5237\u65B0\u6765\u6E90\u72B6\u6001" })
       ] }),
@@ -152,7 +152,7 @@ class LiteratureView extends React.Component {
       ] }) : /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
           /* @__PURE__ */ jsx("h2", { children: "\u6301\u4E45\u4EFB\u52A1\u8BB0\u5F55" }),
-          /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u6700\u8FD1 30 \u6761\uFF1B\u72B6\u6001\u6765\u81EA\u670D\u52A1\u7AEF" })
+          /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u6700\u8FD1 30 \u6761" })
         ] }),
         (data.literatureTasks ?? []).map((task) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
           /* @__PURE__ */ jsxs("h3", { children: [
@@ -282,7 +282,7 @@ class LiteratureView extends React.Component {
       /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
           /* @__PURE__ */ jsx("h2", { children: "\u56FA\u5B9A\u6587\u6863\u7248\u672C" }),
-          /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u6700\u8FD130\u4EFD\uFF1B\u5386\u53F2\u6307\u5B9A\u7248\u672C\u53EF\u76F4\u63A5\u56DE\u67E5" })
+          /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u6700\u8FD130\u4EFD\uFF1B\u53EF\u56DE\u67E5\u5386\u53F2\u7248\u672C" })
         ] }),
         (data.documents ?? []).slice().reverse().map((document2) => /* @__PURE__ */ jsx("button", { className: "artifact-item", onClick: () => this.selectDocument({ documentVersionId: document2.id }), children: /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("strong", { children: document2.title }),
@@ -294,7 +294,7 @@ class LiteratureView extends React.Component {
             short(document2.original.digest)
           ] })
         ] }) }, document2.id)),
-        !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u56FA\u5B9A DocumentVersion\u3002" }) : null
+        !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u6682\u65E0\u56FA\u5B9A\u6587\u6863\u7248\u672C\u3002" }) : null
       ] }),
       s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { readOnly: this.props.readOnly, document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: data.documents?.length ? "\u9009\u62E9\u7248\u672C\u67E5\u770B\u539F\u6587\u3002" : "\u5BFC\u5165\u6587\u6863\u540E\u9009\u62E9\u7248\u672C\u3002" }) }),
       !this.props.readOnly ? /* @__PURE__ */ jsx(TextEvidencePanel, { configurationOnly: this.props.setupOnly, data, perform, onDocument: (target) => this.selectDocument(target, true), onSession: this.props.onSession }) : null

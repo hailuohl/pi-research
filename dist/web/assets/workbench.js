@@ -129,7 +129,6 @@ class Chat extends React.Component {
         messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsxs("div", { className: "welcome", children: [
           /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
           /* @__PURE__ */ jsx("h2", { children: "\u4ECA\u5929\u60F3\u7814\u7A76\u4EC0\u4E48\uFF1F" }),
-          /* @__PURE__ */ jsx("p", { children: "\u4ECE\u4E00\u4E2A\u95EE\u9898\u5F00\u59CB\uFF0C\u9010\u6B65\u5F62\u6210\u5B9E\u9A8C\u4E0E\u7ED3\u679C\u3002" }),
           /* @__PURE__ */ jsxs("div", { className: "welcome-actions", children: [
             /* @__PURE__ */ jsxs("button", { onClick: this.props.onExperiments, children: [
               /* @__PURE__ */ jsx(Icon, { name: "experiment" }),
@@ -267,7 +266,7 @@ class RunFiles extends React.Component {
             " \u5B57\u8282 \xB7 ",
             short(a.digest)
           ] })
-        ] }, a.id)) }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5C1A\u65E0\u5F52\u6863\u4EA7\u7269\u3002\u6267\u884C\u7ED3\u675F\u540E\u5728\u8FD9\u91CC\u67E5\u770B\u539F\u59CB metrics.json \u4E0E\u8F93\u51FA\u6587\u4EF6\u3002" }),
+        ] }, a.id)) }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6682\u65E0\u5F52\u6863\u4EA7\u7269\u3002" }),
         this.state.artifactLoading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u4EA7\u7269\u2026" }) : null,
         this.state.artifactError ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.artifactError }) : null,
         this.state.artifactId && !this.state.artifactLoading && !this.state.artifactError ? /* @__PURE__ */ jsx("pre", { className: "logs", "aria-label": "\u539F\u59CB\u4EA7\u7269\u5185\u5BB9", children: this.state.artifactContent || "\uFF08\u7A7A\u6587\u4EF6\uFF09" }) : null

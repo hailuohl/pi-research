@@ -318,13 +318,10 @@ class ComputeConnections extends React.Component {
         /* @__PURE__ */ jsxs("header", { className: "compute-card-header", children: [
           /* @__PURE__ */ jsxs("div", { className: "compute-card-title", children: [
             /* @__PURE__ */ jsx(Icon, { name: "link" }),
-            /* @__PURE__ */ jsxs("div", { children: [
-              /* @__PURE__ */ jsxs("h2", { id: "ssh-compute-title", children: [
-                "SSH \u7BA1\u7406 ",
-                /* @__PURE__ */ jsx("span", { className: "compute-count", children: ssh.length })
-              ] }),
-              /* @__PURE__ */ jsx("p", { children: "\u7BA1\u7406\u591A\u4E2A\u8FDC\u7A0B\u8BA1\u7B97\u8FDE\u63A5\uFF0C\u9009\u62E9\u4E3B\u8981\u8C03\u7528\u7684\u8D44\u6E90" })
-            ] })
+            /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsxs("h2", { id: "ssh-compute-title", children: [
+              "SSH \u7BA1\u7406 ",
+              /* @__PURE__ */ jsx("span", { className: "compute-count", children: ssh.length })
+            ] }) })
           ] }),
           /* @__PURE__ */ jsxs("button", { className: "primary", type: "button", disabled, onClick: () => void this.edit(), children: [
             /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
@@ -334,7 +331,7 @@ class ComputeConnections extends React.Component {
         /* @__PURE__ */ jsx("div", { className: "compute-card-content", children: !c ? /* @__PURE__ */ jsx("p", { className: "compute-empty", children: "\u6B63\u5728\u8BFB\u53D6 SSH \u8FDE\u63A5\u2026" }) : !ssh.length ? /* @__PURE__ */ jsxs("div", { className: "compute-ssh-empty", children: [
           /* @__PURE__ */ jsx(Icon, { name: "network", size: 30 }),
           /* @__PURE__ */ jsx("h3", { children: "\u6DFB\u52A0\u7B2C\u4E00\u53F0\u8FDC\u7A0B\u8BA1\u7B97\u673A" }),
-          /* @__PURE__ */ jsx("p", { children: "\u6DFB\u52A0\u670D\u52A1\u5668\uFF0C\u786E\u8BA4\u6307\u7EB9\u540E\u81EA\u52A8\u68C0\u67E5\u5E76\u51C6\u5907 SSH \u8BA1\u7B97\u73AF\u5883\u3002" }),
+          /* @__PURE__ */ jsx("p", { children: "\u786E\u8BA4\u670D\u52A1\u5668\u6307\u7EB9\u540E\uFF0C\u81EA\u52A8\u68C0\u67E5\u5E76\u51C6\u5907 SSH \u73AF\u5883\u3002" }),
           /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled, onClick: () => void this.edit(), children: "\u65B0\u5EFA SSH \u8FDE\u63A5" })
         ] }) : /* @__PURE__ */ jsx("div", { className: "compute-ssh-list", children: ssh.map((t) => {
           const pending = s.busy === `ssh:${t.id}` || s.busy === `setup:${t.id}`, usable = !pending && t.status === "verified" && !!t.validUntil && Date.parse(t.validUntil) > Date.now(), gpuUsable = usable && s.busy !== `gpu:${t.id}` && t.capabilities.gpu && !!t.gpuValidUntil && Date.parse(t.gpuValidUntil) > Date.now();
@@ -404,7 +401,7 @@ class ComputeConnections extends React.Component {
         /* @__PURE__ */ jsxs("header", { children: [
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsx("h2", { id: "ssh-editor-title", children: s.challenge ? "\u786E\u8BA4\u670D\u52A1\u5668\u8EAB\u4EFD" : s.editor?.version ? "\u7F16\u8F91 SSH \u8FDE\u63A5" : "\u65B0\u5EFA SSH \u8FDE\u63A5" }),
-            /* @__PURE__ */ jsx("p", { children: s.challenge ? "\u6838\u5BF9\u6307\u7EB9\u540E\u8FDE\u63A5\uFF0C\u5E76\u5728\u9700\u8981\u65F6\u5B89\u88C5\u56FA\u5B9A SSH \u76D1\u7BA1\u5668\u3002" : "\u586B\u5199\u670D\u52A1\u5668\u4FE1\u606F\uFF0C\u4E3B\u673A\u8EAB\u4EFD\u8BB0\u5F55\u7531\u5E94\u7528\u81EA\u52A8\u7BA1\u7406\u3002" })
+            /* @__PURE__ */ jsx("p", { children: s.challenge ? "\u6838\u5BF9\u6307\u7EB9\u540E\u8FDE\u63A5\uFF0C\u5E76\u5728\u9700\u8981\u65F6\u5B89\u88C5\u56FA\u5B9A SSH \u76D1\u7BA1\u5668\u3002" : "\u4E3B\u673A\u8EAB\u4EFD\u8BB0\u5F55\u7531\u5E94\u7528\u81EA\u52A8\u7BA1\u7406\u3002" })
           ] }),
           /* @__PURE__ */ jsx("button", { type: "button", className: "icon-button", "aria-label": "\u5173\u95ED SSH \u8FDE\u63A5\u8868\u5355", onClick: () => this.editorDialog.current?.close(), children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
         ] }),

@@ -394,7 +394,7 @@ class App extends React.Component {
       }, input.github ? "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA\uFF1BGitHub \u540C\u6B65\u72B6\u6001\u53EF\u5728\u8BBE\u7F6E\u4E2D\u67E5\u770B\u3002" : "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA") });
     if (modal === "config")
       return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u5B9E\u9A8C\u53EA\u8BFB\u914D\u7F6E", submitLabel: "\u5173\u95ED\u914D\u7F6E", onSubmit: () => done(), children: [
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u914D\u7F6E\u7531\u7814\u7A76\u5BF9\u8BDD\u4E2D\u7684\u667A\u80FD\u4F53\u7BA1\u7406\u3002" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u914D\u7F6E\u53D8\u66F4\u8BF7\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u3002" }),
         /* @__PURE__ */ jsxs("label", { children: [
           "\u914D\u7F6E\u6E90\u7801",
           /* @__PURE__ */ jsx("textarea", { "aria-label": "\u914D\u7F6E\u6E90\u7801", className: "code-input", rows: 12, readOnly: true, defaultValue: modalData.content })
@@ -536,10 +536,7 @@ class App extends React.Component {
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "sidebar-footer", children: [
           /* @__PURE__ */ jsx("div", { className: "local-avatar", children: /* @__PURE__ */ jsx(Icon, { name: "folder" }) }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx("strong", { children: "\u672C\u5730\u5DE5\u4F5C\u7A7A\u95F4" }),
-            /* @__PURE__ */ jsx("small", { children: "\u6570\u636E\u7531\u4F60\u638C\u63E1" })
-          ] }),
+          /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("strong", { children: "\u672C\u5730\u5DE5\u4F5C\u7A7A\u95F4" }) }),
           /* @__PURE__ */ jsx("span", { className: "status-dot " + (this.state.connected ? "" : "amber") })
         ] })
       ] }),

@@ -57,7 +57,7 @@ class TemplateLibraryView extends React.Component {
       if (!this.mounted) return;
       this.uploadKey = crypto.randomUUID();
       if (this.input) this.input.value = "";
-      this.setState((previous) => ({ templates: [...previous.templates.filter((row) => row.id !== t.id), t], upload: null, message: "\u5DF2\u4FDD\u5B58\u5230\u4E2A\u4EBA\u6A21\u677F\u5E93\uFF1B\u53EF\u5728\u4EFB\u610F\u9879\u76EE\u7684\u6587\u7A3F\u57FA\u7840\u6A21\u677F\u4E2D\u9009\u7528\u3002" }), () => void this.select(t.id));
+      this.setState((previous) => ({ templates: [...previous.templates.filter((row) => row.id !== t.id), t], upload: null, message: "\u5DF2\u4FDD\u5B58\u5230\u4E2A\u4EBA\u6A21\u677F\u5E93\uFF1B\u5404\u9879\u76EE\u53EF\u9009\u4F5C\u57FA\u7840\u6A21\u677F\u3002" }), () => void this.select(t.id));
     } catch (e) {
       if (this.mounted) this.setState({ error: String(e) });
     } finally {

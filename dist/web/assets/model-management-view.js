@@ -728,7 +728,7 @@ class ModelManagementPanel extends React.Component {
           ] }) : null
         ] }) : null,
         s.modelTab === "capabilities" ? /* @__PURE__ */ jsxs(Fragment, { children: [
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u80FD\u529B\u58F0\u660E\u4E0E\u5F53\u524D\u9002\u914D\u72B6\u6001\u5206\u5F00\u8BB0\u5F55\uFF1B\u58F0\u660E\u4E0D\u4EE3\u8868\u771F\u5B9E\u8C03\u7528\u5DF2\u9A8C\u8BC1\u3002" }),
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u80FD\u529B\u58F0\u660E\u4E0D\u4EE3\u8868\u771F\u5B9E\u8C03\u7528\u5DF2\u9A8C\u8BC1\u3002" }),
           /* @__PURE__ */ jsx("div", { className: "management-capabilities", children: Object.keys(capabilityNames).map((key) => /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsxs("label", { className: "management-check", children: [
               /* @__PURE__ */ jsx("input", { type: "checkbox", "aria-label": `\u6A21\u578B\u80FD\u529B ${key}`, checked: draft.capabilities[key], disabled: !this.editable(`capabilities.${key}`), onChange: (e) => edit({ capabilities: { ...draft.capabilities, [key]: e.target.checked } }) }),
@@ -748,7 +748,7 @@ class ModelManagementPanel extends React.Component {
               ] })
             ] }),
             this.renderOverride("reasoning", scope),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53EA\u4FEE\u6539\u6B64\u6A21\u578B\u7684\u9ED8\u8BA4\u7B49\u7EA7\uFF0C\u4E0D\u6539\u53D8\u65B0\u4F1A\u8BDD\u7684\u5168\u5C40\u9ED8\u8BA4\u6A21\u578B\u4E0E\u601D\u8003\u9009\u62E9\u3002" })
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u4FEE\u6539\u6B64\u6A21\u578B\u9ED8\u8BA4\u7B49\u7EA7\uFF1B\u65B0\u4F1A\u8BDD\u7684\u5168\u5C40\u9ED8\u8BA4\u6A21\u578B\u4E0E\u601D\u8003\u9009\u62E9\u4E0D\u53D8\u3002" })
           ] }),
           /* @__PURE__ */ jsxs("div", { className: "settings-list-heading", children: [
             /* @__PURE__ */ jsx("h3", { children: "\u601D\u8003\u7B49\u7EA7\u914D\u7F6E" }),
@@ -824,7 +824,7 @@ class ModelManagementPanel extends React.Component {
               if (this.editorCurrent(scope)) this.applyRecommendation();
             }, children: "\u5E94\u7528\u63A8\u8350\u5230\u8349\u7A3F" }) : null
           ] }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u5339\u914D\u5DF2\u5B89\u88C5 Pi \u7684\u672C\u5730\u6A21\u578B\u76EE\u5F55\uFF0C\u672A\u77E5\u6A21\u578B\u8BF7\u624B\u52A8\u914D\u7F6E\u3002\u624B\u52A8\u8986\u5199\u5B57\u6BB5\u7EE7\u7EED\u4FDD\u7559\u3002" }),
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u5339\u914D\u5DF2\u5B89\u88C5 Pi \u7684\u672C\u5730\u6A21\u578B\u76EE\u5F55\uFF1B\u672A\u77E5\u6A21\u578B\u9700\u624B\u52A8\u914D\u7F6E\uFF0C\u624B\u52A8\u8986\u5199\u4FDD\u7559\u3002" }),
           s.recommendation ? /* @__PURE__ */ jsxs("div", { className: "management-recommendation", children: [
             /* @__PURE__ */ jsx("p", { children: s.recommendation.matched ? `\u5339\u914D\u6765\u6E90\uFF1A${s.recommendation.source?.provider} / ${s.recommendation.source?.model} \xB7 Pi ${s.recommendation.source?.sdkVersion}` : "\u672A\u627E\u5230\u672C\u5730\u76EE\u5F55\u5339\u914D\uFF0C\u8BF7\u4F7F\u7528\u624B\u52A8\u914D\u7F6E\u3002" }),
             s.recommendation.changes.length ? /* @__PURE__ */ jsxs("details", { children: [
@@ -883,7 +883,7 @@ class ModelManagementPanel extends React.Component {
       e.preventDefault();
       if (this.editorCurrent(scope)) void this.saveDefault();
     }, children: [
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u7528\u4E8E\u65B0\u4F1A\u8BDD\uFF0C\u5F53\u524D\u4F1A\u8BDD\u4E0E\u5404\u6A21\u578B\u7684\u9ED8\u8BA4\u7B49\u7EA7\u4FDD\u6301\u72EC\u7ACB\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5F53\u524D\u4F1A\u8BDD\u4E0E\u5404\u6A21\u578B\u9ED8\u8BA4\u7B49\u7EA7\u4E0D\u53D7\u5F71\u54CD\u3002" }),
       /* @__PURE__ */ jsxs("label", { children: [
         "\u5DF2\u6709\u6A21\u578B",
         /* @__PURE__ */ jsxs("select", { "aria-label": "\u9009\u62E9\u5DF2\u6709\u6A21\u578B", value: identity(s.selection.provider, s.selection.model), disabled: locked, onChange: (e) => {

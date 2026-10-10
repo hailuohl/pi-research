@@ -227,7 +227,7 @@ class ReportsView extends React.Component {
     const selectedRuns = data.runs.filter((r) => s.selected.includes(r.id)), mixed = new Set(selectedRuns.map((r) => r.manifest.contractDigest)).size > 1;
     const available = s.selectedCampaigns.every((id) => (data.campaigns ?? []).some((c) => c.id === id) && (data.experimentPlans ?? []).some((p) => p.campaignId === id)) && s.selected.every((id) => eligible.some((r) => r.id === id)) && s.selectedClaims.every((id) => claims.some((c) => c.id === id));
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
+      /* @__PURE__ */ jsx(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
       !this.props.readOnly || s.publicationOpen ? /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: s.publicationOpen, onToggle: (event) => {
         const publicationOpen = event.currentTarget.open;
         if (publicationOpen !== this.state.publicationOpen) this.setState({ publicationOpen });
@@ -250,7 +250,7 @@ class ReportsView extends React.Component {
               s.publications.length,
               "/20\uFF09"
             ] }),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u4E0A\u65B9\u9009\u62E9\u6210\u529F\u4E14\u6765\u6E90\u6709\u6548\u7684\u6784\u5EFA\uFF0C\u70B9\u51FB\u201C\u7EB3\u5165\u6B64\u56FA\u5B9A\u6784\u5EFA\u201D\u3002\u4EC5\u6709\u6587\u7A3F\u4E5F\u53EF\u751F\u6210\u62A5\u544A\u3002" }),
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5C55\u5F00\u201C\u6587\u7A3F\u3001\u7F16\u8BD1\u4E0E\u8BBA\u6587\u5BA1\u67E5\u201D\uFF0C\u7EB3\u5165\u6765\u6E90\u6709\u6548\u7684\u6210\u529F\u6784\u5EFA\uFF1B\u4EC5\u6709\u6587\u7A3F\u4E5F\u53EF\u751F\u6210\u62A5\u544A\u3002" }),
             s.publications.map((p) => /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
               /* @__PURE__ */ jsx("strong", { children: p.title }),
               /* @__PURE__ */ jsxs("p", { className: "small muted", children: [

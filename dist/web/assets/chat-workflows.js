@@ -396,7 +396,7 @@ class ChatWorkflows extends React.Component {
       ...proposals.filter((p) => p.state === "applied" && p.sourceValidity !== "stale").map((p) => p.id)
     ]);
     const content = /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EFB\u52A1\u7531\u5BF9\u8BDD\u4E2D\u7684 Pi \u51C6\u5907\uFF1B\u9700\u8981\u786E\u8BA4\u7684\u56FA\u5B9A\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002\u72B6\u6001\u4F1A\u66F4\u65B0\uFF0C\u540E\u7EED\u8981\u6C42\u7EE7\u7EED\u5728\u8F93\u5165\u6846\u8BF4\u660E\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u4EFB\u52A1\uFF1B\u5F85\u786E\u8BA4\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002" }),
       this.researchBriefCard(disabled),
       /* @__PURE__ */ jsx(PublicationDialogue, { data, session, disabled, busy, perform }),
       campaigns.slice().reverse().map((c) => this.campaignCard(c, disabled)),
@@ -406,7 +406,7 @@ class ChatWorkflows extends React.Component {
         /* @__PURE__ */ jsxs("p", { children: [
           "\u56FA\u5B9A\u6765\u6E90 ",
           short(session.sourceRevisionId),
-          "\u3002\u53EF\u5728\u5BF9\u8BDD\u4E2D\u8981\u6C42 Pi \u7F16\u5199\u4EE3\u7801\u3001\u6D4B\u8BD5\u6216\u4FEE\u590D\u3002"
+          "\u3002"
         ] }),
         /* @__PURE__ */ jsx(WorkingGrants, { data, session, busy: disabled, perform, dirty: false })
       ] }) : null,

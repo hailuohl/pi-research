@@ -13,7 +13,10 @@ const reference={id:'figure',type:'artifact',targetId:'fixed-figure',path:'figur
 const report={id:'report',artifactId:'body',title:'Paper report',integrity:'verified',validity:'stale',reasons:[],references:[reference],runs:[],publications:[{resultId:result.id,jobId:result.jobId,revisionId:result.revisionId,title:'Fixed paper',sourceDigest:result.sourceDigest,pdfArtifactId:'fixed-pdf',pdfDigest:'pdf-digest',pages:1,referenceId:'publication'}]};
 
 test('only successful complete current fixed builds can enter a report; selection is bounded and deduplicated',()=>{
- const p=publication(),v=reports();p.props.onSelectResult=(r,title)=>v.addPublication(r,title);p.selectResult();p.selectResult();assert.equal(v.state.publications.length,1);
+ const p=publication(),v=reports(),initial=nodes(v.render());
+ const entry=initial.find(n=>n.type==='summary'&&n.props.children==='文稿、编译与论文审查'),section=initial.find(n=>n.type==='details'&&nodes(n.props.children).includes(entry));assert.equal(section.props.open,false);
+ const hint=initial.find(n=>n.type==='p'&&typeof n.props.children==='string'&&n.props.children.includes('仅有文稿也可生成报告'));assert.ok(hint.props.children.includes(entry.props.children));
+ p.props.onSelectResult=(r,title)=>v.addPublication(r,title);p.selectResult();p.selectResult();assert.equal(v.state.publications.length,1);
  for(const patch of [{sourceChecking:true},{sourceCheckError:'unavailable'},{loading:true},{result:{...result,sourceValidity:'stale'}},{result:{...result,status:'failed'}},{result:{...result,hadErrors:true}},{result:{...result,converged:false}},{result:{...result,pdf:null}},{job:{...p.state.job,integrity:'invalid'}},{job:{...p.state.job,resultId:'different'}}]){const before={...p.state};Object.assign(p.state,patch);assert.equal(p.selectableResult(),null);p.state=before;}
  for(let n=0;n<25;n++)v.addPublication({...result,id:`result-${n}`},'Paper');assert.equal(v.state.publications.length,20);
  const all=nodes(v.render());assert.equal(all.find(n=>n.type==='button'&&n.props.children==='生成固定结果报告').props.disabled,false);assert.ok(all.every(n=>!n.props.dangerouslySetInnerHTML&&!n.props.href));
