@@ -217,7 +217,7 @@ test('a completed create for a previous project cannot replace the newly selecte
 
 test('legacy workflow tabs reopen in chat and retain their exact campaign selection',t=>{
   const previousStorage=globalThis.localStorage;t.after(()=>{globalThis.localStorage=previousStorage;});
-  for(const tab of ['campaigns','implementation','changes']){
+  for(const tab of ['experiments','campaigns','implementation','changes']){
     globalThis.localStorage={getItem:()=>JSON.stringify({projectId:'p',sessionId:'historical-root',tab,selectedCampaign:'historical-campaign',historyAnchor:{projectId:'p',sessionId:'historical-root',anchor:{direction:'before',id:'m10'}}}),setItem(){}};
     const app=synchronousState(new App({}));
     assert.equal(app.state.tab,'chat');assert.equal(app.state.sessionId,'historical-root');assert.equal(app.state.selectedCampaign,'historical-campaign');
@@ -257,15 +257,75 @@ test('experiment selections restore per project and storage failure keeps the cu
   app.componentWillUnmount();
 });
 
-test('returning from Experiments restores the same chat session and mounted chat key',()=>{
+test('experiment and Run links keep the same chat session, mounted chat key and history position',()=>{
   const previousStorage=globalThis.localStorage;globalThis.localStorage={getItem:()=>null,setItem(){}};
   try{
     const app=synchronousState(new App({})),session={id:'root-a',role:'coordinator',state:'idle',model:{provider:'test',model:'fixture'}};
-    Object.assign(app.state,{boot:{projects:[{id:'p',name:'Project'}],runtime:{ready:true}},projectId:'p',sessionId:session.id,tab:'experiments',data:{project:{id:'p',name:'Project',archived:false,settings:{enabled:false}},sessions:[session],experiments:[],runs:[],teams:[],campaigns:[],evidence:[],intents:[]},messages:[{id:'kept-message'}],pendingMessages:[{id:'kept-pending'}],historyAnchor:{direction:'before',id:'kept-cursor'},stream:'kept draft context'});
+    Object.assign(app.state,{boot:{projects:[{id:'p',name:'Project'}],runtime:{ready:true}},projectId:'p',sessionId:session.id,tab:'experiments',data:{project:{id:'p',name:'Project',archived:false,settings:{enabled:false}},sessions:[session],experiments:[{id:'exp-a'}],runs:[{id:'run-a',experimentId:'exp-a'}],teams:[],campaigns:[],evidence:[],intents:[]},messages:[{id:'kept-message'}],pendingMessages:[{id:'kept-pending'}],historyAnchor:{direction:'before',id:'kept-cursor'},stream:'kept draft context'});
     const chatKey=()=>elements(app.render()).find(node=>node.type?.name==='Chat')?.key,experiments=elements(app.render()).find(node=>node.type?.name==='Experiments'),before=chatKey();
-    assert.ok(experiments);experiments.props.onChat();
+    assert.equal(experiments,undefined);let shown=0;app.conversationPanel.current={showExperiments(){shown++;}};app.selectExperiment('exp-a','run-a');assert.equal(shown,1);assert.equal(app.state.selectedExp,'exp-a');assert.equal(app.state.selectedRun,'run-a');
+    const layout=elements(app.render()).find(node=>node.type?.name==='ConversationLayout'),panel=layout.props.panel;assert.equal(panel.type?.name,'ConversationPanel');assert.equal(panel.props.experimentDetails.props.experiment.id,'exp-a');assert.equal(panel.props.experimentDetails.props.selectedRun,'run-a');
+    app.selectExperiment('foreign','run-a');assert.equal(app.state.selectedExp,'exp-a');assert.equal(app.state.selectedRun,'run-a');assert.equal(shown,1);assert.ok(app.state.error);
+    app.selectExperiment('exp-a','foreign-run');assert.equal(app.state.selectedRun,'run-a');assert.equal(shown,1);
     assert.equal(app.state.tab,'chat');assert.equal(app.state.sessionId,session.id);assert.equal(chatKey(),before);
     assert.deepEqual(app.state.messages,[{id:'kept-message'}]);assert.deepEqual(app.state.pendingMessages,[{id:'kept-pending'}]);assert.deepEqual(app.state.historyAnchor,{direction:'before',id:'kept-cursor'});assert.equal(app.state.stream,'kept draft context');
     app.componentWillUnmount();
   }finally{globalThis.localStorage=previousStorage;}
+});
+
+
+test('confirmed messages are visible in chat before refresh and reject other projects, sessions and history windows',()=>{
+ const app=sessionApp();Object.assign(app.state,{data:{project:{id:'project'},sessions:[idleSession('current')]},messages:[],pendingMessages:[],pendingTotal:0,history:null});
+ const row={id:'submitted',kind:'message',projectId:'project',sessionId:'current',version:1,role:'user',status:'queued',content:'submitted once',mode:'prompt'};
+ app.confirmSessionMessage(row);assert.equal(app.state.messages[0].content,'submitted once');assert.equal(app.state.messages[0].status,'queued');assert.equal(app.state.pendingMessages[0].id,row.id);assert.equal(app.state.pendingTotal,1);
+ app.confirmSessionMessage(row);assert.equal(app.state.messages.length,1);assert.equal(app.state.pendingTotal,1);
+ for(const mismatch of [{projectId:'foreign'},{sessionId:'foreign'}])app.confirmSessionMessage({...row,id:'foreign-message',...mismatch});assert.equal(app.state.messages.length,1);
+ app.state.historyAnchor={direction:'before',id:'saved-cursor'};app.confirmSessionMessage({...row,id:'another'});assert.equal(app.state.messages.length,1);assert.equal(app.state.historyAnchor.id,'saved-cursor');app.componentWillUnmount();
+});
+
+test('a locally confirmed model aborts an older read and retains current navigation, history and message state',()=>{
+ const app=sessionApp(),before=idleSession('current'),confirmed={...before,version:2,model:{...before.model,thinking:'low'}};Object.assign(app.state,{data:{project:{id:'project'},sessions:[before]},messages:[{id:'kept'}],historyAnchor:{direction:'before',id:'cursor'},tab:'chat'});
+ const controller=new AbortController();app.readController=controller;const epoch=app.refreshEpoch;app.confirmSessionModel(confirmed);
+ assert.equal(controller.signal.aborted,true);assert.equal(app.refreshEpoch,epoch+1);assert.equal(app.state.data.sessions[0],confirmed);assert.equal(app.state.tab,'chat');assert.equal(app.state.sessionId,'current');assert.equal(app.state.messages[0].id,'kept');assert.equal(app.state.historyAnchor.id,'cursor');assert.equal(app.state.notice,'');app.componentWillUnmount();
+});
+
+
+test('the first empty-root message leaves Welcome and is visible in chat while the confirmed queued send waits for refresh',async t=>{
+ const oldFetch=globalThis.fetch;t.after(()=>globalThis.fetch=oldFetch);const app=sessionApp(),session=idleSession('current'),row={id:'first-message',kind:'message',projectId:'project',sessionId:'current',version:1,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-10T00:00:00Z',role:'user',status:'queued',content:'first research question',mode:'prompt'};
+ Object.assign(app.state,{boot:{projects:[{id:'project'}],runtime:{ready:true}},data:{project:{id:'project',settings:{enabled:false}},sessions:[session],experiments:[],runs:[],teams:[],wakeups:[]},messages:[],pendingMessages:[],pendingTotal:0,history:null,historyAnchor:null});
+ let finishRefresh,refreshStarted=false;const refresh=new Promise(resolve=>finishRefresh=resolve);app.refresh=async()=>{refreshStarted=true;await refresh;return true;};globalThis.fetch=async(url,init)=>{assert.equal(url,'/api/sessions/current/messages');assert.deepEqual(JSON.parse(init.body),{content:row.content,mode:'prompt'});return response(row);};
+ const chatElement=()=>elements(app.render()).find(node=>node.type?.name==='Chat'),element=chatElement(),chat=synchronousState(new element.type(element.props));assert.ok(elements(chat.render()).find(node=>node.props?.className==='welcome'));chat.state.draft=row.content;
+ const sending=elements(chat.render()).find(node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});await flush();
+ assert.equal(refreshStarted,true);assert.equal(app.state.busy,true);assert.equal(chatElement().key,element.key);chat.props=chatElement().props;
+ assert.equal(elements(chat.render()).find(node=>node.props?.className==='welcome'),undefined);const history=elements(chat.render()).find(node=>node.type?.name==='ScrollHistory');assert.deepEqual(history.props.messages.map(message=>message.id),[row.id]);assert.equal(history.props.messages[0].status,'queued');assert.equal(chat.props.pendingMessages[0].id,row.id);
+ const {SessionHistory}=await import('../../dist/web/assets/session-history.js'),transcript=synchronousState(new SessionHistory(history.props));const rendered=JSON.stringify(transcript.render());assert.match(rendered,/first research question/);assert.match(rendered,/已提交 · 等待处理/);assert.doesNotMatch(rendered,/已消费/);
+ finishRefresh();await sending;assert.equal(app.state.busy,false);chat.componentWillUnmount();app.componentWillUnmount();
+});
+
+
+test('late network failures and invalid send receipts cannot replace another view error through App.perform',async t=>{
+ const oldFetch=globalThis.fetch;t.after(()=>globalThis.fetch=oldFetch);
+ for(const scope of ['switch','unmount'])for(const outcome of ['network','invalid-receipt']){
+  const app=sessionApp(),session=idleSession('current'),other=idleSession('other');Object.assign(app.state,{boot:{projects:[{id:'project'}],runtime:{ready:true}},data:{project:{id:'project',settings:{enabled:false}},sessions:[session,other],experiments:[],runs:[],teams:[],wakeups:[]},messages:[],pendingMessages:[],pendingTotal:0,history:null,historyAnchor:null});
+  let finish,fail;globalThis.fetch=()=>new Promise((resolve,reject)=>{finish=resolve;fail=reject;});const chatElement=()=>elements(app.render()).find(node=>node.type?.name==='Chat'),element=chatElement(),chat=synchronousState(new element.type(element.props));chat.state.draft='old request';
+  const sending=elements(chat.render()).find(node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});assert.equal(app.state.busy,true);
+  app.selectSession('other');if(scope==='unmount')chat.componentWillUnmount();else chat.props=chatElement().props;Object.assign(app.state,{error:'new view error',notice:'new view notice'});
+  if(outcome==='network')fail(Error('old network failure'));else finish(response({id:'old-message',kind:'message',projectId:'foreign',sessionId:'current',version:1,role:'user',status:'queued',content:'old request',mode:'prompt'}));await sending;
+  assert.equal(app.state.sessionId,'other',scope+' '+outcome);assert.equal(app.state.error,'new view error',scope+' '+outcome);assert.equal(app.state.notice,'new view notice',scope+' '+outcome);assert.equal(app.state.messages.length,0);assert.equal(chat.state.draft,'old request');chat.componentWillUnmount();app.componentWillUnmount();
+ }
+});
+
+test('current-view send failures still report through App.perform and keep the retry body, key and draft',async t=>{
+ const oldFetch=globalThis.fetch;t.after(()=>globalThis.fetch=oldFetch);const app=sessionApp(),session=idleSession('current'),posts=[];
+ Object.assign(app.state,{boot:{projects:[{id:'project'}],runtime:{ready:true}},data:{project:{id:'project',settings:{enabled:false}},sessions:[session],experiments:[],runs:[],teams:[],wakeups:[]},messages:[],pendingMessages:[],pendingTotal:0,history:null,historyAnchor:null,notice:'preserved notice'});
+ globalThis.fetch=async(url,init)=>{posts.push({url,body:JSON.parse(init.body),key:init.headers['Idempotency-Key']});throw Error('current send failed');};const element=elements(app.render()).find(node=>node.type?.name==='Chat'),chat=synchronousState(new element.type(element.props));chat.state.draft='retained request';chat.state.attachments=[{documentVersionId:'doc',artifactId:'artifact',digest:'digest',title:'notes.txt',mediaType:'text/plain',size:4}];
+ const submit=()=>elements(chat.render()).find(node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});await submit();assert.equal(app.state.error,'current send failed');assert.equal(app.state.notice,'preserved notice');assert.equal(chat.state.draft,'retained request');assert.equal(chat.state.attachments.length,1);assert.equal(chat.state.sending,false);
+ chat.props=elements(app.render()).find(node=>node.type?.name==='Chat').props;await submit();assert.equal(app.state.error,'current send failed');assert.equal(posts.length,2);assert.deepEqual(posts[1],posts[0]);assert.ok(posts[0].key);assert.equal(chat.state.draft,'retained request');assert.equal(chat.state.attachments.length,1);chat.componentWillUnmount();app.componentWillUnmount();
+});
+
+test('a replayed receipt cannot overwrite a newer pending edit outside the visible message window',()=>{
+ const app=sessionApp(),receipt={id:'pending',kind:'message',projectId:'project',sessionId:'current',version:1,role:'user',status:'queued',mode:'prompt',content:'original request'},edited={...receipt,version:4,content:'new queue edit'};
+ Object.assign(app.state,{data:{project:{id:'project'},sessions:[idleSession('current')]},messages:[],pendingMessages:[edited],pendingTotal:1,history:null,historyAnchor:null});const pending=app.state.pendingMessages;
+ app.confirmSessionMessage(receipt);assert.equal(app.state.pendingMessages,pending);assert.equal(app.state.pendingMessages[0],edited);assert.equal(app.state.pendingTotal,1);assert.equal(app.state.messages.length,0);
+ app.confirmSessionMessage(edited);assert.equal(app.state.messages[0].content,'new queue edit');assert.equal(app.state.messages[0].version,4);assert.equal(app.state.pendingTotal,1);app.componentWillUnmount();
 });

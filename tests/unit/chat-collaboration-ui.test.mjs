@@ -6,8 +6,9 @@ import {App} from '../../dist/web/assets/app.js';
 
 const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children)];
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'?node:'';
-const session={id:'root-a',title:'研究主会话',state:'idle',model:{provider:'test',model:'model'},version:1};
+const session={id:'root-a',projectId:'p',title:'研究主会话',state:'idle',model:{provider:'test',model:'model'},version:1};
 const data=(enabled=false)=>({project:{id:'p',archived:false,version:2,settings:{enabled}},sessions:[],messages:[],teams:[],tasks:[],budgets:[],approvals:[],experiments:[],runs:[],intents:[],runGrants:[]});
+const submitted=(content='first message',mode='prompt')=>({id:crypto.randomUUID(),kind:'message',projectId:'p',sessionId:'root-a',version:1,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-10T00:00:00Z',role:'user',status:'queued',content,mode});
 const boot={runtime:{ready:true,message:''}};
 function chat({project=data(),current=session,busy=false,onToggle=()=>{},perform=async fn=>fn()}={}){
   return synchronousState(new Chat({data:project,boot,session:current??undefined,busy,messages:[],history:null,historyAnchor:null,onHistory(){},stream:'',perform,onToggle,onNew(){},onExperiments(){},onWorkspace(){},onSession(){}}));
@@ -18,7 +19,7 @@ test('composer sends an ordinary message while collaboration mode remains projec
   const oldFetch=globalThis.fetch;
   t.after(()=>{globalThis.fetch=oldFetch;});
   const calls=[],performed=[];let toggles=0;
-  globalThis.fetch=async(url,init)=>{calls.push({url,init});return{ok:true,json:async()=>({})};};
+  globalThis.fetch=async(url,init)=>{calls.push({url,init});return{ok:true,json:async()=>submitted(JSON.parse(init.body).content,JSON.parse(init.body).mode)};};
   const view=chat({onToggle:()=>{toggles++;},perform:fn=>{const work=fn();performed.push(work);return work;}});
   view.state.draft='Compare these results';
   const tree=view.render(),toggle=elements(tree).find(node=>node.type==='button'&&node.props.role==='switch'),form=elements(tree).find(node=>node.type==='form'&&node.props.className==='composer');
@@ -32,20 +33,20 @@ test('composer sends an ordinary message while collaboration mode remains projec
   await Promise.all(performed);
   assert.equal(calls.length,1);
   assert.equal(calls[0].url,'/api/sessions/root-a/messages');
-  assert.deepEqual(JSON.parse(calls[0].init.body),{content:'Compare these results'});
+  assert.deepEqual(JSON.parse(calls[0].init.body),{content:'Compare these results',mode:'prompt'});
 });
 
 test('Enter sends; Shift+Enter and composing Enter stay in the textarea',async t=>{
   const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
-  const calls=[],performed=[];globalThis.fetch=async(url,init)=>{calls.push({url,init});return{ok:true,json:async()=>({})};};
+  const calls=[],performed=[];globalThis.fetch=async(url,init)=>{calls.push({url,init});return{ok:true,json:async()=>submitted(JSON.parse(init.body).content,JSON.parse(init.body).mode)};};
   const view=chat({perform:fn=>{const work=fn();performed.push(work);return work;}}),tree=view.render(),form=elements(tree).find(node=>node.type==='form'&&node.props.className==='composer'),textarea=elements(tree).find(node=>node.type==='textarea'&&node.props['aria-label']==='研究问题');
   let submits=0;const key=(extra={})=>{let prevented=false;textarea.props.onKeyDown({key:'Enter',shiftKey:false,preventDefault(){prevented=true;},currentTarget:{form:{requestSubmit(){submits++;form.props.onSubmit({preventDefault(){}});}}},...extra});return prevented;};
   view.state.draft='line one';assert.equal(key({shiftKey:true}),false);assert.equal(submits,0);
   assert.equal(key({isComposing:true}),false);assert.equal(key({keyCode:229}),false);assert.equal(submits,0);
   assert.equal(key(),true);await Promise.all(performed);
-  assert.equal(submits,1);assert.equal(calls.length,1);assert.deepEqual(JSON.parse(calls[0].init.body),{content:'line one'});
+  assert.equal(submits,1);assert.equal(calls.length,1);assert.deepEqual(JSON.parse(calls[0].init.body),{content:'line one',mode:'prompt'});
   for(const modifier of [{ctrlKey:true},{metaKey:true}]){view.state.draft='shortcut message';assert.equal(key(modifier),true);await Promise.all(performed.slice(-1));}
-  assert.equal(calls.length,3);assert.deepEqual(JSON.parse(calls[2].init.body),{content:'shortcut message'});
+  assert.equal(calls.length,3);assert.deepEqual(JSON.parse(calls[2].init.body),{content:'shortcut message',mode:'prompt'});
 });
 
 test('send failure keeps the draft, and a response does not clear newer typing',async t=>{
@@ -53,7 +54,7 @@ test('send failure keeps the draft, and a response does not clear newer typing',
   let resolve;globalThis.fetch=()=>new Promise(r=>{resolve=r;});
   const performed=[],view=chat({perform:fn=>{const work=fn().catch(error=>error);performed.push(work);return work;}}),form=elements(view.render()).find(node=>node.type==='form'&&node.props.className==='composer');
   view.state.draft='first message';form.props.onSubmit({preventDefault(){}});view.state.draft='next message';
-  resolve({ok:true,json:async()=>({})});await Promise.all(performed);
+  resolve({ok:true,json:async()=>submitted()});await Promise.all(performed);
   assert.equal(view.state.draft,'next message');
   globalThis.fetch=async()=>({ok:false,status:409,json:async()=>({error:{message:'write failed'}})});
   const retry=elements(view.render()).find(node=>node.type==='form'&&node.props.className==='composer');retry.props.onSubmit({preventDefault(){}});

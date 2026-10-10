@@ -49,3 +49,5 @@
 .conversation-file-preview { margin: 0 16px 16px; border-top: 1px solid var(--line); padding-top: 12px; }
 .conversation-file-preview h3 { font-size: 12px; overflow-wrap: anywhere; margin-bottom: 10px; }
 .conversation-file-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; padding: 10px; font-size: 11px; background: var(--canvas); border-radius: 6px; }
+
+.conversation-panel .embedded-inspector[aria-label="实验与运行详情"]{min-height:0}

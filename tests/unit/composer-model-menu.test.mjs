@@ -121,3 +121,12 @@ test('model list replaces the strength panel and ultra uses twelve decorative pa
  find(view,e=>e.type==='button'&&e.props?.className==='composer-model-name').props.onClick();assert.equal(strength().props['data-expanded'],false);assert.equal(strength().props.inert,true);assert.equal(strength().props['aria-hidden'],true);assert.equal(models().props['data-expanded'],true);
  const stars=find(view,e=>e.props?.className==='composer-thinking-stars'),particles=elements(stars).filter(e=>e!==stars&&e.type==='span');assert.equal(particles.length,12);assert.ok(particles.every(p=>p.props.children===undefined));
 });
+
+
+test('saving reserves one status row and focus requests never scroll the conversation',async()=>{
+ let finish;const {view}=picker({onSelect:selection=>new Promise(resolve=>finish=()=>resolve({id:'fixture',model:selection}))});
+ const status=()=>find(view,node=>node.props?.className?.startsWith('composer-model-status '));const idle=status();assert.ok(idle);assert.equal(idle.props.children,'\u00a0');
+ const saving=view.choose(low);assert.equal(status().type,idle.type);assert.equal(status().props.role,'status');assert.equal(status().props.children,'正在保存…');finish();await saving;assert.equal(status().type,idle.type);assert.equal(status().props.children,'\u00a0');
+ const focused=[];view.position=()=>{};view.range.current={disabled:false,focus:options=>focused.push(options)};view.trigger.current={focus:options=>focused.push(options)};
+ view.toggle({newState:'open'});view.keys({key:'Escape',preventDefault(){},stopPropagation(){}});assert.deepEqual(focused,[{preventScroll:true},{preventScroll:true}]);
+});

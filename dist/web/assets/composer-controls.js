@@ -7,7 +7,7 @@ const SOURCES = ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
 const SOURCE_NAMES = { alphaxiv: "alphaXiv", openalex: "OpenAlex", biorxiv: "bioRxiv", pubmed: "PubMed", crossref: "Crossref" };
 const SOURCE_LOGOS = { alphaxiv: "alphaxiv.svg", openalex: "openalex.svg", biorxiv: "biorxiv.svg", pubmed: "pubmed.png", crossref: "crossref.ico" };
 const configCopy = (config) => Object.fromEntries(SOURCES.map((source) => [source, !!config.enabled?.[source]]));
-const modelKey = (model) => JSON.stringify([model.provider, model.model, model.thinking]);
+const modelKey = (model) => JSON.stringify([model.provider, model.model]);
 function fileType(file) {
   const name = file.name.toLowerCase();
   const extensions = { pdf: "application/pdf", txt: "text/plain", md: "text/markdown", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", mp4: "video/mp4" };
@@ -33,7 +33,7 @@ class ComposerControls extends React.Component {
   }
   componentDidUpdate(previous) {
     if (previous.projectId !== this.props.projectId) void this.loadSources();
-    if (previous.boot !== this.props.boot || previous.session?.id !== this.props.session?.id || JSON.stringify(previous.session?.model) !== JSON.stringify(this.props.session?.model)) void this.loadAttachmentTypes();
+    if (previous.boot.modelManagement?.version !== this.props.boot.modelManagement?.version || previous.boot.modelManagementError !== this.props.boot.modelManagementError || previous.session?.id !== this.props.session?.id || previous.session?.model.provider !== this.props.session?.model.provider || previous.session?.model.model !== this.props.session?.model.model) void this.loadAttachmentTypes();
   }
   componentWillUnmount() {
     this.mounted = false;
@@ -46,7 +46,7 @@ class ComposerControls extends React.Component {
     if (!session) return;
     try {
       const types = await api(`/sessions/${session.id}/attachment-types`);
-      if (this.mounted && request === this.attachmentRequest && this.props.session?.id === session.id && modelKey(this.props.session.model) === modelKey(session.model)) this.setState({ attachmentTypes: types, uploadError: "" });
+      if (this.mounted && request === this.attachmentRequest && this.props.session?.id === session.id && modelKey(this.props.session.model) === modelKey(session.model) && modelKey(types.model) === modelKey(session.model)) this.setState({ attachmentTypes: types, uploadError: "" });
     } catch (error) {
       if (this.mounted && request === this.attachmentRequest) this.setState({ uploadError: error instanceof Error ? error.message : String(error) });
     }
@@ -196,7 +196,7 @@ class ComposerControls extends React.Component {
         /* @__PURE__ */ jsx("div", { className: "grow" }),
         /* @__PURE__ */ jsx(ComposerModelMenu, { sessionId: session?.id ?? "none", current: currentModel, management: boot.modelManagement, error: boot.modelManagementError, busy, disabled: modelDisabled, locked: modelLocked, onSelect: this.props.onSendModel }),
         this.props.permissionControl,
-        /* @__PURE__ */ jsxs("button", { className: "primary compact composer-submit-control", type: showStop ? "button" : "submit", "aria-label": showStop ? "\u505C\u6B62\u6A21\u578B" : executing ? "\u6392\u961F\u53D1\u9001" : "\u53D1\u9001", title: showStop ? "\u505C\u6B62\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1" : executing ? "\u53D1\u9001\u5230\u961F\u5217" : "\u53D1\u9001\u6D88\u606F", "data-action": showStop ? "stop" : "send", disabled: showStop ? busy || projectArchived : !canSend || !hasDraft || !session || unsupported, onClick: showStop ? () => this.stopSession(session.id) : void 0, children: [
+        /* @__PURE__ */ jsxs("button", { className: "primary compact composer-submit-control", type: showStop ? "button" : "submit", "aria-label": showStop ? "\u505C\u6B62\u6A21\u578B" : executing ? "\u6392\u961F\u53D1\u9001" : "\u53D1\u9001", title: showStop ? "\u505C\u6B62\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1" : executing ? "\u5F53\u524D\u5DE5\u4F5C\u7ED3\u675F\u540E\u5904\u7406" : "\u53D1\u9001\u6D88\u606F", "data-action": showStop ? "stop" : "send", disabled: showStop ? busy || projectArchived : !canSend || !hasDraft || !session || unsupported, onClick: showStop ? () => this.stopSession(session.id) : void 0, children: [
           /* @__PURE__ */ jsx(Icon, { name: showStop ? "stop" : "arrow", size: 16 }),
           showStop ? "\u505C\u6B62" : "\u53D1\u9001"
         ] })

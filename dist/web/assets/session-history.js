@@ -81,7 +81,7 @@ class SessionHistory extends React.Component {
   }
   render() {
     const { sessionId, messages, history, historyAnchor, onNavigate, perform } = this.props, { messageId, page, busy, error } = this.state;
-    const transcript = messages.filter((message) => !(message.role === "user" && message.status === "queued" && message.origin !== "automation"));
+    const transcript = messages;
     const active = messages.find((message) => message.id === messageId);
     const controls = historyAnchor || history && !history.atLatest ? /* @__PURE__ */ jsx("div", { className: "history-controls", children: /* @__PURE__ */ jsx("button", { type: "button", onClick: () => onNavigate(null), children: "\u8FD4\u56DE\u6700\u65B0" }) }) : null;
     const content = (message) => /* @__PURE__ */ jsx(Fragment, { children: active?.id === message.id ? /* @__PURE__ */ jsxs("div", { className: "message-reader", children: [
@@ -130,7 +130,7 @@ class SessionHistory extends React.Component {
               short(current.nativeRequestId)
             ] }) : null,
             /* @__PURE__ */ jsx("time", { dateTime: message.createdAt, title: message.createdAt, children: date(message.createdAt) }),
-            message.queueRemoved ? /* @__PURE__ */ jsx("span", { className: "badge s-cancelled", children: "\u5DF2\u79FB\u51FA\u961F\u5217" }) : message.status && message.status !== "completed" ? /* @__PURE__ */ jsx(Badge, { value: message.status }) : null
+            message.queueRemoved ? /* @__PURE__ */ jsx("span", { className: "badge s-cancelled", children: "\u5DF2\u79FB\u51FA\u961F\u5217" }) : message.role === "user" && message.status === "queued" && message.origin !== "automation" ? /* @__PURE__ */ jsx("span", { className: "badge s-queued", children: "\u5DF2\u63D0\u4EA4 \xB7 \u7B49\u5F85\u5904\u7406" }) : message.status && message.status !== "completed" ? /* @__PURE__ */ jsx(Badge, { value: message.status }) : null
           ] }),
           message.queueRemoved ? /* @__PURE__ */ jsxs("details", { className: "removed-message-content", children: [
             /* @__PURE__ */ jsx("summary", { children: "\u67E5\u770B\u5DF2\u79FB\u51FA\u961F\u5217\u7684\u539F\u6D88\u606F" }),

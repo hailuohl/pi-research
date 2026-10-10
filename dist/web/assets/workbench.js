@@ -8,19 +8,87 @@ import { ScrollHistory } from "./scroll-history.js";
 import { MessageQueue } from "./message-queue.js";
 import { ComputeWait } from "./compute-wait.js";
 import { WakeupPanel } from "./campaigns.js";
-import { comparableRuns, comparisonMetric } from "./models.js";
-import { ExperimentGraph } from "./experiment-graph.js";
 import { ChatWorkflows } from "./chat-workflows.js";
 import { ResearchActionCards } from "./research-action-cards.js";
 import { ComposerControls } from "./composer-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
-import { Icon, Badge, SectionTitle, nativeSelectButton } from "./ui.js";
+import { Icon, Badge, nativeSelectButton } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { draft: "", draftVersion: 0, attachments: [] };
+    this.state = { draft: "", draftVersion: 0, attachments: [], sending: false };
     this.mounted = true;
+    this.sending = false;
+    this.changeModel = (model) => {
+      const { session, data } = this.props;
+      if (!session || !this.mounted) return Promise.resolve(void 0);
+      const saving = (async () => {
+        const confirmed = await api(`/sessions/${session.id}/model`, { expectedVersion: session.version, model });
+        if (!this.mounted || this.props.session?.id !== session.id || this.props.data.project.id !== data.project.id || confirmed.id !== session.id || confirmed.projectId !== data.project.id || confirmed.model.provider !== model.provider || confirmed.model.model !== model.model || confirmed.model.thinking !== model.thinking) return;
+        this.props.onModelConfirmed?.(confirmed);
+        return confirmed;
+      })();
+      this.modelSave = saving;
+      const clear = () => {
+        if (this.modelSave === saving) this.modelSave = void 0;
+      };
+      void saving.then(clear, clear);
+      return saving;
+    };
+    this.canSend = () => {
+      const { data, boot, session, busy, historyAnchor, history } = this.props;
+      const runtimeAvailable = boot.runtime.ready || boot.runtime.code === "MODEL_NOT_CONFIGURED";
+      const modelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking));
+      return this.mounted && !this.sending && runtimeAvailable && modelAvailable && !busy && !data.project.archived && !!session && session.projectId === data.project.id && !session.taskId && session.state !== "archived" && !historyAnchor && (!history || history.atLatest);
+    };
+    this.submit = async (event) => {
+      event.preventDefault();
+      const { session, data } = this.props;
+      if (!session || !this.canSend() || !this.state.draft.trim() && !this.state.attachments.length) return;
+      const { draft, draftVersion } = this.state, attachments = this.state.attachments.slice(), previous = this.pendingSend;
+      const unchanged = previous?.projectId === data.project.id && previous.sessionId === session.id && previous.draftVersion === draftVersion && previous.draft === draft && JSON.stringify(previous.attachments) === JSON.stringify(attachments);
+      const mode = ["running", "queued"].includes(session.state) || this.props.pendingTotal > 0 ? "follow_up" : "prompt";
+      const request = unchanged ? previous : { projectId: data.project.id, sessionId: session.id, draft, draftVersion, attachments, body: { content: draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", mode, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} }, key: crypto.randomUUID() };
+      const modelSave = this.modelSave;
+      const current = () => this.mounted && this.props.data.project.id === request.projectId && this.props.session?.id === request.sessionId;
+      this.pendingSend = request;
+      this.sending = true;
+      this.setState({ sending: true });
+      try {
+        return await this.props.perform(async () => {
+          if (modelSave) {
+            let model;
+            try {
+              model = await modelSave;
+            } catch (error) {
+              if (!current()) return;
+              throw error;
+            }
+            if (!current()) return;
+            if (!model) throw Error("\u5F53\u524D\u6A21\u578B\u9009\u62E9\u672A\u4FDD\u5B58\uFF1B\u6D88\u606F\u8349\u7A3F\u4E0E\u9644\u4EF6\u5DF2\u4FDD\u7559\u3002");
+          }
+          if (!current() || this.props.data.project.archived || this.props.session?.state === "archived" || this.props.session?.taskId || this.props.historyAnchor || this.props.history && !this.props.history.atLatest) return;
+          let confirmed;
+          try {
+            confirmed = await api(`/sessions/${session.id}/messages`, request.body, "POST", void 0, request.key);
+            if (confirmed.projectId !== request.projectId || confirmed.sessionId !== request.sessionId || confirmed.role !== "user" || typeof confirmed.id !== "string" || confirmed.content !== request.body.content || confirmed.mode !== request.body.mode || !Number.isSafeInteger(confirmed.version) || confirmed.version < 1 || !["queued", "running", "completed", "failed", "cancelled"].includes(confirmed.status)) throw Error("\u53D1\u9001\u56DE\u6267\u4E0E\u5F53\u524D\u4F1A\u8BDD\u4E0D\u4E00\u81F4\uFF1B\u8349\u7A3F\u4E0E\u9644\u4EF6\u5DF2\u4FDD\u7559\u3002");
+          } catch (error) {
+            if (!current()) return;
+            throw error;
+          }
+          if (this.pendingSend === request) this.pendingSend = void 0;
+          if (!this.mounted || this.props.data.project.id !== request.projectId || this.props.session?.id !== request.sessionId) return confirmed;
+          this.props.onMessageConfirmed?.(confirmed);
+          const sent = new Set(request.attachments.map((attachment) => attachment.documentVersionId));
+          this.setState((current2) => ({ draft: current2.draftVersion === request.draftVersion && current2.draft === request.draft ? "" : current2.draft, attachments: current2.attachments.filter((attachment) => !sent.has(attachment.documentVersionId)) }));
+          return confirmed;
+        });
+      } finally {
+        this.sending = false;
+        if (this.mounted) this.setState({ sending: false });
+      }
+    };
   }
   componentWillUnmount() {
     this.mounted = false;
@@ -29,7 +97,7 @@ class Chat extends React.Component {
     const { data, boot, session, messages } = this.props;
     const runtimeAvailable = boot.runtime.ready || boot.runtime.code === "MODEL_NOT_CONFIGURED";
     const sessionModelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking));
-    const canSend = runtimeAvailable && sessionModelAvailable && !this.props.busy && !data.project.archived && !!session && !session.taskId && session.state !== "archived" && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
+    const canSend = this.canSend();
     const hasDraft = !!this.state.draft.trim() || this.state.attachments.length > 0;
     return /* @__PURE__ */ jsxs("div", { className: "chat-page", children: [
       /* @__PURE__ */ jsxs("div", { className: "chat-heading", children: [
@@ -86,25 +154,13 @@ class Chat extends React.Component {
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
         /* @__PURE__ */ jsxs("div", { className: "composer-stack", children: [
           session?.role === "coordinator" ? /* @__PURE__ */ jsx(MessageQueue, { projectId: data.project.id, sessionId: session.id, messages: this.props.pendingMessages, total: this.props.pendingTotal, nextCursor: this.props.pendingNextCursor, canSteer: this.props.canSteer, disabled: data.project.archived || !!session.taskId || session.state === "archived" || !!this.props.historyAnchor || !!this.props.history && !this.props.history.atLatest, busy: this.props.busy, perform: this.props.perform }, data.project.id + ":" + session.id) : null,
-          /* @__PURE__ */ jsxs("form", { className: "composer", onSubmit: (e) => {
-            e.preventDefault();
-            if (!session || !canSend || !this.state.draft.trim() && !this.state.attachments.length) return;
-            const draft = this.state.draft, draftVersion = this.state.draftVersion, attachments = this.state.attachments.slice(), content = draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", sentIds = new Set(attachments.map((attachment) => attachment.documentVersionId));
-            this.props.perform(async () => {
-              await api(`/sessions/${session.id}/messages`, { content, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} });
-              if (this.mounted && this.props.session?.id === session.id) this.setState((current) => ({ draft: current.draftVersion === draftVersion && current.draft === draft ? "" : current.draft, attachments: current.attachments.filter((attachment) => !sentIds.has(attachment.documentVersionId)) }));
-            });
-          }, children: [
+          /* @__PURE__ */ jsxs("form", { className: "composer", onSubmit: this.submit, children: [
             /* @__PURE__ */ jsx("textarea", { "aria-label": "\u7814\u7A76\u95EE\u9898", placeholder: data.project.archived ? "\u5DF2\u5F52\u6863\u9879\u76EE\uFF0C\u53EA\u8BFB\u67E5\u770B\u5386\u53F2" : session?.taskId ? "\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u64CD\u4F5C" : session?.state === "archived" ? "\u5DF2\u5F52\u6863\u4F1A\u8BDD\u4E0D\u53EF\u53D1\u9001" : this.props.historyAnchor || this.props.history && !this.props.history.atLatest ? "\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u53EF\u53D1\u9001" : canSend ? "\u63CF\u8FF0\u7814\u7A76\u95EE\u9898\u2026" : "\u914D\u7F6E Pi \u4F9B\u5E94\u5546\u548C\u6A21\u578B\u540E\uFF0C\u5728\u8FD9\u91CC\u5F00\u59CB\u7814\u7A76\u2026", value: this.state.draft, disabled: data.project.archived || !!session?.taskId || session?.state === "archived", onChange: (e) => this.setState((current) => ({ draft: e.target.value, draftVersion: current.draftVersion + 1 })), onKeyDown: (e) => {
               if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.nativeEvent?.isComposing || e.keyCode === 229 || e.nativeEvent?.keyCode === 229) return;
               e.preventDefault();
               e.currentTarget.form.requestSubmit();
             } }),
-            /* @__PURE__ */ jsx(ComposerControls, { permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: !!data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: async (model) => session && this.mounted && this.props.session?.id === session.id ? this.props.perform(async () => {
-              const confirmed = await api(`/sessions/${session.id}/model`, { expectedVersion: session.version, model });
-              if (this.mounted && this.props.session?.id === session.id && confirmed.id === session.id && confirmed.model.provider === model.provider && confirmed.model.model === model.model && confirmed.model.thinking === model.thinking) this.props.onModelConfirmed?.(confirmed);
-              return confirmed;
-            }, "\u5DF2\u66F4\u65B0\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\uFF1B\u9879\u76EE\u9ED8\u8BA4\u6A21\u578B\u672A\u66F4\u6539") : void 0, children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
+            /* @__PURE__ */ jsx(ComposerControls, { permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: !!data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => session && this.props.session?.id === session.id && this.props.data.project.id === data.project.id ? this.changeModel(model) : Promise.resolve(void 0), children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
               /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
               /* @__PURE__ */ jsx("span", { children: "\u591A\u667A\u80FD\u4F53" })
             ] }) }, `${data.project.id}:${session?.id ?? ""}`)
@@ -120,99 +176,6 @@ class Chat extends React.Component {
       ] })
     ] });
   }
-}
-function Experiments({ data, selected, onSelect, onChat, onRun }) {
-  const measured = comparableRuns(data, selected);
-  const metric = comparisonMetric(data, selected);
-  const max = Math.max(...measured.map((r) => Math.abs(r.metrics[metric.key])), 1e-6);
-  return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
-    /* @__PURE__ */ jsx(SectionTitle, { title: "\u5B9E\u9A8C\u4E0E\u8FD0\u884C", sub: "\u5B9E\u9A8C\u8840\u7F18\u3001\u56FA\u5B9A\u534F\u8BAE\u4E0E\u771F\u5B9E\u89C2\u6D4B\uFF0C\u59CB\u7EC8\u5206\u5F00\u8BB0\u5F55\u3002" }),
-    /* @__PURE__ */ jsx("section", { className: "surface", children: /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("h2", { children: "\u4ECE\u7814\u7A76\u5BF9\u8BDD\u5F00\u59CB" }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63CF\u8FF0\u5B9E\u9A8C\u76EE\u6807\uFF0C\u7531\u667A\u80FD\u4F53\u8BFB\u53D6\u914D\u7F6E\u3001\u521B\u5EFA\u65B9\u6848\u5E76\u53D1\u8D77\u8FD0\u884C\u3002" })
-      ] }),
-      /* @__PURE__ */ jsx("button", { className: "secondary", onClick: onChat, children: "\u8FD4\u56DE\u5F53\u524D\u7814\u7A76\u5BF9\u8BDD" })
-    ] }) }),
-    data.experiments.length ? /* @__PURE__ */ jsx(ExperimentGraph, { data, selected, onSelect }, data.project.id) : /* @__PURE__ */ jsxs("section", { className: "surface", children: [
-      /* @__PURE__ */ jsx("div", { className: "surface-heading", children: /* @__PURE__ */ jsx("h2", { children: "\u5B9E\u9A8C\u8840\u7F18" }) }),
-      /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u5B9E\u9A8C\u8282\u70B9\u3002\u8BF7\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63CF\u8FF0\u76EE\u6807\uFF0C\u7531\u667A\u80FD\u4F53\u521B\u5EFA\u5B9E\u9A8C\u65B9\u6848\u3002" })
-    ] }),
-    /* @__PURE__ */ jsxs("div", { className: "section-kpis", children: [
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("strong", { children: data.experiments.length.toString().padStart(2, "0") }),
-        /* @__PURE__ */ jsx("span", { children: "\u5B9E\u9A8C\u8282\u70B9" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("strong", { children: data.runs.length.toString().padStart(2, "0") }),
-        /* @__PURE__ */ jsx("span", { children: "\u6B63\u5F0F\u8FD0\u884C" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("strong", { children: data.runs.filter((r) => r.integrity === "complete").length.toString().padStart(2, "0") }),
-        /* @__PURE__ */ jsx("span", { children: "\u5B8C\u6574\u7ED3\u679C" })
-      ] }),
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("strong", { children: data.evidence.length.toString().padStart(2, "0") }),
-        /* @__PURE__ */ jsx("span", { children: "\u8BC1\u636E\u8BB0\u5F55" })
-      ] })
-    ] }),
-    /* @__PURE__ */ jsxs("section", { className: "surface", children: [
-      /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-        /* @__PURE__ */ jsx("h2", { children: "\u8FD0\u884C\u8BB0\u5F55" }),
-        /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u9000\u51FA\u6210\u529F \u2260 \u5047\u8BBE\u6210\u7ACB" })
-      ] }),
-      data.runs.length ? /* @__PURE__ */ jsx("div", { className: "table-wrap", children: /* @__PURE__ */ jsxs("table", { children: [
-        /* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
-          /* @__PURE__ */ jsx("th", { children: "\u5B9E\u9A8C / Run" }),
-          /* @__PURE__ */ jsx("th", { children: "\u6267\u884C" }),
-          /* @__PURE__ */ jsx("th", { children: "\u5B8C\u6574\u6027" }),
-          /* @__PURE__ */ jsx("th", { children: "\u5B9E\u6D4B\u6307\u6807\uFF08\u6309\u8FD0\u884C\u5951\u7EA6\uFF09" })
-        ] }) }),
-        /* @__PURE__ */ jsx("tbody", { children: data.runs.slice().reverse().map((r) => /* @__PURE__ */ jsxs("tr", { onClick: () => onSelect(r.experimentId), className: r.experimentId === selected ? "selected-row" : "", children: [
-          /* @__PURE__ */ jsxs("td", { children: [
-            /* @__PURE__ */ jsxs("button", { className: "text-button", onClick: (event) => {
-              event.stopPropagation();
-              if (onRun) onRun(r.id, r.experimentId);
-              else onSelect(r.experimentId);
-            }, children: [
-              data.experiments.find((e) => e.id === r.experimentId)?.title,
-              " \xB7 ",
-              short(r.id)
-            ] }),
-            /* @__PURE__ */ jsx("small", { children: date(r.createdAt) })
-          ] }),
-          /* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx(Badge, { value: r.state }) }),
-          /* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx(Badge, { value: r.integrity }) }),
-          /* @__PURE__ */ jsx("td", { className: "numeric", children: Object.entries(r.manifest.contract.metrics).map(([k, m]) => /* @__PURE__ */ jsxs("div", { children: [
-            k,
-            ": ",
-            number(r.metrics?.[k]),
-            " ",
-            m.unit
-          ] }, k)) })
-        ] }, r.id)) })
-      ] }) }) : /* @__PURE__ */ jsx("div", { className: "inline-empty", children: "\u51C6\u5907\u5FEB\u7167\u5E76\u83B7\u5F97\u6279\u51C6\u540E\uFF0C\u8FD0\u884C\u4F1A\u663E\u793A\u5728\u8FD9\u91CC\u3002" })
-    ] }),
-    measured.length ? /* @__PURE__ */ jsxs("section", { className: "surface", children: [
-      /* @__PURE__ */ jsxs("div", { className: "surface-heading", children: [
-        /* @__PURE__ */ jsx("h2", { children: "\u540C\u534F\u8BAE\u7ED3\u679C\u901F\u89C8" }),
-        /* @__PURE__ */ jsxs("span", { className: "small muted", children: [
-          metric.key,
-          " \xB7 ",
-          metric.direction === "max" ? "\u8D8A\u9AD8\u8D8A\u597D" : "\u8D8A\u4F4E\u8D8A\u597D",
-          " \xB7 ",
-          metric.unit,
-          " \xB7 \u540C\u4E00\u5951\u7EA6"
-        ] })
-      ] }),
-      /* @__PURE__ */ jsx("div", { className: "metric-bars", children: measured.map((r) => /* @__PURE__ */ jsxs("div", { className: "metric-row", children: [
-        /* @__PURE__ */ jsx("span", { children: data.experiments.find((e) => e.id === r.experimentId)?.title }),
-        /* @__PURE__ */ jsx("div", { className: "metric-track", children: /* @__PURE__ */ jsx("div", { style: { width: Math.max(0.5, Math.abs(r.metrics[metric.key]) / max * 100) + "%" } }) }),
-        /* @__PURE__ */ jsx("code", { children: number(r.metrics[metric.key]) })
-      ] }, r.id)) }),
-      /* @__PURE__ */ jsx("p", { className: "footnote", children: "\u957F\u5EA6\u8868\u793A\u7EDD\u5BF9\u503C\uFF0C\u4EC5\u4F5C\u6570\u503C\u901F\u89C8\uFF1B\u4F18\u52A3\u7531\u6307\u6807\u65B9\u5411\u53CA\u5B8C\u6574\u8BC1\u636E\u5224\u65AD\u3002\u4E0D\u540C\u5951\u7EA6\u4E0D\u6DF7\u6BD4\uFF0C\u6267\u884C\u6210\u529F\u4E0D\u7B49\u4E8E\u5047\u8BBE\u6210\u7ACB\u3002" })
-    ] }) : null
-  ] });
 }
 function OutcomeReview({ run, perform, readOnly = false }) {
   if (!["succeeded", "failed", "cancelled"].includes(run.state)) return null;
@@ -368,8 +331,8 @@ class Inspector extends React.Component {
     const teamIds = new Set(teams.map((t) => t.id));
     const inlineReviewTeams = new Set(this.props.inlineWorkflows ? (data.reviews ?? []).filter((r) => r.producerSessionId === this.props.sessionId).map((r) => r.teamId) : []);
     const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending" && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
-    return /* @__PURE__ */ jsxs("aside", { className: "inspector" + (this.props.embedded ? " embedded-inspector" : ""), "aria-label": this.props.embedded ? "\u5F53\u524D\u4F1A\u8BDD\u534F\u4F5C\u7A7A\u95F4" : void 0, children: [
-      !this.props.embedded ? /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
+    return /* @__PURE__ */ jsxs("aside", { className: "inspector" + (this.props.embedded ? " embedded-inspector" : ""), "aria-label": this.props.tab === "experiments" ? "\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u8BE6\u60C5" : this.props.embedded ? "\u5F53\u524D\u4F1A\u8BDD\u534F\u4F5C\u7A7A\u95F4" : void 0, children: [
+      !this.props.embedded || this.props.tab === "experiments" ? /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
         /* @__PURE__ */ jsx(Icon, { name: this.props.tab === "experiments" ? "experiment" : "branch" }),
         /* @__PURE__ */ jsx("h2", { children: this.props.tab === "experiments" ? "\u5B9E\u9A8C\u8BE6\u60C5" : "\u534F\u4F5C\u7A7A\u95F4" }),
         /* @__PURE__ */ jsx("span", { className: "small muted", children: "\u672C\u5730" })
@@ -427,7 +390,12 @@ class Inspector extends React.Component {
           ] }),
           run.metrics ? /* @__PURE__ */ jsx("dl", { className: "details", children: Object.entries(run.metrics).map(([k, v]) => /* @__PURE__ */ jsxs("div", { className: "detail-pair", children: [
             /* @__PURE__ */ jsx("dt", { children: k }),
-            /* @__PURE__ */ jsx("dd", { className: "numeric", children: number(v) })
+            /* @__PURE__ */ jsxs("dd", { className: "numeric", children: [
+              number(v),
+              " ",
+              e.contract.metrics[k]?.unit,
+              e.contract.metrics[k] ? " \xB7 " + (e.contract.metrics[k].direction === "max" ? "\u8D8A\u9AD8\u8D8A\u597D" : "\u8D8A\u4F4E\u8D8A\u597D") : null
+            ] })
           ] }, k)) }) : null,
           ["queued", "submitting", "running", "cancelling", "unknown"].includes(run.state) ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "run", id: run.id }) : null,
           /* @__PURE__ */ jsx(OutcomeReview, { run, perform, readOnly: data.project.archived }),
@@ -440,7 +408,7 @@ class Inspector extends React.Component {
           /* @__PURE__ */ jsx(RunFiles, { run, data, perform }, run.id)
         ] }) : null
       ] }) : null,
-      /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: pendingTeams.length > 0 || ["active", "paused", "draining", "failed", "partial"].includes(team?.state ?? ""), children: [
+      this.props.tab !== "experiments" ? /* @__PURE__ */ jsxs("details", { className: "inspector-collaboration", open: pendingTeams.length > 0 || ["active", "paused", "draining", "failed", "partial"].includes(team?.state ?? ""), children: [
         /* @__PURE__ */ jsxs("summary", { children: [
           "\u534F\u4F5C\u8BA1\u5212\u4E0E\u7ED3\u679C",
           /* @__PURE__ */ jsx("span", { children: pendingTeams.length ? "\u5F85\u5BA1\u6279" : team ? label(team.state) : "\u6682\u65E0\u4EFB\u52A1" })
@@ -541,7 +509,7 @@ class Inspector extends React.Component {
             /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
           ] })
         ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: this.props.tab === "chat" ? "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u4E0D\u4F1A\u5728 Inspector \u4E2D\u624B\u52A8\u521B\u5EFA\uFF0C\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" : "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" })
-      ] }),
+      ] }) : null,
       /* @__PURE__ */ jsxs("div", { className: "inspector-footer", children: [
         /* @__PURE__ */ jsx("span", { className: "status-dot" }),
         "\u6240\u6709\u7ED3\u679C\u5199\u5165\u672C\u5730\u6570\u636E\u5E93"
@@ -551,7 +519,6 @@ class Inspector extends React.Component {
 }
 export {
   Chat,
-  Experiments,
   Inspector,
   OutcomeReview
 };

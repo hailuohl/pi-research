@@ -15,7 +15,8 @@ const response = data => ({ ok: true, json: async () => data });
 const model = { provider: 'test', model: 'default', thinking: 'low' };
 const managed=(id,thinking)=>({model:id,name:id+' configured',enabled:true,deletedAt:null,reasoning:{defaultLevel:thinking,levels:[{id:thinking,label:'Configured '+thinking,piLevel:'high',parameters:{}}]}});
 const boot = { model, models: [model, { provider: 'other', model: 'large', thinking: 'high' }], modelManagement:{providers:[{provider:'test',name:'test',enabled:true,deletedAt:null,models:[managed('default','low')]},{provider:'other',name:'other',enabled:true,deletedAt:null,models:[managed('large','high')]}]}, runtime: { ready: true, message: '', node: 'v22', expectedVersion: 'pi' }, capabilities: [] };
-const session = { id: 's', version: 3, role: 'coordinator', state: 'idle', model, title: 'Research' };
+const session = { id: 's', projectId:'p', version: 3, role: 'coordinator', state: 'idle', model, title: 'Research' };
+const submitted=(content='Look at this',mode='prompt',extra={})=>({id:'sent',kind:'message',projectId:'p',sessionId:'s',version:1,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-10T00:00:00Z',role:'user',status:'queued',content,mode,...extra});
 const attachment = (id, title = `${id}.txt`) => ({ documentVersionId: id, artifactId: `${id}-artifact`, digest: 'digest', title, mediaType: 'text/plain', size: 5 });
 function controlsProps(overrides = {}) {
     return { boot, projectId: 'p', projectArchived: false, modelLocked: false, session, busy: false, perform: async fn => fn(), attachments: [], onAddAttachment() {}, onRemoveAttachment() {}, collaborationEnabled: false, collaborationDisabled: false, onToggleCollaboration() {}, canSend: true, hasDraft: true, onSendModel() {}, ...overrides };
@@ -125,7 +126,7 @@ test('model API confirmation is returned and propagated before refresh, and late
  assert.equal(await controls.props.onSendModel(selected),confirmed);assert.deepEqual(receipts,[confirmed]);assert.deepEqual(requests,[{url:'/api/sessions/s/model',body:{expectedVersion:3,model:selected}}]);
  view.props={...view.props,session:{...session,id:'new-session'}};assert.equal(await controls.props.onSendModel(selected),undefined);assert.equal(requests.length,1);
  view.props=chatProps({onModelConfirmed:row=>receipts.push(row)});let resolve;globalThis.fetch=()=>new Promise(done=>resolve=done);
- const pending=find(view.render(),node=>node.type===ComposerControls).props.onSendModel(selected);view.props={...view.props,session:{...session,id:'next'}};resolve(response(confirmed));assert.equal(await pending,confirmed);assert.equal(receipts.length,1);
+ const pending=find(view.render(),node=>node.type===ComposerControls).props.onSendModel(selected);view.props={...view.props,session:{...session,id:'next'}};resolve(response(confirmed));assert.equal(await pending,undefined);assert.equal(receipts.length,1);
  view.props=chatProps({onModelConfirmed:row=>receipts.push(row)});globalThis.fetch=async()=>response({...confirmed,model});await find(view.render(),node=>node.type===ComposerControls).props.onSendModel(selected);assert.equal(receipts.length,1,'a mismatched model receipt cannot confirm the requested selection');
 });
 
@@ -174,14 +175,14 @@ test('late attachment-type responses cannot revive the previous model capabiliti
 test('attachment send preserves new typing and attachments added while the request is pending', async t => {
     const oldFetch = globalThis.fetch; t.after(() => { globalThis.fetch = oldFetch; });
     let resolve; const sent = [];
-    globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init.body) }); return new Promise(done => { resolve = () => done(response({})); }); };
+    globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init.body) }); return new Promise(done => { resolve = () => done(response(submitted())); }); };
     const work = [], view = synchronousState(new Chat(chatProps({ perform: fn => { const pending = fn(); work.push(pending); return pending; } })));
     view.state.draft = 'Look at this'; view.state.attachments = [attachment('doc-1')];
     find(view.render(), node => node.type === 'form' && node.props.className === 'composer').props.onSubmit({ preventDefault() {} });
     view.setState({ draft: 'next message', draftVersion: 1, attachments: [attachment('doc-1'), attachment('doc-2')] });
     resolve(); await work[0];
     assert.equal(sent[0].url, '/api/sessions/s/messages');
-    assert.deepEqual(sent[0].body, { content: 'Look at this', attachmentDocumentIds: ['doc-1'] });
+    assert.deepEqual(sent[0].body, { content: 'Look at this', mode:'prompt', attachmentDocumentIds: ['doc-1'] });
     assert.equal(view.state.draft, 'next message');
     assert.deepEqual(view.state.attachments.map(item => item.documentVersionId), ['doc-2']);
 });
@@ -194,7 +195,7 @@ test('attachment-only send uses the short prompt; send failure keeps its draft a
     view.state.attachments = [attachment('doc-1')];
     find(view.render(), node => node.type === 'form' && node.props.className === 'composer').props.onSubmit({ preventDefault() {} });
     await pending[0];
-    assert.deepEqual(body, { content: '请查看附件。', attachmentDocumentIds: ['doc-1'] });
+    assert.deepEqual(body, { content: '请查看附件。', mode:'prompt', attachmentDocumentIds: ['doc-1'] });
     assert.equal(view.state.draft, '');
     assert.equal(view.state.attachments[0].documentVersionId, 'doc-1');
 });
@@ -233,4 +234,110 @@ test('disabled or deleted current/default models remain visible only as current 
     }
     const legacy=synchronousState(new ComposerControls(controlsProps({boot:{...boot,models:undefined,modelManagement:undefined}}))),legacyMenu=find(legacy.render(),node=>node.type===ComposerModelMenu),legacyPicker=synchronousState(new ComposerModelMenu(legacyMenu.props));
     assert.equal(elements(legacyPicker.render()).filter(node=>node.props?.role==='menuitemradio').length,0);assert.equal(find(legacyPicker.render(),node=>node.props?.className==='composer-model-trigger').props.disabled,true);
+});
+
+
+test('new messages wait for the current reply regardless of available steer capability',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);
+ for(const [state,canSteer,mode] of [['idle',false,'prompt'],['queued',true,'follow_up'],['running',true,'follow_up'],['running',false,'follow_up']]){
+  const posts=[],receipts=[];globalThis.fetch=async(url,init)=>{const body=JSON.parse(init.body);posts.push({url,body});return response(submitted(body.content,body.mode));};
+  const view=synchronousState(new Chat(chatProps({session:{...session,state},canSteer,onMessageConfirmed:row=>receipts.push(row)})));view.state.draft='current request';
+  await find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});
+  assert.deepEqual(posts,[{url:'/api/sessions/s/messages',body:{content:'current request',mode}}]);assert.equal(receipts[0].status,'queued');assert.equal(view.state.draft,'');
+  const controls=synchronousState(new ComposerControls(controlsProps({session:{...session,state},canSteer})));
+  if(state==='running')assert.ok(find(controls.render(),node=>node.props?.['aria-label']==='排队发送'));
+ }
+});
+
+test('same-tick submits have one request and its receipt is shown before a delayed refresh completes',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);let finishSend,finishRefresh;const receipts=[],posts=[];
+ const refresh=new Promise(resolve=>finishRefresh=resolve),view=synchronousState(new Chat(chatProps({onMessageConfirmed:row=>receipts.push(row),perform:async fn=>{const row=await fn();await refresh;return row;}})));
+ const setState=view.setState;view.setState=(update,callback)=>queueMicrotask(()=>setState(update,callback));
+ globalThis.fetch=async(url,init)=>{posts.push({url,body:JSON.parse(init.body)});return new Promise(resolve=>finishSend=resolve);};
+ view.state.draft='submit once';const form=find(view.render(),node=>node.type==='form'&&node.props.className==='composer');
+ const sending=form.props.onSubmit({preventDefault(){}});await form.props.onSubmit({preventDefault(){}});assert.equal(posts.length,1);
+ finishSend(response(submitted('submit once')));await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(receipts.length,1);assert.equal(receipts[0].content,'submit once');assert.equal(receipts[0].status,'queued');assert.equal(view.state.draft,'');assert.equal(view.state.sending,true);
+ view.setState({draft:'new edit',draftVersion:1});finishRefresh();await sending;await new Promise(resolve=>setImmediate(resolve));assert.equal(view.state.draft,'new edit');assert.equal(view.state.sending,false);
+});
+
+test('a failed queued send retries its frozen body, attachment IDs and key even after the reply finishes',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const posts=[],view=synchronousState(new Chat(chatProps({session:{...session,state:'running'},canSteer:true,perform:async fn=>fn().catch(()=>undefined)})));
+ view.state.draft='next round';view.state.attachments=[attachment('doc-1')];
+ globalThis.fetch=async(url,init)=>{const body=JSON.parse(init.body);posts.push({url,body,key:init.headers['Idempotency-Key']});return {ok:false,status:409,json:async()=>({error:{code:'SEND_FAILED',message:'response unavailable'}})};};
+ const submit=()=>find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});
+ await submit();assert.equal(view.state.draft,'next round');assert.equal(view.state.attachments.length,1);view.props={...view.props,session:{...session,state:'idle'},canSteer:false};await submit();assert.deepEqual(posts[1],posts[0]);assert.equal(posts[0].body.mode,'follow_up');assert.ok(posts[0].key);
+ view.setState({draft:'different request',draftVersion:1});await submit();assert.notEqual(posts[2].key,posts[0].key);assert.equal(posts[2].body.mode,'prompt');assert.equal(view.state.draft,'different request');assert.equal(view.state.attachments.length,1);
+});
+
+test('lost send responses replay one key and late receipts cannot clear another session or new attachments',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const posts=[],receipts=[],view=synchronousState(new Chat(chatProps({onMessageConfirmed:row=>receipts.push(row),perform:async fn=>fn().catch(()=>undefined)})));
+ view.state.draft='saved once';globalThis.fetch=async(url,init)=>{posts.push({body:JSON.parse(init.body),key:init.headers['Idempotency-Key']});if(posts.length===1)throw Error('response lost');return response(submitted('saved once'));};
+ const submit=()=>find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});
+ await submit();assert.equal(view.state.draft,'saved once');await submit();assert.deepEqual(posts[1],posts[0]);assert.equal(receipts.length,1);assert.equal(view.state.draft,'');
+ let finish;globalThis.fetch=()=>new Promise(resolve=>finish=resolve);view.state.draft='old session request';const sending=submit();
+ view.props={...view.props,session:{...session,id:'new-session'}};view.setState({draft:'new session edit',draftVersion:2,attachments:[attachment('new-document')]});finish(response(submitted('old session request')));await sending;
+ assert.equal(receipts.length,1);assert.equal(view.state.draft,'new session edit');assert.equal(view.state.attachments[0].documentVersionId,'new-document');
+});
+
+test('invalid or out-of-scope sends preserve the current draft and attachments',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);let requests=0;globalThis.fetch=async()=>{requests++;return response(submitted('kept draft', 'prompt', {projectId:'foreign'}));};
+ for(const override of [{data:{...chatProps().data,project:{id:'p',archived:true,settings:{enabled:false}}}},{session:{...session,state:'archived'}},{session:{...session,taskId:'task'}},{session:{...session,projectId:'foreign'}},{historyAnchor:{direction:'before',id:'cursor'}},{history:{atLatest:false}}]){
+  const view=synchronousState(new Chat(chatProps(override)));view.state.draft='kept draft';view.state.attachments=[attachment('doc-1')];await find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});assert.equal(view.state.draft,'kept draft');assert.equal(view.state.attachments.length,1);
+ }
+ assert.equal(requests,0);
+ const view=synchronousState(new Chat(chatProps({perform:async fn=>fn().catch(()=>undefined)})));view.state.draft='kept draft';view.state.attachments=[attachment('doc-1')];await find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});assert.equal(requests,1);assert.equal(view.state.draft,'kept draft');assert.equal(view.state.attachments.length,1);
+});
+
+test('thinking-only confirmation keeps attachment capability and avoids the global refresh workflow',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const selected={...model,thinking:'high'},confirmed={...session,version:4,model:selected},requests=[];
+ globalThis.fetch=async(url,init)=>{requests.push(url);return response(confirmed);};
+ const history={atLatest:false},anchor={direction:'before',id:'cursor'},receipts=[],view=synchronousState(new Chat(chatProps({history,historyAnchor:anchor,onModelConfirmed:row=>receipts.push(row),perform(){assert.fail('model change must stay local');}})));
+ view.state.draft='preserved';view.state.attachments=[attachment('doc-1')];const controls=find(view.render(),node=>node.type===ComposerControls);await controls.props.onSendModel(selected);
+ assert.deepEqual(requests,['/api/sessions/s/model']);assert.deepEqual(receipts,[confirmed]);assert.equal(view.state.draft,'preserved');assert.equal(view.state.attachments.length,1);assert.equal(view.props.history,history);assert.equal(view.props.historyAnchor,anchor);
+ const picker=synchronousState(new ComposerControls(controlsProps())),types={model,types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:33554432,native:false}]};picker.state.attachmentTypes=types;
+ picker.loadAttachmentTypes=()=>assert.fail('thinking level does not change media capability');const before=picker.props;picker.props={...before,session:confirmed};picker.componentDidUpdate(before);assert.equal(picker.state.attachmentTypes,types);
+});
+
+
+test('one send click waits for a pending model confirmation and preserves edits made while waiting',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);let finishModel,savedModel=model;const selected={provider:'other',model:'large',thinking:'high'},confirmed={...session,version:4,model:selected},requests=[],receipts=[];
+ globalThis.fetch=async(url,init)=>{
+  const body=JSON.parse(init.body);requests.push({url,body});
+  if(url.endsWith('/model'))return new Promise(resolve=>finishModel=()=>{savedModel=selected;resolve(response(confirmed));});
+  assert.deepEqual(savedModel,selected,'message must use the newly confirmed server model');return response(submitted(body.content,body.mode));
+ };
+ const view=synchronousState(new Chat(chatProps({onModelConfirmed:row=>{view.props={...view.props,session:row};},onMessageConfirmed:row=>receipts.push(row)})));view.state.draft='send after model save';view.state.attachments=[attachment('doc-1')];
+ const controls=find(view.render(),node=>node.type===ComposerControls),changing=controls.props.onSendModel(selected),form=find(view.render(),node=>node.type==='form'&&node.props.className==='composer');
+ const sending=form.props.onSubmit({preventDefault(){}});await form.props.onSubmit({preventDefault(){}});assert.deepEqual(requests.map(row=>row.url),['/api/sessions/s/model']);assert.equal(view.state.sending,true);
+ view.setState({draft:'new typing',draftVersion:1,attachments:[attachment('doc-1'),attachment('doc-2')]});finishModel();await Promise.all([changing,sending]);
+ assert.deepEqual(requests.map(row=>row.url),['/api/sessions/s/model','/api/sessions/s/messages']);assert.deepEqual(requests[1].body,{content:'send after model save',mode:'prompt',attachmentDocumentIds:['doc-1']});assert.equal(receipts.length,1);assert.equal(view.state.draft,'new typing');assert.deepEqual(view.state.attachments.map(row=>row.documentVersionId),['doc-2']);assert.equal(view.state.sending,false);
+});
+
+test('failed, mismatched or stale model confirmations never send the waiting draft',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const selected={provider:'other',model:'large',thinking:'high'},confirmed={...session,version:4,model:selected};
+ for(const scenario of ['failure','mismatch','switch','unmount']){
+  let finishModel;const requests=[],receipts=[],view=synchronousState(new Chat(chatProps({perform:async fn=>fn().catch(()=>undefined),onMessageConfirmed:row=>receipts.push(row)})));view.state.draft='preserve waiting draft';view.state.attachments=[attachment('doc-1')];
+  globalThis.fetch=async(url)=>{requests.push(url);assert.ok(url.endsWith('/model'));return new Promise(resolve=>finishModel=resolve);};
+  const changing=find(view.render(),node=>node.type===ComposerControls).props.onSendModel(selected).catch(()=>undefined),sending=find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});
+  if(scenario==='switch')view.props={...view.props,session:{...session,id:'new-session'}};if(scenario==='unmount')view.componentWillUnmount();
+  finishModel(scenario==='failure'?{ok:false,status:409,json:async()=>({error:{code:'VERSION_CONFLICT',message:'model save failed'}})}:response(scenario==='mismatch'?{...confirmed,model}:confirmed));await Promise.all([changing,sending]);
+  assert.deepEqual(requests,['/api/sessions/s/model'],scenario);assert.equal(view.state.draft,'preserve waiting draft',scenario);assert.equal(view.state.attachments.length,1,scenario);assert.equal(receipts.length,0,scenario);
+ }
+});
+
+
+test('an in-flight attachment capability read survives thinking-only changes and same-catalog refreshes',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);let finish;const requests=[],catalog={...boot.modelManagement,version:7},view=synchronousState(new ComposerControls(controlsProps({boot:{...boot,modelManagement:catalog}})));
+ globalThis.fetch=async(url)=>{requests.push(url);return new Promise(resolve=>finish=resolve);};
+ const reading=view.loadAttachmentTypes(),before=view.props;view.props={...before,boot:{...before.boot,modelManagement:{...catalog}},session:{...session,model:{...model,thinking:'high'}}};view.componentDidUpdate(before);assert.equal(requests.length,1);
+ const types={model,types:[{mediaType:'image/png',extensions:['.png'],maxBytes:20971520,native:true}]};finish(response(types));await reading;assert.equal(view.state.attachmentTypes,types);
+ const confirmed=view.props;view.props={...confirmed,boot:{...confirmed.boot,modelManagement:{...catalog}}};view.componentDidUpdate(confirmed);assert.equal(requests.length,1);assert.equal(view.state.attachmentTypes,types);assert.match(find(view.render(),node=>node.type==='input'&&node.props.type==='file').props.accept,/image\/png/);
+});
+
+test('catalog versions and catalogue read errors invalidate capabilities and reject older in-flight results',async t=>{
+ const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);const pending=[],catalog={...boot.modelManagement,version:7},view=synchronousState(new ComposerControls(controlsProps({boot:{...boot,modelManagement:catalog}})));
+ globalThis.fetch=async()=>new Promise(resolve=>pending.push(resolve));const first=view.loadAttachmentTypes(),before=view.props;view.props={...before,boot:{...before.boot,modelManagement:{...catalog,version:8}}};view.componentDidUpdate(before);assert.equal(pending.length,2);assert.equal(view.state.attachmentTypes,null);
+ const updated={model,types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:33554432,native:false}]};pending[1](response(updated));await new Promise(resolve=>setImmediate(resolve));pending[0](response({model,types:[{mediaType:'image/png',extensions:['.png'],maxBytes:20971520,native:true}]}));await first;assert.equal(view.state.attachmentTypes,updated);assert.doesNotMatch(find(view.render(),node=>node.type==='input'&&node.props.type==='file').props.accept,/image\/png/);
+ const current=view.props;view.props={...current,boot:{...current.boot,modelManagementError:'catalog unavailable'}};view.componentDidUpdate(current);assert.equal(pending.length,3);assert.equal(view.state.attachmentTypes,null);pending[2](response(updated));await new Promise(resolve=>setImmediate(resolve));assert.equal(view.state.attachmentTypes,updated);
 });

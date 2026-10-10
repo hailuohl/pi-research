@@ -87,7 +87,7 @@ test('message reader rejects mismatched identity, version, encoding, and byte bo
     }
 });
 
-test('queued user messages stay in the separate queue while deleted messages remain visible and cannot be retried',()=>{
+test('submitted queued messages show their real pending state while removed messages remain visible and cannot be retried',()=>{
     const reader=synchronousState(new SessionHistory({projectId:'p',sessionId:'s',messages:[
         {id:'queued',version:1,role:'user',status:'queued',content:'queue preview'},
         {id:'auto',version:1,role:'user',status:'queued',origin:'automation',content:'automation notice'},
@@ -95,7 +95,7 @@ test('queued user messages stay in the separate queue while deleted messages rem
     ],history:null,historyAnchor:null,onNavigate(){},perform(){}}));
     const tree=reader.render(),rendered=JSON.stringify(tree),buttons=[];
     const walk=node=>{if(Array.isArray(node))node.forEach(walk);else if(node&&typeof node==='object'){if(node.type==='button')buttons.push(node);walk(node.props?.children);}};walk(tree);
-    assert.doesNotMatch(rendered,/queue preview/);assert.match(rendered,/automation notice/);assert.match(rendered,/已移出队列/);assert.equal(buttons.some(button=>String(button.props.children).includes('重试此消息')),false);
+    assert.match(rendered,/queue preview/);assert.match(rendered,/已提交 · 等待处理/);assert.match(rendered,/automation notice/);assert.match(rendered,/已移出队列/);assert.equal(buttons.some(button=>String(button.props.children).includes('重试此消息')),false);
 });
 
 test('a history anchor keeps return-to-live visible after the last newer page',()=>{
@@ -128,8 +128,8 @@ test('legacy workflow hints and Run links reset history for sessions outside rec
         Object.assign(app.state,{projectId:'p',sessionId:'recent',boot:{projects:[{id:'p'}]},data:{project:{id:'p'},sessions:[{id:'recent'}],experiments:[],runs:[]}});
         for(const tab of ['implementation','campaigns','changes','experiments']){
             Object.assign(app.state,{tab,sessionId:'recent',messages:[{id:'old-body'}],pendingMessages:[{id:'old-queue'}],pendingTotal:1,pendingNextCursor:null,canSteer:true,history:{atLatest:false},historyAnchor:{direction:'before',id:'old-cursor'},stream:'old stream'});
-            if(tab==='experiments'){const view=component(app.render(),'Experiments');assert.ok(view,'Experiments rendered');view.props.onSession('older-root');}
-            else app.selectSession('older-root',tab);
+            assert.equal(component(app.render(),'Experiments'),undefined);
+            app.selectSession('older-root',tab);
             assert.equal(app.state.sessionId,'older-root');assert.equal(app.state.tab,'chat');assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.pendingNextCursor,null);assert.equal(app.state.canSteer,false);assert.equal(app.state.history,null);assert.equal(app.state.historyAnchor,null);assert.equal(app.state.stream,'');
         }
         app.componentWillUnmount();

@@ -17,7 +17,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
     private models=()=>this.props.management?.providers.filter(p=>p.enabled&&!p.deletedAt&&!p.requiresCredential).flatMap(provider=>provider.models.filter(m=>m.enabled&&!m.deletedAt).map(model=>({provider,model})))??[];
     private selected=()=>this.models().find(row=>row.provider.provider===this.props.current?.provider&&row.model.model===this.props.current?.model);
     private unavailable=()=>!this.props.management||!!this.props.error;
-    private blocked=()=>!this.alive||this.props.disabled||this.props.locked||this.props.busy||this.state.saving||this.unavailable();
+    private blocked=()=>!this.alive||this.props.disabled||this.props.locked||this.props.busy||this.state.saving||!!this.pending||this.unavailable();
     componentDidUpdate(previous:Readonly<Props>){
         const changed=previous.sessionId!==this.props.sessionId,currentChanged=key(previous.current)!==key(this.props.current);
         if(changed){this.pending=undefined;this.setState({saving:false,error:''});this.close();}
@@ -40,10 +40,10 @@ export class ComposerModelMenu extends React.Component<Props,State> {
     private resetPreview=()=>{this.pointerStart=undefined;if(this.state.preview!==null||this.state.visual!==null||this.state.pointer||this.state.dragging)this.setState({preview:null,visual:null,pointer:false,dragging:false});};
     private close=()=>{this.resetPreview();if(this.menu.current?.matches(':popover-open'))this.menu.current.hidePopover();if(this.state.open)this.setState({open:false,modelsOpen:false});};
     private keys=(event:React.KeyboardEvent<HTMLDivElement>)=>{
-        if(event.key==='Escape'){event.preventDefault();event.stopPropagation();this.close();this.trigger.current?.focus();return;}
+        if(event.key==='Escape'){event.preventDefault();event.stopPropagation();this.close();this.trigger.current?.focus({preventScroll:true});return;}
         if((event.target as HTMLElement).tagName==='INPUT'||!this.state.modelsOpen||!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
         event.preventDefault();const items=Array.from(this.menu.current?.querySelectorAll<HTMLButtonElement>('button[role="menuitemradio"]:not(:disabled)')??[]);if(!items.length)return;
-        const current=items.indexOf(document.activeElement as HTMLButtonElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(current+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;items[next].focus();
+        const current=items.indexOf(document.activeElement as HTMLButtonElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(current+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;items[next].focus({preventScroll:true});
     };
     private choose=async(model:ModelConfig)=>{
         if(this.blocked()||!this.models().some(row=>row.provider.provider===model.provider&&row.model.model===model.model&&row.model.reasoning.levels.some(level=>level.id===model.thinking)))return;
@@ -90,7 +90,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
     };
     private toggle=(event:React.ToggleEvent<HTMLDivElement>)=>{
         const open=event.newState==='open';if(open&&this.blocked()){this.close();return;}this.resetPreview();this.setState({open,modelsOpen:open&&!this.selected(),error:''},()=>{
-            if(open){this.position();(this.range.current&&!this.range.current.disabled?this.range.current:this.menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)'))?.focus();}
+            if(open){this.position();(this.range.current&&!this.range.current.disabled?this.range.current:this.menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)'))?.focus({preventScroll:true});}
         });
     };
     render(){
@@ -101,7 +101,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
         const blocked=this.blocked(),id='composer-model-menu-'+sessionId,error=this.props.error||this.state.error;
         const style={'--thinking-progress':progress+'%','--thinking-fill-width':progress>=100?'100%':`calc(18px + (100% - 36px) * ${progress/100})`,'--thinking-violet':progress/100} as React.CSSProperties;
         return <div className="composer-model-control composer-model-picker">
-            <button ref={this.trigger} type="button" className="composer-model-trigger" popoverTarget={id} aria-haspopup="dialog" aria-controls={id} aria-expanded={this.state.open} aria-label="会话模型与思考等级" disabled={disabled||locked||busy||this.state.saving||this.unavailable()||!models.length} title={locked?'当前会话已绑定固定授权，模型不能更改':error||(!models.length?'请先在设置中保存供应商、模型与思考档位':current?current.provider+' / '+current.model+' · '+label:'请先在设置中配置模型')}>
+            <button ref={this.trigger} type="button" className="composer-model-trigger" popoverTarget={id} aria-haspopup="dialog" aria-controls={id} aria-expanded={this.state.open} aria-label="会话模型与思考等级" disabled={disabled||locked||busy||this.state.saving||!!this.pending||this.unavailable()||!models.length} title={locked?'当前会话已绑定固定授权，模型不能更改':error||(!models.length?'请先在设置中保存供应商、模型与思考档位':current?current.provider+' / '+current.model+' · '+label:'请先在设置中配置模型')}>
                 {this.state.open&&!this.state.modelsOpen?<span className="composer-thinking-value">选择强度</span>:<><span className="composer-model-name">{selected?.model.name||current?.model||'选择模型'}</span>{label?<span className="composer-thinking-value">{label}</span>:null}</>}<Icon name="chevron" size={11}/>
             </button>
             {this.unavailable()&&error?<span className="composer-model-error" role="status">{error}</span>:null}
@@ -122,7 +122,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
                 <div id={id+'-models'} className="composer-model-models-view" data-expanded={this.state.modelsOpen} inert={!this.state.modelsOpen} aria-hidden={!this.state.modelsOpen}>
                     <div role="group" aria-label="已配置模型">{models.map(row=><button type="button" key={JSON.stringify([row.provider.provider,row.model.model])} role="menuitemradio" aria-checked={current?.provider===row.provider.provider&&current.model===row.model.model} disabled={blocked||!row.model.reasoning.levels.some(level=>level.id===row.model.reasoning.defaultLevel)} className="composer-model-option" onClick={()=>{if(scope())void this.chooseModel(row.provider.provider,row.model.model);}}><span><strong>{row.model.name}</strong><small>{row.provider.name}</small></span>{current?.provider===row.provider.provider&&current.model===row.model.model?<Icon name="check" size={15}/>:null}</button>)}</div>
                 </div>
-                {this.state.saving?<p className="composer-model-note" role="status">正在保存…</p>:error?<p className="composer-model-error" role="alert">{error}</p>:!models.length?<p className="composer-model-note">还没有可用模型，请先在设置中添加。</p>:null}
+                <p className={'composer-model-status '+(error?'composer-model-error':'composer-model-note')} role={error?'alert':'status'} aria-live="polite">{this.state.saving?'正在保存…':error||(!models.length?'还没有可用模型，请先在设置中添加。':'\u00a0')}</p>
             </div>
         </div>;
     }

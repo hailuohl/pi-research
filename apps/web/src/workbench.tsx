@@ -7,15 +7,13 @@ import {ScrollHistory} from './scroll-history.js';
 import {MessageQueue,type QueueMessage} from './message-queue.js';
 import {ComputeWait} from './compute-wait.js';
 import { WakeupPanel } from './campaigns.js';
-import { comparableRuns, comparisonMetric } from './models.js';
-import { ExperimentGraph } from './experiment-graph.js';
 import {ChatWorkflows} from './chat-workflows.js';
 import {ResearchActionCards} from './research-action-cards.js';
 import {ComposerControls} from './composer-controls.js';
 import { api, artifactText, downloadArtifact } from './api.js';
-import type { Bootstrap, MessageAttachment, ModelConfig, ProjectState, Row, Session, Experiment, Run, SessionHistoryPage,SessionView } from './models.js';
+import type { Bootstrap, MessageAttachment, ModelConfig, ProjectState, Row, Session, Message, Experiment, Run, SessionHistoryPage,SessionView } from './models.js';
 import { short, number, date, label } from './models.js';
-import {Icon, Badge, SectionTitle, nativeSelectButton} from './ui.js';
+import {Icon, Badge, nativeSelectButton} from './ui.js';
 export type Perform = (fn: () => Promise<any>, success?: string) => Promise<any>;
 export class Chat extends React.Component<{
     data: ProjectState;
@@ -35,6 +33,7 @@ export class Chat extends React.Component<{
     busy:boolean;
     perform: Perform;
     onModelConfirmed?:(session:Row<Session>)=>void;
+    onMessageConfirmed?:(message:Row<Message>)=>void;
     onToggle: () => void;
     onNew: () => void;
     onExperiments: () => void;
@@ -48,15 +47,72 @@ export class Chat extends React.Component<{
     onSession: (id:string) => void;
     onExperiment: (id:string) => void;
     onRun: (runId:string,experimentId:string) => void;
-}, {draft:string;draftVersion:number;attachments:MessageAttachment[]}> {
-    state:{draft:string;draftVersion:number;attachments:MessageAttachment[]}={draft:'',draftVersion:0,attachments:[]};
+}, {draft:string;draftVersion:number;attachments:MessageAttachment[];sending:boolean}> {
+    state={draft:'',draftVersion:0,attachments:[] as MessageAttachment[],sending:false};
     private mounted=true;
+    private sending=false;
+    private modelSave?:Promise<Row<Session>|undefined>;
+    private pendingSend?:{projectId:string;sessionId:string;draft:string;draftVersion:number;attachments:MessageAttachment[];body:{content:string;mode:Message['mode'];attachmentDocumentIds?:string[]};key:string};
     componentWillUnmount(){this.mounted=false;}
+    private changeModel=(model:ModelConfig)=>{
+        const {session,data}=this.props;
+        if(!session||!this.mounted)return Promise.resolve(undefined);
+        const saving=(async()=>{
+            const confirmed=await api<Row<Session>>(`/sessions/${session.id}/model`,{expectedVersion:session.version,model});
+            if(!this.mounted||this.props.session?.id!==session.id||this.props.data.project.id!==data.project.id||confirmed.id!==session.id||confirmed.projectId!==data.project.id||confirmed.model.provider!==model.provider||confirmed.model.model!==model.model||confirmed.model.thinking!==model.thinking)return;
+            this.props.onModelConfirmed?.(confirmed);
+            return confirmed;
+        })();
+        this.modelSave=saving;
+        const clear=()=>{if(this.modelSave===saving)this.modelSave=undefined;};
+        void saving.then(clear,clear);
+        return saving;
+    };
+    private canSend=()=>{
+        const {data,boot,session,busy,historyAnchor,history}=this.props;
+        const runtimeAvailable=boot.runtime.ready||boot.runtime.code==='MODEL_NOT_CONFIGURED';
+        const modelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking));
+        return this.mounted&&!this.sending&&runtimeAvailable&&modelAvailable&&!busy&&!data.project.archived&&!!session&&session.projectId===data.project.id&&!session.taskId&&session.state!=='archived'&&!historyAnchor&&(!history||history.atLatest);
+    };
+    private submit=async(event:{preventDefault:()=>void})=>{
+        event.preventDefault();
+        const {session,data}=this.props;
+        if(!session||!this.canSend()||!this.state.draft.trim()&&!this.state.attachments.length)return;
+        const {draft,draftVersion}=this.state,attachments=this.state.attachments.slice(),previous=this.pendingSend;
+        const unchanged=previous?.projectId===data.project.id&&previous.sessionId===session.id&&previous.draftVersion===draftVersion&&previous.draft===draft&&JSON.stringify(previous.attachments)===JSON.stringify(attachments);
+        const mode:Message['mode']=['running','queued'].includes(session.state)||this.props.pendingTotal>0?'follow_up':'prompt';
+        const request=unchanged?previous!:{projectId:data.project.id,sessionId:session.id,draft,draftVersion,attachments,body:{content:draft.trim()?draft:'请查看附件。',mode,...(attachments.length?{attachmentDocumentIds:attachments.map(attachment=>attachment.documentVersionId)}:{})},key:crypto.randomUUID()};
+        const modelSave=this.modelSave;
+        const current=()=>this.mounted&&this.props.data.project.id===request.projectId&&this.props.session?.id===request.sessionId;
+        this.pendingSend=request;this.sending=true;this.setState({sending:true});
+        try{
+            return await this.props.perform(async()=>{
+                if(modelSave){
+                    let model:Row<Session>|undefined;
+                    try{model=await modelSave;}catch(error){if(!current())return;throw error;}
+                    if(!current())return;
+                    if(!model)throw Error('当前模型选择未保存；消息草稿与附件已保留。');
+                }
+                if(!current()||this.props.data.project.archived||this.props.session?.state==='archived'||this.props.session?.taskId||this.props.historyAnchor||this.props.history&&!this.props.history.atLatest)return;
+                let confirmed:Row<Message>;
+                try{
+                    confirmed=await api<Row<Message>>(`/sessions/${session.id}/messages`,request.body,'POST',undefined,request.key);
+                    if(confirmed.projectId!==request.projectId||confirmed.sessionId!==request.sessionId||confirmed.role!=='user'||typeof confirmed.id!=='string'||confirmed.content!==request.body.content||confirmed.mode!==request.body.mode||!Number.isSafeInteger(confirmed.version)||confirmed.version<1||!['queued','running','completed','failed','cancelled'].includes(confirmed.status))throw Error('发送回执与当前会话不一致；草稿与附件已保留。');
+                }catch(error){if(!current())return;throw error;}
+                if(this.pendingSend===request)this.pendingSend=undefined;
+                if(!this.mounted||this.props.data.project.id!==request.projectId||this.props.session?.id!==request.sessionId)return confirmed;
+                this.props.onMessageConfirmed?.(confirmed);
+                const sent=new Set(request.attachments.map(attachment=>attachment.documentVersionId));
+                this.setState(current=>({draft:current.draftVersion===request.draftVersion&&current.draft===request.draft?'':current.draft,attachments:current.attachments.filter(attachment=>!sent.has(attachment.documentVersionId))}));
+                return confirmed;
+            });
+        }finally{this.sending=false;if(this.mounted)this.setState({sending:false});}
+    };
     render() {
         const { data, boot, session, messages } = this.props;
         const runtimeAvailable=boot.runtime.ready||boot.runtime.code==='MODEL_NOT_CONFIGURED';
         const sessionModelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking));
-        const canSend = runtimeAvailable && sessionModelAvailable && !this.props.busy && !data.project.archived && !!session && !session.taskId && session.state!=='archived' && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest);
+        const canSend = this.canSend();
         const hasDraft=!!this.state.draft.trim()||this.state.attachments.length>0;
         return <div className="chat-page"><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions"><Badge value={session.state}/><button className="icon-button" disabled={data.project.archived} title="重命名会话" aria-label="重命名会话" onClick={() => {
                     const title = prompt('会话名称', session.title);
@@ -66,33 +122,11 @@ export class Chat extends React.Component<{
  {!runtimeAvailable ? <div className="notice runtime-notice"><span className="status-dot amber"/><div><strong>Pi 尚未就绪</strong><p>{boot.runtime.message} 项目、快照、真实数值实验和证据管理仍可使用。</p></div></div> : runtimeAvailable&&session&&!sessionModelAvailable?<p className="notice runtime-notice">当前会话模型不可用，请选择已启用配置或新建会话。</p>:null}
  {session?.taskId?<p className="notice runtime-notice">这是团队任务会话。请通过团队任务控件发送指令或管理任务。</p>:session?.state==='archived'?<p className="notice runtime-notice">此会话已归档，不能发送消息。</p>:null}
  <div className="conversation" aria-live="polite">{messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <div className="welcome"><div className="welcome-mark">π</div><h2>今天想研究什么？</h2><p>从一个问题开始，逐步形成实验与结果。</p><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>查看实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目文件</span><Icon name="arrow"/></button></div><p className="small muted">这是工作台的引导界面，不是模型生成的研究结果。</p></div> : <ScrollHistory projectId={data.project.id} sessionId={session?.id??''} messages={messages} history={this.props.history} historyAnchor={this.props.historyAnchor} onNavigate={this.props.onHistory} perform={this.props.perform} activeGeneration={session?.state==='running'?session.generation:undefined} liveKey={this.props.stream}/>}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/> : null}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <ConversationActivity content={this.props.stream} active={session?.state==='running'} activity={this.props.activity} truncated={this.props.streamTruncated}/> : null}{session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <PermissionActions key={session.id} sessionId={session.id} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform}/> : null}{session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <ChatWorkflows data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onExperiment={this.props.onExperiment} onRun={this.props.onRun}/> : null}{session?<ResearchActionCards data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onRun={this.props.onRun} onCampaign={this.props.onCampaign} onRegister={this.props.onRegister} onClaim={this.props.onClaim} onUseDocument={this.props.onUseDocument} onSources={this.props.onSources}/> : null}{this.props.archivedHistory}</div>
- <div className="composer-wrap"><div className="composer-stack">{session?.role==='coordinator'?<MessageQueue key={data.project.id+':'+session.id} projectId={data.project.id} sessionId={session.id} messages={this.props.pendingMessages} total={this.props.pendingTotal} nextCursor={this.props.pendingNextCursor} canSteer={this.props.canSteer} disabled={data.project.archived||!!session.taskId||session.state==='archived'||!!this.props.historyAnchor||!!this.props.history&&!this.props.history.atLatest} busy={this.props.busy} perform={this.props.perform}/>:null}<form className="composer" onSubmit={(e: any) => {
-                e.preventDefault();
-                if (!session || !canSend || !this.state.draft.trim()&&!this.state.attachments.length)return;
-                const draft=this.state.draft, draftVersion=this.state.draftVersion, attachments=this.state.attachments.slice(), content=draft.trim()?draft:'请查看附件。', sentIds=new Set(attachments.map(attachment=>attachment.documentVersionId));
-                this.props.perform(async()=>{await api(`/sessions/${session.id}/messages`,{content,...(attachments.length?{attachmentDocumentIds:attachments.map(attachment=>attachment.documentVersionId)}:{})});if(this.mounted&&this.props.session?.id===session.id)this.setState(current=>({draft:current.draftVersion===draftVersion&&current.draft===draft?'':current.draft,attachments:current.attachments.filter(attachment=>!sentIds.has(attachment.documentVersionId))}));});
-            }}><textarea aria-label="研究问题" placeholder={data.project.archived ? '已归档项目，只读查看历史' : session?.taskId ? '请通过团队任务控件操作' : session?.state==='archived' ? '已归档会话不可发送' : this.props.historyAnchor||this.props.history&&!this.props.history.atLatest ? '返回最新消息后可发送' : canSend ? '描述研究问题…' : '配置 Pi 供应商和模型后，在这里开始研究…'} value={this.state.draft} disabled={data.project.archived||!!session?.taskId||session?.state==='archived'} onChange={(e: any) => this.setState(current=>({ draft: e.target.value, draftVersion: current.draftVersion+1 }))} onKeyDown={(e: any) => {
+ <div className="composer-wrap"><div className="composer-stack">{session?.role==='coordinator'?<MessageQueue key={data.project.id+':'+session.id} projectId={data.project.id} sessionId={session.id} messages={this.props.pendingMessages} total={this.props.pendingTotal} nextCursor={this.props.pendingNextCursor} canSteer={this.props.canSteer} disabled={data.project.archived||!!session.taskId||session.state==='archived'||!!this.props.historyAnchor||!!this.props.history&&!this.props.history.atLatest} busy={this.props.busy} perform={this.props.perform}/>:null}<form className="composer" onSubmit={this.submit}><textarea aria-label="研究问题" placeholder={data.project.archived ? '已归档项目，只读查看历史' : session?.taskId ? '请通过团队任务控件操作' : session?.state==='archived' ? '已归档会话不可发送' : this.props.historyAnchor||this.props.history&&!this.props.history.atLatest ? '返回最新消息后可发送' : canSend ? '描述研究问题…' : '配置 Pi 供应商和模型后，在这里开始研究…'} value={this.state.draft} disabled={data.project.archived||!!session?.taskId||session?.state==='archived'} onChange={(e: any) => this.setState(current=>({ draft: e.target.value, draftVersion: current.draftVersion+1 }))} onKeyDown={(e: any) => {
                 if(e.key!=='Enter'||e.shiftKey||e.isComposing||e.nativeEvent?.isComposing||e.keyCode===229||e.nativeEvent?.keyCode===229)return;
                 e.preventDefault();e.currentTarget.form.requestSubmit();
-            }}/><ComposerControls permissionControl={boot.runtime.hostAccess?.available&&session&&!session.taskId?<HostAccessControl key={session.id} sessionId={session.id} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform}/>:null} key={`${data.project.id}:${session?.id??''}`} boot={boot} projectId={data.project.id} projectArchived={!!data.project.archived} modelLocked={!!session?.workingGrantId||!!session?.textCorpusGrantId||!!session?.discoveryGrantId||!!session?.runGrantId||!!data.teams?.some(team=>team.rootSessionId===session?.id&&!['completed','partial','failed','cancelled'].includes(team.state))} session={session} busy={this.props.busy} perform={this.props.perform} attachments={this.state.attachments} onAddAttachment={attachment=>this.setState(current=>({attachments:[...current.attachments,attachment]}))} onRemoveAttachment={documentVersionId=>this.setState(current=>({attachments:current.attachments.filter(attachment=>attachment.documentVersionId!==documentVersionId)}))} canSend={canSend} hasDraft={hasDraft} onSendModel={async(model:ModelConfig)=>session&&this.mounted&&this.props.session?.id===session.id?this.props.perform(async()=>{const confirmed=await api<Row<Session>>(`/sessions/${session.id}/model`,{expectedVersion:session.version,model});if(this.mounted&&this.props.session?.id===session.id&&confirmed.id===session.id&&confirmed.model.provider===model.provider&&confirmed.model.model===model.model&&confirmed.model.thinking===model.thinking)this.props.onModelConfirmed?.(confirmed);return confirmed;},'已更新当前会话模型；项目默认模型未更改'):undefined}><div className="chat-collaboration-control"><button type="button" role="switch" aria-label="多智能体模式" aria-checked={data.project.settings.enabled ? 'true' : 'false'} title="项目级设置，同项目所有研究会话共享" className={'switch ' + (data.project.settings.enabled ? 'on' : '')} disabled={this.props.busy || data.project.archived || !session || !!session.taskId || session.state === 'archived'} onClick={this.props.onToggle}><span/></button><span>多智能体</span></div></ComposerControls></form></div><div className="composer-caption composer-caption-note">固定快照 · 显式审批 · 可追溯证据 <span>Enter 发送<span className="host-extra-key"> · Shift + Enter 换行 · Ctrl/⌘ + Enter 发送</span></span></div></div></div>;
+            }}/><ComposerControls permissionControl={boot.runtime.hostAccess?.available&&session&&!session.taskId?<HostAccessControl key={session.id} sessionId={session.id} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform}/>:null} key={`${data.project.id}:${session?.id??''}`} boot={boot} projectId={data.project.id} projectArchived={!!data.project.archived} modelLocked={!!session?.workingGrantId||!!session?.textCorpusGrantId||!!session?.discoveryGrantId||!!session?.runGrantId||!!data.teams?.some(team=>team.rootSessionId===session?.id&&!['completed','partial','failed','cancelled'].includes(team.state))} session={session} busy={this.props.busy} perform={this.props.perform} attachments={this.state.attachments} onAddAttachment={attachment=>this.setState(current=>({attachments:[...current.attachments,attachment]}))} onRemoveAttachment={documentVersionId=>this.setState(current=>({attachments:current.attachments.filter(attachment=>attachment.documentVersionId!==documentVersionId)}))} canSend={canSend} hasDraft={hasDraft} onSendModel={model=>session&&this.props.session?.id===session.id&&this.props.data.project.id===data.project.id?this.changeModel(model):Promise.resolve(undefined)}><div className="chat-collaboration-control"><button type="button" role="switch" aria-label="多智能体模式" aria-checked={data.project.settings.enabled ? 'true' : 'false'} title="项目级设置，同项目所有研究会话共享" className={'switch ' + (data.project.settings.enabled ? 'on' : '')} disabled={this.props.busy || data.project.archived || !session || !!session.taskId || session.state === 'archived'} onClick={this.props.onToggle}><span/></button><span>多智能体</span></div></ComposerControls></form></div><div className="composer-caption composer-caption-note">固定快照 · 显式审批 · 可追溯证据 <span>Enter 发送<span className="host-extra-key"> · Shift + Enter 换行 · Ctrl/⌘ + Enter 发送</span></span></div></div></div>;
     }
-}
-export function Experiments({ data, selected, onSelect, onChat, onRun }: {
-    data: ProjectState;
-    selected: string;onChat:()=>void;
-    onSession?:(id:string)=>void;
-    onSelect: (id: string) => void;
-    onRun?: (runId:string,experimentId:string)=>void;
-}) {
-    const measured = comparableRuns(data, selected);
-    const metric=comparisonMetric(data,selected);
-    const max=Math.max(...measured.map(r=>Math.abs(r.metrics![metric.key])),0.000001);
-    return <div className="page-scroll"><SectionTitle title="实验与运行" sub="实验血缘、固定协议与真实观测，始终分开记录。"/>
- <section className="surface"><div className="surface-heading"><div><h2>从研究对话开始</h2><p className="small muted">在研究对话中描述实验目标，由智能体读取配置、创建方案并发起运行。</p></div><button className="secondary" onClick={onChat}>返回当前研究对话</button></div></section>
- {data.experiments.length ? <ExperimentGraph key={data.project.id} data={data} selected={selected} onSelect={onSelect}/> : <section className="surface"><div className="surface-heading"><h2>实验血缘</h2></div><p className="inline-empty">尚无实验节点。请在研究对话中描述目标，由智能体创建实验方案。</p></section>}
- <div className="section-kpis"><div><strong>{data.experiments.length.toString().padStart(2, '0')}</strong><span>实验节点</span></div><div><strong>{data.runs.length.toString().padStart(2, '0')}</strong><span>正式运行</span></div><div><strong>{data.runs.filter(r => r.integrity === 'complete').length.toString().padStart(2, '0')}</strong><span>完整结果</span></div><div><strong>{data.evidence.length.toString().padStart(2, '0')}</strong><span>证据记录</span></div></div>
- <section className="surface"><div className="surface-heading"><h2>运行记录</h2><span className="small muted">退出成功 ≠ 假设成立</span></div>{data.runs.length ? <div className="table-wrap"><table><thead><tr><th>实验 / Run</th><th>执行</th><th>完整性</th><th>实测指标（按运行契约）</th></tr></thead><tbody>{data.runs.slice().reverse().map(r => <tr key={r.id} onClick={() => onSelect(r.experimentId)} className={r.experimentId === selected ? 'selected-row' : ''}><td><button className="text-button" onClick={(event:any)=>{event.stopPropagation();if(onRun)onRun(r.id,r.experimentId);else onSelect(r.experimentId);}}>{data.experiments.find(e => e.id === r.experimentId)?.title} · {short(r.id)}</button><small>{date(r.createdAt)}</small></td><td><Badge value={r.state}/></td><td><Badge value={r.integrity}/></td><td className="numeric">{Object.entries(r.manifest.contract.metrics).map(([k,m])=><div key={k}>{k}: {number(r.metrics?.[k])} {m.unit}</div>)}</td></tr>)}</tbody></table></div> : <div className="inline-empty">准备快照并获得批准后，运行会显示在这里。</div>}</section>
- {measured.length ? <section className="surface"><div className="surface-heading"><h2>同协议结果速览</h2><span className="small muted">{metric.key} · {metric.direction==='max'?'越高越好':'越低越好'} · {metric.unit} · 同一契约</span></div><div className="metric-bars">{measured.map(r => <div className="metric-row" key={r.id}><span>{data.experiments.find(e => e.id === r.experimentId)?.title}</span><div className="metric-track"><div style={{ width: Math.max(0.5, Math.abs(r.metrics![metric.key]) / max * 100) + '%' }}/></div><code>{number(r.metrics![metric.key])}</code></div>)}</div><p className="footnote">长度表示绝对值，仅作数值速览；优劣由指标方向及完整证据判断。不同契约不混比，执行成功不等于假设成立。</p></section> : null}</div>;
 }
 export function OutcomeReview({run,perform,readOnly=false}:{run:Row<Run>;perform:Perform;readOnly?:boolean}) {
     if(!['succeeded','failed','cancelled'].includes(run.state))return null;
@@ -166,11 +200,11 @@ export class Inspector extends React.Component<{
         const teamIds = new Set(teams.map(t => t.id));
         const inlineReviewTeams=new Set(this.props.inlineWorkflows?(data.reviews??[]).filter(r=>r.producerSessionId===this.props.sessionId).map(r=>r.teamId):[]);
         const pendingTeams = data.approvals.filter(a => a.subjectKind === 'team' && a.status === 'pending' && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
-        return <aside className={'inspector' + (this.props.embedded ? ' embedded-inspector' : '')} aria-label={this.props.embedded ? '当前会话协作空间' : undefined}>
- {!this.props.embedded ? <div className="inspector-title"><Icon name={this.props.tab === 'experiments' ? 'experiment' : 'branch'}/><h2>{this.props.tab === 'experiments' ? '实验详情' : '协作空间'}</h2><span className="small muted">本地</span></div> : null}
+        return <aside className={'inspector' + (this.props.embedded ? ' embedded-inspector' : '')} aria-label={this.props.tab==='experiments'?'实验与运行详情':this.props.embedded ? '当前会话协作空间' : undefined}>
+ {!this.props.embedded||this.props.tab==='experiments' ? <div className="inspector-title"><Icon name={this.props.tab === 'experiments' ? 'experiment' : 'branch'}/><h2>{this.props.tab === 'experiments' ? '实验详情' : '协作空间'}</h2><span className="small muted">本地</span></div> : null}
  {this.props.tab === 'experiments' && e ? <div className="inspector-section"><div className="detail-title"><h3>{e.title}</h3><div data-testid="selected-experiment-state"><Badge value={e.lifecycle}/></div></div><p className="detail-hypothesis">{e.hypothesis}</p><dl className="details"><dt>实验 ID</dt><dd><code>{short(e.id)}</code></dd><dt>方案修订</dt><dd>v{e.revision}</dd><dt>固定入口</dt><dd><code>{e.contract.command.join(' ')}</code></dd><dt>计算方式</dt><dd>{e.contract.runner === 'trusted-example' ? '受信本地数值示例' : e.contract.runner === 'local' ? '本地 · 当前用户权限（不隔离）' : e.contract.runner === 'ssh' ? 'SSH · 固定镜像隔离运行' : 'Docker · 固定镜像隔离运行'}</dd><dt>数据版本</dt><dd>{e.contract.datasetVersion}</dd></dl><button className="secondary" onClick={this.props.onConfig}>查看只读配置</button>
- {this.props.selectedRun&&!run?<p role="alert" className="error-text">指定 Run 不属于当前实验或已不可用，未显示其他运行。</p>:null}{run ? <div className="run-detail"><label>查看运行<select aria-label="查看运行" value={run.id} onChange={(event:any)=>this.props.onRun?.(event.target.value)}>{nativeSelectButton}{data.runs.filter(r=>r.experimentId===e.id).slice().reverse().map(r=><option key={r.id} value={r.id}>{date(r.createdAt)} · {short(r.id)} · {label(r.state)}</option>)}</select></label><h4>运行 <code>{short(run.id)}</code></h4>{run.execution?<dl className="details"><dt>Docker context</dt><dd>{run.execution.dockerContext}</dd><dt>实际镜像 ID</dt><dd><code className="digest">{run.execution.imageId??'等待容器预检'}</code></dd></dl>:null}<div className="actions"><Badge value={run.state}/><Badge value={run.integrity}/></div>{run.metrics ? <dl className="details">{Object.entries(run.metrics).map(([k, v]) => <div className="detail-pair" key={k}><dt>{k}</dt><dd className="numeric">{number(v)}</dd></div>)}</dl> : null}{['queued','submitting','running','cancelling','unknown'].includes(run.state)?<ComputeWait data={data} kind="run" id={run.id} />:null}<OutcomeReview run={run} perform={perform} readOnly={data.project.archived}/><p className="small muted">科研判断：{run.judgment === 'pending' ? '尚未判定' : run.judgment}</p>{run.error ? <p className="error-text">{run.error}</p> : null}{['queued', 'running', 'submitting'].includes(run.state) ? <button className="danger-outline" disabled={data.project.archived} onClick={() => perform(() => api(`/runs/${run.id}/cancel`, {}), '已请求取消指定实验')}>取消这个实验</button> : null}<RunFiles key={run.id} run={run} data={data} perform={perform}/></div> : null}</div> : null}
- <details className="inspector-collaboration" open={pendingTeams.length>0||['active','paused','draining','failed','partial'].includes(team?.state??'')}><summary>协作计划与结果<span>{pendingTeams.length?'待审批':team?label(team.state):'暂无任务'}</span></summary><div className="inspector-section">{this.props.tab==='chat'?<p className="small muted">协作计划由当前主会话中的 Pi 根据对话需要生成；已有任务状态和结果会保留在这里。</p>:<p className="small muted">协作计划由主会话中的 Pi 根据对话需要生成；已有任务状态和结果会保留在这里。</p>}</div>
+ {this.props.selectedRun&&!run?<p role="alert" className="error-text">指定 Run 不属于当前实验或已不可用，未显示其他运行。</p>:null}{run ? <div className="run-detail"><label>查看运行<select aria-label="查看运行" value={run.id} onChange={(event:any)=>this.props.onRun?.(event.target.value)}>{nativeSelectButton}{data.runs.filter(r=>r.experimentId===e.id).slice().reverse().map(r=><option key={r.id} value={r.id}>{date(r.createdAt)} · {short(r.id)} · {label(r.state)}</option>)}</select></label><h4>运行 <code>{short(run.id)}</code></h4>{run.execution?<dl className="details"><dt>Docker context</dt><dd>{run.execution.dockerContext}</dd><dt>实际镜像 ID</dt><dd><code className="digest">{run.execution.imageId??'等待容器预检'}</code></dd></dl>:null}<div className="actions"><Badge value={run.state}/><Badge value={run.integrity}/></div>{run.metrics ? <dl className="details">{Object.entries(run.metrics).map(([k, v]) => <div className="detail-pair" key={k}><dt>{k}</dt><dd className="numeric">{number(v)} {e.contract.metrics[k]?.unit}{e.contract.metrics[k]?' · '+(e.contract.metrics[k].direction==='max'?'越高越好':'越低越好'):null}</dd></div>)}</dl> : null}{['queued','submitting','running','cancelling','unknown'].includes(run.state)?<ComputeWait data={data} kind="run" id={run.id} />:null}<OutcomeReview run={run} perform={perform} readOnly={data.project.archived}/><p className="small muted">科研判断：{run.judgment === 'pending' ? '尚未判定' : run.judgment}</p>{run.error ? <p className="error-text">{run.error}</p> : null}{['queued', 'running', 'submitting'].includes(run.state) ? <button className="danger-outline" disabled={data.project.archived} onClick={() => perform(() => api(`/runs/${run.id}/cancel`, {}), '已请求取消指定实验')}>取消这个实验</button> : null}<RunFiles key={run.id} run={run} data={data} perform={perform}/></div> : null}</div> : null}
+ {this.props.tab!=='experiments'?<details className="inspector-collaboration" open={pendingTeams.length>0||['active','paused','draining','failed','partial'].includes(team?.state??'')}><summary>协作计划与结果<span>{pendingTeams.length?'待审批':team?label(team.state):'暂无任务'}</span></summary><div className="inspector-section">{this.props.tab==='chat'?<p className="small muted">协作计划由当前主会话中的 Pi 根据对话需要生成；已有任务状态和结果会保留在这里。</p>:<p className="small muted">协作计划由主会话中的 Pi 根据对话需要生成；已有任务状态和结果会保留在这里。</p>}</div>
  {pendingTeams.map(a => {
      const pendingTeam=teams.find(t=>t.id===a.subjectId),canStart=data.project.settings.enabled&&pendingTeam?.state==='awaiting_approval'&&pendingTeam.delegationEnabled;
      return <div className="inspector-section" key={a.id}><div className="small-label">待批准的协作计划</div><h3>{pendingTeam?.goal}</h3><p className="small muted">{a.reason}</p>{!canStart?<p className="small muted" role="status">此计划已停止；请在对话中重新提出任务。</p>:null}<button className="primary full" disabled={data.project.archived||!canStart} onClick={() => { if (this.props.data.project.archived||!canStart) return; perform(async () => { await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true }); await api(`/teams/${a.subjectId}/activate`, {}); }, '协作计划已批准'); }}>批准并启动协作</button><button className="text-button" disabled={data.project.archived?true:undefined} onClick={() => { if(this.props.data.project.archived)return; return perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false })); }}>拒绝此计划</button></div>;
@@ -180,7 +214,7 @@ export class Inspector extends React.Component<{
                             if (reason)
                                 perform(() => api(`/tasks/${t.id}/manual-review`, { verdict: 'accepted', reason }));
  }}>人工确认验收</button> : null}</div>)}{budget ? <div className="budget-note">尝试额度：{budget.used} 已结算 / {budget.reserved} 已预留 / {budget.unknown} 待对账<br />总额度 {budget.limit} 次。此额度不是供应商账单上限。</div> : null}<div className="actions wrap">{team.state === 'active' ? <button className="secondary compact" disabled={data.project.archived} onClick={() => perform(() => api(`/teams/${team.id}/pause`, {}))}>暂停分配</button> : null}{team.state === 'paused' ? <button className="secondary compact" disabled={data.project.archived} onClick={() => perform(() => api(`/teams/${team.id}/resume`, {}))}>恢复</button> : null}<button className="secondary compact" disabled={data.project.archived} onClick={() => this.props.onDirective(team.id)}>引导 / 改变目标</button></div></div> : <div className="inspector-section muted small">{this.props.tab==='chat'?'协作计划由当前主会话中的 Pi 按需生成；不会在 Inspector 中手动创建，已有结果会保留。':'协作计划由主会话中的 Pi 按需生成；已有结果会保留。'}</div>}
-</details>
+</details>:null}
  <div className="inspector-footer"><span className="status-dot"/>所有结果写入本地数据库</div></aside>;
     }
 }

@@ -62,3 +62,5 @@
 @keyframes composer-thinking-drift{0%{opacity:.12;transform:translateX(-4px)}45%{opacity:.58}100%{opacity:.12;transform:translateX(7px)}}
 @media(pointer:coarse){.composer-model-menu .composer-model-option,.composer-model-menu .composer-model-heading>.composer-model-name{min-height:44px}.composer-thinking-range-wrap,.composer-model-menu .composer-thinking-input{height:44px}.composer-thinking-rail,.composer-thinking-stars{top:6.5px}}
 @media(prefers-reduced-motion:reduce){.composer-model-menu,.composer-model-menu *{animation:none!important;transition:none!important}}
+
+.composer-model-menu .composer-model-status{min-height:18px}

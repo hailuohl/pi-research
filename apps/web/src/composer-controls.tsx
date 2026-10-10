@@ -31,7 +31,7 @@ interface Props {
 interface State { config: ConnectorConfig | null; sourceDraft: Record<SourceId, boolean>; sourcesOpen: boolean; loading: boolean; loadingError: string; saving: boolean; uploadError: string; uploading: boolean;attachmentTypes:AttachmentTypes|null }
 
 const configCopy = (config: ConnectorConfig) => Object.fromEntries(SOURCES.map(source => [source, !!config.enabled?.[source]])) as Record<SourceId, boolean>;
-const modelKey = (model: ModelConfig) => JSON.stringify([model.provider, model.model, model.thinking]);
+const modelKey = (model: Pick<ModelConfig,'provider'|'model'>) => JSON.stringify([model.provider, model.model]);
 function fileType(file: File): MessageAttachment['mediaType'] | undefined {
     const name = file.name.toLowerCase();
     const extensions:Record<string,string>={pdf:'application/pdf',txt:'text/plain',md:'text/markdown',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',gif:'image/gif',mp4:'video/mp4'};
@@ -51,9 +51,9 @@ export class ComposerControls extends React.Component<Props, State> {
     private attachmentRequest=0;
 
     componentDidMount() { void this.loadSources();void this.loadAttachmentTypes(); }
-    componentDidUpdate(previous: Props) { if (previous.projectId !== this.props.projectId) void this.loadSources();if(previous.boot!==this.props.boot||previous.session?.id!==this.props.session?.id||JSON.stringify(previous.session?.model)!==JSON.stringify(this.props.session?.model))void this.loadAttachmentTypes(); }
+    componentDidUpdate(previous: Props) { if (previous.projectId !== this.props.projectId) void this.loadSources();if(previous.boot.modelManagement?.version!==this.props.boot.modelManagement?.version||previous.boot.modelManagementError!==this.props.boot.modelManagementError||previous.session?.id!==this.props.session?.id||previous.session?.model.provider!==this.props.session?.model.provider||previous.session?.model.model!==this.props.session?.model.model)void this.loadAttachmentTypes(); }
     componentWillUnmount() { this.mounted = false; this.request++;this.attachmentRequest++; }
-    private async loadAttachmentTypes(){const session=this.props.session,request=++this.attachmentRequest;this.setState({attachmentTypes:null});if(!session)return;try{const types=await api<AttachmentTypes>(`/sessions/${session.id}/attachment-types`);if(this.mounted&&request===this.attachmentRequest&&this.props.session?.id===session.id&&modelKey(this.props.session.model)===modelKey(session.model))this.setState({attachmentTypes:types,uploadError:''});}catch(error){if(this.mounted&&request===this.attachmentRequest)this.setState({uploadError:error instanceof Error?error.message:String(error)});}}
+    private async loadAttachmentTypes(){const session=this.props.session,request=++this.attachmentRequest;this.setState({attachmentTypes:null});if(!session)return;try{const types=await api<AttachmentTypes>(`/sessions/${session.id}/attachment-types`);if(this.mounted&&request===this.attachmentRequest&&this.props.session?.id===session.id&&modelKey(this.props.session.model)===modelKey(session.model)&&modelKey(types.model)===modelKey(session.model))this.setState({attachmentTypes:types,uploadError:''});}catch(error){if(this.mounted&&request===this.attachmentRequest)this.setState({uploadError:error instanceof Error?error.message:String(error)});}}
     private allowedTypes(){const available=this.state.attachmentTypes,model=this.props.session?.model;return available&&available.model.provider===model?.provider&&available.model.model===model?.model?available.types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:32*1024*1024,native:false},{mediaType:'text/markdown',extensions:['.md'],maxBytes:32*1024*1024,native:false}];}
 
     private async loadSources() {
@@ -143,7 +143,7 @@ export class ComposerControls extends React.Component<Props, State> {
                 <div className="grow"/>
                 <ComposerModelMenu sessionId={session?.id??'none'} current={currentModel} management={boot.modelManagement} error={boot.modelManagementError} busy={busy} disabled={modelDisabled} locked={modelLocked} onSelect={this.props.onSendModel}/>
                 {this.props.permissionControl}
-                <button className="primary compact composer-submit-control" type={showStop?'button':'submit'} aria-label={showStop?'停止模型':executing?'排队发送':'发送'} title={showStop?'停止当前对话任务':executing?'发送到队列':'发送消息'} data-action={showStop?'stop':'send'} disabled={showStop?busy||projectArchived:!canSend||!hasDraft||!session||unsupported} onClick={showStop?()=>this.stopSession(session!.id):undefined}><Icon name={showStop?'stop':'arrow'} size={16}/>{showStop?'停止':'发送'}</button>
+                <button className="primary compact composer-submit-control" type={showStop?'button':'submit'} aria-label={showStop?'停止模型':executing?'排队发送':'发送'} title={showStop?'停止当前对话任务':executing?'当前工作结束后处理':'发送消息'} data-action={showStop?'stop':'send'} disabled={showStop?busy||projectArchived:!canSend||!hasDraft||!session||unsupported} onClick={showStop?()=>this.stopSession(session!.id):undefined}><Icon name={showStop?'stop':'arrow'} size={16}/>{showStop?'停止':'发送'}</button>
             </div>
         </>;
     }

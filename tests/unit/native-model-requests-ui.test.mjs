@@ -9,7 +9,7 @@ const find=(tree,predicate)=>elements(tree).find(predicate);
 const response=data=>({ok:true,json:async()=>data});
 const failed=(status,message)=>({ok:false,status,json:async()=>({error:{message}})});
 const model={provider:'owner',model:'research',thinking:'deep'};
-const session={id:'session',version:1,role:'coordinator',state:'idle',model};
+const session={id:'session',projectId:'project',version:1,role:'coordinator',state:'idle',model};
 const source={kind:'document',id:'pdf',artifactId:'pdf-artifact',title:'Research.pdf',digest:'a'.repeat(64),size:1024,mediaType:'application/pdf',scope:'whole-file'};
 const video={kind:'media',id:'video',artifactId:'video-artifact',title:'Experiment.mp4',digest:'b'.repeat(64),size:2048,mediaType:'video/mp4',scope:'whole-file'};
 const available={declared:true,state:'available',reason:'Native adapter available'};

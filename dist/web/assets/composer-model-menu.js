@@ -13,7 +13,7 @@ class ComposerModelMenu extends React.Component {
     this.models = () => this.props.management?.providers.filter((p) => p.enabled && !p.deletedAt && !p.requiresCredential).flatMap((provider) => provider.models.filter((m) => m.enabled && !m.deletedAt).map((model) => ({ provider, model }))) ?? [];
     this.selected = () => this.models().find((row) => row.provider.provider === this.props.current?.provider && row.model.model === this.props.current?.model);
     this.unavailable = () => !this.props.management || !!this.props.error;
-    this.blocked = () => !this.alive || this.props.disabled || this.props.locked || this.props.busy || this.state.saving || this.unavailable();
+    this.blocked = () => !this.alive || this.props.disabled || this.props.locked || this.props.busy || this.state.saving || !!this.pending || this.unavailable();
     this.position = () => {
       const menu = this.menu.current, trigger = this.trigger.current;
       if (!menu?.matches(":popover-open") || !trigger) return;
@@ -37,7 +37,7 @@ class ComposerModelMenu extends React.Component {
         event.preventDefault();
         event.stopPropagation();
         this.close();
-        this.trigger.current?.focus();
+        this.trigger.current?.focus({ preventScroll: true });
         return;
       }
       if (event.target.tagName === "INPUT" || !this.state.modelsOpen || !["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
@@ -45,7 +45,7 @@ class ComposerModelMenu extends React.Component {
       const items = Array.from(this.menu.current?.querySelectorAll('button[role="menuitemradio"]:not(:disabled)') ?? []);
       if (!items.length) return;
       const current = items.indexOf(document.activeElement), next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-      items[next].focus();
+      items[next].focus({ preventScroll: true });
     };
     this.choose = async (model) => {
       if (this.blocked() || !this.models().some((row) => row.provider.provider === model.provider && row.model.model === model.model && row.model.reasoning.levels.some((level) => level.id === model.thinking))) return;
@@ -131,7 +131,7 @@ class ComposerModelMenu extends React.Component {
       this.setState({ open, modelsOpen: open && !this.selected(), error: "" }, () => {
         if (open) {
           this.position();
-          (this.range.current && !this.range.current.disabled ? this.range.current : this.menu.current?.querySelector("button:not(:disabled)"))?.focus();
+          (this.range.current && !this.range.current.disabled ? this.range.current : this.menu.current?.querySelector("button:not(:disabled)"))?.focus({ preventScroll: true });
         }
       });
     };
@@ -169,7 +169,7 @@ class ComposerModelMenu extends React.Component {
     const blocked = this.blocked(), id = "composer-model-menu-" + sessionId, error = this.props.error || this.state.error;
     const style = { "--thinking-progress": progress + "%", "--thinking-fill-width": progress >= 100 ? "100%" : `calc(18px + (100% - 36px) * ${progress / 100})`, "--thinking-violet": progress / 100 };
     return /* @__PURE__ */ jsxs("div", { className: "composer-model-control composer-model-picker", children: [
-      /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "composer-model-trigger", popoverTarget: id, "aria-haspopup": "dialog", "aria-controls": id, "aria-expanded": this.state.open, "aria-label": "\u4F1A\u8BDD\u6A21\u578B\u4E0E\u601D\u8003\u7B49\u7EA7", disabled: disabled || locked || busy || this.state.saving || this.unavailable() || !models.length, title: locked ? "\u5F53\u524D\u4F1A\u8BDD\u5DF2\u7ED1\u5B9A\u56FA\u5B9A\u6388\u6743\uFF0C\u6A21\u578B\u4E0D\u80FD\u66F4\u6539" : error || (!models.length ? "\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u4FDD\u5B58\u4F9B\u5E94\u5546\u3001\u6A21\u578B\u4E0E\u601D\u8003\u6863\u4F4D" : current ? current.provider + " / " + current.model + " \xB7 " + label : "\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E\u6A21\u578B"), children: [
+      /* @__PURE__ */ jsxs("button", { ref: this.trigger, type: "button", className: "composer-model-trigger", popoverTarget: id, "aria-haspopup": "dialog", "aria-controls": id, "aria-expanded": this.state.open, "aria-label": "\u4F1A\u8BDD\u6A21\u578B\u4E0E\u601D\u8003\u7B49\u7EA7", disabled: disabled || locked || busy || this.state.saving || !!this.pending || this.unavailable() || !models.length, title: locked ? "\u5F53\u524D\u4F1A\u8BDD\u5DF2\u7ED1\u5B9A\u56FA\u5B9A\u6388\u6743\uFF0C\u6A21\u578B\u4E0D\u80FD\u66F4\u6539" : error || (!models.length ? "\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u4FDD\u5B58\u4F9B\u5E94\u5546\u3001\u6A21\u578B\u4E0E\u601D\u8003\u6863\u4F4D" : current ? current.provider + " / " + current.model + " \xB7 " + label : "\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u914D\u7F6E\u6A21\u578B"), children: [
         this.state.open && !this.state.modelsOpen ? /* @__PURE__ */ jsx("span", { className: "composer-thinking-value", children: "\u9009\u62E9\u5F3A\u5EA6" }) : /* @__PURE__ */ jsxs(Fragment, { children: [
           /* @__PURE__ */ jsx("span", { className: "composer-model-name", children: selected?.model.name || current?.model || "\u9009\u62E9\u6A21\u578B" }),
           label ? /* @__PURE__ */ jsx("span", { className: "composer-thinking-value", children: label }) : null
@@ -221,7 +221,7 @@ class ComposerModelMenu extends React.Component {
           ] }),
           current?.provider === row.provider.provider && current.model === row.model.model ? /* @__PURE__ */ jsx(Icon, { name: "check", size: 15 }) : null
         ] }, JSON.stringify([row.provider.provider, row.model.model]))) }) }),
-        this.state.saving ? /* @__PURE__ */ jsx("p", { className: "composer-model-note", role: "status", children: "\u6B63\u5728\u4FDD\u5B58\u2026" }) : error ? /* @__PURE__ */ jsx("p", { className: "composer-model-error", role: "alert", children: error }) : !models.length ? /* @__PURE__ */ jsx("p", { className: "composer-model-note", children: "\u8FD8\u6CA1\u6709\u53EF\u7528\u6A21\u578B\uFF0C\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u6DFB\u52A0\u3002" }) : null
+        /* @__PURE__ */ jsx("p", { className: "composer-model-status " + (error ? "composer-model-error" : "composer-model-note"), role: error ? "alert" : "status", "aria-live": "polite", children: this.state.saving ? "\u6B63\u5728\u4FDD\u5B58\u2026" : error || (!models.length ? "\u8FD8\u6CA1\u6709\u53EF\u7528\u6A21\u578B\uFF0C\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u6DFB\u52A0\u3002" : "\xA0") })
       ] })
     ] });
   }
