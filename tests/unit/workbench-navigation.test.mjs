@@ -276,11 +276,22 @@ test('experiment and Run links keep the same chat session, mounted chat key and 
 
 test('confirmed messages are visible in chat before refresh and reject other projects, sessions and history windows',()=>{
  const app=sessionApp();Object.assign(app.state,{data:{project:{id:'project'},sessions:[idleSession('current')]},messages:[],pendingMessages:[],pendingTotal:0,history:null});
- const row={id:'submitted',kind:'message',projectId:'project',sessionId:'current',version:1,role:'user',status:'queued',content:'submitted once',mode:'prompt'};
- app.confirmSessionMessage(row);assert.equal(app.state.messages[0].content,'submitted once');assert.equal(app.state.messages[0].status,'queued');assert.equal(app.state.pendingMessages[0].id,row.id);assert.equal(app.state.pendingTotal,1);
- app.confirmSessionMessage(row);assert.equal(app.state.messages.length,1);assert.equal(app.state.pendingTotal,1);
- for(const mismatch of [{projectId:'foreign'},{sessionId:'foreign'}])app.confirmSessionMessage({...row,id:'foreign-message',...mismatch});assert.equal(app.state.messages.length,1);
- app.state.historyAnchor={direction:'before',id:'saved-cursor'};app.confirmSessionMessage({...row,id:'another'});assert.equal(app.state.messages.length,1);assert.equal(app.state.historyAnchor.id,'saved-cursor');app.componentWillUnmount();
+ const prompt={id:'submitted',kind:'message',projectId:'project',sessionId:'current',version:1,role:'user',status:'queued',content:'submitted once',mode:'prompt'},followUp={...prompt,id:'follow-up',content:'next round',mode:'follow_up'};
+ app.confirmSessionMessage(prompt);assert.equal(app.state.messages[0].content,'submitted once');assert.equal(app.state.messages[0].status,'queued');assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);
+ app.confirmSessionMessage(prompt);assert.equal(app.state.messages.length,1);assert.equal(app.state.pendingTotal,0);
+ app.confirmSessionMessage(followUp);assert.equal(app.state.messages.length,2);assert.equal(app.state.pendingMessages[0].id,followUp.id);assert.equal(app.state.pendingTotal,1);
+ app.confirmSessionMessage(followUp);assert.equal(app.state.messages.length,2);assert.equal(app.state.pendingTotal,1);
+ app.confirmSessionMessage({...followUp,id:'automation-follow-up',origin:'automation'});app.confirmSessionMessage({...followUp,id:'wakeup-follow-up',wakeupId:'wake-up'});assert.equal(app.state.messages.length,4);assert.deepEqual(app.state.pendingMessages.map(item=>item.id),[followUp.id]);assert.equal(app.state.pendingTotal,1);
+ for(const mismatch of [{projectId:'foreign'},{sessionId:'foreign'}])app.confirmSessionMessage({...followUp,id:'foreign-message',...mismatch});assert.equal(app.state.messages.length,4);
+ app.state.historyAnchor={direction:'before',id:'saved-cursor'};app.confirmSessionMessage({...followUp,id:'another'});assert.equal(app.state.messages.length,4);assert.equal(app.state.historyAnchor.id,'saved-cursor');app.componentWillUnmount();
+});
+
+test('confirmed follow-ups beyond the first twenty preserve the page cursor',()=>{
+ const app=sessionApp(),firstPage=Array.from({length:20},(_,index)=>({id:`queue-${index+1}`,mode:'follow_up',role:'user',status:'queued'}));
+ Object.assign(app.state,{data:{project:{id:'project'},sessions:[idleSession('current')]},messages:[],pendingMessages:firstPage,pendingTotal:20,pendingNextCursor:null,history:null});
+ const followUp={id:'queue-21',kind:'message',projectId:'project',sessionId:'current',version:1,role:'user',status:'queued',content:'next round',mode:'follow_up'};
+ app.confirmSessionMessage(followUp);assert.equal(app.state.pendingMessages.length,20);assert.equal(app.state.pendingTotal,21);assert.equal(app.state.pendingNextCursor,'queue-20');
+ app.confirmSessionMessage({...followUp,id:'queue-22'});assert.equal(app.state.pendingTotal,22);assert.equal(app.state.pendingNextCursor,'queue-20');app.componentWillUnmount();
 });
 
 test('a locally confirmed model aborts an older read and retains current navigation, history and message state',()=>{
@@ -297,8 +308,8 @@ test('the first empty-root message leaves Welcome and is visible in chat while t
  const chatElement=()=>elements(app.render()).find(node=>node.type?.name==='Chat'),element=chatElement(),chat=synchronousState(new element.type(element.props));assert.ok(elements(chat.render()).find(node=>node.props?.className==='welcome'));chat.state.draft=row.content;
  const sending=elements(chat.render()).find(node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});await flush();
  assert.equal(refreshStarted,true);assert.equal(app.state.busy,true);assert.equal(chatElement().key,element.key);chat.props=chatElement().props;
- assert.equal(elements(chat.render()).find(node=>node.props?.className==='welcome'),undefined);const history=elements(chat.render()).find(node=>node.type?.name==='ScrollHistory');assert.deepEqual(history.props.messages.map(message=>message.id),[row.id]);assert.equal(history.props.messages[0].status,'queued');assert.equal(chat.props.pendingMessages[0].id,row.id);
- const {SessionHistory}=await import('../../dist/web/assets/session-history.js'),transcript=synchronousState(new SessionHistory(history.props));const rendered=JSON.stringify(transcript.render());assert.match(rendered,/first research question/);assert.match(rendered,/已提交 · 等待处理/);assert.doesNotMatch(rendered,/已消费/);
+ assert.equal(elements(chat.render()).find(node=>node.props?.className==='welcome'),undefined);const history=elements(chat.render()).find(node=>node.type?.name==='ScrollHistory');assert.deepEqual(history.props.messages.map(message=>message.id),[row.id]);assert.equal(history.props.messages[0].status,'queued');assert.deepEqual(chat.props.pendingMessages,[]);assert.equal(chat.props.pendingTotal,0);
+ const {SessionHistory}=await import('../../dist/web/assets/session-history.js'),transcript=synchronousState(new SessionHistory(history.props));const rendered=JSON.stringify(transcript.render());assert.match(rendered,/first research question/);assert.match(rendered,/已发送/);assert.doesNotMatch(rendered,/已提交 · 等待处理|已完成|已消费/);
  finishRefresh();await sending;assert.equal(app.state.busy,false);chat.componentWillUnmount();app.componentWillUnmount();
 });
 

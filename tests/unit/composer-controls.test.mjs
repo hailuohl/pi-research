@@ -32,7 +32,7 @@ test('composer shares one send/stop button and keeps queued drafts sendable duri
         assert.equal(buttons.length,1);const active=['queued','running'].includes(state);
         assert.equal(buttons[0].props.type,active?'button':'submit');assert.equal(buttons[0].props['aria-label'],active?'停止模型':'发送');assert.equal(buttons[0].props.disabled,!active);
         assert.doesNotMatch(JSON.stringify(view.render()),/停止 Agent/);
-        if(active){view.props={...view.props,hasDraft:true};const send=find(view.render(),n=>n.type==='button'&&n.props.className?.includes('composer-submit-control'));assert.equal(send.props.type,'submit');assert.equal(send.props['aria-label'],'排队发送');assert.equal(send.props.disabled,false);assert.equal(send.props.onClick,undefined);}
+        if(active){view.props={...view.props,hasDraft:true};const send=find(view.render(),n=>n.type==='button'&&n.props.className?.includes('composer-submit-control'));assert.equal(send.props.type,'submit');assert.equal(send.props['aria-label'],state==='running'?'排队发送':'发送');assert.equal(send.props.title,state==='running'?'当前工作结束后处理':'发送消息');assert.equal(send.props.disabled,false);assert.equal(send.props.onClick,undefined);}
     }
 });
 
@@ -239,13 +239,13 @@ test('disabled or deleted current/default models remain visible only as current 
 
 test('new messages wait for the current reply regardless of available steer capability',async t=>{
  const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);
- for(const [state,canSteer,mode] of [['idle',false,'prompt'],['queued',true,'follow_up'],['running',true,'follow_up'],['running',false,'follow_up']]){
+ for(const [state,canSteer,mode,pendingTotal] of [['idle',false,'prompt',0],['idle',false,'prompt',4],['queued',true,'prompt',0],['running',true,'follow_up',0],['running',false,'follow_up',0]]){
   const posts=[],receipts=[];globalThis.fetch=async(url,init)=>{const body=JSON.parse(init.body);posts.push({url,body});return response(submitted(body.content,body.mode));};
-  const view=synchronousState(new Chat(chatProps({session:{...session,state},canSteer,onMessageConfirmed:row=>receipts.push(row)})));view.state.draft='current request';
+  const view=synchronousState(new Chat(chatProps({session:{...session,state},canSteer,pendingTotal,onMessageConfirmed:row=>receipts.push(row)})));view.state.draft='current request';
   await find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});
   assert.deepEqual(posts,[{url:'/api/sessions/s/messages',body:{content:'current request',mode}}]);assert.equal(receipts[0].status,'queued');assert.equal(view.state.draft,'');
   const controls=synchronousState(new ComposerControls(controlsProps({session:{...session,state},canSteer})));
-  if(state==='running')assert.ok(find(controls.render(),node=>node.props?.['aria-label']==='排队发送'));
+  const send=find(controls.render(),node=>node.type==='button'&&node.props.className?.includes('composer-submit-control'));assert.equal(send.props['aria-label'],state==='running'?'排队发送':'发送');
  }
 });
 

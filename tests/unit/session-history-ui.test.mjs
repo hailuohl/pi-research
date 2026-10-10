@@ -89,13 +89,15 @@ test('message reader rejects mismatched identity, version, encoding, and byte bo
 
 test('submitted queued messages show their real pending state while removed messages remain visible and cannot be retried',()=>{
     const reader=synchronousState(new SessionHistory({projectId:'p',sessionId:'s',messages:[
-        {id:'queued',version:1,role:'user',status:'queued',content:'queue preview'},
+        {id:'prompt',version:1,role:'user',status:'queued',mode:'prompt',content:'sent prompt'},
+        {id:'queued',version:1,role:'user',status:'queued',mode:'follow_up',content:'queue preview'},
+        {id:'steer',version:1,role:'user',status:'queued',mode:'steer',content:'steering message'},
         {id:'auto',version:1,role:'user',status:'queued',origin:'automation',content:'automation notice'},
         {id:'removed',version:2,role:'user',status:'cancelled',queueRemoved:true,content:'removed from queue'},
     ],history:null,historyAnchor:null,onNavigate(){},perform(){}}));
     const tree=reader.render(),rendered=JSON.stringify(tree),buttons=[];
     const walk=node=>{if(Array.isArray(node))node.forEach(walk);else if(node&&typeof node==='object'){if(node.type==='button')buttons.push(node);walk(node.props?.children);}};walk(tree);
-    assert.match(rendered,/queue preview/);assert.match(rendered,/已提交 · 等待处理/);assert.match(rendered,/automation notice/);assert.match(rendered,/已移出队列/);assert.equal(buttons.some(button=>String(button.props.children).includes('重试此消息')),false);
+    assert.match(rendered,/sent prompt/);assert.match(rendered,/已发送/);assert.match(rendered,/queue preview/);assert.match(rendered,/steering message/);assert.equal(rendered.match(/已提交 · 等待处理/g)?.length,2);assert.match(rendered,/automation notice/);assert.match(rendered,/已移出队列/);assert.equal(buttons.some(button=>String(button.props.children).includes('重试此消息')),false);
 });
 
 test('a history anchor keeps return-to-live visible after the last newer page',()=>{

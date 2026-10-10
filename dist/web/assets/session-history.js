@@ -130,7 +130,7 @@ class SessionHistory extends React.Component {
               short(current.nativeRequestId)
             ] }) : null,
             /* @__PURE__ */ jsx("time", { dateTime: message.createdAt, title: message.createdAt, children: date(message.createdAt) }),
-            message.queueRemoved ? /* @__PURE__ */ jsx("span", { className: "badge s-cancelled", children: "\u5DF2\u79FB\u51FA\u961F\u5217" }) : message.role === "user" && message.status === "queued" && message.origin !== "automation" ? /* @__PURE__ */ jsx("span", { className: "badge s-queued", children: "\u5DF2\u63D0\u4EA4 \xB7 \u7B49\u5F85\u5904\u7406" }) : message.status && message.status !== "completed" ? /* @__PURE__ */ jsx(Badge, { value: message.status }) : null
+            message.queueRemoved ? /* @__PURE__ */ jsx("span", { className: "badge s-cancelled", children: "\u5DF2\u79FB\u51FA\u961F\u5217" }) : message.role === "user" && message.status === "queued" && message.origin !== "automation" && message.wakeupId == null ? /* @__PURE__ */ jsx("span", { className: "badge s-queued", children: message.mode === "prompt" ? "\u5DF2\u53D1\u9001" : "\u5DF2\u63D0\u4EA4 \xB7 \u7B49\u5F85\u5904\u7406" }) : message.status && message.status !== "completed" ? /* @__PURE__ */ jsx(Badge, { value: message.status }) : null
           ] }),
           message.queueRemoved ? /* @__PURE__ */ jsxs("details", { className: "removed-message-content", children: [
             /* @__PURE__ */ jsx("summary", { children: "\u67E5\u770B\u5DF2\u79FB\u51FA\u961F\u5217\u7684\u539F\u6D88\u606F" }),

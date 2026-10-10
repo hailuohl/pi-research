@@ -143,7 +143,7 @@ export class ComposerControls extends React.Component<Props, State> {
                 <div className="grow"/>
                 <ComposerModelMenu sessionId={session?.id??'none'} current={currentModel} management={boot.modelManagement} error={boot.modelManagementError} busy={busy} disabled={modelDisabled} locked={modelLocked} onSelect={this.props.onSendModel}/>
                 {this.props.permissionControl}
-                <button className="primary compact composer-submit-control" type={showStop?'button':'submit'} aria-label={showStop?'停止模型':executing?'排队发送':'发送'} title={showStop?'停止当前对话任务':executing?'当前工作结束后处理':'发送消息'} data-action={showStop?'stop':'send'} disabled={showStop?busy||projectArchived:!canSend||!hasDraft||!session||unsupported} onClick={showStop?()=>this.stopSession(session!.id):undefined}><Icon name={showStop?'stop':'arrow'} size={16}/>{showStop?'停止':'发送'}</button>
+                <button className="primary compact composer-submit-control" type={showStop?'button':'submit'} aria-label={showStop?'停止模型':session?.state==='running'?'排队发送':'发送'} title={showStop?'停止当前对话任务':session?.state==='running'?'当前工作结束后处理':'发送消息'} data-action={showStop?'stop':'send'} disabled={showStop?busy||projectArchived:!canSend||!hasDraft||!session||unsupported} onClick={showStop?()=>this.stopSession(session!.id):undefined}><Icon name={showStop?'stop':'arrow'} size={16}/>{showStop?'停止':'发送'}</button>
             </div>
         </>;
     }

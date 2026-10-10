@@ -48,7 +48,7 @@ class Chat extends React.Component {
       if (!session || !this.canSend() || !this.state.draft.trim() && !this.state.attachments.length) return;
       const { draft, draftVersion } = this.state, attachments = this.state.attachments.slice(), previous = this.pendingSend;
       const unchanged = previous?.projectId === data.project.id && previous.sessionId === session.id && previous.draftVersion === draftVersion && previous.draft === draft && JSON.stringify(previous.attachments) === JSON.stringify(attachments);
-      const mode = ["running", "queued"].includes(session.state) || this.props.pendingTotal > 0 ? "follow_up" : "prompt";
+      const mode = session.state === "running" ? "follow_up" : "prompt";
       const request = unchanged ? previous : { projectId: data.project.id, sessionId: session.id, draft, draftVersion, attachments, body: { content: draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", mode, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} }, key: crypto.randomUUID() };
       const modelSave = this.modelSave;
       const current = () => this.mounted && this.props.data.project.id === request.projectId && this.props.session?.id === request.sessionId;

@@ -1,0 +1,235 @@
+{
+  "baseline": "f9ce2a87da44a35ac602e1604c5b5f49b6bc3a18",
+  "patchFiles": {
+    "apps/web/src/app.tsx": "49bcd9372232580e51d2fd076b85b12d57938c8bbb24a994a5ee90c80b09608a",
+    "apps/web/src/composer-controls.tsx": "2a11d88bc6a33add2f72fc9af001e0fd18e549fd7a8e10f9bfdf7ab3414099b9",
+    "apps/web/src/message-queue.tsx": "158f9380b157aa2994e57d66b7b0a7c5358e0bf5bd601f8318d202f7e8ccbafe",
+    "apps/web/src/session-history.tsx": "a026b79abd8196b8843b3bc69ff76235849874f2788f265287b34745c3f7e9ee",
+    "apps/web/src/workbench.tsx": "743c850a7d877e7b14d790ef8e931437cf9e7c4630166c8ebff287708129ffac",
+    "dist/packages/pi-adapter/session-history.js": "0bb7c8aaa17b10992645b92485181d224b0ee95003fea5244621ea77d93d2d8b",
+    "dist/packages/pi-adapter/session-history.js.map": "64033317d2c065f2c87d470e9604dc0006c510d691282b8d9a9129d278ce3242",
+    "dist/web/assets/app.js": "d30d45fc31253264202c23a7770592940fb31d5d57ef8e529860ed595051d730",
+    "dist/web/assets/composer-controls.js": "b9f16a46f60c4b0182ee2063131ee0af152101b7826afc60bd821cb7abdaf856",
+    "dist/web/assets/main.js": "e087bc26b692d25a26c0dcf15192119256bada4ba4761a48ff824d6b916a7910",
+    "dist/web/assets/message-queue.js": "73ce6a6be0df1ae51b30fa5739f5f82338b319aafae0588677e016d192c03409",
+    "dist/web/assets/session-history.js": "56921b7f299edb0d9bf8e918fcd81b8369f70cfafc67c16c47117c0ece587888",
+    "dist/web/assets/workbench.js": "e36af1fddcf5065737f0554672264f6a0bf93a7bac72c974c21456d415257506",
+    "packages/pi-adapter/session-history.ts": "8194e07489f182df19bd14b041b21044234a85cdcd9b6ae71d5ad81b20f825e4",
+    "tests/integration/session-permissions-pi-http.test.mjs": "c3313a6b619cfd97f9bcfb209070274ba618da5b65942197ca9b58e9aea8bfe0",
+    "tests/integration/session-queue-http.test.mjs": "d80ac77e203a0c8f3e52a65f0945f40f6b02c2cde0ae3544f9ad6cdbca97cbda",
+    "tests/unit/composer-backend.test.mjs": "d6be5b8f4a1d9198016c4052f287a8d24aac96129df24889298941e0deb54f62",
+    "tests/unit/composer-controls.test.mjs": "5053f15cddf8078345b118c02b662c220620176dea9d742034c50341dfc3bdfd",
+    "tests/unit/message-queue-refresh-ui.test.mjs": "c0957322aa9fc79c12c35300bb23b6e2a2865b3a77e62baf0c1a7edf40d17c98",
+    "tests/unit/message-queue-ui.test.mjs": "be2c62c85c96ce0f6f3a238ad5a726e3d4e6b8e5927d0023d1a86bf1ad23d4bd",
+    "tests/unit/session-history-ui.test.mjs": "30d9541c6b518436ab39d705c7c8a4a598bc6b98b14ce6b0ca7439e16e2319d9",
+    "tests/unit/session-queue.test.mjs": "b4515cc9ae1e8693b325d6379382c380e3bd00a8d3ad1e11e3a55ec6ec9c36fc",
+    "tests/unit/workbench-navigation.test.mjs": "acc8233680c9ea685e0608b141985dcce8abcd5a92d8525a565b9ac000794fe4"
+  },
+  "checks": {
+    "build": {
+      "exitCode": 0
+    },
+    "before": {
+      "tests": 83,
+      "pass": 73,
+      "fail": 10,
+      "log": ".validation/queue-presentation/before-regression.log"
+    },
+    "focused": {
+      "exitCode": 0,
+      "summary": [
+        "ℹ tests 87",
+        "ℹ suites 0",
+        "ℹ pass 87",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 46264.7357"
+      ]
+    },
+    "full": {
+      "exitCode": 1,
+      "summary": [
+        "ℹ tests 1658",
+        "ℹ suites 0",
+        "ℹ pass 1633",
+        "ℹ fail 1",
+        "ℹ cancelled 0",
+        "ℹ skipped 24",
+        "ℹ todo 0",
+        "ℹ duration_ms 311108.4018"
+      ],
+      "concurrency": 4,
+      "log": ".validation/queue-presentation/full-regression.log"
+    },
+    "necessaryFixtureRepair": {
+      "path": "tests/unit/composer-backend.test.mjs",
+      "sourceRuntimeChanged": false,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "log": ".validation/queue-presentation/attachment-regression.log",
+      "unresolvedFailures": 0,
+      "scope": "Preserve the initial prompt attachment assertion; use a follow-up for queue attachment assertions. All original version, permission, retry and branch checks retained."
+    },
+    "cleanBuild": {
+      "identical": true,
+      "files": 658,
+      "distManifestSha256": "801d36c3351bcaf8c832600fee286fcb7f47380bd59a7b10735eede33252e25b"
+    }
+  },
+  "browser": {
+    "synthetic": true,
+    "provider": "local mock through pinned Pi SDK",
+    "externalProviderCalls": false,
+    "bootstrapDelayMs": 1800,
+    "ui": {
+      "initialAcknowledgement": {
+        "transcriptVisible": true,
+        "label": "已发送",
+        "queueStrips": 0
+      },
+      "initialAfterRefresh": {
+        "transcriptVisible": true,
+        "queueStrips": 0
+      },
+      "sendBeforeModelReply": {
+        "ordinaryMessages": 2,
+        "queueStrips": 0
+      },
+      "runningFollowUp": {
+        "queueStrips": 1,
+        "queueRows": 1,
+        "countLabel": "排队中 · 1",
+        "editSaved": true,
+        "cancelRemovedStrip": true,
+        "cancelledHistoryRetained": true
+      },
+      "followUpAfterRefresh": {
+        "queueRows": 1
+      },
+      "afterRelease": {
+        "queueStrips": 0,
+        "answers": 3,
+        "cancelledHistoryRetained": true
+      }
+    },
+    "beforeRelease": {
+      "requests": 1,
+      "held": true,
+      "messages": [
+        {
+          "id": "7021ee1c-60f7-4281-9893-d748314b98ab",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "prompt",
+          "status": "running"
+        },
+        {
+          "id": "c41d05f9-3d3f-4dc5-a63a-8e1b5650fd73",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "prompt",
+          "status": "queued"
+        },
+        {
+          "id": "86af9a38-641e-44c9-9cef-12d6e4ddf2d7",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "follow_up",
+          "status": "cancelled"
+        },
+        {
+          "id": "d7d885d5-b9a0-46d6-b51b-258d4c32cf48",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "follow_up",
+          "status": "queued"
+        }
+      ],
+      "workers": 1
+    },
+    "afterRelease": {
+      "requests": 3,
+      "held": false,
+      "messages": [
+        {
+          "id": "7021ee1c-60f7-4281-9893-d748314b98ab",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "prompt",
+          "status": "completed"
+        },
+        {
+          "id": "c41d05f9-3d3f-4dc5-a63a-8e1b5650fd73",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "prompt",
+          "status": "completed"
+        },
+        {
+          "id": "86af9a38-641e-44c9-9cef-12d6e4ddf2d7",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "follow_up",
+          "status": "cancelled"
+        },
+        {
+          "id": "d7d885d5-b9a0-46d6-b51b-258d4c32cf48",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "user",
+          "mode": "follow_up",
+          "status": "completed"
+        },
+        {
+          "id": "fd39eb28-efb5-4862-9ca7-bff50f60a660",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "assistant",
+          "mode": "prompt",
+          "status": "completed"
+        },
+        {
+          "id": "44e403e7-9946-49e6-bb60-44b214a4fe56",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "assistant",
+          "mode": "prompt",
+          "status": "completed"
+        },
+        {
+          "id": "2f62c2d6-b983-4781-9add-8957497e04cb",
+          "sessionId": "4965c0f0-b99d-4c6e-bb8a-d828c199ea9c",
+          "role": "assistant",
+          "mode": "prompt",
+          "status": "completed"
+        }
+      ],
+      "workers": 0
+    },
+    "fixtureLimitation": "Host.stop is terminal; the isolated fixture was closed and reopened against the same synthetic data before busy-send checks."
+  },
+  "agents": {
+    "design": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high"
+    },
+    "implementation": {
+      "requestedModel": "gpt-6-luna",
+      "requestedEffort": "max"
+    },
+    "independentReview": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high"
+    },
+    "runtimeVerification": "requested; runtime model/effort not echoed"
+  },
+  "limitations": [
+    "24 environment-dependent full-suite checks skipped.",
+    "External paid model providers were not called.",
+    "Message mode uses the client-observed session state at submission; unchanged failed sends retain their original mode and idempotency key."
+  ],
+  "screenshots": {
+    "initial-message.jpg": "672117e7d66f22cb0ef0777356c4aee1151dbe680b059112fc78af6de7e04b08",
+    "follow-up-queue.jpg": "95389d46d19392e465349a0f34dfab42ba5e165fb54215d2755b2f96da710466"
+  }
+}

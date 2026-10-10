@@ -8,7 +8,7 @@ const label=node=>typeof node==='string'?node:Array.isArray(node)?node.map(label
 const button=(view,name)=>nodes(view.render()).find(node=>node.type==='button'&&label(node).includes(name));
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 const response=data=>({ok:true,json:async()=>data});
-const message=(id,version=1)=>({id,projectId:'p',sessionId:'s',role:'user',status:'queued',origin:'direct',version,content:`preview ${id}`,contentBytes:20,previewTruncated:false});
+const message=(id,version=1)=>({id,projectId:'p',sessionId:'s',role:'user',status:'queued',mode:'follow_up',origin:'direct',version,content:`preview ${id}`,contentBytes:20,previewTruncated:false});
 
 test('a parent refresh on page two does not leave a pending editor read locked',async t=>{
   const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});

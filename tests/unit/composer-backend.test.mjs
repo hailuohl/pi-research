@@ -41,8 +41,10 @@ test('message attachments retain fixed references through queues, retry, branch 
   const content='研究🧪\n'.repeat(5000),importDoc=(pid,title,body,mediaType='text/plain')=>s.app.operations.execute(USER,'document_import',{title,mediaType,contentBase64:Buffer.from(body).toString('base64')},{projectId:pid,idempotencyKey:title});
   const doc=await importDoc(s.project.id,'notes.txt',content),pdf=await importDoc(s.project.id,'reference.pdf','%PDF-1.7\nfixture','application/pdf');
   assert.throws(()=>s.app.sessions.send(USER,s.session.id,{content:'新附件须符合当前模型',attachmentDocumentIds:[pdf.id]}),{code:'MODEL_ATTACHMENT_UNSUPPORTED'});
-  const message=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'user',content:'查看附件',mode:'prompt',status:'queued',attachments:attachmentReferences(s.app.store,current(s),[doc.id,pdf.id])});
+  let message=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'user',content:'查看附件',mode:'prompt',status:'queued',attachments:attachmentReferences(s.app.store,current(s),[doc.id,pdf.id])});
   assert.equal(message.attachments.length,2);assert.ok(messageInput(message).includes(message.id));assert.ok(!messageInput(message).includes(content));
+  const initial=s.app.operations.execute(USER,'session_view',{sessionId:s.session.id},{projectId:s.project.id});assert.deepEqual(initial.messages[0].attachments,message.attachments);assert.deepEqual(initial.pendingMessages,[]);
+  message=s.app.store.update('message',message.id,message.version,{mode:'follow_up'});
   const page=s.app.operations.execute(USER,'session_view',{sessionId:s.session.id},{projectId:s.project.id});assert.deepEqual(page.messages[0].attachments,message.attachments);assert.deepEqual(page.pendingMessages[0].attachments,message.attachments);
   const edited=s.app.sessions.queueAction(USER,s.session.id,{messageId:message.id,expectedVersion:message.version,action:'edit',content:'修改正文'});assert.deepEqual(edited.attachments,message.attachments);
   const root=s.app.store.update('session',s.session.id,current(s).version,{state:'running',generation:1,leaseUntil:Date.now()+30000});

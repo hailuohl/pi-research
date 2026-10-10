@@ -6,7 +6,7 @@ import {MessageQueue} from '../../dist/web/assets/message-queue.js';
 const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children)];
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'?node:'';
 const response=data=>({ok:true,json:async()=>data});
-const message=(id,version=1,content=`message ${id}`,extra={})=>({id,projectId:'p',sessionId:'s',role:'user',status:'queued',version,content,contentBytes:new TextEncoder().encode(content).length,previewTruncated:false,...extra});
+const message=(id,version=1,content=`message ${id}`,extra={})=>({id,projectId:'p',sessionId:'s',role:'user',status:'queued',mode:'follow_up',version,content,contentBytes:new TextEncoder().encode(content).length,previewTruncated:false,...extra});
 function queue(messages=[message('m')],overrides={}){
   return synchronousState(new MessageQueue({projectId:'p',sessionId:'s',messages,total:messages.length,nextCursor:null,canSteer:false,disabled:false,busy:false,perform:fn=>fn(),...overrides}));
 }
@@ -18,6 +18,12 @@ test('empty queues have no separate panel, and removing the last item hides the 
   const view=queue([message('m')]);assert.ok(view.render());
   const previous=view.props;view.props={...view.props,messages:[],total:0};view.componentDidUpdate(previous);
   assert.equal(view.render(),null);
+});
+
+test('the first queue page excludes prompts and wakeup messages but accepts follow-ups and steering',()=>{
+  const prompt=message('prompt',1,'initial prompt',{mode:'prompt'}),followUp=message('follow-up'),steer=message('steer',1,'steer',{mode:'steer'}),wakeup=message('wakeup',1,'wakeup',{wakeupId:'wakeup'}),automation=message('automation',1,'automation',{origin:'automation'});
+  const view=queue([prompt,followUp,steer,wakeup,automation],{total:2});
+  assert.deepEqual(view.state.items.map(item=>item.id),['follow-up','steer']);assert.equal(view.state.total,2);view.componentWillUnmount();
 });
 
 test('immediate action appears before edit and remove in the compact row',()=>{

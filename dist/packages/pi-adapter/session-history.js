@@ -84,7 +84,7 @@ export function canSteerSession(store, session) {
 }
 export function sessionQueue(store, session, value = {}) {
     const x = closed(value, ['afterMessageId', 'limit']), limit = integer(x.limit ?? 20, 'limit', 1, 20), anchor = x.afterMessageId === undefined ? undefined : messageMeta(store, session, text(x.afterMessageId, 'afterMessageId', 100));
-    const where = "kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND COALESCE(json_extract(data,'$.origin'),'user')<>'automation' AND json_extract(data,'$.wakeupId') IS NULL AND json_extract(data,'$.status')='queued'";
+    const where = "kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND COALESCE(json_extract(data,'$.origin'),'user')<>'automation' AND json_extract(data,'$.wakeupId') IS NULL AND json_extract(data,'$.status')='queued' AND json_extract(data,'$.mode') IN ('follow_up','steer')";
     const total = Number(store.db.prepare(`SELECT COUNT(*) n FROM records WHERE ${where}`).get(session.projectId, session.id).n);
     const params = [session.projectId, session.id];
     if (anchor)

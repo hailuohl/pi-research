@@ -4,7 +4,7 @@ import { api, downloadArtifact } from "./api.js";
 import { Icon } from "./ui.js";
 const PAGE_LIMIT = 20, READ_LIMIT = 64e3, MAX_CONTENT = 32e3;
 const signature = (p) => JSON.stringify([p.total, p.nextCursor, p.canSteer, p.messages.map((m) => [m.id, m.version, m.status, m.contentBytes])]);
-const isQueuedUser = (m) => m.role === "user" && m.status === "queued" && m.origin !== "automation";
+const isQueuedUser = (m) => m.role === "user" && m.status === "queued" && m.origin !== "automation" && m.wakeupId == null && (m.mode === "follow_up" || m.mode === "steer");
 class MessageQueue extends React.Component {
   constructor() {
     super(...arguments);

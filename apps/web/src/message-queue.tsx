@@ -11,7 +11,7 @@ interface Page {items:QueueMessage[];total:number;nextCursor:string|null;canStee
 interface State {items:QueueMessage[];total:number;nextCursor:string|null;canSteer:boolean;pageStarts:(string|null)[];pageIndex:number;loading:boolean;error:string;readingId:string;editingId:string;editingMessage:QueueMessage|null;editVersion:number;draft:string;actionBusy:boolean;steerRequested:string[];}
 const PAGE_LIMIT=20,READ_LIMIT=64000,MAX_CONTENT=32000;
 const signature=(p:Props)=>JSON.stringify([p.total,p.nextCursor,p.canSteer,p.messages.map(m=>[m.id,m.version,m.status,m.contentBytes])]);
-const isQueuedUser=(m:QueueMessage)=>m.role==='user'&&m.status==='queued'&&m.origin!=='automation';
+const isQueuedUser=(m:QueueMessage)=>m.role==='user'&&m.status==='queued'&&m.origin!=='automation'&&m.wakeupId==null&&(m.mode==='follow_up'||m.mode==='steer');
 
 export class MessageQueue extends React.Component<Props,State> {
     state:State={items:this.props.messages.filter(isQueuedUser),total:this.props.total,nextCursor:this.props.nextCursor,canSteer:this.props.canSteer,pageStarts:[null],pageIndex:0,loading:false,error:'',readingId:'',editingId:'',editingMessage:null,editVersion:0,draft:'',actionBusy:false,steerRequested:[]};

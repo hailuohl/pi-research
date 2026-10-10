@@ -192,8 +192,9 @@ export class App extends React.Component<{}, State> {
             const pending=current.pendingMessages.find(item=>item.id===message.id);
             if(existing&&existing.version>=message.version||pending&&pending.version>message.version)return null;
             const row:QueueMessage={...message,previewTruncated:false,contentBytes:new TextEncoder().encode(message.content).byteLength};
-            const queued=message.role==='user'&&message.status==='queued'&&message.origin!=='automation';
-            return {messages:existing?current.messages.map(item=>item.id===message.id?row:item):[...current.messages,row],pendingMessages:queued?(pending?current.pendingMessages.map(item=>item.id===message.id?row:item):current.pendingMessages.length<20?[...current.pendingMessages,row]:current.pendingMessages):current.pendingMessages,pendingTotal:queued?current.pendingTotal+(pending?0:1):current.pendingTotal};
+            const queued=message.role==='user'&&message.status==='queued'&&message.origin!=='automation'&&message.wakeupId==null&&(message.mode==='follow_up'||message.mode==='steer');
+            const pendingMessages=queued?(pending?current.pendingMessages.map(item=>item.id===message.id?row:item):current.pendingMessages.length<20?[...current.pendingMessages,row]:current.pendingMessages):current.pendingMessages,pendingTotal=queued?current.pendingTotal+(pending?0:1):current.pendingTotal,pendingNextCursor=queued&&!pending&&pendingTotal>20&&current.pendingNextCursor===null?pendingMessages[pendingMessages.length-1]?.id??null:current.pendingNextCursor;
+            return {messages:existing?current.messages.map(item=>item.id===message.id?row:item):[...current.messages,row],pendingMessages,pendingTotal,pendingNextCursor};
         });
     };
     private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'activity'|'error'> {
