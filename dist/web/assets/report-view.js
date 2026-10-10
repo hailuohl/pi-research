@@ -77,7 +77,7 @@ class ReportsView extends React.Component {
       this.reportEpoch++;
       this.referenceEpoch++;
       this.inspectionEpoch++;
-      this.setState({ publications: [], selected: [], selectedClaims: [], selectedCampaigns: [], pendingArtifactId: "", report: null, body: "", reference: null, verifiedReference: null, content: "", cursor: 0, complete: false, reading: false, exported: null, error: "", loading: false, checking: false, verificationError: "", referenceError: "" });
+      this.setState({ publicationOpen: false, publications: [], selected: [], selectedClaims: [], selectedCampaigns: [], pendingArtifactId: "", report: null, body: "", reference: null, verifiedReference: null, content: "", cursor: 0, complete: false, reading: false, exported: null, error: "", loading: false, checking: false, verificationError: "", referenceError: "" });
       if (this.props.selectedReport) void this.open(this.props.selectedReport);
       return;
     }
@@ -86,7 +86,7 @@ class ReportsView extends React.Component {
       else {
         this.reportEpoch++;
         this.referenceEpoch++;
-        this.setState({ report: null, body: "", reference: null, verifiedReference: null, content: "", exported: null, error: "" });
+        this.setState({ publicationOpen: false, report: null, body: "", reference: null, verifiedReference: null, content: "", exported: null, error: "" });
       }
     } else if (this.state.report && provenanceSignature(prev.data, this.state.report.id) !== provenanceSignature(this.props.data, this.state.report.id)) void this.reinspect();
     if (this.state.pendingArtifactId) {
@@ -117,7 +117,7 @@ class ReportsView extends React.Component {
   async open(id) {
     const epoch = ++this.reportEpoch, signature = provenanceSignature(this.props.data, id);
     this.referenceEpoch++;
-    this.setState({ report: null, body: "", loading: true, error: "", checking: false, verificationError: "", reference: null, verifiedReference: null, content: "", cursor: 0, complete: false, reading: false, exported: null });
+    this.setState({ publicationOpen: false, report: null, body: "", loading: true, error: "", checking: false, verificationError: "", reference: null, verifiedReference: null, content: "", cursor: 0, complete: false, reading: false, exported: null });
     try {
       const row = this.props.data.reports.find((r) => r.id === id);
       if (!row) throw Error("\u6B64\u62A5\u544A\u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF1B\u8BF7\u9009\u62E9\u6709\u6548\u8BB0\u5F55\u3002");
@@ -170,21 +170,23 @@ class ReportsView extends React.Component {
     await this.props.perform(() => downloadArtifact(kind === "raw" ? d.rawArtifactId : d.imageArtifactId, kind === "raw" ? `${d.documentVersionId}.pdf` : `${d.documentVersionId}-page-${d.pageNumber}.png`));
   }
   addPublication(result, title) {
-    if (this.state.publications.length >= 20 || this.state.publications.some((p) => p.result.id === result.id) || result.status !== "succeeded" || !result.converged || result.hadErrors || !result.pdf || result.sourceValidity !== "current") return;
+    if (this.props.readOnly || this.state.publications.length >= 20 || this.state.publications.some((p) => p.result.id === result.id) || result.status !== "succeeded" || !result.converged || result.hadErrors || !result.pdf || result.sourceValidity !== "current") return;
     this.setState({ publications: [...this.state.publications, { result, title }] });
   }
   openPublication(resultId) {
     const publication = this.state.report?.publications?.find((p) => p.resultId === resultId);
-    if (!publication || this.state.report?.integrity !== "verified" || !this.publicationView) return;
+    if (!this.mounted || !publication || this.state.report?.integrity !== "verified" || this.state.checking || this.state.verificationError) return;
+    const epoch = this.reportEpoch;
     this.setState({ publicationOpen: true }, () => {
-      void this.publicationView?.openFixed(publication.revisionId, publication.jobId);
+      if (this.mounted && epoch === this.reportEpoch) void this.publicationView?.openFixed(publication.revisionId, publication.jobId);
     });
   }
   openPublicationReview(resultId, reviewId) {
     const report = this.state.report, review = report?.publicationReviews?.find((p) => p.resultId === resultId)?.reviews.find((r) => r.id === reviewId);
-    if (!review || review.publicationResultId !== resultId || report?.integrity !== "verified" || this.state.checking || this.state.verificationError) return;
+    if (!this.mounted || !review || review.publicationResultId !== resultId || report?.integrity !== "verified" || this.state.checking || this.state.verificationError) return;
+    const epoch = this.reportEpoch;
     this.setState({ publicationOpen: true }, () => {
-      void this.publicationView?.openFixed(review.revisionId, review.jobId, review.id);
+      if (this.mounted && epoch === this.reportEpoch) void this.publicationView?.openFixed(review.revisionId, review.jobId, review.id);
     });
   }
   async downloadReference() {
@@ -193,6 +195,7 @@ class ReportsView extends React.Component {
     await this.props.perform(() => downloadArtifact(ref.targetId, ref.path?.split("/").pop() ?? ref.label));
   }
   async create() {
+    if (this.props.readOnly) return;
     const projectId = this.props.data.project.id;
     await this.props.perform(async () => {
       const artifact = await this.call("report_create", { title: this.state.title, runIds: this.state.selected, claimIds: this.state.selectedClaims, ...this.state.selectedCampaigns.length ? { campaignIds: this.state.selectedCampaigns } : {}, ...this.state.publications.length ? { publicationResultIds: this.state.publications.map((p) => p.result.id) } : {} });
@@ -225,16 +228,16 @@ class ReportsView extends React.Component {
     const available = s.selectedCampaigns.every((id) => (data.campaigns ?? []).some((c) => c.id === id) && (data.experimentPlans ?? []).some((p) => p.campaignId === id)) && s.selected.every((id) => eligible.some((r) => r.id === id)) && s.selectedClaims.every((id) => claims.some((c) => c.id === id));
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
       /* @__PURE__ */ jsx(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
-      /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: s.publicationOpen, onToggle: (event) => {
+      !this.props.readOnly || s.publicationOpen ? /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: s.publicationOpen, onToggle: (event) => {
         const publicationOpen = event.currentTarget.open;
         if (publicationOpen !== this.state.publicationOpen) this.setState({ publicationOpen });
       }, children: [
-        /* @__PURE__ */ jsx("summary", { children: "\u6587\u7A3F\u3001\u7F16\u8BD1\u4E0E\u8BBA\u6587\u5BA1\u67E5" }),
-        /* @__PURE__ */ jsx(PublicationView, { ref: (view) => {
+        /* @__PURE__ */ jsx("summary", { children: this.props.readOnly ? "\u56FA\u5B9A\u6587\u7A3F\u3001PDF \u4E0E\u5BA1\u67E5\u56DE\u67E5" : "\u6587\u7A3F\u3001\u7F16\u8BD1\u4E0E\u8BBA\u6587\u5BA1\u67E5" }),
+        /* @__PURE__ */ jsx(PublicationView, { readOnly: this.props.readOnly, ref: (view) => {
           this.publicationView = view;
         }, data, perform, onSession: this.props.onSession, selectedResultIds: s.publications.map((p) => p.result.id), onSelectResult: (result, title) => this.addPublication(result, title) }, data.project.id)
-      ] }),
-      !data.project.archived ? /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: !s.report, children: [
+      ] }) : null,
+      !this.props.readOnly && !data.project.archived ? /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: !s.report, children: [
         /* @__PURE__ */ jsx("summary", { children: "\u65B0\u5EFA\u53EF\u8FFD\u6EAF\u62A5\u544A" }),
         /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
           /* @__PURE__ */ jsxs("label", { children: [
@@ -445,7 +448,7 @@ class ReportsView extends React.Component {
                   p.pdfDigest
                 ] }),
                 /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
-                  /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: report.integrity !== "verified", onClick: () => this.openPublication(p.resultId), children: "\u56DE\u67E5\u56FA\u5B9A\u6587\u7A3F\u4E0E PDF" }),
+                  /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: report.integrity !== "verified" || s.checking || !!s.verificationError, onClick: () => this.openPublication(p.resultId), children: "\u56DE\u67E5\u56FA\u5B9A\u6587\u7A3F\u4E0E PDF" }),
                   /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => void this.readReference(p.referenceId), children: "\u8BFB\u53D6\u56FA\u5B9A\u6784\u5EFA\u6765\u6E90" })
                 ] })
               ] }, p.resultId)) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u672C\u62A5\u544A\u672A\u7EB3\u5165\u56FA\u5B9A\u6587\u7A3F\u6784\u5EFA\u3002" }),

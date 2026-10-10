@@ -22,6 +22,14 @@ test('all review opinions are visible and pending, rejection, dispute, and no-re
  v.call=async()=>['pending','passed','rejected','disputed'].map(status=>({...review,id:status,status,summary:`opinion-${status}`}));await v.refresh();const text=flatten(v.render());
  for(const status of ['pending','passed','rejected','disputed'])assert.match(text,new RegExp(`opinion-${status}`));assert.match(text,/待处理/);assert.match(text,/审查通过/);assert.match(text,/未通过/);assert.match(text,/有争议/);assert.match(text,/任务验收与论文审查意见分别记录/);v.componentWillUnmount();
 });
+
+test('read-only and archived review viewers preserve existing opinions without preparation controls',async()=>{
+ for(const archived of [false,true]){
+  const v=view();v.props={...v.props,readOnly:!archived,data:{...data,project:{...data.project,archived}},selectedReviewId:review.id};v.state.reviews=[{...review,summary:'Original fixed opinion'}];v.state.loaded=true;
+  v.call=async()=>assert.fail('read-only viewer must not prepare a review');await v.prepare();
+  const text=flatten(v.render());assert.match(text,/Original fixed opinion/);assert.match(text,/所选固定审查/);assert.doesNotMatch(text,/准备此固定论文审查|显式附加项目证据|论文审查主协调会话/);v.componentWillUnmount();
+ }
+});
 test('late list and prepare replies cannot populate a different build or an unmounted view',async()=>{
  for(const operation of ['refresh','prepare'])for(const change of ['selection','unmount']){
   const v=view();let resolve;v.call=()=>new Promise(r=>{resolve=r;});const pending=v[operation]();

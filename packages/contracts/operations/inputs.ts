@@ -1,3 +1,4 @@
+import {RESEARCH_ACTION_INPUT_SCHEMAS} from './research-action-schemas.js';
 import {EXECUTION_ENVIRONMENT_INPUT_SCHEMAS,GPU_SCHEMA,LOCAL_RUNTIME_SCHEMA,LOCAL_EXECUTION_SCHEMA,GPU_TARGET_SCHEMA} from './execution-environment-schemas.js';
 import {HOST_EXECUTION_INPUT_SCHEMA} from './host-access-schemas.js';
 import {RESEARCH_BRIEF_INPUT_SCHEMAS} from './research-brief-schemas.js';
@@ -48,6 +49,7 @@ const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...RESEARCH_ACTION_INPUT_SCHEMAS,
     ...EXECUTION_ENVIRONMENT_INPUT_SCHEMAS,
     host_execute:HOST_EXECUTION_INPUT_SCHEMA,
     ...RESEARCH_BRIEF_INPUT_SCHEMAS,

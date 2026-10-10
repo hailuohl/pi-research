@@ -19,6 +19,10 @@ import {discoveryContext,discoveryScope} from '../../policy/discovery-grant-vali
 import {assertRunGrantActor,assertRunGrantTaskSubmission} from '../../policy/run-grant-validation.js';
 import {ComputeConnectionService,localHardware} from '../../runners/compute-connections.js';
 import {currentDockerContext} from '../../runners/gpu.js';
+import type {Corpus,Configuration} from '../../text-evidence/service.js';
+import type {DocumentVersion} from '../../documents/types.js';
+import {assertCorpusDocument} from '../../policy/text-corpus-grants.js';
+import {assertDiscoveryDocument} from '../../policy/discovery-grant-validation.js';
 
 export interface OperationScope {
     projectId: string;
@@ -189,16 +193,27 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('research_action_prepare',{requiresSession:true,idempotencyPolicy:'key-required',authorize:c=>{interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'research_action_prepare'));},preconditions:noPrecondition,execute:(c,x)=>c.app.researchActions.prepare(c.actor,c.projectId,c.session!.id,x)}),
+    make('research_action_inspect',{requiresSession:true,idempotencyPolicy:'read-only',authorize:c=>{interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'research_action_inspect'));},preconditions:noPrecondition,execute:(c,x)=>c.app.researchActions.inspect(c.actor,c.projectId,c.session!.id,x.requestId as string)}),
+    make('research_action_decide',{requiresSession:true,idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.researchActions.decide(c.actor,c.projectId,c.session!.id,x)}),
     make('research_history_list',{idempotencyPolicy:'read-only',authorize:c=>{if(c.actor.type==='agent')interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'research_history_list'));else userOnly(c.actor);},preconditions:noPrecondition,execute:(c,x)=>c.app.store.readSnapshot(()=>{
         const kinds={documents:'document-version',evidence:'evidence',claims:'claim',reports:'report'} as const,kind=x.kind as keyof typeof kinds,cursor=(x.cursor as number|undefined)??0,limit=(x.limit as number|undefined)??20;
+        const parseResults=new Map<string,string[]>(),pmcAvailable=new Set<string>();
+        if(kind==='documents'){
+            const config=c.app.store.maybe<Configuration>('text-evidence-settings',c.projectId),corpus=config?.enabled&&config.corpusId?c.app.store.maybe<Corpus>('text-corpus',config.corpusId):undefined;
+            if(config?.projectId===c.projectId&&corpus?.projectId===c.projectId&&digest({projectId:c.projectId,sources:corpus.sources,documents:corpus.documents,parserVersion:corpus.parserVersion,...(corpus.pmcDocuments?{pmcDocuments:corpus.pmcDocuments}:{})})===corpus.id){
+                for(const ref of corpus.documents??[])try{assertCorpusDocument(c.app.store,c.projectId,ref);const ids=parseResults.get(ref.documentVersionId)??[];if(!ids.includes(ref.parseResultId)&&ids.length<30)ids.push(ref.parseResultId);parseResults.set(ref.documentVersionId,ids);}catch{}
+                for(const ref of corpus.pmcDocuments??[])try{const d=c.app.store.get<DocumentVersion>('document-version',ref.documentVersionId,c.projectId);ensure(digest(d)===ref.documentDigest,'PMC_SOURCE_STALE','固定 PMC 文档已改变');assertDiscoveryDocument(c.app.store,c.projectId,d);pmcAvailable.add(d.id);}catch{}
+            }
+        }
         const rows=c.app.store.db.prepare('SELECT rowid,data FROM records WHERE kind=? AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?').all(kinds[kind],c.projectId,cursor,limit+1),page=rows.slice(0,limit),nextCursor=page.length?Number(page.at(-1)!.rowid):cursor;
         ensure(Number.isSafeInteger(nextCursor),'HISTORY_CURSOR_UNSAFE','资料与成果游标超出安全范围',500);
         return {items:page.map(entry=>{
             const record=JSON.parse(String(entry.data));
             switch(kind){
-                case 'documents':return {id:record.id,title:record.title,contentKind:record.contentKind,acquiredAt:record.acquiredAt,source:{provider:record.source.provider,requestedVersion:record.source.requestedVersion,reportedVersion:record.source.reportedVersion}};
+                case 'documents':return {id:record.id,title:record.title,contentKind:record.contentKind,acquiredAt:record.acquiredAt,source:{provider:record.source.provider,requestedVersion:record.source.requestedVersion,reportedVersion:record.source.reportedVersion},parseResultIds:parseResults.get(record.id)??[],textGrantAvailable:parseResults.has(record.id)||pmcAvailable.has(record.id)};
                 case 'evidence':return {id:record.id,type:record.type,createdAt:record.createdAt,documentVersionId:record.document?.documentVersionId??record.providerText?.documentVersionId,parseResultId:record.document?.parseResultId};
-                case 'claims':return {id:record.id,status:record.status,validity:record.validity,createdAt:record.createdAt,evidenceIds:record.evidenceIds};
+                case 'claims':return {id:record.id,version:record.version,status:record.status,validity:record.validity,createdAt:record.createdAt,evidenceIds:record.evidenceIds};
                 case 'reports':return {id:record.id,title:record.title??c.app.store.get<{title:string}>('artifact',record.artifactId,c.projectId).title,createdAt:record.createdAt,updatedAt:record.updatedAt,formatVersion:record.formatVersion===1?1:0,runCount:record.runIds?.length??0,claimCount:record.claimIds?.length??0};
             }
         }),cursor:nextCursor,hasMore:rows.length>limit};
@@ -572,6 +587,11 @@ export class OperationRegistry {
             if(['text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit','session_attachment_read'].includes(id))spec.authorize(context,input);
             const previous = lookup();
             if (previous) {
+                if(['research_action_prepare','research_action_inspect','research_action_decide'].includes(id)){
+                    context.validate();spec.authorize(context,input);
+                    if(id==='research_action_prepare')return output(this.app.researchActions.prepare(context.actor,pid,session!.id,input,(previous.value as {id:string}).id));
+                    return output(spec.execute(context,input));
+                }
                 if(id==='document_page_image_read'){context.actor={...actor,...(permission?.actionId?{permissionActionId:permission.actionId}:{})};return output(spec.execute(context,input));}
                 if(id==='publication_page_image_read'){context.actor={...actor,permissionActionId:permission?.actionId};return output(spec.execute(context,input));}
                 if(actor.type==='agent'&&id==='run_inspect'&&input.includeScheduling===true){spec.authorize(context,input);return output(spec.execute(context,input));}

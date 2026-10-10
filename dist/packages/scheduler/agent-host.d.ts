@@ -10,6 +10,11 @@ interface Active {
     sessionId: string;
     generation: number;
     actor: Actor;
+    currentMessageId?: string | null;
+    callIdActors?: Map<string, {
+        tool: string;
+        actor: Actor;
+    }>;
     messageIds: string[];
     consumedIds: Set<string>;
     attemptId?: string;

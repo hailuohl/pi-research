@@ -53,7 +53,7 @@ class PublicationReviewPanel extends React.Component {
   }
   async prepare() {
     const { data, result } = this.props, s = this.state, session = data.sessions.find((row) => row.id === s.rootSessionId && row.role === "coordinator" && !row.taskId && !row.parentSessionId && row.state !== "archived");
-    if (data.project.archived || !this.props.ready || s.busy || !session || s.inputEvidenceIds.some((id) => !data.evidence.some((e) => e.id === id))) return;
+    if (this.props.readOnly || data.project.archived || !this.props.ready || s.busy || !session || s.inputEvidenceIds.some((id) => !data.evidence.some((e) => e.id === id))) return;
     const epoch = ++this.preparationEpoch;
     this.epoch++;
     this.setState({ busy: true, loading: false, error: "" });
@@ -92,34 +92,36 @@ class PublicationReviewPanel extends React.Component {
         "PDF ",
         result.pdf?.digest ?? "\u65E0 PDF"
       ] }),
-      /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
-        e.preventDefault();
-        void this.prepare();
-      }, children: [
-        /* @__PURE__ */ jsxs("label", { children: [
-          "\u8BBA\u6587\u5BA1\u67E5\u4E3B\u534F\u8C03\u4F1A\u8BDD",
-          /* @__PURE__ */ jsxs("select", { "aria-label": "\u8BBA\u6587\u5BA1\u67E5\u4E3B\u534F\u8C03\u4F1A\u8BDD", value: s.rootSessionId, disabled: s.busy, onChange: (e) => this.setState({ rootSessionId: e.target.value }), children: [
-            nativeSelectButton,
-            /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4E3B\u534F\u8C03\u4F1A\u8BDD" }),
-            roots.map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
-              row.title,
+      !this.props.readOnly && !data.project.archived ? /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
+          e.preventDefault();
+          void this.prepare();
+        }, children: [
+          /* @__PURE__ */ jsxs("label", { children: [
+            "\u8BBA\u6587\u5BA1\u67E5\u4E3B\u534F\u8C03\u4F1A\u8BDD",
+            /* @__PURE__ */ jsxs("select", { "aria-label": "\u8BBA\u6587\u5BA1\u67E5\u4E3B\u534F\u8C03\u4F1A\u8BDD", value: s.rootSessionId, disabled: s.busy, onChange: (e) => this.setState({ rootSessionId: e.target.value }), children: [
+              nativeSelectButton,
+              /* @__PURE__ */ jsx("option", { value: "", children: "\u9009\u62E9\u4E3B\u534F\u8C03\u4F1A\u8BDD" }),
+              roots.map((row) => /* @__PURE__ */ jsxs("option", { value: row.id, children: [
+                row.title,
+                " \xB7 ",
+                short(row.id)
+              ] }, row.id))
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxs("details", { children: [
+            /* @__PURE__ */ jsx("summary", { children: "\u663E\u5F0F\u9644\u52A0\u9879\u76EE\u8BC1\u636E\uFF08\u53EF\u9009\uFF09" }),
+            (data.evidence ?? []).map((evidence) => /* @__PURE__ */ jsxs("label", { className: "checkbox-label", children: [
+              /* @__PURE__ */ jsx("input", { type: "checkbox", disabled: s.busy, checked: s.inputEvidenceIds.includes(evidence.id), onChange: (e) => this.setState({ inputEvidenceIds: e.target.checked ? [...s.inputEvidenceIds, evidence.id] : s.inputEvidenceIds.filter((id) => id !== evidence.id) }) }),
+              evidence.description,
               " \xB7 ",
-              short(row.id)
-            ] }, row.id))
-          ] })
+              short(evidence.id)
+            ] }, evidence.id))
+          ] }),
+          /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || !this.props.ready || s.busy || !roots.some((r) => r.id === s.rootSessionId), children: "\u51C6\u5907\u6B64\u56FA\u5B9A\u8BBA\u6587\u5BA1\u67E5" })
         ] }),
-        /* @__PURE__ */ jsxs("details", { children: [
-          /* @__PURE__ */ jsx("summary", { children: "\u663E\u5F0F\u9644\u52A0\u9879\u76EE\u8BC1\u636E\uFF08\u53EF\u9009\uFF09" }),
-          (data.evidence ?? []).map((evidence) => /* @__PURE__ */ jsxs("label", { className: "checkbox-label", children: [
-            /* @__PURE__ */ jsx("input", { type: "checkbox", disabled: s.busy, checked: s.inputEvidenceIds.includes(evidence.id), onChange: (e) => this.setState({ inputEvidenceIds: e.target.checked ? [...s.inputEvidenceIds, evidence.id] : s.inputEvidenceIds.filter((id) => id !== evidence.id) }) }),
-            evidence.description,
-            " \xB7 ",
-            short(evidence.id)
-          ] }, evidence.id))
-        ] }),
-        /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || !this.props.ready || s.busy || !roots.some((r) => r.id === s.rootSessionId), children: "\u51C6\u5907\u6B64\u56FA\u5B9A\u8BBA\u6587\u5BA1\u67E5" })
-      ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u51C6\u5907\u4EC5\u521B\u5EFA\u5F85\u6279\u51C6\u56E2\u961F\u8BA1\u5212\uFF0C\u4E0D\u4F1A\u6279\u51C6\u6216\u8C03\u7528\u6A21\u578B\u3002\u968F\u540E\u6253\u5F00\u5BF9\u5E94\u4E3B\u4F1A\u8BDD\uFF0C\u5728\u56E2\u961F\u8BA1\u5212\u4E2D\u5355\u72EC\u6279\u51C6\u3002" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u51C6\u5907\u4EC5\u521B\u5EFA\u5F85\u6279\u51C6\u56E2\u961F\u8BA1\u5212\uFF0C\u4E0D\u4F1A\u6279\u51C6\u6216\u8C03\u7528\u6A21\u578B\u3002\u968F\u540E\u6253\u5F00\u5BF9\u5E94\u4E3B\u4F1A\u8BDD\uFF0C\u5728\u56E2\u961F\u8BA1\u5212\u4E2D\u5355\u72EC\u6279\u51C6\u3002" })
+      ] }) : null,
       /* @__PURE__ */ jsx("button", { className: "secondary", disabled: s.busy || s.loading, onClick: () => void this.refresh(), children: "\u5237\u65B0\u5168\u90E8\u8BBA\u6587\u5BA1\u67E5" }),
       s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u6838\u9A8C\u8BBA\u6587\u5BA1\u67E5\u2026" }) : null,
       s.error ? /* @__PURE__ */ jsxs("p", { role: "alert", className: "error-text", children: [
@@ -170,7 +172,7 @@ class PublicationReviewPanel extends React.Component {
             "\u5FC5\u9700\u8BC1\u636E\uFF1A",
             review.requiredEvidenceIds.join("\u3001")
           ] }),
-          this.props.onSession ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => this.props.onSession?.(review.rootSessionId), children: "\u6253\u5F00\u4E3B\u4F1A\u8BDD\u4E0E\u56E2\u961F\u6279\u51C6" }) : /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+          this.props.onSession ? /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => this.props.onSession?.(review.rootSessionId), children: this.props.readOnly || data.project.archived ? "\u67E5\u770B\u4E3B\u4F1A\u8BDD" : "\u6253\u5F00\u4E3B\u4F1A\u8BDD\u4E0E\u56E2\u961F\u6279\u51C6" }) : /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
             "\u5728\u5DE6\u4FA7\u4F1A\u8BDD\u5217\u8868\u6253\u5F00\u4E3B\u4F1A\u8BDD ",
             data.sessions?.find((row) => row.id === review.rootSessionId)?.title ?? review.rootSessionId,
             "\uFF0C\u67E5\u770B\u56E2\u961F\u8BA1\u5212\u4E0E\u6279\u51C6\u3002"

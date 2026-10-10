@@ -57,6 +57,25 @@ test('React publication UI preserves separate prepare, approval and submit and s
  v.props.data.approvals[0].status='approved';assert.match(flatten(v.render()),/提交已批准文稿构建/);assert.doesNotMatch(flatten(v.render()),/批准此固定文稿构建/);
  const editorNode=all.find(n=>n.type?.name==='ManuscriptEditor'),editor=sync(new editorNode.type(editorNode.props));nodes(editor.render());v.componentWillUnmount();
 });
+
+test('read-only and archived fixed viewers hide every write action and preserve the original historical PDF download',async t=>{
+ const oldFetch=globalThis.fetch,oldDocument=globalThis.document,oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;t.after(()=>{globalThis.fetch=oldFetch;globalThis.document=oldDocument;URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;});
+ const requests=[],downloads=[];globalThis.fetch=async url=>{requests.push(url);return {ok:true,blob:async()=>new Blob(['original PDF'])};};URL.createObjectURL=()=> 'blob:fixed';URL.revokeObjectURL=()=>{};globalThis.document={body:{appendChild(){}},createElement:()=>({click(){downloads.push(this.download);},remove(){}})};
+ for(const archived of [false,true]){
+  const v=view();v.props={...v.props,readOnly:!archived,data:{...v.props.data,project:{id:'project',archived}},onSelectResult:()=>assert.fail('read-only result selection')};v.state.revision=revision;v.state.result={id:'historical-result',revisionId:revision.id,jobId:job.id,sourceDigest:digest,sourceValidity:'stale',status:'succeeded',converged:true,hadErrors:false,pdf:{artifactId:'original-fixed-pdf'},previews:[],logs:[],diagnostics:[]};
+  for(const [state,status] of [['prepared','pending'],['prepared','approved'],['running','approved'],['succeeded','approved']]){
+   v.state.job={...job,state,integrity:'complete',resultId:v.state.result.id};v.props.data.approvals=[{id:'approval',status}];const tree=v.render(),all=nodes(tree);
+   assert.ok(!all.some(n=>n.type==='form'||n.type?.name==='ManuscriptEditor'));assert.doesNotMatch(flatten(tree),/显式保存编译配置|固定编译环境配置|复制文本到可编辑新草稿|准备固定文稿构建|批准此固定文稿构建|拒绝文稿构建|提交已批准文稿构建|请求取消文稿构建|纳入此固定构建/);
+   assert.equal(all.find(n=>n.type?.name==='PublicationReviewPanel').props.readOnly,true);
+  }
+  v.call=async()=>assert.fail('read-only methods cannot mutate');await v.freeze({});await v.editRevision();v.selectResult();
+  if(v.props.readOnly)await v.initialize();
+  const previewNode=nodes(v.render()).find(n=>n.type?.name==='PublicationPreview'),preview=sync(new previewNode.type(previewNode.props));
+  await nodes(preview.render()).find(n=>n.type==='button'&&flatten(n)==='下载固定 PDF').props.onClick();assert.match(flatten(v.render()),/历史构建，当前来源失效/);preview.componentWillUnmount();v.componentWillUnmount();
+ }
+ assert.deepEqual(requests,['/api/artifacts/original-fixed-pdf/content','/api/artifacts/original-fixed-pdf/content']);assert.deepEqual(downloads,['manuscript.pdf','manuscript.pdf']);
+});
+
 test('freezing serializes UTF8 text and asset bindings into immutable revision input',async()=>{
  const v=view(),requests=[];v.call=async(name,input)=>{requests.push({name,input});return revision;};v.openRevision=async()=>{};
  await v.freeze({title:'paper',engine:'xelatex',mainFile:'main.tex',bibliography:'bibtex',files:[{path:'main.tex',content:'中文🙂'}],assets:[{path:'figure.png',artifactId:'archived-plot'}]});
@@ -101,4 +120,14 @@ test('late source validity checks cannot replace a newer check or job selection'
  const first=v.refreshJob('build');await new Promise(resolve=>setImmediate(resolve));const second=v.refreshJob('build');await new Promise(resolve=>setImmediate(resolve));
  const result={id:'result',jobId:'build',revisionId:'revision',sourceDigest:digest,manifestDigest:digest,sourceValidity:'stale'};pending[1](result);await second;pending[0]({...result,sourceValidity:'current'});await first;assert.equal(v.state.result.sourceValidity,'stale');
  const old=v.refreshJob('build');await new Promise(resolve=>setImmediate(resolve));v.jobEpoch++;v.state.job={...job,id:'new-job'};v.state.result=null;pending[2](result);await old;assert.equal(v.state.job.id,'new-job');assert.equal(v.state.result,null);v.componentWillUnmount();
+});
+
+test('publication result siblings have unique stable keys and reset separately when the fixed result changes',()=>{
+ const v=view();v.props={...v.props,readOnly:true};v.state.revision=revision;v.state.job=job;v.state.result={id:'fixed-result',diagnostics:[],status:'failed',converged:false,hadErrors:true,pdf:null,previews:[],logs:[]};
+ const inspect=()=>{
+  const all=nodes(v.render());for(const parent of all){const children=Array.isArray(parent.props.children)?parent.props.children.flat(Infinity):[parent.props.children],keys=children.filter(child=>child&&typeof child==='object'&&child.key!==null&&child.key!==undefined).map(child=>child.key);assert.equal(new Set(keys).size,keys.length,'sibling keys must be unique');}
+  const keyed=all.filter(n=>['PublicationReviewPanel','PublicationPreview'].includes(n.type?.name));assert.equal(keyed.length,2);assert.ok(keyed.every(n=>n.key!==null));return keyed.map(n=>n.key);
+ };
+ const first=inspect();v.props={...v.props,data:{...v.props.data}};assert.deepEqual(inspect(),first,'project polling preserves each result viewer');
+ v.state.result={...v.state.result,id:'other-fixed-result'};const changed=inspect();assert.ok(changed.every((key,index)=>key!==first[index]),'each viewer resets for a different fixed result');v.componentWillUnmount();
 });

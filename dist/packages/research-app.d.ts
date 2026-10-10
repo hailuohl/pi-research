@@ -1,3 +1,4 @@
+import { ResearchActionService } from './research-workflows/actions.js';
 import { ResearchAutomationService } from './policy/research-automation.js';
 import { LocalRuntimeService } from './runners/local-runtime.js';
 import { ComputeConnectionMonitor } from './runners/compute-connections.js';
@@ -48,6 +49,7 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly researchActions: ResearchActionService;
     readonly computeMonitor: ComputeConnectionMonitor;
     readonly nativeRequests: NativeRequestService;
     readonly localRuntimes: LocalRuntimeService;

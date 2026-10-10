@@ -30,6 +30,29 @@ test('historical report navigation opens exact revision and job, never latest or
  v.state.report={...report,integrity:'invalid'};v.openPublication(result.id);assert.equal(calls.length,1);v.componentWillUnmount();
 });
 
+test('read-only report return mounts on first click and opens the exact fixed build after its ref commits',()=>{
+ for(const archived of [false,true]){
+  const v=reports();v.props={...v.props,readOnly:true,data:{...v.props.data,project:{id:'project',archived}}};v.state.report=report;
+  assert.ok(!nodes(v.render()).some(n=>n.type===PublicationView));
+  const callbacks=[],calls=[];v.setState=(patch,done)=>{Object.assign(v.state,patch);if(done)callbacks.push(done);};
+  nodes(v.render()).find(n=>n.type==='button'&&n.props.children==='回查固定文稿与 PDF').props.onClick();
+  const mounted=nodes(v.render()).find(n=>n.type===PublicationView);assert.ok(mounted);assert.equal(mounted.props.readOnly,true);assert.deepEqual(calls,[]);
+  mounted.props.ref({openFixed:(...args)=>calls.push(args)});callbacks.shift()();assert.deepEqual(calls,[[result.revisionId,result.jobId]]);
+  v.state.report={...report,publicationReviews:[{resultId:result.id,reviews:[{id:'fixed-review',publicationResultId:result.id,revisionId:result.revisionId,jobId:result.jobId}]}]};
+  v.openPublicationReview(result.id,'fixed-review');callbacks.shift()();assert.deepEqual(calls[1],[result.revisionId,result.jobId,'fixed-review']);
+  v.state.checking=true;v.openPublication(result.id);assert.equal(callbacks.length,0);v.componentWillUnmount();
+ }
+});
+
+test('a queued report return cannot open a fixed viewer after project change or unmount',()=>{
+ for(const change of ['project','unmount']){
+  const v=reports();v.props={...v.props,readOnly:true};v.state.report=report;const callbacks=[],calls=[];
+  v.setState=(patch,done)=>{Object.assign(v.state,patch);if(done)callbacks.push(done);};v.openPublication(result.id);
+  if(change==='project'){const prev=v.props;v.props={...prev,data:{...prev.data,project:{id:'another-project'}}};v.componentDidUpdate(prev);assert.equal(v.state.publicationOpen,false);}else v.componentWillUnmount();
+  v.publicationView={openFixed:(...args)=>calls.push(args)};callbacks.shift()();assert.deepEqual(calls,[]);v.componentWillUnmount();
+ }
+});
+
 test('fixed binary artifact download does not depend on a successful text read and is report-bound',async t=>{
  const oldFetch=globalThis.fetch,oldDocument=globalThis.document,oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;t.after(()=>{globalThis.fetch=oldFetch;globalThis.document=oldDocument;URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;});
  const requests=[],downloads=[];globalThis.fetch=async(url,options)=>{requests.push({url,options});return {ok:true,blob:async()=>new Blob(['binary'])};};URL.createObjectURL=()=> 'blob:fixed';URL.revokeObjectURL=()=>{};globalThis.document={body:{appendChild(){}},createElement:()=>({click(){downloads.push(this.download);},remove(){}})};

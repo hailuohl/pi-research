@@ -78,6 +78,11 @@ test('all existing public tools have closed, literal success contracts exercised
   let serial=0;
   const check=(name,value)=>{validateSchema(OUTPUT_SCHEMAS[name],value,'output');seen.add(name);return value;};
   const call=async(name,input={},a=root)=>check(name,await tools.execute(a,name,input,`schema-${++serial}`));
+  const actionMessage=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'user',content:'Read saved reports',mode:'prompt',status:'running',generation:1});
+  const actionActor={...root,messageId:actionMessage.id,researchModelDigest:s.app.researchAutomation.modelIdentity(s.app.store.get('session',s.session.id))};
+  const action=await call('research_action_prepare',{kind:'history',history:{kind:'reports'}},actionActor);
+  await call('research_action_inspect',{requestId:action.id},actionActor);
+  check('research_action_decide',s.app.operations.execute(USER,'research_action_decide',{requestId:action.id,expectedVersion:1,decision:'dismiss'},{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:'schema-action-dismiss'}));
   const hostResult=await call('host_execute',{argv:[process.execPath,'-e','console.log("closed host contract")']});assert.equal(hostResult.state,'succeeded');assert.equal(hostResult.stdout.trim(),'closed host contract');
   const owner=async(name,input)=>check(name,await s.app.operations.execute(USER,name,input,{projectId:s.project.id,idempotencyKey:`owner-schema-${++serial}`}));
   await owner('local_runtime_configure',{id:'schema-node',executable:'node',expectedVersion:0});

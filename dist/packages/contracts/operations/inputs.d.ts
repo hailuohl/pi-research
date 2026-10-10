@@ -1371,7 +1371,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor")[];
+        readonly required: readonly ("cursor" | "limit")[];
         readonly additionalProperties: false;
     };
     readonly research_history_list: {
@@ -2361,7 +2361,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor")[];
+        readonly required: readonly ("cursor" | "limit")[];
         readonly additionalProperties: false;
     };
     readonly document_inspect: {
@@ -2940,7 +2940,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor")[];
+        readonly required: readonly ("cursor" | "limit")[];
         readonly additionalProperties: false;
     };
     readonly compute_capacity_configure: {
@@ -3005,7 +3005,7 @@ export declare const INPUT_SCHEMAS: {
                         }];
                     };
                 };
-                readonly required: readonly ("cpus" | "memoryMb" | "maxRuns" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
+                readonly required: readonly ("maxRuns" | "cpus" | "memoryMb" | "maxDevelopment" | "maxJobs" | "maxQueued")[];
                 readonly additionalProperties: false;
             };
         };
@@ -3049,7 +3049,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor")[];
+        readonly required: readonly ("cursor" | "limit")[];
         readonly additionalProperties: false;
     };
     readonly model_http_configure: {
@@ -4263,7 +4263,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly ("limit" | "cursor")[];
+        readonly required: readonly ("cursor" | "limit")[];
         readonly additionalProperties: false;
     };
     readonly manuscript_inspect: {
@@ -4434,7 +4434,7 @@ export declare const INPUT_SCHEMAS: {
                 readonly maxLength: number;
             };
         };
-        readonly required: readonly ("revisionId" | "limit" | "cursor")[];
+        readonly required: readonly ("revisionId" | "cursor" | "limit")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_import: {
@@ -5472,6 +5472,237 @@ export declare const INPUT_SCHEMAS: {
             };
         };
         readonly required: readonly ["id", "expectedVersion", "cpu", "gpu"];
+        readonly additionalProperties: false;
+    };
+    readonly research_action_prepare: {
+        readonly type: "object";
+        readonly anyOf: readonly [{
+            readonly type: "object";
+            readonly properties: {
+                readonly kind: {
+                    readonly enum: readonly ["text_grant"];
+                };
+                readonly textGrant: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly documents: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly documentVersionId: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly parseResultId: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                };
+                                readonly required: readonly ["documentVersionId", "parseResultId"];
+                                readonly additionalProperties: false;
+                            };
+                            readonly minItems: number;
+                        };
+                        readonly pmcDocuments: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly documentVersionId: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                };
+                                readonly required: readonly ["documentVersionId"];
+                                readonly additionalProperties: false;
+                            };
+                            readonly minItems: number;
+                        };
+                        readonly maxSearches: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                        readonly expiresAt: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                    };
+                    readonly required: readonly ["documents", "maxSearches", "expiresAt"];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly required: readonly ["kind", "textGrant"];
+            readonly additionalProperties: false;
+        }, {
+            readonly type: "object";
+            readonly properties: {
+                readonly kind: {
+                    readonly enum: readonly ["claim_decision"];
+                };
+                readonly claim: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly claimId: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly expectedVersion: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
+                    };
+                    readonly required: readonly ["claimId", "expectedVersion"];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly required: readonly ["kind", "claim"];
+            readonly additionalProperties: false;
+        }, {
+            readonly type: "object";
+            readonly properties: {
+                readonly kind: {
+                    readonly enum: readonly ["report_compose"];
+                };
+                readonly report: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly title: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly runIds: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly minItems: number;
+                        };
+                        readonly claimIds: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly minItems: number;
+                        };
+                        readonly publicationResultIds: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly minItems: number;
+                        };
+                        readonly campaignIds: {
+                            readonly maxItems?: number | undefined;
+                            readonly type: "array";
+                            readonly items: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly minItems: number;
+                        };
+                    };
+                    readonly required: readonly ["title", "runIds", "claimIds", "publicationResultIds"];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly required: readonly ["kind", "report"];
+            readonly additionalProperties: false;
+        }, {
+            readonly type: "object";
+            readonly properties: {
+                readonly kind: {
+                    readonly enum: readonly ["history"];
+                };
+                readonly history: {
+                    readonly type: "object";
+                    readonly properties: {
+                        readonly kind: {
+                            readonly enum: readonly ["documents", "evidence", "claims", "reports"];
+                        };
+                    };
+                    readonly required: readonly ["kind"];
+                    readonly additionalProperties: false;
+                };
+            };
+            readonly required: readonly ["kind", "history"];
+            readonly additionalProperties: false;
+        }];
+    };
+    readonly research_action_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly requestId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["requestId"];
+        readonly additionalProperties: false;
+    };
+    readonly research_action_decide: {
+        readonly type: "object";
+        readonly properties: {
+            readonly requestId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly expectedVersion: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly decision: {
+                readonly enum: readonly ["confirm", "reject", "accepted", "rejected", "disputed", "dismiss"];
+            };
+        };
+        readonly required: readonly ["requestId", "expectedVersion", "decision"];
         readonly additionalProperties: false;
     };
 };

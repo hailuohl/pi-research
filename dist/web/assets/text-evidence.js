@@ -1,4 +1,4 @@
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { nativeSelectButton } from "./ui.js";
 import { api, artifactText } from "./api.js";
@@ -76,83 +76,85 @@ class TextEvidencePanel extends React.Component {
           }, "\u5DF2\u5173\u95ED\u68C0\u7D22\uFF0C\u5386\u53F2\u6587\u4EF6\u4E0E\u5F15\u7528\u4FDD\u7559"), children: "\u5173\u95ED\u68C0\u7D22" }) : null
         ] })
       ] }),
-      /* @__PURE__ */ jsxs("form", { className: "search-panel", onSubmit: (e) => {
-        e.preventDefault();
-        this.setState({ loading: true });
-        void perform(async () => {
-          const response = await api("/text-evidence-search", { projectId: data.project.id, query: this.state.query, artifactIds: saved, ...savedDocuments.length ? { documents: savedDocuments } : {}, ...savedPmcDocuments.length ? { pmcDocuments: savedPmcDocuments.map((documentVersionId) => ({ documentVersionId })) } : {}, ...savedDocuments.length || savedPmcDocuments.length ? { corpusId: config.corpusId, configurationVersion: config.version } : {}, limit: 5, mmrLambda: this.state.mmrLambda });
-          this.setState({ result: response, sourcePreview: "" });
-        }).finally(() => this.setState({ loading: false }));
-      }, children: [
-        /* @__PURE__ */ jsx("input", { "aria-label": "\u672C\u5730\u539F\u6587\u5173\u952E\u8BCD", placeholder: "\u8F93\u5165\u5173\u952E\u8BCD\uFF1B\u4E2D\u6587\u53EF\u4F7F\u7528\u77ED\u8BED", value: this.state.query, disabled: this.state.loading, onChange: (e) => this.setState({ query: e.target.value }) }),
-        /* @__PURE__ */ jsxs("select", { "aria-label": "\u68C0\u7D22\u6392\u5E8F\u7B56\u7565", value: this.state.mmrLambda, disabled: this.state.loading, onChange: (e) => this.setState({ mmrLambda: Number(e.target.value), result: null }), children: [
-          nativeSelectButton,
-          /* @__PURE__ */ jsx("option", { value: 1, children: "\u7CBE\u786E\u53BB\u91CD\uFF0B\u76F8\u5173\u6027\uFF08\u9ED8\u8BA4\uFF09" }),
-          /* @__PURE__ */ jsx("option", { value: 0.65, children: "\u7CBE\u786E\u53BB\u91CD\uFF0BMMR 0.65\uFF08\u8BD5\u9A8C\uFF09" })
+      !this.props.configurationOnly ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsxs("form", { className: "search-panel", onSubmit: (e) => {
+          e.preventDefault();
+          this.setState({ loading: true });
+          void perform(async () => {
+            const response = await api("/text-evidence-search", { projectId: data.project.id, query: this.state.query, artifactIds: saved, ...savedDocuments.length ? { documents: savedDocuments } : {}, ...savedPmcDocuments.length ? { pmcDocuments: savedPmcDocuments.map((documentVersionId) => ({ documentVersionId })) } : {}, ...savedDocuments.length || savedPmcDocuments.length ? { corpusId: config.corpusId, configurationVersion: config.version } : {}, limit: 5, mmrLambda: this.state.mmrLambda });
+            this.setState({ result: response, sourcePreview: "" });
+          }).finally(() => this.setState({ loading: false }));
+        }, children: [
+          /* @__PURE__ */ jsx("input", { "aria-label": "\u672C\u5730\u539F\u6587\u5173\u952E\u8BCD", placeholder: "\u8F93\u5165\u5173\u952E\u8BCD\uFF1B\u4E2D\u6587\u53EF\u4F7F\u7528\u77ED\u8BED", value: this.state.query, disabled: this.state.loading, onChange: (e) => this.setState({ query: e.target.value }) }),
+          /* @__PURE__ */ jsxs("select", { "aria-label": "\u68C0\u7D22\u6392\u5E8F\u7B56\u7565", value: this.state.mmrLambda, disabled: this.state.loading, onChange: (e) => this.setState({ mmrLambda: Number(e.target.value), result: null }), children: [
+            nativeSelectButton,
+            /* @__PURE__ */ jsx("option", { value: 1, children: "\u7CBE\u786E\u53BB\u91CD\uFF0B\u76F8\u5173\u6027\uFF08\u9ED8\u8BA4\uFF09" }),
+            /* @__PURE__ */ jsx("option", { value: 0.65, children: "\u7CBE\u786E\u53BB\u91CD\uFF0BMMR 0.65\uFF08\u8BD5\u9A8C\uFF09" })
+          ] }),
+          /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || (!config.enabled || selectionChanged || !this.state.query.trim() || this.state.loading), children: this.state.loading ? "\u68C0\u7D22\u4E2D\u2026" : "\u67E5\u627E\u539F\u6587" })
         ] }),
-        /* @__PURE__ */ jsx("button", { className: "primary", disabled: data.project.archived || (!config.enabled || selectionChanged || !this.state.query.trim() || this.state.loading), children: this.state.loading ? "\u68C0\u7D22\u4E2D\u2026" : "\u67E5\u627E\u539F\u6587" })
-      ] }),
-      selectionChanged ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6587\u6863\u9009\u62E9\u5DF2\u6539\u53D8\uFF0C\u8BF7\u5148\u4FDD\u5B58\u8303\u56F4\u3002" }) : null,
-      history.length ? /* @__PURE__ */ jsxs("details", { children: [
-        /* @__PURE__ */ jsxs("summary", { children: [
-          "\u5386\u53F2\u68C0\u7D22\uFF08\u6700\u8FD1 ",
-          history.length,
-          " \u6761\uFF0C\u5173\u95ED\u540E\u4ECD\u53EF\u8BFB\uFF09"
-        ] }),
-        history.map((item) => /* @__PURE__ */ jsxs("button", { className: "text-button", onClick: () => this.setState({ result: item, sourcePreview: "" }), children: [
-          item.query,
-          " \xB7 ",
-          item.hits.length,
-          " \u4E2A\u7247\u6BB5 \xB7 ",
-          short(item.id)
-        ] }, item.id))
-      ] }) : null,
-      stale ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u96C6\u5408\u5DF2\u53D8\u66F4\u6216\u529F\u80FD\u5DF2\u5173\u95ED\uFF1B\u4E0B\u65B9\u662F\u5386\u53F2\u67E5\u8BE2\uFF0C\u8BF7\u91CD\u65B0\u68C0\u7D22\u3002" }) : null,
-      result ? /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: result.status === "no_lexical_match" ? "\u672A\u627E\u5230\u8BCD\u9879\u5339\u914D\uFF1B\u4E0D\u8868\u793A\u6587\u732E\u4E2D\u6CA1\u6709\u7B54\u6848\u3002" : `\u8FD4\u56DE ${result.hits.length} \u4E2A\u539F\u6587\u7247\u6BB5\u3002\u76F8\u5173\u6027\u4E0D\u662F\u79D1\u5B66\u6B63\u786E\u6027\u3002` }),
-        result.coverage ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-          "\u5DF2\u641C\u7D22\u9009\u5B9A ",
-          result.coverage.sourceCount,
-          " \u4EFD\u539F\u6587 / ",
-          result.coverage.totalChunks,
-          " \u4E2A\u5206\u5757\uFF1B",
-          result.coverage.matchingChunks,
-          " \u4E2A\u8BCD\u9879\u5339\u914D\uFF1B\u5408\u5E76 ",
-          result.coverage.exactDuplicatesGrouped,
-          " \u4E2A\u76F8\u540C\u7247\u6BB5\u5E76\u4FDD\u7559\u5176\u4ED6\u6765\u6E90\u3002",
-          result.coverage.resultsTruncated ? "\u5F53\u524D\u5C55\u793A\u53D7\u6570\u91CF\u9650\u5236\uFF0C\u53EF\u7F29\u5C0F\u67E5\u8BE2\u6216\u589E\u5927\u63A5\u53E3 limit\uFF08\u6700\u591A10\uFF09\u3002" : ""
+        selectionChanged ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6587\u6863\u9009\u62E9\u5DF2\u6539\u53D8\uFF0C\u8BF7\u5148\u4FDD\u5B58\u8303\u56F4\u3002" }) : null,
+        history.length ? /* @__PURE__ */ jsxs("details", { children: [
+          /* @__PURE__ */ jsxs("summary", { children: [
+            "\u5386\u53F2\u68C0\u7D22\uFF08\u6700\u8FD1 ",
+            history.length,
+            " \u6761\uFF0C\u5173\u95ED\u540E\u4ECD\u53EF\u8BFB\uFF09"
+          ] }),
+          history.map((item) => /* @__PURE__ */ jsxs("button", { className: "text-button", onClick: () => this.setState({ result: item, sourcePreview: "" }), children: [
+            item.query,
+            " \xB7 ",
+            item.hits.length,
+            " \u4E2A\u7247\u6BB5 \xB7 ",
+            short(item.id)
+          ] }, item.id))
         ] }) : null,
-        result.hits.map((h) => /* @__PURE__ */ jsxs("article", { className: "inspector-section", children: [
-          /* @__PURE__ */ jsx("h3", { children: h.title }),
-          /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-            h.document ? `\u56FA\u5B9A PDF \u7269\u7406\u7B2C ${h.page} \u9875` : h.providerText ? `\u56FA\u5B9A PMC OA \u5168\u6587 ${h.providerText.reportedVersion} \xB7 \u65E0 PDF \u9875\u7801` : `\u539F\u6587\u4EF6\u7B2C ${h.lineStart}\u2013${h.lineEnd} \u884C \xB7 \u65E0 PDF \u9875\u7801`,
-            " \xB7 UTF-16 \u533A\u95F4 [",
-            h.locator.start,
-            ", ",
-            h.locator.end,
-            ")"
-          ] }),
-          /* @__PURE__ */ jsx("pre", { className: "document-preview", children: h.quote }),
-          h.alternativeSources?.length ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-            "\u76F8\u540C\u539F\u6587\u8FD8\u51FA\u73B0\u4E8E\uFF1A",
-            h.alternativeSources.map((a) => `${a.title}\uFF08${a.document ? `PDF \u7B2C ${a.page} \u9875` : a.providerText ? `PMC ${a.providerText.reportedVersion} \xB7 \u65E0 PDF \u9875\u7801` : `\u884C${a.lineStart}\u2013${a.lineEnd}`}\uFF09`).join("\uFF1B"),
-            "\u3002\u526F\u672C\u4E0D\u8BA1\u4E3A\u65B0\u7684\u72EC\u7ACB\u652F\u6301\u3002"
+        stale ? /* @__PURE__ */ jsx("p", { className: "inline-warning", children: "\u96C6\u5408\u5DF2\u53D8\u66F4\u6216\u529F\u80FD\u5DF2\u5173\u95ED\uFF1B\u4E0B\u65B9\u662F\u5386\u53F2\u67E5\u8BE2\uFF0C\u8BF7\u91CD\u65B0\u68C0\u7D22\u3002" }) : null,
+        result ? /* @__PURE__ */ jsxs("div", { children: [
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: result.status === "no_lexical_match" ? "\u672A\u627E\u5230\u8BCD\u9879\u5339\u914D\uFF1B\u4E0D\u8868\u793A\u6587\u732E\u4E2D\u6CA1\u6709\u7B54\u6848\u3002" : `\u8FD4\u56DE ${result.hits.length} \u4E2A\u539F\u6587\u7247\u6BB5\u3002\u76F8\u5173\u6027\u4E0D\u662F\u79D1\u5B66\u6B63\u786E\u6027\u3002` }),
+          result.coverage ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+            "\u5DF2\u641C\u7D22\u9009\u5B9A ",
+            result.coverage.sourceCount,
+            " \u4EFD\u539F\u6587 / ",
+            result.coverage.totalChunks,
+            " \u4E2A\u5206\u5757\uFF1B",
+            result.coverage.matchingChunks,
+            " \u4E2A\u8BCD\u9879\u5339\u914D\uFF1B\u5408\u5E76 ",
+            result.coverage.exactDuplicatesGrouped,
+            " \u4E2A\u76F8\u540C\u7247\u6BB5\u5E76\u4FDD\u7559\u5176\u4ED6\u6765\u6E90\u3002",
+            result.coverage.resultsTruncated ? "\u5F53\u524D\u5C55\u793A\u53D7\u6570\u91CF\u9650\u5236\uFF0C\u53EF\u7F29\u5C0F\u67E5\u8BE2\u6216\u589E\u5927\u63A5\u53E3 limit\uFF08\u6700\u591A10\uFF09\u3002" : ""
           ] }) : null,
-          /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-            "\u8BC1\u636E ",
-            /* @__PURE__ */ jsx("code", { children: h.evidenceId }),
-            " \xB7 \u6E90\u6458\u8981 ",
-            /* @__PURE__ */ jsx("code", { children: short(h.digest) })
-          ] }),
-          h.document ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.props.onDocument?.({ documentVersionId: h.document.documentVersionId, parseResultId: h.document.parseResultId, pageNumber: h.page, start: h.locator.start, end: h.locator.end }), children: "\u8FD4\u56DE\u56FA\u5B9A PDF \u539F\u9875" }) : h.providerText ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.props.onDocument?.({ documentVersionId: h.providerText.documentVersionId }), children: "\u8FD4\u56DE\u56FA\u5B9A PMC \u6587\u6863" }) : /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(async () => this.setState({ sourcePreview: await artifactText(h.artifactId) })), children: "\u8BFB\u53D6\u5BF9\u5E94\u539F\u6587\u4EF6" })
-        ] }, h.chunkId)),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: result.limitations.join(" ") })
+          result.hits.map((h) => /* @__PURE__ */ jsxs("article", { className: "inspector-section", children: [
+            /* @__PURE__ */ jsx("h3", { children: h.title }),
+            /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+              h.document ? `\u56FA\u5B9A PDF \u7269\u7406\u7B2C ${h.page} \u9875` : h.providerText ? `\u56FA\u5B9A PMC OA \u5168\u6587 ${h.providerText.reportedVersion} \xB7 \u65E0 PDF \u9875\u7801` : `\u539F\u6587\u4EF6\u7B2C ${h.lineStart}\u2013${h.lineEnd} \u884C \xB7 \u65E0 PDF \u9875\u7801`,
+              " \xB7 UTF-16 \u533A\u95F4 [",
+              h.locator.start,
+              ", ",
+              h.locator.end,
+              ")"
+            ] }),
+            /* @__PURE__ */ jsx("pre", { className: "document-preview", children: h.quote }),
+            h.alternativeSources?.length ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+              "\u76F8\u540C\u539F\u6587\u8FD8\u51FA\u73B0\u4E8E\uFF1A",
+              h.alternativeSources.map((a) => `${a.title}\uFF08${a.document ? `PDF \u7B2C ${a.page} \u9875` : a.providerText ? `PMC ${a.providerText.reportedVersion} \xB7 \u65E0 PDF \u9875\u7801` : `\u884C${a.lineStart}\u2013${a.lineEnd}`}\uFF09`).join("\uFF1B"),
+              "\u3002\u526F\u672C\u4E0D\u8BA1\u4E3A\u65B0\u7684\u72EC\u7ACB\u652F\u6301\u3002"
+            ] }) : null,
+            /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+              "\u8BC1\u636E ",
+              /* @__PURE__ */ jsx("code", { children: h.evidenceId }),
+              " \xB7 \u6E90\u6458\u8981 ",
+              /* @__PURE__ */ jsx("code", { children: short(h.digest) })
+            ] }),
+            h.document ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.props.onDocument?.({ documentVersionId: h.document.documentVersionId, parseResultId: h.document.parseResultId, pageNumber: h.page, start: h.locator.start, end: h.locator.end }), children: "\u8FD4\u56DE\u56FA\u5B9A PDF \u539F\u9875" }) : h.providerText ? /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.props.onDocument?.({ documentVersionId: h.providerText.documentVersionId }), children: "\u8FD4\u56DE\u56FA\u5B9A PMC \u6587\u6863" }) : /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => perform(async () => this.setState({ sourcePreview: await artifactText(h.artifactId) })), children: "\u8BFB\u53D6\u5BF9\u5E94\u539F\u6587\u4EF6" })
+          ] }, h.chunkId)),
+          /* @__PURE__ */ jsx("p", { className: "small muted", children: result.limitations.join(" ") })
+        ] }) : null,
+        this.state.sourcePreview ? /* @__PURE__ */ jsxs("details", { open: true, children: [
+          /* @__PURE__ */ jsx("summary", { children: "\u539F\u6587\u4EF6\u6587\u672C\uFF08\u4E0D\u662F\u6A21\u578B\u6458\u8981\uFF09" }),
+          /* @__PURE__ */ jsx("pre", { className: "file-preview", children: this.state.sourcePreview })
+        ] }) : null
       ] }) : null,
-      this.state.sourcePreview ? /* @__PURE__ */ jsxs("details", { open: true, children: [
-        /* @__PURE__ */ jsx("summary", { children: "\u539F\u6587\u4EF6\u6587\u672C\uFF08\u4E0D\u662F\u6A21\u578B\u6458\u8981\uFF09" }),
-        /* @__PURE__ */ jsx("pre", { className: "file-preview", children: this.state.sourcePreview })
-      ] }) : null,
-      /* @__PURE__ */ jsx(TextCorpusGrantPanel, { data, perform, onSession: this.props.onSession })
+      /* @__PURE__ */ jsx(TextCorpusGrantPanel, { existingOnly: this.props.configurationOnly, data, perform, onSession: this.props.onSession })
     ] });
   }
 }
@@ -192,7 +194,7 @@ class TextCorpusGrantPanel extends React.Component {
     return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
       /* @__PURE__ */ jsx("h3", { children: "\u6307\u5B9A Pi \u4F1A\u8BDD\u68C0\u7D22\u56FA\u5B9A\u539F\u6587" }),
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u53EA\u6388\u6743\u9009\u5B9A\u7684 PDF \u89E3\u6790\u9875\u6216\u4E00\u4EFD PMC OA \u5168\u6587\u3001\u6307\u5B9A\u4E3B\u4F1A\u8BDD\u548C\u6709\u9650\u6B21\u672C\u5730\u8BCD\u9879\u68C0\u7D22\uFF1B\u4E0D\u6388\u6743\u539F\u4EF6\u4E0B\u8F7D\u3001\u8054\u7F51\u3001\u8BA1\u7B97\u6216\u79D1\u5B66\u7ED3\u8BBA\u3002\u51C6\u5907\u3001\u6279\u51C6\u548C\u6FC0\u6D3B\u4E0D\u8C03\u7528\u6A21\u578B\u3002" }),
-      /* @__PURE__ */ jsxs("details", { children: [
+      !this.props.existingOnly ? /* @__PURE__ */ jsxs("details", { children: [
         /* @__PURE__ */ jsx("summary", { children: "\u51C6\u5907\u56FA\u5B9A\u539F\u6587\u68C0\u7D22\u6388\u6743" }),
         /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
           e.preventDefault();
@@ -248,7 +250,7 @@ class TextCorpusGrantPanel extends React.Component {
           ] }),
           /* @__PURE__ */ jsx("button", { className: "secondary", disabled: data.project.archived || !config?.enabled || !s.sessionId || !(s.documents.length + s.pmcDocuments.length), children: "\u4FDD\u5B58\u56FA\u5B9A\u6388\u6743\u8349\u6848" })
         ] })
-      ] }),
+      ] }) : null,
       grants.length ? /* @__PURE__ */ jsxs("label", { children: [
         "\u67E5\u770B\u56FA\u5B9A\u539F\u6587\u6388\u6743",
         /* @__PURE__ */ jsxs("select", { "aria-label": "\u67E5\u770B\u56FA\u5B9A\u539F\u6587\u6388\u6743", value: selectedId, onChange: (e) => this.setState({ selectedId: e.target.value }), children: [

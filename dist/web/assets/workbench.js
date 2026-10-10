@@ -11,6 +11,7 @@ import { WakeupPanel } from "./campaigns.js";
 import { comparableRuns, comparisonMetric } from "./models.js";
 import { ExperimentGraph } from "./experiment-graph.js";
 import { ChatWorkflows } from "./chat-workflows.js";
+import { ResearchActionCards } from "./research-action-cards.js";
 import { ComposerControls } from "./composer-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
@@ -79,7 +80,8 @@ class Chat extends React.Component {
         !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null,
         session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(PermissionActions, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null,
         session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null,
-        this.props.resources
+        session ? /* @__PURE__ */ jsx(ResearchActionCards, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onRun: this.props.onRun, onCampaign: this.props.onCampaign, onRegister: this.props.onRegister, onClaim: this.props.onClaim, onUseDocument: this.props.onUseDocument, onSources: this.props.onSources }) : null,
+        this.props.archivedHistory
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
         /* @__PURE__ */ jsxs("div", { className: "composer-stack", children: [

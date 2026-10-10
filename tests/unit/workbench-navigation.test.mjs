@@ -232,9 +232,8 @@ test('report campaign links select the exact root session even when it is outsid
   try{
     const app=synchronousState(new App({}));app.refresh=async()=>true;
     Object.assign(app.state,{tab:'reports',boot:{projects:[{id:'p'}]},projectId:'p',sessionId:'recent',data:{project:{id:'p',name:'Project'},sessions:[{id:'recent'}],experiments:[],runs:[],teams:[],campaigns:[{id:'historic-campaign',rootSessionId:'historic-root'}]},messages:[{id:'old-body'}],history:{atLatest:false},historyAnchor:{direction:'before',id:'old-cursor'},stream:'old stream'});
-    const resources=elements(app.render()).find(node=>node.type?.name==='Chat').props.resources;
-    const reports=resources.props.views.reports;assert.ok(reports);
-    reports.props.onCampaign('historic-campaign');
+    const chat=elements(app.render()).find(node=>node.type?.name==='Chat');assert.ok(chat);
+    chat.props.onCampaign('historic-campaign');
     assert.equal(app.state.projectId,'p');assert.equal(app.state.sessionId,'historic-root');assert.equal(app.state.selectedCampaign,'historic-campaign');assert.equal(app.state.tab,'chat');
     assert.deepEqual(app.state.messages,[]);assert.equal(app.state.history,null);assert.equal(app.state.historyAnchor,null);assert.equal(app.state.stream,'');
     app.componentWillUnmount();

@@ -62,7 +62,7 @@ export declare class TeamService {
     cancel(actor: Actor, taskId: string): Row<Task>;
     directive(actor: Actor, id: string, value: unknown): Row<{
         teamId: string;
-        kind: "steer" | "follow_up" | "revise";
+        kind: "follow_up" | "steer" | "revise";
         content: string;
         taskIds: string[];
         directiveVersion: number;

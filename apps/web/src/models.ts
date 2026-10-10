@@ -32,6 +32,8 @@ import type {LiteratureTaskDTO} from '../../../dist/packages/literature/tasks.js
 export type {LiteratureTaskDTO} from '../../../dist/packages/literature/tasks.js';
 import type {TextCorpusGrantDTO} from '../../../dist/packages/policy/text-corpus-grants.js';
 export type {TextCorpusGrantDTO} from '../../../dist/packages/policy/text-corpus-grants.js';
+export type {ResearchActionDTO} from '../../../dist/packages/research-workflows/actions.js';
+import type {ResearchActionDTO} from '../../../dist/packages/research-workflows/actions.js';
 export interface DocumentLocation {documentVersionId:string;parseResultId?:string;pageNumber?:number;start?:number;end?:number;}
 export type { Campaign, ResearchRound, CampaignMember, RunObservation, CampaignDecision,ExperimentPlanRevision,ResearchCandidate, Wakeup };
 import type { Row, Project, Session, Message, Experiment, Run, RunIntent, Approval, Team, Task, Artifact, Evidence, Claim, ChangeProposal, ModelConfig, MessageAttachment } from '../../../dist/packages/domain/types.js';
@@ -64,6 +66,7 @@ export interface ReportRecord {id:string;artifactId:string;runIds:string[];claim
 import type {ResearchBriefService} from '../../../dist/packages/research-workflows/briefs.js';
 export type ResearchBriefView=ReturnType<ResearchBriefService['inspect']>;
 export interface ProjectState {
+    researchActions?:ResearchActionDTO[];
     manuscripts?:Row<ManuscriptRevision>[];
     publicationJobs?:PublicationBuildJobDTO[];
     publicationReviews?:PublicationReviewInspection[];

@@ -3,12 +3,19 @@ import assert from 'node:assert/strict';
 import { INPUT_SCHEMAS } from '../../dist/packages/contracts/operations/inputs.js';
 import { s, validateSchema } from '../../dist/packages/contracts/operations/schema.js';
 import { TOOL_DEFINITIONS } from '../../dist/packages/research-tools/definitions.js';
+import { ROLE_TOOLS } from '../../dist/packages/policy/permissions.js';
 
 test('every advertised tool example satisfies its exact input contract', () => {
-    assert.equal(Object.keys(INPUT_SCHEMAS).length, 158);
+    assert.equal(Object.keys(INPUT_SCHEMAS).length, 161);
     assert.deepEqual(Object.keys(INPUT_SCHEMAS).sort(), Object.keys(TOOL_DEFINITIONS).sort());
-    for (const [name, definition] of Object.entries(TOOL_DEFINITIONS))
+    for (const [name, definition] of Object.entries(TOOL_DEFINITIONS)){
         assert.doesNotThrow(() => validateSchema(INPUT_SCHEMAS[name], definition.example), name);
+    }
+});
+
+test('every Agent tool satisfies the pinned Worker object schema contract',()=>{
+    for(const name of new Set(Object.values(ROLE_TOOLS).flat()))
+        assert.equal(TOOL_DEFINITIONS[name].inputSchema.type,'object',name);
 });
 
 test('operation schemas reject missing/unknown fields and invalid primitive values', () => {
@@ -25,6 +32,10 @@ test('operation schemas reject missing/unknown fields and invalid primitive valu
         ['model_http_configure', { maxRequests: -1 }],
         ['model_http_configure', { maxRequests: 1 }],
         ['model_http_inspect', { limit: 101 }],
+        ['research_action_prepare', {kind:'history',history:{kind:'reports'},sessionId:'extra'}],
+        ['research_action_prepare', {kind:'history',history:{kind:'reports'},claim:{claimId:'c',expectedVersion:1}}],
+        ['research_action_prepare', {kind:'text_grant',textGrant:{documents:[],maxSearches:3,expiresAt:'2099-01-01T00:00:00Z'}}],
+        ['research_action_decide', {requestId:'r',expectedVersion:1,decision:'confirm',approved:true}],
     ];
     for (const [name, input] of invalid)
         assert.throws(() => validateSchema(INPUT_SCHEMAS[name], input), { code: 'INVALID_INPUT', status: 400 }, name);

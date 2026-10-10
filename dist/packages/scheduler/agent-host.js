@@ -106,7 +106,7 @@ export class AgentHost {
                             const latest = this.app.store.get('session', s.id), input = this.app.store.get('message', queued.id, latest.projectId);
                             if (!this.valid(active) || !canSteerSession(this.app.store, latest) || input.sessionId !== latest.id || input.status !== 'queued' || input.mode !== 'steer' || (input.steerGeneration !== undefined && input.steerGeneration !== active.generation) || JSON.stringify(input.permission) !== JSON.stringify(active.actor.permission))
                                 return null;
-                            return this.app.store.update('message', input.id, input.version, { status: 'running' });
+                            return this.app.store.update('message', input.id, input.version, { status: 'running', generation: active.generation });
                         });
                         if (!m)
                             continue;
@@ -306,7 +306,7 @@ export class AgentHost {
                 requested = true;
                 const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
                 // Retain the child before commit: a commit failure is not proof of zero model use.
-                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)) };
+                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, currentMessageId: messageId ?? null, callIdActors: new Map(), messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)) };
                 this.active.set(claimed.id, active);
                 spawned.on('error', error => this.finish(active, this.clean(error.message)));
                 spawned.once('exit', code => { active.exitObserved = true; if (active.ended)
@@ -501,7 +501,10 @@ export class AgentHost {
                     this.app.teams.active(a.actor);
                 if (m.tool === PUBLICATION_IMAGE_TOOL || m.tool === DOCUMENT_IMAGE_TOOL)
                     ensure(publicationImageCatalog(join(this.app.context.dataDir, 'models.json')) === a.catalogFingerprint, 'MODEL_IMAGE_CATALOG_CHANGED', '模型目录已改变，图片不能读取');
-                const result = await this.tools.execute(a.actor, String(m.tool), m.input, String(m.toolCallId));
+                const binding = a.callIdActors?.get(callId);
+                ensure(!binding || binding.tool === tool, 'SCOPE_DENIED', '工具调用来源不匹配', 403);
+                ensure(tool !== 'research_action_prepare' || binding, 'RESEARCH_ACTION_ORIGIN_REQUIRED', '人工请求需要合法工具开始边界', 403);
+                const result = await this.tools.execute(binding?.actor ?? a.actor, String(m.tool), m.input, String(m.toolCallId));
                 if (!a.exitObserved && a.child.connected)
                     a.child.send({ type: 'tool_response', requestId: m.requestId, result });
             }
@@ -538,6 +541,12 @@ export class AgentHost {
             if (!(a.advertisedTools ?? new Set(this.tools.definitions(a.actor.role, !!a.actor.wakeupId, a.sessionId, !!a.actor.continuationId, !!a.actor.approvalResumeId).map(definition => definition.name))).has(tool))
                 return;
             const callId = String(m.toolCallId ?? tool), record = a.toolErrors?.get(callId), error = record?.tool === tool ? record : undefined;
+            if (m.type === 'tool_execution_start' && typeof m.toolCallId === 'string') {
+                const actors = a.callIdActors ??= new Map();
+                // Keep the source captured at tool start even if a later steer is consumed.
+                if (!actors.has(callId))
+                    actors.set(callId, { tool, actor: { ...a.actor, messageId: a.currentMessageId === undefined ? a.actor.messageId : a.currentMessageId ?? undefined } });
+            }
             const failed = m.type === 'tool_execution_end' && (m.isError || error);
             const reported = safeToolDiagnostic(schema.object({ input: TOOL_DEFINITIONS[tool].inputSchema }, ['input']), m.diagnostic?.code, `${m.diagnostic?.path}: ${m.diagnostic?.reason}`);
             const diagnostic = error ? error.diagnostic : reported?.code === 'INVALID_INPUT' ? reported : undefined;
@@ -589,8 +598,16 @@ export class AgentHost {
             if (text)
                 this.app.store.transaction(() => { ensure(this.valid(a), 'LEASE_EXPIRED', '旧 Worker 不能保存当前会话输出'); this.app.store.event(s.projectId, 'session.delta', { sessionId: s.id, generation: a.generation, text: text.slice(0, 4000), truncated: text.length > 4000 }); });
         }
-        if (m?.type === 'input_consumed' && a.messageIds.includes(m.messageId) && a.sent.has(m.messageId))
-            a.consumedIds.add(m.messageId);
+        if (m?.type === 'input_consumed' && a.messageIds.includes(m.messageId) && a.sent.has(m.messageId)) {
+            const input = this.app.store.maybe('message', m.messageId);
+            const ordinary = input?.projectId === s.projectId && input.sessionId === s.id && input.role === 'user' && input.origin !== 'automation' && !input.wakeupId && !input.approvalNoticeId && !input.queueRemoved && input.status === 'running' && input.generation === a.generation;
+            if (ordinary) {
+                a.consumedIds.add(m.messageId);
+                a.currentMessageId = m.messageId;
+            }
+            else
+                a.currentMessageId = null;
+        }
         if (m?.type === 'control_error' && a.messageIds.includes(m.messageId))
             this.failInput(a, m.messageId, this.clean(String(m.error ?? 'Worker 未接受输入')));
         if (m?.type === 'message_ack' && !a.messageIds.includes(m.messageId) && a.actor.taskId && a.sent.has(m.messageId)) {

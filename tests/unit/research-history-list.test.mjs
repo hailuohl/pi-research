@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setup,USER} from '../support/research.mjs';
 import {pmcDocument} from '../support/pmc-corpus.mjs';
+import {documentImageFixture} from '../support/document-image.mjs';
 import {startTeam,spec,actor} from '../support/collaboration.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {ToolDispatcher} from '../../dist/packages/research-tools/dispatcher.js';
@@ -28,19 +29,30 @@ function fixture(s){
  return {document,pmc,evidence,pdfEvidence,pmcEvidence,claim,report};
 }
 
+test('documents index advertises only current enabled fixed parse pairs or PMC grant availability',()=>{const s=setup();try{
+ const pdf=documentImageFixture(s.app,s.project.id,{pages:1}),pmc=pmcDocument(s),pair={documentVersionId:pdf.document.id,parseResultId:pdf.result.id},who=root(s);
+ let rows=list(s,'documents',{},who).items;assert.ok(rows.every(r=>r.textGrantAvailable===false&&r.parseResultIds.length===0));
+ const config=s.app.textEvidence.configure(USER,s.project.id,{enabled:true,documents:[pair],pmcDocuments:[{documentVersionId:pmc.id}],expectedVersion:0});
+ rows=list(s,'documents',{},who).items;assert.deepEqual(rows.find(r=>r.id===pdf.document.id).parseResultIds,[pdf.result.id]);assert.equal(rows.find(r=>r.id===pdf.document.id).textGrantAvailable,true);assert.deepEqual(rows.find(r=>r.id===pmc.id).parseResultIds,[]);assert.equal(rows.find(r=>r.id===pmc.id).textGrantAvailable,true);
+ const wire=JSON.stringify(rows);for(const value of ['SYNTHETIC PARSER TEXT',pdf.document.original.artifactId,pmc.derivedText.artifactId])assert.ok(!wire.includes(value));
+ s.app.approvals.stale(pdf.result.jobId);const stale=list(s,'documents',{},who).items.find(r=>r.id===pdf.document.id);assert.deepEqual(stale.parseResultIds,[]);assert.equal(stale.textGrantAvailable,false);
+ s.app.textEvidence.configure(USER,s.project.id,{enabled:false,expectedVersion:config.version});assert.ok(list(s,'documents',{},who).items.every(r=>!r.textGrantAvailable&&r.parseResultIds.length===0));
+}finally{s.close();}});
+
 test('research history is a closed metadata projection and does not grant protected evidence content',async()=>{
  const s=setup();try{
   const f=fixture(s),who=root(s),tools=new ToolDispatcher(s.app),before=counts(s),pages={};
   for(const kind of ['documents','evidence','claims','reports'])pages[kind]=await tools.execute(who,TOOL,{kind},'index-'+kind);
   assert.deepEqual(counts(s),before);assert.deepEqual(Object.keys(pages.documents).sort(),['cursor','hasMore','items']);
   assert.deepEqual(pages.documents.items.map(row=>row.id),[f.document.id,f.pmc.id]);
-  assert.deepEqual(Object.keys(pages.documents.items[0]).sort(),['acquiredAt','contentKind','id','source','title']);
+  assert.deepEqual(Object.keys(pages.documents.items[0]).sort(),['acquiredAt','contentKind','id','parseResultIds','source','textGrantAvailable','title']);
+  assert.deepEqual(pages.documents.items[0].parseResultIds,[]);assert.equal(pages.documents.items[0].textGrantAvailable,false);
   assert.deepEqual(pages.documents.items[0].source,{requestedVersion:null,reportedVersion:null});
   assert.deepEqual(pages.documents.items[1].source,{provider:'pubmed',requestedVersion:f.pmc.source.requestedVersion,reportedVersion:f.pmc.source.reportedVersion});
   assert.deepEqual(pages.evidence.items.map(row=>row.id),[f.evidence.id,f.pdfEvidence.id,f.pmcEvidence.id]);
   assert.deepEqual(pages.evidence.items[1],{id:f.pdfEvidence.id,type:'paper',createdAt:f.pdfEvidence.createdAt,documentVersionId:f.document.id,parseResultId:'local-parse-fixture'});
   assert.equal(pages.evidence.items[2].documentVersionId,f.pmc.id);assert.ok(!Object.hasOwn(pages.evidence.items[2],'parseResultId'));
-  assert.deepEqual(pages.claims.items,[{id:f.claim.id,status:'accepted',validity:'current',createdAt:f.claim.createdAt,evidenceIds:[f.evidence.id]}]);
+  assert.deepEqual(pages.claims.items,[{id:f.claim.id,version:f.claim.version,status:'accepted',validity:'current',createdAt:f.claim.createdAt,evidenceIds:[f.evidence.id]}]);
   assert.deepEqual(pages.reports.items,[{id:f.report.id,title:'Saved report',createdAt:f.report.createdAt,updatedAt:f.report.updatedAt,formatVersion:1,runCount:0,claimCount:1}]);
   const wire=JSON.stringify(pages);
   for(const secret of ['PDF_BODY_SECRET','PDF_QUOTE_SECRET','PMC_QUOTE_SECRET','EVIDENCE_QUOTE_SECRET','EVIDENCE_DESCRIPTION_SECRET','CLAIM_STATEMENT_SECRET','CLAIM_LIMITATION_SECRET',f.report.artifactId,f.document.original.artifactId,f.pmc.derivedText.artifactId])assert.ok(!wire.includes(secret),secret);

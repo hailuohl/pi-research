@@ -1,3 +1,4 @@
+import {RESEARCH_ACTION_OUTPUT_SCHEMAS} from './research-action-schemas.js';
 import {EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS,GPU_SCHEMA,LOCAL_RUNTIME_SCHEMA,LOCAL_EXECUTION_SCHEMA,GPU_TARGET_SCHEMA} from './execution-environment-schemas.js';
 import {HOST_EXECUTION_OUTPUT_SCHEMA} from './host-access-schemas.js';
 import {RESEARCH_BRIEF_OUTPUT_SCHEMAS} from './research-brief-schemas.js';
@@ -180,6 +181,7 @@ const artifact = row('artifact', { title: string, digest: string, size: integer,
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    ...RESEARCH_ACTION_OUTPUT_SCHEMAS,
     host_execute:HOST_EXECUTION_OUTPUT_SCHEMA,
     ...RESEARCH_BRIEF_OUTPUT_SCHEMAS,
     text_corpus_grant_prepare:textCorpusGrant,text_corpus_grant_inspect:textCorpusGrant,text_corpus_grant_activate:textCorpusGrant,text_corpus_grant_revoke:textCorpusGrant,
@@ -192,9 +194,9 @@ export const OUTPUT_SCHEMAS = {
     run_inspect: {...CORE_OUTPUT_SCHEMAS.run_submit,properties:{...CORE_OUTPUT_SCHEMAS.run_submit.properties,scheduling:runScheduling}},
     research_history_list: object({
         items: {type:'array',maxItems:100,items:{anyOf:[
-            object({id:string,title:string,contentKind:enumeration('metadata','abstract','provider-text','original-pdf','user-text','user-media'),acquiredAt:string,source:object({provider:enumeration('alphaxiv','openalex','biorxiv','pubmed','crossref'),requestedVersion:nullableString,reportedVersion:nullableString},['provider'])}),
+            object({id:string,title:string,contentKind:enumeration('metadata','abstract','provider-text','original-pdf','user-text','user-media'),acquiredAt:string,source:object({provider:enumeration('alphaxiv','openalex','biorxiv','pubmed','crossref'),requestedVersion:nullableString,reportedVersion:nullableString},['provider']),parseResultIds:{...strings,maxItems:30},textGrantAvailable:boolean}),
             object({id:string,type:enumeration('artifact','run','paper','code'),createdAt:string,documentVersionId:string,parseResultId:string},['documentVersionId','parseResultId']),
-            object({id:string,status:enumeration('proposal','accepted','rejected','disputed'),validity:enumeration('current','stale'),createdAt:string,evidenceIds:strings},['validity']),
+            object({id:string,version:integer,status:enumeration('proposal','accepted','rejected','disputed'),validity:enumeration('current','stale'),createdAt:string,evidenceIds:strings},['validity']),
             object({id:string,title:string,createdAt:string,updatedAt:string,formatVersion:{enum:[0,1]},runCount:integer,claimCount:integer})
         ]}},
         cursor:{type:'integer',minimum:0,maximum:Number.MAX_SAFE_INTEGER},hasMore:boolean

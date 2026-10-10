@@ -60,3 +60,15 @@ test('PMC grant form selects one fixed document and preserves the PDF-only reque
  assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/operations/text_corpus_grant_prepare');
  assert.deepEqual(calls[0].body.input.documents,[]);assert.deepEqual(calls[0].body.input.pmcDocuments,[{documentVersionId:'pmc-1'}]);assert.equal(calls[0].body.input.corpusId,'fixed-corpus');assert.equal(calls[0].body.input.configurationVersion,4);assert.equal(panel.state.selectedId,'pmc-grant');
 });
+
+test('source configuration preserves revocation of existing grants without a new grant form',async t=>{
+ const old=globalThis.fetch;t.after(()=>globalThis.fetch=old);const calls=[];
+ globalThis.fetch=async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return {ok:true,json:async()=>({})};};
+ const {TextEvidencePanel,TextCorpusGrantPanel}=await import('../../dist/web/assets/text-evidence.js');
+ const data={project:{id:'p'},artifacts:[],sessions:[],approvals:[],textCorpusGrants:[{id:'g',version:3,state:'active',effectiveState:'active',validity:'current',usage:{used:0,limit:1,remaining:1},model:{provider:'test',model:'m'},documents:[],sessionId:'s',corpusId:'c',digest:'digest',approvalId:'a',expiresAt:'2099-01-01'}]};
+ const config=new TextEvidencePanel({configurationOnly:true,data,perform:async f=>f()});
+ const grantProps=find(config.render(),n=>n.type===TextCorpusGrantPanel).props;assert.equal(grantProps.existingOnly,true);
+ const panel=new TextCorpusGrantPanel(grantProps),tree=panel.render();assert.equal(find(tree,n=>n.type==='form'),undefined);assert.ok(!flatten(tree).includes('保存固定授权草案'));
+ find(tree,n=>n.type==='button'&&flatten(n.props.children)==='撤销授权').props.onClick();await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/operations/text_corpus_grant_revoke');assert.deepEqual(calls[0].body,{projectId:'p',input:{grantId:'g',expectedVersion:3}});
+});

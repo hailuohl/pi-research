@@ -10,6 +10,20 @@ import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
 import {inputEnvelope} from '../../dist/packages/pi-adapter/attachment-input.js';
 async function until(predicate){const end=Date.now()+20000;while(Date.now()<end){if(predicate())return;await delay(10);}assert.fail('queue fixture timed out');}
 
+test('actual Host IPC pins a pending tool to its old input and binds a consumed human steer to new requests',async()=>{
+ const s=setup(),entry=join(s.dir,'research-origin-worker.mjs'),responses=[];
+ writeFileSync(entry,`const input={kind:'history',history:{kind:'reports'}};let replies=0;const begin=id=>process.send({type:'tool_execution_start',tool:'research_action_prepare',toolCallId:id});const call=(id,requestId)=>process.send({type:'tool',tool:'research_action_prepare',toolCallId:id,requestId,input});process.on('message',m=>{if(m.type==='start'){begin('initial');call('initial',1);}if(m.type==='tool_response'){process.send({type:'assistant_message',content:JSON.stringify({fixtureResponse:m.requestId,result:m.result,error:m.error})});if(m.requestId===1)begin('old-pending');else if(++replies===3)process.send({type:'done'});}if(m.type==='steer'){if(!m.content.endsWith('\\n\\n<pi-research-input:'+m.messageId+'>'))throw Error('Missing host input envelope');process.send({type:'message_ack',messageId:m.messageId});process.send({type:'input_consumed',messageId:'not-delivered'});process.send({type:'input_consumed',messageId:m.messageId});call('old-pending',2);begin('new-call');call('new-call',3);call('missing-start',4);}if(m.type==='abort')process.send({type:'done',aborted:true});});`);
+ const host=new AgentHost(s.app,{inspect:()=>({ready:true}),workerEntry:entry});
+ try{
+  const initial=s.app.sessions.send(USER,s.session.id,{content:'Read existing reports'});host.tick();const active=host.active.get(s.session.id);active.child.on('message',m=>{if(m.type==='assistant_message')responses.push(JSON.parse(m.content));});
+  await until(()=>active.callIdActors?.has('old-pending'));const original=s.app.store.list('research-action',s.project.id)[0];assert.equal(original.originMessageId,initial.id);assert.equal(active.callIdActors.get('old-pending').actor.messageId,initial.id);
+  s.app.operations.execute(USER,'research_action_decide',{requestId:original.id,expectedVersion:1,decision:'dismiss'},{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:'reject-original'});
+  const queued=s.app.sessions.send(USER,s.session.id,{content:'Please read reports again'}),steer=s.app.sessions.queueAction(USER,s.session.id,{messageId:queued.id,expectedVersion:queued.version,action:'steer'});host.tick();assert.equal(s.app.store.get('message',steer.id).generation,active.generation);
+  await until(()=>host.active.size===0);const requests=s.app.store.list('research-action',s.project.id);assert.equal(requests.length,2);assert.equal(requests.find(r=>r.id===original.id).state,'rejected');assert.equal(requests.find(r=>r.id!==original.id).originMessageId,steer.id);assert.equal(requests.find(r=>r.id!==original.id).state,'pending');
+  assert.equal(responses.find(r=>r.fixtureResponse===2).result.id,original.id);assert.equal(responses.find(r=>r.fixtureResponse===2).result.state,'rejected');assert.equal(responses.find(r=>r.fixtureResponse===4).error.code,'RESEARCH_ACTION_ORIGIN_REQUIRED');assert.equal(active.actor.messageId,initial.id);assert.equal(active.callIdActors.get('new-call').actor.messageId,steer.id);assert.equal(s.app.store.get('message',steer.id).status,'completed');
+ }finally{await host.stop();s.close();}
+});
+
 test('Host launches writer-claimed edited body; queued follow-up stays editable and ACK alone is not consumption',async()=>{
  const s=setup(),entry=join(s.dir,'queue-worker.mjs');
  writeFileSync(entry,`process.on('message',m=>{if(m.type==='start')process.send({type:'assistant_message',content:m.prompt});if(m.type==='steer'){process.send({type:'message_ack',messageId:m.messageId});setTimeout(()=>process.send({type:'done'}),100);}if(m.type==='abort')process.send({type:'done',aborted:true});});`);

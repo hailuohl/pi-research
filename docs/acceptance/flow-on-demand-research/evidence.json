@@ -1,0 +1,71 @@
+{
+  "baseline": "26642f4cf949a8e269360e20295a3e48fa1b9be2",
+  "checks": {
+    "full": {
+      "tests": 1638,
+      "pass": 1613,
+      "fail": 1,
+      "skipped": 24,
+      "repairedFixture": "settings-ui exact section count 3→4; rechecked in affected suite",
+      "log": ".validation/on-demand-research/final-regression.log"
+    },
+    "affected": {
+      "tests": 61,
+      "pass": 61,
+      "fail": 0,
+      "skipped": 0,
+      "log": ".validation/on-demand-research/key-fix-focused.log"
+    },
+    "cleanBuild": {
+      "identical": true,
+      "files": 658,
+      "node": "24.19.0",
+      "manifest": "bbc158acf16ab72ab6f4ec05ce688787b2a3ca95f4a1fa21f78478a5bce003ce"
+    }
+  },
+  "snapshot": {
+    "files": 111,
+    "sha256": "21cda41279fe03077ada2c22ae2142e098e1d7200d90ce48ff2f8b2760303f82"
+  },
+  "browser": {
+    "synthetic": true,
+    "idleHasNoResourceArea": true,
+    "claimDecision": true,
+    "textGrant": true,
+    "fixedReport": true,
+    "archivedHistoryWithoutRequest": true,
+    "fixedPublicationFirstClick": true,
+    "fixedPdfDownloadDigest": "8f40cc7cad7b92f1ed449b28f66358d171bc8f56cca8aa2ad9359fdfccd4bfbf",
+    "pollingDoesNotDuplicateReview": true
+  },
+  "models": [
+    {
+      "task": "design",
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "high",
+      "runtimeEcho": "unavailable"
+    },
+    {
+      "task": "backend",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "xhigh",
+      "runtimeEcho": "unavailable"
+    },
+    {
+      "task": "independent-review",
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "runtimeEcho": "unavailable"
+    },
+    {
+      "task": "publication-fix",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeEcho": "unavailable"
+    }
+  ],
+  "unverified": [
+    "paid-provider live model",
+    "real PDF parse/TeX compilation for this UI flow"
+  ]
+}

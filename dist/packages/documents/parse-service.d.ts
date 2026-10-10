@@ -18,7 +18,7 @@ export declare function validateParserOutput(root: string, rawDigest: string, ex
 export declare function checkDocumentVersion(source: DocumentVersion['source'], texts: string[]): {
     requestedVersion: string | null;
     observedVersion: string | null;
-    versionAssurance: "unverified" | "marker-match";
+    versionAssurance: "marker-match" | "unverified";
 };
 export declare class DocumentParsingService {
     private app;
@@ -88,7 +88,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;
@@ -122,7 +122,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;
@@ -155,7 +155,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;
@@ -188,7 +188,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "incomplete" | "pending" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;
@@ -279,7 +279,7 @@ export declare class DocumentParsingService {
             ocr: false;
             score: null;
         };
-        versionAssurance: "unverified" | "marker-match";
+        versionAssurance: "marker-match" | "unverified";
         requestedVersion: string | null;
         observedVersion: string | null;
         items: DocumentPage[];
