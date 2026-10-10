@@ -33,6 +33,23 @@ export declare const TASK_PERMISSION_EFFECTS: string[];
 export declare class SessionPermissionService {
     private app;
     constructor(app: ResearchApp);
+    assertActionInput(input: Record<string, unknown>): void;
+    executeAction(actor: Actor, sessionId: string, actionId: string, signal?: AbortSignal): unknown;
+    inspectAction(actor: Actor, sessionId: string, actionId: string): {
+        blockedReason: string;
+        actionId: string;
+        operation: string;
+        state: "failed" | "unknown" | "stale" | "completed" | "pending" | "approved" | "rejected" | "executing";
+        approvalStatus: "stale" | "pending" | "approved" | "rejected";
+        input: Record<string, unknown> | null;
+    } | {
+        input: Record<string, unknown>;
+        actionId: string;
+        operation: string;
+        state: "failed" | "unknown" | "stale" | "completed" | "pending" | "approved" | "rejected" | "executing";
+        approvalStatus: "stale" | "pending" | "approved" | "rejected";
+        blockedReason: string | null;
+    };
     root(sessionId: string): Row<Session>;
     capture(sessionId: string, restricted?: boolean): PermissionReference;
     assert(ref: PermissionReference, effect?: boolean): void;

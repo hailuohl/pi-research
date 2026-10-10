@@ -6,6 +6,8 @@ export interface OperationScope {
     sessionId?: string;
     idempotencyKey?: string;
     signal?: AbortSignal;
+    /** Host-only binding for the fixed text executor; never a transport or model argument. */
+    approvedActionId?: string;
     /** Only trusted legacy adapters provide these, never request JSON. */
     legacy?: {
         scope: string;

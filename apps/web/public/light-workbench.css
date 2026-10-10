@@ -212,7 +212,7 @@ select:not([multiple]):not([size]):disabled { color: var(--muted); opacity: .6; 
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
-.conversation .message-meta { color: var(--muted); flex-wrap: wrap; }
+.conversation .message-meta { position: relative; color: var(--muted); flex-wrap: wrap; }
 .conversation .message-meta strong, .conversation .message-system .message-meta strong { color: var(--muted); }
 .conversation .message-meta time { color: var(--muted); }
 .conversation .message-tools button, .conversation .message-tool-summary,

@@ -2,7 +2,7 @@ import { readCatalog, readSkill, inspectSessionSkills, selectSessionSkills } fro
 import { attachmentScope, readAttachment } from '../../pi-adapter/attachments.js';
 import { digest } from '../../storage/store.js';
 import { routePaperId, parseSearch } from '../../connectors/contracts.js';
-import { ensure } from '../../domain/errors.js';
+import { ensure, DomainError } from '../../domain/errors.js';
 import { publicRecords } from '../../domain/public-record.js';
 import { text, object, integer } from '../validation.js';
 import { CONTINUATION_TOOLS, APPROVAL_RESUME_TOOLS } from '../../policy/research-automation.js';
@@ -367,6 +367,8 @@ const SPECS = [
     make('research_skill_list', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'research_skill_list', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'research_skill_list', x) }),
     make('research_skill_read', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'research_skill_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'research_skill_read', x) }),
     make('connector_status', { idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'connector_status', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'connector_status', x) }),
+    make('session_action_inspect', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c) => { interactiveCoordinator(c.actor, c.projectId, c.session); }, preconditions: noPrecondition, execute: (c, x) => c.app.sessionPermissions.inspectAction(c.actor, c.session.id, x.actionId) }),
+    make('session_action_execute', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: (c) => { interactiveCoordinator(c.actor, c.projectId, c.session); }, preconditions: noPrecondition, execute: (c, x) => c.app.sessionPermissions.executeAction(c.actor, c.session.id, x.actionId, c.signal) }),
     make('session_notice_read', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'session_notice_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'session_notice_read', x) }),
     make('project_inspect', { idempotencyPolicy: 'read-only', authorize: (c, x) => { if (x.githubCommit !== undefined && c.actor.type === 'agent')
             interactiveCoordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'project_inspect'));
@@ -502,8 +504,9 @@ export class OperationRegistry {
         }
         let key = options.idempotencyKey;
         let permission;
-        const cached = !['research_brief_inspect', 'research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
-        if (cached)
+        // Fixed execution rechecks consumption each time; only its original operation stores a receipt.
+        const cached = !['session_action_execute', 'session_action_inspect', 'research_brief_inspect', 'research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
+        if (cached || spec.idempotencyPolicy === 'key-required')
             ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         const context = { ...options, app: this.app, actor, session, validate: () => {
                 ensure(!options.signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时', 409);
@@ -530,7 +533,26 @@ export class OperationRegistry {
                 (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field]);
         }
         spec.authorize(context, input);
-        permission = this.app.sessionPermissions.guard(actor, id, input, key);
+        if (options.approvedActionId) {
+            interactiveCoordinator(actor, pid, session);
+            ensure(['workspace_write', 'research_brief_save', 'artifact_create'].includes(id), 'SESSION_ACTION_EXECUTION_DENIED', '固定执行入口不允许此操作', 403);
+            permission = this.app.store.transaction(() => {
+                this.app.sessionPermissions.validate(actor.permission ?? this.app.sessionPermissions.capture(session.id), session.id, id, input, options.approvedActionId);
+                let fixed;
+                try {
+                    fixed = this.app.sessionPermissions.guard(actor, id, input, key);
+                }
+                catch (error) {
+                    if (error instanceof DomainError && error.code === 'APPROVAL_REQUIRED')
+                        throw new DomainError('APPROVAL_STALE', '固定来源已变化，未创建替代审批', 409);
+                    throw error;
+                }
+                ensure(fixed && fixed.actionId === options.approvedActionId && !fixed.consumed, 'APPROVAL_STALE', '实际操作与指定的未消费批准不符', 409);
+                return fixed;
+            });
+        }
+        else
+            permission = this.app.sessionPermissions.guard(actor, id, input, key);
         if (permission?.key) {
             key = permission.key;
             context.idempotencyKey = key;
@@ -618,6 +640,9 @@ export class OperationRegistry {
                 assertProjectReadable(this.app.store, pid, actor);
             if (actor.type === 'agent')
                 this.authorizeAgent(actor, id);
+            // Supported secret updates share this writer lock, unlike the earlier readback snapshot.
+            if (options.approvedActionId)
+                this.app.sessionPermissions.assertActionInput(input);
             if (permission) {
                 this.app.sessionPermissions.assert(permission.reference, false);
                 if (permission.actionId) {
@@ -628,7 +653,15 @@ export class OperationRegistry {
             spec.preconditions(context, input);
             if (permission?.actionId)
                 context.actor = { ...actor, permissionActionId: permission.actionId };
-            return spec.execute(context, input);
+            const result = spec.execute(context, input);
+            if (options.approvedActionId) {
+                this.app.sessionPermissions.assertActionInput(input);
+                if (id === 'artifact_create') {
+                    const saved = this.app.evidence.read(actor, result.id);
+                    ensure(saved.bytes.equals(Buffer.from(input.content)) && saved.artifact.title === input.title && saved.artifact.mediaType === (input.mediaType ?? 'text/plain'), 'SESSION_ACTION_BYTES_CHANGED', '实际产物与固定批准正文不符，未发布结果', 409);
+                }
+            }
+            return result;
         };
         // Host execution owns its durable intent/receipt. Never reconstruct or rerun an unknown command.
         if (id === 'host_execute') {
@@ -719,6 +752,7 @@ export class OperationRegistry {
                     spec.authorize(context, input);
                 const previous = lookup();
                 if (previous) {
+                    ensure(!options.approvedActionId, 'SESSION_ACTION_NOT_APPROVED', '固定批准已被其它调用消费，请回查结果，不重复执行', 409);
                     if (['research_action_prepare', 'research_action_inspect', 'research_action_decide'].includes(id)) {
                         context.validate();
                         spec.authorize(context, input);

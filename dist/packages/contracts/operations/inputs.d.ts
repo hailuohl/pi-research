@@ -617,6 +617,34 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ["artifactId"];
         readonly additionalProperties: false;
     };
+    readonly session_action_execute: {
+        readonly type: "object";
+        readonly properties: {
+            readonly actionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["actionId"];
+        readonly additionalProperties: false;
+    };
+    readonly session_action_inspect: {
+        readonly type: "object";
+        readonly properties: {
+            readonly actionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["actionId"];
+        readonly additionalProperties: false;
+    };
     readonly session_notice_read: {
         readonly type: "object";
         readonly properties: {

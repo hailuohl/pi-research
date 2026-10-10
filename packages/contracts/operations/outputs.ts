@@ -209,6 +209,8 @@ export const OUTPUT_SCHEMAS = {
     report_export:artifact,
     evidence_register: evidence,
     evidence_read: evidence,
+    session_action_execute:{anyOf:[object({actionId:string,operation:{const:'workspace_write'},result:CORE_OUTPUT_SCHEMAS.workspace_write}),object({actionId:string,operation:{const:'research_brief_save'},result:RESEARCH_BRIEF_OUTPUT_SCHEMAS.research_brief_save}),object({actionId:string,operation:{const:'artifact_create'},result:artifact})]},
+    session_action_inspect: object({actionId:string,operation:string,state:enumeration('pending','approved','rejected','stale','executing','completed','failed','unknown'),approvalStatus:enumeration('pending','approved','rejected','stale'),input:{anyOf:[{type:'object',additionalProperties:{description:'Exact approved operation input; its operation contract already validated every field.'}},{type:'null'}]},blockedReason:nullableString}),
     session_notice_read: object({ messageId: string, content: string, cursor: integer, complete: boolean }),
     run_logs: object({ content: string, cursor: integer, complete: boolean,start:integer,size:integer,identity:nullableString }),
     run_source_list:object({runId:string,experimentId:string,revision:integer,sourceDigest:string,gitCommit:string,files:array(sourceFile)},['gitCommit']),

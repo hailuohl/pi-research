@@ -2,6 +2,7 @@ import type {Store} from '../storage/store.js';
 import type {Message,ModelConfig,Role,Row,Session} from '../domain/types.js';
 import {ensure,DomainError} from '../domain/errors.js';
 import {integer,object,oneOf,text} from '../contracts/validation.js';
+import {publicRecord} from '../domain/public-record.js';
 
 export const MESSAGE_PREVIEW_CHARACTERS=4000,MESSAGE_PAGE_BYTES=262144;
 export type SessionCatalogItem=Pick<Row<Session>,'id'|'kind'|'projectId'|'version'|'createdAt'|'updatedAt'|'title'|'role'|'state'|'model'|'teamId'|'taskId'>;
@@ -53,6 +54,6 @@ export function sessionQueue(store:Store,session:Row<Session>,value:unknown={}){
  const total=Number(store.db.prepare(`SELECT COUNT(*) n FROM records WHERE ${where}`).get(session.projectId!,session.id)!.n);
  const params:Array<string|number>=[session.projectId!,session.id];if(anchor)params.push(Number(anchor.rowid));
  const rows=store.db.prepare(`SELECT json_remove(json_set(data,'$.content',substr(json_extract(data,'$.content'),1,4000)),'$.permission') data,length(CAST(json_extract(data,'$.content') AS BLOB)) bytes FROM records WHERE ${where}${anchor?' AND rowid>?':''} ORDER BY rowid LIMIT ?`).all(...params,limit+1);
- const items=rows.slice(0,limit).map(r=>{const m=JSON.parse(r.data as string) as Row<Message>;return {...m,contentTruncated:!!m.contentTruncated,previewTruncated:Buffer.byteLength(m.content,'utf8')<Number(r.bytes),contentBytes:Number(r.bytes)};});
+ const items=rows.slice(0,limit).map(r=>{const m=publicRecord(JSON.parse(r.data as string) as Row<Message>);return {...m,contentTruncated:!!m.contentTruncated,previewTruncated:Buffer.byteLength(m.content,'utf8')<Number(r.bytes),contentBytes:Number(r.bytes)};});
  return {items,total,nextCursor:rows.length>limit?items.at(-1)!.id:null,canSteer:canSteerSession(store,session)};
 }

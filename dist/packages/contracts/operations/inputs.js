@@ -68,6 +68,8 @@ export const INPUT_SCHEMAS = {
     change_proposal_prepare: s.object({ testJobId: id, baseExperimentId: id, expectedRevision: version, title: s.string(200), hypothesis: s.string(), changes: s.array(s.object({ path: s.string(1000), artifactId: s.nullable(id), expectedDigest: s.nullable(s.string(64)) }, ['path', 'artifactId', 'expectedDigest']), 50, 1) }, ['baseExperimentId', 'expectedRevision', 'title', 'hypothesis', 'changes']),
     reviewed_change_prepare: s.object({ reviewId: id, title: s.string(200), hypothesis: s.string() }, ['reviewId', 'title', 'hypothesis']),
     artifact_read: s.object({ artifactId: id, cursor: s.nullable(s.integer(0, 2 * 1024 * 1024)) }, ['artifactId']),
+    session_action_execute: s.object({ actionId: id }, ['actionId']),
+    session_action_inspect: s.object({ actionId: id }, ['actionId']),
     session_notice_read: s.object({ messageId: id, cursor: s.nullable(s.integer(0, Number.MAX_SAFE_INTEGER)) }, ['messageId']),
     project_inspect: s.object({ runIntentId: id, githubCommit: { ...s.string(40, 40), pattern: '^[0-9a-f]{40}$' } }),
     workspace_list: s.object({ source }),

@@ -78,6 +78,14 @@ test('all existing public tools have closed, literal success contracts exercised
   let serial=0;
   const check=(name,value)=>{validateSchema(OUTPUT_SCHEMAS[name],value,'output');seen.add(name);return value;};
   const call=async(name,input={},a=root)=>check(name,await tools.execute(a,name,input,`schema-${++serial}`));
+  const fixedSession=s.app.sessions.create(USER,s.project.id,{title:'Fixed approval schema'});s.app.sessionPermissions.initialize(fixedSession.id,'confirm');
+  s.app.store.update('session',fixedSession.id,fixedSession.version,{state:'running',generation:1,leaseUntil:Date.now()+120000});
+  const fixedActor={...root,sessionId:fixedSession.id},fixedInput={path:'fixed.txt',content:'Approved exact input',expectedDigest:null};
+  await assert.rejects(tools.execute(fixedActor,'workspace_write',fixedInput,'schema-fixed-prepare'),{code:'APPROVAL_REQUIRED'});
+  const fixedAction=s.app.sessionPermissions.status(USER,fixedSession.id).actions.at(-1);
+  s.app.sessionPermissions.decide(USER,fixedSession.id,fixedAction.id,{expectedVersion:fixedAction.version,expectedApprovalVersion:fixedAction.approval.version,approved:true});
+  const fixedRead=await call('session_action_inspect',{actionId:fixedAction.id},fixedActor);assert.deepEqual(fixedRead.input,fixedInput);assert.equal(fixedRead.blockedReason,null);
+  const fixedSaved=await call('session_action_execute',{actionId:fixedAction.id},fixedActor);assert.equal(fixedSaved.operation,'workspace_write');assert.equal(fixedSaved.result.digest,digest(Buffer.from(fixedInput.content)));
   const actionMessage=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'user',content:'Read saved reports',mode:'prompt',status:'running',generation:1});
   const actionActor={...root,messageId:actionMessage.id,researchModelDigest:s.app.researchAutomation.modelIdentity(s.app.store.get('session',s.session.id))};
   const action=await call('research_action_prepare',{kind:'history',history:{kind:'reports'}},actionActor);
