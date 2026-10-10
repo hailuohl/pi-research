@@ -89,6 +89,7 @@ export const INPUT_SCHEMAS = {
     run_submit: s.object({ intentId: id }, ['intentId']),
     run_inspect: s.object({ runId: id, includeScheduling: s.boolean() }, ['runId']),
     run_list: s.object({ cursor: s.integer(0, Number.MAX_SAFE_INTEGER), limit: s.integer(1, 100) }),
+    research_history_list: s.object({ kind: s.enum(['documents', 'evidence', 'claims', 'reports']), cursor: s.integer(0, Number.MAX_SAFE_INTEGER), limit: s.integer(1, 100) }, ['kind']),
     run_logs: s.object({ runId: id, cursor: s.nullable(s.integer(0, Number.MAX_SAFE_INTEGER)), stream: s.enum(['stdout', 'stderr']), identity: s.nullable(s.string(100)) }, ['runId']),
     run_source_list: s.object({ runId: id }, ['runId']),
     run_source_read: s.object({ runId: id, path: s.string(1000), cursor: s.integer(0), limit: s.integer(1, 64000) }, ['runId', 'path']),

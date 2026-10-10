@@ -103,7 +103,7 @@ class EvidenceView extends React.Component {
     const { data, perform } = this.props;
     const artifact = data.artifacts.find((a) => a.id === this.state.active);
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u8D44\u6599\u4E0E\u8BC1\u636E", sub: "\u8D44\u6599\u662F\u539F\u59CB\u8F93\u5165\uFF1B\u53EA\u6709\u660E\u786E\u5B9A\u4F4D\u5E76\u6821\u9A8C\u540E\u7684\u7247\u6BB5\uFF0C\u624D\u662F\u8BC1\u636E\u3002", children: /* @__PURE__ */ jsxs("label", { className: "secondary file-upload", children: [
+      /* @__PURE__ */ jsx(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u8D44\u6599\u4E0E\u8BC1\u636E", sub: "\u8D44\u6599\u662F\u539F\u59CB\u8F93\u5165\uFF1B\u53EA\u6709\u660E\u786E\u5B9A\u4F4D\u5E76\u6821\u9A8C\u540E\u7684\u7247\u6BB5\uFF0C\u624D\u662F\u8BC1\u636E\u3002", children: /* @__PURE__ */ jsxs("label", { className: "secondary file-upload", children: [
         /* @__PURE__ */ jsx(Icon, { name: "plus", size: 15 }),
         "\u5BFC\u5165\u6587\u672C\u8D44\u6599",
         /* @__PURE__ */ jsx("input", { type: "file", disabled: data.project.archived, accept: ".txt,.md,.csv,.json,.py,.tex,.mjs", onChange: (e) => {

@@ -184,6 +184,15 @@ export const OUTPUT_SCHEMAS = {
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS, ...DOCUMENT_OUTPUT_SCHEMAS,
     run_inspect: { ...CORE_OUTPUT_SCHEMAS.run_submit, properties: { ...CORE_OUTPUT_SCHEMAS.run_submit.properties, scheduling: runScheduling } },
+    research_history_list: object({
+        items: { type: 'array', maxItems: 100, items: { anyOf: [
+                    object({ id: string, title: string, contentKind: enumeration('metadata', 'abstract', 'provider-text', 'original-pdf', 'user-text', 'user-media'), acquiredAt: string, source: object({ provider: enumeration('alphaxiv', 'openalex', 'biorxiv', 'pubmed', 'crossref'), requestedVersion: nullableString, reportedVersion: nullableString }, ['provider']) }),
+                    object({ id: string, type: enumeration('artifact', 'run', 'paper', 'code'), createdAt: string, documentVersionId: string, parseResultId: string }, ['documentVersionId', 'parseResultId']),
+                    object({ id: string, status: enumeration('proposal', 'accepted', 'rejected', 'disputed'), validity: enumeration('current', 'stale'), createdAt: string, evidenceIds: strings }, ['validity']),
+                    object({ id: string, title: string, createdAt: string, updatedAt: string, formatVersion: { enum: [0, 1] }, runCount: integer, claimCount: integer })
+                ] } },
+        cursor: { type: 'integer', minimum: 0, maximum: Number.MAX_SAFE_INTEGER }, hasMore: boolean
+    }),
     reviewed_change_prepare: CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
     artifact_read: object({ artifactId: string, digest: string, title: string, mediaType: string, content: string, cursor: integer, complete: boolean }),

@@ -224,7 +224,7 @@ class ReportsView extends React.Component {
     const selectedRuns = data.runs.filter((r) => s.selected.includes(r.id)), mixed = new Set(selectedRuns.map((r) => r.manifest.contractDigest)).size > 1;
     const available = s.selectedCampaigns.every((id) => (data.campaigns ?? []).some((c) => c.id === id) && (data.experimentPlans ?? []).some((p) => p.campaignId === id)) && s.selected.every((id) => eligible.some((r) => r.id === id)) && s.selectedClaims.every((id) => claims.some((c) => c.id === id));
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
+      /* @__PURE__ */ jsx(SectionTitle, { level: this.props.embedded ? 2 : 1, title: "\u62A5\u544A\u4E0E\u6210\u679C", sub: "\u56FA\u5B9A\u6587\u6863\u3001\u8FD0\u884C\u8BC1\u636E\u548C\u79BB\u7EBF\u4EA4\u4ED8\uFF1B\u62A5\u544A\u4E0D\u4EE3\u66FF\u79D1\u7814\u5224\u65AD\u3002" }),
       /* @__PURE__ */ jsxs("details", { className: "secondary-section", open: s.publicationOpen, onToggle: (event) => {
         const publicationOpen = event.currentTarget.open;
         if (publicationOpen !== this.state.publicationOpen) this.setState({ publicationOpen });

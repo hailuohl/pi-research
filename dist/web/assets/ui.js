@@ -160,10 +160,11 @@ function Empty({ title, children }) {
     /* @__PURE__ */ jsx("div", { className: "muted", children })
   ] });
 }
-function SectionTitle({ title, sub, children }) {
+function SectionTitle({ title, sub, children, level = 1 }) {
+  const Heading = level === 2 ? "h2" : "h1";
   return /* @__PURE__ */ jsxs("div", { className: "section-title", children: [
     /* @__PURE__ */ jsxs("div", { children: [
-      /* @__PURE__ */ jsx("h1", { children: title }),
+      /* @__PURE__ */ jsx(Heading, { children: title }),
       sub ? /* @__PURE__ */ jsx("p", { children: sub }) : null
     ] }),
     /* @__PURE__ */ jsx("div", { className: "actions", children })

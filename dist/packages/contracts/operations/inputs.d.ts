@@ -1374,6 +1374,26 @@ export declare const INPUT_SCHEMAS: {
         readonly required: readonly ("limit" | "cursor")[];
         readonly additionalProperties: false;
     };
+    readonly research_history_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly kind: {
+                readonly enum: readonly ["documents", "evidence", "claims", "reports"];
+            };
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+            readonly limit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
+        };
+        readonly required: readonly ["kind"];
+        readonly additionalProperties: false;
+    };
     readonly run_logs: {
         readonly type: "object";
         readonly properties: {

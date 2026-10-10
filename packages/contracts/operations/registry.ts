@@ -189,6 +189,20 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
 }
 
 const SPECS: OperationSpec[] = [
+    make('research_history_list',{idempotencyPolicy:'read-only',authorize:c=>{if(c.actor.type==='agent')interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'research_history_list'));else userOnly(c.actor);},preconditions:noPrecondition,execute:(c,x)=>c.app.store.readSnapshot(()=>{
+        const kinds={documents:'document-version',evidence:'evidence',claims:'claim',reports:'report'} as const,kind=x.kind as keyof typeof kinds,cursor=(x.cursor as number|undefined)??0,limit=(x.limit as number|undefined)??20;
+        const rows=c.app.store.db.prepare('SELECT rowid,data FROM records WHERE kind=? AND project_id=? AND rowid>? ORDER BY rowid LIMIT ?').all(kinds[kind],c.projectId,cursor,limit+1),page=rows.slice(0,limit),nextCursor=page.length?Number(page.at(-1)!.rowid):cursor;
+        ensure(Number.isSafeInteger(nextCursor),'HISTORY_CURSOR_UNSAFE','资料与成果游标超出安全范围',500);
+        return {items:page.map(entry=>{
+            const record=JSON.parse(String(entry.data));
+            switch(kind){
+                case 'documents':return {id:record.id,title:record.title,contentKind:record.contentKind,acquiredAt:record.acquiredAt,source:{provider:record.source.provider,requestedVersion:record.source.requestedVersion,reportedVersion:record.source.reportedVersion}};
+                case 'evidence':return {id:record.id,type:record.type,createdAt:record.createdAt,documentVersionId:record.document?.documentVersionId??record.providerText?.documentVersionId,parseResultId:record.document?.parseResultId};
+                case 'claims':return {id:record.id,status:record.status,validity:record.validity,createdAt:record.createdAt,evidenceIds:record.evidenceIds};
+                case 'reports':return {id:record.id,title:record.title??c.app.store.get<{title:string}>('artifact',record.artifactId,c.projectId).title,createdAt:record.createdAt,updatedAt:record.updatedAt,formatVersion:record.formatVersion===1?1:0,runCount:record.runIds?.length??0,claimCount:record.claimIds?.length??0};
+            }
+        }),cursor:nextCursor,hasMore:rows.length>limit};
+    })}),
     make('host_execute',{requiresSession:true,asynchronous:true,idempotencyPolicy:'key-required',authorize:(c)=>{c.app.hostAccess.assertAgent(c.actor);},preconditions:(c)=>{c.app.hostAccess.assertAgent(c.actor);},execute:(c,x)=>c.app.hostAccess.execute(c.actor,x,c.idempotencyKey!)}),
     make('research_brief_save',{idempotencyPolicy:'key-required',requiresSession:true,authorize:c=>{c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id);},preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.researchBriefs.save(c.actor,c.projectId,c.session!.id,x)}),
     make('research_brief_inspect',{idempotencyPolicy:'read-only',requiresSession:true,authorize:noPrecondition,preconditions:noPrecondition,execute:(c,x)=>c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id,x.briefId as string|undefined)}),
@@ -421,7 +435,7 @@ export class OperationRegistry {
         }
         let key = options.idempotencyKey;
         let permission:ReturnType<ResearchApp['sessionPermissions']['guard']>;
-        const cached = id !== 'research_brief_inspect' && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
+        const cached = !['research_brief_inspect','research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
         if (cached) ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         const context: OperationContext = {...options, app: this.app, actor, session, validate: () => {
             ensure(!options.signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时', 409);

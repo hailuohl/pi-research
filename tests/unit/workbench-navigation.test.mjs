@@ -163,7 +163,7 @@ test('other workflow buttons preserve project and session while closing mobile n
   Object.assign(app.state,{boot:{projects:[]},projectId:'project',sessionId:'session',navigationOpen:true});
   const buttons=elements(app.render()).filter(node=>node.type==='button'&&node.props.onClick&&node.props.children?.[1]?.type==='span');
   const workflowButtons=buttons.filter(node=>text(node.props.children[1])!=='新建会话');
-  assert.deepEqual(workflowButtons.map(node=>text(node.props.children[1])).sort(),['文献检索','项目工作区','资料与证据','报告与成果','技能与连接器','环境','模型与模板'].sort());
+  assert.deepEqual(workflowButtons.map(node=>text(node.props.children[1])).sort(),['项目工作区','技能与连接器','环境','模型与模板'].sort());
   for(const button of workflowButtons){
     app.state.navigationOpen=true;button.props.onClick({currentTarget:{closest:()=>null}});
     assert.equal(app.state.navigationOpen,false);
@@ -232,7 +232,8 @@ test('report campaign links select the exact root session even when it is outsid
   try{
     const app=synchronousState(new App({}));app.refresh=async()=>true;
     Object.assign(app.state,{tab:'reports',boot:{projects:[{id:'p'}]},projectId:'p',sessionId:'recent',data:{project:{id:'p',name:'Project'},sessions:[{id:'recent'}],experiments:[],runs:[],teams:[],campaigns:[{id:'historic-campaign',rootSessionId:'historic-root'}]},messages:[{id:'old-body'}],history:{atLatest:false},historyAnchor:{direction:'before',id:'old-cursor'},stream:'old stream'});
-    const reports=elements(app.render()).find(node=>node.type?.name==='ReportsView');assert.ok(reports);
+    const resources=elements(app.render()).find(node=>node.type?.name==='Chat').props.resources;
+    const reports=resources.props.views.reports;assert.ok(reports);
     reports.props.onCampaign('historic-campaign');
     assert.equal(app.state.projectId,'p');assert.equal(app.state.sessionId,'historic-root');assert.equal(app.state.selectedCampaign,'historic-campaign');assert.equal(app.state.tab,'chat');
     assert.deepEqual(app.state.messages,[]);assert.equal(app.state.history,null);assert.equal(app.state.historyAnchor,null);assert.equal(app.state.stream,'');

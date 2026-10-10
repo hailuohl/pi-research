@@ -118,6 +118,7 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('approval_request');approve(s.app,intent.approvalId);
   const run=await call('run_submit',{intentId:intent.id});
   check('run_list',s.app.operations.execute(USER,'run_list',{cursor:0,limit:20},{projectId:s.project.id}));
+  check('research_history_list',s.app.operations.execute(USER,'research_history_list',{kind:'evidence',cursor:0,limit:20},{projectId:s.project.id}));
   fixtureFinish(s,run);s.app.campaigns.observe();
   await call('run_inspect',{runId:run.id});
   await call('run_logs',{runId:run.id});

@@ -117,11 +117,12 @@ export function Empty({ title, children }: {
     title: string;
     children?: React.ReactNode;
 }) { return <div className="empty"><div className="empty-symbol"><Icon name="experiment" size={30}/></div><h3>{title}</h3><div className="muted">{children}</div></div>; }
-export function SectionTitle({ title, sub, children }: {
+export function SectionTitle({ title, sub, children, level=1 }: {
     title: string;
     sub?: string;
     children?: React.ReactNode;
-}) { return <div className="section-title"><div><h1>{title}</h1>{sub ? <p>{sub}</p> : null}</div><div className="actions">{children}</div></div>; }
+    level?:1|2;
+}) { const Heading=level===2?'h2':'h1';return <div className="section-title"><div><Heading>{title}</Heading>{sub ? <p>{sub}</p> : null}</div><div className="actions">{children}</div></div>; }
 function syncNativeSelectContent(button: HTMLButtonElement | null) {
     const select = button?.closest<HTMLSelectElement>('select');
     const content = button?.querySelector('selectedcontent');

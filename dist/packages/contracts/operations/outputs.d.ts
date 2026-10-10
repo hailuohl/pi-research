@@ -751,6 +751,147 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: ("version" | "id" | "state" | "createdAt" | "experimentId" | "kind" | "manifestDigest" | "projectId" | "updatedAt" | "artifactIds" | "evidenceIds" | "intentId" | "integrity" | "manifest" | "cancelRequested" | "outputDir" | "judgment")[];
         readonly additionalProperties: false;
     };
+    readonly research_history_list: {
+        readonly type: "object";
+        readonly properties: {
+            readonly items: {
+                readonly type: "array";
+                readonly maxItems: 100;
+                readonly items: {
+                    readonly anyOf: readonly [{
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly title: {
+                                readonly type: "string";
+                            };
+                            readonly contentKind: {
+                                readonly type: "string";
+                                readonly enum: ["metadata", "abstract", "provider-text", "original-pdf", "user-text", "user-media"];
+                            };
+                            readonly acquiredAt: {
+                                readonly type: "string";
+                            };
+                            readonly source: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly provider: {
+                                        readonly type: "string";
+                                        readonly enum: ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"];
+                                    };
+                                    readonly requestedVersion: {
+                                        readonly anyOf: readonly [{
+                                            readonly type: "string";
+                                        }, {
+                                            readonly type: "null";
+                                        }];
+                                    };
+                                    readonly reportedVersion: {
+                                        readonly anyOf: readonly [{
+                                            readonly type: "string";
+                                        }, {
+                                            readonly type: "null";
+                                        }];
+                                    };
+                                };
+                                readonly required: ("reportedVersion" | "requestedVersion")[];
+                                readonly additionalProperties: false;
+                            };
+                        };
+                        readonly required: ("id" | "source" | "title" | "contentKind" | "acquiredAt")[];
+                        readonly additionalProperties: false;
+                    }, {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly type: {
+                                readonly type: "string";
+                                readonly enum: ["artifact", "run", "paper", "code"];
+                            };
+                            readonly createdAt: {
+                                readonly type: "string";
+                            };
+                            readonly documentVersionId: {
+                                readonly type: "string";
+                            };
+                            readonly parseResultId: {
+                                readonly type: "string";
+                            };
+                        };
+                        readonly required: ("id" | "createdAt" | "type")[];
+                        readonly additionalProperties: false;
+                    }, {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly status: {
+                                readonly type: "string";
+                                readonly enum: ["proposal", "accepted", "rejected", "disputed"];
+                            };
+                            readonly validity: {
+                                readonly type: "string";
+                                readonly enum: ["current", "stale"];
+                            };
+                            readonly createdAt: {
+                                readonly type: "string";
+                            };
+                            readonly evidenceIds: {
+                                readonly type: "array";
+                                readonly items: {
+                                    readonly type: "string";
+                                };
+                            };
+                        };
+                        readonly required: ("id" | "createdAt" | "status" | "evidenceIds")[];
+                        readonly additionalProperties: false;
+                    }, {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly type: "string";
+                            };
+                            readonly title: {
+                                readonly type: "string";
+                            };
+                            readonly createdAt: {
+                                readonly type: "string";
+                            };
+                            readonly updatedAt: {
+                                readonly type: "string";
+                            };
+                            readonly formatVersion: {
+                                readonly enum: readonly [0, 1];
+                            };
+                            readonly runCount: {
+                                readonly type: "integer";
+                            };
+                            readonly claimCount: {
+                                readonly type: "integer";
+                            };
+                        };
+                        readonly required: ("id" | "createdAt" | "title" | "formatVersion" | "updatedAt" | "runCount" | "claimCount")[];
+                        readonly additionalProperties: false;
+                    }];
+                };
+            };
+            readonly cursor: {
+                readonly type: "integer";
+                readonly minimum: 0;
+                readonly maximum: number;
+            };
+            readonly hasMore: {
+                readonly type: "boolean";
+            };
+        };
+        readonly required: ("cursor" | "items" | "hasMore")[];
+        readonly additionalProperties: false;
+    };
     readonly reviewed_change_prepare: {
         readonly type: "object";
         readonly properties: {

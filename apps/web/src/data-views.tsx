@@ -54,6 +54,7 @@ export class WorkspaceView extends React.Component<{
     }
 }
 export class EvidenceView extends React.Component<{
+    embedded?:boolean;
     data: ProjectState;
     perform: Perform;
     onRegister: (artifactId: string, content: string) => void;
@@ -69,7 +70,7 @@ export class EvidenceView extends React.Component<{
     render() {
         const { data, perform } = this.props;
         const artifact = data.artifacts.find(a => a.id === this.state.active);
-        return <div className="page-scroll"><SectionTitle title="资料与证据" sub="资料是原始输入；只有明确定位并校验后的片段，才是证据。"><label className="secondary file-upload"><Icon name="plus" size={15}/>导入文本资料<input type="file" disabled={data.project.archived} accept=".txt,.md,.csv,.json,.py,.tex,.mjs" onChange={(e: any) => {
+        return <div className="page-scroll"><SectionTitle level={this.props.embedded?2:1} title="资料与证据" sub="资料是原始输入；只有明确定位并校验后的片段，才是证据。"><label className="secondary file-upload"><Icon name="plus" size={15}/>导入文本资料<input type="file" disabled={data.project.archived} accept=".txt,.md,.csv,.json,.py,.tex,.mjs" onChange={(e: any) => {
                 const file = e.target.files?.[0];
                 if (!file)
                     return;
