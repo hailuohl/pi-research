@@ -567,7 +567,6 @@ class ModelManagementPanel extends React.Component {
         "\u7F16\u8F91",
         this.jsonTitle(buffer)
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4EC5\u4FEE\u6539\u6B64\u76EE\u6807\u7684 JSON\uFF0C\u5E94\u7528\u5230\u8349\u7A3F\u540E\u4ECD\u9700\u4FDD\u5B58\u6A21\u578B\u914D\u7F6E\u3002" }),
       targetChanged ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: "JSON \u76EE\u6807\u5DF2\u53D8\u5316\uFF0C\u4E0D\u80FD\u5E94\u7528\u5230\u5176\u4ED6\u6A21\u578B\u6216\u7B49\u7EA7\uFF1B\u53EF\u53D6\u6D88\u6B64\u7F13\u51B2\u540E\u91CD\u65B0\u7F16\u8F91\u3002" }) : null,
       /* @__PURE__ */ jsxs("label", { className: "management-json-input-label", children: [
         "JSON \u7F16\u8F91\u5668",
@@ -947,7 +946,7 @@ class ModelManagementPanel extends React.Component {
     const sheetDirty = s.editorView === "connection" ? draft.dirty : s.editorView === "default" ? s.defaultDirty : definition.dirty || this.pendingJson().length > 0, title = s.editorView === "connection" ? `${provider?.name || "\u6DFB\u52A0\u63D0\u4F9B\u5546"} / \u8FDE\u63A5\u914D\u7F6E` : s.editorView === "default" ? "\u65B0\u4F1A\u8BDD\u5168\u5C40\u9ED8\u8BA4" : `${model?.name || definition.name || "\u6DFB\u52A0\u6A21\u578B"} / \u6A21\u578B\u914D\u7F6E`;
     return /* @__PURE__ */ jsxs("div", { className: "management-page-body", children: [
       /* @__PURE__ */ jsxs("div", { className: "management-toolbar", children: [
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8FDE\u63A5\u4FDD\u5B58\u3001\u6A21\u578B\u4FDD\u5B58\u3001\u5168\u5C40\u9ED8\u8BA4\u4E0E\u4ED8\u8D39\u6D4B\u8BD5\u5206\u522B\u8FDB\u884C\u3002" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", "aria-hidden": "true" }),
         /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: locked, onClick: () => void this.load(false), children: "\u5237\u65B0\u6982\u89C8" })
       ] }),
       s.error && !s.editorOpen ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text settings-feedback", children: s.error }) : null,
@@ -1121,7 +1120,7 @@ class ModelManagementPanel extends React.Component {
         /* @__PURE__ */ jsxs("header", { className: "management-editor-heading", children: [
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsx("h2", { children: title }),
-            /* @__PURE__ */ jsx("p", { children: s.editorView === "default" ? "\u4EC5\u7528\u4E8E\u65B0\u4F1A\u8BDD" : `\u63D0\u4F9B\u5546\uFF1A${s.provider || "\u65B0\u8FDE\u63A5"}${s.editorView === "model" ? ` \xB7 \u6A21\u578B ID\uFF1A${definition.model || "\u65B0\u6A21\u578B"}` : ""}` }),
+            s.editorView === "default" ? null : /* @__PURE__ */ jsx("p", { children: `\u63D0\u4F9B\u5546\uFF1A${s.provider || "\u65B0\u8FDE\u63A5"}${s.editorView === "model" ? ` \xB7 \u6A21\u578B ID\uFF1A${definition.model || "\u65B0\u6A21\u578B"}` : ""}` }),
             s.editorView !== "default" && !buffer ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button management-header-refresh", disabled: locked, onClick: () => {
               if (this.editorCurrent(scope)) void this.load(true);
             }, children: "\u5237\u65B0\u5F53\u524D\u7248\u672C" }) : null

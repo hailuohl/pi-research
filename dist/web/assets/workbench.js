@@ -141,8 +141,7 @@ class Chat extends React.Component {
               /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u9879\u76EE\u6587\u4EF6" }),
               /* @__PURE__ */ jsx(Icon, { name: "arrow" })
             ] })
-          ] }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8FD9\u662F\u5DE5\u4F5C\u53F0\u7684\u5F15\u5BFC\u754C\u9762\uFF0C\u4E0D\u662F\u6A21\u578B\u751F\u6210\u7684\u7814\u7A76\u7ED3\u679C\u3002" })
+          ] })
         ] }) : /* @__PURE__ */ jsx(ScrollHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream }),
         !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(WakeupPanel, { data, busy: false, sessionId: session?.id, perform: this.props.perform, onSession: this.props.onSession }) : null,
         !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null,
@@ -167,7 +166,7 @@ class Chat extends React.Component {
           ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "composer-caption composer-caption-note", children: [
-          "\u56FA\u5B9A\u5FEB\u7167 \xB7 \u663E\u5F0F\u5BA1\u6279 \xB7 \u53EF\u8FFD\u6EAF\u8BC1\u636E ",
+          /* @__PURE__ */ jsx("span", { "aria-hidden": "true" }),
           /* @__PURE__ */ jsxs("span", { children: [
             "Enter \u53D1\u9001",
             /* @__PURE__ */ jsx("span", { className: "host-extra-key", children: " \xB7 Shift + Enter \u6362\u884C \xB7 Ctrl/\u2318 + Enter \u53D1\u9001" })
@@ -413,7 +412,6 @@ class Inspector extends React.Component {
           "\u534F\u4F5C\u8BA1\u5212\u4E0E\u7ED3\u679C",
           /* @__PURE__ */ jsx("span", { children: pendingTeams.length ? "\u5F85\u5BA1\u6279" : team ? label(team.state) : "\u6682\u65E0\u4EFB\u52A1" })
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "inspector-section", children: this.props.tab === "chat" ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }) : /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6839\u636E\u5BF9\u8BDD\u9700\u8981\u751F\u6210\uFF1B\u5DF2\u6709\u4EFB\u52A1\u72B6\u6001\u548C\u7ED3\u679C\u4F1A\u4FDD\u7559\u5728\u8FD9\u91CC\u3002" }) }),
         pendingTeams.map((a) => {
           const pendingTeam = teams.find((t) => t.id === a.subjectId), canStart = data.project.settings.enabled && pendingTeam?.state === "awaiting_approval" && pendingTeam.delegationEnabled;
           return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
@@ -508,12 +506,8 @@ class Inspector extends React.Component {
             team.state === "paused" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => perform(() => api(`/teams/${team.id}/resume`, {})), children: "\u6062\u590D" }) : null,
             /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
           ] })
-        ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: this.props.tab === "chat" ? "\u534F\u4F5C\u8BA1\u5212\u7531\u5F53\u524D\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u4E0D\u4F1A\u5728 Inspector \u4E2D\u624B\u52A8\u521B\u5EFA\uFF0C\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" : "\u534F\u4F5C\u8BA1\u5212\u7531\u4E3B\u4F1A\u8BDD\u4E2D\u7684 Pi \u6309\u9700\u751F\u6210\uFF1B\u5DF2\u6709\u7ED3\u679C\u4F1A\u4FDD\u7559\u3002" })
-      ] }) : null,
-      /* @__PURE__ */ jsxs("div", { className: "inspector-footer", children: [
-        /* @__PURE__ */ jsx("span", { className: "status-dot" }),
-        "\u6240\u6709\u7ED3\u679C\u5199\u5165\u672C\u5730\u6570\u636E\u5E93"
-      ] })
+        ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: "\u5728\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u534F\u4F5C\u4EFB\u52A1\u3002" })
+      ] }) : null
     ] });
   }
 }

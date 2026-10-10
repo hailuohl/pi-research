@@ -86,7 +86,7 @@ class ProjectCreationModal extends React.Component {
           /* @__PURE__ */ jsx("option", { value: "empty", children: "\u7A7A\u9879\u76EE \xB7 \u81EA\u884C\u51C6\u5907\u6587\u4EF6" })
         ] })
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u66F2\u7EBF\u62DF\u5408\u662F\u7528\u4E8E\u9A8C\u8BC1\u7CFB\u7EDF\u7684\u56FA\u5B9A\u6570\u503C\u793A\u4F8B\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u66F2\u7EBF\u62DF\u5408\u6A21\u677F\u662F\u7528\u4E8E\u7CFB\u7EDF\u9A8C\u8BC1\u7684\u56FA\u5B9A\u6570\u503C\u793A\u4F8B\u3002" }),
       /* @__PURE__ */ jsxs("label", { className: "check-label", children: [
         /* @__PURE__ */ jsx("input", { type: "checkbox", "aria-label": "\u521B\u5EFA GitHub \u79C1\u5BC6\u4ED3\u5E93\u5E76\u81EA\u52A8\u540C\u6B65\u5DF2\u63D0\u4EA4\u6E90\u7801\u53CA\u5176 Git \u5386\u53F2", checked: s.upload, disabled: this.props.busy || !s.status?.ready && !s.upload, onChange: (e) => {
           if (!e.target.checked || s.status?.ready) this.setState({ upload: e.target.checked });

@@ -179,7 +179,7 @@ class LiteratureView extends React.Component {
             ["failed", "cancelled", "interrupted"].includes(task.state) ? /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => perform(() => call(data.project.id, "literature_task_retry", { taskId: task.id, expectedVersion: task.version }), "\u5DF2\u663E\u5F0F\u8BF7\u6C42\u65B0\u5C1D\u8BD5"), children: "\u663E\u5F0F\u91CD\u8BD5" }) : null
           ] })
         ] }, task.id)),
-        !data.literatureTasks?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u6587\u732E\u4EFB\u52A1\u3002\u6CA1\u6709\u7ED3\u679C\u4E0D\u8868\u793A\u4E0D\u5B58\u5728\u76F8\u5173\u7814\u7A76\u3002" }) : null
+        !data.literatureTasks?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u6587\u732E\u4EFB\u52A1\u3002" }) : null
       ] }),
       (this.props.readOnly || this.props.setupOnly) && s.result ? /* @__PURE__ */ jsxs("section", { className: "surface", children: [
         /* @__PURE__ */ jsx("h2", { children: "\u5DF2\u4FDD\u5B58\u68C0\u7D22\u7ED3\u679C" }),
@@ -296,7 +296,7 @@ class LiteratureView extends React.Component {
         ] }) }, document2.id)),
         !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5C1A\u65E0\u56FA\u5B9A DocumentVersion\u3002" }) : null
       ] }),
-      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { readOnly: this.props.readOnly, document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: "\u539F\u59CB\u6587\u4EF6\u53D6\u5F97\u3001\u6587\u672C\u63D0\u53D6\u548C\u79D1\u5B66\u6838\u9A8C\u662F\u4E0D\u540C\u9636\u6BB5\u3002" }) }),
+      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { readOnly: this.props.readOnly, document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: data.documents?.length ? "\u9009\u62E9\u7248\u672C\u67E5\u770B\u539F\u6587\u3002" : "\u5BFC\u5165\u6587\u6863\u540E\u9009\u62E9\u7248\u672C\u3002" }) }),
       !this.props.readOnly ? /* @__PURE__ */ jsx(TextEvidencePanel, { configurationOnly: this.props.setupOnly, data, perform, onDocument: (target) => this.selectDocument(target, true), onSession: this.props.onSession }) : null
     ] });
   }

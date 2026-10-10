@@ -358,8 +358,7 @@ class ReportsView extends React.Component {
                 "SHA-256 ",
                 s.exported.digest
               ] }),
-              /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => downloadArtifact(s.exported.id, s.exported.title)), children: "\u4E0B\u8F7D\u79BB\u7EBF\u5305" }),
-              /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u751F\u6210\u4E0E\u53D1\u8D77\u4E0B\u8F7D\u4E0D\u4EE3\u8868\u6587\u4EF6\u5DF2\u843D\u76D8\uFF1B\u8BF7\u5728\u4E0B\u8F7D\u76EE\u5F55\u6838\u5BF9\u3002" })
+              /* @__PURE__ */ jsx("button", { className: "secondary", onClick: () => perform(() => downloadArtifact(s.exported.id, s.exported.title)), children: "\u4E0B\u8F7D\u79BB\u7EBF\u5305" })
             ] }) : null,
             /* @__PURE__ */ jsxs("details", { open: true, children: [
               /* @__PURE__ */ jsx("summary", { children: "\u56FA\u5B9A\u7814\u7A76\u65B9\u6848\u4E0E\u6BD4\u8F83\u5FEB\u7167" }),

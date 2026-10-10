@@ -222,10 +222,7 @@ class ComputeConnections extends React.Component {
           /* @__PURE__ */ jsxs("header", { className: "compute-card-header", children: [
             /* @__PURE__ */ jsxs("div", { className: "compute-card-title", children: [
               /* @__PURE__ */ jsx(Icon, { name: "cpu" }),
-              /* @__PURE__ */ jsxs("div", { children: [
-                /* @__PURE__ */ jsx("h2", { id: "local-compute-title", children: "\u672C\u5730\u8BA1\u7B97\u4FE1\u606F" }),
-                /* @__PURE__ */ jsx("p", { children: "\u5F53\u524D\u7535\u8111\u7684\u786C\u4EF6\u4E0E\u8FD0\u884C\u73AF\u5883" })
-              ] })
+              /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("h2", { id: "local-compute-title", children: "\u672C\u5730\u8BA1\u7B97\u4FE1\u606F" }) })
             ] }),
             /* @__PURE__ */ jsx("span", { className: "compute-tag", children: "\u672C\u673A" })
           ] }),
@@ -271,8 +268,7 @@ class ComputeConnections extends React.Component {
                 /* @__PURE__ */ jsx("dd", { children: localGpu.flatMap((t) => t.devices).map((d) => d.name).join("\u3001") || "\u5C1A\u65E0\u5DF2\u6838\u9A8C\u8BBE\u5907\u8BB0\u5F55" })
               ] })
             ] })
-          ] }) : /* @__PURE__ */ jsx("p", { className: "compute-empty", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u673A\u4FE1\u606F\u2026" }) }),
-          /* @__PURE__ */ jsx("footer", { className: "compute-card-footer", children: "\u4E3B Agent \u53EF\u8BFB\u53D6\u672C\u673A\u4FE1\u606F\u4E0E\u5DF2\u4FDD\u5B58\u7684\u8FD0\u884C\u73AF\u5883\u3002" })
+          ] }) : /* @__PURE__ */ jsx("p", { className: "compute-empty", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u673A\u4FE1\u606F\u2026" }) })
         ] }),
         /* @__PURE__ */ jsxs("section", { className: "compute-card", "aria-labelledby": "docker-compute-title", children: [
           /* @__PURE__ */ jsxs("header", { className: "compute-card-header", children: [
@@ -399,7 +395,7 @@ class ComputeConnections extends React.Component {
         }) }) }),
         /* @__PURE__ */ jsxs("footer", { className: "compute-card-footer", children: [
           /* @__PURE__ */ jsx(Icon, { name: "check", size: 15 }),
-          /* @__PURE__ */ jsx("span", { children: "\u670D\u52A1\u540E\u53F0\u5B9A\u671F\u68C0\u6D4B\u5DF2\u4FE1\u4EFB\u8FDE\u63A5\uFF1B\u4E3B Agent \u53EF\u8BFB\u53D6\u6838\u9A8C\u72B6\u6001\u3001\u8BBE\u5907\u4FE1\u606F\u4E0E\u8D44\u6E90\u504F\u597D\u3002" })
+          /* @__PURE__ */ jsx("span", { children: "\u5B9A\u671F\u6838\u9A8C\u5DF2\u4FE1\u4EFB\u8FDE\u63A5\u3002" })
         ] })
       ] }),
       /* @__PURE__ */ jsxs("dialog", { ref: this.editorDialog, className: "compute-dialog", "aria-labelledby": "ssh-editor-title", onCancel: () => this.setState({ editor: null, challenge: null, fingerprintConfirmed: false }), onClose: () => {

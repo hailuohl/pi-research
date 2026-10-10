@@ -76,7 +76,7 @@ class EnvironmentView extends React.Component {
   render() {
     const { data, loading, busy, error, message, editing, replacing, name, value, showValue, deleting } = this.state;
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll environment-page", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u73AF\u5883", sub: "\u4E3A\u672C\u5730\u8FD0\u884C\u548C\u7814\u7A76\u667A\u80FD\u4F53\u8BBE\u7F6E\u53D8\u91CF\u3002", children: /* @__PURE__ */ jsxs("button", { className: "primary", disabled: !data || loading || busy, onClick: () => this.edit(), children: [
+      /* @__PURE__ */ jsx(SectionTitle, { title: "\u73AF\u5883", children: /* @__PURE__ */ jsxs("button", { className: "primary", disabled: !data || loading || busy, onClick: () => this.edit(), children: [
         /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
         "\u6DFB\u52A0\u53D8\u91CF"
       ] }) }),
@@ -104,7 +104,6 @@ class EnvironmentView extends React.Component {
             ] }) })
           ] }, row.name)) : /* @__PURE__ */ jsx("tr", { children: /* @__PURE__ */ jsxs("td", { colSpan: 3, className: "environment-empty", children: [
             /* @__PURE__ */ jsx("strong", { children: "\u8FD8\u6CA1\u6709\u73AF\u5883\u53D8\u91CF" }),
-            /* @__PURE__ */ jsx("p", { children: "\u6DFB\u52A0\u4E00\u4E2A\u53D8\u91CF\uFF0C\u8BA9\u672C\u5730\u4EFB\u52A1\u4F7F\u7528\u4F60\u7684 API \u5BC6\u94A5\u6216\u4EE4\u724C\u3002" }),
             /* @__PURE__ */ jsx("code", { children: "\u4F8B\u5982 HF_TOKEN\u3001WANDB_API_KEY\u3001MY_API_KEY" })
           ] }) }) })
         ] }) : /* @__PURE__ */ jsx("p", { className: "environment-empty", role: "status", children: loading ? "\u6B63\u5728\u8BFB\u53D6\u73AF\u5883\u53D8\u91CF\u2026" : "\u73AF\u5883\u53D8\u91CF\u5C1A\u672A\u52A0\u8F7D\uFF0C\u8BF7\u91CD\u8BD5\u3002" })

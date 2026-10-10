@@ -150,8 +150,7 @@ class ConversationPanel extends React.Component {
         /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", onClick: this.props.onRetry, children: "\u91CD\u8BD5\u8BFB\u53D6\u9879\u76EE" })
       ] }) : /* @__PURE__ */ jsx("p", { className: "inline-empty", role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u9879\u76EE\u2026" }) : id === "collaboration" ? this.props.collaboration : id === "experiments" ? /* @__PURE__ */ jsxs(Fragment, { children: [
         /* @__PURE__ */ jsx("div", { className: "conversation-panel-heading", children: /* @__PURE__ */ jsx("h2", { children: "\u9879\u76EE\u5B9E\u9A8C\u6811" }) }),
-        /* @__PURE__ */ jsx("p", { className: "small muted conversation-panel-note", children: "\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63CF\u8FF0\u5B9E\u9A8C\u76EE\u6807\uFF1B\u8FD9\u91CC\u56DE\u67E5\u5DF2\u6709\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u3002" }),
-        data.experiments.length ? /* @__PURE__ */ jsx(ExperimentGraph, { data, selected: this.props.selectedExperiment, onSelect: this.props.onExperiment, preserveViewportOnResize: true, headingId: "conversation-experiment-heading" }) : /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u5F53\u524D\u9879\u76EE\u5C1A\u65E0\u5B9E\u9A8C\uFF1B\u5DF2\u6709\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u4F1A\u663E\u793A\u5728\u8FD9\u91CC\u3002" }),
+        data.experiments.length ? /* @__PURE__ */ jsx(ExperimentGraph, { data, selected: this.props.selectedExperiment, onSelect: this.props.onExperiment, preserveViewportOnResize: true, headingId: "conversation-experiment-heading" }) : /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u6682\u65E0\u5B9E\u9A8C\u3002\u5728\u5BF9\u8BDD\u4E2D\u63CF\u8FF0\u5B9E\u9A8C\u76EE\u6807\u3002" }),
         this.props.experimentDetails
       ] }) : /* @__PURE__ */ jsx(ConversationFiles, { projectId, active: active && view === "files", onWorkspace: this.props.onWorkspace }) }, id))
     ] });

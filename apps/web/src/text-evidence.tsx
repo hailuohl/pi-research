@@ -33,7 +33,7 @@ export class TextEvidencePanel extends React.Component<{configurationOnly?:boole
         const result = this.state.result??history[0]??null, stale = result && (result.configurationVersion !== config.version || !config.enabled);
         return <section className="surface">
             <div className="surface-heading"><h2>本地原文检索 · 试验功能</h2><span className="small muted">{config.enabled ? '已启用' : '默认关闭'}</span></div>
-            <p className="small muted">本地词项评分与精确重复分组；PaperQA MMR 选择流程可选，默认不启用；不调用模型、不联网、不生成摘要或答案。仅处理显式选定的用户文本、已批准解析的固定 PDF 或 PMC OA 全文派生文本；不是 OCR、语义问答或完整 PaperQA，不证明科学结论。</p>
+            <p className="small muted">按词项检索所选原文（用户文本、已批准解析的固定 PDF 或 PMC OA 派生文本）；不联网、不调用模型、不生成摘要或答案。不是 OCR 或语义问答，结果不代表科学结论。</p>
             <details open={!config.enabled}><summary>选择允许检索的原文（文本、固定 PDF 或 PMC OA 全文，最多 30 份）</summary>
                 {!eligible.length && !parsed.length && !pmcDocuments.length ? <p className="inline-empty">先导入 UTF-8 文本、完成固定 PDF 的批准解析，或显式取得 PMC OA 全文。模型产物不会加入原文集合。</p> : null}
                 <div className="run-selection">{eligible.map(a => <label key={a.id}>

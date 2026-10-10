@@ -320,7 +320,7 @@ class SkillManager extends React.Component {
       ] }),
       !s.panel && s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: s.error }) : null,
       !s.panel && s.notice ? /* @__PURE__ */ jsx("p", { role: "status", children: s.notice }) : null,
-      !s.catalog ? /* @__PURE__ */ jsx("p", { role: "status", className: "inline-empty", children: "\u6B63\u5728\u8BFB\u53D6\u6280\u80FD\u5217\u8868\uFF0C\u72B6\u6001\u4F1A\u81EA\u52A8\u66F4\u65B0\u3002" }) : /* @__PURE__ */ jsxs("div", { className: "skill-catalog", children: [
+      !s.catalog ? /* @__PURE__ */ jsx("p", { role: "status", className: "inline-empty", children: "\u6B63\u5728\u8BFB\u53D6\u6280\u80FD\u5217\u8868\u2026" }) : /* @__PURE__ */ jsxs("div", { className: "skill-catalog", children: [
         revisions.map((item) => {
           const revision = item.revision, enabled = s.enabled.includes(revision.id);
           return /* @__PURE__ */ jsxs("div", { className: "skill-revision-row", children: [
@@ -360,7 +360,7 @@ class SkillManager extends React.Component {
             ] })
           ] }, skill.id);
         }),
-        !builtins.length && !revisions.length ? /* @__PURE__ */ jsx("p", { role: "status", className: "inline-empty", children: query ? "\u6CA1\u6709\u5339\u914D\u7684\u6280\u80FD\u3002\u5C1D\u8BD5\u5176\u4ED6\u540D\u79F0\u6216\u8BF4\u660E\u5173\u952E\u8BCD\u3002" : "\u5C1A\u65E0\u6280\u80FD\u3002\u4E0A\u4F20 SKILL.md \u6216 ZIP \u5F00\u59CB\u4F7F\u7528\u3002" }) : null
+        !builtins.length && !revisions.length ? /* @__PURE__ */ jsx("p", { role: "status", className: "inline-empty", children: query ? "\u6CA1\u6709\u5339\u914D\u7684\u6280\u80FD\u3002" : "\u5C1A\u65E0\u6280\u80FD\u3002\u4E0A\u4F20 SKILL.md \u6216 ZIP \u5F00\u59CB\u4F7F\u7528\u3002" }) : null
       ] }),
       /* @__PURE__ */ jsxs("dialog", { ref: this.dialog, className: "skill-dialog", "aria-labelledby": `skill-panel-title-${this.props.projectId}`, onCancel: (e) => {
         e.preventDefault();

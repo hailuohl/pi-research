@@ -207,8 +207,7 @@ class TemplateLibraryView extends React.Component {
           ] })
         ] }) : /* @__PURE__ */ jsxs("div", { className: "settings-template-empty", children: [
           /* @__PURE__ */ jsx(Icon, { name: "report", size: 28 }),
-          /* @__PURE__ */ jsx("h3", { children: "\u9009\u62E9\u6A21\u677F\u4EE5\u9884\u89C8" }),
-          /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u67E5\u770B\u4E3B\u6587\u4EF6\u3001\u914D\u5957\u8D44\u6E90\u4E0E\u7F16\u8BD1\u8BBE\u7F6E\u3002" })
+          /* @__PURE__ */ jsx("h3", { children: "\u9009\u62E9\u6A21\u677F\u4EE5\u9884\u89C8" })
         ] }) })
       ] })
     ] });

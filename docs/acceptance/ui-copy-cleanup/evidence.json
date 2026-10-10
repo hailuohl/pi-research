@@ -1,0 +1,194 @@
+{
+  "date": "2026-10-10",
+  "baseline": "f9379462823697b62765f687c229a6711ff28355",
+  "scope": "仅页面文案删减与精简；不调整CSS、样式、交互控件或业务流程",
+  "acceptance": [
+    "删除重复用途说明和内部宣言",
+    "权限、费用、生效范围、数据与历史保留和异常恢复提示保留",
+    "空态、加载、无结果、快捷键和可访问性反馈保留",
+    "本批差异隔离；最终构建、全量回归、干净构建、浏览器关键路径及独立复核有实际证据"
+  ],
+  "files": [
+    {
+      "path": "apps/web/src/app.tsx",
+      "sha256": "e6a95f1deba057e6eb95cff1c05a9855a9714f51e336125295bc04ac88293aae"
+    },
+    {
+      "path": "apps/web/src/compute-connections.tsx",
+      "sha256": "68c9ca19d0d14753f4116546d3077892747a93340c201322fe9bb92fb8277230"
+    },
+    {
+      "path": "apps/web/src/conversation-panel.tsx",
+      "sha256": "f78d7dcff3e519bf8e0201ac510779eaf90238d1b999a798b514a93dd06ebe27"
+    },
+    {
+      "path": "apps/web/src/environment-view.tsx",
+      "sha256": "685fb5718bddfbf97ea289092ed2b836ba11050c2e4ce4168c1e3790ad171c87"
+    },
+    {
+      "path": "apps/web/src/github-controls.tsx",
+      "sha256": "e2c8728c44f994c6d94d90a6ca0ed6b37cb6743fb9d5cba3a7c0b3b97303b9cc"
+    },
+    {
+      "path": "apps/web/src/integrations.tsx",
+      "sha256": "36ad81e5246fa2d11a652b0065fde53d862dcd9625eb17adc0c6b78fd1ab4495"
+    },
+    {
+      "path": "apps/web/src/literature-view.tsx",
+      "sha256": "4d007b972e8486179eddc55646e4369bc37ba11550704e1718c84636c8a29478"
+    },
+    {
+      "path": "apps/web/src/model-management-view.tsx",
+      "sha256": "9b6230b1eaf30e5dfbbe1d99d45032312f4e9c590dbc39ceeaac7dd86737bf4b"
+    },
+    {
+      "path": "apps/web/src/report-view.tsx",
+      "sha256": "c2218cfc23703be3b06509f715ad2a82d01a5b9b08242e9dac7406779d3c452d"
+    },
+    {
+      "path": "apps/web/src/settings-view.tsx",
+      "sha256": "f7e82cc588216aff1674df1af1754b027e73e77f0f023e053dbbc402ebe11f25"
+    },
+    {
+      "path": "apps/web/src/skill-manager.tsx",
+      "sha256": "d2ca80363f546390160ae363a1df3329f14df83c5a19e0e08443d9704c044453"
+    },
+    {
+      "path": "apps/web/src/template-library-view.tsx",
+      "sha256": "2250690e4b4daec6d1babcb4a50630643a9164ab77eab4bc6960f6f1de1e74cf"
+    },
+    {
+      "path": "apps/web/src/text-evidence.tsx",
+      "sha256": "08d0a92d688910688b4c4b3af6ff20aa3ae6f501a824ec91626e5d63604ae7a8"
+    },
+    {
+      "path": "apps/web/src/workbench.tsx",
+      "sha256": "0b63b74b035f803b6fa2e049ad4f495c4655deaf750548231385c6d969542cf9"
+    }
+  ],
+  "preserved": {
+    "styles": true,
+    "interactiveProperties": true,
+    "events": true,
+    "inlineStyles": true,
+    "nonRenderMethods": true,
+    "preExistingFiles": true
+  },
+  "notes": [
+    "新建项目曲线拟合说明改为模板专属措辞；没有为条件显示增加表单状态。",
+    "既有MMR排序选项保留；只缩短检索介绍，不新增帮助控件。",
+    "两处不可交互且aria-hidden的空占位维持快捷键和刷新按钮原有对齐。"
+  ],
+  "validation": {
+    "build": {
+      "status": "passed",
+      "initialFailures": [
+        {
+          "attempt": 1,
+          "exitCode": 1,
+          "reason": "TS1381/TS1005: model editor JSX delimiter error"
+        },
+        {
+          "attempt": 2,
+          "exitCode": 1,
+          "reason": "TS1005: missing close delimiter after model editor caption; root repaired and verified all changed TSX parse cleanly"
+        }
+      ],
+      "final": "JSX闭合问题已定点修复，最终构建通过"
+    },
+    "coreRegression": {
+      "status": "resolved_by_targeted_recheck",
+      "initial": {
+        "tests": 1658,
+        "pass": 1633,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 24,
+        "todo": 0,
+        "duration_ms": 1128521.9218
+      },
+      "initialExitCode": 1,
+      "initialFailure": "workflow-ui.test.mjs 的旧提示语期望，与用户要求删除提示不一致",
+      "targeted": {
+        "tests": 47,
+        "pass": 47,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "duration_ms": 776.3496
+      },
+      "targetedExitCode": 0,
+      "unresolvedFailures": 0,
+      "reuse": "应用清理源码没有因测试修正变化；另批queued状态标签已由定向检查覆盖，其余全量结果仍适用",
+      "logs": [
+        ".validation/copy-cleanup-20261010/regression.log",
+        ".validation/copy-cleanup-20261010/targeted-recheck.log"
+      ]
+    },
+    "cleanBuild": {
+      "status": "passed",
+      "base": "f9379462823697b62765f687c229a6711ff28355",
+      "originalCleanInstall": ".validation/clean-build-uiuKEn/summary.json",
+      "refreshLog": ".validation/clean-build-uiuKEn/copy-cleanup-rebuild.log",
+      "refreshedFile": "apps/web/src/workbench.tsx",
+      "files": 658,
+      "identical": true,
+      "distManifestSha256": "7d22de36f1d185be8f9722a322b7153a394c02fa9300ef12ac05b428029285a4",
+      "dependencyInstall": "首次干净npm-ci记录复用；无依赖/配置变化，补验最新状态标签的隔离构建与658文件一致性"
+    },
+    "browser": {
+      "status": "passed",
+      "checks": [
+        "协作空态和已有实验",
+        "环境变量范围",
+        "默认模型仅新会话",
+        "模板同名上传保留",
+        "原文检索能力与授权边界",
+        "连接器信任与审批",
+        "工作区快照及冲突保护",
+        "快捷键和刷新按钮原对齐"
+      ],
+      "writes": "无配置写入、模型请求或计算提交"
+    },
+    "review": {
+      "status": "passed",
+      "blockers": 0,
+      "nonBlockingFindings": 0,
+      "testCorrection": "独立定向复核通过；原指标、单位、只读配置与禁止执行断言保留",
+      "snapshot": "13源码哈希未变；workbench仅另批queued标签变化，扣除后匹配初次复核快照；最终记录已更新"
+    }
+  },
+  "agents": [
+    {
+      "task": "copy_cleanup_impl",
+      "requestedModel": "gpt-6-luna",
+      "requestedEffort": "max",
+      "runtime": "已请求，运行时未回显"
+    },
+    {
+      "task": "copy_cleanup_review",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtime": "已请求，运行时未回显"
+    }
+  ],
+  "notRun": [
+    "外部付费模型请求",
+    "生产研究项目的Pi/Docker/SSH计算提交",
+    "全部历史与异常状态的浏览器重现",
+    "全量中的24项环境依赖测试（跳过，不记通过）"
+  ],
+  "rawEvidence": "原始日志留在.validation/copy-cleanup-20261010；浏览器记录与截图留在工作区上级review/copy-cleanup-20261010，未纳入Git。",
+  "validationBaseline": "4201ad249dc9c8f86954375f0446b3f3e1e75632",
+  "concurrentChange": {
+    "commit": "f9379462823697b62765f687c229a6711ff28355",
+    "path": "apps/web/src/workbench.tsx",
+    "description": "另批queued状态标签；扣除该单独渲染属性后本批清理快照一致"
+  },
+  "testCorrection": {
+    "path": "tests/unit/workflow-ui.test.mjs",
+    "sha256": "a1bd1250fb6e9be5c735aa2e5f9702a7fad63040ad79617990ee0989864f4d5c",
+    "description": "更新已删除文案期望并补验空态；原指标、单位、只读与禁止执行断言保留"
+  }
+}

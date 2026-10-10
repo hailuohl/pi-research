@@ -596,8 +596,7 @@ class App extends React.Component {
             /* @__PURE__ */ jsxs("button", { className: "primary", onClick: () => this.open("project"), children: [
               "\u521B\u5EFA\u7B2C\u4E00\u4E2A\u9879\u76EE ",
               /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
-            ] }),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "Pi \u662F\u552F\u4E00 Agent \u6267\u884C\u5185\u6838\u3002\u6CA1\u6709 ORX \u8FD0\u884C\u65F6\u4F9D\u8D56\u3002" })
+            ] })
           ] }) : tab === "chat" ? null : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived }, data.project.id) : null
         ] }) })
       ] }),

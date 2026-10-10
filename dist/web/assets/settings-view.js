@@ -14,7 +14,7 @@ class SettingsView extends React.Component {
   }
   render() {
     return /* @__PURE__ */ jsx("div", { className: "page-scroll settings-page", children: /* @__PURE__ */ jsxs("div", { className: "settings-workspace", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u6A21\u578B\u4E0E\u6A21\u677F", sub: "\u7BA1\u7406\u6A21\u578B\u3001\u8FDE\u63A5\u6D4B\u8BD5\u3001GitHub \u540C\u6B65\u4E0E\u4E2A\u4EBA\u6587\u7A3F\u6A21\u677F\u3002" }),
+      /* @__PURE__ */ jsx(SectionTitle, { title: "\u6A21\u578B\u4E0E\u6A21\u677F" }),
       /* @__PURE__ */ jsx("nav", { className: "settings-sections", "aria-label": "\u8BBE\u7F6E\u5206\u533A", children: [{ id: "models", title: "\u6A21\u578B\u7BA1\u7406", icon: "cpu" }, { id: "github", title: "GitHub \u72B6\u6001", icon: "branch" }, { id: "templates", title: "\u6587\u7A3F\u6A21\u677F\u5E93", icon: "book-open" }, { id: "sources", title: "\u539F\u6587\u4E0E\u7F16\u8BD1\u914D\u7F6E", icon: "settings" }].map((section) => /* @__PURE__ */ jsxs("button", { type: "button", "aria-pressed": this.state.section === section.id, "aria-controls": `settings-${section.id}`, onClick: () => this.setState({ section: section.id }), children: [
         /* @__PURE__ */ jsx(Icon, { name: section.icon, size: 16 }),
         section.title
