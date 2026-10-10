@@ -15,6 +15,15 @@ function chat({project=data(),current=session,busy=false,onToggle=()=>{},perform
 }
 const toggleOf=view=>elements(view.render()).find(node=>node.type==='button'&&node.props.role==='switch');
 
+test('queued chat headings say processing while other badges retain their state labels',()=>{
+  for(const state of ['queued','idle','running','failed','cancelled','archived','interrupted']){
+    const view=chat({current:{...session,state}}),heading=elements(view.render()).find(node=>node.props?.className==='chat-heading'),badge=elements(heading).find(node=>node.type?.name==='Badge');
+    assert.equal(badge.props.value,state);
+    assert.equal(text(badge.type(badge.props)),state==='queued'?'正在处理':text(badge.type({value:state})));
+    assert.equal(text(badge.type({value:'queued'})),'排队中');
+  }
+});
+
 test('composer sends an ordinary message while collaboration mode remains project-scoped',async t=>{
   const oldFetch=globalThis.fetch;
   t.after(()=>{globalThis.fetch=oldFetch;});

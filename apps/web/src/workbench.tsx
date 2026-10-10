@@ -114,7 +114,7 @@ export class Chat extends React.Component<{
         const sessionModelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking));
         const canSend = this.canSend();
         const hasDraft=!!this.state.draft.trim()||this.state.attachments.length>0;
-        return <div className="chat-page"><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions"><Badge value={session.state}/><button className="icon-button" disabled={data.project.archived} title="重命名会话" aria-label="重命名会话" onClick={() => {
+        return <div className="chat-page"><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions"><Badge value={session.state} caption={session.state==='queued'?'正在处理':undefined}/><button className="icon-button" disabled={data.project.archived} title="重命名会话" aria-label="重命名会话" onClick={() => {
                     const title = prompt('会话名称', session.title);
                     if (title)
                         this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));

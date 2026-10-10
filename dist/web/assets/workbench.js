@@ -106,7 +106,7 @@ class Chat extends React.Component {
           /* @__PURE__ */ jsx("span", { className: "muted", children: session ? `${session.model.provider || "\u672A\u914D\u7F6E\u4F9B\u5E94\u5546"} / ${session.model.model || "\u672A\u914D\u7F6E\u6A21\u578B"}` : "\u6BCF\u4E2A\u4E3B\u4F1A\u8BDD\u90FD\u6709\u72EC\u7ACB\u5386\u53F2\u548C\u5DE5\u4F5C\u533A" })
         ] }),
         session ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-          /* @__PURE__ */ jsx(Badge, { value: session.state }),
+          /* @__PURE__ */ jsx(Badge, { value: session.state, caption: session.state === "queued" ? "\u6B63\u5728\u5904\u7406" : void 0 }),
           /* @__PURE__ */ jsx("button", { className: "icon-button", disabled: data.project.archived, title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: () => {
             const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title);
             if (title)
