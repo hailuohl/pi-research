@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import {synchronousState} from '../support/ui.mjs';
 import {Chat, Inspector} from '../../dist/web/assets/workbench.js';
 import {App} from '../../dist/web/assets/app.js';
+import {ChatWorkflows} from '../../dist/web/assets/chat-workflows.js';
 
 const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children)];
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'?node:'';
-const session={id:'root-a',projectId:'p',title:'研究主会话',state:'idle',model:{provider:'test',model:'model'},version:1};
+const session={id:'root-a',projectId:'p',role:'coordinator',title:'研究主会话',state:'idle',model:{provider:'test',model:'model'},version:1};
 const data=(enabled=false)=>({project:{id:'p',archived:false,version:2,settings:{enabled}},sessions:[],messages:[],teams:[],tasks:[],budgets:[],approvals:[],experiments:[],runs:[],intents:[],runGrants:[]});
 const submitted=(content='first message',mode='prompt')=>({id:crypto.randomUUID(),kind:'message',projectId:'p',sessionId:'root-a',version:1,createdAt:'2026-10-10T00:00:00Z',updatedAt:'2026-10-10T00:00:00Z',role:'user',status:'queued',content,mode});
 const boot={runtime:{ready:true,message:''}};
@@ -130,4 +131,64 @@ test('project switch writes collaboration settings and leaves its displayed valu
   assert.equal(app.state.data.project.settings.enabled,false);
   assert.equal(app.state.error,'version conflict');
   assert.equal(app.state.notice,'');
+});
+
+test('the on-demand drawer keeps task components outside messages and mounted while closed',()=>{
+  const view=chat(),tree=view.render(),conversation=elements(tree).find(node=>node.props?.className==='conversation'),drawer=elements(tree).find(node=>node.props?.id==='chat-task-drawer');
+  const names=['PermissionActions','ChatWorkflows','ResearchActionCards','WakeupPanel'];
+  for(const name of names){assert.equal(elements(conversation).some(node=>node.type?.name===name),false);assert.ok(elements(drawer).some(node=>node.type?.name===name),name);}
+  assert.equal(drawer.props.hidden,true);assert.equal(drawer.props.role,undefined);
+  const permissions=elements(drawer).find(node=>node.type?.name==='PermissionActions'),trigger=elements(tree).find(node=>node.props?.className?.includes('chat-task-trigger'));
+  let closeFocus=0,triggerFocus=0;view.drawerClose.current={focus(){closeFocus++;}};
+  trigger.props.onClick({currentTarget:{focus(){triggerFocus++;}}});
+  assert.equal(view.state.drawerOpen,true);assert.equal(closeFocus,1);
+  assert.equal(elements(view.render()).find(node=>node.props?.id==='chat-task-drawer').props.hidden,false);
+  let prevented=false;view.render().props.onKeyDown({key:'Escape',defaultPrevented:false,target:{closest(){return null;}},preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);assert.equal(view.state.drawerOpen,false);assert.equal(triggerFocus,1);
+  const closedPermissions=elements(view.render()).find(node=>node.type?.name==='PermissionActions');assert.equal(closedPermissions.key,permissions.key);assert.equal(closedPermissions.props.sessionId,permissions.props.sessionId);
+  assert.ok(elements(view.render()).find(node=>node.props?.className==='composer'));
+});
+
+test('drawer history opens existing details and reminders deduplicate current-session known approvals',()=>{
+  const project=data();Object.assign(project,{campaigns:[{id:'current-campaign',rootSessionId:'root-a',state:'draft',approvalId:'pending'},{id:'other-campaign',rootSessionId:'root-b',state:'draft',approvalId:'foreign'}],approvals:[{id:'pending',subjectId:'current-campaign',status:'pending'},{id:'foreign',subjectId:'other-campaign',status:'pending'}],researchActions:[{id:'request',projectId:'p',sessionId:'root-a',state:'pending'},{id:'other',projectId:'p',sessionId:'root-b',state:'pending'}]});
+  const view=chat({project});view.permissionPending(['pending']);assert.deepEqual(elements(view.render()).find(node=>node.props?.className==='chat-pending-count').props.children,['已知待确认 ',2]);
+  let focus=0;const details={open:false,querySelector(){return{focus(){focus++;},getBoundingClientRect(){return{top:80};}};}};
+  view.drawerContent.current={scrollTop:0,querySelector(){return details;},getBoundingClientRect(){return{top:20};}};
+  const history=elements(view.render()).find(node=>node.type==='button'&&text(node)==='历史');
+  assert.equal(history.props['aria-controls'],'chat-task-drawer');assert.equal(history.props['aria-expanded'],false);
+  history.props.onClick({currentTarget:{focus(){}}});assert.equal(details.open,true);assert.equal(focus,1);assert.equal(view.drawerContent.current.scrollTop,60);
+  assert.equal(elements(view.render()).find(node=>node.type==='button'&&text(node)==='历史').props['aria-expanded'],true);
+});
+
+test('ordinary collaboration approvals never create an unreachable task-drawer reminder',()=>{
+  const project=data(true);project.teams=[{id:'team',rootSessionId:'root-a',state:'awaiting_approval',approvalId:'approval',delegationEnabled:true}];project.approvals=[{id:'approval',subjectId:'team',status:'pending'}];
+  const view=chat({project}),workflow=elements(view.render()).find(node=>node.type===ChatWorkflows);
+  assert.equal(synchronousState(new ChatWorkflows(workflow.props)).render(),null);
+  assert.equal(elements(view.render()).some(node=>node.props?.className==='chat-pending-count'),false);
+  view.permissionPending(['permission-approval']);view.props={...view.props,historyAnchor:{direction:'before',id:'message'}};
+  assert.equal(elements(view.render()).some(node=>node.type?.name==='PermissionActions'),false);
+  assert.equal(elements(view.render()).some(node=>node.props?.className==='chat-pending-count'),false);
+});
+
+test('drawer reminders count reachable review, campaign, intent and inferred change approvals, excluding read-only records',()=>{
+  const project=data(true);Object.assign(project,{members:[],observations:[],decisions:[],sandboxJobs:[],reviews:[{id:'review',producerSessionId:'root-a',teamId:'review-team',approvalId:'review-approval',status:'awaiting_approval'}],teams:[{id:'plain-team',rootSessionId:'root-a',state:'awaiting_approval',delegationEnabled:true},{id:'review-team',rootSessionId:'root-a',state:'awaiting_approval',delegationEnabled:true}],campaigns:[{id:'draft',rootSessionId:'root-a',state:'draft',approvalId:'draft-approval',rootModel:session.model},{id:'stopped',rootSessionId:'root-a',state:'stopped',approvalId:'stopped-approval',rootModel:session.model}],intents:[{id:'ready',rootSessionId:'root-a',status:'prepared',approvalId:'ready-approval',manifest:{}},{id:'submitted',rootSessionId:'root-a',status:'prepared',runId:'run',approvalId:'submitted-approval',manifest:{}},{id:'bound',rootSessionId:'root-a',status:'prepared',runGrant:{id:'grant'},approvalId:'bound-approval',manifest:{}}],developmentTasks:[{id:'expired',sessionId:'root-a',grantId:'expired-approval',manifest:{deadline:'2000-01-01T00:00:00Z',command:[]}}],changeProposals:[{id:'change',digest:'change-digest',reviewId:'review',state:'prepared',approvalId:'change-approval',baseSnapshot:{},candidateSnapshot:{}},{id:'stale',digest:'stale-digest',rootSessionId:'root-a',state:'prepared',sourceValidity:'stale',approvalId:'stale-approval',baseSnapshot:{},candidateSnapshot:{}}]});
+  project.approvals=['plain','review','draft','stopped','ready','submitted','bound','expired','change','stale'].map(id=>({id:id+'-approval',subjectId:id==='plain'?'plain-team':id==='review'?'review-team':id,status:'pending'}));
+  const view=chat({project}),workflow=elements(view.render()).find(node=>node.type===ChatWorkflows),cards=synchronousState(new ChatWorkflows(workflow.props));
+  assert.deepEqual(elements(view.render()).find(node=>node.props?.className==='chat-pending-count').props.children,['已知待确认 ',4]);
+  const buttons=elements(cards.render()).filter(node=>node.type==='button').map(text);
+  for(const label of ['批准并启动独立审查','批准并启动研究计划','确认并让智能体执行','拒绝代码变更'])assert.ok(buttons.includes(label),label);
+});
+
+test('only a verified current-session send signals latest, including queued follow-ups; failures retain retry input',async t=>{
+  const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});const requests=[];
+  const view=chat({current:{...session,state:'running'},perform:fn=>fn().catch(()=>undefined)}),attachment={documentVersionId:'document',artifactId:'artifact',title:'fixed source'};
+  view.state.draft='follow up';view.state.attachments=[attachment];
+  globalThis.fetch=async(url,init)=>{requests.push(init);throw Error('lost response');};
+  await view.submit({preventDefault(){}});assert.equal(view.state.sentMessageId,'');assert.equal(view.state.draft,'follow up');assert.deepEqual(view.state.attachments,[attachment]);
+  globalThis.fetch=async(url,init)=>{requests.push(init);return{ok:true,json:async()=>({...submitted('follow up','follow_up'),id:'confirmed-follow-up'})};};
+  await view.submit({preventDefault(){}});assert.equal(view.state.sentMessageId,'confirmed-follow-up');assert.equal(view.state.draft,'');assert.deepEqual(view.state.attachments,[]);
+  assert.equal(requests[0].headers['Idempotency-Key'],requests[1].headers['Idempotency-Key']);assert.equal(requests[0].body,requests[1].body);assert.equal(JSON.parse(requests[1].body).mode,'follow_up');
+  let resolve;globalThis.fetch=()=>new Promise(done=>{resolve=done;});view.state.draft='late';
+  const pending=view.submit({preventDefault(){}});view.componentWillUnmount();resolve({ok:true,json:async()=>({...submitted('late','follow_up'),id:'late-message'})});await pending;
+  assert.equal(view.state.sentMessageId,'confirmed-follow-up');assert.equal(view.state.draft,'late');
 });

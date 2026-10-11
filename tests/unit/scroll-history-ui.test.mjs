@@ -154,3 +154,42 @@ test('message history has no permanent earlier/newer controls and tolerates a mi
     const anchored=synchronousState(new SessionHistory(props({historyAnchor:{direction:'before',id:'m-1'}}))).render();
     assert.match(JSON.stringify(anchored),/返回最新/);
 });
+
+test('a confirmed own send waits for the message then replaces an older local window before following',()=>{
+    const existing=Array.from({length:200},(_,index)=>message(`old-${index}`)),view=synchronousState(new ScrollHistory(props({messages:existing,history:pageHistory('older',null,true)})));
+    view.state.afterCursor='old-199';view.state.atLatest=false;view.state.atBottom=false;view.isHostVisible=()=>true;view.checkEdges=()=>{};
+    let follows=0;view.scrollToBottom=()=>{follows++;};view.restorePosition=()=>{};
+    const snapshot={visible:true,atBottom:false},previous=view.props;view.props={...view.props,confirmedMessageId:'mine'};
+    view.componentDidUpdate(previous,{...view.state},snapshot);assert.equal(follows,0);assert.equal(view.state.messages.length,200);
+    const beforeMessage=view.props;view.props={...view.props,messages:[message('newer'),{...message('mine'),role:'user',status:'queued',mode:'follow_up'}],history:pageHistory('newer',null,true)};
+    view.componentDidUpdate(beforeMessage,{...view.state},snapshot);assert.equal(follows,1);assert.deepEqual(view.state.messages.map(row=>row.id),['newer','mine']);assert.equal(view.state.atLatest,true);assert.equal(view.state.afterCursor,null);
+    view.state.atBottom=false;const beforeStream=view.props;view.props={...view.props,liveKey:'more output'};
+    view.componentDidUpdate(beforeStream,{...view.state},snapshot);assert.equal(follows,1);
+});
+
+test('scrolling upward within the latest page exposes a working return-to-latest action',()=>{
+    const view=synchronousState(new ScrollHistory(props({messages:[message('latest')],history:pageHistory(null,null,true)}))),scroller={scrollTop:20,scrollHeight:1000,clientHeight:300};
+    view.mounted=true;view.findScrollElement=()=>scroller;view.isHostVisible=()=>true;view.checkEdges=()=>{};view.onScroll();
+    assert.equal(view.state.atLatest,true);assert.equal(view.state.atBottom,false);
+    const control=view.render().props.children.find(node=>node?.props?.className==='scroll-latest-control');assert.ok(control);assert.equal(control.props.children.props.children,'回到最新');
+    control.props.children.props.onClick();assert.equal(scroller.scrollTop,1000);assert.equal(view.state.atBottom,true);
+});
+
+test('message reconciliation carries the pre-update anchor or live-bottom snapshot through its state commit',()=>{
+    for(const atBottom of [false,true]){
+        const view=synchronousState(new ScrollHistory(props({messages:[message('first')],history:pageHistory(null,null,true)})));view.isHostVisible=()=>true;view.checkEdges=()=>{};
+        let follows=0,restored=null;view.scrollToBottom=()=>{follows++;};view.restorePosition=snapshot=>{restored=snapshot;};
+        const previous=view.props,previousState={...view.state},original={visible:true,atBottom,anchorId:'first',anchorOffset:12,lastId:'first'};
+        view.props={...view.props,messages:[message('first'),message('next')],liveKey:'stream after update'};
+        view.componentDidUpdate(previous,previousState,original);
+        view.componentDidUpdate(view.props,previousState,{visible:true,atBottom:false,anchorId:'different',anchorOffset:99});
+        if(atBottom){assert.equal(follows,1);assert.equal(restored,null);}else{assert.equal(follows,0);assert.equal(restored,original);}
+    }
+});
+
+test('foreign, assistant and anchored confirmations cannot pull a reader to live',()=>{
+    for(const extra of [{messages:[{...message('mine'),role:'user',sessionId:'foreign'}]},{messages:[message('mine')]},{messages:[{...message('mine'),role:'user'}],historyAnchor:{direction:'before',id:'anchor'}}]){
+        const view=synchronousState(new ScrollHistory(props({...extra,confirmedMessageId:'mine'})));view.isHostVisible=()=>false;view.checkEdges=()=>{};
+        let follows=0;view.scrollToBottom=()=>{follows++;};view.componentDidUpdate(view.props,{...view.state},{visible:false,atBottom:false});assert.equal(follows,0);
+    }
+});

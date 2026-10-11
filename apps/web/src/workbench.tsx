@@ -7,7 +7,7 @@ import {ScrollHistory} from './scroll-history.js';
 import {MessageQueue,type QueueMessage} from './message-queue.js';
 import {ComputeWait} from './compute-wait.js';
 import { WakeupPanel } from './campaigns.js';
-import {ChatWorkflows} from './chat-workflows.js';
+import {ChatWorkflows,proposalSession} from './chat-workflows.js';
 import {ResearchActionCards} from './research-action-cards.js';
 import {ComposerControls} from './composer-controls.js';
 import { api, artifactText, downloadArtifact } from './api.js';
@@ -47,8 +47,25 @@ export class Chat extends React.Component<{
     onSession: (id:string) => void;
     onExperiment: (id:string) => void;
     onRun: (runId:string,experimentId:string) => void;
-}, {draft:string;draftVersion:number;attachments:MessageAttachment[];sending:boolean}> {
-    state={draft:'',draftVersion:0,attachments:[] as MessageAttachment[],sending:false};
+}, {draft:string;draftVersion:number;attachments:MessageAttachment[];sending:boolean;drawerOpen:boolean;permissionPending:string[];sentMessageId:string}> {
+    state={draft:'',draftVersion:0,attachments:[] as MessageAttachment[],sending:false,drawerOpen:false,permissionPending:[] as string[],sentMessageId:''};
+    private drawerClose=React.createRef<HTMLButtonElement>();
+    private drawerContent=React.createRef<HTMLDivElement>();
+    private drawerTrigger:HTMLButtonElement|null=null;
+    private openDrawer=(trigger:HTMLButtonElement,history=false)=>{
+        this.drawerTrigger=trigger;
+        this.setState({drawerOpen:true},()=>{
+            const content=this.drawerContent.current,details=history?content?.querySelector<HTMLDetailsElement>('details.workflow-history,details.notification-history'):null;
+            if(details)details.open=true;
+            const target=history?(details?.querySelector<HTMLElement>('summary')??content?.querySelector<HTMLElement>('.chat-drawer-history-note')):this.drawerClose.current;
+            target?.focus({preventScroll:true});
+            if(history&&content&&target)content.scrollTop+=target.getBoundingClientRect().top-content.getBoundingClientRect().top;
+        });
+    };
+    private closeDrawer=()=>this.setState({drawerOpen:false},()=>this.drawerTrigger?.focus({preventScroll:true}));
+    private permissionPending=(ids:string[])=>{
+        if(this.mounted&&(ids.length!==this.state.permissionPending.length||ids.some((id,index)=>id!==this.state.permissionPending[index])))this.setState({permissionPending:ids});
+    };
     private mounted=true;
     private sending=false;
     private modelSave?:Promise<Row<Session>|undefined>;
@@ -103,7 +120,7 @@ export class Chat extends React.Component<{
                 if(!this.mounted||this.props.data.project.id!==request.projectId||this.props.session?.id!==request.sessionId)return confirmed;
                 this.props.onMessageConfirmed?.(confirmed);
                 const sent=new Set(request.attachments.map(attachment=>attachment.documentVersionId));
-                this.setState(current=>({draft:current.draftVersion===request.draftVersion&&current.draft===request.draft?'':current.draft,attachments:current.attachments.filter(attachment=>!sent.has(attachment.documentVersionId))}));
+                this.setState(current=>({draft:current.draftVersion===request.draftVersion&&current.draft===request.draft?'':current.draft,attachments:current.attachments.filter(attachment=>!sent.has(attachment.documentVersionId)),sentMessageId:confirmed.id}));
                 return confirmed;
             });
         }finally{this.sending=false;if(this.mounted)this.setState({sending:false});}
@@ -114,14 +131,39 @@ export class Chat extends React.Component<{
         const sessionModelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking));
         const canSend = this.canSend();
         const hasDraft=!!this.state.draft.trim()||this.state.attachments.length>0;
-        return <div className="chat-page"><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions"><Badge value={session.state} caption={session.state==='queued'?'正在处理':undefined}/><button className="icon-button" disabled={data.project.archived} title="重命名会话" aria-label="重命名会话" onClick={() => {
+        const latest=!this.props.historyAnchor&&(!this.props.history||this.props.history.atLatest),pending=new Set(latest?this.state.permissionPending:[]);
+        if(latest&&session?.role==='coordinator'&&!session.taskId){
+            const campaigns=(data.campaigns??[]).filter(row=>row.rootSessionId===session.id),campaignIds=new Set(campaigns.map(row=>row.id)),
+                campaignIntents=new Set([...(data.members??[]).filter(row=>campaignIds.has(row.campaignId)).map(row=>row.intentId),...(data.researchCandidates??[]).filter(row=>campaignIds.has(row.campaignId)).map(row=>row.intentId)]),
+                grant=(data.workingGrants??[]).find(row=>row.id===session.workingGrantId);
+            const approvalIds=new Set([
+                ...campaigns.filter(row=>row.state==='draft').map(row=>row.approvalId),
+                ...(data.decisions??[]).filter(row=>campaignIds.has(row.campaignId)&&row.status==='proposed').map(row=>row.approvalId),
+                ...(data.intents??[]).filter(row=>(row.rootSessionId===session.id||row.rootSessionId==null&&campaignIntents.has(row.id))&&row.status==='prepared'&&!row.runId&&!row.runGrant&&!data.approvals.find(approval=>approval.id===row.approvalId)?.runGrant).map(row=>row.approvalId),
+                ...(data.developmentTasks??[]).filter(row=>row.sessionId===session.id&&!row.jobId&&Date.parse(row.manifest?.deadline??'')>Date.now()&&(!session.workingGrantId||row.manifest.workingGrant?.id===session.workingGrantId&&grant?.effectiveState==='active'&&grant.validity==='current'&&Date.parse(grant.expiresAt)>Date.now())).map(row=>row.grantId),
+                ...(data.reviews??[]).filter(row=>row.producerSessionId===session.id&&data.project.settings.enabled&&data.teams.some(team=>team.id===row.teamId&&team.state==='awaiting_approval'&&team.delegationEnabled)).map(row=>row.approvalId),
+                ...(data.changeProposals??[]).filter(row=>proposalSession(data,row)===session.id&&row.state==='prepared'&&row.sourceValidity!=='stale').map(row=>row.approvalId),
+            ]);
+            for(const approval of data.approvals??[])if(approval.status==='pending'&&approvalIds.has(approval.id))pending.add(approval.id);
+            for(const request of data.researchActions??[])if(request.projectId===data.project.id&&request.sessionId===session.id&&request.state==='pending')pending.add('research:'+request.id);
+        }
+        return <div className="chat-page" onKeyDown={event=>{if(event.key==='Escape'&&this.state.drawerOpen&&!event.defaultPrevented&&!(event.target as HTMLElement).closest('[role="dialog"]')){event.preventDefault();this.closeDrawer();}}}><div className="chat-heading"><div><h1>{session?.title ?? '研究会话'}</h1><span className="muted">{session ? `${session.model.provider || '未配置供应商'} / ${session.model.model || '未配置模型'}` : '每个主会话都有独立历史和工作区'}</span></div>{session ? <div className="actions chat-heading-actions"><Badge value={session.state} caption={session.state==='queued'?'正在处理':undefined}/><button type="button" className="secondary compact chat-task-trigger" aria-expanded={this.state.drawerOpen} aria-controls="chat-task-drawer" onClick={event=>this.state.drawerOpen?this.closeDrawer():this.openDrawer(event.currentTarget)}><Icon name="settings" size={15}/>任务与审批{pending.size?<span className="chat-pending-count">已知待确认 {pending.size}</span>:null}</button><button type="button" className="secondary compact" aria-expanded={this.state.drawerOpen} aria-controls="chat-task-drawer" onClick={event=>this.openDrawer(event.currentTarget,true)}><Icon name="report" size={15}/>历史</button><button className="icon-button" disabled={data.project.archived} title="重命名会话" aria-label="重命名会话" onClick={() => {
                     const title = prompt('会话名称', session.title);
                     if (title)
                         this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));
                 }}><Icon name="edit"/></button></div> : null}</div>
  {!runtimeAvailable ? <div className="notice runtime-notice"><span className="status-dot amber"/><div><strong>Pi 尚未就绪</strong><p>{boot.runtime.message} 项目、快照、真实数值实验和证据管理仍可使用。</p></div></div> : runtimeAvailable&&session&&!sessionModelAvailable?<p className="notice runtime-notice">当前会话模型不可用，请选择已启用配置或新建会话。</p>:null}
  {session?.taskId?<p className="notice runtime-notice">这是团队任务会话。请通过团队任务控件发送指令或管理任务。</p>:session?.state==='archived'?<p className="notice runtime-notice">此会话已归档，不能发送消息。</p>:null}
- <div className="conversation" aria-live="polite">{messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <div className="welcome"><div className="welcome-mark">π</div><h2>今天想研究什么？</h2><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>查看实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目文件</span><Icon name="arrow"/></button></div></div> : <ScrollHistory projectId={data.project.id} sessionId={session?.id??''} messages={messages} history={this.props.history} historyAnchor={this.props.historyAnchor} onNavigate={this.props.onHistory} perform={this.props.perform} activeGeneration={session?.state==='running'?session.generation:undefined} liveKey={this.props.stream}/>}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <WakeupPanel data={data} busy={false} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/> : null}{!this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <ConversationActivity content={this.props.stream} active={session?.state==='running'} activity={this.props.activity} truncated={this.props.streamTruncated}/> : null}{session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <PermissionActions key={session.id} sessionId={session.id} projectId={data.project.id} session={session} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform}/> : null}{session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? <ChatWorkflows data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onExperiment={this.props.onExperiment} onRun={this.props.onRun}/> : null}{session?<ResearchActionCards data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onRun={this.props.onRun} onCampaign={this.props.onCampaign} onRegister={this.props.onRegister} onClaim={this.props.onClaim} onUseDocument={this.props.onUseDocument} onSources={this.props.onSources}/> : null}{this.props.archivedHistory}</div>
+ <div className={'chat-work-region'+(this.state.drawerOpen?' is-drawer-open':'')}>
+ <div className="conversation" aria-live="polite">{messages.length === 0 && latest ? <div className="welcome"><div className="welcome-mark">π</div><h2>今天想研究什么？</h2><div className="welcome-actions"><button onClick={this.props.onExperiments}><Icon name="experiment"/><span>查看实验</span><Icon name="arrow"/></button><button onClick={this.props.onWorkspace}><Icon name="folder"/><span>查看项目文件</span><Icon name="arrow"/></button></div></div> : <ScrollHistory projectId={data.project.id} sessionId={session?.id??''} messages={messages} history={this.props.history} historyAnchor={this.props.historyAnchor} onNavigate={this.props.onHistory} perform={this.props.perform} activeGeneration={session?.state==='running'?session.generation:undefined} liveKey={this.props.stream} confirmedMessageId={this.state.sentMessageId}/>} {latest?<ConversationActivity content={this.props.stream} active={session?.state==='running'} activity={this.props.activity} truncated={this.props.streamTruncated}/>:null}</div>
+ <aside id="chat-task-drawer" className="chat-task-drawer" hidden={!this.state.drawerOpen} aria-labelledby="chat-task-drawer-title"><header><h2 id="chat-task-drawer-title">任务与审批</h2><button type="button" ref={this.drawerClose} className="icon-button" aria-label="关闭任务与审批" onClick={this.closeDrawer}><Icon name="close"/></button></header><div className="chat-task-drawer-content" ref={this.drawerContent}>
+ <p className="small muted">本会话的任务、审批与结果通知。操作仍按原有固定范围确认。</p>
+ {session&&latest?<PermissionActions key={session.id} sessionId={session.id} projectId={data.project.id} session={session} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform} onPendingChange={this.permissionPending}/>:null}
+ {session&&latest?<ChatWorkflows data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onExperiment={this.props.onExperiment} onRun={this.props.onRun}/>:null}
+ {session?<ResearchActionCards data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onRun={this.props.onRun} onCampaign={this.props.onCampaign} onRegister={this.props.onRegister} onClaim={this.props.onClaim} onUseDocument={this.props.onUseDocument} onSources={this.props.onSources}/>:null}
+ {latest?<WakeupPanel data={data} busy={this.props.busy} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/>:null}
+ <p className="small muted chat-drawer-history-note" tabIndex={-1}>历史记录保留在操作审批历史、结果通知和已完成事项中；可展开已有记录。</p>{!latest?<p className="small muted">正在查看消息历史，返回最新消息后显示当前任务与审批。</p>:null}{this.props.archivedHistory}
+ </div></aside></div>
  <div className="composer-wrap"><div className="composer-stack">{session?.role==='coordinator'?<MessageQueue key={data.project.id+':'+session.id} projectId={data.project.id} sessionId={session.id} messages={this.props.pendingMessages} total={this.props.pendingTotal} nextCursor={this.props.pendingNextCursor} canSteer={this.props.canSteer} disabled={data.project.archived||!!session.taskId||session.state==='archived'||!!this.props.historyAnchor||!!this.props.history&&!this.props.history.atLatest} busy={this.props.busy} perform={this.props.perform}/>:null}<form className="composer" onSubmit={this.submit}><textarea aria-label="研究问题" placeholder={data.project.archived ? '已归档项目，只读查看历史' : session?.taskId ? '请通过团队任务控件操作' : session?.state==='archived' ? '已归档会话不可发送' : this.props.historyAnchor||this.props.history&&!this.props.history.atLatest ? '返回最新消息后可发送' : canSend ? '描述研究问题…' : '配置 Pi 供应商和模型后，在这里开始研究…'} value={this.state.draft} disabled={data.project.archived||!!session?.taskId||session?.state==='archived'} onChange={(e: any) => this.setState(current=>({ draft: e.target.value, draftVersion: current.draftVersion+1 }))} onKeyDown={(e: any) => {
                 if(e.key!=='Enter'||e.shiftKey||e.isComposing||e.nativeEvent?.isComposing||e.keyCode===229||e.nativeEvent?.keyCode===229)return;
                 e.preventDefault();e.currentTarget.form.requestSubmit();

@@ -141,3 +141,33 @@ Interactions: 三页签、目录展开/纯文本预览及状态保留、实际�
 Follow-up: 成功读取的目录清单在本页面内缓存；工作区新建文件后的目录刷新保留为非阻断待办。无剩余P0/P1/P2。
 
 final result: passed
+
+## 2026-10-12：按需任务抽屉与最新消息
+
+Source visual truth: 用户在本会话选定的第3张模拟图 `exec-2c921fec-3e73-4630-8894-005ecd7c40d9.png`，SHA256 `c71e8c885c52f05434cce268e412fc8fe432a9861dc62659e1bc4aca90ccb925`。原图保留在本地 ImageGen 输出目录，因包含用户提供的研究对话，不纳入Git。
+
+Implementation: 仅本批变更的交付快照；[桌面截图](docs/acceptance/flow-chat-task-drawer/desktop.jpg)、[窄屏截图](docs/acceptance/flow-chat-task-drawer/mobile.jpg)。使用专用合成项目和确定性IPC输出，未调用外部供应商或操作用户科研数据。
+
+Viewport/state: 原图及桌面截图均1670×942像素，CSS视口1670×942，deviceScaleFactor约1，未缩放原图或实现截图。桌面为最新用户消息、任务抽屉打开、1个可处理的合成历史查看请求；原图的运行状态、示例文字和数量仅作为设计示意。窄屏截图390×844；另外实测320×844、768×1024、1024×900和1440×960。
+
+Full-view comparison evidence: `../.codex-chat-drawer-20261012/design-comparison.jpg` 将原图与实现以原始尺度并排；关键消息/输入框区域以同密度独立裁切并排于 `endpoint-comparison.jpg`，没有拉伸。对照图含原始研究文案，仅留本地；上述实现截图只有合成验收资料。
+
+Findings/intentional constraints:
+
+- 无本批未解决的P0/P1/P2视觉问题。顶部任务/历史入口、可关闭的独立滚动任务区、最新对话及底部输入框均可识别和操作。
+- 保留已存在的协作/实验/目录面板；抽屉打开时临时占消息区一列，窄屏占有界上下区域，防止覆盖消息或输入框。该产品约束与图中浮层表现不同，不做额外全局布局重排。
+- 模拟图中的大空白和业务示例未硬编码。消息保持自然顺序和间距，任务卡片不再参与聊天滚动高度。
+
+Required fidelity surfaces:
+
+- Fonts/typography: 复用Segoe UI、Microsoft YaHei、Noto Sans CJK SC及现有字号层级，标题、正文、状态与按钮可读；未添加字体依赖。
+- Spacing/layout: 桌面最新消息可见，滚动底部距离约0；4个断点无文档横向溢出，任务区底边始终在输入框上边之前。任务与消息分别滚动。
+- Colors/tokens: 沿用项目画布、边框、正文和状态变量；待确认使用明确文字，保留原有成功/失败语义。
+- Image/assets: 沿用项目π身份及既有Icon组件；无新生成资产、截图背景或假界面覆盖层。
+- Copy/content: 生产UI使用现有真实任务组件及权限语义；提醒标为“已知待确认”，历史只承诺已有入口与记录。截图中的英文资料和模型是隔离测试夹具。
+
+Primary interactions: 开关、Escape关闭和焦点返回；上翻后的“回到最新”；从阅读位置发送确认后显示新消息；流第9段至第24段及最终消息后原阅读锚点、偏移与scrollTop不变；处理合成请求后提醒消失，历史入口展开已保留的记录。浏览器console errors=[]。真实触控和屏幕阅读器未实测。
+
+Comparison history: 初次与最终对照均未发现需要修正的视觉阻断。独立代码复核发现的不可达团队审批提醒已修复；新增测试夹具缺必填digest的问题已补齐，受影响复核通过。原视觉与滚动证据仍适用于最终代码，提醒范围有新增回归验证。
+
+final result: passed

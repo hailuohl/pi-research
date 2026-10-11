@@ -75,7 +75,7 @@ function validatePage(page, capturedProjectId, capturedSessionId, direction, cur
 class ScrollHistory extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { ...initialWindow(this.props.messages, this.props.history), loading: null, failedDirection: null, error: "" };
+    this.state = { ...initialWindow(this.props.messages, this.props.history), loading: null, failedDirection: null, error: "", atBottom: true };
     this.root = React.createRef();
     this.controller = null;
     this.requestEpoch = 0;
@@ -89,7 +89,12 @@ class ScrollHistory extends React.Component {
     this.autoDirection = null;
     this.autoPages = 0;
     this.touchY = null;
-    this.onScroll = () => this.checkEdges();
+    this.lastConfirmedId = "";
+    this.pendingSnapshot = null;
+    this.onScroll = () => {
+      this.updateBottomState();
+      this.checkEdges();
+    };
     this.onResize = () => {
       this.bindScrollEvents();
       this.checkEdges();
@@ -116,6 +121,7 @@ class ScrollHistory extends React.Component {
     this.autoDirection = this.state.afterCursor ? "after" : this.state.beforeCursor ? "before" : null;
     if (typeof window !== "undefined") window.addEventListener("resize", this.onResize, { passive: true });
     if (this.isHostVisible() && this.state.atLatest) this.scrollToBottom();
+    this.lastConfirmedId = this.confirmedMessage()?.id ?? "";
     this.checkEdges();
   }
   getSnapshotBeforeUpdate(_previous, previousState) {
@@ -134,8 +140,11 @@ class ScrollHistory extends React.Component {
     return { visible, atBottom, scrollElement, scrollTop, scrollHeight, anchorId, anchorOffset, firstId: previousState.messages[0]?.id ?? null, lastId: previousState.messages[previousState.messages.length - 1]?.id ?? null };
   }
   componentDidUpdate(previous, previousState, snapshot) {
+    snapshot = this.pendingSnapshot ?? snapshot;
+    this.pendingSnapshot = null;
     const scopeChanged = previous.projectId !== this.props.projectId || previous.sessionId !== this.props.sessionId || !sameAnchor(previous.historyAnchor, this.props.historyAnchor);
     if (scopeChanged) {
+      if (previous.projectId !== this.props.projectId || previous.sessionId !== this.props.sessionId) this.lastConfirmedId = "";
       this.cancelRequest();
       this.waitingLatest = previous.projectId === this.props.projectId && previous.sessionId === this.props.sessionId && !!previous.historyAnchor && !this.props.historyAnchor && this.props.messages.length === 0;
       const next = this.waitingLatest ? initialWindow([], null) : initialWindow(this.props.messages, this.props.history);
@@ -160,26 +169,37 @@ class ScrollHistory extends React.Component {
       });
       return;
     }
+    const confirmed = this.confirmedMessage();
+    if (confirmed && confirmed.id !== this.lastConfirmedId) {
+      this.lastConfirmedId = confirmed.id;
+      this.jumpLatest();
+      return;
+    }
     if (previous.messages !== this.props.messages) {
       const next = reconcileHistoryWindow(this.state, this.props.messages, this.props.history, snapshot?.atBottom ?? false);
       const direction = this.loadingDirection, cursor = direction === "before" ? next.beforeCursor : next.afterCursor, edge = direction === "before" ? next.messages[0]?.id ?? null : next.messages[next.messages.length - 1]?.id ?? null;
       const cancelled = !!direction && (cursor !== this.requestCursor || edge !== this.requestEdge);
       if (cancelled) this.cancelRequest();
       if (cancelled || !sameWindow(this.state, next)) {
+        this.pendingSnapshot = snapshot;
         this.setState({ ...next, loading: cancelled ? null : this.state.loading });
         return;
       }
     }
-    const messagesChanged = previousState.messages !== this.state.messages, liveChanged = previous.liveKey !== this.props.liveKey;
     if (snapshot?.visible && this.isHostVisible()) {
-      if (liveChanged && snapshot.atBottom) this.scrollToBottom();
-      else if (messagesChanged) {
-        const last = this.state.messages[this.state.messages.length - 1]?.id ?? null, appended = last !== snapshot.lastId && this.state.messages.some((message) => message.id === snapshot.lastId);
-        if (snapshot.atBottom && this.state.atLatest && (appended || !this.state.messages.some((message) => message.id === snapshot.lastId))) this.scrollToBottom();
-        else this.restorePosition(snapshot);
-      }
+      if (snapshot.atBottom && this.state.atLatest) this.scrollToBottom();
+      else this.restorePosition(snapshot);
     }
     this.checkEdges();
+  }
+  confirmedMessage() {
+    if (!this.props.confirmedMessageId || this.props.historyAnchor || this.props.history && !this.props.history.atLatest) return;
+    return this.props.messages.find((message) => message.id === this.props.confirmedMessageId && message.role === "user" && message.projectId === this.props.projectId && message.sessionId === this.props.sessionId);
+  }
+  updateBottomState() {
+    if (!this.mounted || !this.isHostVisible()) return;
+    const element = this.findScrollElement(this.root.current), atBottom = element ? element.scrollHeight - element.clientHeight - element.scrollTop <= 32 : typeof window !== "undefined" && typeof document !== "undefined" && document.documentElement.scrollHeight - window.innerHeight - window.scrollY <= 32;
+    if (atBottom !== this.state.atBottom) this.setState({ atBottom });
   }
   componentWillUnmount() {
     this.mounted = false;
@@ -244,7 +264,7 @@ class ScrollHistory extends React.Component {
     const next = initialWindow(this.props.messages, this.props.history);
     this.autoPages = 0;
     this.autoDirection = next.afterCursor ? "after" : next.beforeCursor ? "before" : null;
-    this.setState({ ...next, loading: null, failedDirection: null, error: "" }, () => {
+    this.setState({ ...next, loading: null, failedDirection: null, error: "", atBottom: true }, () => {
       if (this.isHostVisible()) this.scrollToBottom();
       this.checkEdges();
     });
@@ -269,6 +289,7 @@ class ScrollHistory extends React.Component {
     const element = this.findScrollElement(this.root.current);
     if (element) element.scrollTop = element.scrollHeight;
     else if (typeof window !== "undefined" && typeof document !== "undefined") window.scrollTo(0, document.documentElement.scrollHeight);
+    this.updateBottomState();
   }
   restorePosition(snapshot) {
     const root = this.root.current, scrollElement = this.findScrollElement(root), viewportTop = scrollElement?.getBoundingClientRect().top ?? 0;
@@ -362,6 +383,7 @@ class ScrollHistory extends React.Component {
       loading === "before" ? /* @__PURE__ */ jsx("div", { className: "scroll-history-loading", "aria-live": "polite", children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u65E9\u6D88\u606F\u2026" }) : null,
       failedDirection === "before" ? retry : null,
       /* @__PURE__ */ jsx(SessionHistory, { projectId, sessionId, messages: this.state.messages, history, historyAnchor, onNavigate: this.navigate, perform, activeGeneration }),
+      !this.state.atBottom ? /* @__PURE__ */ jsx("div", { className: "scroll-latest-control", children: /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", onClick: () => this.jumpLatest(), children: "\u56DE\u5230\u6700\u65B0" }) }) : null,
       loading === "after" ? /* @__PURE__ */ jsx("div", { className: "scroll-history-loading", "aria-live": "polite", children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u65B0\u6D88\u606F\u2026" }) : null,
       failedDirection === "after" ? retry : null
     ] });

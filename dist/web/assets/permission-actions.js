@@ -27,7 +27,11 @@ class PermissionActions extends React.Component {
     const request = ++this.request;
     try {
       const result = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/permissions`);
-      if (this.alive && request === this.request) this.setState({ actions: result.actions ?? [], hasMore: !!result.hasMoreActions });
+      if (this.alive && request === this.request) {
+        const actions = result.actions ?? [];
+        this.setState({ actions, hasMore: !!result.hasMoreActions });
+        this.props.onPendingChange?.(actions.filter((action) => action.state === "pending" && action.approval.status === "pending").map((action) => action.approval.id));
+      }
     } catch (error) {
       if (this.alive && request === this.request) this.setState({ error: error instanceof Error ? error.message : String(error) });
     }

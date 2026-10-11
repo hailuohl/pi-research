@@ -8,7 +8,7 @@ import { ScrollHistory } from "./scroll-history.js";
 import { MessageQueue } from "./message-queue.js";
 import { ComputeWait } from "./compute-wait.js";
 import { WakeupPanel } from "./campaigns.js";
-import { ChatWorkflows } from "./chat-workflows.js";
+import { ChatWorkflows, proposalSession } from "./chat-workflows.js";
 import { ResearchActionCards } from "./research-action-cards.js";
 import { ComposerControls } from "./composer-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
@@ -17,7 +17,24 @@ import { Icon, Badge, nativeSelectButton } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { draft: "", draftVersion: 0, attachments: [], sending: false };
+    this.state = { draft: "", draftVersion: 0, attachments: [], sending: false, drawerOpen: false, permissionPending: [], sentMessageId: "" };
+    this.drawerClose = React.createRef();
+    this.drawerContent = React.createRef();
+    this.drawerTrigger = null;
+    this.openDrawer = (trigger, history = false) => {
+      this.drawerTrigger = trigger;
+      this.setState({ drawerOpen: true }, () => {
+        const content = this.drawerContent.current, details = history ? content?.querySelector("details.workflow-history,details.notification-history") : null;
+        if (details) details.open = true;
+        const target = history ? details?.querySelector("summary") ?? content?.querySelector(".chat-drawer-history-note") : this.drawerClose.current;
+        target?.focus({ preventScroll: true });
+        if (history && content && target) content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top;
+      });
+    };
+    this.closeDrawer = () => this.setState({ drawerOpen: false }, () => this.drawerTrigger?.focus({ preventScroll: true }));
+    this.permissionPending = (ids) => {
+      if (this.mounted && (ids.length !== this.state.permissionPending.length || ids.some((id, index) => id !== this.state.permissionPending[index]))) this.setState({ permissionPending: ids });
+    };
     this.mounted = true;
     this.sending = false;
     this.changeModel = (model) => {
@@ -81,7 +98,7 @@ class Chat extends React.Component {
           if (!this.mounted || this.props.data.project.id !== request.projectId || this.props.session?.id !== request.sessionId) return confirmed;
           this.props.onMessageConfirmed?.(confirmed);
           const sent = new Set(request.attachments.map((attachment) => attachment.documentVersionId));
-          this.setState((current2) => ({ draft: current2.draftVersion === request.draftVersion && current2.draft === request.draft ? "" : current2.draft, attachments: current2.attachments.filter((attachment) => !sent.has(attachment.documentVersionId)) }));
+          this.setState((current2) => ({ draft: current2.draftVersion === request.draftVersion && current2.draft === request.draft ? "" : current2.draft, attachments: current2.attachments.filter((attachment) => !sent.has(attachment.documentVersionId)), sentMessageId: confirmed.id }));
           return confirmed;
         });
       } finally {
@@ -99,14 +116,45 @@ class Chat extends React.Component {
     const sessionModelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking));
     const canSend = this.canSend();
     const hasDraft = !!this.state.draft.trim() || this.state.attachments.length > 0;
-    return /* @__PURE__ */ jsxs("div", { className: "chat-page", children: [
+    const latest = !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest), pending = new Set(latest ? this.state.permissionPending : []);
+    if (latest && session?.role === "coordinator" && !session.taskId) {
+      const campaigns = (data.campaigns ?? []).filter((row) => row.rootSessionId === session.id), campaignIds = new Set(campaigns.map((row) => row.id)), campaignIntents = /* @__PURE__ */ new Set([...(data.members ?? []).filter((row) => campaignIds.has(row.campaignId)).map((row) => row.intentId), ...(data.researchCandidates ?? []).filter((row) => campaignIds.has(row.campaignId)).map((row) => row.intentId)]), grant = (data.workingGrants ?? []).find((row) => row.id === session.workingGrantId);
+      const approvalIds = /* @__PURE__ */ new Set([
+        ...campaigns.filter((row) => row.state === "draft").map((row) => row.approvalId),
+        ...(data.decisions ?? []).filter((row) => campaignIds.has(row.campaignId) && row.status === "proposed").map((row) => row.approvalId),
+        ...(data.intents ?? []).filter((row) => (row.rootSessionId === session.id || row.rootSessionId == null && campaignIntents.has(row.id)) && row.status === "prepared" && !row.runId && !row.runGrant && !data.approvals.find((approval) => approval.id === row.approvalId)?.runGrant).map((row) => row.approvalId),
+        ...(data.developmentTasks ?? []).filter((row) => row.sessionId === session.id && !row.jobId && Date.parse(row.manifest?.deadline ?? "") > Date.now() && (!session.workingGrantId || row.manifest.workingGrant?.id === session.workingGrantId && grant?.effectiveState === "active" && grant.validity === "current" && Date.parse(grant.expiresAt) > Date.now())).map((row) => row.grantId),
+        ...(data.reviews ?? []).filter((row) => row.producerSessionId === session.id && data.project.settings.enabled && data.teams.some((team) => team.id === row.teamId && team.state === "awaiting_approval" && team.delegationEnabled)).map((row) => row.approvalId),
+        ...(data.changeProposals ?? []).filter((row) => proposalSession(data, row) === session.id && row.state === "prepared" && row.sourceValidity !== "stale").map((row) => row.approvalId)
+      ]);
+      for (const approval of data.approvals ?? []) if (approval.status === "pending" && approvalIds.has(approval.id)) pending.add(approval.id);
+      for (const request of data.researchActions ?? []) if (request.projectId === data.project.id && request.sessionId === session.id && request.state === "pending") pending.add("research:" + request.id);
+    }
+    return /* @__PURE__ */ jsxs("div", { className: "chat-page", onKeyDown: (event) => {
+      if (event.key === "Escape" && this.state.drawerOpen && !event.defaultPrevented && !event.target.closest('[role="dialog"]')) {
+        event.preventDefault();
+        this.closeDrawer();
+      }
+    }, children: [
       /* @__PURE__ */ jsxs("div", { className: "chat-heading", children: [
         /* @__PURE__ */ jsxs("div", { children: [
           /* @__PURE__ */ jsx("h1", { children: session?.title ?? "\u7814\u7A76\u4F1A\u8BDD" }),
           /* @__PURE__ */ jsx("span", { className: "muted", children: session ? `${session.model.provider || "\u672A\u914D\u7F6E\u4F9B\u5E94\u5546"} / ${session.model.model || "\u672A\u914D\u7F6E\u6A21\u578B"}` : "\u6BCF\u4E2A\u4E3B\u4F1A\u8BDD\u90FD\u6709\u72EC\u7ACB\u5386\u53F2\u548C\u5DE5\u4F5C\u533A" })
         ] }),
-        session ? /* @__PURE__ */ jsxs("div", { className: "actions", children: [
+        session ? /* @__PURE__ */ jsxs("div", { className: "actions chat-heading-actions", children: [
           /* @__PURE__ */ jsx(Badge, { value: session.state, caption: session.state === "queued" ? "\u6B63\u5728\u5904\u7406" : void 0 }),
+          /* @__PURE__ */ jsxs("button", { type: "button", className: "secondary compact chat-task-trigger", "aria-expanded": this.state.drawerOpen, "aria-controls": "chat-task-drawer", onClick: (event) => this.state.drawerOpen ? this.closeDrawer() : this.openDrawer(event.currentTarget), children: [
+            /* @__PURE__ */ jsx(Icon, { name: "settings", size: 15 }),
+            "\u4EFB\u52A1\u4E0E\u5BA1\u6279",
+            pending.size ? /* @__PURE__ */ jsxs("span", { className: "chat-pending-count", children: [
+              "\u5DF2\u77E5\u5F85\u786E\u8BA4 ",
+              pending.size
+            ] }) : null
+          ] }),
+          /* @__PURE__ */ jsxs("button", { type: "button", className: "secondary compact", "aria-expanded": this.state.drawerOpen, "aria-controls": "chat-task-drawer", onClick: (event) => this.openDrawer(event.currentTarget, true), children: [
+            /* @__PURE__ */ jsx(Icon, { name: "report", size: 15 }),
+            "\u5386\u53F2"
+          ] }),
           /* @__PURE__ */ jsx("button", { className: "icon-button", disabled: data.project.archived, title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: () => {
             const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title);
             if (title)
@@ -125,29 +173,43 @@ class Chat extends React.Component {
         ] })
       ] }) : runtimeAvailable && session && !sessionModelAvailable ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u9009\u62E9\u5DF2\u542F\u7528\u914D\u7F6E\u6216\u65B0\u5EFA\u4F1A\u8BDD\u3002" }) : null,
       session?.taskId ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u8FD9\u662F\u56E2\u961F\u4EFB\u52A1\u4F1A\u8BDD\u3002\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u53D1\u9001\u6307\u4EE4\u6216\u7BA1\u7406\u4EFB\u52A1\u3002" }) : session?.state === "archived" ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u6B64\u4F1A\u8BDD\u5DF2\u5F52\u6863\uFF0C\u4E0D\u80FD\u53D1\u9001\u6D88\u606F\u3002" }) : null,
-      /* @__PURE__ */ jsxs("div", { className: "conversation", "aria-live": "polite", children: [
-        messages.length === 0 && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsxs("div", { className: "welcome", children: [
-          /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
-          /* @__PURE__ */ jsx("h2", { children: "\u4ECA\u5929\u60F3\u7814\u7A76\u4EC0\u4E48\uFF1F" }),
-          /* @__PURE__ */ jsxs("div", { className: "welcome-actions", children: [
-            /* @__PURE__ */ jsxs("button", { onClick: this.props.onExperiments, children: [
-              /* @__PURE__ */ jsx(Icon, { name: "experiment" }),
-              /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u5B9E\u9A8C" }),
-              /* @__PURE__ */ jsx(Icon, { name: "arrow" })
-            ] }),
-            /* @__PURE__ */ jsxs("button", { onClick: this.props.onWorkspace, children: [
-              /* @__PURE__ */ jsx(Icon, { name: "folder" }),
-              /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u9879\u76EE\u6587\u4EF6" }),
-              /* @__PURE__ */ jsx(Icon, { name: "arrow" })
+      /* @__PURE__ */ jsxs("div", { className: "chat-work-region" + (this.state.drawerOpen ? " is-drawer-open" : ""), children: [
+        /* @__PURE__ */ jsxs("div", { className: "conversation", "aria-live": "polite", children: [
+          messages.length === 0 && latest ? /* @__PURE__ */ jsxs("div", { className: "welcome", children: [
+            /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
+            /* @__PURE__ */ jsx("h2", { children: "\u4ECA\u5929\u60F3\u7814\u7A76\u4EC0\u4E48\uFF1F" }),
+            /* @__PURE__ */ jsxs("div", { className: "welcome-actions", children: [
+              /* @__PURE__ */ jsxs("button", { onClick: this.props.onExperiments, children: [
+                /* @__PURE__ */ jsx(Icon, { name: "experiment" }),
+                /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u5B9E\u9A8C" }),
+                /* @__PURE__ */ jsx(Icon, { name: "arrow" })
+              ] }),
+              /* @__PURE__ */ jsxs("button", { onClick: this.props.onWorkspace, children: [
+                /* @__PURE__ */ jsx(Icon, { name: "folder" }),
+                /* @__PURE__ */ jsx("span", { children: "\u67E5\u770B\u9879\u76EE\u6587\u4EF6" }),
+                /* @__PURE__ */ jsx(Icon, { name: "arrow" })
+              ] })
             ] })
+          ] }) : /* @__PURE__ */ jsx(ScrollHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream, confirmedMessageId: this.state.sentMessageId }),
+          " ",
+          latest ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null
+        ] }),
+        /* @__PURE__ */ jsxs("aside", { id: "chat-task-drawer", className: "chat-task-drawer", hidden: !this.state.drawerOpen, "aria-labelledby": "chat-task-drawer-title", children: [
+          /* @__PURE__ */ jsxs("header", { children: [
+            /* @__PURE__ */ jsx("h2", { id: "chat-task-drawer-title", children: "\u4EFB\u52A1\u4E0E\u5BA1\u6279" }),
+            /* @__PURE__ */ jsx("button", { type: "button", ref: this.drawerClose, className: "icon-button", "aria-label": "\u5173\u95ED\u4EFB\u52A1\u4E0E\u5BA1\u6279", onClick: this.closeDrawer, children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
+          ] }),
+          /* @__PURE__ */ jsxs("div", { className: "chat-task-drawer-content", ref: this.drawerContent, children: [
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u672C\u4F1A\u8BDD\u7684\u4EFB\u52A1\u3001\u5BA1\u6279\u4E0E\u7ED3\u679C\u901A\u77E5\u3002\u64CD\u4F5C\u4ECD\u6309\u539F\u6709\u56FA\u5B9A\u8303\u56F4\u786E\u8BA4\u3002" }),
+            session && latest ? /* @__PURE__ */ jsx(PermissionActions, { sessionId: session.id, projectId: data.project.id, session, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform, onPendingChange: this.permissionPending }, session.id) : null,
+            session && latest ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null,
+            session ? /* @__PURE__ */ jsx(ResearchActionCards, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onRun: this.props.onRun, onCampaign: this.props.onCampaign, onRegister: this.props.onRegister, onClaim: this.props.onClaim, onUseDocument: this.props.onUseDocument, onSources: this.props.onSources }) : null,
+            latest ? /* @__PURE__ */ jsx(WakeupPanel, { data, busy: this.props.busy, sessionId: session?.id, perform: this.props.perform, onSession: this.props.onSession }) : null,
+            /* @__PURE__ */ jsx("p", { className: "small muted chat-drawer-history-note", tabIndex: -1, children: "\u5386\u53F2\u8BB0\u5F55\u4FDD\u7559\u5728\u64CD\u4F5C\u5BA1\u6279\u5386\u53F2\u3001\u7ED3\u679C\u901A\u77E5\u548C\u5DF2\u5B8C\u6210\u4E8B\u9879\u4E2D\uFF1B\u53EF\u5C55\u5F00\u5DF2\u6709\u8BB0\u5F55\u3002" }),
+            !latest ? /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u6B63\u5728\u67E5\u770B\u6D88\u606F\u5386\u53F2\uFF0C\u8FD4\u56DE\u6700\u65B0\u6D88\u606F\u540E\u663E\u793A\u5F53\u524D\u4EFB\u52A1\u4E0E\u5BA1\u6279\u3002" }) : null,
+            this.props.archivedHistory
           ] })
-        ] }) : /* @__PURE__ */ jsx(ScrollHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream }),
-        !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(WakeupPanel, { data, busy: false, sessionId: session?.id, perform: this.props.perform, onSession: this.props.onSession }) : null,
-        !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null,
-        session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(PermissionActions, { sessionId: session.id, projectId: data.project.id, session, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null,
-        session && !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest) ? /* @__PURE__ */ jsx(ChatWorkflows, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onExperiment: this.props.onExperiment, onRun: this.props.onRun }) : null,
-        session ? /* @__PURE__ */ jsx(ResearchActionCards, { data, session, busy: this.props.busy, perform: this.props.perform, onSession: this.props.onSession, onRun: this.props.onRun, onCampaign: this.props.onCampaign, onRegister: this.props.onRegister, onClaim: this.props.onClaim, onUseDocument: this.props.onUseDocument, onSources: this.props.onSources }) : null,
-        this.props.archivedHistory
+        ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
         /* @__PURE__ */ jsxs("div", { className: "composer-stack", children: [

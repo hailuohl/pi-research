@@ -8,6 +8,15 @@ const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==
 const action={id:'fixed-action',version:3,operation:'workspace_write',input:{path:'draft.py',content:'after',expectedDigest:'before-digest'},state:'pending',createdAt:'2026-10-06T00:00:00Z',before:{path:'draft.py',content:'before',digest:'before-digest'},approval:{id:'approval',version:2,status:'pending'}};
 function view(){const component=synchronousState(new PermissionActions({sessionId:'session-fixture',archived:false,busy:false,perform:fn=>fn()}));component.state.actions=[action];return component;}
 
+test('known pending notifications follow accepted reads and ignore a disposed session response',async t=>{
+ const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});const pending=[];
+ const component=view();component.props={...component.props,onPendingChange:ids=>pending.push(ids)};
+ globalThis.fetch=async()=>({ok:true,json:async()=>({actions:[action,{...action,id:'approved',approval:{...action.approval,id:'approved-approval',status:'approved'}}],hasMoreActions:true})});
+ await component.load();assert.deepEqual(pending,[['approval']]);assert.equal(component.state.hasMore,true);
+ let resolve;globalThis.fetch=()=>new Promise(done=>{resolve=done;});const late=component.load();component.componentWillUnmount();
+ resolve({ok:true,json:async()=>({actions:[]})});await late;assert.deepEqual(pending,[['approval']]);
+});
+
 test('fixed page approval discloses destination model and history resend in the existing card',()=>{
  const component=view();component.state.actions=[{...action,operation:'publication_page_image_read',input:{publicationResultId:'fixed-result',pageNumber:2},before:undefined,approval:{...action.approval,reason:'允许固定页加入当前会话并发送给 provider/vision-model；后续请求及重开可能再次发送，权限失效时停止。'}}];const rendered=text(component.render());assert.match(rendered,/发送固定文稿页给模型/);assert.match(rendered,/provider\/vision-model/);assert.match(rendered,/后续请求及重开可能再次发送/);assert.match(rendered,/fixed-result/);assert.equal(elements(component.render()).filter(e=>e.type==='button').length,2);
 });

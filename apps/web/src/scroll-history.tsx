@@ -9,8 +9,8 @@ type Direction='before'|'after';
 type Anchor={direction:Direction;id:string}|null;
 interface HistoryWindow {messages:QueueMessage[];beforeCursor:string|null;afterCursor:string|null;atLatest:boolean;}
 interface HistoryView {session:{id:string;projectId:string};messages:QueueMessage[];history:SessionHistoryPage;}
-interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;liveKey?:string;}
-interface State extends HistoryWindow {loading:Direction|null;failedDirection:Direction|null;error:string;}
+interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;liveKey?:string;confirmedMessageId?:string;}
+interface State extends HistoryWindow {loading:Direction|null;failedDirection:Direction|null;error:string;atBottom:boolean;}
 interface LayoutSnapshot {visible:boolean;atBottom:boolean;scrollElement:HTMLElement|null;scrollTop:number;scrollHeight:number;anchorId:string|null;anchorOffset:number;firstId:string|null;lastId:string|null;}
 const PAGE_SIZE=20,MAX_MESSAGES=200,MAX_AUTO_PAGES=10;
 
@@ -74,7 +74,7 @@ function validatePage(page:HistoryView,capturedProjectId:string,capturedSessionI
 }
 
 export class ScrollHistory extends React.Component<Props,State>{
-    state:State={...initialWindow(this.props.messages,this.props.history),loading:null,failedDirection:null,error:''};
+    state:State={...initialWindow(this.props.messages,this.props.history),loading:null,failedDirection:null,error:'',atBottom:true};
     private root=React.createRef<HTMLDivElement>();
     private controller:AbortController|null=null;
     private requestEpoch=0;
@@ -88,7 +88,9 @@ export class ScrollHistory extends React.Component<Props,State>{
     private autoDirection:Direction|null=null;
     private autoPages=0;
     private touchY:number|null=null;
-    private readonly onScroll=()=>this.checkEdges();
+    private lastConfirmedId='';
+    private pendingSnapshot:LayoutSnapshot|null=null;
+    private readonly onScroll=()=>{this.updateBottomState();this.checkEdges();};
     private readonly onResize=()=>{this.bindScrollEvents();this.checkEdges();};
     private readonly onWheel=(event:WheelEvent)=>{if(this.isInsideHost(event.target)&&event.deltaY)this.userDirection(event.deltaY<0?'before':'after');};
     private readonly onTouchStart=(event:TouchEvent)=>{if(this.isInsideHost(event.target))this.touchY=event.touches[0]?.clientY??null;};
@@ -101,6 +103,7 @@ export class ScrollHistory extends React.Component<Props,State>{
         this.autoDirection=this.state.afterCursor?'after':this.state.beforeCursor?'before':null;
         if(typeof window!=='undefined')window.addEventListener('resize',this.onResize,{passive:true});
         if(this.isHostVisible()&&this.state.atLatest)this.scrollToBottom();
+        this.lastConfirmedId=this.confirmedMessage()?.id??'';
         this.checkEdges();
     }
 
@@ -118,8 +121,10 @@ export class ScrollHistory extends React.Component<Props,State>{
     }
 
     componentDidUpdate(previous:Props,previousState:State,snapshot:LayoutSnapshot){
+        snapshot=this.pendingSnapshot??snapshot;this.pendingSnapshot=null;
         const scopeChanged=previous.projectId!==this.props.projectId||previous.sessionId!==this.props.sessionId||!sameAnchor(previous.historyAnchor,this.props.historyAnchor);
         if(scopeChanged){
+            if(previous.projectId!==this.props.projectId||previous.sessionId!==this.props.sessionId)this.lastConfirmedId='';
             this.cancelRequest();
             this.waitingLatest=previous.projectId===this.props.projectId&&previous.sessionId===this.props.sessionId&&!!previous.historyAnchor&&!this.props.historyAnchor&&this.props.messages.length===0;
             const next=this.waitingLatest?initialWindow([],null):initialWindow(this.props.messages,this.props.history);
@@ -134,23 +139,31 @@ export class ScrollHistory extends React.Component<Props,State>{
             this.setState({...next,loading:null,failedDirection:null,error:''},()=>{if(this.isHostVisible())this.scrollToBottom();this.checkEdges();});
             return;
         }
+        const confirmed=this.confirmedMessage();
+        if(confirmed&&confirmed.id!==this.lastConfirmedId){this.lastConfirmedId=confirmed.id;this.jumpLatest();return;}
         if(previous.messages!==this.props.messages){
             const next=reconcileHistoryWindow(this.state,this.props.messages,this.props.history,snapshot?.atBottom??false);
             const direction=this.loadingDirection,cursor=direction==='before'?next.beforeCursor:next.afterCursor,
                 edge=direction==='before'?next.messages[0]?.id??null:next.messages[next.messages.length-1]?.id??null;
             const cancelled=!!direction&&(cursor!==this.requestCursor||edge!==this.requestEdge);
             if(cancelled)this.cancelRequest();
-            if(cancelled||!sameWindow(this.state,next)){this.setState({...next,loading:cancelled?null:this.state.loading});return;}
+            if(cancelled||!sameWindow(this.state,next)){this.pendingSnapshot=snapshot;this.setState({...next,loading:cancelled?null:this.state.loading});return;}
         }
-        const messagesChanged=previousState.messages!==this.state.messages,liveChanged=previous.liveKey!==this.props.liveKey;
         if(snapshot?.visible&&this.isHostVisible()){
-            if(liveChanged&&snapshot.atBottom)this.scrollToBottom();
-            else if(messagesChanged){
-                const last=this.state.messages[this.state.messages.length-1]?.id??null,appended=last!==snapshot.lastId&&this.state.messages.some(message=>message.id===snapshot.lastId);
-                if(snapshot.atBottom&&this.state.atLatest&&(appended||!this.state.messages.some(message=>message.id===snapshot.lastId)))this.scrollToBottom();else this.restorePosition(snapshot);
-            }
+            if(snapshot.atBottom&&this.state.atLatest)this.scrollToBottom();else this.restorePosition(snapshot);
         }
         this.checkEdges();
+    }
+
+    private confirmedMessage(){
+        if(!this.props.confirmedMessageId||this.props.historyAnchor||this.props.history&&!this.props.history.atLatest)return;
+        return this.props.messages.find(message=>message.id===this.props.confirmedMessageId&&message.role==='user'&&message.projectId===this.props.projectId&&message.sessionId===this.props.sessionId);
+    }
+    private updateBottomState(){
+        if(!this.mounted||!this.isHostVisible())return;
+        const element=this.findScrollElement(this.root.current),atBottom=element?element.scrollHeight-element.clientHeight-element.scrollTop<=32:
+            typeof window!=='undefined'&&typeof document!=='undefined'&&document.documentElement.scrollHeight-window.innerHeight-window.scrollY<=32;
+        if(atBottom!==this.state.atBottom)this.setState({atBottom});
     }
 
     componentWillUnmount(){
@@ -182,7 +195,7 @@ export class ScrollHistory extends React.Component<Props,State>{
     private jumpLatest(){
         const anchored=!!this.props.historyAnchor;
         this.cancelRequest();const next=initialWindow(this.props.messages,this.props.history);this.autoPages=0;this.autoDirection=next.afterCursor?'after':next.beforeCursor?'before':null;
-        this.setState({...next,loading:null,failedDirection:null,error:''},()=>{if(this.isHostVisible())this.scrollToBottom();this.checkEdges();});
+        this.setState({...next,loading:null,failedDirection:null,error:'',atBottom:true},()=>{if(this.isHostVisible())this.scrollToBottom();this.checkEdges();});
         if(anchored)this.props.onNavigate(null);
     }
     private findScrollElement(root:HTMLElement|null):HTMLElement|null{
@@ -203,6 +216,7 @@ export class ScrollHistory extends React.Component<Props,State>{
         const element=this.findScrollElement(this.root.current);
         if(element)element.scrollTop=element.scrollHeight;
         else if(typeof window!=='undefined'&&typeof document!=='undefined')window.scrollTo(0,document.documentElement.scrollHeight);
+        this.updateBottomState();
     }
     private restorePosition(snapshot:LayoutSnapshot){
         const root=this.root.current,scrollElement=this.findScrollElement(root),viewportTop=scrollElement?.getBoundingClientRect().top??0;
@@ -267,6 +281,7 @@ export class ScrollHistory extends React.Component<Props,State>{
             {loading==='before'?<div className="scroll-history-loading" aria-live="polite">正在加载更早消息…</div>:null}
             {failedDirection==='before'?retry:null}
             <SessionHistory projectId={projectId} sessionId={sessionId} messages={this.state.messages} history={history} historyAnchor={historyAnchor} onNavigate={this.navigate} perform={perform} activeGeneration={activeGeneration}/>
+            {!this.state.atBottom?<div className="scroll-latest-control"><button type="button" className="secondary compact" onClick={()=>this.jumpLatest()}>回到最新</button></div>:null}
             {loading==='after'?<div className="scroll-history-loading" aria-live="polite">正在加载更新消息…</div>:null}
             {failedDirection==='after'?retry:null}
         </div>;
