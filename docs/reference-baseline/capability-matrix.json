@@ -76,7 +76,7 @@
       "reason": "适配技能文本，不加载ORX执行内核；受管导入与回滚仍待PR11。",
       "files": [
         "packages/skills/service.ts",
-        "skills/openresearch/manifest.json"
+        "skills/piresearch/manifest.json"
       ],
       "interfaces": [
         "packages/skills/service.ts"
@@ -95,7 +95,7 @@
         "config": {
           "status": "partial",
           "evidence": [
-            "skills/openresearch/manifest.json"
+            "skills/piresearch/manifest.json"
           ]
         },
         "contractTests": {
