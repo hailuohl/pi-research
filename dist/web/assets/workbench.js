@@ -396,7 +396,7 @@ class Inspector extends React.Component {
             ] })
           ] }, k)) }) : null,
           ["queued", "submitting", "running", "cancelling", "unknown"].includes(run.state) ? /* @__PURE__ */ jsx(ComputeWait, { data, kind: "run", id: run.id }) : null,
-          /* @__PURE__ */ jsx(OutcomeReview, { run, perform, readOnly: data.project.archived }),
+          /* @__PURE__ */ jsx(OutcomeReview, { run, perform, readOnly: data.project.archived }, `outcome:${run.id}`),
           /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
             "\u79D1\u7814\u5224\u65AD\uFF1A",
             run.judgment === "pending" ? "\u5C1A\u672A\u5224\u5B9A" : run.judgment
