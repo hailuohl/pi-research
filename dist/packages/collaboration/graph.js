@@ -26,6 +26,7 @@ export function validateGraph(value, maxTasks = 24) {
         }
         task.acceptanceRuleIds = strings(x.acceptanceRuleIds ?? [], 'acceptanceRuleIds', 10);
         ensure(task.acceptanceRuleIds.every(r => ['artifact-required', 'evidence-required', 'claims-evidenced'].includes(r)), 'ACCEPTANCE_RULE_UNSUPPORTED', '存在未实现的验收规则；不能忽略后继续运行', 400);
+        ensure(task.role !== 'reviewer' || !task.expectedOutputs?.some(o => o.required) && !task.acceptanceRuleIds.includes('artifact-required'), 'REVIEW_OUTPUT_UNSUPPORTED', `审查任务 ${task.key} 没有创建文件产物的权限，不能要求必需 expectedOutputs 或 artifact-required；使用 expectedOutputs=[]，通过 task_result_submit 的 summary 保存完整审查意见并提交 verdict`, 400);
         return task;
     });
     const byKey = new Map(tasks.map(t => [t.key, t]));

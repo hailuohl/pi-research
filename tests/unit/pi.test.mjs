@@ -33,3 +33,8 @@ test('development reviewers must read the fixed target and cite every required e
     for(const tool of ['task_context_read','developmentReview','development_review_source_list','development_review_source_read','evidence_read','artifact_read','task_result_submit'])assert.ok(instruction.includes(tool),tool);
     assert.match(instruction,/基础版本不能替代该候选/);assert.match(instruction,/verdict=accept\/reject\/disputed/);assert.match(instruction,/evidenceIds 中引用全部必需输入证据 ID/);assert.match(instruction,/成功提交后停止/);
 });
+test('collaboration guidance uses the supported reviewer result contract',()=>{
+    const coordinator=systemInstruction('coordinator'),reviewer=systemInstruction('reviewer');
+    assert.match(coordinator,/expectedOutputs=\[\]/);assert.match(coordinator,/不能要求必需文件产物或 artifact-required/);
+    assert.match(reviewer,/没有 artifact_create 或 review_submit/);assert.match(reviewer,/summary/);assert.match(reviewer,/不能用上游产物冒充自己的交付/);
+});

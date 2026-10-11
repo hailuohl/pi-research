@@ -157,13 +157,13 @@ const TOOL_METADATA = {
     run_inspect: { description: '读取真实 Run 的状态、指标和证据；结束 Agent 不能当作实验完成。用户或交互主协调者可设 includeScheduling=true 读取此 Run 当前排队原因、预留资源和恢复状态；不探测或启动作业。任务及自动通知只使用默认读取。', example: { runId: 'record-id', includeScheduling: true } },
     run_logs: { description: '读取真实运行日志。cursor 为字节位置。', example: { runId: 'record-id', cursor: 0 } },
     approval_request: { description: '列出当前项目待用户审批事项，不允许 Agent 自己批准。', example: {} },
-    collaboration_plan_submit: { description: '从当前对话的用户任务生成并提交完整有界协作计划，等待用户确认。主协调者专用；不自动开启开关。设置 autoSummarize=true 可在结束后唤醒原主会话综合真实结果，需预留一次综合额度。', example: { goal: '核查证据并写报告', budget: 8, autoSummarize: true, tasks: [{ key: 'analysis', role: 'analyst', objective: '核查已有指标', dependencies: [], critical: true }, { key: 'review', role: 'reviewer', objective: '核对分析', dependencies: [], reviewOf: 'analysis' }, { key: 'write', role: 'writer', objective: '整理已验收成果', dependencies: ['analysis', 'review'] }] } },
+    collaboration_plan_submit: { description: '从当前对话的用户任务生成并提交完整有界协作计划，等待用户确认。主协调者专用；不自动开启开关。设置 autoSummarize=true 可在结束后唤醒原主会话综合真实结果，需预留一次综合额度。Reviewer 用 expectedOutputs=[]，由 task_result_submit 的 summary/verdict 保存审查意见；不支持必需文件产物或 artifact-required，其他角色的必需产物仍按原合同验收。', example: { goal: '核查证据并写报告', budget: 8, autoSummarize: true, tasks: [{ key: 'analysis', role: 'analyst', objective: '核查已有指标', dependencies: [], critical: true }, { key: 'review', role: 'reviewer', objective: '核对分析并在 summary 保存完整审查意见、提交 verdict', dependencies: [], reviewOf: 'analysis', expectedOutputs: [] }, { key: 'write', role: 'writer', objective: '整理已验收成果', dependencies: ['analysis', 'review'] }] } },
     agent_delegate: { description: '提交新的独立任务计划（与 collaboration_plan_submit 同义），立即返回 Team/Task 标识，不阻塞等待；禁止助手调用。', example: { goal: '独立资料检查', tasks: [{ key: 'check', role: 'literature', objective: '查找资料，明确未读全文', dependencies: [] }], budget: 3 } },
     task_inspect: { description: '读取本团队任务状态；主协调者可以查询项目内团队。', example: { teamId: 'record-id' } },
     task_result_read: { description: '读取已提交的结构化结果与验收状态。', example: { taskId: 'record-id' } },
     task_context_read: { description: '读取自己不可变最小简报。', example: {} },
     task_progress_report: { description: '写入可观察进展，不会改变验收状态。', example: { message: '正在核查已有证据' } },
-    task_result_submit: { description: '提交结构化结果。完成声明不是科研事实；claims 必须引用 evidenceIds；Reviewer 必须给出 verdict。提交后结束任务。', example: { summary: '工作结果与限制', outcome: 'completed', evidenceIds: [], artifactIds: [], claims: [], unresolvedQuestions: [], verdict: 'accept' } }
+    task_result_submit: { description: '提交结构化结果。完成声明不是科研事实；claims 必须引用 evidenceIds；Reviewer 在 summary 保存完整审查意见并给出 verdict，不创建文件产物，其 artifactIds 仅引用允许的既有输入，不能冒充本任务产物。提交后结束任务。', example: { summary: '工作结果与限制', outcome: 'completed', evidenceIds: [], artifactIds: [], claims: [], unresolvedQuestions: [], verdict: 'accept' } }
 };
 export const TOOL_DEFINITIONS = Object.fromEntries(Object.entries(TOOL_METADATA).map(([id, info]) => [id, { ...info, inputSchema: INPUT_SCHEMAS[id], ...(OUTPUT_SCHEMAS[id] ? { outputSchema: OUTPUT_SCHEMAS[id] } : {}) }]));
 //# sourceMappingURL=definitions.js.map
