@@ -805,6 +805,7 @@ class PublicationPreview extends React.Component {
   }
 }
 export {
+  PublicationPreview,
   PublicationView,
   publicationBase64,
   publicationLineRange,

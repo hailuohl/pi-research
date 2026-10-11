@@ -8,7 +8,7 @@ import {setup,USER} from '../support/research.mjs';
 // Real child IPC only. A busy parent can observe exit before the child's final messages.
 for(const hasDone of [true,false])test(`host drains exited worker IPC ${hasDone?'before accepting done':'before declaring missing done'}`,async()=>{
  const s=setup(),worker=join(s.dir,'ipc-drain.mjs');
- writeFileSync(worker,`process.on('message',m=>{if(m.type!=='start')return;process.send({type:'delta',text:'fixture preview'});setTimeout(()=>{process.send({type:'tool',tool:'artifact_create',requestId:1,toolCallId:'after-exit',input:{title:'must-not-exist.txt',content:'late side effect'}});process.send({type:'assistant_message',content:'complete fixture answer',stopReason:'stop',usage:{fixture:true}});${hasDone?"process.send({type:'done'});":''}setTimeout(()=>process.exit(0),50);},20);});`);
+ writeFileSync(worker,`process.on('message',m=>{if(m.type!=='start')return;process.send({type:'delta',deltaId:1,text:'fixture preview'});setTimeout(()=>{process.send({type:'tool',tool:'artifact_create',requestId:1,toolCallId:'after-exit',input:{title:'must-not-exist.txt',content:'late side effect'}});process.send({type:'assistant_message',content:'complete fixture answer',stopReason:'stop',usage:{fixture:true}});${hasDone?"process.send({type:'done'});":''}setTimeout(()=>process.exit(0),50);},20);});`);
  const h=new AgentHost(s.app,{inspect:()=>({ready:true,code:'IPC_FIXTURE',message:'No SDK or model'}),workerEntry:worker}),events=[];let exitState;
  try{
   const input=s.app.sessions.send(USER,s.session.id,{content:'offline IPC drain fixture'});h.tick();

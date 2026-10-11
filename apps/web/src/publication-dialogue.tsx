@@ -1,16 +1,16 @@
 import * as React from 'react';
-import {api,artifactBlob,downloadArtifact} from './api.js';
+import {api,downloadArtifact} from './api.js';
+import {PublicationPreview} from './publication-view.js';
 import {Badge} from './ui.js';
 import {short} from './models.js';
 import type {ProjectState,Row,Session,ManuscriptRevision,PublicationBuildJobDTO,PublicationBuildResultDTO,Artifact} from './models.js';
 import type {Perform} from './workbench.js';
 
-export class PublicationDialogue extends React.Component<{data:ProjectState;session:Row<Session>;disabled:boolean;busy?:boolean;perform:Perform},{results:Record<string,PublicationBuildResultDTO>;drafts:Record<string,{content:string;complete:boolean}>;pdfUrl:string;pdfTitle:string}> {
-    state={results:{} as Record<string,PublicationBuildResultDTO>,drafts:{} as Record<string,{content:string;complete:boolean}>,pdfUrl:'',pdfTitle:''};
+export class PublicationDialogue extends React.Component<{data:ProjectState;session:Row<Session>;disabled:boolean;busy?:boolean;perform:Perform},{results:Record<string,PublicationBuildResultDTO>;drafts:Record<string,{content:string;complete:boolean}>;previewJobId:string}> {
+    state={results:{} as Record<string,PublicationBuildResultDTO>,drafts:{} as Record<string,{content:string;complete:boolean}>,previewJobId:''};
     private mounted=true;
-    componentWillUnmount(){this.mounted=false;this.releasePdf();}
-    componentDidUpdate(previous:Readonly<PublicationDialogue['props']>){if(previous.session.id!==this.props.session.id||previous.data.project.id!==this.props.data.project.id){this.releasePdf();this.setState({results:{},drafts:{},pdfUrl:'',pdfTitle:''});}}
-    private releasePdf(){if(this.state.pdfUrl)URL.revokeObjectURL(this.state.pdfUrl);}
+    componentWillUnmount(){this.mounted=false;}
+    componentDidUpdate(previous:Readonly<PublicationDialogue['props']>){if(previous.session.id!==this.props.session.id||previous.data.project.id!==this.props.data.project.id)this.setState({results:{},drafts:{},previewJobId:''});}
     private dialogue(){return {projectId:this.props.data.project.id,sessionId:this.props.session.id};}
     private matches(c:ReturnType<PublicationDialogue['dialogue']>){return this.mounted&&c.projectId===this.props.data.project.id&&c.sessionId===this.props.session.id;}
     private call<T=any>(c:ReturnType<PublicationDialogue['dialogue']>,name:string,input:unknown,key?:string){return api<T>(`/operations/${name}`,{...c,input},'POST',undefined,key);}
@@ -37,8 +37,9 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
         this.setState(s=>({results:{...s.results,[job.id]:result}}));return result;
     }
     async preview(job:PublicationBuildJobDTO){
-        const c=this.dialogue(),result=await this.result(job);if(!result.pdf)throw Error('本次编译没有成功 PDF，请查看诊断。');
-        const blob=await artifactBlob(result.pdf.artifactId);this.assertJob(c,job);this.releasePdf();this.setState({pdfUrl:URL.createObjectURL(blob),pdfTitle:`文稿 ${short(job.revisionId)}`});
+        const c=this.dialogue(),result=await this.result(job);this.assertJob(c,job);
+        if(job.state!=='succeeded'||job.integrity!=='complete'||result.status!=='succeeded'||!result.converged||result.hadErrors||!result.pdf)throw Error('本次编译没有完整成功 PDF，请查看诊断。');
+        this.setState({previewJobId:job.id});
     }
     async export(job:PublicationBuildJobDTO){
         const c=this.dialogue(),result=await this.result(job),revision=(this.props.data.manuscripts??[]).find(r=>r.id===job.revisionId)!;
@@ -81,7 +82,7 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
                 {(data.publicationExports??[]).filter(e=>reportIds.has(e.reportId)).map(e=><button key={e.artifactId} className="text-button" onClick={()=>perform(()=>downloadArtifact(e.artifactId,`report-${e.reportId}.tar.gz`))}>下载已归档成果包</button>)}
             </div>;})}
         </details>;};
-        const older=revisions.filter(r=>!isCurrent(r));
-        return <>{revisions.filter(isCurrent).map(renderRevision)}{older.length?<details className="workflow-history"><summary>历史文稿（{older.length}）</summary>{older.map(renderRevision)}</details>:null}{this.state.pdfUrl?<details className="workflow-card" open><summary>{this.state.pdfTitle} · PDF</summary><button className="text-button" onClick={()=>{this.releasePdf();this.setState({pdfUrl:'',pdfTitle:''});}}>关闭预览</button><iframe title={this.state.pdfTitle} src={this.state.pdfUrl} style={{width:'100%',height:'70vh',border:0}}/></details>:null}</>;
+        const older=revisions.filter(r=>!isCurrent(r)),previewJob=(data.publicationJobs??[]).find(j=>j.id===this.state.previewJobId&&this.owns(j)),previewResult=previewJob?this.state.results[previewJob.id]:undefined;
+        return <>{revisions.filter(isCurrent).map(renderRevision)}{older.length?<details className="workflow-history"><summary>历史文稿（{older.length}）</summary>{older.map(renderRevision)}</details>:null}{previewJob&&previewResult?<details className="workflow-card" open><summary>文稿 {short(previewJob.revisionId)} · PDF</summary><button className="text-button" onClick={()=>this.setState({previewJobId:''})}>关闭预览</button><PublicationPreview key={previewResult.id} result={previewResult} ready={previewJob.state==='succeeded'&&previewJob.integrity==='complete'} perform={perform}/></details>:null}</>;
     }
 }

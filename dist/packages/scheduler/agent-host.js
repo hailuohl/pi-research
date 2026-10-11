@@ -305,7 +305,8 @@ export class AgentHost {
                 const marked = this.admission.markSpawnRequested(slot.id, this.ownerHost, claimed.generation);
                 store.update('agent-admission', marked.id, marked.version, { httpManagedVersion: 1 });
                 requested = true;
-                const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: this.app.store.paths.physical(claimed.workspace), env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+                // Windows locks a process cwd; keep the replaceable workspace only in the SDK options.
+                const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: home, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
                 // Retain the child before commit: a commit failure is not proof of zero model use.
                 active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, currentMessageId: messageId ?? null, callIdActors: new Map(), messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)) };
                 this.active.set(claimed.id, active);
@@ -622,6 +623,9 @@ export class AgentHost {
             const text = redact(chunk.text);
             if (text)
                 this.app.store.transaction(() => { ensure(this.valid(a), 'LEASE_EXPIRED', '旧 Worker 不能保存当前会话输出'); this.app.store.event(s.projectId, 'session.delta', { sessionId: s.id, generation: a.generation, text: text.slice(0, 4000), truncated: text.length > 4000 }); });
+            // A preview ACK can race with exit; its send error must not discard buffered final messages.
+            if (Number.isSafeInteger(m.deltaId) && !a.exitObserved && a.child.connected)
+                a.child.send({ type: 'delta_ack', deltaId: m.deltaId }, () => { });
         }
         if (m?.type === 'input_consumed' && a.messageIds.includes(m.messageId) && a.sent.has(m.messageId)) {
             const input = this.app.store.maybe('message', m.messageId);

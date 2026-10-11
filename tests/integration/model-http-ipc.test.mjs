@@ -10,6 +10,42 @@ import {startTeam,spec} from '../support/collaboration.mjs';
 const pause=ms=>new Promise(r=>setTimeout(r,ms)),deps={inspect:()=>({ready:true,code:'IPC_FIXTURE',message:'No model/network'}),workerEntry:resolve('tests/fixtures/model-http-worker.mjs')};
 async function until(fn){const end=Date.now()+10000;while(Date.now()<end){if(fn())return;await pause(20);}throw Error('IPC fixture did not settle');}
 
+test('two Workers settle HTTP during micro-delta floods without replay or preview after final',async()=>{
+ const s=setup(),stats=[],deltaCounts=new Map(),h=new AgentHost(s.app,{...deps,fork:(...args)=>{const child=fork(...args);child.on('message',m=>{if(m.type==='fixture_stats')stats.push(m.requests);});return child;}}),receive=h.onMessage.bind(h),wait=new Int32Array(new SharedArrayBuffer(4));
+ h.onMessage=async(a,m,...rest)=>{if(m.type==='delta'){deltaCounts.set(a.sessionId,(deltaCounts.get(a.sessionId)??0)+1);Atomics.wait(wait,0,0,10);}return receive(a,m,...rest);};
+ try{
+  const second=s.app.sessions.create(USER,s.project.id,{title:'second flood fixture'}),sessions=[s.session,second];
+  for(const session of sessions){s.app.sessions.send(USER,session.id,{content:'flood micro-deltas'});h.tick();}
+  await until(()=>h.active.size===0);
+  assert.deepEqual(stats,[1,1],'one fake external request per Worker');
+  const rows=s.app.modelHttp.inspect(USER,s.project.id).items;assert.equal(rows.length,2);assert.ok(rows.every(r=>r.state==='succeeded'));
+  for(const session of sessions){
+   const current=s.app.sessions.get(USER,session.id);assert.equal(current.state,'idle',current.lastError);assert.ok(deltaCounts.get(session.id)<=2);
+   const messages=s.app.sessions.messages(USER,session.id);assert.equal(messages.find(m=>m.role==='assistant').content,'微'.repeat(200));
+   const events=s.app.store.events(0,s.project.id,500).filter(e=>e.payload.sessionId===session.id),final=events.find(e=>e.type==='session.message_completed');
+   assert.ok(final);assert.ok(!events.some(e=>e.type==='session.delta'&&e.seq>final.seq));
+  }
+ }finally{await h.stop();s.close();}
+});
+
+test('a lost finish ACK preserves task failure and unknown budget even when HTTP was settled',async()=>{
+ const s=setup();let receipt,identity,requests=0;
+ const h=new AgentHost(s.app,{...deps,fork:(...args)=>{const child=fork(...args),send=child.send.bind(child);
+  child.send=(m,...rest)=>m.type==='model_http_response'&&m.requestId===receipt?.requestId?true:send(m,...rest);
+  child.on('message',m=>{if(m.type==='model_http_finish')receipt=m;if(m.type==='fixture_stats')requests+=m.requests;});return child;
+ }}),receive=h.onMessage.bind(h);
+ h.onMessage=async(a,m,...rest)=>{if(m.type==='model_http_finish')identity=a;return receive(a,m,...rest);};
+ try{
+  const team=startTeam(s,[spec('flood')]);h.tick();await until(()=>h.active.size===0);
+  const task=s.app.teams.tasks(USER,team.id)[0],before=s.app.budget.summary(team.id);
+  assert.equal(requests,1);assert.equal(task.execution,'failed');assert.equal(before.unknown,1);assert.equal(before.used,0);assert.equal(before.reserved,0);
+  assert.equal(s.app.modelHttp.inspect(USER,s.project.id).items[0].state,'succeeded');
+  await receive(identity,receipt,'');await receive(identity,{type:'done'},'');
+  assert.equal(s.app.teams.tasks(USER,team.id)[0].execution,'failed');assert.deepEqual(s.app.budget.summary(team.id),before);
+  assert.match(s.app.sessions.get(USER,identity.sessionId).lastError,/MODEL_HTTP_CONTROL_TIMEOUT/);
+ }finally{await h.stop();s.close();}
+});
+
 test('a catalog edit before HTTP admission does not impose image authorization on a text-only request',async()=>{
  const s=setup();let changed=false;const h=new AgentHost(s.app,{...deps,fork:(...args)=>{const child=fork(...args);child.prependListener('message',m=>{if(m.type==='model_http_acquire'&&!changed){changed=true;writeFileSync(resolve(s.dir,'models.json'),JSON.stringify({providers:{}}));}});return child;}});
  try{s.app.sessions.send(USER,s.session.id,{content:'text-only catalog control'});h.tick();await until(()=>h.active.size===0);assert.ok(changed);assert.equal(s.app.modelHttp.inspect(USER,s.project.id).items[0].state,'succeeded');assert.equal(s.app.sessions.get(USER,s.session.id).lastError,undefined);}finally{await h.stop();s.close();}

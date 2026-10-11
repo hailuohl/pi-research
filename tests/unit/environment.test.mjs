@@ -84,8 +84,8 @@ test('both coordinator and task worker forks receive explicitly configured envir
  const s=setup(),seen=[],host=new AgentHost(s.app,{inspect:()=>({ready:true,code:'FIXTURE'}),fork:(_file,_argv,options)=>{seen.push(options);throw new Error('fixture stops before creating a process');}});
  try{save(s);s.app.sessions.send(USER,s.session.id,{content:'fixture coordinator'});host.tick();startTeam(s,[spec('environment-worker')]);host.tick();
   assert.ok(seen.length>=2);for(const options of seen){assert.equal(options.env.RESEARCH_API_KEY,token);assert.equal(options.env.NODE_OPTIONS,undefined);assert.deepEqual(options.execArgv,[]);}
-  assert.ok(seen.some(options=>options.cwd===s.app.store.paths.physical(s.app.sessions.get(USER,s.session.id).workspace)),'coordinator fork captured');
-  assert.ok(s.app.store.list('session',s.project.id).filter(session=>session.taskId&&session.role!=='coordinator').some(session=>seen.some(options=>options.cwd===s.app.store.paths.physical(session.workspace))),'task worker fork captured');
+  assert.ok(seen.some(options=>options.cwd===join(s.dir,'sessions',s.session.id)),'coordinator fork uses its stable session home');
+  assert.ok(s.app.store.list('session',s.project.id).filter(session=>session.taskId&&session.role!=='coordinator').some(session=>seen.some(options=>options.cwd===join(s.dir,'sessions',session.id))),'task worker fork uses its own stable session home');
   configureEnvironment(s.app.context,USER,{action:'delete',expectedVersion:1,name:'RESEARCH_API_KEY'},'delete');const later=s.app.sessions.create(USER,s.project.id,{title:'after delete'});s.app.sessions.send(USER,later.id,{content:'fixture after deletion'});host.tick();assert.equal(seen.at(-1).env.RESEARCH_API_KEY,undefined);
  }finally{await host.stop();s.close();}
 });

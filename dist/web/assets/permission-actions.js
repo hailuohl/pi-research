@@ -10,6 +10,7 @@ class PermissionActions extends React.Component {
     this.state = { actions: [], hasMore: false, saving: "", error: "" };
     this.alive = true;
     this.request = 0;
+    this.preparing = false;
   }
   componentDidMount() {
     void this.load();
@@ -49,8 +50,39 @@ class PermissionActions extends React.Component {
       }
     }, approved ? "\u5DF2\u6279\u51C6\u672C\u6B21\u64CD\u4F5C" : "\u5DF2\u62D2\u7EDD\u672C\u6B21\u64CD\u4F5C");
   }
+  fixedWorkspaceSource(action) {
+    const { session, sessionId, projectId } = this.props, { experimentId, revision } = action.input;
+    if (!projectId || !session || session.id !== sessionId || session.projectId !== projectId || session.role !== "coordinator" || session.taskId || session.teamId || session.parentSessionId || action.sessionId !== sessionId || action.state !== "failed" || action.operation !== "workspace_prepare_from_revision" || ["rejected", "stale"].includes(action.approval.status)) return null;
+    return Object.keys(action.input).length === 2 && typeof experimentId === "string" && experimentId.length > 0 && experimentId.length <= 100 && experimentId.trim() === experimentId && typeof revision === "number" && Number.isSafeInteger(revision) && revision >= 1 ? { experimentId, revision } : null;
+  }
+  workspacePreparationDisabled() {
+    return this.props.archived || this.props.busy || !!this.state.saving || this.preparing || ["running", "queued", "archived"].includes(this.props.session?.state ?? "") || !!this.props.session?.sourceRevisionId;
+  }
+  async prepareWorkspace(action) {
+    const input = this.fixedWorkspaceSource(action);
+    if (!this.alive || !input || this.workspacePreparationDisabled()) return;
+    const { projectId, sessionId } = this.props;
+    this.preparing = true;
+    this.request++;
+    this.setState({ saving: action.id, error: "" });
+    try {
+      await this.props.perform(async () => {
+        try {
+          await api("/operations/workspace_prepare_from_revision", { projectId, sessionId, input }, "POST", void 0, `owner-workspace-prepare:${action.id}`);
+        } catch (error) {
+          if (this.alive) this.setState({ error: error instanceof Error ? error.message : String(error) });
+          throw error;
+        } finally {
+          if (this.alive) await this.load();
+        }
+      }, "\u56FA\u5B9A\u7248\u672C\u5DE5\u4F5C\u533A\u5DF2\u51C6\u5907");
+    } finally {
+      this.preparing = false;
+      if (this.alive) this.setState({ saving: "" });
+    }
+  }
   card(action) {
-    const status = ["rejected", "stale"].includes(action.approval.status) ? action.approval.status : action.state === "pending" ? action.approval.status : action.state, pending = status === "pending", path = typeof action.input.path === "string" ? action.input.path : null;
+    const status = ["rejected", "stale"].includes(action.approval.status) ? action.approval.status : action.state === "pending" ? action.approval.status : action.state, pending = status === "pending", path = typeof action.input.path === "string" ? action.input.path : null, source = this.fixedWorkspaceSource(action);
     return /* @__PURE__ */ jsxs("article", { className: "workflow-card permission-action", children: [
       /* @__PURE__ */ jsxs("div", { className: "permission-action-heading", children: [
         /* @__PURE__ */ jsx(Icon, { name: path ? "edit" : "settings", size: 16 }),
@@ -76,7 +108,21 @@ class PermissionActions extends React.Component {
             /* @__PURE__ */ jsx("h4", { children: "\u53D8\u66F4\u540E" }),
             /* @__PURE__ */ jsx("pre", { className: "file-preview", children: typeof action.input.content === "string" ? action.input.content : JSON.stringify(action.input, null, 2) })
           ] })
-        ] }) : /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ operation: action.operation, input: action.input }, null, 2) })
+        ] }) : /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ operation: action.operation, input: action.input }, null, 2) }),
+        source ? /* @__PURE__ */ jsxs("div", { children: [
+          /* @__PURE__ */ jsxs("p", { className: "small", children: [
+            "\u5F53\u524D\u4E3B\u4F1A\u8BDD\uFF1A",
+            /* @__PURE__ */ jsx("code", { children: this.props.sessionId }),
+            " \xB7 \u56FA\u5B9A\u5B9E\u9A8C\uFF1A",
+            /* @__PURE__ */ jsx("code", { children: source.experimentId }),
+            " \xB7 \u4FEE\u8BA2 ",
+            source.revision,
+            "\u3002\u539F\u5931\u8D25\u8BB0\u5F55\u4FDD\u7559\uFF1B\u70B9\u51FB\u5C06\u4EE5\u4F60\u7684\u8EAB\u4EFD\u51C6\u5907\u6B64\u56FA\u5B9A\u6765\u6E90\u3002"
+          ] }),
+          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", disabled: this.workspacePreparationDisabled(), onClick: () => {
+            void this.prepareWorkspace(action);
+          }, children: "\u51C6\u5907\u8FD9\u4E00\u56FA\u5B9A\u7248\u672C\u7684\u5DE5\u4F5C\u533A" })
+        ] }) : null
       ] }),
       pending ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
         /* @__PURE__ */ jsx("button", { type: "button", className: "primary compact", disabled: this.props.archived || this.props.busy || !!this.state.saving, onClick: () => {

@@ -3,6 +3,7 @@ import {imageContextReferences,publicationImageCatalog,PUBLICATION_IMAGE_TOOL,DO
 import {applyModelConnection,connectionFetch,safeConnectionStream,type ModelConnection} from '../../packages/pi-adapter/model-connections.js';
 import {resolvedThinking,modelPayload} from '../../packages/pi-adapter/model-definition.js';
 import {managedModelFetch} from '../../packages/pi-adapter/model-fetch.js';
+import {workerDeltaSender} from '../../packages/pi-adapter/worker-delta.js';
 import {attachmentPayload,type AttachmentManifest,type NativeAttachmentReference} from '../../packages/pi-adapter/attachment-input.js';
 import {MANAGED_HTTP_APIS} from '../../packages/scheduler/model-http.js';
 import {s as schema,type JsonSchema} from '../../packages/contracts/operations/schema.js';
@@ -19,6 +20,7 @@ import type { SessionSetup } from '../../packages/pi-adapter/options.js';
 import type { HostNotice } from '../../packages/pi-adapter/prompt.js';
 type WorkerMessage =
     | {type: 'tool_response'|'model_http_response'; requestId: number; error?: {code: string; message: string}; result?: unknown}
+    | {type: 'delta_ack'; deltaId:number}
     | {type: 'abort'}
     | {type: 'steer' | 'follow_up'; content: string; messageId: string;attachmentManifest?:AttachmentManifest}
     | {type: 'start'; dataDir:string; contextRecoveryEligible?:boolean; attachmentManifests?:AttachmentManifest[];connection?:Omit<ModelConnection,'apiKey'>; managedHttp?:boolean; catalogFingerprint?:string; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
@@ -44,10 +46,12 @@ function send(value: unknown) {
     if (process.connected)
         process.send?.(value);
 }
-function httpRpc(type:'model_http_acquire'|'model_http_finish',key:string,result?:unknown,imageRefs?:unknown[],attachmentRefs?:NativeAttachmentReference[],contextRecovery?:'summary'|'resume'){return new Promise<unknown>((resolve,reject)=>{const requestId=++seq,timer=setTimeout(()=>{pending.delete(requestId);reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应'));},30000);pending.set(requestId,{resolve,reject,timer,attachmentRequest:!!attachmentRefs?.length});send({type,requestId,key,result,...(contextRecovery?{contextRecovery}:{}),...(imageRefs?{imageRefs}:{}),...(attachmentRefs?{attachmentRefs}:{})});});}
+const display=workerDeltaSender(send);
+function httpRpc(type:'model_http_acquire'|'model_http_finish',key:string,result?:unknown,imageRefs?:unknown[],attachmentRefs?:NativeAttachmentReference[],contextRecovery?:'summary'|'resume'){return new Promise<unknown>((resolve,reject)=>{const requestId=++seq,startedAt=Date.now(),timer=setTimeout(()=>{pending.delete(requestId);reject(new Error(`MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应 (${type}, requestId=${requestId}, elapsedMs=${Date.now()-startedAt})`));},30000);pending.set(requestId,{resolve,reject,timer,attachmentRequest:!!attachmentRefs?.length});send({type,requestId,key,result,...(contextRecovery?{contextRecovery}:{}),...(imageRefs?{imageRefs}:{}),...(attachmentRefs?{attachmentRefs}:{})});});}
 function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('受控工具请求超时')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 process.on('message', async (message) => {
     const raw = message as WorkerMessage;
+    if(raw?.type==='delta_ack'){if(!stopping)display.acknowledge(raw.deltaId);return;}
     if (raw?.type === 'tool_response'||raw?.type==='model_http_response') {
         const p = pending.get(raw.requestId);
         if (!p)
@@ -59,7 +63,7 @@ process.on('message', async (message) => {
         return;
     }
     if (raw?.type === 'abort') {
-        stopping = true;httpStop.abort();
+        stopping = true;display.clear();httpStop.abort();
         await session?.abort();
         return;
     }
@@ -178,9 +182,10 @@ process.on('message', async (message) => {
                 const diagnostic=e.type==='tool_execution_end'&&e.isError&&definition?toolResultDiagnostic(schema.object({input:definition.inputSchema},['input']),e.result):undefined;
                 send({type: e.type, tool: e.toolName, toolCallId: e.toolCallId, ...(e.type === 'tool_execution_end' ? {isError: e.isError,...(diagnostic?{diagnostic}:{})} : {})});
             }
-            if (e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
-                send({ type: 'delta', text: e.assistantMessageEvent.delta });
+            if (!stopping && e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
+                display.push(e.assistantMessageEvent.delta);
             if (e.type === 'message_end' && e.message?.role === 'assistant') {
+                display.clear();
                 const emptyLength=emptyLengthAssistant(e.message),failure=assistantFailure(e.message);
                 if(emptyLength){pendingEmptyLength=EMPTY_LENGTH_FAILURE;if(recoveryAttempted)recoveryFailure=COMPACTION_FAILURE;else armRecovery();}
                 else {
@@ -215,6 +220,7 @@ process.on('message', async (message) => {
         send({ type: 'failure', error: imageFailure??providerFailure??recoveryFailure??(pendingEmptyLength?COMPACTION_FAILURE:piFailure(code?.startsWith('MODEL_IMAGE_')?`${code}: ${(error as Error).message}`:error)) });
     }
     finally {
+        stopping=true;display.clear();
         session?.dispose();
         for (const p of pending.values()) {
             clearTimeout(p.timer);
@@ -224,4 +230,4 @@ process.on('message', async (message) => {
         setTimeout(() => process.exit(0), 50);
     }
 });
-process.on('disconnect', () => { stopping = true;httpStop.abort(); void session?.abort(); setTimeout(() => process.exit(1), 500).unref(); });
+process.on('disconnect', () => { stopping = true;display.clear();httpStop.abort(); void session?.abort(); setTimeout(() => process.exit(1), 500).unref(); });

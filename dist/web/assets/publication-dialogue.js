@@ -1,26 +1,20 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
-import { api, artifactBlob, downloadArtifact } from "./api.js";
+import { api, downloadArtifact } from "./api.js";
+import { PublicationPreview } from "./publication-view.js";
 import { Badge } from "./ui.js";
 import { short } from "./models.js";
 class PublicationDialogue extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { results: {}, drafts: {}, pdfUrl: "", pdfTitle: "" };
+    this.state = { results: {}, drafts: {}, previewJobId: "" };
     this.mounted = true;
   }
   componentWillUnmount() {
     this.mounted = false;
-    this.releasePdf();
   }
   componentDidUpdate(previous) {
-    if (previous.session.id !== this.props.session.id || previous.data.project.id !== this.props.data.project.id) {
-      this.releasePdf();
-      this.setState({ results: {}, drafts: {}, pdfUrl: "", pdfTitle: "" });
-    }
-  }
-  releasePdf() {
-    if (this.state.pdfUrl) URL.revokeObjectURL(this.state.pdfUrl);
+    if (previous.session.id !== this.props.session.id || previous.data.project.id !== this.props.data.project.id) this.setState({ results: {}, drafts: {}, previewJobId: "" });
   }
   dialogue() {
     return { projectId: this.props.data.project.id, sessionId: this.props.session.id };
@@ -65,11 +59,9 @@ class PublicationDialogue extends React.Component {
   }
   async preview(job) {
     const c = this.dialogue(), result = await this.result(job);
-    if (!result.pdf) throw Error("\u672C\u6B21\u7F16\u8BD1\u6CA1\u6709\u6210\u529F PDF\uFF0C\u8BF7\u67E5\u770B\u8BCA\u65AD\u3002");
-    const blob = await artifactBlob(result.pdf.artifactId);
     this.assertJob(c, job);
-    this.releasePdf();
-    this.setState({ pdfUrl: URL.createObjectURL(blob), pdfTitle: `\u6587\u7A3F ${short(job.revisionId)}` });
+    if (job.state !== "succeeded" || job.integrity !== "complete" || result.status !== "succeeded" || !result.converged || result.hadErrors || !result.pdf) throw Error("\u672C\u6B21\u7F16\u8BD1\u6CA1\u6709\u5B8C\u6574\u6210\u529F PDF\uFF0C\u8BF7\u67E5\u770B\u8BCA\u65AD\u3002");
+    this.setState({ previewJobId: job.id });
   }
   async export(job) {
     const c = this.dialogue(), result = await this.result(job), revision = (this.props.data.manuscripts ?? []).find((r) => r.id === job.revisionId);
@@ -198,7 +190,7 @@ class PublicationDialogue extends React.Component {
         })
       ] }, revision.id);
     };
-    const older = revisions.filter((r) => !isCurrent(r));
+    const older = revisions.filter((r) => !isCurrent(r)), previewJob = (data.publicationJobs ?? []).find((j) => j.id === this.state.previewJobId && this.owns(j)), previewResult = previewJob ? this.state.results[previewJob.id] : void 0;
     return /* @__PURE__ */ jsxs(Fragment, { children: [
       revisions.filter(isCurrent).map(renderRevision),
       older.length ? /* @__PURE__ */ jsxs("details", { className: "workflow-history", children: [
@@ -209,16 +201,14 @@ class PublicationDialogue extends React.Component {
         ] }),
         older.map(renderRevision)
       ] }) : null,
-      this.state.pdfUrl ? /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: true, children: [
+      previewJob && previewResult ? /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: true, children: [
         /* @__PURE__ */ jsxs("summary", { children: [
-          this.state.pdfTitle,
+          "\u6587\u7A3F ",
+          short(previewJob.revisionId),
           " \xB7 PDF"
         ] }),
-        /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => {
-          this.releasePdf();
-          this.setState({ pdfUrl: "", pdfTitle: "" });
-        }, children: "\u5173\u95ED\u9884\u89C8" }),
-        /* @__PURE__ */ jsx("iframe", { title: this.state.pdfTitle, src: this.state.pdfUrl, style: { width: "100%", height: "70vh", border: 0 } })
+        /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.setState({ previewJobId: "" }), children: "\u5173\u95ED\u9884\u89C8" }),
+        /* @__PURE__ */ jsx(PublicationPreview, { result: previewResult, ready: previewJob.state === "succeeded" && previewJob.integrity === "complete", perform }, previewResult.id)
       ] }) : null
     ] });
   }
