@@ -11,11 +11,14 @@ import { buildWorkerPrompt } from '../../packages/pi-adapter/prompt.js';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { buildSessionOptions, buildCustomTools, systemInstruction, assistantFailure } from '../../packages/pi-adapter/options.js';
+import { buildSessionOptions, buildCustomTools, systemInstruction, assistantFailure, emptyLengthAssistant, EMPTY_LENGTH_FAILURE } from '../../packages/pi-adapter/options.js';
 import { locatePi, inspectPi, piFailure, MODEL_HTTP_TIMEOUT_MS } from '../../packages/pi-adapter/runtime.js';
 let session;
 let providerFailure;
 let imageFailure;
+let pendingEmptyLength, recoveryFailure;
+const COMPACTION_FAILURE = 'CONTEXT_COMPACTION_FAILED: 本次上下文恢复未完成，已停止；原始历史与已完成操作保留，请在原会话核对后继续，避免重复副作用。';
+let recoveryEligible = false, recoveryArmed = false, recoveryAttempted = false, compacting = false, summaryCalls = 0;
 let started = false, stopping = false, taskSubmitted = false;
 const httpStop = new AbortController();
 let seq = 0;
@@ -27,7 +30,7 @@ function send(value) {
     if (process.connected)
         process.send?.(value);
 }
-function httpRpc(type, key, result, imageRefs, attachmentRefs) { return new Promise((resolve, reject) => { const requestId = ++seq, timer = setTimeout(() => { pending.delete(requestId); reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应')); }, 30000); pending.set(requestId, { resolve, reject, timer, attachmentRequest: !!attachmentRefs?.length }); send({ type, requestId, key, result, ...(imageRefs ? { imageRefs } : {}), ...(attachmentRefs ? { attachmentRefs } : {}) }); }); }
+function httpRpc(type, key, result, imageRefs, attachmentRefs, contextRecovery) { return new Promise((resolve, reject) => { const requestId = ++seq, timer = setTimeout(() => { pending.delete(requestId); reject(new Error('MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应')); }, 30000); pending.set(requestId, { resolve, reject, timer, attachmentRequest: !!attachmentRefs?.length }); send({ type, requestId, key, result, ...(contextRecovery ? { contextRecovery } : {}), ...(imageRefs ? { imageRefs } : {}), ...(attachmentRefs ? { attachmentRefs } : {}) }); }); }
 function rpc(tool, input, toolCallId) { return new Promise((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('受控工具请求超时')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
 process.on('message', async (message) => {
     const raw = message;
@@ -126,12 +129,26 @@ process.on('message', async (message) => {
         const definition = raw.connection?.models?.find(m => m.model === raw.model.model && !m.controlOnly), thinking = resolvedThinking(definition, raw.model.thinking);
         const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role, raw.tools.some(tool => tool.name === 'host_execute'), raw.permissionMode) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
+        recoveryEligible = raw.contextRecoveryEligible === true && raw.managedHttp === true && raw.role === 'coordinator' && raw.permissionMode !== 'readOnly';
+        const armRecovery = () => { if (recoveryEligible && !recoveryAttempted && !stopping && !taskSubmitted && !providerFailure && !imageFailure && !recoveryFailure) {
+            recoveryArmed = true;
+            session.setAutoCompactionEnabled(true);
+        } };
         if (raw.managedHttp && !MANAGED_HTTP_APIS.includes(model.api))
             throw new Error('MODEL_HTTP_UNSUPPORTED: 所选SDK传输尚未接入受管HTTP，不会绕过限流');
         const stream = session.agent.streamFunction;
         session.agent.streamFunction = async (chosen, context, options) => {
+            if (recoveryFailure || recoveryArmed && !compacting)
+                throw new Error(recoveryFailure ?? COMPACTION_FAILURE);
             if (chosen.provider !== raw.model.provider || chosen.id !== raw.model.model || chosen.api !== model.api)
                 throw new Error('MODEL_FALLBACK_REFUSED: 请求模型或传输已改变');
+            const contextRecovery = compacting ? 'summary' : recoveryAttempted ? 'resume' : undefined;
+            if (compacting) {
+                const { clampMaxTokensToContext } = await import(new URL('./api/simple-options.js', pathToFileURL(installed.aiPath)).href);
+                // Reuse the SDK reserve; an oversized summary must fail before dispatch, never raise model limits.
+                if (++summaryCalls > 2 || !options?.maxTokens || clampMaxTokensToContext(chosen, context, options.maxTokens) < options.maxTokens)
+                    throw new Error(COMPACTION_FAILURE);
+            }
             const refs = imageContextReferences(context, chosen.input?.includes('image') === true, raw.managedHttp === true);
             if (!raw.managedHttp) {
                 const response = await stream(chosen, context, options);
@@ -142,9 +159,15 @@ process.on('message', async (message) => {
             // Each transport closure owns this exact context, including all historical images.
             let attachmentRefs = [];
             const fetcher = managedModelFetch(raw.connection ? connectionFetch(globalThis.fetch, raw.connection.baseUrl) : globalThis.fetch, key => { if (refs.length || attachmentRefs.length)
-                checkCatalog(); return httpRpc('model_http_acquire', key, undefined, refs, attachmentRefs); }, (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal);
+                checkCatalog(); return httpRpc('model_http_acquire', key, undefined, refs, attachmentRefs, contextRecovery); }, (key, result) => httpRpc('model_http_finish', key, result), httpStop.signal);
             const response = await stream(chosen, context, { ...options, transport: 'sse', fetch: fetcher, onPayload: (body) => { const configured = definition ? modelPayload(body, definition, raw.model.thinking, raw.connection.api) : body; const attached = attachmentPayload(configured, context, model.api, definition, attachmentManifests, chosen.input?.includes('image') === true); attachmentRefs = attached.references; return attached.payload; } });
-            return raw.connection ? safeConnectionStream(response) : response;
+            const guarded = raw.connection ? safeConnectionStream(response) : response;
+            if (contextRecovery === 'summary') {
+                const result = guarded.result.bind(guarded);
+                guarded.result = async () => { const message = await result(); if (message.stopReason !== 'stop' || !message.content.some(block => block.type === 'text' && block.text.trim()) || message.content.some(block => block.type === 'toolCall'))
+                    throw new Error(COMPACTION_FAILURE); return message; };
+            }
+            return guarded;
         };
         const finishTurn = session.agent.finishTurn;
         session.agent.finishTurn = async (turn, signal) => {
@@ -159,6 +182,22 @@ process.on('message', async (message) => {
             throw new Error('MODEL_FALLBACK_REFUSED: SDK 尝试切换未经批准的模型');
         send({ type: 'ready', sessionFile: session.sessionFile, sessionId: session.sessionId, activeTools: session.getActiveToolNames(), model: { provider: session.model?.provider, id: session.model?.id } });
         session.subscribe((e) => {
+            if (e.type === 'compaction_start') {
+                session.setAutoCompactionEnabled(false);
+                if (!recoveryEligible || !recoveryArmed || recoveryAttempted || stopping || taskSubmitted || providerFailure || imageFailure) {
+                    recoveryFailure = COMPACTION_FAILURE;
+                    void session.abortCompaction();
+                    return;
+                }
+                recoveryAttempted = true;
+                recoveryArmed = false;
+                compacting = true;
+            }
+            if (e.type === 'compaction_end') {
+                compacting = false;
+                if (!e.result || e.aborted || e.errorMessage)
+                    recoveryFailure = COMPACTION_FAILURE;
+            }
             if (e.type === 'message_start' && e.message.role === 'user') {
                 if (!initialUserSeen)
                     initialUserSeen = true;
@@ -180,19 +219,49 @@ process.on('message', async (message) => {
             if (e.type === 'message_update' && e.assistantMessageEvent?.type === 'text_delta')
                 send({ type: 'delta', text: e.assistantMessageEvent.delta });
             if (e.type === 'message_end' && e.message?.role === 'assistant') {
-                providerFailure = imageFailure ?? (e.message.stopReason === 'aborted' && stopping ? providerFailure : assistantFailure(e.message) ?? providerFailure);
+                const emptyLength = emptyLengthAssistant(e.message), failure = assistantFailure(e.message);
+                if (emptyLength) {
+                    pendingEmptyLength = EMPTY_LENGTH_FAILURE;
+                    if (recoveryAttempted)
+                        recoveryFailure = COMPACTION_FAILURE;
+                    else
+                        armRecovery();
+                }
+                else {
+                    providerFailure = imageFailure ?? (e.message.stopReason === 'aborted' && stopping ? providerFailure : failure ?? providerFailure);
+                    if (!failure && (e.message.stopReason === 'stop' || e.message.stopReason === 'toolUse') && e.message.content.some(p => p.type === 'toolCall' || p.type === 'text' && p.text.trim()))
+                        pendingEmptyLength = undefined;
+                }
                 const content = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'text').map(p => p.text).join('') : '';
                 const toolCalls = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'toolCall').map(p => p.name).slice(0, 64) : [];
                 send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: imageFailure ?? assistantFailure(e.message) ?? null });
             }
+            if (e.type === 'turn_end' && e.message.role === 'assistant' && emptyLengthAssistant(e.message) && e.toolResults.length) {
+                recoveryArmed = false;
+                session.setAutoCompactionEnabled(false);
+            }
             if (e.type === 'agent_settled')
                 send({ type: 'settled' });
         });
-        if (!stopping)
-            await session.prompt(buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []));
-        if (!providerFailure && !stopping && raw.hostMessages?.length)
+        const branch = session.sessionManager.getBranch(), lastAssistant = [...branch].reverse().find(entry => entry.type === 'message' && entry.message.role === 'assistant');
+        if (lastAssistant?.type === 'message' && lastAssistant.message.role === 'assistant' && emptyLengthAssistant(lastAssistant.message) && lastAssistant.message.provider === raw.model.provider && lastAssistant.message.model === raw.model.model) {
+            const after = branch.slice(branch.indexOf(lastAssistant) + 1);
+            if (!after.some(entry => entry.type === 'compaction' || entry.type === 'context_edit' && entry.targetId === lastAssistant.id && entry.replacement === null || entry.type === 'message' && entry.message.role === 'toolResult')) {
+                pendingEmptyLength = EMPTY_LENGTH_FAILURE;
+                armRecovery();
+            }
+        }
+        try {
+            if (!stopping)
+                await session.prompt(buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []));
+        }
+        finally {
+            session.setAutoCompactionEnabled(false);
+            recoveryArmed = false;
+        }
+        if (!providerFailure && !pendingEmptyLength && !recoveryFailure && !stopping && raw.hostMessages?.length)
             send({ type: 'context_ack', messageIds: raw.hostMessages.map((m) => m.id) });
-        providerFailure = imageFailure ?? providerFailure;
+        providerFailure = imageFailure ?? providerFailure ?? recoveryFailure ?? pendingEmptyLength;
         if (providerFailure)
             send({ type: 'failure', error: providerFailure });
         else
@@ -200,7 +269,7 @@ process.on('message', async (message) => {
     }
     catch (error) {
         const code = error?.code;
-        send({ type: 'failure', error: imageFailure ?? piFailure(code?.startsWith('MODEL_IMAGE_') ? `${code}: ${error.message}` : error) });
+        send({ type: 'failure', error: imageFailure ?? providerFailure ?? recoveryFailure ?? (pendingEmptyLength ? COMPACTION_FAILURE : piFailure(code?.startsWith('MODEL_IMAGE_') ? `${code}: ${error.message}` : error)) });
     }
     finally {
         session?.dispose();

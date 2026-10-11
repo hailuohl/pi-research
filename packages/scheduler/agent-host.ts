@@ -18,6 +18,7 @@ import {s as schema} from '../contracts/operations/schema.js';
 import {safeToolDiagnostic,type ToolDiagnostic} from '../pi-adapter/tool-diagnostic.js';
 import type { Wakeup } from './wakeups.js';
 import { inspectPi } from '../pi-adapter/runtime.js';
+import {emptyLengthAssistant,EMPTY_LENGTH_FAILURE} from '../pi-adapter/options.js';
 import { asError, ensure, DomainError } from '../domain/errors.js';
 import {assertWorkspaceReady} from '../workspace/git-service.js';
 import {randomUUID} from 'node:crypto';
@@ -39,6 +40,8 @@ interface Active {
     ended: boolean;
     exitObserved?: boolean;
     providerError?: string;
+    pendingEmptyLength?:string;
+    contextRecoveryEligible?:boolean;
     stopError?: string;
     assistantOutput?: boolean;
     failedToolCalls?: Set<string>;
@@ -262,6 +265,7 @@ export class AgentHost {
             return spawned;
         });
         const worker = active!;
+        worker.contextRecoveryEligible=this.contextRecoveryEligible(worker);
         child.stdout?.on('data', () => { });
         child.stderr?.on('data', () => { });
         child.on('message', raw => { void this.onMessage(worker, raw as any, sessionDir).catch(e => this.finish(worker, this.clean(asError(e).message))); });
@@ -275,7 +279,7 @@ export class AgentHost {
         const currentEnvelope=inputEnvelope(messageId??randomUUID());if(!messageId)prompt+=currentEnvelope;
         const currentFiles=input&&!wakeupId&&!attempt?nativeInputFiles(store,claimed,input):[];
         attachmentManifests.push({envelope:currentEnvelope,files:currentFiles});
-        this.sendInput(worker,{ type: 'start', dataDir:this.app.context.dataDir, ...(connection?{connection}:{}), attachmentManifests,managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
+        this.sendInput(worker,{ type: 'start', dataDir:this.app.context.dataDir, contextRecoveryEligible:worker.contextRecoveryEligible, ...(connection?{connection}:{}), attachmentManifests,managedHttp:true, catalogFingerprint, permissionMode:actor.permission?.mode??'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis&&claimed.piSessionPath?this.app.store.paths.physical(claimed.piSessionPath):null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt },messageId);
         store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation:claimed.generation, attemptId: attempt?.id });
         } catch(error) {
             const failure=asError(error),startError=this.clean(`${failure.code} — ${failure.message}`);
@@ -315,6 +319,12 @@ export class AgentHost {
         const approval=this.app.store.maybe<Approval>('approval',action.approvalId);
         if(approval?.projectId===a.actor.projectId&&approval.subjectKind==='session-action'&&approval.subjectId===action.id&&approval.scope==='session.action'&&approval.status==='pending')return action.id;
     }
+    private contextRecoveryEligible(a:Active):boolean {
+        const s=this.app.store.get<Session>('session',a.sessionId),input=a.currentMessageId?this.app.store.maybe<Message>('message',a.currentMessageId):undefined;
+        if(!this.valid(a)||s.role!=='coordinator'||s.taskId||s.teamId||s.parentSessionId||a.actor.taskId||a.actor.attemptId||a.actor.wakeupId||a.actor.continuationId||a.actor.approvalResumeId||!a.actor.permission||a.actor.permission.mode==='readOnly')return false;
+        if(!input||input.projectId!==s.projectId||input.sessionId!==s.id||input.role!=='user'||input.origin==='automation'||input.wakeupId||input.approvalNoticeId||input.queueRemoved||input.status!=='running'||input.generation!==a.generation||!a.consumedIds.has(input.id)||JSON.stringify(input.permission)!==JSON.stringify(a.actor.permission))return false;
+        try{this.app.sessionPermissions.assert(a.actor.permission,false);return true;}catch{return false;}
+    }
     private async onMessage(a: Active, m: any, sessionDir: string) {
         if(m?.type==='model_http_acquire'||m?.type==='model_http_finish'){
             const identity={admissionId:a.admissionId,ownerHost:this.ownerHost,sessionId:a.sessionId,generation:a.generation};
@@ -323,6 +333,7 @@ export class AgentHost {
                 if(m.type==='model_http_acquire'){
                     result=this.app.store.transaction(()=>{
                         ensure(!a.ended&&!a.exitObserved&&!a.stopError&&this.valid(a),'MODEL_HTTP_SCOPE_EXPIRED','会话已停止，不能外发模型请求');
+                        if(m.contextRecovery!==undefined){ensure(['summary','resume'].includes(m.contextRecovery)&&a.contextRecoveryEligible&&this.contextRecoveryEligible(a),'CONTEXT_RECOVERY_SCOPE_EXPIRED','本次上下文恢复的人工来源或权限已失效');this.app.sessionPermissions.assert(a.actor.permission!,false);}
                         const attachmentRefs=m.attachmentRefs??[];ensure(Array.isArray(attachmentRefs),'MODEL_ATTACHMENT_UNBOUND','模型附件引用无效');
                         if(attachmentRefs.length){if(a.actor.permission)this.app.sessionPermissions.assert(a.actor.permission,false);ensure(!a.actor.taskId&&!a.actor.wakeupId&&publicationImageCatalog(join(this.app.context.dataDir,'models.json'))===a.catalogFingerprint,'MODEL_ATTACHMENT_CATALOG_CHANGED','模型或目录已改变，原生附件不能继续发送');let bytes=0;const session=this.app.sessions.get(SYSTEM,a.sessionId);for(const ref of attachmentRefs as NativeAttachmentReference[]){bytes+=nativeAttachmentFile(this.app.store,session,ref).reference.size;ensure(bytes<=NATIVE_ATTACHMENT_BYTES,'MODEL_ATTACHMENT_LIMIT','实际原生附件合计最多20 MiB');}}
                         const refs=m.imageRefs===undefined?[]:m.imageRefs;ensure(Array.isArray(refs)&&refs.length<=Math.floor(CONTEXT_IMAGE_BYTES/33),'MODEL_IMAGE_UNBOUND','模型图片引用无效');
@@ -420,14 +431,17 @@ export class AgentHost {
         }
         if (m?.type === 'assistant_message') {
             a.deltaTail='';
-            if (m.error) a.providerError = this.clean(String(m.error));
+            const allowed = a.advertisedTools??new Set(this.tools.definitions(a.actor.role!, !!a.actor.wakeupId,a.sessionId,!!a.actor.continuationId,!!a.actor.approvalResumeId).map(definition => definition.name));
+            const toolCalls = Array.isArray(m.toolCalls) ? m.toolCalls.filter((name:unknown):name is string => typeof name === 'string' && allowed.has(name)).slice(0,64) : [];
+            const emptyLength=emptyLengthAssistant({...m,toolCalls}),messageError=emptyLength?EMPTY_LENGTH_FAILURE:m.error?this.clean(String(m.error)):undefined;
+            if(emptyLength)a.pendingEmptyLength=EMPTY_LENGTH_FAILURE;
+            else if (m.error) a.providerError = messageError;
             else if (typeof m.content === 'string' && m.content.trim()) a.assistantOutput = true;
+            if(!messageError&&(m.stopReason==='stop'||m.stopReason==='toolUse')&&(typeof m.content==='string'&&m.content.trim()||toolCalls.length))a.pendingEmptyLength=undefined;
             const content=this.redact(String(m.content??''));
             this.app.store.transaction(()=>{
                 ensure(this.valid(a),'LEASE_EXPIRED','旧 Worker 不能保存当前会话输出');
-                const allowed = a.advertisedTools??new Set(this.tools.definitions(a.actor.role!, !!a.actor.wakeupId,a.sessionId,!!a.actor.continuationId,!!a.actor.approvalResumeId).map(definition => definition.name));
-                const toolCalls = Array.isArray(m.toolCalls) ? m.toolCalls.filter((name:unknown):name is string => typeof name === 'string' && allowed.has(name)).slice(0,64) : [];
-                const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, generation:a.generation,phase:toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer',...(toolCalls.length ? {toolCalls} : {}), ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: m.error ? 'failed' : 'completed', error: m.error ? this.clean(String(m.error)) : undefined, usage: m.usage });
+                const record = this.app.store.create<Message>('message', s.projectId, { sessionId: s.id, generation:a.generation,phase:toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer',...(toolCalls.length ? {toolCalls} : {}), ...(a.actor.wakeupId ? { origin: 'automation' as const, wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0,32000),...(content.length>32000?{contentTruncated:true}:{}), mode: 'prompt', status: messageError ? 'failed' : 'completed', error: messageError, usage: m.usage });
                 this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, generation:s.generation,messageId: record.id });
                 this.app.store.create('model-usage', s.projectId, { sessionId: s.id, attemptId: a.attemptId ?? null, provider: s.model.provider, model: s.model.model, usage: m.usage, status: m.usage ? 'reported' : 'unknown', stopReason: m.stopReason ?? null });
             });
@@ -470,7 +484,7 @@ export class AgentHost {
     private finish(a: Active, error?: string) {
         if (a.ended)
             return;
-        error = error ?? a.providerError ?? a.stopError ?? (a.actor.wakeupId && !a.assistantOutput ? 'Pi 已结束但没有可展示的最终分析；请核对后重试' : undefined) ?? (this.valid(a) ? undefined : '会话已中止或自动分析来源已失效');
+        error = error ?? a.providerError ?? a.stopError ?? a.pendingEmptyLength ?? (a.actor.wakeupId && !a.assistantOutput ? 'Pi 已结束但没有可展示的最终分析；请核对后重试' : undefined) ?? (this.valid(a) ? undefined : '会话已中止或自动分析来源已失效');
         const missingResult = !error && a.attemptId && this.app.store.get<TaskAttempt>('task-attempt', a.attemptId).state === 'running';
         if (missingResult) error = 'Pi 结束但没有提交结构化结果';
         a.ended = true;

@@ -23,6 +23,8 @@ interface Active {
     ended: boolean;
     exitObserved?: boolean;
     providerError?: string;
+    pendingEmptyLength?: string;
+    contextRecoveryEligible?: boolean;
     stopError?: string;
     assistantOutput?: boolean;
     failedToolCalls?: Set<string>;
@@ -86,6 +88,7 @@ export declare class AgentHost {
     private exited;
     private valid;
     private pendingSessionAction;
+    private contextRecoveryEligible;
     private onMessage;
     private failInput;
     private sendInput;
