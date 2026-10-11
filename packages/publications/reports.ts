@@ -67,7 +67,7 @@ export function safeExportBytes(bytes:Buffer,context:Pick<AppContext,'dataDir'|'
         let decoded=initial;
         for(let layer=0;layer<5;layer++) {
             const normalized=decoded.replaceAll('\\','/'),lower=normalized.toLowerCase();
-            safe(!roots.some(root=>root.length>1&&lower.includes(root))&&!/(?:^|[^A-Za-z0-9_])[A-Za-z]:\//.test(normalized)&&!/(?:^|[\s"'(=,])\/{2,}[^\s/"']+\/+[^\s/"']+/.test(normalized)&&!marker.test(normalized)&&!/--mount[^\r\n]{0,300}[,\s]src=\/[^\s"'<>]+/i.test(normalized));
+            safe(!roots.some(root=>root.length>1&&lower.includes(root))&&!/(?:^|[^A-Za-z0-9_])[A-Za-z]:\//.test(normalized)&&!/(?:^|[\s"'(=,])\/{2,}[^\s/"',]+\/+[^\s/"']+/.test(normalized)&&!marker.test(normalized)&&!/--mount[^\r\n]{0,300}[,\s]src=\/[^\s"'<>]+/i.test(normalized));
             const next=decoded.replace(/\\u([a-f0-9]{4})|\\(["\\/])/gi,(_match,unicode:string|undefined,literal:string|undefined)=>unicode?String.fromCharCode(parseInt(unicode,16)):literal!);
             if(next===decoded)break;decoded=next;
         }

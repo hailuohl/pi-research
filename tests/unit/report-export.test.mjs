@@ -5,6 +5,7 @@ import {mkdirSync, readdirSync, readFileSync, writeFileSync, chmodSync} from 'no
 import {join} from 'node:path';
 import {setup, USER, approve, fixtureFinish} from '../support/research.mjs';
 import {ExportService} from '../../dist/packages/publications/export.js';
+import {safeExportBytes} from '../../dist/packages/publications/reports.js';
 import {digest} from '../../dist/packages/storage/store.js';
 import {setSourceMode} from '../../dist/packages/workspace/files.js';
 import {crc32,deflateSync} from 'node:zlib';
@@ -68,6 +69,30 @@ test('native tar export contains every fixed collected byte and logical mode, ex
   assert.match(readFileSync(join(extracted,'README.md'),'utf8'),/Windows tar headers do not reliably preserve executable bits/);
   assert.deepEqual(readdirSync(join(s.dir,'exports','tmp')),[]);
  }finally{s.close();}
+});
+test('TeX division followed by thin spacing exports fixed source and container logs byte-for-byte',async()=>{
+ const s=setup(),tex=Buffer.from(String.raw`\documentclass{article}
+\begin{document}
+\[q = a /\,\sqrt{b}\]
+\end{document}
+`),log=Buffer.from('File /work/main.py reads /tmp/cache and writes /output/metrics.json\n');
+ try{
+  const e=s.app.experiments.get(USER,s.baseline.id);s.app.experiments.writeFile(USER,e.id,'paper.tex',tex.toString(),null,e.version);
+  const intent=s.app.runs.prepare(USER,e.id);approve(s.app,intent.approvalId);const run=s.app.runs.submit(USER,intent.id);writeFileSync(join(physical(s,run.outputDir),'build.log'),log);fixtureFinish(s,run);
+  const artifact=s.app.reports.create(USER,s.project.id,{runIds:[run.id]}),report=s.app.store.list('report',s.project.id).find(r=>r.artifactId===artifact.id),before=readFileSync(physical(s,artifact.path)),expected=s.app.reports.collectExport(USER,s.project.id,report.id);
+  assert.ok(expected.files.some(f=>f.path===`sources/${run.manifest.snapshotDigest}/paper.tex`&&f.bytes.equals(tex)));assert.ok(expected.files.some(f=>f.bytes.equals(log)));
+  const archive=await s.app.exports.create(USER,s.project.id,{reportId:report.id},'tex-spacing'),extracted=join(s.dir,'extracted');mkdirSync(extracted);execFileSync(tar,['-xf',physical(s,archive.path),'-C',extracted],{shell:false,windowsHide:true});
+  const manifest=JSON.parse(readFileSync(join(extracted,'manifest.json'),'utf8'));assert.equal(manifest.files.length,expected.files.length);
+  for(const file of expected.files){const bytes=readFileSync(join(extracted,file.path));assert.deepEqual(bytes,file.bytes,file.path);assert.equal(manifest.files.find(f=>f.path===file.path).digest,digest(bytes),file.path);}
+  assert.deepEqual(readFileSync(join(physical(s,run.manifest.snapshotPath),'paper.tex')),tex);assert.deepEqual(readFileSync(physical(s,artifact.path)),before);
+  const frozenLog=s.app.store.list('artifact',s.project.id).find(a=>a.title==='build.log');assert.ok(frozenLog);assert.deepEqual(readFileSync(physical(s,frozenLog.path)),log);
+ }finally{s.close();}
+});
+test('UNC guard retains Unicode, device and mixed paths and comma shares through JSON decoding',()=>{
+ const context={dataDir:'C:/unit-data',repoRoot:'C:/unit-repo',store:{paths:{legacyRoots:['C:/unit-legacy']}}};
+ const paths=[String.raw`\\服务器\共享\paper.tex`,String.raw`\\?\UNC\server\share\paper.tex`,String.raw`\\.\pipe\unit`,String.raw`/\server/share\paper.tex`,String.raw`\/server\share/paper.tex`,String.raw`\\server\share,part\paper.tex`,'C:/unit-data/file','C:/unit-repo/file','C:/unit-legacy/file',String.raw`Z:\private\paper.tex`,'host_path: /private/source','--mount type=bind,src=/private/source'];
+ for(const path of paths)for(const content of [path,JSON.stringify({message:JSON.stringify({path})})])assert.throws(()=>safeExportBytes(Buffer.from(content),context),{code:'EXPORT_HOST_PATH_DETECTED'},path);
+ assert.throws(()=>safeExportBytes(Buffer.from('api_key = "sk-unit-test-value-0123456789"'),context),{code:'EXPORT_SENSITIVE_CONTENT'});
 });
 test('configured credential values and collector-detected credential formats are rejected without artifact publication',async()=>{
  const secret='unit-secret-value-92837465',previous=process.env.PI_EXPORT_TEST_API_KEY;process.env.PI_EXPORT_TEST_API_KEY=secret;
