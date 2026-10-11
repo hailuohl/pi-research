@@ -1,4 +1,4 @@
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { HostAccessControl } from "./host-access-control.js";
 import { PermissionActions } from "./permission-actions.js";
@@ -328,7 +328,7 @@ class Inspector extends React.Component {
     const run = this.currentRun();
     const teamIds = new Set(teams.map((t) => t.id));
     const inlineReviewTeams = new Set(this.props.inlineWorkflows ? (data.reviews ?? []).filter((r) => r.producerSessionId === this.props.sessionId).map((r) => r.teamId) : []);
-    const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && a.status === "pending" && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
+    const pendingTeams = data.approvals.filter((a) => a.subjectKind === "team" && (a.status === "pending" || a.status === "approved" && teams.some((t) => t.id === a.subjectId && t.state === "awaiting_approval")) && teamIds.has(a.subjectId) && !inlineReviewTeams.has(a.subjectId));
     return /* @__PURE__ */ jsxs("aside", { className: "inspector" + (this.props.embedded ? " embedded-inspector" : ""), "aria-label": this.props.tab === "experiments" ? "\u5B9E\u9A8C\u4E0E\u8FD0\u884C\u8BE6\u60C5" : this.props.embedded ? "\u5F53\u524D\u4F1A\u8BDD\u534F\u4F5C\u7A7A\u95F4" : void 0, children: [
       !this.props.embedded || this.props.tab === "experiments" ? /* @__PURE__ */ jsxs("div", { className: "inspector-title", children: [
         /* @__PURE__ */ jsx(Icon, { name: this.props.tab === "experiments" ? "experiment" : "branch" }),
@@ -414,21 +414,21 @@ class Inspector extends React.Component {
         pendingTeams.map((a) => {
           const pendingTeam = teams.find((t) => t.id === a.subjectId), canStart = data.project.settings.enabled && pendingTeam?.state === "awaiting_approval" && pendingTeam.delegationEnabled;
           return /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
-            /* @__PURE__ */ jsx("div", { className: "small-label", children: "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" }),
+            /* @__PURE__ */ jsx("div", { className: "small-label", children: a.status === "approved" ? "\u5DF2\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" : "\u5F85\u6279\u51C6\u7684\u534F\u4F5C\u8BA1\u5212" }),
             /* @__PURE__ */ jsx("h3", { children: pendingTeam?.goal }),
             /* @__PURE__ */ jsx("p", { className: "small muted", children: a.reason }),
             !canStart ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u8BA1\u5212\u5DF2\u505C\u6B62\uFF1B\u8BF7\u5728\u5BF9\u8BDD\u4E2D\u91CD\u65B0\u63D0\u51FA\u4EFB\u52A1\u3002" }) : null,
             /* @__PURE__ */ jsx("button", { className: "primary full", disabled: data.project.archived || !canStart, onClick: () => {
               if (this.props.data.project.archived || !canStart) return;
               perform(async () => {
-                await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
+                if (a.status === "pending") await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true });
                 await api(`/teams/${a.subjectId}/activate`, {});
-              }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u6279\u51C6");
-            }, children: "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
-            /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived ? true : void 0, onClick: () => {
+              }, "\u534F\u4F5C\u8BA1\u5212\u5DF2\u542F\u52A8");
+            }, children: a.status === "approved" ? "\u542F\u52A8\u5DF2\u6279\u51C6\u534F\u4F5C" : "\u6279\u51C6\u5E76\u542F\u52A8\u534F\u4F5C" }),
+            a.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived ? true : void 0, onClick: () => {
               if (this.props.data.project.archived) return;
               return perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false }));
-            }, children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" })
+            }, children: "\u62D2\u7EDD\u6B64\u8BA1\u5212" }) : null
           ] }, a.id);
         }),
         team ? /* @__PURE__ */ jsxs("div", { className: "inspector-section", children: [
@@ -471,7 +471,37 @@ class Inspector extends React.Component {
             ] }),
             t.blockReason ? /* @__PURE__ */ jsx("p", { className: "small error-text", children: t.blockReason }) : null,
             ["running", "pending"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: data.project.archived, onClick: () => perform(() => api(`/tasks/${t.id}/cancel`, {})), children: "\u505C\u6B62\u6B64\u52A9\u624B" }) : null,
-            ["failed", "cancelled", "blocked"].includes(t.execution) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived, onClick: () => perform(() => api(`/tasks/${t.id}/retry`, {})), children: "\u65B0\u5C1D\u8BD5\u91CD\u8BD5" }) : null,
+            ["failed", "cancelled", "blocked"].includes(t.execution) ? /* @__PURE__ */ jsxs(Fragment, { children: [
+              /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived || !t.retry?.eligible, onClick: () => {
+                if (!data.project.archived && t.retry?.eligible) perform(() => api(`/tasks/${t.id}/retry`, {}));
+              }, children: "\u65B0\u5C1D\u8BD5\u91CD\u8BD5" }),
+              t.retry && !t.retry.eligible ? /* @__PURE__ */ jsxs("p", { className: "small error-text", role: "status", children: [
+                "\u4E0D\u80FD\u91CD\u8BD5\uFF1A",
+                t.retry.code,
+                " \u2014 ",
+                t.retry.reason
+              ] }) : null
+            ] }) : null,
+            t.attempts?.length ? /* @__PURE__ */ jsxs("details", { children: [
+              /* @__PURE__ */ jsx("summary", { children: "\u5C1D\u8BD5\u5386\u53F2\uFF08\u6700\u8FD1\u81F3\u591A 10 \u6B21\uFF1B\u8F83\u65E9\u8BB0\u5F55\u4ECD\u4FDD\u7559\uFF09" }),
+              t.attempts.map((a) => /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsxs("p", { className: "small", children: [
+                  "\u5C1D\u8BD5 ",
+                  /* @__PURE__ */ jsx("code", { children: short(a.id) }),
+                  " \xB7 ",
+                  label(a.state),
+                  " \xB7 ",
+                  date(a.updatedAt)
+                ] }),
+                a.error ? /* @__PURE__ */ jsx("p", { className: "small error-text", children: a.error }) : null,
+                a.result ? /* @__PURE__ */ jsxs("p", { className: "small prose-text", children: [
+                  label(a.result.outcome),
+                  "\uFF1A",
+                  a.result.summary,
+                  a.result.summaryTruncated ? "\uFF08\u5386\u53F2\u6458\u8981\u5DF2\u622A\u65AD\uFF09" : null
+                ] }) : null
+              ] }, a.id))
+            ] }) : null,
             t.result ? /* @__PURE__ */ jsxs("details", { children: [
               /* @__PURE__ */ jsx("summary", { children: "\u7ED3\u679C\u4E0E\u9650\u5236" }),
               t.role === "reviewer" ? /* @__PURE__ */ jsxs("p", { className: "small", role: "status", children: [

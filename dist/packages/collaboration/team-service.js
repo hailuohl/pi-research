@@ -37,7 +37,7 @@ export class TeamService {
     }
     get(actor, id) { const t = this.c.store.get('team', id); scope(actor, t.projectId); return t; }
     tasks(actor, id) { const t = this.get(actor, id); return this.c.store.list('task', t.projectId).filter(x => x.teamId === id); }
-    create(actor, rootSessionId, value, inheritSource = true) {
+    validatePlan(actor, rootSessionId, value, inheritSource = true) {
         ensure(actor.type === 'user' || actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId, 'DELEGATION_DEPTH_EXCEEDED', '只有主协调者可委派，助手不能递归创建团队', 403);
         const s = this.sessions.get(actor, rootSessionId);
         if (actor.type === 'agent')
@@ -49,11 +49,15 @@ export class TeamService {
         ensure(limit >= tasks.filter(t => t.required !== false).length, 'BUDGET_EXCEEDED', '额度至少需要覆盖全部必需任务和审查');
         const autoSummarize = bool(x.autoSummarize ?? false, 'autoSummarize');
         ensure(!autoSummarize || limit >= tasks.filter(t => t.required !== false).length + 1, 'BUDGET_EXCEEDED', '自动综合需要额外预留一次主会话尝试');
+        this.assertInputsCurrent(p.id, tasks);
+        const source = inheritSource && s.sourceRevisionId ? { sourceRevisionId: s.sourceRevisionId } : {};
+        if (source.sourceRevisionId)
+            validateSourceRevision(this.c, p.id, source.sourceRevisionId);
+        return { s, p, tasks, goal, limit, autoSummarize, source };
+    }
+    create(actor, rootSessionId, value, inheritSource = true) {
         return this.c.store.transaction(() => {
-            this.assertInputsCurrent(p.id, tasks);
-            const source = inheritSource && s.sourceRevisionId ? { sourceRevisionId: s.sourceRevisionId } : {};
-            if (source.sourceRevisionId)
-                validateSourceRevision(this.c, p.id, source.sourceRevisionId);
+            const { s, p, tasks, goal, limit, autoSummarize, source } = this.validatePlan(actor, rootSessionId, value, inheritSource);
             const permission = this.sessions.taskPermissionCapture?.(rootSessionId), taskPermissionEffects = permission && permission.mode !== 'legacy' ? [...TASK_PERMISSION_EFFECTS] : undefined;
             const id = randomUUID(), planDigest = digest({ tasks, goal, settings: p.settings, limit, model: s.model, autoSummarize, ...source, ...(taskPermissionEffects ? { taskPermissionEffects, permission } : {}) });
             const a = this.approvals.request(p.id, 'team', id, planDigest, 'collaboration', `允许 ${tasks.length} 个协作任务，${limit} 次尝试；自动综合=${autoSummarize}；不批准正式计算或代码合并。${taskPermissionEffects ? '授权所列任务角色在固定来源内写私有工作区并产生任务私有产物、证据和草案；不授权新联网、宿主命令、共享写入或自行审批。' : ''}`);
@@ -491,16 +495,31 @@ export class TeamService {
             this.c.store.transaction(() => { const current = this.c.store.get('task-attempt', a.id); if (current.state === 'running' && current.leaseUntil < Date.now())
                 this.fail(a.id, 'Worker 租约过期；用量待对账', true); });
     }
-    retry(actor, taskId) {
+    assertRetry(actor, taskId) {
         userOnly(actor);
+        const task = this.c.store.get('task', taskId);
+        scope(actor, task.projectId);
+        const t = this.get(actor, task.teamId);
+        this.assertDispatchPlan(t);
+        ensure(['active', 'paused', 'partial'].includes(t.state), 'TEAM_STATE_INVALID', '当前团队不能重试');
+        ensure(['failed', 'cancelled', 'blocked'].includes(task.execution), 'TASK_NOT_RETRYABLE', '只有失败、取消或部分交付可建立新尝试');
+        ensure(task.attemptCount < t.settings.maxTaskAttempts, 'ATTEMPT_LIMIT', '已达到最大尝试次数');
+        ensure(this.budget.summary(t.id).available > (t.autoSummarize ? 1 : 0), 'BUDGET_EXCEEDED', '可用任务额度不足；保留主会话综合额度');
+        return { task, t };
+    }
+    retryEligibility(actor, taskId) {
+        try {
+            this.assertRetry(actor, taskId);
+            return { eligible: true };
+        }
+        catch (error) {
+            const e = asError(error);
+            return { eligible: false, code: e.code, reason: e.message };
+        }
+    }
+    retry(actor, taskId) {
         return this.c.store.transaction(() => {
-            const task = this.c.store.get('task', taskId);
-            scope(actor, task.projectId);
-            const t = this.get(actor, task.teamId);
-            this.assertDispatchPlan(t);
-            ensure(['active', 'paused', 'partial'].includes(t.state), 'TEAM_STATE_INVALID', '当前团队不能重试');
-            ensure(['failed', 'cancelled', 'blocked'].includes(task.execution), 'TASK_NOT_RETRYABLE', '只有失败、取消或部分交付可建立新尝试');
-            ensure(task.attemptCount < t.settings.maxTaskAttempts, 'ATTEMPT_LIMIT', '已达到最大尝试次数');
+            const { task, t } = this.assertRetry(actor, taskId);
             const next = this.c.store.update('task', task.id, task.version, { execution: 'pending', acceptance: 'pending', result: undefined, blockReason: undefined });
             this.c.store.update('team', t.id, t.version, { state: t.state === 'paused' ? 'paused' : 'active', summarySent: false });
             this.c.store.event(t.projectId, 'task.retry_queued', { taskId, teamRemainsPaused: t.state === 'paused' });

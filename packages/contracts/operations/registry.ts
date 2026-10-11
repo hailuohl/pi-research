@@ -73,6 +73,7 @@ function paperReplay(c: OperationContext, x: Record<string, unknown>) {
 
 function authorizeRegistered(c: OperationContext, name: string, x: Record<string, unknown>) {
     c.app.textCorpusGrants.authorizeContent(c.actor,c.projectId,name,x);
+    if (name === 'collaboration_plan_submit' || name === 'agent_delegate') c.app.teams.validatePlan(c.actor,c.session!.id,x);
     if (name === 'workspace_list') workspaceScope(c, x);
     if (name === 'text_evidence_search') {
         if (c.actor.type === 'agent') c.app.operations.authorizeAgent(c.actor, name);

@@ -1,5 +1,5 @@
 import type { AppContext } from '../domain/context.js';
-import type { Actor, Row, Team, Task, TaskAttempt } from '../domain/types.js';
+import type { Actor, Project, Row, Session, Team, Task, TaskAttempt, TaskSpec } from '../domain/types.js';
 import type { SessionService } from '../pi-adapter/sessions.js';
 import type { ApprovalService } from '../policy/approvals.js';
 import type { BudgetService } from '../policy/budget.js';
@@ -16,6 +16,19 @@ export declare class TeamService {
     constructor(c: AppContext, sessions: SessionService, approvals: ApprovalService, budget: BudgetService, evidence: EvidenceService);
     get(actor: Actor, id: string): Row<Team>;
     tasks(actor: Actor, id: string): Row<Task>[];
+    validatePlan(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean): {
+        s: Row<Session>;
+        p: Row<Project>;
+        tasks: TaskSpec[];
+        goal: string;
+        limit: number;
+        autoSummarize: boolean;
+        source: {
+            sourceRevisionId: string;
+        } | {
+            sourceRevisionId?: undefined;
+        };
+    };
     create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean): Row<Team>;
     activate(actor: Actor, id: string): Row<Team>;
     private assertInputsCurrent;
@@ -58,6 +71,12 @@ export declare class TeamService {
     resume(actor: Actor, id: string): Row<Team>;
     fail(attemptId: string, error: string, unknown?: boolean, notStarted?: boolean): void;
     recover(): void;
+    private assertRetry;
+    retryEligibility(actor: Actor, taskId: string): {
+        eligible: boolean;
+        code?: string;
+        reason?: string;
+    };
     retry(actor: Actor, taskId: string): Row<Task>;
     cancel(actor: Actor, taskId: string): Row<Task>;
     directive(actor: Actor, id: string, value: unknown): Row<{

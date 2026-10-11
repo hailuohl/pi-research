@@ -5126,7 +5126,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly type: "string";
                     };
                 };
-                readonly required: ("rootSessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "planDigest" | "contractDigest" | "autoAnalyze" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
+                readonly required: ("rootSessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "planDigest" | "contractDigest" | "autoAnalyze" | "limits" | "goal" | "primaryMetric" | "direction" | "baselineExperimentId" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
                 readonly additionalProperties: false;
             };
             readonly members: {
@@ -11780,7 +11780,7 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("rootSessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "planDigest" | "contractDigest" | "autoAnalyze" | "limits" | "primaryMetric" | "direction" | "goal" | "baselineExperimentId" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
+        readonly required: ("rootSessionId" | "approvalId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "state" | "planDigest" | "contractDigest" | "autoAnalyze" | "limits" | "goal" | "primaryMetric" | "direction" | "baselineExperimentId" | "rootModel" | "focusExperimentId" | "currentRoundId" | "roundNumber" | "consecutiveRegressions")[];
         readonly additionalProperties: false;
     };
     readonly task_result_submit: {

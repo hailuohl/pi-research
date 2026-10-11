@@ -65,6 +65,10 @@ export type {ReportReference,ReportInspection} from '../../../dist/packages/publ
 export interface ReportRecord {id:string;artifactId:string;runIds:string[];claimIds:string[];evidenceIds?:string[];publicationResultIds?:string[];}
 import type {ResearchBriefService} from '../../../dist/packages/research-workflows/briefs.js';
 export type ResearchBriefView=ReturnType<ResearchBriefService['inspect']>;
+export interface CollaborationTaskView extends Row<Task> {
+    retry?:{eligible:boolean;code?:string;reason?:string};
+    attempts?:Array<{id:string;generation:number;state:string;createdAt:string;updatedAt:string;error?:string;result?:{outcome:string;summary:string;summaryTruncated:boolean}}>;
+}
 export interface ProjectState {
     researchActions?:ResearchActionDTO[];
     manuscripts?:Row<ManuscriptRevision>[];
@@ -96,7 +100,7 @@ export interface ProjectState {
     intents: Row<RunIntent>[];
     approvals: Row<Approval>[];
     teams: Row<Team>[];
-    tasks: Row<Task>[];
+    tasks: CollaborationTaskView[];
     artifacts: Row<Artifact>[];
     evidence: Row<Evidence>[];
     claims: Row<Claim>[];

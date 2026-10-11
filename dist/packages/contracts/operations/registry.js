@@ -44,6 +44,8 @@ function paperReplay(c, x) {
 }
 function authorizeRegistered(c, name, x) {
     c.app.textCorpusGrants.authorizeContent(c.actor, c.projectId, name, x);
+    if (name === 'collaboration_plan_submit' || name === 'agent_delegate')
+        c.app.teams.validatePlan(c.actor, c.session.id, x);
     if (name === 'workspace_list')
         workspaceScope(c, x);
     if (name === 'text_evidence_search') {
