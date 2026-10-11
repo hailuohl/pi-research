@@ -6,41 +6,94 @@ import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
 class WorkspaceView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { files: [], path: "", content: "", digest: null, dirty: false, loading: false };
+    this.state = { files: [], path: "", content: "", digest: null, dirty: false, loading: false, saving: false };
     this.loadId = 0;
+    this.listId = 0;
+    this.mounted = true;
+    this.saving = false;
+    this.beforeUnload = (event) => {
+      if (!this.state.dirty && !this.state.saving) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    this.newFile = () => {
+      if (this.props.data.project.archived || !this.confirmDiscard()) return;
+      const path = prompt("\u65B0\u6587\u4EF6\u76F8\u5BF9\u8DEF\u5F84\uFF0C\u4F8B\u5982 notes/research.md");
+      if (path) {
+        this.loadId++;
+        this.setState({ path, content: "", digest: null, dirty: true, loading: false });
+      }
+    };
+    this.save = async () => {
+      if (this.saving || this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading) return;
+      const { path, content, digest } = this.state, projectId = this.props.data.project.id, seq = this.loadId;
+      const current = () => this.mounted && seq === this.loadId && projectId === this.props.data.project.id && path === this.state.path;
+      this.saving = true;
+      this.setState({ saving: true });
+      try {
+        await this.props.perform(async () => {
+          try {
+            const f = await api(`/projects/${projectId}/files`, { path, content, expectedDigest: digest });
+            if (!current()) return;
+            await new Promise((resolve) => this.setState((state) => current() ? { digest: f.digest, dirty: state.content !== content } : null, resolve));
+            if (current()) await this.loadFiles();
+          } catch (e) {
+            if (current()) throw e;
+          }
+        });
+      } finally {
+        this.saving = false;
+        if (this.mounted) this.setState({ saving: false });
+      }
+    };
   }
   componentDidMount() {
+    window.addEventListener("beforeunload", this.beforeUnload);
     void this.loadFiles();
   }
+  componentWillUnmount() {
+    this.mounted = false;
+    this.loadId++;
+    this.listId++;
+    if (typeof window !== "undefined") window.removeEventListener("beforeunload", this.beforeUnload);
+  }
+  confirmDiscard() {
+    return !this.state.dirty && !this.state.saving || confirm("\u6709\u672A\u4FDD\u5B58\u4FEE\u6539\u6216\u6B63\u5728\u4FDD\u5B58\uFF0C\u653E\u5F03\u5F53\u524D\u8349\u7A3F\uFF1F");
+  }
   async loadFiles() {
-    const files = await api(`/projects/${this.props.data.project.id}/files`);
-    this.setState({ files });
-    if (!this.state.path && files.length)
-      await this.open(files[0].path);
+    const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId;
+    try {
+      const files = await api(`/projects/${projectId}/files`);
+      if (!this.mounted || seq !== this.listId || projectId !== this.props.data.project.id) return;
+      this.setState({ files });
+      if (!this.state.path && files.length && selection === this.loadId) await this.open(files[0].path);
+    } catch (e) {
+      if (this.mounted && seq === this.listId && projectId === this.props.data.project.id)
+        await this.props.perform(async () => {
+          throw e;
+        });
+    }
   }
   async open(path) {
-    if (this.state.dirty && !confirm("\u6709\u672A\u4FDD\u5B58\u4FEE\u6539\uFF0C\u653E\u5F03\u540E\u5207\u6362\u6587\u4EF6\uFF1F"))
-      return;
-    const seq = ++this.loadId;
+    if (!this.confirmDiscard()) return;
+    const seq = ++this.loadId, projectId = this.props.data.project.id;
+    const current = () => this.mounted && seq === this.loadId && projectId === this.props.data.project.id;
     this.setState({ loading: true });
     try {
-      const f = await api(`/projects/${this.props.data.project.id}/files?path=${encodeURIComponent(path)}`);
-      if (seq === this.loadId)
+      const f = await api(`/projects/${projectId}/files?path=${encodeURIComponent(path)}`);
+      if (current())
         this.setState({ path, content: f.content, digest: f.digest, dirty: false, loading: false });
     } catch (e) {
+      if (!current()) return;
       this.setState({ loading: false });
-      this.props.perform(async () => {
+      await this.props.perform(async () => {
         throw e;
       });
     }
   }
   render() {
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll workspace-page", children: [
-      /* @__PURE__ */ jsx(SectionTitle, { title: "\u9879\u76EE\u5DE5\u4F5C\u533A", sub: this.props.data.project.archived ? "\u5DF2\u5F52\u6863\u9879\u76EE\u6E90\u7801\u53EA\u8BFB\uFF0C\u5B9E\u9A8C\u5FEB\u7167\u4E0E\u51C6\u5907\u533A\u6587\u4EF6\u4FDD\u7559\u3002" : "\u7F16\u8F91\u7684\u662F\u51C6\u5907\u533A\uFF0C\u4E0D\u4F1A\u6539\u53D8\u5DF2\u7ECF\u63D0\u4EA4\u7684\u5B9E\u9A8C\u5FEB\u7167\u3002", children: /* @__PURE__ */ jsxs("button", { className: "secondary", disabled: this.props.data.project.archived, onClick: () => {
-        const path = prompt("\u65B0\u6587\u4EF6\u76F8\u5BF9\u8DEF\u5F84\uFF0C\u4F8B\u5982 notes/research.md");
-        if (path)
-          this.setState({ path, content: "", digest: null, dirty: true });
-      }, children: [
+      /* @__PURE__ */ jsx(SectionTitle, { title: "\u9879\u76EE\u5DE5\u4F5C\u533A", sub: this.props.data.project.archived ? "\u5DF2\u5F52\u6863\u9879\u76EE\u6E90\u7801\u53EA\u8BFB\uFF0C\u5B9E\u9A8C\u5FEB\u7167\u4E0E\u51C6\u5907\u533A\u6587\u4EF6\u4FDD\u7559\u3002" : "\u7F16\u8F91\u7684\u662F\u51C6\u5907\u533A\uFF0C\u4E0D\u4F1A\u6539\u53D8\u5DF2\u7ECF\u63D0\u4EA4\u7684\u5B9E\u9A8C\u5FEB\u7167\u3002", children: /* @__PURE__ */ jsxs("button", { className: "secondary", disabled: this.props.data.project.archived, onClick: this.newFile, children: [
         /* @__PURE__ */ jsx(Icon, { name: "plus", size: 15 }),
         "\u65B0\u5EFA\u6587\u4EF6"
       ] }) }),
@@ -59,13 +112,11 @@ class WorkspaceView extends React.Component {
             this.state.dirty ? /* @__PURE__ */ jsx("span", { className: "dirty-dot", title: "\u672A\u4FDD\u5B58" }) : null,
             /* @__PURE__ */ jsx("span", { className: "grow" }),
             /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.state.path && this.open(this.state.path), children: "\u91CD\u65B0\u8BFB\u53D6" }),
-            /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading, onClick: () => this.props.perform(async () => {
-              const f = await api(`/projects/${this.props.data.project.id}/files`, { path: this.state.path, content: this.state.content, expectedDigest: this.state.digest });
-              this.setState({ digest: f.digest, dirty: false });
-              await this.loadFiles();
-            }, "\u6587\u4EF6\u5DF2\u4FDD\u5B58"), children: "\u4FDD\u5B58\u6587\u4EF6" })
+            /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading || this.state.saving, onClick: this.save, children: "\u4FDD\u5B58\u6587\u4EF6" })
           ] }),
-          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u6587\u4EF6\u5185\u5BB9", readOnly: this.props.data.project.archived, spellCheck: false, value: this.state.content, onChange: (e) => this.setState({ content: e.target.value, dirty: true }) }),
+          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u6587\u4EF6\u5185\u5BB9", readOnly: this.props.data.project.archived || this.state.loading, spellCheck: false, value: this.state.content, onChange: (e) => {
+            if (!this.props.data.project.archived && !this.state.loading) this.setState({ content: e.target.value, dirty: true });
+          } }),
           /* @__PURE__ */ jsxs("div", { className: "editor-status", children: [
             /* @__PURE__ */ jsx("span", { children: "UTF-8" }),
             /* @__PURE__ */ jsxs("span", { children: [

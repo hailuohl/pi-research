@@ -80,6 +80,7 @@ export class App extends React.Component<{}, State> {
     private pendingSessionCreate?:{projectId:string;epoch:number;body:unknown;key:string};
     private noticeTimer?: number;
     private conversationPanel=React.createRef<ConversationPanel>();
+    private workspace=React.createRef<WorkspaceView>();
     componentDidMount() {
         if(saved().tab==='experiments')this.conversationPanel.current?.showExperiments();
         window.addEventListener('resize',this.closeNavigationOnResize);
@@ -200,7 +201,7 @@ export class App extends React.Component<{}, State> {
     private sessionSelection(id:string,tab=this.state.tab):Pick<State,'sessionId'|'tab'|'messages'|'pendingMessages'|'pendingTotal'|'pendingNextCursor'|'canSteer'|'history'|'historyAnchor'|'stream'|'streamTruncated'|'activity'|'error'> {
         return {sessionId:id,tab:normalizeView(tab),messages:[],pendingMessages:[],pendingTotal:0,pendingNextCursor:null,canSteer:false,history:null,historyAnchor:null,stream:'',streamTruncated:false,activity:null,error:''};
     }
-    switchProject(id: string) { this.projectSelectionEpoch++;if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',archiveHistoryOpen:false,selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); }); }
+    switchProject(id: string) { if(id===this.state.projectId)return true;if(this.workspace.current&&!this.workspace.current.confirmDiscard())return false;this.projectSelectionEpoch++;if(this.state.data?.experiments.some(e=>e.id===this.state.selectedExp))this.experimentSelections[this.state.projectId]=this.state.selectedExp;this.invalidateRead();this.feed?.stop();this.feed=undefined; this.setState({ ...this.sessionSelection(''),projectId: id, selectedExp: this.experimentSelections[id]??'', navigationOpen:false, selectedRun:'',selectedReport:'',archiveHistoryOpen:false,selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,eventNotice:'', data: null }, () => { void this.refresh(); });return true; }
     private async clearDeletedView(id:string){
         if(this.state.projectId!==id)return;
         const selectionEpoch=++this.projectSelectionEpoch;this.feed?.stop();this.feed=undefined;
@@ -225,7 +226,7 @@ export class App extends React.Component<{}, State> {
     private showExperiments=()=>this.setState({tab:'chat'},()=>this.conversationPanel.current?.showExperiments());
     selectExperiment=(id:string,runId='')=>{const data=this.state.data;if(!data?.experiments.some(e=>e.id===id)||runId&&!data.runs.some(r=>r.id===runId&&r.experimentId===id)){this.setState({error:'指定实验或运行不在当前项目中。'});return;}this.setState({selectedExp:id,selectedRun:runId,tab:'chat'},()=>this.conversationPanel.current?.showExperiments());};
     selectHistory=(anchor:{direction:'before'|'after';id:string}|null)=>{this.invalidateRead();this.setState({messages:[],historyAnchor:anchor,stream:'',streamTruncated:false,activity:null},()=>void this.refresh());};
-    open(modal: string, data: any = null) { this.setState({ modal, modalData: data, error: '' }); }
+    open(modal: string, data: any = null) { if(modal==='project'&&this.workspace.current&&!this.workspace.current.confirmDiscard())return;this.setState({ modal, modalData: data, error: '' }); }
     close = () => {
         if (!this.state.busy)
             this.setState({ modal: '', modalData: null });
@@ -297,7 +298,7 @@ export class App extends React.Component<{}, State> {
             return null;
         const base = { onClose: this.close, busy };
         const done = () => this.setState({ modal: '', modalData: null });
-        if(modal==='projects')return <ProjectManagement onClose={this.close} onOpen={id=>{done();this.switchProject(id);}} selectionToken={()=>this.projectSelectionEpoch} onChanged={this.projectLifecycleChanged}/>;
+        if(modal==='projects')return <ProjectManagement onClose={this.close} onOpen={id=>{if(this.switchProject(id))done();}} selectionToken={()=>this.projectSelectionEpoch} onChanged={this.projectLifecycleChanged}/>;
         if (modal === 'project')
             return <ProjectCreationModal {...base} onCreate={(input,key)=>this.perform(async()=>{const p=await api<Row<Project>>('/projects',input,'POST',undefined,key);const s=await api<Row<Session>>('/sessions',{projectId:p.id,title:'研究主会话'},'POST',undefined,key+'-session');await new Promise<void>(resolve=>this.setState({...this.sessionSelection(s.id,'chat'),projectId:p.id,selectedExp:'',selectedRun:'',selectedReport:'',archiveHistoryOpen:false,selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,data:null},resolve));done();},input.github?'本地项目已创建；GitHub 同步状态可在设置中查看。':'本地项目已创建')}/>;
         if (modal === 'config')
@@ -334,9 +335,10 @@ export class App extends React.Component<{}, State> {
  <ConversationLayout projectId={this.state.projectId} active={tab==='chat'} inspector={null} panel={<ConversationPanel ref={this.conversationPanel} key={this.state.projectId} projectId={this.state.projectId} active={tab==='chat'} data={data} collaboration={inspector} experimentDetails={inspector?React.cloneElement(inspector,{tab:'experiments',inlineWorkflows:false}):null} selectedExperiment={this.state.selectedExp} onExperiment={this.selectExperiment} onWorkspace={()=>this.selectTab('workspace')} onChooseProject={()=>{if(boot?.projects.length){this.setState({navigationOpen:true},()=>document.querySelector<HTMLSelectElement>('.sidebar-project select')?.focus());}else this.open('project');}} onRetry={()=>void this.refresh()} error={this.state.error}/>}>
  <main className={'main-pane page-' + tab + (tab === 'chat' ? ' chat-pane' : '')}>
 {boot&&data?<div className="chat-view-container" hidden={tab!=='chat'}><Chat key={data.project.id+':'+(currentSession?.id??'')} data={data} boot={boot} session={currentSession} archivedHistory={data.project.archived&&this.state.archiveHistoryOpen?<ArchivedResearchHistory key={data.project.id} data={data} perform={this.perform}/>:null} onRegister={(artifactId,content)=>this.open('evidence',{artifactId,content})} onClaim={()=>this.open('claim')} onUseDocument={this.useParsedDocument} onSources={()=>this.selectTab('integrations')} onCampaign={this.selectCampaign} onModelConfirmed={this.confirmSessionModel} onMessageConfirmed={this.confirmSessionMessage} busy={this.state.busy} messages={this.state.messages} pendingMessages={this.state.pendingMessages} pendingTotal={this.state.pendingTotal} pendingNextCursor={this.state.pendingNextCursor} canSteer={this.state.canSteer} history={this.state.history} historyAnchor={this.state.historyAnchor} onHistory={this.selectHistory} stream={this.state.stream} streamTruncated={this.state.streamTruncated} activity={this.state.activity} perform={this.perform} onToggle={() => this.toggle()} onNew={() => this.newSession()} onExperiments={this.showExperiments} onWorkspace={() => this.setState({ tab: 'workspace' })} onSession={id=>this.selectSession(id)} onExperiment={this.selectExperiment} onRun={(runId,experimentId)=>this.selectExperiment(experimentId,runId)}/></div>:null}
+{boot&&data?<div hidden={tab!=='workspace'}><WorkspaceView ref={this.workspace} key={data.project.id} data={data} perform={this.perform}/></div>:null}
  {!boot ? <div className="boot-screen">正在读取本地项目…</div> : tab === 'settings' ? <SettingsView boot={boot} data={data??undefined} readOnly={data?.project.archived} projectId={this.state.projectId} session={currentSession} perform={this.perform}/> : tab === 'environment' ? <EnvironmentView/> : !data ? <div className="first-project"><div className="welcome-mark">π</div><h1>每一个研究，<br />从清晰的起点开始。</h1><p>建立本地项目，保存源代码、实验快照和证据。<br />也可以先运行随包的真实数值示例，检查完整流程。</p><button className="primary" onClick={() => this.open('project')}>创建第一个项目 <Icon name="arrow" size={17}/></button></div> :
                 tab === 'chat' ? null :
-                        tab === 'workspace' ? <WorkspaceView key={data.project.id} data={data} perform={this.perform}/> :
+                        tab === 'workspace' ? null :
                             tab === 'integrations' ? <IntegrationsView key={data.project.id} projectId={data.project.id} sessionId={this.state.sessionId} refreshToken={data} readOnly={data.project.archived}/> : null}
 
  </main></ConversationLayout></div>{this.modalView()}</div>;

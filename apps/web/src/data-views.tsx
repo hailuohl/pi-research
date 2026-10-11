@@ -17,40 +17,82 @@ export class WorkspaceView extends React.Component<{
     digest: string | null;
     dirty: boolean;
     loading: boolean;
+    saving: boolean;
 }> {
     state = { files: [] as Array<{
             path: string;
             size: number;
-        }>, path: '', content: '', digest: null as string | null, dirty: false, loading: false };
+        }>, path: '', content: '', digest: null as string | null, dirty: false, loading: false, saving: false };
     private loadId = 0;
-    componentDidMount() { void this.loadFiles(); }
+    private listId = 0;
+    private mounted = true;
+    private saving = false;
+    private beforeUnload = (event: BeforeUnloadEvent) => {
+        if (!this.state.dirty && !this.state.saving) return;
+        event.preventDefault();
+        event.returnValue = '';
+    };
+    componentDidMount() { window.addEventListener('beforeunload', this.beforeUnload); void this.loadFiles(); }
+    componentWillUnmount() { this.mounted = false; this.loadId++; this.listId++; if (typeof window !== 'undefined') window.removeEventListener('beforeunload', this.beforeUnload); }
+    confirmDiscard() { return !this.state.dirty && !this.state.saving || confirm('有未保存修改或正在保存，放弃当前草稿？'); }
     async loadFiles() {
-        const files = await api(`/projects/${this.props.data.project.id}/files`);
-        this.setState({ files });
-        if (!this.state.path && files.length)
-            await this.open(files[0].path);
+        const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId;
+        try {
+            const files = await api(`/projects/${projectId}/files`);
+            if (!this.mounted || seq !== this.listId || projectId !== this.props.data.project.id) return;
+            this.setState({ files });
+            if (!this.state.path && files.length && selection === this.loadId) await this.open(files[0].path);
+        } catch (e) {
+            if (this.mounted && seq === this.listId && projectId === this.props.data.project.id)
+                await this.props.perform(async () => { throw e; });
+        }
     }
     async open(path: string) {
-        if (this.state.dirty && !confirm('有未保存修改，放弃后切换文件？'))
-            return;
-        const seq = ++this.loadId;
+        if (!this.confirmDiscard()) return;
+        const seq = ++this.loadId, projectId = this.props.data.project.id;
+        const current = () => this.mounted && seq === this.loadId && projectId === this.props.data.project.id;
         this.setState({ loading: true });
         try {
-            const f = await api(`/projects/${this.props.data.project.id}/files?path=${encodeURIComponent(path)}`);
-            if (seq === this.loadId)
+            const f = await api(`/projects/${projectId}/files?path=${encodeURIComponent(path)}`);
+            if (current())
                 this.setState({ path, content: f.content, digest: f.digest, dirty: false, loading: false });
         }
         catch (e) {
+            if (!current()) return;
             this.setState({ loading: false });
-            this.props.perform(async () => { throw e; });
+            await this.props.perform(async () => { throw e; });
         }
     }
+    newFile = () => {
+        if (this.props.data.project.archived || !this.confirmDiscard()) return;
+        const path = prompt('新文件相对路径，例如 notes/research.md');
+        if (path) {
+            this.loadId++;
+            this.setState({ path, content: '', digest: null, dirty: true, loading: false });
+        }
+    };
+    save = async () => {
+        if (this.saving || this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading) return;
+        const { path, content, digest } = this.state, projectId = this.props.data.project.id, seq = this.loadId;
+        const current = () => this.mounted && seq === this.loadId && projectId === this.props.data.project.id && path === this.state.path;
+        this.saving = true;
+        this.setState({ saving: true });
+        try {
+            await this.props.perform(async () => {
+                try {
+                    const f = await api(`/projects/${projectId}/files`, { path, content, expectedDigest: digest });
+                    if (!current()) return;
+                    await new Promise<void>(resolve => this.setState(state => current() ? { digest: f.digest, dirty: state.content !== content } : null, resolve));
+                    if (current()) await this.loadFiles();
+                } catch (e) { if (current()) throw e; }
+            });
+        } finally {
+            this.saving = false;
+            if (this.mounted) this.setState({ saving: false });
+        }
+    };
     render() {
-        return <div className="page-scroll workspace-page"><SectionTitle title="项目工作区" sub={this.props.data.project.archived?"已归档项目源码只读，实验快照与准备区文件保留。":"编辑的是准备区，不会改变已经提交的实验快照。"}><button className="secondary" disabled={this.props.data.project.archived} onClick={() => {
-                const path = prompt('新文件相对路径，例如 notes/research.md');
-                if (path)
-                    this.setState({ path, content: '', digest: null, dirty: true });
-            }}><Icon name="plus" size={15}/>新建文件</button></SectionTitle><div className="workspace-grid"><nav className="file-tree" aria-label="项目文件"><div className="small-label">SOURCE FILES</div>{this.state.files.map(f => <button key={f.path} className={this.state.path === f.path ? 'active' : ''} onClick={() => this.open(f.path)}><Icon name="evidence" size={15}/><span>{f.path}</span></button>)}<p className="small muted">.git、可执行 Pi 配置与敏感配置不作为普通工作区资源加载。</p></nav><div className="editor"><div className="editor-toolbar"><code>{this.state.path || '选择文件'}</code>{this.state.dirty ? <span className="dirty-dot" title="未保存"/> : null}<span className="grow"/><button className="text-button" onClick={() => this.state.path && this.open(this.state.path)}>重新读取</button><button className="primary compact" disabled={this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading} onClick={() => this.props.perform(async () => { const f = await api(`/projects/${this.props.data.project.id}/files`, { path: this.state.path, content: this.state.content, expectedDigest: this.state.digest }); this.setState({ digest: f.digest, dirty: false }); await this.loadFiles(); }, '文件已保存')}>保存文件</button></div><textarea aria-label="文件内容" readOnly={this.props.data.project.archived} spellCheck={false} value={this.state.content} onChange={(e: any) => this.setState({ content: e.target.value, dirty: true })}/><div className="editor-status"><span>UTF-8</span><span>{this.state.content.split('\n').length} 行</span><span>版本校验 {short(this.state.digest)}</span><span className="grow"/><span>冲突时保留当前编辑，不覆盖新版本</span></div></div></div><div className="notice"><Icon name="folder"/><p>实验代码可使用本地、Docker 或 SSH；源码、执行环境和资源在运行前单独批准。本地代码拥有当前用户权限，文件与网络不隔离。</p></div></div>;
+        return <div className="page-scroll workspace-page"><SectionTitle title="项目工作区" sub={this.props.data.project.archived?"已归档项目源码只读，实验快照与准备区文件保留。":"编辑的是准备区，不会改变已经提交的实验快照。"}><button className="secondary" disabled={this.props.data.project.archived} onClick={this.newFile}><Icon name="plus" size={15}/>新建文件</button></SectionTitle><div className="workspace-grid"><nav className="file-tree" aria-label="项目文件"><div className="small-label">SOURCE FILES</div>{this.state.files.map(f => <button key={f.path} className={this.state.path === f.path ? 'active' : ''} onClick={() => this.open(f.path)}><Icon name="evidence" size={15}/><span>{f.path}</span></button>)}<p className="small muted">.git、可执行 Pi 配置与敏感配置不作为普通工作区资源加载。</p></nav><div className="editor"><div className="editor-toolbar"><code>{this.state.path || '选择文件'}</code>{this.state.dirty ? <span className="dirty-dot" title="未保存"/> : null}<span className="grow"/><button className="text-button" onClick={() => this.state.path && this.open(this.state.path)}>重新读取</button><button className="primary compact" disabled={this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading || this.state.saving} onClick={this.save}>保存文件</button></div><textarea aria-label="文件内容" readOnly={this.props.data.project.archived || this.state.loading} spellCheck={false} value={this.state.content} onChange={(e: any) => { if (!this.props.data.project.archived && !this.state.loading) this.setState({ content: e.target.value, dirty: true }); }}/><div className="editor-status"><span>UTF-8</span><span>{this.state.content.split('\n').length} 行</span><span>版本校验 {short(this.state.digest)}</span><span className="grow"/><span>冲突时保留当前编辑，不覆盖新版本</span></div></div></div><div className="notice"><Icon name="folder"/><p>实验代码可使用本地、Docker 或 SSH；源码、执行环境和资源在运行前单独批准。本地代码拥有当前用户权限，文件与网络不隔离。</p></div></div>;
     }
 }
 export class EvidenceView extends React.Component<{

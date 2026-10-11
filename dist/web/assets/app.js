@@ -42,6 +42,7 @@ class App extends React.Component {
     this.projectSelectionEpoch = 0;
     this.creatingSession = false;
     this.conversationPanel = React.createRef();
+    this.workspace = React.createRef();
     this.perform = async (fn, success) => {
       if (this.state.busy)
         return;
@@ -275,6 +276,8 @@ class App extends React.Component {
     return { sessionId: id, tab: normalizeView(tab), messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false, activity: null, error: "" };
   }
   switchProject(id) {
+    if (id === this.state.projectId) return true;
+    if (this.workspace.current && !this.workspace.current.confirmDiscard()) return false;
     this.projectSelectionEpoch++;
     if (this.state.data?.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[this.state.projectId] = this.state.selectedExp;
     this.invalidateRead();
@@ -283,6 +286,7 @@ class App extends React.Component {
     this.setState({ ...this.sessionSelection(""), projectId: id, selectedExp: this.experimentSelections[id] ?? "", navigationOpen: false, selectedRun: "", selectedReport: "", archiveHistoryOpen: false, selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", data: null }, () => {
       void this.refresh();
     });
+    return true;
   }
   async clearDeletedView(id) {
     if (this.state.projectId !== id) return;
@@ -299,6 +303,7 @@ class App extends React.Component {
     });
   }
   open(modal, data = null) {
+    if (modal === "project" && this.workspace.current && !this.workspace.current.confirmDiscard()) return;
     this.setState({ modal, modalData: data, error: "" });
   }
   async newSession() {
@@ -382,8 +387,7 @@ class App extends React.Component {
     const base = { onClose: this.close, busy };
     const done = () => this.setState({ modal: "", modalData: null });
     if (modal === "projects") return /* @__PURE__ */ jsx(ProjectManagement, { onClose: this.close, onOpen: (id) => {
-      done();
-      this.switchProject(id);
+      if (this.switchProject(id)) done();
     }, selectionToken: () => this.projectSelectionEpoch, onChanged: this.projectLifecycleChanged });
     if (modal === "project")
       return /* @__PURE__ */ jsx(ProjectCreationModal, { ...base, onCreate: (input, key) => this.perform(async () => {
@@ -578,6 +582,7 @@ class App extends React.Component {
           } else this.open("project");
         }, onRetry: () => void this.refresh(), error: this.state.error }, this.state.projectId), children: /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
           boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, archivedHistory: data.project.archived && this.state.archiveHistoryOpen ? /* @__PURE__ */ jsx(ArchivedResearchHistory, { data, perform: this.perform }, data.project.id) : null, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim"), onUseDocument: this.useParsedDocument, onSources: () => this.selectTab("integrations"), onCampaign: this.selectCampaign, onModelConfirmed: this.confirmSessionModel, onMessageConfirmed: this.confirmSessionMessage, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: this.showExperiments, onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
+          boot && data ? /* @__PURE__ */ jsx("div", { hidden: tab !== "workspace", children: /* @__PURE__ */ jsx(WorkspaceView, { ref: this.workspace, data, perform: this.perform }, data.project.id) }) : null,
           !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, data: data ?? void 0, readOnly: data?.project.archived, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : tab === "environment" ? /* @__PURE__ */ jsx(EnvironmentView, {}) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
             /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
             /* @__PURE__ */ jsxs("h1", { children: [
@@ -594,7 +599,7 @@ class App extends React.Component {
               "\u521B\u5EFA\u7B2C\u4E00\u4E2A\u9879\u76EE ",
               /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
             ] })
-          ] }) : tab === "chat" ? null : tab === "workspace" ? /* @__PURE__ */ jsx(WorkspaceView, { data, perform: this.perform }, data.project.id) : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived }, data.project.id) : null
+          ] }) : tab === "chat" ? null : tab === "workspace" ? null : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived }, data.project.id) : null
         ] }) })
       ] }),
       this.modalView()
