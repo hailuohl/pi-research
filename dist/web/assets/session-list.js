@@ -44,7 +44,7 @@ class SessionList extends React.Component {
     } else if (previous.creationSignal !== this.props.creationSignal) {
       this.generation++;
       this.setState({ stateFilter: "active", page: null, cursors: [void 0], index: 0 }, () => void this.load(void 0, this.state.query, this.state.role, "active"));
-    } else if (previous.selectedId !== this.props.selectedId && this.state.index === 0 && !this.state.query) void this.load();
+    } else if (previous.selectedId !== this.props.selectedId && this.state.index === 0 && !this.state.query || previous.selectedId === this.props.selectedId && (previous.selected?.title !== this.props.selected?.title || previous.selected?.state !== this.props.selected?.state)) void this.load();
   }
   componentWillUnmount() {
     this.generation++;
@@ -62,7 +62,7 @@ class SessionList extends React.Component {
   }
   render() {
     const { selectedId, selected, onSelect } = this.props, { page, busy, error, index, stateFilter } = this.state;
-    const items = page?.items ?? [];
+    const items = (page?.items ?? []).map((item) => item.id === selectedId && selected?.id === item.id && selected.version >= item.version ? { ...item, title: selected.title } : item);
     const selectedMatchesFilter = selected && (stateFilter === "all" || (stateFilter === "archived" ? selected.state === "archived" : selected.state !== "archived"));
     const selectedOutside = selectedMatchesFilter && selectedId && !items.some((item) => item.id === selectedId);
     const row = (item) => /* @__PURE__ */ jsxs("button", { className: item.id === selectedId ? "selected-session" : "", "aria-current": item.id === selectedId ? "page" : void 0, title: item.title, onClick: () => onSelect(item.id), children: [

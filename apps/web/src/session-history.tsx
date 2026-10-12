@@ -1,6 +1,6 @@
 import * as React from 'react';
-import {api,downloadArtifact} from './api.js';
-import type {SessionHistoryPage,SessionMessageContent} from './models.js';
+import {api,ApiError,downloadArtifact} from './api.js';
+import type {Row,Session,SessionHistoryPage,SessionMessageContent} from './models.js';
 import {date,short} from './models.js';
 import {Badge,Icon} from './ui.js';
 import type {QueueMessage} from './message-queue.js';
@@ -10,7 +10,7 @@ import {MessageMarkdown} from './message-markdown.js';
 type Anchor={direction:'before'|'after';id:string}|null;
 type MessagePhase='commentary'|'final_answer';
 type ConversationMessage=QueueMessage&{generation?:number;phase?:MessagePhase;toolCalls?:string[];nativeRequestId?:string};
-interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;}
+interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;readOnly?:boolean;sessionArchived?:boolean;busy?:boolean;onBranch?:(session:Row<Session>)=>void;}
 interface State {messageId:string;page:SessionMessageContent|null;busy:boolean;error:string;}
 interface ActivityTool {tool:string;status:'running'|'completed'|'failed';}
 export interface ConversationActivityProps {content:string;active:boolean;activity?:ActivityTool|null;truncated?:boolean;}
@@ -58,9 +58,33 @@ export function ConversationActivity({content,active,activity,truncated}:Convers
 export class SessionHistory extends React.Component<Props,State> {
     state:State={messageId:'',page:null,busy:false,error:''};
     private generation=0;
-    componentDidUpdate(previous:Props){if(previous.projectId!==this.props.projectId||previous.sessionId!==this.props.sessionId||this.state.messageId&&previous.messages.find(message=>message.id===this.state.messageId)?.version!==this.props.messages.find(message=>message.id===this.state.messageId)?.version)this.close();}
-    componentWillUnmount(){this.generation++;}
+    private mounted=true;
+    private actionEpoch=0;
+    private actionPending=false;
+    private pendingActions=new Map<string,string>();
+    componentDidUpdate(previous:Props){if(previous.projectId!==this.props.projectId||previous.sessionId!==this.props.sessionId){this.actionEpoch++;this.pendingActions.clear();this.close();}else if(this.state.messageId&&previous.messages.find(message=>message.id===this.state.messageId)?.version!==this.props.messages.find(message=>message.id===this.state.messageId)?.version)this.close();}
+    componentWillUnmount(){this.mounted=false;this.generation++;this.actionEpoch++;}
     close=()=>{this.generation++;this.setState({messageId:'',page:null,busy:false,error:''});};
+    private changeMessage=async(action:'branch'|'retry',messageId:string)=>{
+        const {projectId,sessionId}=this.props,epoch=this.actionEpoch;
+        if(!this.mounted||this.props.readOnly||action==='retry'&&this.props.sessionArchived||this.props.busy||this.actionPending||!projectId||!sessionId)return;
+        const current=()=>this.mounted&&epoch===this.actionEpoch&&projectId===this.props.projectId&&sessionId===this.props.sessionId;
+        const target=action+':'+messageId,key=this.pendingActions.get(target)??crypto.randomUUID();this.pendingActions.set(target,key);this.actionPending=true;
+        try{
+            return await this.props.perform(async()=>{
+                if(!current()||this.props.readOnly||action==='retry'&&this.props.sessionArchived)return;
+                try{
+                    const confirmed=await api<Row<Session>>(`/sessions/${encodeURIComponent(sessionId)}/${action}`,{messageId},'POST',undefined,key);
+                    if(!current())return;
+                    if(action==='branch'){
+                        if(confirmed.projectId!==projectId||confirmed.parentSessionId!==sessionId||typeof confirmed.id!=='string'||!confirmed.id||confirmed.id===sessionId||!Number.isSafeInteger(confirmed.version)||confirmed.version<1||typeof confirmed.title!=='string'||!confirmed.model||typeof confirmed.model.provider!=='string'||typeof confirmed.model.model!=='string'||typeof confirmed.model.thinking!=='string')throw Error('分支回执与当前会话不一致，请刷新后重试');
+                        if(!this.props.readOnly)this.props.onBranch?.(confirmed);
+                    }
+                    this.pendingActions.delete(target);return confirmed;
+                }catch(error){if(error instanceof ApiError&&error.status<500)this.pendingActions.delete(target);if(current())throw error;}
+            });
+        }finally{this.actionPending=false;}
+    };
     async read(messageId:string,cursor=0,expectedVersion?:number){
         const generation=++this.generation,projectId=this.props.projectId,sessionId=this.props.sessionId;
         this.setState({messageId,page:null,busy:true,error:''});
@@ -82,7 +106,7 @@ export class SessionHistory extends React.Component<Props,State> {
             const current=conversationMessage(message),summary=toolSummary(current);
             const author=message.role==='user'?'你':message.role==='assistant'?(message.wakeupId?'Pi · 结果分析':'Pi'):(message.wakeupId?'持久化结果通知':'工作台状态通知');
             return <article className={'message message-'+message.role} key={message.id} aria-label={author} data-notification={message.wakeupId?'wakeup':undefined} data-history-anchor-id={message.id}><div className="message-avatar" aria-hidden="true">{message.role==='user'?'我':message.role==='assistant'?'π':'·'}</div><div className="message-body"><div className="message-meta"><strong>{author}</strong>{current.nativeRequestId?<span className="badge" title={'原生请求 '+current.nativeRequestId}>原生请求 · {short(current.nativeRequestId)}</span>:null}<time dateTime={message.createdAt} title={message.createdAt}>{date(message.createdAt)}</time>{message.queueRemoved?<span className="badge s-cancelled">已移出队列</span>:message.role==='user'&&message.status==='queued'&&message.origin!=='automation'&&message.wakeupId==null?<span className="badge s-queued">{message.mode==='prompt'?'已发送':'已提交 · 等待处理'}</span>:message.status&&message.status!=='completed'?<Badge value={message.status}/>:null}</div>{message.queueRemoved?<details className="removed-message-content"><summary>查看已移出队列的原消息</summary>{content(message)}</details>:content(message)}{summary?<p className="message-tool-summary">涉及工具：{summary}</p>:null}{message.attachments?.length?<div className="message-attachments" aria-label="消息附件">{message.attachments.map(attachment=><div className="message-attachment" key={attachment.documentVersionId}><Icon name="evidence" size={15}/><span title={attachment.title}>{attachment.title}</span><small>{attachment.inputMode==='native'?(message.nativeAttachmentsDisabled?'保留原件引用 · 未自动外发':'整文件附件'):attachment.mediaType==='application/pdf'?(attachment.parseResultId?'固定解析 · 视觉读取须另批':'PDF 原件 · 需显式解析'):'文本原件'}</small><button type="button" className="text-button" aria-label={`下载附件原件 ${attachment.title}`} onClick={()=>perform(()=>downloadArtifact(attachment.artifactId,attachment.title))}>下载原件</button></div>)}</div>:null}
-                {message.error?<p className="error-text">{message.error}</p>:null}<div className="message-tools"><button className="message-branch-button" onClick={()=>perform(()=>api(`/sessions/${sessionId}/branch`,{messageId:message.id}),'已创建对话分支；实验记录保持不变')}>从此处分支</button>{!message.queueRemoved&&message.role==='user'&&['failed','cancelled'].includes(message.status)?<button onClick={()=>perform(()=>api(`/sessions/${sessionId}/retry`,{messageId:message.id}))}>重试此消息</button>:null}</div></div></article>;
+                {message.error?<p className="error-text">{message.error}</p>:null}<div className="message-tools"><button className="message-branch-button" disabled={!!this.props.readOnly||!!this.props.busy} onClick={()=>this.changeMessage('branch',message.id)}>从此处分支</button>{!message.queueRemoved&&message.role==='user'&&['failed','cancelled'].includes(message.status)?<button disabled={!!this.props.readOnly||!!this.props.sessionArchived||!!this.props.busy} onClick={()=>this.changeMessage('retry',message.id)}>重试此消息</button>:null}</div></div></article>;
         };
         const assistantGroup=(group:QueueMessage[])=>{
             const tagged=group.some(message=>{const current=conversationMessage(message);return current.generation!==undefined||current.phase!==undefined||current.toolCalls!==undefined;});

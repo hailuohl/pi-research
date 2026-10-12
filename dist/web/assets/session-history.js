@@ -1,6 +1,6 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
-import { api, downloadArtifact } from "./api.js";
+import { api, ApiError, downloadArtifact } from "./api.js";
 import { date, short } from "./models.js";
 import { Badge, Icon } from "./ui.js";
 import { MessageMarkdown } from "./message-markdown.js";
@@ -56,16 +56,54 @@ class SessionHistory extends React.Component {
     super(...arguments);
     this.state = { messageId: "", page: null, busy: false, error: "" };
     this.generation = 0;
+    this.mounted = true;
+    this.actionEpoch = 0;
+    this.actionPending = false;
+    this.pendingActions = /* @__PURE__ */ new Map();
     this.close = () => {
       this.generation++;
       this.setState({ messageId: "", page: null, busy: false, error: "" });
     };
+    this.changeMessage = async (action, messageId) => {
+      const { projectId, sessionId } = this.props, epoch = this.actionEpoch;
+      if (!this.mounted || this.props.readOnly || action === "retry" && this.props.sessionArchived || this.props.busy || this.actionPending || !projectId || !sessionId) return;
+      const current = () => this.mounted && epoch === this.actionEpoch && projectId === this.props.projectId && sessionId === this.props.sessionId;
+      const target = action + ":" + messageId, key = this.pendingActions.get(target) ?? crypto.randomUUID();
+      this.pendingActions.set(target, key);
+      this.actionPending = true;
+      try {
+        return await this.props.perform(async () => {
+          if (!current() || this.props.readOnly || action === "retry" && this.props.sessionArchived) return;
+          try {
+            const confirmed = await api(`/sessions/${encodeURIComponent(sessionId)}/${action}`, { messageId }, "POST", void 0, key);
+            if (!current()) return;
+            if (action === "branch") {
+              if (confirmed.projectId !== projectId || confirmed.parentSessionId !== sessionId || typeof confirmed.id !== "string" || !confirmed.id || confirmed.id === sessionId || !Number.isSafeInteger(confirmed.version) || confirmed.version < 1 || typeof confirmed.title !== "string" || !confirmed.model || typeof confirmed.model.provider !== "string" || typeof confirmed.model.model !== "string" || typeof confirmed.model.thinking !== "string") throw Error("\u5206\u652F\u56DE\u6267\u4E0E\u5F53\u524D\u4F1A\u8BDD\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
+              if (!this.props.readOnly) this.props.onBranch?.(confirmed);
+            }
+            this.pendingActions.delete(target);
+            return confirmed;
+          } catch (error) {
+            if (error instanceof ApiError && error.status < 500) this.pendingActions.delete(target);
+            if (current()) throw error;
+          }
+        });
+      } finally {
+        this.actionPending = false;
+      }
+    };
   }
   componentDidUpdate(previous) {
-    if (previous.projectId !== this.props.projectId || previous.sessionId !== this.props.sessionId || this.state.messageId && previous.messages.find((message) => message.id === this.state.messageId)?.version !== this.props.messages.find((message) => message.id === this.state.messageId)?.version) this.close();
+    if (previous.projectId !== this.props.projectId || previous.sessionId !== this.props.sessionId) {
+      this.actionEpoch++;
+      this.pendingActions.clear();
+      this.close();
+    } else if (this.state.messageId && previous.messages.find((message) => message.id === this.state.messageId)?.version !== this.props.messages.find((message) => message.id === this.state.messageId)?.version) this.close();
   }
   componentWillUnmount() {
+    this.mounted = false;
     this.generation++;
+    this.actionEpoch++;
   }
   async read(messageId, cursor = 0, expectedVersion) {
     const generation = ++this.generation, projectId = this.props.projectId, sessionId = this.props.sessionId;
@@ -148,8 +186,8 @@ class SessionHistory extends React.Component {
           ] }, attachment.documentVersionId)) }) : null,
           message.error ? /* @__PURE__ */ jsx("p", { className: "error-text", children: message.error }) : null,
           /* @__PURE__ */ jsxs("div", { className: "message-tools", children: [
-            /* @__PURE__ */ jsx("button", { className: "message-branch-button", onClick: () => perform(() => api(`/sessions/${sessionId}/branch`, { messageId: message.id }), "\u5DF2\u521B\u5EFA\u5BF9\u8BDD\u5206\u652F\uFF1B\u5B9E\u9A8C\u8BB0\u5F55\u4FDD\u6301\u4E0D\u53D8"), children: "\u4ECE\u6B64\u5904\u5206\u652F" }),
-            !message.queueRemoved && message.role === "user" && ["failed", "cancelled"].includes(message.status) ? /* @__PURE__ */ jsx("button", { onClick: () => perform(() => api(`/sessions/${sessionId}/retry`, { messageId: message.id })), children: "\u91CD\u8BD5\u6B64\u6D88\u606F" }) : null
+            /* @__PURE__ */ jsx("button", { className: "message-branch-button", disabled: !!this.props.readOnly || !!this.props.busy, onClick: () => this.changeMessage("branch", message.id), children: "\u4ECE\u6B64\u5904\u5206\u652F" }),
+            !message.queueRemoved && message.role === "user" && ["failed", "cancelled"].includes(message.status) ? /* @__PURE__ */ jsx("button", { disabled: !!this.props.readOnly || !!this.props.sessionArchived || !!this.props.busy, onClick: () => this.changeMessage("retry", message.id), children: "\u91CD\u8BD5\u6B64\u6D88\u606F" }) : null
           ] })
         ] })
       ] }, message.id);

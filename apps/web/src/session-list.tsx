@@ -15,7 +15,7 @@ export class SessionList extends React.Component<Props,State> {
     state:State={draft:'',query:'',role:'coordinator',stateFilter:'active',page:null,cursors:[undefined],index:0,busy:false,error:''};
     private generation=0;
     componentDidMount(){void this.load();}
-    componentDidUpdate(previous:Props){if(previous.projectId!==this.props.projectId){this.generation++;this.setState({draft:'',query:'',role:'coordinator',stateFilter:'active',page:null,cursors:[undefined],index:0,error:''},()=>void this.load());}else if(previous.creationSignal!==this.props.creationSignal){this.generation++;this.setState({stateFilter:'active',page:null,cursors:[undefined],index:0},()=>void this.load(undefined,this.state.query,this.state.role,'active'));}else if(previous.selectedId!==this.props.selectedId&&this.state.index===0&&!this.state.query)void this.load();}
+    componentDidUpdate(previous:Props){if(previous.projectId!==this.props.projectId){this.generation++;this.setState({draft:'',query:'',role:'coordinator',stateFilter:'active',page:null,cursors:[undefined],index:0,error:''},()=>void this.load());}else if(previous.creationSignal!==this.props.creationSignal){this.generation++;this.setState({stateFilter:'active',page:null,cursors:[undefined],index:0},()=>void this.load(undefined,this.state.query,this.state.role,'active'));}else if(previous.selectedId!==this.props.selectedId&&this.state.index===0&&!this.state.query||previous.selectedId===this.props.selectedId&&(previous.selected?.title!==this.props.selected?.title||previous.selected?.state!==this.props.selected?.state))void this.load();}
     componentWillUnmount(){this.generation++;}
     async load(cursor=this.state.cursors[this.state.index],query=this.state.query,role=this.state.role,stateFilter=this.state.stateFilter){
         if(!this.props.projectId)return;
@@ -33,7 +33,7 @@ export class SessionList extends React.Component<Props,State> {
     previous=()=>{if(this.state.index===0)return;this.setState({index:this.state.index-1},()=>void this.load());};
     render(){
         const {selectedId,selected,onSelect}=this.props,{page,busy,error,index,stateFilter}=this.state;
-        const items=page?.items??[];
+        const items=(page?.items??[]).map(item=>item.id===selectedId&&selected?.id===item.id&&selected.version>=item.version?{...item,title:selected.title}:item);
         const selectedMatchesFilter=selected&&(stateFilter==='all'||(stateFilter==='archived'?selected.state==='archived':selected.state!=='archived'));
         const selectedOutside=selectedMatchesFilter&&selectedId&&!items.some(item=>item.id===selectedId);
         const row=(item:{id:string;state:string;title:string})=><button key={item.id} className={item.id===selectedId?'selected-session':''} aria-current={item.id===selectedId?'page':undefined} title={item.title} onClick={()=>onSelect(item.id)}><Icon name={item.state==='archived'?'archive':'chat'} size={16}/><span className="session-label">{item.title}</span>{item.state==='archived'?<span className="session-state-pill">已归档</span>:item.state==='running'?<span className="session-state-pill s-running">运行中</span>:null}</button>;

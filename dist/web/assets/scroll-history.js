@@ -382,7 +382,7 @@ class ScrollHistory extends React.Component {
     return /* @__PURE__ */ jsxs("div", { className: "scroll-history", ref: this.root, children: [
       loading === "before" ? /* @__PURE__ */ jsx("div", { className: "scroll-history-loading", "aria-live": "polite", children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u65E9\u6D88\u606F\u2026" }) : null,
       failedDirection === "before" ? retry : null,
-      /* @__PURE__ */ jsx(SessionHistory, { projectId, sessionId, messages: this.state.messages, history, historyAnchor, onNavigate: this.navigate, perform, activeGeneration }),
+      /* @__PURE__ */ jsx(SessionHistory, { projectId, sessionId, messages: this.state.messages, history, historyAnchor, onNavigate: this.navigate, perform, activeGeneration, readOnly: this.props.readOnly, sessionArchived: this.props.sessionArchived, busy: this.props.busy, onBranch: this.props.onBranch }),
       !this.state.atBottom ? /* @__PURE__ */ jsx("div", { className: "scroll-latest-control", children: /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", onClick: () => this.jumpLatest(), children: "\u56DE\u5230\u6700\u65B0" }) }) : null,
       loading === "after" ? /* @__PURE__ */ jsx("div", { className: "scroll-history-loading", "aria-live": "polite", children: "\u6B63\u5728\u52A0\u8F7D\u66F4\u65B0\u6D88\u606F\u2026" }) : null,
       failedDirection === "after" ? retry : null

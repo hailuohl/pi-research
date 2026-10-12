@@ -37,6 +37,31 @@ class Chat extends React.Component {
     };
     this.mounted = true;
     this.sending = false;
+    this.renaming = false;
+    this.renameSession = async () => {
+      const { session, data } = this.props;
+      if (!this.mounted || !session || this.renaming || this.props.busy || data.project.archived) return;
+      const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title)?.trim();
+      if (!title) return;
+      const current = () => this.mounted && this.props.data.project.id === data.project.id && this.props.session?.id === session.id;
+      this.renaming = true;
+      try {
+        return await this.props.perform(async () => {
+          if (!current() || this.props.data.project.archived) return;
+          try {
+            const confirmed = await api(`/sessions/${encodeURIComponent(session.id)}`, { title, expectedVersion: session.version });
+            if (!current()) return;
+            if (confirmed.id !== session.id || confirmed.projectId !== data.project.id || confirmed.title !== title || !Number.isSafeInteger(confirmed.version) || confirmed.version <= session.version || !confirmed.model || typeof confirmed.model.provider !== "string" || typeof confirmed.model.model !== "string" || typeof confirmed.model.thinking !== "string") throw Error("\u6539\u540D\u56DE\u6267\u4E0E\u5F53\u524D\u4F1A\u8BDD\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
+            this.props.onModelConfirmed?.(confirmed);
+            return confirmed;
+          } catch (error) {
+            if (current()) throw error;
+          }
+        });
+      } finally {
+        this.renaming = false;
+      }
+    };
     this.changeModel = (model) => {
       const { session, data } = this.props;
       if (!session || !this.mounted) return Promise.resolve(void 0);
@@ -155,11 +180,7 @@ class Chat extends React.Component {
             /* @__PURE__ */ jsx(Icon, { name: "report", size: 15 }),
             "\u5386\u53F2"
           ] }),
-          /* @__PURE__ */ jsx("button", { className: "icon-button", disabled: data.project.archived, title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: () => {
-            const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title);
-            if (title)
-              this.props.perform(() => api(`/sessions/${session.id}`, { title, expectedVersion: session.version }));
-          }, children: /* @__PURE__ */ jsx(Icon, { name: "edit" }) })
+          /* @__PURE__ */ jsx("button", { className: "icon-button", disabled: this.props.busy || data.project.archived, title: "\u91CD\u547D\u540D\u4F1A\u8BDD", "aria-label": "\u91CD\u547D\u540D\u4F1A\u8BDD", onClick: this.renameSession, children: /* @__PURE__ */ jsx(Icon, { name: "edit" }) })
         ] }) : null
       ] }),
       !runtimeAvailable ? /* @__PURE__ */ jsxs("div", { className: "notice runtime-notice", children: [
@@ -190,7 +211,7 @@ class Chat extends React.Component {
                 /* @__PURE__ */ jsx(Icon, { name: "arrow" })
               ] })
             ] })
-          ] }) : /* @__PURE__ */ jsx(ScrollHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream, confirmedMessageId: this.state.sentMessageId }),
+          ] }) : /* @__PURE__ */ jsx(ScrollHistory, { projectId: data.project.id, sessionId: session?.id ?? "", messages, history: this.props.history, historyAnchor: this.props.historyAnchor, onNavigate: this.props.onHistory, perform: this.props.perform, activeGeneration: session?.state === "running" ? session.generation : void 0, liveKey: this.props.stream, confirmedMessageId: this.state.sentMessageId, readOnly: !!data.project.archived || !session, sessionArchived: session?.state === "archived", busy: this.props.busy, onBranch: this.props.onBranchConfirmed }),
           " ",
           latest ? /* @__PURE__ */ jsx(ConversationActivity, { content: this.props.stream, active: session?.state === "running", activity: this.props.activity, truncated: this.props.streamTruncated }) : null
         ] }),

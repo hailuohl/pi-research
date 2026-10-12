@@ -1,6 +1,6 @@
 import * as React from 'react';
 import {api} from './api.js';
-import type {SessionHistoryPage} from './models.js';
+import type {Row,Session,SessionHistoryPage} from './models.js';
 import type {QueueMessage} from './message-queue.js';
 import type {Perform} from './workbench.js';
 import {SessionHistory} from './session-history.js';
@@ -9,7 +9,7 @@ type Direction='before'|'after';
 type Anchor={direction:Direction;id:string}|null;
 interface HistoryWindow {messages:QueueMessage[];beforeCursor:string|null;afterCursor:string|null;atLatest:boolean;}
 interface HistoryView {session:{id:string;projectId:string};messages:QueueMessage[];history:SessionHistoryPage;}
-interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;liveKey?:string;confirmedMessageId?:string;}
+interface Props {projectId:string;sessionId:string;messages:QueueMessage[];history:SessionHistoryPage|null;historyAnchor:Anchor;onNavigate:(anchor:Anchor)=>void;perform:Perform;activeGeneration?:number;liveKey?:string;confirmedMessageId?:string;readOnly?:boolean;sessionArchived?:boolean;busy?:boolean;onBranch?:(session:Row<Session>)=>void;}
 interface State extends HistoryWindow {loading:Direction|null;failedDirection:Direction|null;error:string;atBottom:boolean;}
 interface LayoutSnapshot {visible:boolean;atBottom:boolean;scrollElement:HTMLElement|null;scrollTop:number;scrollHeight:number;anchorId:string|null;anchorOffset:number;firstId:string|null;lastId:string|null;}
 const PAGE_SIZE=20,MAX_MESSAGES=200,MAX_AUTO_PAGES=10;
@@ -280,7 +280,7 @@ export class ScrollHistory extends React.Component<Props,State>{
         return <div className="scroll-history" ref={this.root}>
             {loading==='before'?<div className="scroll-history-loading" aria-live="polite">正在加载更早消息…</div>:null}
             {failedDirection==='before'?retry:null}
-            <SessionHistory projectId={projectId} sessionId={sessionId} messages={this.state.messages} history={history} historyAnchor={historyAnchor} onNavigate={this.navigate} perform={perform} activeGeneration={activeGeneration}/>
+            <SessionHistory projectId={projectId} sessionId={sessionId} messages={this.state.messages} history={history} historyAnchor={historyAnchor} onNavigate={this.navigate} perform={perform} activeGeneration={activeGeneration} readOnly={this.props.readOnly} sessionArchived={this.props.sessionArchived} busy={this.props.busy} onBranch={this.props.onBranch}/>
             {!this.state.atBottom?<div className="scroll-latest-control"><button type="button" className="secondary compact" onClick={()=>this.jumpLatest()}>回到最新</button></div>:null}
             {loading==='after'?<div className="scroll-history-loading" aria-live="polite">正在加载更新消息…</div>:null}
             {failedDirection==='after'?retry:null}
