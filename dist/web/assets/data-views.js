@@ -1,40 +1,48 @@
 import { jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short } from "./models.js";
-import { Icon, Badge, Empty, SectionTitle } from "./ui.js";
+import { Icon, Badge, Empty, SectionTitle, Modal } from "./ui.js";
 class WorkspaceView extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { files: [], path: "", content: "", digest: null, dirty: false, loading: false, saving: false };
+    this.state = { files: [], path: "", content: "", digest: null, dirty: false, loading: false, saving: false, dialog: null, newPath: "", dialogError: "" };
     this.loadId = 0;
     this.listId = 0;
     this.mounted = true;
     this.saving = false;
+    this.draftGeneration = 0;
+    // 同步标记，避免输入后 React 尚未提交 dirty 时直接离开。
+    this.edited = false;
+    this.intent = 0;
     this.beforeUnload = (event) => {
-      if (!this.state.dirty && !this.state.saving) return;
+      if (!this.state.dirty && !this.edited && !this.state.saving && !this.saving) return;
       event.preventDefault();
       event.returnValue = "";
     };
-    this.newFile = () => {
-      if (this.props.data.project.archived || !this.confirmDiscard()) return;
-      const path = prompt("\u65B0\u6587\u4EF6\u76F8\u5BF9\u8DEF\u5F84\uFF0C\u4F8B\u5982 notes/research.md");
-      if (path) {
-        this.loadId++;
-        this.setState({ path, content: "", digest: null, dirty: true, loading: false });
-      }
+    this.newFile = async () => {
+      if (this.props.data.project.archived || this.dialogTarget) return;
+      const target = this.snapshot(++this.intent);
+      if (!await this.confirmDiscard(target.intent) || !this.current(target) || this.props.data.project.archived) return;
+      const dialog = { ...target, kind: "path" };
+      this.dialogTarget = dialog;
+      this.setState(() => this.dialogTarget === dialog ? { dialog, newPath: "", dialogError: "" } : null);
     };
     this.save = async () => {
       if (this.saving || this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading) return;
       const { path, content, digest } = this.state, projectId = this.props.data.project.id, seq = this.loadId;
       const current = () => this.mounted && seq === this.loadId && projectId === this.props.data.project.id && path === this.state.path;
       this.saving = true;
+      this.changedDraft();
       this.setState({ saving: true });
       try {
         await this.props.perform(async () => {
           try {
             const f = await api(`/projects/${projectId}/files`, { path, content, expectedDigest: digest });
             if (!current()) return;
+            this.changedDraft();
+            this.edited = this.state.content !== content;
             await new Promise((resolve) => this.setState((state) => current() ? { digest: f.digest, dirty: state.content !== content } : null, resolve));
             if (current()) await this.loadFiles();
           } catch (e) {
@@ -43,6 +51,7 @@ class WorkspaceView extends React.Component {
         });
       } finally {
         this.saving = false;
+        if (current()) this.changedDraft();
         if (this.mounted) this.setState({ saving: false });
       }
     };
@@ -55,18 +64,59 @@ class WorkspaceView extends React.Component {
     this.mounted = false;
     this.loadId++;
     this.listId++;
+    this.intent++;
+    this.finishDialog(this.dialogTarget, false);
     if (typeof window !== "undefined") window.removeEventListener("beforeunload", this.beforeUnload);
   }
-  confirmDiscard() {
-    return !this.state.dirty && !this.state.saving || confirm("\u6709\u672A\u4FDD\u5B58\u4FEE\u6539\u6216\u6B63\u5728\u4FDD\u5B58\uFF0C\u653E\u5F03\u5F53\u524D\u8349\u7A3F\uFF1F");
+  componentDidUpdate(previous) {
+    if (previous.data.project.id !== this.props.data.project.id || previous.data.project.archived !== this.props.data.project.archived) {
+      this.loadId++;
+      this.listId++;
+      this.intent++;
+      this.changedDraft();
+      this.setState({ loading: false });
+    }
+  }
+  snapshot(intent) {
+    return { kind: "discard", projectId: this.props.data.project.id, generation: this.draftGeneration, intent, archived: !!this.props.data.project.archived, path: this.state.path, content: this.state.content, digest: this.state.digest };
+  }
+  current(target) {
+    return this.mounted && target.intent === this.intent && target.generation === this.draftGeneration && target.projectId === this.props.data.project.id && target.archived === !!this.props.data.project.archived && target.path === this.state.path && target.content === this.state.content && target.digest === this.state.digest;
+  }
+  finishDialog(target, accepted) {
+    if (!target || this.dialogTarget !== target) return;
+    const resolve = this.discardResolve;
+    this.discardResolve = void 0;
+    this.dialogTarget = void 0;
+    if (!this.mounted) {
+      resolve?.(false);
+      return;
+    }
+    this.setState((state) => state.dialog === target ? { dialog: null, dialogError: "" } : null, () => resolve?.(accepted && this.current(target)));
+  }
+  changedDraft() {
+    this.draftGeneration++;
+    this.finishDialog(this.dialogTarget, false);
+  }
+  async confirmDiscard(intent) {
+    if (!this.mounted || this.dialogTarget) return false;
+    intent ?? (intent = ++this.intent);
+    if (!this.state.dirty && !this.edited && !this.state.saving && !this.saving) return true;
+    const target = this.snapshot(intent);
+    this.dialogTarget = target;
+    const accepted = new Promise((resolve) => {
+      this.discardResolve = resolve;
+    });
+    this.setState(() => this.dialogTarget === target ? { dialog: target, newPath: "", dialogError: "" } : null);
+    return await accepted && this.current(target);
   }
   async loadFiles() {
-    const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId;
+    const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId, intent = this.intent;
     try {
       const files = await api(`/projects/${projectId}/files`);
       if (!this.mounted || seq !== this.listId || projectId !== this.props.data.project.id) return;
       this.setState({ files });
-      if (!this.state.path && files.length && selection === this.loadId) await this.open(files[0].path);
+      if (!this.state.path && files.length && selection === this.loadId && intent === this.intent) await this.open(files[0].path);
     } catch (e) {
       if (this.mounted && seq === this.listId && projectId === this.props.data.project.id)
         await this.props.perform(async () => {
@@ -75,14 +125,20 @@ class WorkspaceView extends React.Component {
     }
   }
   async open(path) {
-    if (!this.confirmDiscard()) return;
+    if (this.dialogTarget) return;
+    const target = this.snapshot(++this.intent);
+    if (!await this.confirmDiscard(target.intent) || !this.current(target)) return;
+    this.changedDraft();
     const seq = ++this.loadId, projectId = this.props.data.project.id;
-    const current = () => this.mounted && seq === this.loadId && projectId === this.props.data.project.id;
+    const generation = this.draftGeneration, current = () => this.mounted && seq === this.loadId && generation === this.draftGeneration && projectId === this.props.data.project.id;
     this.setState({ loading: true });
     try {
       const f = await api(`/projects/${projectId}/files?path=${encodeURIComponent(path)}`);
-      if (current())
+      if (current()) {
+        this.changedDraft();
+        this.edited = false;
         this.setState({ path, content: f.content, digest: f.digest, dirty: false, loading: false });
+      }
     } catch (e) {
       if (!current()) return;
       this.setState({ loading: false });
@@ -91,7 +147,39 @@ class WorkspaceView extends React.Component {
       });
     }
   }
+  createFile(target, fd) {
+    if (this.dialogTarget !== target) return;
+    if (!this.current(target) || this.props.data.project.archived) {
+      this.finishDialog(target, false);
+      return;
+    }
+    const path = String(fd.get("path") ?? "");
+    const excluded = [".git", "node_modules", ".pi", ".env", ".ds_store", ".pi-research", ".pi-runtime", ".npmrc", ".pypirc"];
+    if (!path || !path.trim() || path.length > 1e3 || /^[\/]|[\\:<>"|?*\x00-\x1f]/.test(path) || path.split("/").some((part) => {
+      const name = part.toLowerCase();
+      return !part || part === "." || part === ".." || /[. ]$/.test(part) || /^(?:con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(part) || name === "conin$" || name === "conout$" || excluded.includes(name) || name.startsWith(".env.") || /^(?:model-connections|environment-variables)\.json(?:\.[\w-]+\.tmp)?$/i.test(part);
+    })) {
+      this.setState({ newPath: path, dialogError: "\u8BF7\u8F93\u5165\u5408\u6CD5\u7684\u76F8\u5BF9\u6587\u4EF6\u8DEF\u5F84\uFF0C\u4E0D\u80FD\u4F7F\u7528\u5C3E\u70B9\u3001\u5C3E\u7A7A\u683C\u3001Windows \u4FDD\u7559\u540D\u79F0\u6216\u654F\u611F\u914D\u7F6E\u8DEF\u5F84\u3002" });
+      return;
+    }
+    this.finishDialog(target, false);
+    this.loadId++;
+    this.changedDraft();
+    this.edited = true;
+    this.setState({ path, content: "", digest: null, dirty: true, loading: false });
+  }
   render() {
+    const target = this.state.dialog, dialog = target ? /* @__PURE__ */ jsx("div", { onKeyDown: (event) => event.stopPropagation(), onSubmit: (event) => event.stopPropagation(), children: /* @__PURE__ */ jsxs(Modal, { title: target.kind === "discard" ? "\u653E\u5F03\u5F53\u524D\u5DE5\u4F5C\u533A\u8349\u7A3F\uFF1F" : "\u65B0\u5EFA\u6587\u4EF6", alert: target.kind === "discard", busy: false, submitLabel: target.kind === "discard" ? "\u653E\u5F03\u8349\u7A3F\u5E76\u7EE7\u7EED" : "\u65B0\u5EFA\u6587\u4EF6", onClose: () => this.finishDialog(target, false), onSubmit: (fd) => target.kind === "discard" ? this.finishDialog(target, true) : this.createFile(target, fd), children: [
+      target.kind === "discard" ? /* @__PURE__ */ jsxs("p", { children: [
+        "\u6587\u4EF6 ",
+        target.path || "\u5F53\u524D\u8349\u7A3F",
+        " \u6709\u672A\u4FDD\u5B58\u4FEE\u6539\u6216\u6B63\u5728\u4FDD\u5B58\u3002\u7EE7\u7EED\u64CD\u4F5C\u4F1A\u653E\u5F03\u5F53\u524D\u8349\u7A3F\uFF1B\u53D6\u6D88\u4F1A\u4FDD\u7559\u5168\u90E8\u7F16\u8F91\u3002"
+      ] }) : /* @__PURE__ */ jsxs("label", { children: [
+        "\u65B0\u6587\u4EF6\u76F8\u5BF9\u8DEF\u5F84",
+        /* @__PURE__ */ jsx("input", { name: "path", required: true, maxLength: 1e3, value: this.state.newPath, placeholder: "notes/research.md", onChange: (event) => this.setState({ newPath: event.target.value, dialogError: "" }) })
+      ] }),
+      this.state.dialogError ? /* @__PURE__ */ jsx("p", { role: "alert", children: this.state.dialogError }) : null
+    ] }, target.kind + ":" + target.intent) }) : null;
     return /* @__PURE__ */ jsxs("div", { className: "page-scroll workspace-page", children: [
       /* @__PURE__ */ jsx(SectionTitle, { title: "\u9879\u76EE\u5DE5\u4F5C\u533A", sub: this.props.data.project.archived ? "\u5DF2\u5F52\u6863\u9879\u76EE\u6E90\u7801\u53EA\u8BFB\uFF0C\u5B9E\u9A8C\u5FEB\u7167\u4E0E\u51C6\u5907\u533A\u6587\u4EF6\u4FDD\u7559\u3002" : "\u7F16\u8F91\u7684\u662F\u51C6\u5907\u533A\uFF0C\u4E0D\u4F1A\u6539\u53D8\u5DF2\u7ECF\u63D0\u4EA4\u7684\u5B9E\u9A8C\u5FEB\u7167\u3002", children: /* @__PURE__ */ jsxs("button", { className: "secondary", disabled: this.props.data.project.archived, onClick: this.newFile, children: [
         /* @__PURE__ */ jsx(Icon, { name: "plus", size: 15 }),
@@ -115,7 +203,11 @@ class WorkspaceView extends React.Component {
             /* @__PURE__ */ jsx("button", { className: "primary compact", disabled: this.props.data.project.archived || !this.state.path || !this.state.dirty || this.state.loading || this.state.saving, onClick: this.save, children: "\u4FDD\u5B58\u6587\u4EF6" })
           ] }),
           /* @__PURE__ */ jsx("textarea", { "aria-label": "\u6587\u4EF6\u5185\u5BB9", readOnly: this.props.data.project.archived || this.state.loading, spellCheck: false, value: this.state.content, onChange: (e) => {
-            if (!this.props.data.project.archived && !this.state.loading) this.setState({ content: e.target.value, dirty: true });
+            if (!this.props.data.project.archived && !this.state.loading) {
+              this.edited = true;
+              this.changedDraft();
+              this.setState({ content: e.target.value, dirty: true });
+            }
           } }),
           /* @__PURE__ */ jsxs("div", { className: "editor-status", children: [
             /* @__PURE__ */ jsx("span", { children: "UTF-8" }),
@@ -135,7 +227,8 @@ class WorkspaceView extends React.Component {
       /* @__PURE__ */ jsxs("div", { className: "notice", children: [
         /* @__PURE__ */ jsx(Icon, { name: "folder" }),
         /* @__PURE__ */ jsx("p", { children: "\u5B9E\u9A8C\u4EE3\u7801\u53EF\u4F7F\u7528\u672C\u5730\u3001Docker \u6216 SSH\uFF1B\u6E90\u7801\u3001\u6267\u884C\u73AF\u5883\u548C\u8D44\u6E90\u5728\u8FD0\u884C\u524D\u5355\u72EC\u6279\u51C6\u3002\u672C\u5730\u4EE3\u7801\u62E5\u6709\u5F53\u524D\u7528\u6237\u6743\u9650\uFF0C\u6587\u4EF6\u4E0E\u7F51\u7EDC\u4E0D\u9694\u79BB\u3002" })
-      ] })
+      ] }),
+      dialog && (typeof document !== "undefined" && document.body ? createPortal(dialog, document.body) : dialog)
     ] });
   }
 }

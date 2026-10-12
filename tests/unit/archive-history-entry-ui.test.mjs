@@ -65,13 +65,13 @@ test('X, Escape and top collapse synchronize the entry and restore its focus',t=
  }
 });
 
-test('same-session polling does not reopen or steal focus; session and project changes discard the viewer',t=>{
+test('same-session polling does not reopen or steal focus; session and project changes discard the viewer',async t=>{
  const h=harness(t);h.open();const focused=h.focus.length;
  h.app.setState({data:{...h.app.state.data}});h.chat.render();assert.equal(h.focus.length,focused);assert.equal(drawer(h.chat).props.hidden,false);
  button(h.chat,'关闭任务与审批').props.onClick();const closedFocus=h.focus.length;
  h.app.setState({data:{...h.app.state.data}});h.chat.render();assert.equal(h.focus.length,closedFocus);assert.equal(drawer(h.chat).props.hidden,true);
  h.open();h.app.selectSession('other');assert.equal(h.app.state.archiveHistoryOpen,false);assert.equal(h.chat.props.archivedHistory,null);assert.equal(drawer(h.chat).props.hidden,true);
- h.open();h.app.switchProject('q');assert.equal(h.app.state.archiveHistoryOpen,false);assert.equal(h.app.state.data,null);assert.equal(h.focus.at(-1),'archive');
+ h.open();await h.app.switchProject('q');assert.equal(h.app.state.archiveHistoryOpen,false);assert.equal(h.app.state.data,null);assert.equal(h.focus.at(-1),'archive');
 });
 
 test('loading a selected session absent from the recent snapshot preserves the open drawer and archive selection',t=>{

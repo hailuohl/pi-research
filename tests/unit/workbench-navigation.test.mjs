@@ -145,7 +145,7 @@ test('late lookup or create responses cannot take over after A to B to A or unmo
       if(url.endsWith('/session_list'))return response(catalog([]));throw Error('Unexpected request');
     };
     const creating=app.newSession();await flush();assert.ok(finish,stage);
-    if(unmount)app.componentWillUnmount();else{app.switchProject('other');app.switchProject('project');Object.assign(app.state,{sessionId:'new-selection',error:'new-project-error'});}
+    if(unmount)app.componentWillUnmount();else{await app.switchProject('other');await app.switchProject('project');Object.assign(app.state,{sessionId:'new-selection',error:'new-project-error'});}
     const selection=app.state.sessionId;
     finish(response(stage==='project'?{id:'project',archived:false}:stage==='metadata'?idleSession('current'):stage==='messages'?[]:stage==='catalog'?catalog([]):{id:'stale-created'}));await creating;
     assert.equal(app.state.sessionId,selection);assert.equal(app.state.sessionCreationSignal,0);assert.equal(requests.at(-1),stage==='project'?'/api/projects/project':stage==='metadata'?'/api/sessions/current':stage==='messages'?'/api/sessions/current/messages':stage==='catalog'?'/api/operations/session_list':'/api/sessions');if(!unmount)assert.equal(app.state.error,'new-project-error');app.componentWillUnmount();
@@ -155,7 +155,7 @@ test('late lookup or create responses cannot take over after A to B to A or unmo
 test('late lookup errors do not appear in the newly selected project',async t=>{
   const oldFetch=globalThis.fetch;t.after(()=>{globalThis.fetch=oldFetch;});
   const app=sessionApp();let fail;globalThis.fetch=url=>projectResponse(url)??new Promise((_resolve,reject)=>{fail=reject;});
-  const creating=app.newSession();await flush();app.switchProject('other');app.switchProject('project');app.state.error='current view';fail(Error('stale failure'));await creating;assert.equal(app.state.error,'current view');assert.equal(app.state.sessionCreationSignal,0);app.componentWillUnmount();
+  const creating=app.newSession();await flush();await app.switchProject('other');await app.switchProject('project');app.state.error='current view';fail(Error('stale failure'));await creating;assert.equal(app.state.error,'current view');assert.equal(app.state.sessionCreationSignal,0);app.componentWillUnmount();
 });
 
 test('other workflow buttons preserve project and session while closing mobile navigation',()=>{
@@ -207,7 +207,7 @@ test('a completed create for a previous project cannot replace the newly selecte
   const createButton=elements(app.render()).find(node=>node.type==='button'&&text(node.props.children?.[1])==='新建会话');
   const creating=createButton.props.onClick();
   await flush();
-  app.switchProject('new-project');
+  await app.switchProject('new-project');
   resolvePost(response({id:'created-in-old-project'}));
   await creating;
   assert.deepEqual(request,{projectId:'old-project',title:'新的研究会话'});
@@ -240,18 +240,18 @@ test('report campaign links select the exact root session even when it is outsid
   }finally{globalThis.localStorage=previousStorage;}
 });
 
-test('experiment selections restore per project and storage failure keeps the current view usable',t=>{
+test('experiment selections restore per project and storage failure keeps the current view usable',async t=>{
   const previousStorage=globalThis.localStorage;t.after(()=>{globalThis.localStorage=previousStorage;});
   let persisted;
   globalThis.localStorage={getItem:()=>null,setItem:(_key,value)=>{persisted=JSON.parse(value);}};
   const app=synchronousState(new App({}));app.refresh=async()=>true;
   Object.assign(app.state,{projectId:'p',selectedExp:'p-exp',selectedRun:'old-run',data:{project:{id:'p'},experiments:[{id:'p-exp'}]}});
-  app.switchProject('q');assert.equal(app.state.selectedExp,'');assert.equal(app.state.selectedRun,'');
+  await app.switchProject('q');assert.equal(app.state.selectedExp,'');assert.equal(app.state.selectedRun,'');
   Object.assign(app.state,{selectedExp:'q-exp',data:{project:{id:'q'},experiments:[{id:'q-exp'}]}});
   const previous={...app.state,selectedExp:''};app.componentDidUpdate({},previous);
   assert.deepEqual(persisted.experimentSelections,{p:'p-exp',q:'q-exp'});
-  app.switchProject('p');assert.equal(app.state.selectedExp,'p-exp');
-  app.switchProject('q');assert.equal(app.state.selectedExp,'q-exp');
+  await app.switchProject('p');assert.equal(app.state.selectedExp,'p-exp');
+  await app.switchProject('q');assert.equal(app.state.selectedExp,'q-exp');
   globalThis.localStorage.setItem=()=>{throw Error('storage blocked');};
   assert.doesNotThrow(()=>app.componentDidUpdate({},previous));
   app.componentWillUnmount();

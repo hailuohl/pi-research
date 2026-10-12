@@ -69,7 +69,7 @@ test('archived project metadata read errors retain current view; deleted project
 test('a stale archived read or lifecycle reply cannot take over another project selection',async t=>{
     const v=app(t);let release;
     mockFetch(t,async url=>url==='/api/bootstrap'?reply(boot([project('q')])):url==='/api/settings/model-management'?reply({schemaVersion:2,providers:[]}):url==='/api/projects/p'?new Promise(resolve=>release=()=>resolve(reply(project('p',true)))):url.startsWith('/api/projects/q/state')?reply(data(project('q'))):url.startsWith('/api/projects/p/state')?reply(data(project('p',true))):assert.fail(url));
-    const stale=v.refresh();await tick();v.switchProject('q');v.feed={projectId:'q',stop(){}};await v.refresh();release();await stale;assert.equal(v.state.projectId,'q');assert.equal(v.state.data.project.id,'q');
+    const stale=v.refresh();await tick();await v.switchProject('q');v.feed={projectId:'q',stop(){}};await v.refresh();release();await stale;assert.equal(v.state.projectId,'q');assert.equal(v.state.data.project.id,'q');
     await v.projectLifecycleChanged(project('p',true,4),0);assert.equal(v.state.projectId,'q');assert.equal(v.state.data.project.id,'q');
 });
 

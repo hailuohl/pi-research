@@ -146,7 +146,7 @@ test('late branch success and failure cannot select another project or a reopene
  restore(t);
  for(const outcome of ['success','failure'])for(const scope of ['session','project','reopen','unmount']){
   const {app,chat,history}=appView();let finish,fail;globalThis.fetch=()=>new Promise((resolve,reject)=>{finish=resolve;fail=reject;});const action=button(history,'从此处分支').props.onClick();await flush();
-  if(scope==='project')app.switchProject('other-project');else if(scope!=='unmount'){app.selectSession('other');if(scope==='reopen')app.selectSession('s');}history.componentWillUnmount();chat.componentWillUnmount();
+  if(scope==='project')await app.switchProject('other-project');else if(scope!=='unmount'){app.selectSession('other');if(scope==='reopen')app.selectSession('s');}history.componentWillUnmount();chat.componentWillUnmount();
   const expected=app.state.sessionId;Object.assign(app.state,{error:'current error',notice:'current notice'});if(outcome==='success')finish(response(session('branch',{parentSessionId:'s',version:2})));else fail(Error('old failure'));await action;
   assert.equal(app.state.sessionId,expected,outcome+' '+scope);assert.equal(app.state.sessionCreationSignal,0);assert.equal(app.state.error,'current error');assert.equal(app.state.notice,'current notice');app.componentWillUnmount();
  }
