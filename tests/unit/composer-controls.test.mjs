@@ -177,8 +177,13 @@ test('attachment send preserves new typing and attachments added while the reque
     let resolve; const sent = [];
     globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init.body) }); return new Promise(done => { resolve = () => done(response(submitted())); }); };
     const work = [], view = synchronousState(new Chat(chatProps({ perform: fn => { const pending = fn(); work.push(pending); return pending; } })));
+    const placeholder=()=>find(view.render(),node=>node.type==='textarea'&&node.props['aria-label']==='研究问题').props.placeholder;
+    view.props={...view.props,busy:true};assert.equal(placeholder(),'描述研究问题…');assert.equal(find(view.render(),node=>node.type===ComposerControls).props.canSend,false);
+    view.props={...view.props,busy:false};
+    view.props={...view.props,boot:{...boot,runtime:{...boot.runtime,ready:false,code:'MODEL_NOT_CONFIGURED'}}};assert.equal(placeholder(),'描述研究问题…');assert.equal(find(view.render(),node=>node.type===ComposerControls).props.canSend,true);
     view.state.draft = 'Look at this'; view.state.attachments = [attachment('doc-1')];
     find(view.render(), node => node.type === 'form' && node.props.className === 'composer').props.onSubmit({ preventDefault() {} });
+    assert.equal(placeholder(),'描述研究问题…');assert.equal(find(view.render(),node=>node.type===ComposerControls).props.canSend,false);
     view.setState({ draft: 'next message', draftVersion: 1, attachments: [attachment('doc-1'), attachment('doc-2')] });
     resolve(); await work[0];
     assert.equal(sent[0].url, '/api/sessions/s/messages');
@@ -282,8 +287,19 @@ test('lost send responses replay one key and late receipts cannot clear another 
 
 test('invalid or out-of-scope sends preserve the current draft and attachments',async t=>{
  const previous=globalThis.fetch;t.after(()=>globalThis.fetch=previous);let requests=0;globalThis.fetch=async()=>{requests++;return response(submitted('kept draft', 'prompt', {projectId:'foreign'}));};
- for(const override of [{data:{...chatProps().data,project:{id:'p',archived:true,settings:{enabled:false}}}},{session:{...session,state:'archived'}},{session:{...session,taskId:'task'}},{session:{...session,projectId:'foreign'}},{historyAnchor:{direction:'before',id:'cursor'}},{history:{atLatest:false}}]){
-  const view=synchronousState(new Chat(chatProps(override)));view.state.draft='kept draft';view.state.attachments=[attachment('doc-1')];await find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});assert.equal(view.state.draft,'kept draft');assert.equal(view.state.attachments.length,1);
+ for(const [override,placeholder] of [
+  [{data:{...chatProps().data,project:{id:'p',archived:true,settings:{enabled:false}}}},'已归档项目，只读查看历史'],
+  [{session:{...session,state:'archived'}},'已归档会话不可发送'],
+  [{session:{...session,taskId:'task'}},'请通过团队任务控件操作'],
+  [{session:{...session,projectId:'foreign'}},'描述研究问题…'],
+  [{historyAnchor:{direction:'before',id:'cursor'}},'返回最新消息后可发送'],
+  [{history:{atLatest:false}},'返回最新消息后可发送'],
+  [{session:undefined},'选择或新建会话后开始研究…'],
+  [{session:{...session,model:{provider:'',model:'',thinking:'off'}}},'配置 Pi 供应商和模型后，在这里开始研究…'],
+  [{boot:{...boot,models:[]}},'配置 Pi 供应商和模型后，在这里开始研究…'],
+  [{boot:{...boot,runtime:{...boot.runtime,ready:false,code:'PI_NOT_INSTALLED'}}},'Pi 尚未就绪，请查看上方说明…'],
+ ]){
+  const view=synchronousState(new Chat(chatProps(override)));view.state.draft='kept draft';view.state.attachments=[attachment('doc-1')];assert.equal(find(view.render(),node=>node.type==='textarea'&&node.props['aria-label']==='研究问题').props.placeholder,placeholder);assert.equal(find(view.render(),node=>node.type===ComposerControls).props.canSend,false);await find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});assert.equal(view.state.draft,'kept draft');assert.equal(view.state.attachments.length,1);
  }
  assert.equal(requests,0);
  const view=synchronousState(new Chat(chatProps({perform:async fn=>fn().catch(()=>undefined)})));view.state.draft='kept draft';view.state.attachments=[attachment('doc-1')];await find(view.render(),node=>node.type==='form'&&node.props.className==='composer').props.onSubmit({preventDefault(){}});assert.equal(requests,1);assert.equal(view.state.draft,'kept draft');assert.equal(view.state.attachments.length,1);
