@@ -11,7 +11,7 @@ import {publicRecord} from '../../dist/packages/domain/public-record.js';
 import {attachmentPayload,inputEnvelope,NATIVE_ATTACHMENT_BYTES} from '../../dist/packages/pi-adapter/attachment-input.js';
 import {digest} from '../../dist/packages/storage/store.js';
 import {imageContextReferences} from '../../dist/packages/pi-adapter/publication-image.js';
-const pdf=Buffer.from('%PDF-1.7\nfixed upload\n'),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX6sAAAAASUVORK5CYII=','base64');
+const pdf=Buffer.from('%PDF-1.7\nfixed upload\n'),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGMUiVrAgA0wYRUdtBIA11ABHtwYMtoAAAAASUVORK5CYII=','base64');
 const modify=(s,action,fields)=>configureModelManagement(s.app.context,USER,{expectedVersion:readModelState(s.dir).version,action,...fields},crypto.randomUUID());
 async function managed(s,api='openai-completions',profile='openai'){const definition=defaultModelDefinition('fixture');definition.nativeProfile=profile;Object.assign(definition.capabilities,{image:true,pdf:true,video:true});await modify(s,'provider.upsert',{provider:'managed',value:{name:'Offline attachment',baseUrl:'https://example.invalid/v1',api,apiKey:'FAKE_attachment_key'}});await modify(s,'model.upsert',{provider:'managed',model:'fixture',value:definition});const row=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',row.id,row.version,{model:{provider:'managed',model:'fixture',thinking:'off'}});return definition;}
 const importFile=(s,bytes=pdf,type='application/pdf')=>s.app.documents.import(USER,s.project.id,{title:'file',mediaType:type,contentBase64:bytes.toString('base64')},crypto.randomUUID());

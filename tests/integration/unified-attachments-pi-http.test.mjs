@@ -8,7 +8,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {createHttpServer} from '../../dist/apps/server/http.js';
 import {defaultModelDefinition} from '../../dist/packages/pi-adapter/model-definition.js';
 import {inputEnvelope} from '../../dist/packages/pi-adapter/attachment-input.js';
-const pdf=Buffer.from('%PDF-1.7\nordinary conversation fixed file\n'),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX6sAAAAASUVORK5CYII=','base64'),mp4=Buffer.concat([Buffer.from([0,0,0,24]),Buffer.from('ftypisom'),Buffer.alloc(12)]);
+const pdf=Buffer.from('%PDF-1.7\nordinary conversation fixed file\n'),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGMUiVrAgA0wYRUdtBIA11ABHtwYMtoAAAAASUVORK5CYII=','base64'),mp4=Buffer.concat([Buffer.from([0,0,0,24]),Buffer.from('ftypisom'),Buffer.alloc(12)]);
 const text=m=>typeof m?.content==='string'?m.content:(m?.content??[]).filter(p=>['text','input_text'].includes(p.type)).map(p=>p.text).join('');
 const files=body=>(body.input??body.messages).filter(m=>m.role==='user').flatMap(m=>Array.isArray(m.content)?m.content.filter(p=>!['text','input_text'].includes(p.type)):[]);
 const bytes=block=>Buffer.from((block.source?.data??block.file?.file_data??block.file_data??block.image_url?.url??block.image_url??block.video_url?.url??block.video_url).replace(/^data:[^,]+,/,''),'base64');
