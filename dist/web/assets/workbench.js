@@ -1,5 +1,6 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { HostAccessControl } from "./host-access-control.js";
 import { PermissionActions } from "./permission-actions.js";
 import { LogView } from "./log-view.js";
@@ -13,11 +14,11 @@ import { ResearchActionCards } from "./research-action-cards.js";
 import { ComposerControls } from "./composer-controls.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
-import { Icon, Badge, nativeSelectButton } from "./ui.js";
+import { Icon, Badge, Modal, nativeSelectButton } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { draft: "", draftVersion: 0, attachments: [], sending: false, drawerOpen: false, permissionPending: [], sentMessageId: "" };
+    this.state = { draft: "", draftVersion: 0, attachments: [], sending: false, drawerOpen: false, permissionPending: [], sentMessageId: "", renameTarget: null, renameTitle: "", renameError: "", renameSaving: false };
     this.drawerClose = React.createRef();
     this.drawerContent = React.createRef();
     this.drawerTrigger = null;
@@ -47,28 +48,79 @@ class Chat extends React.Component {
     this.sending = false;
     this.composerControls = React.createRef();
     this.renaming = false;
-    this.renameSession = async () => {
+    this.renameEpoch = 0;
+    this.renameInput = React.createRef();
+    this.renameActive = (target) => this.mounted && this.state.renameTarget === target && this.renameEpoch === target.epoch && this.props.data.project.id === target.projectId && this.props.session?.id === target.sessionId && !this.props.data.project.archived;
+    this.renameCurrent = (target) => this.renameActive(target) && this.props.session?.version === target.version && this.props.session.title === target.originalTitle;
+    this.finishRename = () => {
+      const request = this.renameRequest;
+      if (!request?.finished || !request.confirmed || !this.renameActive(request.target) || this.props.busy) return;
+      if (!this.renameCurrent(request.target) && (this.props.session?.version !== request.confirmed.version || this.props.session.title !== request.confirmed.title)) return;
+      this.renameEpoch++;
+      this.renaming = false;
+      this.renameRequest = void 0;
+      this.setState({ renameTarget: null, renameSaving: false, renameError: "" });
+    };
+    this.closeRename = () => {
+      if (!this.mounted || this.renaming || this.state.renameSaving) return;
+      this.renameEpoch++;
+      this.setState({ renameTarget: null, renameError: "" });
+    };
+    this.renameSession = () => {
       const { session, data } = this.props;
-      if (!this.mounted || !session || this.renaming || this.props.busy || data.project.archived) return;
-      const title = prompt("\u4F1A\u8BDD\u540D\u79F0", session.title)?.trim();
-      if (!title) return;
-      const current = () => this.mounted && this.props.data.project.id === data.project.id && this.props.session?.id === session.id;
+      if (!this.mounted || !session || session.projectId !== data.project.id || this.state.renameTarget || this.renaming || this.props.busy || data.project.archived) return;
+      const target = { projectId: data.project.id, sessionId: session.id, version: session.version, originalTitle: session.title, epoch: ++this.renameEpoch };
+      this.setState({ renameTarget: target, renameTitle: session.title, renameError: "", renameSaving: false }, () => {
+        if (this.renameCurrent(target)) this.renameInput.current?.focus();
+      });
+    };
+    this.submitRename = async (target) => {
+      if (!this.renameCurrent(target) || this.renaming || this.props.busy) return;
+      const title = this.state.renameTitle.trim();
+      if (!title || title.length > 160) {
+        this.setState({ renameError: "\u4F1A\u8BDD\u540D\u79F0\u4E0D\u80FD\u4E3A\u7A7A\uFF0C\u4E14\u4E0D\u80FD\u8D85\u8FC7 160 \u4E2A\u5B57\u7B26\u3002" });
+        return;
+      }
+      const request = { target, title, sent: false, finished: false };
+      this.renameRequest = request;
       this.renaming = true;
+      this.setState({ renameSaving: true, renameError: "" });
       try {
         return await this.props.perform(async () => {
-          if (!current() || this.props.data.project.archived) return;
+          if (!this.renameCurrent(target)) return;
           try {
-            const confirmed = await api(`/sessions/${encodeURIComponent(session.id)}`, { title, expectedVersion: session.version });
-            if (!current()) return;
-            if (confirmed.id !== session.id || confirmed.projectId !== data.project.id || confirmed.title !== title || !Number.isSafeInteger(confirmed.version) || confirmed.version <= session.version || !confirmed.model || typeof confirmed.model.provider !== "string" || typeof confirmed.model.model !== "string" || typeof confirmed.model.thinking !== "string") throw Error("\u6539\u540D\u56DE\u6267\u4E0E\u5F53\u524D\u4F1A\u8BDD\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
+            request.sent = true;
+            const confirmed = await api(`/sessions/${encodeURIComponent(target.sessionId)}`, { title, expectedVersion: target.version });
+            if (!this.renameActive(target)) return;
+            if (confirmed.id !== target.sessionId || confirmed.projectId !== target.projectId || confirmed.title !== title || !Number.isSafeInteger(confirmed.version) || confirmed.version <= target.version || !confirmed.model || typeof confirmed.model.provider !== "string" || typeof confirmed.model.model !== "string" || typeof confirmed.model.thinking !== "string") throw Error("\u6539\u540D\u56DE\u6267\u4E0E\u5F53\u524D\u4F1A\u8BDD\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
+            if (!this.renameCurrent(target) && (this.props.session?.version !== confirmed.version || this.props.session.title !== confirmed.title)) {
+              this.renameEpoch++;
+              this.renaming = false;
+              this.setState({ renameSaving: false, renameError: "\u4F1A\u8BDD\u6216\u9879\u76EE\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u6253\u5F00\u6539\u540D\u7A97\u53E3\u3002" });
+              return;
+            }
+            request.confirmed = confirmed;
             this.props.onModelConfirmed?.(confirmed);
             return confirmed;
           } catch (error) {
-            if (current()) throw error;
+            if (this.renameActive(target)) {
+              this.setState({ renameError: error instanceof Error ? error.message : String(error) });
+              throw error;
+            }
           }
         });
+      } catch (error) {
+        if (this.renameActive(target)) this.setState({ renameError: error instanceof Error ? error.message : String(error) });
       } finally {
-        this.renaming = false;
+        request.finished = true;
+        if (request.confirmed && this.renameActive(target)) this.finishRename();
+        else {
+          if (this.renameRequest === request) this.renameRequest = void 0;
+          if (this.renameActive(target)) {
+            this.renaming = false;
+            this.setState({ renameSaving: false });
+          }
+        }
       }
     };
     this.changeModel = (model) => {
@@ -144,6 +196,19 @@ class Chat extends React.Component {
   }
   componentWillUnmount() {
     this.mounted = false;
+    this.renameEpoch++;
+  }
+  componentDidUpdate(previous) {
+    if (previous.data.project.id !== this.props.data.project.id || previous.session?.id !== this.props.session?.id || previous.session?.version !== this.props.session?.version || previous.session?.title !== this.props.session?.title || previous.data.project.archived !== this.props.data.project.archived) {
+      const request = this.renameRequest;
+      const ownRename = request?.sent && this.renameActive(request.target) && this.props.session?.title === request.title && this.props.session.version > request.target.version && (!request.confirmed || this.props.session.version === request.confirmed.version);
+      if (!ownRename) {
+        this.renameEpoch++;
+        this.renaming = false;
+        if (this.state.renameTarget) this.setState({ renameSaving: false, renameError: "\u4F1A\u8BDD\u6216\u9879\u76EE\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u6253\u5F00\u6539\u540D\u7A97\u53E3\u3002" });
+      }
+    }
+    this.finishRename();
   }
   render() {
     const { data, boot, session, messages } = this.props;
@@ -264,8 +329,23 @@ class Chat extends React.Component {
             /* @__PURE__ */ jsx("span", { className: "host-extra-key", children: " \xB7 Shift + Enter \u6362\u884C \xB7 Ctrl/\u2318 + Enter \u53D1\u9001" })
           ] })
         ] })
-      ] })
+      ] }),
+      this.renderRename()
     ] });
+  }
+  renderRename() {
+    const { renameTarget: target, renameTitle, renameError, renameSaving } = this.state;
+    if (!target) return null;
+    const dialog = /* @__PURE__ */ jsx("div", { onSubmit: (event) => event.stopPropagation(), onKeyDown: (event) => event.stopPropagation(), children: /* @__PURE__ */ jsxs(Modal, { title: "\u91CD\u547D\u540D\u4F1A\u8BDD", submitLabel: "\u4FDD\u5B58\u540D\u79F0", busy: renameSaving, closeDisabled: renameSaving, submitDisabled: !this.renameCurrent(target) || this.props.busy || !renameTitle.trim() || renameTitle.trim().length > 160, onClose: this.closeRename, onSubmit: () => this.submitRename(target), children: [
+      /* @__PURE__ */ jsxs("label", { children: [
+        "\u4F1A\u8BDD\u540D\u79F0",
+        /* @__PURE__ */ jsx("input", { ref: this.renameInput, name: "title", required: true, maxLength: 160, value: renameTitle, disabled: renameSaving, onChange: (event) => {
+          if (this.renameCurrent(target) && !this.renaming) this.setState({ renameTitle: event.target.value, renameError: "" });
+        } })
+      ] }),
+      renameError ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: renameError }) : null
+    ] }) });
+    return typeof document !== "undefined" ? createPortal(dialog, document.body) : dialog;
   }
 }
 function OutcomeReview({ run, perform, readOnly = false }) {

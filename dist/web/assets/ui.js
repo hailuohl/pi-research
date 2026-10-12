@@ -190,32 +190,45 @@ class Modal extends React.Component {
     super(...arguments);
     this.el = null;
     this.previous = null;
+    this.close = () => {
+      if (!this.props.closeDisabled) this.props.onClose();
+    };
   }
   componentDidMount() {
     this.previous = document.activeElement;
-    this.el?.querySelector("input,textarea,select,button")?.focus();
+    (this.el?.querySelector("input:not(:disabled),textarea:not(:disabled),select:not(:disabled),button:not(:disabled),a[href]") ?? this.el)?.focus();
   }
   componentDidUpdate(previous) {
-    if (previous.title !== this.props.title) this.el?.querySelector("footer button")?.focus();
+    if (this.props.closeDisabled && !previous.closeDisabled) this.el?.focus();
+    else if (previous.title !== this.props.title) this.el?.querySelector("footer button:not(:disabled)")?.focus();
   }
   componentWillUnmount() {
-    this.previous?.focus?.();
+    if (!this.el || document.activeElement === document.body || this.el.contains(document.activeElement)) this.previous?.focus?.();
   }
   render() {
     return /* @__PURE__ */ jsx("div", { className: "modal-backdrop", onMouseDown: (e) => {
       if (e.target === e.currentTarget)
-        this.props.onClose();
+        this.close();
     }, children: /* @__PURE__ */ jsxs("section", { ref: (el) => {
       this.el = el;
-    }, role: this.props.alert ? "alertdialog" : "dialog", "aria-modal": "true", "aria-label": this.props.title, "aria-describedby": this.props.description ? "modal-description" : void 0, className: "modal " + (this.props.wide ? "wide" : ""), onKeyDown: (e) => {
+    }, role: this.props.alert ? "alertdialog" : "dialog", tabIndex: -1, "aria-modal": "true", "aria-label": this.props.title, "aria-describedby": this.props.description ? "modal-description" : void 0, className: "modal " + (this.props.wide ? "wide" : ""), onKeyDown: (e) => {
       const select = e.target?.closest?.("select");
       const pickerOpen = select && getComputedStyle(select).appearance === "base-select" && select.matches(":open");
       if (e.key === "Escape" && !pickerOpen)
-        this.props.onClose();
+        this.close();
       if (e.key === "Tab") {
         const els = Array.from(this.el.querySelectorAll("button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]")).filter((el) => !el.closest("[hidden]"));
         const first = els[0], last = els[els.length - 1];
-        if (!first) return;
+        if (!first) {
+          e.preventDefault();
+          this.el?.focus();
+          return;
+        }
+        if (!els.includes(document.activeElement)) {
+          e.preventDefault();
+          (e.shiftKey ? last : first).focus();
+          return;
+        }
         if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
           last.focus();
@@ -227,7 +240,7 @@ class Modal extends React.Component {
     }, children: [
       /* @__PURE__ */ jsxs("header", { children: [
         /* @__PURE__ */ jsx("h2", { children: this.props.title }),
-        /* @__PURE__ */ jsx("button", { type: "button", className: "icon-button", "aria-label": "\u5173\u95ED\u5BF9\u8BDD\u6846", onClick: this.props.onClose, children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
+        /* @__PURE__ */ jsx("button", { type: "button", className: "icon-button", "aria-label": "\u5173\u95ED\u5BF9\u8BDD\u6846", disabled: this.props.closeDisabled, onClick: this.close, children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
       ] }),
       /* @__PURE__ */ jsxs("form", { onSubmit: (e) => {
         e.preventDefault();
@@ -238,7 +251,7 @@ class Modal extends React.Component {
           this.props.children
         ] }),
         /* @__PURE__ */ jsxs("footer", { children: [
-          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", onClick: this.props.onClose, children: this.props.cancelLabel ?? "\u53D6\u6D88" }),
+          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: this.props.closeDisabled, onClick: this.close, children: this.props.cancelLabel ?? "\u53D6\u6D88" }),
           !this.props.hideSubmit ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.busy || this.props.submitDisabled, children: this.props.busy ? "\u6B63\u5728\u5904\u7406\u2026" : this.props.submitLabel }) : null
         ] })
       ] })

@@ -152,25 +152,32 @@ export class Modal extends React.Component<{
     submitDisabled?: boolean;
     cancelLabel?: string;
     hideSubmit?: boolean;
+    closeDisabled?: boolean;
 }> {
     private el: HTMLElement | null = null;
     private previous: Element | null = null;
-    componentDidMount() { this.previous = document.activeElement; this.el?.querySelector<HTMLInputElement>('input,textarea,select,button')?.focus(); }
-    componentDidUpdate(previous:Readonly<Modal['props']>){if(previous.title!==this.props.title)this.el?.querySelector<HTMLButtonElement>('footer button')?.focus();}
-    componentWillUnmount() { (this.previous as HTMLElement)?.focus?.(); }
+    private close=()=>{if(!this.props.closeDisabled)this.props.onClose();};
+    componentDidMount() { this.previous = document.activeElement; (this.el?.querySelector<HTMLElement>('input:not(:disabled),textarea:not(:disabled),select:not(:disabled),button:not(:disabled),a[href]')??this.el)?.focus(); }
+    componentDidUpdate(previous:Readonly<Modal['props']>){if(this.props.closeDisabled&&!previous.closeDisabled)this.el?.focus();else if(previous.title!==this.props.title)this.el?.querySelector<HTMLButtonElement>('footer button:not(:disabled)')?.focus();}
+    componentWillUnmount() { if(!this.el||document.activeElement===document.body||this.el.contains(document.activeElement))(this.previous as HTMLElement)?.focus?.(); }
     render() {
         return <div className="modal-backdrop" onMouseDown={(e) => {
                 if (e.target === e.currentTarget)
-                    this.props.onClose();
-            }}><section ref={(el) => { this.el = el; }} role={this.props.alert?'alertdialog':'dialog'} aria-modal="true" aria-label={this.props.title} aria-describedby={this.props.description?'modal-description':undefined} className={'modal ' + (this.props.wide ? 'wide' : '')} onKeyDown={(e) => {
+                    this.close();
+            }}><section ref={(el) => { this.el = el; }} role={this.props.alert?'alertdialog':'dialog'} tabIndex={-1} aria-modal="true" aria-label={this.props.title} aria-describedby={this.props.description?'modal-description':undefined} className={'modal ' + (this.props.wide ? 'wide' : '')} onKeyDown={(e) => {
                 const select = (e.target as HTMLElement | undefined)?.closest?.('select');
                 const pickerOpen = select && getComputedStyle(select).appearance === 'base-select' && select.matches(':open');
                 if (e.key === 'Escape' && !pickerOpen)
-                    this.props.onClose();
+                    this.close();
                 if (e.key === 'Tab') {
                     const els = Array.from(this.el!.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]')).filter(el=>!el.closest('[hidden]'));
                     const first = els[0], last = els[els.length - 1];
-                    if(!first)return;
+                    if(!first){e.preventDefault();this.el?.focus();return;}
+                    if(!els.includes(document.activeElement as HTMLElement)){
+                        e.preventDefault();
+                        (e.shiftKey?last:first).focus();
+                        return;
+                    }
                     if (e.shiftKey && document.activeElement === first) {
                         e.preventDefault();
                         last.focus();
@@ -180,6 +187,6 @@ export class Modal extends React.Component<{
                         first.focus();
                     }
                 }
-            }}><header><h2>{this.props.title}</h2><button type="button" className="icon-button" aria-label="关闭对话框" onClick={this.props.onClose}><Icon name="close"/></button></header><form onSubmit={(e: any) => { e.preventDefault(); if(!this.props.busy&&!this.props.submitDisabled)this.props.onSubmit(new FormData(e.currentTarget)); }}><div className="form-body">{this.props.description?<p id="modal-description" className="muted">{this.props.description}</p>:null}{this.props.children}</div><footer><button type="button" className="secondary" onClick={this.props.onClose}>{this.props.cancelLabel??'取消'}</button>{!this.props.hideSubmit?<button className="primary" disabled={this.props.busy||this.props.submitDisabled}>{this.props.busy ? '正在处理…' : this.props.submitLabel}</button>:null}</footer></form></section></div>;
+            }}><header><h2>{this.props.title}</h2><button type="button" className="icon-button" aria-label="关闭对话框" disabled={this.props.closeDisabled} onClick={this.close}><Icon name="close"/></button></header><form onSubmit={(e: any) => { e.preventDefault(); if(!this.props.busy&&!this.props.submitDisabled)this.props.onSubmit(new FormData(e.currentTarget)); }}><div className="form-body">{this.props.description?<p id="modal-description" className="muted">{this.props.description}</p>:null}{this.props.children}</div><footer><button type="button" className="secondary" disabled={this.props.closeDisabled} onClick={this.close}>{this.props.cancelLabel??'取消'}</button>{!this.props.hideSubmit?<button className="primary" disabled={this.props.busy||this.props.submitDisabled}>{this.props.busy ? '正在处理…' : this.props.submitLabel}</button>:null}</footer></form></section></div>;
     }
 }

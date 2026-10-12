@@ -6,12 +6,14 @@ import {SessionHistory} from '../../dist/web/assets/session-history.js';
 import {App} from '../../dist/web/assets/app.js';
 import {setup,USER} from '../support/research.mjs';
 
-const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children)];
+const elements=node=>Array.isArray(node)?node.flatMap(elements):!node||typeof node!=='object'?[]:[node,...elements(node.props?.children??node.children)];
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):typeof node==='string'?node:'';
 const response=data=>({ok:true,json:async()=>data});
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const session=(id,extra={})=>({id,version:1,projectId:'p',title:id,role:'coordinator',state:'idle',model:{provider:'test',model:'test',thinking:'high'},...extra});
 const message={id:'m',projectId:'p',sessionId:'s',version:1,role:'user',status:'failed',mode:'prompt',content:'Original question',createdAt:'2026-10-12T00:00:00Z'};
+const renameDialog=view=>elements(view.render()).find(node=>node.type?.name==='Modal'&&node.props.title==='重命名会话');
+const rename=async(view,title)=>{button(view,'重命名会话').props.onClick();const dialog=renameDialog(view);if(title===null){dialog.props.onClose();return;}elements(dialog).find(node=>node.type==='input').props.onChange({target:{value:title}});return dialog.props.onSubmit(new FormData());};
 const button=(view,label)=>elements(view.render()).find(node=>node.type==='button'&&(text(node)===label||node.props['aria-label']===label));
 function appView(){
  const app=synchronousState(new App({}));app.refresh=async()=>false;
@@ -21,7 +23,7 @@ function appView(){
  const historyElement=elements(scroll.render()).find(node=>node.type?.name==='SessionHistory'),history=synchronousState(new historyElement.type(historyElement.props));
  return {app,chat,scroll,history};
 }
-function restore(t){const previous={fetch:globalThis.fetch,prompt:globalThis.prompt,window:globalThis.window,localStorage:globalThis.localStorage};globalThis.window={setTimeout:()=>0};globalThis.localStorage={getItem:()=>null,setItem(){}};t.after(()=>Object.assign(globalThis,previous));}
+function restore(t){const previous={fetch:globalThis.fetch,prompt:globalThis.prompt,document:globalThis.document,window:globalThis.window,localStorage:globalThis.localStorage};globalThis.document={body:{nodeType:1}};globalThis.prompt=()=>{throw Error('native prompt must not open');};globalThis.window={setTimeout:()=>0};globalThis.localStorage={getItem:()=>null,setItem(){}};t.after(()=>Object.assign(globalThis,previous));}
 
 test('same-session rename refreshes the catalog without resetting search, role or current cursor',async t=>{
  restore(t);const requests=[];globalThis.fetch=async(_url,init)=>{requests.push(JSON.parse(init.body).input);return response({items:[session('s',{title:'Renamed'})],nextCursor:null});};
@@ -56,8 +58,8 @@ test('an older selected session cannot overwrite a newer version in the catalog 
 });
 
 test('rename confirms the heading and catalog even if the following refresh is unavailable',async t=>{
- restore(t);const {app,chat}=appView(),renamed=session('s',{title:'Renamed',version:2});globalThis.prompt=()=>renamed.title;globalThis.fetch=async()=>response(renamed);
- await button(chat,'重命名会话').props.onClick();assert.equal(app.state.data.sessions[0].title,'Renamed');assert.equal(app.state.sessionId,'s');
+ restore(t);const {app,chat}=appView(),renamed=session('s',{title:'Renamed',version:2});globalThis.fetch=async()=>response(renamed);
+ await rename(chat,renamed.title);assert.equal(app.state.data.sessions[0].title,'Renamed');assert.equal(app.state.sessionId,'s');
  const next=elements(app.render()).find(node=>node.type?.name==='Chat');chat.props=next.props;assert.match(text(chat.render()),/Renamed/);
  const list=elements(app.render()).find(node=>node.type?.name==='SessionList');assert.equal(list.props.selected.title,'Renamed');chat.componentWillUnmount();app.componentWillUnmount();
 });
@@ -131,9 +133,9 @@ test('the real session service permits archived-source rename and branch, but re
 
 test('an archived source in an active project can be renamed and branched in the UI while retry stays disabled',async t=>{
  restore(t);const {app,chat}=appView(),source=session('s',{state:'archived'}),renamed={...source,title:'Archived source renamed',version:2},branch=session('branch',{parentSessionId:'s',title:'Archived source renamed · 分支',version:2}),requests=[];
- app.state.data={...app.state.data,sessions:app.state.data.sessions.map(row=>row.id===source.id?source:row)};chat.props={...chat.props,data:app.state.data,session:source};globalThis.prompt=()=>renamed.title;
+ app.state.data={...app.state.data,sessions:app.state.data.sessions.map(row=>row.id===source.id?source:row)};chat.props={...chat.props,data:app.state.data,session:source};
  globalThis.fetch=async(url,init)=>{requests.push({url,body:JSON.parse(init.body)});return response(url.endsWith('/branch')?branch:renamed);};
- const rename=button(chat,'重命名会话');assert.equal(rename.props.disabled,false);await rename.props.onClick();assert.deepEqual(app.state.data.sessions[0],renamed);assert.equal(app.state.sessionId,'s');
+ const rename=button(chat,'重命名会话');assert.equal(rename.props.disabled,false);rename.props.onClick();const dialog=renameDialog(chat);elements(dialog).find(node=>node.type==='input').props.onChange({target:{value:renamed.title}});await dialog.props.onSubmit(new FormData());assert.deepEqual(app.state.data.sessions[0],renamed);assert.equal(app.state.sessionId,'s');
  chat.props={...chat.props,data:app.state.data,session:renamed};const scrollElement=elements(chat.render()).find(node=>node.type?.name==='ScrollHistory'),scroll=synchronousState(new scrollElement.type(scrollElement.props)),historyElement=elements(scroll.render()).find(node=>node.type?.name==='SessionHistory'),history=synchronousState(new historyElement.type(historyElement.props));
  assert.equal(button(history,'重试此消息').props.disabled,true);await button(history,'重试此消息').props.onClick();assert.equal(requests.length,1);
  assert.equal(button(history,'从此处分支').props.disabled,false);await button(history,'从此处分支').props.onClick();assert.equal(app.state.sessionId,'branch');assert.equal(app.state.sessionCreationSignal,1);assert.deepEqual(app.state.data.sessions[0],renamed);assert.equal(app.state.data.sessions[0].state,'archived');assert.deepEqual(app.state.data.sessions.at(-1),branch);assert.deepEqual(requests.map(row=>row.url),['/api/sessions/s','/api/sessions/s/branch']);
@@ -153,8 +155,8 @@ test('late branch success and failure cannot select another project or a reopene
 test('cancelled, blank, failed and mismatched rename requests preserve the current session',async t=>{
  restore(t);
  for(const kind of ['cancel','blank','failure','overlong','foreign','wrong-id','stale','missing-model']){
-  const {app,chat}=appView(),original=app.state.data.sessions.slice();let writes=0;globalThis.prompt=()=>kind==='cancel'?null:kind==='blank'?'   ':kind==='overlong'?'x'.repeat(161):'Renamed';globalThis.fetch=async()=>{writes++;if(kind==='failure')throw Error('rename failed');if(kind==='overlong')return {ok:false,status:400,json:async()=>({error:{code:'INVALID_INPUT',message:'title too long'}})};return response(session(kind==='wrong-id'?'other':'s',{projectId:kind==='foreign'?'foreign':'p',title:'Renamed',version:kind==='stale'?1:2,...(kind==='missing-model'?{model:null}:{})}));};
-  await button(chat,'重命名会话').props.onClick();assert.deepEqual(app.state.data.sessions,original,kind);assert.equal(app.state.sessionId,'s');assert.equal(app.state.sessionCreationSignal,0);if(['cancel','blank'].includes(kind))assert.equal(writes,0);else assert.ok(app.state.error);chat.componentWillUnmount();app.componentWillUnmount();
+  const {app,chat}=appView(),original=app.state.data.sessions.slice();let writes=0;const title=kind==='cancel'?null:kind==='blank'?'   ':kind==='overlong'?'x'.repeat(161):'Renamed';globalThis.fetch=async()=>{writes++;if(kind==='failure')throw Error('rename failed');if(kind==='overlong')return {ok:false,status:400,json:async()=>({error:{code:'INVALID_INPUT',message:'title too long'}})};return response(session(kind==='wrong-id'?'other':'s',{projectId:kind==='foreign'?'foreign':'p',title:'Renamed',version:kind==='stale'?1:2,...(kind==='missing-model'?{model:null}:{})}));};
+  await rename(chat,title);assert.deepEqual(app.state.data.sessions,original,kind);assert.equal(app.state.sessionId,'s');assert.equal(app.state.sessionCreationSignal,0);if(['cancel','blank','overlong'].includes(kind))assert.equal(writes,0);else assert.ok(app.state.error);if(kind!=='cancel'){assert.ok(elements(renameDialog(chat)).some(node=>node.props?.role==='alert'),kind);assert.equal(elements(renameDialog(chat)).find(node=>node.type==='input').props.value,title,kind);}chat.componentWillUnmount();app.componentWillUnmount();
  }
 });
 

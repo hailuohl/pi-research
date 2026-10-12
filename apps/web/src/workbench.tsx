@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {createPortal} from 'react-dom';
 import {HostAccessControl} from './host-access-control.js';
 import {PermissionActions} from './permission-actions.js';
 import {LogView,type LogPage} from './log-view.js';
@@ -13,8 +14,9 @@ import {ComposerControls} from './composer-controls.js';
 import { api, artifactText, downloadArtifact } from './api.js';
 import type { Bootstrap, MessageAttachment, ModelConfig, ProjectState, Row, Session, Message, Experiment, Run, SessionHistoryPage,SessionView } from './models.js';
 import { short, number, date, label } from './models.js';
-import {Icon, Badge, nativeSelectButton} from './ui.js';
+import {Icon, Badge, Modal, nativeSelectButton} from './ui.js';
 export type Perform = (fn: () => Promise<any>, success?: string) => Promise<any>;
+type RenameTarget={projectId:string;sessionId:string;version:number;originalTitle:string;epoch:number};
 export class Chat extends React.Component<{
     data: ProjectState;
     boot: Bootstrap;
@@ -49,8 +51,8 @@ export class Chat extends React.Component<{
     onSession: (id:string) => void;
     onExperiment: (id:string) => void;
     onRun: (runId:string,experimentId:string) => void;
-}, {draft:string;draftVersion:number;attachments:MessageAttachment[];sending:boolean;drawerOpen:boolean;permissionPending:string[];sentMessageId:string}> {
-    state={draft:'',draftVersion:0,attachments:[] as MessageAttachment[],sending:false,drawerOpen:false,permissionPending:[] as string[],sentMessageId:''};
+}, {draft:string;draftVersion:number;attachments:MessageAttachment[];sending:boolean;drawerOpen:boolean;permissionPending:string[];sentMessageId:string;renameTarget:RenameTarget|null;renameTitle:string;renameError:string;renameSaving:boolean}> {
+    state={draft:'',draftVersion:0,attachments:[] as MessageAttachment[],sending:false,drawerOpen:false,permissionPending:[] as string[],sentMessageId:'',renameTarget:null as RenameTarget|null,renameTitle:'',renameError:'',renameSaving:false};
     private drawerClose=React.createRef<HTMLButtonElement>();
     private drawerContent=React.createRef<HTMLDivElement>();
     private drawerTrigger:HTMLButtonElement|null=null;
@@ -76,24 +78,69 @@ export class Chat extends React.Component<{
     private modelSave?:Promise<Row<Session>|undefined>;
     private pendingSend?:{projectId:string;sessionId:string;draft:string;draftVersion:number;attachments:MessageAttachment[];body:{content:string;mode:Message['mode'];attachmentDocumentIds?:string[]};key:string;clearUploadError?:()=>void};
     private renaming=false;
-    componentWillUnmount(){this.mounted=false;}
-    private renameSession=async()=>{
+    private renameEpoch=0;
+    private renameInput=React.createRef<HTMLInputElement>();
+    private renameRequest?:{target:RenameTarget;title:string;sent:boolean;confirmed?:Row<Session>;finished:boolean};
+    componentWillUnmount(){this.mounted=false;this.renameEpoch++;}
+    componentDidUpdate(previous:Readonly<Chat['props']>){
+        if(previous.data.project.id!==this.props.data.project.id||previous.session?.id!==this.props.session?.id||previous.session?.version!==this.props.session?.version||previous.session?.title!==this.props.session?.title||previous.data.project.archived!==this.props.data.project.archived){
+            const request=this.renameRequest;
+            // A refresh can see this rename before its HTTP receipt; verify that exact version on arrival.
+            const ownRename=request?.sent&&this.renameActive(request.target)&&this.props.session?.title===request.title&&this.props.session.version>request.target.version&&(!request.confirmed||this.props.session.version===request.confirmed.version);
+            if(!ownRename){
+                this.renameEpoch++;this.renaming=false;
+                if(this.state.renameTarget)this.setState({renameSaving:false,renameError:'会话或项目已变化，请关闭后重新打开改名窗口。'});
+            }
+        }
+        this.finishRename();
+    }
+    private renameActive=(target:RenameTarget)=>this.mounted&&this.state.renameTarget===target&&this.renameEpoch===target.epoch&&this.props.data.project.id===target.projectId&&this.props.session?.id===target.sessionId&&!this.props.data.project.archived;
+    private renameCurrent=(target:RenameTarget)=>this.renameActive(target)&&this.props.session?.version===target.version&&this.props.session.title===target.originalTitle;
+    private finishRename=()=>{
+        const request=this.renameRequest;
+        if(!request?.finished||!request.confirmed||!this.renameActive(request.target)||this.props.busy)return;
+        if(!this.renameCurrent(request.target)&&(this.props.session?.version!==request.confirmed.version||this.props.session.title!==request.confirmed.title))return;
+        // Close after perform releases busy so Modal can return focus to the enabled opener.
+        this.renameEpoch++;this.renaming=false;this.renameRequest=undefined;
+        this.setState({renameTarget:null,renameSaving:false,renameError:''});
+    };
+    private closeRename=()=>{
+        if(!this.mounted||this.renaming||this.state.renameSaving)return;
+        this.renameEpoch++;this.setState({renameTarget:null,renameError:''});
+    };
+    private renameSession=()=>{
         const {session,data}=this.props;
-        if(!this.mounted||!session||this.renaming||this.props.busy||data.project.archived)return;
-        const title=prompt('会话名称',session.title)?.trim();if(!title)return;
-        const current=()=>this.mounted&&this.props.data.project.id===data.project.id&&this.props.session?.id===session.id;
-        this.renaming=true;
+        if(!this.mounted||!session||session.projectId!==data.project.id||this.state.renameTarget||this.renaming||this.props.busy||data.project.archived)return;
+        const target={projectId:data.project.id,sessionId:session.id,version:session.version,originalTitle:session.title,epoch:++this.renameEpoch};
+        this.setState({renameTarget:target,renameTitle:session.title,renameError:'',renameSaving:false},()=>{if(this.renameCurrent(target))this.renameInput.current?.focus();});
+    };
+    private submitRename=async(target:RenameTarget)=>{
+        if(!this.renameCurrent(target)||this.renaming||this.props.busy)return;
+        const title=this.state.renameTitle.trim();
+        if(!title||title.length>160){this.setState({renameError:'会话名称不能为空，且不能超过 160 个字符。'});return;}
+        const request:{target:RenameTarget;title:string;sent:boolean;confirmed?:Row<Session>;finished:boolean}={target,title,sent:false,finished:false};this.renameRequest=request;
+        this.renaming=true;this.setState({renameSaving:true,renameError:''});
         try{
             return await this.props.perform(async()=>{
-                if(!current()||this.props.data.project.archived)return;
+                if(!this.renameCurrent(target))return;
                 try{
-                    const confirmed=await api<Row<Session>>(`/sessions/${encodeURIComponent(session.id)}`,{title,expectedVersion:session.version});
-                    if(!current())return;
-                    if(confirmed.id!==session.id||confirmed.projectId!==data.project.id||confirmed.title!==title||!Number.isSafeInteger(confirmed.version)||confirmed.version<=session.version||!confirmed.model||typeof confirmed.model.provider!=='string'||typeof confirmed.model.model!=='string'||typeof confirmed.model.thinking!=='string')throw Error('改名回执与当前会话不一致，请刷新后重试');
+                    request.sent=true;
+                    const confirmed=await api<Row<Session>>(`/sessions/${encodeURIComponent(target.sessionId)}`,{title,expectedVersion:target.version});
+                    if(!this.renameActive(target))return;
+                    if(confirmed.id!==target.sessionId||confirmed.projectId!==target.projectId||confirmed.title!==title||!Number.isSafeInteger(confirmed.version)||confirmed.version<=target.version||!confirmed.model||typeof confirmed.model.provider!=='string'||typeof confirmed.model.model!=='string'||typeof confirmed.model.thinking!=='string')throw Error('改名回执与当前会话不一致，请刷新后重试');
+                    if(!this.renameCurrent(target)&&(this.props.session?.version!==confirmed.version||this.props.session.title!==confirmed.title)){
+                        this.renameEpoch++;this.renaming=false;this.setState({renameSaving:false,renameError:'会话或项目已变化，请关闭后重新打开改名窗口。'});return;
+                    }
+                    request.confirmed=confirmed;
                     this.props.onModelConfirmed?.(confirmed);return confirmed;
-                }catch(error){if(current())throw error;}
+                }catch(error){if(this.renameActive(target)){this.setState({renameError:error instanceof Error?error.message:String(error)});throw error;}}
             });
-        }finally{this.renaming=false;}
+        }catch(error){if(this.renameActive(target))this.setState({renameError:error instanceof Error?error.message:String(error)});}
+        finally{
+            request.finished=true;
+            if(request.confirmed&&this.renameActive(target))this.finishRename();
+            else{if(this.renameRequest===request)this.renameRequest=undefined;if(this.renameActive(target)){this.renaming=false;this.setState({renameSaving:false});}}
+        }
     };
     private changeModel=(model:ModelConfig)=>{
         const {session,data}=this.props;
@@ -188,7 +235,13 @@ export class Chat extends React.Component<{
  <div className="composer-wrap"><div className="composer-stack">{session?.role==='coordinator'?<MessageQueue key={data.project.id+':'+session.id} projectId={data.project.id} sessionId={session.id} messages={this.props.pendingMessages} total={this.props.pendingTotal} nextCursor={this.props.pendingNextCursor} canSteer={this.props.canSteer} disabled={data.project.archived||!!session.taskId||session.state==='archived'||!!this.props.historyAnchor||!!this.props.history&&!this.props.history.atLatest} busy={this.props.busy} perform={this.props.perform}/>:null}<form className="composer" onSubmit={this.submit}><textarea aria-label="研究问题" placeholder={data.project.archived ? '已归档项目，只读查看历史' : session?.taskId ? '请通过团队任务控件操作' : session?.state==='archived' ? '已归档会话不可发送' : this.props.historyAnchor||this.props.history&&!this.props.history.atLatest ? '返回最新消息后可发送' : canSend ? '描述研究问题…' : '配置 Pi 供应商和模型后，在这里开始研究…'} value={this.state.draft} disabled={data.project.archived||!!session?.taskId||session?.state==='archived'} onChange={(e: any) => this.setState(current=>({ draft: e.target.value, draftVersion: current.draftVersion+1 }))} onKeyDown={(e: any) => {
                 if(e.key!=='Enter'||e.shiftKey||e.isComposing||e.nativeEvent?.isComposing||e.keyCode===229||e.nativeEvent?.keyCode===229)return;
                 e.preventDefault();e.currentTarget.form.requestSubmit();
-            }}/><ComposerControls ref={this.composerControls} permissionControl={boot.runtime.hostAccess?.available&&session&&!session.taskId?<HostAccessControl key={session.id} sessionId={session.id} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform}/>:null} key={`${data.project.id}:${session?.id??''}`} boot={boot} projectId={data.project.id} projectArchived={!!data.project.archived} modelLocked={!!session?.workingGrantId||!!session?.textCorpusGrantId||!!session?.discoveryGrantId||!!session?.runGrantId||!!data.teams?.some(team=>team.rootSessionId===session?.id&&!['completed','partial','failed','cancelled'].includes(team.state))} session={session} busy={this.props.busy} perform={this.props.perform} attachments={this.state.attachments} onAddAttachment={attachment=>this.setState(current=>({attachments:[...current.attachments,attachment]}))} onRemoveAttachment={documentVersionId=>this.setState(current=>({attachments:current.attachments.filter(attachment=>attachment.documentVersionId!==documentVersionId)}))} canSend={canSend} hasDraft={hasDraft} onSendModel={model=>session&&this.props.session?.id===session.id&&this.props.data.project.id===data.project.id?this.changeModel(model):Promise.resolve(undefined)}><div className="chat-collaboration-control"><button type="button" role="switch" aria-label="多智能体模式" aria-checked={data.project.settings.enabled ? 'true' : 'false'} title="项目级设置，同项目所有研究会话共享" className={'switch ' + (data.project.settings.enabled ? 'on' : '')} disabled={this.props.busy || data.project.archived || !session || !!session.taskId || session.state === 'archived'} onClick={this.props.onToggle}><span/></button><span>多智能体</span></div></ComposerControls></form></div><div className="composer-caption composer-caption-note"><span aria-hidden="true"/><span>Enter 发送<span className="host-extra-key"> · Shift + Enter 换行 · Ctrl/⌘ + Enter 发送</span></span></div></div></div>;
+            }}/><ComposerControls ref={this.composerControls} permissionControl={boot.runtime.hostAccess?.available&&session&&!session.taskId?<HostAccessControl key={session.id} sessionId={session.id} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform}/>:null} key={`${data.project.id}:${session?.id??''}`} boot={boot} projectId={data.project.id} projectArchived={!!data.project.archived} modelLocked={!!session?.workingGrantId||!!session?.textCorpusGrantId||!!session?.discoveryGrantId||!!session?.runGrantId||!!data.teams?.some(team=>team.rootSessionId===session?.id&&!['completed','partial','failed','cancelled'].includes(team.state))} session={session} busy={this.props.busy} perform={this.props.perform} attachments={this.state.attachments} onAddAttachment={attachment=>this.setState(current=>({attachments:[...current.attachments,attachment]}))} onRemoveAttachment={documentVersionId=>this.setState(current=>({attachments:current.attachments.filter(attachment=>attachment.documentVersionId!==documentVersionId)}))} canSend={canSend} hasDraft={hasDraft} onSendModel={model=>session&&this.props.session?.id===session.id&&this.props.data.project.id===data.project.id?this.changeModel(model):Promise.resolve(undefined)}><div className="chat-collaboration-control"><button type="button" role="switch" aria-label="多智能体模式" aria-checked={data.project.settings.enabled ? 'true' : 'false'} title="项目级设置，同项目所有研究会话共享" className={'switch ' + (data.project.settings.enabled ? 'on' : '')} disabled={this.props.busy || data.project.archived || !session || !!session.taskId || session.state === 'archived'} onClick={this.props.onToggle}><span/></button><span>多智能体</span></div></ComposerControls></form></div><div className="composer-caption composer-caption-note"><span aria-hidden="true"/><span>Enter 发送<span className="host-extra-key"> · Shift + Enter 换行 · Ctrl/⌘ + Enter 发送</span></span></div></div>{this.renderRename()}</div>;
+    }
+    private renderRename(){
+        const {renameTarget:target,renameTitle,renameError,renameSaving}=this.state;
+        if(!target)return null;
+        const dialog=<div onSubmit={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}><Modal title="重命名会话" submitLabel="保存名称" busy={renameSaving} closeDisabled={renameSaving} submitDisabled={!this.renameCurrent(target)||this.props.busy||!renameTitle.trim()||renameTitle.trim().length>160} onClose={this.closeRename} onSubmit={()=>this.submitRename(target)}><label>会话名称<input ref={this.renameInput} name="title" required maxLength={160} value={renameTitle} disabled={renameSaving} onChange={event=>{if(this.renameCurrent(target)&&!this.renaming)this.setState({renameTitle:event.target.value,renameError:''});}}/></label>{renameError?<p role="alert" className="error-text">{renameError}</p>:null}</Modal></div>;
+        return typeof document!=='undefined'?createPortal(dialog,document.body):dialog;
     }
 }
 export function OutcomeReview({run,perform,readOnly=false}:{run:Row<Run>;perform:Perform;readOnly?:boolean}) {
