@@ -1,0 +1,472 @@
+{
+  "flow": "VIDEO-UI-01",
+  "baseline": "76821489fd49c9a2805af11e6e16aefa65579553",
+  "productChanges": false,
+  "status": "accepted",
+  "scope": "Native MP4 chat, exact 20MiB upload and rejection boundaries, signature failure, exact wire, reopen and download",
+  "primaryVerification": {
+    "flow": "VIDEO-UI-01",
+    "passed": true,
+    "sessionId": "be59d263-736d-48ed-a1d1-f20f91b5e965",
+    "messageId": "e8d4508f-ba85-42e7-a21e-996793cb6502",
+    "documentVersionId": "224a7c65-8900-4f1b-b79d-0b9a68f84800",
+    "artifactId": "e69a889d-b2c5-4ee1-aa0a-cbc4162cf1e3",
+    "httpId": "a69347377e5fba6a2bca37320bb9d1b16f91ae191dc642d42bb7ffed728f38da",
+    "requests": 1,
+    "videoCount": 1,
+    "bytes": 8510,
+    "sha256": "eac745341edf199272ccd365a35cfb0d5be05dd483d0cf1937ed8edbee26758a",
+    "codec": "h264",
+    "frames": 20,
+    "durationSeconds": 2,
+    "exact20MiBUploadAccepted": true,
+    "overSingleAndTotalZeroUploadPost": true,
+    "removedLargeOriginalRetained": true,
+    "largeOriginalNotSent": true,
+    "invalidSignatureRejectedWithoutRecords": true,
+    "noRequestOnReopen": true,
+    "oldSessionsPreserved": 7,
+    "defaultUnchanged": true,
+    "actualDownloadHashAndFullDecodeMatch": true,
+    "browserDownloadEventObserved": false,
+    "limits": [
+      "Only Chat Completions/qwen transport to local fixed supplier; not external video understanding.",
+      "20 MiB boundary verifies upload only; sent video is 8510 bytes.",
+      "Container signature rejection does not prove every corrupted video is rejected."
+    ]
+  },
+  "wire": [
+    {
+      "requestSequence": 1,
+      "time": "2026-10-12T14:45:24.045Z",
+      "model": "video-fixture",
+      "marker": "MEDIA_UI_VIDEO_RECEIPT_20261012",
+      "messageId": "e8d4508f-ba85-42e7-a21e-996793cb6502",
+      "videos": [
+        {
+          "type": "video_url",
+          "mimeType": "video/mp4",
+          "decodedBytes": 8510,
+          "sha256": "eac745341edf199272ccd365a35cfb0d5be05dd483d0cf1937ed8edbee26758a",
+          "matchesExpected": true
+        }
+      ],
+      "videoCount": 1
+    }
+  ],
+  "http": [
+    {
+      "id": "a69347377e5fba6a2bca37320bb9d1b16f91ae191dc642d42bb7ffed728f38da",
+      "sessionId": "be59d263-736d-48ed-a1d1-f20f91b5e965",
+      "provider": "offline-winstop",
+      "model": "video-fixture",
+      "state": "succeeded",
+      "queuedAt": "2026-10-12T14:45:24.028Z",
+      "startedAt": "2026-10-12T14:45:24.029Z",
+      "endedAt": "2026-10-12T14:45:24.055Z",
+      "httpStatus": 200,
+      "receivedBytes": 486,
+      "outcome": "body-complete"
+    }
+  ],
+  "attachments": [
+    {
+      "documentVersionId": "224a7c65-8900-4f1b-b79d-0b9a68f84800",
+      "artifactId": "e69a889d-b2c5-4ee1-aa0a-cbc4162cf1e3",
+      "digest": "eac745341edf199272ccd365a35cfb0d5be05dd483d0cf1937ed8edbee26758a",
+      "title": "UIQA_NATIVE_VIDEO_20261012.mp4",
+      "mediaType": "video/mp4",
+      "size": 8510,
+      "inputMode": "native"
+    }
+  ],
+  "fixture": {
+    "filename": "UIQA_NATIVE_VIDEO_20261012.mp4",
+    "bytes": 8510,
+    "sha256": "eac745341edf199272ccd365a35cfb0d5be05dd483d0cf1937ed8edbee26758a",
+    "codec": "h264",
+    "width": 96,
+    "height": 64,
+    "durationSeconds": 2,
+    "frames": 20,
+    "fullDecodeExit": 0,
+    "publicSoftwarePattern": true,
+    "path": "2026-10-12-native-video/UIQA_NATIVE_VIDEO_20261012.mp4"
+  },
+  "sizeFixtures": [
+    {
+      "filename": "UIQA_LIMIT_20M_VIDEO_20261012.mp4",
+      "bytes": 20971520,
+      "sha256": "e5f99e3cf5eac2e942bec7da77e7319706021dc7413703ff7cd51ca569532a5f",
+      "padding": "ISO BMFF free box"
+    },
+    {
+      "filename": "UIQA_OVER_20M_VIDEO_20261012.mp4",
+      "bytes": 20971521,
+      "sha256": "0e81b534a893223b4ca955377894f684670343c18fe81a4ba3bf90a21f6b408a",
+      "padding": "ISO BMFF free box"
+    },
+    {
+      "filename": "UIQA_TOTAL_A_VIDEO_20261012.mp4",
+      "bytes": 11534336,
+      "sha256": "7561d3bf8817b9383f6509473c30ee1285e1ebe0da67f6bf2f6c468754d51bea",
+      "padding": "ISO BMFF free box"
+    },
+    {
+      "filename": "UIQA_TOTAL_B_VIDEO_20261012.mp4",
+      "bytes": 11534336,
+      "sha256": "7561d3bf8817b9383f6509473c30ee1285e1ebe0da67f6bf2f6c468754d51bea",
+      "padding": "ISO BMFF free box"
+    }
+  ],
+  "sizeDecode": [
+    {
+      "filename": "UIQA_LIMIT_20M_VIDEO_20261012.mp4",
+      "bytes": 20971520,
+      "frames": 20,
+      "durationSeconds": 2,
+      "width": 96,
+      "height": 64,
+      "codec": "h264",
+      "fullDecodeExit": 0
+    },
+    {
+      "filename": "UIQA_OVER_20M_VIDEO_20261012.mp4",
+      "bytes": 20971521,
+      "frames": 20,
+      "durationSeconds": 2,
+      "width": 96,
+      "height": 64,
+      "codec": "h264",
+      "fullDecodeExit": 0
+    },
+    {
+      "filename": "UIQA_TOTAL_A_VIDEO_20261012.mp4",
+      "bytes": 11534336,
+      "frames": 20,
+      "durationSeconds": 2,
+      "width": 96,
+      "height": 64,
+      "codec": "h264",
+      "fullDecodeExit": 0
+    },
+    {
+      "filename": "UIQA_TOTAL_B_VIDEO_20261012.mp4",
+      "bytes": 11534336,
+      "frames": 20,
+      "durationSeconds": 2,
+      "width": 96,
+      "height": 64,
+      "codec": "h264",
+      "fullDecodeExit": 0
+    }
+  ],
+  "download": {
+    "filename": "UIQA_NATIVE_VIDEO_20261012.mp4",
+    "bytes": 8510,
+    "sha256": "eac745341edf199272ccd365a35cfb0d5be05dd483d0cf1937ed8edbee26758a",
+    "createdAtUtc": "2026-10-12T14:47:05.2369840Z",
+    "lastWriteAtUtc": "2026-10-12T14:47:05.4687621Z",
+    "frames": 20,
+    "fullDecodeExit": 0,
+    "browserEventObserved": false,
+    "absentBeforeClick": true
+  },
+  "implementation": {
+    "requestedModel": "gpt-6-luna",
+    "requestedEffort": "max",
+    "runtime": "requested-not-echoed",
+    "scope": "Temporary observer only",
+    "observerSha256": "2edc9731b2d515d37d65a3436e307c4d32518a3c447ccac8fc9f146ce9189773",
+    "selfCheckSha256": "3f6de284f4d510afe1c5df6ec62fce1bc717091fac21f481e20144ef63383936",
+    "productionAdapterCheck": {
+      "passed": true,
+      "observed": {
+        "model": "video-fixture",
+        "marker": "MEDIA_UI_VIDEO_RECEIPT_20261012",
+        "messageId": "5428ab8c-562f-4d74-999f-fae78cd1056a",
+        "videos": [
+          {
+            "type": "video_url",
+            "mimeType": "video/mp4",
+            "decodedBytes": 8510,
+            "sha256": "eac745341edf199272ccd365a35cfb0d5be05dd483d0cf1937ed8edbee26758a",
+            "matchesExpected": true
+          }
+        ],
+        "videoCount": 1
+      }
+    }
+  },
+  "independentReview": {
+    "report": ".validation/video-ui-20261012/independent-review.json",
+    "reportSha256": "9e7f189003c8def32595bf0dbb609f384be32b5f717fb397ba586c22271f2ab2",
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "configurationStatus": "requested and accepted; runtime metadata not echoed",
+    "baselineHead": "76821489fd49c9a2805af11e6e16aefa65579553",
+    "finalHead": "76821489fd49c9a2805af11e6e16aefa65579553",
+    "overall": "pass within fixed scope, with declared download event-observation gap",
+    "blocking": [],
+    "nonBlocking": [],
+    "acceptance": [
+      {
+        "id": "AC1",
+        "status": "pass",
+        "evidence": "public 8510-byte MP4 independently decoded; model video enabled; zero provider requests before send"
+      },
+      {
+        "id": "AC2",
+        "status": "pass",
+        "evidence": "exact20MiB accepted and retained after draft removal; overSingle/total zero added upload; invalid signature preserves valid draft and record IDs"
+      },
+      {
+        "id": "AC3",
+        "status": "pass",
+        "evidence": "one ordinary Pi Chat request; one nested video_url.url block; UUID/MIME/bytes/hash linked to Chrome user and HTTP200 succeeded"
+      },
+      {
+        "id": "AC4",
+        "status": "pass with declared event-observation gap",
+        "evidence": "frozen before/after reopen equal; old seven preserved; physical Downloads file newly created and independently decoded"
+      }
+    ],
+    "checks": [
+      {
+        "command": "node .validation/video-ui-20261012/observer-self-check.mjs",
+        "exitCode": 0,
+        "status": "pass"
+      },
+      {
+        "command": "node .validation/video-ui-20261012/verify-video.mjs --read-only",
+        "exitCode": 0,
+        "status": "pass"
+      },
+      {
+        "command": "ffprobe per six explicit local video paths; ffmpeg -hide_banner -loglevel error -i <path> -f null -",
+        "status": "all exit0, independently executed"
+      },
+      {
+        "command": "Get-FileHash on 45 frozen entries before and after",
+        "status": "all match"
+      },
+      {
+        "command": "view_image of five Chrome screenshots plus first/last frame",
+        "status": "actually viewed; no blocked controls in this flow"
+      },
+      {
+        "command": "check-production-adapter.mjs",
+        "status": "not executed because writes frozen result; script, compiled product adapter and frozen output inspected"
+      }
+    ],
+    "validationGaps": [
+      "Browser download event timed out; physical file/hash/probe/full decode are alternative evidence, not an observed browser event."
+    ],
+    "frozenManifestHashBefore": "6c558a145cc646dce8212a12ed8c54566a2794b1ba38bd9de9b788bf887f24d9",
+    "frozenManifestHashAfter": "6c558a145cc646dce8212a12ed8c54566a2794b1ba38bd9de9b788bf887f24d9",
+    "frozenFiles": 45
+  },
+  "reusedRegression": {
+    "reason": "No product changes; actual served distribution still matches complete accepted manifest",
+    "reference": "2026-10-12-legacy-provider-key.evidence.json",
+    "tests": 1909,
+    "pass": 1885,
+    "fail": 0,
+    "skip": 24,
+    "cleanFiles": 661,
+    "cleanDistManifestSha256": "12e6789de2aab7c9fc4af8cbdcc2b0e8b7c75210dec6f4e744449c011b09bee7",
+    "repeated": false
+  },
+  "evidenceRoot": ".validation/video-ui-20261012/",
+  "frozenEvidence": [
+    {
+      "path": "plan.md",
+      "sha256": "ddd24e8e0dbc9dd470d1cc2b7d0b9aec80980ec0415cd17c494ee8c62f26d523"
+    },
+    {
+      "path": "video-observer.mjs",
+      "sha256": "2edc9731b2d515d37d65a3436e307c4d32518a3c447ccac8fc9f146ce9189773"
+    },
+    {
+      "path": "observer-self-check.mjs",
+      "sha256": "3f6de284f4d510afe1c5df6ec62fce1bc717091fac21f481e20144ef63383936"
+    },
+    {
+      "path": "observer-result.md",
+      "sha256": "30df0ced8f6e5e215d3c20546573ad1acd73ec9b2db7cca3003fed5123bbc192"
+    },
+    {
+      "path": "chrome-fixture.mjs",
+      "sha256": "b5dc78755b524492629086c2c5cf9f0d63c16853e116e52bd90f702d45222bb2"
+    },
+    {
+      "path": "capture-state.mjs",
+      "sha256": "a7a8ed01e905751830823f3e51d3661da2008c44876888f79579cc4d973b5f7f"
+    },
+    {
+      "path": "verify-video.mjs",
+      "sha256": "ead73d1cf4f0e84e61a49464d9ea76f9f98400a4d727ac2e4727b0773f1f68cd"
+    },
+    {
+      "path": "check-production-adapter.mjs",
+      "sha256": "500f6e42b58d72f5a80794f14255354fb25e774e64620fbbe3142f2d8f66bfe1"
+    },
+    {
+      "path": "production-adapter-check.json",
+      "sha256": "9763b93d0437c30d102c12e8fb0c27265bc38fc3c3dd0f94c20482a236a13a41"
+    },
+    {
+      "path": "fixture.json",
+      "sha256": "d18d255bcbbf30e5ca2573285fdbc2561da020cfbc4a141d72ba4edde3892d49"
+    },
+    {
+      "path": "ffprobe.json",
+      "sha256": "0bb71ff47e6c81c81be72092c116fa4da4e97abbb23e6e904db2d34036de9d91"
+    },
+    {
+      "path": "generation.json",
+      "sha256": "f3248896a929a14270df7039bd0a1c37dd01d6659feaaef8cf11c94858b5ba51"
+    },
+    {
+      "path": "create-size-fixtures.py",
+      "sha256": "1a310c5310328ea96e2e5c934b50f4de6820e75120e145e50c5a1889ee1a563d"
+    },
+    {
+      "path": "size-fixtures.json",
+      "sha256": "57d783646a9fce1690962d58c458091ddd1340092908850eaeda56e0f73d415a"
+    },
+    {
+      "path": "size-fixtures-decode.json",
+      "sha256": "48c4b4108921643139e7bb698566e17379bff01c106d3b0c6c0065e8c8ac6d35"
+    },
+    {
+      "path": "decode.exit",
+      "sha256": "13bf7b3039c63bf5a50491fa3cfd8eb4e699d1ba1436315aef9cbe5711530354"
+    },
+    {
+      "path": "decode.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "before-models.json",
+      "sha256": "469863190028525329efa83f672eb326ad2a24f860c60afd5c7816618f7b29c3"
+    },
+    {
+      "path": "before-upload.json",
+      "sha256": "7f7ebb7e8e53ac61b18f1dd55305a59bf2a25cfccc4eae864e1226c0b9c84655"
+    },
+    {
+      "path": "limit-uploaded.json",
+      "sha256": "e14bc2907fa16e4fd34a9ef391e41ca79d50d7734135014397f37a096c3b53b4"
+    },
+    {
+      "path": "after-over-single.json",
+      "sha256": "e14bc2907fa16e4fd34a9ef391e41ca79d50d7734135014397f37a096c3b53b4"
+    },
+    {
+      "path": "after-over-total.json",
+      "sha256": "e14bc2907fa16e4fd34a9ef391e41ca79d50d7734135014397f37a096c3b53b4"
+    },
+    {
+      "path": "before-invalid-upload.json",
+      "sha256": "9e416bb3483e1f5e06ec57fd387da0162b12990d73c9530edc88e13a1e7958b3"
+    },
+    {
+      "path": "after-invalid-upload.json",
+      "sha256": "2372d0151da73f03d10007ed825feca6522bb68fdd073780f8ab070777b5730e"
+    },
+    {
+      "path": "before-reopen.json",
+      "sha256": "b02298b48fdce1dbc6bdb7ac167f090237840fa1a1a61a6998df1fe2afe5db51"
+    },
+    {
+      "path": "after-reopen.json",
+      "sha256": "b02298b48fdce1dbc6bdb7ac167f090237840fa1a1a61a6998df1fe2afe5db51"
+    },
+    {
+      "path": "chrome-evidence.json",
+      "sha256": "ee5911af8367ff831abfe13cb0d809583467e4fb0870839f9c012982431cee84"
+    },
+    {
+      "path": "download-before.json",
+      "sha256": "9dacba458e18b92230a591818dda8fb2f1eaad8db47a681b5a2cf0b0096bbdf5"
+    },
+    {
+      "path": "download-verification.json",
+      "sha256": "aaa2bee70bef0657f946c1f40ab250af690368ebed1b04e17c480ecaf06c1053"
+    },
+    {
+      "path": "verified.json",
+      "sha256": "19a67d0e58d5bc3b7abf34dffa4567a968869267c3ff510597e8a87fc265f8f6"
+    },
+    {
+      "path": "provider-observations.json",
+      "sha256": "26362eff1a277373e70bbc367cfd2cb38cd2fdcf7b5f364c7e55ef67c1dec706"
+    },
+    {
+      "path": "model-configuration.json",
+      "sha256": "2fa7cff0cf319938ce532ebdd8750394298d61b90ae78ccb21a57f9f6b53f5a1"
+    },
+    {
+      "path": "chrome-complete.jpg",
+      "sha256": "ce8bd1288d5f807c75aa01e264c008dd75a40363f874ec6d0de0d7cb31d6d76a"
+    },
+    {
+      "path": "chrome-limit-uploaded.jpg",
+      "sha256": "387f6123817aa2604db082567242d2540fedfc6c185ce020f39b818f41da2d01"
+    },
+    {
+      "path": "chrome-over-single.jpg",
+      "sha256": "84148308873a81c6aeb034c662c9d3c3af930ba1c1c7098103cd418a5d8879cc"
+    },
+    {
+      "path": "chrome-over-total.jpg",
+      "sha256": "e3e9d120a08c32d5a95aab4a2b9ad5cf7b6fa020e53f3fd4f04a9b912c832170"
+    },
+    {
+      "path": "chrome-invalid-upload.jpg",
+      "sha256": "807e9e366e4736f9771fc56021e98595b5f8a6c4ef2ae5ccfbb2611a94a451a5"
+    },
+    {
+      "path": "first-frame.png",
+      "sha256": "ebfc51e1ebe242844991dfd5f31bdd6521621c554a951d05329c7b640780696d"
+    },
+    {
+      "path": "last-frame.png",
+      "sha256": "33609539488ad06b7169e6783fe3cb3dce594c4f04403c365ecb8c6dfb105511"
+    },
+    {
+      "path": "UIQA_NATIVE_VIDEO_20261012.mp4",
+      "sha256": "eac745341edf199272ccd365a35cfb0d5be05dd483d0cf1937ed8edbee26758a"
+    },
+    {
+      "path": "UIQA_INVALID_VIDEO_20261012.mp4",
+      "sha256": "b53c3573f06c69b2bf80eccb4e16fd05b18f35ef3afc90cf858098ddd7d2e77f"
+    },
+    {
+      "path": "UIQA_LIMIT_20M_VIDEO_20261012.mp4",
+      "sha256": "e5f99e3cf5eac2e942bec7da77e7319706021dc7413703ff7cd51ca569532a5f"
+    },
+    {
+      "path": "UIQA_OVER_20M_VIDEO_20261012.mp4",
+      "sha256": "0e81b534a893223b4ca955377894f684670343c18fe81a4ba3bf90a21f6b408a"
+    },
+    {
+      "path": "UIQA_TOTAL_A_VIDEO_20261012.mp4",
+      "sha256": "7561d3bf8817b9383f6509473c30ee1285e1ebe0da67f6bf2f6c468754d51bea"
+    },
+    {
+      "path": "UIQA_TOTAL_B_VIDEO_20261012.mp4",
+      "sha256": "7561d3bf8817b9383f6509473c30ee1285e1ebe0da67f6bf2f6c468754d51bea"
+    }
+  ],
+  "screenshot": "2026-10-12-native-video/chrome-complete.jpg",
+  "limits": [
+    "Only Chat Completions/qwen transport to local fixed supplier; not external video understanding.",
+    "20 MiB boundary verifies upload only; sent video is 8510 bytes.",
+    "Container signature rejection does not prove every corrupted video is rejected."
+  ],
+  "downloadEventObservationGap": "Event timeout; actual new file, exact hash and full decoding verified",
+  "main4794Restarted": false,
+  "completeProjectGoal": false
+}
