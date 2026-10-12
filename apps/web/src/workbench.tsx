@@ -290,6 +290,7 @@ class RunFiles extends React.Component<{run:Row<Run>;data:ProjectState;perform:P
         </div>;
     }
 }
+type ManualReviewTarget={projectId:string;sessionId:string;teamId:string;taskId:string;taskVersion:number;key:string;objective:string;context:string;epoch:number};
 export class Inspector extends React.Component<{
     data: ProjectState;
     boot: Bootstrap;
@@ -304,7 +305,66 @@ export class Inspector extends React.Component<{
 
     selectedRun?:string;
     onRun?:(id:string)=>void;
-}> {
+}, {reviewTarget:ManualReviewTarget|null;reviewReason:string;reviewError:string;reviewSaving:boolean}> {
+    state={reviewTarget:null as ManualReviewTarget|null,reviewReason:'',reviewError:'',reviewSaving:false};
+    private reviewPending=false;
+    private reviewDisposed=false;
+    private reviewEpoch=0;
+    private reviewDialog:ManualReviewTarget|null=null;
+    private reviewTeam=(props=this.props)=>props.data.teams.slice().reverse().find(team=>props.tab!=='chat'||team.rootSessionId===props.sessionId);
+    private reviewContext=(props=this.props)=>{
+        const team=this.reviewTeam(props),session=props.data.sessions?.find(row=>row.id===props.sessionId);
+        return JSON.stringify([props.data.project.id,props.data.project.archived,props.data.project.settings.enabled,props.sessionId,session?.state,props.tab,props.embedded,props.inlineWorkflows,props.experiment?.id,props.selectedRun,team?.id,team?.version,team?.rootSessionId,team?.state,props.data.tasks.filter(task=>task.teamId===team?.id).map(task=>[task.id,task.version,task.key,task.objective,task.execution,task.acceptance,task.reviewOf])]);
+    };
+    componentWillUnmount(){this.reviewDisposed=true;this.reviewDialog=null;this.reviewEpoch++;}
+    componentDidUpdate(previous:Readonly<Inspector['props']>){
+        if(this.state.reviewTarget&&this.reviewContext(previous)!==this.reviewContext()){
+            this.reviewEpoch++;
+            this.setState({reviewError:'任务或页面上下文已变化，请关闭后重新打开人工审查窗口。'});
+        }
+    }
+    private reviewActive=(target:ManualReviewTarget)=>!this.reviewDisposed&&this.reviewDialog===target&&this.state.reviewTarget===target&&target.epoch===this.reviewEpoch;
+    private reviewCurrent=(target:ManualReviewTarget)=>this.reviewActive(target)&&!this.props.data.project.archived&&this.reviewContext()===target.context;
+    private closeReview=(target:ManualReviewTarget)=>{
+        if(this.reviewDisposed||this.reviewPending||this.reviewDialog!==target)return;
+        this.reviewDialog=null;this.reviewEpoch++;
+        this.setState(state=>state.reviewTarget===target?{reviewTarget:null,reviewError:''}:null);
+    };
+    private openReview=(taskId:string)=>{
+        const {data,sessionId}=this.props,team=this.reviewTeam(),task=data.tasks.find(row=>row.id===taskId&&row.teamId===team?.id);
+        if(this.reviewDisposed||this.reviewPending||this.reviewDialog||data.project.archived||this.props.tab==='experiments'||!team||!task||task.projectId!==data.project.id||task.execution!=='output_submitted'||!['pending','rejected','disputed'].includes(task.acceptance))return;
+        const target={projectId:data.project.id,sessionId,teamId:team.id,taskId:task.id,taskVersion:task.version,key:task.key,objective:task.objective,context:this.reviewContext(),epoch:++this.reviewEpoch};
+        this.reviewDialog=target;
+        this.setState({reviewTarget:target,reviewReason:'',reviewError:'',reviewSaving:false});
+    };
+    private submitReview=async(target:ManualReviewTarget)=>{
+        if(!this.reviewCurrent(target)||this.reviewPending)return;
+        const reason=this.state.reviewReason.trim();
+        if(!reason||reason.length>4000){this.setState({reviewError:'审查依据不能为空，且不能超过 4000 个字符。'});return;}
+        let invoked=false;
+        this.reviewPending=true;this.setState({reviewSaving:true,reviewError:''});
+        try{
+            return await this.props.perform(async()=>{
+                invoked=true;
+                if(!this.reviewCurrent(target))throw Error('任务或页面上下文已变化，人工审查已失效。');
+                try{
+                    const confirmed=await api(`/tasks/${encodeURIComponent(target.taskId)}/manual-review`,{verdict:'accepted',reason,expectedVersion:target.taskVersion});
+                    if(this.reviewCurrent(target)){this.reviewDialog=null;this.reviewEpoch++;this.setState({reviewTarget:null,reviewSaving:false,reviewError:''});}
+                    return confirmed;
+                }catch(error){if(this.reviewActive(target))this.setState({reviewError:error instanceof Error?error.message:String(error)});throw error;}
+            });
+        }catch(error){if(this.reviewActive(target))this.setState({reviewError:error instanceof Error?error.message:String(error)});}
+        finally{
+            this.reviewPending=false;
+            if(!this.reviewDisposed&&this.state.reviewTarget===target)this.setState(state=>({reviewSaving:false,reviewError:!invoked&&this.reviewActive(target)?'当前操作繁忙，人工审查未提交；依据已保留，请稍后重试。':state.reviewError}));
+        }
+    };
+    private renderReview(){
+        const {reviewTarget:target,reviewReason,reviewError,reviewSaving}=this.state;
+        if(!target)return null;
+        const dialog=<div onSubmit={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}><Modal title="人工确认验收" submitLabel="确认验收" busy={reviewSaving} closeDisabled={reviewSaving} submitDisabled={!this.reviewCurrent(target)||!reviewReason.trim()||reviewReason.trim().length>4000} onClose={()=>this.closeReview(target)} onSubmit={()=>this.submitReview(target)}><p className="small muted">任务 <code>{target.key}</code> · v{target.taskVersion}</p><p className="prose-text">{target.objective}</p><label>人工审查依据（将保留记录）<textarea name="reason" rows={6} required maxLength={4000} value={reviewReason} disabled={reviewSaving} onChange={event=>{if(this.reviewCurrent(target)&&!this.reviewPending)this.setState({reviewReason:event.target.value,reviewError:''});}}/></label>{reviewError?<p role="alert" className="error-text">{reviewError}</p>:null}</Modal></div>;
+        return typeof document!=='undefined'?createPortal(dialog,document.body):dialog;
+    }
     currentRun() { const runs=this.props.data.runs.filter(r=>r.experimentId===this.props.experiment?.id);return this.props.selectedRun?runs.find(r=>r.id===this.props.selectedRun):runs[runs.length-1]; }
     render() {
         const { data, boot, experiment: e, perform } = this.props;
@@ -325,12 +385,10 @@ export class Inspector extends React.Component<{
      const pendingTeam=teams.find(t=>t.id===a.subjectId),canStart=data.project.settings.enabled&&pendingTeam?.state==='awaiting_approval'&&pendingTeam.delegationEnabled;
      return <div className="inspector-section" key={a.id}><div className="small-label">{a.status==='approved'?'已批准的协作计划':'待批准的协作计划'}</div><h3>{pendingTeam?.goal}</h3><p className="small muted">{a.reason}</p>{!canStart?<p className="small muted" role="status">此计划已停止；请在对话中重新提出任务。</p>:null}<button className="primary full" disabled={data.project.archived||!canStart} onClick={() => { if (this.props.data.project.archived||!canStart) return; perform(async () => { if(a.status==='pending') await api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: true }); await api(`/teams/${a.subjectId}/activate`, {}); }, '协作计划已启动'); }}>{a.status==='approved'?'启动已批准协作':'批准并启动协作'}</button>{a.status==='pending'?<button className="text-button" disabled={data.project.archived?true:undefined} onClick={() => { if(this.props.data.project.archived)return; return perform(() => api(`/approvals/${a.id}/decide`, { expectedVersion: a.version, approved: false })); }}>拒绝此计划</button>:null}</div>;
  })}
- {team ? <div className="inspector-section"><div className="surface-heading"><h3>当前团队</h3><Badge value={team.state}/></div><p className="team-goal">{team.goal}</p>{team.blockReason?<p className="inline-warning">{team.blockReason}</p>:null}{team.state === 'active' && !boot.runtime.ready ? <p className="inline-warning">尚未启动助手：Pi 未就绪。任务仍保存在队列中，没有模拟执行。</p> : null}<div className="team-progress"><strong>{tasks.filter(t => t.acceptance === 'accepted').length}<span> / {tasks.length}</span></strong><span>任务已验收</span></div>{tasks.map(t => <div className="task-card" key={t.id}><div className="task-top"><div className={'role-mark role-' + t.role}>{label(t.role).slice(0, 1)}</div><div><strong>{label(t.role)} <code>{t.key}</code></strong><span>{label(t.execution)}</span></div></div><p>{t.objective}</p><div className="task-footer"><span>验收：{label(t.acceptance)}</span><span>{t.reviewOf ? '审查 ' + t.reviewOf : t.dependencies.length ? '依赖 ' + t.dependencies.join(', ') : '无前置依赖'}</span></div>{t.blockReason ? <p className="small error-text">{t.blockReason}</p> : null}{['running','pending'].includes(t.execution) ? <button className="text-button danger" disabled={data.project.archived} onClick={() => perform(() => api(`/tasks/${t.id}/cancel`, {}))}>停止此助手</button> : null}{['failed','cancelled','blocked'].includes(t.execution) ? <><button className="text-button" disabled={data.project.archived||!t.retry?.eligible} onClick={() => {if(!data.project.archived&&t.retry?.eligible) perform(() => api(`/tasks/${t.id}/retry`, {}));}}>新尝试重试</button>{t.retry&&!t.retry.eligible?<p className="small error-text" role="status">不能重试：{t.retry.code} — {t.retry.reason}</p>:null}</> : null}{t.attempts?.length?<details><summary>尝试历史（最近至多 10 次；较早记录仍保留）</summary>{t.attempts.map(a=><div key={a.id}><p className="small">尝试 <code>{short(a.id)}</code> · {label(a.state)} · {date(a.updatedAt)}</p>{a.error?<p className="small error-text">{a.error}</p>:null}{a.result?<p className="small prose-text">{label(a.result.outcome)}：{a.result.summary}{a.result.summaryTruncated?'（历史摘要已截断）':null}</p>:null}</div>)}</details>:null}{t.result ? <details><summary>结果与限制</summary>{t.role === 'reviewer' ? <p className="small" role="status">审查意见：{t.result.verdict === 'accept' ? '接受' : t.result.verdict === 'reject' ? '拒绝' : t.result.verdict === 'disputed' ? '存在争议' : '未提供；不能视为通过'}（独立于任务验收状态）</p> : null}<p className="small prose-text">{t.result.summary}</p></details> : null}{t.execution === 'output_submitted' && ['pending','rejected','disputed'].includes(t.acceptance) ? <button className="text-button" disabled={data.project.archived} onClick={() => {
-                            const reason = prompt('人工审查依据（将保留记录）');
-                            if (reason)
-                                perform(() => api(`/tasks/${t.id}/manual-review`, { verdict: 'accepted', reason }));
+ {team ? <div className="inspector-section"><div className="surface-heading"><h3>当前团队</h3><Badge value={team.state}/></div><p className="team-goal">{team.goal}</p>{team.blockReason?<p className="inline-warning">{team.blockReason}</p>:null}{team.state === 'active' && !boot.runtime.ready ? <p className="inline-warning">尚未启动助手：Pi 未就绪。任务仍保存在队列中，没有模拟执行。</p> : null}<div className="team-progress"><strong>{tasks.filter(t => t.acceptance === 'accepted').length}<span> / {tasks.length}</span></strong><span>任务已验收</span></div>{tasks.map(t => <div className="task-card" key={t.id}><div className="task-top"><div className={'role-mark role-' + t.role}>{label(t.role).slice(0, 1)}</div><div><strong>{label(t.role)} <code>{t.key}</code></strong><span>{label(t.execution)}</span></div></div><p>{t.objective}</p><div className="task-footer"><span>验收：{label(t.acceptance)}</span><span>{t.reviewOf ? '审查 ' + t.reviewOf : t.dependencies.length ? '依赖 ' + t.dependencies.join(', ') : '无前置依赖'}</span></div>{t.blockReason ? <p className="small error-text">{t.blockReason}</p> : null}{['running','pending'].includes(t.execution) ? <button className="text-button danger" disabled={data.project.archived} onClick={() => perform(() => api(`/tasks/${t.id}/cancel`, {}))}>停止此助手</button> : null}{['failed','cancelled','blocked'].includes(t.execution) ? <><button className="text-button" disabled={data.project.archived||!t.retry?.eligible} onClick={() => {if(!data.project.archived&&t.retry?.eligible) perform(() => api(`/tasks/${t.id}/retry`, {}));}}>新尝试重试</button>{t.retry&&!t.retry.eligible?<p className="small error-text" role="status">不能重试：{t.retry.code} — {t.retry.reason}</p>:null}</> : null}{t.attempts?.length?<details><summary>尝试历史（最近至多 10 次；较早记录仍保留）</summary>{t.attempts.map(a=><div key={a.id}><p className="small">尝试 <code>{short(a.id)}</code> · {label(a.state)} · {date(a.updatedAt)}</p>{a.error?<p className="small error-text">{a.error}</p>:null}{a.result?<p className="small prose-text">{label(a.result.outcome)}：{a.result.summary}{a.result.summaryTruncated?'（历史摘要已截断）':null}</p>:null}</div>)}</details>:null}{t.result ? <details><summary>结果与限制</summary>{t.role === 'reviewer' ? <p className="small" role="status">审查意见：{t.result.verdict === 'accept' ? '接受' : t.result.verdict === 'reject' ? '拒绝' : t.result.verdict === 'disputed' ? '存在争议' : '未提供；不能视为通过'}（独立于任务验收状态）</p> : null}<p className="small prose-text">{t.result.summary}</p></details> : null}{t.execution === 'output_submitted' && ['pending','rejected','disputed'].includes(t.acceptance) ? <button type="button" className="text-button" disabled={data.project.archived} onClick={() => {
+                            this.openReview(t.id);
  }}>人工确认验收</button> : null}</div>)}{budget ? <div className="budget-note">尝试额度：{budget.used} 已结算 / {budget.reserved} 已预留 / {budget.unknown} 待对账<br />总额度 {budget.limit} 次。此额度不是供应商账单上限。</div> : null}<div className="actions wrap">{team.state === 'active' ? <button className="secondary compact" disabled={data.project.archived} onClick={() => perform(() => api(`/teams/${team.id}/pause`, {}))}>暂停分配</button> : null}{team.state === 'paused' ? <button className="secondary compact" disabled={data.project.archived} onClick={() => perform(() => api(`/teams/${team.id}/resume`, {}))}>恢复</button> : null}<button className="secondary compact" disabled={data.project.archived} onClick={() => this.props.onDirective(team.id)}>引导 / 改变目标</button></div></div> : <div className="inspector-section muted small">在对话中提出协作任务。</div>}
 </details>:null}
- </aside>;
+ {this.renderReview()}</aside>;
     }
 }

@@ -488,6 +488,100 @@ class RunFiles extends React.Component {
   }
 }
 class Inspector extends React.Component {
+  constructor() {
+    super(...arguments);
+    this.state = { reviewTarget: null, reviewReason: "", reviewError: "", reviewSaving: false };
+    this.reviewPending = false;
+    this.reviewDisposed = false;
+    this.reviewEpoch = 0;
+    this.reviewDialog = null;
+    this.reviewTeam = (props = this.props) => props.data.teams.slice().reverse().find((team) => props.tab !== "chat" || team.rootSessionId === props.sessionId);
+    this.reviewContext = (props = this.props) => {
+      const team = this.reviewTeam(props), session = props.data.sessions?.find((row) => row.id === props.sessionId);
+      return JSON.stringify([props.data.project.id, props.data.project.archived, props.data.project.settings.enabled, props.sessionId, session?.state, props.tab, props.embedded, props.inlineWorkflows, props.experiment?.id, props.selectedRun, team?.id, team?.version, team?.rootSessionId, team?.state, props.data.tasks.filter((task) => task.teamId === team?.id).map((task) => [task.id, task.version, task.key, task.objective, task.execution, task.acceptance, task.reviewOf])]);
+    };
+    this.reviewActive = (target) => !this.reviewDisposed && this.reviewDialog === target && this.state.reviewTarget === target && target.epoch === this.reviewEpoch;
+    this.reviewCurrent = (target) => this.reviewActive(target) && !this.props.data.project.archived && this.reviewContext() === target.context;
+    this.closeReview = (target) => {
+      if (this.reviewDisposed || this.reviewPending || this.reviewDialog !== target) return;
+      this.reviewDialog = null;
+      this.reviewEpoch++;
+      this.setState((state) => state.reviewTarget === target ? { reviewTarget: null, reviewError: "" } : null);
+    };
+    this.openReview = (taskId) => {
+      const { data, sessionId } = this.props, team = this.reviewTeam(), task = data.tasks.find((row) => row.id === taskId && row.teamId === team?.id);
+      if (this.reviewDisposed || this.reviewPending || this.reviewDialog || data.project.archived || this.props.tab === "experiments" || !team || !task || task.projectId !== data.project.id || task.execution !== "output_submitted" || !["pending", "rejected", "disputed"].includes(task.acceptance)) return;
+      const target = { projectId: data.project.id, sessionId, teamId: team.id, taskId: task.id, taskVersion: task.version, key: task.key, objective: task.objective, context: this.reviewContext(), epoch: ++this.reviewEpoch };
+      this.reviewDialog = target;
+      this.setState({ reviewTarget: target, reviewReason: "", reviewError: "", reviewSaving: false });
+    };
+    this.submitReview = async (target) => {
+      if (!this.reviewCurrent(target) || this.reviewPending) return;
+      const reason = this.state.reviewReason.trim();
+      if (!reason || reason.length > 4e3) {
+        this.setState({ reviewError: "\u5BA1\u67E5\u4F9D\u636E\u4E0D\u80FD\u4E3A\u7A7A\uFF0C\u4E14\u4E0D\u80FD\u8D85\u8FC7 4000 \u4E2A\u5B57\u7B26\u3002" });
+        return;
+      }
+      let invoked = false;
+      this.reviewPending = true;
+      this.setState({ reviewSaving: true, reviewError: "" });
+      try {
+        return await this.props.perform(async () => {
+          invoked = true;
+          if (!this.reviewCurrent(target)) throw Error("\u4EFB\u52A1\u6216\u9875\u9762\u4E0A\u4E0B\u6587\u5DF2\u53D8\u5316\uFF0C\u4EBA\u5DE5\u5BA1\u67E5\u5DF2\u5931\u6548\u3002");
+          try {
+            const confirmed = await api(`/tasks/${encodeURIComponent(target.taskId)}/manual-review`, { verdict: "accepted", reason, expectedVersion: target.taskVersion });
+            if (this.reviewCurrent(target)) {
+              this.reviewDialog = null;
+              this.reviewEpoch++;
+              this.setState({ reviewTarget: null, reviewSaving: false, reviewError: "" });
+            }
+            return confirmed;
+          } catch (error) {
+            if (this.reviewActive(target)) this.setState({ reviewError: error instanceof Error ? error.message : String(error) });
+            throw error;
+          }
+        });
+      } catch (error) {
+        if (this.reviewActive(target)) this.setState({ reviewError: error instanceof Error ? error.message : String(error) });
+      } finally {
+        this.reviewPending = false;
+        if (!this.reviewDisposed && this.state.reviewTarget === target) this.setState((state) => ({ reviewSaving: false, reviewError: !invoked && this.reviewActive(target) ? "\u5F53\u524D\u64CD\u4F5C\u7E41\u5FD9\uFF0C\u4EBA\u5DE5\u5BA1\u67E5\u672A\u63D0\u4EA4\uFF1B\u4F9D\u636E\u5DF2\u4FDD\u7559\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002" : state.reviewError }));
+      }
+    };
+  }
+  componentWillUnmount() {
+    this.reviewDisposed = true;
+    this.reviewDialog = null;
+    this.reviewEpoch++;
+  }
+  componentDidUpdate(previous) {
+    if (this.state.reviewTarget && this.reviewContext(previous) !== this.reviewContext()) {
+      this.reviewEpoch++;
+      this.setState({ reviewError: "\u4EFB\u52A1\u6216\u9875\u9762\u4E0A\u4E0B\u6587\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u6253\u5F00\u4EBA\u5DE5\u5BA1\u67E5\u7A97\u53E3\u3002" });
+    }
+  }
+  renderReview() {
+    const { reviewTarget: target, reviewReason, reviewError, reviewSaving } = this.state;
+    if (!target) return null;
+    const dialog = /* @__PURE__ */ jsx("div", { onSubmit: (event) => event.stopPropagation(), onKeyDown: (event) => event.stopPropagation(), children: /* @__PURE__ */ jsxs(Modal, { title: "\u4EBA\u5DE5\u786E\u8BA4\u9A8C\u6536", submitLabel: "\u786E\u8BA4\u9A8C\u6536", busy: reviewSaving, closeDisabled: reviewSaving, submitDisabled: !this.reviewCurrent(target) || !reviewReason.trim() || reviewReason.trim().length > 4e3, onClose: () => this.closeReview(target), onSubmit: () => this.submitReview(target), children: [
+      /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+        "\u4EFB\u52A1 ",
+        /* @__PURE__ */ jsx("code", { children: target.key }),
+        " \xB7 v",
+        target.taskVersion
+      ] }),
+      /* @__PURE__ */ jsx("p", { className: "prose-text", children: target.objective }),
+      /* @__PURE__ */ jsxs("label", { children: [
+        "\u4EBA\u5DE5\u5BA1\u67E5\u4F9D\u636E\uFF08\u5C06\u4FDD\u7559\u8BB0\u5F55\uFF09",
+        /* @__PURE__ */ jsx("textarea", { name: "reason", rows: 6, required: true, maxLength: 4e3, value: reviewReason, disabled: reviewSaving, onChange: (event) => {
+          if (this.reviewCurrent(target) && !this.reviewPending) this.setState({ reviewReason: event.target.value, reviewError: "" });
+        } })
+      ] }),
+      reviewError ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: reviewError }) : null
+    ] }) });
+    return typeof document !== "undefined" ? createPortal(dialog, document.body) : dialog;
+  }
   currentRun() {
     const runs = this.props.data.runs.filter((r) => r.experimentId === this.props.experiment?.id);
     return this.props.selectedRun ? runs.find((r) => r.id === this.props.selectedRun) : runs[runs.length - 1];
@@ -684,10 +778,8 @@ class Inspector extends React.Component {
               ] }) : null,
               /* @__PURE__ */ jsx("p", { className: "small prose-text", children: t.result.summary })
             ] }) : null,
-            t.execution === "output_submitted" && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived, onClick: () => {
-              const reason = prompt("\u4EBA\u5DE5\u5BA1\u67E5\u4F9D\u636E\uFF08\u5C06\u4FDD\u7559\u8BB0\u5F55\uFF09");
-              if (reason)
-                perform(() => api(`/tasks/${t.id}/manual-review`, { verdict: "accepted", reason }));
+            t.execution === "output_submitted" && ["pending", "rejected", "disputed"].includes(t.acceptance) ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: data.project.archived, onClick: () => {
+              this.openReview(t.id);
             }, children: "\u4EBA\u5DE5\u786E\u8BA4\u9A8C\u6536" }) : null
           ] }, t.id)),
           budget ? /* @__PURE__ */ jsxs("div", { className: "budget-note", children: [
@@ -709,7 +801,8 @@ class Inspector extends React.Component {
             /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived, onClick: () => this.props.onDirective(team.id), children: "\u5F15\u5BFC / \u6539\u53D8\u76EE\u6807" })
           ] })
         ] }) : /* @__PURE__ */ jsx("div", { className: "inspector-section muted small", children: "\u5728\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u534F\u4F5C\u4EFB\u52A1\u3002" })
-      ] }) : null
+      ] }) : null,
+      this.renderReview()
     ] });
   }
 }
