@@ -348,25 +348,123 @@ class Chat extends React.Component {
     return typeof document !== "undefined" ? createPortal(dialog, document.body) : dialog;
   }
 }
-function OutcomeReview({ run, perform, readOnly = false }) {
-  if (!["succeeded", "failed", "cancelled"].includes(run.state)) return null;
-  const disposition = run.answerDisposition ?? (run.metrics ? "answered" : run.state === "cancelled" && !run.startedAt ? "unanswered" : "needs_review");
-  if (disposition !== "needs_review") return /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-    "\u95EE\u9898\u56DE\u7B54\u72B6\u6001\uFF1A",
-    disposition === "answered" ? "\u5DF2\u6709\u7ED3\u679C\uFF0C\u6E90\u7801\u53D7\u4FDD\u62A4" : "\u7528\u6237\u786E\u8BA4\u672A\u56DE\u7B54\uFF0C\u53EF\u51C6\u5907\u6709\u754C\u4FEE\u590D"
-  ] });
-  const review = (disposition2) => {
-    const reason = prompt("\u5148\u68C0\u67E5\u65E5\u5FD7\u4E0E\u539F\u59CB\u4EA7\u7269\uFF0C\u518D\u8BF4\u660E\u6B64\u6B21\u8FD0\u884C\u662F\u5426\u56DE\u7B54\u7814\u7A76\u95EE\u9898\uFF1A");
-    if (reason) void perform(() => api(`/runs/${run.id}/outcome-review`, { expectedVersion: run.version, disposition: disposition2, reason }), "\u5DF2\u4FDD\u5B58\u7ED3\u679C\u8BC4\u8BAE\uFF1B\u4E0D\u4F1A\u81EA\u52A8\u542F\u52A8\u8BA1\u7B97");
-  };
-  return /* @__PURE__ */ jsxs("div", { className: "approval-card", children: [
-    /* @__PURE__ */ jsx("h4", { children: "\u6B64\u6B21\u8FD0\u884C\u662F\u5426\u56DE\u7B54\u7814\u7A76\u95EE\u9898\uFF1F" }),
-    /* @__PURE__ */ jsx("p", { className: "small", children: "\u65E0\u6709\u6548\u6570\u503C\u4E0D\u4E00\u5B9A\u8868\u793A\u6CA1\u6709\u7814\u7A76\u7ED3\u679C\u3002\u8BF7\u7ED3\u5408\u5047\u8BBE\u4E0E\u771F\u5B9E\u65E5\u5FD7\u5224\u65AD\uFF1B\u6B64\u64CD\u4F5C\u4E0D\u4F1A\u4FEE\u6539\u6267\u884C\u72B6\u6001\u3001\u4EA7\u7269\u5B8C\u6574\u6027\u6216\u5047\u8BBE\u7ED3\u8BBA\u3002" }),
-    /* @__PURE__ */ jsxs("div", { className: "stack-actions", children: [
-      /* @__PURE__ */ jsx("button", { className: "secondary", disabled: readOnly, onClick: () => review("unanswered"), children: "\u672A\u56DE\u7B54\uFF1A\u5141\u8BB8\u51C6\u5907\u4FEE\u590D" }),
-      /* @__PURE__ */ jsx("button", { className: "secondary", disabled: readOnly, onClick: () => review("answered"), children: "\u5DF2\u56DE\u7B54\uFF1A\u51BB\u7ED3\u8282\u70B9" })
-    ] })
-  ] });
+class OutcomeReview extends React.Component {
+  constructor() {
+    super(...arguments);
+    this.state = { target: null, reason: "", error: "", saving: false };
+    this.pending = null;
+    this.disposed = false;
+    this.epoch = 0;
+    this.disposition = (run) => run.metrics && Object.keys(run.metrics).length ? "answered" : run.answerDisposition ?? (run.state === "cancelled" && !run.startedAt ? "unanswered" : "needs_review");
+    this.eligible = () => ["succeeded", "failed", "cancelled"].includes(this.props.run.state) && this.disposition(this.props.run) === "needs_review";
+    this.active = (target) => !this.disposed && this.state.target === target && this.epoch === target.epoch;
+    this.current = (target) => this.active(target) && !this.props.readOnly && this.eligible() && target.id === this.props.run.id && target.version === this.props.run.version && target.projectId === this.props.run.projectId && target.experimentId === this.props.run.experimentId && target.state === this.props.run.state;
+  }
+  componentWillUnmount() {
+    this.disposed = true;
+    this.epoch++;
+    this.pending = null;
+  }
+  componentDidUpdate(previous) {
+    const run = this.props.run, old = previous.run;
+    if (old.id !== run.id || old.version !== run.version || old.projectId !== run.projectId || old.experimentId !== run.experimentId || old.state !== run.state || this.disposition(old) !== this.disposition(run) || previous.readOnly !== this.props.readOnly) {
+      this.epoch++;
+      this.pending = null;
+      if (this.state.target) this.setState({ saving: false, error: "\u8FD0\u884C\u8BB0\u5F55\u6216\u9879\u76EE\u72B6\u6001\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u5F39\u7A97\u540E\u91CD\u65B0\u6838\u5BF9\u3002" });
+      else this.setState({ saving: false });
+    }
+  }
+  open(disposition, run = this.props.run, epoch = this.epoch) {
+    if (run !== this.props.run || epoch !== this.epoch || this.disposed || this.props.readOnly || this.state.target || this.pending || !this.eligible()) return;
+    const { id, version, projectId, experimentId, state } = this.props.run;
+    this.setState({ target: { id, version, projectId, experimentId, state, disposition, epoch: ++this.epoch }, reason: "", error: "", saving: false });
+  }
+  close(target = this.state.target) {
+    if (!this.disposed && target === this.state.target && this.pending !== target) {
+      this.epoch++;
+      this.setState({ target: null, reason: "", error: "", saving: false });
+    }
+  }
+  async save(target = this.state.target) {
+    if (!target || this.disposed || target !== this.state.target || this.pending) return;
+    if (!this.current(target)) {
+      this.setState({ error: "\u8FD0\u884C\u8BB0\u5F55\u6216\u9879\u76EE\u72B6\u6001\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u5F39\u7A97\u540E\u91CD\u65B0\u6838\u5BF9\u3002" });
+      return;
+    }
+    const reason = this.state.reason.trim();
+    if (!reason || reason.length > 4e3) {
+      this.setState({ error: "\u8BC4\u8BAE\u7406\u7531\u4E0D\u80FD\u4E3A\u7A7A\uFF0C\u4E14\u4E0D\u80FD\u8D85\u8FC7 4000 \u4E2A\u5B57\u7B26\u3002" });
+      return;
+    }
+    let sent = false;
+    this.pending = target;
+    this.setState({ saving: true, error: "" });
+    try {
+      await this.props.perform(async () => {
+        if (!this.current(target)) throw Error("\u8FD0\u884C\u8BB0\u5F55\u6216\u9879\u76EE\u72B6\u6001\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u5F39\u7A97\u540E\u91CD\u65B0\u6838\u5BF9\u3002");
+        if (sent) throw Error("\u672C\u6B21\u8BC4\u8BAE\u5DF2\u63D0\u4EA4\uFF0C\u8BF7\u7B49\u5F85\u5904\u7406\u5B8C\u6210\u3002");
+        try {
+          sent = true;
+          const result = await api(`/runs/${target.id}/outcome-review`, { expectedVersion: target.version, disposition: target.disposition, reason });
+          if (this.current(target)) {
+            this.epoch++;
+            this.pending = null;
+            this.setState({ target: null, reason: "", error: "", saving: false });
+          }
+          return result;
+        } catch (error) {
+          if (this.current(target)) this.setState({ error: error instanceof Error ? error.message : String(error) });
+          throw error;
+        }
+      }, "\u5DF2\u4FDD\u5B58\u7ED3\u679C\u8BC4\u8BAE\uFF1B\u4E0D\u4F1A\u81EA\u52A8\u542F\u52A8\u8BA1\u7B97");
+      if (!sent && this.current(target)) this.setState({ error: "\u5F53\u524D\u64CD\u4F5C\u672A\u6267\u884C\uFF0C\u8BF7\u7B49\u5F85\u5176\u4ED6\u64CD\u4F5C\u5B8C\u6210\u540E\u91CD\u8BD5\u3002" });
+    } catch (error) {
+      if (this.current(target)) this.setState({ error: error instanceof Error ? error.message : String(error) });
+    } finally {
+      if (this.pending === target) this.pending = null;
+      if (this.active(target)) this.setState({ saving: false });
+    }
+  }
+  render() {
+    const { run, readOnly } = this.props, { target, reason, error, saving } = this.state;
+    const disposition = this.disposition(run), terminal = ["succeeded", "failed", "cancelled"].includes(run.state), epoch = this.epoch;
+    const stale = !!target && !this.current(target);
+    const dialog = target ? /* @__PURE__ */ jsx("div", { onSubmit: (event) => event.stopPropagation(), onKeyDown: (event) => event.stopPropagation(), children: /* @__PURE__ */ jsxs(Modal, { title: "\u8FD0\u884C\u7ED3\u679C\u8BC4\u8BAE", description: "\u5148\u68C0\u67E5\u65E5\u5FD7\u4E0E\u539F\u59CB\u4EA7\u7269\uFF0C\u518D\u8BF4\u660E\u6B64\u6B21\u8FD0\u884C\u662F\u5426\u56DE\u7B54\u7814\u7A76\u95EE\u9898\u3002", submitLabel: target.disposition === "unanswered" ? "\u786E\u8BA4\u672A\u56DE\u7B54\uFF0C\u5141\u8BB8\u51C6\u5907\u4FEE\u590D" : "\u786E\u8BA4\u5DF2\u56DE\u7B54\uFF0C\u51BB\u7ED3\u8282\u70B9", busy: saving, closeDisabled: saving, submitDisabled: !!readOnly || stale || !reason.trim() || reason.trim().length > 4e3, onClose: () => this.close(target), onSubmit: () => this.save(target), children: [
+      /* @__PURE__ */ jsxs("p", { children: [
+        "\u8FD0\u884C ",
+        /* @__PURE__ */ jsx("code", { children: short(target.id) }),
+        " \xB7 \u7248\u672C ",
+        target.version,
+        " \xB7 ",
+        target.disposition === "unanswered" ? "\u672A\u56DE\u7B54\u7814\u7A76\u95EE\u9898" : "\u5DF2\u56DE\u7B54\u7814\u7A76\u95EE\u9898"
+      ] }),
+      /* @__PURE__ */ jsxs("label", { children: [
+        "\u8BC4\u8BAE\u7406\u7531",
+        /* @__PURE__ */ jsx("textarea", { name: "reason", "aria-label": "\u8BC4\u8BAE\u7406\u7531", rows: 5, required: true, maxLength: 4e3, value: reason, disabled: saving || readOnly || stale, onChange: (event) => {
+          if (this.current(target) && !this.pending) this.setState({ reason: event.target.value, error: "" });
+        }, placeholder: "\u8BF7\u7ED3\u5408\u65E5\u5FD7\u548C\u539F\u59CB\u4EA7\u7269\u8BF4\u660E\u5224\u65AD\u4F9D\u636E\u2026" })
+      ] }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: target.disposition === "unanswered" ? "\u4FDD\u5B58\u540E\u53EF\u51C6\u5907\u6709\u754C\u4FEE\u590D\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u542F\u52A8\u8BA1\u7B97\u3002" : "\u4FDD\u5B58\u540E\u8BE5\u8282\u70B9\u6E90\u7801\u53D7\u4FDD\u62A4\uFF0C\u540E\u7EED\u6539\u52A8\u9700\u6D3E\u751F\u65B0\u5B50\u5B9E\u9A8C\u3002" }),
+      error || stale || readOnly ? /* @__PURE__ */ jsxs("p", { className: "error-text", role: "alert", children: [
+        error || (readOnly ? "\u9879\u76EE\u5DF2\u5F52\u6863\uFF0C\u4E0D\u80FD\u4FDD\u5B58\u8BC4\u8BAE\u3002" : "\u8FD0\u884C\u8BB0\u5F55\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u5F39\u7A97\u540E\u91CD\u65B0\u6838\u5BF9\u3002"),
+        " \u5F53\u524D\u8F93\u5165\u4FDD\u7559\u3002"
+      ] }) : null
+    ] }) }) : null;
+    return /* @__PURE__ */ jsxs(Fragment, { children: [
+      terminal ? disposition !== "needs_review" ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+        "\u95EE\u9898\u56DE\u7B54\u72B6\u6001\uFF1A",
+        disposition === "answered" ? "\u5DF2\u6709\u7ED3\u679C\uFF0C\u6E90\u7801\u53D7\u4FDD\u62A4" : "\u7528\u6237\u786E\u8BA4\u672A\u56DE\u7B54\uFF0C\u53EF\u51C6\u5907\u6709\u754C\u4FEE\u590D"
+      ] }) : /* @__PURE__ */ jsxs("div", { className: "approval-card", children: [
+        /* @__PURE__ */ jsx("h4", { children: "\u6B64\u6B21\u8FD0\u884C\u662F\u5426\u56DE\u7B54\u7814\u7A76\u95EE\u9898\uFF1F" }),
+        /* @__PURE__ */ jsx("p", { className: "small", children: "\u65E0\u6709\u6548\u6570\u503C\u4E0D\u4E00\u5B9A\u8868\u793A\u6CA1\u6709\u7814\u7A76\u7ED3\u679C\u3002\u8BF7\u7ED3\u5408\u5047\u8BBE\u4E0E\u771F\u5B9E\u65E5\u5FD7\u5224\u65AD\uFF1B\u6B64\u64CD\u4F5C\u4E0D\u4F1A\u4FEE\u6539\u6267\u884C\u72B6\u6001\u3001\u4EA7\u7269\u5B8C\u6574\u6027\u6216\u5047\u8BBE\u7ED3\u8BBA\u3002" }),
+        /* @__PURE__ */ jsxs("div", { className: "stack-actions", children: [
+          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: readOnly || saving, onClick: () => this.open("unanswered", run, epoch), children: "\u672A\u56DE\u7B54\uFF1A\u5141\u8BB8\u51C6\u5907\u4FEE\u590D" }),
+          /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: readOnly || saving, onClick: () => this.open("answered", run, epoch), children: "\u5DF2\u56DE\u7B54\uFF1A\u51BB\u7ED3\u8282\u70B9" })
+        ] })
+      ] }) : null,
+      dialog && typeof document !== "undefined" ? createPortal(dialog, document.body) : dialog
+    ] });
+  }
 }
 class RunFiles extends React.Component {
   constructor() {

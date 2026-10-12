@@ -244,12 +244,64 @@ export class Chat extends React.Component<{
         return typeof document!=='undefined'?createPortal(dialog,document.body):dialog;
     }
 }
-export function OutcomeReview({run,perform,readOnly=false}:{run:Row<Run>;perform:Perform;readOnly?:boolean}) {
-    if(!['succeeded','failed','cancelled'].includes(run.state))return null;
-    const disposition=run.answerDisposition??(run.metrics?'answered':run.state==='cancelled'&&!run.startedAt?'unanswered':'needs_review');
-    if(disposition!=='needs_review')return <p className="small muted">问题回答状态：{disposition==='answered'?'已有结果，源码受保护':'用户确认未回答，可准备有界修复'}</p>;
-    const review=(disposition:'answered'|'unanswered')=>{const reason=prompt('先检查日志与原始产物，再说明此次运行是否回答研究问题：');if(reason)void perform(()=>api(`/runs/${run.id}/outcome-review`,{expectedVersion:run.version,disposition,reason}),'已保存结果评议；不会自动启动计算');};
-    return <div className="approval-card"><h4>此次运行是否回答研究问题？</h4><p className="small">无有效数值不一定表示没有研究结果。请结合假设与真实日志判断；此操作不会修改执行状态、产物完整性或假设结论。</p><div className="stack-actions"><button className="secondary" disabled={readOnly} onClick={()=>review('unanswered')}>未回答：允许准备修复</button><button className="secondary" disabled={readOnly} onClick={()=>review('answered')}>已回答：冻结节点</button></div></div>;
+type OutcomeReviewTarget={id:string;version:number;projectId:Row<Run>['projectId'];experimentId:string;state:Run['state'];disposition:'answered'|'unanswered';epoch:number};
+interface OutcomeReviewState {target:OutcomeReviewTarget|null;reason:string;error:string;saving:boolean;}
+export class OutcomeReview extends React.Component<{run:Row<Run>;perform:Perform;readOnly?:boolean},OutcomeReviewState> {
+    state:OutcomeReviewState={target:null,reason:'',error:'',saving:false};
+    private pending:OutcomeReviewTarget|null=null;
+    private disposed=false;
+    private epoch=0;
+    private disposition=(run:Row<Run>)=>run.metrics&&Object.keys(run.metrics).length?'answered':run.answerDisposition??(run.state==='cancelled'&&!run.startedAt?'unanswered':'needs_review');
+    private eligible=()=>['succeeded','failed','cancelled'].includes(this.props.run.state)&&this.disposition(this.props.run)==='needs_review';
+    private active=(target:OutcomeReviewTarget)=>!this.disposed&&this.state.target===target&&this.epoch===target.epoch;
+    private current=(target:OutcomeReviewTarget)=>this.active(target)&&!this.props.readOnly&&this.eligible()&&target.id===this.props.run.id&&target.version===this.props.run.version&&target.projectId===this.props.run.projectId&&target.experimentId===this.props.run.experimentId&&target.state===this.props.run.state;
+    componentWillUnmount(){this.disposed=true;this.epoch++;this.pending=null;}
+    componentDidUpdate(previous:Readonly<OutcomeReview['props']>){
+        const run=this.props.run,old=previous.run;
+        if(old.id!==run.id||old.version!==run.version||old.projectId!==run.projectId||old.experimentId!==run.experimentId||old.state!==run.state||this.disposition(old)!==this.disposition(run)||previous.readOnly!==this.props.readOnly){
+            this.epoch++;this.pending=null;
+            if(this.state.target)this.setState({saving:false,error:'运行记录或项目状态已变化，请关闭弹窗后重新核对。'});else this.setState({saving:false});
+        }
+    }
+    open(disposition:'answered'|'unanswered',run=this.props.run,epoch=this.epoch){
+        if(run!==this.props.run||epoch!==this.epoch||this.disposed||this.props.readOnly||this.state.target||this.pending||!this.eligible())return;
+        const {id,version,projectId,experimentId,state}=this.props.run;this.setState({target:{id,version,projectId,experimentId,state,disposition,epoch:++this.epoch},reason:'',error:'',saving:false});
+    }
+    close(target=this.state.target){if(!this.disposed&&target===this.state.target&&this.pending!==target){this.epoch++;this.setState({target:null,reason:'',error:'',saving:false});}}
+    async save(target=this.state.target){
+        if(!target||this.disposed||target!==this.state.target||this.pending)return;
+        if(!this.current(target)){this.setState({error:'运行记录或项目状态已变化，请关闭弹窗后重新核对。'});return;}
+        const reason=this.state.reason.trim();
+        if(!reason||reason.length>4000){this.setState({error:'评议理由不能为空，且不能超过 4000 个字符。'});return;}
+        let sent=false;
+        this.pending=target;this.setState({saving:true,error:''});
+        try{
+            await this.props.perform(async()=>{
+                if(!this.current(target))throw Error('运行记录或项目状态已变化，请关闭弹窗后重新核对。');
+                if(sent)throw Error('本次评议已提交，请等待处理完成。');
+                try{
+                    sent=true;
+                    const result=await api(`/runs/${target.id}/outcome-review`,{expectedVersion:target.version,disposition:target.disposition,reason});
+                    if(this.current(target)){this.epoch++;this.pending=null;this.setState({target:null,reason:'',error:'',saving:false});}
+                    return result;
+                }catch(error){if(this.current(target))this.setState({error:error instanceof Error?error.message:String(error)});throw error;}
+            },'已保存结果评议；不会自动启动计算');
+            if(!sent&&this.current(target))this.setState({error:'当前操作未执行，请等待其他操作完成后重试。'});
+        }catch(error){if(this.current(target))this.setState({error:error instanceof Error?error.message:String(error)});}
+        finally{if(this.pending===target)this.pending=null;if(this.active(target))this.setState({saving:false});}
+    }
+    render(){
+        const {run,readOnly}=this.props,{target,reason,error,saving}=this.state;
+        const disposition=this.disposition(run),terminal=['succeeded','failed','cancelled'].includes(run.state),epoch=this.epoch;
+        const stale=!!target&&!this.current(target);
+        const dialog=target?<div onSubmit={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}><Modal title="运行结果评议" description="先检查日志与原始产物，再说明此次运行是否回答研究问题。" submitLabel={target.disposition==='unanswered'?'确认未回答，允许准备修复':'确认已回答，冻结节点'} busy={saving} closeDisabled={saving} submitDisabled={!!readOnly||stale||!reason.trim()||reason.trim().length>4000} onClose={()=>this.close(target)} onSubmit={()=>this.save(target)}>
+            <p>运行 <code>{short(target.id)}</code> · 版本 {target.version} · {target.disposition==='unanswered'?'未回答研究问题':'已回答研究问题'}</p>
+            <label>评议理由<textarea name="reason" aria-label="评议理由" rows={5} required maxLength={4000} value={reason} disabled={saving||readOnly||stale} onChange={event=>{if(this.current(target)&&!this.pending)this.setState({reason:event.target.value,error:''});}} placeholder="请结合日志和原始产物说明判断依据…"/></label>
+            <p className="small muted">{target.disposition==='unanswered'?'保存后可准备有界修复，不会自动启动计算。':'保存后该节点源码受保护，后续改动需派生新子实验。'}</p>
+            {error||stale||readOnly?<p className="error-text" role="alert">{error||(readOnly?'项目已归档，不能保存评议。':'运行记录已变化，请关闭弹窗后重新核对。')} 当前输入保留。</p>:null}
+        </Modal></div>:null;
+        return <>{terminal?(disposition!=='needs_review'?<p className="small muted">问题回答状态：{disposition==='answered'?'已有结果，源码受保护':'用户确认未回答，可准备有界修复'}</p>:<div className="approval-card"><h4>此次运行是否回答研究问题？</h4><p className="small">无有效数值不一定表示没有研究结果。请结合假设与真实日志判断；此操作不会修改执行状态、产物完整性或假设结论。</p><div className="stack-actions"><button type="button" className="secondary" disabled={readOnly||saving} onClick={()=>this.open('unanswered',run,epoch)}>未回答：允许准备修复</button><button type="button" className="secondary" disabled={readOnly||saving} onClick={()=>this.open('answered',run,epoch)}>已回答：冻结节点</button></div></div>):null}{dialog&&typeof document!=='undefined'?createPortal(dialog,document.body):dialog}</>;
+    }
 }
 type RunSourceFile={path:string;size:number;digest:string;mode?:string};
 class RunFiles extends React.Component<{run:Row<Run>;data:ProjectState;perform:Perform},{
