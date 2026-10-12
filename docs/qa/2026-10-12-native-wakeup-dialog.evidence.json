@@ -416,5 +416,40 @@
     "Retry API lacks atomic expectedVersion; page-known guards do not close cross-client races.",
     "Recovery rollback invalidates the dialog and requires close/reopen.",
     "A hypothetical Perform host rejecting before fn may replace its specific error with generic not-submitted feedback; no such current App path identified."
-  ]
+  ],
+  "reviewedSourceSnapshot": {
+    "baseline": "2750e0184715df8beb04380577ef943159f2667b",
+    "candidate": ".validation/native-dialogs-20261012/wakeup/verified-source",
+    "parentManualFiles": [
+      {
+        "path": "apps/web/src/workbench.tsx",
+        "candidateSha256": "7951f7356772ffee5da4eef25d866ef5300701068313f79ed22aa84b6922836d",
+        "liveSha256": "8c2afa472e6ebbe4a096f884950bdfff497242d6236191acc2ffa446cce25b73"
+      },
+      {
+        "path": "tests/unit/manual-review-dialog-ui.test.mjs",
+        "candidateSha256": "1274cde8340db830d9f2e0c662aa7292424b0fabfd08fa33860cfe7602b51dbf",
+        "liveSha256": "1274cde8340db830d9f2e0c662aa7292424b0fabfd08fa33860cfe7602b51dbf"
+      }
+    ],
+    "files": [
+      {
+        "path": "apps/web/src/campaigns.tsx",
+        "sha256": "7beab390cac52a8225ae3ed7762a7bd5572b2fde40dda279accb1ea02a160c35",
+        "liveSha256": "7beab390cac52a8225ae3ed7762a7bd5572b2fde40dda279accb1ea02a160c35"
+      },
+      {
+        "path": "tests/unit/campaign-ui.test.mjs",
+        "sha256": "8a8bf536d6f8b836c31e45028c1e82c67f59e52bd88ea8b44b3f721458c3fab9",
+        "liveSha256": "8a8bf536d6f8b836c31e45028c1e82c67f59e52bd88ea8b44b3f721458c3fab9"
+      },
+      {
+        "path": "tests/unit/wakeup-dialog-ui.test.mjs",
+        "sha256": "94acd2cde1c181f850fc4be2f99c8ed914a6780130f7d5de0264d2439256f4a4",
+        "liveSha256": "94acd2cde1c181f850fc4be2f99c8ed914a6780130f7d5de0264d2439256f4a4"
+      }
+    ],
+    "frozen": true,
+    "deliveryOrder": "Manual-review before wakeup; OutcomeReview WIP excluded."
+  }
 }
