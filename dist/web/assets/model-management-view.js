@@ -160,7 +160,7 @@ class ModelManagementPanel extends React.Component {
       this.setState({ error: "\u6B64\u63D0\u4F9B\u5546\u5DF2\u5220\u9664\uFF0C\u8BF7\u9009\u62E9\u5176\u4ED6\u8FDE\u63A5\uFF1B\u539F\u8349\u7A3F\u4FDD\u7559\u3002" });
       return;
     }
-    if (!draft.apiKey.trim() && (saved?.requiresCredential || !saved?.hasApiKey && saved?.source !== "legacy")) {
+    if (!draft.apiKey.trim() && (saved?.requiresCredential || !saved?.hasApiKey)) {
       this.setState({ error: "\u9996\u6B21\u4FDD\u5B58\u6216\u6062\u590D\u8FDE\u63A5\u9700\u8981 API Key\u3002" });
       return;
     }
@@ -703,9 +703,9 @@ class ModelManagementPanel extends React.Component {
       ] }),
       /* @__PURE__ */ jsxs("label", { children: [
         "API Key",
-        /* @__PURE__ */ jsx("input", { "aria-label": "\u8FDE\u63A5 API Key", type: "password", autoComplete: "new-password", required: !!provider?.requiresCredential || !provider?.hasApiKey && provider?.source !== "legacy", maxLength: 8192, value: draft.apiKey, disabled: locked, placeholder: provider?.requiresCredential ? "\u6062\u590D\u540E\u9700\u91CD\u65B0\u914D\u7F6E\u5BC6\u94A5" : provider?.hasApiKey ? "\u5DF2\u914D\u7F6E\uFF1B\u7559\u7A7A\u4FDD\u7559" : provider?.source === "legacy" ? "\u73B0\u6709\u672C\u5730\u914D\u7F6E\uFF1B\u7559\u7A7A\u4FDD\u7559" : "\u9996\u6B21\u4FDD\u5B58\u65F6\u586B\u5199", onChange: (e) => edit({ apiKey: e.target.value }) })
+        /* @__PURE__ */ jsx("input", { "aria-label": "\u8FDE\u63A5 API Key", type: "password", autoComplete: "new-password", required: !!provider?.requiresCredential || !provider?.hasApiKey, maxLength: 8192, value: draft.apiKey, disabled: locked, placeholder: provider?.requiresCredential ? "\u6062\u590D\u540E\u9700\u91CD\u65B0\u914D\u7F6E\u5BC6\u94A5" : provider?.hasApiKey ? "\u5DF2\u914D\u7F6E\uFF1B\u7559\u7A7A\u4FDD\u7559" : "\u9996\u6B21\u4FDD\u5B58\u65F6\u586B\u5199", onChange: (e) => edit({ apiKey: e.target.value }) })
       ] }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5BC6\u94A5\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u4E0D\u56DE\u663E\u3002\u73B0\u6709\u5BC6\u94A5\u7559\u7A7A\u4FDD\u7559\uFF0C\u63D0\u4F9B\u5546 ID \u4FDD\u5B58\u540E\u56FA\u5B9A\u3002" }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: provider?.hasApiKey ? "\u5BC6\u94A5\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u4E0D\u56DE\u663E\u3002\u7559\u7A7A\u4FDD\u7559\u73B0\u6709\u5BC6\u94A5\uFF0C\u63D0\u4F9B\u5546 ID \u4FDD\u5B58\u540E\u56FA\u5B9A\u3002" : "\u9996\u6B21\u4FDD\u5B58\u8FDE\u63A5\u9700\u586B\u5199 API Key\u3002\u5BC6\u94A5\u4FDD\u5B58\u5728\u672C\u673A\uFF0C\u4E0D\u56DE\u663E\u3002\u63D0\u4F9B\u5546 ID \u4FDD\u5B58\u540E\u56FA\u5B9A\u3002" }),
       provider ? /* @__PURE__ */ jsxs(Fragment, { children: [
         /* @__PURE__ */ jsxs("div", { className: "management-inline-actions", children: [
           /* @__PURE__ */ jsxs("label", { className: "management-check", children: [

@@ -1,0 +1,145 @@
+{
+  "flow": "LEGACY-KEY-01",
+  "baseline": "822be4884e338f5db85b654a1a217cf5c622d40c",
+  "status": "accepted",
+  "candidate": ".validation/legacy-provider-key-20261012/source",
+  "files": [
+    {
+      "path": "apps/web/src/model-management-view.tsx",
+      "sha256": "1b09ef3e3c9f3bbd2f1f805d6158906b242028bcf720f97abcfe7bf47cc82aec"
+    },
+    {
+      "path": "tests/unit/settings-management-ui.test.mjs",
+      "sha256": "9872bedaa7c872f69238237f3332f23ad271fb46ce77534dda6e144ec3b435d1"
+    },
+    {
+      "path": "dist/web/assets/model-management-view.js",
+      "sha256": "d8c9571fe8d78903a0d59529b64a60ab134386437f1232b1d9e401857e5a3698"
+    },
+    {
+      "path": "dist/web/assets/main.js",
+      "sha256": "016e62987eca0e790b4f4db7bef2fda9bc1d65e4bdf4e82c3379f021bd71da55"
+    }
+  ],
+  "patchSha256": "e806db14bba8a3ab4403e942a41047bf5273fa87709a7963127bf5c92b338de8",
+  "scope": "Frontend required/help/submit guard only; no backend or credential migration, no layout changes",
+  "implementation": {
+    "requestedModel": "gpt-6-luna",
+    "requestedEffort": "max",
+    "runtime": "requested-not-echoed",
+    "red": {
+      "tests": 1,
+      "failed": 1,
+      "oldDistRequired": false,
+      "chunkId": "ec3653",
+      "rawLogSaved": false,
+      "reference": ".validation/legacy-provider-key-20261012/result/evidence/LEGACY-KEY-01-tool-results.md"
+    },
+    "related": {
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0,
+      "rawLogSaved": false
+    }
+  },
+  "independentReview": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtime": "requested-not-echoed",
+    "report": ".validation/legacy-provider-key-20261012/independent-review.json",
+    "sha256": "e43ea90e575d47763e63dfabe183bc335714a0ff579e7081c0433a28977fc32e",
+    "related": {
+      "command": "node --test --test-concurrency=1 tests/unit/settings-management-ui.test.mjs tests/unit/settings-ui.test.mjs tests/unit/model-management.test.mjs",
+      "cwd": ".validation/legacy-provider-key-20261012/source",
+      "exitCode": 0,
+      "total": 38,
+      "passed": 38,
+      "failed": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "blocking": [],
+    "nonBlocking": [],
+    "scope": "Code and related tests only; criteria 3 and 4 verified by primary"
+  },
+  "full": {
+    "tests": 1909,
+    "pass": 1885,
+    "fail": 0,
+    "skip": 24,
+    "cancelled": 0,
+    "durationMs": 1272689.4178,
+    "log": ".validation/legacy-provider-key-20261012/full-test.log",
+    "sha256": "43b31dde3e755f0a0f6d3c199905e74000a463944c2ccf495b47272919300209"
+  },
+  "clean": {
+    "identical": true,
+    "files": 661,
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ],
+    "distManifestSha256": "12e6789de2aab7c9fc4af8cbdcc2b0e8b7c75210dec6f4e744449c011b09bee7",
+    "summary": ".validation/legacy-provider-key-20261012/source/.validation/clean-build-7igPYp/summary.json"
+  },
+  "chrome": {
+    "flow": "LEGACY-KEY-01",
+    "passed": true,
+    "oldChromeRed": true,
+    "emptyAndWhitespaceZeroPost": true,
+    "publicExplicitSaveAndManagedBlankRetain": true,
+    "credentialRevisionUnchanged": true,
+    "originalSeedUnchanged": true,
+    "defaultAndUiModelUnchanged": true,
+    "inferenceRequests": 0,
+    "reopenPersisted": true,
+    "oldQaSessionsPreserved": 5,
+    "oldPngHistoryPreserved": true,
+    "limitations": [
+      "Browser empty validation message was not exposed by DOM; required/valueMissing and zero POST observed.",
+      "Public fixed credential fixture; no real provider authentication or inference tested.",
+      "Old QA retention checks cover five session states/generations and prior PNG identity, not a byte-for-byte database comparison."
+    ],
+    "browser": "Chrome 3",
+    "url": "http://127.0.0.1:61937/",
+    "data": ".validation/legacy-provider-key-20261012/chrome-data",
+    "observations": ".validation/legacy-provider-key-20261012/chrome-evidence.json",
+    "observationsSha256": "80dbece4996b32b681b8c67a26f8925a8259865b0eb0a1b5402997f39d74ad86",
+    "fixture": ".validation/legacy-provider-key-20261012/chrome-fixture.mjs",
+    "fixtureSha256": "245f196e018d6797702c51698975423c08bef3689dd152ef39d55a32389d3c89",
+    "verification": ".validation/legacy-provider-key-20261012/verify-chrome.mjs",
+    "verificationSha256": "fa14fc8affbbc9c184737cee25a22d4db28e01084585d25f8a2529776771a8a6",
+    "redMutations": 1,
+    "greenEmptyMutations": 0,
+    "greenWhitespaceMutations": 0,
+    "successfulMutations": 2,
+    "finalManagedVersion": 2,
+    "credentialRevision": 1,
+    "uiModelIds": [
+      "fixture"
+    ],
+    "managedStoredModelIds": [],
+    "defaultModel": {
+      "provider": "uiqa-legacy-key",
+      "model": "fixture",
+      "thinking": "off"
+    },
+    "screenshot": "2026-10-12-legacy-provider-key/chrome-whitespace.jpg"
+  },
+  "limits": [
+    "No real provider authentication or inference; public fixed values only.",
+    "Legacy source first managed save now truthfully requires explicit credential input.",
+    "Full project Chrome goal remains incomplete; earlier unrelated five WIP files excluded."
+  ]
+}
