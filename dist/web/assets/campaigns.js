@@ -1,71 +1,199 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { ResearchPlanFields, ResearchPlanPanel, readResearchPlan, readPlanCandidates } from "./research-plan.js";
 import { api } from "./api.js";
 import { short, label, number } from "./models.js";
 import { Badge, Empty, Modal, SectionTitle, nativeSelectButton } from "./ui.js";
-function WakeupPanel({ data, perform, busy, onSession, sessionId }) {
-  const items = data.wakeups.filter((w) => !sessionId || w.rootSessionId === sessionId);
-  if (!items.length) return null;
-  const historical = (w) => ["completed", "superseded", "cancelled"].includes(w.state) && !w.error;
-  const row = (w) => {
-    const budget = data.budgets.find((b) => b.campaignId === w.ownerId || b.teamId === w.ownerId);
-    return /* @__PURE__ */ jsxs("article", { className: "wakeup-row", children: [
-      /* @__PURE__ */ jsxs("div", { children: [
-        /* @__PURE__ */ jsx("strong", { children: w.sourceKind === "team" ? "\u534F\u4F5C\u6210\u679C\u7EFC\u5408" : "\u5B9E\u9A8C\u7ED3\u679C\u5206\u6790" }),
-        " ",
-        /* @__PURE__ */ jsx(Badge, { value: w.state }),
-        /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-          w.automatic ? "\u5DF2\u6388\u6743\u81EA\u52A8\u5206\u6790" : "\u4EC5\u624B\u52A8\u8BF7\u6C42",
-          " \xB7 \u5DF2\u5C1D\u8BD5 ",
-          w.attempts,
-          "/",
-          w.maxAttempts,
-          " \xB7 ",
-          short(w.sourceId)
+const retryable = (w) => ["failed", "cancelled"].includes(w.state) && w.attempts < w.maxAttempts;
+const sameRetrySource = (a, b) => ["id", "projectId", "rootSessionId", "maxAttempts", "sourceDigest", "sourceKind", "sourceId", "ownerId", "automatic"].every((key) => a[key] === b[key]);
+const sameWakeup = (a, b) => !!a && sameRetrySource(a, b) && ["version", "attempts", "state", "requested", "queueGeneration"].every((key) => a[key] === b[key]);
+const sameRetryAttempt = (w, confirmed) => !!w && sameRetrySource(w, confirmed) && Number.isSafeInteger(w.version) && w.version >= confirmed.version && w.requested === confirmed.requested && (w.state === "pending" && w.attempts === confirmed.attempts && w.queueGeneration === confirmed.queueGeneration || w.version > confirmed.version && ["queued", "running", "completed", "failed", "cancelled", "superseded"].includes(w.state) && w.attempts === confirmed.attempts + 1 && w.queueGeneration === (confirmed.queueGeneration ?? 0) + 1);
+class WakeupPanel extends React.Component {
+  constructor() {
+    super(...arguments);
+    this.state = { target: null, error: "", saving: false };
+    this.mounted = true;
+    this.epoch = 0;
+    this.pending = false;
+    this.panel = React.createRef();
+    this.active = (target) => this.mounted && this.state.target === target && this.epoch === target.epoch && this.props.data.project.id === target.projectId && this.props.sessionId === target.sessionId && !this.props.data.project.archived;
+    this.current = (target) => this.active(target) && sameWakeup(this.props.data.wakeups.find((w) => w.id === target.wakeup.id), target.wakeup) && retryable(target.wakeup) && (!this.props.sessionId || target.wakeup.rootSessionId === this.props.sessionId);
+    this.open = (w, trigger) => {
+      if (!this.mounted || this.pending || this.state.target || this.props.busy || this.props.data.project.archived || !retryable(w) || !sameWakeup(this.props.data.wakeups.find((row) => row.id === w.id), w) || w.projectId !== this.props.data.project.id || this.props.sessionId && w.rootSessionId !== this.props.sessionId) return;
+      this.trigger = trigger;
+      this.setState({ target: { wakeup: { ...w }, projectId: this.props.data.project.id, sessionId: this.props.sessionId, epoch: ++this.epoch }, error: "", saving: false });
+    };
+    this.close = (target) => {
+      if (!this.mounted || this.pending || this.state.target !== target) return;
+      if (this.request?.target === target) this.request = void 0;
+      this.epoch++;
+      this.setState({ target: null, error: "", saving: false }, () => {
+        if (this.mounted && this.trigger?.isConnected === false && document.activeElement === document.body) this.panel.current?.focus();
+      });
+    };
+    this.finish = () => {
+      const request = this.request;
+      if (!request?.finished) return;
+      this.pending = false;
+      if (!request.confirmed || !this.active(request.target)) {
+        this.request = void 0;
+        if (this.mounted && this.state.target === request.target && this.state.saving) this.setState({ saving: false });
+        return;
+      }
+      if (this.props.busy) {
+        if (this.state.saving) this.setState({ saving: false });
+        return;
+      }
+      this.request = void 0;
+      this.close(request.target);
+    };
+    this.retry = async (target) => {
+      if (this.pending || this.props.busy || !this.current(target)) return;
+      const request = { target, sent: false, finished: false };
+      this.request = request;
+      this.pending = true;
+      this.setState({ saving: true, error: "" });
+      try {
+        await this.props.perform(async () => {
+          if (!this.current(target)) return;
+          try {
+            request.sent = true;
+            const confirmed = await api(`/wakeups/${encodeURIComponent(target.wakeup.id)}/retry`, {});
+            if (!sameRetrySource(confirmed, target.wakeup) || confirmed.state !== "pending" || confirmed.requested !== true || confirmed.attempts !== target.wakeup.attempts || confirmed.queueGeneration !== target.wakeup.queueGeneration || !Number.isSafeInteger(confirmed.version) || confirmed.version <= target.wakeup.version) throw Error("\u91CD\u8BD5\u56DE\u6267\u4E0E\u56FA\u5B9A\u5524\u9192\u8BB0\u5F55\u4E0D\u4E00\u81F4\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u65B0\u786E\u8BA4");
+            if (this.active(target)) {
+              const w = this.props.data.wakeups.find((w2) => w2.id === target.wakeup.id);
+              if (!sameWakeup(w, target.wakeup) && !sameRetryAttempt(w, confirmed)) {
+                this.epoch++;
+                this.setState({ error: "\u5524\u9192\u8BB0\u5F55\u6216\u9879\u76EE\u3001\u4F1A\u8BDD\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u6253\u5F00\u91CD\u8BD5\u7A97\u53E3\u3002" });
+              } else request.confirmed = confirmed;
+            }
+            return confirmed;
+          } catch (error) {
+            if (this.active(target)) this.setState({ error: `${error instanceof Error ? error.message : String(error)}\uFF1B\u53EF\u518D\u6B21\u786E\u8BA4\u91CD\u8BD5\uFF0C\u4ECD\u4F7F\u7528\u672C\u7A97\u53E3\u663E\u793A\u7684\u8BB0\u5F55\u3002` });
+            throw error;
+          }
+        });
+      } catch (error) {
+        if (this.active(target) && !this.state.error) this.setState({ error: `${error instanceof Error ? error.message : String(error)}\uFF1B\u53EF\u518D\u6B21\u786E\u8BA4\u91CD\u8BD5\uFF0C\u4ECD\u4F7F\u7528\u672C\u7A97\u53E3\u663E\u793A\u7684\u8BB0\u5F55\u3002` });
+      } finally {
+        request.finished = true;
+        if (this.request === request) {
+          if (!request.confirmed && this.active(target) && !this.current(target)) {
+            this.epoch++;
+            this.setState({ error: "\u91CD\u8BD5\u7ED3\u679C\u672A\u786E\u8BA4\u4E14\u5524\u9192\u8BB0\u5F55\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u65B0\u6253\u5F00\u91CD\u8BD5\u7A97\u53E3\u3002" });
+          }
+          if (!request.sent && this.current(target) && !this.state.error) this.setState({ error: "\u672A\u63D0\u4EA4\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5" });
+          this.finish();
+        }
+      }
+    };
+  }
+  componentWillUnmount() {
+    this.mounted = false;
+    this.epoch++;
+  }
+  componentDidUpdate(previous) {
+    const target = this.state.target;
+    if (target && target.epoch === this.epoch) {
+      const w = this.props.data.wakeups.find((w2) => w2.id === target.wakeup.id), request = this.request?.target === target ? this.request : void 0;
+      const confirmed = request?.sent ? request.confirmed ?? { ...target.wakeup, version: target.wakeup.version + 1, state: "pending", requested: true } : void 0;
+      if (previous.data.project.id !== this.props.data.project.id || previous.sessionId !== this.props.sessionId || previous.data.project.archived !== this.props.data.project.archived || !this.active(target) || !sameWakeup(w, target.wakeup) && (!confirmed || !sameRetryAttempt(w, confirmed))) {
+        this.epoch++;
+        this.setState({ error: "\u5524\u9192\u8BB0\u5F55\u6216\u9879\u76EE\u3001\u4F1A\u8BDD\u5DF2\u53D8\u5316\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u6253\u5F00\u91CD\u8BD5\u7A97\u53E3\u3002" });
+      }
+    }
+    this.finish();
+  }
+  retryDialog() {
+    const target = this.state.target;
+    if (!target) return null;
+    const w = target.wakeup;
+    const dialog = /* @__PURE__ */ jsx("div", { onSubmit: (event) => event.stopPropagation(), onKeyDown: (event) => event.stopPropagation(), children: /* @__PURE__ */ jsxs(Modal, { title: "\u663E\u5F0F\u91CD\u8BD5\u7ED3\u679C\u5206\u6790", alert: true, description: "\u5C06\u589E\u52A0\u4E00\u6B21\u6A21\u578B\u5C1D\u8BD5\uFF1B\u4E4B\u524D\u672A\u77E5\u7684\u7528\u91CF\u4E0D\u4F1A\u81EA\u52A8\u91CA\u653E\u3002\u7EE7\u7EED\uFF1F", submitLabel: "\u786E\u8BA4\u91CD\u8BD5", busy: this.state.saving, closeDisabled: this.pending, submitDisabled: !this.current(target) || this.props.busy, onClose: () => this.close(target), onSubmit: () => this.retry(target), children: [
+      /* @__PURE__ */ jsxs("p", { children: [
+        "\u5524\u9192\u8BB0\u5F55\uFF1A",
+        w.id,
+        " \xB7 \u5DF2\u5C1D\u8BD5 ",
+        w.attempts,
+        "/",
+        w.maxAttempts
+      ] }),
+      /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+        "\u6765\u6E90\uFF1A",
+        w.sourceId,
+        " \xB7 \u4E3B\u4F1A\u8BDD\uFF1A",
+        w.rootSessionId,
+        " \xB7 \u8BB0\u5F55\u7248\u672C\uFF1A",
+        w.version
+      ] }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5386\u53F2\u5206\u6790\u8BB0\u5F55\u4F1A\u4FDD\u7559\uFF1B\u91CD\u8BD5\u4ECD\u987B\u901A\u8FC7\u6765\u6E90\u3001\u989D\u5EA6\u548C\u6388\u6743\u68C0\u67E5\u3002" }),
+      this.state.error ? /* @__PURE__ */ jsx("p", { className: "notice-inline", role: "alert", children: this.state.error }) : null
+    ] }) });
+    return typeof document === "undefined" ? dialog : createPortal(dialog, document.body);
+  }
+  render() {
+    const { data, perform, busy, onSession, sessionId } = this.props;
+    const items = data.wakeups.filter((w) => !sessionId || w.rootSessionId === sessionId);
+    if (!items.length && !this.state.target) return null;
+    const historical = (w) => ["completed", "superseded", "cancelled"].includes(w.state) && !w.error;
+    const row = (w) => {
+      const budget = data.budgets.find((b) => b.campaignId === w.ownerId || b.teamId === w.ownerId);
+      return /* @__PURE__ */ jsxs("article", { className: "wakeup-row", children: [
+        /* @__PURE__ */ jsxs("div", { children: [
+          /* @__PURE__ */ jsx("strong", { children: w.sourceKind === "team" ? "\u534F\u4F5C\u6210\u679C\u7EFC\u5408" : "\u5B9E\u9A8C\u7ED3\u679C\u5206\u6790" }),
+          " ",
+          /* @__PURE__ */ jsx(Badge, { value: w.state }),
+          /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+            w.automatic ? "\u5DF2\u6388\u6743\u81EA\u52A8\u5206\u6790" : "\u4EC5\u624B\u52A8\u8BF7\u6C42",
+            " \xB7 \u5DF2\u5C1D\u8BD5 ",
+            w.attempts,
+            "/",
+            w.maxAttempts,
+            " \xB7 ",
+            short(w.sourceId)
+          ] }),
+          w.blockReason || w.error ? /* @__PURE__ */ jsx("p", { className: "notice-inline", role: "status", children: w.blockReason || w.error }) : null,
+          budget ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+            "\u5C1D\u8BD5\u989D\u5EA6\uFF1A\u5DF2\u7528 ",
+            budget.used,
+            " / \u9884\u7559 ",
+            budget.reserved,
+            " / \u672A\u77E5 ",
+            budget.unknown,
+            " / \u53EF\u7528 ",
+            budget.available,
+            "\uFF1B\u4E0D\u662F\u8D27\u5E01\u8D26\u5355"
+          ] }) : null
         ] }),
-        w.blockReason || w.error ? /* @__PURE__ */ jsx("p", { className: "notice-inline", role: "status", children: w.blockReason || w.error }) : null,
-        budget ? /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
-          "\u5C1D\u8BD5\u989D\u5EA6\uFF1A\u5DF2\u7528 ",
-          budget.used,
-          " / \u9884\u7559 ",
-          budget.reserved,
-          " / \u672A\u77E5 ",
-          budget.unknown,
-          " / \u53EF\u7528 ",
-          budget.available,
-          "\uFF1B\u4E0D\u662F\u8D27\u5E01\u8D26\u5355"
-        ] }) : null
+        /* @__PURE__ */ jsxs("div", { className: "actions", children: [
+          sessionId === w.rootSessionId ? null : /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onSession(w.rootSessionId), children: "\u67E5\u770B\u4E3B\u4F1A\u8BDD" }),
+          w.state === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy || w.requested, onClick: () => perform(() => api(`/wakeups/${w.id}/request`, {}), "\u8BF7\u6C42\u5DF2\u4FDD\u5B58\uFF1B\u5C31\u7EEA\u540E\u6267\u884C"), children: w.requested ? "\u5DF2\u8BF7\u6C42\u5206\u6790" : "\u8BF7\u6C42\u5206\u6790" }) : null,
+          ["pending", "queued", "running"].includes(w.state) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived || busy, onClick: () => perform(() => api(`/wakeups/${w.id}/cancel`, {}), "\u5DF2\u53D6\u6D88\u6B64\u5206\u6790\uFF0C\u4E0D\u5F71\u54CD\u5B9E\u9A8C"), children: "\u53D6\u6D88\u5206\u6790" }) : null,
+          retryable(w) ? /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", disabled: data.project.archived || busy, onClick: (event) => this.open(w, event.currentTarget), children: "\u663E\u5F0F\u91CD\u8BD5" }) : null
+        ] })
+      ] }, w.id);
+    };
+    const older = items.filter(historical), current = items.filter((w) => !historical(w));
+    return /* @__PURE__ */ jsxs("section", { ref: this.panel, tabIndex: -1, className: "wakeup-panel", "aria-label": "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5", children: [
+      current.length ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx("h2", { children: "\u7ED3\u679C\u5206\u6790" }),
+        current.map(row)
+      ] }) : null,
+      older.length ? /* @__PURE__ */ jsxs("details", { className: "notification-history", children: [
+        /* @__PURE__ */ jsxs("summary", { children: [
+          "\u5DF2\u7ED3\u675F\u7684\u7ED3\u679C\u901A\u77E5\uFF08",
+          older.length,
+          "\uFF09"
+        ] }),
+        older.map(row)
+      ] }) : null,
+      /* @__PURE__ */ jsxs("details", { className: "notification-history", children: [
+        /* @__PURE__ */ jsx("summary", { children: "\u5206\u6790\u8C03\u7528\u8BF4\u660E" }),
+        /* @__PURE__ */ jsx("p", { className: "muted small", children: "\u901A\u77E5\u5DF2\u4FDD\u5B58\u5230\u6570\u636E\u5E93\u3002\u4EC5\u5728\u6388\u6743\u3001\u989D\u5EA6\u548C Pi \u914D\u7F6E\u5747\u6709\u6548\u65F6\u8C03\u7528\u6A21\u578B\uFF1B\u6682\u505C\u6216\u53D6\u6D88\u8FD9\u91CC\u7684\u5206\u6790\u4E0D\u4F1A\u53D6\u6D88 Run\u3002" })
       ] }),
-      /* @__PURE__ */ jsxs("div", { className: "actions", children: [
-        sessionId === w.rootSessionId ? null : /* @__PURE__ */ jsx("button", { className: "secondary compact", onClick: () => onSession(w.rootSessionId), children: "\u67E5\u770B\u4E3B\u4F1A\u8BDD" }),
-        w.state === "pending" ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy || w.requested, onClick: () => perform(() => api(`/wakeups/${w.id}/request`, {}), "\u8BF7\u6C42\u5DF2\u4FDD\u5B58\uFF1B\u5C31\u7EEA\u540E\u6267\u884C"), children: w.requested ? "\u5DF2\u8BF7\u6C42\u5206\u6790" : "\u8BF7\u6C42\u5206\u6790" }) : null,
-        ["pending", "queued", "running"].includes(w.state) ? /* @__PURE__ */ jsx("button", { className: "text-button", disabled: data.project.archived || busy, onClick: () => perform(() => api(`/wakeups/${w.id}/cancel`, {}), "\u5DF2\u53D6\u6D88\u6B64\u5206\u6790\uFF0C\u4E0D\u5F71\u54CD\u5B9E\u9A8C"), children: "\u53D6\u6D88\u5206\u6790" }) : null,
-        ["failed", "cancelled"].includes(w.state) && w.attempts < w.maxAttempts ? /* @__PURE__ */ jsx("button", { className: "secondary compact", disabled: data.project.archived || busy, onClick: () => {
-          if (confirm("\u5C06\u589E\u52A0\u4E00\u6B21\u6A21\u578B\u5C1D\u8BD5\uFF1B\u4E4B\u524D\u672A\u77E5\u7684\u7528\u91CF\u4E0D\u4F1A\u81EA\u52A8\u91CA\u653E\u3002\u7EE7\u7EED\uFF1F")) perform(() => api(`/wakeups/${w.id}/retry`, {}));
-        }, children: "\u663E\u5F0F\u91CD\u8BD5" }) : null
-      ] })
-    ] }, w.id);
-  };
-  const older = items.filter(historical), current = items.filter((w) => !historical(w));
-  return /* @__PURE__ */ jsxs("section", { className: "wakeup-panel", "aria-label": "\u6301\u4E45\u5316\u7ED3\u679C\u901A\u77E5", children: [
-    current.length ? /* @__PURE__ */ jsxs(Fragment, { children: [
-      /* @__PURE__ */ jsx("h2", { children: "\u7ED3\u679C\u5206\u6790" }),
-      current.map(row)
-    ] }) : null,
-    older.length ? /* @__PURE__ */ jsxs("details", { className: "notification-history", children: [
-      /* @__PURE__ */ jsxs("summary", { children: [
-        "\u5DF2\u7ED3\u675F\u7684\u7ED3\u679C\u901A\u77E5\uFF08",
-        older.length,
-        "\uFF09"
-      ] }),
-      older.map(row)
-    ] }) : null,
-    /* @__PURE__ */ jsxs("details", { className: "notification-history", children: [
-      /* @__PURE__ */ jsx("summary", { children: "\u5206\u6790\u8C03\u7528\u8BF4\u660E" }),
-      /* @__PURE__ */ jsx("p", { className: "muted small", children: "\u901A\u77E5\u5DF2\u4FDD\u5B58\u5230\u6570\u636E\u5E93\u3002\u4EC5\u5728\u6388\u6743\u3001\u989D\u5EA6\u548C Pi \u914D\u7F6E\u5747\u6709\u6548\u65F6\u8C03\u7528\u6A21\u578B\uFF1B\u6682\u505C\u6216\u53D6\u6D88\u8FD9\u91CC\u7684\u5206\u6790\u4E0D\u4F1A\u53D6\u6D88 Run\u3002" })
-    ] })
-  ] });
+      this.retryDialog()
+    ] });
+  }
 }
 class CampaignView extends React.Component {
   constructor() {

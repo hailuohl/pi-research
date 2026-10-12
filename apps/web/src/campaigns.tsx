@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {createPortal} from 'react-dom';
 import {ResearchPlanFields,ResearchPlanPanel,readResearchPlan,readPlanCandidates} from './research-plan.js';
 import { api } from './api.js';
 import type { ProjectState, Campaign, Row, CampaignDecision, Wakeup } from './models.js';
@@ -9,11 +10,107 @@ import type { Perform } from './workbench.js';
 type Props = { data: ProjectState; perform: Perform; busy: boolean; onExperiment: (id: string) => void; onSession: (id: string) => void; onRun?:(runId:string,experimentId:string)=>void; onImplementation?: (id:string)=>void; selectedCampaign?:string; onSelect?:(id:string)=>void };
 
 
-export function WakeupPanel({data, perform, busy, onSession, sessionId}: {
-    data: ProjectState; perform: Perform; busy: boolean; onSession:(id:string)=>void; sessionId?: string;
-}) {
+type WakeupProps={data:ProjectState;perform:Perform;busy:boolean;onSession:(id:string)=>void;sessionId?:string};
+type RetryTarget={wakeup:Row<Wakeup>;projectId:string;sessionId?:string;epoch:number};
+const retryable=(w:Row<Wakeup>)=>['failed','cancelled'].includes(w.state)&&w.attempts<w.maxAttempts;
+const sameRetrySource=(a:Row<Wakeup>,b:Row<Wakeup>)=>(['id','projectId','rootSessionId','maxAttempts','sourceDigest','sourceKind','sourceId','ownerId','automatic'] as const).every(key=>a[key]===b[key]);
+const sameWakeup=(a:Row<Wakeup>|undefined,b:Row<Wakeup>)=>!!a&&sameRetrySource(a,b)&&(['version','attempts','state','requested','queueGeneration'] as const).every(key=>a[key]===b[key]);
+// Dispatch increments both counters; recovery rollbacks invalidate this confirmation.
+const sameRetryAttempt=(w:Row<Wakeup>|undefined,confirmed:Row<Wakeup>)=>!!w&&sameRetrySource(w,confirmed)&&Number.isSafeInteger(w.version)&&w.version>=confirmed.version&&w.requested===confirmed.requested&&(
+    w.state==='pending'&&w.attempts===confirmed.attempts&&w.queueGeneration===confirmed.queueGeneration||
+    w.version>confirmed.version&&['queued','running','completed','failed','cancelled','superseded'].includes(w.state)&&w.attempts===confirmed.attempts+1&&w.queueGeneration===(confirmed.queueGeneration??0)+1
+);
+
+export class WakeupPanel extends React.Component<WakeupProps,{target:RetryTarget|null;error:string;saving:boolean}> {
+    state:{target:RetryTarget|null;error:string;saving:boolean}={target:null,error:'',saving:false};
+    private mounted=true;
+    private epoch=0;
+    private pending=false;
+    private panel=React.createRef<HTMLElement>();
+    private trigger?:HTMLButtonElement;
+    private request?:{target:RetryTarget;sent:boolean;confirmed?:Row<Wakeup>;finished:boolean};
+    componentWillUnmount(){this.mounted=false;this.epoch++;}
+    componentDidUpdate(previous:Readonly<WakeupProps>){
+        const target=this.state.target;
+        if(target&&target.epoch===this.epoch){
+            const w=this.props.data.wakeups.find(w=>w.id===target.wakeup.id),request=this.request?.target===target?this.request:undefined;
+            const confirmed=request?.sent?(request.confirmed??{...target.wakeup,version:target.wakeup.version+1,state:'pending' as const,requested:true}):undefined;
+            if(previous.data.project.id!==this.props.data.project.id||previous.sessionId!==this.props.sessionId||previous.data.project.archived!==this.props.data.project.archived||!this.active(target)||(!sameWakeup(w,target.wakeup)&&(!confirmed||!sameRetryAttempt(w,confirmed)))){
+                this.epoch++;this.setState({error:'唤醒记录或项目、会话已变化，请关闭后重新打开重试窗口。'});
+            }
+        }
+        this.finish();
+    }
+    private active=(target:RetryTarget)=>this.mounted&&this.state.target===target&&this.epoch===target.epoch&&this.props.data.project.id===target.projectId&&this.props.sessionId===target.sessionId&&!this.props.data.project.archived;
+    private current=(target:RetryTarget)=>this.active(target)&&sameWakeup(this.props.data.wakeups.find(w=>w.id===target.wakeup.id),target.wakeup)&&retryable(target.wakeup)&&(!this.props.sessionId||target.wakeup.rootSessionId===this.props.sessionId);
+    private open=(w:Row<Wakeup>,trigger?:HTMLButtonElement)=>{
+        if(!this.mounted||this.pending||this.state.target||this.props.busy||this.props.data.project.archived||!retryable(w)||!sameWakeup(this.props.data.wakeups.find(row=>row.id===w.id),w)||w.projectId!==this.props.data.project.id||this.props.sessionId&&w.rootSessionId!==this.props.sessionId)return;
+        this.trigger=trigger;
+        this.setState({target:{wakeup:{...w},projectId:this.props.data.project.id,sessionId:this.props.sessionId,epoch:++this.epoch},error:'',saving:false});
+    };
+    private close=(target:RetryTarget)=>{
+        if(!this.mounted||this.pending||this.state.target!==target)return;
+        if(this.request?.target===target)this.request=undefined;
+        this.epoch++;this.setState({target:null,error:'',saving:false},()=>{
+            if(this.mounted&&this.trigger?.isConnected===false&&document.activeElement===document.body)this.panel.current?.focus();
+        });
+    };
+    private finish=()=>{
+        const request=this.request;
+        if(!request?.finished)return;
+        this.pending=false;
+        if(!request.confirmed||!this.active(request.target)){
+            this.request=undefined;
+            if(this.mounted&&this.state.target===request.target&&this.state.saving)this.setState({saving:false});
+            return;
+        }
+        if(this.props.busy){if(this.state.saving)this.setState({saving:false});return;}
+        // Close after perform releases busy so Modal returns focus to an enabled control.
+        this.request=undefined;this.close(request.target);
+    };
+    private retry=async(target:RetryTarget)=>{
+        if(this.pending||this.props.busy||!this.current(target))return;
+        const request:{target:RetryTarget;sent:boolean;confirmed?:Row<Wakeup>;finished:boolean}={target,sent:false,finished:false};this.request=request;
+        this.pending=true;this.setState({saving:true,error:''});
+        try{
+            await this.props.perform(async()=>{
+                if(!this.current(target))return;
+                try{
+                    // shortcut: retry API has no atomic version condition; recheck page-known state until the API supports one.
+                    request.sent=true;
+                    const confirmed=await api<Row<Wakeup>>(`/wakeups/${encodeURIComponent(target.wakeup.id)}/retry`,{});
+                    if(!sameRetrySource(confirmed,target.wakeup)||confirmed.state!=='pending'||confirmed.requested!==true||confirmed.attempts!==target.wakeup.attempts||confirmed.queueGeneration!==target.wakeup.queueGeneration||!Number.isSafeInteger(confirmed.version)||confirmed.version<=target.wakeup.version)throw Error('重试回执与固定唤醒记录不一致，请刷新后重新确认');
+                    if(this.active(target)){
+                        const w=this.props.data.wakeups.find(w=>w.id===target.wakeup.id);
+                        if(!sameWakeup(w,target.wakeup)&&!sameRetryAttempt(w,confirmed)){this.epoch++;this.setState({error:'唤醒记录或项目、会话已变化，请关闭后重新打开重试窗口。'});}
+                        else request.confirmed=confirmed;
+                    }
+                    return confirmed;
+                }catch(error){if(this.active(target))this.setState({error:`${error instanceof Error?error.message:String(error)}；可再次确认重试，仍使用本窗口显示的记录。`});throw error;}
+            });
+        }catch(error){if(this.active(target)&&!this.state.error)this.setState({error:`${error instanceof Error?error.message:String(error)}；可再次确认重试，仍使用本窗口显示的记录。`});}
+        finally{
+            request.finished=true;
+            if(this.request===request){
+                if(!request.confirmed&&this.active(target)&&!this.current(target)){this.epoch++;this.setState({error:'重试结果未确认且唤醒记录已变化，请刷新后重新打开重试窗口。'});}
+                if(!request.sent&&this.current(target)&&!this.state.error)this.setState({error:'未提交，请稍后重试'});
+                this.finish();
+            }
+        }
+    };
+    private retryDialog(){
+        const target=this.state.target;if(!target)return null;
+        const w=target.wakeup;
+        const dialog=<div onSubmit={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}><Modal title="显式重试结果分析" alert description="将增加一次模型尝试；之前未知的用量不会自动释放。继续？" submitLabel="确认重试" busy={this.state.saving} closeDisabled={this.pending} submitDisabled={!this.current(target)||this.props.busy} onClose={()=>this.close(target)} onSubmit={()=>this.retry(target)}>
+            <p>唤醒记录：{w.id} · 已尝试 {w.attempts}/{w.maxAttempts}</p><p className="small muted">来源：{w.sourceId} · 主会话：{w.rootSessionId} · 记录版本：{w.version}</p>
+            <p className="small muted">历史分析记录会保留；重试仍须通过来源、额度和授权检查。</p>{this.state.error?<p className="notice-inline" role="alert">{this.state.error}</p>:null}
+        </Modal></div>;
+        return typeof document==='undefined'?dialog:createPortal(dialog,document.body);
+    }
+    render(){
+    const {data,perform,busy,onSession,sessionId}=this.props;
     const items = data.wakeups.filter(w => !sessionId || w.rootSessionId === sessionId);
-    if (!items.length) return null;
+    if (!items.length&&!this.state.target) return null;
     const historical=(w:Row<Wakeup>)=>['completed','superseded','cancelled'].includes(w.state)&&!w.error;
     const row=(w:Row<Wakeup>)=>{const budget=data.budgets.find(b=>b.campaignId===w.ownerId||b.teamId===w.ownerId);return <article className="wakeup-row" key={w.id}>
             <div><strong>{w.sourceKind==='team'?'协作成果综合':'实验结果分析'}</strong> <Badge value={w.state}/><p className="small muted">{w.automatic?'已授权自动分析':'仅手动请求'} · 已尝试 {w.attempts}/{w.maxAttempts} · {short(w.sourceId)}</p>
@@ -22,14 +119,16 @@ export function WakeupPanel({data, perform, busy, onSession, sessionId}: {
             </div><div className="actions">{sessionId===w.rootSessionId?null:<button className="secondary compact" onClick={()=>onSession(w.rootSessionId)}>查看主会话</button>}
                 {w.state==='pending'?<button className="secondary compact" disabled={data.project.archived||busy||w.requested} onClick={()=>perform(()=>api(`/wakeups/${w.id}/request`,{}),'请求已保存；就绪后执行')}>{w.requested?'已请求分析':'请求分析'}</button>:null}
                 {['pending','queued','running'].includes(w.state)?<button className="text-button" disabled={data.project.archived||busy} onClick={()=>perform(()=>api(`/wakeups/${w.id}/cancel`,{}),'已取消此分析，不影响实验')}>取消分析</button>:null}
-                {['failed','cancelled'].includes(w.state)&&w.attempts<w.maxAttempts?<button className="secondary compact" disabled={data.project.archived||busy} onClick={()=>{if(confirm('将增加一次模型尝试；之前未知的用量不会自动释放。继续？'))perform(()=>api(`/wakeups/${w.id}/retry`,{}));}}>显式重试</button>:null}
+                {retryable(w)?<button type="button" className="secondary compact" disabled={data.project.archived||busy} onClick={event=>this.open(w,event.currentTarget)}>显式重试</button>:null}
         </div></article>;};
     const older=items.filter(historical),current=items.filter(w=>!historical(w));
-    return <section className="wakeup-panel" aria-label="持久化结果通知">
+    return <section ref={this.panel} tabIndex={-1} className="wakeup-panel" aria-label="持久化结果通知">
         {current.length?<><h2>结果分析</h2>{current.map(row)}</>:null}
         {older.length?<details className="notification-history"><summary>已结束的结果通知（{older.length}）</summary>{older.map(row)}</details>:null}
         <details className="notification-history"><summary>分析调用说明</summary><p className="muted small">通知已保存到数据库。仅在授权、额度和 Pi 配置均有效时调用模型；暂停或取消这里的分析不会取消 Run。</p></details>
+        {this.retryDialog()}
     </section>;
+    }
 }
 
 export class CampaignView extends React.Component<Props,{selected:string;create:boolean;decision:boolean;action:string}> {
