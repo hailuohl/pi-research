@@ -36,7 +36,14 @@ function relativeName(path, allowRoot = false) {
     return path;
 }
 function inside(root, path) { const value = resolve(path), name = relative(root, value).split(sep).join('/'); ensure(isAbsolute(path) && name !== '' && name !== '..' && !name.startsWith('../') && !isAbsolute(name), 'BACKUP_EXTERNAL_REFERENCE', '必需文件引用不在原数据目录内；请先处理路径迁移', 409); return relativeName(name); }
-function disjoint(a, b) { ensure(a !== b && !a.startsWith(b + sep) && !b.startsWith(a + sep), 'BACKUP_PATH_DENIED', '源与目标目录不能重叠', 400); }
+function disjoint(a, b) {
+    if (process.platform === 'win32') {
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+    }
+    const prefix = (root) => root.endsWith(sep) ? root : root + sep;
+    ensure(a !== b && !a.startsWith(prefix(b)) && !b.startsWith(prefix(a)), 'BACKUP_PATH_DENIED', '源与目标目录不能重叠', 400);
+}
 const statId = (s) => `${s.dev}:${s.ino}:${s.size}:${s.mode}:${s.mtimeMs}:${s.ctimeMs}`;
 /** Stream large logs/artifacts; preserve bytes without loading the research corpus into memory. */
 function fileBytes(path, destination) {

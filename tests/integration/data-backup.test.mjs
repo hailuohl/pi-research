@@ -14,6 +14,7 @@ import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
 function fixture(){const parent=mkdtempSync(join(realpathSync.native(tmpdir()),'pi-backup-')),data=join(parent,'data'),app=new ResearchApp(data,process.cwd()),project=app.projects.create(USER,{name:'本地备份夹具',template:'curve-fit'}),session=app.sessions.create(USER,project.id,{title:'保留的会话'});app.sessions.system(session.id,'软件备份夹具，不是模型结果');const artifact=app.evidence.put(project.id,'原文',Buffer.from('固定证据\n'));const experiment=app.experiments.create(USER,project.id,{title:'保留源码'}),intent=app.runs.prepare(USER,experiment.id);return {parent,data,app,project,session,artifact,experiment,intent,backup:join(parent,'backup'),close(){this.app.close();rmSync(parent,{recursive:true,force:true});}};}
 function records(data){const db=new DatabaseSync(join(data,'state.db'),{readOnly:true});try{return db.prepare('SELECT kind,id,version,data FROM records ORDER BY kind,id').all();}finally{db.close();}}
 function rewriteManifest(path,fn){const file=join(path,'manifest.json'),m=JSON.parse(readFileSync(file));fn(m);delete m.manifestDigest;m.manifestDigest=digest(m);writeFileSync(file,JSON.stringify(m));}
+function treeSnapshot(root){const entries={};function walk(path,key){for(const entry of readdirSync(path,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))){const name=key?key+'/'+entry.name:entry.name,file=join(path,entry.name);entries[name]=entry.isDirectory()?null:digest(readFileSync(file));if(entry.isDirectory())walk(file,name);}}walk(root,'');return entries;}
 function writeRecord(s,kind,id,value){s.app.store.db.prepare('UPDATE records SET data=? WHERE kind=? AND id=?').run(JSON.stringify(value),kind,id);}
 const physical = (s, reference) => s.app.store.paths.physical(reference);
 
@@ -150,6 +151,39 @@ test('restore rejects existing/different targets, corruption, missing files, for
   const manifest=readFileSync(join(s.backup,'manifest.json')),m=JSON.parse(manifest),file=m.entries.find(x=>x.type==='file'&&x.path.startsWith('artifacts/')),path=join(s.backup,'data',file.path),bytes=readFileSync(path);chmodSync(path,0o600);writeFileSync(path,'bad');await assert.rejects(verifyDataBackup(s.backup),{code:'BACKUP_CONTENT_MISMATCH'});writeFileSync(path,bytes);rmSync(path);await assert.rejects(verifyDataBackup(s.backup),{code:'BACKUP_CONTENT_MISMATCH'});writeFileSync(path,bytes);
   rewriteManifest(s.backup,m=>{m.entries.find(x=>x.path===file.path).path='../escape';});await assert.rejects(verifyDataBackup(s.backup),{code:'BACKUP_PATH_DENIED'});writeFileSync(join(s.backup,'manifest.json'),manifest);
   rewriteManifest(s.backup,m=>m.entries.push({path:'access.token',type:'file',mode:0o600,size:3,digest:digest('bad')}));await assert.rejects(verifyDataBackup(s.backup),{code:'BACKUP_INVALID'});writeFileSync(join(s.backup,'manifest.json'),manifest);assert.equal(existsSync(join(s.parent,'escape')),false);
+ }finally{s.close();}
+});
+
+test('Windows backup rejects case-equivalent nested destinations before changing either tree',{skip:process.platform!=='win32'},async t=>{
+ for(const operation of ['create','restore'])for(const upperInput of [false,true])await t.test(`${operation}, uppercase ${upperInput?'input':'destination'}`,async()=>{
+  const s=fixture();try{
+   s.app.close();await createDataBackup(s.data,s.backup,{offline:true});const original=operation==='create'?s.data:s.backup;
+   const input=upperInput?original.toUpperCase():original,target=join(upperInput?original:original.toUpperCase(),'nested');
+   const sourceBefore=treeSnapshot(s.data),backupBefore=treeSnapshot(s.backup),siblingsBefore=readdirSync(s.parent).sort();
+   await assert.rejects(operation==='create'?createDataBackup(input,target,{offline:true}):restoreDataBackup(input,target,{offline:true,relocate:true}),{code:'BACKUP_PATH_DENIED'});
+   assert.equal(existsSync(target),false);assert.deepEqual(readdirSync(s.parent).sort(),siblingsBefore);
+   assert.deepEqual(treeSnapshot(s.data),sourceBefore);assert.deepEqual(treeSnapshot(s.backup),backupBefore);
+   await verifyDataBackup(s.backup);assert.deepEqual(treeSnapshot(s.backup),backupBefore);
+  }finally{s.close();}
+ });
+});
+
+test('backup allows adjacent names and still rejects an existing destination or ancestor',async()=>{
+ const s=fixture();try{
+  s.app.close();const originalRecords=records(s.data),adjacentBackup=s.data+'-backup',adjacentRestore=adjacentBackup+'-restored';
+  await createDataBackup(s.data,adjacentBackup,{offline:true});const sourceBefore=treeSnapshot(s.data),backupBefore=treeSnapshot(adjacentBackup);
+  for(const target of [adjacentBackup,s.parent])await assert.rejects(restoreDataBackup(adjacentBackup,target,{offline:true,relocate:true}),{code:'BACKUP_TARGET_EXISTS'});
+  await restoreDataBackup(adjacentBackup,adjacentRestore,{offline:true,relocate:true});assert.deepEqual(records(adjacentRestore),originalRecords);
+  assert.deepEqual(treeSnapshot(s.data),sourceBefore);assert.deepEqual(treeSnapshot(adjacentBackup),backupBefore);await verifyDataBackup(adjacentBackup);
+ }finally{s.close();}
+});
+
+test('POSIX backup preserves distinct case-sensitive sibling paths',{skip:process.platform==='win32'},async t=>{
+ const s=fixture();try{
+  s.app.close();const other=join(s.parent,'DATA');mkdirSync(other,{recursive:true});
+  if(realpathSync.native(other)===realpathSync.native(s.data)){t.skip('Filesystem is not case-sensitive');return;}
+  const backup=join(other,'backup');await createDataBackup(s.data,backup,{offline:true});const before=treeSnapshot(backup);
+  await restoreDataBackup(backup,join(s.parent,'Data'),{offline:true,relocate:true});assert.deepEqual(treeSnapshot(backup),before);await verifyDataBackup(backup);
  }finally{s.close();}
 });
 
