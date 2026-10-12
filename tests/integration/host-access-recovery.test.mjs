@@ -12,6 +12,29 @@ function setup(){const dir=mkdtempSync(join(tmpdir(),'pi-host-recovery-')),data=
 const run=(s,id,script,...args)=>s.app.hostAccess.execute(s.actor,{argv:[process.execPath,'-e',script,...args],cwd:s.dir},id);
 async function close(s){await s.app.hostAccess.stop();s.app.close();rmSync(s.dir,{recursive:true,force:true});}
 
+for(const outcome of ['slow-success','child-first','failed','spawn-error','no-child-close'])test(`Windows cancellation observes taskkill lifecycle: ${outcome}`,{skip:process.platform!=='win32'},async()=>{
+ const s=setup(),require=createRequire(import.meta.url),cp=require('node:child_process'),originalSpawn=cp.spawn;let ownedChild,childClosed,stopTimer,stopStarted,stopFinished,stopAttempts=0;
+ try{
+  cp.spawn=(program,...args)=>{
+   if(program!=='taskkill'){ownedChild=originalSpawn(program,...args);childClosed=new Promise(resolve=>ownedChild.once('close',resolve));return ownedChild;}
+   assert.deepEqual(args[0],['/PID',String(ownedChild.pid),'/T','/F']);stopAttempts++;stopStarted=Date.now();const helper=new EventEmitter();helper.kill=()=>{clearTimeout(stopTimer);return true;};
+   stopTimer=setTimeout(()=>{stopFinished=Date.now();if(outcome==='slow-success')ownedChild.kill('SIGKILL');if(outcome==='spawn-error')helper.emit('error',Error('INJECTED_TASKKILL_ERROR'));else helper.emit('close',outcome==='failed'?1:0);},['slow-success','child-first'].includes(outcome)?4500:20);return helper;
+  };syncBuiltinESMExports();
+  const marker=join(s.dir,'started'),script="require('node:fs').writeFileSync(process.argv[1],'started');"+(outcome==='child-first'?'setTimeout(()=>process.exit(0),300)':'setInterval(()=>{},1000)');
+  const pending=run(s,'controlled-stop',script,marker),rejected=assert.rejects(pending,/撤销|失效/);
+  for(let i=0;i<100&&!existsSync(marker);i++)await delay(20);assert.equal(existsSync(marker),true);
+  const grant=s.app.hostAccess.status(USER,s.session.id);s.app.hostAccess.revoke(USER,s.session.id,{expectedVersion:grant.version});
+  assert.throws(()=>run(s,'controlled-stop',script,marker),/撤销/);assert.throws(()=>run(s,'new-key','console.log(1)'),/撤销/);
+  const stopping=Promise.all([s.app.hostAccess.stop(),s.app.hostAccess.stop()]);
+  if(outcome==='child-first'){await childClosed;assert.equal(s.app.store.list('host-command')[0].state,'running','child close alone cannot confirm tree cleanup');}
+  await rejected;await stopping;const job=s.app.store.list('host-command')[0];assert.equal(stopAttempts,1,'repeated cancellation must not start another taskkill');
+  if(['slow-success','child-first'].includes(outcome)){assert.equal(job.state,'cancelled');assert.ok(stopFinished-stopStarted>4000);assert.throws(()=>process.kill(job.pid,0),{code:'ESRCH'});}
+  else{assert.equal(job.state,'unknown');assert.equal(job.pid,ownedChild.pid);process.kill(job.pid,0);assert.match(job.error,outcome==='failed'?/taskkill.*1/:outcome==='spawn-error'?/INJECTED_TASKKILL_ERROR/:/受管进程退出未确认/);assert.equal(s.app.hostAccess.status(USER,s.session.id).unknownCommands,1);}
+  assert.equal(s.app.store.list('host-command').length,1);assert.equal(s.app.hostAccess.status(USER,s.session.id).enabled,false);
+  const finished=s.app.store.db.prepare("SELECT payload FROM events WHERE type='host_command.finished'").all();assert.equal(finished.length,1);assert.equal(JSON.parse(finished[0].payload).state,job.state);
+ }finally{clearTimeout(stopTimer);cp.spawn=originalSpawn;syncBuiltinESMExports();if(ownedChild){if(ownedChild.exitCode===null)ownedChild.kill('SIGKILL');await childClosed;}await close(s);}
+});
+
 test('terminal audit failure rolls back terminal state, settles without uncaught callback error, and fences future calls',async()=>{
  const s=setup(),original=s.app.store.event.bind(s.app.store);try{s.app.store.event=(pid,type,payload)=>{if(type==='host_command.finished')throw Error('INJECTED_TERMINAL_AUDIT_FAILURE');return original(pid,type,payload);};const pending=run(s,'audit','console.log("actual child finished")');const settled=await Promise.race([pending.then(()=>({ok:true}),error=>({error:error.message})),delay(2000).then(()=>({timeout:true}))]);assert.equal(settled.timeout,undefined);assert.match(settled.error,/未确认|记录|核对/);assert.equal(s.app.store.list('host-command')[0].state,'running','terminal update must roll back together with failed audit');const status=s.app.hostAccess.status(USER,s.session.id);assert.equal(status.enabled,false);assert.equal(status.unknownCommands,1);assert.throws(()=>run(s,'new','console.log(1)'),/未确认|核对|记录/);
  }finally{s.app.store.event=original;await close(s);}

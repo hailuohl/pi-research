@@ -1,0 +1,128 @@
+{
+  "batch": "WINSTOP-01",
+  "baseline": "894106e4a01ba85d7de3651597ad7f121a5e494d",
+  "snapshot": {
+    "baseline": "894106e4a01ba85d7de3651597ad7f121a5e494d",
+    "candidate": ".validation/host-stop-20261012/verified-source",
+    "files": [
+      {
+        "path": "packages/policy/host-access.ts",
+        "sha256": "f3f103d320959778146a6b6ca977ac658ac74f4fd2a21390504b6c81dd557739"
+      },
+      {
+        "path": "tests/integration/host-access-recovery.test.mjs",
+        "sha256": "852d78c98a7eab21404f5785c09b0cbf371cb5da75f9ef4e68a3eacc164eba6e"
+      }
+    ],
+    "patchSha256": "e26303fc5420ee9238c9e4c6f25d9e0a641199254ee0710321c16ad583bc0465",
+    "frozen": true,
+    "rootIntegrated": true
+  },
+  "change": "Observe bounded taskkill completion separately from target close; preserve synchronous revocation and unknown/history barriers",
+  "checks": {
+    "red": {
+      "tests": 2,
+      "passed": 0,
+      "expectedFailed": 2,
+      "logSha256": "2055f84747f419ae5f169bf868f03653920572a915a6e1a5c8abc587cc99260a"
+    },
+    "related": {
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "5a56ea39d8d0c388ba5ea244e9f8ecedf4f30b380857d906a3df28f9eaa0972d"
+    },
+    "orderingIncrement": {
+      "tests": 5,
+      "passed": 5,
+      "logSha256": "2fd3318eececa542c51f0bd3877e3df9693acb3440c5043101ebb3c04955405a"
+    },
+    "full": {
+      "command": "npm run test:core",
+      "tests": 1898,
+      "passed": 1874,
+      "failed": 0,
+      "skipped": 24,
+      "logSha256": "ee1d11eabf1ac7f40b8e36644522e4486f9750c0fcf403030a4a75f1be5c8ae9"
+    },
+    "cleanBuild": {
+      "node": "24.19.0",
+      "platform": "win32",
+      "lockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 661,
+      "distManifestSha256": "d32e39120a9211e48a87173eb4dadedfa867d93645af7dabfc1a87fd23000576"
+    },
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "verification": "requested; runtime not echoed",
+      "reportSha256": "f5cd3e74d45dd13e7c16c8b9863e4e97eac0517f61678212380a119d32d9cdf9",
+      "relatedPassed": 17,
+      "codeBlockers": 0
+    },
+    "chrome": {
+      "apiMocked": false,
+      "modelProvider": "deterministic localhost; real production Pi and HTTP",
+      "authorization": "In-thread action-time approval for this exact QA session and at most two heartbeat commands; full access revoked afterwards",
+      "steps": [
+        "Created software QA project through Chrome without GitHub creation.",
+        "Before full access, visible model reply confirmed no host tool; first actual dispatch was provider request 2.",
+        "Enabled exact approved session once.",
+        "First command running, clicked Stop model, received interrupted/cancelled UI and durable cancelled command.",
+        "Second command running, clicked Revoke full access, received durable cancelled command and restricted permission mode.",
+        "Reload retained history and restricted mode."
+      ],
+      "hostAccessSourceSha256": "f3f103d320959778146a6b6ca977ac658ac74f4fd2a21390504b6c81dd557739",
+      "dispatches": 2,
+      "commands": [
+        {
+          "state": "cancelled",
+          "error": "会话、租约或完全访问授权已失效",
+          "exitCode": 1
+        },
+        {
+          "state": "cancelled",
+          "error": "会话、租约或完全访问授权已失效",
+          "exitCode": 1
+        }
+      ],
+      "permissions": {
+        "pending": false,
+        "unknownCommands": 0,
+        "activeCommands": 0,
+        "enabled": false
+      },
+      "ownedProcessesExited": true,
+      "heartbeatsStable": true,
+      "logSha256": "2defcb7b1d81c546089718944d7f25e09fd7cd8d4af1e719dd1bf7b22fa506b7"
+    },
+    "ownedTreeProbe": {
+      "passed": true,
+      "logSha256": "45c71951510818ffbfb7710e00fd4cf521fccca6ffe0d9046bdbd423c2ab6e1d",
+      "treeConfirmedBeforeDirectoryCleanup": true
+    }
+  },
+  "limits": [
+    "24 skipped tests are not passes; POSIX branch was reviewed statically, not dynamically exercised on this Windows host.",
+    "10s helper plus 4s target-close bounds are not guarantees of Windows responsiveness; unconfirmed exits remain unknown.",
+    "Main research service 4794 and prior 4795/4796 fixtures were not restarted; updated backend takes effect in those processes after a normal restart.",
+    "No external model or real research command ran.",
+    "Overall 73-flow browser acceptance continues, including external SSH and other unfinished flows."
+  ]
+}

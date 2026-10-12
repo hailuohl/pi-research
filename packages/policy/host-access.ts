@@ -153,18 +153,38 @@ export class HostAccessService {
             catch {const unknown={...result,state:'unknown' as const,error:'命令终态记录或审计写入失败；需用户核对实际进程和外部效果后重新启用'};this.uncertain.set(id,unknown);row={...row!,...unknown};}
             finally {this.active.delete(id);resolveResult!(row!);}
         };
-        let stopDeadline:ReturnType<typeof setTimeout>|undefined;
+        let stopDeadline:ReturnType<typeof setTimeout>|undefined,stopProcess:ChildProcess|undefined,stopCompleted=false,childClosed=false,childExitCode:number|null=null;
+        const finishClosed=()=>{if(childClosed&&(!stopProcess||stopCompleted))finish(cancelReason?'cancelled':childExitCode===0?'succeeded':'failed',childExitCode,cancelReason);};
+        const waitForStop=(ms:number,detail:string)=>{
+            clearTimeout(stopDeadline);stopDeadline=setTimeout(()=>{
+                if(stopProcess&&!stopCompleted)try{stopProcess.kill('SIGKILL');}catch{}
+                finish('unknown',null,cancelReason+'；'+detail+'，不能保证清除脱管进程');
+            },ms);stopDeadline.unref();
+        };
         const cancel=(reason:string)=>{
             if(done||cancelReason)return;cancelReason=reason;
-            if(child!.pid&&process.platform==='win32')spawn('taskkill',['/PID',String(child!.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'}).on('error',()=>{});
-            else if(child!.pid)try{process.kill(-child!.pid,'SIGTERM');}catch{child!.kill('SIGTERM');}
-            stopDeadline=setTimeout(()=>finish('unknown',null,reason+'；受管进程退出未确认，不能保证清除脱管进程'),4000);stopDeadline.unref();
+            if(child!.pid&&process.platform==='win32'){
+                // taskkill enumerates the tree asynchronously; its completion is distinct from the target's close.
+                waitForStop(10000,'taskkill 执行超时，受管进程退出未确认');
+                try{
+                    stopProcess=spawn('taskkill',['/PID',String(child!.pid),'/T','/F'],{windowsHide:true,stdio:'ignore'});
+                    stopProcess.once('error',error=>finish('unknown',null,reason+'；taskkill 启动失败：'+error.message));
+                    stopProcess.once('close',code=>{
+                        if(done)return;
+                        if(code!==0){finish('unknown',null,reason+'；taskkill 未成功完成（退出码 '+String(code)+'），进程树退出未确认');return;}
+                        stopCompleted=true;waitForStop(4000,'受管进程退出未确认');finishClosed();
+                    });
+                }catch(error){finish('unknown',null,reason+'；taskkill 启动失败：'+String(error));}
+            }else{
+                if(child!.pid)try{process.kill(-child!.pid,'SIGTERM');}catch{child!.kill('SIGTERM');}
+                waitForStop(4000,'受管进程退出未确认');
+            }
         };
         const deadline=setTimeout(()=>cancel('命令超过执行时限'),timeoutMs);deadline.unref();
         const fence=setInterval(()=>{try{this.assertAgent(actor,grant.epoch);}catch{cancel('会话、租约或完全访问授权已失效');}},100);fence.unref();
         this.active.set(id,{child:child!,sessionId:session.id,epoch:grant.epoch,generation:actor.generation!,promise,cancel});
         child!.once('error',error=>finish('failed',null,error.message));
-        child!.once('close',code=>finish(cancelReason?'cancelled':code===0?'succeeded':'failed',code,cancelReason));
+        child!.once('close',code=>{childClosed=true;childExitCode=code;finishClosed();});
         return promise.then(result=>{this.assertAgent(actor,grant.epoch);return result;});
     }
     async stop() {this.stopping=true;for(const job of this.active.values())job.cancel('服务关闭，完全访问授权将失效');await Promise.allSettled([...this.active.values()].map(job=>job.promise));}

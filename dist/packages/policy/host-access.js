@@ -233,22 +233,57 @@ export class HostAccessService {
                 resolveResult(row);
             }
         };
-        let stopDeadline;
+        let stopDeadline, stopProcess, stopCompleted = false, childClosed = false, childExitCode = null;
+        const finishClosed = () => { if (childClosed && (!stopProcess || stopCompleted))
+            finish(cancelReason ? 'cancelled' : childExitCode === 0 ? 'succeeded' : 'failed', childExitCode, cancelReason); };
+        const waitForStop = (ms, detail) => {
+            clearTimeout(stopDeadline);
+            stopDeadline = setTimeout(() => {
+                if (stopProcess && !stopCompleted)
+                    try {
+                        stopProcess.kill('SIGKILL');
+                    }
+                    catch { }
+                finish('unknown', null, cancelReason + '；' + detail + '，不能保证清除脱管进程');
+            }, ms);
+            stopDeadline.unref();
+        };
         const cancel = (reason) => {
             if (done || cancelReason)
                 return;
             cancelReason = reason;
-            if (child.pid && process.platform === 'win32')
-                spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }).on('error', () => { });
-            else if (child.pid)
+            if (child.pid && process.platform === 'win32') {
+                // taskkill enumerates the tree asynchronously; its completion is distinct from the target's close.
+                waitForStop(10000, 'taskkill 执行超时，受管进程退出未确认');
                 try {
-                    process.kill(-child.pid, 'SIGTERM');
+                    stopProcess = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+                    stopProcess.once('error', error => finish('unknown', null, reason + '；taskkill 启动失败：' + error.message));
+                    stopProcess.once('close', code => {
+                        if (done)
+                            return;
+                        if (code !== 0) {
+                            finish('unknown', null, reason + '；taskkill 未成功完成（退出码 ' + String(code) + '），进程树退出未确认');
+                            return;
+                        }
+                        stopCompleted = true;
+                        waitForStop(4000, '受管进程退出未确认');
+                        finishClosed();
+                    });
                 }
-                catch {
-                    child.kill('SIGTERM');
+                catch (error) {
+                    finish('unknown', null, reason + '；taskkill 启动失败：' + String(error));
                 }
-            stopDeadline = setTimeout(() => finish('unknown', null, reason + '；受管进程退出未确认，不能保证清除脱管进程'), 4000);
-            stopDeadline.unref();
+            }
+            else {
+                if (child.pid)
+                    try {
+                        process.kill(-child.pid, 'SIGTERM');
+                    }
+                    catch {
+                        child.kill('SIGTERM');
+                    }
+                waitForStop(4000, '受管进程退出未确认');
+            }
         };
         const deadline = setTimeout(() => cancel('命令超过执行时限'), timeoutMs);
         deadline.unref();
@@ -261,7 +296,7 @@ export class HostAccessService {
         fence.unref();
         this.active.set(id, { child: child, sessionId: session.id, epoch: grant.epoch, generation: actor.generation, promise, cancel });
         child.once('error', error => finish('failed', null, error.message));
-        child.once('close', code => finish(cancelReason ? 'cancelled' : code === 0 ? 'succeeded' : 'failed', code, cancelReason));
+        child.once('close', code => { childClosed = true; childExitCode = code; finishClosed(); });
         return promise.then(result => { this.assertAgent(actor, grant.epoch); return result; });
     }
     async stop() { this.stopping = true; for (const job of this.active.values())
