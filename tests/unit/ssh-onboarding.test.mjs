@@ -1,17 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync,writeFileSync,existsSync,renameSync,mkdtempSync,rmSync} from 'node:fs';
+import {readFileSync,writeFileSync,existsSync,renameSync,mkdirSync,mkdtempSync,rmdirSync,rmSync} from 'node:fs';
 import {join,resolve,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import {EventEmitter} from 'node:events';
 import {PassThrough} from 'node:stream';
 import childProcess from 'node:child_process';
 import {syncBuiltinESMExports} from 'node:module';
+import {performance} from 'node:perf_hooks';
 import {setup,USER,approve} from '../support/research.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {digest} from '../../dist/packages/storage/store.js';
 import {DomainError} from '../../dist/packages/domain/errors.js';
-import {parseHostKeys,sshOnboardingRequest} from '../../dist/packages/runners/ssh-onboarding.js';
+import {parseHostKeys,scanHostKeys,sshOnboardingRequest} from '../../dist/packages/runners/ssh-onboarding.js';
 import {sshArgs,sshRequest} from '../../dist/packages/runners/ssh.js';
 import {ComputeConnectionService} from '../../dist/packages/runners/compute-connections.js';
 import {createDataBackup,verifyDataBackup} from '../../dist/packages/storage/backup.js';
@@ -25,7 +26,7 @@ test('SSH transport failure waits for observed child exit and escalates ignored 
  const s=setup(),saved=childProcess.spawn;let child;
  try{
   const target={id:'fixture',host:'fixture.invalid',port:22,user:'research',remoteRoot:'/srv/pi/jobs',identityFile:join(s.dir,'key'),knownHostsFile:join(s.dir,'hosts')};
-  for(const request of [()=>sshOnboardingRequest(s.app.context,target,'inspect'),()=>sshRequest(target,{op:'probe'},32)]){
+  for(const request of [()=>sshOnboardingRequest(s.app.context,target,'inspect'),()=>sshRequest(target,{op:'probe'},32),()=>scanHostKeys(target)]){
    const signals=[];let exited=false,settled=false;
    childProcess.spawn=()=>{child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.stdin=new PassThrough();child.kill=signal=>{signals.push(signal);if(signal==='SIGKILL'){exited=true;child.emit('close',null);}return true;};queueMicrotask(()=>child.stdout.write(Buffer.alloc(512*1024+1)));return child;};syncBuiltinESMExports();
    const pending=request().then(()=>{settled=true;assert.fail('oversized response must fail');},error=>{settled=true;return error;});
@@ -35,6 +36,25 @@ test('SSH transport failure waits for observed child exit and escalates ignored 
  }finally{child?.emit('close',null);childProcess.spawn=saved;syncBuiltinESMExports();s.close();}
 });
 const key=n=>parseHostKeys('untrusted.example ssh-ed25519 '+wire(n))[0];
+test('Windows unsupported KEX retries only an installed Git scanner and validates its public keys',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'pi-keyscan-')),scanner=join(dir,'Programs','Git','usr','bin','ssh-keyscan.exe'),savedSpawn=childProcess.spawn,clock=performance.now.bind(performance),clockDescriptor=Object.getOwnPropertyDescriptor(performance,'now'),platform=Object.getOwnPropertyDescriptor(process,'platform'),names=['LOCALAPPDATA','ProgramFiles','ProgramFiles(x86)'],environment=Object.fromEntries(names.map(name=>[name,process.env[name]]));
+ const restoreClock=()=>{if(clockDescriptor)Object.defineProperty(performance,'now',clockDescriptor);else delete performance.now;};
+ try{
+  process.env.LOCALAPPDATA=dir;delete process.env.ProgramFiles;delete process.env['ProgramFiles(x86)'];mkdirSync(join(dir,'Programs','Git','usr','bin'),{recursive:true});writeFileSync(scanner,'offline scanner fixture');
+  for(const scenario of ['success','retry','failed-retry','invalid-key','conflict','other-error','other-platform','expired-budget','non-file','missing']){
+   restoreClock();
+   Object.defineProperty(process,'platform',{value:scenario==='other-platform'?'linux':'win32'});if(scenario==='non-file'){rmSync(scanner);mkdirSync(scanner);}if(scenario==='missing')rmdirSync(scanner);
+   const calls=[];childProcess.spawn=(exe,args,options)=>{
+    calls.push(exe);assert.deepEqual(args,['-T','10','-p','2222','-t','ed25519,ecdsa,rsa','--','fixture.invalid']);assert.equal(options.shell,false);assert.equal(options.windowsHide,true);
+    const p=new EventEmitter();p.stdout=new PassThrough();p.stderr=new PassThrough();p.stdin=new PassThrough();p.kill=()=>{};
+    queueMicrotask(()=>{if(exe==='ssh-keyscan'&&scenario!=='success'){if(scenario==='expired-budget')Object.defineProperty(performance,'now',{value:()=>clock()+16000,configurable:true});p.stderr.end(scenario==='other-error'?'connection refused':'choose_kex: unsupported KEX method sntrup761x25519-sha512@openssh.com');p.emit('close',1);}else{p.stdout.end(scenario==='invalid-key'?'fixture.invalid ssh-ed25519 AAAA':scenario==='conflict'?'fixture.invalid ssh-ed25519 '+wire(7)+'\nfixture.invalid ssh-ed25519 '+wire(8):'untrusted.example ssh-ed25519 '+wire(7));p.emit('close',scenario==='failed-retry'?1:0);}});return p;
+   };syncBuiltinESMExports();
+   if(['success','retry'].includes(scenario))assert.equal((await scanHostKeys({host:'fixture.invalid',port:2222}))[0].fingerprint,key(7).fingerprint);
+   else await assert.rejects(scanHostKeys({host:'fixture.invalid',port:2222}),error=>{assert.equal(error.code,scenario==='invalid-key'?'SSH_HOST_KEY_INVALID':scenario==='conflict'?'SSH_HOST_KEY_CONFLICT':'SSH_HOST_KEY_UNAVAILABLE');if(['other-platform','expired-budget','non-file','missing'].includes(scenario))assert.match(error.message,/扫描器不兼容/);if(scenario==='other-platform')assert.doesNotMatch(error.message,/Git for Windows/);if(['other-error','failed-retry'].includes(scenario))assert.match(error.message,/地址和端口/);return true;});
+   assert.deepEqual(calls,['retry','failed-retry','invalid-key','conflict'].includes(scenario)?['ssh-keyscan',scanner]:['ssh-keyscan']);
+  }
+ }finally{restoreClock();childProcess.spawn=savedSpawn;syncBuiltinESMExports();Object.defineProperty(process,'platform',platform);for(const name of names)if(environment[name]===undefined)delete process.env[name];else process.env[name]=environment[name];assert.ok(resolve(dir).startsWith(resolve(tmpdir())+sep));rmSync(dir,{recursive:true,force:true});}
+});
 const healthy=()=>({supervisor:'ready',workspace:'ready',docker:'ready',engineId:'onboarding-fixture',protocolDigest:digest(readFileSync('scripts/ssh-runner-gpu.py'))});
 function fixture(){const s=setup(),identityFile=join(s.dir,'fixture-key');writeFileSync(identityFile,'fake identity for offline test');s.config={id:'fixture',host:'fixture.invalid',user:'research',identityFile,remoteRoot:'/srv/pi/jobs',expectedVersion:0};s.calls=[];s.app.sshTargets.scan=async()=>[key(7)];s.app.sshTargets.onboarding=async(t,action)=>{s.calls.push(action);return healthy();};return s;}
 const owner=(s,name,input,key=name)=>s.app.operations.execute(USER,name,input,{projectId:s.project.id,idempotencyKey:key});

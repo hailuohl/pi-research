@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { DomainError, ensure } from '../domain/errors.js';
 import { digest } from '../storage/store.js';
 import { sshArgs, sshEnvironment } from './ssh.js';
@@ -73,7 +74,25 @@ function bounded(executable, args, input, timeout) {
         child.stdin.end(input);
     });
 }
-export async function scanHostKeys(t) { const r = await bounded('ssh-keyscan', ['-T', '10', '-p', String(t.port), '-t', 'ed25519,ecdsa,rsa', '--', t.host], '', 15000); ensure(r.code === 0, 'SSH_HOST_KEY_UNAVAILABLE', '无法取得 SSH 主机密钥；请检查地址和端口'); return parseHostKeys(r.stdout); }
+export async function scanHostKeys(t) {
+    const deadline = performance.now() + 15000, args = ['-T', '10', '-p', String(t.port), '-t', 'ed25519,ecdsa,rsa', '--', t.host];
+    let r = await bounded('ssh-keyscan', args, '', 15000);
+    // Some Windows OpenSSH builds advertise a KEX they cannot use; Git bundles a separate OpenSSH scanner.
+    if (process.platform === 'win32' && r.code !== 0 && /choose_kex: unsupported KEX method/.test(r.stderr)) {
+        const roots = [process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs') : undefined, process.env.ProgramFiles, process.env['ProgramFiles(x86)']];
+        const scanner = roots.filter((root) => typeof root === 'string' && isAbsolute(root)).map(root => join(root, 'Git', 'usr', 'bin', 'ssh-keyscan.exe')).find(file => { try {
+            const stat = lstatSync(file);
+            return stat.isFile() && !stat.isSymbolicLink();
+        }
+        catch {
+            return false;
+        } });
+        if (scanner && performance.now() < deadline)
+            r = await bounded(scanner, args, '', Math.max(1, deadline - performance.now()));
+    }
+    ensure(r.code === 0, 'SSH_HOST_KEY_UNAVAILABLE', /choose_kex: unsupported KEX method/.test(r.stderr) ? (process.platform === 'win32' ? '本机 SSH 主机密钥扫描器不兼容；请安装或更新 Git for Windows 后重新获取指纹' : '本机 SSH 主机密钥扫描器不兼容；请更新本机 OpenSSH 后重新获取指纹') : '无法取得 SSH 主机密钥；请检查地址和端口');
+    return parseHostKeys(r.stdout);
+}
 /** The command is bundled code only. All values, including helper bytes, travel as JSON over stdin. */
 export async function sshOnboardingRequest(c, t, action) {
     const source = readFileSync(join(c.repoRoot, 'scripts', 'ssh-onboarding.py')), helper = readFileSync(join(c.repoRoot, 'scripts', 'ssh-runner-gpu.py'));
