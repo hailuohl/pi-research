@@ -145,7 +145,7 @@ test('foreign session selection reports scoped failure without showing the previ
     Object.assign(app.state,{projectId:'p',sessionId:'recent',messages:[{id:'previous-body'}],pendingMessages:[{id:'previous-queue'}],pendingTotal:1,pendingNextCursor:'q',canSteer:true,historyAnchor:{direction:'before',id:'previous-cursor'}});
     const urls=[];globalThis.fetch=async url=>{urls.push(url);return url.endsWith('/bootstrap')?response({projects:[{id:'p'}]}):{ok:false,status:403,json:async()=>({error:{code:'SCOPE_DENIED',message:'会话不属于此项目'}})};};
     app.selectSession('foreign');await app.refresh();
-    assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.pendingNextCursor,null);assert.equal(app.state.canSteer,false);assert.equal(app.state.historyAnchor,null);assert.match(app.state.error,/不属于此项目/);
+    assert.deepEqual(app.state.messages,[]);assert.deepEqual(app.state.pendingMessages,[]);assert.equal(app.state.pendingTotal,0);assert.equal(app.state.pendingNextCursor,null);assert.equal(app.state.canSteer,false);assert.equal(app.state.historyAnchor,null);assert.match(app.state.projectReadError,/不属于此项目/);
     assert.ok(urls.some(url=>url.includes('/state?sessionId=foreign')));assert.ok(!urls.some(url=>url.includes('/sessions/foreign/view')));
     app.componentWillUnmount();
 });

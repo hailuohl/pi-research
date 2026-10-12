@@ -62,8 +62,8 @@ test('cold reopen and refresh retain an archived selected project and its explic
 test('archived project metadata read errors retain current view; deleted project falls back to active',async t=>{
     const v=app(t),prior=v.state.data;let deleted=false;
     mockFetch(t,async url=>url==='/api/bootstrap'?reply(boot([project('a')])):url==='/api/settings/model-management'?reply({schemaVersion:2,providers:[]}):url==='/api/projects/p'?deleted?failure('PROJECT_DELETED',404):failure('READ_FAILED',503):url.startsWith('/api/projects/a/state')?reply(data(project('a'))):assert.fail(url));
-    assert.equal(await v.refresh(),false);assert.equal(v.state.projectId,'p');assert.equal(v.state.data,prior);assert.match(v.state.error,/READ_FAILED/);
-    deleted=true;v.feed={projectId:'a',stop(){}};assert.equal(await v.refresh(),true);assert.equal(v.state.projectId,'a');
+    assert.equal(await v.refresh(),false);assert.equal(v.state.projectId,'p');assert.equal(v.state.data,prior);assert.match(v.state.projectReadError,/READ_FAILED/);assert.equal(v.state.error,'');
+    deleted=true;v.feed={projectId:'a',stop(){}};assert.equal(await v.refresh(),true);assert.equal(v.state.projectId,'a');assert.equal(v.state.projectReadError,'');
 });
 
 test('a stale archived read or lifecycle reply cannot take over another project selection',async t=>{
@@ -163,7 +163,7 @@ test('a newer selection made during deleted-view clearing is preserved before bo
 test('a deleted cold reopen clears cached research even when the fallback active project cannot be read',async t=>{
     const v=app(t);v.state.sessionId='old';v.state.messages=[{id:'old'}];v.state.stream='old';v.state.selectedReport='report';
     mockFetch(t,async url=>url==='/api/bootstrap'?reply(boot([project('q')])):url==='/api/settings/model-management'?reply({schemaVersion:2,providers:[]}):url==='/api/projects/p'?failure('PROJECT_DELETED',410):url.startsWith('/api/projects/q/state')?failure('READ_FAILED',503):assert.fail(url));
-    assert.equal(await v.refresh(),false);assert.equal(v.state.data,null);assert.equal(v.state.sessionId,'');assert.deepEqual(v.state.messages,[]);assert.equal(v.state.stream,'');assert.equal(v.state.selectedReport,'');assert.match(v.state.error,/READ_FAILED/);
+    assert.equal(await v.refresh(),false);assert.equal(v.state.data,null);assert.equal(v.state.sessionId,'');assert.deepEqual(v.state.messages,[]);assert.equal(v.state.stream,'');assert.equal(v.state.selectedReport,'');assert.match(v.state.projectReadError,/READ_FAILED/);assert.equal(v.state.error,'');
 });
 
 test('a delayed deleted-session response clears the old view and safely falls back',async t=>{
