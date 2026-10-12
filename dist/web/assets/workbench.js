@@ -214,6 +214,7 @@ class Chat extends React.Component {
     const { data, boot, session, messages } = this.props;
     const runtimeAvailable = boot.runtime.ready || boot.runtime.code === "MODEL_NOT_CONFIGURED";
     const sessionModelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking));
+    const sessionFailure = session?.state === "failed" ? session.lastError : void 0;
     const canSend = this.canSend();
     const hasDraft = !!this.state.draft.trim() || this.state.attachments.length > 0;
     const latest = !this.props.historyAnchor && (!this.props.history || this.props.history.atLatest), pending = new Set(latest ? this.state.permissionPending : []);
@@ -268,6 +269,14 @@ class Chat extends React.Component {
           ] })
         ] })
       ] }) : runtimeAvailable && session && !sessionModelAvailable ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u5F53\u524D\u4F1A\u8BDD\u6A21\u578B\u4E0D\u53EF\u7528\uFF0C\u8BF7\u9009\u62E9\u5DF2\u542F\u7528\u914D\u7F6E\u6216\u65B0\u5EFA\u4F1A\u8BDD\u3002" }) : null,
+      session?.state === "failed" ? /* @__PURE__ */ jsx("div", { className: "notice runtime-notice", role: "alert", children: /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx("strong", { children: "\u4F1A\u8BDD\u5DF2\u5931\u8D25" }),
+        /* @__PURE__ */ jsx("p", { children: sessionFailure?.includes("SKILL_REVOKED") ? "\u6B64\u4F1A\u8BDD\u7ED1\u5B9A\u7684\u6280\u80FD\u7248\u672C\u5DF2\u64A4\u9500\uFF0C\u65E0\u6CD5\u542F\u52A8\u3002\u8BF7\u521B\u5EFA\u65B0\u4F1A\u8BDD\uFF1B\u5DF2\u6709\u6D88\u606F\u4E0E\u5386\u53F2\u4FDD\u7559\u3002" : "\u6B64\u4F1A\u8BDD\u5DF2\u5931\u8D25\u3002\u5DF2\u6709\u6D88\u606F\u4E0E\u5386\u53F2\u4FDD\u7559\u3002" }),
+        sessionFailure ? /* @__PURE__ */ jsxs("details", { children: [
+          /* @__PURE__ */ jsx("summary", { children: "\u67E5\u770B\u5931\u8D25\u539F\u56E0" }),
+          /* @__PURE__ */ jsx("p", { className: "small error-text code-wrap", children: sessionFailure })
+        ] }) : null
+      ] }) }) : null,
       session?.taskId ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u8FD9\u662F\u56E2\u961F\u4EFB\u52A1\u4F1A\u8BDD\u3002\u8BF7\u901A\u8FC7\u56E2\u961F\u4EFB\u52A1\u63A7\u4EF6\u53D1\u9001\u6307\u4EE4\u6216\u7BA1\u7406\u4EFB\u52A1\u3002" }) : session?.state === "archived" ? /* @__PURE__ */ jsx("p", { className: "notice runtime-notice", children: "\u6B64\u4F1A\u8BDD\u5DF2\u5F52\u6863\uFF0C\u4E0D\u80FD\u53D1\u9001\u6D88\u606F\u3002" }) : null,
       /* @__PURE__ */ jsxs("div", { className: "chat-work-region" + (this.state.drawerOpen ? " is-drawer-open" : ""), children: [
         /* @__PURE__ */ jsxs("div", { className: "conversation", "aria-live": "polite", children: [

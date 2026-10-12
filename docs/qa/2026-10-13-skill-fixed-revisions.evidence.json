@@ -1,0 +1,553 @@
+{
+  "flow": "SKILL-REVISION-UI-01",
+  "date": "2026-10-13",
+  "baseline": "ded2d95eb366713bf588769e430622b290804389",
+  "status": "accepted-scoped-flow",
+  "acceptance": [
+    {
+      "id": 1,
+      "status": "pass",
+      "scope": "Public pure-text revisions seeded through owner API; Chrome fixed resource/metadata reads, four raw bytes verified"
+    },
+    {
+      "id": 2,
+      "status": "pass",
+      "scope": "Explicit owner session binding A/v1, Chrome default upgrade then B/v2; old task/retry binding uses existing evidence, no new task execution claim"
+    },
+    {
+      "id": 3,
+      "status": "pass",
+      "scope": "Chrome rollback to v1, reload, then disable; A/B remain fixed and new C has builtin-only catalog"
+    },
+    {
+      "id": 4,
+      "status": "pass-after-feedback-fix",
+      "scope": "Owner revoke, UI disable, actual single Chrome start blocked before model; missing failure reason fixed and same failed session reopened without resend"
+    }
+  ],
+  "productChanges": [
+    {
+      "path": "apps/web/src/workbench.tsx",
+      "sha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64"
+    },
+    {
+      "path": "dist/web/assets/workbench.js",
+      "sha256": "e9baf92c1138e24bfc94f94d06da916c7f6c8faa40effb90012f89e80e4a9198"
+    },
+    {
+      "path": "dist/web/assets/main.js",
+      "sha256": "30482a54de334f711003466fb234e0c806fe7616a971c34c293f8fa370800d6d"
+    },
+    {
+      "path": "tests/unit/session-failure-ui.test.mjs",
+      "sha256": "d4485b76f8822809ce31d18186191c6d4021e9217ba127f13b730522d70bb23e"
+    }
+  ],
+  "fix": {
+    "problem": "Chat omitted session.lastError, showing only failed badge after revoked-skill startup refusal",
+    "implementation": "Failed-state-only readable alert and collapsed plain-text details; revoked-skill recovery hint; no backend/state/permission/CSS changes",
+    "preFixDom": {
+      "path": ".validation/skill-revision-ui-20261013/result/blocked-dom.txt",
+      "sha256": "4e9c734b406d1b7105f912b5f2bf82cd8f6f9adece3aec1539e5fd59484b6c95"
+    },
+    "postFixDom": {
+      "path": ".validation/skill-revision-ui-20261013/result/failure-fixed-dom.txt",
+      "sha256": "4e7d92f4de92e2f9163f4220c95ce6589620d4f09b19f95fa75f714e6ca542d6"
+    }
+  },
+  "bindings": {
+    "projectId": "e926d2ed-fbf9-4965-a44e-58c8ac754cd5",
+    "packageId": "uiqa-fixed-revision-20261013",
+    "revisionIds": [
+      "cffe77c0-f7da-4159-933a-d556c36a52c5",
+      "bf4d94ec-330a-482d-9faf-f6f87a4cb8f8"
+    ],
+    "A": {
+      "sessionId": "e70e099f-5020-4726-94d1-a7dc01f6564b",
+      "version": 2,
+      "skillBundleId": "6d1de438a713018eb39db425c2b0084811217ed3b91c0f851fe6026c2f90b2b8",
+      "skillIds": [
+        "uiqa-fixed-revision-20261013"
+      ],
+      "ready": true,
+      "missing": []
+    },
+    "B": {
+      "sessionId": "f4dd27fe-fa3b-4962-8dc9-b74d0958f65b",
+      "version": 2,
+      "skillBundleId": "4138a5be905131fab2d155a626dff6a7ec85e7fb210ff4b7a02170eaebf58e84",
+      "skillIds": [
+        "uiqa-fixed-revision-20261013"
+      ],
+      "ready": true,
+      "missing": []
+    },
+    "C": {
+      "sessionId": "099bf6a6-a7e9-4f81-b34f-001bcc50fcb0",
+      "version": 1,
+      "skillBundleId": "7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b",
+      "skillIds": [],
+      "ready": true,
+      "missing": []
+    },
+    "finalConfiguration": {
+      "version": 4,
+      "bundleId": "7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b",
+      "builtinBundleId": "7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b",
+      "revisionIds": [],
+      "disabledBuiltinIds": []
+    }
+  },
+  "verification": {
+    "pass": true,
+    "projectId": "e926d2ed-fbf9-4965-a44e-58c8ac754cd5",
+    "sessionId": "f4dd27fe-fa3b-4962-8dc9-b74d0958f65b",
+    "startRequestAccepted": true,
+    "sessionState": "failed",
+    "messageId": "327c5016-d941-4db9-be41-1852959ed0cc",
+    "messageStatus": "queued",
+    "pendingTotal": 0,
+    "lastError": "SKILL_CAPABILITY_MISSING — bundle binding:4138a5be905131fab2d155a626dff6a7ec85e7fb210ff4b7a02170eaebf58e84 — SKILL_REVOKED — 技能版本已撤销，不能启动或启用",
+    "generationUnchanged": 0,
+    "piSessionPath": null,
+    "modelRequestsTotal": 2,
+    "newModelRequests": 0,
+    "newWorkersOrAdmissions": 0,
+    "newProjectUsage": 0,
+    "newTasks": 0,
+    "added": [
+      {
+        "kind": "message",
+        "id": "327c5016-d941-4db9-be41-1852959ed0cc"
+      }
+    ],
+    "changed": [
+      {
+        "kind": "session",
+        "id": "f4dd27fe-fa3b-4962-8dc9-b74d0958f65b",
+        "beforeVersion": 2,
+        "afterVersion": 4
+      }
+    ],
+    "reenable": {
+      "status": 409,
+      "error": "SKILL_REVOKED",
+      "recordsUnchanged": true
+    },
+    "configuration": {
+      "version": 4,
+      "bundleId": "7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b",
+      "builtinBundleId": "7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b",
+      "revisionIds": [],
+      "disabledBuiltinIds": []
+    },
+    "preserved": [
+      {
+        "revisionId": "cffe77c0-f7da-4159-933a-d556c36a52c5",
+        "path": "notes.txt",
+        "bytes": 46,
+        "sha256": "2989bcf019d65a3723c730c9e4c4e4ddd1ae8e2a8194496d99354d1934072019"
+      },
+      {
+        "revisionId": "cffe77c0-f7da-4159-933a-d556c36a52c5",
+        "path": "SKILL.md",
+        "bytes": 130,
+        "sha256": "0c7451d31c6a8baa2da1dd5a3c479bff8d5fa03315a1bca0695bfd4e6464fc39"
+      },
+      {
+        "revisionId": "bf4d94ec-330a-482d-9faf-f6f87a4cb8f8",
+        "path": "notes.txt",
+        "bytes": 46,
+        "sha256": "9f4a30ff59b949b9752f2bce39f9c1dcf3df3f5caf33b637f805e258e410fa95"
+      },
+      {
+        "revisionId": "bf4d94ec-330a-482d-9faf-f6f87a4cb8f8",
+        "path": "SKILL.md",
+        "bytes": 130,
+        "sha256": "f1cf9f67e260d391d2a81c463be2987acf446054bfac3b735f9370e79343a823"
+      }
+    ],
+    "oldRecordsUnchanged": 40,
+    "readAfterRevocation": {
+      "id": "uiqa-fixed-revision-20261013",
+      "resource": "notes.txt",
+      "content": "Public resource v2: UIQA_RESOURCE_V2_20261013\n",
+      "digest": "9f4a30ff59b949b9752f2bce39f9c1dcf3df3f5caf33b637f805e258e410fa95",
+      "bundleId": "4138a5be905131fab2d155a626dff6a7ec85e7fb210ff4b7a02170eaebf58e84",
+      "source": {
+        "repository": "user-import",
+        "commit": "53ab1123c86d521a5e291a2fe0e6ade51d920518a1c64a5a948e0431f8e7543d",
+        "path": "SKILL.md",
+        "blob": "53ab1123c86d521a5e291a2fe0e6ade51d920518a1c64a5a948e0431f8e7543d"
+      }
+    },
+    "preflightA": {
+      "sessionId": "e70e099f-5020-4726-94d1-a7dc01f6564b",
+      "version": 2,
+      "skillBundleId": "6d1de438a713018eb39db425c2b0084811217ed3b91c0f851fe6026c2f90b2b8",
+      "skillIds": [
+        "uiqa-fixed-revision-20261013"
+      ],
+      "ready": true,
+      "missing": []
+    },
+    "preflightB": {
+      "sessionId": "f4dd27fe-fa3b-4962-8dc9-b74d0958f65b",
+      "version": 4,
+      "skillBundleId": "4138a5be905131fab2d155a626dff6a7ec85e7fb210ff4b7a02170eaebf58e84",
+      "skillIds": [
+        "uiqa-fixed-revision-20261013"
+      ],
+      "ready": false,
+      "missing": [
+        {
+          "skillId": "",
+          "kind": "binding",
+          "value": "4138a5be905131fab2d155a626dff6a7ec85e7fb210ff4b7a02170eaebf58e84",
+          "reason": "SKILL_REVOKED — 技能版本已撤销，不能启动或启用"
+        }
+      ]
+    },
+    "uiGap": "Server error exists; original Chrome showed only failed badge, not its reason. Product repair is pending and not claimed passed by this backend check."
+  },
+  "postFix": {
+    "allBusinessRecordsUnchanged": true,
+    "modelRequestsTotal": 2,
+    "newModelRequests": 0,
+    "activeWorkers": 0,
+    "noResend": true
+  },
+  "validation": {
+    "newRegression": {
+      "red": {
+        "tests": 3,
+        "pass": 0,
+        "fail": 3
+      },
+      "green": {
+        "tests": 3,
+        "pass": 3,
+        "fail": 0
+      }
+    },
+    "candidateRelated": {
+      "tests": 64,
+      "pass": 64,
+      "fail": 0,
+      "skipped": 0,
+      "log": {
+        "path": ".validation/skill-revision-ui-20261013/result/integrated-related.log",
+        "sha256": "0b0410307f801a9d7a54b4b2971708f3e277b0084ce58cffdf54e6a273759c60"
+      }
+    },
+    "build": {
+      "exitCode": 0,
+      "includesTypechecks": true,
+      "log": {
+        "path": ".validation/skill-revision-ui-20261013/result/build.log",
+        "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+      }
+    },
+    "agentRelatedBeforeBuild": "61 passed against old dist; historical only, superseded for candidate by integrated 64 checks",
+    "reused": {
+      "log": {
+        "path": ".validation/settings-github-ui-20261013/result/phase-full-tests.log",
+        "sha256": "02dad224541e2f6d5f388546b3b9cf587c65633463a902eb77cf0d3319a57d2c"
+      },
+      "names": [
+        "task retry keeps first bundle and lazy read; revocation blocks future attempts, not historical reading",
+        "builtin release upgrade leaves existing attempts and retries on their original baseline",
+        "owner skill operations have closed HTTP/CLI contracts, frozen session reads and no automatic grant to agents"
+      ],
+      "scope": "Unchanged skill backend, task/retry fixed binding; no current whole-suite or clean-build rerun claim"
+    }
+  },
+  "codeSnapshot": [
+    {
+      "path": "apps/web/src/workbench.tsx",
+      "rootSha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64",
+      "runtimeSha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64",
+      "normalizedLfSha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64"
+    },
+    {
+      "path": "apps/web/src/app.tsx",
+      "rootSha256": "b0df6c27037ead48d72667f476beb4448dbfaef51faace2f84bf526cc65cd304",
+      "runtimeSha256": "6bb22eecccdac2812a45a206a47e3da5d96a4b4036343b69aff73d780f7626dc",
+      "normalizedLfSha256": "6bb22eecccdac2812a45a206a47e3da5d96a4b4036343b69aff73d780f7626dc"
+    },
+    {
+      "path": "apps/web/src/skill-manager.tsx",
+      "rootSha256": "d2ca80363f546390160ae363a1df3329f14df83c5a19e0e08443d9704c044453",
+      "runtimeSha256": "d2ca80363f546390160ae363a1df3329f14df83c5a19e0e08443d9704c044453",
+      "normalizedLfSha256": "d2ca80363f546390160ae363a1df3329f14df83c5a19e0e08443d9704c044453"
+    },
+    {
+      "path": "packages/skills/service.ts",
+      "rootSha256": "7713918cbd89d35bce0fb670031de31520080d544782ed8d92a96a88f9282a9e",
+      "runtimeSha256": "1334ea4886c2b1dbbd42d0d1c7216d9bf395af26c2d3dd52f0f08ada0e63d8f9",
+      "normalizedLfSha256": "1334ea4886c2b1dbbd42d0d1c7216d9bf395af26c2d3dd52f0f08ada0e63d8f9"
+    },
+    {
+      "path": "packages/skills/runtime.ts",
+      "rootSha256": "d7b4ea3d87a37e2e1bfdbbaaa2a47aa8d02cebc4f65dcd9a33f6c25b4e0c162c",
+      "runtimeSha256": "f8fc9e51ef138dc528e00c8829dbf0fd4ccbb15e12a0d04d0f186c5704368e2e",
+      "normalizedLfSha256": "f8fc9e51ef138dc528e00c8829dbf0fd4ccbb15e12a0d04d0f186c5704368e2e"
+    },
+    {
+      "path": "packages/contracts/operations/skill-schemas.ts",
+      "rootSha256": "6c5a8c35d69b44cf0abef9cfcf0402a407d0d8a9f73e1f2a70321594990f57d1",
+      "runtimeSha256": "6c5a8c35d69b44cf0abef9cfcf0402a407d0d8a9f73e1f2a70321594990f57d1",
+      "normalizedLfSha256": "6c5a8c35d69b44cf0abef9cfcf0402a407d0d8a9f73e1f2a70321594990f57d1"
+    },
+    {
+      "path": "packages/contracts/operations/registry.ts",
+      "rootSha256": "31fab510d30a4cb6e6708272c7c8ae72f9104669fd1c932b8486928cbac85b39",
+      "runtimeSha256": "31fab510d30a4cb6e6708272c7c8ae72f9104669fd1c932b8486928cbac85b39",
+      "normalizedLfSha256": "31fab510d30a4cb6e6708272c7c8ae72f9104669fd1c932b8486928cbac85b39"
+    },
+    {
+      "path": "packages/pi-adapter/sessions.ts",
+      "rootSha256": "61f56ba1e93dc7d96637a54ab56f5028343dc70ead289a8be82cf588ee0d9fbc",
+      "runtimeSha256": "6ef678b54d6d3d046ab07cc8dbd60ad0ac23cf61f3036dd046505f190d0f716e",
+      "normalizedLfSha256": "6ef678b54d6d3d046ab07cc8dbd60ad0ac23cf61f3036dd046505f190d0f716e"
+    },
+    {
+      "path": "packages/pi-adapter/session-history.ts",
+      "rootSha256": "eef3b1554629aba85f7b206b7a8da8e561e5bdb95d5b51627d8b0462625cc842",
+      "runtimeSha256": "eef3b1554629aba85f7b206b7a8da8e561e5bdb95d5b51627d8b0462625cc842",
+      "normalizedLfSha256": "eef3b1554629aba85f7b206b7a8da8e561e5bdb95d5b51627d8b0462625cc842"
+    },
+    {
+      "path": "packages/scheduler/agent-host.ts",
+      "rootSha256": "f1e55bb8e7d1f386009ac440eaafa1ef8af47440a28ff71691f21ac80b9e169c",
+      "runtimeSha256": "f1e55bb8e7d1f386009ac440eaafa1ef8af47440a28ff71691f21ac80b9e169c",
+      "normalizedLfSha256": "f1e55bb8e7d1f386009ac440eaafa1ef8af47440a28ff71691f21ac80b9e169c"
+    },
+    {
+      "path": "apps/server/http.ts",
+      "rootSha256": "ce39f12e82ce78476dc547b0eac4818fdf26982396ab89ee0ee8e48730f149dd",
+      "runtimeSha256": "e3a26a8387e336550c80cda654cd8dd5799557c2e41c6b7fedd5afcc6ef56812",
+      "normalizedLfSha256": "e3a26a8387e336550c80cda654cd8dd5799557c2e41c6b7fedd5afcc6ef56812"
+    },
+    {
+      "path": "apps/server/routes.ts",
+      "rootSha256": "8c57571ff0777bf85d465cf0498ea913c2d6ce628df433ce5c4e488e3f46282a",
+      "runtimeSha256": "8c57571ff0777bf85d465cf0498ea913c2d6ce628df433ce5c4e488e3f46282a",
+      "normalizedLfSha256": "8c57571ff0777bf85d465cf0498ea913c2d6ce628df433ce5c4e488e3f46282a"
+    },
+    {
+      "path": "dist/web/assets/workbench.js",
+      "rootSha256": "e9baf92c1138e24bfc94f94d06da916c7f6c8faa40effb90012f89e80e4a9198",
+      "runtimeSha256": "e9baf92c1138e24bfc94f94d06da916c7f6c8faa40effb90012f89e80e4a9198",
+      "normalizedLfSha256": "e9baf92c1138e24bfc94f94d06da916c7f6c8faa40effb90012f89e80e4a9198"
+    },
+    {
+      "path": "dist/web/assets/main.js",
+      "rootSha256": "30482a54de334f711003466fb234e0c806fe7616a971c34c293f8fa370800d6d",
+      "runtimeSha256": "30482a54de334f711003466fb234e0c806fe7616a971c34c293f8fa370800d6d",
+      "normalizedLfSha256": "30482a54de334f711003466fb234e0c806fe7616a971c34c293f8fa370800d6d"
+    }
+  ],
+  "independentReview": {
+    "status": "ship-within-reviewed-scope",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeVerification": "requested; runtime not echoed",
+    "frozenInputs": [
+      {
+        "path": "docs/qa/2026-10-13-skill-fixed-revisions.md",
+        "sha256": "6b523580fbb26786654c56b5516f783079b34e9be97863121e4b485990aa303b"
+      },
+      {
+        "path": "docs/qa/2026-10-13-skill-fixed-revisions.evidence.json",
+        "sha256": "bd8491b1fa34a290916d1f46c21e1446a478a510ba155b89f9026c2fd497d5b1"
+      }
+    ],
+    "productSnapshot": [
+      {
+        "path": "apps/web/src/workbench.tsx",
+        "sha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64"
+      },
+      {
+        "path": "dist/web/assets/workbench.js",
+        "sha256": "e9baf92c1138e24bfc94f94d06da916c7f6c8faa40effb90012f89e80e4a9198"
+      },
+      {
+        "path": "dist/web/assets/main.js",
+        "sha256": "30482a54de334f711003466fb234e0c806fe7616a971c34c293f8fa370800d6d"
+      },
+      {
+        "path": "tests/unit/session-failure-ui.test.mjs",
+        "sha256": "d4485b76f8822809ce31d18186191c6d4021e9217ba127f13b730522d70bb23e"
+      }
+    ],
+    "evidence": [
+      {
+        "path": ".validation/skill-revision-ui-20261013/review.md",
+        "sha256": "dc510f5d434da54821f679d5eac7855d79c43f6a8017a1c13bad8d1ac3736f8a"
+      },
+      {
+        "path": ".validation/skill-revision-ui-20261013/review.json",
+        "sha256": "7389d7e628abebb8e55096200f6a966dda5367eea8e39378a15f1e46bba3e336"
+      }
+    ],
+    "blocking": [],
+    "nonBlocking": [],
+    "verificationGaps": [
+      "No current whole-suite or clean-build rerun; current product build and related checks only.",
+      "No new successful model/scientific execution or TaskAttempt/retry browser run.",
+      "Advanced selection and revocation use owner API, not GUI.",
+      "Revision deletion and other original workflows are outside this batch.",
+      "Reviewer did not replay browser/service/API/database actions or execute tests/builds."
+    ],
+    "administrativeFinalization": {
+      "oldText": "A仍可按v1使用，B只保留历史读取",
+      "newText": "A的技能预检仍通过，B仅保留历史读取",
+      "reason": "No model execution in A; preflight and fixed reads are the actual evidence.",
+      "alsoAllowed": "Review status and metadata; cumulative summary/checkpoint links are outside this frozen review.",
+      "additionalTestsRequired": false
+    }
+  },
+  "agents": {
+    "preflight": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeEchoed": false
+    },
+    "implementation": {
+      "requestedModel": "gpt-6-luna",
+      "requestedEffort": "max",
+      "runtimeEchoed": false
+    }
+  },
+  "anchors": [
+    {
+      "path": ".validation/skill-revision-ui-20261013/plan.md",
+      "sha256": "1730afb0f571a9586958c04128f2130fffb3d6e5dee96ff1270ff0bd102b6e5e"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/preflight.md",
+      "sha256": "783693a80b134cb0f10b81338e99a5b9375919edade6d0111a90cf3cb9180ba8"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/api.mjs",
+      "sha256": "6340553b4011b29eab1dfa399f2f397fb50d873e3cb105550e57b5519b739af8"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/setup.mjs",
+      "sha256": "f3f29c44a0ade11e13087853c2def52ac992a802cac7ca18038345dd707d59f3"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/stage.mjs",
+      "sha256": "63600e1a970631620724a06c6ae4c7be61702f22c0f975cea44e579e2a9ae533"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/verify.mjs",
+      "sha256": "04ff0e45cf57b2853e9b22a59f86c36c7e792ba84d7f367b2e4be83db669f9f3"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/before-setup.json",
+      "sha256": "bc22e6b49a7c36d82a7ed4820e22f21c4d9c72627039a205d18fc1734a592d6e"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/setup.json",
+      "sha256": "f38f7ad48bd78e6b8f0acee5f0f5a589d68d90977a2013a7bddf915c282a16c5"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/upgrade.json",
+      "sha256": "01fc37dfd3e646b47734da7da881bc419ce11a8c5ff38c1c93b0346e397fa5ff"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/rollback.json",
+      "sha256": "b778e66262229b8be6674e2df94958f50cdf40fa4c4751251a0dcaf612bdac3b"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/disabled.json",
+      "sha256": "77184ba1411b90b816aa6bef03caa6f1bf51f6fe3fb135379b80837643291fdf"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/revoke.json",
+      "sha256": "ee3f78a496905de452bf661fcd7924cabc8ce72aafe72425e71ef05a6daef352"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/v1-resource-dom.txt",
+      "sha256": "5592cd62aae625826ce6e67857263181decbf85f697454e0dec4de6a00dee4f5"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/v2-resource-ready-dom.txt",
+      "sha256": "4cb66d27d8becf14bc1afa70b010a4ff390a2d1926beb01f46bf554a2b0d2738"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/upgrade-dom.txt",
+      "sha256": "5e45d42b9cc6ce5b2a08697cf620e4fd88a53b16dc4c5bd6a5dd0ae6d001545a"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/rollback-reopened-dom.txt",
+      "sha256": "4bc5e940b4a3e226361dd0d778352c1565bddd95bcdc6a54d06103a0874f44fd"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/disabled-dom.txt",
+      "sha256": "8c9674422d8251922168e55e30a34b0820c7d81a10f78d79c9f15c4841030de9"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/revoked-read-dom.txt",
+      "sha256": "fa559c158dc6c508e8b3465fe3413a5baa9b705ae234d7306a004f489cfee028"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/blocked-state.json",
+      "sha256": "6b9264eb9a859cd2cdc3a864a21605dcf9efed9f92a34793420e86e810fb01d6"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/verified.json",
+      "sha256": "b4b9552a798abe5b21ae09a77e3ad3aad6c073a630447fe13c12e1a2a88ef1e0"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/before-feedback-fix.json",
+      "sha256": "4dd9f21446826dcb1d914cd8bec5ab6611c5c3f9dff9ababb4af9120f636eb94"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/after-feedback-fix.json",
+      "sha256": "d64da62766bddb39d903edb1f1ae5213cf9188deb253a42f5852c967f8038805"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/failure-details-dom.txt",
+      "sha256": "c80a59fa0e23fb140bb0f0679a02f145752ae56a6aa427d000e4e14912c19c10"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/final-ui-dom.txt",
+      "sha256": "971c5184a13c186655e7028ba65f224d05089ea4dd5eef0399c5ebd833b0cc4a"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/failure-ui-red.log",
+      "sha256": "0fafc93190a85e68f054822f4950255409f9eed1d73699e70b9a4731b909bd09"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/failure-ui-green.log",
+      "sha256": "ca8c0904131bb06187c9fe35dfad08e8ea9888d7392e4acee3a9bd0fc395e0bb"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/summary.json",
+      "sha256": "2de4e349a572866b73121b64ec4dba0d36a10ef0734aabb1a38c68d893dac13f"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/runtime-update.json",
+      "sha256": "57a34dd65bcbd7c2b30b0368f70e572cff3b30eb15c448aa7a4d680ce6c99360"
+    },
+    {
+      "path": ".validation/skill-revision-ui-20261013/result/wip-before-build.json",
+      "sha256": "503b1ab697468b7a5e691b15a23b5ec5e91a85fab6ebdc94f9d29f26fffb433b"
+    }
+  ],
+  "deliverable": {
+    "path": "docs/qa/2026-10-13-skill-fixed-revisions/failure-fixed.jpg",
+    "sha256": "b80365aaf0d0076ffeef788604a4a742498a539b12bd88068f883fa714f71103"
+  },
+  "limits": [
+    "Advanced binding and revocation use existing owner API; no invented advanced UI",
+    "Existing TaskAttempt/retry checks reused, no fresh task or scientific use",
+    "Original prompt remains queued in a failed session per backend contract; no automatic retry or binding replacement",
+    "First CUA checkbox check returned early while async save was disabled; subsequent DOM and API proved one successful v2 change without another click",
+    "An initial expected-error text locator matched the public message marker; full DOM exposed the missing alert. Final check uses exact visible role=alert and scoped details",
+    "Skill deletion and other unmatched original flows remain incomplete"
+  ]
+}
