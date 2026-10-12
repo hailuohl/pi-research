@@ -1,7 +1,7 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api, ApiError } from "./api.js";
-import { Icon, nativeSelectButton } from "./ui.js";
+import { Icon, Modal, nativeSelectButton } from "./ui.js";
 const identity = (provider, model) => JSON.stringify([provider, model ?? null]);
 const sameSelection = (a, b) => a.provider === b.provider && a.model === b.model && a.thinking === b.thinking;
 const own = (rows, key) => Object.prototype.hasOwnProperty.call(rows, key) ? rows[key] : void 0;
@@ -13,7 +13,7 @@ const defaultCapabilities = { text: true, image: false, pdf: false, video: false
 class ModelManagementPanel extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { data: null, loading: false, busy: false, error: "", message: "", provider: this.props.boot.model.provider, model: this.props.boot.model.model, providerDrafts: {}, modelDrafts: {}, selection: this.props.boot.model, defaultVersion: this.props.boot.modelVersion ?? 0, defaultDirty: false, recommendation: null, recommendationLoading: false, acknowledgedCost: false, preset: "", editorOpen: false, editorView: "connection", modelTab: "basic", levelId: "", jsonTarget: null, jsonBuffers: {} };
+    this.state = { deleteTarget: null, deleteError: "", deleteSaving: false, data: null, loading: false, busy: false, error: "", message: "", provider: this.props.boot.model.provider, model: this.props.boot.model.model, providerDrafts: {}, modelDrafts: {}, selection: this.props.boot.model, defaultVersion: this.props.boot.modelVersion ?? 0, defaultDirty: false, recommendation: null, recommendationLoading: false, acknowledgedCost: false, preset: "", editorOpen: false, editorView: "connection", modelTab: "basic", levelId: "", jsonTarget: null, jsonBuffers: {} };
     this.disposed = false;
     this.epoch = 0;
     this.recommendationEpoch = 0;
@@ -21,6 +21,9 @@ class ModelManagementPanel extends React.Component {
     this.mutations = /* @__PURE__ */ new Map();
     this.selectedModels = /* @__PURE__ */ new Map();
     this.editorSequence = 0;
+    this.catalogSequence = 0;
+    this.deletePending = false;
+    this.deleteTarget = null;
     this.editor = React.createRef();
     this.returnFocus = null;
     this.jsonInput = React.createRef();
@@ -35,6 +38,7 @@ class ModelManagementPanel extends React.Component {
   }
   componentDidUpdate(previous) {
     if (previous.boot.modelVersion !== this.props.boot.modelVersion || !sameSelection(previous.boot.model, this.props.boot.model)) {
+      this.catalogSequence++;
       const selection = this.props.boot.model, version = this.props.boot.modelVersion ?? 0;
       this.setState((current) => ({ ...current, data: current.data ? { ...current.data, defaultModel: selection, defaultModelVersion: version } : null, ...!current.defaultDirty ? { selection, defaultVersion: version } : {} }));
     }
@@ -43,6 +47,7 @@ class ModelManagementPanel extends React.Component {
     return { ...data, defaultModel: { provider: data.defaultModel.provider, model: data.defaultModel.model, thinking: data.defaultModel.thinking }, providers: data.providers.map(({ provider, name, enabled, deletedAt, order, source, baseUrl, api: api2, hasApiKey, requiresCredential, models, test }) => ({ provider, name, enabled, deletedAt, order, source, baseUrl, api: api2, hasApiKey, ...requiresCredential === true ? { requiresCredential: true } : {}, models, test })) };
   }
   observe(data) {
+    if (data.version !== this.state.data?.version || data.defaultModelVersion !== this.state.data?.defaultModelVersion || !this.state.data || !sameSelection(data.defaultModel, this.state.data.defaultModel)) this.catalogSequence++;
     this.setState((current) => ({ ...current, data, ...!current.defaultDirty ? { selection: data.defaultModel, defaultVersion: data.defaultModelVersion } : {} }));
   }
   async load(acceptCurrent = true, acceptDefault = false) {
@@ -52,6 +57,7 @@ class ModelManagementPanel extends React.Component {
     try {
       const data = this.safeData(await api("/settings/model-management"));
       if (this.disposed || epoch !== this.epoch) return;
+      if (data.version !== this.state.data?.version || data.defaultModelVersion !== this.state.data?.defaultModelVersion || !this.state.data || !sameSelection(data.defaultModel, this.state.data.defaultModel)) this.catalogSequence++;
       this.setState((current) => {
         const providerDraft = own(current.providerDrafts, providerKey), modelDraft = own(current.modelDrafts, modelKey);
         return { ...current, data, providerDrafts: acceptCurrent && providerDraft?.dirty ? { ...current.providerDrafts, [providerKey]: { ...providerDraft, version: data.version } } : current.providerDrafts, modelDrafts: acceptCurrent && modelDraft && (modelDraft.dirty || modelDraft.frozen) ? { ...current.modelDrafts, [modelKey]: { ...modelDraft, version: data.version } } : current.modelDrafts, ...acceptDefault ? { defaultVersion: data.defaultModelVersion, defaultDirty: !sameSelection(current.selection, data.defaultModel) } : !current.defaultDirty ? { selection: data.defaultModel, defaultVersion: data.defaultModelVersion } : {} };
@@ -113,7 +119,7 @@ class ModelManagementPanel extends React.Component {
     for (const draft of Object.values(this.state.providerDrafts)) if (draft.apiKey) message = message.split(draft.apiKey).join("[\u5DF2\u9690\u85CF]");
     return message;
   }
-  async mutate(command, scope) {
+  async mutate(command, scope, valid, onError) {
     if (this.disposed || this.pending || this.state.loading) return null;
     const body = JSON.stringify(command);
     let mutation = this.mutations.get(scope);
@@ -127,12 +133,16 @@ class ModelManagementPanel extends React.Component {
     try {
       await this.props.perform(async () => {
         try {
+          if (valid && !valid()) throw Error("\u5220\u9664\u786E\u8BA4\u5DF2\u5931\u6548\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u786E\u8BA4\u3002");
           result = this.safeData(await api("/settings/model-management", command, "POST", void 0, mutation.key));
           this.mutations.delete(scope);
           if (!this.disposed) this.observe(result);
         } catch (error) {
           const message = this.errorMessage(error) + (error instanceof ApiError && error.status === 409 ? " \u8BF7\u5237\u65B0\u5F53\u524D\u7248\u672C\u540E\u91CD\u8BD5\uFF0C\u5F53\u524D\u8F93\u5165\u4E0E\u5176\u4ED6\u8349\u7A3F\u5747\u4FDD\u7559\u3002" : "");
-          if (!this.disposed) this.setState({ error: message });
+          if (!this.disposed) {
+            this.setState({ error: message });
+            onError?.(message);
+          }
           throw new Error(message);
         }
       });
@@ -207,18 +217,77 @@ class ModelManagementPanel extends React.Component {
     }
     await this.mutate(kind === "provider" ? { expectedVersion: version ?? this.state.data.version, action: "provider.enabled", provider, value: { enabled } } : { expectedVersion: version ?? this.state.data.version, action: "model.enabled", provider, model, value: { enabled } }, `${kind}.enabled:${identity(provider, model)}`);
   }
-  async remove(kind) {
-    if (!this.state.data) return;
+  remove(kind, trigger) {
+    if (this.disposed || this.pending || this.state.loading || this.deleteTarget || !this.state.data) return;
     if (this.isDefault(this.state.provider, kind === "model" ? this.state.model : void 0)) {
       this.setState({ error: "\u8BF7\u5148\u5207\u6362\u6216\u6E05\u7A7A\u9ED8\u8BA4\u6A21\u578B\uFF0C\u518D\u5220\u9664\u3002" });
       return;
     }
-    if (!confirm("\u5220\u9664\u540E\u4FDD\u7559\u5386\u53F2\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u6062\u590D\u6B64\u6807\u8BC6\u3002\u7EE7\u7EED\u5220\u9664\uFF1F")) return;
-    const result = await this.mutate(kind === "provider" ? { expectedVersion: this.state.data.version, action: "provider.delete", provider: this.state.provider } : { expectedVersion: this.state.data.version, action: "model.delete", provider: this.state.provider, model: this.state.model }, `${kind}.delete:${identity(this.state.provider, this.state.model)}`);
-    if (result) {
-      if (kind === "provider") this.chooseProvider(result.providers.filter((p) => !p.deletedAt).sort((a, b) => a.order - b.order)[0]?.provider ?? "");
-      else this.chooseModel(result.providers.find((p) => p.provider === this.state.provider)?.models.filter((m) => !m.deletedAt).sort((a, b) => a.order - b.order)[0]?.model ?? "");
+    const provider = this.provider(), model = this.managedModel();
+    if (!provider || provider.deletedAt || kind === "model" && (!model || model.deletedAt)) return;
+    const target = { kind, provider: this.state.provider, model: this.state.model, name: kind === "provider" ? provider.name : model.name, catalogVersion: this.state.data.version, catalogSequence: this.catalogSequence, editorSequence: this.editorSequence, editorOpen: this.state.editorOpen, selection: { ...this.state.selection }, trigger: trigger ?? (typeof document !== "undefined" ? document.activeElement : null) };
+    this.deleteTarget = target;
+    this.setState({ deleteTarget: target, deleteError: "", deleteSaving: false });
+  }
+  deleteContext(target) {
+    return !this.disposed && this.deleteTarget === target && target.editorSequence === this.editorSequence && target.editorOpen === this.state.editorOpen && target.provider === this.state.provider && target.model === this.state.model && sameSelection(target.selection, this.state.selection);
+  }
+  deleteCurrent(target) {
+    const provider = this.provider(), model = this.managedModel();
+    return this.deleteContext(target) && !this.state.loading && target.catalogSequence === this.catalogSequence && target.catalogVersion === this.state.data?.version && !!provider && !provider.deletedAt && (target.kind === "provider" || !!model && !model.deletedAt) && !this.isDefault(target.provider, target.kind === "model" ? target.model : void 0);
+  }
+  closeDelete(target = this.deleteTarget) {
+    if (!target || this.deleteTarget !== target || this.deletePending) return;
+    this.deleteTarget = null;
+    this.setState({ deleteTarget: null, deleteError: "" }, () => {
+      if (target.trigger?.isConnected !== false) target.trigger?.focus();
+    });
+  }
+  async confirmDelete(target) {
+    if (this.disposed || this.deleteTarget !== target || this.deletePending || this.pending) return;
+    if (!this.deleteCurrent(target)) {
+      this.setState({ deleteError: "\u5220\u9664\u786E\u8BA4\u5DF2\u5931\u6548\uFF0C\u8BF7\u5173\u95ED\u540E\u91CD\u65B0\u786E\u8BA4\u3002" });
+      return;
     }
+    this.deletePending = true;
+    this.setState({ deleteSaving: true, deleteError: "" });
+    const result = await this.mutate(target.kind === "provider" ? { expectedVersion: target.catalogVersion, action: "provider.delete", provider: target.provider } : { expectedVersion: target.catalogVersion, action: "model.delete", provider: target.provider, model: target.model }, `${target.kind}.delete:${identity(target.provider, target.model)}`, () => this.deleteCurrent(target), (message) => {
+      if (this.deleteTarget === target) this.setState({ deleteError: message });
+    });
+    this.deletePending = false;
+    if (this.disposed || this.deleteTarget !== target) return;
+    this.setState({ deleteSaving: false });
+    if (result && this.deleteContext(target)) {
+      this.closeDelete(target);
+      if (target.kind === "provider") this.chooseProvider(result.providers.filter((p) => !p.deletedAt).sort((a, b) => a.order - b.order)[0]?.provider ?? "");
+      else this.chooseModel(result.providers.find((p) => p.provider === target.provider)?.models.filter((m) => !m.deletedAt).sort((a, b) => a.order - b.order)[0]?.model ?? "");
+    }
+  }
+  renderDelete() {
+    const target = this.state.deleteTarget;
+    if (!target) return null;
+    return /* @__PURE__ */ jsx("div", { "data-model-delete-confirmation": "true", style: { display: "contents" }, onSubmit: (e) => e.stopPropagation(), onKeyDownCapture: (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeDelete(target);
+      }
+    }, children: /* @__PURE__ */ jsxs(Modal, { title: target.kind === "provider" ? "\u5220\u9664\u63D0\u4F9B\u5546" : "\u5220\u9664\u6A21\u578B", alert: true, description: "\u5220\u9664\u540E\u4FDD\u7559\u5386\u53F2\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u6062\u590D\u6B64\u6807\u8BC6\u3002\u7EE7\u7EED\u5220\u9664\uFF1F", onClose: () => this.closeDelete(target), onSubmit: () => void this.confirmDelete(target), submitLabel: "\u786E\u8BA4\u5220\u9664", busy: this.state.deleteSaving, closeDisabled: this.state.deleteSaving, children: [
+      /* @__PURE__ */ jsxs("p", { children: [
+        target.kind === "provider" ? "\u63D0\u4F9B\u5546" : "\u6A21\u578B",
+        "\uFF1A",
+        target.name
+      ] }),
+      /* @__PURE__ */ jsxs("p", { className: "small", children: [
+        "\u63D0\u4F9B\u5546 ID\uFF1A",
+        /* @__PURE__ */ jsx("code", { children: target.provider }),
+        target.kind === "model" ? /* @__PURE__ */ jsxs(Fragment, { children: [
+          " \xB7 \u6A21\u578B ID\uFF1A",
+          /* @__PURE__ */ jsx("code", { children: target.model })
+        ] }) : null
+      ] }),
+      this.state.deleteError ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.deleteError }) : null
+    ] }) });
   }
   async reorder(kind, id, target) {
     if (!this.state.data || id === target) return;
@@ -277,6 +346,7 @@ class ModelManagementPanel extends React.Component {
     this.updateDefinition({ overrides: checked ? [.../* @__PURE__ */ new Set([...draft.overrides, field])] : draft.overrides.filter((value) => value !== field) });
   }
   updateSelection(update) {
+    if (this.deleteTarget) this.editorSequence++;
     this.setState((current) => {
       const selection = { ...current.selection, ...update }, dirty = !!current.data && !sameSelection(selection, current.data.defaultModel);
       return { selection, defaultDirty: dirty, defaultVersion: dirty ? current.defaultVersion : current.data?.defaultModelVersion ?? current.defaultVersion, message: "" };
@@ -370,7 +440,7 @@ class ModelManagementPanel extends React.Component {
     return { sequence: this.editorSequence, provider: this.state.provider, model: this.state.model, view: this.state.editorView, tab: this.state.modelTab };
   }
   editorCurrent(scope) {
-    return !this.disposed && !this.pending && this.state.editorOpen && this.editorSequence === scope.sequence && scope.provider === this.state.provider && scope.model === this.state.model && scope.view === this.state.editorView && scope.tab === this.state.modelTab;
+    return !this.disposed && !this.pending && !this.deleteTarget && this.state.editorOpen && this.editorSequence === scope.sequence && scope.provider === this.state.provider && scope.model === this.state.model && scope.view === this.state.editorView && scope.tab === this.state.modelTab;
   }
   editDefinition(scope, update) {
     if (this.editorCurrent(scope) && scope.view === "model" && !this.state.jsonTarget) this.updateDefinition(update);
@@ -494,7 +564,7 @@ class ModelManagementPanel extends React.Component {
   }
   jsonCurrent(key, sequence) {
     const buffer = own(this.state.jsonBuffers, key);
-    return !this.disposed && !this.pending && this.state.editorOpen && this.state.editorView === "model" && this.state.jsonTarget === key && this.editorSequence === sequence && buffer?.provider === this.state.provider && buffer?.model === this.state.model;
+    return !this.disposed && !this.pending && !this.deleteTarget && this.state.editorOpen && this.state.editorView === "model" && this.state.jsonTarget === key && this.editorSequence === sequence && buffer?.provider === this.state.provider && buffer?.model === this.state.model;
   }
   editJson(key, sequence, text) {
     if (!this.jsonCurrent(key, sequence)) return;
@@ -644,8 +714,8 @@ class ModelManagementPanel extends React.Component {
             } }),
             "\u542F\u7528"
           ] }),
-          /* @__PURE__ */ jsx("button", { type: "button", className: "text-button danger", disabled: locked || this.isDefault(s.provider), onClick: () => {
-            if (this.editorCurrent(scope)) void this.remove("provider");
+          /* @__PURE__ */ jsx("button", { type: "button", className: "text-button danger", disabled: locked || this.isDefault(s.provider), onClick: (e) => {
+            if (this.editorCurrent(scope)) this.remove("provider", e.currentTarget);
           }, children: "\u5220\u9664\u63D0\u4F9B\u5546" })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "management-sheet-test", children: [
@@ -722,8 +792,8 @@ class ModelManagementPanel extends React.Component {
               } }),
               "\u542F\u7528\u6A21\u578B"
             ] }),
-            /* @__PURE__ */ jsx("button", { type: "button", className: "text-button danger", disabled: locked || this.isDefault(s.provider, s.model), onClick: () => {
-              if (this.editorCurrent(scope)) void this.remove("model");
+            /* @__PURE__ */ jsx("button", { type: "button", className: "text-button danger", disabled: locked || this.isDefault(s.provider, s.model), onClick: (e) => {
+              if (this.editorCurrent(scope)) this.remove("model", e.currentTarget);
             }, children: "\u5220\u9664\u6A21\u578B" })
           ] }) : null
         ] }) : null,
@@ -1110,14 +1180,15 @@ class ModelManagementPanel extends React.Component {
       ] }),
       /* @__PURE__ */ jsxs("dialog", { ref: this.editor, className: "management-editor", "aria-modal": "true", "aria-label": title, onCancel: (e) => {
         e.preventDefault();
-        this.closeEditor();
+        if (this.state.deleteTarget) this.closeDelete();
+        else this.closeEditor();
       }, onClose: () => {
         if (s.editorOpen) {
           this.editorSequence++;
           this.setState({ editorOpen: false });
         }
       }, children: [
-        /* @__PURE__ */ jsxs("header", { className: "management-editor-heading", children: [
+        /* @__PURE__ */ jsxs("header", { className: "management-editor-heading", inert: !!s.deleteTarget, "aria-hidden": s.deleteTarget ? true : void 0, children: [
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsx("h2", { children: title }),
             s.editorView === "default" ? null : /* @__PURE__ */ jsx("p", { children: `\u63D0\u4F9B\u5546\uFF1A${s.provider || "\u65B0\u8FDE\u63A5"}${s.editorView === "model" ? ` \xB7 \u6A21\u578B ID\uFF1A${definition.model || "\u65B0\u6A21\u578B"}` : ""}` }),
@@ -1128,7 +1199,7 @@ class ModelManagementPanel extends React.Component {
           /* @__PURE__ */ jsx("span", { className: "management-editor-state " + (sheetDirty ? "dirty" : ""), children: sheetDirty ? "\u672A\u4FDD\u5B58" : s.editorView === "connection" && !provider || s.editorView === "model" && !model ? "\u5C1A\u672A\u4FDD\u5B58" : "\u5DF2\u4FDD\u5B58\u914D\u7F6E" }),
           /* @__PURE__ */ jsx("button", { type: "button", className: "icon-button", "aria-label": "\u5173\u95ED\u914D\u7F6E\u7F16\u8F91\u680F", onClick: () => this.closeEditor(), children: /* @__PURE__ */ jsx(Icon, { name: "close", size: 18 }) })
         ] }),
-        /* @__PURE__ */ jsxs("div", { className: "management-editor-scroll", children: [
+        /* @__PURE__ */ jsxs("div", { className: "management-editor-scroll", inert: !!s.deleteTarget, "aria-hidden": s.deleteTarget ? true : void 0, children: [
           s.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text settings-feedback", children: s.error }) : null,
           s.message ? /* @__PURE__ */ jsx("p", { role: "status", className: "settings-feedback", children: s.message }) : null,
           buffer && s.jsonTarget ? this.renderJson(buffer, s.jsonTarget, scope) : s.editorView === "connection" ? this.renderConnection(scope) : s.editorView === "default" ? this.renderDefault(scope) : this.renderModel(scope),
@@ -1144,7 +1215,7 @@ class ModelManagementPanel extends React.Component {
             ] }, key))
           ] }) : null
         ] }),
-        /* @__PURE__ */ jsx("footer", { className: "management-editor-footer", children: buffer && s.jsonTarget ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx("footer", { className: "management-editor-footer", inert: !!s.deleteTarget, "aria-hidden": s.deleteTarget ? true : void 0, children: buffer && s.jsonTarget ? /* @__PURE__ */ jsxs(Fragment, { children: [
           /* @__PURE__ */ jsx("p", { children: "\u5E94\u7528\u540E\u8FD4\u56DE\u914D\u7F6E\uFF1B\u4FDD\u5B58\u6A21\u578B\u540E\u624D\u751F\u6548\u3002" }),
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", disabled: locked, onClick: (event) => {
@@ -1162,8 +1233,10 @@ class ModelManagementPanel extends React.Component {
             /* @__PURE__ */ jsx("button", { type: "button", className: "secondary", onClick: () => this.closeEditor(), children: "\u5173\u95ED\uFF0C\u4FDD\u7559\u8349\u7A3F" }),
             /* @__PURE__ */ jsx("button", { className: "primary", type: "submit", form: s.editorView === "connection" ? "management-connection-form" : s.editorView === "model" ? "management-model-form" : "management-default-form", disabled: locked || s.editorView === "model" && this.pendingJson().length > 0 || s.editorView === "default" && !usableDefault, children: s.editorView === "connection" ? "\u4FDD\u5B58\u8FDE\u63A5" : s.editorView === "model" ? "\u4FDD\u5B58\u6A21\u578B\u914D\u7F6E" : "\u4FDD\u5B58\u4E3A\u9ED8\u8BA4\u6A21\u578B\uFF08\u7528\u4E8E\u65B0\u4F1A\u8BDD\uFF09" })
           ] }, "persisted-actions")
-        ] }) })
-      ] })
+        ] }) }),
+        s.editorOpen ? this.renderDelete() : null
+      ] }),
+      !s.editorOpen ? this.renderDelete() : null
     ] });
   }
 }
