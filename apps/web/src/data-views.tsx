@@ -9,6 +9,7 @@ type WorkspaceDialog={kind:'discard'|'path';projectId:string;generation:number;i
 export class WorkspaceView extends React.Component<{
     data: ProjectState;
     perform: Perform;
+    active?: boolean;
 }, {
     files: Array<{
         path: string;
@@ -30,6 +31,7 @@ export class WorkspaceView extends React.Component<{
         }>, path: '', content: '', digest: null as string | null, dirty: false, loading: false, saving: false, dialog:null as WorkspaceDialog|null,newPath:'',dialogError:'' };
     private loadId = 0;
     private listId = 0;
+    private initialListLoaded = false;
     private mounted = true;
     private saving = false;
     draftGeneration=0;
@@ -45,7 +47,10 @@ export class WorkspaceView extends React.Component<{
     };
     componentDidMount() { window.addEventListener('beforeunload', this.beforeUnload); void this.loadFiles(); }
     componentWillUnmount() { this.mounted = false; this.loadId++; this.listId++;this.intent++;this.finishDialog(this.dialogTarget,false); if (typeof window !== 'undefined') window.removeEventListener('beforeunload', this.beforeUnload); }
-    componentDidUpdate(previous:Readonly<WorkspaceView['props']>){if(previous.data.project.id!==this.props.data.project.id||previous.data.project.archived!==this.props.data.project.archived){this.loadId++;this.listId++;this.intent++;this.changedDraft();this.setState({loading:false});}}
+    componentDidUpdate(previous:Readonly<WorkspaceView['props']>){
+        if(previous.data.project.id!==this.props.data.project.id||previous.data.project.archived!==this.props.data.project.archived){this.loadId++;this.listId++;this.intent++;this.changedDraft();this.setState({loading:false});}
+        if((previous.active!==false)!==(this.props.active!==false)){this.listId++;if(this.props.active!==false)void this.loadFiles();}
+    }
     private snapshot(intent:number):WorkspaceDialog{return {kind:'discard',projectId:this.props.data.project.id,generation:this.draftGeneration,intent,archived:!!this.props.data.project.archived,path:this.state.path,content:this.state.content,digest:this.state.digest};}
     private current(target:WorkspaceDialog){return this.mounted&&target.intent===this.intent&&target.generation===this.draftGeneration&&target.projectId===this.props.data.project.id&&target.archived===!!this.props.data.project.archived&&target.path===this.state.path&&target.content===this.state.content&&target.digest===this.state.digest;}
     private finishDialog(target:WorkspaceDialog|undefined,accepted:boolean){
@@ -65,14 +70,17 @@ export class WorkspaceView extends React.Component<{
         return await accepted&&this.current(target);
     }
     async loadFiles() {
-        const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId,intent=this.intent;
+        const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId,intent=this.intent,selectFirst=!this.initialListLoaded;
+        const current=()=>this.mounted&&seq===this.listId&&projectId===this.props.data.project.id;
         try {
             const files = await api(`/projects/${projectId}/files`);
-            if (!this.mounted || seq !== this.listId || projectId !== this.props.data.project.id) return;
-            this.setState({ files });
-            if (!this.state.path && files.length && selection === this.loadId&&intent===this.intent) await this.open(files[0].path);
+            if (!current()) return;
+            // 切项目可能丢弃子组件提交回调，目录完成不能等待它。
+            this.setState(()=>current()?{files}:null);
+            this.initialListLoaded=true;
+            if (selectFirst&&!this.state.path&&!this.state.dirty&&!this.edited&&!this.state.loading&&!this.saving&&files.length&&selection===this.loadId&&intent===this.intent) await this.open(files[0].path);
         } catch (e) {
-            if (this.mounted && seq === this.listId && projectId === this.props.data.project.id)
+            if (current())
                 await this.props.perform(async () => { throw e; });
         }
     }

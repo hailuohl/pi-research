@@ -10,6 +10,7 @@ class WorkspaceView extends React.Component {
     this.state = { files: [], path: "", content: "", digest: null, dirty: false, loading: false, saving: false, dialog: null, newPath: "", dialogError: "" };
     this.loadId = 0;
     this.listId = 0;
+    this.initialListLoaded = false;
     this.mounted = true;
     this.saving = false;
     this.draftGeneration = 0;
@@ -76,6 +77,10 @@ class WorkspaceView extends React.Component {
       this.changedDraft();
       this.setState({ loading: false });
     }
+    if (previous.active !== false !== (this.props.active !== false)) {
+      this.listId++;
+      if (this.props.active !== false) void this.loadFiles();
+    }
   }
   snapshot(intent) {
     return { kind: "discard", projectId: this.props.data.project.id, generation: this.draftGeneration, intent, archived: !!this.props.data.project.archived, path: this.state.path, content: this.state.content, digest: this.state.digest };
@@ -111,14 +116,16 @@ class WorkspaceView extends React.Component {
     return await accepted && this.current(target);
   }
   async loadFiles() {
-    const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId, intent = this.intent;
+    const seq = ++this.listId, projectId = this.props.data.project.id, selection = this.loadId, intent = this.intent, selectFirst = !this.initialListLoaded;
+    const current = () => this.mounted && seq === this.listId && projectId === this.props.data.project.id;
     try {
       const files = await api(`/projects/${projectId}/files`);
-      if (!this.mounted || seq !== this.listId || projectId !== this.props.data.project.id) return;
-      this.setState({ files });
-      if (!this.state.path && files.length && selection === this.loadId && intent === this.intent) await this.open(files[0].path);
+      if (!current()) return;
+      this.setState(() => current() ? { files } : null);
+      this.initialListLoaded = true;
+      if (selectFirst && !this.state.path && !this.state.dirty && !this.edited && !this.state.loading && !this.saving && files.length && selection === this.loadId && intent === this.intent) await this.open(files[0].path);
     } catch (e) {
-      if (this.mounted && seq === this.listId && projectId === this.props.data.project.id)
+      if (current())
         await this.props.perform(async () => {
           throw e;
         });

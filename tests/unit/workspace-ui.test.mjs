@@ -18,6 +18,66 @@ function answer(v,accepted){const m=modal(v);assert.ok(m,'discard Modal must be 
 function createPath(v,path){const m=modal(v);assert.ok(m);assert.equal(m.props.title,'新建文件');const fd=new FormData();fd.set('path',path);m.props.onSubmit(fd);}
 async function newDraft(v,path){const creating=v.newFile();if(modal(v)?.props.title.includes('放弃'))answer(v,true);await creating;createPath(v,path);}
 const edit=(v,content)=>nodes(v.render()).find(n=>n.type==='textarea').props.onChange({target:{value:content}});
+function updateWorkspace(v,extra){const previous=v.props;v.props={...v.props,...extra};v.componentDidUpdate(previous);}
+
+test('returning to workspace refreshes added and removed files without touching the draft',async t=>{
+ const requests=[],v=workspace({active:true}),draft={path:v.state.path,content:v.state.content,digest:v.state.digest,dirty:v.state.dirty},generation=v.draftGeneration;
+ v.state.files=[{path:'removed.md',size:1}];mockGlobal(t,'fetch',async url=>{requests.push(url);return reply([{path:'external.txt',size:2}]);});
+ updateWorkspace(v,{active:false});assert.equal(requests.length,0);updateWorkspace(v,{active:true});await tick();
+ assert.deepEqual(v.state.files,[{path:'external.txt',size:2}]);assert.deepEqual(Object.fromEntries(Object.keys(draft).map(key=>[key,v.state[key]])),draft);assert.equal(v.draftGeneration,generation);assert.equal(modal(v),undefined);assert.deepEqual(requests,['/api/projects/p/files']);
+ updateWorkspace(v,{data:data()});await tick();assert.equal(requests.length,1,'unrelated App data refresh must not reload the directory');
+});
+
+test('directory refresh failures retain the readable list and only current visible requests apply',async t=>{
+ const errors=[],pending=[],v=workspace({active:false,perform:async fn=>{try{await fn();}catch(e){errors.push(e.message);}}}),old=[{path:'retained.md',size:1}];v.state.files=old;
+ mockGlobal(t,'fetch',url=>new Promise((resolve,reject)=>pending.push({url,resolve,reject})));
+ updateWorkspace(v,{active:true});assert.equal(pending.length,1);pending[0].reject(Error('current list offline'));await tick();assert.equal(v.state.files,old);assert.deepEqual(errors,['current list offline']);
+ updateWorkspace(v,{active:false});updateWorkspace(v,{active:true});updateWorkspace(v,{active:false});updateWorkspace(v,{active:true});assert.equal(pending.length,3);
+ pending[2].resolve(reply([{path:'newest.txt',size:2}]));await tick();pending[1].resolve(reply([{path:'stale.txt',size:3}]));await tick();assert.deepEqual(v.state.files,[{path:'newest.txt',size:2}]);
+ updateWorkspace(v,{active:false});updateWorkspace(v,{active:true});updateWorkspace(v,{active:false});pending[3].reject(Error('hidden failure'));await tick();assert.deepEqual(errors,['current list offline']);
+ updateWorkspace(v,{active:true});updateWorkspace(v,{data:data('q')});updateWorkspace(v,{data:data()});pending[4].resolve(reply([{path:'old-project.txt',size:3}]));await tick();assert.deepEqual(v.state.files,[{path:'newest.txt',size:2}]);assert.equal(v.state.content,'draft');assert.equal(v.state.digest,'D0');assert.equal(v.state.dirty,true);assert.equal(modal(v),undefined);
+});
+
+test('first entry during the initial directory read still selects a file exactly once',async t=>{
+ mockGlobal(t,'window',{addEventListener(){},removeEventListener(){}});const pending=[],reads=[],v=synchronousState(new WorkspaceView({data:data(),active:false,perform:async fn=>fn()}));
+ mockGlobal(t,'fetch',url=>url.includes('?path=')?(reads.push(url),Promise.resolve(reply({content:'initial text',digest:'INITIAL'}))):new Promise(resolve=>pending.push(resolve)));
+ v.componentDidMount();updateWorkspace(v,{active:true});assert.equal(pending.length,2);pending[1](reply([{path:'fresh.md',size:1}]));await tick();assert.equal(v.state.path,'fresh.md');assert.equal(v.state.content,'initial text');assert.equal(v.state.dirty,false);
+ pending[0](reply([{path:'stale.md',size:1}]));await tick();updateWorkspace(v,{active:false});updateWorkspace(v,{active:true});pending[2](reply([{path:'external.md',size:2}]));await tick();assert.equal(v.state.path,'fresh.md');assert.deepEqual(reads,['/api/projects/p/files?path=fresh.md']);v.componentWillUnmount();
+});
+
+test('initial and returning directory reads never ask to discard an anonymous edited draft',async t=>{
+ mockGlobal(t,'window',{addEventListener(){},removeEventListener(){}});const pending=[],v=synchronousState(new WorkspaceView({data:data(),active:false,perform:async fn=>fn()}));mockGlobal(t,'fetch',url=>{assert.equal(url.includes('?path='),false);return new Promise(resolve=>pending.push(resolve));});
+ v.componentDidMount();edit(v,'anonymous draft');updateWorkspace(v,{active:true});pending[1](reply([{path:'first.md',size:1}]));pending[0](reply([{path:'old.md',size:1}]));await tick();assert.equal(v.state.path,'');assert.equal(v.state.content,'anonymous draft');assert.equal(v.state.digest,null);assert.equal(v.state.dirty,true);assert.equal(modal(v),undefined);v.componentWillUnmount();
+});
+
+test('hiding the workspace only invalidates its directory request, not a pending file read',async t=>{
+ const v=workspace({active:true});v.state.dirty=false;let release;mockGlobal(t,'fetch',()=>new Promise(resolve=>release=resolve));const reading=v.open('selected.md');await tick();updateWorkspace(v,{active:false});release(reply({content:'selected text',digest:'SELECTED'}));await reading;assert.equal(v.state.path,'selected.md');assert.equal(v.state.content,'selected text');assert.equal(v.state.digest,'SELECTED');assert.equal(v.state.loading,false);
+});
+
+test('a directory update queued by React cannot apply after the workspace is hidden',async t=>{
+ const v=workspace({active:true}),old=[{path:'retained.md',size:1}],updates=[],update=v.setState;v.state.files=old;mockGlobal(t,'fetch',async()=>reply([{path:'late.txt',size:2}]));v.setState=(value,callback)=>updates.push([value,callback]);
+ const loading=v.loadFiles();await tick();assert.equal(updates.length,1);updateWorkspace(v,{active:false});v.setState=update;for(const [value,callback] of updates)update(value,callback);await loading;assert.equal(v.state.files,old);assert.equal(v.state.content,'draft');assert.equal(v.state.dirty,true);
+});
+
+test('a saved directory refresh releases App busy when a queued project switch discards child callbacks',async t=>{
+ mockGlobal(t,'window',{removeEventListener(){},setTimeout:()=>0});const app=synchronousState(new App({}));Object.assign(app.state,{projectId:'p',data:data(),tab:'workspace'});app.refresh=async()=>true;const v=workspace({active:true,perform:app.perform});app.workspace.current=v;t.after(()=>{v.componentWillUnmount();app.componentWillUnmount();});
+ let releaseDirectory;mockGlobal(t,'fetch',async(_url,options)=>options.body?reply({digest:'D1'}):new Promise(resolve=>releaseDirectory=()=>resolve(reply([{path:'notes.md',size:1}]))));let saveSettled=false;const saving=v.save().then(()=>saveSettled=true);await tick();assert.equal(v.state.digest,'D1');assert.ok(releaseDirectory);assert.equal(app.state.busy,true);
+ const parentUpdates=[],appUpdate=app.setState;app.setState=(value,callback)=>parentUpdates.push([value,callback]);const switching=app.switchProject('q');answer(v,true);await tick();assert.equal(parentUpdates.length,1,'confirmed project switch queues its parent update before the directory returns');const childUpdates=[];v.setState=(value,callback)=>childUpdates.push([value,callback]);releaseDirectory();await tick();assert.ok(childUpdates.length,'directory state is queued before the parent update commits');
+ for(const [value,callback] of parentUpdates)appUpdate(value,()=>{if(app.state.data===null){v.componentWillUnmount();app.workspace.current=null;}callback?.();});await switching;await tick();
+ // Parent deletion drops every queued child callback; a completed save may invalidate that switch.
+ assert.equal(saveSettled,true);assert.equal(app.state.busy,false);assert.equal(v.saving,false);assert.equal(childUpdates.filter(([,callback])=>callback).length,0);await saving;
+});
+
+test('initial auto-selection protects edits even before React commits dirty state',async t=>{
+ const v=synchronousState(new WorkspaceView({data:data(),perform:async fn=>fn()}));let release;mockGlobal(t,'fetch',()=>new Promise(resolve=>release=resolve));const loading=v.loadFiles(),updates=[],update=v.setState;v.setState=(value,callback)=>updates.push([value,callback]);edit(v,'queued anonymous draft');v.setState=update;assert.equal(v.state.dirty,false);
+ release(reply([{path:'first.md',size:1}]));await loading;assert.equal(modal(v),undefined);assert.equal(v.state.path,'');for(const [value,callback] of updates)update(value,callback);assert.equal(v.state.content,'queued anonymous draft');assert.equal(v.state.dirty,true);
+});
+
+test('App workspace entries expose active visibility and Chat uses the common navigation action',()=>{
+ const app=synchronousState(new App({}));Object.assign(app.state,{projectId:'p',boot:{projects:[]},data:data(),tab:'workspace'});const element=()=>nodes(app.render()).find(n=>n.type?.name==='WorkspaceView');assert.equal(element().props.active,true);
+ app.selectTab('settings');assert.equal(element().props.active,false);app.selectTab('chat');assert.equal(element().props.active,false);app.state.navigationOpen=true;const intent=app.projectIntent;nodes(app.render()).find(n=>n.type?.name==='Chat').props.onWorkspace();assert.equal(app.state.tab,'workspace');assert.equal(app.state.navigationOpen,false);assert.equal(app.projectIntent,intent+1);assert.equal(element().props.active,true);
+ app.selectTab('chat');nodes(app.render()).find(n=>n.type?.name==='ConversationLayout').props.panel.props.onWorkspace();assert.equal(element().props.active,true);app.componentWillUnmount();
+});
 
 test('workspace stays mounted across management and chat navigation; cancelling a project switch preserves its draft',async t=>{
  const v=synchronousState(new App({}));Object.assign(v.state,{projectId:'p',boot:{projects:[]},data:data(),tab:'workspace'});v.refresh=async()=>true;
