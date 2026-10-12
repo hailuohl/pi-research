@@ -49,11 +49,20 @@ export class ComposerControls extends React.Component<Props, State> {
     private mounted = true;
     private request = 0;
     private attachmentRequest=0;
+    private uploadRequest=0;
+
+    captureUploadError() {
+        const upload=this.uploadRequest,capability=this.attachmentRequest,error=this.state.uploadError,project=this.props.projectId,session=this.props.session?.id,model=this.props.session&&modelKey(this.props.session.model);
+        return ()=>{
+            if(this.mounted&&upload===this.uploadRequest&&capability===this.attachmentRequest&&project===this.props.projectId&&session===this.props.session?.id&&model===(this.props.session&&modelKey(this.props.session.model))&&error===this.state.uploadError&&!this.state.uploading)
+                this.setState({uploadError:''});
+        };
+    }
 
     componentDidMount() { void this.loadSources();void this.loadAttachmentTypes(); }
     componentDidUpdate(previous: Props) { if (previous.projectId !== this.props.projectId) void this.loadSources();if(previous.boot.modelManagement?.version!==this.props.boot.modelManagement?.version||previous.boot.modelManagementError!==this.props.boot.modelManagementError||previous.session?.id!==this.props.session?.id||previous.session?.model.provider!==this.props.session?.model.provider||previous.session?.model.model!==this.props.session?.model.model)void this.loadAttachmentTypes(); }
     componentWillUnmount() { this.mounted = false; this.request++;this.attachmentRequest++; }
-    private async loadAttachmentTypes(){const session=this.props.session,request=++this.attachmentRequest;this.setState({attachmentTypes:null});if(!session)return;try{const types=await api<AttachmentTypes>(`/sessions/${session.id}/attachment-types`);if(this.mounted&&request===this.attachmentRequest&&this.props.session?.id===session.id&&modelKey(this.props.session.model)===modelKey(session.model)&&modelKey(types.model)===modelKey(session.model))this.setState({attachmentTypes:types,uploadError:''});}catch(error){if(this.mounted&&request===this.attachmentRequest)this.setState({uploadError:error instanceof Error?error.message:String(error)});}}
+    private async loadAttachmentTypes(){const session=this.props.session,request=++this.attachmentRequest;this.setState({attachmentTypes:null});if(!session)return;try{const types=await api<AttachmentTypes>(`/sessions/${session.id}/attachment-types`);if(this.mounted&&request===this.attachmentRequest&&this.props.session?.id===session.id&&modelKey(this.props.session.model)===modelKey(session.model)&&modelKey(types.model)===modelKey(session.model))this.setState({attachmentTypes:types,uploadError:''});}catch(error){if(this.mounted&&request===this.attachmentRequest){this.uploadRequest++;this.setState({uploadError:error instanceof Error?error.message:String(error)});}}}
     private allowedTypes(){const available=this.state.attachmentTypes,model=this.props.session?.model;return available&&available.model.provider===model?.provider&&available.model.model===model?.model?available.types:[{mediaType:'text/plain',extensions:['.txt'],maxBytes:32*1024*1024,native:false},{mediaType:'text/markdown',extensions:['.md'],maxBytes:32*1024*1024,native:false}];}
 
     private async loadSources() {
@@ -91,6 +100,7 @@ export class ComposerControls extends React.Component<Props, State> {
     private async addFiles(files: File[]) {
         const { attachments, projectId, session } = this.props;
         if (!session || this.state.uploading) return;
+        this.uploadRequest++;
         if (attachments.length + files.length > 5) { this.setState({ uploadError: '草稿最多附加 5 个文件；已上传的附件引用已保留。' }); return; }
         const typed = files.map(file => ({ file, mediaType: fileType(file) })),allowed=this.allowedTypes();
         const invalid = typed.find(item => !allowed.some(t=>t.mediaType===item.mediaType)||!item.file.size||item.file.size>allowed.find(t=>t.mediaType===item.mediaType)!.maxBytes);

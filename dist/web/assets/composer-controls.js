@@ -26,6 +26,14 @@ class ComposerControls extends React.Component {
     this.mounted = true;
     this.request = 0;
     this.attachmentRequest = 0;
+    this.uploadRequest = 0;
+  }
+  captureUploadError() {
+    const upload = this.uploadRequest, capability = this.attachmentRequest, error = this.state.uploadError, project = this.props.projectId, session = this.props.session?.id, model = this.props.session && modelKey(this.props.session.model);
+    return () => {
+      if (this.mounted && upload === this.uploadRequest && capability === this.attachmentRequest && project === this.props.projectId && session === this.props.session?.id && model === (this.props.session && modelKey(this.props.session.model)) && error === this.state.uploadError && !this.state.uploading)
+        this.setState({ uploadError: "" });
+    };
   }
   componentDidMount() {
     void this.loadSources();
@@ -48,7 +56,10 @@ class ComposerControls extends React.Component {
       const types = await api(`/sessions/${session.id}/attachment-types`);
       if (this.mounted && request === this.attachmentRequest && this.props.session?.id === session.id && modelKey(this.props.session.model) === modelKey(session.model) && modelKey(types.model) === modelKey(session.model)) this.setState({ attachmentTypes: types, uploadError: "" });
     } catch (error) {
-      if (this.mounted && request === this.attachmentRequest) this.setState({ uploadError: error instanceof Error ? error.message : String(error) });
+      if (this.mounted && request === this.attachmentRequest) {
+        this.uploadRequest++;
+        this.setState({ uploadError: error instanceof Error ? error.message : String(error) });
+      }
     }
   }
   allowedTypes() {
@@ -93,6 +104,7 @@ class ComposerControls extends React.Component {
   async addFiles(files) {
     const { attachments, projectId, session } = this.props;
     if (!session || this.state.uploading) return;
+    this.uploadRequest++;
     if (attachments.length + files.length > 5) {
       this.setState({ uploadError: "\u8349\u7A3F\u6700\u591A\u9644\u52A0 5 \u4E2A\u6587\u4EF6\uFF1B\u5DF2\u4E0A\u4F20\u7684\u9644\u4EF6\u5F15\u7528\u5DF2\u4FDD\u7559\u3002" });
       return;

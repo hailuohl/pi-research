@@ -45,6 +45,7 @@ class Chat extends React.Component {
     };
     this.mounted = true;
     this.sending = false;
+    this.composerControls = React.createRef();
     this.renaming = false;
     this.renameSession = async () => {
       const { session, data } = this.props;
@@ -99,7 +100,7 @@ class Chat extends React.Component {
       const { draft, draftVersion } = this.state, attachments = this.state.attachments.slice(), previous = this.pendingSend;
       const unchanged = previous?.projectId === data.project.id && previous.sessionId === session.id && previous.draftVersion === draftVersion && previous.draft === draft && JSON.stringify(previous.attachments) === JSON.stringify(attachments);
       const mode = session.state === "running" ? "follow_up" : "prompt";
-      const request = unchanged ? previous : { projectId: data.project.id, sessionId: session.id, draft, draftVersion, attachments, body: { content: draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", mode, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} }, key: crypto.randomUUID() };
+      const request = unchanged ? previous : { projectId: data.project.id, sessionId: session.id, draft, draftVersion, attachments, body: { content: draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", mode, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} }, key: crypto.randomUUID(), clearUploadError: this.composerControls.current?.captureUploadError() };
       const modelSave = this.modelSave;
       const current = () => this.mounted && this.props.data.project.id === request.projectId && this.props.session?.id === request.sessionId;
       this.pendingSend = request;
@@ -130,6 +131,7 @@ class Chat extends React.Component {
           if (this.pendingSend === request) this.pendingSend = void 0;
           if (!this.mounted || this.props.data.project.id !== request.projectId || this.props.session?.id !== request.sessionId) return confirmed;
           this.props.onMessageConfirmed?.(confirmed);
+          request.clearUploadError?.();
           const sent = new Set(request.attachments.map((attachment) => attachment.documentVersionId));
           this.setState((current2) => ({ draft: current2.draftVersion === request.draftVersion && current2.draft === request.draft ? "" : current2.draft, attachments: current2.attachments.filter((attachment) => !sent.has(attachment.documentVersionId)), sentMessageId: confirmed.id }));
           return confirmed;
@@ -249,7 +251,7 @@ class Chat extends React.Component {
               e.preventDefault();
               e.currentTarget.form.requestSubmit();
             } }),
-            /* @__PURE__ */ jsx(ComposerControls, { permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: !!data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => session && this.props.session?.id === session.id && this.props.data.project.id === data.project.id ? this.changeModel(model) : Promise.resolve(void 0), children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
+            /* @__PURE__ */ jsx(ComposerControls, { ref: this.composerControls, permissionControl: boot.runtime.hostAccess?.available && session && !session.taskId ? /* @__PURE__ */ jsx(HostAccessControl, { sessionId: session.id, archived: data.project.archived || session.state === "archived", busy: this.props.busy, perform: this.props.perform }, session.id) : null, boot, projectId: data.project.id, projectArchived: !!data.project.archived, modelLocked: !!session?.workingGrantId || !!session?.textCorpusGrantId || !!session?.discoveryGrantId || !!session?.runGrantId || !!data.teams?.some((team) => team.rootSessionId === session?.id && !["completed", "partial", "failed", "cancelled"].includes(team.state)), session, busy: this.props.busy, perform: this.props.perform, attachments: this.state.attachments, onAddAttachment: (attachment) => this.setState((current) => ({ attachments: [...current.attachments, attachment] })), onRemoveAttachment: (documentVersionId) => this.setState((current) => ({ attachments: current.attachments.filter((attachment) => attachment.documentVersionId !== documentVersionId) })), canSend, hasDraft, onSendModel: (model) => session && this.props.session?.id === session.id && this.props.data.project.id === data.project.id ? this.changeModel(model) : Promise.resolve(void 0), children: /* @__PURE__ */ jsxs("div", { className: "chat-collaboration-control", children: [
               /* @__PURE__ */ jsx("button", { type: "button", role: "switch", "aria-label": "\u591A\u667A\u80FD\u4F53\u6A21\u5F0F", "aria-checked": data.project.settings.enabled ? "true" : "false", title: "\u9879\u76EE\u7EA7\u8BBE\u7F6E\uFF0C\u540C\u9879\u76EE\u6240\u6709\u7814\u7A76\u4F1A\u8BDD\u5171\u4EAB", className: "switch " + (data.project.settings.enabled ? "on" : ""), disabled: this.props.busy || data.project.archived || !session || !!session.taskId || session.state === "archived", onClick: this.props.onToggle, children: /* @__PURE__ */ jsx("span", {}) }),
               /* @__PURE__ */ jsx("span", { children: "\u591A\u667A\u80FD\u4F53" })
             ] }) }, `${data.project.id}:${session?.id ?? ""}`)
