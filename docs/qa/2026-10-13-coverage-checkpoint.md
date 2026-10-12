@@ -16,6 +16,7 @@
 | [协作计划与失败恢复](2026-10-12-collaboration-flow.md) | 已有Pi/Chrome的计划拒绝、原批准续接、独立重试及额度历史 | 不恢复暂停的真实科研团队；不代表新科学成果 |
 | [按需成果卡片](../acceptance/flow-on-demand-research/RESULT.md)、[固定文稿报告](../acceptance/flow-publication-report/RESULTS.zh-CN.md) | 既有固定来源/报告/PDF回查与保留设计及实物 | 前者未真编译，后者是旧入口；不能冒充当前新Chrome完整流程 |
 | [设置页查询](2026-10-13-settings-github-visibility.md) | 当前批次模型→GitHub→返回的可见状态门控 | 仅固定本地客户端，不补造旧批次外联观测或实际远端认证 |
+| [报告前提撤回](2026-10-13-report-premise-revocation.md) | 公开单任务团队revise→结论/报告stale、新交付拒绝、旧正文/包保留及Chrome重开下载 | 不代表全部grant/解析批准撤销；旧包没有重开列表，未称UI重新找到旧包 |
 
 已按上述优先级[补齐一条当前科研交付链](2026-10-13-scientific-flow.md)：同项目Anscombe固定问题→既有真实两Run与定位证据→当前Pi来源确认→新固定报告→原真实编译文稿/PDF精确回查及离线包。当前产品已验证旧实物有效，因此没有重做计算、绘图或编译。独立副本的schema10→14迁移保留核对、Chrome确认/重开/实存下载、35个原科学文件的离线包字节复用均有证据；没有拼接其他项目。它不覆盖从零Pi科学推理/写稿或独立论文审查，原73流程其余分支仍逐项保留状态。
 
