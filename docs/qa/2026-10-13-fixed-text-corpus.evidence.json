@@ -1,0 +1,421 @@
+{
+  "flow": "TEXT-CORPUS-UI-01",
+  "date": "2026-10-13",
+  "baseline": "478d47cc77ff4513f7b3ae1643c3cb92ada1bef3",
+  "status": "accepted-for-batch-scope",
+  "acceptance": {
+    "fixedPdfAndCompleteParse": {
+      "status": "pass",
+      "digest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+      "pageCount": 3,
+      "sourceCopiesMatch": true
+    },
+    "confirmedGrantBeforeRetrieval": {
+      "status": "pass",
+      "sessionId": "33055bfa-1e0b-4f03-a377-f4b9c7077f5b",
+      "grantId": "439cd84b-5e63-45c3-9b5d-8e46cadaa15e",
+      "documentVersionId": "8f8d0f7d-781f-4bf3-9f92-f59b6d3647d6",
+      "parseResultId": "4266c390f7b3b96523046c59e018554d27e770bf091fb3bb5bff5d772d272d95",
+      "corpusId": "e2734830bc8506dc97c2894a50225dfe541f3b96a7e6adb8dccedf3e3078f9b4",
+      "maxSearches": 2,
+      "expiresAt": "2026-10-12T23:02:35.501Z",
+      "preConfirmationNewSearches": 0
+    },
+    "authorizedSearchAndUtf16Evidence": {
+      "status": "pass",
+      "searchId": "5ea89d2001c729a88dd2567a74169b04a6618655bb95412d0dba67a254cd6604",
+      "hitCount": 2,
+      "exactEvidenceId": "98a53997-f8ab-4c98-94f1-a6cc9e775687",
+      "page": 2,
+      "utf16": {
+        "start": 1187,
+        "end": 1631
+      },
+      "localUsage": {
+        "modelCalls": 0,
+        "networkCalls": 0
+      }
+    },
+    "revokeAndRetention": {
+      "status": "pass",
+      "rejectedCode": "TEXT_GRANT_REVOKED",
+      "searchRecords": 2,
+      "evidenceRecords": 4,
+      "newGrantUseRows": 1,
+      "preexistingOwnerHistoryRecordsMatched": 4,
+      "priorOwnerQaRecordsMatched": 58,
+      "finalDbRecordSnapshotMatches": true
+    }
+  },
+  "rootChecks": {
+    "pass": true,
+    "oldTargetRecordsUnchanged": 42,
+    "offlineSourceSqlExact": true,
+    "retainedFilesExactBothSourceAndTarget": 28,
+    "priorQaRecords": 58,
+    "uiReopenBusinessRecordsUnchanged": 102,
+    "uiReopenModelRequestsUnchanged": 11,
+    "exactInspectedInputReused": true,
+    "newRuns": 0,
+    "newParses": 0,
+    "viewport": {
+      "before": {
+        "bottom": 1710.4791679382324,
+        "drawerHeight": 800,
+        "drawerScrollTop": 0,
+        "top": 1691.8125
+      },
+      "after": {
+        "containers": [
+          {
+            "className": "chat-task-drawer-content",
+            "clientHeight": 800,
+            "rect": {
+              "bottom": 1015.937530517578,
+              "top": 216.33334350585935
+            },
+            "scrollTop": 1252.6666259765625,
+            "tag": "DIV"
+          }
+        ],
+        "heading": {
+          "bottom": 457.8125114440918,
+          "text": "物理页 2 · 页标签 未知",
+          "top": 439.1458435058594
+        },
+        "image": {
+          "complete": true,
+          "naturalHeight": 1263,
+          "naturalWidth": 893
+        },
+        "page": {
+          "bottom": 1904.8125,
+          "top": 216.09375
+        }
+      }
+    },
+    "unchangedCriticalBackendSincePhase": "63c063bf5aa0a51461e96b329df1bcb43ca56f59",
+    "codeSnapshot": [
+      {
+        "path": "apps/web/src/literature-view.tsx",
+        "rootSha256": "cb1b9375184392a8743057bf9783d1c7bfdeae059aa1e5892593299e2f14d333",
+        "runtimeSha256": "cb1b9375184392a8743057bf9783d1c7bfdeae059aa1e5892593299e2f14d333",
+        "normalizedLfSha256": "cb1b9375184392a8743057bf9783d1c7bfdeae059aa1e5892593299e2f14d333"
+      },
+      {
+        "path": "apps/web/src/research-action-cards.tsx",
+        "rootSha256": "c93b28d6cb6f0a95bc497efdf2bd3e46b945b527b9abb23bb2654698451791ac",
+        "runtimeSha256": "c93b28d6cb6f0a95bc497efdf2bd3e46b945b527b9abb23bb2654698451791ac",
+        "normalizedLfSha256": "c93b28d6cb6f0a95bc497efdf2bd3e46b945b527b9abb23bb2654698451791ac"
+      },
+      {
+        "path": "apps/web/src/data-views.tsx",
+        "rootSha256": "50dc1cffa96dde8e5ef2703e086984359a4dd92c5322c02c8b2750f888f815dc",
+        "runtimeSha256": "50dc1cffa96dde8e5ef2703e086984359a4dd92c5322c02c8b2750f888f815dc",
+        "normalizedLfSha256": "50dc1cffa96dde8e5ef2703e086984359a4dd92c5322c02c8b2750f888f815dc"
+      },
+      {
+        "path": "apps/web/src/text-evidence.tsx",
+        "rootSha256": "08d0a92d688910688b4c4b3af6ff20aa3ae6f501a824ec91626e5d63604ae7a8",
+        "runtimeSha256": "08d0a92d688910688b4c4b3af6ff20aa3ae6f501a824ec91626e5d63604ae7a8",
+        "normalizedLfSha256": "08d0a92d688910688b4c4b3af6ff20aa3ae6f501a824ec91626e5d63604ae7a8"
+      },
+      {
+        "path": "packages/text-evidence/service.ts",
+        "rootSha256": "e508ee7a38ceb7eeceec75c10e06aec73a72f5166366d9654a88674e7eafa4c5",
+        "runtimeSha256": "e508ee7a38ceb7eeceec75c10e06aec73a72f5166366d9654a88674e7eafa4c5",
+        "normalizedLfSha256": "e508ee7a38ceb7eeceec75c10e06aec73a72f5166366d9654a88674e7eafa4c5"
+      },
+      {
+        "path": "packages/policy/text-corpus-grants.ts",
+        "rootSha256": "3fc386f5de7217bd9301c5172542bb7726c002bcc591f3abe8ef989097baa402",
+        "runtimeSha256": "3fc386f5de7217bd9301c5172542bb7726c002bcc591f3abe8ef989097baa402",
+        "normalizedLfSha256": "3fc386f5de7217bd9301c5172542bb7726c002bcc591f3abe8ef989097baa402"
+      },
+      {
+        "path": "packages/research-workflows/actions.ts",
+        "rootSha256": "d43a1d39e4caddd999b9bb50f223b2c80a7febd60a158e5a92e2f62cc446e7b3",
+        "runtimeSha256": "d43a1d39e4caddd999b9bb50f223b2c80a7febd60a158e5a92e2f62cc446e7b3",
+        "normalizedLfSha256": "d43a1d39e4caddd999b9bb50f223b2c80a7febd60a158e5a92e2f62cc446e7b3"
+      },
+      {
+        "path": "packages/documents/parse-service.ts",
+        "rootSha256": "3938c3ba3e2a9d8b32a0b871a27665504e302a00bfe483e0bb53144eddcecf2d",
+        "runtimeSha256": "3938c3ba3e2a9d8b32a0b871a27665504e302a00bfe483e0bb53144eddcecf2d",
+        "normalizedLfSha256": "3938c3ba3e2a9d8b32a0b871a27665504e302a00bfe483e0bb53144eddcecf2d"
+      },
+      {
+        "path": "apps/server/http.ts",
+        "rootSha256": "ce39f12e82ce78476dc547b0eac4818fdf26982396ab89ee0ee8e48730f149dd",
+        "runtimeSha256": "e3a26a8387e336550c80cda654cd8dd5799557c2e41c6b7fedd5afcc6ef56812",
+        "normalizedLfSha256": "e3a26a8387e336550c80cda654cd8dd5799557c2e41c6b7fedd5afcc6ef56812"
+      },
+      {
+        "path": "apps/server/routes.ts",
+        "rootSha256": "8c57571ff0777bf85d465cf0498ea913c2d6ce628df433ce5c4e488e3f46282a",
+        "runtimeSha256": "8c57571ff0777bf85d465cf0498ea913c2d6ce628df433ce5c4e488e3f46282a",
+        "normalizedLfSha256": "8c57571ff0777bf85d465cf0498ea913c2d6ce628df433ce5c4e488e3f46282a"
+      },
+      {
+        "path": "packages/pi-adapter/sessions.ts",
+        "rootSha256": "61f56ba1e93dc7d96637a54ab56f5028343dc70ead289a8be82cf588ee0d9fbc",
+        "runtimeSha256": "6ef678b54d6d3d046ab07cc8dbd60ad0ac23cf61f3036dd046505f190d0f716e",
+        "normalizedLfSha256": "6ef678b54d6d3d046ab07cc8dbd60ad0ac23cf61f3036dd046505f190d0f716e"
+      },
+      {
+        "path": "dist/web/assets/literature-view.js",
+        "rootSha256": "a24f2d9095af331ed2068422dc930da20b538038ed48f7be7d13f238c34b24f3",
+        "runtimeSha256": "a24f2d9095af331ed2068422dc930da20b538038ed48f7be7d13f238c34b24f3",
+        "normalizedLfSha256": "a24f2d9095af331ed2068422dc930da20b538038ed48f7be7d13f238c34b24f3"
+      },
+      {
+        "path": "dist/web/assets/main.js",
+        "rootSha256": "5b273ea0c7e1f9d8272c0f266e92931abea34288bbee471177351df6661111e7",
+        "runtimeSha256": "5b273ea0c7e1f9d8272c0f266e92931abea34288bbee471177351df6661111e7",
+        "normalizedLfSha256": "5b273ea0c7e1f9d8272c0f266e92931abea34288bbee471177351df6661111e7"
+      }
+    ],
+    "wipUnchanged": 5
+  },
+  "pi": {
+    "provider": "localhost deterministic fixture through real Pi",
+    "requests": 11,
+    "externalModelRequests": 0,
+    "perSearchUsage": {
+      "modelCalls": 0,
+      "networkCalls": 0
+    },
+    "approvalResume": "inspect exact approved input, execute unchanged input, read actual result"
+  },
+  "checks": {
+    "initialRegression": {
+      "task": "TEXT-CORPUS-UI-01 evidence page jump",
+      "baseline": "478d47cc77ff4513f7b3ae1643c3cb92ada1bef3",
+      "modelRequest": "Sol/high; runtime not echoed",
+      "changes": [
+        "local DocumentPages ref replaces parent global ID lookup",
+        "one scroll after committed verified current page/window/image/list",
+        "target changes rearm; polling/stale replies do not scroll"
+      ],
+      "check": "node --test tests/unit/literature-jump-ui.test.mjs; esbuild write:false source bundle, no dist build",
+      "red": {
+        "pass": 0,
+        "log": "result/jump-red-final.log",
+        "exitCode": 1,
+        "tests": 3,
+        "fail": 3
+      },
+      "green": {
+        "pass": 3,
+        "log": "result/jump-green-final.log",
+        "exitCode": 0,
+        "tests": 3,
+        "fail": 0
+      },
+      "candidateRestoredExactly": true,
+      "sourceSha256": "F69BB83483E8874A85B5059706ECD4595480141C3CCBE882C4096279CDDD03A5",
+      "testSha256": "C804CA98DF9692D2E913DC61D3815292ECEA14A01DBDAB801E97C6E390226F81",
+      "skipped": [
+        "product build/typecheck",
+        "old dist tests",
+        "browser/service/model actions",
+        "full suite/clean build",
+        "independent review",
+        "commit/push"
+      ],
+      "earlierLogs": [
+        "jump-red.log initial regression",
+        "jump-green.log intermediate harness did not await PNG digest; final tests await actual readPage promise"
+      ],
+      "scope": [
+        "apps/web/src/literature-view.tsx",
+        "tests/unit/literature-jump-ui.test.mjs"
+      ]
+    },
+    "batchStateRegression": {
+      "task": "TEXT-CORPUS-UI-01 queued React state boundary",
+      "execution": "Sol/high continued same agent; runtime not echoed",
+      "change": "Return immediately after target change starts readPage; ready-state scroll runs only after a subsequent commit",
+      "regression": "Queued setState for same-page/start end shrink; old window cannot scroll; removing end retains existing invalid-range rejection",
+      "sourceSha256": "CB1B9375184392A8743057BF9783D1C7BFDEAE059AA1E5892593299E2F14D333",
+      "testSha256": "28864F89207E3D7B962683A3AEB5C114C2834216ADCF63EEDDF47ECC511B24C8",
+      "red": {
+        "log": "result/jump-batch-red-final.log",
+        "fail": 1,
+        "pass": 3,
+        "exitCode": 1,
+        "tests": 4
+      },
+      "green": {
+        "log": "result/jump-batch-green-final.log",
+        "fail": 0,
+        "pass": 4,
+        "exitCode": 0,
+        "tests": 4
+      },
+      "diffCheckExit": 0,
+      "preserved": "Original jump-red-final and jump-green-final unchanged",
+      "intermediate": "jump-batch-green.log exposed harness expecting a network read after removing end; corrected test keeps existing invalid-range assertion, then reran same final regression before and after return fix",
+      "notRun": [
+        "dist build/typecheck",
+        "Chrome/service/model",
+        "full suite/clean",
+        "independent review",
+        "commit/push"
+      ]
+    },
+    "finalRelated": {
+      "tests": 24,
+      "pass": 24,
+      "fail": 0,
+      "skipped": 0,
+      "exitCode": 0
+    },
+    "build": {
+      "exitCode": 0,
+      "includesTypecheck": true
+    },
+    "chrome": {
+      "status": "pass",
+      "scene": "existing evidence -> fixed page 2 after grant revocation",
+      "sourceSha256": "f69bb83483e8874a85b5059706ecd4595480141c3ccbe882c4096279cddd03a5",
+      "finalPatchReuse": "Final return affects target-prop changes only; initial mount path unchanged, reused the passed initial-mount Chrome scene.",
+      "nativeSelection": "unsupported, not verified"
+    },
+    "phaseReuse": {
+      "document": "docs/qa/2026-10-13-scientific-flow.evidence.json",
+      "tests": 1938,
+      "pass": 1913,
+      "skip": 25,
+      "cleanFiles": 661,
+      "latestPatchFullRerun": false
+    }
+  },
+  "agents": [
+    {
+      "task": "text_corpus_preflight",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "runtime": "not echoed"
+    },
+    {
+      "task": "corpus_retention_evidence",
+      "model": "gpt-6-luna",
+      "effort": "high",
+      "runtime": "not echoed"
+    }
+  ],
+  "independentReview": {
+    "status": "passed-no-blocker",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtime": "not echoed",
+    "review": {
+      "path": ".validation/text-corpus-ui-20261013/review.json",
+      "sha256": "2766e647a41b56b3f1df0e3e443137f0282fc1d92c0fa49077b2ced8d93c1634"
+    },
+    "report": {
+      "path": ".validation/text-corpus-ui-20261013/review.md",
+      "sha256": "78c2c9b817be58ada8335a4fe63e3f66e1e5402866c6923c4dff2d8b93a05af5"
+    },
+    "snapshot": {
+      "path": ".validation/text-corpus-ui-20261013/review-snapshot.json",
+      "sha256": "2ef9eb946e4e36a4bd694d138c441aa83c1be636d4c8d5306371520d8c7d9594"
+    },
+    "validationGaps": [
+      "Manual lifecycle/queued-state regression is not a React DOM scheduler test; final end-only change was not rerun in Chrome. Existing initial-mount Chrome evidence remains applicable.",
+      "Native text selection/highlight was not verified; accurate page, UTF16 window, quote, digest and position were verified.",
+      "No tests/build/service/browser/model/DB/network rerun by this reviewer. Source SQL,28 files and prior58 DB comparison rely on frozen results plus inspection of actual verifier logic.",
+      "No claim for scientific research, external model reasoning, new parsing/OCR/PMC, all permission interleavings, whole-site/mobile or remaining flows."
+    ],
+    "administrativeFinalization": "Only review status/metadata finalized after review; product,tests and core results unchanged."
+  },
+  "anchors": [
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/current-source.json",
+      "sha256": "3dea4fb6f4d2a62f410c9b92e8d495b3bf7914dfa35f6ecd63c4e66165c142e4"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/copy-cli.json",
+      "sha256": "23e86e3765cf533425bb3f1493ea0e1fd53238f1033388695ee0242b9e0a81f5"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/store-migration.json",
+      "sha256": "0782898ebd59acda66d713aa531c621debd0e3f4f8b3bce46b7a07409d052d53"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/provider-restart-verified.json",
+      "sha256": "90b8e3d01e25cb765950c48ad6662a3864de1c498f6c489ea268807474aad88c"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/before-grant-confirm.json",
+      "sha256": "a845ee8f58720b25e8b58b01d8f3cf80909a3097ccf9344f97f88148f4b94bce"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/after-grant-confirm.json",
+      "sha256": "e5cc1eb46f86eacdfb23d4771d17c46fd295122c3a2da42d0af178e0962be0d6"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/after-authorized-search.json",
+      "sha256": "9c71b862b29a7fa9c131da81d21e3f4099756e7d8daaae54eaafd9c7cd4d2dd6"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/before-revoke.json",
+      "sha256": "5d2d757fa6e6790f5cff397fe66e3156ddf2f868d62d758134361371c9181c6e"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/after-revoke-attempt.json",
+      "sha256": "a0329a158edd7a16e88d2133ec20e8af90dc2e6ff2d840f3be9f8cbf42fe7c79"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/after-ui-fix.json",
+      "sha256": "ed13fd8724370c38699ff5c93b9e12ddd0b15fdd27a16f22d68024e4a8e98cd5"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/retention-verify.json",
+      "sha256": "fa63079c1420c81d4c733a0457da1d19fbd961bf90069904443690c4986b0204"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/root-final-verification.json",
+      "sha256": "a3af2e465fe1d065e2ad4215b3d7980ddbc4c8d2a4c22881b209bb468d56bc70"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/jump-summary.json",
+      "sha256": "08af8adc0cc68ef4179b9f7539904e6462557900847f44ffbe78f22e6ffcbd6d"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/jump-batch-summary.json",
+      "sha256": "6d24283ab6c54c4575fad8029c952a5ec57aa66a932d59513b4b7849715f943f"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/build-final.log",
+      "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/related-tests-final.log",
+      "sha256": "e9a2bca605ce967a863e690679d67ea583832c6825d61813629b4a9f18f78bc3"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/page-jump-fixed-dom.txt",
+      "sha256": "52952c89a9063f6fd07663b3884a12e048f133250f34c52f144da39b6b74381e"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/page-jump-fixed-geometry.json",
+      "sha256": "353a4d22eeb3d1babf23425176dacbc24a530e4dd8790cc3b1d2c16483719a28"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/page-jump.jpg",
+      "sha256": "c2315ce97d5d4add14f103ec3d1ccc27f346f2d95e12a3aec2520867a76481c4"
+    },
+    {
+      "path": ".validation/text-corpus-ui-20261013/result/page-jump-fixed.jpg",
+      "sha256": "7ba7761c94dc963d621b4946bbbb199023609729c1ed8c10aeeb56bc181b82aa"
+    }
+  ],
+  "limitations": [
+    "No new parse, OCR, PMC or current parser image readiness test.",
+    "No external model inference or scientific validation.",
+    "Old receipt replay, scope and concurrency checks reused from unchanged backend phase evidence.",
+    "UI whole-site/mobile/accessibility and remaining original flows not declared complete."
+  ]
+}
