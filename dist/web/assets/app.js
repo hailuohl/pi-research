@@ -43,6 +43,15 @@ class App extends React.Component {
     this.creatingSession = false;
     this.conversationPanel = React.createRef();
     this.workspace = React.createRef();
+    this.chat = React.createRef();
+    this.toggleArchiveHistory = (event) => {
+      const trigger = event.currentTarget, projectId = this.state.projectId, sessionId = this.state.sessionId, open = !this.state.archiveHistoryOpen;
+      this.setState({ tab: "chat", archiveHistoryOpen: open }, () => {
+        if (!this.mounted || this.state.projectId !== projectId || this.state.sessionId !== sessionId || this.state.archiveHistoryOpen !== open) return;
+        if (open) this.chat.current?.openArchivedHistory(trigger);
+        else this.chat.current?.closeDrawer();
+      });
+    };
     this.perform = async (fn, success) => {
       if (this.state.busy)
         return;
@@ -285,7 +294,7 @@ class App extends React.Component {
     }
   }
   sessionSelection(id, tab = this.state.tab) {
-    return { sessionId: id, tab: normalizeView(tab), messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false, activity: null, error: "" };
+    return { sessionId: id, tab: normalizeView(tab), archiveHistoryOpen: false, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false, activity: null, error: "" };
   }
   switchProject(id) {
     if (id === this.state.projectId) return true;
@@ -576,7 +585,7 @@ class App extends React.Component {
           /* @__PURE__ */ jsx(Icon, { name: "archive", size: 16 }),
           /* @__PURE__ */ jsx("span", { children: "\u5DF2\u5F52\u6863\u9879\u76EE \xB7 \u53EA\u8BFB\u67E5\u770B\u4F1A\u8BDD\u3001\u6E90\u7801\u4E0E\u5DF2\u6709\u6210\u679C" }),
           /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => this.open("projects"), children: "\u7BA1\u7406\u5F52\u6863" }),
-          /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", onClick: () => this.setState({ tab: "chat", archiveHistoryOpen: !this.state.archiveHistoryOpen }), children: this.state.archiveHistoryOpen ? "\u6536\u8D77\u5386\u53F2\u8D44\u6599" : "\u67E5\u770B\u5386\u53F2\u8D44\u6599" })
+          /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", "aria-expanded": this.state.archiveHistoryOpen, "aria-controls": "chat-task-drawer", onClick: this.toggleArchiveHistory, children: this.state.archiveHistoryOpen ? "\u6536\u8D77\u5386\u53F2\u8D44\u6599" : "\u67E5\u770B\u5386\u53F2\u8D44\u6599" })
         ] }) : null,
         this.state.eventNotice ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: this.state.eventNotice }) : null,
         this.state.error ? /* @__PURE__ */ jsxs("div", { className: "global-error", role: "alert", children: [
@@ -593,7 +602,7 @@ class App extends React.Component {
             this.setState({ navigationOpen: true }, () => document.querySelector(".sidebar-project select")?.focus());
           } else this.open("project");
         }, onRetry: () => void this.refresh(), error: this.state.error }, this.state.projectId), children: /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
-          boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { data, boot, session: currentSession, archivedHistory: data.project.archived && this.state.archiveHistoryOpen ? /* @__PURE__ */ jsx(ArchivedResearchHistory, { data, perform: this.perform }, data.project.id) : null, onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim"), onUseDocument: this.useParsedDocument, onSources: () => this.selectTab("integrations"), onCampaign: this.selectCampaign, onModelConfirmed: this.confirmSessionModel, onBranchConfirmed: this.confirmSessionBranch, onMessageConfirmed: this.confirmSessionMessage, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: this.showExperiments, onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + (currentSession?.id ?? "")) }) : null,
+          boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { ref: this.chat, data, boot, session: currentSession, archivedHistory: data.project.archived && this.state.archiveHistoryOpen ? /* @__PURE__ */ jsx(ArchivedResearchHistory, { data, perform: this.perform }, data.project.id) : null, onArchivedHistoryClose: () => this.setState({ archiveHistoryOpen: false }), onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim"), onUseDocument: this.useParsedDocument, onSources: () => this.selectTab("integrations"), onCampaign: this.selectCampaign, onModelConfirmed: this.confirmSessionModel, onBranchConfirmed: this.confirmSessionBranch, onMessageConfirmed: this.confirmSessionMessage, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: this.showExperiments, onWorkspace: () => this.setState({ tab: "workspace" }), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + this.state.sessionId) }) : null,
           boot && data ? /* @__PURE__ */ jsx("div", { hidden: tab !== "workspace", children: /* @__PURE__ */ jsx(WorkspaceView, { ref: this.workspace, data, perform: this.perform }, data.project.id) }) : null,
           !boot ? /* @__PURE__ */ jsx("div", { className: "boot-screen", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, data: data ?? void 0, readOnly: data?.project.archived, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : tab === "environment" ? /* @__PURE__ */ jsx(EnvironmentView, {}) : !data ? /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
             /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),

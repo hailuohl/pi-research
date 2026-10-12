@@ -80,5 +80,5 @@ test('source settings show failed and running literature tasks and saved hits wi
 
 test('archived projects can open a read-only history card without an Agent or stored request',()=>{
     const app=synchronousState(new App({}));Object.assign(app.state,{boot:{projects:[{id:'p'}],runtime:{ready:true}},data:{...data(),project:{...data().project,archived:true}},projectId:'p',sessionId:'s'});
-    const open=elements(app.render()).find(n=>n.type==='button'&&n.props.children==='查看历史资料');assert.ok(open);open.props.onClick();const chat=elements(app.render()).find(n=>n.type?.name==='Chat');assert.equal(chat.props.archivedHistory.type.name,'ArchivedResearchHistory');assert.equal(app.state.archiveHistoryOpen,true);app.componentWillUnmount();
+    const open=elements(app.render()).find(n=>n.type==='button'&&n.props.children==='查看历史资料');assert.ok(open);open.props.onClick({currentTarget:{focus(){}}});const chat=elements(app.render()).find(n=>n.type?.name==='Chat');assert.equal(chat.props.archivedHistory.type.name,'ArchivedResearchHistory');assert.equal(app.state.archiveHistoryOpen,true);app.componentWillUnmount();
 });

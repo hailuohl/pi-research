@@ -40,6 +40,7 @@ export class Chat extends React.Component<{
     onExperiments: () => void;
     onWorkspace: () => void;
     archivedHistory?:React.ReactNode;
+    onArchivedHistoryClose?:()=>void;
     onRegister?:(id:string,content:string)=>void;
     onClaim?:()=>void;
     onUseDocument?:(target:{documentVersionId:string;parseResultId:string})=>void;
@@ -53,17 +54,19 @@ export class Chat extends React.Component<{
     private drawerClose=React.createRef<HTMLButtonElement>();
     private drawerContent=React.createRef<HTMLDivElement>();
     private drawerTrigger:HTMLButtonElement|null=null;
-    private openDrawer=(trigger:HTMLButtonElement,history=false)=>{
+    private openDrawer=(trigger:HTMLButtonElement,history=false,archive=false)=>{
         this.drawerTrigger=trigger;
         this.setState({drawerOpen:true},()=>{
+            if(!this.mounted)return;
             const content=this.drawerContent.current,details=history?content?.querySelector<HTMLDetailsElement>('details.workflow-history,details.notification-history'):null;
             if(details)details.open=true;
-            const target=history?(details?.querySelector<HTMLElement>('summary')??content?.querySelector<HTMLElement>('.chat-drawer-history-note')):this.drawerClose.current;
+            const target=archive?content?.querySelector<HTMLElement>('[aria-label="归档项目历史"]'):history?(details?.querySelector<HTMLElement>('summary')??content?.querySelector<HTMLElement>('.chat-drawer-history-note')):this.drawerClose.current;
             target?.focus({preventScroll:true});
-            if(history&&content&&target)content.scrollTop+=target.getBoundingClientRect().top-content.getBoundingClientRect().top;
+            if((history||archive)&&content&&target)content.scrollTop+=target.getBoundingClientRect().top-content.getBoundingClientRect().top;
         });
     };
-    private closeDrawer=()=>this.setState({drawerOpen:false},()=>this.drawerTrigger?.focus({preventScroll:true}));
+    openArchivedHistory=(trigger:HTMLButtonElement)=>{if(this.mounted&&this.props.archivedHistory)this.openDrawer(trigger,false,true);};
+    closeDrawer=()=>this.setState({drawerOpen:false},()=>{if(!this.mounted)return;if(this.props.archivedHistory)this.props.onArchivedHistoryClose?.();this.drawerTrigger?.focus({preventScroll:true});});
     private permissionPending=(ids:string[])=>{
         if(this.mounted&&(ids.length!==this.state.permissionPending.length||ids.some((id,index)=>id!==this.state.permissionPending[index])))this.setState({permissionPending:ids});
     };

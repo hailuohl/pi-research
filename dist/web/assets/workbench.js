@@ -21,17 +21,25 @@ class Chat extends React.Component {
     this.drawerClose = React.createRef();
     this.drawerContent = React.createRef();
     this.drawerTrigger = null;
-    this.openDrawer = (trigger, history = false) => {
+    this.openDrawer = (trigger, history = false, archive = false) => {
       this.drawerTrigger = trigger;
       this.setState({ drawerOpen: true }, () => {
+        if (!this.mounted) return;
         const content = this.drawerContent.current, details = history ? content?.querySelector("details.workflow-history,details.notification-history") : null;
         if (details) details.open = true;
-        const target = history ? details?.querySelector("summary") ?? content?.querySelector(".chat-drawer-history-note") : this.drawerClose.current;
+        const target = archive ? content?.querySelector('[aria-label="\u5F52\u6863\u9879\u76EE\u5386\u53F2"]') : history ? details?.querySelector("summary") ?? content?.querySelector(".chat-drawer-history-note") : this.drawerClose.current;
         target?.focus({ preventScroll: true });
-        if (history && content && target) content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top;
+        if ((history || archive) && content && target) content.scrollTop += target.getBoundingClientRect().top - content.getBoundingClientRect().top;
       });
     };
-    this.closeDrawer = () => this.setState({ drawerOpen: false }, () => this.drawerTrigger?.focus({ preventScroll: true }));
+    this.openArchivedHistory = (trigger) => {
+      if (this.mounted && this.props.archivedHistory) this.openDrawer(trigger, false, true);
+    };
+    this.closeDrawer = () => this.setState({ drawerOpen: false }, () => {
+      if (!this.mounted) return;
+      if (this.props.archivedHistory) this.props.onArchivedHistoryClose?.();
+      this.drawerTrigger?.focus({ preventScroll: true });
+    });
     this.permissionPending = (ids) => {
       if (this.mounted && (ids.length !== this.state.permissionPending.length || ids.some((id, index) => id !== this.state.permissionPending[index]))) this.setState({ permissionPending: ids });
     };
