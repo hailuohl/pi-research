@@ -128,13 +128,16 @@ class GitHubSettings extends React.Component {
     this.onFocus();
   }
   componentDidUpdate(prev) {
-    if (prev.projectId !== this.props.projectId) {
+    const projectChanged = prev.projectId !== this.props.projectId;
+    if (projectChanged) {
       this.projectEpoch++;
       clearTimeout(this.timer);
       this.mutation = void 0;
       this.setState({ project: null, error: "", busy: false });
-      void this.loadProject();
     }
+    if (!this.props.active) clearTimeout(this.timer);
+    if (!prev.active && this.props.active) this.onFocus();
+    else if (projectChanged) void this.loadProject();
   }
   componentWillUnmount() {
     this.mounted = false;
@@ -144,6 +147,7 @@ class GitHubSettings extends React.Component {
     window.removeEventListener("focus", this.onFocus);
   }
   async loadStatus() {
+    if (!this.mounted || !this.props.active) return;
     const epoch = ++this.cliEpoch;
     try {
       const status = await api("/github/status");
@@ -154,13 +158,14 @@ class GitHubSettings extends React.Component {
   }
   async loadProject() {
     clearTimeout(this.timer);
+    if (!this.mounted || !this.props.active) return;
     const pid = this.props.projectId, epoch = ++this.projectEpoch;
     if (!pid) return;
     try {
       const project = await api(`/projects/${encodeURIComponent(pid)}/github`);
       if (!this.mounted || epoch !== this.projectEpoch || pid !== this.props.projectId) return;
       this.setState({ project });
-      if (["queued", "creating", "uploading"].includes(project.state)) this.timer = setTimeout(() => void this.loadProject(), 2e3);
+      if (this.props.active && ["queued", "creating", "uploading"].includes(project.state)) this.timer = setTimeout(() => void this.loadProject(), 2e3);
     } catch (e) {
       if (this.mounted && epoch === this.projectEpoch) this.setState({ error: String(e) });
     }

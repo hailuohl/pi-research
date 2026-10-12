@@ -88,11 +88,59 @@ test('new project stays local without gh, gates opt-in and keeps one request ide
 
 test('GitHub settings never replace a newly selected project with a late status response',async()=>{
  const original=global.fetch,pending=[];global.fetch=async(url)=>new Promise(resolve=>pending.push({url,resolve}));
- const v=synchronousState(new GitHubSettings({projectId:'first'}));v.mounted=true;
- try{const first=v.loadProject();v.props={projectId:'second'};const second=v.loadProject();assert.match(pending[0].url,/first\/github$/);assert.match(pending[1].url,/second\/github$/);
+ const v=synchronousState(new GitHubSettings({projectId:'first',active:true}));v.mounted=true;
+ try{const first=v.loadProject();v.props={projectId:'second',active:true};const second=v.loadProject();assert.match(pending[0].url,/first\/github$/);assert.match(pending[1].url,/second\/github$/);
  pending[1].resolve(new Response(JSON.stringify({...local,version:2})));await second;
  pending[0].resolve(new Response(JSON.stringify({...local,version:1})));await first;assert.equal(v.state.project.version,2);
  }finally{v.mounted=false;clearTimeout(v.timer);global.fetch=original;}
+});
+
+const settle=()=>new Promise(resolve=>setImmediate(resolve));
+function settings(t,active=false){
+ const previous={fetch:globalThis.fetch,window:globalThis.window,setTimeout:globalThis.setTimeout,clearTimeout:globalThis.clearTimeout},events=new Map(),timers=new Map();let timer=0;
+ globalThis.window={addEventListener:(name,fn)=>events.set(name,fn),removeEventListener:name=>events.delete(name)};
+ globalThis.setTimeout=fn=>{timers.set(++timer,fn);return timer;};globalThis.clearTimeout=id=>timers.delete(id);
+ const view=synchronousState(new GitHubSettings({projectId:'first',active}));
+ t.after(()=>{view.componentWillUnmount();Object.assign(globalThis,previous);});
+ const update=props=>{const prev=view.props;view.props={...prev,...props};view.componentDidUpdate(prev);};
+ return {view,update,timers,focus:()=>events.get('focus')?.()};
+}
+
+test('hidden GitHub settings make no reads on mount or focus; activation, focus and reentry refresh and recover',async t=>{
+ const {view,update,focus}=settings(t),calls=[];let fail=true;
+ globalThis.fetch=async(url,init)=>{calls.push({url,method:init.method});return url.endsWith('/github/status')?(fail?response({error:{message:'status unavailable'}},503):response(ready)):response(local);};
+ view.componentDidMount();focus();await view.loadStatus();await view.loadProject();await settle();assert.deepEqual(calls,[]);
+ update({active:true});await settle();assert.deepEqual(calls.map(c=>c.url),['/api/github/status','/api/projects/first/github']);assert.match(view.state.statusError,/status unavailable/);
+ focus();await settle();assert.equal(calls.length,4);
+ update({active:false});focus();await settle();assert.equal(calls.length,4);
+ fail=false;update({active:true});await settle();assert.equal(calls.length,6);assert.equal(view.state.status.account.id,42);assert.equal(view.state.statusError,'');assert.ok(calls.every(c=>c.method==='GET'));
+});
+
+test('hiding stops queued polling and a late queued response cannot restart it',async t=>{
+ const {view,update,timers}=settings(t,true),pending=[],calls=[];
+ globalThis.fetch=async(url)=>{calls.push(url);return url.endsWith('/github/status')?response(ready):new Promise(resolve=>pending.push(resolve));};
+ view.componentDidMount();pending.shift()(response({...local,state:'queued'}));await settle();assert.equal(timers.size,1);
+ const scheduled=[...timers.values()][0];update({active:false});assert.equal(timers.size,0);scheduled();await settle();assert.equal(calls.length,2);
+ update({active:true});await settle();assert.equal(calls.length,4);update({active:false});pending.shift()(response({...local,state:'queued',version:1}));await settle();assert.equal(view.state.project.version,1);assert.equal(timers.size,0);assert.equal(calls.length,4);
+});
+
+test('project changes while hidden clear the old project and isolate late status responses',async t=>{
+ const {view,update,timers}=settings(t,true),pending=[],calls=[];
+ globalThis.fetch=async(url)=>{calls.push(url);return url.endsWith('/github/status')?response(ready):new Promise(resolve=>pending.push({url,resolve}));};
+ view.componentDidMount();update({active:false});update({projectId:'second'});assert.equal(view.state.project,null);assert.equal(calls.length,2);
+ pending.shift().resolve(response({...local,version:1,state:'queued'}));await settle();assert.equal(view.state.project,null);assert.equal(timers.size,0);
+ update({active:true});await settle();assert.match(pending[0].url,/second\/github$/);pending.shift().resolve(response({...local,version:2}));await settle();assert.equal(view.state.project.version,2);
+});
+
+test('hidden sync completion preserves busy and retry identity without reading, and read-only still blocks writes',async t=>{
+ const {view,update}=settings(t,true),calls=[];let resolve,reject;
+ globalThis.fetch=async(url,init)=>{calls.push({url,...init});return init.method==='POST'?new Promise((r,j)=>{resolve=r;reject=j;}):response(url.endsWith('/github/status')?ready:{...local,version:7,enabled:true,state:'failed',retryable:true});};
+ view.componentDidMount();await settle();update({readOnly:true});await view.change('retry');assert.equal(calls.length,2);update({readOnly:false});
+ const first=view.change('retry');assert.equal(view.state.busy,true);update({active:false});assert.equal(view.state.busy,true);const identity=view.mutation;
+ await view.change('retry');assert.equal(calls.length,3);assert.equal(view.mutation,identity);
+ reject(Error('sync unavailable'));await first;assert.equal(view.state.busy,false);assert.equal(view.mutation,identity);assert.match(view.state.error,/sync unavailable/);assert.equal(calls.length,3);
+ update({active:true});await settle();const retry=view.change('retry');assert.equal(calls.length,6);assert.equal(calls[2].headers['Idempotency-Key'],calls[5].headers['Idempotency-Key']);assert.equal(calls[2].body,calls[5].body);assert.deepEqual(JSON.parse(calls[5].body),{expectedVersion:7});
+ update({active:false});assert.equal(view.state.busy,true);resolve(response({}));await retry;assert.equal(view.state.busy,false);assert.equal(view.mutation,identity);assert.equal(calls.length,6);
 });
 
 test('CLI state cannot be replaced by an older account check or a response after unmount',async()=>{
