@@ -215,7 +215,9 @@
     },
     {
       "path": ".validation/settings-github-ui-20261013/result/green-final.json",
-      "sha256": "b99795cbdf3dd4a611a8624dec7d9f1ffbfb447eb28b4110f9cbc1df82973539"
+      "sha256": "2b8488c0c06bc5c5e000666dbaa0dad940e34909bbc54b49c9874c0eb62fbef8",
+      "sha256AtOriginalReview": "b99795cbdf3dd4a611a8624dec7d9f1ffbfb447eb28b4110f9cbc1df82973539",
+      "postAcceptanceReplacement": true
     },
     {
       "path": ".validation/settings-github-ui-20261013/result/verified.json",
@@ -230,5 +232,14 @@
     "path": "docs/qa/2026-10-13-settings-github-visibility/green-visible.jpg",
     "sha256": "4a280d9d2c4f4cc56fd5cdc0f8cab6df4938de625015ff51627ad33c5f1f88ee"
   },
-  "fullAndCleanBuild": "Deferred to phase delivery per latest user instruction; no claim of running them for this candidate"
+  "fullAndCleanBuild": "Deferred to phase delivery per latest user instruction; no claim of running them for this candidate",
+  "postAcceptanceEvidenceCorrection": {
+    "path": ".validation/settings-github-ui-20261013/result/green-final.json",
+    "priorAcceptedHash": "b99795cbdf3dd4a611a8624dec7d9f1ffbfb447eb28b4110f9cbc1df82973539",
+    "currentHash": "2b8488c0c06bc5c5e000666dbaa0dad940e34909bbc54b49c9874c0eb62fbef8",
+    "overwrittenOnFixtureStop": true,
+    "explanation": "Settings fixture save(final) reused the manual green-final capture filename after acceptance. Earlier green-visible/model snapshots and immutable verdict remain; closing snapshot is a longer observation with identical business state and GitHub calls. This does not reconstruct the lost prior raw snapshot.",
+    "immutableComparison": ".validation/settings-github-ui-20261013/result/green-visible.json",
+    "businessAndGitHubEvidenceUnchanged": true
+  }
 }
