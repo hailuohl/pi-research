@@ -80,7 +80,7 @@ export class App extends React.Component<{}, State> {
     private modalIntent=0;
     private creatingSession=false;
     private pendingSessionCreate?:{projectId:string;epoch:number;body:unknown;key:string};
-    private noticeTimer?: number;
+    private noticeTimer?: ReturnType<typeof setTimeout>|number;
     private conversationPanel=React.createRef<ConversationPanel>();
     private workspace=React.createRef<WorkspaceView>();
     private chat=React.createRef<Chat>();
@@ -342,7 +342,31 @@ export class App extends React.Component<{}, State> {
         const modalIntent=this.modalIntent,done = () => {if(this.mounted&&modalIntent===this.modalIntent&&this.state.modal===modal){this.modalIntent++;this.setState({modal:'',modalData:null});}};
         if(modal==='projects')return <ProjectManagement onClose={this.close} onOpen={async id=>{if(this.mounted&&modalIntent===this.modalIntent&&this.state.modal===modal&&await this.switchProject(id))done();}} selectionToken={()=>this.projectSelectionEpoch} onChanged={this.projectLifecycleChanged}/>;
         if (modal === 'project')
-            return <ProjectCreationModal {...base} onCreate={(input,key)=>this.perform(async()=>{const p=await api<Row<Project>>('/projects',input,'POST',undefined,key);const s=await api<Row<Session>>('/sessions',{projectId:p.id,title:'研究主会话'},'POST',undefined,key+'-session');await new Promise<void>(resolve=>this.setState({...this.sessionSelection(s.id,'chat'),projectId:p.id,selectedExp:'',selectedRun:'',selectedReport:'',archiveHistoryOpen:false,selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,data:null},resolve));done();},input.github?'本地项目已创建；GitHub 同步状态可在设置中查看。':'本地项目已创建')}/>;
+            return <ProjectCreationModal {...base} key={modalIntent} onCreate={async(input,key)=>{
+                const current=()=>this.mounted&&modalIntent===this.modalIntent&&this.state.modal===modal;
+                if(!current())throw Error('此创建窗口已关闭，本次创建未提交。');
+                let started=false,completed=false,failure:unknown;
+                await this.perform(async()=>{
+                    started=true;
+                    try{
+                        const p=await api<Row<Project>>('/projects',input,'POST',undefined,key);
+                        if(!current())return;
+                        const s=await api<Row<Session>>('/sessions',{projectId:p.id,title:'研究主会话'},'POST',undefined,key+'-session');
+                        completed=true;
+                        if(!current())return;
+                        await new Promise<void>(resolve=>this.setState(()=>current()?{...this.sessionSelection(s.id,'chat'),projectId:p.id,selectedExp:'',selectedRun:'',selectedReport:'',archiveHistoryOpen:false,selectedCampaign:'',selectedDiscoveryGrant:'',selectedDocument:null,data:null}:null,resolve));
+                        if(!current())return;
+                        clearTimeout(this.noticeTimer);
+                        this.setState({notice:input.github?'本地项目已创建；GitHub 同步状态可在设置中查看。':'本地项目已创建'});
+                        this.noticeTimer=setTimeout(()=>this.setState({notice:''}),4500);
+                        done();
+                    }catch(error){failure=error;if(current())throw error;}
+                });
+                // perform keeps its shared swallowed-error contract; this dialog still needs the write result.
+                if(failure!==undefined)throw failure;
+                if(!started)throw Error('当前操作尚未完成，本次创建未提交。请稍后重试。');
+                if(!completed)throw Error('此创建窗口已关闭，创建流程未完成。');
+            }}/>;
         if (modal === 'config')
             return <Modal {...base} wide title="实验只读配置" submitLabel="关闭配置" onSubmit={() => done()}><p className="small muted">配置变更请在研究对话中提出。</p><label>配置源码<textarea aria-label="配置源码" className="code-input" rows={12} readOnly defaultValue={modalData.content}/></label></Modal>;
         if (modal === 'directive')

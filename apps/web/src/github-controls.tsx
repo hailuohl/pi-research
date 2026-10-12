@@ -9,21 +9,25 @@ function GitHubReadiness({status,error}:{status:GitHubStatus|null;error:string})
  return <div aria-live="polite"><p className="small muted">{error||status?.message||'正在检测本机 GitHub CLI…'}</p>{status?.account?<p className="small muted">GitHub 账号：{status.account.login}</p>:null}{status&&!status.cliInstalled?<p className="small muted">安装 <a href="https://cli.github.com/" target="_blank" rel="noreferrer">GitHub CLI</a> 后可启用上传；本地项目始终可用。</p>:null}{status?.state==='unauthenticated'?<p className="small muted">登录命令：<code>gh auth login</code></p>:null}</div>;
 }
 
-export class ProjectCreationModal extends React.Component<{busy:boolean;onClose:()=>void;onCreate:(input:NewProjectInput,key:string)=>Promise<unknown>},{status:GitHubStatus|null;upload:boolean;error:string}> {
- state={status:null as GitHubStatus|null,upload:false,error:''};
- private mounted=false;private epoch=0;private requestKey=crypto.randomUUID();
+export class ProjectCreationModal extends React.Component<{busy:boolean;onClose:()=>void;onCreate:(input:NewProjectInput,key:string)=>Promise<unknown>},{status:GitHubStatus|null;upload:boolean;statusError:string;error:string;submitting:boolean}> {
+ state={status:null as GitHubStatus|null,upload:false,statusError:'',error:'',submitting:false};
+ private mounted=false;private epoch=0;private requestKey=crypto.randomUUID();private submitting=false;
  private onFocus=()=>{void this.loadStatus();};
  componentDidMount(){this.mounted=true;window.addEventListener('focus',this.onFocus);void this.loadStatus();}
  componentWillUnmount(){this.mounted=false;this.epoch++;window.removeEventListener('focus',this.onFocus);}
- async loadStatus(){const epoch=++this.epoch;try{const status=await api<GitHubStatus>('/github/status');if(this.mounted&&epoch===this.epoch)this.setState({status,error:''});}catch(e){if(this.mounted&&epoch===this.epoch)this.setState({status:null,error:String(e)});}}
+ async loadStatus(){const epoch=++this.epoch;try{const status=await api<GitHubStatus>('/github/status');if(this.mounted&&epoch===this.epoch)this.setState({status,statusError:''});}catch(e){if(this.mounted&&epoch===this.epoch)this.setState({status:null,statusError:String(e)});}}
  changed(){this.requestKey=crypto.randomUUID();}
  async submit(fd:FormData){
+  if(this.submitting)return;
+  if(this.props.busy){this.setState({error:'当前操作尚未完成，本次创建未提交。请稍后重试。'});return;}
   const {status,upload}=this.state;
   if(upload&&(!status?.ready||!status.account)){this.setState({error:'GitHub CLI 尚未就绪。请取消勾选以创建本地项目，或完成登录后返回。'});return;}
   const input:NewProjectInput={name:String(fd.get('name')??''),description:String(fd.get('description')??''),template:String(fd.get('template')??'empty'),...(upload?{github:{enabled:true as const,expectedAccountId:status!.account!.id}}:{})};
-  try{await this.props.onCreate(input,this.requestKey);}catch(e){if(this.mounted)this.setState({error:String(e)});}
+  this.submitting=true;this.setState({submitting:true,error:''});
+  try{await this.props.onCreate(input,this.requestKey);}catch(e){if(this.mounted)this.setState({error:e instanceof Error?e.message:String(e)});}
+  finally{this.submitting=false;if(this.mounted)this.setState({submitting:false});}
  }
- render(){const s=this.state;return <Modal title="新建项目" submitLabel="创建项目" busy={this.props.busy} onClose={this.props.onClose} onSubmit={fd=>void this.submit(fd)}><div onChange={()=>this.changed()}><label>项目名称<input aria-label="项目名称" name="name" required maxLength={120} disabled={this.props.busy} placeholder="例如：材料筛选研究"/></label><label>项目说明<textarea name="description" disabled={this.props.busy} placeholder="研究目标、范围或输入资料"/></label><label>项目模板<select aria-label="项目模板" name="template" defaultValue="curve-fit" disabled={this.props.busy}>{nativeSelectButton}<option value="curve-fit">真实曲线拟合示例 · 可直接运行</option><option value="empty">空项目 · 自行准备文件</option></select></label><p className="small muted">曲线拟合模板是用于系统验证的固定数值示例。</p><label className="check-label"><input type="checkbox" aria-label="创建 GitHub 私密仓库并自动同步已提交源码及其 Git 历史" checked={s.upload} disabled={this.props.busy||(!s.status?.ready&&!s.upload)} onChange={e=>{if(!e.target.checked||s.status?.ready)this.setState({upload:e.target.checked});}}/>创建 GitHub 私密仓库并自动同步已提交源码及其 Git 历史</label><p className="small muted">默认仅本地保存。仓库使用项目名或中文拼音；重名自动加 -1、-2。数据库、会话和独立科研资料留在本地。</p><GitHubReadiness status={s.status} error={s.error}/></div></Modal>;}
+ render(){const s=this.state,busy=this.props.busy||s.submitting;return <Modal title="新建项目" submitLabel="创建项目" busy={busy} closeDisabled={busy} onClose={this.props.onClose} onSubmit={fd=>void this.submit(fd)}><div onChange={()=>this.changed()}><label>项目名称<input aria-label="项目名称" name="name" required maxLength={120} disabled={busy} placeholder="例如：材料筛选研究"/></label><label>项目说明<textarea name="description" disabled={busy} placeholder="研究目标、范围或输入资料"/></label><label>项目模板<select aria-label="项目模板" name="template" defaultValue="curve-fit" disabled={busy}>{nativeSelectButton}<option value="curve-fit">真实曲线拟合示例 · 可直接运行</option><option value="empty">空项目 · 自行准备文件</option></select></label><p className="small muted">曲线拟合模板是用于系统验证的固定数值示例。</p><label className="check-label"><input type="checkbox" aria-label="创建 GitHub 私密仓库并自动同步已提交源码及其 Git 历史" checked={s.upload} disabled={busy||(!s.status?.ready&&!s.upload)} onChange={e=>{if(!e.target.checked||s.status?.ready)this.setState({upload:e.target.checked});}}/>创建 GitHub 私密仓库并自动同步已提交源码及其 Git 历史</label><p className="small muted">默认仅本地保存。仓库使用项目名或中文拼音；重名自动加 -1、-2。数据库、会话和独立科研资料留在本地。</p><GitHubReadiness status={s.status} error={s.statusError}/>{s.error?<p className="error-text" role="alert">{s.error}</p>:null}</div></Modal>;}
 }
 
 export class GitHubSettings extends React.Component<{projectId?:string;readOnly?:boolean},{status:GitHubStatus|null;project:ProjectGitHubStatus|null;statusError:string;error:string;busy:boolean}> {

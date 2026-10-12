@@ -1,4 +1,5 @@
 import { jsx, jsxs } from "react/jsx-runtime";
+import { createElement } from "react";
 import * as React from "react";
 import { ProjectEventFeed } from "./event-feed.js";
 import { EnvironmentView } from "./environment-view.js";
@@ -439,12 +440,33 @@ class App extends React.Component {
       if (this.mounted && modalIntent === this.modalIntent && this.state.modal === modal && await this.switchProject(id)) done();
     }, selectionToken: () => this.projectSelectionEpoch, onChanged: this.projectLifecycleChanged });
     if (modal === "project")
-      return /* @__PURE__ */ jsx(ProjectCreationModal, { ...base, onCreate: (input, key) => this.perform(async () => {
-        const p = await api("/projects", input, "POST", void 0, key);
-        const s = await api("/sessions", { projectId: p.id, title: "\u7814\u7A76\u4E3B\u4F1A\u8BDD" }, "POST", void 0, key + "-session");
-        await new Promise((resolve) => this.setState({ ...this.sessionSelection(s.id, "chat"), projectId: p.id, selectedExp: "", selectedRun: "", selectedReport: "", archiveHistoryOpen: false, selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, data: null }, resolve));
-        done();
-      }, input.github ? "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA\uFF1BGitHub \u540C\u6B65\u72B6\u6001\u53EF\u5728\u8BBE\u7F6E\u4E2D\u67E5\u770B\u3002" : "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA") });
+      return /* @__PURE__ */ createElement(ProjectCreationModal, { ...base, key: modalIntent, onCreate: async (input, key) => {
+        const current = () => this.mounted && modalIntent === this.modalIntent && this.state.modal === modal;
+        if (!current()) throw Error("\u6B64\u521B\u5EFA\u7A97\u53E3\u5DF2\u5173\u95ED\uFF0C\u672C\u6B21\u521B\u5EFA\u672A\u63D0\u4EA4\u3002");
+        let started = false, completed = false, failure;
+        await this.perform(async () => {
+          started = true;
+          try {
+            const p = await api("/projects", input, "POST", void 0, key);
+            if (!current()) return;
+            const s = await api("/sessions", { projectId: p.id, title: "\u7814\u7A76\u4E3B\u4F1A\u8BDD" }, "POST", void 0, key + "-session");
+            completed = true;
+            if (!current()) return;
+            await new Promise((resolve) => this.setState(() => current() ? { ...this.sessionSelection(s.id, "chat"), projectId: p.id, selectedExp: "", selectedRun: "", selectedReport: "", archiveHistoryOpen: false, selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, data: null } : null, resolve));
+            if (!current()) return;
+            clearTimeout(this.noticeTimer);
+            this.setState({ notice: input.github ? "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA\uFF1BGitHub \u540C\u6B65\u72B6\u6001\u53EF\u5728\u8BBE\u7F6E\u4E2D\u67E5\u770B\u3002" : "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA" });
+            this.noticeTimer = setTimeout(() => this.setState({ notice: "" }), 4500);
+            done();
+          } catch (error) {
+            failure = error;
+            if (current()) throw error;
+          }
+        });
+        if (failure !== void 0) throw failure;
+        if (!started) throw Error("\u5F53\u524D\u64CD\u4F5C\u5C1A\u672A\u5B8C\u6210\uFF0C\u672C\u6B21\u521B\u5EFA\u672A\u63D0\u4EA4\u3002\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002");
+        if (!completed) throw Error("\u6B64\u521B\u5EFA\u7A97\u53E3\u5DF2\u5173\u95ED\uFF0C\u521B\u5EFA\u6D41\u7A0B\u672A\u5B8C\u6210\u3002");
+      } });
     if (modal === "config")
       return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u5B9E\u9A8C\u53EA\u8BFB\u914D\u7F6E", submitLabel: "\u5173\u95ED\u914D\u7F6E", onSubmit: () => done(), children: [
         /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u914D\u7F6E\u53D8\u66F4\u8BF7\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u3002" }),
