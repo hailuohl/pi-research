@@ -570,7 +570,7 @@ class App extends React.Component {
           }, children: [
             /* @__PURE__ */ jsx("span", { children: "\u03C0" }),
             /* @__PURE__ */ jsxs("div", { children: [
-              "Pi Research",
+              "\u7814\u821F\u03C0",
               /* @__PURE__ */ jsx("small", { children: "\u79D1\u7814\u5DE5\u4F5C\u53F0" })
             ] })
           ] }),

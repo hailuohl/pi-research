@@ -1,6 +1,8 @@
-# Pi Research 0.3.1-experimental
+# 研舟π 0.3.1-experimental
 
-**可试用本地科研后端 · Pi 唯一 Agent 执行内核**
+**多智能体协作的可追溯科研平台 · Pi 唯一 Agent 执行内核**
+
+项目对外名称为“研舟π”；`pi-research` 包名、命令、数据路径及历史发行标识保持兼容。
 
 本开发副本基于 v0.3.1 按 [优化实施计划](docs/IMPLEMENTATION-PLAN.zh-CN.md) 持续推进。原 ZIP 保持冻结；版本号沿用源包身份，不代表新发布。当前进度见 [实施状态](docs/IMPLEMENTATION-STATUS.md)，证据见 [PR01](docs/acceptance/pr01/RESULTS.zh-CN.md)、[PR02 首批](docs/acceptance/pr02/RESULTS.zh-CN.md) 与 [能力矩阵](docs/reference-baseline/PR01.md)。
 

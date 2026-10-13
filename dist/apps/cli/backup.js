@@ -3,7 +3,7 @@ import { DomainError, ensure } from '../../packages/domain/errors.js';
 import { createDataBackup, restoreDataBackup, verifyDataBackup } from '../../packages/storage/backup.js';
 function print(value) { console.log(JSON.stringify(value, null, 2)); }
 function help() {
-    console.log(`Pi Research backup · 本地私有数据备份
+    console.log(`研舟π backup · 本地私有数据备份
 
   backup create --data <数据目录> --out <备份目录> --offline [--json]
                                   离线完整备份：数据库、审批、快照、原生 Pi 数据与 Git 历史
