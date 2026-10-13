@@ -1,5 +1,5 @@
 /** OpenResearch client.rs wire protocols ported to independent TypeScript providers (MIT).
- * No OpenResearch account/compute endpoint, ORX process, or provider URL supplied by the model.
+ * No upstream account/compute endpoint, ORX process, or provider URL supplied by the model.
  */
 import {ensure,DomainError} from '../domain/errors.js';
 import {object} from '../contracts/validation.js';

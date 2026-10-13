@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7";
+export declare const BUNDLE_ID = "4e1944bb74918d76764c87cd63cdb746122c7ab0c0cf73d87dd829a7365070b0";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -153,7 +153,7 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly digest: "205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f";
     }, {
         readonly path: "assets/pi-tikz-preamble.tex";
-        readonly digest: "4ade8f750ab24cfe9d19b1e7d72695f4bcc450d5fe885a32950210d833c95917";
+        readonly digest: "d40e7130f36d437711d433bab1e6bd71c2329479ac520af24323ba296ecb5f7e";
     }, {
         readonly path: "examples/README.md";
         readonly digest: "554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71";
@@ -180,13 +180,13 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly digest: "ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae";
     }, {
         readonly path: "examples/method.tex";
-        readonly digest: "ba4da34a1fae6379559a79657e4ab1a890b86335ba9937a9d4c932604eaf80c2";
+        readonly digest: "6db10e33e3a91f9c6d9adfa69884b7896393702ed4cf5cf11e267e3697ed4f0d";
     }, {
         readonly path: "examples/software-demo-data.py";
         readonly digest: "21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3";
     }, {
         readonly path: "PROVENANCE.md";
-        readonly digest: "0660ff2bd55da3851a44b871028b4482a1b19a2852cf6881e02406487c425bfe";
+        readonly digest: "ad4d96da66228cc19f0d4318395cff154f7138b7281aa52fe8b5855d660e13d1";
     }, {
         readonly path: "LICENSE";
         readonly digest: "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7";

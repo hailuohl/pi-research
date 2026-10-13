@@ -1,4 +1,4 @@
-# OpenResearch绘图资源来源与适配
+# 绘图资源来源与适配
 
 来源仓库：alphaXiv/OpenResearch；固定commit：`3037f727e80e0ab20c61a87c613a50dde009a835`。许可：MIT，Copyright (c) 2026 alphaXiv；完整文本为本目录LICENSE及仓库 `third_party/openresearch/LICENSE`。两份共享资产顶部还内嵌完整MIT，单文件复制也保留许可。
 

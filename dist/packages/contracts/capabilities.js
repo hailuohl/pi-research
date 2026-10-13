@@ -1,7 +1,7 @@
 /** Saved verification scope; current model and compute readiness are reported separately. */
 export const CAPABILITIES = [
     { id: 'local-text-evidence', name: '可选本地原文检索', stage: 'M4', status: 'partial', verification: '固定文档语料、授权、原文定位与来源撤销已验', notes: '默认关闭，显式获准文本才进入语料；固定分块、TF-IDF与可选MMR，无自动科学回答。不是完整PaperQA SDK。' },
-    { id: 'reviewed-skills', name: 'OpenResearch适配技能', stage: 'M2/M4', status: 'partial', verification: '导入审阅、固定bundle、升级/回滚、真实Pi写作与图表/diagram产物已验', notes: '12个主题模块与总览；按角色/摘要固定，资源审阅不授权脚本执行。新模板与领域写作按实际任务需要验收。' },
+    { id: 'reviewed-skills', name: '内置科研技能', stage: 'M2/M4', status: 'partial', verification: '导入审阅、固定bundle、升级/回滚、真实Pi写作与图表/diagram产物已验', notes: '12个主题模块与总览；按角色/摘要固定，资源审阅不授权脚本执行。新模板与领域写作按实际任务需要验收。' },
     { id: 'projects', name: '本地项目 / 文件导入', stage: 'M1', status: 'implemented', verification: '项目副本导入、受管Git工作区及离线备份/异址恢复已验', notes: '输入原目录保留；备份限离线、同平台、单活动副本，目标必须不存在。' },
     { id: 'sessions', name: '会话 / 排队 / 中止 / 分支', stage: 'M2', status: 'partial', verification: '真实Pi工具调用、正常收尾、中止及原生ID异址续接已验', notes: '会话/长消息稳定分页；原失败和中止历史保留。恢复沿原固定来源和技能，不替换成最新版。' },
     { id: 'pi', name: 'Pi SDK 执行内核', stage: 'M2', status: 'verified', verification: '智谱真实Pi实现、文献/分析Task及独立审查已验', notes: '固定0.87.1；仅证明记录中的供应商/模型路径。启动仍需本地依赖与凭据，其他供应商按目标环境验收；无模拟AI回退。' },

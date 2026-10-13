@@ -62,5 +62,9 @@
   {
     "bundleId": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7",
     "manifestDigest": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7"
+  },
+  {
+    "bundleId": "4e1944bb74918d76764c87cd63cdb746122c7ab0c0cf73d87dd829a7365070b0",
+    "manifestDigest": "4e1944bb74918d76764c87cd63cdb746122c7ab0c0cf73d87dd829a7365070b0"
   }
 ]

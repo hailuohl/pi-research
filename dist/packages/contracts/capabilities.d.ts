@@ -8,7 +8,7 @@ export declare const CAPABILITIES: readonly [{
     readonly notes: "默认关闭，显式获准文本才进入语料；固定分块、TF-IDF与可选MMR，无自动科学回答。不是完整PaperQA SDK。";
 }, {
     readonly id: "reviewed-skills";
-    readonly name: "OpenResearch适配技能";
+    readonly name: "内置科研技能";
     readonly stage: "M2/M4";
     readonly status: "partial";
     readonly verification: "导入审阅、固定bundle、升级/回滚、真实Pi写作与图表/diagram产物已验";
