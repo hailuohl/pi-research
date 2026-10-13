@@ -64,7 +64,19 @@
     "manifestDigest": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7"
   },
   {
+    "bundleId": "13b287f05de2899138026917bdecd79f967bb9813cda2bf9ac745fb2fc307509",
+    "manifestDigest": "13b287f05de2899138026917bdecd79f967bb9813cda2bf9ac745fb2fc307509"
+  },
+  {
+    "bundleId": "5f4e3bf3539b3a197bd5a2d71e43d1f8152fc2884afcaaf9a316c5b3f6ac7ac2",
+    "manifestDigest": "5f4e3bf3539b3a197bd5a2d71e43d1f8152fc2884afcaaf9a316c5b3f6ac7ac2"
+  },
+  {
     "bundleId": "4e1944bb74918d76764c87cd63cdb746122c7ab0c0cf73d87dd829a7365070b0",
     "manifestDigest": "4e1944bb74918d76764c87cd63cdb746122c7ab0c0cf73d87dd829a7365070b0"
+  },
+  {
+    "bundleId": "5f147a56da6ba9ad7e665a7dfb5bcbe08ab9818a2c1645c6c5be325f0703df04",
+    "manifestDigest": "5f147a56da6ba9ad7e665a7dfb5bcbe08ab9818a2c1645c6c5be325f0703df04"
   }
 ]

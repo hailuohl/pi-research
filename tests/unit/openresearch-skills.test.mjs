@@ -3,10 +3,29 @@ import {mkdtempSync,rmSync,cpSync,writeFileSync,symlinkSync,readFileSync} from '
 import {SkillService} from '../../dist/packages/skills/service.js';
 import {buildSessionOptions,buildCustomTools} from '../../dist/packages/pi-adapter/options.js';
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
-import {readSkill} from '../../dist/packages/skills/runtime.js';
+import {readSkill,sessionSkillBundle} from '../../dist/packages/skills/runtime.js';
 import {setup} from '../support/research.mjs';
 const root=resolve('.');
 const skillBodies=(service,id)=>[undefined,...service.list('coordinator').find(entry=>entry.id===id).resources].map(resource=>service.read('coordinator',id,resource).content);
+
+test('scientific review reference reaches new paper sessions while the published prior binding stays immutable',()=>{
+ const s=setup(),previous='2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7',pid=s.project.id,id='pi-research-paper',resource='references/scientific-review.md';
+ try{
+  const old=s.app.sessions.create({type:'system'},pid,{title:'Preserved scientific writer'},{role:'writer'});
+  const frozen=s.app.store.update('session',old.id,old.version,{skillBundleId:previous,piSessionPath:'preserved-scientific-writer.jsonl',generation:1});
+  const actor=session=>({type:'agent',role:session.role,projectId:pid,sessionId:session.id});
+  const historical=readSkill(s.app,actor(frozen),pid,id);
+  assert.equal(historical.bundleId,previous);assert.equal(historical.content,readFileSync(join(root,'skills/releases',previous,'blobs',historical.digest),'utf8'));
+  assert.throws(()=>readSkill(s.app,actor(frozen),pid,id,resource),{code:'SKILL_RESOURCE_NOT_FOUND'});
+  for(const role of ['coordinator','writer','reviewer']){
+   const current=s.app.sessions.create({type:'system'},pid,{title:`Scientific ${role}`},{role}),next=readSkill(s.app,actor(current),pid,id,resource);
+   assert.notEqual(next.bundleId,previous);assert.equal(next.bundleId,sessionSkillBundle(s.app,current));
+   assert.equal(next.content,readFileSync(join(root,'skills/piresearch',id,resource),'utf8'));
+   assert.ok(readSkill(s.app,actor(current),pid,id).content.includes(`](${resource})`));
+  }
+  assert.deepEqual(s.app.store.get('session',old.id,pid),frozen);
+ }finally{s.close();}
+});
 
 test('writing release is read through session binding while prior writer history keeps its exact bytes',()=>{
  const s=setup(),previous='7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b',pid=s.project.id;

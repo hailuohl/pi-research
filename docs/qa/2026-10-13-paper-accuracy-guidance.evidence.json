@@ -1,0 +1,240 @@
+{
+  "date": "2026-10-13",
+  "initialBaseline": "d4bab493a6f4e8226c692a320633f4fe27c638d6",
+  "integrationBaseline": "a4fdeec63ba0a2e2b3777cd1af1f4fb775ceb45e",
+  "validatedBundleId": "5f4e3bf3539b3a197bd5a2d71e43d1f8152fc2884afcaaf9a316c5b3f6ac7ac2",
+  "deployedBundleId": "5f147a56da6ba9ad7e665a7dfb5bcbe08ab9818a2c1645c6c5be325f0703df04",
+  "paperMetadataIdentical": true,
+  "reviewedFiles": 154,
+  "initialPatchSha256": "72d79c7de4c843f4647648c9e08ac41b24b49450dab029e1bb2ae2e68c9553ca",
+  "integrationPatchSha256": "adf345d400c8c5e9e4b9fe9a322becaba228a448b0832e7bed21df464d430ed7",
+  "implementation": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "runtimeEcho": "requested only"
+  },
+  "review": {
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "runtimeEcho": "requested only",
+    "status": "passed within stated scope: implementation and controlled workflow; raw writer strict edit remains failed"
+  },
+  "checks": {
+    "fullRegression": {
+      "tests": 1948,
+      "pass": 1923,
+      "fail": 0,
+      "skipped": 25,
+      "exitCode": 0,
+      "log": ".validation/paper-accuracy-guidance-20261013/full-regression.log"
+    },
+    "combinedRelated": {
+      "tests": 26,
+      "pass": 26,
+      "fail": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "log": ".validation/paper-accuracy-guidance-20261013/combined-related-tests.log"
+    },
+    "combinedCleanBuild": {
+      "exitCode": 0,
+      "files": 661,
+      "identical": true,
+      "distManifestSha256": "ed11376939181b67a37050a42370a6f37e8d71a65a015a2d0a0a89800f976467",
+      "summary": ".validation/clean-build-8pkKMR/summary.json"
+    },
+    "combinedPeerRegression": {
+      "tests": 1948,
+      "pass": 1923,
+      "fail": 0,
+      "skipped": 25,
+      "log": ".validation/literal-cleanup-20261013/working-full-tests.log"
+    },
+    "skillFormat": "passed"
+  },
+  "live": {
+    "model": {
+      "provider": "zai-coding-cn",
+      "model": "glm-5.3",
+      "thinking": "low"
+    },
+    "requests": 31,
+    "stages": [
+      {
+        "stage": "science",
+        "taskId": "b6930e29-da79-4733-b004-44799df27acc",
+        "sessionId": "51054518-e889-44b3-adf8-2793ea45ed04",
+        "verdict": "reject",
+        "acceptance": "rejected",
+        "requests": 6,
+        "errors": [
+          {
+            "tool": "task_context_read",
+            "error": "INVALID_INPUT: $.input: 缺少必需字段"
+          }
+        ]
+      },
+      {
+        "stage": "lossy",
+        "taskId": "fad5f310-a6eb-4fd4-a034-b22aa0a85171",
+        "sessionId": "651f9b77-83cb-4d7d-9e23-6feab94f4a1d",
+        "verdict": "reject",
+        "acceptance": "accepted",
+        "requests": 4,
+        "errors": [
+          {
+            "tool": "task_context_read",
+            "error": "INVALID_INPUT: $.input: 缺少必需字段"
+          }
+        ]
+      },
+      {
+        "stage": "writer",
+        "taskId": "46e78c30-4278-477e-a0b9-af03c70b0bfa",
+        "sessionId": "cbf1db89-26ab-4907-992e-ba2436d13fb7",
+        "verdict": "accept",
+        "acceptance": "accepted",
+        "requests": 10,
+        "errors": [
+          {
+            "tool": "task_context_read",
+            "error": "INVALID_INPUT: $.input: 缺少必需字段"
+          }
+        ]
+      },
+      {
+        "stage": "finalReview",
+        "taskId": "54187891-5306-40d1-ac73-1f055dd14ddb",
+        "sessionId": "4ca5da8f-5197-4469-aeea-18fe0ae349bd",
+        "verdict": "accept",
+        "acceptance": "accepted",
+        "requests": 11,
+        "errors": [
+          {
+            "tool": "task_context_read",
+            "error": "INVALID_INPUT: $.input: 缺少必需字段"
+          },
+          {
+            "tool": "task_result_submit",
+            "error": "INVALID_INPUT: $.input.summary: 缺少必需字段"
+          },
+          {
+            "tool": "task_result_submit",
+            "error": "REVIEW_VERDICT_REQUIRED: 审查任务必须给出明确意见"
+          }
+        ]
+      }
+    ],
+    "scienceReview": {
+      "id": "76b13eef7bc09c02ea0b53fbb2feb872fa562eeee67c132513d23f40e7f9d946",
+      "status": "rejected"
+    },
+    "finalReview": {
+      "id": "43c866803aed973b612496a94d9468410111ad6c31743c9a06678b54538fb68a",
+      "status": "passed",
+      "validity": "current"
+    },
+    "rawWriterStrictPassed": false,
+    "rawWriterUnexpectedEdit": "UC uses full rated power -> UC uses the full rated power",
+    "controlledStrictPassed": true,
+    "controlledArtifactId": "fa198dab-04cf-4f1c-9522-3e6d60f987c0",
+    "controlledSha256": "d2735df70c7fba2fa89524a311512b5e3e423f649aca6087696c32a48e79300f",
+    "controllerAppliedApprovedPlan": true,
+    "newPatchToolAdded": false,
+    "build": {
+      "jobId": "2fb61fc2-0b3c-4cb7-baa2-4327a9f8e640",
+      "resultId": "d996eedf61fdf3e8a0dca7aa59198476f94723a20aaba7ece1e0f347f506318c",
+      "state": "succeeded",
+      "integrity": "complete",
+      "pages": 5,
+      "digest": "9cbd7d8580d96d647e963cb184618f39a6a5495efb1daadc1eb039948d607e92",
+      "diagnostics": []
+    },
+    "visual": {
+      "reused": true,
+      "previousResultId": "f377817a0e24b3a8a11b10c3c5e7018569eb5ed224b5f8e40cc9cb5a7820ec3f",
+      "pdfAndPreviewBytesIdentical": true,
+      "previousInspectedPages": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "identifierChecks": [
+      {
+        "kind": "raw-writer",
+        "sourceMatches": {
+          "uuid": [],
+          "long_hash": [],
+          "internal_field": [],
+          "tool_name": []
+        }
+      },
+      {
+        "kind": "controlled",
+        "sourceMatches": {
+          "uuid": [],
+          "long_hash": [],
+          "internal_field": [],
+          "tool_name": []
+        },
+        "pages": 5,
+        "pdfMatches": {
+          "uuid": [],
+          "long_hash": [],
+          "internal_field": [],
+          "tool_name": []
+        }
+      }
+    ]
+  },
+  "preservation": {
+    "baselineRecords": 9532,
+    "oldRecordsDeleted": 0,
+    "oldRecordChanges": [
+      {
+        "kind": "compute-connection",
+        "id": "docker:desktop-linux",
+        "fields": [
+          "observation.attempt",
+          "observation.checkedAt",
+          "observation.validUntil",
+          "version",
+          "updatedAt"
+        ]
+      },
+      {
+        "kind": "skill-configuration",
+        "id": "2e289299-39f6-4ff4-999b-f55d5225766d",
+        "fields": [
+          "bundleId",
+          "version",
+          "updatedAt"
+        ]
+      }
+    ],
+    "oldSessions": 41,
+    "oldManuscripts": 11,
+    "oldFiles": 426,
+    "oldBytes": 57476226,
+    "allOldFilesUnchanged": true,
+    "historicalUnknownPreserved": 3,
+    "defaultModelUnchanged": true,
+    "activeWorkers": 0
+  },
+  "server": {
+    "port": 4794,
+    "initialPid": 239904,
+    "validationPid": 246276,
+    "finalPid": 147968
+  },
+  "limitations": [
+    "Raw Pi writer did not satisfy strict byte preservation",
+    "Model self-check statements were not accepted as proof",
+    "Mechanical comparison/construction was performed by the primary agent with existing tools, not a new built-in Pi diff tool",
+    "Limited scientific consistency review, no complete scientific/venue review or new experiment"
+  ],
+  "rawEvidenceDirectory": ".validation/paper-accuracy-guidance-20261013"
+}

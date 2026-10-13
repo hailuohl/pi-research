@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "4e1944bb74918d76764c87cd63cdb746122c7ab0c0cf73d87dd829a7365070b0";
+export declare const BUNDLE_ID = "5f147a56da6ba9ad7e665a7dfb5bcbe08ab9818a2c1645c6c5be325f0703df04";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -203,7 +203,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿用模板和配套资产，固定稿件，构建、检查并交付源码与实际结果。普通研究报告使用reports。";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
-    readonly digest: "7854b3113fe080f5e422d601428c968dddc6efcf4f8344ea8a565118e4e51759";
+    readonly digest: "fe4edcda3b213e8ea097ef1706a638c7173f069ff02e9248b00dfe51c6122c7f";
     readonly resources: readonly [{
         readonly path: "assets/starter-main.tex";
         readonly digest: "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974";
@@ -213,6 +213,9 @@ export declare const SKILL_MANIFEST: readonly [{
     }, {
         readonly path: "references/build-and-review.md";
         readonly digest: "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192";
+    }, {
+        readonly path: "references/scientific-review.md";
+        readonly digest: "6bb7ed4d485c581d9a1eab01b925e5ae5d3d4066d6a678551e0592a1b221092f";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

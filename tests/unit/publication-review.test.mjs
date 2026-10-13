@@ -7,12 +7,28 @@ import {actor,result as taskResult} from '../support/collaboration.mjs';
 import {publicationFixture,publicationPng} from '../support/publication.mjs';
 import {parserProfile} from '../../dist/packages/documents/parse-service.js';
 import {digest} from '../../dist/packages/storage/store.js';
+import {readSkill} from '../../dist/packages/skills/runtime.js';
 
 function fixture(){const s=setup(),p=s.app.projects.get(USER,s.project.id);s.app.projects.settings(USER,p.id,{expectedVersion:p.version,enabled:true});const build=publicationFixture(s.app,p.id);return {...s,...build};}
 function prepare(s,extra={}){return s.app.publicationReviews.prepare(USER,s.project.id,{resultId:s.result.id,rootSessionId:s.session.id,...extra});}
 function claim(s,r){approve(s.app,r.approvalId);s.app.teams.activate(USER,r.teamId);const c=s.app.teams.claim(r.teamId);assert.ok(c);return c;}
 function submit(s,r,c,extra={}){return s.app.teams.submit(actor(c),taskResult({verdict:'accept',evidenceIds:r.requiredEvidenceIds,...extra}));}
 function change(s,kind,id,patch){const row=s.app.store.get(kind,id);s.app.store.update(kind,id,row.version,patch);}
+
+test('fixed publication review dispatches scientific guidance with the actual readonly manuscript context',()=>{
+ const s=fixture();try{
+  const r=prepare(s),c=claim(s,r),who=actor(c),resource='references/scientific-review.md';
+  assert.ok(c.context.objective.includes('research_skill_read'));assert.ok(c.context.objective.includes('pi-research-paper'));assert.ok(c.context.objective.includes(resource));
+  const guidance=readSkill(s.app,who,s.project.id,'pi-research-paper',resource);
+  assert.equal(guidance.bundleId,c.context.skillBundleId);
+  assert.equal(c.context.publicationReview.sourceDigest,s.revision.sourceDigest);
+  const data=JSON.parse(s.app.evidence.verify(s.project.id,r.requiredEvidenceIds[0]).quote);
+  assert.deepEqual(data.files,s.revision.files);
+  for(const file of data.files)assert.doesNotThrow(()=>s.app.teams.assertResource(who,'artifact',file.artifactId));
+  assert.deepEqual(c.context.inputEvidenceIds,r.requiredEvidenceIds);
+  assert.equal(c.context.developmentReview,undefined);
+ }finally{s.close();}
+});
 
 test('fixed manuscript review preparation is explicit, scoped, idempotent and requires its own approval',()=>{
  const s=fixture();try{
