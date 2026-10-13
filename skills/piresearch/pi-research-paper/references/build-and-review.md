@@ -65,6 +65,8 @@ Codex 的终端、图像和 LaTeX 工具不是 Pi Research 工具；这些示例
 
 用 `publication_review_inspect`：`{"input":{"reviewId":"actual-review-id"}}` 核对真实 `status`、`validity`、固定意见及版本；执行完成不等于通过。awaiting_approval/pending/running 是未完成，rejected/disputed/failed 保留意见和缺口；passed 仍不能替代科学证据。旧意见不自动覆盖新稿。
 
+内容复核还应确认：摘要、正文及图表用读者能理解的科学/实验名称，内部追溯编号留在既有绑定或独立来源记录；真实引用、必要代码/数据版本、单位、科学局限和负结果完整。来源记录须对应实际产物和可解析入口，不因隐藏内部编号而丢失证据绑定，不把尚未生成的材料称为已交付。提示词符合这些规则不等于模型输出已通过核对。
+
 先读当前工作区内容和摘要，修正文/图/引用后用 `manuscript_create` 创建完整新修订，增加真实 `previousRevisionId`；旧批准不覆盖新字节。再准备新待批构建，实际成功后查看新 result 对应页，旧页图不能代表新稿布局。
 
 `manuscript_list`/`manuscript_inspect`/`manuscript_source_read` 按原 revision ID 和文件路径回查源码，`publication_build_list` 按原 revisionId 回查 job，`publication_result` 及 review 入口回查结果与意见。个人模板按旧 templateId 读取；同名新上传不改旧模板与已有固定稿。无权、来源失效或摘要不符时保留合法历史并报告具体缺口，不回退到最新文件冒充原版本。

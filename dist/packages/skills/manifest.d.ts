@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b";
+export declare const BUNDLE_ID = "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -112,7 +112,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-reports/SKILL.md";
-    readonly digest: "409b304acf143a33b0e6139abdb3d0079b8b2a553dadaf300af85ccf934c18e7";
+    readonly digest: "2b6dc0328698eb2786b3442d1d6e20e92c0c7ed04065b22e73dfe7d957bd64f9";
     readonly resources: readonly [{
         readonly path: "references/fixed-report.md";
         readonly digest: "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc";
@@ -203,7 +203,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿用模板和配套资产，固定稿件，构建、检查并交付源码与实际结果。普通研究报告使用reports。";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
-    readonly digest: "012b7aecfd73e0400b99e088b0153018077d0142b0886642068a745409fa4a23";
+    readonly digest: "7854b3113fe080f5e422d601428c968dddc6efcf4f8344ea8a565118e4e51759";
     readonly resources: readonly [{
         readonly path: "assets/starter-main.tex";
         readonly digest: "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974";
@@ -212,7 +212,7 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly digest: "c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9";
     }, {
         readonly path: "references/build-and-review.md";
-        readonly digest: "0f86a87c8a61b8aaba8413146c991098062c04ec9e52d99fbd4b8c0e53dbc636";
+        readonly digest: "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

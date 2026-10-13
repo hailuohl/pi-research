@@ -25,6 +25,10 @@ writer 没有 `publication_templates`、`publication_template_inspect/read`，�
 
 正文围绕问题、方法、结果、解释和限制组织，规模随任务调整。测量值用 `run_inspect`/`run_logs`/`evidence_read` 核对；原论文报告值与本项目实测分列并标来源，没测量写 `Not measured`。引用先按 `pi-research-lit-review` 实际阅读，核对作者、年份、标题和版本；元数据不能支持未读方法。
 
+摘要、章节正文、图表标题和图注面向读者，使用有含义的科学或实验名称，如“二次曲线拟合基线”，不默认插入内部 Run/Task/合同/审批/快照编号、散列或工具调试经过。方法中写清可复现的数据、参数和评价协议，流程故障只有影响结果解释时才写其科学后果；不能因去掉内部编号而隐藏真实负结果、科学局限或未验证条件。
+
+保留真实文献引用、DOI、数据登录号和必要且可解析的代码/数据版本。正常变量、单位和专业缩写不是内部编号，缩写首次解释。追溯 ID 保留在已有 `evidenceIds`、文件/产物绑定与构建/审查记录；确需人工核对时另列独立来源记录，逐项对应正文中的实验名称，不默认追加到论文摘要或正文。只有实际存在且能交付的文件/链接才可称补充材料或代码/数据入口；当前工具无法关联或导出时如实说明，不编造可用链接。
+
 只加载所用包：theorem/lemma/proof 需 amsthm，前两者还需 `newtheorem`；align/eqref/text 需 amsmath，lstlisting 需 listings，toprule 需 booktabs，includegraphics 需 graphicx，url/href 需 hyperref。公式、浮动图表加 label，并以 `\eqref`、`Table~\ref` 等引用，避免“下表”随浮动失效。
 
 引擎由 `manuscript_create.engine` 固定。通常使用 pdfLaTeX；fontspec/unicode-math/系统 OpenType 字体需要 XeLaTeX 或 LuaLaTeX，中文还需匹配包和字体。`% !TeX program` 注释不能替代引擎字段，也不能证明环境已有字体。

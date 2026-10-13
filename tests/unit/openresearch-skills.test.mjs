@@ -3,8 +3,27 @@ import {mkdtempSync,rmSync,cpSync,writeFileSync,symlinkSync,readFileSync} from '
 import {SkillService} from '../../dist/packages/skills/service.js';
 import {buildSessionOptions,buildCustomTools} from '../../dist/packages/pi-adapter/options.js';
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
+import {readSkill} from '../../dist/packages/skills/runtime.js';
+import {setup} from '../support/research.mjs';
 const root=resolve('.');
 const skillBodies=(service,id)=>[undefined,...service.list('coordinator').find(entry=>entry.id===id).resources].map(resource=>service.read('coordinator',id,resource).content);
+
+test('writing release is read through session binding while prior writer history keeps its exact bytes',()=>{
+ const s=setup(),previous='7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b',pid=s.project.id;
+ try{
+  const old=s.app.sessions.create({type:'system'},pid,{title:'Previous writer'},{role:'writer'});
+  const frozen=s.app.store.update('session',old.id,old.version,{skillBundleId:previous,piSessionPath:'preserved-writer.jsonl',generation:1});
+  const current=s.app.sessions.create({type:'system'},pid,{title:'Current writer'},{role:'writer'}),actor=session=>({type:'agent',role:'writer',projectId:pid,sessionId:session.id});
+  for(const [id,resource] of [['pi-research-paper',undefined],['pi-research-paper','references/build-and-review.md'],['pi-research-reports',undefined]]){
+   const historical=readSkill(s.app,actor(old),pid,id,resource),next=readSkill(s.app,actor(current),pid,id,resource);
+   assert.equal(historical.bundleId,previous);assert.equal(next.bundleId,s.app.skills.bundleId);assert.notEqual(next.digest,historical.digest);
+   assert.equal(next.content,readFileSync(join(root,'skills/piresearch',id,resource??'SKILL.md'),'utf8'));
+   assert.equal(historical.content,readFileSync(join(root,'skills/releases',previous,'blobs',historical.digest),'utf8'));
+  }
+  assert.deepEqual(s.app.store.get('session',old.id,pid),frozen);
+  assert.throws(()=>readSkill(s.app,actor(current),pid,'pi-research-paper','../../.env'),{code:'SKILL_RESOURCE_NOT_FOUND'});
+ }finally{s.close();}
+});
 test('all twelve current upstream skill modules plus overview have provenance and usable bodies',()=>{const s=new SkillService(root);assert.equal(s.list('coordinator').length,13);assert.ok(!s.list('coordinator').some(e=>e.id==='pi-research-instances'));assert.throws(()=>s.read('coordinator','pi-research-instances'),{code:'SKILL_NOT_FOUND'});for(const entry of s.list('coordinator')){const body=s.read('coordinator',entry.id);assert.ok(body.content.length>600);assert.equal(body.digest,entry.digest);assert.match(body.content,/name: pi-research-/);assert.match(body.content,/3037f727/);assert.ok(body.source.blob);assert.doesNotMatch(body.content,/```(?:bash|sh)\s*\norx /);}});
 test('skill descriptions are visible; bodies are lazily read with role boundary',()=>{const s=new SkillService(root);assert.ok(s.list('literature').some(x=>x.id==='pi-research-lit-review'));assert.throws(()=>s.read('reviewer','pi-research-agent-delegation'),{code:'SKILL_SCOPE_DENIED'});assert.throws(()=>s.read('coordinator','../../.env'));assert.throws(()=>s.read('coordinator','pi-research-compute','../../LICENSE'));assert.match(s.read('coordinator','pi-research-compute','references/ssh.md').content,/受信 Linux Docker 监管器/);});
 test('compute routes local, Docker and SSH separately while historical removed references keep their fixed bytes',()=>{const s=new SkillService(root),id='pi-research-compute',previous='344a44dcf73a8bcb2b2cdf5acf637f756c1763ef05c5ba464bc8285fa45a188b',old=JSON.parse(readFileSync(join(root,'skills/releases',previous,'manifest.json'),'utf8')).skills.find(e=>e.id===id);assert.deepEqual(s.list('coordinator').find(e=>e.id===id).resources,['references/local.md','references/docker.md','references/ssh.md']);assert.doesNotMatch(s.read('coordinator',id).content,/slurm|k8s|ray|modal|tinker|managed-compute|\bhf\b/i);const local=s.read('coordinator',id,'references/local.md').content,docker=s.read('coordinator',id,'references/docker.md').content;for(const expected of [/localRuntimeId/,/NVIDIA/,/不回退其他GPU或CPU/])assert.match(local,expected);for(const expected of [/Linux Docker/,/不能扩大为all/,/NVIDIA_VISIBLE_DEVICES=void/])assert.match(docker,expected);assert.doesNotMatch(local,/## Docker正式契约与环境准备/);for(const entry of old.resources){const historical=s.read('coordinator',id,entry.path,previous);assert.equal(historical.digest,entry.digest);assert.equal(historical.bundleId,previous);if(!['references/local.md','references/docker.md','references/ssh.md'].includes(entry.path))assert.throws(()=>s.read('coordinator',id,entry.path),{code:'SKILL_RESOURCE_NOT_FOUND'});}});
