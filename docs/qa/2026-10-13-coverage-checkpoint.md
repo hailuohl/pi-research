@@ -9,6 +9,7 @@
 | [工作区](2026-10-12-chrome-audit.md)、[目录刷新](2026-10-12-directory-refresh.md)、[原生弹框](2026-10-12-native-workspace-dialogs.md) | 编辑保存、草稿、目录刷新、新建与放弃确认 | 所有系统路径与全部竞态 |
 | [会话](2026-10-12-session-management.md)、[队列](2026-10-12-message-queue.md)、[输入提示](2026-10-12-composer-copy.md) | 改名、分支、队列编辑/引导/停止/重试、历史 | 外部模型质量和全部多客户端交错 |
 | [PNG](2026-10-12-native-png.md)、[PDF](2026-10-12-native-pdf.md)、[JPEG/WebP/GIF](2026-10-12-image-formats.md)、[MP4](2026-10-12-native-video.md) | 真Pi固定字节传输、数量/大小边界、历史和实存下载 | 解析/OCR/视觉理解、动态图和所有损坏检测 |
+| [TXT与Markdown](2026-10-13-text-attachments.md) | 当前Chrome chooser上传、移除草稿引用、真实Pi按准确消息读取、Unicode/换行、重开及两份原件下载；旧311记录/28文件保持 | 仅无BOM小样本；不新增PDF固定解析带入、解析/OCR或全部Unicode分页矩阵 |
 | [模型密钥提示](2026-10-12-legacy-provider-key.md)、[模型删除](2026-10-12-native-model-delete.md)、[环境变量](2026-10-12-environment-ui.md) | 专用QA连接、删除和变量的已记录增改/边界/重开 | 真实供应商认证或未测删除提供商 |
 | [项目创建](2026-10-12-project-create-feedback.md)、[读取](2026-10-13-project-loading.md)、[导入](2026-10-13-project-import.md) | 创建失败留稿、读取恢复、CLI源码副本导入及原目录保护 | 产品内GitHub建仓、网页导入入口（未实现） |
 | [生命周期](2026-10-13-project-lifecycle.md)、[备份恢复](2026-10-13-data-backup.md) | 已授权四步、完整保留、异址恢复/keyless与Windows重叠拒绝 | 永久清理、所有旧授权/并发、POSIX与未观测外联 |
@@ -29,4 +30,4 @@
 
 集中待办包括：历史加载短暂欢迎语、启动侧栏占位、部分英文状态/本地标题、项目状态读取与同步错误共用字段、GitHub创建窗口账号刷新绑定、旧E2E入口及其他未走通的原账本分支。这些非阻断项不插入下一条科研流程。完整功能目标保持未完成。
 
-已对原73条流程逐项归并29份文档及仍适用的旧验收（本机 `effective-coverage-20261013.json`，代码基线38468a3）；不再按旧D状态重复排队。该基线为52条有限范围已覆盖、13条部分覆盖、1条待完成、2条环境未验、4条明确暂停、1条退休合同。结论分支和独立owned-run分支分别作为增量合并到 `merged-evidence-20261013.json`，验收后共31份交付文档、54条有限范围已覆盖、12条部分覆盖、0条该类待完成，其余状态不变。它不是Chrome穷尽通过率；部分覆盖、环境未验、明确暂停仍未消失。owned-run用真实生产Pi独立链补齐，未用已通过task-continuation替代。
+已对原73条流程逐项归并29份文档及仍适用的旧验收（本机 `effective-coverage-20261013.json`，代码基线38468a3）；不再按旧D状态重复排队。该基线为52条有限范围已覆盖、13条部分覆盖、1条待完成、2条环境未验、4条明确暂停、1条退休合同。后续结论、独立owned-run、TXT/MD分别作为增量合并到 `merged-evidence-20261013.json`：共32份交付文档、55条有限范围已覆盖、11条部分覆盖、0条该类待完成，其余状态不变。文本批次关闭native-media-attachment的TXT/MD缺口，但sessions/attachments仍为partial，只移除其TXT/MD待办；固定解析带入没有被本次文本读取替代。分类不是Chrome穷尽通过率，环境未验与明确暂停仍保留。owned-run用真实生产Pi独立链补齐，未用已通过task-continuation替代。

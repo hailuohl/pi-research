@@ -1,0 +1,406 @@
+{
+  "flow": "TEXT-ATTACH-UI-01",
+  "date": "2026-10-13",
+  "baseline": "4ed0ff0960fcecff0d982a76b6bc701ae58afd80",
+  "status": "accepted-for-batch-scope",
+  "productChanges": [],
+  "acceptance": {
+    "pass": true,
+    "baseline": "4ed0ff0960fcecff0d982a76b6bc701ae58afd80",
+    "checks": [
+      {
+        "id": "upload_and_remove_reference",
+        "status": "pass"
+      },
+      {
+        "id": "exact_message_and_real_pi_reads",
+        "status": "pass"
+      },
+      {
+        "id": "reopen_and_actual_downloads",
+        "status": "pass"
+      },
+      {
+        "id": "old_records_files_and_defaults",
+        "status": "pass"
+      },
+      {
+        "id": "no_execution_or_new_permissions_and_cleanup",
+        "status": "pass"
+      }
+    ],
+    "projectId": "2a8b2262-edd5-4c7f-b561-7f976737d963",
+    "sessionId": "4baaa852-7007-4f9b-b4e4-4427fa5f7cce",
+    "messageId": "71e028e4-28f7-4674-964a-b96063615a83",
+    "attachments": [
+      {
+        "documentVersionId": "979af38c-316e-42e3-9088-bf46c1d4959f",
+        "artifactId": "5890426c-f863-448b-8162-d45bda111a14",
+        "digest": "a5c8e1e195afb828525a8dba09c31aafa9b65c0cc62e9d2922c5aaa5997869b4",
+        "title": "公开数值说明.txt",
+        "mediaType": "text/plain",
+        "size": 182
+      },
+      {
+        "documentVersionId": "72afa5f5-7179-4bdd-b71a-8dfd7cf33a39",
+        "artifactId": "e5ab67b6-e1c6-4654-a556-f0e886475d02",
+        "digest": "9b731f3ebf283e545e1c0a2cf6674ba626fb60035bc04bf6bd58f14058f521ac",
+        "title": "公开验收笔记.md",
+        "mediaType": "text/markdown",
+        "size": 192
+      }
+    ],
+    "requests": 3,
+    "fixtureErrors": 0,
+    "originalRecords": 311,
+    "finalRecords": 330,
+    "fixedFiles": 28,
+    "native": {
+      "reference": "pi-data:/sessions/4baaa852-7007-4f9b-b4e4-4427fa5f7cce/pi/2026-10-13T00-12-17-282Z_01a1329a-5402-7099-a002-c30580e6724a.jsonl",
+      "bytes": 131885,
+      "sha256": "564cce35eec97055d74ccb756c0943e66c4559a31b53d06cd13993706b8483a1",
+      "unchangedAfterReopen": true
+    },
+    "downloads": {
+      "pass": true,
+      "files": [
+        {
+          "path": "C:/Users/hailuohpc/Downloads/公开数值说明.txt",
+          "size": 182,
+          "sha256": "a5c8e1e195afb828525a8dba09c31aafa9b65c0cc62e9d2922c5aaa5997869b4",
+          "modifiedAt": "2026-10-13T00:13:22.737Z",
+          "actualDownload": true
+        },
+        {
+          "path": "C:/Users/hailuohpc/Downloads/公开验收笔记.md",
+          "size": 192,
+          "sha256": "9b731f3ebf283e545e1c0a2cf6674ba626fb60035bc04bf6bd58f14058f521ac",
+          "modifiedAt": "2026-10-13T00:13:56.612Z",
+          "actualDownload": true
+        }
+      ],
+      "eventTimeouts": 2,
+      "redownloads": 0
+    },
+    "codeSnapshot": [
+      {
+        "path": "apps/web/src/composer-controls.tsx",
+        "sha256": "2222756fd47b67b7b515fd50c1717cb2961dc2a21366557c4086b8136f27e9e4",
+        "runtimeSha256": "2222756fd47b67b7b515fd50c1717cb2961dc2a21366557c4086b8136f27e9e4",
+        "normalizedLfSha256": "2222756fd47b67b7b515fd50c1717cb2961dc2a21366557c4086b8136f27e9e4"
+      },
+      {
+        "path": "apps/web/src/workbench.tsx",
+        "sha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64",
+        "runtimeSha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64",
+        "normalizedLfSha256": "c656eff3b0e364f98da338aa6e731f6b2bf7f61700ad47df50d35705e33c8b64"
+      },
+      {
+        "path": "apps/web/src/session-history.tsx",
+        "sha256": "2a017505827d93ed3181065f881986bb8e7420e703b90c895a9af9a488155c08",
+        "runtimeSha256": "2a017505827d93ed3181065f881986bb8e7420e703b90c895a9af9a488155c08",
+        "normalizedLfSha256": "2a017505827d93ed3181065f881986bb8e7420e703b90c895a9af9a488155c08"
+      },
+      {
+        "path": "apps/web/src/api.ts",
+        "sha256": "af5c196681f2d2b994f14729ae62cce6c91e0bef9013398b4be24b1990f1964b",
+        "runtimeSha256": "af5c196681f2d2b994f14729ae62cce6c91e0bef9013398b4be24b1990f1964b",
+        "normalizedLfSha256": "af5c196681f2d2b994f14729ae62cce6c91e0bef9013398b4be24b1990f1964b"
+      },
+      {
+        "path": "apps/server/attachment-routes.ts",
+        "sha256": "8b13c288efd97bfb6edcfa990129c832fca21b20660bb07a26551f9506854faf",
+        "runtimeSha256": "8b13c288efd97bfb6edcfa990129c832fca21b20660bb07a26551f9506854faf",
+        "normalizedLfSha256": "8b13c288efd97bfb6edcfa990129c832fca21b20660bb07a26551f9506854faf"
+      },
+      {
+        "path": "packages/documents/service.ts",
+        "sha256": "09535669998c8f26884d512e68a6086d8cc94c7a5da58cdc601e9c9e918ac681",
+        "runtimeSha256": "3ef9dc1f20d116ddcaa80d5f79f915676beba095461cf2be149884026d39606f",
+        "normalizedLfSha256": "3ef9dc1f20d116ddcaa80d5f79f915676beba095461cf2be149884026d39606f"
+      },
+      {
+        "path": "packages/pi-adapter/attachments.ts",
+        "sha256": "f9fb539fbaf9ad9c361573a9d00169502fde59798b6e7adb1f6dac1bfbbeb811",
+        "runtimeSha256": "f9fb539fbaf9ad9c361573a9d00169502fde59798b6e7adb1f6dac1bfbbeb811",
+        "normalizedLfSha256": "f9fb539fbaf9ad9c361573a9d00169502fde59798b6e7adb1f6dac1bfbbeb811"
+      },
+      {
+        "path": "packages/pi-adapter/attachment-input.ts",
+        "sha256": "7080592728bcfdb72c33dee714c87717efda184ae7fa3ad03e1efabcccdf934c",
+        "runtimeSha256": "7080592728bcfdb72c33dee714c87717efda184ae7fa3ad03e1efabcccdf934c",
+        "normalizedLfSha256": "7080592728bcfdb72c33dee714c87717efda184ae7fa3ad03e1efabcccdf934c"
+      },
+      {
+        "path": "packages/pi-adapter/prompt.ts",
+        "sha256": "6bb09fc3cdb285ab0b83460e6ab3a91bc5f14daeb770efdeeea6d0cc9615d44a",
+        "runtimeSha256": "6bb09fc3cdb285ab0b83460e6ab3a91bc5f14daeb770efdeeea6d0cc9615d44a",
+        "normalizedLfSha256": "6bb09fc3cdb285ab0b83460e6ab3a91bc5f14daeb770efdeeea6d0cc9615d44a"
+      },
+      {
+        "path": "packages/pi-adapter/options.ts",
+        "sha256": "8354c423bb59568291fd788f90648aa2b6a4d1667746383d951b773c4f4cf490",
+        "runtimeSha256": "8354c423bb59568291fd788f90648aa2b6a4d1667746383d951b773c4f4cf490",
+        "normalizedLfSha256": "8354c423bb59568291fd788f90648aa2b6a4d1667746383d951b773c4f4cf490"
+      },
+      {
+        "path": "apps/agent-worker/index.ts",
+        "sha256": "df4cbbcbbd93f5312a20cfe1f400fbcb1807d3825c6921c1bcf415fe7163e1e7",
+        "runtimeSha256": "494511c2d8df81d602e2e27a94a16e0784cc892ec12ad03bb0d2f5a2802788f1",
+        "normalizedLfSha256": "494511c2d8df81d602e2e27a94a16e0784cc892ec12ad03bb0d2f5a2802788f1"
+      },
+      {
+        "path": "dist/packages/pi-adapter/attachments.js",
+        "sha256": "54727ef439182e5a95562ff3ef94443126b45ac0d3d61d7875ab0a2f8da258cc",
+        "runtimeSha256": "54727ef439182e5a95562ff3ef94443126b45ac0d3d61d7875ab0a2f8da258cc",
+        "normalizedLfSha256": "54727ef439182e5a95562ff3ef94443126b45ac0d3d61d7875ab0a2f8da258cc"
+      },
+      {
+        "path": "dist/packages/documents/service.js",
+        "sha256": "ec6223fb2df426e5763412d29ca45bceea5e925eb1672e15f607b5999493784b",
+        "runtimeSha256": "ec6223fb2df426e5763412d29ca45bceea5e925eb1672e15f607b5999493784b",
+        "normalizedLfSha256": "ec6223fb2df426e5763412d29ca45bceea5e925eb1672e15f607b5999493784b"
+      },
+      {
+        "path": "dist/apps/agent-worker/index.js",
+        "sha256": "d819e7f52d7b20c765c3aad9081cc48e852db79b9d114fe26a4ceb09478ff82f",
+        "runtimeSha256": "d819e7f52d7b20c765c3aad9081cc48e852db79b9d114fe26a4ceb09478ff82f",
+        "normalizedLfSha256": "d819e7f52d7b20c765c3aad9081cc48e852db79b9d114fe26a4ceb09478ff82f"
+      },
+      {
+        "path": "tests/unit/composer-backend.test.mjs",
+        "sha256": "d6be5b8f4a1d9198016c4052f287a8d24aac96129df24889298941e0deb54f62",
+        "runtimeSha256": "d6be5b8f4a1d9198016c4052f287a8d24aac96129df24889298941e0deb54f62",
+        "normalizedLfSha256": "d6be5b8f4a1d9198016c4052f287a8d24aac96129df24889298941e0deb54f62"
+      },
+      {
+        "path": "tests/integration/composer-controls-http.test.mjs",
+        "sha256": "beee993491d68e3d19dc3e9b5ea4747087a0c810ef03494212dc865a741b4a4d",
+        "runtimeSha256": "4e456de011607f45686960fdb4188b3721f7d66ac2641714f22748ed8ac16cfb",
+        "normalizedLfSha256": "4e456de011607f45686960fdb4188b3721f7d66ac2641714f22748ed8ac16cfb"
+      },
+      {
+        "path": "tests/unit/attachment-error-ui.test.mjs",
+        "sha256": "4ed6b668be81e897238c0c9ea9781a72b706df6e68a9c40686e7b90814546e61",
+        "runtimeSha256": "4ed6b668be81e897238c0c9ea9781a72b706df6e68a9c40686e7b90814546e61",
+        "normalizedLfSha256": "4ed6b668be81e897238c0c9ea9781a72b706df6e68a9c40686e7b90814546e61"
+      }
+    ],
+    "reuse": {
+      "phaseLog": ".validation/settings-github-ui-20261013/result/phase-full-tests.log",
+      "phaseLogSha256": "02dad224541e2f6d5f388546b3b9cf587c65633463a902eb77cf0d3319a57d2c",
+      "phaseFull": {
+        "total": 1938,
+        "passed": 1913,
+        "failed": 0,
+        "skipped": 25
+      },
+      "cleanBuildIdenticalFiles": 661,
+      "freshFull": false,
+      "freshBuild": false,
+      "relatedContractUnchangedSince": "63c063bf5aa0a51461e96b329df1bcb43ca56f59"
+    },
+    "limitations": [
+      "No BOM sample; existing TextDecoder strips BOM from text but preserves original bytes",
+      "No new Unicode pagination/authorization-race/other-media matrix",
+      "Local fixed replies validate software transfer, not scientific understanding",
+      "Download event tool timed out twice; real new files were checked without redownload"
+    ]
+  },
+  "setupBoundary": "owner API created dedicated session/model only; Chrome uploaded, removed reference, sent, reopened and downloaded",
+  "independentReview": {
+    "status": "ship-with-stated-scope",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtime": "not echoed",
+    "report": {
+      "path": ".validation/text-attachment-ui-20261013/review.md",
+      "sha256": "9ae6abc186957bf5ed4a28b79b068bd5be603ab0cd9e5758fd423b435d8d2816"
+    },
+    "review": {
+      "path": ".validation/text-attachment-ui-20261013/review.json",
+      "sha256": "65be879ba74a3919027f1618fc4cb395f373c051b16cfa20b18b518445cff4c3"
+    },
+    "snapshot": {
+      "path": ".validation/text-attachment-ui-20261013/review-snapshot.json",
+      "sha256": "0521d9baaea0965db2fce0dee12cad7efe9df376d7858c8de1993b161ead6ac3"
+    },
+    "blockers": [],
+    "nonblocking": [],
+    "validationGaps": [
+      {
+        "id": "fixture-negative-matrix",
+        "blockingForThisBatch": false,
+        "location": "provider.mjs:11-25",
+        "detail": "Only tail-format negative self-check is directly exercised; no new injected wrong-message/artifact/tool-call/truncated-response matrix. Actual native and provider results are independently checked field by field and match."
+      },
+      {
+        "id": "bounded-sample-and-provider",
+        "blockingForThisBatch": false,
+        "detail": "No-BOM small public TXT/MD and localhost fixed replies; no new BOM, pagination/race, other-adapter or scientific-understanding validation."
+      },
+      {
+        "id": "saved-evidence-only",
+        "blockingForThisBatch": false,
+        "detail": "Reviewer uses saved actual-download and process-stop observations; does not repeat download, re-read old fixed files or access live services."
+      },
+      {
+        "id": "fixed-parse-carry-in",
+        "blockingForThisBatch": false,
+        "blockingForClosingFullAttachmentsRequirement": true,
+        "detail": "No current fixed documentVersionId/parseResultId attachment binding was exercised; fixed text/page-image lookup is not that flow."
+      }
+    ],
+    "administrativeFinalization": "Only review status, hashes and coverage decision finalized; frozen core facts unchanged."
+  },
+  "preflight": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtime": "not echoed"
+  },
+  "cleanup": {
+    "providerPid": 230088,
+    "providerExecSession": 4147,
+    "method": "Stop-Process after stdin was closed; zero active workers and all 3 requests already persisted",
+    "providerProcessCount": 0,
+    "listenerCount": 0,
+    "appPid": 34248
+  },
+  "anchors": [
+    {
+      "path": ".validation/text-attachment-ui-20261013/plan.md",
+      "sha256": "9ba4bc58fce9db34da03ad69b8db39f1613c4bdcf2654afac4afb2752d0d45ff"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/preflight.md",
+      "sha256": "20e12bc5e4cc495f9c8d39bcd2b412a6cc78a0bfb1911fd4bf7d9b501deeba7f"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/prepare-inputs.mjs",
+      "sha256": "00ebb948ad7a677c9a5bcff937365fe06ce08603721c8bd18c741250b016c824"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/setup.mjs",
+      "sha256": "ba00cfc0d673e070313991c6aad1bcf78a08654977ede30be6510b767d4cc0d4"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/provider.mjs",
+      "sha256": "6ba1e4bb76052748df7c9057c81d021ba1ef208fa0508e6ac42be658904fc2cf"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/capture.mjs",
+      "sha256": "43176b29c7e3a92659e185d90a8785b56617f0939a0a9447865fe9510dc46e23"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/verify.mjs",
+      "sha256": "9d7b511bc6fcf155966e4426e2635f839dd7a97995947222a81a98446afdb96a"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/inputs.json",
+      "sha256": "fbf50ebc87ea89f19323a7b294282fe98df41b833e365d6a06dfd3ecd37bda71"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/setup-before.json",
+      "sha256": "3fe1c3cc83037a84dee317498bea1cb00ed7de663c6d5964895d9fae040ec916"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/setup.json",
+      "sha256": "4d7c5f487091038be8248cc85460c2e57ef58dd9f1d2fd42a4aa2b167ec22588"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/catalog-before.json",
+      "sha256": "d9792579d91995e4b87385797d1ac7e528103f4e368be74e356e698acf5ef517"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/catalog-ready.json",
+      "sha256": "598bb3b20a685fe07ca42f6381ea05267d6407b9654bec9fce8810a18e292d08"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/catalog-cleanup.json",
+      "sha256": "ad1b0bbb1f4cbc62402cd40ee80e92efc537117cb9c48359ddc1c85380e03536"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/uploaded.json",
+      "sha256": "e761435e14341c9064e3de687b97dbfd225d75aa03897ff5801c37e70935dadf"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/removed-before-send.json",
+      "sha256": "97c20de328d2e168eb71dedf6a7783ac0bc94f23895e82f43c98c6cd6a93f6a6"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/after-send.json",
+      "sha256": "1be107458bdb43a31f7dab75957c70526a9b4cad335b0e5bacf9bd4b8f2ec49a"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/reopened-downloaded.json",
+      "sha256": "c8df3a73c8b70d8983d57ec07f273e3aed400980fe6ea0d4d358249854ca4633"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/cleanup-final.json",
+      "sha256": "d159d1b68bd33b26bd329f19ba6d063e10cef8ccb5721c1bd16d5c86ebbc9a9a"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/provider-requests.json",
+      "sha256": "8cd2f86bec84c32acdf9b5a3ea67a7f139b94a776389921d7994d5750101f1f5"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/provider-state.json",
+      "sha256": "9876463d357f58cd3d6f80e237df638caeff3a366d63ccb8caf093510f066ed4"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/provider-stopped.json",
+      "sha256": "d7f789893eb02eaa8f1f932e18bf23879a6d0166f5fab15771c66c3cf97af1a3"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/downloads-before.json",
+      "sha256": "36388d1a9f13e50f90a7396f39ee46c22c3b839c53656fdcbcaff1c96013c7fb"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/downloads.json",
+      "sha256": "e59c4349b2b487bceded37a834d1d6ddebce10732d5509b629cee1a9f81e3e75"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/verification.json",
+      "sha256": "26417571fc1289cb9643e22b6ff59c00dabaf2a0289c2c319a29e96f08e22e6e"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/uploaded-ready-dom.txt",
+      "sha256": "33438e524d92322bff4843fa4bbdd204892571ef167f3fa2f362e2345b2ead6c"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/removed-before-send-dom.txt",
+      "sha256": "9eb79dad35c445c31d473663150bebff0081d89847e071dd9735ada04b218937"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/read-complete-dom.txt",
+      "sha256": "b2a3a3079391bc62b3172d1719f701f3de0967f9c6e0ab8eb1117d483bad1c83"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/reopened-ready-dom.txt",
+      "sha256": "396e42f13605b1ff06b0a5af2f92d19395d33e5877cb16eb1919ae5cea71273f"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/downloaded-dom.txt",
+      "sha256": "cde8ba1f4f6c6844df23333e222077532fdc216303063936cf06b33289e46e35"
+    },
+    {
+      "path": ".validation/text-attachment-ui-20261013/result/final-dom.txt",
+      "sha256": "6c08455b6e1f2794182f222f08bbaabcdc7a5e56555978396a0a3fc4ccf04b9b"
+    }
+  ],
+  "coverageMerge": {
+    "originalFlows": 73,
+    "sessions/attachments": {
+      "status": "partial",
+      "closeOnly": "current Chrome TXT/MD upload, exact read, remove-reference, reopen and download",
+      "retain": "fixed PDF parse attachment carry-in"
+    },
+    "sessions/native-media-attachment": {
+      "status": "covered-with-stated-limits",
+      "closeOnly": "TXT/MD gap",
+      "retainLimits": "Existing six-media/adapter/software-transfer limits; TXT/MD are controlled text reads, not native media blocks"
+    },
+    "otherFlowStates": "unchanged",
+    "finalLedgerMutationReviewed": false
+  }
+}
