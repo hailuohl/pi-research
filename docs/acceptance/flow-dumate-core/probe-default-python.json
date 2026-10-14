@@ -1,0 +1,17 @@
+{
+  "kind": "software-capability-test",
+  "modules": {
+    "numpy": false,
+    "matplotlib": false,
+    "pypdf": false,
+    "pypdfium2": false,
+    "PIL": false,
+    "docx": false,
+    "reportlab": false,
+    "fitz": false,
+    "scipy": false
+  },
+  "pdf_generated": false,
+  "image_generated": false,
+  "image_viewed": false
+}

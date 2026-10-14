@@ -1,0 +1,31 @@
+{
+  "package_version": "1.0.1; manually enabled, installed files matched frozen ZIP, actual native continuation completed",
+  "last_native_execution_package_version": "1.0.1",
+  "candidate_package_version": "1.0.1 frozen release; 11 runtime files, SHA497a07e891ff43ea57286c19ee6291d725d608e64ff385a7a445a5be4461b9ba",
+  "helper_sha256": "d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67",
+  "actual_installation": "User manually acknowledged the file/network warnings for 1.0.1. Main observed blue enabled switch; all 11 installed runtime files matched the frozen ZIP. Agent did not acknowledge security permissions.",
+  "client_version": "1.0.59",
+  "scanner": {
+    "level": "medium",
+    "warnings": [
+      "file operations: may access/modify local files",
+      "network access: may make network requests or transmit data"
+    ],
+    "override_clicked_by_agent": false
+  },
+  "native_probe": "Functional JSON, PNG and PDF produced under prepared task-specific interpreter; native model attempted image read but cannot accept image input",
+  "final_skill_native_full_workflow": "T1 native five-capability workflow produced V2. Updated 1.0.1 continuation loaded new instructions, tested missing CSV/restoration, reported A1 reused:true, ran verify O3 and exported publication P1. Actual command-card names and final files observed; raw command parameters/returns not independently exposed by the checked UI.",
+  "native_task": "ses_ec8467161ffewnRwu6AokVNtpe",
+  "native_v2_content": "Selected-source claims, 12 numerical mappings and MD/DOCX/PDF text equivalence passed read-only independent engineering audit; not scientific peer review",
+  "native_v2_visual": "Main opened PNG and both PDF pages; labels/means/units checked. Native DOCX preview showed three pages; not an independent DOCX render certification. Uneven Latin spacing remains.",
+  "export_integrity": "O3 canonical five files pass. P1 all twelve downloaded bytes matched. P2 actually exported twelve files; DOCX/PDF/PNG platform metadata/repackaging changed bytes, targeted content equivalence and 124-file history audit passed. Two P2 Cloud files previously checked; ten not checked, further sharing tests waived by user.",
+  "native_multiagent": "Actual task/General cards observed for two no-file microtasks and one continuation each; native reports same IDs and completed states but prompt echoes, no valid 42 or sorted answer. Dispatch entry exists; useful child execution not verified. Stopped retries, no independent scientific checks or Skill conversion claimed; see native-multiagent-probe.json.",
+  "required_missing_input_and_reopen": "Actual native run reported exit1/WinError2, restored CSV hash and A1 reused:true; disk CSV/A1/history verified unchanged, no fake missing-input result. Raw native command-return evidence remains a separate gap.",
+  "share_link": "https://www.dumate.cn/s/d9oLSggG",
+  "anonymous_access": "skipped_by_user",
+  "overall_status": "selected five-capability flow, P2 native export and actual desktop share delivered; broader validation gaps recorded, not blanket P0-P7 pass",
+  "goal_status": "active",
+  "blocking_audit": "Desktop input recovered; latest installation/demo export and link creation performed in native UI. Browser login cancelled under desktop-only user steering.",
+  "enabled_state": "1.0.1 manually enabled and actually invoked",
+  "local_publication": "P2 provenance repair by Codex integration, then actual native verification/export observed. Pre-export manifest retained; separate C1 records platform changes and partial Cloud checks."
+}

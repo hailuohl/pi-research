@@ -1,0 +1,38 @@
+{
+  "kind": "P0-P7 completion mapping summary; full read-only mapping retained outside Git",
+  "baseline_commit": "77a979978d142b9f66f83e8d62469bac671d3f7a",
+  "requested_model": "gpt-6.1-sol",
+  "requested_reasoning_effort": "high",
+  "runtime": "requested; not echoed",
+  "original_record": "outer tmp/dumate-native-audit/completion-requirements-audit.json",
+  "sha256": "548aa5a7302920b17d08959246c74a4419a475c1f0a1bc506fa49696739dc22b",
+  "criteria": 40,
+  "statuses": {
+    "demonstrated": 8,
+    "demonstrated_plus_reusable_check": 5,
+    "demonstrated_boundary_plus_reusable_check": 1,
+    "partial": 10,
+    "reusable_check_with_uncovered_variants": 2,
+    "reusable_check_plus_history": 3,
+    "demonstrated_selected_scope": 3,
+    "documented_boundary_with_unrun_variants": 1,
+    "reusable_boundary_with_unrun_variants": 2,
+    "demonstrated_with_inspector_limit": 1,
+    "demonstrated_canonical": 1,
+    "demonstrated_with_review_limit": 1,
+    "not_run": 2
+  },
+  "overall": "Selected five-capability core flow, P2 native export and actual share delivered; sharing tests explicitly skipped by user; other unrun variants and validation gaps remain accurately recorded.",
+  "remaining_actions": [
+    "Raw native missing-input/reuse command parameters and returns not independently captured",
+    "Separate fresh native 1.0.1 installation/post-disable readability not explicitly tested; actual update and eleven installed hashes verified"
+  ],
+  "boundaries": "Unrun failure variants remain explicitly unrun. Existing applicable software and Astra checks are reusable; no global regression, new science, source changes, sandbox or scientific-peer-review claim.",
+  "record_scope": "Historical 40-criterion mapping counts retained; later actual changes and user scope decision below supersede old remaining-actions list.",
+  "later_completed": [
+    "Actual native twelve-file P2 export",
+    "Four-file installation/demo native export",
+    "User-approved actual desktop URL creation for two replies and sixteen files"
+  ],
+  "user_scope_decision": "Generate the link, do not test sharing; anonymous/other-account viewing, download/install/reuse tests skipped, not passed."
+}

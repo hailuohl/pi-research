@@ -1,0 +1,17 @@
+{
+  "zip_sha256": "9d5b30e8e1e601dadeebca029c0587480adfae23829bc7b4c87c201982c41177",
+  "all_11_runtime_files_digest_match": true,
+  "no_research_inputs_or_test_fixtures": true,
+  "outside_repository_extract_and_preflight": {
+    "exit_code": 0,
+    "capabilities": {
+      "csv": true,
+      "text": true,
+      "pdf_read": true,
+      "figures": true,
+      "docx": true,
+      "pdf_export": true
+    }
+  },
+  "native_duMate_workflow": "not_run: pending manual enabling"
+}

@@ -1,0 +1,25 @@
+{
+  "verdict": "R1_R2_resolved_no_new_blocker_in_targeted_scope",
+  "requested_model": "gpt-6-astra",
+  "requested_reasoning_effort": "xhigh",
+  "runtime_verification": "Requested configuration retained; runtime model/effort not echoed, therefore not independently verified.",
+  "baseline_commit": "77a979978d142b9f66f83e8d62469bac671d3f7a",
+  "research_sha256_before_and_after": "d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67",
+  "all_12_package_hashes_match_fixed_snapshot_before_and_after": true,
+  "blocking_findings": [],
+  "checks": {
+    "unmodified_package_tests": "14 tests run: 12 pass, 2 skipped for native symlink permission. Neither skip counted as pass; independent real Windows junction checks succeeded and are recorded separately.",
+    "targeted_independent_groups": "All six result groups in targeted-results.json pass, plus evidence-only-results.json pass.",
+    "affected_forward_flow": "Using unchanged independent public inputs and previously reviewed draft, ran register S1/D1, extract, evidence E1/E2, claim, analyze, figure, manuscript, verify and status under the fixed package. No new research conclusion or duplicate search was needed.",
+    "artifact_comparison": "New manuscript.md SHA equals prior independently checked manuscript; citation-map JSON equal; chart PNG bytes equal; PDF extracted text equal; DOCX paragraphs equal; computed group results equal. Verified current task receipts all match before intentional fault fixtures.",
+    "reopening": "Repeated completed analysis and manuscript returned reused=true and preserved all manuscript file hashes; subsequent injected pending state rejected reuse.",
+    "honest_delivery": "Fresh verification remained partial because no new scientific or visual pass record was supplied. It did not silently inherit the prior review.",
+    "freeze": "hash-before.json and hash-after.json match all 12 files from fixed-snapshot.json; source and existing assertions were not changed."
+  },
+  "verification_gaps_retained": [
+    "This targeted re-review does not certify actual DuMate installation, model image-input capability or platform sandbox; those remain the parent's platform evidence.",
+    "No new PDF/DOCX page rendering pass was claimed. Prior PDF visual evidence applies to prior artifacts; the affected forward check established equal content and chart bytes. Original DOCX page-rendering gap remains.",
+    "Complex TeX, templates and fonts were not retested or added to scope."
+  ],
+  "original_evidence_directory": "../../../../tmp/dumate-independent-review/revision/"
+}

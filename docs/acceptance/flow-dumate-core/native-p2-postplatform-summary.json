@@ -1,0 +1,223 @@
+{
+  "publication": "P2",
+  "stage": "post_platform_local_content_verified_cloud_partial",
+  "created_by": "Codex integration after actual DuMate P2 export; not written by the DuMate model",
+  "pre_export_manifest_sha256": "41a12c2ee5d4d16c9756eb4087a4ec98a2af167b418ff51b290de2fa8fbc61a5",
+  "files": [
+    {
+      "filename": "manuscript.md",
+      "pre_export_bytes": 3388,
+      "pre_export_sha256": "d089ea0ba10641520f996f4946e4c64b4f081b460b22146e77b70f2165535609",
+      "post_platform_local_bytes": 3388,
+      "post_platform_local_sha256": "d089ea0ba10641520f996f4946e4c64b4f081b460b22146e77b70f2165535609",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "canonical_origin": {
+        "path": "tasks/T1/manuscript/V2/manuscript.md",
+        "sha256": "d089ea0ba10641520f996f4946e4c64b4f081b460b22146e77b70f2165535609"
+      }
+    },
+    {
+      "filename": "manuscript.docx",
+      "pre_export_bytes": 90386,
+      "pre_export_sha256": "345590722ab783ca4c3c2cb532f7619d3440f4fa87760b581fac59eb1db68dcd",
+      "post_platform_local_bytes": 922089,
+      "post_platform_local_sha256": "4e1bbf8e603c2a2e1a61caf03b8f8c9912b72183a4a1be6d3f12d4361f43ca70",
+      "byte_equal_to_pre_export": false,
+      "cloud_download_checked": false,
+      "canonical_origin": {
+        "path": "tasks/T1/delivery/O3/manuscript.docx",
+        "sha256": "345590722ab783ca4c3c2cb532f7619d3440f4fa87760b581fac59eb1db68dcd"
+      }
+    },
+    {
+      "filename": "manuscript.pdf",
+      "pre_export_bytes": 125207,
+      "pre_export_sha256": "617080e3aef39cef265d10a96cc3755c96e209fa06b9493d0b25d201fd4a9354",
+      "post_platform_local_bytes": 124286,
+      "post_platform_local_sha256": "90c72b5254c96d0541dedec4d90d6ad02ef6c777c71312bbc316545161b87f7a",
+      "byte_equal_to_pre_export": false,
+      "cloud_download_checked": true,
+      "canonical_origin": {
+        "path": "tasks/T1/delivery/O3/manuscript.pdf",
+        "sha256": "617080e3aef39cef265d10a96cc3755c96e209fa06b9493d0b25d201fd4a9354"
+      }
+    },
+    {
+      "filename": "F1.png",
+      "pre_export_bytes": 87488,
+      "pre_export_sha256": "0fb6365c831a5515b16c6f9e185116bc247e8f73592de6628f9a0ab00ed09582",
+      "post_platform_local_bytes": 87894,
+      "post_platform_local_sha256": "fe2aec92d14a2d097715a120b3819d7a85b1018e1be4ff3e0689ba273d2c2add",
+      "byte_equal_to_pre_export": false,
+      "cloud_download_checked": false,
+      "canonical_origin": {
+        "path": "tasks/T1/delivery/O3/F1.png",
+        "sha256": "0fb6365c831a5515b16c6f9e185116bc247e8f73592de6628f9a0ab00ed09582"
+      }
+    },
+    {
+      "filename": "citation-map.json",
+      "pre_export_bytes": 1345,
+      "pre_export_sha256": "3d95fe830b7123531b6b5abeec59187c354195deb3064ca1b7571383ca1ff6a3",
+      "post_platform_local_bytes": 1345,
+      "post_platform_local_sha256": "3d95fe830b7123531b6b5abeec59187c354195deb3064ca1b7571383ca1ff6a3",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "canonical_origin": {
+        "path": "tasks/T1/manuscript/V2/citation-map.json",
+        "sha256": "3d95fe830b7123531b6b5abeec59187c354195deb3064ca1b7571383ca1ff6a3"
+      }
+    },
+    {
+      "filename": "evidence-summary.csv",
+      "pre_export_bytes": 1183,
+      "pre_export_sha256": "7709f3820278b1bd792488ccfb2085c91b54bfffbe8caa6ef8fda7be7b2d62a4",
+      "post_platform_local_bytes": 1183,
+      "post_platform_local_sha256": "7709f3820278b1bd792488ccfb2085c91b54bfffbe8caa6ef8fda7be7b2d62a4",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "derived_from": [
+        {
+          "path": "tasks/T1/evidence/E1/evidence.json",
+          "sha256": "ae8feb5014feed4dfa655d47caea6728050ca00be260cbdc4a5bffcb43485a03"
+        },
+        {
+          "path": "tasks/T1/evidence/E2/evidence.json",
+          "sha256": "0b0710b6ba8e35f7911495f88c22bb50041d26e06df2359ab215c5b8b3033ac0"
+        },
+        {
+          "path": "tasks/T1/evidence/E3/evidence.json",
+          "sha256": "df0672db4aabb8284db9667a0603a607e657a62bd29c0e95efbc4a947e7835c1"
+        }
+      ],
+      "transform": "summary/paraphrase"
+    },
+    {
+      "filename": "claims-summary.csv",
+      "pre_export_bytes": 1158,
+      "pre_export_sha256": "9f6882cbe3a754fe14f2add795f95d8c8abfeb691b8e06890e904b581fc0b2e1",
+      "post_platform_local_bytes": 1158,
+      "post_platform_local_sha256": "9f6882cbe3a754fe14f2add795f95d8c8abfeb691b8e06890e904b581fc0b2e1",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "derived_from": [
+        {
+          "path": "tasks/T1/claims/C1v2/claim.json",
+          "sha256": "9fb9e5de268dca606a0be6265f394bab1b9bcc48c3dfb83bd758530da89c90f2"
+        },
+        {
+          "path": "tasks/T1/claims/C2v2/claim.json",
+          "sha256": "b4680b0a54ca933ff635200d0826f66412262f16c40b41a1241d4c1f84cb245b"
+        },
+        {
+          "path": "tasks/T1/claims/C3v2/claim.json",
+          "sha256": "5fd1a2778ed60967a3cec99b4016f67ea2cbcf3f2bb5d5309d5c2c0ce8000fc0"
+        }
+      ],
+      "transform": "summary/paraphrase"
+    },
+    {
+      "filename": "analysis-result.json",
+      "pre_export_bytes": 519,
+      "pre_export_sha256": "9e2fc0233b102beb99021f654c63ff4e36b4d2a71f7a2d269523e57cefa47e35",
+      "post_platform_local_bytes": 519,
+      "post_platform_local_sha256": "9e2fc0233b102beb99021f654c63ff4e36b4d2a71f7a2d269523e57cefa47e35",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "derived_from": [
+        {
+          "path": "tasks/T1/analysis/A1/result.json",
+          "sha256": "83b9db77c78f2f21959c98d49f47f3eba752bb87f161ed93c70ce9f9a8ba81de"
+        }
+      ],
+      "transform": "summary/paraphrase"
+    },
+    {
+      "filename": "literature-selection-notes.json",
+      "pre_export_bytes": 3517,
+      "pre_export_sha256": "600de7c05e4dd260fb37423179e1a2f37bfa895528670cf4e13443a9d2aa1a2e",
+      "post_platform_local_bytes": 3517,
+      "post_platform_local_sha256": "600de7c05e4dd260fb37423179e1a2f37bfa895528670cf4e13443a9d2aa1a2e",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "canonical_origin": {
+        "path": "inputs/L1-selection-notes.json",
+        "sha256": "600de7c05e4dd260fb37423179e1a2f37bfa895528670cf4e13443a9d2aa1a2e"
+      }
+    },
+    {
+      "filename": "checks.json",
+      "pre_export_bytes": 1762,
+      "pre_export_sha256": "f54b9aae45f79ab8027b1a7ae033a53cb0aebba494cdf07e3e919e7bb9da4255",
+      "post_platform_local_bytes": 1762,
+      "post_platform_local_sha256": "f54b9aae45f79ab8027b1a7ae033a53cb0aebba494cdf07e3e919e7bb9da4255",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "canonical_origin": {
+        "path": "inputs/native-v2-checks.json",
+        "sha256": "f54b9aae45f79ab8027b1a7ae033a53cb0aebba494cdf07e3e919e7bb9da4255"
+      }
+    },
+    {
+      "filename": "verify-manifest.json",
+      "pre_export_bytes": 2272,
+      "pre_export_sha256": "20b973f263905145babd19c87949997938c2edfbe57bc85c83844e8713abc471",
+      "post_platform_local_bytes": 2272,
+      "post_platform_local_sha256": "20b973f263905145babd19c87949997938c2edfbe57bc85c83844e8713abc471",
+      "byte_equal_to_pre_export": true,
+      "cloud_download_checked": false,
+      "canonical_origin": {
+        "path": "tasks/T1/delivery/O3/manifest.json",
+        "sha256": "20b973f263905145babd19c87949997938c2edfbe57bc85c83844e8713abc471"
+      }
+    },
+    {
+      "filename": "publication-manifest.json",
+      "post_platform_local_bytes": 10378,
+      "post_platform_local_sha256": "41a12c2ee5d4d16c9756eb4087a4ec98a2af167b418ff51b290de2fa8fbc61a5",
+      "cloud_download_checked": true,
+      "purpose": "Retained local_pre_export provenance snapshot; not a post-platform binary checksum manifest."
+    }
+  ],
+  "local_content_equivalence": {
+    "pdf": "Two pages: extracted text, decoded content streams, page boxes and 144dpi RGB pixels exactly equal to O3.",
+    "docx": "All word/ ZIP members, document XML and paragraphs exactly equal to O3; AIGC custom property and packaging changed.",
+    "png": "Decoded RGBA pixels exactly equal to O3; AIGC metadata added.",
+    "other_eight_attachments": "Bytes equal to the pre-export snapshot."
+  },
+  "review": {
+    "type": "Targeted engineering/content-equivalence review, not scientific peer review",
+    "requested_model": "gpt-6-astra",
+    "requested_reasoning_effort": "xhigh",
+    "runtime": "requested; not echoed",
+    "record_sha256": "74bff2b399c89762f04fa5e6e8627c86aa47f6f55022cfa79f45e7f5ed2fe3ce"
+  },
+  "historical_files": {
+    "checked": 124,
+    "mismatches": 0,
+    "receipts_and_pre_export_manifest_rewritten": false
+  },
+  "actual_cloud_downloads_checked": [
+    "publication-manifest.json",
+    "manuscript.pdf"
+  ],
+  "cloud_downloads_pending": [
+    "manuscript.md",
+    "manuscript.docx",
+    "F1.png",
+    "citation-map.json",
+    "evidence-summary.csv",
+    "claims-summary.csv",
+    "analysis-result.json",
+    "literature-selection-notes.json",
+    "checks.json",
+    "verify-manifest.json"
+  ],
+  "boundaries": [
+    "Local post-platform bytes do not prove unobserved Cloud attachment bytes.",
+    "The pre-export manifest remains a preserved snapshot; the three binary hashes changed.",
+    "No raw conversations, authentication data or absolute local paths are included.",
+    "No scientific peer review or DuMate-model visual inspection is claimed."
+  ]
+}

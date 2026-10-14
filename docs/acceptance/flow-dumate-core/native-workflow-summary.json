@@ -1,0 +1,52 @@
+{
+  "baseline_commit": "77a979978d142b9f66f83e8d62469bac671d3f7a",
+  "client_version": "1.0.59",
+  "package_version": "1.0.1 (five-capability initial run 1.0.0; continuation on installed 1.0.1)",
+  "helper_sha256": "d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67",
+  "actual_native_execution": "T1: Crossref search, selected PLOS PDF evidence, six-row synthetic CSV, chart and V1/V2 MD/DOCX/PDF; main agent inspected native UI calls",
+  "independent_audit": {
+    "requested_model": "gpt-6.1-sol",
+    "requested_reasoning_effort": "high",
+    "runtime": "requested; not echoed",
+    "original_record": "tmp/dumate-native-audit/native-v2-content-audit.json (relative to outer workspace)",
+    "original_record_sha256": "ac1c30e8fda0c683d7e3287230f36631ddd2baa56ae9e3cd41cffd1986caa968",
+    "content": "pass in targeted scope: ten candidate decisions, three revised claim scopes, twelve numerical mappings, MD/DOCX/PDF text equivalence; only selected S1 cited",
+    "digest_checks": {
+      "receipt_groups": 19,
+      "checks": 115,
+      "mismatches": 6
+    },
+    "mismatches": "O1/O2 PNG, DOCX and PDF; preserve old receipts and actual changed files",
+    "O2_change_evidence": "AIGC metadata and repackaging; PNG decoded pixels, DOCX body XML/paragraphs and PDF two-page extracted text unchanged",
+    "scientific_peer_review": "not_performed"
+  },
+  "visual_review": "Main opened PNG and both PDF pages; labels/means/units checked. Native DOCX preview showed three pages; not an independent DOCX render certification. Uneven Latin spacing remains.",
+  "history": "103-file native continuation baseline and 124-file P2 export baseline preserved; previous receipts and failures retained.",
+  "multiagent": {
+    "builtin_case": "DuMate resources/extra-resource/opencode/skills/skill-creator/SKILL.md, DuMate-specific section around lines 422-434 states no subagents; generic/Cowork examples do not establish DuMate support",
+    "builtin_case_sha256": "0e8737ee69aa46b6e01476acd1c40232339b151cf2fb21ec39595a46ee46a84f",
+    "official_standard": "https://cloud.baidu.com/doc/Dumate/s/rmtv82njb: agents[] currently declares entry agent",
+    "runtime_probe": "two native task/General call cards observed; native reports completed IDs but prompt echoes. One same-ID continuation each also echoes, no correct answers. Dispatch entry observed; useful results not verified. See native-multiagent-probe.json.",
+    "conversion": "not_done; no fabricated native calls or external executor",
+    "feasibility_review": "Astra/high requested; runtime not echoed"
+  },
+  "pending": [
+    "Raw native failure/reuse command-return evidence",
+    "Separate fresh native 1.0.1 clean-install check; installed update and 11 file hashes already verified"
+  ],
+  "input_blocker": "resolved; supported native desktop input/export/share used. No browser login required.",
+  "overall": "selected five-capability flow, P2 native export and actual desktop share delivered; broader validation gaps recorded, not blanket P0-P7 pass",
+  "native_1_0_1_continuation": {
+    "O3": "13 dependent receipts/72 digest checks match; five O3 files byte-equal to V2; actual manifest status complete; independent_review not performed",
+    "failure_reopen": "Missing-input failure/restoration and A1 reused:true reported during directly observed native UI run; restored CSV and A1 artifacts verified; raw tool command returns not independently captured",
+    "P1": "12 final attachment files downloaded through visible browser UI; all byte-equal to P1, including PDF/DOCX/PNG and manifest",
+    "P2": "Codex repaired provenance, native DuMate verified and exported twelve files. Three processed binaries differ in bytes; targeted independent Astra content-equivalence/history audit passed. Two actual Cloud downloads checked, ten not checked.",
+    "share_kit": "Four installation/demo files actually exported; all four local post-export hashes match frozen copies. No share-page testing."
+  },
+  "share": {
+    "url": "https://www.dumate.cn/s/d9oLSggG",
+    "selected_messages": 2,
+    "selected_files": 16,
+    "access_and_reuse_tests": "skipped_by_user"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "status": "draft; native full workflow and share pending",
+  "pages": 3,
+  "bytes": 10796,
+  "pdf_sha256": "45b68514d17c64f7fd7e1b7efb112e61e2b9dd615aa80a00da9c147206694bde",
+  "source_sha256": "3cf8a144091d17db6b802ef2ac14e36596c4ba41588d630c433f5ee803c7f9a5",
+  "visual_check": {
+    "status": "pass",
+    "inspector": "main agent",
+    "actual_scope": "All three pages rendered with bundled Poppler and opened. Title, paragraphs, table, headings, source URL and page numbers are legible without clipping or overlap. Draft and pending native workflow status are visible."
+  },
+  "pdf_relative_path": "output/pdf/yan-zhou-pi-application-draft-1.0.0.pdf",
+  "intro_characters": 132,
+  "official_rules": {
+    "url": "https://www.g-ican.com/competition/details?id=99",
+    "verified_through": "actual browser rendered public page, after JS data loaded",
+    "date": "2026-10-14",
+    "deadline": "2026-10-15",
+    "application_format": "PDF",
+    "max_pages": 20,
+    "max_bytes": 52428800,
+    "intro_max_characters": 200,
+    "native_execution_evidence": "Full DuMate execution screen recording or workflow screenshots; skill can accompany submission"
+  }
+}

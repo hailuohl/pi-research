@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-14",
+  "baseline_commit": "77a979978d142b9f66f83e8d62469bac671d3f7a",
+  "native_client": "DuMate 1.0.59",
+  "native_task": "ses_ec8467161ffewnRwu6AokVNtpe",
+  "package_version": "1.0.1",
+  "package_sha256": "497a07e891ff43ea57286c19ee6291d725d608e64ff385a7a445a5be4461b9ba",
+  "actual_native_export": {
+    "P2_scientific_files": 12,
+    "installation_and_demo_files": 4
+  },
+  "kit_files": [
+    {
+      "filename": "yan-zhou-pi-1.0.1.zip",
+      "bytes": 32644,
+      "sha256": "497a07e891ff43ea57286c19ee6291d725d608e64ff385a7a445a5be4461b9ba"
+    },
+    {
+      "filename": "software-demo.csv",
+      "bytes": 43,
+      "sha256": "8f92fe3329e89bc843ae2e40daebbce13d27926ed8edec2ff009cc1437a116fe"
+    },
+    {
+      "filename": "START.zh-CN.md",
+      "bytes": 2274,
+      "sha256": "2aac1fb7ff94983d362e571e3fceee8a6d7c4e7d149708cdcefa39fb31ee206a"
+    },
+    {
+      "filename": "platform-verification-C1.json",
+      "bytes": 9703,
+      "sha256": "26d42f146fc62d5c49955ecbf23275fddbe7413f169cec7d6009559d30d112a2"
+    }
+  ],
+  "share": {
+    "url": "https://www.dumate.cn/s/d9oLSggG",
+    "created": true,
+    "method": "Native desktop: selected exactly two latest assistant replies; confirmed 16-file share dialog; pasted copied URL into empty composer; read selected_text through supported accessibility API; cleared unsent text.",
+    "user_action_time_confirmation": "User chose generate link, do not test.",
+    "included": "Latest P2 scientific delivery summary with 12 attachments and latest installation/demo summary with four attachments.",
+    "excluded": "Older conversation history, user prompts, original PDF and entire workspace were not selected.",
+    "anonymous_or_other_account_access": "skipped_by_user",
+    "share_page_view_download_install_reuse_tests": "skipped_by_user",
+    "opened_share_url": false
+  },
+  "cloud_byte_checks": {
+    "P1": "All 12 previously downloaded attachments matched local P1 bytes.",
+    "P2": "Previously downloaded PDF and publication manifest matched processed local bytes; remaining ten not checked, further sharing tests skipped by user."
+  },
+  "screenshots": [
+    {
+      "filename": "desktop-selected-science-and-install.jpg",
+      "bytes": 124423,
+      "sha256": "ed6fd520c0a51d313a610c826c2df4a08cdbb2fc9878a14cac839af9f65319a7"
+    },
+    {
+      "filename": "desktop-generated-share-link.jpg",
+      "bytes": 107067,
+      "sha256": "54ba49d723e3a644170255b9007cccfb6f8190a0832c4fa85cd6a0c497b88770"
+    }
+  ],
+  "screenshots_location": "outer tmp/dumate-native-audit/screenshots; raw captures excluded from Git",
+  "unchanged": "Frozen package/helper; canonical V2/O3, old P1/P2 pre-export manifest and 124 historical input/task files preserved. No native scientific regeneration for final share.",
+  "remaining_validation_gaps": [
+    "Fresh 1.0.1 clean native installation was not separately tested; actual update/install and all 11 installed bytes were verified.",
+    "Raw native missing-input and A1-reuse command parameters/returns were not independently captured.",
+    "DOCX native three-page preview was observed; no independent rendered-DOCX layout certification."
+  ],
+  "multiagent": "Dispatch entry observed, useful child result not verified; no conversion claimed.",
+  "scientific_peer_review": "not_performed",
+  "competition_submission": "not_submitted"
+}

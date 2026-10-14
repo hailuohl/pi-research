@@ -1,0 +1,105 @@
+{
+  "captured_at": "2026-10-14T04:07:48.139960+00:00",
+  "native_task": "ses_ec8467161ffewnRwu6AokVNtpe",
+  "platform": "DuMate Chrome website; actual final P1 attachment cards clicked, preview More > Download",
+  "scope": "P1 actual downloaded attachment bytes only; P1 provenance defects remain historical, fixed locally in P2",
+  "actual_downloads": [
+    {
+      "filename": "manuscript.md",
+      "download_name": "manuscript.md",
+      "bytes": 3388,
+      "sha256": "d089ea0ba10641520f996f4946e4c64b4f081b460b22146e77b70f2165535609",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "manuscript.docx",
+      "download_name": "manuscript.docx",
+      "bytes": 90386,
+      "sha256": "345590722ab783ca4c3c2cb532f7619d3440f4fa87760b581fac59eb1db68dcd",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "manuscript.pdf",
+      "download_name": "manuscript (6).pdf",
+      "bytes": 125207,
+      "sha256": "617080e3aef39cef265d10a96cc3755c96e209fa06b9493d0b25d201fd4a9354",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "F1.png",
+      "download_name": "F1.png",
+      "bytes": 87488,
+      "sha256": "0fb6365c831a5515b16c6f9e185116bc247e8f73592de6628f9a0ab00ed09582",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "citation-map.json",
+      "download_name": "citation-map.json",
+      "bytes": 1345,
+      "sha256": "3d95fe830b7123531b6b5abeec59187c354195deb3064ca1b7571383ca1ff6a3",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "evidence-summary.csv",
+      "download_name": "evidence-summary.csv",
+      "bytes": 1183,
+      "sha256": "7709f3820278b1bd792488ccfb2085c91b54bfffbe8caa6ef8fda7be7b2d62a4",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "claims-summary.csv",
+      "download_name": "claims-summary.csv",
+      "bytes": 1158,
+      "sha256": "9f6882cbe3a754fe14f2add795f95d8c8abfeb691b8e06890e904b581fc0b2e1",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "analysis-result.json",
+      "download_name": "analysis-result.json",
+      "bytes": 519,
+      "sha256": "9e2fc0233b102beb99021f654c63ff4e36b4d2a71f7a2d269523e57cefa47e35",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "literature-selection-notes.json",
+      "download_name": "literature-selection-notes.json",
+      "bytes": 3517,
+      "sha256": "600de7c05e4dd260fb37423179e1a2f37bfa895528670cf4e13443a9d2aa1a2e",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "checks.json",
+      "download_name": "checks.json",
+      "bytes": 1762,
+      "sha256": "f54b9aae45f79ab8027b1a7ae033a53cb0aebba494cdf07e3e919e7bb9da4255",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "verify-manifest.json",
+      "download_name": "verify-manifest.json",
+      "bytes": 2272,
+      "sha256": "20b973f263905145babd19c87949997938c2edfbe57bc85c83844e8713abc471",
+      "byte_equal_to_P1": true
+    },
+    {
+      "filename": "publication-manifest.json",
+      "download_name": "publication-manifest.json",
+      "bytes": 7690,
+      "sha256": "2832ff19a9504fc4e03c3a16748ba9ab66e1a625ed004685fa697e237ef1177d",
+      "byte_equal_to_P1": true
+    }
+  ],
+  "counts": {
+    "files": 12,
+    "byte_equal_to_P1": 12,
+    "missing": 0
+  },
+  "read_boundaries": "Files downloaded in this session through visible UI. No app database, authentication data, hidden state or direct platform API used.",
+  "not_checked": [
+    "P2 platform export/download",
+    "anonymous share access",
+    "native command raw parameters and returns"
+  ],
+  "screenshot": "outer tmp/dumate-native-audit/screenshots/p1-platform-figure-preview.jpg",
+  "overall": "P1 downloaded bytes pass; does not certify P1 erroneous provenance or P2 platform completion"
+}

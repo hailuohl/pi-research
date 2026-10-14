@@ -1,0 +1,54 @@
+{
+  "capture_method": "Actual DuMate Chrome task screenshots; completed history inspected through visible UI; no simulated image or workflow diagram",
+  "native_task": "ses_ec8467161ffewnRwu6AokVNtpe",
+  "scope": "Literature/analysis, evidence/claims/figure, V2 manuscript, 1.0.1 recovery/verify and P1 final file preview",
+  "raw_command_return_proof": false,
+  "final_P2_export": "actual native export observed; retained six earlier screenshots remain historical captures",
+  "files": [
+    {
+      "filename": "native-1.0.1-recovery-and-verify.jpg",
+      "bytes": 186333,
+      "sha256": "113b288f981e8f6982a7171ae6101131b05b79ed3d7f4ed21a5df372a8b89ce6"
+    },
+    {
+      "filename": "native-evidence-claims-figure-workflow.jpg",
+      "bytes": 170854,
+      "sha256": "c163778352153d53364ded5f78854d356f07e7d1d9c31fed5749d6e8e447b65d"
+    },
+    {
+      "filename": "native-literature-analysis-workflow.jpg",
+      "bytes": 153939,
+      "sha256": "faa93ab0f13886f31558d131f8555c7d37666a098bdfd8b92f4a60ac1e785469"
+    },
+    {
+      "filename": "native-v2-manuscript-workflow.jpg",
+      "bytes": 179571,
+      "sha256": "275db6a0da1fd8e5f8668b2aee1f945688aea543123132d987bac222074a56cf"
+    },
+    {
+      "filename": "p1-platform-figure-preview.jpg",
+      "bytes": 178924,
+      "sha256": "1546874be82aa594b3e5c27ad5b8c5ae71a22290cdb5a1fcd741ac28414d1e1f"
+    },
+    {
+      "filename": "p1-platform-file-cards.jpg",
+      "bytes": 175421,
+      "sha256": "e808bf7f2db07b74d9fbe1c74803d96127ee0798fea8f4096fedfe4608e64fbf"
+    }
+  ],
+  "original_location": "outer tmp/dumate-native-audit/screenshots",
+  "public_submission": "share URL created; competition materials not submitted",
+  "notes": "Earlier six captures retained. Two new unmodified native desktop captures show selected scope and actual copied URL; exact URL obtained from selected_text. Share-page tests skipped by user.",
+  "additional_desktop_captures": [
+    {
+      "filename": "desktop-selected-science-and-install.jpg",
+      "bytes": 124423,
+      "sha256": "ed6fd520c0a51d313a610c826c2df4a08cdbb2fc9878a14cac839af9f65319a7"
+    },
+    {
+      "filename": "desktop-generated-share-link.jpg",
+      "bytes": 107067,
+      "sha256": "54ba49d723e3a644170255b9007cccfb6f8190a0832c4fa85cd6a0c497b88770"
+    }
+  ]
+}
