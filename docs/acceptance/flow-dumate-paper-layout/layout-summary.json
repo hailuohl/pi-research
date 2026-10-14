@@ -162,7 +162,7 @@
     "scientific_scope": "Reuse existing selected V2 content checks; MD/map/context/PNG exactly unchanged, no new analysis or independent scientific peer review",
     "share_tests": "skipped_by_user",
     "old_share_url": "https://www.dumate.cn/s/d9oLSggG",
-    "platform_export": "not_yet_performed; original formatter receipt/check fields remain unchanged"
+    "platform_export": "skipped_by_user; canonical formatted/V3 and prepared ordinary P3 copies retained, no platform processing"
   },
   "independent_review": {
     "requested_model": "gpt-6-astra",
@@ -175,9 +175,11 @@
     "checks": "Three related isolated tests passed independently; code and clean release, actual canonical V3, old141 history, same MD/map/context/PNG, A4/font/image/DOCX fields and both PNG pages reviewed; not scientific peer review"
   },
   "desktop_export": {
-    "publication_prepared": "tasks/T1/publication/P3-article, nine ordinary files",
-    "actual_attachment_export": "not_run; input failed then refreshed binding/activation failed, user choice pending",
-    "error": "failed to activate captured window"
+    "publication_prepared": "tasks/T1/publication/P3-article, nine ordinary files preserved as local_pre_export",
+    "actual_attachment_export": "skipped_by_user",
+    "user_decision": "User initially offered to restore the window, then explicitly said not to export before any export request was sent.",
+    "previous_input_error": "failed to activate captured window; user-restored window subsequently rebound successfully",
+    "export_request_sent": false
   },
   "scope_preservation": "Other scientific-review/check_revision additions in four working-tree docs and three new files are excluded from this release/commit; working files kept. Original five unrelated modifications also kept.",
   "sharing_tests": "skipped_by_user",
