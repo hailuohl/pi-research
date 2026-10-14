@@ -60,3 +60,10 @@ Markdown正文中 `[@S1]` 是选定文献引用，`[evidence:E1]` / `[claim:C1]`
 ## 开发检查
 
 在包的独立副本运行 `python -m unittest discover -s tests -v`。测试仅建立明确标注的合成夹具，统计答案独立可知；没有默认示例论文。真实DuMate安装、平台权限及页面检查由实际测试单独记录。
+
+
+## 科学核对与限定修订补充
+
+科学核对方法、检查记录和限定修订接口见 [scientific-review.md](references/scientific-review.md)。新增 `scripts/check_revision.py` 仅用标准库，复用冻结helper的任务边界、摘要和唯一锁；两稿均先由原 `manuscript` 命令生成，再按原稿SHA256和明确位置的old/new清单核对新源码。原helper、统计/绘图、旧稿和排版工作不改。
+
+核对通过仅表示修改范围逐字节匹配，不自动批准科学结论、独立审阅或新DOCX/PDF页面。相同输入可校验后复用；旧记录不覆盖新稿。不改变当前平台安装，发行补充包与实际安装/调用状态分别记录。

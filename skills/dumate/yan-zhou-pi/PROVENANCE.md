@@ -7,3 +7,6 @@
 1.0.2的 `scripts/format_paper.py`为独立实现的后排版命令，依据本项目 `skills/piresearch/pi-research-paper/assets/starter-main.tex` 的单栏article结构，以及 `docs/acceptance/flow-paper-writing/second-draft/main.tex` 实际中文稿的A4、25mm、11pt版式规则。没有复制示例正文、作者、日期、参考文献或图像；不是期刊模板或通用TeX执行器。字体只读取本机已有的Windows Noto Serif SC（SIL Open Font License），用已有FontTools在内存按本稿字符生成400/700实例，供PDF嵌入子集；不在Skill中分发或落盘完整字体。不可用时使用ReportLab内置STSong-Light/Times，并在实际导出清单标明回退、缺少粗体及partial。Word依赖使用方已有字体。
 
 原 `research.py`字节及SHA256 `d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67`、`figstyle.py`和旧科研产物不随本次格式迁移改写；新增格式器直接复用原校验和唯一锁。原1.0.0/1.0.1发行、旧稿、旧链接保留。
+
+
+科学核对补充的 `references/scientific-review.md` 适配自本项目 `skills/piresearch/pi-research-paper/references/scientific-review.md`（基线e315385），保留数值/方向/单位/统计/条件核对、实际独立审阅和限定修订方法，去除Pi工具及服务调用。其上游沿用alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835的 `agent-skills/orx-paper/SKILL.md`，MIT许可保留。新增 `scripts/check_revision.py` 为本项目独立实现的标准库范围核对，不改冻结research.py、旧receipt或在途格式器；不含论文正文、原始数据或默认结论。
