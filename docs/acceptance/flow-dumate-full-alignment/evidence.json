@@ -1,6 +1,6 @@
 {
   "baseline_commit": "e2889fe0bab922d68d6cfd7d0c03b3d3dcdda819",
-  "stage": "core_acceptance_passed",
+  "stage": "core_acceptance_passed_native_ui_6_of_6",
   "pure_dumate_runtime": true,
   "local_regression": {
     "passed": 94,
@@ -197,10 +197,13 @@
     },
     "optional_cleanup": {
       "core_native_execution": "completed and independently checked from actual files",
-      "permission": "waiting human rejection; agent did not operate security choice",
+      "permission": "user reported rejection; agent did not operate any security option",
       "target": "inputs/_compat_tmp_write_summary.py",
       "belongs_to_original_228": false,
-      "native_process_terminal": "not_claimed"
+      "native_process_terminal": "native UI displayed 6/6 complete after rejection",
+      "final_path_exists": false,
+      "auxiliary_preservation_check": "failed: temporary path missing; original 228 preservation passed; original audit retained",
+      "removal_cause": "unconfirmed; no same-name copy found in current workspace; no platform permission/lifecycle guarantee claimed"
     }
   },
   "environment_event": {
@@ -246,7 +249,10 @@
     "branch": "implementation/pr01-reproducible-baseline",
     "repository": "hailuohl/pi-research",
     "private_verified": true,
-    "commit": "recorded after verified push in parent tmp/dumate-full-alignment/git-delivery.json and final response"
+    "commit": "recorded after verified push in parent tmp/dumate-full-alignment/git-delivery.json and final response",
+    "code_commit": "cc64bf6492737d17eece524d77170d746f0ced1e",
+    "code_push_verified": true,
+    "code_github_link": "https://github.com/hailuohl/pi-research/commit/cc64bf6492737d17eece524d77170d746f0ced1e"
   },
   "review_compatibility_repair": {
     "after_regression": {

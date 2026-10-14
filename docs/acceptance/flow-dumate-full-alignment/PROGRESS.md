@@ -14,7 +14,7 @@
 
 核心原生复验已完成：旧未登记export实际退出1；冻结1.0.2另建V4Clean（真实DOCX、PDF2页、无额外export）；MD/context/map/PNG与V4原字节匹配。O4Clean科学自查pass、视觉not_run、独立not_performed，总体partial；真实清单kind=legacy_layout_1.0.2，receipt.inputs含layout清单和V4源receipt，实际来源/收据摘要回读通过。第二次原生调用返回reused:true。原228文件全部保持，无writer锁或pending，不重新分析数据。上轮不兼容V4/O4及全部失败历史保留。
 
-平台目前停在本轮临时脚本inputs/_compat_tmp_write_summary.py的可选清理权限请求；该脚本不在原228文件中。用户已被请求拒绝以保留它，主代理未操作安全选项。此弹窗不计作核心科学/修订验收失败，也不将原生整体进程虚记终止；已保存的命令/返回/新审查和总结均回读核实。
+用户报告已拒绝本轮临时脚本inputs/_compat_tmp_write_summary.py的可选清理请求，主代理未操作安全选项；之后原生UI显示6/6完成。终态回查原228文件全部保持、无锁/pending，但该临时脚本原路径已不存在，工作区未找到同名备份，清理原因/执行者未确认。附加的临时脚本保留断言实际失败，原检查保留；不能声称它已保留或平台拒绝语义已经验证。这一未确认的平台临时文件行为与核心科学/修订检查分别记录，未涉及原228科研/历史文件。
 
 默认宋体无真粗体时会保留字体替代warning并partial；已选择完整字体的独立完整流程无warning。原生图片送达/真正独立审阅、平台导出后的重封装核验单独保留门槛；Pi服务端Run/调度/CAS/DB/撤权传播和无沙箱任意cls/sty执行不移植。
 
