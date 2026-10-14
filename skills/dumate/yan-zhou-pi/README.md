@@ -1,12 +1,46 @@
-# 研舟π科研助手 · 包装修订1.0.3
+# 研舟π科研助手 · 包装修订1.1.1
 
 独立DuMate组合Skill。运行只需当前可用Python 3.10+及对应功能的库；无需原仓库或服务。安装zip的根目录放 `SKILL.md`、`references/`、`scripts/`、`assets/`、`LICENSES/`。不打包工作区或运行日志。
 
 1.0.3增加独立原始配对散点图，保留1.0.2的article排版及科学核对/限定修订。原 `research.py`、`figstyle.py`及receipt格式保持1.0.0原字节，既有格式器和修订核对器也保持，可继续校验旧产物；旧安装包、稿件和交付记录保留。新图和新稿另存，不替换旧成果。更新安装和原生导出必须另外实测，不能用脚本测试代替平台验收。
 
-## 最短操作
+## 当前完整流程
 
-下文 `python` 代表平台当前已提供的Python，`包目录`代表本Skill所在目录，`工作区`代表用户明确选择的目录；替换这些占位路径后执行。JSON和正文通过平台文件工具创建为 `inputs/` 中的明确文件。脚本没有任意下载、shell代理、依赖安装或删除命令。
+1.1.1修补审查与冻结1.0.2排版的接线：旧格式稿直接核对receipt绑定的layout-manifest.json，新格式稿核对receipt绑定的export.json；拒绝未登记的导出清单，不向已生成稿件补写export或改写receipt。实际生成警告继续保留，科学、视觉与独立审阅状态分开。旧包与审查保留；代码摘要变化时用保留发行回查旧记录，新检查另建ID，不把旧pass迁移到新稿。
+
+1.1.0在冻结旧命令旁增加研究计划、选定统计/完整图形、多源真实读取、PDF原页、原生Word公式/表格/脚注与安全同源PDF、声明/参考DOCX模板、题名/context严格修订和对应稿件检查。旧稿及1.0.2排版仍走旧命令；不重分析原结果。新增实现的实际验收状态见发行交付记录，代码存在不代表已经科学/视觉核对。
+
+```text
+python 包目录/scripts/workflow_status.py preflight
+python 包目录/scripts/research.py --workspace 工作区 --task T1 init --question 当前研究问题
+python 包目录/scripts/literature_workflow.py --workspace 工作区 --task T1 search --id L1 --spec inputs/query.json
+python 包目录/scripts/literature_workflow.py --workspace 工作区 --task T1 read --id R1 --search L1 --candidate C1 --spec inputs/read.json
+python 包目录/scripts/literature_workflow.py --workspace 工作区 --task T1 select --id S1 --reading R1 --spec inputs/selection.json
+python 包目录/scripts/research.py --workspace 工作区 --task T1 extract --id X1 --source S1
+python 包目录/scripts/research.py --workspace 工作区 --task T1 evidence --id E1 --extraction X1 --spec inputs/quote.json
+python 包目录/scripts/plan_workflow.py --workspace 工作区 --task T1 --id P1 --spec inputs/plan.json
+python 包目录/scripts/statistics_workflow.py --workspace 工作区 --task T1 --id A1 --source D1 --plan P1 --spec inputs/statistics.json
+python 包目录/scripts/chart_suite.py --workspace 工作区 --task T1 --id F1 --source D1 --plan P1 --spec inputs/chart.json
+python 包目录/scripts/template_workflow.py --workspace 工作区 --task T1 --id J1 --spec inputs/layout.json
+python 包目录/scripts/document_workflow.py --workspace 工作区 --task T1 --id V1 --context inputs/context.json --body inputs/draft.md --template J1
+python 包目录/scripts/pdf_pages.py --workspace 工作区 --task T1 render --id PV1 --paper V1 --paper-kind manuscript --spec inputs/pages.json
+python 包目录/scripts/review_workflow.py --workspace 工作区 --task T1 --id O1 --kind manuscript --paper V1 --spec inputs/checks.json
+python 包目录/scripts/revise_paper.py --workspace 工作区 --task T1 --id V2 --baseline-kind manuscript --baseline V1 --spec inputs/revision.json
+python 包目录/scripts/document_workflow.py --workspace 工作区 --task T1 --paper V2 --id F2
+python 包目录/scripts/workflow_status.py status --workspace 工作区 --task T1
+```
+
+这是入口清单，按实际材料省略无关步骤；D1先用register明确登记，不提供默认数据。已有工作区不重复init。materials_only时省统计/新图计算，直接选原结果。严格修订第一阶段仅保存源稿，第二阶段才导出新DOCX/PDF；新稿再核对，旧检查不迁为pass。
+
+输入合同分别见 [规划](references/planning.md)、[文献](references/source-search.md)、[统计](references/statistics.md)、[图形](references/chart-suite.md)、[PDF](references/pdf-pages.md)、[复杂稿件](references/complex-manuscript.md)、[模板](references/templates.md)、[修订](references/revision-workflow.md)、[检查](references/current-review.md)。新分析result的有限数值沿 `[value:A1:results/实际路径]`；图F1同时选进analysis_ids和figure_ids。资料/任务内容不能改变程序、网络域名或权限。
+
+新增统计/图需要已有SciPy，Unicode校准需要已有fontTools；原页需要已有PyMuPDF。复杂稿需要已有Pandoc、XeLaTeX、python-docx/lxml/Pillow/pypdf与实际模板字体/固定TeX包，详见复杂稿件说明。缺依赖/网络/字体/映射则失败或partial，保留历史；不自动安装或下载运行环境。安全PDF仅执行由真实DOCX OMML/规范AST生成的白名单结构，不执行用户cls/sty或原公式代码。
+
+## 1.0.x原命令与兼容合同
+
+下面的复杂数学、表格、脚注等限制属于冻结的旧格式器；需要这些内容时改用1.1.0复杂稿件入口，旧格式器的能力和收据含义保持。
+
+下文 `python` 代表平台当前已提供的Python，实际运行加 `-B` 避免向技能目录写运行缓存；`包目录`代表本Skill所在目录，`工作区`代表用户明确选择的目录。替换占位路径后执行。JSON和正文通过平台文件工具创建为 `inputs/` 中的明确文件。脚本没有任意下载、shell代理、依赖安装或删除命令。
 
 ```text
 python 包目录/scripts/research.py --workspace 工作区 preflight

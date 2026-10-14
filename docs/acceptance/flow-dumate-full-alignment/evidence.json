@@ -1,0 +1,280 @@
+{
+  "baseline_commit": "e2889fe0bab922d68d6cfd7d0c03b3d3dcdda819",
+  "stage": "core_acceptance_passed",
+  "pure_dumate_runtime": true,
+  "local_regression": {
+    "passed": 94,
+    "failed": 0,
+    "skipped": 2,
+    "ran": 96,
+    "skip_reason": "Windows symlink privilege unavailable",
+    "log": "parent tmp/dumate-full-alignment-1.1.1-regression.log"
+  },
+  "necessary_heading_fix": {
+    "related_tests": 27,
+    "passed": 27,
+    "log": "parent tmp/dumate-full-alignment-heading-fixes.log",
+    "unchanged_checks_reused": true
+  },
+  "standalone_flow": {
+    "status": "mechanical_flow_complete",
+    "steps": [
+      "source",
+      "extraction",
+      "evidence",
+      "plan",
+      "statistics",
+      "chart",
+      "template",
+      "complex_document",
+      "formatted",
+      "exact_body_title_revision",
+      "reopen",
+      "reformatted",
+      "all_pdf_pages",
+      "honest_review_record"
+    ],
+    "old_files_unchanged": 68,
+    "pdf_pages": 2,
+    "review_status": "partial",
+    "actual_scientific_review": "not_performed",
+    "native": false
+  },
+  "public_http": {
+    "sources": [
+      {
+        "source": "crossref",
+        "status": "received",
+        "count": 2,
+        "strategy": "keyword",
+        "limitations": []
+      },
+      {
+        "source": "pubmed",
+        "status": "received",
+        "count": 2,
+        "strategy": "keyword",
+        "limitations": []
+      },
+      {
+        "source": "openalex",
+        "status": "received",
+        "count": 2,
+        "strategy": "keyword",
+        "limitations": []
+      },
+      {
+        "source": "biorxiv",
+        "status": "received",
+        "count": 2,
+        "strategy": "keyword",
+        "limitations": [
+          "Discovery uses OpenAlex bioRxiv source metadata; original version/abstract requires a separate bioRxiv read"
+        ]
+      },
+      {
+        "source": "alphaxiv",
+        "status": "received",
+        "count": 2,
+        "strategy": "keyword",
+        "limitations": []
+      },
+      {
+        "source": "arxiv",
+        "status": "received",
+        "count": 2,
+        "strategy": "keyword",
+        "limitations": []
+      }
+    ],
+    "reading": [
+      {
+        "source": "pubmed",
+        "status": "received",
+        "level": "abstract",
+        "sha256": "9014bd908c786e7f06f910ac8b0db76aeabe70b323833e9b833bb434cd95e309",
+        "actual_reading": "not_recorded"
+      },
+      {
+        "source": "biorxiv",
+        "status": "received",
+        "level": "abstract",
+        "sha256": "f05c841878c7615f2ebaed4e64bf0e605ee27e64c1c169b2bcc96eabe3d6b8ca",
+        "actual_reading": "not_recorded"
+      },
+      {
+        "source": "alphaxiv",
+        "status": "received",
+        "level": "full_text",
+        "sha256": "b1045b802f038df34e342a6f51789f3acb1a38bdf42c3fa7f3314818628421a8",
+        "actual_reading": "not_recorded"
+      }
+    ],
+    "scope": "public connector validation only; no user's study data",
+    "retained_snapshot": "candidate1 matches actual recorded discovery code; normal UTF8 paths and version fixes also covered by current isolated tests"
+  },
+  "preservation": {
+    "original_files": 185,
+    "unchanged": 185,
+    "changed": [],
+    "missing": [],
+    "writer_lock": false,
+    "purpose": "Read-only original preservation after update submission, before native workflow; all 185 unchanged"
+  },
+  "independent_code_review": {
+    "initial_blockers": 4,
+    "fixed_and_rechecked": 4,
+    "additional_xml_encoding_blocker": "fixed and rechecked",
+    "font_warning_case": "same input now complete, warnings/gaps empty",
+    "heading_case": "Word/PDF 1→1.1→2, bibliography unnumbered",
+    "current_blockers": 0,
+    "reports": "parent tmp/dumate-full-alignment/independent-review; original reports/logs retained"
+  },
+  "native": {
+    "installed_version": "1.1.1 manually enabled; 46 runtime files match final manifest",
+    "new_archive": "1.1.1 final installed and manually enabled; 46 runtime hashes match final manifest",
+    "scientific_revision_workflow": "core native checks passed: actual self-check, exact single revision/R4, extra-change rejection, true 1.0.2 V4Clean, receipt-bound O4Clean and reused:true; no reanalysis",
+    "independent_agent": "previous native probe echoed prompt; unavailable, not replaced by external model",
+    "image_delivery": "previous native session reported image input unsupported; new render files do not prove viewing",
+    "version_before_update": "1.0.2",
+    "installed_file_hashes": "46 matched; 0 changed or missing; platform _meta.json separated",
+    "security_scan": {
+      "human_enable_required": true,
+      "enabled": true,
+      "risk": "medium",
+      "warnings": [
+        "command execution",
+        "data collection",
+        "file operations",
+        "network access",
+        "process control"
+      ]
+    },
+    "first_attempt_preservation": {
+      "unchanged": 185,
+      "original_files": 185,
+      "writer_lock": false,
+      "changed": [],
+      "missing": [],
+      "expanded_files_before_patch": 228
+    },
+    "metadata_issue": {
+      "status": "fixed and natively retested in 1.1.1; first extra export and O4 retained",
+      "extra_file": "formatted/V4/export.json",
+      "receipt_modified": false,
+      "review": "O4 retained; not final compatibility acceptance",
+      "receipt_declared": false
+    },
+    "next_native_flow": [
+      "reject existing unreceipted export",
+      "format existing V4 as V4Clean",
+      "fresh self-check and O4Clean from true layout manifest",
+      "O4Clean reused",
+      "preserve 228 existing files"
+    ],
+    "corrected_native_result": {
+      "independent_review": "not_performed",
+      "source_md_context_map_png_identical": true,
+      "generation_manifest_kind": "legacy_layout_1.0.2",
+      "old_files": 228,
+      "audit": "parent tmp/dumate-full-alignment/native-1.1.1-core-audit.json",
+      "format_version": "1.0.2",
+      "clean_format_has_export": false,
+      "overall": "partial",
+      "clean_format": "V4Clean",
+      "pdf_visual": "not_run",
+      "pending_attempts": [],
+      "pdf_pages": 2,
+      "manifest_and_source_receipt_inputs_verified": true,
+      "unchanged": 228,
+      "writer_lock": false,
+      "reused": true,
+      "figure_visual": "not_run",
+      "actual_docx": true,
+      "unreceipted_export_rejection_exit": 1,
+      "scientific_self_check": "pass",
+      "review": "O4Clean"
+    },
+    "optional_cleanup": {
+      "core_native_execution": "completed and independently checked from actual files",
+      "permission": "waiting human rejection; agent did not operate security choice",
+      "target": "inputs/_compat_tmp_write_summary.py",
+      "belongs_to_original_228": false,
+      "native_process_terminal": "not_claimed"
+    }
+  },
+  "environment_event": {
+    "unexpected_install": "MiKTeX missing-file lookup triggered cjk installation (212 files); later confirmed and corrected to user",
+    "queries_stopped": true,
+    "new_skill_uses_cjk_package": false,
+    "compiler_auto_installer": "disabled",
+    "original_log": "host MiKTeX/miktex/log/kpsewhich.log; not copied"
+  },
+  "models": [
+    {
+      "task": "analysis_and_figures",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "actual_runtime": "not_echoed"
+    },
+    {
+      "task": "alignment_boundaries",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "high",
+      "actual_runtime": "not_echoed"
+    },
+    {
+      "task": "alignment_final_review",
+      "requested_model": "gpt-6-astra",
+      "requested_effort": "xhigh",
+      "actual_runtime": "not_echoed"
+    },
+    {
+      "actual_runtime": "not_echoed",
+      "task": "review_manifest_compatibility",
+      "requested_effort": "high",
+      "requested_model": "gpt-6.1-sol"
+    },
+    {
+      "actual_runtime": "not_echoed",
+      "task": "review_manifest_final",
+      "requested_effort": "xhigh",
+      "requested_model": "gpt-6-astra"
+    }
+  ],
+  "git": {
+    "branch": "implementation/pr01-reproducible-baseline",
+    "repository": "hailuohl/pi-research",
+    "private_verified": true,
+    "commit": "recorded after verified push in parent tmp/dumate-full-alignment/git-delivery.json and final response"
+  },
+  "review_compatibility_repair": {
+    "after_regression": {
+      "exit_code": 0,
+      "tests": 6,
+      "passed": 6
+    },
+    "reports": "parent tmp/dumate-full-alignment/review-compatibility-fix",
+    "independent_blockers": 0,
+    "archive": "yan-zhou-pi-1.1.1-review-compatibility-final.zip",
+    "changed_runtime_files": [
+      "README.md",
+      "PROVENANCE.md",
+      "scripts/review_workflow.py",
+      "references/current-review.md"
+    ],
+    "real_legacy_png_read_only": "passed; 17 selected files unchanged",
+    "real_complex_png_read_only": "passed; actual rich export with 1 PNG",
+    "before_regression": {
+      "failures": 1,
+      "exit_code": 1,
+      "tests": 6,
+      "errors": 10
+    },
+    "runtime_files": 46,
+    "protected_old_files": "5 match baseline bytes",
+    "archive_sha256": "4859020fa850ca9e9c73c46ffb6b73d2ff5ff7f18b05835abfb279045dd9706e",
+    "version": "1.1.1",
+    "native_status": "core passed"
+  }
+}
