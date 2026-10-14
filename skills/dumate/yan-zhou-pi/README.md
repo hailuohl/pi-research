@@ -1,8 +1,8 @@
-# 研舟π科研助手 · 包装修订1.0.1
+# 研舟π科研助手 · 包装修订1.0.2
 
 独立DuMate组合Skill。运行只需当前可用Python 3.10+及对应功能的库；无需原仓库或服务。安装zip的根目录放 `SKILL.md`、`references/`、`scripts/`、`assets/`、`LICENSES/`。不打包工作区或运行日志。
 
-1.0.1仅修订平台附件发布说明；确定性脚本及receipt格式仍为1.0.0，脚本与样式摘要不变。旧1.0.0安装包、任务与交付记录保留。更新安装和原生导出必须另外实测，不能用文档修订代替平台验收。
+1.0.2增加独立article后排版命令。原 `research.py`、`figstyle.py`及receipt格式保持1.0.0原字节，可继续校验旧科研产物；旧1.0.0/1.0.1安装包、稿件和交付记录保留。新格式稿另存，不替换旧PDF。更新安装和原生导出必须另外实测，不能用脚本测试代替平台验收。
 
 ## 最短操作
 
@@ -21,6 +21,7 @@ python 包目录/scripts/research.py --workspace 工作区 analyze --id A1 --sou
 python 包目录/scripts/research.py --workspace 工作区 figure --id F1 --analysis A1
 python 包目录/scripts/research.py --workspace 工作区 manuscript --id V1 --context inputs/paper_context.json --body inputs/draft.md
 python 包目录/scripts/research.py --workspace 工作区 verify --id O1 --paper V1 --checks inputs/checks.json
+python 包目录/scripts/format_paper.py --workspace 工作区 --task T1 --paper V1 --id V2
 python 包目录/scripts/research.py --workspace 工作区 status
 ```
 
@@ -42,7 +43,11 @@ Markdown正文中 `[@S1]` 是选定文献引用，`[evidence:E1]` / `[claim:C1]`
 
 ## 依赖与重开
 
-检索、文本、CSV分析和校验用标准库。PDF读取需要 `pypdf`，绘图需要 `numpy` / `matplotlib`，DOCX需要 `python-docx`，PDF导出需要 `reportlab`。脚本不自动安装这些库；缺少文档库仍保存Markdown和真实导出缺口。简版DOCX/PDF支持标题、段落、图和引用；复杂数学、期刊模板、Markdown表格和脚注要用已核实的编辑工具继续处理并再次校验，不称模板排版已经完成。
+检索、文本、CSV分析和校验用标准库。PDF读取需要 `pypdf`，绘图需要 `numpy` / `matplotlib`，DOCX需要 `python-docx`，PDF导出需要 `reportlab`；article后排版另需已有的 `Pillow`读取图尺寸。已有Noto可变字体的常规/粗体实例化使用已有 `fontTools`，不可用会明确回退并记partial，不自动安装。原稿简版导出缺库时保留Markdown及真实缺口；后排版缺必需库会保留失败尝试，不能称DOCX/PDF完成。
+
+`format_paper.py`只读指定原稿、选定上下文、引用映射及图，重新解析并与原Markdown逐字核对，使用原helper共享唯一写锁，在 `tasks/<task>/formatted/<id>/` 创建新版本。复制原MD、context、map和PNG原字节；同一解析正文输出DOCX/PDF，`layout-manifest.json`记录格式器/来源/输出摘要、实际字体及待检查状态。原helper的 `verify --paper`仍只处理manuscript原稿；formatted新PDF须单独实际查看并记录当前文件摘要。生成完成不等于科学或视觉检查通过。
+
+版式为A4、四边25mm、单栏，正文11pt/13.6pt、首行17pt，题名居中17.28pt，摘要10pt/12pt，黑色编号章节14.4pt/12pt，底部居中页码。Word字号只支持半磅，题名/一级节取最近的17.5pt/14.5pt，实际值记入清单；PDF使用17.28pt/14.4pt。摘要和参考文献不编号，列表逐项换行；标题原文字完整保留，不猜剥离数字。图按原manifest打印宽度及真实纵横比居中，超过160mm正文宽度会失败，不自动缩放。Word英文用Times New Roman；本机已有Noto Serif SC时中文采用它，否则宋体，章节为粗体。PDF使用已有Windows Noto Serif SC与FontTools，先按本稿实际字符做内存子集，再实例化400常规/700粗体；各子集face名字独立，实际名字和权重记入清单。不下载、不打包或落盘完整字体。常规实例失败时明确回退STSong-Light，粗体失败时保持常规并记缺口；存在字体缺口的新格式生成记partial，不能称版式全部通过。英文采用Times。这不是相同TeX字形、分页或投稿模板的逐像素复刻。不支持复杂数学、Markdown表格、代码块或脚注；需用已核实的编辑工具另存并重新校验，不伪称已排好。
 
 所有步骤在 `tasks/<id>/<kind>/<version>/` 保存独立receipt、任务身份及输入/代码/输出摘要。步骤、输出和依赖只接受当前真实任务，拒绝任务目录别名、跨任务junction及复制来的其它任务receipt；用户明确选择的输入仅在inputs内。重复相同命令只在校验通过后回读；输入、参数、样式或脚本改变要求新版本。
 

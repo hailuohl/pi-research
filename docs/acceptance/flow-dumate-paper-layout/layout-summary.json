@@ -1,0 +1,185 @@
+{
+  "scope": "Pi Research-style article formatting of actual selected native V2, no new research",
+  "baseline_commit": "e3153852d7aee00470c6e0ad0b336db3fc361fed",
+  "release": {
+    "version": "1.0.2-article",
+    "baseline_commit": "e3153852d7aee00470c6e0ad0b336db3fc361fed",
+    "zip_sha256": "9238769c6a61456ff479f93e195dd9468d591133a22421989ba8c54e36900e9f",
+    "zip_bytes": 40836,
+    "runtime_files": [
+      {
+        "path": "LICENSES/alphaXiv-MIT.txt",
+        "bytes": 1065,
+        "sha256": "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7"
+      },
+      {
+        "path": "PROVENANCE.md",
+        "bytes": 1758,
+        "sha256": "29277e5db833243462ac5541aa43a44b36ec495b472eb4c6ee14a92d163f30f5"
+      },
+      {
+        "path": "README.md",
+        "bytes": 8964,
+        "sha256": "0fd6c614358c9cde751a3d544f7da312e6a52a90cc05250856ad1f5927be0b51"
+      },
+      {
+        "path": "SKILL.md",
+        "bytes": 3263,
+        "sha256": "fd0bee1cbb04bdcbfc9e70021e55baf878f30130b4250542d179e68a07d3162e"
+      },
+      {
+        "path": "assets/figstyle.py",
+        "bytes": 23200,
+        "sha256": "99c172e94c9c71863304924c34fa03926abf132eec2386b9363b52f589a89d1a"
+      },
+      {
+        "path": "references/analysis.md",
+        "bytes": 896,
+        "sha256": "dff7e7d99fc7e85ba6990838072ed94f200e2d07e70caa2bfdcbf9d20dd82d81"
+      },
+      {
+        "path": "references/evidence.md",
+        "bytes": 907,
+        "sha256": "514749e031ff99b4f457b6024e351713cc544c732782ac8b251ae98fd3808dbd"
+      },
+      {
+        "path": "references/figures.md",
+        "bytes": 982,
+        "sha256": "152c62ac54e2b6f03c2a8260ea766d1b07e93863fe73ee2cf3c4128f08ac4a43"
+      },
+      {
+        "path": "references/literature.md",
+        "bytes": 967,
+        "sha256": "8d627d19e3057df4c763ffb22e4a64c9d3111332d02483ad73d9a6b82a0d90dd"
+      },
+      {
+        "path": "references/manuscript.md",
+        "bytes": 4256,
+        "sha256": "abf48b5d22dbf3acf496e6649fe94de7c7108d058288577d5bbaff6c5e2fa3af"
+      },
+      {
+        "path": "scripts/research.py",
+        "bytes": 39731,
+        "sha256": "d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67"
+      },
+      {
+        "path": "scripts/format_paper.py",
+        "bytes": 17846,
+        "sha256": "d3ff99ea22e205ebb3fa5217482b42b6e759b1ccf76bb43dc791245317ed9dbf"
+      }
+    ],
+    "test_sha256": "c459c3c33e1d0a91821d737a2da52f8770e035cd4a9dbf2fcb706970077157f1",
+    "scope": "Only article formatter and its four document edits. Separate scientific-review/check_revision additions preserved in source, excluded from this ZIP and this batch.",
+    "prior_invalid_zip_sha256": "bf1ccda6b44c483158ce092a693ecb820565ad401a0419ca74bcaddc860958c0",
+    "native_mode": "selected workspace copy; installed1.0.1 kept, no scanner bypass"
+  },
+  "native": {
+    "kind": "Actual native V3 article formatting validation, not scientific peer review",
+    "baseline_commit": "e3153852d7aee00470c6e0ad0b336db3fc361fed",
+    "native_mode": "DuMate desktop task executed selected workspace1.0.2-article copy; installed1.0.1 remains",
+    "native_execution": "Observed new prompt, read-file/execute cards, successful format result and V3 eight-file summary through native desktop UI; root did not execute format_paper on actual V2",
+    "canonical_directory": "tasks/T1/formatted/V3",
+    "source_paper": "tasks/T1/manuscript/V2",
+    "source_receipt_sha256": "f389084425cfc2c8f7741c6a1236f2e8ae7d5ecbc99436bfb9af947c3153295a",
+    "helper_sha256": "d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67",
+    "formatter_sha256": "d3ff99ea22e205ebb3fa5217482b42b6e759b1ccf76bb43dc791245317ed9dbf",
+    "history": {
+      "baseline_files": 141,
+      "mismatches": []
+    },
+    "original_files_byte_equal": [
+      "manuscript.md",
+      "citation-map.json",
+      "paper_context.json",
+      "F1.png"
+    ],
+    "files": {
+      "citation-map.json": {
+        "bytes": 1345,
+        "sha256": "3d95fe830b7123531b6b5abeec59187c354195deb3064ca1b7571383ca1ff6a3"
+      },
+      "F1.png": {
+        "bytes": 87488,
+        "sha256": "0fb6365c831a5515b16c6f9e185116bc247e8f73592de6628f9a0ab00ed09582"
+      },
+      "layout-manifest.json": {
+        "bytes": 3135,
+        "sha256": "358c96e10dd5e9c340f4b4dd4c15d5b042870d4e6b12ca2361cb57fb370b0f52"
+      },
+      "manuscript.docx": {
+        "bytes": 91251,
+        "sha256": "c89f77870dae83bdebb987930509bec9cd99314b0dda6f4e92972fd3ce944b0f"
+      },
+      "manuscript.md": {
+        "bytes": 3388,
+        "sha256": "d089ea0ba10641520f996f4946e4c64b4f081b460b22146e77b70f2165535609"
+      },
+      "manuscript.pdf": {
+        "bytes": 194739,
+        "sha256": "e929f1927a1ff51611e663316e9273d5c79f9863a50ab3604e5f042f9423c40a"
+      },
+      "paper_context.json": {
+        "bytes": 314,
+        "sha256": "2cb99ddc56895fcfd6ae3601a1681bae4a44aee7d5cdb7190aff6b6bd21368aa"
+      },
+      "receipt.json": {
+        "bytes": 1598,
+        "sha256": "28ed748a91c9a33f4a510296132d2664fc3358a6801a7c30a60540a494bf1973"
+      }
+    },
+    "actual_pdf": {
+      "pages": 2,
+      "page_pt": [
+        595.2756,
+        841.8898
+      ],
+      "images": 1,
+      "fonts": [
+        "/AAAAAA+NotoSerifSC-Bold-4acc2c2a2ec9",
+        "/AAAAAA+NotoSerifSC-Regular-a8fa20fb1c30",
+        "/AAAAAB+NotoSerifSC-Regular-a8fa20fb1c30",
+        "/Helvetica",
+        "/Times-Roman"
+      ],
+      "all_six_numbered_sections": true
+    },
+    "actual_docx": {
+      "page_mm": [
+        210,
+        297
+      ],
+      "margins_mm": 25,
+      "body_pt": 11,
+      "images": 1,
+      "layout_render_certification": "not_performed"
+    },
+    "pdf_visual": {
+      "status": "pass",
+      "reviewer": "Codex main agent",
+      "scope": "Actually opened both full 120dpi PNG pages: readable regular/bold Noto, centered title and independent abstract, six numbered black sections, original chart aspect and group2/4 labels, caption, reference and centered page1/2; no clipping or overlap",
+      "render_warnings": "Poppler reports unused display-font configuration entries; actual embedded Noto/Times pages inspected"
+    },
+    "scientific_scope": "Reuse existing selected V2 content checks; MD/map/context/PNG exactly unchanged, no new analysis or independent scientific peer review",
+    "share_tests": "skipped_by_user",
+    "old_share_url": "https://www.dumate.cn/s/d9oLSggG",
+    "platform_export": "not_yet_performed; original formatter receipt/check fields remain unchanged"
+  },
+  "independent_review": {
+    "requested_model": "gpt-6-astra",
+    "requested_reasoning_effort": "xhigh",
+    "runtime": "requested; not echoed",
+    "report_sha256": "09cc74bf60ead40aece5e279d297abe7bdaee69a490fb29a6e70dd5ad696c159",
+    "status": null,
+    "blocking_findings": 0,
+    "nonblocking": "Page2 discussion has one line beginning with a comma; deferred, no content loss",
+    "checks": "Three related isolated tests passed independently; code and clean release, actual canonical V3, old141 history, same MD/map/context/PNG, A4/font/image/DOCX fields and both PNG pages reviewed; not scientific peer review"
+  },
+  "desktop_export": {
+    "publication_prepared": "tasks/T1/publication/P3-article, nine ordinary files",
+    "actual_attachment_export": "not_run; input failed then refreshed binding/activation failed, user choice pending",
+    "error": "failed to activate captured window"
+  },
+  "scope_preservation": "Other scientific-review/check_revision additions in four working-tree docs and three new files are excluded from this release/commit; working files kept. Original five unrelated modifications also kept.",
+  "sharing_tests": "skipped_by_user",
+  "new_share_url": "not_created; prior URL preserved"
+}
