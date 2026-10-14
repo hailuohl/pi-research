@@ -1,0 +1,104 @@
+{
+  "filename": "yan-zhou-pi-1.0.3-scatter-final.zip",
+  "runtime_files": 16,
+  "bytes": 53497,
+  "sha256": "a5bdf5f2f0769392b81f0b5eb8eda0d7fc153b2f8e4a3c109e8c5a82118f4401",
+  "files": [
+    {
+      "path": "LICENSES/alphaXiv-MIT.txt",
+      "bytes": 1065,
+      "sha256": "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7"
+    },
+    {
+      "path": "PROVENANCE.md",
+      "bytes": 2750,
+      "sha256": "092377a19dbb54f97f0ab3754648de8906d97fc3fba6b07597854ab7cda7b772"
+    },
+    {
+      "path": "README.md",
+      "bytes": 10186,
+      "sha256": "fad973642e28355b52646b028acab4c726972db8ac1ada75acce08506a624901"
+    },
+    {
+      "path": "SKILL.md",
+      "bytes": 3833,
+      "sha256": "c0c7e1751931814f01429223793c5e5d9c2f067d5672cbc5e96fb73e590b1364"
+    },
+    {
+      "path": "assets/figstyle.py",
+      "bytes": 23200,
+      "sha256": "99c172e94c9c71863304924c34fa03926abf132eec2386b9363b52f589a89d1a"
+    },
+    {
+      "path": "references/analysis.md",
+      "bytes": 896,
+      "sha256": "dff7e7d99fc7e85ba6990838072ed94f200e2d07e70caa2bfdcbf9d20dd82d81"
+    },
+    {
+      "path": "references/evidence.md",
+      "bytes": 907,
+      "sha256": "514749e031ff99b4f457b6024e351713cc544c732782ac8b251ae98fd3808dbd"
+    },
+    {
+      "path": "references/figures.md",
+      "bytes": 1106,
+      "sha256": "5c3209e4ff5a89e98b6bd3e1f7d00c1275295a37a66ffe4b581ea1585ebec7c4"
+    },
+    {
+      "path": "references/literature.md",
+      "bytes": 967,
+      "sha256": "8d627d19e3057df4c763ffb22e4a64c9d3111332d02483ad73d9a6b82a0d90dd"
+    },
+    {
+      "path": "references/manuscript.md",
+      "bytes": 4670,
+      "sha256": "16f6c8a2aff4af29a13515e328bfb5e63aaadf1fda5657730e06b03ff5f8e01a"
+    },
+    {
+      "path": "references/scatter.md",
+      "bytes": 2622,
+      "sha256": "3869e678a627c95120ab543f51e3d9291c801dc928f0e69a5b143c76422a28ac"
+    },
+    {
+      "path": "references/scientific-review.md",
+      "bytes": 7078,
+      "sha256": "7ee40ec2d03f25b9b79633a003b311a00cc91e10a85fa3008674eee157149b69"
+    },
+    {
+      "path": "scripts/check_revision.py",
+      "bytes": 7038,
+      "sha256": "a3c87e8008b9748abe98feca95d6bdd56936f14b1bfdc9871755ae00522160af"
+    },
+    {
+      "path": "scripts/format_paper.py",
+      "bytes": 17846,
+      "sha256": "d3ff99ea22e205ebb3fa5217482b42b6e759b1ccf76bb43dc791245317ed9dbf"
+    },
+    {
+      "path": "scripts/plot_scatter.py",
+      "bytes": 8676,
+      "sha256": "015fae1e14ebbc74cbe34c3a16579453b95df02f0bf90541168df7f344b09d92"
+    },
+    {
+      "path": "scripts/research.py",
+      "bytes": 39731,
+      "sha256": "d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67"
+    }
+  ],
+  "excluded": [
+    "tests",
+    "caches",
+    "research workspaces",
+    "raw conversations",
+    "credentials",
+    "unrelated working-tree changes"
+  ],
+  "native_installation": "existing 1.0.2 scientific supplement manually enabled and verified; 1.0.3 not installed",
+  "native_scientific_validation": "pending while user prioritizes capability alignment",
+  "native_scatter_validation": "not_run",
+  "rejected_candidate": {
+    "filename": "yan-zhou-pi-1.0.3-scatter.zip",
+    "sha256": "ccac6e1cfa40dd9cf705ca5be9ec481a9592823ba3f4ca9b43ae8d53e978c9ed",
+    "status": "retained; two independently reproduced acceptance blockers repaired; do not install"
+  }
+}

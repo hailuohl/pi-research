@@ -1,8 +1,8 @@
-# 研舟π科研助手 · 包装修订1.0.2
+# 研舟π科研助手 · 包装修订1.0.3
 
 独立DuMate组合Skill。运行只需当前可用Python 3.10+及对应功能的库；无需原仓库或服务。安装zip的根目录放 `SKILL.md`、`references/`、`scripts/`、`assets/`、`LICENSES/`。不打包工作区或运行日志。
 
-1.0.2增加独立article后排版命令。原 `research.py`、`figstyle.py`及receipt格式保持1.0.0原字节，可继续校验旧科研产物；旧1.0.0/1.0.1安装包、稿件和交付记录保留。新格式稿另存，不替换旧PDF。更新安装和原生导出必须另外实测，不能用脚本测试代替平台验收。
+1.0.3增加独立原始配对散点图，保留1.0.2的article排版及科学核对/限定修订。原 `research.py`、`figstyle.py`及receipt格式保持1.0.0原字节，既有格式器和修订核对器也保持，可继续校验旧产物；旧安装包、稿件和交付记录保留。新图和新稿另存，不替换旧成果。更新安装和原生导出必须另外实测，不能用脚本测试代替平台验收。
 
 ## 最短操作
 
@@ -67,3 +67,7 @@ Markdown正文中 `[@S1]` 是选定文献引用，`[evidence:E1]` / `[claim:C1]`
 科学核对方法、检查记录和限定修订接口见 [scientific-review.md](references/scientific-review.md)。新增 `scripts/check_revision.py` 仅用标准库，复用冻结helper的任务边界、摘要和唯一锁；两稿均先由原 `manuscript` 命令生成，再按原稿SHA256和明确位置的old/new清单核对新源码。原helper、统计/绘图、旧稿和排版工作不改。
 
 核对通过仅表示修改范围逐字节匹配，不自动批准科学结论、独立审阅或新DOCX/PDF页面。相同输入可校验后复用；旧记录不覆盖新稿。不改变当前平台安装，发行补充包与实际安装/调用状态分别记录。
+
+## 原始配对散点图
+
+两个已选数值列需要逐行展示时，读取 [scatter.md](references/scatter.md) 并用 `plot_scatter.py`。同一ID对应配对提取analysis和真实figure两份版本；其row_count可用原正文数值标记，PNG及图注可用原figure标记入稿。保持原始行、不重跑已有分组统计，不增加拟合、CI或显著性结论。原图种和已有article交付继续有效。

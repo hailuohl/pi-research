@@ -10,3 +10,5 @@
 
 
 科学核对补充的 `references/scientific-review.md` 适配自本项目 `skills/piresearch/pi-research-paper/references/scientific-review.md`（基线e315385），保留数值/方向/单位/统计/条件核对、实际独立审阅和限定修订方法，去除Pi工具及服务调用。其上游沿用alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835的 `agent-skills/orx-paper/SKILL.md`，MIT许可保留。新增 `scripts/check_revision.py` 为本项目独立实现的标准库范围核对，不改冻结research.py、旧receipt或在途格式器；不含论文正文、原始数据或默认结论。
+
+1.0.3的 `plot_scatter.py` 为独立实现的所选CSV原始配对绘图，scatter方法沿用本项目pi-research-figures的观测保留、打印尺寸、轴语义及科学/视觉检查原则；复用既有figstyle的MIT资产，不复制示例论文或研究结论，不增加统计检验。冻结helper、资产、article格式器和修订核对器原字节保持。
