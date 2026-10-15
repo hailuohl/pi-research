@@ -1,0 +1,18 @@
+{
+  "sourceCommit": "68b79c6",
+  "backup": ".validation/documents-migration-zKlrGU/state.db",
+  "versionsBefore": [
+    1,
+    2,
+    3
+  ],
+  "versionsAfter": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "existingRecords": 173,
+  "byteIdenticalRecords": 173
+}

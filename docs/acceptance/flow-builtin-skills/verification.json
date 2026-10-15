@@ -1,0 +1,65 @@
+{
+  "registryOperations": 101,
+  "fullRegression": {
+    "command": "npm run test:core",
+    "tests": 598,
+    "pass": 576,
+    "fail": 0,
+    "skipped": 22,
+    "durationMs": 183612.9349,
+    "log": ".validation/builtin-skill-upgrade/regression.log",
+    "logSha256": "3bc569702f962e2f4cfe20f48dd47c34229ba362686d8834d196812174219760",
+    "timing": "Before final legacy configuration-receipt output compatibility correction"
+  },
+  "related": {
+    "httpCliSchemaRouting": 23,
+    "skillManagerUI": 8,
+    "independentDomainRuntimeUI": 24,
+    "ipcTests": 2,
+    "ipcNote": "Builtin and custom revision IPC tests; no Pi SDK/model calls",
+    "domainOnlyGates": "TaskAttempt retry, corrupted builtin/custom pre-admission refusal, unknown started history, maintainer release script idempotency/refusal"
+  },
+  "cleanBuild": {
+    "source": ".validation/clean-build-GS1uBo/summary.json",
+    "sourceSha256": "dcd75f680333eee91a38aa4c9939896197f6830d96f96392199c71093c8a2b25",
+    "node": "24.19.0",
+    "lockSha256": "c50e82528bda0350b504de14c794a1caaed22750611d88a331ae172bc21ea5cc",
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ],
+    "files": 371,
+    "identical": true,
+    "distManifestSha256": "05c000cb738484d5c43ee0a2b832377a1451d5c10d75cce1bd8e1679290cdffb",
+    "timing": "After final receipt compatibility correction"
+  },
+  "independentReview": {
+    "readOnly": true,
+    "blockingFindingsRemaining": 0,
+    "originalGitCommit": "5fd8511",
+    "oldReleaseFilesByteEqual": 29,
+    "oldReleaseModulesMetadataEqual": 14
+  },
+  "newModelRequests": 0,
+  "newCompilerJobs": 0,
+  "finalReceiptCorrection": {
+    "command": "node --test tests/integration/builtin-skill-http.test.mjs tests/integration/skill-lifecycle-http.test.mjs tests/unit/operation-outputs.test.mjs tests/unit/skill-lifecycle.test.mjs",
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "skipped": 0,
+    "durationMs": 835.2381,
+    "actualHistoricalReceiptsReplayed": 3,
+    "independentHTTPRecheck": 2
+  }
+}

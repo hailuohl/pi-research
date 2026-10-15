@@ -1,0 +1,762 @@
+{
+  "sources": {
+    "finalImageFixtureEvidence": {
+      "path": ".validation/document-build-runtime-evidence.json",
+      "sha256": "8a993f2dd6146052ba88c8fa6f034c4aa687c7587a776148fa05ad8b07768c57"
+    },
+    "priorImageWorkerEvidence": {
+      "path": ".validation/publication-live-YtSOLm/evidence.json",
+      "sha256": "9f824a1b0b0c420bfe005ce8133de5bd5405481d5c06b9a37b05527a72936111"
+    },
+    "priorImageTimeoutBuild": {
+      "path": ".validation/document-build-test-timeout-jduBkp/output/build.json",
+      "sha256": "723a45caa0bf36b280b55e1992ecf3c5ce7655ace15c39c1ad2cd42ce27b19fe"
+    }
+  },
+  "finalImage": {
+    "receipt": {
+      "profileId": "latex-document-v1",
+      "dockerContext": "desktop-linux",
+      "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+      "lockDigest": "99080a22e1c0d3930bb165ddf1cc6af4aeff9cf6ce8fdf49c0cdbc7a2c2c97cc",
+      "scriptDigest": "9a3b18dad43f1cd661a3cf35a8742eb38691ef8ba65940e085363fe4daa48d4f",
+      "dockerfileDigest": "d4b1d3f077834fb0e8e7f37963ae6e4bd43091638898a12ab38ee512796d8e9f",
+      "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d"
+    },
+    "fixtureCount": 18,
+    "fixtures": [
+      {
+        "fixture": "lua-forged-host-result",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "4099fe781a72aa3244134bdce599a0651e2d289420e9a9f7cf6257dbb713f8b3",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "Undefined control sequence.",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "==> Fatal error occurred, no output PDF file produced!",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-lua-forged-host-result-DdZLFy"
+      },
+      {
+        "fixture": "biber-nonutf8-control",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "9e4586c2a3276a66b2b6f7ae7fdeb254ec4a93432b104e4dd95c56154c5a222c",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "build_error",
+            "message": "'utf-8' codec can't decode byte 0xff in position 0: invalid start byte",
+            "file": null,
+            "line": null,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-biber-nonutf8-control-Gi7b3I"
+      },
+      {
+        "fixture": "biber-remote-blocked",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "afa97cbc65c7850a22643a81fd79bd620abf8e10f1a2559a7b060a6be6574a2a",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "build_error",
+            "message": "Only explicit local BibTeX data sources are permitted",
+            "file": null,
+            "line": null,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-biber-remote-blocked-dVa1uH"
+      },
+      {
+        "fixture": "absolute-write-blocked",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "24fcaf72bb6d3609099894776c9fd4add0d2498124caf732eea9967a092c2262",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "I can't write on file `/output/build.json'.",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "Emergency stop.",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "==> Fatal error occurred, no output PDF file produced!",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-absolute-write-blocked-3oS6vA"
+      },
+      {
+        "fixture": "pdf-before-error",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "b0cdf4860ce9279ba46314eb89e8edd05b8dcf871688fd16f24540c8d477bf43",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "Undefined control sequence.",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "==> Fatal error occurred, no output PDF file produced!",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-pdf-before-error-hzVUDm"
+      },
+      {
+        "fixture": "forged-result",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "f256fc4aed751105803405b3f98f926c73ed5f968d82681ed60bc6aebea7755f",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "Undefined control sequence.",
+            "file": "main.tex",
+            "line": 5,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "==> Fatal error occurred, no output PDF file produced!",
+            "file": "main.tex",
+            "line": 5,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-forged-result-x8xMJp"
+      },
+      {
+        "fixture": "lua-blocked",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "6ca11a9d957ecea2cc52ff3f38fa7183364eb91a1a306f0ba5df882ea66c492a",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 2,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "e71dcf5734b197c80e05e7e301d11e89791839bfc205ab3f502e9514889d3068",
+          "bytes": 3101,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "81987ba1c84644e0c35d3b228e88ec1a6c0025c956fcfc64cba352fc7e805788",
+            "bytes": 8860,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-lua-blocked-9uXri7"
+      },
+      {
+        "fixture": "shell-blocked",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "097068016d316209ee9027f0b31fcef387023aeb6bc1ff02fdd578eb7fb551fb",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 2,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "f68d6a272fd6ad2aaf40bfbd96e6e2d6e56909b30eb8557bb528624807d35675",
+          "bytes": 12000,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "32fc955f022254a411b0e8bd1fca4552f226b25caec6fcbc4fe5eebaf48cc0c7",
+            "bytes": 8844,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-shell-blocked-O8TDEf"
+      },
+      {
+        "fixture": "undefined-reference",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "563f0cde933306e5cda9b3936f31226975c649556321a793d03901db4616799a",
+        "status": "non_convergent",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 6,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "non_convergent",
+            "message": "References did not stabilize within 6 TeX passes.",
+            "file": null,
+            "line": null,
+            "pass": 6
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-undefined-reference-7CZmOS"
+      },
+      {
+        "fixture": "missing-package",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "47d9bcbaa9ad82bc34cef69f0ed9d37539988465bd619e20c3c975483de5469d",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "Emergency stop.",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "==> Fatal error occurred, no output PDF file produced!",
+            "file": "main.tex",
+            "line": 3,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "LaTeX Error: File `pi-package-does-not-exist.sty' not found.",
+            "file": null,
+            "line": 3,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-missing-package-gsmByO"
+      },
+      {
+        "fixture": "missing-image",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "cf6a0ea6ef66cb92f85182446419146bd31026e00dd1de55344cf19d0ebf1cd8",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "missing_image",
+            "message": "Package pdftex.def Error: File `missing-image.png' not found: using draft setting.",
+            "file": "main.tex",
+            "line": 4,
+            "pass": 1
+          },
+          {
+            "severity": "error",
+            "code": "tex_error",
+            "message": "==> Fatal error occurred, no output PDF file produced!",
+            "file": "main.tex",
+            "line": 4,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-missing-image-iVDmd8"
+      },
+      {
+        "fixture": "biber",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "ab452d56590c5ba6bba4596142c0f2e38b59734797ce4dc7fe66a97050d3f11c",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 3,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "1dbe4bb9b8b878031a61ce820acc18fcb2a90bb71423e437ea65ce4b8a006d4d",
+          "bytes": 35120,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "cf02fbcdb4f562391929c0033a31e67683dac071ec2fdfad2e1bc25bd9fb2d4e",
+            "bytes": 19123,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-biber-AuFTJJ"
+      },
+      {
+        "fixture": "bibtex",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "4864f304a6c14b951547204f39d76184084d191e08e12aedd5a2a4b6f80c9f27",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 3,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "7c4fed3da79ab8686ed32f1b854bfa9e3050de14130337310c8859576ab4cc65",
+          "bytes": 35119,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "c28930e3889006f7fd3400d7bc477746ba75c75bcb98911555f8d87278fa8f6c",
+            "bytes": 19021,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-bibtex-Euz52X"
+      },
+      {
+        "fixture": "lua-chinese-budget",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "b58cb92da00e8b209bd1040009390c04ee1c2b33d61830bc3fbaed2ca6832589",
+        "status": "failed",
+        "hadErrors": true,
+        "converged": false,
+        "passes": 1,
+        "diagnostics": [
+          {
+            "severity": "error",
+            "code": "engine_exit",
+            "message": "lualatex exited with status -9.",
+            "file": null,
+            "line": null,
+            "pass": 1
+          }
+        ],
+        "pdf": null,
+        "previews": [],
+        "evidenceDirectory": ".validation/document-build-test-lua-chinese-budget-6SOL2e"
+      },
+      {
+        "fixture": "chinese",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "b58cb92da00e8b209bd1040009390c04ee1c2b33d61830bc3fbaed2ca6832589",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 2,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "05b5d69314d1716b689da361549544baa672c0e56b68e3a4088708eee4740857",
+          "bytes": 5841,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "b345ec015d87eefdc1df1d9af9589ee4bbcfaa77f4a346f672bdcb54fdc0c76c",
+            "bytes": 14603,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-chinese-HDb7jS"
+      },
+      {
+        "fixture": "lualatex",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "a1cf9db8e769c2aa4af5fea7fc682322f7b6a298fd27e73a0b0ef4a132b67656",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 2,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "04cc529822c965fa0cb17d19041774145b80909c4f2257f7934f20e5c50759c2",
+          "bytes": 3326,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "6c7d6cf2745003ff7b940dc2fa9f160c87303c4d0f79b310a3c3c97a7f4fe50c",
+            "bytes": 9668,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-lualatex-6nxvpX"
+      },
+      {
+        "fixture": "xelatex",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "a1cf9db8e769c2aa4af5fea7fc682322f7b6a298fd27e73a0b0ef4a132b67656",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 2,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "3a2e1f20a78d58fdf177678eb67eb2d4d7c7c18354443127dd60a398a77a335b",
+          "bytes": 2974,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "6c7d6cf2745003ff7b940dc2fa9f160c87303c4d0f79b310a3c3c97a7f4fe50c",
+            "bytes": 9668,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-xelatex-DG9jUO"
+      },
+      {
+        "fixture": "pdflatex",
+        "imageDigest": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+        "profileDigest": "4112e86a21c5fcaa37cd7d2352417360e9bb2ee0588c80cc6d8937d1e9d3915d",
+        "sourceDigest": "a1cf9db8e769c2aa4af5fea7fc682322f7b6a298fd27e73a0b0ef4a132b67656",
+        "status": "succeeded",
+        "hadErrors": false,
+        "converged": true,
+        "passes": 2,
+        "diagnostics": [],
+        "pdf": {
+          "file": "document.pdf",
+          "digest": "5511e05b8cfcd6e6d830b6ef13be6c15c65707af6ed74b1781ff3a9470664892",
+          "bytes": 12688,
+          "pages": 1
+        },
+        "previews": [
+          {
+            "pageNumber": 1,
+            "file": "page-001.png",
+            "digest": "4962b0554aacd031cd77302e3a5c710192e24692a4499e39e808424d12727375",
+            "bytes": 9665,
+            "width": 1132,
+            "height": 1600
+          }
+        ],
+        "evidenceDirectory": ".validation/document-build-test-pdflatex-TRJE1r"
+      }
+    ]
+  },
+  "priorImage": {
+    "imageDigest": "sha256:c1f397efa0a6616c403a9cc4a1a1b6046565466b2afd82dbae739a61b282e5fe",
+    "workerDataDirectory": ".validation/publication-live-YtSOLm",
+    "workerChecks": [
+      {
+        "name": "pdflatex",
+        "jobId": "e335cf51-dbcc-463e-bb21-726cdb70a97a",
+        "revisionId": "d78ce9a8-e642-4d5c-8824-b2ba75718d68",
+        "state": "succeeded",
+        "integrity": "complete",
+        "exitCode": 0,
+        "containerId": "a74172555b66d00f163ad3d7aa0a5e2ab585d2b5de5d580e916b1ceeb94ed7b1",
+        "resultId": "22b65c430bd64e42d204f0f996a062b96e6adb25680119255f46bab09c4b14ac",
+        "sourceDigest": "baecfa272ea73938cafb3838d751678baf80f2423eb0054f7a36e58a696aa145",
+        "artifactIds": [
+          "828f6129-c888-415a-a5f5-2368827293ff",
+          "66c47cab-044c-4d71-ba52-7b83ae6f5b07",
+          "c8affb81-e954-4a63-b17a-a9c694129680",
+          "7659de31-7af6-4b05-a5f9-f1bfb8f4d17d",
+          "e185660a-84f6-4b15-a40a-e13bf7060bf1",
+          "8e38d13b-474f-4b3d-9a39-56d009a266d7"
+        ],
+        "outputBuild": {
+          "path": ".validation/publication-live-YtSOLm/publication-jobs/e335cf51-dbcc-463e-bb21-726cdb70a97a/output/build.json",
+          "sha256": "516e27e07d8ec81ea484a27c3ada88c45ef69a9b82f2c98c1dee40098c4913f0",
+          "status": "succeeded",
+          "sourceDigest": "baecfa272ea73938cafb3838d751678baf80f2423eb0054f7a36e58a696aa145",
+          "hadErrors": false,
+          "converged": true,
+          "passes": 2,
+          "diagnostics": []
+        }
+      },
+      {
+        "name": "xelatex",
+        "jobId": "3dbce91e-5ed9-403a-82ac-14145256066c",
+        "revisionId": "0495574a-89fa-42f9-957c-12569b4c281c",
+        "state": "succeeded",
+        "integrity": "complete",
+        "exitCode": 0,
+        "containerId": "2fcab3dc552201fbd443779249689e0f0851bb48b64a31d2ba1d77871b9e1f81",
+        "resultId": "3611e21c4801f1e50cd80d15cc9840b60641596e39e616b583d08aa677681040",
+        "sourceDigest": "5d5e874b98cc8365c03010729802166030a962d5d66e330f7b53e336c2c8b1ed",
+        "artifactIds": [
+          "061d0bcc-6ffd-4a57-903a-26d5495bd081",
+          "998bde9b-4f9f-471e-86ba-869898566944",
+          "1ba66d15-3624-40c3-8091-452c2c058f56",
+          "e7b57704-05d3-4368-af03-6a6bfe0e924a",
+          "33c8f0ce-8ab0-4361-b0aa-a9579af28ca3",
+          "1b5432f0-557e-4b67-ba8c-032d328adf81"
+        ],
+        "outputBuild": {
+          "path": ".validation/publication-live-YtSOLm/publication-jobs/3dbce91e-5ed9-403a-82ac-14145256066c/output/build.json",
+          "sha256": "05bfcb5032f535d2d53fe63b462e39b2d710d8809c471a9778a3c876b288dd3c",
+          "status": "succeeded",
+          "sourceDigest": "5d5e874b98cc8365c03010729802166030a962d5d66e330f7b53e336c2c8b1ed",
+          "hadErrors": false,
+          "converged": true,
+          "passes": 2,
+          "diagnostics": []
+        }
+      },
+      {
+        "name": "lualatex",
+        "jobId": "10436b85-e313-4513-9f5b-73496dc277f0",
+        "revisionId": "fbf19a41-0d13-45bd-bdd1-51d8dbf5129b",
+        "state": "succeeded",
+        "integrity": "complete",
+        "exitCode": 0,
+        "containerId": "6c56621ac0f4d7751a934add180051a1283fe31c7a65b175745eee5fbc5a7166",
+        "resultId": "73ec27242b2aa631136aed0d383af4953dde2824a86c9e541bd94a073cd31319",
+        "sourceDigest": "d752eaea126d85536b3659d544854b376e870be264a41cbc6d7a8bb94baf19c5",
+        "artifactIds": [
+          "fc739c24-303f-4a43-808e-bbbb54d8b364",
+          "403ee5a9-0fba-4b2f-830e-3cc6a42582da",
+          "79b1ce2b-751d-464c-9f19-1aef7b3d2225",
+          "57d215fd-ce7a-4404-a44f-7e2e9b35a64c",
+          "66eedf5f-60aa-4939-a3cf-37fa6e2e2654",
+          "39059663-3c93-41ed-b2bb-6b6b175da91e"
+        ],
+        "outputBuild": {
+          "path": ".validation/publication-live-YtSOLm/publication-jobs/10436b85-e313-4513-9f5b-73496dc277f0/output/build.json",
+          "sha256": "56996632db9e5e4064b83d7a6a4ffddaf68e352fdf55503cea566d011078c968",
+          "status": "succeeded",
+          "sourceDigest": "d752eaea126d85536b3659d544854b376e870be264a41cbc6d7a8bb94baf19c5",
+          "hadErrors": false,
+          "converged": true,
+          "passes": 2,
+          "diagnostics": []
+        }
+      },
+      {
+        "name": "failure-diagnostics",
+        "jobId": "f1b62b98-b6c8-4839-a0e6-577f6e7313b6",
+        "revisionId": "3de3f0b9-13ba-49f4-a65e-ee4503ecf810",
+        "state": "failed",
+        "integrity": "complete",
+        "exitCode": 1,
+        "containerId": "f0c4680ffc21020633183def9fad115f3a9045eb72d6427545f8bd2ecdabbe6e",
+        "resultId": "bb0493ff6f03e3bc38524089a4f13e637ce857e47b4fed2b0fb0b27278b2b47c",
+        "sourceDigest": "fd9ee87e70f9cb5029e328ba511ab3177af9a80caf696c6426ab467e27dbc9b1",
+        "artifactIds": [
+          "037e43cc-6761-4fca-aec6-052092a821a4",
+          "ddd9e753-057e-4712-997b-eec6ff96aaa8",
+          "85e323bc-d020-4166-8e9c-8f5bf24fba46",
+          "6b7dd076-0882-4a23-9e1a-aadd515c9ed8"
+        ],
+        "outputBuild": {
+          "path": ".validation/publication-live-YtSOLm/publication-jobs/f1b62b98-b6c8-4839-a0e6-577f6e7313b6/output/build.json",
+          "sha256": "bec3a65eb544943e4a66adac67be086629428565af59550865aeeb4439b427a1",
+          "status": "failed",
+          "sourceDigest": "fd9ee87e70f9cb5029e328ba511ab3177af9a80caf696c6426ab467e27dbc9b1",
+          "hadErrors": true,
+          "converged": false,
+          "passes": 1,
+          "diagnostics": [
+            {
+              "severity": "error",
+              "code": "tex_error",
+              "message": "Undefined control sequence.",
+              "file": "main.tex",
+              "line": 3,
+              "pass": 1
+            },
+            {
+              "severity": "error",
+              "code": "tex_error",
+              "message": "==> Fatal error occurred, no output PDF file produced!",
+              "file": "main.tex",
+              "line": 3,
+              "pass": 1
+            }
+          ]
+        }
+      },
+      {
+        "name": "same-container-recovery-cancel",
+        "jobId": "8d61e78a-d2e4-4b2d-b535-8e866ed5f21a",
+        "revisionId": "cb0a9ed2-9915-49a3-a0d6-187c50dbb705",
+        "state": "cancelled",
+        "integrity": "incomplete",
+        "exitCode": 137,
+        "containerId": "ed6ce26406c474742cffa9338b138ab3a64e0f5134953bca30dd4a361b4b0a1c",
+        "sourceDigest": "b966d0fb17ef19544c787e219e8c34d92f45d7dfece9b39701694271b9a7b963",
+        "artifactIds": [
+          "14f7058e-760e-42fb-8f80-6559b50a5573",
+          "d87d340b-117b-4e73-a21a-aa93d1c702df"
+        ]
+      },
+      {
+        "name": "queued-after-release",
+        "jobId": "1dc4aab5-0e25-4677-bccc-c15085c342fb",
+        "revisionId": "4c57a0ca-4a7d-459a-b233-a11d54e1461f",
+        "state": "succeeded",
+        "integrity": "complete",
+        "exitCode": 0,
+        "containerId": "52d9eb6ea7fc6856c957aad9a3a6139ff71c5529f672fa26db3279febfba4149",
+        "resultId": "b1db68b435d131ad57aa60fcd847829d42860ee089800d94d96f94832b5f6ab1",
+        "sourceDigest": "569807f544bdbf70829e8520ed94cfca29d32563db3ce5176a6fdbf3eff6cd96",
+        "artifactIds": [
+          "e719198b-ed4b-4160-a877-5d2baeb4c5aa",
+          "11617660-1d06-4b83-a144-c73ec40c2d8b",
+          "74fdcb36-bb19-4ce2-a90a-4694eb1816b8",
+          "69eeb03b-7f0b-473c-998b-626f840b65b9",
+          "e403b110-5cb5-45dc-b386-ba3374850cab",
+          "30931616-87db-41a4-a949-512e7c723536"
+        ],
+        "outputBuild": {
+          "path": ".validation/publication-live-YtSOLm/publication-jobs/1dc4aab5-0e25-4677-bccc-c15085c342fb/output/build.json",
+          "sha256": "542565a48d073ceac20a92faabbe9b96602f64dd2763fe86c4d5f4628d1943db",
+          "status": "succeeded",
+          "sourceDigest": "569807f544bdbf70829e8520ed94cfca29d32563db3ce5176a6fdbf3eff6cd96",
+          "hadErrors": false,
+          "converged": true,
+          "passes": 2,
+          "diagnostics": []
+        }
+      }
+    ],
+    "timeout": {
+      "evidenceDirectory": ".validation/document-build-test-timeout-jduBkp",
+      "buildJsonSha256": "723a45caa0bf36b280b55e1992ecf3c5ce7655ace15c39c1ad2cd42ce27b19fe",
+      "sourceTexSha256": "63ebedf2ebf917d63dfe636b622e049085e954d9ef95de82829b1c5d8acd63ba",
+      "imageDigest": "sha256:c1f397efa0a6616c403a9cc4a1a1b6046565466b2afd82dbae739a61b282e5fe",
+      "sourceDigest": "63ebedf2ebf917d63dfe636b622e049085e954d9ef95de82829b1c5d8acd63ba",
+      "engine": "pdflatex",
+      "status": "timed_out",
+      "hadErrors": true,
+      "converged": false,
+      "passes": 1,
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "Total compiler deadline exceeded.",
+          "file": null,
+          "line": null,
+          "pass": 1
+        }
+      ],
+      "pdf": null,
+      "previews": [],
+      "deadlineSeconds": 120,
+      "observedFileCreationIntervalSeconds": 120.437
+    }
+  },
+  "notes": [
+    "17 non-timeout cases plus direct Lua host-output forgery passed on this receipt. Lua CJK budget probe truthfully failed with engine SIGKILL(-9); Chinese XeLaTeX succeeded and its page PNG was visually checked.",
+    "A 120-second timeout passed on prior image c1f397efa0a6616c403a9cc4a1a1b6046565466b2afd82dbae739a61b282e5fe before the BCF UTF-8-only validation change; timeout mechanism was unchanged.",
+    "Output monitoring is not a hard host-disk quota. No existing unrelated containers were modified.",
+    "The timeout build.json is in .validation/document-build-test-timeout-jduBkp/output/build.json on prior image c1f397...; it is not one of the 18 final-image fixtures. The observed interval is the filesystem creation-time difference between source/main.tex and output/build.json, not a timer field in build.json.",
+    "Initial Lua --safer probe failed because luaotfload rejects --safer; see .validation/document-build-cache/lua-probe.py and .validation/document-build-cache/build.py. The final lua-chinese-budget fixture records lualatex exit -9 at the 768 MiB budget; Chinese XeLaTeX succeeded.",
+    "Fixture status is the measured compiler state. A failed state on a rejection fixture can be the expected acceptance outcome; no blanket passed count is inferred."
+  ]
+}

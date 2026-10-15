@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "baseline": "d3b27fc257972ee68823ecf75cb2750c0dadb119",
+  "platform": "win32",
+  "node": "24.19.0",
+  "bundleId": "deacf6d3accce4602e8c28974a85dbebf56dd021e4d48672a2ddf0b0b6ce5715",
+  "acceptance": "ACCEPTANCE.md",
+  "checks": {
+    "full": {
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "--test-concurrency=1",
+        "tests/unit/*.test.mjs",
+        "tests/integration/*.test.mjs"
+      ],
+      "startedAt": "2026-10-07T12:19:18.705Z",
+      "durationMs": 736234,
+      "exitCode": 0,
+      "counts": {
+        "tests": 1215,
+        "pass": 1192,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 23
+      },
+      "log": ".validation/agent-github-receipt/full.log",
+      "logSha256": "3d317eac76ed29b7e810faf4d98bd48e0ca07c1ea273673ff4e82c357df87ced"
+    },
+    "focused": {
+      "command": [
+        "C:\\Program Files\\nodejs\\node.exe",
+        "--test",
+        "--test-concurrency=1",
+        "tests/unit/openresearch-skills.test.mjs",
+        "tests/unit/operation-schema.test.mjs",
+        "tests/unit/operation-outputs.test.mjs",
+        "tests/integration/experiment-dialogue-http.test.mjs",
+        "tests/integration/operations-http-cli.test.mjs"
+      ],
+      "startedAt": "2026-10-07T12:14:12.354Z",
+      "durationMs": 62758,
+      "exitCode": 0,
+      "counts": {
+        "tests": 31,
+        "pass": 31,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "log": ".validation/agent-github-receipt/focused.log",
+      "logSha256": "a540d133a06f8c70a9a3e6fc77c3b7c16cc517c2189f05da3146fc0e796003bf"
+    },
+    "implementationFocused": {
+      "tests": 26,
+      "passed": 26,
+      "failed": 0,
+      "skipped": 0,
+      "command": "node --test --test-concurrency=1 tests/unit/github-commit-inspect.test.mjs tests/integration/github-project.test.mjs",
+      "verifiedAgainByParentFull": true
+    },
+    "sdk": {
+      "version": "0.87.1",
+      "supplier": "isolated offline HTTP fixture",
+      "remoteData": "explicitly seeded saved mock receipt rows",
+      "privateErrorCanaryExcluded": true
+    },
+    "gitIntegration": {
+      "execution": "actual local managed Git → existing mock GitHub worker → exact SHA/ref receipt → same callId refresh → reopen",
+      "realRemote": false
+    },
+    "clean": {
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 554,
+      "distManifestSha256": "88503e76f42bdc855fc859d92ef75d495b3e049b935f8abe7cec2979ea9635f1"
+    }
+  },
+  "review": {
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoning": "xhigh",
+    "runtimeEcho": "not available",
+    "patchSha256": "c72df7f069c083a53d9c18c222c18f7a69ddcc191fb4b2ea16abf84c7780a1e7",
+    "verifiedFiles": 78,
+    "blockingFindings": 0,
+    "independentFocusedTests": {
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoning": "high",
+    "runtimeEcho": "not available"
+  },
+  "preservation": {
+    "preexistingFiveFilesUnchanged": true,
+    "historicalReleases": 10,
+    "oldOperationReceiptsPreserved": true,
+    "defaultProjectInspectionUnchanged": true
+  },
+  "notRun": [
+    "actual research-repository upload to GitHub",
+    "external-model autonomous execution; no live model environment configured"
+  ],
+  "knownPreexistingGap": {
+    "name": "parity baseline still references skills/openresearch/manifest.json",
+    "evidence": "../flow-agent-run-scheduling/evidence.json",
+    "newFailure": false
+  },
+  "ci": "dedicated SHA receipt/skills/SDK checks in existing three-OS workflow; post-push result recorded separately"
+}

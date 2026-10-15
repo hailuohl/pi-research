@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-06",
+  "baseline": "71803f01199d0aa01b3f38bb923b265b354353a0",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "validation": {
+    "full": {
+      "status": "passed",
+      "total": 1088,
+      "passed": 1065,
+      "failed": 0,
+      "skipped": 23,
+      "log": ".validation/permission-modes-2026-10-06/full-tests-delivery-frozen.log"
+    },
+    "clean": {
+      "status": "passed",
+      "files": 523,
+      "node": "24.19.0",
+      "manifestSha256": "eb71edcbf96c63b42e6765c69100906c0476b0c343fc2257ced10b6d035e8003",
+      "summary": ".validation/clean-build-0M181L/summary.json"
+    },
+    "review": {
+      "status": "passed",
+      "diffSha256": "04ff1547e0aff63599d04647b280b9e9a6f4cf2ccc188e0f70515749afca9847",
+      "closedBlockers": 4,
+      "independent": true,
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "runtimeConfigurationEchoed": false
+    },
+    "docker": {
+      "status": "passed",
+      "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+      "checks": [
+        {
+          "name": "exact owner-approved full job with saved readonly runs in independent Docker worker",
+          "state": "succeeded",
+          "integrity": "complete"
+        },
+        {
+          "name": "revoke rejects queued job before Docker container creation",
+          "state": "failed",
+          "containerCreated": false
+        }
+      ],
+      "scientificValidation": false
+    }
+  },
+  "live": {
+    "url": "http://127.0.0.1:4794/",
+    "fourOptionsEnabled": true,
+    "existingSelectionChanged": false,
+    "mainJsSha256": "51f3912869246eb0eb2367c757fb0dfc3ebf34ae4555310b93435a55cf6246e0",
+    "hostCssSha256": "75b765606e96c7a10b7583c47218477b3f587b1b9da9dbe281d39af4f697e856"
+  },
+  "protectedFiles": [
+    {
+      "path": "apps/web/public/styles.css",
+      "sha256": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2"
+    },
+    {
+      "path": "dist/web/styles.css",
+      "sha256": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2"
+    },
+    {
+      "path": "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
+      "sha256": "57655c0f434da59c5e87377e2d615293498bd581e6c96e0b03206006aaf23afe"
+    },
+    {
+      "path": "docs/reference-baseline/capability-matrix.json",
+      "sha256": "9d716565f9640cdfc5054c9467d46db8f63945a0a296c45b480b88d0019b5037"
+    },
+    {
+      "path": "docs/specs/project-design.txt",
+      "sha256": "251e12b2201f1cbb87f497f5771f20d0011a20f73e2ec324ce613141e958a6f7"
+    }
+  ],
+  "limitations": [
+    "First three modes use controlled tools; automatic edit is private workspace only.",
+    "Full access uses trusted same-user host execution without OS isolation.",
+    "Status displays the latest twenty actions; older records are retained.",
+    "Twenty-three environment-dependent tests skipped; never counted as passed."
+  ]
+}

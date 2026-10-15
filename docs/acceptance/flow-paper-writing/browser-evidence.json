@@ -1,0 +1,24 @@
+{
+  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+  "reportId": "c4cd8310-261a-4b5e-9962-7c4115752778",
+  "method": "Actual in-app browser, native keyboard activation, DOM observations and screenshots",
+  "checks": [
+    {"name": "Separate model approvals", "result": "Approved four saved team plans: initial writer, first reviewer, correction writer and independent revised-text reviewer"},
+    {"name": "Fixed model artifact input", "result": "Selected 9415f622 main.tex, then corrected 80ad6315 main.tex; source preview read-only and freeze preserved the actual artifact ID instead of pasted text"},
+    {"name": "Run attachment", "result": "Attached actual Run predictions.csv artifact 84411932 under that relative path in both revisions"},
+    {"name": "Compiler approval", "result": "Explicitly configured the pinned 358ed6f3 image and separately prepared, approved and submitted both builds"},
+    {"name": "Budget refusal", "result": "First build queued with request_too_large under the copied 512 MiB shared budget; explicitly changed only the acceptance-copy memory budget to 1024 MiB, admitting the unchanged 768 MiB job"},
+    {"name": "Review state", "result": "Final task UI displayed 审查意见：接受（独立于任务验收状态）; first stored reviewer verdict remains disputed"},
+    {"name": "Report and archive", "result": "Selected the revised build plus accepted protocol-metadata reference; generated c4cd8310 report and 1285237-byte archive"},
+    {"name": "Numeric reference", "result": "Clicked MSE 0.000050345031695457565 and read evidence b5ec55cc, metrics artifact c635e6b8 and digest 1d94893e; opened exact Run ca819399 rather than latest"},
+    {"name": "Narrow fixed source", "width": 390, "documentScrollWidth": 375, "previewReadOnly": true, "previewChars": 5922, "result": "Complete visible SHA wrapped into two lines after the display fix; visible digest elements had scrollWidth equal to clientWidth (267px)", "screenshot": "fixed-artifact-mobile.png"},
+    {"name": "Reload", "result": "Report c4cd8310, revision 4d04072b and build be4d0f6a restored; physical page resets then can be selected again"},
+    {"name": "Narrow PDF", "width": 390, "documentScrollWidth": 375, "imageComplete": true, "naturalWidth": 1132, "naturalHeight": 1600, "physicalPage": 3, "screenshot": "pdf-mobile.png"}
+  ],
+  "limits": [
+    "No independent browser console-error collection was performed",
+    "The browser download destination was not confirmed; archive bytes were independently retrieved over authenticated HTTP and actually unpacked",
+    "Source SHA initially clipped in the narrow view; only block display and the existing code-wrap class were added, then visually rechecked",
+    "Pi reviewers evaluated text, source facts and logs, not PDF page images; primary-agent visual inspection is recorded separately"
+  ]
+}

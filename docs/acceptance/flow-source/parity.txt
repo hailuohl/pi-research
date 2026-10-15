@@ -1,0 +1,16 @@
+
+> pi-research@0.3.1-experimental test:parity
+> node --test --test-concurrency=1 tests/parity/*.test.mjs
+
+✔ baseline matrix preserves the fixed upstream, all capabilities and five independent evidence dimensions (9.5802ms)
+✔ runtime, compiler and bundled browser assets are pinned (2.6028ms)
+✔ build fails explicitly without local dependencies even when a global compiler is available (92.215ms)
+✔ prebuilt CLI and authenticated HTTP core start in a directory without node_modules (1810.3494ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2003.3845

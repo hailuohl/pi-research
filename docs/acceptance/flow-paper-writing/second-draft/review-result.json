@@ -1,0 +1,54 @@
+{
+  "teamId": "3e11eeda-9954-47ef-ac6e-297cc49937d7",
+  "taskId": "2bd54327-afe1-4e8e-a3c1-6612b66247d1",
+  "approvalId": "2bed2db9-8e06-4e60-8a64-9ed73c614f5f",
+  "revisionId": "4d04072b-ba5e-4890-b005-02c24df684de",
+  "bindingArtifactId": "2b008cc1-15c0-4250-9b32-7c8dae999226",
+  "bindingDigest": "69ce7bce8fe5034bb33309e4c6b43c11f79125f12a6973d9b4e81a8349e259a0",
+  "inputEvidenceIds": [
+    "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+    "9deca99c-b768-4f8c-af6f-9b0805124d35",
+    "b77604be-6e13-4a12-b938-4db0227f28ea",
+    "1b17a4f2-5601-4da2-847e-144f4e63d53e",
+    "4c4a62f5-342d-49b8-831a-d73a981d724f",
+    "be4cc135-744d-4da1-bdf2-dcf6b9024e84",
+    "2fecace6-9840-44c8-8c98-b453aa099adf",
+    "c3bc43e5-1389-4902-aa56-9e9ba5af34a3"
+  ],
+  "publicationResultId": "d0d59f0e5f5d6a9a8d3319821f9d0f7ba06046c0b510c30405def847d8e73700",
+  "attemptId": "6ecd0581-d008-489c-b21b-5ff72a630984",
+  "sessionId": "0d401e39-5bab-4557-ae5e-5c474dcc7487",
+  "inputDigest": "052536be41b8f0c8e7138b620628c36bf72f71c129e6b036f3ff540ba9d65b1f",
+  "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+  "taskResultId": "8583e5c4-7379-4831-9a3a-735e123adf96",
+  "resultDigest": "cbbf99247df7baa763b980f67a3b7ab2ce656cb26b2fab7ef29e869b88fd436d",
+  "taskExecution": "output_submitted",
+  "taskAcceptance": "accepted",
+  "sessionState": "failed",
+  "sessionError": "模型请求已中止",
+  "model": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "thinking": "off"
+  },
+  "result": {
+    "summary": "独立复核固定文稿 revision 4d04072b-ba5e-4890-b005-02c24df684de、PDF digest fef21efe…e018、Run ca819399-1714-4aaa-b50e-ef1700b3991f，共审 8 项输入证据，结论为 accept（技术层面），但保留两项事实性限制。\n\n数值一致性：摘要与表 1 的测试 MSE 5.0345031695457565e-05、训练 MSE 4.962382619455619e-05、R² 0.9999474271448613 与 metrics.json 原件逐位一致；三系数 0.4998729432962087 / 1.4006018337068389 / 2.0004320863077187 与 model.json 一致；predictions.csv 抽样首行（x=0.05…044, actual 0.5686328523686484, predicted 0.57490411519732）与末行（x=-0.20833…337, actual 0.29592522007178595, predicted 0.2949052039088342）均与 60 行原件逐位一致。产物摘要引用（80674682…2037、1d94893e…a841、5a54951e…ed547、协议 5e1a5287…e948、sourceDigest b8f9aaa5…1b80）与固定记录相符；五文件大小与摘要逐件核对无误。\n\n算法描述：绑定 JSON 内 fixedMainSource 含完整 main.py。稿件式 (eq:normal) 的左端对 β_j 显式求和、右端 Σ y x^i 与代码中 A[i][j]=Σ x^{i+j}、b[i]=Σ y x^i 逐条对应；带部分主元的 Gauss–Jordan、主元阈值 1e-12 抛奇异异常、前 180/后 60 切分、ŷ=Σβ_i x^i、MSE 与 R²（测试集均值）公式均与代码一致。config.json 引文（{\"polynomialDegree\": 2}）正确。\n\n时态与交付状态：稿件按撰写时点声明本修订“尚未构建/未审查、以系统固定记录为准”，未预称已编译或已通过审查，与证据相符（该修订后来确有构建记录，但不与稿件时态矛盾）。首轮编译的 tab:metrics undefined 警告经第二遍消除（末轮日志无 undefined references）；最终编译 2 passes、converged=true、3 页、PDF digest 与目标一致。运行日志流的遗留事实为 4 处 Overfull hbox（约 5.23、33.50、28.57、10.44 pt，位于稿件第 23–24、43–45、50–51、52–53 行段落），稿件未声称排版已完全清除，该警告仍真实存在，建议后续修订处理（如对长 digest/数字行加断行）。\n\nwriter/会话状态如实记录：writer 任务 output_submitted 且 accepted，但 nativeSessionState=failed，与已保存 task 结果分开记录。主代理对 3 页 PNG 的视觉观察（无裁切、digest 换行、保留 Overfull 警告）系其自检，本人未查看 PDF 页图，不作背书。\n\n限制：本审查基于文本与日志证据，未执行任何代码、未目视 PDF；稿件自述科研 judgment 仍为 pending，属合成数据软件验收，范围声明准确。综合以上，数值、公式、范围与交付时态均与固定证据一致，无实质性错误，给 accept。",
+    "outcome": "completed",
+    "evidenceIds": [
+      "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+      "9deca99c-b768-4f8c-af6f-9b0805124d35",
+      "b77604be-6e13-4a12-b938-4db0227f28ea",
+      "1b17a4f2-5601-4da2-847e-144f4e63d53e",
+      "4c4a62f5-342d-49b8-831a-d73a981d724f",
+      "be4cc135-744d-4da1-bdf2-dcf6b9024e84",
+      "2fecace6-9840-44c8-8c98-b453aa099adf",
+      "c3bc43e5-1389-4902-aa56-9e9ba5af34a3"
+    ],
+    "artifactIds": [],
+    "claims": [],
+    "unresolvedQuestions": [],
+    "verdict": "accept"
+  },
+  "allRequiredEvidenceReadAndCited": true,
+  "independentSession": true
+}

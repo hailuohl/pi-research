@@ -1,0 +1,404 @@
+
+> pi-research@0.1.0 test
+> npm run build && node --test --test-concurrency=1 tests/unit/*.test.mjs tests/integration/*.test.mjs
+
+
+> pi-research@0.1.0 build
+> node scripts/build.mjs
+
+TAP version 13
+# (node:6078) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: doctor runs from prebuilt distribution without npm or a model key
+ok 1 - doctor runs from prebuilt distribution without npm or a model key
+  ---
+  duration_ms: 53.682245
+  type: 'test'
+  ...
+# Subtest: CLI demo performs real baseline/candidate/retained-parent runs and creates evidence report
+ok 2 - CLI demo performs real baseline/candidate/retained-parent runs and creates evidence report
+  ---
+  duration_ms: 663.721341
+  type: 'test'
+  ...
+# (node:6200) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: API requires owner token and rejects cross-origin writes
+ok 3 - API requires owner token and rejects cross-origin writes
+  ---
+  duration_ms: 30.333773
+  type: 'test'
+  ...
+# Subtest: API rejects DNS rebinding Host header even with valid token
+ok 4 - API rejects DNS rebinding Host header even with valid token
+  ---
+  duration_ms: 12.581266
+  type: 'test'
+  ...
+# Subtest: API writes require explicit idempotency keys and enforce repeated request semantics
+ok 5 - API writes require explicit idempotency keys and enforce repeated request semantics
+  ---
+  duration_ms: 18.138095
+  type: 'test'
+  ...
+# Subtest: API creates real project, empty session, files and audit event cursor
+ok 6 - API creates real project, empty session, files and audit event cursor
+  ---
+  duration_ms: 28.791482
+  type: 'test'
+  ...
+# Subtest: missing Pi is an actionable error, not a fake assistant response
+ok 7 - missing Pi is an actionable error, not a fake assistant response
+  ---
+  duration_ms: 11.236544
+  type: 'test'
+  ...
+# Subtest: approval + fixed snapshot + actual Run complete over HTTP
+ok 8 - approval + fixed snapshot + actual Run complete over HTTP
+  ---
+  duration_ms: 421.836755
+  type: 'test'
+  ...
+# (node:6233) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: run submission requires separate manifest approval
+ok 9 - run submission requires separate manifest approval
+  ---
+  duration_ms: 15.62135
+  type: 'test'
+  ...
+# Subtest: revising approved code invalidates approval
+ok 10 - revising approved code invalidates approval
+  ---
+  duration_ms: 4.931519
+  type: 'test'
+  ...
+# Subtest: real local run uses immutable snapshot, records metrics and freezes experiment
+ok 11 - real local run uses immutable snapshot, records metrics and freezes experiment
+  ---
+  duration_ms: 108.186249
+  type: 'test'
+  ...
+# Subtest: zero exit without required metrics is incomplete, not scientific success
+ok 12 - zero exit without required metrics is incomplete, not scientific success
+  ---
+  duration_ms: 106.803423
+  type: 'test'
+  ...
+# Subtest: independent supervisor finishes after control store is closed
+ok 13 - independent supervisor finishes after control store is closed
+  ---
+  duration_ms: 708.890767
+  type: 'test'
+  ...
+# Subtest: cancel running job records an observed terminal state
+ok 14 - cancel running job records an observed terminal state
+  ---
+  duration_ms: 359.121396
+  type: 'test'
+  ...
+# Subtest: untrusted code cannot use trusted example runner
+ok 15 - untrusted code cannot use trusted example runner
+  ---
+  duration_ms: 5.758844
+  type: 'test'
+  ...
+# Subtest: child experiment retains distinct lineage and fixed contract
+ok 16 - child experiment retains distinct lineage and fixed contract
+  ---
+  duration_ms: 5.2715
+  type: 'test'
+  ...
+# (node:6332) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: MA-01 disabled mode denies collaboration without creating assistants
+ok 17 - MA-01 disabled mode denies collaboration without creating assistants
+  ---
+  duration_ms: 5.440214
+  type: 'test'
+  ...
+# Subtest: MA-05 helper cannot recursively delegate
+ok 18 - MA-05 helper cannot recursively delegate
+  ---
+  duration_ms: 2.328152
+  type: 'test'
+  ...
+# Subtest: team approval is separate and dependencies require accepted results
+ok 19 - team approval is separate and dependencies require accepted results
+  ---
+  duration_ms: 7.872052
+  type: 'test'
+  ...
+# Subtest: critical output waits for independent reviewer; rejected output blocks downstream
+ok 20 - critical output waits for independent reviewer; rejected output blocks downstream
+  ---
+  duration_ms: 5.893826
+  type: 'test'
+  ...
+# Subtest: MA-07 invalid evidence cannot become accepted results
+ok 21 - MA-07 invalid evidence cannot become accepted results
+  ---
+  duration_ms: 3.679235
+  type: 'test'
+  ...
+# Subtest: MA-09 duplicate result has one record and settles budget once
+ok 22 - MA-09 duplicate result has one record and settles budget once
+  ---
+  duration_ms: 3.707087
+  type: 'test'
+  ...
+# Subtest: MA-10 disabling drains active helper and never launches queued work
+ok 23 - MA-10 disabling drains active helper and never launches queued work
+  ---
+  duration_ms: 4.127459
+  type: 'test'
+  ...
+# Subtest: project toggle is enforced even before team drain handler
+ok 24 - project toggle is enforced even before team drain handler
+  ---
+  duration_ms: 2.404798
+  type: 'test'
+  ...
+# Subtest: MA-17 expired leases reject late output and retries use a new attempt workspace
+ok 25 - MA-17 expired leases reject late output and retries use a new attempt workspace
+  ---
+  duration_ms: 5.851142
+  type: 'test'
+  ...
+# Subtest: MA-13 changed requirements supersede affected downstream and preserve old records
+ok 26 - MA-13 changed requirements supersede affected downstream and preserve old records
+  ---
+  duration_ms: 4.277295
+  type: 'test'
+  ...
+# Subtest: MA-03 independent helpers can claim concurrently with distinct sessions
+ok 27 - MA-03 independent helpers can claim concurrently with distinct sessions
+  ---
+  duration_ms: 3.652996
+  type: 'test'
+  ...
+# Subtest: completion message is persisted exactly once, without fabricating model authorship
+ok 28 - completion message is persisted exactly once, without fabricating model authorship
+  ---
+  duration_ms: 4.301661
+  type: 'test'
+  ...
+# Subtest: session branching copies conversation but does not roll back business objects
+ok 29 - session branching copies conversation but does not roll back business objects
+  ---
+  duration_ms: 2.66546
+  type: 'test'
+  ...
+# (node:6343) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: transactions roll back records and events together
+ok 30 - transactions roll back records and events together
+  ---
+  duration_ms: 4.389624
+  type: 'test'
+  ...
+# Subtest: same operation is replayed; changed payload conflicts
+ok 31 - same operation is replayed; changed payload conflicts
+  ---
+  duration_ms: 2.556526
+  type: 'test'
+  ...
+# Subtest: optimistic versions reject lost updates
+ok 32 - optimistic versions reject lost updates
+  ---
+  duration_ms: 1.324473
+  type: 'test'
+  ...
+# Subtest: cross-project record access fails
+ok 33 - cross-project record access fails
+  ---
+  duration_ms: 1.205003
+  type: 'test'
+  ...
+# Subtest: SQLite records survive reopening
+ok 34 - SQLite records survive reopening
+  ---
+  duration_ms: 1.939358
+  type: 'test'
+  ...
+# Subtest: budget reservations are atomic and idempotent
+ok 35 - budget reservations are atomic and idempotent
+  ---
+  duration_ms: 2.285228
+  type: 'test'
+  ...
+# Subtest: unknown model usage retains reservation
+ok 36 - unknown model usage retains reservation
+  ---
+  duration_ms: 1.669542
+  type: 'test'
+  ...
+# Subtest: path traversal, absolute paths and symlinks are refused
+ok 37 - path traversal, absolute paths and symlinks are refused
+  ---
+  duration_ms: 0.519031
+  type: 'test'
+  ...
+# Subtest: file editing checks hash and preserves newer content
+ok 38 - file editing checks hash and preserves newer content
+  ---
+  duration_ms: 1.636171
+  type: 'test'
+  ...
+# Subtest: snapshot digest is deterministic and unaffected by later source changes
+ok 39 - snapshot digest is deterministic and unaffected by later source changes
+  ---
+  duration_ms: 3.54955
+  type: 'test'
+  ...
+# Subtest: graph rejects cycles and unknown prerequisites
+ok 40 - graph rejects cycles and unknown prerequisites
+  ---
+  duration_ms: 0.567313
+  type: 'test'
+  ...
+# Subtest: critical tasks need an independent review node
+ok 41 - critical tasks need an independent review node
+  ---
+  duration_ms: 0.789248
+  type: 'test'
+  ...
+# (node:6354) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: metric comparisons include only successful complete runs under selected contract
+ok 42 - metric comparisons include only successful complete runs under selected contract
+  ---
+  duration_ms: 1.072193
+  type: 'test'
+  ...
+# Subtest: provider error or aborted assistant is not a completed response
+ok 43 - provider error or aborted assistant is not a completed response
+  ---
+  duration_ms: 0.259711
+  type: 'test'
+  ...
+# Subtest: metadata search idempotently saves exactly one record and event
+ok 44 - metadata search idempotently saves exactly one record and event
+  ---
+  duration_ms: 21.37099
+  type: 'test'
+  ...
+# (node:6365) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: source import copies selected files and leaves original untouched
+ok 45 - source import copies selected files and leaves original untouched
+  ---
+  duration_ms: 13.636234
+  type: 'test'
+  ...
+# Subtest: source import rejects symlink trees without registering a partial project
+ok 46 - source import rejects symlink trees without registering a partial project
+  ---
+  duration_ms: 1.732596
+  type: 'test'
+  ...
+# Subtest: workspace blocks secret variants and a symlink root
+ok 47 - workspace blocks secret variants and a symlink root
+  ---
+  duration_ms: 2.574783
+  type: 'test'
+  ...
+# Subtest: unresolved submodules are refused instead of called complete snapshots
+ok 48 - unresolved submodules are refused instead of called complete snapshots
+  ---
+  duration_ms: 1.653578
+  type: 'test'
+  ...
+# Subtest: a helper can read assigned evidence but cannot inspect unrelated evidence or runs
+ok 49 - a helper can read assigned evidence but cannot inspect unrelated evidence or runs
+  ---
+  duration_ms: 9.958771
+  type: 'test'
+  ...
+# (node:6376) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: supervisor heartbeat reads and updates inside one SQLite write transaction
+ok 50 - supervisor heartbeat reads and updates inside one SQLite write transaction
+  ---
+  duration_ms: 18.375133
+  type: 'test'
+  ...
+# Subtest: Pi options enable custom tools but never built-in bash/read or project resource discovery
+ok 51 - Pi options enable custom tools but never built-in bash/read or project resource discovery
+  ---
+  duration_ms: 1.35628
+  type: 'test'
+  ...
+# Subtest: Pi restore uses exact stored session path, never most recent
+ok 52 - Pi restore uses exact stored session path, never most recent
+  ---
+  duration_ms: 0.157006
+  type: 'test'
+  ...
+# Subtest: missing Pi package is reported, never replaced by simulated AI
+ok 53 - missing Pi package is reported, never replaced by simulated AI
+  ---
+  duration_ms: 0.325599
+  type: 'test'
+  ...
+# Subtest: research instructions separate model guesses from measured evidence
+ok 54 - research instructions separate model guesses from measured evidence
+  ---
+  duration_ms: 0.17893
+  type: 'test'
+  ...
+# (node:6398) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: retrying a failed prerequisite eventually unblocks downstream tasks
+ok 55 - retrying a failed prerequisite eventually unblocks downstream tasks
+  ---
+  duration_ms: 13.390323
+  type: 'test'
+  ...
+# (node:6409) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: tool dispatcher rejects invented tools and shell commands
+ok 56 - tool dispatcher rejects invented tools and shell commands
+  ---
+  duration_ms: 5.41052
+  type: 'test'
+  ...
+# Subtest: tool request is idempotent across repeated Pi tool-call ids
+ok 57 - tool request is idempotent across repeated Pi tool-call ids
+  ---
+  duration_ms: 3.52987
+  type: 'test'
+  ...
+# Subtest: agent interrupted by user loses tool authority and cannot create artifacts
+ok 58 - agent interrupted by user loses tool authority and cannot create artifacts
+  ---
+  duration_ms: 3.30358
+  type: 'test'
+  ...
+# Subtest: tool evidence read rejects evidence from another project
+ok 59 - tool evidence read rejects evidence from another project
+  ---
+  duration_ms: 3.246944
+  type: 'test'
+  ...
+# Subtest: reports with nonexistent or incomparable runs are refused
+ok 60 - reports with nonexistent or incomparable runs are refused
+  ---
+  duration_ms: 2.128052
+  type: 'test'
+  ...
+# Subtest: report distinguishes accepted claims from proposals
+ok 61 - report distinguishes accepted claims from proposals
+  ---
+  duration_ms: 3.513646
+  type: 'test'
+  ...
+1..61
+# tests 61
+# suites 0
+# pass 61
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3397.605917

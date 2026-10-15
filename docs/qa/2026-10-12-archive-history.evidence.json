@@ -1,0 +1,95 @@
+{
+  "batch": "UIQA-ARCHIVE",
+  "baseline": "c643ab7bbbd5e93d7e072415b105e95e0ecc09c4",
+  "candidate": ".validation/archive-history-20261012/verified-source",
+  "checks": {
+    "initialFrozenFull": {
+      "tests": 1798,
+      "pass": 1773,
+      "fail": 1,
+      "skipped": 24,
+      "cancelled": 0,
+      "durationMs": 1169646.6758,
+      "log": ".validation/archive-history-20261012/full-regression.log",
+      "sha256": "d886877025d22446562c838b0dfcfff1c2ff6555f28285052cfbad276756ad78",
+      "exitCode": 1,
+      "scope": "Initial immutable source, before necessary review fixes; one known old test caller failed. Not claimed as final all-green full regression."
+    },
+    "finalAffected": {
+      "tests": 232,
+      "pass": 232,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "durationMs": 6649.6001,
+      "log": ".validation/archive-history-20261012/verified-related.log",
+      "sha256": "14cf0bc1760f0f50a2fe47bcb7bad494d4cd3021fcf79ace94438cee0c8e69e8",
+      "files": ".validation/archive-history-20261012/verified-related-files.txt",
+      "scope": "20 App/Chat-related test files after both fixes, including original failed caller and new hydration counterexample"
+    },
+    "clean": {
+      "identical": true,
+      "files": 661,
+      "distManifestSha256": "a6ba26625fe44f83017c66d6d3403bc611120ccafeccf698ab803675cc47120f",
+      "sourceHashes": {
+        "apps/web/src/app.tsx": "30e17465ebc6078ea7df1c7e90c7e816ca9750c7ad32a1d42e364fcf7a40e6d4",
+        "apps/web/src/workbench.tsx": "03d3fc625ac9112afa8214251dffcb17ec0915316926b9391c51097df53971bf",
+        "apps/web/src/archived-research-history.tsx": "cec8b1ccbc394a78ed0e58bbb6af3ab346c9d5893b01cfcf86a50d4e6f4d55ca",
+        "tests/unit/archive-history-entry-ui.test.mjs": "a54579e7b6d9923e4f4ceac3060e22c736e1982c9c6af2fe20256e483f9c19b4",
+        "tests/unit/research-action-cards-ui.test.mjs": "60506975232e67ac78b0317b97d0963b6e1eab59e11cad123f627af0457822ba"
+      },
+      "head": "c643ab7bbbd5e93d7e072415b105e95e0ecc09c4",
+      "candidate": ".validation\\archive-history-20261012\\verified-source",
+      "clean": ".validation\\archive-history-20261012\\source\\.validation\\clean-build-M0LIBn\\source",
+      "method": "Reused successful isolated npm ci environment; rebuilt and typechecked after the App key correction. All final candidate dist files compared. Main workbench keeps unrelated preexisting changes.",
+      "patches": [
+        {
+          "path": "archive-history-entry.patch",
+          "sha256": "5243761f575574e0d99e24ea54f166d040aa5391d0d92f150473738c7b142ca9"
+        },
+        {
+          "path": "review-fix.patch",
+          "sha256": "6ff76ff27a0a0d0bfe6989f254bc91ccbb49a59ed8883d8402c872e16c963b6a"
+        },
+        {
+          "path": "existing-test-fix.patch",
+          "sha256": "489a8bc4df26ad4c1bd855cc355a27930e799346fbd993ee409fdae115419081"
+        }
+      ]
+    },
+    "independentReview": {
+      "report": ".validation/archive-history-20261012/re-review.json",
+      "sha256": "b2380c23d82e69664ed7c0ec29e6b17c8c467ce0f89a700524ce50e64f9eb1be",
+      "pass": 18,
+      "fail": 0,
+      "blocking": 0,
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtimeEchoed": false
+    }
+  },
+  "latestCombinedFull": {
+    "tests": 1809,
+    "pass": 1785,
+    "fail": 0,
+    "skipped": 24,
+    "cancelled": 0,
+    "durationMs": 1191660.092,
+    "exitCode": 0,
+    "log": ".validation/attachment-error-20261012/full-regression.log",
+    "sha256": "1f64d408c8d696f6cc9e93dedc73e44ca54d79b3f5c8d7c4eb3c10a58a890611"
+  },
+  "browser": {
+    "project": "对话实验 · 本机验收 (read-only; no research writes)",
+    "checks": [
+      "Top entry opened the actual archive region in one click and focused it.",
+      "X, Escape and top collapse each hid the region, reset aria-expanded and returned focus to the top entry.",
+      "From Workspace, the top entry returned to Chat and opened/focused the history region.",
+      "Selecting another archived-project session closed the old region and reset the entry; later passive observation did not reopen it.",
+      "Returning to the active QA project showed its own history."
+    ],
+    "evidence": "archive-opened.jpg",
+    "remaining": "Empty-session project and delayed missing-record hydration remain component-test coverage, not a claim of new Chrome reproduction."
+  },
+  "scope": "Archive entry, focus and selected identity; no backend, permission or layout change"
+}

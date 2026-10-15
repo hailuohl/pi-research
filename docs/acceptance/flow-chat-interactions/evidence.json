@@ -1,0 +1,150 @@
+{
+  "baseline": "66383a1c157796d8e85ba22141d8ab20162e9c9e",
+  "checks": {
+    "full": {
+      "tests": 1656,
+      "pass": 1632,
+      "fail": 0,
+      "skipped": 24
+    },
+    "focused": {
+      "tests": 150,
+      "pass": 150,
+      "fail": 0,
+      "skipped": 0
+    },
+    "scope": {
+      "tests": 64,
+      "pass": 64,
+      "fail": 0,
+      "skipped": 0
+    },
+    "cleanBuild": {
+      "identical": true,
+      "files": 658,
+      "node": "24.19.0",
+      "manifestSha256": "9a833de6c1a3b025b63542bb5236258548539c8d51bab50a6d11cef4bcb17dc1"
+    }
+  },
+  "originalRegression": {
+    "tests": 3,
+    "pass": 0,
+    "fail": 3,
+    "log": ".validation/chat-interactions/before-regression.log"
+  },
+  "snapshot": {
+    "files": 24,
+    "sha256": "21a4739f156db49683b5cbeaa7acbf4ced33ddbf9e2e6a85414b426f099fbc1f"
+  },
+  "browser": {
+    "synthetic": true,
+    "firstQueuedReceiptVisibleBeforeSlowRefresh": true,
+    "sameChatAfterExperimentClick": true,
+    "draftPreservedAfterExperimentClick": true,
+    "modelGeometry": {
+      "before": {
+        "attachments": "fixture.png项目资料 · 整文件随消息发送",
+        "composer": {
+          "height": 274.8958435058594,
+          "left": 284.66668701171875,
+          "top": 236.4375,
+          "width": 644.6666870117188
+        },
+        "draft": "切换思考强度后保留这段草稿。",
+        "menu": {
+          "height": 148.33334350585938,
+          "left": 542.6666870117188,
+          "top": 223.33334350585935,
+          "width": 320
+        },
+        "scrollTop": 2087.333251953125
+      },
+      "during": {
+        "attachments": "fixture.png项目资料 · 整文件随消息发送",
+        "composer": {
+          "height": 274.8958435058594,
+          "left": 284.66668701171875,
+          "top": 236.4375,
+          "width": 644.6666870117188
+        },
+        "draft": "切换思考强度后保留这段草稿。",
+        "menu": {
+          "height": 148.33334350585938,
+          "left": 542.6666870117188,
+          "top": 223.33334350585935,
+          "width": 320
+        },
+        "saving": "正在保存…",
+        "scrollTop": 2087.333251953125
+      },
+      "after": {
+        "attachments": "fixture.png项目资料 · 整文件随消息发送",
+        "composer": {
+          "height": 274.8958435058594,
+          "left": 284.66668701171875,
+          "top": 236.4375,
+          "width": 644.6666870117188
+        },
+        "draft": "切换思考强度后保留这段草稿。",
+        "menu": {
+          "height": 148.33334350585938,
+          "left": 542.6666870117188,
+          "top": 223.33334350585935,
+          "width": 320
+        },
+        "saving": " ",
+        "scrollTop": 2087.333251953125
+      }
+    },
+    "httpReplay": {
+      "synthetic": true,
+      "firstPromptCount": 1,
+      "replayedSameId": true,
+      "replayDidNotCreateMessage": true,
+      "userMessages": [
+        {
+          "id": "3ffe6e24-8a63-4840-86bb-e84eb1f56c13",
+          "mode": "prompt",
+          "status": "completed"
+        },
+        {
+          "id": "ed94c543-3e00-4bca-95c2-4f473d54123c",
+          "mode": "follow_up",
+          "status": "completed"
+        }
+      ],
+      "localMockModelRequests": 2,
+      "activeWorkers": 0
+    }
+  },
+  "models": [
+    {
+      "task": "implementation",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "runtimeEcho": "unavailable"
+    },
+    {
+      "task": "send-diagnosis",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "runtimeEcho": "unavailable"
+    },
+    {
+      "task": "boundary-design-readonly",
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "runtimeEcho": "unavailable"
+    },
+    {
+      "task": "independent-review",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "runtimeEcho": "unavailable"
+    }
+  ],
+  "unchangedBackend": true,
+  "unverified": [
+    "actual external model provider"
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "batch": "local-environment",
+  "sourceBaseline": "f3f0dd6ee2b2bbe4857cae947490adf6cb48caca",
+  "sourcePatchSha256": "f86b214463b10760d1793f3891d8e6a77b6b83a0bf721040db8666d1cf36c16f",
+  "buildManifestSha256": "2d6293787d148e112c472f7e0f9e4cc4a257467a1ad1f26e08030fed106d26c7",
+  "node": "24.19.0",
+  "platform": "win32",
+  "checks": [
+    {
+      "skip": 0,
+      "pass": 23,
+      "log": ".validation/flow-environment/ui-focused.log",
+      "name": "ui-development",
+      "fail": 0
+    },
+    {
+      "skip": 0,
+      "pass": 43,
+      "log": ".validation/flow-environment/focused-repaired.log",
+      "name": "integrated-focused",
+      "fail": 0
+    },
+    {
+      "log": ".validation/flow-environment/full-regression.log",
+      "fail": 0,
+      "pass": 1235,
+      "name": "full-before-review-repairs",
+      "skip": 23,
+      "total": 1258
+    },
+    {
+      "expectedFailure": true,
+      "log": ".validation/flow-environment/review-before-fix.log",
+      "name": "artifact-regression-before-fix"
+    },
+    {
+      "expectedFailure": true,
+      "log": ".validation/flow-environment/host-before-fix.log",
+      "name": "host-truncation-regression-before-fix"
+    },
+    {
+      "skip": 0,
+      "pass": 37,
+      "log": ".validation/flow-environment/affected-final.log",
+      "name": "affected-after-review-repairs",
+      "fail": 0
+    },
+    {
+      "files": 569,
+      "status": "passed",
+      "log": ".validation/flow-environment/clean-build-final.log",
+      "name": "final-clean-build"
+    },
+    {
+      "fail": 0,
+      "name": "completed-skill-parent-integration",
+      "pass": 31,
+      "skip": 0,
+      "log": ".validation/flow-environment/parent-integration.log"
+    },
+    {
+      "files": 569,
+      "name": "parent-clean-build",
+      "log": ".validation/flow-environment/clean-build-parent.log",
+      "status": "passed"
+    },
+    {
+      "name": "completed-model-parent-integration",
+      "log": ".validation/flow-environment/model-integration.log",
+      "skip": 0,
+      "fail": 0,
+      "pass": 59
+    },
+    {
+      "name": "model-merged-clean-build",
+      "log": ".validation/flow-environment/clean-build-model-integration.log",
+      "files": 574,
+      "status": "passed"
+    }
+  ],
+  "skipped": {
+    "optionalDocker": 2,
+    "windowsInapplicablePosix": 2,
+    "optionalIsolatedCompiler": 19
+  },
+  "browser": {
+    "data": "synthetic",
+    "status": "passed",
+    "actions": [
+      "empty without project",
+      "create",
+      "replace",
+      "delete",
+      "reopen",
+      "reject PATH and retain draft",
+      "390px long name and visible actions"
+    ],
+    "screenshotSha256": "74149700f331cc1db53c12eafb7c1792625d31d8ee8a9c1e2e05a3a1331b6898",
+    "screenshot": ".validation/flow-environment/environment-desktop.jpg"
+  },
+  "delegation": [
+    {
+      "runtimeEcho": "unavailable",
+      "modelRequested": "gpt-6-astra",
+      "task": "environment_boundary",
+      "effortRequested": "high"
+    },
+    {
+      "runtimeEcho": "unavailable",
+      "modelRequested": "gpt-6.1-sol",
+      "task": "integration_checks",
+      "effortRequested": "high"
+    },
+    {
+      "runtimeEcho": "unavailable",
+      "modelRequested": "gpt-6-astra",
+      "task": "environment_review",
+      "effortRequested": "xhigh"
+    }
+  ],
+  "review": {
+    "sourceHashes": 41,
+    "status": "passed-after-required-repairs-and-model-intersection-review",
+    "nonBlocking": [
+      "Short values may rewrite the host output redaction marker on the raw-cut branch."
+    ],
+    "blockersRemaining": 0
+  },
+  "limitations": [
+    "No live paid provider call.",
+    "Raw local logs remain private locally; public terminal logs and new archives are masked.",
+    "Active local Run raw logs are deferred until terminal.",
+    "Credential-bearing native Pi JSONL narrative blocks shareable backup.",
+    "All configured values are treated as sensitive narrative strings."
+  ],
+  "unrelatedWorkExcluded": [
+    "global styles",
+    "private research specifications"
+  ],
+  "deliveryParent": "21a82b520727684c37370deb7d6581078440040c"
+}

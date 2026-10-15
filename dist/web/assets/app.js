@@ -1,0 +1,690 @@
+import { jsx, jsxs } from "react/jsx-runtime";
+import { createElement } from "react";
+import * as React from "react";
+import { ProjectEventFeed } from "./event-feed.js";
+import { EnvironmentView } from "./environment-view.js";
+import { IntegrationsView } from "./integrations.js";
+import { api, ApiError } from "./api.js";
+import { short } from "./models.js";
+import { Icon, Modal, nativeSelectButton } from "./ui.js";
+import { Chat, Inspector } from "./workbench.js";
+import { SessionList } from "./session-list.js";
+import { ProjectCreationModal } from "./github-controls.js";
+import { ProjectManagement } from "./project-management.js";
+import { WorkspaceView, SettingsView } from "./data-views.js";
+import { ConversationLayout } from "./conversation-panel-layout.js";
+import { ConversationPanel } from "./conversation-panel.js";
+import { ArchivedResearchHistory } from "./archived-research-history.js";
+const navigation = [["chat", "\u7814\u7A76\u4F1A\u8BDD", "chat"], ["environment", "\u73AF\u5883", "settings"], ["workspace", "\u9879\u76EE\u5DE5\u4F5C\u533A", "folder"], ["literature", "\u6587\u732E\u68C0\u7D22", "search"], ["integrations", "\u6280\u80FD\u4E0E\u8FDE\u63A5\u5668", "skills"], ["evidence", "\u8D44\u6599\u4E0E\u8BC1\u636E", "evidence"], ["reports", "\u62A5\u544A\u4E0E\u6210\u679C", "report"], ["settings", "\u6A21\u578B\u4E0E\u6A21\u677F", "settings"]];
+const navigationGroups = [
+  { name: "\u7814\u7A76", ids: ["chat", "workspace"] },
+  { name: "\u7BA1\u7406", ids: ["integrations", "environment", "settings"] }
+];
+const normalizeView = (tab) => tab === "scheduler" ? "environment" : ["experiments", "campaigns", "implementation", "changes", "literature", "evidence", "reports"].includes(tab) ? "chat" : tab;
+const deletedRead = (error) => error instanceof ApiError && (error.status === 404 || error.status === 410 || error.code === "PROJECT_DELETED");
+function saved() {
+  try {
+    return JSON.parse(localStorage.getItem("pi-research-ui-v1") ?? "{}");
+  } catch {
+    return {};
+  }
+}
+class App extends React.Component {
+  constructor() {
+    super(...arguments);
+    this.state = { boot: null, data: null, projectId: saved().projectId ?? "", sessionId: saved().sessionId ?? "", tab: normalizeView(saved().tab ?? "chat"), selectedExp: saved().selectedExp ?? "", selectedRun: saved().selectedRun ?? "", selectedReport: saved().selectedReport ?? "", selectedCampaign: saved().selectedCampaign ?? "", selectedDiscoveryGrant: saved().selectedDiscoveryGrant ?? "", selectedDocument: saved().selectedDocument ?? null, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: saved().historyAnchor && saved().historyAnchor.projectId === saved().projectId && saved().historyAnchor.sessionId === saved().sessionId ? saved().historyAnchor.anchor : null, stream: "", streamTruncated: false, activity: null, eventNotice: "", modal: "", modalData: null, busy: false, projectReadError: "", error: "", notice: "", connected: false, navigationOpen: false, archiveHistoryOpen: false, sessionCreationSignal: 0 };
+    this.experimentSelections = Object.fromEntries(Object.entries(saved().experimentSelections ?? {}).filter(([, value]) => typeof value === "string"));
+    this.closeNavigationOnResize = () => {
+      if (window.innerWidth > 760 && this.state.navigationOpen) this.setState({ navigationOpen: false });
+    };
+    this.navigationToggle = null;
+    this.refreshEpoch = 0;
+    this.mounted = true;
+    this.projectSelectionEpoch = 0;
+    this.projectIntent = 0;
+    this.modalIntent = 0;
+    this.creatingSession = false;
+    this.conversationPanel = React.createRef();
+    this.workspace = React.createRef();
+    this.chat = React.createRef();
+    this.toggleArchiveHistory = (event) => {
+      const trigger = event.currentTarget, projectId = this.state.projectId, sessionId = this.state.sessionId, open = !this.state.archiveHistoryOpen;
+      this.setState({ tab: "chat", archiveHistoryOpen: open }, () => {
+        if (!this.mounted || this.state.projectId !== projectId || this.state.sessionId !== sessionId || this.state.archiveHistoryOpen !== open) return;
+        if (open) this.chat.current?.openArchivedHistory(trigger);
+        else this.chat.current?.closeDrawer();
+      });
+    };
+    this.perform = async (fn, success) => {
+      if (this.state.busy)
+        return;
+      this.invalidateRead();
+      this.setState({ busy: true, error: "" });
+      try {
+        const result = await fn();
+        if (success) {
+          clearTimeout(this.noticeTimer);
+          this.setState({ notice: success });
+          this.noticeTimer = window.setTimeout(() => this.setState({ notice: "" }), 4500);
+        }
+        await this.refresh();
+        return result;
+      } catch (e) {
+        this.setState({ error: e instanceof Error ? e.message : String(e) });
+        return void 0;
+      } finally {
+        this.setState({ busy: false });
+      }
+    };
+    this.confirmSessionModel = (session) => {
+      if (!this.mounted || this.state.sessionId !== session.id || this.state.projectId !== session.projectId || this.state.data?.project.id !== session.projectId) return;
+      this.invalidateRead();
+      this.setState((current) => {
+        if (!this.mounted || current.sessionId !== session.id || current.projectId !== session.projectId || current.data?.project.id !== session.projectId) return null;
+        const existing = current.data.sessions.find((item) => item.id === session.id);
+        if (existing && existing.version > session.version) return null;
+        return { data: { ...current.data, sessions: existing ? current.data.sessions.map((item) => item.id === session.id ? session : item) : [...current.data.sessions, session] } };
+      });
+    };
+    this.confirmSessionBranch = (session) => {
+      if (!this.mounted || this.state.sessionId !== session.parentSessionId || this.state.projectId !== session.projectId || this.state.data?.project.id !== session.projectId || this.state.data.project.archived) return;
+      if (this.state.data.sessions.find((item) => item.id === session.id)?.state === "archived") throw Error("\u5206\u652F\u4F1A\u8BDD\u5DF2\u5F52\u6863\uFF0C\u8BF7\u5728\u5DF2\u5F52\u6863\u4F1A\u8BDD\u76EE\u5F55\u4E2D\u67E5\u770B");
+      this.invalidateRead();
+      this.setState((current) => {
+        if (!this.mounted || current.sessionId !== session.parentSessionId || current.projectId !== session.projectId || current.data?.project.id !== session.projectId || current.data.project.archived) return null;
+        const existing = current.data.sessions.find((item) => item.id === session.id);
+        if (existing?.state === "archived") return { ...current, error: "\u5206\u652F\u4F1A\u8BDD\u5DF2\u5F52\u6863\uFF0C\u8BF7\u5728\u5DF2\u5F52\u6863\u4F1A\u8BDD\u76EE\u5F55\u4E2D\u67E5\u770B" };
+        const confirmed = existing && existing.version > session.version ? existing : session;
+        return { ...this.sessionSelection(confirmed.id, "chat"), navigationOpen: false, sessionCreationSignal: current.sessionCreationSignal + 1, data: { ...current.data, sessions: existing ? current.data.sessions.map((item) => item.id === confirmed.id ? confirmed : item) : [...current.data.sessions, confirmed] } };
+      });
+    };
+    this.confirmSessionMessage = (message) => {
+      this.setState((current) => {
+        if (!this.mounted || current.sessionId !== message.sessionId || current.projectId !== message.projectId || current.data?.project.id !== message.projectId || current.historyAnchor || current.history && !current.history.atLatest) return null;
+        const existing = current.messages.find((item) => item.id === message.id);
+        const pending = current.pendingMessages.find((item) => item.id === message.id);
+        if (existing && existing.version >= message.version || pending && pending.version > message.version) return null;
+        const row = { ...message, previewTruncated: false, contentBytes: new TextEncoder().encode(message.content).byteLength };
+        const queued = message.role === "user" && message.status === "queued" && message.origin !== "automation" && message.wakeupId == null && (message.mode === "follow_up" || message.mode === "steer");
+        const pendingMessages = queued ? pending ? current.pendingMessages.map((item) => item.id === message.id ? row : item) : current.pendingMessages.length < 20 ? [...current.pendingMessages, row] : current.pendingMessages : current.pendingMessages, pendingTotal = queued ? current.pendingTotal + (pending ? 0 : 1) : current.pendingTotal, pendingNextCursor = queued && !pending && pendingTotal > 20 && current.pendingNextCursor === null ? pendingMessages[pendingMessages.length - 1]?.id ?? null : current.pendingNextCursor;
+        return { messages: existing ? current.messages.map((item) => item.id === message.id ? row : item) : [...current.messages, row], pendingMessages, pendingTotal, pendingNextCursor };
+      });
+    };
+    this.projectLifecycleChanged = async (project, selectionEpoch) => {
+      if (!this.mounted) return;
+      this.invalidateRead();
+      if (this.state.projectId === project.id && this.projectSelectionEpoch === selectionEpoch && project.status !== "active") {
+        const deleted = project.status === "trashed" || project.status === "purging";
+        const currentEpoch = deleted ? await this.clearDeletedView(project.id) : selectionEpoch, currentId = deleted ? "" : project.id;
+        if (!this.mounted || this.state.projectId !== currentId || this.projectSelectionEpoch !== currentEpoch) return;
+        if (!deleted)
+          this.setState((current) => current.data && current.data.project.id === project.id ? { data: { ...current.data, project: { ...current.data.project, status: project.status, archived: true, version: project.version, lifecycleEpoch: project.lifecycleEpoch } } } : null);
+        const boot = await api("/bootstrap");
+        if (!this.mounted || this.state.projectId !== currentId || this.projectSelectionEpoch !== currentEpoch) return;
+        await this.switchProject(boot.projects[0]?.id ?? "");
+      } else await this.refresh();
+    };
+    this.showExperiments = () => this.setState({ tab: "chat" }, () => this.conversationPanel.current?.showExperiments());
+    this.selectExperiment = (id, runId = "") => {
+      const data = this.state.data;
+      if (!data?.experiments.some((e) => e.id === id) || runId && !data.runs.some((r) => r.id === runId && r.experimentId === id)) {
+        this.setState({ error: "\u6307\u5B9A\u5B9E\u9A8C\u6216\u8FD0\u884C\u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\u3002" });
+        return;
+      }
+      this.setState({ selectedExp: id, selectedRun: runId, tab: "chat" }, () => this.conversationPanel.current?.showExperiments());
+    };
+    this.selectHistory = (anchor) => {
+      this.invalidateRead();
+      this.setState({ messages: [], historyAnchor: anchor, stream: "", streamTruncated: false, activity: null }, () => void this.refresh());
+    };
+    this.close = () => {
+      if (!this.state.busy) {
+        this.modalIntent++;
+        this.setState({ modal: "", modalData: null });
+      }
+    };
+    this.useParsedDocument = (target) => {
+      const projectId = this.state.projectId, sessionId = this.state.sessionId, epoch = this.projectSelectionEpoch;
+      const current = () => {
+        const s = this.state.data?.sessions.find((s2) => s2.id === sessionId);
+        return this.mounted && this.state.projectId === projectId && this.state.sessionId === sessionId && this.projectSelectionEpoch === epoch && !this.state.data?.project.archived && s?.role === "coordinator" && !s.taskId && !s.teamId && s.state !== "archived";
+      };
+      if (this.state.busy || !current()) return;
+      void this.perform(async () => {
+        if (!current()) return;
+        await api(`/sessions/${encodeURIComponent(sessionId)}/messages`, { content: "\u6211\u9009\u62E9\u5C06\u8FD9\u4EFD\u56FA\u5B9A\u89E3\u6790\u8D44\u6599\u5E26\u5165\u5F53\u524D\u4F1A\u8BDD\u3002\u8BF7\u5148\u6838\u5BF9\u8D44\u6599\uFF0C\u518D\u4E0E\u6211\u660E\u786E\u9700\u8981\u89C6\u89C9\u8BFB\u53D6\u7684\u7269\u7406\u9875\u8303\u56F4\uFF1B\u8D44\u6599\u9644\u4EF6\u672C\u8EAB\u4E0D\u6388\u4E88\u539F\u6587\u6216\u56FE\u7247\u8BFB\u53D6\u6743\u9650\u3002", parsedDocumentAttachments: [target] });
+        if (current()) this.selectSession(sessionId, "chat");
+      }, "\u5DF2\u5E26\u5165\u56FA\u5B9A\u89E3\u6790\u8D44\u6599\uFF1B\u89C6\u89C9\u9875\u8303\u56F4\u4ECD\u9700\u51C6\u786E\u6279\u51C6");
+    };
+    this.selectCampaign = (selectedCampaign) => {
+      const data = this.state.data;
+      const clearHistory = { messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false };
+      const campaign = data?.campaigns.find((c) => c.id === selectedCampaign);
+      if (!campaign) {
+        this.setState({ ...clearHistory, error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u4E0D\u5728\u5F53\u524D\u9879\u76EE\u4E2D\uFF0C\u672A\u8DF3\u8F6C\u5230\u5176\u4ED6\u6D3B\u52A8\u3002" });
+        return;
+      }
+      if (!campaign.rootSessionId) {
+        this.setState({ ...clearHistory, error: "\u6307\u5B9A\u7814\u7A76\u6D3B\u52A8\u6CA1\u6709\u53EF\u6253\u5F00\u7684\u4E3B\u4F1A\u8BDD\u3002" });
+        return;
+      }
+      this.setState({ selectedCampaign }, () => this.selectSession(campaign.rootSessionId));
+    };
+    this.selectTab = (tab) => {
+      this.projectIntent++;
+      const returnFocus = this.state.navigationOpen;
+      this.setState({ tab: normalizeView(tab), navigationOpen: false }, () => {
+        if (returnFocus) this.navigationToggle?.focus();
+      });
+    };
+    this.toggleNavigation = () => {
+      this.projectIntent++;
+      const navigationOpen = !this.state.navigationOpen;
+      this.setState({ navigationOpen }, () => document.getElementById(navigationOpen ? "navigation-close" : "navigation-toggle")?.focus());
+    };
+    this.chooseProject = (id) => {
+      if (!id) return;
+      const intent = ++this.projectIntent, projectId = this.state.projectId, epoch = this.projectSelectionEpoch, modalIntent = this.modalIntent, workspace = this.workspace.current, generation = workspace?.draftGeneration, returnFocus = this.state.navigationOpen;
+      this.setState({ navigationOpen: false }, () => {
+        if (!this.mounted || intent !== this.projectIntent || projectId !== this.state.projectId || epoch !== this.projectSelectionEpoch || modalIntent !== this.modalIntent || workspace !== this.workspace.current || generation !== workspace?.draftGeneration || this.state.navigationOpen) return;
+        if (returnFocus) this.navigationToggle?.focus();
+        void this.switchProject(id);
+      });
+    };
+  }
+  componentDidMount() {
+    if (saved().tab === "experiments") this.conversationPanel.current?.showExperiments();
+    window.addEventListener("resize", this.closeNavigationOnResize);
+    void this.refresh();
+    this.timer = window.setInterval(() => {
+      if (this.feed) this.feed.wake();
+      else void this.refresh(true);
+    }, 2e4);
+  }
+  componentWillUnmount() {
+    if (typeof window !== "undefined") window.removeEventListener?.("resize", this.closeNavigationOnResize);
+    this.mounted = false;
+    this.invalidateRead();
+    this.feed?.stop();
+    clearInterval(this.timer);
+    clearTimeout(this.noticeTimer);
+  }
+  componentDidUpdate(_, prev) {
+    if (this.state.data?.project.id === this.state.projectId && this.state.data.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[this.state.projectId] = this.state.selectedExp;
+    try {
+      if (["projectId", "sessionId", "tab", "selectedExp", "selectedRun", "selectedReport", "selectedCampaign", "selectedDiscoveryGrant", "selectedDocument", "historyAnchor"].some((k) => prev[k] !== this.state[k]))
+        localStorage.setItem("pi-research-ui-v1", JSON.stringify({ experimentSelections: this.experimentSelections, projectId: this.state.projectId, sessionId: this.state.sessionId, tab: this.state.tab, selectedExp: this.state.selectedExp, selectedRun: this.state.selectedRun, selectedReport: this.state.selectedReport, selectedCampaign: this.state.selectedCampaign, selectedDiscoveryGrant: this.state.selectedDiscoveryGrant, selectedDocument: this.state.selectedDocument, historyAnchor: { projectId: this.state.projectId, sessionId: this.state.sessionId, anchor: this.state.historyAnchor } }));
+    } catch {
+    }
+  }
+  invalidateRead() {
+    this.refreshEpoch++;
+    this.readController?.abort();
+    this.refreshing = void 0;
+  }
+  refresh(quiet = false) {
+    if (!this.mounted || quiet && this.state.busy) return Promise.resolve(false);
+    if (this.refreshing) return this.refreshing;
+    const reading = this.readState(quiet);
+    this.refreshing = reading;
+    void reading.finally(() => {
+      if (this.refreshing === reading) this.refreshing = void 0;
+    });
+    return reading;
+  }
+  async readState(quiet) {
+    const epoch = this.refreshEpoch, requestedProjectId = this.state.projectId, controller = new AbortController();
+    this.readController = controller;
+    if (!quiet) this.setState({ projectReadError: "" });
+    let fallbackProjects = [];
+    let recoveringDeleted = false;
+    try {
+      const boot = await api("/bootstrap", void 0, "GET", controller.signal);
+      fallbackProjects = boot.projects;
+      const modelManagementRead = api("/settings/model-management", void 0, "GET", controller.signal).then((data2) => {
+        if (data2.schemaVersion !== 2 || !Array.isArray(data2.providers)) throw Error("\u6A21\u578B\u8BBE\u7F6E\u76EE\u5F55\u683C\u5F0F\u4E0D\u6B63\u786E\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5");
+        return { data: data2, error: "" };
+      }).catch((error) => ({ data: null, error: error instanceof Error ? error.message : String(error) }));
+      let projectId = this.state.projectId;
+      if (projectId && !boot.projects.some((p) => p.id === projectId)) {
+        try {
+          const project = await api(`/projects/${encodeURIComponent(projectId)}`, void 0, "GET", controller.signal);
+          if (project.id !== projectId) throw Error("\u9879\u76EE\u5FEB\u7167\u4E0E\u5F53\u524D\u9009\u62E9\u4E0D\u4E00\u81F4");
+          if (!project.archived) projectId = boot.projects[0]?.id ?? "";
+        } catch (error) {
+          if (deletedRead(error)) {
+            recoveringDeleted = true;
+            if (this.mounted && epoch === this.refreshEpoch) await this.clearDeletedView(projectId);
+            projectId = boot.projects.find((p) => p.id !== projectId)?.id ?? "";
+          } else throw error;
+        }
+      }
+      if (!projectId) projectId = boot.projects[0]?.id ?? "";
+      let requestedSession = projectId === this.state.projectId ? this.state.sessionId : "";
+      let data = null;
+      try {
+        data = projectId ? await api(`/projects/${projectId}/state${requestedSession ? "?sessionId=" + encodeURIComponent(requestedSession) : ""}`, void 0, "GET", controller.signal) : null;
+      } catch (error) {
+        if (!deletedRead(error)) throw error;
+        recoveringDeleted = true;
+        if (this.mounted && epoch === this.refreshEpoch) await this.clearDeletedView(projectId);
+        projectId = boot.projects.find((p) => p.id !== projectId)?.id ?? "";
+        requestedSession = "";
+        data = projectId ? await api(`/projects/${projectId}/state`, void 0, "GET", controller.signal) : null;
+      }
+      const sessionId = requestedSession || (data?.sessions.find((s) => s.role === "coordinator" && s.state !== "archived")?.id ?? "");
+      const anchor = requestedSession ? this.state.historyAnchor : null;
+      const view = sessionId ? await api(`/sessions/${sessionId}/view${anchor ? "?" + (anchor.direction === "before" ? "beforeMessageId" : "afterMessageId") + "=" + encodeURIComponent(anchor.id) : ""}`, void 0, "GET", controller.signal) : null;
+      const modelManagement = await modelManagementRead;
+      if (!this.mounted || epoch !== this.refreshEpoch) return false;
+      if (view && view.session.id !== sessionId) throw Error("\u4F1A\u8BDD\u5FEB\u7167\u4E0E\u5F53\u524D\u9009\u62E9\u4E0D\u4E00\u81F4");
+      if (data && view) data = { ...data, sessions: data.sessions.some((s) => s.id === sessionId) ? data.sessions.map((s) => s.id === sessionId ? view.session : s) : [...data.sessions, view.session] };
+      const active = !!view?.progress.active && view.progress.generation === view.session.generation;
+      const requestedExp = projectId === this.state.projectId ? this.state.selectedExp : this.experimentSelections[projectId] ?? "";
+      const selectedExp = data?.experiments.some((e) => e.id === requestedExp) ? requestedExp : data?.experiments[0]?.id ?? "";
+      await new Promise((resolve) => this.setState({ boot: { ...boot, modelManagement: modelManagement.data, modelManagementError: modelManagement.error }, data, projectId, sessionId, messages: view?.messages ?? [], pendingMessages: view?.pendingMessages ?? [], pendingTotal: view?.pendingTotal ?? 0, pendingNextCursor: view?.pendingNextCursor ?? null, canSteer: view?.progress?.canSteer ?? false, history: view?.history ?? null, historyAnchor: anchor, selectedExp, stream: !anchor && active ? view.progress.content : "", streamTruncated: !anchor && active && !!view?.progress.truncated, activity: !anchor && active ? view?.progress.activity ?? null : null, connected: true, projectReadError: "" }, resolve));
+      if (!this.mounted || epoch !== this.refreshEpoch) return false;
+      if (this.feed?.projectId !== projectId) {
+        this.feed?.stop();
+        this.feed = void 0;
+        if (projectId) {
+          const feed = new ProjectEventFeed(projectId, () => this.refresh(true), (eventNotice) => {
+            if (this.mounted && this.feed === feed) this.setState({ eventNotice });
+          });
+          this.feed = feed;
+          feed.start();
+        }
+      }
+      return true;
+    } catch (error) {
+      if (!this.mounted || epoch !== this.refreshEpoch || controller.signal.aborted) return false;
+      if (deletedRead(error) && requestedProjectId && !recoveringDeleted) {
+        await this.clearDeletedView(requestedProjectId);
+        if (!this.mounted || epoch !== this.refreshEpoch) return false;
+        if (!await this.switchProject(fallbackProjects.find((p) => p.id !== requestedProjectId)?.id ?? "")) return false;
+        return this.refresh();
+      }
+      this.setState((previous) => ({ connected: false, projectReadError: !quiet || !previous.data || previous.projectReadError ? error instanceof Error ? error.message : String(error) : previous.projectReadError }));
+      return false;
+    } finally {
+      if (this.readController === controller) this.readController = void 0;
+    }
+  }
+  sessionSelection(id, tab = this.state.tab) {
+    return { sessionId: id, tab: normalizeView(tab), archiveHistoryOpen: false, messages: [], pendingMessages: [], pendingTotal: 0, pendingNextCursor: null, canSteer: false, history: null, historyAnchor: null, stream: "", streamTruncated: false, activity: null, error: "" };
+  }
+  async switchProject(id) {
+    const intent = ++this.projectIntent, sourceId = this.state.projectId, epoch = this.projectSelectionEpoch, modalIntent = this.modalIntent, workspace = this.workspace.current, generation = workspace?.draftGeneration, archived = this.state.data?.project.archived;
+    if (!this.mounted) return false;
+    if (id === sourceId) return true;
+    const current = (selectionEpoch2 = epoch) => this.mounted && intent === this.projectIntent && modalIntent === this.modalIntent && sourceId === this.state.projectId && selectionEpoch2 === this.projectSelectionEpoch && workspace === this.workspace.current && generation === workspace?.draftGeneration && archived === this.state.data?.project.archived;
+    if (workspace && !await workspace.confirmDiscard() || !current()) return false;
+    if (this.state.data?.experiments.some((e) => e.id === this.state.selectedExp)) this.experimentSelections[sourceId] = this.state.selectedExp;
+    const selectionEpoch = ++this.projectSelectionEpoch;
+    this.invalidateRead();
+    this.feed?.stop();
+    this.feed = void 0;
+    return new Promise((resolve) => this.setState(() => current(selectionEpoch) ? { ...this.sessionSelection(""), projectId: id, selectedExp: this.experimentSelections[id] ?? "", navigationOpen: false, selectedRun: "", selectedReport: "", archiveHistoryOpen: false, selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", data: null } : null, () => {
+      const switched = this.mounted && intent === this.projectIntent && modalIntent === this.modalIntent && this.state.projectId === id && this.projectSelectionEpoch === selectionEpoch;
+      if (switched) void this.refresh();
+      resolve(switched);
+    }));
+  }
+  async clearDeletedView(id) {
+    if (this.state.projectId !== id) return;
+    const selectionEpoch = ++this.projectSelectionEpoch;
+    this.projectIntent++;
+    if (this.state.modal !== "projects") this.modalIntent++;
+    this.feed?.stop();
+    this.feed = void 0;
+    await new Promise((resolve) => this.setState({ ...this.sessionSelection(""), projectId: "", data: null, selectedExp: "", selectedRun: "", selectedReport: "", archiveHistoryOpen: false, selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, eventNotice: "", modal: this.state.modal === "projects" ? "projects" : "", modalData: null }, resolve));
+    return selectionEpoch;
+  }
+  selectSession(id, tab = "chat") {
+    this.invalidateRead();
+    this.setState(this.sessionSelection(id, tab), () => {
+      void this.refresh();
+    });
+  }
+  async open(modal, data = null) {
+    const intent = ++this.modalIntent, projectId = this.state.projectId, epoch = this.projectSelectionEpoch, projectIntent = this.projectIntent, workspace = this.workspace.current, generation = workspace?.draftGeneration, archived = this.state.data?.project.archived;
+    if (modal === "project" && workspace && !await workspace.confirmDiscard()) return;
+    const current = () => this.mounted && intent === this.modalIntent && (modal !== "project" || projectId === this.state.projectId && epoch === this.projectSelectionEpoch && projectIntent === this.projectIntent && workspace === this.workspace.current && generation === workspace?.draftGeneration && archived === this.state.data?.project.archived);
+    if (current()) this.setState(() => current() ? { modal, modalData: data, error: "" } : null);
+  }
+  async newSession() {
+    const projectId = this.state.projectId, currentSessionId = this.state.sessionId, epoch = this.projectSelectionEpoch;
+    if (!this.mounted || !projectId || this.state.busy || this.creatingSession || this.state.data?.project.archived)
+      return;
+    this.creatingSession = true;
+    const current = () => this.mounted && this.state.projectId === projectId && this.projectSelectionEpoch === epoch;
+    const eligible = (s) => s.projectId === projectId && s.role === "coordinator" && s.state === "idle" && !s.taskId && !s.teamId;
+    const seen = /* @__PURE__ */ new Set();
+    const emptySession = async (id) => {
+      seen.add(id);
+      const session = await api(`/sessions/${encodeURIComponent(id)}`);
+      if (!current()) return null;
+      if (session.id !== id) throw Error("\u4F1A\u8BDD\u5FEB\u7167\u4E0E\u8BF7\u6C42\u4E0D\u4E00\u81F4");
+      if (!eligible(session) || session.parentSessionId || session.piSessionPath !== null || session.generation !== 0 || session.leaseUntil !== 0) return null;
+      const messages = await api(`/sessions/${encodeURIComponent(id)}/messages`);
+      if (!current()) return null;
+      if (!Array.isArray(messages)) throw Error("\u4F1A\u8BDD\u6D88\u606F\u8BFB\u53D6\u672A\u8FD4\u56DE\u5B8C\u6574\u5386\u53F2");
+      return messages.length === 0 ? session : null;
+    };
+    try {
+      await this.perform(async () => {
+        try {
+          const project = await api(`/projects/${encodeURIComponent(projectId)}`);
+          if (!current()) return;
+          if (project.id !== projectId || typeof project.archived !== "boolean") throw Error("\u9879\u76EE\u5FEB\u7167\u4E0E\u8BF7\u6C42\u4E0D\u4E00\u81F4");
+          if (project.archived) throw Error("\u5DF2\u5F52\u6863\u9879\u76EE\u4E0D\u53EF\u65B0\u5EFA\u4F1A\u8BDD");
+          let session = currentSessionId ? await emptySession(currentSessionId) : null;
+          if (!current()) return;
+          let cursor;
+          const cursors = /* @__PURE__ */ new Set();
+          while (!session) {
+            const page = await api("/operations/session_list", { projectId, input: { role: "coordinator", stateFilter: "active", limit: 50, ...cursor ? { beforeSessionId: cursor } : {} } });
+            if (!current()) return;
+            if (!Array.isArray(page.items)) throw Error("\u4F1A\u8BDD\u76EE\u5F55\u8BFB\u53D6\u5931\u8D25");
+            for (const item of page.items) {
+              if (seen.has(item.id) || !eligible(item)) continue;
+              session = await emptySession(item.id);
+              if (!current()) return;
+              if (session) break;
+            }
+            if (session || !page.nextCursor) break;
+            if (cursors.has(page.nextCursor)) throw Error("\u4F1A\u8BDD\u76EE\u5F55\u6E38\u6807\u91CD\u590D");
+            cursor = page.nextCursor;
+            cursors.add(cursor);
+          }
+          const body = session ? { projectId, reuseSessionId: session.id, expectedVersion: session.version } : { projectId, title: "\u65B0\u7684\u7814\u7A76\u4F1A\u8BDD" };
+          const pending = this.pendingSessionCreate?.projectId === projectId && this.pendingSessionCreate.epoch === epoch ? this.pendingSessionCreate : { projectId, epoch, body, key: crypto.randomUUID() };
+          this.pendingSessionCreate = pending;
+          try {
+            session = await api("/sessions", pending.body, "POST", void 0, pending.key);
+            this.pendingSessionCreate = void 0;
+          } catch (error) {
+            if (error instanceof ApiError && error.status < 500) this.pendingSessionCreate = void 0;
+            throw error;
+          }
+          if (!current() || this.state.sessionId !== currentSessionId) return;
+          const closeNavigation = this.state.navigationOpen, sessionId = session.id;
+          await new Promise((resolve) => this.setState({ ...this.sessionSelection(sessionId, "chat"), navigationOpen: false, sessionCreationSignal: this.state.sessionCreationSignal + 1 }, () => {
+            if (current() && this.state.sessionId === sessionId && this.state.data?.sessions.find((item) => item.id === sessionId) !== session) this.confirmSessionModel(session);
+            if (closeNavigation) this.navigationToggle?.focus();
+            resolve();
+          }));
+        } catch (error) {
+          if (current()) throw error;
+        }
+      });
+    } finally {
+      this.creatingSession = false;
+    }
+  }
+  async toggle() {
+    const p = this.state.data.project;
+    await this.perform(() => api(`/projects/${p.id}/collaboration-settings`, { expectedVersion: p.version, enabled: !p.settings.enabled }));
+  }
+  modalView() {
+    const { modal, modalData, data, busy } = this.state;
+    if (!modal)
+      return null;
+    const base = { onClose: this.close, busy };
+    const modalIntent = this.modalIntent, done = () => {
+      if (this.mounted && modalIntent === this.modalIntent && this.state.modal === modal) {
+        this.modalIntent++;
+        this.setState({ modal: "", modalData: null });
+      }
+    };
+    if (modal === "projects") return /* @__PURE__ */ jsx(ProjectManagement, { onClose: this.close, onOpen: async (id) => {
+      if (this.mounted && modalIntent === this.modalIntent && this.state.modal === modal && await this.switchProject(id)) done();
+    }, selectionToken: () => this.projectSelectionEpoch, onChanged: this.projectLifecycleChanged });
+    if (modal === "project")
+      return /* @__PURE__ */ createElement(ProjectCreationModal, { ...base, key: modalIntent, onCreate: async (input, key) => {
+        const current = () => this.mounted && modalIntent === this.modalIntent && this.state.modal === modal;
+        if (!current()) throw Error("\u6B64\u521B\u5EFA\u7A97\u53E3\u5DF2\u5173\u95ED\uFF0C\u672C\u6B21\u521B\u5EFA\u672A\u63D0\u4EA4\u3002");
+        let started = false, completed = false, failure;
+        await this.perform(async () => {
+          started = true;
+          try {
+            const p = await api("/projects", input, "POST", void 0, key);
+            if (!current()) return;
+            const s = await api("/sessions", { projectId: p.id, title: "\u7814\u7A76\u4E3B\u4F1A\u8BDD" }, "POST", void 0, key + "-session");
+            completed = true;
+            if (!current()) return;
+            await new Promise((resolve) => this.setState(() => current() ? { ...this.sessionSelection(s.id, "chat"), projectId: p.id, selectedExp: "", selectedRun: "", selectedReport: "", archiveHistoryOpen: false, selectedCampaign: "", selectedDiscoveryGrant: "", selectedDocument: null, data: null } : null, resolve));
+            if (!current()) return;
+            clearTimeout(this.noticeTimer);
+            this.setState({ notice: input.github ? "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA\uFF1BGitHub \u540C\u6B65\u72B6\u6001\u53EF\u5728\u8BBE\u7F6E\u4E2D\u67E5\u770B\u3002" : "\u672C\u5730\u9879\u76EE\u5DF2\u521B\u5EFA" });
+            this.noticeTimer = setTimeout(() => this.setState({ notice: "" }), 4500);
+            done();
+          } catch (error) {
+            failure = error;
+            if (current()) throw error;
+          }
+        });
+        if (failure !== void 0) throw failure;
+        if (!started) throw Error("\u5F53\u524D\u64CD\u4F5C\u5C1A\u672A\u5B8C\u6210\uFF0C\u672C\u6B21\u521B\u5EFA\u672A\u63D0\u4EA4\u3002\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002");
+        if (!completed) throw Error("\u6B64\u521B\u5EFA\u7A97\u53E3\u5DF2\u5173\u95ED\uFF0C\u521B\u5EFA\u6D41\u7A0B\u672A\u5B8C\u6210\u3002");
+      } });
+    if (modal === "config")
+      return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u5B9E\u9A8C\u53EA\u8BFB\u914D\u7F6E", submitLabel: "\u5173\u95ED\u914D\u7F6E", onSubmit: () => done(), children: [
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u914D\u7F6E\u53D8\u66F4\u8BF7\u5728\u7814\u7A76\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u3002" }),
+        /* @__PURE__ */ jsxs("label", { children: [
+          "\u914D\u7F6E\u6E90\u7801",
+          /* @__PURE__ */ jsx("textarea", { "aria-label": "\u914D\u7F6E\u6E90\u7801", className: "code-input", rows: 12, readOnly: true, defaultValue: modalData.content })
+        ] })
+      ] });
+    if (modal === "directive")
+      return /* @__PURE__ */ jsxs(Modal, { ...base, title: "\u7ED9\u56E2\u961F\u53D1\u9001\u6307\u4EE4", submitLabel: "\u4FDD\u5B58\u6307\u4EE4", onSubmit: (fd) => this.perform(async () => {
+        await api(`/teams/${modalData}/directives`, { kind: fd.get("kind"), content: fd.get("content") });
+        done();
+      }), children: [
+        /* @__PURE__ */ jsxs("label", { children: [
+          "\u6307\u4EE4\u8BED\u4E49",
+          /* @__PURE__ */ jsxs("select", { name: "kind", children: [
+            nativeSelectButton,
+            /* @__PURE__ */ jsx("option", { value: "steer", children: "\u5F15\u5BFC\u5F53\u524D\u5DE5\u4F5C \xB7 \u4E0D\u4FEE\u6539\u7814\u7A76\u76EE\u6807" }),
+            /* @__PURE__ */ jsx("option", { value: "follow_up", children: "\u540E\u7EED\u6307\u4EE4 \xB7 \u5F53\u524D\u4EFB\u52A1\u7ED3\u675F\u540E\u5904\u7406" }),
+            /* @__PURE__ */ jsx("option", { value: "revise", children: "\u6539\u53D8\u7814\u7A76\u76EE\u6807 \xB7 \u65E7\u4EFB\u52A1\u5931\u6548\uFF0C\u6682\u505C\u91CD\u65B0\u89C4\u5212" })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("label", { children: [
+          "\u6307\u4EE4\u5185\u5BB9",
+          /* @__PURE__ */ jsx("textarea", { name: "content", rows: 6, required: true })
+        ] }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4FEE\u6539\u76EE\u6807\u4F1A\u4FDD\u5B58\u65B0\u9700\u6C42\u7248\u672C\uFF0C\u4E0D\u5220\u9664\u5DF2\u6709\u5B9E\u9A8C\u6216\u7ED3\u679C\u3002\u53D6\u6D88\u6B63\u5F0F Run \u9700\u5355\u72EC\u64CD\u4F5C\u3002" })
+      ] });
+    if (modal === "evidence")
+      return /* @__PURE__ */ jsxs(Modal, { ...base, wide: true, title: "\u767B\u8BB0\u539F\u6587\u8BC1\u636E", submitLabel: "\u4FDD\u5B58\u8BC1\u636E", onSubmit: (fd) => this.perform(async () => {
+        await api("/evidence", { projectId: data.project.id, artifactId: modalData.artifactId, start: Number(fd.get("start")), end: Number(fd.get("end")), description: fd.get("description") });
+        done();
+      }, "\u8BC1\u636E\u5DF2\u5B9A\u4F4D\u5E76\u6821\u9A8C"), children: [
+        /* @__PURE__ */ jsxs("label", { children: [
+          "\u8BC1\u636E\u8BF4\u660E",
+          /* @__PURE__ */ jsx("input", { name: "description", required: true, placeholder: "\u6B64\u7247\u6BB5\u7528\u4E8E\u652F\u6301\u4EC0\u4E48\u89C2\u5BDF\uFF1F" })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "form-columns", children: [
+          /* @__PURE__ */ jsxs("label", { children: [
+            "\u8D77\u59CB\u5B57\u7B26",
+            /* @__PURE__ */ jsx("input", { type: "number", name: "start", min: 0, defaultValue: 0 })
+          ] }),
+          /* @__PURE__ */ jsxs("label", { children: [
+            "\u7ED3\u675F\u5B57\u7B26",
+            /* @__PURE__ */ jsx("input", { type: "number", name: "end", min: 1, max: modalData.content.length, defaultValue: Math.min(modalData.content.length, 2e3) })
+          ] })
+        ] }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4F7F\u7528 JavaScript UTF-16 \u5B57\u7B26\u4F4D\u7F6E\uFF0C\u4E0D\u662F PDF \u9875\u7801\u6216\u65E5\u5FD7\u5B57\u8282\u4F4D\u7F6E\u3002" }),
+        /* @__PURE__ */ jsx("pre", { className: "modal-preview", children: modalData.content.slice(0, 4e3) })
+      ] });
+    if (modal === "claim")
+      return /* @__PURE__ */ jsxs(Modal, { ...base, title: "\u63D0\u51FA\u7ED3\u8BBA\u5019\u9009", submitLabel: "\u4FDD\u5B58\u5019\u9009\u5F85\u9A8C\u6536", onSubmit: (fd) => this.perform(async () => {
+        await api("/claims", { projectId: data.project.id, statement: fd.get("statement"), evidenceIds: [fd.get("evidenceId")], limitations: String(fd.get("limitations")).split("\n").filter(Boolean) });
+        done();
+      }), children: [
+        /* @__PURE__ */ jsxs("label", { children: [
+          "\u7ED3\u8BBA\u9648\u8FF0",
+          /* @__PURE__ */ jsx("textarea", { name: "statement", required: true, rows: 4 })
+        ] }),
+        /* @__PURE__ */ jsxs("label", { children: [
+          "\u8BC1\u636E\u6765\u6E90",
+          /* @__PURE__ */ jsxs("select", { name: "evidenceId", children: [
+            nativeSelectButton,
+            data.evidence.map((e) => /* @__PURE__ */ jsxs("option", { value: e.id, children: [
+              e.description,
+              " \xB7 ",
+              short(e.id)
+            ] }, e.id))
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("label", { children: [
+          "\u9650\u5236\uFF08\u6BCF\u884C\u4E00\u6761\uFF09",
+          /* @__PURE__ */ jsx("textarea", { name: "limitations", required: true, placeholder: "\u6837\u672C\u89C4\u6A21\u3001\u6761\u4EF6\u3001\u672A\u6267\u884C\u7684\u9A8C\u8BC1\u7B49" })
+        ] })
+      ] });
+    return null;
+  }
+  render() {
+    const { boot, data } = this.state, tab = normalizeView(this.state.tab);
+    const projectReadFailure = this.state.projectReadError ? /* @__PURE__ */ jsxs("div", { className: data ? "global-error" : "boot-screen", role: "alert", children: [
+      /* @__PURE__ */ jsx("strong", { children: "\u8BFB\u53D6\u9879\u76EE\u5931\u8D25" }),
+      /* @__PURE__ */ jsx("span", { children: this.state.projectReadError }),
+      /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", onClick: () => void this.refresh(), children: "\u91CD\u8BD5\u8BFB\u53D6\u9879\u76EE" })
+    ] }) : null;
+    const currentSession = data?.sessions.find((s) => s.id === this.state.sessionId), experiment = data?.experiments.find((e) => e.id === this.state.selectedExp), collaborationSessionId = currentSession?.taskId ? data?.teams.find((t) => t.id === currentSession.teamId)?.rootSessionId ?? "" : this.state.sessionId;
+    const inspector = data && boot ? /* @__PURE__ */ jsx(Inspector, { data, boot, tab: "chat", embedded: true, sessionId: collaborationSessionId, inlineWorkflows: currentSession?.role === "coordinator" && !currentSession.taskId, experiment, selectedRun: this.state.selectedRun, onRun: (selectedRun) => experiment && this.selectExperiment(experiment.id, selectedRun), perform: this.perform, onConfig: () => {
+      if (experiment) this.perform(async () => {
+        const file = await api(`/experiments/${experiment.id}/files?path=config.json`);
+        this.open("config", { ...file });
+      });
+    }, onDirective: (teamId) => this.open("directive", teamId) }) : null;
+    return /* @__PURE__ */ jsxs("div", { className: "app-shell" + (this.state.navigationOpen ? " navigation-open" : ""), onKeyDown: (event) => {
+      if (event.key === "Escape" && this.state.navigationOpen) this.toggleNavigation();
+    }, children: [
+      /* @__PURE__ */ jsxs("nav", { id: "main-navigation", className: "sidebar", "aria-label": "\u4E3B\u5BFC\u822A", children: [
+        /* @__PURE__ */ jsxs("div", { className: "sidebar-brand", children: [
+          /* @__PURE__ */ jsxs("a", { className: "brand", href: "#", onClick: (e) => {
+            e.preventDefault();
+            this.setState({ tab: "chat", navigationOpen: false });
+          }, children: [
+            /* @__PURE__ */ jsx("span", { children: "\u03C0" }),
+            /* @__PURE__ */ jsxs("div", { children: [
+              "\u7814\u821F\u03C0",
+              /* @__PURE__ */ jsx("small", { children: "\u79D1\u7814\u5DE5\u4F5C\u53F0" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsx("button", { id: "navigation-close", className: "icon-button mobile-navigation", "aria-label": "\u5173\u95ED\u5BFC\u822A", onClick: this.toggleNavigation, children: /* @__PURE__ */ jsx(Icon, { name: "close" }) })
+        ] }),
+        /* @__PURE__ */ jsxs("label", { className: "sidebar-project", children: [
+          "\u9879\u76EE",
+          /* @__PURE__ */ jsxs("select", { "aria-label": "\u5F53\u524D\u9879\u76EE", value: data?.project.archived ? "" : this.state.projectId, onChange: (e) => {
+            const id = String(e.target.value);
+            this.chooseProject(id);
+          }, children: [
+            nativeSelectButton,
+            data?.project.archived ? /* @__PURE__ */ jsxs("option", { value: "", disabled: true, children: [
+              data.project.name,
+              " \xB7 \u5DF2\u5F52\u6863"
+            ] }) : !boot?.projects.length ? /* @__PURE__ */ jsx("option", { value: "", children: "\u5C1A\u672A\u521B\u5EFA\u9879\u76EE" }) : null,
+            boot?.projects.map((p) => /* @__PURE__ */ jsx("option", { value: p.id, children: p.name }, p.id))
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "sidebar-project-actions", children: [
+          /* @__PURE__ */ jsxs("button", { className: "new-project", onClick: () => this.setState({ navigationOpen: false }, () => void this.open("project")), children: [
+            /* @__PURE__ */ jsx(Icon, { name: "plus", size: 16 }),
+            "\u65B0\u5EFA\u9879\u76EE"
+          ] }),
+          /* @__PURE__ */ jsxs("button", { className: "text-button project-management-trigger", onClick: () => this.setState({ navigationOpen: false }, () => void this.open("projects")), children: [
+            /* @__PURE__ */ jsx(Icon, { name: "archive", size: 15 }),
+            "\u9879\u76EE\u7BA1\u7406"
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "sidebar-body", children: [
+          /* @__PURE__ */ jsx("div", { className: "nav-groups", children: navigationGroups.map((group) => /* @__PURE__ */ jsxs("details", { open: group.name === "\u7814\u7A76" || group.ids.includes(tab), children: [
+            /* @__PURE__ */ jsx("summary", { children: group.name }),
+            /* @__PURE__ */ jsx("div", { className: "nav-list", children: group.ids.map((id) => {
+              const entry = navigation.find((item) => item[0] === id);
+              return /* @__PURE__ */ jsxs("button", { "aria-current": id !== "chat" && tab === id ? "page" : void 0, className: id !== "chat" && tab === id ? "active" : "", disabled: id === "chat" && (!this.state.projectId || this.state.busy || !!data?.project.archived), onClick: () => id === "chat" ? this.newSession() : this.selectTab(id), children: [
+                /* @__PURE__ */ jsx(Icon, { name: entry[2], size: 18 }),
+                /* @__PURE__ */ jsx("span", { children: id === "chat" ? "\u65B0\u5EFA\u4F1A\u8BDD" : entry[1] })
+              ] }, id);
+            }) })
+          ] }, group.name)) }),
+          /* @__PURE__ */ jsx(SessionList, { projectId: this.state.projectId, selectedId: this.state.sessionId, selected: currentSession, creationSignal: this.state.sessionCreationSignal, busy: this.state.busy, onSelect: (id) => {
+            this.setState({ navigationOpen: false });
+            this.selectSession(id);
+          } })
+        ] }),
+        /* @__PURE__ */ jsxs("div", { className: "sidebar-footer", children: [
+          /* @__PURE__ */ jsx("div", { className: "local-avatar", children: /* @__PURE__ */ jsx(Icon, { name: "folder" }) }),
+          /* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("strong", { children: "\u672C\u5730\u5DE5\u4F5C\u7A7A\u95F4" }) }),
+          /* @__PURE__ */ jsx("span", { className: "status-dot " + (this.state.connected ? "" : "amber") })
+        ] })
+      ] }),
+      this.state.navigationOpen ? /* @__PURE__ */ jsx("button", { className: "navigation-backdrop", "aria-label": "\u6536\u8D77\u5BFC\u822A", onClick: this.toggleNavigation }) : null,
+      /* @__PURE__ */ jsxs("div", { className: "workspace-shell", inert: this.state.navigationOpen ? true : void 0, children: [
+        /* @__PURE__ */ jsxs("header", { className: "topbar", children: [
+          /* @__PURE__ */ jsx("button", { id: "navigation-toggle", ref: (node) => {
+            this.navigationToggle = node;
+          }, className: "icon-button mobile-navigation", "aria-label": "\u6253\u5F00\u5BFC\u822A", "aria-expanded": this.state.navigationOpen, "aria-controls": "main-navigation", onClick: this.toggleNavigation, children: /* @__PURE__ */ jsx(Icon, { name: "menu" }) }),
+          /* @__PURE__ */ jsxs("div", { className: "breadcrumb", children: [
+            /* @__PURE__ */ jsx("span", { children: data?.project.name ?? "\u9879\u76EE" }),
+            /* @__PURE__ */ jsx(Icon, { name: "chevron", size: 12 }),
+            /* @__PURE__ */ jsx("strong", { children: navigation.find((item) => item[0] === tab)?.[1] ?? "\u7814\u7A76\u4F1A\u8BDD" })
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "topbar-right", children: /* @__PURE__ */ jsxs("span", { className: "connection-state " + (this.state.connected ? "ready" : ""), children: [
+            /* @__PURE__ */ jsx("span", { className: "status-dot " + (this.state.connected ? "" : "amber") }),
+            this.state.connected ? "\u672C\u5730\u670D\u52A1\u5728\u7EBF" : "\u6B63\u5728\u91CD\u8FDE"
+          ] }) })
+        ] }),
+        data?.project.archived ? /* @__PURE__ */ jsxs("div", { className: "project-readonly-notice", role: "status", children: [
+          /* @__PURE__ */ jsx(Icon, { name: "archive", size: 16 }),
+          /* @__PURE__ */ jsx("span", { children: "\u5DF2\u5F52\u6863\u9879\u76EE \xB7 \u53EA\u8BFB\u67E5\u770B\u4F1A\u8BDD\u3001\u6E90\u7801\u4E0E\u5DF2\u6709\u6210\u679C" }),
+          /* @__PURE__ */ jsx("button", { className: "text-button", onClick: () => void this.open("projects"), children: "\u7BA1\u7406\u5F52\u6863" }),
+          /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", "aria-expanded": this.state.archiveHistoryOpen, "aria-controls": "chat-task-drawer", onClick: this.toggleArchiveHistory, children: this.state.archiveHistoryOpen ? "\u6536\u8D77\u5386\u53F2\u8D44\u6599" : "\u67E5\u770B\u5386\u53F2\u8D44\u6599" })
+        ] }) : null,
+        this.state.eventNotice ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: this.state.eventNotice }) : null,
+        this.state.error ? /* @__PURE__ */ jsxs("div", { className: "global-error", role: "alert", children: [
+          /* @__PURE__ */ jsx("strong", { children: "\u64CD\u4F5C\u672A\u5B8C\u6210" }),
+          /* @__PURE__ */ jsx("span", { children: this.state.error }),
+          /* @__PURE__ */ jsx("button", { className: "icon-button", "aria-label": "\u5173\u95ED\u9519\u8BEF\u63D0\u793A", onClick: () => this.setState({ error: "" }), children: /* @__PURE__ */ jsx(Icon, { name: "close", size: 16 }) })
+        ] }) : null,
+        data ? projectReadFailure : null,
+        this.state.notice ? /* @__PURE__ */ jsxs("div", { className: "toast", role: "status", children: [
+          /* @__PURE__ */ jsx(Icon, { name: "check", size: 16 }),
+          this.state.notice
+        ] }) : null,
+        /* @__PURE__ */ jsx(ConversationLayout, { projectId: this.state.projectId, active: tab === "chat", inspector: null, panel: /* @__PURE__ */ jsx(ConversationPanel, { ref: this.conversationPanel, projectId: this.state.projectId, active: tab === "chat" && !!data, data, collaboration: inspector, experimentDetails: inspector ? React.cloneElement(inspector, { tab: "experiments", inlineWorkflows: false }) : null, selectedExperiment: this.state.selectedExp, onExperiment: this.selectExperiment, onWorkspace: () => this.selectTab("workspace"), onChooseProject: () => {
+          if (boot?.projects.length) {
+            this.setState({ navigationOpen: true }, () => document.querySelector(".sidebar-project select")?.focus());
+          } else void this.open("project");
+        }, onRetry: () => void this.refresh(), error: this.state.projectReadError }, this.state.projectId), children: /* @__PURE__ */ jsxs("main", { className: "main-pane page-" + tab + (tab === "chat" ? " chat-pane" : ""), children: [
+          boot && data ? /* @__PURE__ */ jsx("div", { className: "chat-view-container", hidden: tab !== "chat", children: /* @__PURE__ */ jsx(Chat, { ref: this.chat, data, boot, session: currentSession, archivedHistory: data.project.archived && this.state.archiveHistoryOpen ? /* @__PURE__ */ jsx(ArchivedResearchHistory, { data, perform: this.perform }, data.project.id) : null, onArchivedHistoryClose: () => this.setState({ archiveHistoryOpen: false }), onRegister: (artifactId, content) => this.open("evidence", { artifactId, content }), onClaim: () => this.open("claim"), onUseDocument: this.useParsedDocument, onSources: () => this.selectTab("integrations"), onCampaign: this.selectCampaign, onModelConfirmed: this.confirmSessionModel, onBranchConfirmed: this.confirmSessionBranch, onMessageConfirmed: this.confirmSessionMessage, busy: this.state.busy, messages: this.state.messages, pendingMessages: this.state.pendingMessages, pendingTotal: this.state.pendingTotal, pendingNextCursor: this.state.pendingNextCursor, canSteer: this.state.canSteer, history: this.state.history, historyAnchor: this.state.historyAnchor, onHistory: this.selectHistory, stream: this.state.stream, streamTruncated: this.state.streamTruncated, activity: this.state.activity, perform: this.perform, onToggle: () => this.toggle(), onNew: () => this.newSession(), onExperiments: this.showExperiments, onWorkspace: () => this.selectTab("workspace"), onSession: (id) => this.selectSession(id), onExperiment: this.selectExperiment, onRun: (runId, experimentId) => this.selectExperiment(experimentId, runId) }, data.project.id + ":" + this.state.sessionId) }) : null,
+          boot && data ? /* @__PURE__ */ jsx("div", { hidden: tab !== "workspace", children: /* @__PURE__ */ jsx(WorkspaceView, { ref: this.workspace, data, perform: this.perform, active: tab === "workspace" }, data.project.id) }) : null,
+          !boot ? projectReadFailure ?? /* @__PURE__ */ jsx("div", { className: "boot-screen", role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u672C\u5730\u9879\u76EE\u2026" }) : tab === "settings" ? /* @__PURE__ */ jsx(SettingsView, { boot, data: data ?? void 0, readOnly: data?.project.archived, projectId: this.state.projectId, session: currentSession, perform: this.perform }) : tab === "environment" ? /* @__PURE__ */ jsx(EnvironmentView, {}) : !data ? projectReadFailure ?? (this.state.projectId || boot.projects.length ? /* @__PURE__ */ jsx("div", { className: "boot-screen", role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u9879\u76EE\u2026" }) : /* @__PURE__ */ jsxs("div", { className: "first-project", children: [
+            /* @__PURE__ */ jsx("div", { className: "welcome-mark", children: "\u03C0" }),
+            /* @__PURE__ */ jsxs("h1", { children: [
+              "\u6BCF\u4E00\u4E2A\u7814\u7A76\uFF0C",
+              /* @__PURE__ */ jsx("br", {}),
+              "\u4ECE\u6E05\u6670\u7684\u8D77\u70B9\u5F00\u59CB\u3002"
+            ] }),
+            /* @__PURE__ */ jsxs("p", { children: [
+              "\u5EFA\u7ACB\u672C\u5730\u9879\u76EE\uFF0C\u4FDD\u5B58\u6E90\u4EE3\u7801\u3001\u5B9E\u9A8C\u5FEB\u7167\u548C\u8BC1\u636E\u3002",
+              /* @__PURE__ */ jsx("br", {}),
+              "\u4E5F\u53EF\u4EE5\u5148\u8FD0\u884C\u968F\u5305\u7684\u771F\u5B9E\u6570\u503C\u793A\u4F8B\uFF0C\u68C0\u67E5\u5B8C\u6574\u6D41\u7A0B\u3002"
+            ] }),
+            /* @__PURE__ */ jsxs("button", { className: "primary", onClick: () => void this.open("project"), children: [
+              "\u521B\u5EFA\u7B2C\u4E00\u4E2A\u9879\u76EE ",
+              /* @__PURE__ */ jsx(Icon, { name: "arrow", size: 17 })
+            ] })
+          ] })) : tab === "chat" ? null : tab === "workspace" ? null : tab === "integrations" ? /* @__PURE__ */ jsx(IntegrationsView, { projectId: data.project.id, sessionId: this.state.sessionId, refreshToken: data, readOnly: data.project.archived }, data.project.id) : null
+        ] }) })
+      ] }),
+      this.modalView()
+    ] });
+  }
+}
+export {
+  App
+};

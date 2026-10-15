@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "baseline": "8aa1f25dbacb29efb7e05f6f64a59577186abc5e",
+  "platform": "win32",
+  "node": "24.19.0",
+  "acceptance": "ACCEPTANCE.md",
+  "live": [
+    {
+      "backend": "local",
+      "scope": "actual host GPU",
+      "runId": "42f864ac-e4bc-44ce-9905-f83705c6a1c5",
+      "manifestDigest": "e84513f15cf0318c463166d277b50759c659ba2a36259c7141fa273dad169ed9",
+      "selected": [
+        "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067"
+      ],
+      "state": "succeeded",
+      "integrity": "complete",
+      "metrics": {
+        "max_abs_error": 0,
+        "elements_checked": 4096,
+        "elapsed_seconds": 0.11587839992716908
+      },
+      "kernel": {
+        "runtime": "cuda-driver",
+        "deviceIds": [
+          "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067"
+        ],
+        "kernel": "vector-add",
+        "validated": true
+      },
+      "claimReleased": true,
+      "historyReopened": true,
+      "unapprovedRejected": true,
+      "raw": "nvidia-live-local-relative-compiler-final.json"
+    },
+    {
+      "backend": "docker",
+      "scope": "actual host GPU",
+      "runId": "41997ef2-4d8e-4cd1-b574-3fafb45ecac7",
+      "manifestDigest": "eefe5bdc12c4f9294e5b33667908763fcebd55e6be42e6f30e5f82c8d3ac8cba",
+      "selected": [
+        "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067",
+        "GPU-58dc30ef-abe7-0221-812a-eb2e6c49e2ae",
+        "GPU-17faea42-44e2-e404-ce4a-8d30b3e89fbc"
+      ],
+      "state": "succeeded",
+      "integrity": "complete",
+      "metrics": {
+        "max_abs_error": 0,
+        "elements_checked": 12288,
+        "elapsed_seconds": 0.7607436659745872
+      },
+      "kernel": {
+        "runtime": "cuda-driver",
+        "deviceIds": [
+          "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067",
+          "GPU-58dc30ef-abe7-0221-812a-eb2e6c49e2ae",
+          "GPU-17faea42-44e2-e404-ce4a-8d30b3e89fbc"
+        ],
+        "kernel": "vector-add",
+        "validated": true
+      },
+      "claimReleased": true,
+      "historyReopened": true,
+      "unapprovedRejected": true,
+      "raw": "nvidia-live-docker-final-three.json"
+    },
+    {
+      "backend": "ssh",
+      "scope": "isolated loopback SSH to real Docker GPU",
+      "runId": "b2af4ff4-7cb7-4aa1-9d71-4e836ff9eaf0",
+      "manifestDigest": "c3492cd1f916929264d7c48e51fa602f46cd7cc25f41c71d6ad026e5474101ab",
+      "selected": [
+        "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067",
+        "GPU-58dc30ef-abe7-0221-812a-eb2e6c49e2ae",
+        "GPU-17faea42-44e2-e404-ce4a-8d30b3e89fbc"
+      ],
+      "state": "succeeded",
+      "integrity": "complete",
+      "metrics": {
+        "max_abs_error": 0,
+        "elements_checked": 12288,
+        "elapsed_seconds": 0.7836057560052723
+      },
+      "kernel": {
+        "runtime": "cuda-driver",
+        "deviceIds": [
+          "GPU-f07d86e9-eefa-0b63-a535-5df14fed0067",
+          "GPU-58dc30ef-abe7-0221-812a-eb2e6c49e2ae",
+          "GPU-17faea42-44e2-e404-ce4a-8d30b3e89fbc"
+        ],
+        "kernel": "vector-add",
+        "validated": true
+      },
+      "claimReleased": true,
+      "historyReopened": true,
+      "unapprovedRejected": true,
+      "raw": "nvidia-live-ssh-canonical-three.json"
+    }
+  ],
+  "browser": {
+    "runtimeConfigured": true,
+    "realLocalProbe": true,
+    "deviceRecords": 3,
+    "reloadPreserved": true,
+    "widths": [
+      {
+        "scroll": 265,
+        "viewport": 320,
+        "width": 265
+      },
+      {
+        "scroll": 468,
+        "viewport": 768,
+        "width": 468
+      },
+      {
+        "scroll": 698,
+        "viewport": 1024,
+        "width": 698
+      },
+      {
+        "scroll": 1066,
+        "viewport": 1440,
+        "width": 1066
+      }
+    ],
+    "finalScreenshot": "nvidia-settings-final.png",
+    "finalSshProtocolHintVerified": true
+  },
+  "skillRelease": "14e1170adc7bf3ab02a4b37a44172082d5853732fc1df1bd0aac9fbde70479cb",
+  "retainedFailures": [
+    {
+      "record": "nvidia-live-local.json",
+      "reason": "Windows NVML requires ProgramFiles"
+    },
+    {
+      "record": "nvidia-live-local-driver-fixed.json",
+      "reason": "supervisor environment also needs ProgramFiles"
+    },
+    {
+      "record": "nvidia-resume-local-driver-fixed.json",
+      "reason": "PowerShell UTF8 decoding of Chinese path; original unknown retained"
+    },
+    {
+      "record": "nvidia-live-docker.json",
+      "reason": "WSL2 returned three devices for one requested UUID; rejected before experiment"
+    }
+  ],
+  "checks": {
+    "backend": {
+      "passed": 24,
+      "log": "nvidia-backend-tests.log"
+    },
+    "schemaAndCatalog": {
+      "passed": 35,
+      "log": "nvidia-schema-connectors-tests.log"
+    },
+    "localAfterUnicodeFix": {
+      "passed": 10
+    },
+    "frontend": {
+      "passed": 9
+    },
+    "full": {
+      "status": "completed_with_failures_retained",
+      "tests": 1184,
+      "passed": 1143,
+      "failed": 18,
+      "skipped": 23,
+      "log": "nvidia-full-tests.log",
+      "repairStatus": "all original failed cases covered by passing targeted checks"
+    },
+    "cleanBuild": {
+      "node": "24.19.0",
+      "platform": "win32",
+      "lockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 554,
+      "distManifestSha256": "8a28a680cf0a662e14f1edcdfccd5862b3b83be88c98fcd9c6061c77f6eaed43"
+    },
+    "independentReview": {
+      "status": "passed",
+      "task": "nvidia_review",
+      "requestedModel": "gpt-6-astra",
+      "requestedReasoningEffort": "xhigh",
+      "runtimeVerification": "requested; runtime not echoed",
+      "isolatedChecks": 7,
+      "remainingBlockers": 0,
+      "snapshot": "nvidia-review-fixed.json",
+      "patchSha256": "8e172ab70856f87bdbdc94284c29ea4cce8f9308605f69755309b0c895d3d274",
+      "closed": [
+        "CPU containers inheriting GPU access and upgrade admission window",
+        "CRLF source publication mismatching Git checkout bytes"
+      ]
+    },
+    "repairs": [
+      {
+        "name": "backup and relocation",
+        "passed": 13,
+        "log": "nvidia-backup-contract-fix.log",
+        "note": "13 backup checks passed; a separate added permission fixture initially failed and was corrected, final permission/output check below"
+      },
+      {
+        "name": "operation output and role boundaries",
+        "passed": 6,
+        "log": "nvidia-operation-outputs-final.log"
+      },
+      {
+        "name": "149 HTTP/CLI/tool interface parity",
+        "passed": 1,
+        "log": "nvidia-owner-operation-parity-fix.log"
+      },
+      {
+        "name": "remaining CLI/GitHub/template backup and HTTP capability failures",
+        "passed": 4,
+        "log": "nvidia-remaining-repair-tests.log"
+      },
+      {
+        "name": "skill/inspector repair",
+        "passed": 15,
+        "log": "nvidia-ui-skills-repair.log"
+      },
+      {
+        "name": "visible native/GPU authority and workflow preservation",
+        "passed": 22,
+        "log": "nvidia-authority-ui-final.log"
+      },
+      {
+        "name": "CPU GPU visibility and legacy SSH policy",
+        "passed": 29,
+        "skipped": 2,
+        "log": "nvidia-cpu-policy-final-tests.log",
+        "skipReasons": [
+          "PI_TEST_DOCKER_MODES not enabled",
+          "POSIX umask unavailable on Windows"
+        ]
+      },
+      {
+        "name": "legacy CPU/SSH admission matrix",
+        "passed": 1,
+        "log": "nvidia-upgrade-admission-tests.log"
+      },
+      {
+        "name": "final skills and UI",
+        "passed": 49,
+        "log": "nvidia-final-skills-ui.log"
+      }
+    ],
+    "skillLineEndings": {
+      "before": "CRLF publication unexpectedly succeeded; test failed",
+      "after": "18/18 skill checks passed; final combined skills/UI49/49",
+      "beforeLog": "nvidia-lf-before.log",
+      "afterLog": "nvidia-lf-after.log"
+    },
+    "gitByteIdentity": {
+      "checked": 41,
+      "changed": []
+    },
+    "portabilityCI": {
+      "status": "success",
+      "runId": 37586643026,
+      "headSha": "fa26bcd88855c7aaa294408f7014b545e5bdb93a",
+      "url": "https://github.com/hailuohl/pi-research/actions/runs/37586643026",
+      "jobs": [
+        {
+          "name": "portable-features (ubuntu-latest)",
+          "conclusion": "success"
+        },
+        {
+          "name": "portable-features (windows-latest)",
+          "conclusion": "success"
+        },
+        {
+          "name": "portable-features (macos-latest)",
+          "conclusion": "success"
+        }
+      ],
+      "gpuHardwareOnHostedCI": false
+    },
+    "portabilityRepairs": {
+      "priorRuns": [
+        {
+          "id": 37580182394,
+          "result": "Linux passed; macOS fixture symlink paths and Windows startup failed"
+        },
+        {
+          "id": 37581645491,
+          "result": "macOS native execution passed; remaining skill fixture and Windows startup failed"
+        },
+        {
+          "id": 37582939233,
+          "result": "Linux and macOS passed; Windows trace stopped before spec-ready"
+        },
+        {
+          "id": 37584461717,
+          "result": "Windows startup fixed: 42 of 43 checks passed; Unicode compiler path failed"
+        }
+      ],
+      "changes": [
+        "Test temporary roots canonicalized; production symlink rejection retained",
+        "Windows helper loads only PSHOME system command modules",
+        "System C# compiler uses fixed ASCII relative filenames inside the original Unicode control directory; C# definitions unchanged",
+        "Original assertion/time limits retained; bounded diagnostic observations added"
+      ],
+      "finalLocal": {
+        "passed": 15,
+        "log": "nvidia-windows-relative-compiler-final.log"
+      },
+      "independentReviews": {
+        "model": "gpt-6.1-sol",
+        "reasoningEffort": "high",
+        "status": "passed",
+        "runtimeVerification": "requested; runtime not echoed"
+      },
+      "compilerSourceSha256": "8a764ece610ddcbda08514ac821ee3d495fdc77ba3a9f5b306bddec52f61c2a5"
+    }
+  },
+  "delegation": [
+    {
+      "task": "gpu_design",
+      "model": "gpt-6-astra",
+      "reasoningEffort": "high",
+      "verification": "requested; runtime not echoed"
+    },
+    {
+      "task": "nvidia_integration_fix",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "verification": "requested; runtime not echoed"
+    },
+    {
+      "task": "portable_test_temp",
+      "model": "gpt-6-luna",
+      "reasoningEffort": "max",
+      "verification": "requested; runtime not echoed"
+    },
+    {
+      "task": "ci_fixture_review",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "verification": "requested; runtime not echoed"
+    }
+  ],
+  "limits": [
+    "NVIDIA only; AMD and Metal not implemented",
+    "local is trusted same-user execution without file/network isolation; CPU/RAM advisory",
+    "GPU reservations cover this application shared data directory, not external workloads",
+    "WSL2 single-device isolation failed closed; Docker and SSH arithmetic used three explicitly approved UUIDs",
+    "SSH is isolated loopback, not an external host",
+    "New GPU admission conservatively waits for CPU Docker and legacy SSH nonterminal jobs; new SSH CPU/GPU starts require the new helper."
+  ],
+  "cpuIsolation": {
+    "before": {
+      "mode": "before-room",
+      "scope": "actual shared createArgs with inherited image ENV all; per-container NVIDIA runtime models an NVIDIA default engine without changing host configuration",
+      "image": "sha256:427075c2eb3dfbc6a110524c8a8dbc35a43e13810ecc681eb7a95bc018248fcf",
+      "passed": false,
+      "containerId": "de537a72ca39c9401234b0aa325e1739e1bdcacf425ff4929cfd093f8e4a0db1",
+      "env": [
+        "NVIDIA_VISIBLE_DEVICES=all"
+      ],
+      "runtime": "nvidia",
+      "deviceRequests": null,
+      "result": {
+        "cudaDeviceCount": 3,
+        "nvidiaVisibility": "void",
+        "cudaVisibility": null
+      },
+      "failure": "AssertionError [ERR_ASSERTION]: CPU job must not inherit access to GPUs\n\n3 !== 0\n"
+    },
+    "after": {
+      "mode": "after",
+      "scope": "actual shared createArgs with inherited image ENV all; per-container NVIDIA runtime models an NVIDIA default engine without changing host configuration",
+      "image": "sha256:427075c2eb3dfbc6a110524c8a8dbc35a43e13810ecc681eb7a95bc018248fcf",
+      "passed": true,
+      "containerId": "9d38026cccf4d2ee1f550620758fafaa42b209cb710eb3549a5fe6d1e5534755",
+      "env": [
+        "NVIDIA_VISIBLE_DEVICES=void",
+        "CUDA_VISIBLE_DEVICES=-1"
+      ],
+      "runtime": "nvidia",
+      "deviceRequests": null,
+      "result": {
+        "cudaDeviceCount": 0,
+        "nvidiaVisibility": "void",
+        "cudaVisibility": "-1"
+      }
+    }
+  },
+  "nonblocking": [
+    "Offline backup retains historical native-spec paths; private runtime registration file excluded. Consider omitting terminal control specs in a later batch."
+  ]
+}

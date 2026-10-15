@@ -1,0 +1,33 @@
+test_empty_data_rejected (test_main.FitTests.test_empty_data_rejected) ... ok
+test_exact_quadratic_coefficients (test_main.FitTests.test_exact_quadratic_coefficients) ... ok
+test_predict_valid (test_main.FitTests.test_predict_valid) ... ok
+test_singular_input_rejected (test_main.FitTests.test_singular_input_rejected) ... ok
+test_fixed_data_and_outputs (test_main.ProtocolTests.test_fixed_data_and_outputs) ... /work/test_main.py:34: ResourceWarning: unclosed file <_io.TextIOWrapper name='config.json' mode='r' encoding='UTF-8'>
+  cfg = json.loads(open('config.json').read())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/work/test_main.py:36: ResourceWarning: unclosed file <_io.TextIOWrapper name='data.csv' mode='r' encoding='UTF-8'>
+  rows = list(csv.DictReader(open('data.csv')))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/work/test_main.py:40: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpjr4cgla7/metrics.json' mode='r' encoding='UTF-8'>
+  metrics = json.loads(open(os.path.join(outdir, 'metrics.json')).read())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/work/test_main.py:44: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpjr4cgla7/model.json' mode='r' encoding='UTF-8'>
+  model = json.loads(open(os.path.join(outdir, 'model.json')).read())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/work/test_main.py:47: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpjr4cgla7/predictions.csv' mode='r' encoding='UTF-8'>
+  preds = list(csv.DictReader(open(os.path.join(outdir, 'predictions.csv')).read()))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+FAIL
+
+======================================================================
+FAIL: test_fixed_data_and_outputs (test_main.ProtocolTests.test_fixed_data_and_outputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/work/test_main.py", line 48, in test_fixed_data_and_outputs
+    self.assertEqual(len(preds), 60)
+AssertionError: 3340 != 60
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.110s
+
+FAILED (failures=1)

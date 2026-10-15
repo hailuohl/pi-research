@@ -1,0 +1,36 @@
+{
+  "flow": "fixed-pmc-evidence-report-export",
+  "reportId": "284713b6-9aa9-47c9-82b6-c9462d6ce542",
+  "claimId": "73b1b67b-174f-4e3a-957a-99ab3d87054a",
+  "documentVersionId": "15054ad4-ec8e-4e51-8580-8572dce05d39",
+  "referenceId": "8050894e765eefa24412206fd9338dced8a534592cd5837f69eb604b3cade091",
+  "pmcidVersion": "PMC8270360.1",
+  "archiveSha256": "59f36d0a999cf89b5fce9c97a52555bf83cb44555802b92337f2f3da75ee1764",
+  "archiveBytes": 32468,
+  "manifestSourceFiles": 3,
+  "rawXmlSha256": "d4e447868dd7e9b025417ce862cba533744e63a9633003229cd72eb9f18adacf",
+  "derivedTextSha256": "f39e03083e69a1267ec369fd0eb5258d51cad902a42ce37dcfe8b077e0307341",
+  "licenseSha256": "cca71ba82a46d37b32d86773c5c4c9222100a84688d287e167971d7b57e9f0f1",
+  "quoteSha256": "875d3ecf8af1d72314493cdf83544bebfb9f0f68b7665a92c85c0ad9a8be7691",
+  "backupManifestSha256": "d7f36aafcb46b8947b4f4ec30fd922ca96f8c4361826427ee687a4558a2b23c0",
+  "unboundEvidenceCode": "REPORT_PROVIDER_TEXT_UNSUPPORTED",
+  "foreignProjectCode": "SCOPE_DENIED",
+  "oldRowsUnchanged": 48,
+  "networkCallsAdded": 0,
+  "modelCallsAdded": 0,
+  "browser": {
+    "acceptedClaimSelected": true,
+    "reportCurrentAndVerified": true,
+    "licenseAndSourceVersionVisible": true,
+    "exactDocumentReturn": true,
+    "archiveCreated": true,
+    "reportAfterRefresh": true
+  },
+  "checks": {
+    "cleanBuild": "passed",
+    "fullRegression": { "passed": 829, "failed": 0, "skipped": 22 },
+    "backendFocused": { "passed": 18, "failed": 0 },
+    "reportUiFocused": { "passed": 10, "failed": 0 },
+    "independentReview": "no blocking finding"
+  }
+}

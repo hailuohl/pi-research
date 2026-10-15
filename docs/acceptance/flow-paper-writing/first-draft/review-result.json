@@ -1,0 +1,54 @@
+{
+  "teamId": "dbf5a91b-6cf8-4104-abe1-205b0ea0f958",
+  "taskId": "626f1d07-6b21-4f32-ac18-962b492ae764",
+  "approvalId": "a57becdf-7e68-476d-9fad-0a4d4a495f44",
+  "revisionId": "625cdab4-6426-4cc8-bcb5-8c8e186f6285",
+  "bindingArtifactId": "99769dd0-42fd-4a66-beb5-f4a9fa974cf2",
+  "bindingDigest": "4eb4a2e07a2544d45a635b0c58e0f76a23e1010174c5f33e38126e83023c863e",
+  "inputEvidenceIds": [
+    "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+    "9deca99c-b768-4f8c-af6f-9b0805124d35",
+    "b77604be-6e13-4a12-b938-4db0227f28ea",
+    "1b17a4f2-5601-4da2-847e-144f4e63d53e",
+    "246c48f6-26e5-4965-be4a-1a842f78d58d",
+    "2bf23ed5-d83a-4c96-abd8-0ff0fd239363",
+    "0701188f-5b53-4650-afb5-abbd5ac9e6a0",
+    "bae575d9-2715-4bcb-9262-ca10ea84b621"
+  ],
+  "publicationResultId": "c41789f4d99e41c8d769fc3588da2e7d212a4f4cf41522d227214ed13cc2caeb",
+  "attemptId": "a0f3b571-d8a9-4665-b94b-5493aad4f453",
+  "sessionId": "6bdd25ef-2c78-48d1-a14c-79eba5e56c76",
+  "inputDigest": "74c238d001957238c021ad7f4803801e0297268bf1c1e29c55744bb1220a716a",
+  "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+  "taskResultId": "f5ad5a0d-e927-496d-94a7-8ad585907128",
+  "resultDigest": "2c9e96a9491610676c7400fd861fe0686e038dbb3679e03b43519e35213efa39",
+  "taskExecution": "output_submitted",
+  "taskAcceptance": "accepted",
+  "sessionState": "failed",
+  "sessionError": "模型请求已中止",
+  "model": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "thinking": "off"
+  },
+  "result": {
+    "summary": "逐项核对了固定文稿（main.tex digest 45e60b52...d37e9）、Run ca819399-1714-4aaa-b50e-ef1700b3991f 产物原件、绑定 main.py 全文与完整编译日志，全部8项输入证据已读。\n\n【一致项】(1) 数值逐字吻合：测试MSE 5.0345031695457565e-05、训练MSE 4.962382619455619e-05、R2 0.9999474271448613、系数 0.4998729432962087/1.4006018337068389/2.0004320863077187、predictions.csv 首末行数值均与不可变产物一致。(2) 数学与方法描述正确：正规方程(eq:normal)与MSE/R2定义(eq:metrics)与固定main.py实现（Gauss-Jordan部分主元、1e-12奇异阈值、前180/后60确定性切分、三产物输出）逐条对应；config.json为{\"polynomialDegree\":2}。(3) 执行合同细节（python@sha256:f77ac9e4...e51f、无网络、1CPU/256MB/60s）与协议一致。(4) 全部摘要截断（b8f9aaa5、ace85cae0、f91a8e60、6becb20c、5a54951e、1d94893e、80674682、5e1a5287）与原件digest匹配；Git提交前缀61dcde6a吻合。(5) 编译：xelatex 2 passes、converged、无error，PDF digest aef6bf09...57d、3页、121953字节，与manifest及pdfinfo一致；tab:metrics未定义引用仅出现在首轮，末轮已消除。\n\n【问题1（需修改，导致disputed）】文稿摘要写",
+    "outcome": "completed",
+    "evidenceIds": [
+      "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+      "9deca99c-b768-4f8c-af6f-9b0805124d35",
+      "b77604be-6e13-4a12-b938-4db0227f28ea",
+      "1b17a4f2-5601-4da2-847e-144f4e63d53e",
+      "246c48f6-26e5-4965-be4a-1a842f78d58d",
+      "2bf23ed5-d83a-4c96-abd8-0ff0fd239363",
+      "0701188f-5b53-4650-afb5-abbd5ac9e6a0",
+      "bae575d9-2715-4bcb-9262-ca10ea84b621"
+    ],
+    "artifactIds": [],
+    "claims": [],
+    "unresolvedQuestions": [],
+    "verdict": "disputed"
+  },
+  "allRequiredEvidenceReadAndCited": true,
+  "independentSession": true
+}

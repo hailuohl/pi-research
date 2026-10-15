@@ -1,0 +1,75 @@
+{
+  "capturedAt": "2026-09-29T12:07:45.734Z",
+  "repositoryBaseCommit": "f8e7667c2739fc7afc3aceaf9999f114ed38e2dd",
+  "scope": "bioRxiv fixed v2 original PDF acquisition attempt; official endpoint returned 429 twice",
+  "projectId": "9d3a83d7-527b-4e29-9ff3-949be843de3f",
+  "target": {
+    "source": "biorxiv",
+    "doi": "10.1101/322859",
+    "requestedVersion": "2",
+    "host": "www.biorxiv.org",
+    "path": "/content/10.1101/322859v2.full.pdf",
+    "versionAssurance": "requested-address-unverified"
+  },
+  "boundary": {
+    "missingVersionRejectedWith": "PAPER_VERSION_REQUIRED",
+    "disabledSourceRejectedWith": "SOURCE_DISABLED",
+    "crossProjectDocumentReadRejectedWith": "SCOPE_DENIED",
+    "sourceEnabledExplicitly": true,
+    "requestLimit": 5
+  },
+  "attempts": [
+    {
+      "taskId": "609d0062-670f-48da-8ef7-a6bb36ea76ea",
+      "state": "failed",
+      "connectorCallId": "31524771-4a2b-4a47-8c9b-1b2b9c9d325f",
+      "httpStatus": 429,
+      "errorCode": "CONNECTOR_RATE_LIMITED",
+      "retryAfterSeconds": 53
+    },
+    {
+      "taskId": "68ffb436-b2e5-42a1-8932-af29b3ff7aef",
+      "previousTaskId": "609d0062-670f-48da-8ef7-a6bb36ea76ea",
+      "state": "failed",
+      "connectorCallId": "a3b7ea44-e7d7-42bd-a467-579f007bd165",
+      "httpStatus": 429,
+      "errorCode": "CONNECTOR_RATE_LIMITED",
+      "retryAfterSeconds": 101,
+      "startedAfterRetryAfter": true
+    }
+  ],
+  "results": {
+    "documentVersions": 0,
+    "parseJobs": 0,
+    "paperReadRecords": 0,
+    "scientificClaims": 0,
+    "usableOriginalPdf": false
+  },
+  "history": {
+    "browserCapturedAt": "2026-09-29T12:03:06.523Z",
+    "firstAndRetryVisibleAfterRefresh": true,
+    "noDocumentVersionVisible": true,
+    "wineRecordsUnchanged": {
+      "wineRuns": 3,
+      "winePublicationResults": 2,
+      "wineReports": 5
+    }
+  },
+  "validation": {
+    "productCodeChanged": false,
+    "modelCalls": 0,
+    "dockerJobs": 0,
+    "fullRegressionRepeated": false,
+    "cleanBuildRepeated": false,
+    "independentReadOnlyReview": {
+      "model": "gpt-6-sol",
+      "remainingBlockers": 0,
+      "scope": "task lineage, HTTP 429, no document and Wine preservation"
+    }
+  },
+  "limitations": [
+    "Official provider returned HTTP 429 for both attempts; network availability is not established.",
+    "No PDF bytes, parsed pages or page-level evidence were produced; PR10 bioRxiv original-PDF path remains unverified.",
+    "Browser observation is a compact state snapshot; it does not include copied screenshots or raw response bodies."
+  ]
+}

@@ -1,0 +1,53 @@
+.workbench-content.conversation-layout { display: flex; flex-direction: row; gap: 0; overflow: hidden; }
+.conversation-layout > .main-pane { flex: 1 1 0; min-width: 480px; }
+.conversation-panel { display: flex; flex-direction: column; flex: 0 0 var(--conversation-panel-width, 320px); width: var(--conversation-panel-width, 320px); min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--paper, #fff); box-shadow: var(--panel-shadow); }
+.conversation-panel[hidden], .conversation-panel-view[hidden], .conversation-resizer[hidden] { display: none; }
+.conversation-panel-tabs { display: flex; gap: 3px; flex-shrink: 0; padding: 14px 10px; border-bottom: 1px solid var(--line); }
+.conversation-panel-tabs > button { flex: 1; min-width: 0; padding: 9px 4px; border-radius: 7px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.conversation-panel-tabs > button[aria-selected="true"] { background: var(--green-soft); color: var(--ink); font-weight: 650; }
+.conversation-panel-tabs > button:hover { background: var(--canvas); }
+.conversation-panel-tabs > button:focus-visible, .conversation-panel-view:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
+.conversation-panel-view { flex: 1; min-height: 0; overflow: auto; }
+.conversation-panel .embedded-inspector { width: 100%; min-height: 100%; overflow: visible; border: 0; border-radius: 0; box-shadow: none; }
+.conversation-panel .embedded-inspector .inspector-collaboration > summary { padding-inline: 16px; }
+.conversation-panel .team-goal, .conversation-panel .task-card > p, .conversation-panel .task-top > div:last-child, .conversation-panel .task-footer > span { min-width: 0; overflow-wrap: anywhere; }
+.conversation-layout .composer-toolbar, .conversation-layout .composer-caption { flex-wrap: wrap; }
+.conversation-panel-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding: 18px 16px 10px; }
+.conversation-panel-heading h2 { font-size: 14px; }
+.conversation-panel-note { padding: 0 16px 12px; line-height: 1.7; }
+.conversation-panel-error { padding: 20px 16px; overflow-wrap: anywhere; }
+.conversation-panel-error button { margin-top: 12px; }
+.conversation-panel .experiment-lineage { border: 0; border-radius: 0; margin: 0; }
+.conversation-panel .experiment-graph-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 14px; }
+.conversation-panel .experiment-graph-controls { flex-wrap: wrap; gap: 4px; }
+.conversation-panel .experiment-graph-heading { gap: 6px; }
+.conversation-panel .experiment-graph-viewport { height: clamp(330px, 58vh, 680px); }
+.conversation-panel .experiment-graph-viewport.is-list-view { height: auto; }
+.conversation-panel .experiment-graph-card.is-list { width: calc(100% - var(--tree-indent-narrow, 0px)); margin-left: var(--tree-indent-narrow, 0px); }
+.conversation-resizer { position: relative; display: flex; justify-content: center; align-items: center; flex: 0 0 14px; min-width: 14px; cursor: col-resize; touch-action: none; outline: none; }
+.conversation-resizer::before { content: ""; position: absolute; inset: 0 6px; border-radius: 3px; background: transparent; }
+.conversation-resizer > span { display: grid; place-items: center; z-index: 1; border: 1px solid var(--line); border-radius: 5px; background: var(--paper, #fff); color: var(--muted); height: 28px; width: 14px; box-shadow: 0 2px 7px #00000008; }
+.conversation-resizer > span > svg { transform: rotate(90deg); }
+.conversation-resizer:hover::before, .conversation-resizer:focus-visible::before, .is-resizing .conversation-resizer::before { background: var(--green); }
+.conversation-resizer:focus-visible > span { outline: 2px solid var(--green); outline-offset: 2px; }
+.conversation-layout.is-resizing { cursor: col-resize; user-select: none; }
+.workbench-content.conversation-layout.is-stacked { flex-direction: column; gap: 14px; overflow: auto; }
+.conversation-layout.is-stacked > .main-pane { flex: 0 0 620px; min-width: 0; height: 620px; min-height: 620px; overflow: hidden; }
+.conversation-layout.is-stacked .chat-view-container { height: 100%; min-height: 0; }
+.conversation-layout.is-stacked .chat-page { height: 100%; min-height: 0; }
+.conversation-layout.is-stacked .conversation { flex: 1 1 0; overflow-y: auto; min-height: 0; }
+.conversation-layout.is-stacked > .conversation-panel { flex: 0 0 auto; width: 100%; min-height: 300px; max-height: 640px; }
+.conversation-file-tree { padding: 4px 12px 16px; }
+.conversation-directory > summary { display: flex; align-items: center; gap: 7px; padding: 8px 4px; cursor: pointer; list-style: none; font-size: 12px; overflow-wrap: anywhere; }
+.conversation-directory > summary > svg:first-child { color: var(--muted); flex-shrink: 0; }
+.conversation-directory[open] > summary > svg:first-child { transform: rotate(90deg); }
+.conversation-directory > div { padding-left: 14px; border-left: 1px solid var(--line); margin-left: 8px; }
+.conversation-file { width: 100%; display: flex; gap: 7px; align-items: center; padding: 8px; border-radius: 6px; text-align: left; font-size: 12px; }
+.conversation-file > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conversation-file:hover, .conversation-file.is-selected { background: var(--green-soft); }
+.conversation-file:focus-visible, .conversation-directory > summary:focus-visible { outline: 2px solid var(--green); }
+.conversation-file-preview { margin: 0 16px 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.conversation-file-preview h3 { font-size: 12px; overflow-wrap: anywhere; margin-bottom: 10px; }
+.conversation-file-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; padding: 10px; font-size: 11px; background: var(--canvas); border-radius: 6px; }
+
+.conversation-panel .embedded-inspector[aria-label="实验与运行详情"]{min-height:0}

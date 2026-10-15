@@ -1,0 +1,279 @@
+{
+  "date": "2026-10-13",
+  "runtimeSourceCommit": "390e5261be2c571de1aa2c52f0c457ac2bbc033b",
+  "reviewHead": "e8a9ebda63235358d05e584da24300d56461fceb",
+  "sourceFiles": [
+    {
+      "path": "packages/pi-adapter/options.ts",
+      "sha256": "7d53ba1bc2ebc7ee02480b6e93cac6193548410cb1801a8e600fac10aa012c93"
+    },
+    {
+      "path": "packages/skills/manifest.ts",
+      "sha256": "fbf4c6ce5efaa41089743916f3c9001e98806512aa723386dff9ab152b60fd93"
+    },
+    {
+      "path": "packages/skills/releases.ts",
+      "sha256": "2c40bb9e8a6d95ee1d0dbe4ca2496ae7cb3554407337ecf13478a3a9c12d6083"
+    },
+    {
+      "path": "skills/piresearch/pi-research-paper/SKILL.md",
+      "sha256": "7854b3113fe080f5e422d601428c968dddc6efcf4f8344ea8a565118e4e51759"
+    },
+    {
+      "path": "skills/piresearch/pi-research-paper/references/build-and-review.md",
+      "sha256": "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192"
+    },
+    {
+      "path": "skills/piresearch/pi-research-reports/SKILL.md",
+      "sha256": "2b6dc0328698eb2786b3442d1d6e20e92c0c7ed04065b22e73dfe7d957bd64f9"
+    },
+    {
+      "path": "dist/apps/server/index.js",
+      "sha256": "c49515828a56f98c677456cd58230163014e49e83c9c7f5a22f3c3e84a318a67"
+    },
+    {
+      "path": "dist/apps/agent-worker/index.js",
+      "sha256": "d819e7f52d7b20c765c3aad9081cc48e852db79b9d114fe26a4ceb09478ff82f"
+    },
+    {
+      "path": "dist/packages/pi-adapter/options.js",
+      "sha256": "762f36b3427484b6362bf984d7ba345e41279b38ebfa93374b5eb127372facf0"
+    }
+  ],
+  "server": {
+    "url": "http://127.0.0.1:4794",
+    "oldPid": 146180,
+    "newPid": 239904,
+    "stopMethod": "native Stop-Process after idle preflight, then hidden Start-Process",
+    "initialCompositeCommand": "policy rejected, not executed",
+    "model": {
+      "provider": "zai-coding-cn",
+      "model": "glm-5.3",
+      "thinking": "low"
+    },
+    "modelEndpoint": "https://open.bigmodel.cn/api/coding/paas/v4",
+    "endpointSource": "legacy"
+  },
+  "bundleId": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7",
+  "modelValidation": {
+    "requests": 21,
+    "allHttp200": true,
+    "taskAttempts": [
+      {
+        "id": "4f4a1591-46db-4f4c-b59d-90a878363446",
+        "attempts": 1,
+        "acceptance": "accepted"
+      },
+      {
+        "id": "f0678827-0d67-4ce1-9e38-26957f3ece5d",
+        "attempts": 1,
+        "acceptance": "accepted"
+      },
+      {
+        "id": "7acf150f-dbbd-44d0-9101-68dbdf128dea",
+        "attempts": 1,
+        "acceptance": "accepted"
+      }
+    ],
+    "toolValidationErrors": [
+      {
+        "sessionId": "2f87dd9e-8648-4fa1-a48e-c08825b24780",
+        "tool": "artifact_create"
+      },
+      {
+        "sessionId": "d9aea873-ad56-46f7-bdaa-6607ab4dd717",
+        "tool": "task_context_read"
+      },
+      {
+        "sessionId": "4f850d5c-9c18-45fd-ba2d-e58c29aa95f1",
+        "tool": "task_context_read"
+      }
+    ],
+    "actualPaperReads": [
+      {
+        "sessionId": "2f87dd9e-8648-4fa1-a48e-c08825b24780",
+        "bundleId": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7",
+        "digest": "7854b3113fe080f5e422d601428c968dddc6efcf4f8344ea8a565118e4e51759"
+      },
+      {
+        "sessionId": "d9aea873-ad56-46f7-bdaa-6607ab4dd717",
+        "bundleId": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7",
+        "digest": "7854b3113fe080f5e422d601428c968dddc6efcf4f8344ea8a565118e4e51759"
+      },
+      {
+        "sessionId": "4f850d5c-9c18-45fd-ba2d-e58c29aa95f1",
+        "bundleId": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7",
+        "digest": "7854b3113fe080f5e422d601428c968dddc6efcf4f8344ea8a565118e4e51759"
+      }
+    ],
+    "fixtureProviderUsed": false
+  },
+  "preservation": {
+    "oldRecordCount": 9360,
+    "oldRecordsMissing": 0,
+    "oldRecordChanges": [
+      {
+        "kind": "compute-connection",
+        "id": "docker:desktop-linux"
+      }
+    ],
+    "oldSessions": 37,
+    "oldManuscripts": 8,
+    "oldFileCount": 386,
+    "oldFileBytes": 51499611,
+    "oldFilesUnchanged": true,
+    "oldUnknownAttemptsPreserved": 3,
+    "defaultModelUnchanged": true,
+    "oldHostAccessEffectiveRevoked": 4
+  },
+  "identifierChecks": [
+    {
+      "version": "first",
+      "texSha256": "2eca0f6b5d48e99433a975e95485455e46095ba48d3f1b29813a8d98b6a624bc",
+      "sourceMatches": {
+        "uuid": [],
+        "long_hash": [],
+        "internal_fields": [],
+        "tool_names": [],
+        "known_short_ids": []
+      },
+      "pages": 4,
+      "pdfCharacters": 12759,
+      "pdfMatches": {
+        "uuid": [],
+        "long_hash": [],
+        "internal_fields": [],
+        "tool_names": [],
+        "known_short_ids": []
+      },
+      "sourceNotesUuidCount": 10
+    },
+    {
+      "version": "revised",
+      "texSha256": "a3e6eb020f729acb0f475a0f3cb5bf4b91455cb8e66628d8300b6dfa71114307",
+      "sourceMatches": {
+        "uuid": [],
+        "long_hash": [],
+        "internal_fields": [],
+        "tool_names": [],
+        "known_short_ids": []
+      },
+      "pages": 5,
+      "pdfCharacters": 15671,
+      "pdfMatches": {
+        "uuid": [],
+        "long_hash": [],
+        "internal_fields": [],
+        "tool_names": [],
+        "known_short_ids": []
+      },
+      "sourceNotesUuidCount": 1
+    },
+    {
+      "version": "final-raw",
+      "texSha256": "d766f07b49f53875f2c1ad24b07580902c923eac5a405fdc6c4eddb485004c00",
+      "sourceMatches": {
+        "uuid": [],
+        "long_hash": [],
+        "internal_fields": [],
+        "tool_names": [],
+        "known_short_ids": []
+      },
+      "sourceNotesUuidCount": 5
+    },
+    {
+      "version": "delivery",
+      "texSha256": "6520f3b8d111ed94b7b885b1517ff9da6dcb7732c8d7e32e0f7bdc85ea0f5ed6",
+      "sourceMatches": {
+        "uuid": [],
+        "long_hash": [],
+        "internal_fields": [],
+        "tool_names": [],
+        "known_short_ids": []
+      },
+      "pages": 5,
+      "pdfCharacters": 16098,
+      "pdfMatches": {
+        "uuid": [],
+        "long_hash": [],
+        "internal_fields": [],
+        "tool_names": [],
+        "known_short_ids": []
+      },
+      "sourceNotesUuidCount": 5
+    }
+  ],
+  "compiled": [
+    {
+      "version": "first",
+      "jobId": "b10534c9-2d2d-4e52-bb8b-ffa1c7840d69",
+      "resultId": "b374510aa6948d1373c6f0a9d83f78de9f8f5d8ae60b9c8e92e26a0677701d1b",
+      "pages": 4,
+      "pdfDigest": "848998324f7c86048aab211f9671b4968e7e95a91a1450387814505171de099a",
+      "diagnostics": []
+    },
+    {
+      "version": "revised",
+      "jobId": "7c243be1-cd74-4cce-a8da-c4263169c9d0",
+      "resultId": "28f647028b36961d88d3e02f4f345427a9e67487cc0b1fcea32dd52256b30d61",
+      "pages": 5,
+      "pdfDigest": "1974795d17640ce4eae1e5df42b0a61ffd4d5a8b71b0189794c14252cbcf22fa",
+      "diagnostics": []
+    },
+    {
+      "version": "delivery",
+      "jobId": "cdcd7294-67b0-43bd-a564-f3c5b2b18cd2",
+      "resultId": "f377817a0e24b3a8a11b10c3c5e7018569eb5ed224b5f8e40cc9cb5a7820ec3f",
+      "pages": 5,
+      "pdfDigest": "9cbd7d8580d96d647e963cb184618f39a6a5495efb1daadc1eb039948d607e92",
+      "diagnostics": []
+    }
+  ],
+  "manuscriptRevisionChain": [
+    "90a46fde-5eba-48f5-80d1-f72c43c1d353",
+    "2d5db2f3-0ce6-4386-90b1-4aa5c35bb184",
+    "811ef779-73d1-43cf-b274-76098ea4ad53"
+  ],
+  "manualCorrection": {
+    "strictModelEditPassed": false,
+    "observedExtraChanges": [
+      "one leading blank line",
+      "omitted original site-load sentence"
+    ],
+    "manualRestoration": "The site has a deterministic trapezoid building load peaking at 2~kW per fleet EV during 08:00--18:00.",
+    "manualIdentifierRemoval": false,
+    "modelSourceArtifactId": "b4a1fe77-3505-4e74-87c7-7a7d8a180d55",
+    "modelSha256": "d766f07b49f53875f2c1ad24b07580902c923eac5a405fdc6c4eddb485004c00",
+    "deliveryArtifactId": "19a1386f-aa77-4fd6-b371-e74eb2a3fa19",
+    "deliverySha256": "6520f3b8d111ed94b7b885b1517ff9da6dcb7732c8d7e32e0f7bdc85ea0f5ed6",
+    "equalsExpectedWithLeadingBlank": true
+  },
+  "visual": {
+    "reviewer": "primary agent",
+    "pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "resultId": "f377817a0e24b3a8a11b10c3c5e7018569eb5ed224b5f8e40cc9cb5a7820ec3f",
+    "observation": "All five generated PNG pages inspected; no clipping, overlaps, missing glyphs or visible internal identifiers. Tables and equation readable."
+  },
+  "review": {
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeEcho": "not available",
+    "status": "passed within stated scope; no remaining blockers",
+    "preservedFailure": "Final model strict edit check failed; delivery restores exactly one omitted original sentence, raw output retained"
+  },
+  "finalActiveWorkers": 0,
+  "notClaimed": [
+    "Complete scientific correctness",
+    "External-paper full-text verification",
+    "New experiments or simulations",
+    "Strict edit compliance by final model output",
+    "Guaranteed behavior for all future generations"
+  ],
+  "rawEvidenceDirectory": ".validation/live-paper-guidance-20261013"
+}

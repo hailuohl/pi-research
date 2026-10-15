@@ -1,0 +1,119 @@
+{
+  "date": "2026-10-09",
+  "baseline": "27ea33e537dfecd44ba8c19d5ff2d02d3f7f5404",
+  "sourcePatchSha256": "ac90d8399f3c9e897562e196dd1e386abead4c8a778b7a8a04cd9c128cbb5fda",
+  "sourceFiles": [
+    {
+      "path": "apps/web/public/settings-page.css",
+      "sha256": "83fc35898a9d8a786b666c62ce233f2f5abd82c93d14878b469210b1b3546766"
+    },
+    {
+      "path": "apps/web/src/model-management-view.tsx",
+      "sha256": "4e4cec88256533b0d5641c8ab6f999d111400d3aee77dae1c4ea0f7f95a83a69"
+    },
+    {
+      "path": "tests/unit/settings-management-ui.test.mjs",
+      "sha256": "499688a684191b9b7113860ed00110fd923fbf7486dc85f38dc4217dfe402b9e"
+    }
+  ],
+  "checks": {
+    "before": {
+      "sorting": "failed: 4 provider arrows instead of 0"
+    },
+    "build": "passed",
+    "related": {
+      "passed": 53,
+      "failed": 0,
+      "skipped": 0
+    },
+    "fullRegression": {
+      "total": 1506,
+      "passed": 1482,
+      "failed": 0,
+      "skipped": 24,
+      "exitCode": 0
+    },
+    "clean": {
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 635,
+      "distManifestSha256": "906d3b822d8aa4188b3786310a9a14d9f99d096eb6dbfb501518274a15f28f36"
+    }
+  },
+  "browser": {
+    "synthetic": true,
+    "providerArrows": 0,
+    "nativeDrag": "passed",
+    "refreshRetainsOrder": "passed",
+    "order": [
+      "provider-beta",
+      "provider-alpha"
+    ],
+    "managementVersion": 5,
+    "defaultModel": {
+      "provider": "provider-alpha",
+      "model": "alpha-model",
+      "thinking": "off"
+    },
+    "nonDefaultDeleteButton": "enabled",
+    "deleteSubmitted": false,
+    "nativeConfirmCancellation": "not completed: tool did not expose dialog and CDP calls timed out",
+    "backendBefore": {
+      "version": 5,
+      "order": [
+        "provider-beta",
+        "provider-alpha"
+      ],
+      "defaultModel": {
+        "provider": "provider-alpha",
+        "model": "alpha-model",
+        "thinking": "off"
+      },
+      "defaultModelVersion": 1
+    },
+    "backendAfter": {
+      "version": 5,
+      "order": [
+        "provider-beta",
+        "provider-alpha"
+      ],
+      "defaultModel": {
+        "provider": "provider-alpha",
+        "model": "alpha-model",
+        "thinking": "off"
+      },
+      "defaultModelVersion": 1
+    },
+    "viewportReset": "attempted but timed out; not verified",
+    "finalLiveCapture": "not completed"
+  },
+  "review": {
+    "independent": true,
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeEcho": "unavailable",
+    "blockers": 0,
+    "nonblockers": 0,
+    "coverageGap": "native browser confirmation cancellation; component and existing backend checks passed"
+  },
+  "implementation": "main agent",
+  "limits": [
+    "24 environment checks skipped",
+    "No real supplier call",
+    "No real provider deleted"
+  ],
+  "result": "code and requested control flow verified; explicit browser automation gap"
+}

@@ -1,0 +1,15 @@
+{
+  "version": "0.3.1-experimental",
+  "parentVersion": "0.3.0-experimental",
+  "variant": "enhanced-with-local-text-retrieval",
+  "upstreamCommit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+  "newTests": 50,
+  "fullSuiteExpectedCount": 271,
+  "moduleCount": 14,
+  "resourceCount": 15,
+  "skillBundle": "6683733f868b846a6bed3434bba1ff2bdceed99aece0538ac75fe1c70bbd89f2",
+  "runtimeDependenciesAdded": [],
+  "liveProvidersVerified": false,
+  "nativePiVerified": false,
+  "browserVerified": false
+}

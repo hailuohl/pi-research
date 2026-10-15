@@ -1,0 +1,34 @@
+{
+  "flow": "fixed-pmc-oa-local-corpus",
+  "documentVersionId": "15054ad4-ec8e-4e51-8580-8572dce05d39",
+  "pmcidVersion": "PMC8270360.1",
+  "corpusId": "2487902563ffdabeb43099ab8f5fc74ba4e25748fcdd296c45cefc3b915c7a11",
+  "searchId": "806a97390f88839d30a27fc6e327418faf983f38ea9edd851e44bec6c4e53bbb",
+  "evidenceId": "9e985043-eb0c-4dce-9e5a-ee1aedef8138",
+  "sourceKind": "pmc_oa_text",
+  "page": null,
+  "rawXmlSha256": "d4e447868dd7e9b025417ce862cba533744e63a9633003229cd72eb9f18adacf",
+  "derivedTextSha256": "f39e03083e69a1267ec369fd0eb5258d51cad902a42ce37dcfe8b077e0307341",
+  "quoteSha256": "875d3ecf8af1d72314493cdf83544bebfb9f0f68b7665a92c85c0ad9a8be7691",
+  "backupManifestSha256": "201fc481d5b9384e72d4bca95f54982f923ceeae31ed1e8354122dec3f767e41",
+  "oldRowsUnchanged": 34,
+  "networkCallsAdded": 0,
+  "modelCallsAdded": 0,
+  "foreignProjectCode": "SCOPE_DENIED",
+  "disabledSearchCode": "TEXT_EVIDENCE_DISABLED",
+  "disabledReplayCode": "TEXT_EVIDENCE_DISABLED",
+  "browser": {
+    "explicitSelectionAndSave": true,
+    "lexicalHits": 5,
+    "versionAndNoPdfPageVisible": true,
+    "exactDocumentReturn": true,
+    "historyAfterRefresh": true
+  },
+  "checks": {
+    "finalCleanBuild": "passed",
+    "fullRegressionBeforeNecessaryFix": { "passed": 822, "failed": 1, "skipped": 22, "failure": "obsolete Agent status assertion" },
+    "postFixFocused": { "passed": 57, "failed": 0 },
+    "corpusUiFocused": { "passed": 5, "failed": 0 },
+    "independentReview": "two blockers closed by targeted verification"
+  }
+}

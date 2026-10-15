@@ -1,0 +1,24 @@
+{
+  "reportId": "134330d1-3635-4faf-8350-46db12511de6",
+  "jobId": "fb89073a-c8f7-458d-867f-a18ba907608e",
+  "approvalId": "89a8c7ef-f6e9-4c8b-80c7-700a1a0afc34",
+  "integrity": "verified",
+  "validity": "stale",
+  "reasons": [
+    "APPROVAL_STALE"
+  ],
+  "bodyDigest": "572734cfe11638522bbe9ed09ed57679ea79df9fbc980e5ab4701aefcc0dba4d",
+  "historyBytesUnchanged": true,
+  "newReportRejected": true,
+  "newExportRejected": true,
+  "historicalCsvReadable": true,
+  "sourceRecordsChecked": 95,
+  "mainAcceptanceCopyUnchanged": true,
+  "changesOnlyInRevocationCopy": [
+    {
+      "kind": "approval",
+      "id": "89a8c7ef-f6e9-4c8b-80c7-700a1a0afc34"
+    }
+  ],
+  "revocationDirectory": ".validation/publication-report-revoked-gxn17R"
+}

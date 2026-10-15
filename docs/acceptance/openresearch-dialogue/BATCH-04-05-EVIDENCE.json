@@ -1,0 +1,136 @@
+{
+  "batch": "4-5",
+  "localDate": "2026-10-03",
+  "checks": {
+    "fullBeforeNecessaryFixtureUpdate": {
+      "total": 1005,
+      "passed": 981,
+      "skipped": 23,
+      "failed": 1,
+      "reason": "Opened coordinator publication operations were still classified as owner-only in the shared invalid-input fixture"
+    },
+    "related": {
+      "total": 44,
+      "passed": 44
+    },
+    "ui": {
+      "total": 3,
+      "passed": 3
+    },
+    "necessaryContractFix": {
+      "total": 1,
+      "passed": 1
+    },
+    "exportReopenRegression": {
+      "failedBeforeFix": true,
+      "afterFixTotal": 5,
+      "afterFixPassed": 5
+    },
+    "independentReviews": [
+      "Astra: permission/contract review passed after two initial fixes and host review ID callback correction",
+      "Sol: export history association fix passed"
+    ],
+    "cleanBuild": {
+      "identical": true,
+      "files": 503,
+      "manifestSha256": "3b0c99d726707d44c8a898e332c3deeab8cf2b542fb4c286f124fbe568c2a1e0"
+    }
+  },
+  "live": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "failedFirstBuild": {
+      "revisionId": "4d69fce0-9b31-4843-8a4a-fd163138ae9e",
+      "jobId": "1d7c4c39-09de-41f6-94bb-bd3853de787d",
+      "state": "failed",
+      "pdfPublished": false,
+      "reason": "ctex.sty not installed in the frozen compiler image"
+    },
+    "compile": {
+      "jobId": "db9bf4b7-db8d-42c3-9099-7bf7a86dcf09",
+      "state": "succeeded",
+      "integrity": "complete",
+      "resultId": "e357623f1429b81e8f316baf319eca002f66a2bee95ab9bbb0765803dc90277d",
+      "revisionId": "d1ff39d5-c2f1-4f9a-80c8-ad4f0451cc82",
+      "pdf": {
+        "artifactId": "7c9b459a-a8a0-4617-8931-84fad00a5ef9",
+        "digest": "5ab9d4bacd22d6316f25a1f4ff63c527b39f30109d69b4ca45e401ee2201fbbd",
+        "bytes": 104880,
+        "pages": 2
+      },
+      "previews": [
+        {
+          "artifactId": "b8ef4a40-45a1-488e-99d4-2440dfae391d",
+          "digest": "6e556fe4a243e507ce249a58a37b9727554ae332823de4dff7f0d2d8e8f2d00d",
+          "bytes": 339048,
+          "pageNumber": 1,
+          "width": 1237,
+          "height": 1600
+        },
+        {
+          "artifactId": "bc457124-2d0a-4349-a1d8-dbe4a444593e",
+          "digest": "d6211535ab189d91c6ff4780355ffb0b8aa610756440921ccf7637e8c6710418",
+          "bytes": 288899,
+          "pageNumber": 2,
+          "width": 1237,
+          "height": 1600
+        }
+      ],
+      "diagnostics": [],
+      "status": "succeeded",
+      "converged": true,
+      "engineVersion": "XeTeX 3.141592653-2.6-0.999996 (TeX Live 2025/dev/Debian)"
+    },
+    "previousRevisionId": "4d69fce0-9b31-4843-8a4a-fd163138ae9e",
+    "review": {
+      "id": "694d5d33d2f02229c64f36a7453529ff5fcfb8adb9252caa179afbbfedc6c924",
+      "rootSessionId": "57bac1d3-cf26-405b-9883-5b1de5e1d8c3",
+      "reviewerSessionId": "80e9145d-c438-49f3-a71a-6443a03571a2",
+      "taskId": "8a38cdef-ab48-43b7-bca2-734af6109a9d",
+      "execution": "output_submitted",
+      "acceptance": "accepted",
+      "verdict": "accept",
+      "requiredEvidenceCount": 6
+    },
+    "archive": {
+      "reportId": "4cde1681-1140-4844-974d-7960f3aacf35",
+      "artifactId": "ad9b1e65-6a38-479e-90e3-629403781cd8",
+      "digest": "eb060edc27bfffca4d97c453b95032f59d17bd015df4af676012e01b065f2f08",
+      "bytes": 834345,
+      "title": "report-4cde1681-1140-4844-974d-7960f3aacf35.tar.gz",
+      "verifiedFiles": 38,
+      "allBytesAndDigestsVerified": true,
+      "hasEditableTex": true,
+      "hasCsv": true,
+      "hasPdf": true,
+      "hasRunSource": true,
+      "hasReview": true,
+      "sourceModesRecorded": true
+    },
+    "reopened": {
+      "pdfAvailable": true,
+      "reviewPreserved": true,
+      "archivedDownloadButtonVisible": true,
+      "failedRevisionPreserved": true
+    },
+    "visualInspection": {
+      "pages": 2,
+      "allPagesInspected": true,
+      "readableChinese": true,
+      "realCsvFigure": true
+    },
+    "mainService": {
+      "url": "http://127.0.0.1:4794/",
+      "ready": true,
+      "activeWorkers": 0,
+      "model": "zai-coding-cn/glm-5.3",
+      "compilerConfigured": true
+    }
+  },
+  "limits": [
+    "Independent model review covers the fixed manuscript, logs and authorized Run evidence; it did not inspect PDF page pixels, original PDF/PMC literature, every CSV row or the data generator.",
+    "Host visual QA inspected the two generated page images.",
+    "The acceptance manuscript concerns synthetic software workflow verification and contains no external research claims.",
+    "Dialogue cards show the latest 30 builds; older archive records remain stored."
+  ]
+}

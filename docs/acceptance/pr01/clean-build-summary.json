@@ -1,0 +1,25 @@
+{
+  "node": "24.19.0",
+  "platform": "win32",
+  "lockSha256": "c50e82528bda0350b504de14c794a1caaed22750611d88a331ae172bc21ea5cc",
+  "steps": [
+    {
+      "name": "npm-ci",
+      "exitCode": 0,
+      "log": "D:\\项目\\pi research\\pi-research\\.validation\\clean-build-0l3gpS\\npm-ci.log"
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "log": "D:\\项目\\pi research\\pi-research\\.validation\\clean-build-0l3gpS\\build.log"
+    },
+    {
+      "name": "typecheck",
+      "exitCode": 0,
+      "log": "D:\\项目\\pi research\\pi-research\\.validation\\clean-build-0l3gpS\\typecheck.log"
+    }
+  ],
+  "identical": true,
+  "files": 204,
+  "distManifestSha256": "8096bfde7d28059972f689d8256df06a6add84d98afc4cb56fb2acd02cc76ac4"
+}

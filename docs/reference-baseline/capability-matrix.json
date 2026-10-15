@@ -1,0 +1,1042 @@
+{
+  "schemaVersion": 1,
+  "basis": {
+    "capabilitySource": "packages/contracts/capabilities.ts",
+    "roadmap": "docs/specs/project-design.txt",
+    "implementationPlan": "docs/IMPLEMENTATION-PLAN.zh-CN.md",
+    "scopeRevision": "2026-09-29：当前范围以implementationPlan为准；desktop项所含桌面分发及自建托管账户/组织/实例/账本已移出目标，不计为未完成。OpenResearch前端布局和关键交互已恢复为PR09目标；本机参考版本/页面基线待按用户流程确认，现有dimensions只记录已有证据，不新增通过声明。",
+    "upstream": "alphaXiv/OpenResearch@3037f727e80e0ab20c61a87c613a50dde009a835",
+    "upstreamEvidence": "docs/reference-baseline/baseline.json",
+    "zipSha256": {
+      "v0.2.3-fixed-skills": "cf648fa86d39024d55914af421d9899c7f1f968bf549ca67d1bdae29374dd4fa",
+      "v0.3.1-experimental-skills": "5dee66f094f42353c5ac1d47387ae30fa4e65bafde11b3ff10f39542ff591f1c"
+    }
+  },
+  "legend": {
+    "alignment": "目标对齐方式；不表示目标已实现或通过验收。exact=目标行为相同，equivalent=用户能力相同但实现不同，intentional-deviation=明确保留的差异。",
+    "dimensions": "present=存在代码或配置，local-tested=已有本地自动化测试，unverified=尚无目标环境证据，absent=尚未实现，partial=仅覆盖所述范围。历史测试文件仅证明测试存在，不证明本次重跑通过。"
+  },
+  "capabilities": [
+    {
+      "id": "local-text-evidence",
+      "name": "可选本地原文检索",
+      "stage": "M4",
+      "prs": [
+        "PR10"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "默认关闭的本地文本检索；不是完整PaperQA或PDF全文链。",
+      "files": [
+        "packages/text-evidence/service.ts",
+        "apps/web/src/text-evidence.tsx"
+      ],
+      "interfaces": [
+        "packages/text-evidence/service.ts"
+      ],
+      "tests": [
+        "tests/unit/text-evidence.test.mjs",
+        "tests/integration/text-evidence-http.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/text-evidence/service.ts"
+          ]
+        },
+        "config": {
+          "status": "present",
+          "evidence": [
+            "packages/text-evidence/service.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/integration/text-evidence-http.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "reviewed-skills",
+      "name": "OpenResearch适配技能",
+      "stage": "M2/M4",
+      "prs": [
+        "PR11"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "适配技能文本，不加载ORX执行内核；受管导入与回滚仍待PR11。",
+      "files": [
+        "packages/skills/service.ts",
+        "skills/piresearch/manifest.json"
+      ],
+      "interfaces": [
+        "packages/skills/service.ts"
+      ],
+      "tests": [
+        "tests/unit/openresearch-skills.test.mjs",
+        "tests/integration/openresearch-worker.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/skills/service.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "skills/piresearch/manifest.json"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/openresearch-skills.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "projects",
+      "name": "本地项目与文件导入",
+      "stage": "M1",
+      "prs": [
+        "PR03",
+        "PR05"
+      ],
+      "alignment": "equivalent",
+      "reason": "现有本地副本能力；指定实验版本读取和Git历史导入未完成。",
+      "files": [
+        "packages/workspace/projects.ts",
+        "packages/workspace/files.ts"
+      ],
+      "interfaces": [
+        "packages/workspace/projects.ts",
+        "apps/server/http.ts"
+      ],
+      "tests": [
+        "tests/unit/core.test.mjs",
+        "tests/integration/http.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/workspace/projects.ts"
+          ]
+        },
+        "config": {
+          "status": "present",
+          "evidence": [
+            "packages/workspace/projects.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/integration/http.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "sessions",
+      "name": "会话、排队、中止和分支",
+      "stage": "M2",
+      "prs": [
+        "PR01",
+        "PR08"
+      ],
+      "alignment": "equivalent",
+      "reason": "应用层分支与Pi精确文件恢复接口已接入；真实SDK恢复尚未验收。",
+      "files": [
+        "packages/pi-adapter/sessions.ts",
+        "packages/pi-adapter/options.ts"
+      ],
+      "interfaces": [
+        "packages/pi-adapter/sessions.ts",
+        "apps/agent-worker/index.ts"
+      ],
+      "tests": [
+        "tests/unit/pi.test.mjs",
+        "tests/integration/wakeup-host.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "present",
+          "evidence": [
+            "packages/pi-adapter/sessions.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/pi-adapter/runtime.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/pi.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "pi",
+      "name": "Pi SDK唯一执行内核",
+      "stage": "M2",
+      "prs": [
+        "PR01",
+        "PR02"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "上游Agent内核以Pi替代；固定真实SDK类型、离线会话/工具/恢复契约已接入，真实供应商调用仍待验收。",
+      "files": [
+        "packages/pi-adapter/runtime.ts",
+        "apps/agent-worker/index.ts"
+      ],
+      "interfaces": [
+        "packages/pi-adapter/options.ts",
+        "apps/agent-worker/index.ts"
+      ],
+      "tests": [
+        "tests/unit/pi.test.mjs",
+        "tests/unit/pi-sdk-contract.test.mjs",
+        "tests/live/pi-live.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "present",
+          "evidence": [
+            "apps/agent-worker/index.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/pi-adapter/runtime.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/pi.test.mjs",
+            "tests/unit/pi-sdk-contract.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "snapshots",
+      "name": "固定运行契约、快照和审批",
+      "stage": "M3",
+      "prs": [
+        "PR05"
+      ],
+      "alignment": "equivalent",
+      "reason": "内容寻址快照已有；Git提交与源码版本迁移待PR05。",
+      "files": [
+        "packages/workspace/experiments.ts",
+        "packages/policy/approvals.ts"
+      ],
+      "interfaces": [
+        "packages/workspace/experiments.ts",
+        "packages/runners/service.ts"
+      ],
+      "tests": [
+        "tests/unit/core.test.mjs",
+        "tests/integration/runner.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/workspace/experiments.ts"
+          ]
+        },
+        "config": {
+          "status": "present",
+          "evidence": [
+            "packages/runners/contracts.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/integration/runner.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "partial",
+          "evidence": [
+            "tests/integration/runner.test.mjs"
+          ]
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "runner-local",
+      "name": "本地受信数值示例Runner",
+      "stage": "M3",
+      "prs": [
+        "PR06"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "仅随包受信示例可宿主执行；通用Runner仍待PR06。",
+      "files": [
+        "packages/runners/service.ts",
+        "apps/runner-supervisor/index.ts"
+      ],
+      "interfaces": [
+        "packages/runners/service.ts"
+      ],
+      "tests": [
+        "tests/integration/runner.test.mjs",
+        "tests/integration/campaign-demo.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "present",
+          "evidence": [
+            "packages/runners/service.ts"
+          ]
+        },
+        "config": {
+          "status": "present",
+          "evidence": [
+            "packages/runners/contracts.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/integration/runner.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "partial",
+          "evidence": [
+            "tests/integration/runner.test.mjs"
+          ]
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "runner-docker",
+      "name": "Docker通用代码Runner",
+      "stage": "M3",
+      "prs": [
+        "PR04",
+        "PR06"
+      ],
+      "alignment": "equivalent",
+      "reason": "有Docker相关代码与关闭失败路径；真实容器和非白名单任务未验收。",
+      "files": [
+        "packages/runners/service.ts",
+        "packages/runners/contracts.ts"
+      ],
+      "interfaces": [
+        "packages/runners/service.ts"
+      ],
+      "tests": [
+        "tests/integration/runner.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/runners/service.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/runners/contracts.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "partial",
+          "evidence": [
+            "tests/integration/runner.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "literature",
+      "name": "文献检索与全文",
+      "stage": "M4",
+      "prs": [
+        "PR10"
+      ],
+      "alignment": "equivalent",
+      "reason": "多源连接器有夹具测试；实网、固定原文版本与页图定位未验收。",
+      "files": [
+        "packages/connectors/service.ts",
+        "packages/literature/service.ts"
+      ],
+      "interfaces": [
+        "packages/connectors/contracts.ts",
+        "packages/literature/service.ts"
+      ],
+      "tests": [
+        "tests/unit/openresearch-connectors.test.mjs",
+        "tests/integration/openresearch-http.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/connectors/service.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/connectors/settings.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/openresearch-connectors.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "collaboration",
+      "name": "多Agent开关、DAG和审查",
+      "stage": "M5",
+      "prs": [
+        "PR08"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "协作默认关闭并独立审批；真实多Pi任务与收益对照未验收。",
+      "files": [
+        "packages/collaboration/team-service.ts",
+        "packages/collaboration/graph.ts"
+      ],
+      "interfaces": [
+        "packages/collaboration/team-service.ts"
+      ],
+      "tests": [
+        "tests/unit/collaboration.test.mjs",
+        "tests/unit/audit-collaboration.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/collaboration/team-service.ts"
+          ]
+        },
+        "config": {
+          "status": "present",
+          "evidence": [
+            "packages/collaboration/team-service.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/collaboration.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "budget",
+      "name": "团队与活动尝试额度",
+      "stage": "M5",
+      "prs": [
+        "PR07",
+        "PR08"
+      ],
+      "alignment": "equivalent",
+      "reason": "已有限额预留；还不是费用硬上限或多目标资源调度。",
+      "files": [
+        "packages/policy/budget.ts",
+        "packages/scheduler/agent-host.ts"
+      ],
+      "interfaces": [
+        "packages/policy/budget.ts"
+      ],
+      "tests": [
+        "tests/unit/core.test.mjs",
+        "tests/unit/automation-policy.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/policy/budget.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/policy/budget.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/core.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "autonomous",
+      "name": "Campaign、轮次与四类决定",
+      "stage": "M5",
+      "prs": [
+        "PR08"
+      ],
+      "alignment": "equivalent",
+      "reason": "确定性示例验证状态链；不能代表真实Pi科研决策。",
+      "files": [
+        "packages/research-workflows/campaign-service.ts",
+        "apps/cli/campaign-demo.ts"
+      ],
+      "interfaces": [
+        "packages/research-workflows/campaign-service.ts",
+        "apps/server/campaign-routes.ts"
+      ],
+      "tests": [
+        "tests/unit/campaign.test.mjs",
+        "tests/integration/campaign-demo.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/research-workflows/campaign-service.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/research-workflows/campaign-service.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/campaign.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "root-wakeup",
+      "name": "结果队列与主Pi唤醒",
+      "stage": "M5",
+      "prs": [
+        "PR07",
+        "PR08"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "默认不额外发起付费总结；真实Pi唤醒未验收。",
+      "files": [
+        "packages/scheduler/wakeups.ts",
+        "packages/scheduler/agent-host.ts"
+      ],
+      "interfaces": [
+        "packages/scheduler/wakeups.ts"
+      ],
+      "tests": [
+        "tests/unit/wakeups.test.mjs",
+        "tests/integration/wakeup-host.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "present",
+          "evidence": [
+            "packages/scheduler/wakeups.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/scheduler/agent-host.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/wakeups.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "workbench",
+      "name": "科研工作台",
+      "stage": "M6",
+      "prs": [
+        "PR09"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "独立界面；未录制固定上游逐屏基线或完成浏览器旅程。",
+      "files": [
+        "apps/web/src/app.tsx",
+        "apps/server/http.ts"
+      ],
+      "interfaces": [
+        "apps/server/http.ts"
+      ],
+      "tests": [
+        "tests/unit/workflow-ui.test.mjs",
+        "tests/integration/http.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "present",
+          "evidence": [
+            "apps/web/src/app.tsx"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "apps/web/tsconfig.json"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/workflow-ui.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "evidence",
+      "name": "类型化证据、Claim与Markdown报告",
+      "stage": "M6",
+      "prs": [
+        "PR09",
+        "PR12"
+      ],
+      "alignment": "equivalent",
+      "reason": "有文本和运行证据；报告数字到固定产物的完整浏览器回查待验。",
+      "files": [
+        "packages/evidence/service.ts",
+        "packages/publications/reports.ts"
+      ],
+      "interfaces": [
+        "packages/evidence/service.ts",
+        "packages/publications/reports.ts"
+      ],
+      "tests": [
+        "tests/unit/core.test.mjs",
+        "tests/integration/http.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/evidence/service.ts"
+          ]
+        },
+        "config": {
+          "status": "present",
+          "evidence": [
+            "packages/publications/reports.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/unit/core.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "latex",
+      "name": "LaTeX与PDF编译预览",
+      "stage": "M6",
+      "prs": [
+        "PR12"
+      ],
+      "alignment": "equivalent",
+      "reason": "目标用户能力；当前只有Markdown报告，尚无TeX执行器。",
+      "files": [
+        "packages/publications/reports.ts"
+      ],
+      "interfaces": [],
+      "tests": [],
+      "dimensions": {
+        "code": {
+          "status": "absent",
+          "evidence": []
+        },
+        "config": {
+          "status": "absent",
+          "evidence": []
+        },
+        "contractTests": {
+          "status": "absent",
+          "evidence": []
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "remote",
+      "name": "SSH、Slurm及其他远程后端",
+      "stage": "M7",
+      "prs": [
+        "PR13"
+      ],
+      "alignment": "equivalent",
+      "reason": "目标用户能力；兼容说明不是可执行后端。",
+      "files": [
+        "packages/runners/contracts.ts",
+        "docs/IMPLEMENTATION-PLAN.zh-CN.md"
+      ],
+      "interfaces": [],
+      "tests": [],
+      "dimensions": {
+        "code": {
+          "status": "absent",
+          "evidence": []
+        },
+        "config": {
+          "status": "absent",
+          "evidence": []
+        },
+        "contractTests": {
+          "status": "absent",
+          "evidence": []
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "code-handoff",
+      "name": "受控代码产物交接",
+      "stage": "M3/M5",
+      "prs": [
+        "PR03",
+        "PR04",
+        "PR05"
+      ],
+      "alignment": "equivalent",
+      "reason": "固定源码版本读取和私有工作区准备、任务来源绑定、跨团队撤销已落地；开发测试及Git整合仍待PR04/05。",
+      "files": [
+        "packages/workspace/change-proposals.ts",
+        "packages/workspace/experiments.ts",
+        "packages/workspace/source-access.ts"
+      ],
+      "interfaces": [
+        "packages/workspace/change-proposals.ts"
+      ],
+      "tests": [
+        "tests/unit/handoff-hardening.test.mjs",
+        "tests/integration/handoff-http.test.mjs",
+        "tests/integration/source-selection.test.mjs",
+        "tests/unit/source-lineage.test.mjs"
+      ],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "packages/workspace/change-proposals.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "packages/workspace/change-proposals.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "local-tested",
+          "evidence": [
+            "tests/integration/handoff-http.test.mjs",
+            "tests/integration/source-selection.test.mjs",
+            "tests/unit/source-lineage.test.mjs"
+          ]
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "publish",
+      "name": "Git发布与Overleaf",
+      "stage": "M8",
+      "prs": [
+        "PR14"
+      ],
+      "alignment": "equivalent",
+      "reason": "目标用户能力；当前无发布或双向同步。",
+      "files": [
+        "docs/IMPLEMENTATION-PLAN.zh-CN.md"
+      ],
+      "interfaces": [],
+      "tests": [],
+      "dimensions": {
+        "code": {
+          "status": "absent",
+          "evidence": []
+        },
+        "config": {
+          "status": "absent",
+          "evidence": []
+        },
+        "contractTests": {
+          "status": "absent",
+          "evidence": []
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "desktop",
+      "name": "桌面分发与自建托管账户服务（已移出目标）",
+      "stage": "M8",
+      "prs": [
+        "PR13",
+        "PR14"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "2026-09-29用户明确移除桌面安装/自动更新/应用版本回滚及自建账户/组织/托管实例/用量账本。保留该ID和原证据供历史对照，不作为待完成项；用户已有远程环境接入仍由remote项按需覆盖。",
+      "files": [
+        "apps/server/http.ts",
+        "docs/IMPLEMENTATION-PLAN.zh-CN.md"
+      ],
+      "interfaces": [
+        "apps/server/http.ts"
+      ],
+      "tests": [],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "apps/server/http.ts"
+          ]
+        },
+        "config": {
+          "status": "partial",
+          "evidence": [
+            "apps/server/http.ts"
+          ]
+        },
+        "contractTests": {
+          "status": "absent",
+          "evidence": []
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    },
+    {
+      "id": "parity",
+      "name": "修订范围内的科研功能对齐与任务评测",
+      "stage": "M0/M9",
+      "prs": [
+        "PR01",
+        "PR02",
+        "PR09"
+      ],
+      "alignment": "intentional-deviation",
+      "reason": "Pi唯一内核、独立UI形态及scopeRevision排除项是明确差异；用户已要求对齐OpenResearch主要前端布局和交互。本机参考版本/同视口页面证据尚待PR01/09补录；当前固定上游静态材料不证明视觉或真实任务对齐。单/多Agent收益评测属于优化，不是功能可用门槛。",
+      "files": [
+        "docs/reference-baseline/baseline.json",
+        "docs/reference-baseline/OPENRESEARCH-COMPARISON.md"
+      ],
+      "interfaces": [],
+      "tests": [],
+      "dimensions": {
+        "code": {
+          "status": "partial",
+          "evidence": [
+            "docs/reference-baseline/OPENRESEARCH-COMPARISON.md"
+          ]
+        },
+        "config": {
+          "status": "present",
+          "evidence": [
+            "docs/reference-baseline/baseline.json"
+          ]
+        },
+        "contractTests": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "targetIntegration": {
+          "status": "unverified",
+          "evidence": []
+        },
+        "userJourney": {
+          "status": "unverified",
+          "evidence": []
+        }
+      }
+    }
+  ],
+  "operationMigration": {
+    "inputSchemas": 37,
+    "outputSchemas": 37,
+    "registeredOperations": 37,
+    "status": "all-current-tools-contract-tested",
+    "evidence": [
+      "docs/acceptance/pr03/RESULTS.zh-CN.md"
+    ],
+    "liveVerified": false
+  }
+}

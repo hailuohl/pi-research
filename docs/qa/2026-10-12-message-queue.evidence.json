@@ -1,0 +1,860 @@
+{
+  "flow": "QUEUE-UI-01",
+  "baseline": "c6155d7ac1fef8d684f244469a97eeb3020f39b2",
+  "productChanges": [],
+  "sessionId": "38a0d591-a98b-4e48-a310-f306e19aa988",
+  "sources": [
+    {
+      "path": "apps/web/src/workbench.tsx",
+      "sha256": "ae99f4c104aa49cd29b319e481f0d41dc5266dd2683b197a3c3f1dfe0ffefbae",
+      "runtimeSha256": "ae99f4c104aa49cd29b319e481f0d41dc5266dd2683b197a3c3f1dfe0ffefbae",
+      "sameAfterLineEndingNormalization": true
+    },
+    {
+      "path": "apps/web/src/composer-controls.tsx",
+      "sha256": "2222756fd47b67b7b515fd50c1717cb2961dc2a21366557c4086b8136f27e9e4",
+      "runtimeSha256": "2222756fd47b67b7b515fd50c1717cb2961dc2a21366557c4086b8136f27e9e4",
+      "sameAfterLineEndingNormalization": true
+    },
+    {
+      "path": "apps/web/src/message-queue.tsx",
+      "sha256": "158f9380b157aa2994e57d66b7b0a7c5358e0bf5bd601f8318d202f7e8ccbafe",
+      "runtimeSha256": "158f9380b157aa2994e57d66b7b0a7c5358e0bf5bd601f8318d202f7e8ccbafe",
+      "sameAfterLineEndingNormalization": true
+    },
+    {
+      "path": "apps/web/src/session-history.tsx",
+      "sha256": "2a017505827d93ed3181065f881986bb8e7420e703b90c895a9af9a488155c08",
+      "runtimeSha256": "2a017505827d93ed3181065f881986bb8e7420e703b90c895a9af9a488155c08",
+      "sameAfterLineEndingNormalization": true
+    },
+    {
+      "path": "apps/web/src/scroll-history.tsx",
+      "sha256": "a2f38c630a6e4bd237f27d5b484666c8f7d6377e6d7136858660a8cd1b69b28a",
+      "runtimeSha256": "a2f38c630a6e4bd237f27d5b484666c8f7d6377e6d7136858660a8cd1b69b28a",
+      "sameAfterLineEndingNormalization": true
+    },
+    {
+      "path": "packages/pi-adapter/sessions.ts",
+      "sha256": "61f56ba1e93dc7d96637a54ab56f5028343dc70ead289a8be82cf588ee0d9fbc",
+      "runtimeSha256": "6ef678b54d6d3d046ab07cc8dbd60ad0ac23cf61f3036dd046505f190d0f716e",
+      "sameAfterLineEndingNormalization": true
+    },
+    {
+      "path": "packages/pi-adapter/session-history.ts",
+      "sha256": "eef3b1554629aba85f7b206b7a8da8e561e5bdb95d5b51627d8b0462625cc842",
+      "runtimeSha256": "eef3b1554629aba85f7b206b7a8da8e561e5bdb95d5b51627d8b0462625cc842",
+      "sameAfterLineEndingNormalization": true
+    }
+  ],
+  "files": [
+    {
+      "path": ".validation/queue-ui-20261012/queue-provider.mjs",
+      "sha256": "f3ae054187bc08bdf133b28d46068cc29ad2e7f8e46a65540b157140edc625c1"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/self-check.mjs",
+      "sha256": "4f4490599c3a44097e484d4c8876d21c451f18e1368ff92099328a0a2c43b8f5"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/verify-fifo.mjs",
+      "sha256": "0a1f2f9b74b7bf659a2a05bde520fcfb30ea326356aab650088b9ff0b09cbca1"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/verify-final.mjs",
+      "sha256": "e00e55de48f5598e3775c58fec9fc30d4931a24eec118b4730fe50d12d338a70"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/queued-21.json",
+      "sha256": "a4c61b31c785aa7818df44069338bfb7afa0f845ca0e9161bfb1a27a397eb1bc"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/fifo-complete.json",
+      "sha256": "5fbcfdf0076f905ea463e023d434cc925e327a7486ede4302e5699ff91543f77"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/before-stop.json",
+      "sha256": "ec7286bf1819bce5595d725e05aba165459893e4aa7e5c3a701399f698faa99a"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/after-stop.json",
+      "sha256": "06ff521eeedbbd16bc91404441b0efec43aff2c2da70e8b7dbb89c69df77198f"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/final-state.json",
+      "sha256": "0a992bea5feabed750d16f93be9f01508d03d555e91a69ca320836e1e31d3c40"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/chrome-evidence.json",
+      "sha256": "776b7c927d91367ed47f8e83c10096778e888a61e9c7413c27d2017b3ef79422"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/chrome-supplement.json",
+      "sha256": "8b9d6661fb7ccebda71aecbfb3f705cfd5d354d3df8a58f6a5b08a16f35c0e3c"
+    },
+    {
+      "path": ".validation/queue-ui-20261012/independent-review.json",
+      "sha256": "46be6c3671632f9a279c8d7fdce90172776634a9611d3166ec7be0d17f424b31"
+    }
+  ],
+  "checks": {
+    "fifo": {
+      "exactProviderOrder": true,
+      "editedFullTextMatched": true,
+      "staleUnsavedEditNotWritten": true,
+      "steerSameGeneration": true,
+      "followUpNewGenerationFifo": true,
+      "removedNeverSent": true,
+      "noDuplicateRequests": true
+    },
+    "final": {
+      "requestCount": 25,
+      "userMessageCount": 27,
+      "noActiveQueue": true,
+      "originalFifoRecordsUnchanged": true,
+      "stopCancelledCurrentAndPending": true,
+      "stopOldStreamAborted": true,
+      "retriesCreateDistinctMessages": true,
+      "originalFailureAndCancellationPreserved": true,
+      "noProviderRetryBeforeUi": true,
+      "otherSessionsAndHostJobsUnchanged": true
+    },
+    "chrome": {
+      "cancelPreservedOriginal": true,
+      "blankSaveDisabled": true,
+      "removedQ02": true,
+      "removedHistoryText": "你\n10/12 19:15\n已移出队列\n查看已移出队列的原消息\n\nQUEUE_UI_ITEM Q02 公开队列验收 Q02\n\n从此处分支",
+      "removedHistoryRetryCount": 0,
+      "historyQueueDisabled": false,
+      "staleEditText": "消息版本已变化或已离开队列。草稿已保留，请取消后重新读取。",
+      "staleDraftPreserved": true,
+      "staleSaveDisabled": true,
+      "stopCancelledBoth": true,
+      "failureRowsBeforeReload": [
+        {
+          "id": "fc8a0e8b-7fc4-4d67-87fb-148c997a424e",
+          "text": "你\n10/12 19:23\n失败\n\nQUEUE_UI_FAIL_ONCE FAILURE_20261012_A 公开软件验收：固定服务第一次返回错误，随后只重试这条消息。\n\nPROVIDER_FAILED: 500: {\"message\":\"Fixed queue fixture failure.\",\"type\":\"server_error\"}\n\n从此处分支\n重试此消息"
+        },
+        {
+          "id": "8b74cd3b-a5c3-4de2-b820-9b9286d0c366",
+          "text": "你\n10/12 19:24\n\nQUEUE_UI_FAIL_ONCE FAILURE_20261012_A 公开软件验收：固定服务第一次返回错误，随后只重试这条消息。\n\n从此处分支"
+        }
+      ],
+      "reopenedRetryRows": [
+        {
+          "cancelled": true,
+          "failed": false,
+          "id": "14052b4a-341c-4265-887d-a2606d581662",
+          "retryButtons": 1
+        },
+        {
+          "cancelled": true,
+          "failed": false,
+          "id": "4dac124a-0a77-4320-9b5f-a383bfc91b2d",
+          "retryButtons": 1
+        },
+        {
+          "cancelled": false,
+          "failed": false,
+          "id": "3bbf9298-e96b-4aa0-9c01-fd36242fdf4e",
+          "retryButtons": 0
+        },
+        {
+          "cancelled": false,
+          "failed": true,
+          "id": "fc8a0e8b-7fc4-4d67-87fb-148c997a424e",
+          "retryButtons": 1
+        },
+        {
+          "cancelled": false,
+          "failed": false,
+          "id": "8b74cd3b-a5c3-4de2-b820-9b9286d0c366",
+          "retryButtons": 0
+        }
+      ],
+      "reopenedEditedTail": false,
+      "reopenedRemovedText": "你\n10/12 19:15\n已移出队列\n查看已移出队列的原消息\n\nQUEUE_UI_ITEM Q02 公开队列验收 Q02\n\n从此处分支",
+      "reopenedRemovedRetryCount": 0,
+      "queueHiddenAtEnd": true,
+      "historyModeMeaning": "普通回看保持当前live会话；不是固定historyAnchor，队列保持可编辑符合当前入口。",
+      "reopenedFullReadMatches": true,
+      "reopenedPreviewTailNote": "历史卡按预览截断；点分段查看原文后读取完整14324字节并与保存文本相等。"
+    }
+  },
+  "originalPage2Observation": "排队中 · 21\n队首\nQUEUE_UI_ITEM Q21 公开队列验收 Q21\n立即\n引导\n编辑\n删除\n第 2 页\n上一页\n下一页",
+  "originalSendAcknowledgementMarkers": [
+    "Q02",
+    "Q03",
+    "Q04",
+    "Q05",
+    "Q06",
+    "Q07",
+    "Q08",
+    "Q09",
+    "Q10",
+    "Q11",
+    "Q12",
+    "Q13",
+    "Q14",
+    "Q15",
+    "Q16",
+    "Q17",
+    "Q18",
+    "Q19",
+    "Q20",
+    "Q21"
+  ],
+  "transcribedManualObservation": {
+    "source": "Original CUA response: 检查刷新持久化并读取长消息全文",
+    "queueHeadingAfterRefresh": "排队中 · 21",
+    "firstPageMarkersAfterRefresh": [
+      "QUEUE_UI_ITEM Q01",
+      "QUEUE_UI_ITEM Q02",
+      "QUEUE_UI_ITEM Q03",
+      "QUEUE_UI_ITEM Q04",
+      "QUEUE_UI_ITEM Q05",
+      "QUEUE_UI_ITEM Q06",
+      "QUEUE_UI_ITEM Q07",
+      "QUEUE_UI_ITEM Q08",
+      "QUEUE_UI_ITEM Q09",
+      "QUEUE_UI_ITEM Q10",
+      "QUEUE_UI_ITEM Q11",
+      "QUEUE_UI_ITEM Q12",
+      "QUEUE_UI_ITEM Q13",
+      "QUEUE_UI_ITEM Q14",
+      "QUEUE_UI_ITEM Q15",
+      "QUEUE_UI_ITEM Q16",
+      "QUEUE_UI_ITEM Q17",
+      "QUEUE_UI_ITEM Q18",
+      "QUEUE_UI_ITEM Q19",
+      "QUEUE_UI_ITEM Q20"
+    ],
+    "editorLength": 5079,
+    "editorTail": "尾部标记 Q01_ORIGINAL_END",
+    "note": "Transcribed from the original tool result in this task, not reconstructed from the backend"
+  },
+  "providerRequests": [
+    {
+      "marker": "FIFO_20261012_A",
+      "kind": "SLOW",
+      "attempt": 1,
+      "requestSequence": 1,
+      "state": "completed",
+      "userTextSha256": "243caba0f73dc1d943c2734a09b607247cd404d1d4b2215930988d725f323cf7",
+      "time": "2026-10-12T11:19:21.020Z"
+    },
+    {
+      "marker": "Q03",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 2,
+      "state": "completed",
+      "userTextSha256": "95e7e5e499dd9197c0bb6a23505d608bed11cbf8aac3b21da5ae83c846dfec71",
+      "time": "2026-10-12T11:19:21.044Z"
+    },
+    {
+      "marker": "Q01",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 3,
+      "state": "completed",
+      "userTextSha256": "ba1ddaef0e5effdf575fa5072bcc799629ffd50e88e417cc228e58bdf3fbc0b9",
+      "time": "2026-10-12T11:19:23.199Z"
+    },
+    {
+      "marker": "Q04",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 4,
+      "state": "completed",
+      "userTextSha256": "3a3c3f986a24ac0e56746750748f546b34c194382e5dc7bda04d9fa39d86c0e2",
+      "time": "2026-10-12T11:19:25.402Z"
+    },
+    {
+      "marker": "Q05",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 5,
+      "state": "completed",
+      "userTextSha256": "6662c5dc85c88c4e8cd0faa065a399a0e8d171db328f0bca44e94bfd6db26583",
+      "time": "2026-10-12T11:19:27.460Z"
+    },
+    {
+      "marker": "Q06",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 6,
+      "state": "completed",
+      "userTextSha256": "8ad2be83db7f6d3d25511328516541c86428ed08fbc518ac78f3ee28d7f5b76b",
+      "time": "2026-10-12T11:19:29.586Z"
+    },
+    {
+      "marker": "Q07",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 7,
+      "state": "completed",
+      "userTextSha256": "a44f34baec137e0f49bcbb8704b6ced13fe1fa89e837e8737cd6bb03bcc9183b",
+      "time": "2026-10-12T11:19:31.634Z"
+    },
+    {
+      "marker": "Q08",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 8,
+      "state": "completed",
+      "userTextSha256": "4d44f68df08f6dfb6be8a04306ede1f59fd41fc09af2b1a4cb2ee00c02d8dd76",
+      "time": "2026-10-12T11:19:33.733Z"
+    },
+    {
+      "marker": "Q09",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 9,
+      "state": "completed",
+      "userTextSha256": "634551e85aaf2313bc001a8229b5f7ce7e051c169c4cb5157f26915546bacb1c",
+      "time": "2026-10-12T11:19:35.784Z"
+    },
+    {
+      "marker": "Q10",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 10,
+      "state": "completed",
+      "userTextSha256": "194d1ec77c252c63347e13164e17320d040f6ec2bbb0abcba0f920084c3e16b7",
+      "time": "2026-10-12T11:19:37.867Z"
+    },
+    {
+      "marker": "Q11",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 11,
+      "state": "completed",
+      "userTextSha256": "3374faf3fdee524250907ed5686b66bec5dc68a9d95764b89a56b74dc8470e8d",
+      "time": "2026-10-12T11:19:40.156Z"
+    },
+    {
+      "marker": "Q12",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 12,
+      "state": "completed",
+      "userTextSha256": "4b5ba0c4823792b631fef87f46c52f29938a4ae3713c65647f7300c106810a38",
+      "time": "2026-10-12T11:19:42.457Z"
+    },
+    {
+      "marker": "Q13",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 13,
+      "state": "completed",
+      "userTextSha256": "f8e95b3c63e5b2cb722921dac059a7c7600f51e62cf1159a00f1e0d1bdafdb77",
+      "time": "2026-10-12T11:19:44.839Z"
+    },
+    {
+      "marker": "Q14",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 14,
+      "state": "completed",
+      "userTextSha256": "b6e35bf4f2ed357068b16bd0ea8dac473876ae6299fc624c54dd095b3dce67c5",
+      "time": "2026-10-12T11:19:47.074Z"
+    },
+    {
+      "marker": "Q15",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 15,
+      "state": "completed",
+      "userTextSha256": "dadfb0ee646d780d137e9b955050db646720293cbeaed300b6b276166ff6ff59",
+      "time": "2026-10-12T11:19:49.410Z"
+    },
+    {
+      "marker": "Q16",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 16,
+      "state": "completed",
+      "userTextSha256": "654865de5e5cfecf8379109bef9bbbd0d84245a0f537c74111ea8a3ce76dede6",
+      "time": "2026-10-12T11:19:51.664Z"
+    },
+    {
+      "marker": "Q17",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 17,
+      "state": "completed",
+      "userTextSha256": "548eea71f33791d081160bba7ae5ab4baa6349458cbce922f97057c44ed9a667",
+      "time": "2026-10-12T11:19:53.737Z"
+    },
+    {
+      "marker": "Q18",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 18,
+      "state": "completed",
+      "userTextSha256": "506ec90581c23b7d3fb1b591aeb1a00b518dfa10c62167b1170b13aa1ea4397a",
+      "time": "2026-10-12T11:19:55.833Z"
+    },
+    {
+      "marker": "Q19",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 19,
+      "state": "completed",
+      "userTextSha256": "866130538bb7527edd4673f48760f8a9550d8ca044ff4983f7cc2bce6fae82b4",
+      "time": "2026-10-12T11:19:57.878Z"
+    },
+    {
+      "marker": "Q20",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 20,
+      "state": "completed",
+      "userTextSha256": "2f7a44a59f8fbecdd754730f3aa103654284fdab7fdacaef0c6219f1d6ea75d9",
+      "time": "2026-10-12T11:19:59.962Z"
+    },
+    {
+      "marker": "Q21",
+      "kind": "ITEM",
+      "attempt": 1,
+      "requestSequence": 21,
+      "state": "completed",
+      "userTextSha256": "3f2a51dec8d0dab652f78538a54aadeddb6684b351caace7a0d43adad69f99f4",
+      "time": "2026-10-12T11:20:02.354Z"
+    },
+    {
+      "marker": "STOP_20261012_A",
+      "kind": "SLOW",
+      "attempt": 1,
+      "requestSequence": 22,
+      "state": "aborted",
+      "userTextSha256": "863892e8e66b9873eadad044624c7584075ba08ad08cdad834eaa14d6229225c",
+      "time": "2026-10-12T11:22:49.460Z"
+    },
+    {
+      "marker": "STOP_20261012_A",
+      "kind": "SLOW",
+      "attempt": 2,
+      "requestSequence": 23,
+      "state": "completed",
+      "userTextSha256": "3cfe3758e8705dfdf6a9fe740bc02e84ef81cd7a8f62caee29e6ab477c968132",
+      "time": "2026-10-12T11:23:19.302Z"
+    },
+    {
+      "marker": "FAILURE_20261012_A",
+      "kind": "FAIL_ONCE",
+      "attempt": 1,
+      "requestSequence": 24,
+      "state": "failed",
+      "userTextSha256": "082019fcbb91a182a4effd852b7fea31847cdf0ef3e5c04607992672a793ae70",
+      "time": "2026-10-12T11:23:44.390Z"
+    },
+    {
+      "marker": "FAILURE_20261012_A",
+      "kind": "FAIL_ONCE",
+      "attempt": 2,
+      "requestSequence": 25,
+      "state": "completed",
+      "userTextSha256": "681c76e5c1531cbf2a9a99c7c426bdfe7e61ec8c8eb2d080c71c62432a60c75f",
+      "time": "2026-10-12T11:24:25.159Z"
+    }
+  ],
+  "messageStates": [
+    {
+      "id": "1c8de43b-4fbb-48c9-a12f-e69e2e2df10d",
+      "marker": "FIFO_20261012_A",
+      "mode": "prompt",
+      "status": "completed",
+      "generation": 1,
+      "queueRemoved": false,
+      "contentSha256": "35ed357eb7303197649e92992e33971ccde780dd5fe430147cc34abc3c616c5a"
+    },
+    {
+      "id": "6daa766d-fa67-4b5b-977a-37bb2ad0f23d",
+      "marker": "Q01",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 2,
+      "queueRemoved": false,
+      "contentSha256": "0e8f6d9623a392fd484f9125ad09bcbda557c69272a89efaf1f1a5d0545a0685"
+    },
+    {
+      "id": "85a3668d-a98b-4712-aee5-d7a7542f314c",
+      "marker": "Q02",
+      "mode": "follow_up",
+      "status": "cancelled",
+      "queueRemoved": true,
+      "contentSha256": "bc1a63cb32afac1df08d0f56d55328f1a37946cfa4fc6199fe24f09f8decd48b"
+    },
+    {
+      "id": "4144439a-31c9-461a-a6cd-72998280558e",
+      "marker": "Q03",
+      "mode": "steer",
+      "status": "completed",
+      "generation": 1,
+      "queueRemoved": false,
+      "contentSha256": "8733268042a9f9b91d2219e9a01f401ad1229103afd88ee3bd8c5964514c1166"
+    },
+    {
+      "id": "8d34785d-3ff2-4bc7-93d3-0d5670c32b7d",
+      "marker": "Q04",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 3,
+      "queueRemoved": false,
+      "contentSha256": "27a510cf8f49799de2f86befda97358ea7190de02294c1d9c030ed06d7539c43"
+    },
+    {
+      "id": "cf09c842-b54b-4c89-847d-dc78e4560141",
+      "marker": "Q05",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 4,
+      "queueRemoved": false,
+      "contentSha256": "6f39eb86ec3fdf371043648166b075f907eb35e2c8436225ce2873261016090b"
+    },
+    {
+      "id": "954dcadd-c139-4596-a7fb-0201d147cdf3",
+      "marker": "Q06",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 5,
+      "queueRemoved": false,
+      "contentSha256": "cccc5f2125e3136a24bf2bb7ca8c5d911e44cb5e8d8d095b1d2625cfc3679a0d"
+    },
+    {
+      "id": "818fd605-c62b-4b02-b7ec-f1f99172fe43",
+      "marker": "Q07",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 6,
+      "queueRemoved": false,
+      "contentSha256": "86b80d436f81f09c66e1faefce0ecdb881718eb1fb20603e78594dae39680206"
+    },
+    {
+      "id": "06f1d835-4f56-42be-b4c3-8790f1f1c31e",
+      "marker": "Q08",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 7,
+      "queueRemoved": false,
+      "contentSha256": "15cf77eca6e1c68b07c6c96682f326647b636d61d0cea0f98c74697b205ea502"
+    },
+    {
+      "id": "737f14f6-0cbe-4f98-91f6-d4d4fbbab565",
+      "marker": "Q09",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 8,
+      "queueRemoved": false,
+      "contentSha256": "0f95d6d38ebd9ae71fe4d27e86547349cc20b8c809af107a471d2311207ac411"
+    },
+    {
+      "id": "17009960-b9d6-4a29-8cbd-823baf717e79",
+      "marker": "Q10",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 9,
+      "queueRemoved": false,
+      "contentSha256": "71e26d353eca5738c187d39c9298a2ebeac60d7526e85c7709f13213be6a2e70"
+    },
+    {
+      "id": "c70a300c-c1f1-495b-a299-4f8e20381b16",
+      "marker": "Q11",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 10,
+      "queueRemoved": false,
+      "contentSha256": "14f87dad3582b2f246bcb58e0519cb31897d568c7411241d5ae0f2f98f01c87a"
+    },
+    {
+      "id": "822d3bba-3913-4b31-aa19-a02bab091d99",
+      "marker": "Q12",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 11,
+      "queueRemoved": false,
+      "contentSha256": "fb242dfc6ef505542ec6ee763ad7846fe043dc6eb609bfde4866857fc831c27a"
+    },
+    {
+      "id": "32aaa5c9-5a98-4ab9-a8ba-9792522e78a1",
+      "marker": "Q13",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 12,
+      "queueRemoved": false,
+      "contentSha256": "6afafc5145548e8cc6b921fc5841c7b328d318e0d2679f8aab197e44113074ae"
+    },
+    {
+      "id": "48d091e5-d6e6-4722-9bbe-09eab66b27f7",
+      "marker": "Q14",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 13,
+      "queueRemoved": false,
+      "contentSha256": "414a96a7703a7dffb8b606ff35b02aec30d43bf62beeb712b8586ceeb31253c1"
+    },
+    {
+      "id": "24568e8f-6f05-407c-8c9b-43de69e4fcdb",
+      "marker": "Q15",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 14,
+      "queueRemoved": false,
+      "contentSha256": "e82c25a6b521bb25aff4e172de608beec79df8f1c1d9a8cf5fe645302b6a5c27"
+    },
+    {
+      "id": "4d972ce3-9f21-4488-b227-cc3def70b2e2",
+      "marker": "Q16",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 15,
+      "queueRemoved": false,
+      "contentSha256": "b947fbf6c6375bc41480e01f0d71e24abcbbd0e678220c1e6cf721595de20a76"
+    },
+    {
+      "id": "e789bbd6-4c8c-4287-b32e-241dcda7437b",
+      "marker": "Q17",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 16,
+      "queueRemoved": false,
+      "contentSha256": "d062c415d131b4bd157dd9a6c6d519eaf1701a7b6a8b65061a61e0e335271e61"
+    },
+    {
+      "id": "9d5b8702-7ac7-45a8-88bd-52b5a974cd80",
+      "marker": "Q18",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 17,
+      "queueRemoved": false,
+      "contentSha256": "16253ee93fd740180653a6508d5649483db2eb6a52af37a5d15e5460eaa6e954"
+    },
+    {
+      "id": "701f7d94-d50d-490d-8274-71c9a26bb9c1",
+      "marker": "Q19",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 18,
+      "queueRemoved": false,
+      "contentSha256": "dde8b5757bb9462a6ba2c58ebbf39348aa977071157d763bc3f84f9f5e1ec06d"
+    },
+    {
+      "id": "1edf607f-c9d0-472f-8d95-f2b3d72cff71",
+      "marker": "Q20",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 19,
+      "queueRemoved": false,
+      "contentSha256": "6ad9b1d4ac03a55b4d27d4c03a03e82ee15d6c4c43dd6fc62cbb412fbb0815d1"
+    },
+    {
+      "id": "b4b7819f-cc9e-4f3f-afef-652d6d2ed70e",
+      "marker": "Q21",
+      "mode": "follow_up",
+      "status": "completed",
+      "generation": 20,
+      "queueRemoved": false,
+      "contentSha256": "a0451f42068ed4dab9b6704ac4b224c7cbbb91e992d15f09bcabf6ccfb48c612"
+    },
+    {
+      "id": "14052b4a-341c-4265-887d-a2606d581662",
+      "marker": "STOP_20261012_A",
+      "mode": "prompt",
+      "status": "cancelled",
+      "generation": 21,
+      "queueRemoved": false,
+      "contentSha256": "66514b6bb55b4cc2b3f86de6a743b995b879bad3d95a902dce8408b8fee2b872"
+    },
+    {
+      "id": "4dac124a-0a77-4320-9b5f-a383bfc91b2d",
+      "marker": "STOP_PENDING",
+      "mode": "follow_up",
+      "status": "cancelled",
+      "queueRemoved": false,
+      "contentSha256": "7d9519150c1af19de8ad39da944f6d7dd1b4a0f10c437fc5ba914896a1c8216d"
+    },
+    {
+      "id": "3bbf9298-e96b-4aa0-9c01-fd36242fdf4e",
+      "marker": "STOP_20261012_A",
+      "mode": "prompt",
+      "status": "completed",
+      "generation": 23,
+      "queueRemoved": false,
+      "contentSha256": "66514b6bb55b4cc2b3f86de6a743b995b879bad3d95a902dce8408b8fee2b872"
+    },
+    {
+      "id": "fc8a0e8b-7fc4-4d67-87fb-148c997a424e",
+      "marker": "FAILURE_20261012_A",
+      "mode": "prompt",
+      "status": "failed",
+      "generation": 24,
+      "queueRemoved": false,
+      "contentSha256": "b2c80f1f6d46d069aeb568b115eecd274be653b59a57dbbaf67f10001b6fede4"
+    },
+    {
+      "id": "8b74cd3b-a5c3-4de2-b820-9b9286d0c366",
+      "marker": "FAILURE_20261012_A",
+      "mode": "prompt",
+      "status": "completed",
+      "generation": 25,
+      "queueRemoved": false,
+      "contentSha256": "b2c80f1f6d46d069aeb568b115eecd274be653b59a57dbbaf67f10001b6fede4"
+    }
+  ],
+  "implementation": {
+    "modelRequested": "gpt-6-luna",
+    "effortRequested": "max",
+    "runtime": "not echoed",
+    "scope": "local QA provider only"
+  },
+  "review": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoningEffort": "high",
+    "runtimeVerification": "已请求，运行时未回显",
+    "verdict": "accepted_with_recorded_evidence_limits",
+    "blockers": [],
+    "nonBlocking": [
+      {
+        "id": "EVIDENCE-GRANULARITY",
+        "location": ".validation/queue-ui-20261012/chrome-supplement.json",
+        "detail": "第二页为保留CUA值；刷新第一页/编辑5079字符与尾部为原工具输出逐项转录。复核核对存档内容、自洽性与源码，未独立取得浏览器原始工具响应。全文重开匹配只保留布尔观察，无重开读取内容或读取hash供重新计算。"
+      }
+    ],
+    "gaps": [
+      {
+        "id": "FIXED-HISTORY-ANCHOR",
+        "status": "not_run_in_chrome",
+        "detail": "当前可达普通滚动不设非null historyAnchor；固定锚点禁写为静态接线与原自动检查覆盖。不能称本批Chrome已验固定锚点。"
+      },
+      {
+        "id": "EXTERNAL-PROVIDER",
+        "status": "out_of_scope",
+        "detail": "使用localhost固定provider；不证明外部模型质量或全部多客户端竞争组合。"
+      }
+    ],
+    "acceptance": [
+      {
+        "id": 1,
+        "status": "supported",
+        "evidence": [
+          "queued-21.json",
+          "chrome-21-queued.jpg",
+          "chrome-supplement.json"
+        ],
+        "detail": "独立断言21条pending与marker顺序；第二页仅Q21、刷新21/第一页Q01–Q20由存档原观察支持。"
+      },
+      {
+        "id": 2,
+        "status": "supported",
+        "evidence": [
+          "chrome-evidence.json",
+          "after-edit-remove-steer.json",
+          "fifo-complete.json",
+          "chrome-supplement.json"
+        ],
+        "detail": "全文初稿5079字符hash、保存5076字符/14324字节hash重算一致；取消/空白为原Chrome观察；Q02全文hash保持、cancelled+queueRemoved且无provider请求/重试入口。"
+      },
+      {
+        "id": 3,
+        "status": "supported",
+        "evidence": [
+          "fifo-complete.json",
+          "chrome-stale-draft.jpg",
+          "chrome-evidence.json"
+        ],
+        "detail": "21真实请求marker/wire hash/attempt/终态/sequence逐项核对，Q03与SLOW同generation1，follow_up generation2–20；Q21草稿保留禁保存和原发送hash保持。"
+      },
+      {
+        "id": 4,
+        "status": "supported",
+        "evidence": [
+          "before-stop.json",
+          "after-stop.json",
+          "final-state.json"
+        ],
+        "detail": "运行/queued两条变cancelled，generation21→22，旧provider流aborted，STOP_PENDING零请求；其他会话/jobs逐项相等；取消重试新id完成且旧记录保持。"
+      },
+      {
+        "id": 5,
+        "status": "supported",
+        "evidence": [
+          "final-state.json",
+          "provider-observations.json",
+          "chrome-provider-failed.jpg",
+          "chrome-reopened-history.jpg",
+          "chrome-evidence.json"
+        ],
+        "detail": "失败请求failed→同marker第二次completed，distinct message ids，原failed不变；重开五卡ID/状态/按钮与durable记录一致，Q02原文无重试；Q01预览截断语义成立并有完整读取匹配观察。"
+      }
+    ],
+    "offlineChecks": [
+      {
+        "command": "node .validation/queue-ui-20261012/self-check.mjs",
+        "status": "passed",
+        "exitCode": 0
+      },
+      {
+        "command": "node stdin assertions against stored JSON only",
+        "status": "passed",
+        "exitCode": 0,
+        "groups": [
+          "initial_21_pending",
+          "pagination_refresh_full_read_observations",
+          "edit_removed_draft",
+          "fifo_actual_wire_and_generations",
+          "stop_exact_scope_aborted",
+          "distinct_retries_and_original_records",
+          "reopened_observation_ids_match_durable_records"
+        ]
+      }
+    ],
+    "reuse": {
+      "valid": true,
+      "candidate": ".validation/directory-refresh-20261012/source-v2",
+      "candidateVsHead": {
+        "trackedFilesCompared": 1275,
+        "different": [],
+        "comparison": "SHA1 Git blob of candidate raw bytes against git ls-tree HEAD; apps/packages/tests/scripts/dist/package.json/package-lock.json/tsconfig.json"
+      },
+      "full": {
+        "status": "reused_not_rerun",
+        "tests": 1908,
+        "pass": 1884,
+        "fail": 0,
+        "skipped": 24,
+        "log": ".validation/directory-refresh-20261012/v2-full-regression.log",
+        "sha256": "1a574d349abf372470ca93eb7f6f8435c5b6826ff06878fa90bbc54466c9ae61"
+      },
+      "clean": {
+        "status": "reused_not_rerun",
+        "files": 661,
+        "identical": true,
+        "steps": [
+          "npm-ci exit0",
+          "build exit0",
+          "typecheck exit0"
+        ],
+        "summary": ".validation/directory-refresh-20261012/source-v2/.validation/clean-build-mc4Tsp/summary.json",
+        "sha256": "8a2fe698628d64328fc59ce6be56d6840f64ff57443e367a78c2a78e0eb3a906"
+      },
+      "limit": "只复用已提交HEAD与实际source-v2候选；五份无关WIP（含两CSS）不在本批验收/复用通过声明内。"
+    }
+  },
+  "previousChecksReused": {
+    "fullTests": 1908,
+    "pass": 1884,
+    "fail": 0,
+    "skipped": 24,
+    "cleanIdenticalFiles": 661,
+    "record": "docs/qa/2026-10-12-directory-refresh.evidence.json",
+    "rerun": false,
+    "reason": "Product code unchanged; relevant runtime source matches current delivery"
+  },
+  "notTested": [
+    "External model reasoning quality",
+    "All multi-client edit races",
+    "Non-null fixed historyAnchor with no current UI entry"
+  ]
+}

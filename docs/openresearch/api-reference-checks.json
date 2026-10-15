@@ -1,0 +1,12 @@
+{
+  "asOf": "2026-09-27",
+  "openresearchCommit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+  "openalexAuthentication": "https://help.openalex.org/api/authentication/",
+  "openalexLastUpdated": "2026-08-19",
+  "appliedChecks": [
+    "optional bearer auth",
+    "per_page at most 100"
+  ],
+  "liveProgramProviderRequests": "all failed DNS; not validated",
+  "referenceDocumentsFetchedVia": "GitHub connector and web read, not program provider transport"
+}

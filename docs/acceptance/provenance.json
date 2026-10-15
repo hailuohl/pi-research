@@ -1,0 +1,16 @@
+{
+  "inputArchive": "pi-research-v0.2.0.zip",
+  "inputArchiveSha256": "8d99f20e532835aa193f60520478e849a23e4610104a62007040da78026c373c",
+  "referenceCommit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+  "originalSpecsPreserved": [
+    {
+      "path": "docs/specs/project-design.txt",
+      "sha256": "d264982823165ecd8416971451ccce953d1dbecc4232a31d503bfd91d832416c"
+    },
+    {
+      "path": "docs/specs/multi-agent-design.md",
+      "sha256": "46b9670656c361837276d878cb0b100c4e235a716e0209a77fa13121030e6087"
+    }
+  ],
+  "runtimeOrxDependency": false
+}

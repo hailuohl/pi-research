@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-09-28T22:58:06.328Z",
+  "acceptance": "isolated-service-level-budget-gate",
+  "scope": "SQLite backup of current acceptance database; real previously completed control Run, separate user-approved campaign and manual analysis request; no new paid model or experiment execution",
+  "isolation": {
+    "sourceOpenedReadOnly": true,
+    "sqliteOnlineBackup": true,
+    "sourceDatabaseWritten": false,
+    "sourceRuntimeStarted": false,
+    "sandboxDirectory": ".validation/bounded-budget-e307rP"
+  },
+  "campaign": {
+    "id": "688ad677-4b58-4d54-b24b-2f78e590781b",
+    "approvalId": "61d5ed24-2af9-4307-bcb1-37a9c821b292",
+    "state": "active",
+    "autoAnalyze": false,
+    "maxAnalysisAttempts": 0
+  },
+  "source": {
+    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+    "observationId": "d21fc0e11635995f1466944baf00101faadd98df256d1e5058a8e5b72df0e3d2",
+    "validation": "verified",
+    "status": "pending"
+  },
+  "wakeup": {
+    "id": "c66d0ce39dff66de85c96073fdfa1ff6316d03b15858b3d9a8e0ef13a8d57f2d",
+    "state": "pending",
+    "requested": true,
+    "attempts": 0,
+    "blockReason": "分析尝试额度不足；未知用量不会自动释放",
+    "messageCreated": false,
+    "reservationCreated": false,
+    "persistedAfterReopen": true,
+    "repeatedDispatches": 4
+  },
+  "budget": {
+    "limit": 0,
+    "used": 0,
+    "reserved": 0,
+    "unknown": 0,
+    "available": 0,
+    "unit": "agent-attempt"
+  },
+  "countsBefore": {
+    "agent-admission": 9,
+    "task-attempt": 8,
+    "model-usage": 64,
+    "reservation": 8,
+    "message": 80,
+    "run": 6
+  },
+  "countsAfter": {
+    "agent-admission": 9,
+    "task-attempt": 8,
+    "model-usage": 64,
+    "reservation": 8,
+    "message": 80,
+    "run": 6
+  },
+  "countDeltas": {
+    "agent-admission": 0,
+    "task-attempt": 0,
+    "model-usage": 0,
+    "reservation": 0,
+    "message": 0,
+    "run": 0
+  },
+  "execution": {
+    "modelReadinessInput": "ready=true supplied to exercise budget gate; not a model connectivity check",
+    "agentHostConstructed": false,
+    "workerForked": false,
+    "modelRequested": false,
+    "paidModelExperiment": false
+  },
+  "result": "passed"
+}

@@ -1,0 +1,132 @@
+{
+  "batch": "native-workspace-dialogs",
+  "baseline": "07a8e29c87d80c2ec6b5fd80b012214bcf91cc7d",
+  "integration": {
+    "baseline": "07a8e29c87d80c2ec6b5fd80b012214bcf91cc7d",
+    "source": ".validation/native-dialogs-20261012/workspace/verified-source",
+    "files": [
+      {
+        "path": "apps/web/src/data-views.tsx",
+        "sha256": "2c24aade3bc771faa17ba3a752d822582b56f94d7052623577562fe51c8261a8"
+      },
+      {
+        "path": "apps/web/src/app.tsx",
+        "sha256": "1902679041ffc718ec92309d3911dd9bb824092a0630e83c3a6e604ad2a6c185"
+      },
+      {
+        "path": "tests/unit/workspace-ui.test.mjs",
+        "sha256": "055a5754208a68bae08834cd33ae102390943c4039426775e75e7161f673077f"
+      },
+      {
+        "path": "tests/unit/archive-history-entry-ui.test.mjs",
+        "sha256": "158a5c73a781a634944be25b92705d96708cefd315bf84e6049c8f9241acfb16"
+      },
+      {
+        "path": "tests/unit/project-management-ui.test.mjs",
+        "sha256": "df76f1dfcd72f055a851a94b230b85a6c98625516a0f3a9681b9e46f08ec72c2"
+      },
+      {
+        "path": "tests/unit/workbench-navigation.test.mjs",
+        "sha256": "42558629ef82ead1a3bc52612a6b43a2960a3e4c02feac07ae0556f9f95b538d"
+      },
+      {
+        "path": "tests/unit/session-management-ui.test.mjs",
+        "sha256": "a25e8f41874c8aee7fb601a35ecff37dc5aeba556ff72e1cc870a1c6a7c25006"
+      }
+    ],
+    "frozen": true
+  },
+  "fixes": [
+    "Promise-based discard confirmation and new-file path input, with full App caller updates",
+    "Immediate draft/intent generations prevent stale confirmation and read/write receipts from clearing new edits",
+    "Validate clearly invalid Windows paths before changing the draft",
+    "Collapse mobile navigation and preserve a visible focus-return target before project switch confirmation"
+  ],
+  "checks": {
+    "initialFullRegression": {
+      "snapshot": "workspace/final-source before W1/W2 corrections",
+      "command": "npm run test:core",
+      "exitCode": 0,
+      "total": 1837,
+      "passed": 1813,
+      "failed": 0,
+      "skipped": 24,
+      "durationMs": 1185062.7339,
+      "logSha256": "3c62e49f7ff0f05df430da24ee3f3a09bf737645884b9eba9d62385ca6b79ecb"
+    },
+    "finalRelated": {
+      "snapshot": "workspace/verified-source final built distribution",
+      "command": "node --test six related UI test files (workspace, workbench-navigation, project-management, session-management, archive-history-entry, session-rename-dialog)",
+      "exitCode": 0,
+      "passed": 123,
+      "failed": 0,
+      "skipped": 0,
+      "logSha256": "78669dc165bd60e8c2d36865978d0ac77831d0d3194d0dfa7a59847aef5995f1"
+    },
+    "cleanBuild": {
+      "node": "24.19.0",
+      "platform": "win32",
+      "lockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 661,
+      "distManifestSha256": "d03c71a261f0b68be6349aee0895403485667017328b0018da36503351d92379"
+    },
+    "independentReview": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "xhigh",
+      "runtimeModelAndEffort": "requested; runtime not echoed",
+      "initialReportSha256": "04aa75149c64b345830444539714c75df688b7b3413346f505361f5cebfc9bff",
+      "targetedRereviewSha256": "561065c475458608acbb18da436846bb4c013a26eb200b650a38437b5873943d",
+      "initialPassed": 103,
+      "targetedPassed": 82,
+      "blocking": 0
+    },
+    "browser": {
+      "date": "2026-10-12",
+      "url": "http://127.0.0.1:4794/",
+      "project": "UIQA 工作区回归 2026-10-12",
+      "status": "pass",
+      "checks": [
+        "New-file and discard use page Modal, no native prompt.",
+        "../outside.md refused with inline error; original content retained.",
+        "Both discard cancellation and second path-window cancellation preserve the draft.",
+        "Confirming then cancelling project creation preserves the draft.",
+        "Project-management open from hidden workspace shows discard above the manager; cancelling retains manager and draft.",
+        "Before correction, notes/new.md. cleared the unsaved QA draft; after correction the same path stays in its input window, shows an error and preserves the draft.",
+        "Before correction, 390x844 mobile navigation covers Cancel; after correction its center hit-test reaches Cancel. Cancelling returns focus to visible Open Navigation button, aria-expanded=false, and preserves the hidden workspace draft.",
+        "Created notes/dialog-uiqa-20261012.md, saved public test content, file tree updated, reload reopened all content.",
+        "Confirmed switch to existing v2g without writing its files, returned to QA project: saved test file intact and deliberately discarded temporary draft absent.",
+        "Temporary viewport reset; no outstanding unsaved test draft."
+      ],
+      "evidence": [
+        "invalid-path-preserves-draft.jpg",
+        "mobile-confirm-verified.jpg",
+        "new-file-reopened.jpg"
+      ],
+      "limitations": [
+        "One initial rapid reload/edit attempt overlapped startup before a file was selected; the operation was repeated after README.md loaded. No claim of a successful write is based on that timed-out click.",
+        "Network failure and race branches were checked in automated tests, not injected into the live service.",
+        "Browser beforeunload remains intentionally native and was retained by source/automated checks; no deliberate reload of a dirty live page was attempted."
+      ]
+    }
+  },
+  "limitations": [
+    "24 skipped full-suite tests are not counted as passes.",
+    "After the initial full run, necessary W1/W2 corrections received affected regression, independent targeted review, clean build and Chrome, rather than another unchanged full-suite run.",
+    "Original unrelated WIP and model-delete changes are excluded from this batch."
+  ]
+}

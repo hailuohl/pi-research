@@ -1,0 +1,271 @@
+{
+  "batch": "native-manual-review",
+  "parentCommit": "2750e0184715df8beb04380577ef943159f2667b",
+  "snapshot": {
+    "baseline": "fb4aa6deb3e2c8656fce8b9fc154b5a745f76110",
+    "candidate": ".validation/native-dialogs-20261012/manual-review/verified-source",
+    "parentModelFiles": [
+      {
+        "path": "apps/web/src/model-management-view.tsx",
+        "sha256": "580d3caa72b742c8f2d1c3f4fae1521e1436ee9441cc325c0095f6cf17431dc2"
+      },
+      {
+        "path": "tests/unit/settings-management-ui.test.mjs",
+        "sha256": "8f34cedc7184f424dea64ffd630fb41f0de293b70c1cf585692da08f8f595f68"
+      },
+      {
+        "path": "tests/unit/model-delete-dialog-ui.test.mjs",
+        "sha256": "37f76005ad51b4ff151271f4217dbe0ee0ed8f1f01fd488c886c168cd991560b"
+      }
+    ],
+    "files": [
+      {
+        "path": "apps/web/src/workbench.tsx",
+        "candidateSha256": "7951f7356772ffee5da4eef25d866ef5300701068313f79ed22aa84b6922836d",
+        "liveSha256": "8c2afa472e6ebbe4a096f884950bdfff497242d6236191acc2ffa446cce25b73"
+      },
+      {
+        "path": "tests/unit/manual-review-dialog-ui.test.mjs",
+        "candidateSha256": "1274cde8340db830d9f2e0c662aa7292424b0fabfd08fa33860cfe7602b51dbf",
+        "liveSha256": "1274cde8340db830d9f2e0c662aa7292424b0fabfd08fa33860cfe7602b51dbf"
+      }
+    ],
+    "retainedOutcomeSha256": "27a64fcff21c02d5b184f7e72d30528d1fc00cf01d89e6e794b762f65019073a",
+    "frozen": true
+  },
+  "checks": {
+    "fullRegression": {
+      "command": "npm run test:core",
+      "total": 1857,
+      "passed": 1833,
+      "failed": 0,
+      "skipped": 24,
+      "exitCode": 0,
+      "logSha256": "e2b10d45f8cf6376c92401712f1f9ed2d2691f37c9de191f399d49b2f563e406"
+    },
+    "cleanBuild": {
+      "node": "24.19.0",
+      "platform": "win32",
+      "lockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 661,
+      "distManifestSha256": "62b80396de84237fd8bbe62900261334ed8df483471f34f44ab61ac71b523ff3"
+    },
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "verification": "requested; runtime not echoed",
+      "repairReportSha256": "69c6f5b511ff8817bba60327c1318743b55361cc0defcbe3374aabb80873ce52",
+      "appSseReportSha256": "7b8fbb4983009c01e86295454be6aaa799cf8425c24a0a58157da92529503623",
+      "relatedPassed": 16,
+      "blocking": 0
+    },
+    "chrome": {
+      "backendValidation": false,
+      "kind": "Real component, in-memory API, CSP connect-src none",
+      "cases": [
+        {
+          "flow": "manual",
+          "case": "blank/newline/success",
+          "requests": [
+            {
+              "number": 1,
+              "path": "/tasks/qa-task/manual-review",
+              "method": "POST",
+              "body": {
+                "verdict": "accepted",
+                "reason": "公开测试理由第一行\n公开测试理由第二行",
+                "expectedVersion": 7
+              },
+              "mode": "success",
+              "valid": true,
+              "result": "mock success",
+              "receipt": {
+                "id": "qa-task",
+                "projectId": "qa-project",
+                "teamId": "qa-team",
+                "version": 8,
+                "key": "public-fixture",
+                "objective": "检查公开测试夹具的两行理由",
+                "role": "researcher",
+                "execution": "output_submitted",
+                "acceptance": "accepted",
+                "dependencies": [],
+                "result": {
+                  "outcome": "completed",
+                  "summary": "公开夹具结果",
+                  "evidenceIds": []
+                }
+              }
+            }
+          ],
+          "requestCount": 1,
+          "skipped": 0,
+          "parentForm": {
+            "draft": "底层公开草稿（弹框操作后应保持）",
+            "submits": 0,
+            "escapes": 0
+          },
+          "task": {
+            "id": "qa-task",
+            "projectId": "qa-project",
+            "teamId": "qa-team",
+            "version": 8,
+            "key": "public-fixture",
+            "objective": "检查公开测试夹具的两行理由",
+            "role": "researcher",
+            "execution": "output_submitted",
+            "acceptance": "accepted",
+            "dependencies": [],
+            "result": {
+              "outcome": "completed",
+              "summary": "公开夹具结果",
+              "evidenceIds": []
+            }
+          }
+        },
+        {
+          "flow": "manual",
+          "case": "409 失败（模拟）",
+          "requests": [
+            {
+              "number": 1,
+              "path": "/tasks/qa-task/manual-review",
+              "method": "POST",
+              "body": {
+                "verdict": "accepted",
+                "reason": "公开测试理由第一行\n公开测试理由第二行",
+                "expectedVersion": 7
+              },
+              "mode": "conflict",
+              "valid": true,
+              "result": "mock 409"
+            }
+          ],
+          "requestCount": 1,
+          "skipped": 0,
+          "parentForm": {
+            "draft": "底层公开草稿（弹框操作后应保持）",
+            "submits": 0,
+            "escapes": 0
+          },
+          "task": {
+            "id": "qa-task",
+            "projectId": "qa-project",
+            "teamId": "qa-team",
+            "version": 7,
+            "key": "public-fixture",
+            "objective": "检查公开测试夹具的两行理由",
+            "role": "researcher",
+            "execution": "output_submitted",
+            "acceptance": "pending",
+            "dependencies": [],
+            "result": {
+              "outcome": "completed",
+              "summary": "公开夹具结果",
+              "evidenceIds": []
+            }
+          }
+        },
+        {
+          "flow": "manual",
+          "case": "网络失败（模拟）",
+          "requests": [
+            {
+              "number": 1,
+              "path": "/tasks/qa-task/manual-review",
+              "method": "POST",
+              "body": {
+                "verdict": "accepted",
+                "reason": "公开测试理由第一行\n公开测试理由第二行",
+                "expectedVersion": 7
+              },
+              "mode": "network",
+              "valid": true,
+              "result": "mock network error"
+            }
+          ],
+          "requestCount": 1,
+          "skipped": 0,
+          "parentForm": {
+            "draft": "底层公开草稿（弹框操作后应保持）",
+            "submits": 0,
+            "escapes": 0
+          },
+          "task": {
+            "id": "qa-task",
+            "projectId": "qa-project",
+            "teamId": "qa-team",
+            "version": 7,
+            "key": "public-fixture",
+            "objective": "检查公开测试夹具的两行理由",
+            "role": "researcher",
+            "execution": "output_submitted",
+            "acceptance": "pending",
+            "dependencies": [],
+            "result": {
+              "outcome": "completed",
+              "summary": "公开夹具结果",
+              "evidenceIds": []
+            }
+          }
+        },
+        {
+          "flow": "manual",
+          "case": "父 perform 忙，未执行 fn",
+          "requests": [],
+          "requestCount": 0,
+          "skipped": 1,
+          "parentForm": {
+            "draft": "底层公开草稿（弹框操作后应保持）",
+            "submits": 0,
+            "escapes": 0
+          },
+          "task": {
+            "id": "qa-task",
+            "projectId": "qa-project",
+            "teamId": "qa-team",
+            "version": 7,
+            "key": "public-fixture",
+            "objective": "检查公开测试夹具的两行理由",
+            "role": "researcher",
+            "execution": "output_submitted",
+            "acceptance": "pending",
+            "dependencies": [],
+            "result": {
+              "outcome": "completed",
+              "summary": "公开夹具结果",
+              "evidenceIds": []
+            }
+          }
+        }
+      ],
+      "realPageReadOnly": [
+        "Manual review dialog opened in current research task without submitting a verdict.",
+        "Blank submit disabled, maxLength 4000, no native dialog.",
+        "Escape closed and returned focus."
+      ],
+      "sourceCompatibility": "Harness contains the same Inspector and Modal implementation; later OutcomeReview changes do not alter Inspector."
+    }
+  },
+  "limits": [
+    "No real research task was accepted or team resumed.",
+    "24 skipped tests are not passes.",
+    "Original OutcomeReview WIP and unrelated styles/docs are excluded.",
+    "Forced external-host props updates before HTTP are not supported as a new contract; actual App quiet refresh/read-epoch barrier was independently checked."
+  ]
+}

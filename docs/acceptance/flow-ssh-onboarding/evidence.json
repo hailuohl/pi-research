@@ -1,0 +1,53 @@
+{
+  "baseline": "3ba320e53f69a30eb4edfb287a0aafe7f3fc3d94",
+  "sourceManifestSha256": "575E3B99FF321C1AB0348A6838D198F79773D97EF5ABE0288C7F735C0A3C50C6",
+  "coreV1": {
+    "failed": 0,
+    "passed": 1270,
+    "skipped": 24,
+    "total": 1294
+  },
+  "affectedV2": {
+    "failed": 0,
+    "passed": 43,
+    "skipped": 1,
+    "total": 44
+  },
+  "cleanBuild": {
+    "identical": true,
+    "passed": true,
+    "log": ".validation/ssh-onboarding/clean-build-v2.txt"
+  },
+  "parity": {
+    "preexistingMissingEvidence": "skills/openresearch/manifest.json",
+    "passed": 3,
+    "failed": 1
+  },
+  "loopback": {
+    "fingerprintMatched": true,
+    "noInstallBeforeConfirmation": true,
+    "wrongFingerprintRejected": true,
+    "helperDigestMatched": true,
+    "helperInstalledOnce": true,
+    "workspacePrivateReady": true,
+    "dockerMissingReported": true,
+    "realExternalHost": false,
+    "realDockerDaemonConnected": true,
+    "readOnlyPeriodicDoesNotInstall": true,
+    "profileReopened": true,
+    "absenceAssertedByDirectExitCode": true,
+    "noInstallAfterWrongFingerprint": true,
+    "freshDockerUnavailableClassified": true
+  },
+  "review": {
+    "runtimeEchoed": false,
+    "blockingFindingsAfterRepairs": 0,
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh"
+  },
+  "local": {
+    "historyIdsRetained": true,
+    "servicePid": 133708,
+    "url": "http://127.0.0.1:4794/"
+  }
+}

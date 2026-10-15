@@ -1,0 +1,84 @@
+import { object, text, integer, oneOf } from '../contracts/validation.js';
+import { ensure } from '../domain/errors.js';
+import { userOnly } from '../policy/permissions.js';
+import { digest } from '../storage/store.js';
+import { readModelState, applyModelConnection, connectionFetch, safeConnectionStream, modelNeedsCredential } from './model-connections.js';
+import { modelSdk, modelCatalog, probeBinding } from './model-management.js';
+const result = (r) => ({ coverage: 'minimal-availability', state: r.state, category: r.category, checkedAt: r.checkedAt, durationMs: r.durationMs, requests: r.requests, ...(r.httpStatus ? { httpStatus: r.httpStatus } : {}) });
+const classify = (status) => status === 401 || status === 403 ? 'authentication' : status === 404 ? 'model_not_found' : status === 429 ? 'rate_limit' : status && status >= 500 ? 'server' : status && status >= 400 ? 'invalid_request' : 'network';
+/** Owner-only bounded request journal; never creates a research session or stores model text. */
+export async function probeModel(c, actor, value, key) {
+    userOnly(actor);
+    const x = object(value);
+    ensure(Object.keys(x).every(k => ['expectedVersion', 'provider', 'model', 'kind', 'acknowledgedCost'].includes(k)) && x.acknowledgedCost === true, 'MODEL_TEST_ACK_REQUIRED', '测试需要用户明确确认一次请求及可能费用', 400);
+    const expected = integer(x.expectedVersion, 'expectedVersion', 0), provider = text(x.provider, 'provider', 100), kind = oneOf(x.kind, ['connection', 'model'], 'kind'), model = kind === 'model' ? text(x.model, 'model', 160) : undefined;
+    ensure(kind === 'model' || x.model === undefined, 'INVALID_INPUT', '连接测试不接受模型字段', 400);
+    text(key, 'Idempotency-Key', 200);
+    const id = digest({ scope: 'model-probe', key }), inputHash = digest(value), start = Date.now();
+    const prepared = c.store.transaction(() => { const old = c.store.maybe('model-probe', id); if (old) {
+        ensure(old.inputHash === inputHash, 'IDEMPOTENCY_CONFLICT', '测试幂等键不能改变参数');
+        return { old };
+    } const state = readModelState(c.dataDir); ensure(state.version === expected, 'VERSION_CONFLICT', '配置已变化，请刷新后重新测试'); const connection = state.connections.find(p => p.provider === provider); ensure(connection && !connection.controlOnly && !connection.deletedAt && connection.enabled !== false, 'MODEL_CONNECTION_REQUIRED', '需要已启用且保存的供应商连接'); ensure(!modelNeedsCredential(connection), 'MODEL_CREDENTIAL_REQUIRED', '从备份恢复的连接须先重新保存API Key'); const definition = connection.models?.find(m => m.model === model); ensure(!definition?.deletedAt && definition?.enabled !== false, 'MODEL_DISABLED', '模型已停用或删除'); const binding = probeBinding(connection, definition); c.store.create('model-probe', null, { provider, ...(model ? { model } : {}), kind, binding, inputHash, ownerPid: process.pid, state: 'running', category: 'unknown', checkedAt: new Date(start).toISOString(), durationMs: 0, requests: 0 }, id); return { connection, definition }; });
+    if (prepared.old) {
+        const p = readModelState(c.dataDir).connections.find(p => p.provider === provider), m = p?.models?.find(m => m.model === model);
+        return { ...result(prepared.old), state: p && !modelNeedsCredential(p) && prepared.old.binding === probeBinding(p, m) ? prepared.old.state === 'running' && prepared.old.ownerPid !== process.pid ? 'unknown' : prepared.old.state : 'stale' };
+    }
+    const { connection, definition } = prepared;
+    let httpStatus, requests = 0, category = 'unknown', passed = false, transportFailed = false;
+    const signal = AbortSignal.timeout(20000);
+    const once = async (input, init) => {
+        ensure(requests === 0, 'MODEL_TEST_REQUEST_LIMIT', '测试只允许一次请求');
+        c.store.transaction(() => { const current = readModelState(c.dataDir), p = current.connections.find(p => p.provider === provider), m = p?.models?.find(m => m.model === model), r = c.store.get('model-probe', id); ensure(current.version === expected && p && !p.deletedAt && p.enabled !== false && !modelNeedsCredential(p) && !m?.deletedAt && m?.enabled !== false && probeBinding(p, m) === r.binding, 'VERSION_CONFLICT', '配置在测试准备后变化，未发送请求'); c.store.update('model-probe', id, r.version, { requests: 1 }); requests = 1; });
+        const response = await fetch(input, { ...init, signal, redirect: 'error' }).catch(error => { transportFailed = true; throw error; });
+        httpStatus = response.status;
+        if (!response.body)
+            return response;
+        const reader = response.body.getReader();
+        let bytes = 0;
+        return new Response(new ReadableStream({ async pull(controller) { try {
+                const r = await reader.read().catch(error => { transportFailed = true; throw error; });
+                if (r.done) {
+                    controller.close();
+                    return;
+                }
+                bytes += r.value.byteLength;
+                ensure(bytes <= 256 * 1024, 'MODEL_TEST_RESPONSE_LIMIT', '测试响应超过256 KiB');
+                controller.enqueue(r.value);
+            }
+            catch (e) {
+                await reader.cancel().catch(() => { });
+                controller.error(e);
+            } }, async cancel() { await reader.cancel(); } }), { status: response.status, headers: response.headers });
+    };
+    try {
+        const fetcher = connectionFetch(once, connection.baseUrl);
+        if (kind === 'connection') {
+            const base = connection.baseUrl.replace(/\/$/, ''), url = base + (connection.api === 'anthropic-messages' && !base.endsWith('/v1') ? '/v1/models' : '/models');
+            const headers = connection.api === 'anthropic-messages' ? { 'x-api-key': connection.apiKey, 'anthropic-version': '2023-06-01' } : { authorization: 'Bearer ' + connection.apiKey };
+            const response = await fetcher(url, { headers, signal });
+            if (response.ok) {
+                const body = await response.json();
+                passed = !!body && typeof body === 'object' && Array.isArray(body.data);
+                category = passed ? 'success' : 'invalid_request';
+            }
+            else {
+                await response.body?.cancel();
+                category = response.status === 404 ? 'unsupported' : classify(response.status);
+            }
+        }
+        else {
+            const sdk = await modelSdk(c), source = await modelCatalog(c), runtime = await applyModelConnection(sdk, source, { provider, model: model, thinking: 'off' }, connection, connection.apiKey, null), chosen = runtime.getModel(provider, model);
+            ensure(chosen, 'MODEL_NOT_FOUND', '模型未配置');
+            const stream = safeConnectionStream(runtime.streamSimple(chosen, { messages: [{ role: 'user', content: 'Reply with OK.', timestamp: Date.now() }] }, { signal, fetch: fetcher, maxRetries: 0, maxTokens: Math.min(chosen.maxTokens, 32) }));
+            const message = await stream.result();
+            passed = !['error', 'aborted'].includes(message.stopReason);
+            category = passed ? 'success' : transportFailed || signal.aborted ? 'network' : httpStatus && httpStatus >= 400 ? classify(httpStatus) : 'invalid_request';
+        }
+    }
+    catch (error) {
+        category = error.code === 'VERSION_CONFLICT' ? 'invalid_request' : classify(httpStatus);
+    }
+    const final = { coverage: 'minimal-availability', state: passed ? 'passed' : 'failed', category, checkedAt: new Date().toISOString(), durationMs: Date.now() - start, requests, ...(httpStatus ? { httpStatus } : {}) };
+    return c.store.transaction(() => { const old = c.store.get('model-probe', id), state = readModelState(c.dataDir), latest = state.connections.find(p => p.provider === provider), latestDefinition = latest?.models?.find(m => m.model === model), visible = { ...final, state: state.version === expected && latest && old.binding === probeBinding(latest, latestDefinition) ? final.state : 'stale' }; c.store.update('model-probe', id, old.version, visible); return visible; });
+}
+//# sourceMappingURL=model-probe.js.map

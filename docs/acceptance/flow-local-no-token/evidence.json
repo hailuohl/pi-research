@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-02",
+  "scope": "local HTTP, CLI and workbench without access token",
+  "boundary": {
+    "listen": "127.0.0.1",
+    "hostWhitelist": true,
+    "originCheck": true,
+    "crossSiteFetchMetadataRejected": true,
+    "approvalAndAgentPermissionsUnchanged": true
+  },
+  "tokenLifecycle": {
+    "newTokenCreated": false,
+    "legacyShortTokenPreserved": true,
+    "legacyBackupExclusionPreserved": true,
+    "supplierCredentialsUnchanged": true
+  },
+  "browser": {
+    "newTabPlainUrl": "http://127.0.0.1:4794/",
+    "tokenLoginPresent": false,
+    "projectCount": 2,
+    "visibleErrors": 0,
+    "legacyHashResult": "#tab=reports"
+  },
+  "tests": {
+    "focusedBeforeCli": 44,
+    "focusedAfterCli": 34,
+    "repairScope": 15,
+    "failuresAfterRepair": 0,
+    "fullRegression": {
+      "total": 894,
+      "passedBeforeOldAssertionUpdate": 870,
+      "skipped": 23,
+      "oldExpectationFailures": 1,
+      "description": "The historical catalog expected 401; updated to local 200 while retaining connector/history/path isolation assertions. Only affected checks repeated."
+    }
+  },
+  "cleanBuild": {
+    "files": 474,
+    "identical": true,
+    "node": "24.19.0"
+  },
+  "independentReview": {
+    "model": "gpt-6-astra",
+    "finalBlockingFindings": 0,
+    "correctedFinding": "CLI request still read access.token; removed and covered by an actual asynchronous CLI request test."
+  },
+  "runtime": {
+    "updatedPreviewPort": 4794,
+    "activeWorkBeforeUpdate": 0,
+    "otherControllersRestarted": false
+  },
+  "rawEvidence": ".validation/no-local-token/"
+}

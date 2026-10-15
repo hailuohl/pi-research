@@ -1,0 +1,564 @@
+{
+  "capturedAt": "2026-09-28T20:09:38.342Z",
+  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+  "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+  "reportId": "c4cd8310-261a-4b5e-9962-7c4115752778",
+  "reportDigest": "98f6f0eacdcf3f64962544073c6f574699d22d8726900bcd943fc6315023294a",
+  "inspection": {
+    "id": "c4cd8310-261a-4b5e-9962-7c4115752778",
+    "artifactId": "f61b4bdd-0c82-4ee3-82de-6346ceb5139a",
+    "title": "真实 Pi 技术文稿与固定回归结果",
+    "formatVersion": 1,
+    "integrity": "verified",
+    "validity": "current",
+    "reasons": [],
+    "references": [
+      {
+        "type": "artifact",
+        "targetId": "48aea818-3b7c-465b-90d6-943a459ed371",
+        "label": "manuscript-manifest.json",
+        "digest": "1072e6b83072d63c00fb4d6b51595ebc86f7da8c5970e2b369ae56a6a8bba554",
+        "id": "eb0977d2d52de086b95f1329c2e90b3934334205cfabfc49d10c093ee6bf2fb8"
+      },
+      {
+        "type": "artifact",
+        "targetId": "80ad6315-aa0c-4fa6-991d-b279bc67451a",
+        "label": "main.tex",
+        "digest": "342c4b0627506756e8949ecef70aeab56032da51fc30afa19c17e7285126fe36",
+        "id": "809f76e32af460f4f0e276f6c7b3eb7c19da289abf1cc4b778106a113f12e9a2"
+      },
+      {
+        "type": "artifact",
+        "targetId": "84411932-b54b-4398-be59-68fbd73386f6",
+        "label": "predictions.csv",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "id": "8cf7c4bfc2bc51b8fb4668a9b0d8b670cecc93c593df12a61a4c972ba553c6e4"
+      },
+      {
+        "type": "artifact",
+        "targetId": "258f30bf-5a06-414f-a482-ea949c6287fc",
+        "label": "build.json",
+        "digest": "803b24743ee3e13f05c18078fefcc27fafd5bc4265e82aa0cad20af2cb08f8f5",
+        "id": "9f109e92e6819993dff4c0f94b42e7b29b59ec3eb69794bb7c4e589352e943e6"
+      },
+      {
+        "type": "artifact",
+        "targetId": "335aa573-ea16-42a3-b634-cb7057512b99",
+        "label": "build.log",
+        "digest": "b46886b2f0c078756a6258104a20fa9301d6853d0c1b552669b54268b5c06955",
+        "id": "a7ce391390de1e00c55331dd175d300115ec8bfe7b2845f151f2208027785490"
+      },
+      {
+        "type": "artifact",
+        "targetId": "c34d793c-28c4-4cde-8702-63dfb5b24b8d",
+        "label": "page-001.png",
+        "digest": "9acb70f078fee27b5ea5444bd9709041eb4bd568be02e81479420265470e20d1",
+        "id": "50bcc5ad60d4f89dfd2bb5d3f993596a428900b1abd664d3ab600b85aca4ced7"
+      },
+      {
+        "type": "artifact",
+        "targetId": "1375174f-9293-46b2-a3fb-99d07867cff3",
+        "label": "page-002.png",
+        "digest": "e7e2a4cf46e134675aff38fbf7ac9c289e9f826522f98ed5348258c3885e0e81",
+        "id": "91d7a082f522beadd6dbc49c7cb4fb8dd57b97ca78d91c6d3381ea06632c49c5"
+      },
+      {
+        "type": "artifact",
+        "targetId": "b1abc3d9-704d-407f-83c7-2d2335bc5760",
+        "label": "page-003.png",
+        "digest": "8201083b27ec32f682105d6ccef130a9584d6e0b13f2a9be8767b9aeeed955ac",
+        "id": "4dee912797bcd6ea563f2a18e682d1b39cbf157400a7ce7bfd1ff45405a02c3e"
+      },
+      {
+        "type": "artifact",
+        "targetId": "9dd71230-2951-4723-8b98-1d6b3a009651",
+        "label": "document.pdf",
+        "digest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+        "id": "45be48e7217bf3441a3bbf2a36171fc9d5480db9fe8eb011a845345f04193b8e"
+      },
+      {
+        "type": "publication",
+        "targetId": "d0d59f0e5f5d6a9a8d3319821f9d0f7ba06046c0b510c30405def847d8e73700",
+        "label": "固定二次回归技术报告·Pi 修订稿",
+        "digest": "c2b2a448d8fef6c46c6f2c550e5817ab8aa6d34a6f1fe9e0c7e82eb7d068b8f7",
+        "id": "45b4cc81186fbb2c543d22b09ebf8955f68ae3726e44e8449995a8b89667a9fa"
+      },
+      {
+        "type": "figure-source",
+        "targetId": "4d04072b-ba5e-4890-b005-02c24df684de",
+        "path": "main.tex",
+        "label": "文稿文件来源：main.tex",
+        "digest": "342c4b0627506756e8949ecef70aeab56032da51fc30afa19c17e7285126fe36",
+        "id": "9ddb8ed57af4769169d2001b6c2aba9da3980f3df1eb74db2fe2d888b08785b7"
+      },
+      {
+        "type": "figure-source",
+        "targetId": "4d04072b-ba5e-4890-b005-02c24df684de",
+        "path": "predictions.csv",
+        "label": "文稿文件来源：predictions.csv",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "id": "a114eb8bed15f05bae09d113a87caf176df6580698c1aa96e947b0abffca5153"
+      },
+      {
+        "type": "run",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "label": "Run ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+        "id": "64a53514d128703de8f880b3ed105f6c542aec76227629a9c53efd3ddaf60f97"
+      },
+      {
+        "type": "artifact",
+        "targetId": "c635e6b8-be64-4f85-a2a8-8d25ea9d8471",
+        "label": "metrics.json",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "d15bc211d75cf880de400374bf308c15daeab8e55be5f618a4f03069be12ad00"
+      },
+      {
+        "type": "artifact",
+        "targetId": "9655e139-97dd-484f-8f68-1b7dd8d4435e",
+        "label": "model.json",
+        "digest": "80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "1c750c3fb5ed9a1556e98a5785fa42d6e6d6a6100f5caef8d51f9c3fe05ce1f8"
+      },
+      {
+        "type": "artifact",
+        "targetId": "84411932-b54b-4398-be59-68fbd73386f6",
+        "label": "predictions.csv",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "40c6aba13e6264a548bf19e91a6b14b58b004db5473d308b0d3cf54f1d36f56c"
+      },
+      {
+        "type": "artifact",
+        "targetId": "5e83a064-dfcb-4776-bb40-940bfd27a201",
+        "label": "stdout.log",
+        "digest": "7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "21cb2a21ffd27b283318d7fc830fe671c59ff37e0b3d15aaa64b7bb3d8fa9132"
+      },
+      {
+        "type": "artifact",
+        "targetId": "6cd2b1a3-6f76-4fe4-b935-5687c85bf79a",
+        "label": "stderr.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "f7dbafa59f308a367a2f5268fcc7552ff4055e35c58fa840472a2b74f48cb700"
+      },
+      {
+        "type": "artifact",
+        "targetId": "8b9e594c-ca81-4bfb-91c5-7381289335a1",
+        "label": "execution.json",
+        "digest": "4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "145a2c4b543cfe85399d7b5e61ab16ea34b1aafb969f3439728061b24f2b4a4d"
+      },
+      {
+        "type": "evidence",
+        "targetId": "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+        "label": "真实运行输出指标（解释仍需审核）",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "config.json",
+        "digest": "f91a8e608c044d16c872ce4c75f0709407ab63ea5e0aba9452c81ee9353c8f33",
+        "label": "config.json",
+        "relation": "exact",
+        "id": "6e27f5ab6ec2a3c39f587bd517548fa96289a4a0675dacd2ed9605f3f67433ed"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "data.csv",
+        "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+        "label": "data.csv",
+        "relation": "exact",
+        "id": "abefe8e969aed717a17a472bcbf4a425bd32bd64ce1b6d6552a5bd31e841c9fa"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "main.py",
+        "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+        "label": "main.py",
+        "relation": "exact",
+        "id": "602e97a6c77279689f7742483d3860ed683e5bf048641d43fa28e482505e92f9"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "README.md",
+        "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+        "label": "README.md",
+        "relation": "exact",
+        "id": "60f9f6ac7bacb85271b10612337cfabf04d968c2d860add2d19b416045a98bd9"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "test_main.py",
+        "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+        "label": "test_main.py",
+        "relation": "exact",
+        "id": "65720765cf3e62af89830771991776ac39e62707da667222e00632fb540299f5"
+      },
+      {
+        "type": "development-job",
+        "targetId": "074803b8-5d7c-4892-b78d-725db988e7d7",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5",
+        "relation": "exact",
+        "label": "该源码版本的开发测试",
+        "id": "4f5b088b8909139c7ecc3d304150f5e73563b65e816a0992b64fc84dbbe2360b"
+      },
+      {
+        "type": "artifact",
+        "targetId": "f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a",
+        "label": "stdout.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "id": "4a2d8eca3e979900287da3c127dc9bf4e4d182812ecba24e26a013cb2d2894fe"
+      },
+      {
+        "type": "artifact",
+        "targetId": "6a31fde5-077a-4437-b750-89aea3bfff10",
+        "label": "stderr.log",
+        "digest": "50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+        "id": "ee7153b3bc26526b8cf22e40d68f6b2c9c5e94b56f476c2674846952bc697ea3"
+      },
+      {
+        "type": "artifact",
+        "targetId": "d0c4e3d0-e6ff-4ad2-b32c-75d017304786",
+        "label": "test-report.json",
+        "digest": "6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+        "id": "cc74e4d710e578cf6fb436b3167f21094235a92e998bda076e9bdb289627aaaa"
+      },
+      {
+        "type": "development-review",
+        "targetId": "4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc",
+        "relation": "exact",
+        "label": "该源码版本的独立审查",
+        "id": "09ab325da5d58c6fa73253513f9bbe5757fe59045761fb3cbea67f0494c6a56b"
+      },
+      {
+        "type": "artifact",
+        "targetId": "ecfc93f7-2f82-4b0d-82f9-fe950676456c",
+        "label": "development-review-manifest.json",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "id": "bc11213e3038d37d8341f54ea5807336736cba83cf36d758907fab60e0b719b0"
+      },
+      {
+        "type": "evidence",
+        "targetId": "235c2f4a-4760-45e7-b15c-1e9a03443c4f",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "id": "a05105db4eb5c14d8fc6cbc6ab7ea926694da4769da9a2e4a2fdefce19544b04"
+      },
+      {
+        "type": "artifact",
+        "targetId": "1bd1306d-f6da-4a44-987a-6b1d746c65e0",
+        "label": "development-review-test-report.json",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "id": "cafd1a8154f1e063dd1f44b4840d2c9851f9951b078016d32b2d416899fcb3cc"
+      },
+      {
+        "type": "evidence",
+        "targetId": "1ca8106b-789a-411f-8663-0b8a4649db92",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "id": "8f62c9500f47669ab8f2dea81a24a4f830582391511346b7a7dd425457a7dedc"
+      },
+      {
+        "type": "artifact",
+        "targetId": "ce9238fc-aa03-4350-8ada-64a7fd29e098",
+        "label": "development-review-stdout.json",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "id": "43196cfe4de283fe22f957762556d256177d74e71ea8cb830af667d0f7a73fbf"
+      },
+      {
+        "type": "evidence",
+        "targetId": "51577370-5ff9-4375-9a72-3edf6d8123e8",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "id": "90efad6c66b338a5fdcbcde2a82f23db9545c3f3929d41c8489ac1955aa1a721"
+      },
+      {
+        "type": "artifact",
+        "targetId": "81d735f1-c612-42a1-9861-b0da17913835",
+        "label": "development-review-stderr.json",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "id": "3f0fbb957170eac7d9d589943d814808522add4fd51f8cae17b1cb91b4d5b814"
+      },
+      {
+        "type": "evidence",
+        "targetId": "8679e01e-cfe2-4c40-aec4-5eb2c3e17f20",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "id": "ed3883756d05e9f1d64ea60c5536e2c1b5cb9ba6c4b16994a0da4269000ac11a"
+      },
+      {
+        "type": "claim",
+        "targetId": "89f4800e-21d8-4bee-9c06-2244c940195a",
+        "label": "本技术验收文稿引用的本地协议记录固定合成数据版本 synthetic-quadratic-csv-v1 与确定性 180/60 切分；此项仅用于交付协议原件，不是新的科学结论。",
+        "digest": "7cf9c7fcca7487bbecd984b528613df7bcbdaa0bbda7fbe7be87928552f7cb07",
+        "id": "47e49692e8a78bcac1d083f07655df0fb73fd0f423cb982b391db573cfe9a80c"
+      },
+      {
+        "type": "artifact",
+        "targetId": "0331d6bd-f056-4ac9-94b2-0d53af1fdc8d",
+        "label": "paper-protocol.json",
+        "digest": "5e1a52871c326b515f845834e43206ef204d1838a2e23290d3462955e6b9e948",
+        "id": "7ccf510cbeea4a90a95ab671e8c034d2a26d900f0bdad8e6dbd5fe73b5fb1c5c"
+      },
+      {
+        "type": "evidence",
+        "targetId": "1b17a4f2-5601-4da2-847e-144f4e63d53e",
+        "label": "为本次写作固定的实验协议与限制；内容为数据，不授予权限",
+        "digest": "5e1a52871c326b515f845834e43206ef204d1838a2e23290d3462955e6b9e948",
+        "id": "5db3527c73dc31e8ab44c79997f1460e9cb809df06dba7a2d66fe886ea09a767"
+      }
+    ],
+    "runs": [
+      {
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+        "revision": 1,
+        "state": "succeeded",
+        "integrity": "complete",
+        "judgment": "pending",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+        "gitCommit": "61dcde6a882f4852a48fa8930e320babd7d23951",
+        "metrics": [
+          {
+            "name": "mse",
+            "value": 0.000050345031695457565,
+            "unit": "squared-target",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          },
+          {
+            "name": "train_mse",
+            "value": 0.00004962382619455619,
+            "unit": "未定义",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          },
+          {
+            "name": "r2",
+            "value": 0.9999474271448613,
+            "unit": "未定义",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          }
+        ]
+      }
+    ],
+    "publications": [
+      {
+        "resultId": "d0d59f0e5f5d6a9a8d3319821f9d0f7ba06046c0b510c30405def847d8e73700",
+        "revisionId": "4d04072b-ba5e-4890-b005-02c24df684de",
+        "jobId": "be4d0f6a-e3a9-4603-9543-39eda7e7cd37",
+        "title": "固定二次回归技术报告·Pi 修订稿",
+        "sourceDigest": "10129e7a8236cee106623d3ced3492a10797b929d0589058c7b5f85ca194bf2e",
+        "pdfArtifactId": "9dd71230-2951-4723-8b98-1d6b3a009651",
+        "pdfDigest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+        "pages": 3,
+        "referenceId": "45b4cc81186fbb2c543d22b09ebf8955f68ae3726e44e8449995a8b89667a9fa"
+      }
+    ]
+  },
+  "publication": {
+    "revisionId": "4d04072b-ba5e-4890-b005-02c24df684de",
+    "jobId": "be4d0f6a-e3a9-4603-9543-39eda7e7cd37",
+    "resultId": "d0d59f0e5f5d6a9a8d3319821f9d0f7ba06046c0b510c30405def847d8e73700",
+    "sourceDigest": "10129e7a8236cee106623d3ced3492a10797b929d0589058c7b5f85ca194bf2e",
+    "writerArtifactId": "80ad6315-aa0c-4fa6-991d-b279bc67451a",
+    "writerDigest": "342c4b0627506756e8949ecef70aeab56032da51fc30afa19c17e7285126fe36",
+    "state": "succeeded",
+    "integrity": "complete",
+    "passes": 2,
+    "hadErrors": false,
+    "converged": true,
+    "pdf": {
+      "artifactId": "9dd71230-2951-4723-8b98-1d6b3a009651",
+      "digest": "fef21efe899dd835edfce496b70f794592712239a8454da908bf2605c380e018",
+      "bytes": 130528,
+      "pages": 3
+    },
+    "diagnostics": [],
+    "sourceValidity": "current"
+  },
+  "archive": {
+    "artifactId": "24a4b8d4-1dc3-4232-b8f2-681c1c52dad9",
+    "digest": "ea6e5956a34d2a2d81e99359d64707cf6cd7b7a8b878607fa4cc7bb64a321905",
+    "bytes": 1285237,
+    "entries": 32,
+    "fixedFiles": 30
+  },
+  "protocol": {
+    "claimId": "89f4800e-21d8-4bee-9c06-2244c940195a",
+    "protocolEvidenceId": "1b17a4f2-5601-4da2-847e-144f4e63d53e",
+    "protocolArtifactId": "0331d6bd-f056-4ac9-94b2-0d53af1fdc8d",
+    "protocolDigest": "5e1a52871c326b515f845834e43206ef204d1838a2e23290d3462955e6b9e948",
+    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+    "publicationResultId": "d0d59f0e5f5d6a9a8d3319821f9d0f7ba06046c0b510c30405def847d8e73700",
+    "claimPurpose": "Metadata-only citation so the actual protocol bytes are included; not a new scientific conclusion"
+  },
+  "models": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "realTaskSessions": [
+      {
+        "id": "0d288cab-1c32-4eee-8ddd-d074d7b129ea",
+        "role": "writer",
+        "state": "failed",
+        "generation": 1,
+        "error": "模型请求已中止",
+        "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+        "usageRecords": 7
+      },
+      {
+        "id": "6bdd25ef-2c78-48d1-a14c-79eba5e56c76",
+        "role": "reviewer",
+        "state": "failed",
+        "generation": 1,
+        "error": "模型请求已中止",
+        "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+        "usageRecords": 6
+      },
+      {
+        "id": "2bdec317-22fe-475d-9d48-137951e64174",
+        "role": "writer",
+        "state": "failed",
+        "generation": 1,
+        "error": "模型请求已中止",
+        "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+        "usageRecords": 5
+      },
+      {
+        "id": "0d401e39-5bab-4557-ae5e-5c474dcc7487",
+        "role": "reviewer",
+        "state": "failed",
+        "generation": 1,
+        "error": "模型请求已中止",
+        "bundleId": "2a5141eda3efbe5934669fbc86fe95ad72e311c97303615d0d92dcfa78aa60cd",
+        "usageRecords": 6
+      }
+    ],
+    "usageRecordCount": 24,
+    "usageRecordIds": [
+      "6d6fd420-18ef-48e0-a5b9-f99ce3aa4880",
+      "b92712c4-0f35-4d71-b625-d243646757f5",
+      "2592a9b6-587e-45cc-9ead-71d98e2d4ddf",
+      "16a14f40-9d0f-4640-ba2f-c972044b32e8",
+      "3d0ce7b3-0e41-4e09-8382-833782837d9e",
+      "63393b1a-c015-4ca9-a3e3-dd90c594b262",
+      "4084a088-e088-40bb-9ffe-993c65965689",
+      "3a3f0ca8-df21-49d8-8cb7-72d13af19afc",
+      "9a5f0d45-2eac-4f7d-a830-6ccce57eff02",
+      "2630c4d2-99a0-480c-8ee9-02a13707417a",
+      "64deefd7-ba07-49b2-bd63-197702354dad",
+      "a223f107-f44c-47d6-90c2-4ed9e82985c2",
+      "ed95c6e9-bd38-4659-8d84-41330016e66a",
+      "2c3d5737-dc92-440c-b246-d29cd9381023",
+      "e3f168be-8b60-4ec4-ba0c-753d799f4c13",
+      "e3dbfec1-0d76-4dcd-916d-fb03c00282ce",
+      "70545e02-a506-46b8-a607-8f62e9b082ed",
+      "5b6ad4e7-fb8d-45d9-871a-61c5b2d5828e",
+      "667c77c5-93eb-4f0d-a52e-95a5df3a3fc3",
+      "4b8c63e0-f665-483c-ac1f-5666f1796276",
+      "d0b81983-8e99-4ea9-bb54-6da28d91c001",
+      "59fb6b4a-ea62-40d9-b64f-39723e71e385",
+      "cd676d82-84c3-4aab-9c7c-793096471ab9",
+      "913f266d-4e99-49b4-8c41-a74cb0b7249e"
+    ],
+    "note": "Usage records are SDK assistant-message observations, not a measured count of HTTP requests or billing charges"
+  },
+  "review": {
+    "first": {
+      "taskId": "626f1d07-6b21-4f32-ac18-962b492ae764",
+      "verdict": "disputed",
+      "summaryChars": 796,
+      "summaryIncomplete": true
+    },
+    "revised": {
+      "taskId": "2bd54327-afe1-4e8e-a3c1-6612b66247d1",
+      "verdict": "accept",
+      "resultDigest": "cbbf99247df7baa763b980f67a3b7ab2ce656cb26b2fab7ef29e869b88fd436d",
+      "inputDigest": "052536be41b8f0c8e7138b620628c36bf72f71c129e6b036f3ff540ba9d65b1f",
+      "publicationResultId": "d0d59f0e5f5d6a9a8d3319821f9d0f7ba06046c0b510c30405def847d8e73700",
+      "independentSession": true,
+      "allRequiredEvidenceReadAndCited": true
+    },
+    "automaticReportBinding": false
+  },
+  "compatibility": {
+    "oldRecords": 173,
+    "unchangedRecords": 172,
+    "renewedWorkspaceLease": [
+      {
+        "kind": "workspace-lease",
+        "id": "ec625eff699088b6bcee6a22fc2ff19aea6ef107258400f33d4f5f549d4b2d57",
+        "beforeDigest": "386fbe64f805ad1fbad38994f92fb952b212d5aa6b2a6f9f31458bd2528b27d0",
+        "afterDigest": "6714686abbcb4f3716cc5fede08082e1790414d67d0b6374127b85c57be209fc",
+        "changedKeys": [
+          "generation",
+          "until",
+          "version",
+          "updatedAt"
+        ]
+      }
+    ],
+    "computeBudget": {
+      "beforeVersion": 3,
+      "afterVersion": 4,
+      "beforeMemoryMb": 512,
+      "afterMemoryMb": 1024,
+      "otherLimitsUnchanged": true,
+      "reason": "Explicit acceptance-copy change to admit the fixed 768 MiB compiler"
+    },
+    "originalDatabaseUnchanged": true,
+    "oldNativeFilesUnchanged": [
+      {
+        "sessionId": "5e82e677-f2e2-468d-9b69-b02f1b56cbd0",
+        "digest": "b546917e9f3b9dcffc3ec8817601a54cd6746d0756a425fd97980e37f9bd3756"
+      },
+      {
+        "sessionId": "7b7ef384-b639-4ba9-ae38-6dd32de63292",
+        "digest": "782bdad5dd7ae4652425d30dc3e96f1aec85e88f783ec5c924eb617ccca882ce"
+      }
+    ],
+    "oldReportValidity": "current",
+    "oldRunJudgment": "pending",
+    "newNumericalRuns": 0,
+    "originalRunIds": [
+      "44083f93-3c75-4501-ba8f-b5b131ef87a3",
+      "63b6e637-edc4-4df8-9394-ea7f6e54ec37",
+      "b4c239d1-62e0-4d61-8e18-9facfd326887",
+      "ca819399-1714-4aaa-b50e-ef1700b3991f"
+    ],
+    "currentRunIds": [
+      "44083f93-3c75-4501-ba8f-b5b131ef87a3",
+      "63b6e637-edc4-4df8-9394-ea7f6e54ec37",
+      "b4c239d1-62e0-4d61-8e18-9facfd326887",
+      "ca819399-1714-4aaa-b50e-ef1700b3991f"
+    ]
+  },
+  "checks": {
+    "allPackageBytesMatch": true,
+    "actualUnpack": true,
+    "httpCliAgreement": true,
+    "authenticatedArchiveDownloadExact": true,
+    "modelArtifactIdPreservedInRevision": true
+  },
+  "unpackedDirectory": ".validation/paper-result-unpacked-3JwRKI"
+}

@@ -1,0 +1,123 @@
+{
+  "scope": "isolated loopback SSH to Linux Docker; not external owned host or Slurm",
+  "projectId": "08d9f7a0-8a87-44fd-ad0a-f1aacb00c280",
+  "runId": "7cb63e83-bfa1-4af2-8c05-9340c8578798",
+  "intentId": "17641517-6cbb-41ec-87f2-ef6d034b93fc",
+  "approvalId": "4655bc52-f7bd-4596-a2b5-3fc166cc4948",
+  "unapprovedSubmitCode": "APPROVAL_REQUIRED",
+  "target": {
+    "id": "loopback-umask",
+    "version": 1,
+    "engineId": "8e48ff2e-f534-4179-b403-56f8187e4f79",
+    "protocolDigest": "a3a47f0974ddf6f666b7fa83f5f1931e59cb907a007f3ad5218ea32ce047e0bd",
+    "targetId": "ssh-1ee795d203599ea6e23027b7685bd3ac69fe5793ac7f00c5ac15303e864977aa"
+  },
+  "run": {
+    "state": "succeeded",
+    "integrity": "complete",
+    "exitCode": 0,
+    "metrics": {
+      "mean": 2
+    },
+    "manifestDigest": "962b974a4ecfc3f6f90cd16f1277895b0064dfea98c5195de85ee9cdb0c8ba04",
+    "sourceDigest": "176de990aee0e81833b8beeeadda6e6b9745965312b45798405236245d0bf440",
+    "sshHandle": "pi-ssh-7cb63e83-bfa1-4af2-8c05-9340c8578798",
+    "containerId": "bd6f9b67dcd979c3b18fad8cd60545f86539d638a7ca29d489789a337bfa5130",
+    "recoveryCount": 1
+  },
+  "nestedSource": [
+    {
+      "path": "pkg/.hidden/data.json",
+      "digest": "6ee6cfdc9555f69dd19bcd35373e6742dac54cc1aeee6037f800e2b93b6ba9d7",
+      "size": 19,
+      "mode": "100644"
+    },
+    {
+      "path": "pkg/.hidden/formal.py",
+      "digest": "134ff06838b9babd74a80c9fcd6ae00e7224928f0d22232c2786bb38e44ff0d3",
+      "size": 795,
+      "mode": "100644"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "93ddea53-d0b3-47aa-9ff2-5476d9d3687e",
+      "title": "start-events.txt",
+      "digest": "46210dddc66714c3d8d226711510cf8421774214016c508c72a833a05370f6b5",
+      "size": 6
+    },
+    {
+      "id": "398610ee-ff6a-436c-8d1b-aaf9f4cbbd6b",
+      "title": "metrics.json",
+      "digest": "e6ed0002cabe15a3394c892c60df5e6ff91dac274066f0fd145ecf2eb7ea95c5",
+      "size": 13
+    },
+    {
+      "id": "990c09e5-e696-48b3-b903-e4af6e86abba",
+      "title": "predictions.csv",
+      "digest": "69919732a6e8e30642a24da1ea6d1f0f6658a4f8b468599f4b8eb0f6657ee9ee",
+      "size": 29
+    },
+    {
+      "id": "78cd2e89-fbae-40a8-ad5d-b2599c4d8759",
+      "title": "stdout.log",
+      "digest": "fb478cba0633e7c1de1069dd16672f5ecf90a6eba5620a12d6929dbd60725e55",
+      "size": 39
+    },
+    {
+      "id": "19025f5c-6539-47a3-95a5-76c369fb487e",
+      "title": "stderr.log",
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "id": "9f172760-2ab3-432b-8026-546158768536",
+      "title": "execution.json",
+      "digest": "e894cb542e6e6725f68a3835fc236894ab68a30276c02b3b395d9bacb5f56752",
+      "size": 1469
+    }
+  ],
+  "startCount": 1,
+  "oldRunId": "e92fa959-97d7-49ef-b895-c789c1f685fa",
+  "oldRunUnchanged": true,
+  "oldArtifactsUnchanged": 6,
+  "oldTerminalStatusAfterProtocolUpgrade": "succeeded",
+  "controllerRestarted": true,
+  "controllerRestartPhase": "after-terminal",
+  "newRuns": 1,
+  "modelCalls": 0,
+  "remoteModes": {
+    "job": "700",
+    "source": "755",
+    "package": "755",
+    "hidden": "755",
+    "program": "444",
+    "data": "444",
+    "record": "600"
+  },
+  "remoteUmask": "0077",
+  "runtimeIsolation": {
+    "user": "65534:65534",
+    "network": "none",
+    "readonlyRootfs": true,
+    "privileged": false
+  },
+  "validation": {
+    "preFixLinuxFixture": "failed on nested 0700 directory",
+    "postFixLinuxFixture": "passed under umask 077",
+    "regression": {
+      "tests": 875,
+      "passed": 852,
+      "failed": 0,
+      "skipped": 23
+    },
+    "cleanBuild": {
+      "identical": true,
+      "files": 471,
+      "distManifestSha256": "f9d7210ab435a96ca3937c1a06f5e86bff4221708243aecd660d6ebf6aa8e1e6"
+    },
+    "independentReview": "Astra: initial terminal-history blocker fixed; focused recheck clear"
+  },
+  "hostReturnedStopped": true,
+  "externalSlurmLiveVerified": false
+}

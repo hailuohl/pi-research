@@ -1,0 +1,40 @@
+{
+  "flow": "versioned-pmc-jats-table-row-text",
+  "pmid": "34285670",
+  "pmcidVersion": "PMC8270360.1",
+  "newTaskId": "2353d0f7-c0fc-40ae-8268-e5978e536589",
+  "newDocumentVersionId": "05f034a6-751c-4e54-8829-d7a3635ba521",
+  "newTextProfile": "pmc-jats-text-v2",
+  "oldDocumentVersionId": "15054ad4-ec8e-4e51-8580-8572dce05d39",
+  "oldTextProfile": "legacy-v1-implicit",
+  "rawXmlSha256": "d4e447868dd7e9b025417ce862cba533744e63a9633003229cd72eb9f18adacf",
+  "rawXmlBytes": 136774,
+  "oldDerivedSha256": "f39e03083e69a1267ec369fd0eb5258d51cad902a42ce37dcfe8b077e0307341",
+  "newDerivedSha256": "f5559329cc4f7950623c21d4e3625e5414cd5bf861520c6b030273aee349082c",
+  "newDerivedBytes": 26790,
+  "tableCell": "Health, biomedicine, pharmacology",
+  "searchId": "0d6125675923183b631e5178435c83bbc548172e5f466f39147118bae7a6fad2",
+  "evidenceId": "0ca36671-86aa-42cd-800c-160200ab7497",
+  "quoteSha256": "906a31c1ff19f2eac299f90c31928b47b35aef3797c8fcc9a8a11945f3440a94",
+  "page": null,
+  "httpAttempts": 2,
+  "crossProjectCode": "SCOPE_DENIED",
+  "oldRowsUnchangedExcludingSettings": 54,
+  "oldReportAfterFix": "verified/current",
+  "firstAttemptFailureRetained": "PMC_SOURCE_INVALID",
+  "backupManifestSha256": "d567da37c9f898e0ffe6687d1ffc575262699ca6b97ab61f422184172b91bcef",
+  "newModelCalls": 0,
+  "newComputeJobs": 0,
+  "browser": {
+    "distinctDocumentIdsVisible": true,
+    "tableCellHitAndExactReturn": true,
+    "oldReportCurrentAfterRefresh": true,
+    "searchHistoryAfterRefresh": true
+  },
+  "checks": {
+    "fullRegressionBeforeNecessaryCompatibilityFix": { "passed": 837, "failed": 0, "skipped": 22 },
+    "finalCleanBuild": "passed",
+    "postFixFocused": { "passed": 50, "failed": 0 },
+    "independentReview": "no blocking finding"
+  }
+}

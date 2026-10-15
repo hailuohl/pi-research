@@ -1,0 +1,28 @@
+{
+  "referenceRepository": "alphaXiv/OpenResearch",
+  "referenceCommitFromUserDesign": "3037f727e80e0ab20c61a87c613a50dde009a835",
+  "upstreamAppExecuted": false,
+  "baselineScreenshotsCaptured": false,
+  "fullParityValidated": false,
+  "intentionalDeviations": [
+    "Pi is the sole Agent kernel",
+    "Owner-only loopback web server",
+    "Collaboration disabled by default",
+    "Trusted bundled example only for unsandboxed host execution",
+    "Independent workbench UI; no visual-clone claim"
+  ],
+  "sourceSpecs": [
+    {
+      "path": "docs/specs/project-design.txt",
+      "sha256": "d264982823165ecd8416971451ccce953d1dbecc4232a31d503bfd91d832416c"
+    },
+    {
+      "path": "docs/specs/multi-agent-design.md",
+      "sha256": "46b9670656c361837276d878cb0b100c4e235a716e0209a77fa13121030e6087"
+    }
+  ],
+  "piSdkReferenceVersion": "0.87.1",
+  "piSdkLiveVerified": false,
+  "workflowSourceReviewedAt": "2026-09-27",
+  "workflowSourceReview": "OPENRESEARCH-COMPARISON.md"
+}

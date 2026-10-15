@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620">
+<title>Anscombe quartet: four groups of eleven points</title>
+<rect width="100%" height="100%" fill="#f7f8fa"/>
+<g id="q1" data-group="1" data-point-count="11" transform="translate(0 0)">
+<rect x="8" y="6" width="464" height="296" rx="8" fill="#fff" stroke="#d7dee3"/>
+<text x="24" y="31" font-family="sans-serif" font-size="17" font-weight="700" fill="#18313f">Group 1</text>
+<path d="M 58 48 V 266 H 450" fill="none" stroke="#667782" stroke-width="1.2"/>
+<text x="254.0" y="294" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#43545e">x</text>
+<text x="31" y="157.0" text-anchor="middle" transform="rotate(-90 31 157.0)" font-family="sans-serif" font-size="12" fill="#43545e">y</text>
+<circle class="point" data-group="1" cx="214.80" cy="154.29" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="162.53" cy="178.94" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="293.20" cy="164.69" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="188.67" cy="136.87" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="240.93" cy="147.73" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="319.33" cy="110.87" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="110.27" cy="172.38" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="58.00" cy="239.77" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="267.07" cy="90.97" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="136.40" cy="227.10" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="1" cx="84.13" cy="207.66" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+</g>
+<g id="q2" data-group="2" data-point-count="11" transform="translate(480 0)">
+<rect x="8" y="6" width="464" height="296" rx="8" fill="#fff" stroke="#d7dee3"/>
+<text x="24" y="31" font-family="sans-serif" font-size="17" font-weight="700" fill="#18313f">Group 2</text>
+<path d="M 58 48 V 266 H 450" fill="none" stroke="#667782" stroke-width="1.2"/>
+<text x="254.0" y="294" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#43545e">x</text>
+<text x="31" y="157.0" text-anchor="middle" transform="rotate(-90 31 157.0)" font-family="sans-serif" font-size="12" fill="#43545e">y</text>
+<circle class="point" data-group="2" cx="214.80" cy="129.41" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="162.53" cy="152.02" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="293.20" cy="138.46" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="188.67" cy="137.78" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="240.93" cy="126.70" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="319.33" cy="152.93" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="110.27" cy="197.48" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="58.00" cy="266.00" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="267.07" cy="129.64" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="136.40" cy="171.93" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="2" cx="84.13" cy="228.91" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+</g>
+<g id="q3" data-group="3" data-point-count="11" transform="translate(0 310)">
+<rect x="8" y="6" width="464" height="296" rx="8" fill="#fff" stroke="#d7dee3"/>
+<text x="24" y="31" font-family="sans-serif" font-size="17" font-weight="700" fill="#18313f">Group 3</text>
+<path d="M 58 48 V 266 H 450" fill="none" stroke="#667782" stroke-width="1.2"/>
+<text x="254.0" y="294" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#43545e">x</text>
+<text x="31" y="157.0" text-anchor="middle" transform="rotate(-90 31 157.0)" font-family="sans-serif" font-size="12" fill="#43545e">y</text>
+<circle class="point" data-group="3" cx="214.80" cy="167.40" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="162.53" cy="183.01" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="293.20" cy="48.00" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="188.67" cy="175.32" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="240.93" cy="159.49" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="319.33" cy="136.20" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="110.27" cy="198.61" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="58.00" cy="214.21" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="267.07" cy="151.80" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="136.40" cy="190.92" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="3" cx="84.13" cy="206.52" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+</g>
+<g id="q4" data-group="4" data-point-count="11" transform="translate(480 310)">
+<rect x="8" y="6" width="464" height="296" rx="8" fill="#fff" stroke="#d7dee3"/>
+<text x="24" y="31" font-family="sans-serif" font-size="17" font-weight="700" fill="#18313f">Group 4</text>
+<path d="M 58 48 V 266 H 450" fill="none" stroke="#667782" stroke-width="1.2"/>
+<text x="254.0" y="294" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#43545e">x</text>
+<text x="31" y="157.0" text-anchor="middle" transform="rotate(-90 31 157.0)" font-family="sans-serif" font-size="12" fill="#43545e">y</text>
+<circle class="point" data-group="4" cx="162.53" cy="187.30" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="205.85" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="161.75" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="136.20" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="144.56" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="176.90" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="217.38" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="450.00" cy="53.43" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="210.37" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="157.23" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+<circle class="point" data-group="4" cx="162.53" cy="180.29" r="4.2" fill="#16728a" stroke="#fff" stroke-width="1.2"/>
+</g>
+</svg>

@@ -1,0 +1,122 @@
+{
+  "task": "UI-LIGHT-05",
+  "date": "2026-10-04",
+  "baselineCommit": "372bd3e4bb65e5c9bb53dff3c2df3b13eabc3f25",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "scope": "formal React frontend light skin integration,layout preserved",
+  "sourceHashes": {
+    "apps/web/public/index.html": "1c5ffac58f1cdb292b5e383570648ecc030d5cc31e84049faa83ff108d8d7773",
+    "apps/web/public/light-workbench.css": "62b333d74a2e83540d6e875d53ca20e56862fe82c47ea22dd51b4a4bd750db0d",
+    "apps/web/src/ui.tsx": "420002b0e1250a6a588ba33e9f66e8d9a684c197642b6a2c60087948207a31f1",
+    "apps/web/src/session-list.tsx": "ecdf1f14234ab25dea6dfaacb3647e87f198c72ba88b51df4d4e0c3ae766fc48",
+    "apps/web/src/session-history.tsx": "4c5621ced3bc69b377a188b35c80751d13966cc3e69bb0457789c64cbd2d58fb",
+    "apps/web/src/app.tsx": "c59f56d953a721dc141c5d126e6017537a39f520add2a6c3055517598b75baa6",
+    "apps/web/src/workbench.tsx": "6bc0c5d6d5efdfd365d728a0bc955cb699f14bcbdabc7ab163a5d607bc5ceba6"
+  },
+  "checks": {
+    "fullRegression": {
+      "tests": 1036,
+      "passed": 1006,
+      "failed": 7,
+      "skipped": 23,
+      "status": "first run;7 icon Fragment failures repaired"
+    },
+    "affectedUiRegression": {
+      "tests": 174,
+      "passed": 174,
+      "failed": 0,
+      "skipped": 0,
+      "status": "after physical rebuild,all unit *-ui test files"
+    },
+    "repair": "only29 icon group Fragment->SVGg, no test/helper/assertion changes; compositor font14 restores original box",
+    "cleanBuild": {
+      "node": "24.19.0",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "files": 507,
+      "identical": true,
+      "manifestSha256": "74cf8d506773fc8c1713a2141b1d3d9f45b479a21bbd499e7fe8fadbce54e349"
+    },
+    "browser": {
+      "actualCompiledApp": true,
+      "fixtureUrl": "http://127.0.0.1:4796/",
+      "model": "pinned Pi kernel with local fixed SSE;no external provider",
+      "sendAndReply": "passed",
+      "failedBadge": "visible26.03px height;metadata not clipped",
+      "keyboardRetryFocus": "reachable",
+      "archivedHistoryAndNoSend": "passed",
+      "sameSessionDraftAfterWorkspace": "passed",
+      "desktopPanelBaseline": "1280x720,1440x844,1024x844 match",
+      "composerBox": "1440x844:x313.33,y637.60,w747.33,h138.06",
+      "mobile390": "nav background inert,source218px,five logos loaded",
+      "consoleErrorsOrWarnings": 0,
+      "currentWorkbench": {
+        "url": "http://127.0.0.1:4794/",
+        "canvas": "#f7f7f8",
+        "primary": "#292d35",
+        "lastStylesheet": "/light-workbench.css"
+      },
+      "legacy4317": "token page/old assets;lightCSS404,not restarted or used as current build evidence"
+    }
+  },
+  "independentReview": {
+    "status": "passed,no blockers/new nonblocking issues",
+    "patch": ".validation/ui-light-2026-10-04/source-review.patch",
+    "patchSha256": "2DB168EED484D6B1819DBF5843A87A959A5E6BC40861FB9348A897E36630C5DA",
+    "checks": "7source hashes,source/dist correspondence,CSS cascade/geometry/status/accessibility,tests and clean manifest",
+    "browser": "not independently run;root owns GUI checks"
+  },
+  "notRun": [
+    "physical IME",
+    "screenreader/axe",
+    "external provider",
+    "Docker",
+    "unchanged full regression repeated after targeted repair"
+  ],
+  "preservedInFlight": {
+    "apps/web/public/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+    "dist/web/styles.css": "5683f58251601e8ea50ed3f110cc907133a29f557b368cd1e975176b42b348d2",
+    "docs/reference-baseline/OPENRESEARCH-COMPARISON.md": "57655c0f434da59c5e87377e2d615293498bd581e6c96e0b03206006aaf23afe",
+    "docs/reference-baseline/capability-matrix.json": "9d716565f9640cdfc5054c9467d46db8f63945a0a296c45b480b88d0019b5037",
+    "docs/specs/project-design.txt": "251e12b2201f1cbb87f497f5771f20d0011a20f73e2ec324ce613141e958a6f7"
+  },
+  "sourceOfHashes": "matched batch-start inventory; five files excluded from staging",
+  "logs": {
+    "full": ".validation/ui-light-2026-10-04/full-tests.log",
+    "affected": ".validation/ui-light-2026-10-04/affected-ui-tests.log",
+    "rebuild": ".validation/ui-light-2026-10-04/rebuild.log",
+    "clean": ".validation/clean-build-0rBDje/summary.json",
+    "geometry": ".validation/ui-light-2026-10-04/geometry.json"
+  },
+  "agents": [
+    {
+      "role": "implementation",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "high",
+      "runtime": "accepted/not echoed"
+    },
+    {
+      "role": "independent review",
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "high",
+      "runtime": "accepted/not echoed"
+    }
+  ],
+  "delivery": {
+    "repository": "https://github.com/hailuohl/pi-research",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "commitReference": "commit containing this evidence;root confirms SHA/remote in final delivery"
+  }
+}

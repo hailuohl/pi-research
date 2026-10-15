@@ -1,0 +1,71 @@
+{
+  "registryOperations": 101,
+  "fullRegression": {
+    "command": "npm run test:core",
+    "tests": 605,
+    "pass": 583,
+    "fail": 0,
+    "skipped": 22,
+    "durationMs": 177085.7371,
+    "log": ".validation/paper-writing-flow/regression.log",
+    "logSha256": "a1e243b1ffcc6ee6b87c95c7de694d85205bcf1579077fc908dcf2af6831522a",
+    "timing": "Before final publication digest wrapping display correction"
+  },
+  "finalDisplayCorrection": {
+    "command": "node --test tests/unit/publication-ui.test.mjs tests/unit/report-publication-ui.test.mjs tests/unit/paper-review-ui.test.mjs",
+    "tests": 22,
+    "pass": 22,
+    "fail": 0,
+    "skipped": 0,
+    "durationMs": 1117.1049
+  },
+  "related": {
+    "collaborationDevelopmentAudit": 29,
+    "independentPublicationAndVerdictUI": 15,
+    "independentCollaboration": 14
+  },
+  "cleanBuild": {
+    "source": ".validation/clean-build-Rs5Yjn/summary.json",
+    "sourceSha256": "22e031dd727dd45849ae7e3647ed91385b3ae2c861ce4098b3f010618c9fb9fb",
+    "node": "24.19.0",
+    "lockSha256": "c50e82528bda0350b504de14c794a1caaed22750611d88a331ae172bc21ea5cc",
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ],
+    "files": 371,
+    "identical": true,
+    "distManifestSha256": "2dcb843733981afcbfb45aa32844e8146c074bb9daf0e2308b9bd0990c567974",
+    "timing": "After final display correction"
+  },
+  "independentCodeReview": {
+    "readOnly": true,
+    "blockingFindingsRemaining": 0,
+    "scope": "Artifact authorization and full text validation, fixed source identity, path/conflict/late response handling, Reviewer verdict semantics and display",
+    "displayFixRechecked": true,
+    "paperContentNotCoveredByThisCodeReview": true
+  },
+  "actualModelValidation": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "taskSessions": 4,
+    "writerTasks": 2,
+    "reviewerTasks": 2,
+    "usageObservationRecords": 24,
+    "nativeSessionFailuresPreserved": 4,
+    "firstVerdict": "disputed",
+    "revisedVerdict": "accept"
+  },
+  "actualCompilerJobs": 2,
+  "newNumericalRuns": 0
+}

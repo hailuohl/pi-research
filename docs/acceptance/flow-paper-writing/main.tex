@@ -1,0 +1,104 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage{fontspec}
+\setmainfont{Noto Serif CJK SC}
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip=0pt plus 1pt
+\usepackage[margin=25mm]{geometry}
+\usepackage{amsmath,booktabs}
+\begin{document}
+
+\title{固定二次回归的可追溯软件验收流程：\ 固定 Run 的一次端到端技术报告}
+\author{Pi Research 写作助手}
+\date{2026年}
+\maketitle
+
+\begin{abstract}
+本文报告一次在 Pi Research 科研工作台中完成的固定二次多项式回归实验的软件工程验收流程，目的在于验证固定源码、固定执行合同与固定产物之间的可追溯性，而不是提出新的科学发现。实验使用固定合成数据集 \texttt{data.csv}（版本 \texttt{synthetic-}\allowbreak\texttt{quadratic-csv-v1}），共 240 行；按确定性切分协议 \texttt{deterministic-split-180-60-v1} 将前 180 行作为训练集、后 60 行作为测试集，拟合二阶多项式并输出指标、模型与预测产物。固定 Run（标识 \texttt{ca819399-1714-4aaa-}\allowbreak\texttt{b50e-ef1700b3991f}）报告测试集均方误差 $5.0345031695457565\times10^{-5}$、训练集均方误差 $4.962382619455619\times10^{-5}$、测试集 $R^2=0.9999474271448613$。该 Run 的科研判断（scientific judgment）状态仍为 pending；本文所有数值均逐字取自该固定 Run 的不可变产物原件。本修订的编排、构建与审查状态以系统后续固定记录为准；撰写时点本修订尚未经系统构建或独立审查，本文稿不预先声称任何构建或审查结论。
+\end{abstract}
+
+\section{问题与范围}
+
+本文要回答的问题是工程性而非科学性的：在 Pi Research 的固定运行机制下，从获准冻结的源码（\texttt{main.py}、\texttt{config.json}、\texttt{data.csv}、\texttt{test\_main.py}、\texttt{README.md}）出发，经固定容器合同执行后，能否得到一组内容确定、摘要可核对、指标可从原件逐字回溯的产物？据此，本文是一份软件验收（software acceptance）技术文稿：它验证的是流程的可追溯性，不构成对外部真实数据或任何自然规律的断言。
+
+数据与评价范围须明确界定：数据为合成数据，仅一个数据集版本（\texttt{synthetic-quadratic-csv-v1}），仅一个确定性切分（\texttt{deterministic-split-180-60-v1}），没有多随机种子重复、没有外部数据验证，也没有任何超出现有 Run 的测量。凡是本文未测量的性质，一律写明未测量。
+
+\section{方法}
+
+\subsection{固定源码与执行合同}
+
+本次验收针对固定 Run \texttt{ca819399-1714-4aaa-}\allowbreak\texttt{b50e-ef1700b3991f}，其源码清单由该 Run 的固定记录给出：源码总摘要（sourceDigest）\texttt{b8f9aaa5a47dd861e637e9c5405b81b8255ecde8}\allowbreak\texttt{83057f49bf6db0de98da1b80}，对应 Git 提交 \texttt{61dcde6a}（完整提交号见系统记录）。执行合同为 Docker 容器运行命令 \texttt{python main.py}，镜像为 \texttt{python@sha256:f77ac9e4...e51f}（完整摘要见协议原件），无网络访问，资源限制为 1 CPU、256\,MB 内存、60 秒超时。配置文件 \texttt{config.json} 全文为 \texttt{\{"polynomialDegree": 2\}}，即模型阶数固定为 2。
+
+\subsection{算法}
+
+固定 Run 中实际执行的 \texttt{main.py} 实现：读取 \texttt{data.csv} 的 $(x,y)$ 对；按行序取前 180 行为训练集 \(D_{\mathrm{train}}\)、后 60 行为测试集 \(D_{\mathrm{test}}\)；对给定阶数 \(d\) 构造正规方程
+\begin{equation}
+\sum_{(x,y)\in D_{\mathrm{train}}} \Bigl(\sum_{j=0}^{d} x^{i+j}\,\beta_j\Bigr) \;=\; \sum_{(x,y)\in D_{\mathrm{train}}} y\,x^{i}, \qquad i=0,\dots,d,
+\label{eq:normal}
+\end{equation}
+即矩阵形式 $A\beta=b$，其中 $A_{ij}=\sum_{(x,y)\in D_{\mathrm{train}}} x^{i+j}$、$b_i=\sum_{(x,y)\in D_{\mathrm{train}}} y\,x^{i}$（$i,j=0,\dots,d$），左端对未知系数 $\beta_j$ 显式求和 $j=0,\dots,d$；该表述与固定 \texttt{main.py} 中先对训练数据求和、再解线性方程组的实现逐条对应。方程组用带部分主元选取（partial pivoting）的 Gauss--Jordan 消元求解；当主元绝对值小于 $10^{-12}$ 时抛出奇异矩阵异常。预测函数为 $\hat y(x)=\sum_{i=0}^{d}\beta_i x^i$。测试集指标为
+\begin{equation}
+\mathrm{MSE} = \frac{1}{|D_{\mathrm{test}}|}\sum (\hat y - y)^2, \qquad
+R^2 = 1 - \frac{\sum (\hat y - y)^2}{\sum (y - \bar y)^2},
+\label{eq:metrics}
+\end{equation}
+其中 $\bar y$ 为测试集均值。运行结束时写出三个产物：\texttt{metrics.json}、\texttt{model.json} 与 \texttt{predictions.csv}。
+
+\section{结果}
+
+以下数值逐字取自固定 Run \texttt{ca819399-1714-4aaa-}\allowbreak\texttt{b50e-ef1700b3991f} 的不可变产物原件，未作四舍五入以外改写；本节不做任何超出原件的统计推断。
+
+拟合得到的模型参数（\texttt{model.json}，摘要 \texttt{80674682...2037}）为 $\beta_0=0.4998729432962087$、$\beta_1=1.4006018337068389$、$\beta_2=2.0004320863077187$，阶数为 2。
+
+指标（\texttt{metrics.json}，摘要 \texttt{1d94893e...a841}）见表~\ref{tab:metrics}。预测产物 \texttt{predictions.csv}（摘要 \texttt{5a54951e...ed547}）包含测试集 60 行的 \texttt{x}、\texttt{actual}、\texttt{predicted} 三列；作为抽样核对，其首行为 $x=0.050000000000000044$，实际值 $0.5686328523686484$，预测值 $0.57490411519732$；末行为 $x=-0.20833333333333337$，实际值 $0.29592522007178595$，预测值 $0.2949052039088342$。
+
+\begin{table}[htbp]
+\centering
+\caption{固定 Run 的指标原件数值（来源：\texttt{metrics.json}）}
+\label{tab:metrics}
+\begin{tabular}{lr}
+\toprule
+指标 & 数值（原件精度） \\
+\midrule
+测试集 MSE & $5.0345031695457565\times10^{-5}$ \\
+训练集 MSE & $4.962382619455619\times10^{-5}$ \\
+测试集 $R^2$ & $0.9999474271448613$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+系数接近但不等于任何"真值"（本验收未定义真值，合成数据的生成参数不在本 Run 产物内），因此对系数接近某些常数的解释只能作为候选观察，不属于已验证结论。
+
+\section{局限}
+
+\begin{itemize}
+\item 数据为固定合成数据集的一个版本，仅 240 行、单一确定性切分（前 180 训练、后 60 测试）；没有外部数据、多种子重复或置信区间。据此，本验收对外部有效性（external validity）未作评估：缺乏外部验证意味着其尚未被检验，而不是证明其不存在。
+\item 模型固定为二阶多项式；未与其它阶数或其它模型比较（该比较未在本次 Run 中测量）。
+\item 固定 Run 的科研判断（judgment）状态仍为 pending；本文不得也并不声称任何科学假设已获支持或验证。
+\item 本文稿撰写于该 Run 之后，本轮未重新训练、未重新运行、未测量任何新实验；所有历史测试信息（如开发测试日志）不在本文引用范围核心内，若引用历史审查不应沿用与日志流位置相反的摘要。
+\item 关于交付状态：前次文稿修订（revision \texttt{625cdab4-6426-4cc8-bcb5-}\allowbreak\texttt{8c8e186f6285}）已由系统构建出 3 页 PDF（构建记录以系统固定记录为准）。本修订为新的文稿修订，撰写时点尚未经系统构建、冻结或独立审查，其构建与审查结果以系统后续固定记录为准；本文不预称本修订已编译或已通过审查。
+\end{itemize}
+
+\section{可复现性}
+
+完整复现须在 Pi Research 工作台内按固定 Run 的记录进行，而不是依赖任何本地可变副本：
+\begin{enumerate}
+\item 固定 Run 标识：\texttt{ca819399-1714-4aaa-}\allowbreak\texttt{b50e-ef1700b3991f}。固定源码清单（五件，含摘要，摘要首尾各取 8 位、中间以省略号标注）：
+  \begin{itemize}
+  \item \texttt{main.py}（2617 字节，模式 100644）：\texttt{ace85cae0...2d8}
+  \item \texttt{config.json}（27 字节，模式 100644）：\texttt{f91a8e60...f33}
+  \item \texttt{data.csv}（8657 字节，模式 100644）：\texttt{6becb20c...b60}
+  \item \texttt{test\_main.py}（2308 字节，模式 100644）：\texttt{9e77d6b7...328f}
+  \item \texttt{README.md}（61 字节，模式 100644）：\texttt{20789f1d...e931c}
+  \end{itemize}
+  完整逐文件摘要以该 Run 的源码记录为准。
+\item 执行合同：协议 \texttt{paper-protocol.json}（摘要 \texttt{5e1a5287...e948}）记录的容器镜像摘要、命令、资源限制与预期产物清单。
+\item 产物核对：\texttt{metrics.json}、\texttt{model.json}、\texttt{predictions.csv} 三件产物的内容摘要已在上文给出，可与任何重放输出逐字节比对。
+\end{enumerate}
+本文的撰写依据是上述 Run 记录、产物原件与本地项目协议文件（作为真实项目内部参考），未引用任何外部文献；外部有效性或与新方法比较的问题超出本验收范围。
+
+\begin{thebibliography}{9}
+\bibitem{proto} Pi Research 项目内部文件 \texttt{paper-protocol.json}：《Pi Research 固定二次回归实验协议》，版本 synthetic-quadratic-csv-v1 / deterministic-split-180-60-v1。（本地项目参考，非外部出版物）
+\bibitem{run} 固定 Run 记录 \texttt{ca819399-1714-4aaa-}\allowbreak\texttt{b50e-ef1700b3991f} 的源码清单与不可变产物 \texttt{metrics.json}、\texttt{model.json}、\texttt{predictions.csv}。（系统内记录）
+\end{thebibliography}
+
+\end{document}

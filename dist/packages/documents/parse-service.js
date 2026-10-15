@@ -1,0 +1,288 @@
+import { assertDiscoveryDocument } from '../policy/discovery-grant-validation.js';
+import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, writeFileSync, readFileSync, chmodSync, readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { assertPublicationPng } from '../pi-adapter/publication-image.js';
+import { object, text, integer } from '../contracts/validation.js';
+import { ensure, DomainError } from '../domain/errors.js';
+import { userOnly, scope, interactiveCoordinator } from '../policy/permissions.js';
+import { assertProjectWritable } from '../policy/lifecycle.js';
+import { digest } from '../storage/store.js';
+import { snapshotDirectory, verifySnapshot, safePath } from '../workspace/files.js';
+import { readStableFile } from '../workspace/stable-file.js';
+import { verifyDocumentLink } from '../evidence/document-link.js';
+import { docker, preflight, dockerEnv } from '../execution/docker.js';
+import { DOCUMENT_PARSER_PROFILE, DOCUMENT_PARSER_LEGACY_PROFILE, DOCUMENT_PARSE_RESOURCES, DOCUMENT_PARSE_TERMINAL } from './parse-types.js';
+const terminal = (state) => DOCUMENT_PARSE_TERMINAL.includes(state);
+const quality = { readingOrder: 'unverified', paragraphs: 'heuristic', tables: 'unknown', figures: 'unknown', ocr: false, score: null };
+const closed = (x, keys) => { const v = object(x); ensure(Object.keys(v).length === keys.length && Object.keys(v).every(k => keys.includes(k)), 'DOCUMENT_OUTPUT_INVALID', '解析输出字段不符'); return v; };
+export function parserProfile(repoRoot) { const root = join(repoRoot, 'scripts', 'pdf-parser'), lockDigest = digest(readFileSync(join(root, 'requirements.lock'))), scriptDigest = digest(readFileSync(join(root, 'parse.py'))), profileDigest = digest(JSON.stringify({ profileId: DOCUMENT_PARSER_PROFILE, lockDigest, scriptDigest })); return { profileId: DOCUMENT_PARSER_PROFILE, lockDigest, scriptDigest, profileDigest }; }
+export async function verifyParserImage(context, image, profile) { const imageId = await preflight(context, image, { allowLocalImageId: true }), labels = JSON.parse(await docker(context, ['image', 'inspect', '--format', '{{json .Config.Labels}}', image])); ensure(labels?.['pi-research.parser-profile'] === profile.profileId && labels?.['pi-research.parser-lock'] === profile.lockDigest && labels?.['pi-research.parser-script'] === profile.scriptDigest && labels?.['pi-research.parser-digest'] === profile.profileDigest, 'DOCUMENT_PARSER_PROFILE_MISMATCH', '镜像未匹配本机固定解析配置/锁文件'); return imageId; }
+/** Validate parser-controlled files before any result gains evidence authority. */
+export function validateParserOutput(root, rawDigest, expectedProfileId = DOCUMENT_PARSER_PROFILE) {
+    const manifestBytes = readStableFile(root, 'manifest.json', 1024 * 1024), value = closed(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifestBytes)), ['formatVersion', 'profileId', 'rawDigest', 'pageCount', 'quality', 'pages']);
+    ensure(value.formatVersion === (expectedProfileId === DOCUMENT_PARSER_LEGACY_PROFILE ? 1 : 2) && value.profileId === expectedProfileId && value.rawDigest === rawDigest && digest(value.quality) === digest(quality), 'DOCUMENT_OUTPUT_INVALID', '解析清单与输入不匹配');
+    const pageCount = integer(value.pageCount, 'pageCount', 1, 100);
+    ensure(Array.isArray(value.pages) && value.pages.length === pageCount, 'DOCUMENT_OUTPUT_INVALID', '页数与清单不一致');
+    const files = new Map([['manifest.json', manifestBytes]]);
+    let textBytes = 0, total = manifestBytes.length;
+    const pages = value.pages.map((raw, index) => {
+        const p = closed(raw, ['pageNumber', 'pageLabel', 'width', 'height', 'imageWidth', 'imageHeight', 'textFile', 'textDigest', 'textBytes', 'imageFile', 'imageDigest', 'imageBytes', 'paragraphs', 'textStatus', ...(value.formatVersion === 2 ? ['imageCandidates'] : [])]);
+        ensure(p.pageNumber === index + 1 && (p.pageLabel === null || typeof p.pageLabel === 'string' && p.pageLabel.length <= 400), 'DOCUMENT_OUTPUT_INVALID', '物理页码或页标签无效');
+        ensure(['width', 'height'].every(k => typeof p[k] === 'number' && Number.isFinite(p[k]) && Number(p[k]) > 0 && Number(p[k]) <= 100000), 'DOCUMENT_OUTPUT_INVALID', '页几何无效');
+        const width = integer(p.imageWidth, 'imageWidth', 1, 1600), height = integer(p.imageHeight, 'imageHeight', 1, 1600), prefix = `page-${String(index + 1).padStart(4, '0')}`;
+        ensure(p.textFile === prefix + '.txt' && p.imageFile === prefix + '.png', 'DOCUMENT_OUTPUT_INVALID', '解析输出路径不在固定清单中');
+        const bytes = readStableFile(root, p.textFile, 8 * 1024 * 1024), png = readStableFile(root, p.imageFile, 16 * 1024 * 1024), content = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+        ensure(bytes.length === p.textBytes && digest(bytes) === p.textDigest && png.length === p.imageBytes && digest(png) === p.imageDigest, 'DOCUMENT_OUTPUT_INVALID', '页文件摘要不符');
+        ensure(png.length >= 33 && png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) && png.toString('ascii', 12, 16) === 'IHDR' && png.readUInt32BE(16) === width && png.readUInt32BE(20) === height, 'DOCUMENT_OUTPUT_INVALID', '页图PNG头或尺寸无效');
+        ensure(p.textStatus === (content.trim() ? 'text-extracted' : 'no-text-layer') && Array.isArray(p.paragraphs) && p.paragraphs.length <= 10000, 'DOCUMENT_OUTPUT_INVALID', '页文本状态或段落无效');
+        if (value.formatVersion === 2) {
+            ensure(Array.isArray(p.imageCandidates) && p.imageCandidates.length <= 100, 'DOCUMENT_OUTPUT_INVALID', '嵌入图像候选数无效');
+            for (const [i, rawCandidate] of p.imageCandidates.entries()) {
+                const candidate = closed(rawCandidate, ['index', 'method', 'pixelBounds']), b = closed(candidate.pixelBounds, ['left', 'top', 'right', 'bottom']);
+                ensure(candidate.index === i + 1 && candidate.method === 'embedded-raster-object', 'DOCUMENT_OUTPUT_INVALID', '图像候选类型或顺序无效');
+                ensure([b.left, b.top, b.right, b.bottom].every(Number.isSafeInteger) && Number(b.left) >= 0 && Number(b.top) >= 0 && Number(b.right) > Number(b.left) && Number(b.bottom) > Number(b.top) && Number(b.right) <= width && Number(b.bottom) <= height, 'DOCUMENT_OUTPUT_INVALID', '图像候选页内边界无效');
+            }
+        }
+        let end = 0;
+        for (const [i, item] of p.paragraphs.entries()) {
+            const span = closed(item, ['index', 'start', 'end']), start = integer(span.start, 'start', 0, content.length), stop = integer(span.end, 'end', start + 1, content.length);
+            ensure(span.index === i + 1 && start >= end && !(start > 0 && /[\uD800-\uDBFF]/.test(content[start - 1])) && !/[\uD800-\uDBFF]/.test(content[stop - 1]) && content.slice(start, stop).trim(), 'DOCUMENT_OUTPUT_INVALID', '段落UTF-16定位无效');
+            end = stop;
+        }
+        textBytes += bytes.length;
+        total += bytes.length + png.length;
+        ensure(textBytes <= 8 * 1024 * 1024 && total <= DOCUMENT_PARSE_RESOURCES.outputBytes, 'DOCUMENT_OUTPUT_LIMIT', '解析输出超过固定上限');
+        files.set(p.textFile, bytes);
+        files.set(p.imageFile, png);
+        return p;
+    });
+    const actual = readdirSync(root, { withFileTypes: true });
+    ensure(actual.length === files.size && actual.every(f => f.isFile() && !f.isSymbolicLink() && files.has(f.name)), 'DOCUMENT_OUTPUT_INVALID', '解析器输出了额外或非普通文件');
+    return { manifest: { ...value, pages }, manifestBytes, files };
+}
+export function checkDocumentVersion(source, texts) {
+    const requested = source.requestedVersion ?? source.requestedId?.match(/v([1-9]\d*)$/)?.[1] ?? null, base = source.requestedId?.replace(/v[1-9]\d*$/, '').toLowerCase(), expected = requested?.replace(/^v/, '') ?? null;
+    let observed = null;
+    if (source.provider === 'alphaxiv' && base)
+        for (const content of texts)
+            for (const m of content.matchAll(/arxiv\s*:\s*(\d{4}\.\d{4,5}|[a-z-]+(?:\.[a-z]{2})?\/\d{7})v([1-9]\d*)/gi)) {
+                if (m[1].toLowerCase() !== base)
+                    continue;
+                ensure(!expected || m[2] === expected, 'DOCUMENT_VERSION_MISMATCH', '原PDF版本标记与所请求版本矛盾');
+                observed = m[2];
+            }
+    return { requestedVersion: requested, observedVersion: observed, versionAssurance: expected && observed === expected ? 'marker-match' : 'unverified' };
+}
+export class DocumentParsingService {
+    app;
+    stopped = false;
+    constructor(app) {
+        this.app = app;
+    }
+    status(actor, pid) { userOnly(actor); if (pid)
+        scope(actor, pid); const config = this.app.store.maybe('document-parser-settings', 'global'); return { version: config?.version ?? 0, configured: !!config, profileId: DOCUMENT_PARSER_PROFILE, limits: { maxPages: 100, maxImageEdge: 1600, textBytes: 8 * 1024 * 1024, ...DOCUMENT_PARSE_RESOURCES }, ...(config ? { configuration: { dockerContext: config.dockerContext, imageDigest: config.imageDigest, imageId: config.imageId, profileId: config.profileId, lockDigest: config.lockDigest, scriptDigest: config.scriptDigest, profileDigest: config.profileDigest } } : {}) }; }
+    async configure(actor, value, validate = () => { }, key) { userOnly(actor); if (key) {
+        const old = this.app.store.operationResult('document-parser-configure', key, value);
+        if (old.found)
+            return old.value;
+    } const x = closed(value, ['expectedVersion', 'dockerContext', 'imageDigest']), version = integer(x.expectedVersion, 'expectedVersion', 0), context = text(x.dockerContext, 'dockerContext', 100), image = text(x.imageDigest, 'imageDigest', 300), profile = parserProfile(this.app.context.repoRoot); validate(); const imageId = await verifyParserImage(context, image, profile); validate(); return this.app.store.transaction(() => { validate(); const update = () => { const old = this.app.store.maybe('document-parser-settings', 'global'); ensure((old?.version ?? 0) === version, 'VERSION_CONFLICT', '解析配置已改变'); const fields = { ...profile, dockerContext: context, imageDigest: image, imageId }; if (old)
+        this.app.store.update('document-parser-settings', 'global', old.version, fields);
+    else
+        this.app.store.create('document-parser-settings', null, fields, 'global'); return this.status(actor); }; return key ? this.app.store.operation('document-parser-configure', key, value, update) : update(); }); }
+    get(actor, pid, id) { userOnly(actor); scope(actor, pid); return this.app.store.get('document-parse-job', id, pid); }
+    prepare(actor, pid, value, key) {
+        userOnly(actor);
+        scope(actor, pid);
+        if (key) {
+            const cached = this.app.store.operationResult('document-parse-prepare:' + pid, key, value);
+            if (cached.found)
+                return cached.value;
+        }
+        const x = closed(value, ['documentVersionId']);
+        assertProjectWritable(this.app.store, pid);
+        const document = this.app.documents.get(actor, pid, text(x.documentVersionId, 'documentVersionId', 100)), original = document.original;
+        assertDiscoveryDocument(this.app.store, pid, document);
+        ensure(document.contentKind === 'original-pdf' && original.mediaType === 'application/pdf', 'DOCUMENT_NOT_PDF', '仅原始PDF可进入此解析配置');
+        const { artifact, bytes } = this.app.evidence.read(actor, original.artifactId);
+        ensure(artifact.projectId === pid && artifact.digest === original.digest && bytes.length === original.size && bytes.subarray(0, 5).toString() === '%PDF-', 'DOCUMENT_CORRUPTED', '原PDF摘要或头部不符');
+        const config = this.app.store.maybe('document-parser-settings', 'global');
+        ensure(config, 'DOCUMENT_PARSER_UNCONFIGURED', '先配置已安装的固定PDF解析镜像');
+        const profile = parserProfile(this.app.context.repoRoot);
+        ensure(profile.profileDigest === config.profileDigest, 'DOCUMENT_PARSER_PROFILE_MISMATCH', '本机解析脚本已更新，请重新配置镜像');
+        const id = randomUUID(), root = join(this.app.context.dataDir, 'document-jobs', id), controlDir = join(root, 'control'), outputDir = join(root, 'output'), source = join(controlDir, 'trusted-source');
+        mkdirSync(source, { recursive: true, mode: 0o700 });
+        mkdirSync(outputDir, { mode: 0o777 });
+        chmodSync(outputDir, 0o777);
+        writeFileSync(join(source, 'parse.py'), readFileSync(join(this.app.context.repoRoot, 'scripts', 'pdf-parser', 'parse.py')), { mode: 0o444 });
+        const inputSnapshot = this.app.store.paths.referenceSnapshot(snapshotDirectory(source, join(this.app.context.dataDir, 'snapshots')));
+        const manifest = { purpose: 'document-parse', documentVersionId: document.id, documentDigest: digest(document), rawArtifactId: artifact.id, rawDigest: artifact.digest, rawSize: artifact.size, ...profile, dockerContext: config.dockerContext, environmentImageDigest: config.imageDigest, command: ['python', '/work/parse.py', `/data/${artifact.id}`, '/output'], inputSnapshot, dataArtifacts: [{ id: artifact.id, digest: artifact.digest, size: artifact.size, path: artifact.path }], resources: { ...DOCUMENT_PARSE_RESOURCES } }, manifestDigest = digest(manifest);
+        return this.app.store.transaction(() => {
+            const publish = () => {
+                assertProjectWritable(this.app.store, pid);
+                ensure(digest(this.app.documents.get(actor, pid, document.id)) === manifest.documentDigest && this.app.store.get('document-parser-settings', 'global').version === config.version, 'DOCUMENT_SOURCE_STALE', '准备期间原件或解析配置已改变');
+                const approval = this.app.approvals.request(pid, 'document-parse-job', id, manifestDigest, 'document.parse', '只批准固定原PDF、固定解析器及固定资源；不会执行文档脚本，也不会自动加入语料');
+                this.app.store.create('document-parse-job', pid, { documentVersionId: document.id, manifest, manifestDigest, approvalId: approval.id, state: 'prepared', integrity: 'pending', containerName: 'pi-document-' + id, outputDir: this.app.store.paths.reference(outputDir), controlDir: this.app.store.paths.reference(controlDir), generation: 0, leaseUntil: 0, startRequested: false, cancelRequested: false, recoveryCount: 0, artifactIds: [] }, id);
+                this.app.store.event(pid, 'document.parse_prepared', { jobId: id, documentVersionId: document.id });
+                return this.inspect(actor, pid, id);
+            };
+            return key ? this.app.store.operation('document-parse-prepare:' + pid, key, value, publish) : publish();
+        });
+    }
+    assertCurrent(job, verifyBytes = true) { assertProjectWritable(this.app.store, job.projectId); ensure(digest(job.manifest) === job.manifestDigest, 'DOCUMENT_JOB_CORRUPTED', '解析清单已改变'); const document = this.app.documents.get({ type: 'user' }, job.projectId, job.documentVersionId); assertDiscoveryDocument(this.app.store, job.projectId, document); ensure(digest(document) === job.manifest.documentDigest && document.original.digest === job.manifest.rawDigest, 'DOCUMENT_CORRUPTED', '原件版本记录已改变'); this.app.approvals.assert(job.approvalId, job.projectId, job.id, job.manifestDigest, 'document.parse'); if (verifyBytes) {
+        verifySnapshot(this.app.store.paths.physical(job.manifest.inputSnapshot.path), job.manifest.inputSnapshot.files);
+        const raw = this.app.evidence.read({ type: 'user' }, job.manifest.rawArtifactId);
+        ensure(raw.artifact.projectId === job.projectId && raw.artifact.digest === job.manifest.rawDigest && raw.bytes.length === job.manifest.rawSize, 'DOCUMENT_CORRUPTED', '原件已改变');
+    } return document; }
+    submit(actor, pid, id) { return this.app.store.transaction(() => { const job = this.get(actor, pid, id); if (job.state !== 'prepared')
+        return this.inspect(actor, pid, id); this.assertCurrent(job, false); this.app.compute.assertEnqueue('document', pid, job.manifest.dockerContext); this.app.store.update('document-parse-job', id, job.version, { state: 'queued' }); return this.inspect(actor, pid, id); }); }
+    inspect(actor, pid, id) { const j = this.get(actor, pid, id); return { id: j.id, jobId: j.id, documentVersionId: j.documentVersionId, approvalId: j.approvalId, state: j.state, integrity: j.integrity, manifestDigest: j.manifestDigest, rawDigest: j.manifest.rawDigest, profileId: j.manifest.profileId, profileDigest: j.manifest.profileDigest, imageDigest: j.manifest.environmentImageDigest, dockerContext: j.manifest.dockerContext, resources: j.manifest.resources, generation: j.generation, startRequested: j.startRequested, cancelRequested: j.cancelRequested, exitCode: j.exitCode ?? null, artifactIds: j.artifactIds, ...(j.imageId ? { imageId: j.imageId } : {}), ...(j.resultId ? { resultId: j.resultId } : {}), ...(j.error ? { error: j.error } : {}), ...(j.startedAt ? { startedAt: j.startedAt } : {}), ...(j.endedAt ? { endedAt: j.endedAt } : {}) }; }
+    cancel(actor, pid, id) { return this.app.store.transaction(() => { const j = this.get(actor, pid, id); if (!terminal(j.state)) {
+        this.app.store.update('document-parse-job', id, j.version, { cancelRequested: true });
+        if (['prepared', 'queued'].includes(j.state) && !j.startRequested && !j.containerId)
+            this.finalize(id, { state: 'cancelled', exitCode: null, incomplete: true });
+    } return this.inspect(actor, pid, id); }); }
+    result(actor, pid, id) { userOnly(actor); scope(actor, pid); return this.fixedResult(pid, id); }
+    /** Internal integrity check, not an owner-tool impersonation or an Agent content endpoint. */
+    fixedResult(pid, id) {
+        const result = this.app.store.get('document-parse-result', id, pid), job = this.app.store.get('document-parse-job', result.jobId, pid), document = this.app.store.get('document-version', result.documentVersionId, pid);
+        ensure(job.state === 'succeeded' && job.integrity === 'complete' && job.resultId === id && job.manifestDigest === result.manifestDigest && digest(job.manifest) === job.manifestDigest && digest(document) === job.manifest.documentDigest && document.original.digest === result.rawDigest, 'DOCUMENT_RESULT_INVALID', '解析结果绑定失效');
+        const raw = this.app.evidence.read({ type: 'system' }, document.original.artifactId);
+        ensure(raw.artifact.digest === result.rawDigest, 'DOCUMENT_CORRUPTED', '原PDF已改变');
+        const archived = this.app.evidence.read({ type: 'system' }, result.manifestArtifactId);
+        ensure(archived.artifact.projectId === pid && archived.artifact.digest === result.manifestArtifactDigest, 'DOCUMENT_RESULT_INVALID', '固定解析清单已改变');
+        const fixed = JSON.parse(archived.bytes.toString('utf8'));
+        ensure(fixed.rawDigest === result.rawDigest && digest(result.quality) === digest(fixed.quality) && fixed.profileId === result.profileId && fixed.formatVersion === (result.profileId === DOCUMENT_PARSER_LEGACY_PROFILE ? 1 : 2) && result.profileId === job.manifest.profileId && result.profileDigest === job.manifest.profileDigest && result.imageId === job.imageId && fixed.pageCount === result.pageCount && fixed.pages.length === result.pages.length, 'DOCUMENT_RESULT_INVALID', '页清单绑定不符');
+        for (const [index, page] of result.pages.entries()) {
+            const f = fixed.pages[index], t = this.app.store.get('artifact', page.textArtifactId, pid), i = this.app.store.get('artifact', page.imageArtifactId, pid);
+            ensure(f.pageNumber === page.pageNumber && f.textDigest === page.textArtifactDigest && f.imageDigest === page.imageArtifactDigest && t.digest === f.textDigest && i.digest === f.imageDigest && t.size === f.textBytes && i.size === f.imageBytes && digest(f.paragraphs) === digest(page.paragraphs) && f.textStatus === page.textStatus && f.pageLabel === page.pageLabel && f.width === page.width && f.height === page.height && f.imageWidth === page.imageWidth && f.imageHeight === page.imageHeight && Object.hasOwn(f, 'imageCandidates') === Object.hasOwn(page, 'imageCandidates') && digest(f.imageCandidates ?? []) === digest(page.imageCandidates ?? []), 'DOCUMENT_RESULT_INVALID', '页关联与固定清单不符');
+        }
+        return result;
+    }
+    /** Fixed source proof shared by metadata selection and narrowly approved visual reads. */
+    visualSource(pid, documentVersionId, parseResultId, firstPage, lastPage) {
+        const r = this.fixedResult(pid, parseResultId), j = this.app.store.get('document-parse-job', r.jobId, pid), d = this.assertCurrent(j, true);
+        ensure(d.id === documentVersionId && r.documentVersionId === d.id && j.documentVersionId === d.id && j.manifest.documentVersionId === d.id && d.contentKind === 'original-pdf' && d.original.mediaType === 'application/pdf' && j.manifest.rawArtifactId === d.original.artifactId, 'DOCUMENT_RESULT_INVALID', '固定文档与解析结果不匹配');
+        const approval = this.app.approvals.assert(j.approvalId, pid, j.id, j.manifestDigest, 'document.parse');
+        ensure(approval.subjectKind === 'document-parse-job' && !approval.runGrant && !approval.workingGrant, 'APPROVAL_STALE', '解析批准类型改变');
+        ensure(r.pageCount === r.pages.length && r.pages.every((p, i) => p.pageNumber === i + 1) && j.artifactIds.includes(r.manifestArtifactId), 'DOCUMENT_RESULT_INVALID', '固定解析页列表或清单归属失效');
+        integer(firstPage, 'firstPage', 1, r.pageCount);
+        integer(lastPage, 'lastPage', firstPage, r.pageCount);
+        const pages = r.pages.slice(firstPage - 1, lastPage).map(p => { ensure(j.artifactIds.includes(p.imageArtifactId) && j.artifactIds.includes(p.textArtifactId), 'DOCUMENT_RESULT_INVALID', '解析页不属于固定任务'); const { artifact, bytes } = this.app.evidence.read({ type: 'system' }, p.imageArtifactId); ensure(artifact.projectId === pid && artifact.mediaType === 'image/png' && artifact.digest === p.imageArtifactDigest && bytes.length === artifact.size, 'DOCUMENT_RESULT_INVALID', '固定页资产改变'); return { pageNumber: p.pageNumber, artifactId: artifact.id, digest: artifact.digest, bytes: bytes.length, width: p.imageWidth, height: p.imageHeight }; });
+        return { documentVersionId, parseResultId, documentDigest: digest(d), resultDigest: digest(r), rawDigest: r.rawDigest, jobId: j.id, manifestDigest: j.manifestDigest, manifestArtifactDigest: r.manifestArtifactDigest, approvalId: j.approvalId, firstPage, lastPage, pageCount: r.pageCount, pages };
+    }
+    attachmentMetadata(actor, session, pair) {
+        scope(actor, session.projectId);
+        ensure(session.role === 'coordinator' && !session.taskId && !session.teamId && session.state !== 'archived', 'ATTACHMENT_SCOPE_DENIED', '固定解析资料只可带入主协调会话', 403);
+        if (actor.type === 'agent')
+            interactiveCoordinator(actor, session.projectId, this.app.store.get('session', session.id, session.projectId));
+        else
+            userOnly(actor);
+        const r = this.app.store.get('document-parse-result', pair.parseResultId, session.projectId), source = this.visualSource(session.projectId, pair.documentVersionId, pair.parseResultId, 1, r.pageCount);
+        return { parseResultId: pair.parseResultId, resultDigest: source.resultDigest, pageCount: source.pageCount };
+    }
+    pageImage(pid, documentVersionId, parseResultId, pageNumber, firstPage, lastPage) {
+        const source = this.visualSource(pid, documentVersionId, parseResultId, firstPage, lastPage);
+        integer(pageNumber, 'pageNumber', firstPage, lastPage);
+        const p = source.pages.find(p => p.pageNumber === pageNumber);
+        const { bytes } = this.app.evidence.read({ type: 'system' }, p.artifactId);
+        ensure(bytes.length === p.bytes && digest(bytes) === p.digest, 'MODEL_IMAGE_INVALID', '固定页字节改变');
+        assertPublicationPng(bytes, p.width, p.height);
+        return { ...p, data: bytes.toString('base64') };
+    }
+    readPageImage(actor, pid, input) {
+        scope(actor, pid);
+        const scopeRef = this.app.sessionPermissions.documentImageScope(actor, input), page = this.pageImage(pid, input.documentVersionId, input.parseResultId, input.pageNumber, scopeRef.firstPage, scopeRef.lastPage);
+        return { reference: { kind: 'document-page', ...scopeRef, documentVersionId: input.documentVersionId, parseResultId: input.parseResultId, pageNumber: page.pageNumber, digest: page.digest, bytes: page.bytes, width: page.width, height: page.height }, mimeType: 'image/png', data: page.data };
+    }
+    pages(actor, pid, id, cursor = 0, limit = 20) { const r = this.result(actor, pid, id); integer(cursor, 'cursor', 0, r.pageCount); integer(limit, 'limit', 1, 100); const end = Math.min(r.pageCount, cursor + limit); return { resultId: r.id, documentVersionId: r.documentVersionId, rawDigest: r.rawDigest, pageCount: r.pageCount, quality: r.quality, versionAssurance: r.versionAssurance, requestedVersion: r.requestedVersion, observedVersion: r.observedVersion, items: r.pages.slice(cursor, end), cursor, end, complete: end === r.pageCount }; }
+    readPage(actor, pid, resultId, pageNumber, cursor = 0, limit = 16000) { const r = this.result(actor, pid, resultId), page = r.pages.find(p => p.pageNumber === integer(pageNumber, 'pageNumber', 1, r.pageCount)); ensure(page, 'NOT_FOUND', 'PDF页不存在', 404); verifyDocumentLink(this.app.context, pid, { documentVersionId: r.documentVersionId, rawDigest: r.rawDigest, parseResultId: r.id, pageNumber: page.pageNumber, textArtifactDigest: page.textArtifactDigest }, page.textArtifactId); const { bytes, artifact } = this.app.evidence.read(actor, page.textArtifactId); ensure(artifact.projectId === pid && artifact.digest === page.textArtifactDigest, 'DOCUMENT_RESULT_INVALID', '页文本绑定已改变'); const content = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); integer(cursor, 'cursor', 0, content.length); integer(limit, 'limit', 1, 64000); const end = Math.min(content.length, cursor + limit); return { resultId, documentVersionId: r.documentVersionId, rawDigest: r.rawDigest, ...page, content: content.slice(cursor, end), cursor, end, complete: end === content.length }; }
+    finalize(id, result) {
+        return this.app.store.transaction(() => {
+            let job = this.app.store.get('document-parse-job', id);
+            if (terminal(job.state))
+                return job;
+            ensure(result.generation === undefined || job.generation === result.generation && job.leaseUntil > Date.now(), 'LEASE_EXPIRED', '解析监管器已失去租约');
+            let state = result.state, integrity = result.incomplete ? 'incomplete' : 'complete', error = result.error, parsed, document;
+            try {
+                if (job.startRequested || state !== 'cancelled')
+                    document = this.assertCurrent(job);
+                if (state === 'succeeded' && result.exitCode === 0 && !result.incomplete)
+                    parsed = validateParserOutput(this.app.store.paths.physical(job.outputDir), job.manifest.rawDigest, job.manifest.profileId);
+            }
+            catch (e) {
+                if (state === 'succeeded')
+                    state = 'failed';
+                integrity = 'invalid';
+                error = e instanceof DomainError ? e.code : 'DOCUMENT_OUTPUT_INVALID';
+            }
+            const artifactIds = [];
+            const put = (name, bytes, mediaType) => { const a = this.app.evidence.put(job.projectId, name, bytes, mediaType, 'document-parser'); artifactIds.push(a.id); return a; };
+            for (const name of ['stdout.log', 'stderr.log'])
+                try {
+                    const path = safePath(this.app.store.paths.physical(job.controlDir), name);
+                    ensure(existsSync(path) || !job.startRequested, 'DOCUMENT_LOG_MISSING', '解析日志缺失');
+                    put(name, existsSync(path) ? readStableFile(this.app.store.paths.physical(job.controlDir), name, DOCUMENT_PARSE_RESOURCES.logBytes) : Buffer.alloc(0), 'text/plain');
+                }
+                catch {
+                    integrity = 'incomplete';
+                    state = state === 'succeeded' ? 'failed' : state;
+                }
+            let resultId;
+            if (parsed && document && integrity === 'complete' && !result.logTruncated) {
+                try {
+                    const version = checkDocumentVersion(document.source, parsed.manifest.pages.map(p => parsed.files.get(p.textFile).toString('utf8'))), manifestArtifact = put('document-parse-manifest.json', parsed.manifestBytes, 'application/json'), pages = parsed.manifest.pages.map(p => { const t = put(p.textFile, parsed.files.get(p.textFile), 'text/plain'), i = put(p.imageFile, parsed.files.get(p.imageFile), 'image/png'); return { pageNumber: p.pageNumber, pageLabel: p.pageLabel, width: p.width, height: p.height, imageWidth: p.imageWidth, imageHeight: p.imageHeight, textArtifactId: t.id, textArtifactDigest: t.digest, imageArtifactId: i.id, imageArtifactDigest: i.digest, paragraphs: p.paragraphs, textStatus: p.textStatus, ...(p.imageCandidates ? { imageCandidates: p.imageCandidates } : {}) }; });
+                    resultId = digest({ jobId: id, manifestDigest: job.manifestDigest });
+                    this.app.store.create('document-parse-result', job.projectId, { documentVersionId: job.documentVersionId, jobId: id, rawDigest: job.manifest.rawDigest, manifestDigest: job.manifestDigest, profileId: job.manifest.profileId, profileDigest: job.manifest.profileDigest, imageId: job.imageId, pageCount: pages.length, pages, manifestArtifactId: manifestArtifact.id, manifestArtifactDigest: manifestArtifact.digest, quality, ...version }, resultId);
+                }
+                catch (e) {
+                    if (state === 'succeeded')
+                        state = 'failed';
+                    integrity = 'invalid';
+                    error = e instanceof DomainError ? e.code : 'DOCUMENT_OUTPUT_INVALID';
+                }
+            }
+            if (state === 'succeeded' && (!resultId || integrity !== 'complete' || result.logTruncated)) {
+                state = 'failed';
+                integrity = 'incomplete';
+            }
+            put('document-parse-execution.json', Buffer.from(JSON.stringify({ jobId: id, documentVersionId: job.documentVersionId, rawDigest: job.manifest.rawDigest, manifestDigest: job.manifestDigest, state, integrity, exitCode: result.exitCode, error, scientificConclusion: false })), 'application/json');
+            job = this.app.store.update('document-parse-job', id, job.version, { state, integrity, exitCode: result.exitCode, error, artifactIds, ...(resultId && state === 'succeeded' ? { resultId } : {}), logTruncated: result.logTruncated, endedAt: new Date().toISOString(), leaseUntil: 0 });
+            this.app.store.event(job.projectId, 'document.parse_finished', { jobId: id, state, integrity, resultId: job.resultId });
+            return job;
+        });
+    }
+    tick() {
+        if (this.stopped)
+            return;
+        this.app.compute.tick();
+        for (const id of this.app.compute.queued('document')) {
+            const j = this.app.store.get('document-parse-job', id);
+            try {
+                this.assertCurrent(j, false);
+            }
+            catch {
+                this.finalize(id, { state: 'failed', exitCode: null, incomplete: true, error: 'DOCUMENT_APPROVAL_OR_SOURCE_STALE' });
+            }
+        }
+        for (const id of this.app.compute.candidates('document')) {
+            const j = this.app.compute.withAdmission('document', id, () => { const old = this.app.store.get('document-parse-job', id); if (terminal(old.state) || old.state === 'prepared' || old.state !== 'queued' && old.leaseUntil > Date.now())
+                return null; if (old.state === 'queued')
+                this.assertCurrent(old, false); return this.app.store.update('document-parse-job', id, old.version, { state: old.state === 'queued' ? 'starting' : old.state, generation: old.generation + 1, recoveryCount: old.recoveryCount + (old.generation ? 1 : 0), leaseUntil: Date.now() + 60000 }); });
+            if (!j)
+                continue;
+            const child = spawn(process.execPath, [fileURLToPath(new URL('../../apps/document-worker/index.js', import.meta.url)), this.app.context.dataDir, this.app.context.repoRoot, j.id, String(j.generation)], { shell: false, windowsHide: true, detached: true, stdio: 'ignore', env: dockerEnv() });
+            child.on('error', () => { try {
+                this.app.store.transaction(() => { const r = this.app.store.get('document-parse-job', j.id); if (r.generation === j.generation)
+                    this.app.store.update('document-parse-job', r.id, r.version, { leaseUntil: 0, error: 'DOCUMENT_WORKER_UNAVAILABLE' }); });
+            }
+            catch { } });
+            child.unref();
+            break;
+        }
+    }
+    async stop() { this.stopped = true; }
+}
+//# sourceMappingURL=parse-service.js.map

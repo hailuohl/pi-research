@@ -1,0 +1,50 @@
+{
+  "name": "pi-research",
+  "version": "0.3.2-experimental",
+  "private": true,
+  "type": "module",
+  "description": "研舟π — Local-first research workbench with auditable multi-agent orchestration",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "packageManager": "npm@11.17.0",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node dist/apps/server/index.js",
+    "dev": "npm run build && npm start",
+    "test": "npm run build && node --test --test-concurrency=1 tests/unit/*.test.mjs tests/integration/*.test.mjs",
+    "test:core": "node --test --test-concurrency=1 tests/unit/*.test.mjs tests/integration/*.test.mjs",
+    "demo": "node dist/apps/cli/index.js demo",
+    "doctor": "node dist/apps/cli/index.js doctor",
+    "setup:pi": "node scripts/setup-pi.mjs",
+    "typecheck": "node scripts/build.mjs --typecheck",
+    "test:parity": "node --test --test-concurrency=1 tests/parity/*.test.mjs",
+    "test:live": "node --test --test-concurrency=1 tests/live/*.test.mjs",
+    "test:baseline": "node scripts/verify-baselines.mjs",
+    "verify:build": "node scripts/verify-build.mjs",
+    "demo:campaign": "node dist/apps/cli/index.js demo-campaign",
+    "test:upgrade": "node scripts/verify-legacy-upgrade.mjs"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "1.2.0",
+    "@earendil-works/pi-coding-agent": "1.2.0",
+    "@types/node": "24.0.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.8.3"
+  },
+  "overrides": {
+    "@earendil-works/pi-agent-core": "1.2.0",
+    "@earendil-works/pi-codemode": "1.2.0",
+    "@earendil-works/pi-mcp": "1.2.0",
+    "@earendil-works/pi-telemetry": "1.2.0",
+    "@earendil-works/pi-tui": "1.2.0"
+  },
+  "dependencies": {
+    "marked": "18.0.11",
+    "pinyin-pro": "3.29.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

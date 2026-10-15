@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-03",
+  "acceptance": [
+    {
+      "id": 1,
+      "description": "最终回答Markdown排版；过程可折叠；成功空响应不占气泡",
+      "result": "passed"
+    },
+    {
+      "id": 2,
+      "description": "当前工具活动与流式正文按当前generation恢复；原队列编辑、立即、删除保留",
+      "result": "passed"
+    },
+    {
+      "id": 3,
+      "description": "审批与失败可见；Markdown链接和HTML安全渲染",
+      "result": "passed"
+    },
+    {
+      "id": 4,
+      "description": "刷新保留阶段与工具名；旧历史、分页原文、分支和重试兼容",
+      "result": "passed"
+    },
+    {
+      "id": 5,
+      "description": "完成任务与通知折叠；旧稿失败和待审批不被历史父层隐藏；会话范围保留",
+      "result": "passed"
+    }
+  ],
+  "regression": {
+    "before": {
+      "backendFailed": 2,
+      "workflowFailed": 3,
+      "reviewIssueFailed": 1
+    },
+    "related": {
+      "hostHistoryWorkflowPassed": 32,
+      "renderAndHistoryPassed": 19
+    },
+    "full": {
+      "tests": 1018,
+      "passed": 995,
+      "skipped": 23,
+      "failed": 0
+    },
+    "necessaryFix": {
+      "passed": 7,
+      "failed": 0
+    }
+  },
+  "cleanBuild": {
+    "identical": true,
+    "files": 505,
+    "distManifestSha256": "eda76229c8ee4e9d5c7d19584ffcbbc006f4462673b8f04354330738de2d3fd5",
+    "lockSha256": "aacaba3da779a9bbafabe3bf0446d44ec7512c5a611f804ed6d96f017de0a2eb"
+  },
+  "independentReview": {
+    "model": "gpt-6-astra",
+    "blockersFound": 1,
+    "blockersFixed": 1,
+    "remainingBlockers": 0
+  },
+  "actualPi": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "generation": 1,
+    "completed": true,
+    "toolCalls": [
+      "project_inspect",
+      "workspace_list"
+    ],
+    "activityEvents": 4,
+    "assistantMessages": {
+      "commentary": 1,
+      "finalAnswer": 1
+    },
+    "createdExperiments": 0,
+    "refreshRetained": true
+  },
+  "browser": {
+    "legacyBlankPlaceholderRemoved": true,
+    "completedWorkCollapsed": true,
+    "failedOldBuildVisible": true,
+    "historyDeletedOrRewritten": false
+  },
+  "evidencePaths": {
+    "rawLogs": ".validation/compact-messages/",
+    "actualPi": ".validation/compact-messages/live-evidence.json",
+    "screenshot": ".validation/compact-messages/01-final-answer.jpg",
+    "cleanBuild": ".validation/clean-build-JR3cb0/summary.json"
+  },
+  "backlog": [
+    "旧稿失败状态回归用例可进一步拆分无error状态分支与仅error分支；当前实现和原阻断已核对并通过。"
+  ],
+  "scope": "对话消息显示与历史折叠；不改研究执行、授权或队列接口",
+  "implementationChanges": [
+    "持久化轮次、回答阶段、允许的工具名称及当前工具活动；错误单独保留状态通知",
+    "使用现有版本marked解析并由React渲染Markdown；HTML仅作文本，限制链接协议",
+    "按相邻消息与轮次收拢执行过程，旧记录回退为末尾正文；成功空响应不占气泡",
+    "已完成事项、结束通知与旧稿件使用原生details折叠，审批与失败保持可见",
+    "消息时间与分支按钮按悬停或聚焦显示；触屏保持可访问"
+  ],
+  "buildNote": "干净构建验证当前工作区；原有styles.css及参考文档改动按所有权保持未提交。"
+}

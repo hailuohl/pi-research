@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-02",
+  "scope": "new-session navigation action and active/archived/all session catalog",
+  "behavior": {
+    "newSessionUsesExistingPost": true,
+    "frontendDefault": "active",
+    "legacyApiDefault": "all",
+    "activeMeansUnarchived": true,
+    "filteredBeforePagination": true,
+    "queryAndRoleIntersection": true,
+    "categorySwitchPreservesOpenConversation": true,
+    "creationReturnsToActive": true,
+    "staleProjectAndCategoryResponsesIgnored": true,
+    "failurePreservesHistory": true
+  },
+  "tests": {
+    "frontendFocusedPassed": 18,
+    "backendFocusedPassed": 15,
+    "full": {
+      "total": 938,
+      "passed": 915,
+      "skipped": 23,
+      "failed": 0,
+      "durationMs": 443081.5249
+    }
+  },
+  "independentReview": {
+    "model": "gpt-6-sol",
+    "blockingFindings": 0,
+    "deferredFinding": "SessionList can retain its busy flag when switching to no project until a valid project next loads."
+  },
+  "browser": {
+    "widths": [390, 1280],
+    "horizontalOverflow": false,
+    "categoriesAndArchivedHistoryOpened": true,
+    "creationFromArchivedReturnsToActive": true,
+    "mobileNavigationCategorySwitch": true,
+    "consoleErrors": 0,
+    "newEmptyPreviewSessions": 1,
+    "modelCalls": 0,
+    "researchRecordsDeleted": 0,
+    "screenshot": ".validation/session-categories/session-categories-desktop.png"
+  },
+  "cleanBuild": {
+    "files": 476,
+    "identical": true,
+    "node": "24.19.0",
+    "distManifestSha256": "9ded656ccda491f516ff70cde1f23dbcd16e9c9a757ac5b1e684d6bb6368bbb0",
+    "summary": ".validation/clean-build-YUjLGP/summary.json"
+  },
+  "rawEvidence": ".validation/session-categories/"
+}

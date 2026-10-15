@@ -1,0 +1,20 @@
+{
+  "disclosure": "Authored deterministic fixture, not real papers, not material-performance claims, and not an external benchmark.",
+  "documents": [
+    {"name":"positive-copy-a.txt","group":"positive-duplicate","text":"Adsorption protocol. Adsorption protocol adsorption protocol. The recorded observation was enhancement. Fixture only."},
+    {"name":"positive-copy-b.txt","group":"positive-duplicate","text":"Adsorption protocol. Adsorption protocol adsorption protocol. The recorded observation was enhancement. Fixture only."},
+    {"name":"positive-copy-c.txt","group":"positive-duplicate","text":"Adsorption protocol. Adsorption protocol adsorption protocol. The recorded observation was enhancement. Fixture only."},
+    {"name":"negative-observation.txt","group":"negative-control","text":"Adsorption protocol control. Adsorption protocol control used a clean reference surface. No enhancement was observed under the control condition. Fixture only."},
+    {"name":"measurement-method.txt","group":"method","text":"Adsorption protocol measurement. Adsorption protocol measurement used identical instrument settings. The protocol comparison requires matching controls. Fixture only."},
+    {"name":"numerical-fixture.txt","group":"calibration","text":"Synthetic laboratory exercise, not a real measurement.\n\nCalibration constant equals 17.5 under protocol Q7. The uncertainty was not evaluated.\n\nThis file exists only to test exact source locations."},
+    {"name":"中文示例.txt","group":"chinese","text":"这是人工编写的评测夹具，不是真实科研数据。😀\r\n\r\n吸附构型采用固定网格，候选之间保持相同原子顺序。\r\n这里只用于验证中文检索和位置，不代表材料性能。"},
+    {"name":"irrelevant-manual.txt","group":"irrelevant","text":"Office equipment manual.\n\nThe keyboard has several shortcut keys. Connect the display before changing resolution. This manual contains no result about material experiments.\n\nPreserve the original documentation and record configuration changes."}
+  ],
+  "questions": [
+    {"id":"numeric-source","query":"calibration constant Q7","targets":["17.5"],"expectedGroups":["calibration"]},
+    {"id":"chinese-source","query":"吸附构型","targets":["固定网格"],"expectedGroups":["chinese"]},
+    {"id":"contradictory-sources","query":"adsorption protocol","targets":["No enhancement"],"expectedGroups":["positive-duplicate","negative-control"]},
+    {"id":"no-lexical-answer","query":"photosynthetic chlorophyll","targets":[],"expectedGroups":[],"expectNoMatch":true},
+    {"id":"synonym-limit","query":"sorption procedure","targets":["instrument settings"],"expectedGroups":["method"],"note":"Deliberately requires a terminology mapping the lexical retriever does not implement; not a claim of semantic equivalence or an external QA benchmark."}
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "fixture": true,
+  "scientificConclusion": false,
+  "modelCalls": 0,
+  "projectId": "0b9e3454-237c-49d2-accc-1e2e6d7c109b",
+  "runId": "f3895989-1add-4080-b2d2-ffca4033cbce",
+  "developmentJobId": "e835d0b2-d97c-49b7-b5f9-efdcf0b256e7",
+  "sourceDigest": "8c5d0a0a8942a227dc518502c4a48a820ecca425e2aa27c886d7632b2a8cdcf1",
+  "logs": [
+    {
+      "artifactId": "3022fcec-7659-4db8-9546-cf657390d9e3",
+      "digest": "67ad1d1104de837185a1a28f44a8a1f6395d2de6f3183e1177f34107b65bd0d7",
+      "bytes": 1595543
+    },
+    {
+      "artifactId": "da66e52a-a0af-4734-96ea-f779b5b442ee",
+      "digest": "67ad1d1104de837185a1a28f44a8a1f6395d2de6f3183e1177f34107b65bd0d7",
+      "bytes": 1595543
+    }
+  ],
+  "browser": {
+    "driver": "Codex in-app browser",
+    "checks": [
+      "Viewed both real terminal Docker results",
+      "Formal log from start then next known UTF-8 boundary starts with 中🙂 with no replacement character",
+      "Previous page uses an observed cursor; switched stdout/stderr using keyboard",
+      "Development log reader mounts only when expanded; read the real stderr",
+      "Stopped the verified idle QA controller, observed reconnect state while successful results remained visible",
+      "Changed isolated fixture project title while offline; restarted controller and observed automatic title refresh without browser reload",
+      "Reloaded and restored selected formal Run and terminal log tail",
+      "Switched real IPC fixture A/B sessions, observed only the chosen session preview; reloaded A and recovered its unfinished preview",
+      "Fixture final message replaced the temporary preview; no duplicate final message",
+      "390px keyboard controls and viewport reset"
+    ],
+    "formalBoundary": {
+      "start": 65535,
+      "cursor": 131070,
+      "observedSize": 1595543,
+      "displayedBytes": 65535,
+      "prefix": "中🙂\n真实日志🙂 abcdefghijklmnop\n",
+      "replacementCharacter": false
+    },
+    "narrow": {
+      "width": 390,
+      "documentScrollWidth": 375,
+      "developmentStderr": "独立错误流：验收标记\n",
+      "start": 0,
+      "cursor": 31
+    },
+    "reconnect": {
+      "oldControllerPid": 122364,
+      "newControllerPid": 193444,
+      "observedOfflineStatus": "正在重连",
+      "observedRecoveredTitle": "Long log and reconnect fixture · 已恢复",
+      "runStatePreserved": "succeeded",
+      "observedRestoredLogRange": [
+        1572840,
+        1595543
+      ]
+    },
+    "sessionFixtures": [
+      {
+        "id": "20be2045-d9da-44f4-89ef-9dc284ba32c6",
+        "label": "A",
+        "generation": 1,
+        "state": "idle",
+        "finalMessageId": "10e1a600-e48a-41ed-9199-5d4e55c68def",
+        "finalContent": "IPC验收夹具 A：最终消息已保存（非模型输出）"
+      },
+      {
+        "id": "34c67a2e-fa01-4a22-a2d4-3482667125c5",
+        "label": "B",
+        "generation": 1,
+        "state": "idle",
+        "finalMessageId": "a30053be-2853-4e78-8cbb-b9a72bc0f833",
+        "finalContent": "IPC验收夹具 B：最终消息已保存（非模型输出）"
+      }
+    ],
+    "finalStreamPanels": 0,
+    "consoleErrors": 0,
+    "viewportReset": true,
+    "screenshots": [
+      "log-boundary-desktop.png",
+      "log-development-mobile.png",
+      "controller-offline.png",
+      "controller-reconnected.png",
+      "session-restored-mobile.png"
+    ]
+  },
+  "limitation": "IPC stream fixtures are explicitly labelled non-model output. They verify UI recovery with real child processes; they do not constitute a new live Pi/provider acceptance. Browser coordinate offset was worked around using native keyboard controls."
+}

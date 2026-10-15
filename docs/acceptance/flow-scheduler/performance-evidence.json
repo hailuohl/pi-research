@@ -1,0 +1,203 @@
+{
+  "formatVersion": 1,
+  "batch": "flow-scheduler",
+  "source": {
+    "path": ".validation/scheduler-benchmark-IQeKNS/evidence.json",
+    "sha256": "015c6199784353f9e33f0c009ae9fbcbc9a78ca6ddb42b264d4606ea068b25fe"
+  },
+  "passed": true,
+  "fixture": true,
+  "scientificConclusion": false,
+  "scope": "compute queue inspect/candidates only; not a whole-application benchmark",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32"
+  },
+  "dataset": {
+    "terminalHistoryRecords": 20000,
+    "queuedProjectionRecords": 64,
+    "heldProjectionRecords": 2,
+    "totalProjectionRecords": 66,
+    "description": "Synthetic storage/performance fixtures, not actually executed Runs or development workloads."
+  },
+  "measurement": {
+    "iterationsPerOperation": 100,
+    "warmupPerOperation": 20,
+    "unit": "milliseconds",
+    "roundingDecimals": 4,
+    "seedMs": 3814.4353,
+    "timings": {
+      "inspect": {
+        "samples": 100,
+        "p50Ms": 8.7176,
+        "p95Ms": 16.8674,
+        "minMs": 7.2355,
+        "maxMs": 23.4018
+      },
+      "runCandidates": {
+        "samples": 100,
+        "p50Ms": 0.9078,
+        "p95Ms": 1.362,
+        "minMs": 0.8071,
+        "maxMs": 2.0018
+      },
+      "developmentCandidates": {
+        "samples": 100,
+        "p50Ms": 1.1605,
+        "p95Ms": 1.6009,
+        "minMs": 0.8274,
+        "maxMs": 17.2025
+      }
+    }
+  },
+  "memory": {
+    "unit": "bytes",
+    "before": {
+      "rss": 89821184,
+      "heapTotal": 11788288,
+      "heapUsed": 7956896,
+      "external": 2584354,
+      "arrayBuffers": 143647
+    },
+    "after": {
+      "rss": 91774976,
+      "heapTotal": 20701184,
+      "heapUsed": 11579712,
+      "external": 2584394,
+      "arrayBuffers": 143647
+    }
+  },
+  "lockWait": {
+    "method": "Separate Node process/SQLite connection held BEGIN IMMEDIATE for a nominal 200 ms; the benchmark connection measured acquiring its own write transaction.",
+    "nominalHoldMs": 200,
+    "observedWaitMs": 250.921
+  },
+  "historicalManifests": {
+    "before": {
+      "count": 20000,
+      "changed": 0,
+      "originalManifestDigest": "f151388fb6f1ee23dc82e13cce54f6ce6027e93225febed07c10dce3887848dc"
+    },
+    "after": {
+      "count": 20000,
+      "changed": 0,
+      "originalManifestDigest": "f151388fb6f1ee23dc82e13cce54f6ce6027e93225febed07c10dce3887848dc"
+    },
+    "unchanged": true
+  },
+  "queries": {
+    "capturedCount": 11,
+    "historicalRecordsTableReferenced": false,
+    "plans": [
+      {
+        "index": 0,
+        "sqlSha256": "2079323deb7efbc2d1a945164ce4e57113ab45b2bc27c53a02d3cd37d516a3a8",
+        "sql": "SELECT * FROM compute_queue WHERE phase NOT IN ('succeeded','failed','cancelled','timed_out') AND sequence>?  ORDER BY sequence LIMIT ?",
+        "details": [
+          "SEARCH compute_queue USING INTEGER PRIMARY KEY (rowid>?)"
+        ]
+      },
+      {
+        "index": 1,
+        "sqlSha256": "9b3c30903ccf565248bdc8967eddd9ac4b9deee6a3dcea23a807b4226022efa9",
+        "sql": "SELECT target_id FROM compute_contexts WHERE target_id IS NOT NULL UNION SELECT target_id FROM compute_queue WHERE held=1 AND target_id IS NOT NULL UNION SELECT target_id FROM compute_queue WHERE phase='queued' AND target_id IS NOT NULL UNION SELECT 'host-example' target_id ORDER BY target_id LIMIT 256",
+        "details": [
+          "MERGE (UNION)",
+          "LEFT",
+          "SCAN compute_contexts",
+          "USE TEMP B-TREE FOR ORDER BY",
+          "RIGHT",
+          "SEARCH compute_queue USING COVERING INDEX compute_queue_occupancy (held=? AND target_id>?)",
+          "SEARCH compute_queue USING INDEX compute_queue_phase_sequence (phase=?)",
+          "SCAN CONSTANT ROW"
+        ]
+      },
+      {
+        "index": 2,
+        "sqlSha256": "e92eff41320fb8490b2a271de3abd65e35734a1db6c1e93ea46eaf48749cde40",
+        "sql": "WITH eligible AS (\nSELECT q.* FROM compute_queue q JOIN compute_limits h ON h.target_id='host' LEFT JOIN compute_limits t ON t.target_id=q.target_id\nWHERE q.phase='queued' AND q.bound=1 AND q.next_attempt_at<=? AND (q.backend='trusted-example' OR EXISTS(SELECT 1 FROM compute_contexts c WHERE c.context=q.context_name AND c.status='ready' AND c.engine_id=q.engine_id AND c.endpoint=q.endpoint AND c.next_probe_at>?))\nAND ((CASE WHEN json_type(t.data,'$.cpus') IS NULL THEN json_extract(h.data,'$.cpus') ELSE json_extract(t.data,'$.cpus') END) IS NULL OR q.cpu_millis<=(CASE WHEN json_type(t.data,'$.cpus') IS NULL THEN json_extract(h.data,'$.cpus') ELSE json_extract(t.data,'$.cpus') END)*1000) AND (json_extract(h.data,'$.cpus') IS NULL OR q.cpu_millis<=json_extract(h.data,'$.cpus')*1000) AND ((CASE WHEN json_type(t.data,'$.memoryMb') IS NULL THEN json_extract(h.data,'$.memoryMb') ELSE json_extract(t.data,'$.memoryMb') END) IS NULL OR q.memory_mb<=(CASE WHEN json_type(t.data,'$.memoryMb') IS NULL THEN json_extract(h.data,'$.memoryMb') ELSE json_extract(t.data,'$.memoryMb') END)*1) AND (json_extract(h.data,'$.memoryMb') IS NULL OR q.memory_mb<=json_extract(h.data,'$.memoryMb')*1)\nAND (CASE WHEN json_type(t.data,'$.maxJobs') IS NULL THEN json_extract(h.data,'$.maxJobs') ELSE json_extract(t.data,'$.maxJobs') END)>=1 AND json_extract(h.data,'$.maxJobs')>=1\nAND (q.kind='run' AND (CASE WHEN json_type(t.data,'$.maxRuns') IS NULL THEN json_extract(h.data,'$.maxRuns') ELSE json_extract(t.data,'$.maxRuns') END)>=1 AND json_extract(h.data,'$.maxRuns')>=1 OR q.kind='development' AND (CASE WHEN json_type(t.data,'$.maxDevelopment') IS NULL THEN json_extract(h.data,'$.maxDevelopment') ELSE json_extract(t.data,'$.maxDevelopment') END)>=1 AND json_extract(h.data,'$.maxDevelopment')>=1)),\nheads AS (SELECT target_id,min(sequence) sequence FROM eligible GROUP BY target_id)\nSELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequence LIMIT 256",
+        "details": [
+          "MATERIALIZE heads",
+          "SEARCH h USING INDEX sqlite_autoindex_compute_limits_1 (target_id=?)",
+          "SEARCH q USING INDEX compute_queue_phase_sequence (phase=?)",
+          "CORRELATED SCALAR SUBQUERY 1",
+          "SEARCH c USING INDEX sqlite_autoindex_compute_contexts_1 (context=?)",
+          "SEARCH t USING INDEX sqlite_autoindex_compute_limits_1 (target_id=?) LEFT-JOIN",
+          "USE TEMP B-TREE FOR GROUP BY",
+          "SCAN h"
+        ]
+      },
+      {
+        "index": 3,
+        "sqlSha256": "daae44738b38af5a00eaf5019be016737f7cc06ff76e3a630d5f402ceb0d77e9",
+        "sql": "SELECT version,data FROM compute_limits WHERE target_id='host'",
+        "details": [
+          "SEARCH compute_limits USING INDEX sqlite_autoindex_compute_limits_1 (target_id=?)"
+        ]
+      },
+      {
+        "index": 4,
+        "sqlSha256": "af98fde9460f4a049798f90f72bcd0395a11718022645da9dc5b79856c96a7e5",
+        "sql": "SELECT count(*) jobs,COALESCE(sum(kind='run'),0) runs,COALESCE(sum(kind='development'),0) development,COALESCE(sum(cpu_millis),0) cpu,COALESCE(sum(memory_mb),0) memory,COALESCE(sum(phase='unknown'),0) unknown FROM compute_queue WHERE held=1",
+        "details": [
+          "SEARCH compute_queue USING INDEX compute_queue_occupancy (held=?)"
+        ]
+      },
+      {
+        "index": 5,
+        "sqlSha256": "d18ca5623815e644daf7e478385a2d562f8a0280b5ed0c63ea001c9f1c0db74d",
+        "sql": "SELECT version,data FROM compute_limits WHERE target_id=?",
+        "details": [
+          "SEARCH compute_limits USING INDEX sqlite_autoindex_compute_limits_1 (target_id=?)"
+        ]
+      },
+      {
+        "index": 6,
+        "sqlSha256": "982d17f7403242470b5c2375e3b864be4342ee7d8ae09055112e4cbacb697190",
+        "sql": "SELECT count(*) jobs,COALESCE(sum(kind='run'),0) runs,COALESCE(sum(kind='development'),0) development,COALESCE(sum(cpu_millis),0) cpu,COALESCE(sum(memory_mb),0) memory,COALESCE(sum(phase='unknown'),0) unknown FROM compute_queue WHERE held=1 AND (target_id=? OR (?<>'host-example' AND backend='docker' AND bound=0))",
+        "details": [
+          "SEARCH compute_queue USING INDEX compute_queue_occupancy (held=?)"
+        ]
+      },
+      {
+        "index": 7,
+        "sqlSha256": "9acfe94f035965648c9cdc98d20bc1bacac6d071c49acbec6790ea64c7b47fd9",
+        "sql": "SELECT count(*) n FROM compute_queue WHERE phase='queued'",
+        "details": [
+          "SEARCH compute_queue USING COVERING INDEX compute_queue_phase_sequence (phase=?)"
+        ]
+      },
+      {
+        "index": 8,
+        "sqlSha256": "d6f3485e8a23e2f1187be6c6f633a49d3802625405174c997c9898d3716c8573",
+        "sql": "SELECT context FROM compute_contexts WHERE target_id=? ORDER BY context",
+        "details": [
+          "SCAN compute_contexts USING INDEX sqlite_autoindex_compute_contexts_1"
+        ]
+      },
+      {
+        "index": 9,
+        "sqlSha256": "fb2f1b246184de15e937d4a9430a36ef7da3e94973710330f9e84d1424fe7a85",
+        "sql": "SELECT * FROM compute_contexts WHERE context=?",
+        "details": [
+          "SEARCH compute_contexts USING INDEX sqlite_autoindex_compute_contexts_1 (context=?)"
+        ]
+      },
+      {
+        "index": 10,
+        "sqlSha256": "ee3054818d396e2f4629ce1ccfd557a861c916c7f176ad5f8045baef955e53dc",
+        "sql": "SELECT * FROM compute_queue WHERE kind=? AND held=1 AND backend='docker' AND lease_until<=? AND next_attempt_at<=? ORDER BY sequence LIMIT ?",
+        "details": [
+          "SEARCH compute_queue USING INDEX compute_queue_recovery (kind=? AND held=? AND next_attempt_at<?)",
+          "USE TEMP B-TREE FOR ORDER BY"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Measurements cover ComputeQueue.inspect and ComputeQueue.candidates only, under the recorded synthetic dataset.",
+    "They do not establish whole-application speedups, eliminate every other full scan, or measure Docker workload throughput.",
+    "EXPLAIN retains context-table scans, temporary B-trees and the derived-head scan; this is not a claim that all SQL operations are index-only.",
+    "No claim is made about production load isolation, GPU, remote targets or model HTTP concurrency."
+  ]
+}

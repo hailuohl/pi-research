@@ -1,0 +1,153 @@
+{
+  "flow": "C2-directory-refresh",
+  "baseline": "50c65dc57d6117bc0ed534665437a2ad472dee7e",
+  "files": [
+    {
+      "path": "apps/web/src/app.tsx",
+      "baselineSha256": "23ff061ff393c8ac1782c3437b1378c6262041d670363def4adaba898351bc69",
+      "v1Sha256": "4082542973f89a7e5542eea7a38143324c7cc1e53eb4f571aa2b404731cd3765",
+      "candidateSha256": "4082542973f89a7e5542eea7a38143324c7cc1e53eb4f571aa2b404731cd3765"
+    },
+    {
+      "path": "apps/web/src/data-views.tsx",
+      "baselineSha256": "b9f4660835a16bb81c053a613e11d8d2425f69a2559114c0958bc2dd60d809c7",
+      "v1Sha256": "dd33525fe2b7c2c5a65e52eff06cd540b5c2dcd4c3eff0f8e8599c4efbb38a84",
+      "candidateSha256": "50dc1cffa96dde8e5ef2703e086984359a4dd92c5322c02c8b2750f888f815dc"
+    },
+    {
+      "path": "tests/unit/workspace-ui.test.mjs",
+      "baselineSha256": "ad42f755aac423320e14bb9dc7cf8f7acd37cfd463b5076111dff85c7a6e9667",
+      "v1Sha256": "9e2ad9fda036642892b030adb0597056f1637365ca16a61b2b56ee0f7018e237",
+      "candidateSha256": "493cfd8abbc68a8cc9b9c1738b0a97da4f8bbb9622a98461808c2fea0bb43e68"
+    }
+  ],
+  "compiled": [
+    {
+      "path": "dist/web/assets/app.js",
+      "sha256": "05cacd6d1ce5e360dd8d7659a112f4f7c681e21aa10f57fd4114387944a6ce6b"
+    },
+    {
+      "path": "dist/web/assets/data-views.js",
+      "sha256": "d287e5c341fc578e0329540d0bbdf8af8bc2e4287800248573c24578bbc137fa"
+    },
+    {
+      "path": "dist/web/assets/main.js",
+      "sha256": "7655e65699c094a9bc0cf9f2b13156fbbde04decfa6f115fd94a6410b836a603"
+    }
+  ],
+  "fullPatch": {
+    "path": ".validation/directory-refresh-20261012/v2-directory-refresh.patch",
+    "sha256": "67d7f10dcf1c552b42880428aa255e69f77dcb672c9729346be978078fbe063c"
+  },
+  "repairPatch": {
+    "path": ".validation/directory-refresh-20261012/v1-to-v2.patch",
+    "sha256": "274c4c6f4790f943eceec160762ed2ea87d355e19ec4bf656a595fdee900da9a"
+  },
+  "implementation": {
+    "requested": "gpt-6.1-sol",
+    "reasoningEffortRequested": "high",
+    "runtime": "已请求，运行时未回显"
+  },
+  "independentReview": {
+    "requested": "gpt-6.1-sol",
+    "effortRequested": "high",
+    "runtime": "not echoed",
+    "originalBlocking": "P1 save/loadFiles completion awaited a discarded React callback",
+    "closedInV2": true,
+    "tests": 62,
+    "pass": 62,
+    "fail": 0,
+    "actualReactMounted": false,
+    "report": ".validation/directory-refresh-20261012/independent-v2-review.json",
+    "sha256": "2740d36497818b248808ba2dfee08ab85818c6d6713c0b260ee7231ff7e460a8"
+  },
+  "regressions": [
+    {
+      "command": "node --test --test-name-pattern='a saved directory refresh releases App busy' tests/unit/workspace-ui.test.mjs",
+      "stage": "new test against frozen v1 built modules copied to v2/dist",
+      "status": "failed as expected",
+      "exitCode": 1,
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "log": ".validation/directory-refresh-20261012/v2-red-tests.log"
+    },
+    {
+      "command": "node scripts/build.mjs",
+      "stage": "source-v2; single build",
+      "status": "passed",
+      "exitCode": 0,
+      "log": ".validation/directory-refresh-20261012/v2-build.log"
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/unit/workspace-ui.test.mjs tests/unit/workbench-navigation.test.mjs",
+      "stage": "source-v2",
+      "status": "passed",
+      "exitCode": 0,
+      "tests": 62,
+      "pass": 62,
+      "fail": 0,
+      "log": ".validation/directory-refresh-20261012/v2-green-tests.log"
+    }
+  ],
+  "full": {
+    "command": "npm run test:core",
+    "tests": 1908,
+    "pass": 1884,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 24,
+    "todo": 0,
+    "duration_ms": 1239054.0414,
+    "exitCode": 0,
+    "log": ".validation/directory-refresh-20261012/v2-full-regression.log",
+    "logSha256": "1a574d349abf372470ca93eb7f6f8435c5b6826ff06878fa90bbc54466c9ae61"
+  },
+  "clean": {
+    "install": 0,
+    "build": 0,
+    "typecheck": 0,
+    "files": 661,
+    "identical": true,
+    "manifestSha256": "76959a99f3f9531e7f46dff2dc1afe8ad1d27b56785f12b71746094f495993b6"
+  },
+  "chrome": {
+    "addedVisible": 1,
+    "contentPreserved": true,
+    "saveEnabled": true,
+    "dialogCount": 0,
+    "digestVisible": 1,
+    "removedVisible": 0,
+    "draftAfterRemoval": true,
+    "dialogCountAfterRemoval": 0,
+    "restoredOriginal": true,
+    "savedButtonDisabled": true,
+    "unsavedIndicator": 0,
+    "projectId": "716c3e14-4d51-4f7f-9142-42e0eca7d2cd",
+    "source": ".validation/directory-refresh-20261012/source-v2",
+    "realBackend": true,
+    "redEvidence": ".validation/directory-refresh-20261012/chrome-red.json",
+    "originalContentSha256": "40890ef93057f9ec44b9f3aff5d9039fb651f821393dc7f41571785cdf6bc01b",
+    "sourceDraftRestored": true,
+    "removedFixtureRetainedOutsideSource": true
+  },
+  "unchangedSsh": [
+    {
+      "path": "packages/runners/ssh-onboarding.ts",
+      "sha256": "65875767552263fc38099073fb25d7fe1d2c9617b31b396ebe31c86a049f7e18",
+      "unchanged": true
+    },
+    {
+      "path": "tests/unit/ssh-onboarding.test.mjs",
+      "sha256": "399df4240d788d453789f7b8b1366fbd1ad911aeb7a763ac0ba9f0463f81dfeb",
+      "unchanged": true
+    }
+  ],
+  "notRun": [
+    "Mounted React DOM race injection",
+    "Real Chrome network failure injection",
+    "Separate Chrome click for every App entry"
+  ],
+  "unrelatedWipExcluded": true,
+  "main4794Restarted": false
+}

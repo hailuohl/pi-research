@@ -1,0 +1,376 @@
+{
+  "version": "0.2.2",
+  "aiUsed": false,
+  "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+  "sessionId": "0804e491-9c33-4a80-885a-77141f99fadc",
+  "campaign": {
+    "goal": "以同一协议比较候选，再沿保留父节点建立下一轮",
+    "rootSessionId": "0804e491-9c33-4a80-885a-77141f99fadc",
+    "rootModel": {
+      "provider": "",
+      "model": "",
+      "thinking": "off"
+    },
+    "baselineExperimentId": "921c751c-63b9-4760-b53f-f37e799f92ca",
+    "contractDigest": "0ee604d00db1e345ebc6e5a12d1c818bc511065d096ae1a137b142ebad2e6ffb",
+    "primaryMetric": "mse",
+    "limits": {
+      "maxRounds": 3,
+      "maxCandidatesPerRound": 4,
+      "maxUnansweredRunsPerNode": 2,
+      "maxConsecutiveRegressions": 3,
+      "maxAnalysisAttempts": 0
+    },
+    "autoAnalyze": false,
+    "focusExperimentId": "548f3da3-8b8d-40bf-b021-2bb5b389ec7e",
+    "direction": "min",
+    "state": "stopped",
+    "currentRoundId": "e176b760-ba45-42a3-926b-55b9d6d83704",
+    "roundNumber": 2,
+    "approvalId": "0b4c9c07-a7fb-43df-8262-9ae7b2e6fc1c",
+    "planDigest": "f5732c73d697520d9101047e56ee3fd01f646e107913ae89438af11ff8a7b31e",
+    "consecutiveRegressions": 0,
+    "id": "079303db-8dd0-4790-b292-cecc802cf735",
+    "kind": "campaign",
+    "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+    "version": 7,
+    "createdAt": "2026-09-27T06:45:46.620Z",
+    "updatedAt": "2026-09-27T06:45:47.141Z",
+    "stopReason": "用户授权的 4 次随包数值验证已完成；不继续搜索、不调用模型"
+  },
+  "rounds": [
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "number": 1,
+      "parentExperimentId": "921c751c-63b9-4760-b53f-f37e799f92ca",
+      "state": "closed",
+      "id": "d2be9d7d-6a05-4bdc-9ab0-4bb18eab72e9",
+      "kind": "research-round",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:46.620Z",
+      "updatedAt": "2026-09-27T06:45:47.013Z"
+    },
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "number": 2,
+      "parentExperimentId": "548f3da3-8b8d-40bf-b021-2bb5b389ec7e",
+      "state": "closed",
+      "decisionId": "7a064a74-0e59-47c8-be9c-688d7acce6ac",
+      "id": "e176b760-ba45-42a3-926b-55b9d6d83704",
+      "kind": "research-round",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:47.013Z",
+      "updatedAt": "2026-09-27T06:45:47.142Z"
+    }
+  ],
+  "decisions": [
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "roundId": "d2be9d7d-6a05-4bdc-9ab0-4bb18eab72e9",
+      "action": "refill",
+      "reason": "一阶结果已实测；比较同一父节点下二阶与三阶配置",
+      "observationIds": [
+        "29a3ba1473938a964b8a21c3b61d6d7c80de8141a9f8c7d8848783e078e53e9e"
+      ],
+      "candidates": [
+        {
+          "title": "候选 A · 二阶模型",
+          "hypothesis": "固定协议的二阶候选",
+          "config": {
+            "polynomialDegree": 2,
+            "ridge": 0.000001
+          }
+        },
+        {
+          "title": "候选 B · 三阶模型",
+          "hypothesis": "固定协议的三阶候选",
+          "config": {
+            "polynomialDegree": 3,
+            "ridge": 0.000001
+          }
+        }
+      ],
+      "inputDigest": "cf87b8a50be0f0669083de45a5652f9694a5ea686d18abaa0364cb37f6b44e30",
+      "approvalId": "8a3d8f6d-2607-4120-8878-bdbe694803d6",
+      "decisionDigest": "3d47887b7b8db25814e500002a6476919dd1c4b54702ef3cec9c9e1ad37d8e6a",
+      "status": "applied",
+      "id": "a98d5627-cd6f-4786-b7d9-3300bfcd68fc",
+      "kind": "campaign-decision",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:46.750Z",
+      "updatedAt": "2026-09-27T06:45:46.756Z",
+      "appliedAt": "2026-09-27T06:45:46.756Z",
+      "effects": {
+        "experimentIds": [
+          "548f3da3-8b8d-40bf-b021-2bb5b389ec7e",
+          "a9219ab5-4d15-44a5-9f5c-b091fd168f60"
+        ],
+        "intentIds": [
+          "79c9e89c-7af7-4aa8-bbc2-5a7e43a651de",
+          "0e81ef87-0511-41c2-ad7d-f6b56500e146"
+        ],
+        "roundId": "d2be9d7d-6a05-4bdc-9ab0-4bb18eab72e9",
+        "stopped": false
+      }
+    },
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "roundId": "d2be9d7d-6a05-4bdc-9ab0-4bb18eab72e9",
+      "action": "promote",
+      "reason": "按两个已完成候选的实际 mse 保留较低者；只适用于本次固定合成数据比较",
+      "observationIds": [
+        "29a3ba1473938a964b8a21c3b61d6d7c80de8141a9f8c7d8848783e078e53e9e",
+        "de0f22eeb283508c3dbc3db0bf0fa66579a039ac3389a55d60cfc406cdfde0af",
+        "2e281d306f88ee5e8289b1c446106d68d3dab1a8b84329be9c54366780f29810"
+      ],
+      "candidates": [
+        {
+          "title": "下一轮 · 岭参数变体",
+          "hypothesis": "保留父节点后改变岭参数，结果仍待真实运行",
+          "config": {
+            "polynomialDegree": 2,
+            "ridge": 0.01
+          }
+        }
+      ],
+      "selectedRunId": "33ac4b91-bab6-46ef-89b2-8bd1e1ca5458",
+      "inputDigest": "65be51e22426a459ca37790f3feb7950c0f9ef0873070a7d6307d760a8d36497",
+      "approvalId": "68fc21fe-75b0-446b-8835-d015602e2aae",
+      "decisionDigest": "8d7b68ea3cf08cefc7f7d16f2337bdcda3b9af63bd860582f8f86e54a5b84b27",
+      "status": "applied",
+      "id": "7a064a74-0e59-47c8-be9c-688d7acce6ac",
+      "kind": "campaign-decision",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:47.010Z",
+      "updatedAt": "2026-09-27T06:45:47.016Z",
+      "appliedAt": "2026-09-27T06:45:47.016Z",
+      "effects": {
+        "experimentIds": [
+          "ef7e8153-9850-4698-b6d0-ed2b7e8a2c67"
+        ],
+        "intentIds": [
+          "0c8177ec-d77b-4c8f-9868-7414be37bcb7"
+        ],
+        "roundId": "e176b760-ba45-42a3-926b-55b9d6d83704",
+        "stopped": false
+      }
+    },
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "roundId": "e176b760-ba45-42a3-926b-55b9d6d83704",
+      "action": "stop",
+      "reason": "用户授权的 4 次随包数值验证已完成；不继续搜索、不调用模型",
+      "observationIds": [
+        "933ab86df2dbd2de56e3ee25b9848b955a52eabef8deca78ea9bc56e540f3af0"
+      ],
+      "candidates": [],
+      "inputDigest": "91d0f41c700f2986c179a051791c571377649e1b8cde59d43f439ff5be878750",
+      "approvalId": "cc6a6b8a-e4cc-4501-9764-aa2f6873c662",
+      "decisionDigest": "e0392c5c0d81235057c501674b36445e22e26dcd701fed1f725d1f463348989e",
+      "status": "applied",
+      "id": "9190f1d4-f520-432e-b157-03307fc98eab",
+      "kind": "campaign-decision",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:47.141Z",
+      "updatedAt": "2026-09-27T06:45:47.142Z",
+      "appliedAt": "2026-09-27T06:45:47.142Z",
+      "effects": {
+        "experimentIds": [],
+        "intentIds": [],
+        "roundId": "e176b760-ba45-42a3-926b-55b9d6d83704",
+        "stopped": true
+      }
+    }
+  ],
+  "observations": [
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "roundId": "d2be9d7d-6a05-4bdc-9ab0-4bb18eab72e9",
+      "memberId": "1ff8c8ee-7012-4701-8c57-85ed4bde5bcf",
+      "runId": "3d03af06-fbc9-4dfa-8871-b53a8f4c593b",
+      "experimentId": "921c751c-63b9-4760-b53f-f37e799f92ca",
+      "manifestDigest": "f08a22764eba0de4637f1790e0ccffa6a521dfdfa24f02867ec3d02e63b991a3",
+      "contentDigest": "e671b82246602d58f8f9c30a93864473bc671e80068e009113c2243fba76fee3",
+      "executionState": "succeeded",
+      "integrity": "complete",
+      "evidenceIds": [
+        "5993f637-6734-413b-80d8-f8442ec845fe"
+      ],
+      "validation": "verified",
+      "explanation": "指标和全部必需产物已核验；科研解释仍需审核。",
+      "metrics": {
+        "mse": 0.04350140148425378,
+        "r2": 0.9622735588409816,
+        "train_mse": 0.044989798949094585
+      },
+      "status": "decided",
+      "id": "29a3ba1473938a964b8a21c3b61d6d7c80de8141a9f8c7d8848783e078e53e9e",
+      "kind": "run-observation",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:46.749Z",
+      "updatedAt": "2026-09-27T06:45:46.756Z",
+      "decisionId": "a98d5627-cd6f-4786-b7d9-3300bfcd68fc"
+    },
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "roundId": "d2be9d7d-6a05-4bdc-9ab0-4bb18eab72e9",
+      "memberId": "d591f086-8f01-4b1c-be39-6411f45b5dea",
+      "runId": "33ac4b91-bab6-46ef-89b2-8bd1e1ca5458",
+      "experimentId": "548f3da3-8b8d-40bf-b021-2bb5b389ec7e",
+      "manifestDigest": "173043ae4d495b2b66f0bdcf2cb160f28f0aa0b3c016939ffd7f551b04130854",
+      "contentDigest": "5bd15a60cc064167a3de6636aca88d4df6adff3827fc12b5fd5f73752317aa39",
+      "executionState": "succeeded",
+      "integrity": "complete",
+      "evidenceIds": [
+        "dfc07c21-03b8-4a14-92d3-f0c2851986b2"
+      ],
+      "validation": "verified",
+      "explanation": "指标和全部必需产物已核验；科研解释仍需审核。",
+      "metrics": {
+        "mse": 0.000446210591122142,
+        "r2": 0.9996130253960532,
+        "train_mse": 0.00045146486373746783
+      },
+      "status": "decided",
+      "id": "de0f22eeb283508c3dbc3db0bf0fa66579a039ac3389a55d60cfc406cdfde0af",
+      "kind": "run-observation",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:46.880Z",
+      "updatedAt": "2026-09-27T06:45:47.015Z",
+      "decisionId": "7a064a74-0e59-47c8-be9c-688d7acce6ac"
+    },
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "roundId": "d2be9d7d-6a05-4bdc-9ab0-4bb18eab72e9",
+      "memberId": "74f2b7b5-31a4-456e-8304-c56fdd44b40f",
+      "runId": "9482ea95-b029-4587-8064-0b2dd61b4bb0",
+      "experimentId": "a9219ab5-4d15-44a5-9f5c-b091fd168f60",
+      "manifestDigest": "72f51a22401f5cc7408792e3682779ba3325444d1996fec850734e4b8821e9cb",
+      "contentDigest": "96c3dfa49c9ded8ac687afdee8b1cb399e9b56633999a53c72ae48470a5cf6ba",
+      "executionState": "succeeded",
+      "integrity": "complete",
+      "evidenceIds": [
+        "f3f359f3-5604-411b-ac30-cc1ebf00e794"
+      ],
+      "validation": "verified",
+      "explanation": "指标和全部必需产物已核验；科研解释仍需审核。",
+      "metrics": {
+        "mse": 0.00044694689491089033,
+        "r2": 0.9996123868391191,
+        "train_mse": 0.0004513395510615139
+      },
+      "status": "decided",
+      "id": "2e281d306f88ee5e8289b1c446106d68d3dab1a8b84329be9c54366780f29810",
+      "kind": "run-observation",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:47.008Z",
+      "updatedAt": "2026-09-27T06:45:47.015Z",
+      "decisionId": "7a064a74-0e59-47c8-be9c-688d7acce6ac"
+    },
+    {
+      "campaignId": "079303db-8dd0-4790-b292-cecc802cf735",
+      "roundId": "e176b760-ba45-42a3-926b-55b9d6d83704",
+      "memberId": "f7afd223-e671-41c5-8156-bbab12253ea3",
+      "runId": "7a5308ba-fbc3-498e-bfac-8604edc8537f",
+      "experimentId": "ef7e8153-9850-4698-b6d0-ed2b7e8a2c67",
+      "manifestDigest": "753c9cf442f7859838dfce8c725b9532479a3309d88717ebb7dce7c0fb220ef8",
+      "contentDigest": "f76ad3b7a1df1a08ada1182ae3f647c10ba3921f312873ef9f75d7d4886ae79d",
+      "executionState": "succeeded",
+      "integrity": "complete",
+      "evidenceIds": [
+        "8035627f-77cb-463f-9729-4828a8b5c239"
+      ],
+      "validation": "verified",
+      "explanation": "指标和全部必需产物已核验；科研解释仍需审核。",
+      "metrics": {
+        "mse": 0.00044494215648380506,
+        "r2": 0.9996141254416405,
+        "train_mse": 0.00045152446792745733
+      },
+      "status": "decided",
+      "id": "933ab86df2dbd2de56e3ee25b9848b955a52eabef8deca78ea9bc56e540f3af0",
+      "kind": "run-observation",
+      "projectId": "7a66ed97-7977-404b-9f37-8b79fe2a8355",
+      "version": 2,
+      "createdAt": "2026-09-27T06:45:47.140Z",
+      "updatedAt": "2026-09-27T06:45:47.142Z",
+      "decisionId": "9190f1d4-f520-432e-b157-03307fc98eab"
+    }
+  ],
+  "runs": [
+    {
+      "id": "3d03af06-fbc9-4dfa-8871-b53a8f4c593b",
+      "experimentId": "921c751c-63b9-4760-b53f-f37e799f92ca",
+      "state": "succeeded",
+      "integrity": "complete",
+      "metrics": {
+        "mse": 0.04350140148425378,
+        "r2": 0.9622735588409816,
+        "train_mse": 0.044989798949094585
+      },
+      "snapshotDigest": "d59306e7d8fabfd3f19ca3ebef13fec16d0a4665211a3875f89fba95d6e3eb06",
+      "evidenceIds": [
+        "5993f637-6734-413b-80d8-f8442ec845fe"
+      ]
+    },
+    {
+      "id": "33ac4b91-bab6-46ef-89b2-8bd1e1ca5458",
+      "experimentId": "548f3da3-8b8d-40bf-b021-2bb5b389ec7e",
+      "state": "succeeded",
+      "integrity": "complete",
+      "metrics": {
+        "mse": 0.000446210591122142,
+        "r2": 0.9996130253960532,
+        "train_mse": 0.00045146486373746783
+      },
+      "snapshotDigest": "9cdc90658301831c123aed15c8e17126175c78f63ffddeb9154e1f3fbb57fb40",
+      "evidenceIds": [
+        "dfc07c21-03b8-4a14-92d3-f0c2851986b2"
+      ]
+    },
+    {
+      "id": "9482ea95-b029-4587-8064-0b2dd61b4bb0",
+      "experimentId": "a9219ab5-4d15-44a5-9f5c-b091fd168f60",
+      "state": "succeeded",
+      "integrity": "complete",
+      "metrics": {
+        "mse": 0.00044694689491089033,
+        "r2": 0.9996123868391191,
+        "train_mse": 0.0004513395510615139
+      },
+      "snapshotDigest": "1a1f8de126ee948fa1966b2b6ba181efda3cffe03c6143ee280978c7fdd1ac1e",
+      "evidenceIds": [
+        "f3f359f3-5604-411b-ac30-cc1ebf00e794"
+      ]
+    },
+    {
+      "id": "7a5308ba-fbc3-498e-bfac-8604edc8537f",
+      "experimentId": "ef7e8153-9850-4698-b6d0-ed2b7e8a2c67",
+      "state": "succeeded",
+      "integrity": "complete",
+      "metrics": {
+        "mse": 0.00044494215648380506,
+        "r2": 0.9996141254416405,
+        "train_mse": 0.00045152446792745733
+      },
+      "snapshotDigest": "27d173b93b81e21d9706b883a702afb0b947eefd325bcf1ff379e3503ba95393",
+      "evidenceIds": [
+        "8035627f-77cb-463f-9729-4828a8b5c239"
+      ]
+    }
+  ],
+  "retainedExperimentId": "548f3da3-8b8d-40bf-b021-2bb5b389ec7e",
+  "nextExperimentId": "ef7e8153-9850-4698-b6d0-ed2b7e8a2c67",
+  "reportId": "ae3d4537-385e-4347-a127-4d8fb06cf808",
+  "reportPath": "/mnt/data/pi-research-work/verification/fixed-demo-data/artifacts/a59f2d40999dc2c399b5a0ea30f237ebbd2ff5a127c4eaca326d379dfd97815e",
+  "traceArtifactId": "15290f6a-b344-44df-9f76-22f235d39285",
+  "limitations": "固定合成数据实际运算；仅验证业务流程和恢复，不是 Pi/多模型/DFT/论文复现测试。"
+}

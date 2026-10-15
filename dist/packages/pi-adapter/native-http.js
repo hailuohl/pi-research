@@ -1,0 +1,25 @@
+import { digest, now } from '../storage/store.js';
+import { ensure } from '../domain/errors.js';
+/** Uses the shared HTTP journal; this identity never impersonates an AgentAdmission. */
+export function acquireOwnerNativeHttp(store, projectId, identity, validate) { return store.transaction(() => { validate(); const id = digest({ ownerKind: identity.ownerKind, operationId: identity.operationId }), old = store.maybe('model-http-request', id); ensure(!old, 'NATIVE_ALREADY_DISPATCHED', '此原生请求已进入外发账目，不能重复发送', 409); store.create('model-http-request', projectId, { ...identity, state: 'active', queuedAt: now(), startedAt: now() }, id); store.event(projectId, 'model-http.queued', { requestId: id, sessionId: identity.sessionId, ownerKind: identity.ownerKind, operationId: identity.operationId }); store.event(projectId, 'model-http.started', { requestId: id, sessionId: identity.sessionId, ownerKind: identity.ownerKind, operationId: identity.operationId }); return id; }); }
+/** Only a drained local transport can release the shared journal; provider outcome may remain unknown. */
+export function finishOwnerNativeHttp(store, identity, outcome, httpStatus, receivedBytes = 0, transportEnded = false) { return store.transaction(() => { const id = digest({ ownerKind: identity.ownerKind, operationId: identity.operationId }), row = store.maybe('model-http-request', id); if (!row)
+    return; ensure(row.ownerKind === 'owner-native' && row.ownerHost === identity.ownerHost && row.operationId === identity.operationId, 'NATIVE_HTTP_SCOPE_DENIED', 'HTTP回执不属于原生请求所有者', 403); if (row.state !== 'active' && row.state !== 'unknown')
+    return; const state = !transportEnded ? 'unknown' : outcome === 'unknown' ? 'interrupted' : outcome; store.update('model-http-request', id, row.version, { state, transportEnded, providerOutcomeUnknown: outcome === 'unknown', ...(transportEnded ? { endedAt: now() } : {}), ...(httpStatus === undefined ? {} : { httpStatus }), receivedBytes, outcome: state === 'succeeded' ? 'body-complete' : state === 'interrupted' ? 'owner-native-transport-ended-provider-outcome-unknown' : state === 'unknown' ? 'owner-native-transport-unconfirmed' : state === 'cancelled' ? 'cancelled-before-dispatch' : 'owner-native-request-failed' }); store.event(row.projectId, 'model-http.finished', { requestId: id, sessionId: identity.sessionId, ownerKind: identity.ownerKind, operationId: identity.operationId, state, transportEnded }); }); }
+const alive = (pid) => { try {
+    process.kill(pid, 0);
+    return true;
+}
+catch (e) {
+    return e.code === 'EPERM';
+} };
+/** A confirmed lost process does not authorize another paid request. */
+export function recoverOwnerNativeHttp(store) { store.transaction(() => { for (const row of store.list('model-http-request').filter(r => r.ownerKind === 'owner-native' && ['active', 'queued', 'unknown'].includes(r.state) && !alive(r.ownerPid))) {
+    const state = row.state === 'queued' ? 'cancelled' : 'interrupted', operation = store.maybe('native-request', row.operationId);
+    ensure(!operation || operation.projectId === row.projectId, 'NATIVE_HTTP_SCOPE_DENIED', '原生请求恢复记录不属于此项目', 403);
+    store.update('model-http-request', row.id, row.version, { state, transportEnded: true, providerOutcomeUnknown: state === 'interrupted', endedAt: now(), outcome: state === 'interrupted' ? 'owner-native-process-lost-provider-outcome-unknown' : 'cancelled-before-dispatch' });
+    if (operation && operation.state === 'running')
+        store.update('native-request', operation.id, operation.version, { state: state === 'interrupted' ? 'unknown' : 'cancelled', error: '执行进程已退出；供应商结果未确认，不自动重发。' });
+    store.event(row.projectId, 'model-http.reconciled', { requestId: row.id, sessionId: row.sessionId, ownerKind: 'owner-native', operationId: row.operationId, state, transportEnded: true });
+} }); }
+//# sourceMappingURL=native-http.js.map

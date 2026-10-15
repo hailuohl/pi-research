@@ -1,0 +1,20 @@
+{
+  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+  "reportId": "28b4360a-b410-4956-b56e-125e094a74f7",
+  "integrity": "verified",
+  "validity": "current",
+  "bodyDigest": "10cb140dd8ac95dcc22e630e421afe715cf95da90c4141dc28ff718a5d9aa407",
+  "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+  "mse": 0.000050345031695457565,
+  "metricReferenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911",
+  "source": {
+    "path": "main.py",
+    "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+    "complete": true
+  },
+  "checkedLegacyRecords": 173,
+  "allLegacyRecordsUnchanged": true,
+  "originalDatabaseUntouched": true,
+  "backupDirectory": ".validation/publication-report-compat-NiZTyU",
+  "newModelRequests": 0
+}

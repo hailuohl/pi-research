@@ -1,0 +1,632 @@
+{
+  "flow": "OWNED-RUN-PI-01",
+  "date": "2026-10-13",
+  "baseline": "8bde3aeb86acfc51ad1a0caf00b09a9f87b574ca",
+  "status": "accepted-for-batch-scope",
+  "productChanges": [],
+  "acceptance": {
+    "projectId": "2a8b2262-edd5-4c7f-b561-7f976737d963",
+    "sessionId": "5e1fc7b3-0128-42bf-b9a7-83369e4df434",
+    "experimentId": "01a32d3b-7a95-4063-9c42-c289f265d9d5",
+    "setupVia": "owner API; not autonomous Pi experiment preparation",
+    "chrome": [
+      "exact run.submit and run_submit approval for each of two distinct intents",
+      "Run 782301cf metrics, stdout and expected artifact entries",
+      "metrics.json raw preview",
+      "failed/completed persistent notifications and Pi result-analysis author",
+      "reload original root and ordinary REOPEN response"
+    ],
+    "runs": [
+      {
+        "id": "81431e14-90b1-4339-ae00-082bd068db8a",
+        "intentId": "48ed4f6e-b2e6-4624-a0b3-676bcddffa9a",
+        "state": "succeeded",
+        "integrity": "complete",
+        "judgment": "pending",
+        "metrics": {
+          "mse": 0.04350140148425378,
+          "r2": 0.9622735588409816,
+          "train_mse": 0.044989798949094585
+        },
+        "supervisorPid": 227900,
+        "childPid": 31396,
+        "startedAt": "2026-10-12T23:23:25.480Z",
+        "endedAt": "2026-10-12T23:23:25.600Z"
+      },
+      {
+        "id": "782301cf-f1c8-483e-be7a-836bc93d0b85",
+        "intentId": "6a51631a-5537-42c9-8b66-b8ef481e6c6e",
+        "state": "succeeded",
+        "integrity": "complete",
+        "judgment": "pending",
+        "metrics": {
+          "mse": 0.04350140148425378,
+          "r2": 0.9622735588409816,
+          "train_mse": 0.044989798949094585
+        },
+        "supervisorPid": 168668,
+        "childPid": 170684,
+        "startedAt": "2026-10-12T23:34:18.522Z",
+        "endedAt": "2026-10-12T23:34:18.645Z"
+      }
+    ],
+    "wakeups": [
+      {
+        "id": "51add9a8124373ea3eba4e105cb695fbc16b8efa76e654a40a8bf24ff0b883fb",
+        "sourceKind": "run-result",
+        "sourceId": "81431e14-90b1-4339-ae00-082bd068db8a",
+        "ownerId": "48ed4f6e-b2e6-4624-a0b3-676bcddffa9a",
+        "rootSessionId": "5e1fc7b3-0128-42bf-b9a7-83369e4df434",
+        "state": "failed",
+        "automatic": true,
+        "attempts": 1,
+        "maxAttempts": 1
+      },
+      {
+        "id": "5f1925b6ed54c84c40c8e8998f52fa8875060b22e9a664ca624b7cd8701b0eeb",
+        "sourceKind": "run-result",
+        "sourceId": "782301cf-f1c8-483e-be7a-836bc93d0b85",
+        "ownerId": "6a51631a-5537-42c9-8b66-b8ef481e6c6e",
+        "rootSessionId": "5e1fc7b3-0128-42bf-b9a7-83369e4df434",
+        "state": "completed",
+        "automatic": true,
+        "attempts": 1,
+        "maxAttempts": 1
+      }
+    ],
+    "execution": {
+      "command": [
+        "node",
+        "experiment.mjs"
+      ],
+      "environment": {},
+      "datasetVersion": "synthetic-quadratic-v1",
+      "evaluationProtocolVersion": "deterministic-split-180-60-v1",
+      "metrics": {
+        "mse": {
+          "unit": "squared-target",
+          "direction": "min"
+        },
+        "r2": {
+          "unit": "dimensionless",
+          "direction": "max"
+        },
+        "train_mse": {
+          "unit": "squared-target",
+          "direction": "min"
+        }
+      },
+      "expectedArtifacts": [
+        "metrics.json",
+        "predictions.csv",
+        "model.json"
+      ],
+      "timeoutSeconds": 30,
+      "runner": "trusted-example",
+      "cpus": 1,
+      "memoryMb": 256
+    },
+    "isolation": {
+      "pass": true,
+      "runId": "782301cf-f1c8-483e-be7a-836bc93d0b85",
+      "wakeupId": "5f1925b6ed54c84c40c8e8998f52fa8875060b22e9a664ca624b7cd8701b0eeb",
+      "sourceKind": "run-result",
+      "ownerId": "6a51631a-5537-42c9-8b66-b8ef481e6c6e",
+      "automatic": true,
+      "attempts": 1,
+      "maxAttempts": 1,
+      "interactive": {
+        "reference": "pi-data:/sessions/5e1fc7b3-0128-42bf-b9a7-83369e4df434/pi/2026-10-12T23-19-23-426Z_01a13269-e621-7792-9344-29f90deed169.jsonl",
+        "bytes": 155693,
+        "sha256": "9b6da2861f4b11587c2167af3cb9827f57eb5bd1d30977078d6bec1a58a9ce5a",
+        "unchangedDuringAnalysis": true
+      },
+      "analysis": {
+        "reference": "pi-data:/sessions/5e1fc7b3-0128-42bf-b9a7-83369e4df434/pi-analysis/5f1925b6ed54c84c40c8e8998f52fa8875060b22e9a664ca624b7cd8701b0eeb/2026-10-12T23-34-20-591Z_01a13277-96af-7587-8f52-5c21ca513886.jsonl",
+        "bytes": 47079,
+        "sha256": "06bff3de3c17febca007bedb0d26509023cc863adf0b6c2cba50b79ba92f286c",
+        "tools": [
+          "run_inspect",
+          "run_logs",
+          "evidence_read"
+        ],
+        "noOriginalMarker": true
+      },
+      "budget": {
+        "success": {
+          "ownerId": "6a51631a-5537-42c9-8b66-b8ef481e6c6e",
+          "state": "settled",
+          "used": 1,
+          "amount": 1
+        },
+        "firstFailure": {
+          "ownerId": "48ed4f6e-b2e6-4624-a0b3-676bcddffa9a",
+          "state": "unknown",
+          "used": 0,
+          "amount": 1
+        }
+      },
+      "rootState": "idle",
+      "workers": 0
+    },
+    "provider": {
+      "requests": 21,
+      "successful": 20,
+      "fixtureFailures": 1,
+      "errorSequence": 9,
+      "correction": "strictly remove recognized terminal pi-research-input envelope before JSON parse; reject unknown suffix",
+      "secondAutoRequests": 4,
+      "secondAutoTools": [
+        "run_inspect",
+        "run_logs",
+        "evidence_read"
+      ],
+      "firstFailureRetained": true
+    },
+    "preservation": {
+      "oldRecords": 195,
+      "finalRecords": 311,
+      "fixedFiles": 28,
+      "pass": true,
+      "firstAttemptRecordsUnchanged": 41,
+      "firstFailureNativeUnchanged": true,
+      "firstRunArtifactsAndEvidenceUnchanged": true,
+      "originalDefaultAndModelsUnchanged": true,
+      "orderChanges": [
+        {
+          "provider": "offline-text-corpus",
+          "before": 2,
+          "after": 3
+        }
+      ],
+      "legacyModelsSha256": "a3b1441f5085bf4e648e42a2460bb94c939ae14b77b9a629dcac2212fd0b5f43",
+      "reopenVisible": true,
+      "automaticRequestsWithoutInteractiveMarker": 5,
+      "automaticToolSetExcludesRunSubmitHostExecuteArtifactRead": true,
+      "completedWakeupRootMatches": true,
+      "automationMessages": 5,
+      "events": {
+        "agent.started": 8,
+        "agent.finished": 8,
+        "run.prepared": 2,
+        "run.queued": 2,
+        "run.completed": 2,
+        "wakeup.pending": 2,
+        "wakeup.queued": 2,
+        "wakeup.failed": 1,
+        "wakeup.completed": 1
+      }
+    },
+    "verification": [
+      {
+        "id": "setup_and_contract",
+        "status": "pass",
+        "detail": "root/project/experiment identities and frozen trusted-example 1 CPU, 256 MiB, 30 s contract match the saved intents"
+      },
+      {
+        "id": "two_chrome_approvals_and_no_extra_grants",
+        "status": "pass",
+        "detail": "each run_submit has an approved session-action plus saved Chrome approval UI; no RunGrant, WorkingGrant, campaign, or FullAccess"
+      },
+      {
+        "id": "first_failure_preserved_and_second_run_analyzed",
+        "status": "pass",
+        "detail": "first succeeded Run retains failed one-attempt wakeup and unknown 1/0 reservation; second frozen-source intent creates the only other Run and completes one automatic wakeup"
+      },
+      {
+        "id": "provider_recovery_and_real_analysis",
+        "status": "pass",
+        "detail": "21 provider requests with only seq 9 suffix parse failure; second AUTO makes exactly three read calls and reports this Run/evidence metrics"
+      },
+      {
+        "id": "artifacts_are_real_and_metrics_derive_from_files",
+        "status": "pass",
+        "detail": "four current Run artifacts match metadata size/SHA; metrics file, Run DTO and evidence quote agree, model parses, and predictions contain 60 rows"
+      },
+      {
+        "id": "reopen_isolated_and_no_new_run",
+        "status": "pass",
+        "detail": "root session file keeps its pre-analysis prefix and path through REOPEN; independent analysis hash remains stable, and REOPEN adds no Run/wakeup"
+      },
+      {
+        "id": "old_records_files_and_process_cleanup",
+        "status": "pass",
+        "detail": "the original 195 records match; all 28 fixed manifest files match SHA/size; 8 admissions released, both run PID/time records present, provider stopped and app PID unchanged"
+      }
+    ],
+    "cleanup": {
+      "providerDisabled": true,
+      "providerPid": 16284,
+      "providerExecSession": 74412,
+      "providerStopped": true,
+      "appPid": 34248,
+      "appNotRestarted": true,
+      "activeWorkers": 0
+    }
+  },
+  "codeSnapshot": [
+    {
+      "path": "packages/scheduler/agent-host.ts",
+      "rootSha256": "f1e55bb8e7d1f386009ac440eaafa1ef8af47440a28ff71691f21ac80b9e169c",
+      "runtimeSha256": "f1e55bb8e7d1f386009ac440eaafa1ef8af47440a28ff71691f21ac80b9e169c",
+      "normalizedLfSha256": "f1e55bb8e7d1f386009ac440eaafa1ef8af47440a28ff71691f21ac80b9e169c"
+    },
+    {
+      "path": "packages/scheduler/wakeups.ts",
+      "rootSha256": "dde9b040b9831340e32bc4c6c88de24a8bd6243009f0eef49713b74460074ca6",
+      "runtimeSha256": "e97e88b2eeda15ebba53b26d8caab00db15d84d5255b7f37507448eeafca48c8",
+      "normalizedLfSha256": "e97e88b2eeda15ebba53b26d8caab00db15d84d5255b7f37507448eeafca48c8"
+    },
+    {
+      "path": "packages/runners/service.ts",
+      "rootSha256": "5237df49cbe375210a87e1590ce0ba0764b4f9a4ff10f0a5f16fc12531a9d21e",
+      "runtimeSha256": "493ef4e5a251da0dd1038abe384b8f935dab0bac2812adaa73985cf50341ef10",
+      "normalizedLfSha256": "493ef4e5a251da0dd1038abe384b8f935dab0bac2812adaa73985cf50341ef10"
+    },
+    {
+      "path": "packages/runners/contracts.ts",
+      "rootSha256": "3e90b9253af643741500178ebcc47793e2ad0709fdb8c891c5398a4b1c0c3fad",
+      "runtimeSha256": "3e90b9253af643741500178ebcc47793e2ad0709fdb8c891c5398a4b1c0c3fad",
+      "normalizedLfSha256": "3e90b9253af643741500178ebcc47793e2ad0709fdb8c891c5398a4b1c0c3fad"
+    },
+    {
+      "path": "packages/runners/artifacts.ts",
+      "rootSha256": "e4b9de2cc14a8c1148ba3ebbb00414f0df8c2259ded086e589b69b4f2120e6da",
+      "runtimeSha256": "e4b9de2cc14a8c1148ba3ebbb00414f0df8c2259ded086e589b69b4f2120e6da",
+      "normalizedLfSha256": "e4b9de2cc14a8c1148ba3ebbb00414f0df8c2259ded086e589b69b4f2120e6da"
+    },
+    {
+      "path": "packages/policy/session-permissions.ts",
+      "rootSha256": "5f46795d45213a1225da5b47ea91784e1507ea89f0ee6cfdb6193cd26f664df2",
+      "runtimeSha256": "5f46795d45213a1225da5b47ea91784e1507ea89f0ee6cfdb6193cd26f664df2",
+      "normalizedLfSha256": "5f46795d45213a1225da5b47ea91784e1507ea89f0ee6cfdb6193cd26f664df2"
+    },
+    {
+      "path": "packages/policy/budget.ts",
+      "rootSha256": "b7c9be0c48b4cd1aee456868ccf8deb65aef06338431b8ee93523a72b0842356",
+      "runtimeSha256": "b7c9be0c48b4cd1aee456868ccf8deb65aef06338431b8ee93523a72b0842356",
+      "normalizedLfSha256": "b7c9be0c48b4cd1aee456868ccf8deb65aef06338431b8ee93523a72b0842356"
+    },
+    {
+      "path": "packages/pi-adapter/attachments.ts",
+      "rootSha256": "f9fb539fbaf9ad9c361573a9d00169502fde59798b6e7adb1f6dac1bfbbeb811",
+      "runtimeSha256": "f9fb539fbaf9ad9c361573a9d00169502fde59798b6e7adb1f6dac1bfbbeb811",
+      "normalizedLfSha256": "f9fb539fbaf9ad9c361573a9d00169502fde59798b6e7adb1f6dac1bfbbeb811"
+    },
+    {
+      "path": "apps/agent-worker/index.ts",
+      "rootSha256": "df4cbbcbbd93f5312a20cfe1f400fbcb1807d3825c6921c1bcf415fe7163e1e7",
+      "runtimeSha256": "494511c2d8df81d602e2e27a94a16e0784cc892ec12ad03bb0d2f5a2802788f1",
+      "normalizedLfSha256": "494511c2d8df81d602e2e27a94a16e0784cc892ec12ad03bb0d2f5a2802788f1"
+    },
+    {
+      "path": "apps/web/src/chat-workflows.tsx",
+      "rootSha256": "80c5177b5d2645d23fe5fbfb373c04abd6c000669869419c66a6a08e7e55fc95",
+      "runtimeSha256": "28e0e0fdbe77d9ed15dfb42ae33e4d35a699115816863287981834d0ec5a1889",
+      "normalizedLfSha256": "28e0e0fdbe77d9ed15dfb42ae33e4d35a699115816863287981834d0ec5a1889"
+    },
+    {
+      "path": "dist/packages/scheduler/agent-host.js",
+      "rootSha256": "b4b0d44912199ed52aec456d2f589d1abaed7019bf7e4dfae7dc460e91ab9f98",
+      "runtimeSha256": "b4b0d44912199ed52aec456d2f589d1abaed7019bf7e4dfae7dc460e91ab9f98",
+      "normalizedLfSha256": "b4b0d44912199ed52aec456d2f589d1abaed7019bf7e4dfae7dc460e91ab9f98"
+    },
+    {
+      "path": "dist/packages/scheduler/wakeups.js",
+      "rootSha256": "3b505a2e187411ea38cebe99b899eb2f68f27b12a03dce7ae6be09e557ef1a52",
+      "runtimeSha256": "3b505a2e187411ea38cebe99b899eb2f68f27b12a03dce7ae6be09e557ef1a52",
+      "normalizedLfSha256": "3b505a2e187411ea38cebe99b899eb2f68f27b12a03dce7ae6be09e557ef1a52"
+    },
+    {
+      "path": "dist/packages/runners/service.js",
+      "rootSha256": "78d8fd394b00b1381e262f7506b6d4156c5f1dea4aa35a83dfeb59993dbbdc34",
+      "runtimeSha256": "78d8fd394b00b1381e262f7506b6d4156c5f1dea4aa35a83dfeb59993dbbdc34",
+      "normalizedLfSha256": "78d8fd394b00b1381e262f7506b6d4156c5f1dea4aa35a83dfeb59993dbbdc34"
+    },
+    {
+      "path": "dist/packages/runners/contracts.js",
+      "rootSha256": "baf51c18a8afb435ce25e90a99fbbe480d44525370b1c22f7e05cfbe75b00350",
+      "runtimeSha256": "baf51c18a8afb435ce25e90a99fbbe480d44525370b1c22f7e05cfbe75b00350",
+      "normalizedLfSha256": "baf51c18a8afb435ce25e90a99fbbe480d44525370b1c22f7e05cfbe75b00350"
+    },
+    {
+      "path": "dist/packages/runners/artifacts.js",
+      "rootSha256": "e8217464e42936af171d721ff4d1ffdea918c92fe3318273aee72baef34d6986",
+      "runtimeSha256": "e8217464e42936af171d721ff4d1ffdea918c92fe3318273aee72baef34d6986",
+      "normalizedLfSha256": "e8217464e42936af171d721ff4d1ffdea918c92fe3318273aee72baef34d6986"
+    },
+    {
+      "path": "dist/packages/policy/session-permissions.js",
+      "rootSha256": "51872fd97b60688a73109c9dc186e6053e2008ce6944f6e1c040be55560ff35f",
+      "runtimeSha256": "51872fd97b60688a73109c9dc186e6053e2008ce6944f6e1c040be55560ff35f",
+      "normalizedLfSha256": "51872fd97b60688a73109c9dc186e6053e2008ce6944f6e1c040be55560ff35f"
+    },
+    {
+      "path": "dist/packages/policy/budget.js",
+      "rootSha256": "fe2047338b44cdc79b4450ed7faa0e0e6069480a32e23d656b32ba7b63abdc74",
+      "runtimeSha256": "fe2047338b44cdc79b4450ed7faa0e0e6069480a32e23d656b32ba7b63abdc74",
+      "normalizedLfSha256": "fe2047338b44cdc79b4450ed7faa0e0e6069480a32e23d656b32ba7b63abdc74"
+    },
+    {
+      "path": "dist/packages/pi-adapter/attachments.js",
+      "rootSha256": "54727ef439182e5a95562ff3ef94443126b45ac0d3d61d7875ab0a2f8da258cc",
+      "runtimeSha256": "54727ef439182e5a95562ff3ef94443126b45ac0d3d61d7875ab0a2f8da258cc",
+      "normalizedLfSha256": "54727ef439182e5a95562ff3ef94443126b45ac0d3d61d7875ab0a2f8da258cc"
+    },
+    {
+      "path": "dist/apps/agent-worker/index.js",
+      "rootSha256": "d819e7f52d7b20c765c3aad9081cc48e852db79b9d114fe26a4ceb09478ff82f",
+      "runtimeSha256": "d819e7f52d7b20c765c3aad9081cc48e852db79b9d114fe26a4ceb09478ff82f",
+      "normalizedLfSha256": "d819e7f52d7b20c765c3aad9081cc48e852db79b9d114fe26a4ceb09478ff82f"
+    },
+    {
+      "path": "dist/apps/runner-supervisor/index.js",
+      "rootSha256": "aeffcab504e9d381b6a781048e0b8881172cb01b3b3639748256ebbb71e93dbf",
+      "runtimeSha256": "aeffcab504e9d381b6a781048e0b8881172cb01b3b3639748256ebbb71e93dbf",
+      "normalizedLfSha256": "aeffcab504e9d381b6a781048e0b8881172cb01b3b3639748256ebbb71e93dbf"
+    },
+    {
+      "path": "examples/curve-fit/experiment.mjs",
+      "rootSha256": "7b165767dc820fb64c549734893126d9f92b6ba5d09c0b3f6e4b81a8df3225f9",
+      "runtimeSha256": "7b165767dc820fb64c549734893126d9f92b6ba5d09c0b3f6e4b81a8df3225f9",
+      "normalizedLfSha256": "7b165767dc820fb64c549734893126d9f92b6ba5d09c0b3f6e4b81a8df3225f9"
+    }
+  ],
+  "reuse": {
+    "backendAndRelatedTestsUnchangedSince": "63c063bf5aa0a51461e96b329df1bcb43ca56f59",
+    "phaseLog": {
+      "path": ".validation/settings-github-ui-20261013/result/phase-full-tests.log",
+      "sha256": "02dad224541e2f6d5f388546b3b9cf587c65633463a902eb77cf0d3319a57d2c"
+    },
+    "phaseFull": {
+      "total": 1938,
+      "passed": 1913,
+      "failed": 0,
+      "skipped": 25
+    },
+    "cleanBuildIdenticalFiles": 661,
+    "freshFull": false,
+    "freshBuild": false,
+    "oldOwnedIntegration": "IPC_FIXTURE_ONLY; not substituted for the direct production evidence in this batch"
+  },
+  "independentReview": {
+    "status": "pass-with-stated-limits",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtime": "not echoed",
+    "report": {
+      "path": ".validation/owned-run-pi-ui-20261013/review.md",
+      "sha256": "253bee1d2c01ad87e8653f438bcaad9249c55a6ee34c593c92351865f9894427"
+    },
+    "review": {
+      "path": ".validation/owned-run-pi-ui-20261013/review.json",
+      "sha256": "1732ca79b1d60a07f65ef23782f3477519a6af4cd89b4528134ab415e9590e36"
+    },
+    "snapshot": {
+      "path": ".validation/owned-run-pi-ui-20261013/review-snapshot.json",
+      "sha256": "0529234d7929778c0454d9d6ca8c106fb1ee962778bb802f259dac9c6c3cbacb"
+    },
+    "blockers": [],
+    "nonblocking": [],
+    "validationGaps": [
+      {
+        "id": "external_reasoning_and_science",
+        "blocking": false,
+        "detail": "Deterministic localhost provider establishes the software chain only."
+      },
+      {
+        "id": "environment_isolation",
+        "blocking": false,
+        "detail": "No new Docker, GPU, arbitrary workload isolation, or network recovery evidence."
+      },
+      {
+        "id": "full_browser_matrix",
+        "blocking": false,
+        "detail": "Only metrics previewed; other artifact entries and machine integrity evidence reused. Concurrency, cancellation, source invalidation use unchanged backend tests."
+      },
+      {
+        "id": "no_second_private_file_scan",
+        "blocking": false,
+        "detail": "Preservation uses frozen captures, inspected verification/finish-check assertions and recorded passes; no native contents or old private files reread in this review."
+      },
+      {
+        "id": "runtime_model_metadata",
+        "blocking": false,
+        "detail": "Requested gpt-6-astra/xhigh; actual runtime model and effort not echoed."
+      }
+    ],
+    "administrativeFinalization": "Only status/review metadata finalized after frozen-snapshot review; facts and core evidence unchanged."
+  },
+  "delegation": {
+    "preflight": {
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "high",
+      "runtime": "not echoed"
+    },
+    "mechanicalEvidence": {
+      "requestedModel": "gpt-6-luna",
+      "requestedEffort": "high",
+      "runtime": "not echoed"
+    }
+  },
+  "limitations": [
+    "localhost deterministic provider validates software transport/tool execution, not external model reasoning or scientific validity",
+    "trusted-example is a constrained bundled Node workload, not Docker isolation or arbitrary host access",
+    "no new full regression, clean build, GPU, network-recovery or exhaustive concurrency browser matrix",
+    "only metrics previewed; all expected artifact entries observed, no claim all were previewed or downloaded"
+  ],
+  "anchors": [
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/plan.md",
+      "sha256": "b0b63d75dc73bec73d0270317225feaf1ae831e14c01821f72957e15fec7f3f3"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/preflight.md",
+      "sha256": "020fc431e8d31f5fb93349adce6f128d795a3fdf7fb47409bd555090ef2f0386"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/provider.mjs",
+      "sha256": "94891f711ccb1fb003373b2f59ce2f4e267433bf9630ad2b70086fcab709d5db"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/provider-first-attempt.mjs",
+      "sha256": "9ef848832fb28c6d6949b53195dd4e9c83152d4e2541c700e9e5db96233f76ef"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/setup.mjs",
+      "sha256": "ea1641b9c10bac7eab4f2cd21cf5dc74c40832a14676ab7b9fa84fae8ae1fd79"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/prepare-intent.mjs",
+      "sha256": "196e98617e5e9905ec4bb5ddb1383d8e6c628fa5ed44e5a2c22f5b9a810e0ed3"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/capture.mjs",
+      "sha256": "e60d06c12ad3db67d922099114586b71cb25f21a7ff4540a1404b365232ad9df"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/verify.mjs",
+      "sha256": "3f08032c91e473d095fdee4001be5df8c4f9b8b12f0e59818b59919284cea02d"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/finish-check.mjs",
+      "sha256": "023cb4a372beb058c611f9e4e2e2d54996c4ccebcd306bbcd79f4e289bb7467a"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/setup-before.json",
+      "sha256": "3ce781d561221bf368ccffc11315136a0f39f6b1d4997ffc58c20b866371f95b"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/setup.json",
+      "sha256": "cf7e7de68e6edea16e32ff8df1c881c3ac01c7b41217c843df62aef5df086d2b"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/catalog-before.json",
+      "sha256": "456d334976bf8247cff8261093889901e07eede6a5571e6976d07791069d311b"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/catalog-ready.json",
+      "sha256": "8665ec8430e8881584e9803617e1dc40b5ae4f2aeeb41b57106bf22f10ec3961"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/catalog-cleanup.json",
+      "sha256": "b4efeb5a877bf9e06426ebd2236c43f41127cfd4d5820cc1309d54244e23f905"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/intent-ready.json",
+      "sha256": "9ea5036c885a8eb8af779e70d007c0e4840b1f78a41040117e64b365b72b07df"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/intent-second-ready.json",
+      "sha256": "bf08f2ccc0fda99ca9356a6a0fbc7baf6fc21f3c7a8d2a3def0bcec2b4b8e8ad"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/first-attempt-terminal.json",
+      "sha256": "c0de2c4a0fc57c01b98ccbdc3991e791c9723e8c670f597c99715dd8246217e3"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/provider-first-attempt-requests.json",
+      "sha256": "209d92bf185fa6bb449692028a6698d3dfcdf969167980ddf9ec5a8248286d1b"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/provider-first-attempt-state.json",
+      "sha256": "405c2b609a63e7c30bf54f3839d15ca0e8eba44e39829c10163baf5a708a8232"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/fixture-notice-suffix-proof.json",
+      "sha256": "d02352a47aa741e27900d6020d3f9e91f9de73e97b5857b1f1caaaced7cf5624"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/provider-correction-preservation.json",
+      "sha256": "d3be358f1c7cbbc834afe0bbe3016ef19aee62a31a0f29d5413607d375c31d85"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/before-second-submit-approval.json",
+      "sha256": "fc5666ec64b135ada5ba2c3b2dbb13f2745502dc1e618de138a066e75d47b960"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/second-analysis-complete.json",
+      "sha256": "06d1c6a0142d379d8f5a630c877211e5a9e5cba41a36c29af5228adeac01a641"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/interactive-at-analysis-start.json",
+      "sha256": "a0219d2fb1c7f82178e52da15ba077d853464c05e5d5f0dfe953efc521f55573"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/isolation-before-reopen.json",
+      "sha256": "38e6be73844d8888f9a21d217240829f9de2a2c7ae1750c66d6117fab95f52e8"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/reopened-interactive.json",
+      "sha256": "1adbbb328b5098eaaf80a8ebbff2002daea9616726986a2d0e97ac2f6d3068c8"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/cleanup-final.json",
+      "sha256": "614211b7a216c4bd77e1747e278cf0772004f7f9036362b7dcf4acd2342eade4"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/provider-requests.json",
+      "sha256": "543ab67c98d928284b26840c2c90c73a002df2358be704c15f0944984ae2f024"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/provider-state.json",
+      "sha256": "289513e6f427287622cb83456bfb46da0e6a56317a50c8ed237b54261c1e64a4"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/provider-stopped.json",
+      "sha256": "2ee9860cddbb4a1b9b44b4cd9613991e7ac4adb8d1c533fc93c047c62b91464b"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/verification.json",
+      "sha256": "f19eb1a6c84be440bc3b887e85866d5dfceb731cdbf084fc9aed5eac2298e503"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/finish-check.json",
+      "sha256": "e313de98b0b645df4b60336d9a7dcd5b9cb213d6c6373da635de7ab5dbc41d09"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/code-and-reuse.json",
+      "sha256": "57eeba7ef55d1d6337818bffe6b6bbf016f8f009771776066b8207f4325ccd9e"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/run-ui-selection.json",
+      "sha256": "b404619071300de03dc70b3950afca8beef6f654c763683525ed638129e22ca3"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/run-approval-dom.txt",
+      "sha256": "485494d6e9ce0c8fe5d3cbaa98d888b55037c83b37845ae926699bafc12ddc20"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/submit-approval-dom.txt",
+      "sha256": "c905c831332bd894adeaab5a9917a1543c69a5d3e0dbd4355586faef429046d3"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/second-run-approval-dom.txt",
+      "sha256": "7b3dd4b6c15f23aacd7bd2aac887e9b1fa1fb136427cdedc9826314d3546c64f"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/second-submit-approval-dom.txt",
+      "sha256": "531a677a6bfec1cf4ca08c682488440c2d898f3663318787a4911019814ff6ec"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/first-analysis-failed-dom.txt",
+      "sha256": "e3c5d247944c5aec8ca5ce342ca60e8de5c8475b94d5651adab6a5d4df7d4546"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/analysis-completed-dom.txt",
+      "sha256": "76a6381439c6913eaf8a8d6123e76f2cc07dac8198600ce9a87609aa21b620cb"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/run-metrics-dom.txt",
+      "sha256": "b1479ff3c556e775edd4f371a8a13f13c8e96fe807a7122d9cda19c5a31139f7"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/reopened-before-message-dom.txt",
+      "sha256": "a877169ad5e7875258df6e63e4e022123ee213bcfa0e3ddb69fa309caf6e11a9"
+    },
+    {
+      "path": ".validation/owned-run-pi-ui-20261013/result/reopened-final-dom.txt",
+      "sha256": "661b74a4bf50369216f60e67e43731dd7186a1548a98d4bb9968571649568382"
+    }
+  ]
+}

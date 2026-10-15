@@ -1,0 +1,20 @@
+{
+  "date":"2026-10-09",
+  "baseline":"832c7ae62460d3e8e3635d50300b71c1fe2bf6b9",
+  "sourcePatchSha256":"1ecba19d43df0dff3ba0338ed6bc5af3899fa0b28147cd0fffa012982c988f78",
+  "codeAndOutputPatchSha256":"3a37f69dd18225dfaa66146435a2ec77eaaa63d762150a7bc029737d60f8dc5b",
+  "acceptance":["Sidebar project-workspace entry opens existing page","No duplicate entry; project/session and mobile closing retained","Experimental page, right tree and persistent Chat retained","No backend/data/dependency or in-flight source changes"],
+  "related":{"passed":49,"failed":0,"skipped":0,"log":".validation/workspace-navigation/related.log"},
+  "before":{"total":16,"failed":1,"case":"other workflow buttons preserve project and session while closing mobile navigation","log":".validation/workspace-navigation/before.log"},
+  "build":{"passed":true,"log":".validation/workspace-navigation/build.log"},
+  "cleanBuild":{"passed":true,"files":628,"npmCi":0,"build":0,"typecheck":0,"identical":true,"summary":".validation/workspace-navigation/accepted-source/.validation/clean-build-FyAgo7/summary.json"},
+  "reusedFullCore":{"passed":1409,"failed":0,"skipped":24,"log":".validation/conversation-right-panel/accepted-core.log","scope":"Unchanged backend, dependency and history contracts; affected navigation and frontend paths checked anew"},
+  "browser":{"synthetic":true,"workspacePage":"passed","fileListAndEditor":"passed","menuLabels":["文献检索","资料与证据","报告与成果"],"draftPreserved":true,"mobileDrawerClosed":true,"mobileViewport":390,"mobileDocumentWidth":375},
+  "review":{"task":"review_workspace_navigation","requestedModel":"gpt-6.1-sol","requestedEffort":"medium","runtimeEcho":"unavailable","readOnly":true,"blockingFindings":0},
+  "liveBuild":{"preservedInFlightSource":true,"onlyOutputs":["dist/web/assets/app.js","dist/web/assets/main.js"],"sourceAndPriorOutputGuard":"passed","record":".validation/workspace-navigation/live-build.json"},
+  "realModel":"not_run",
+  "fileWritesFromUI":"not_run",
+  "fullCoreRepeated":"not_run; applicable preceding proof reused",
+  "branch":"implementation/pr01-reproducible-baseline",
+  "delivery":".validation/workspace-navigation/delivery.json"
+}

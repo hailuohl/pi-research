@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-02",
+  "scope": "12-page local workbench presentation and experiment tree",
+  "preview": "isolated synthetic data; no model or Run submissions",
+  "desktop": {
+    "pages": 12,
+    "viewport": [
+      1487,
+      1058
+    ],
+    "outerOverflow": false,
+    "alerts": 0
+  },
+  "mobile": {
+    "pages": 12,
+    "viewport": [
+      390,
+      844
+    ],
+    "outerOverflow": false,
+    "alerts": 0
+  },
+  "core": {
+    "projectReturnRestoresSelection": true,
+    "reloadRestoresSelection": true,
+    "listPreferenceRestored": true,
+    "zoomChangesTransform": true,
+    "keyboardPanChangesTransform": true,
+    "chatDraftPreserved": true,
+    "archivedTextareaDisabled": true,
+    "archivedNoticeShown": true,
+    "pointerDragChangesTransform": true
+  },
+  "regression": {
+    "total": 889,
+    "passedBeforeFixtureRepair": 865,
+    "skipped": 23,
+    "failureBeforeRepair": "workflow-ui test fixture lacked the required project ID; assertions preserved",
+    "relatedAfterRepair": {
+      "passed": 34,
+      "failed": 0
+    },
+    "rawLog": ".validation/frontend-redesign-20261002/regression.log",
+    "focusedLog": ".validation/frontend-redesign-20261002/final-focused.log"
+  },
+  "cleanBuild": {
+    "identical": true,
+    "files": 474,
+    "node": "24.19.0",
+    "summary": ".validation/clean-build-fbb29z/summary.json"
+  },
+  "independentReview": {
+    "model": "gpt-6-sol",
+    "blockingFindings": 0
+  },
+  "limitations": [
+    "Fixed manuscript revisions, compilation approval and traceable final report creation remain user operations; conversational confirmation cards are not implemented.",
+    "Browser checks used synthetic data and did not repeat Pi or Docker execution."
+  ],
+  "preservedWork": [
+    "apps/web/public/styles.css",
+    "dist/web/styles.css",
+    "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
+    "docs/reference-baseline/capability-matrix.json",
+    "docs/specs/project-design.txt"
+  ]
+}

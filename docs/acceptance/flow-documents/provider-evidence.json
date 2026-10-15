@@ -1,0 +1,345 @@
+{
+  "formatVersion": 1,
+  "batch": "flow-documents",
+  "fixture": true,
+  "scientificConclusion": false,
+  "modelCalls": false,
+  "evidenceCollection": "Existing results summarized; no tests rerun during collection",
+  "source": {
+    "path": ".validation/literature-preflight-5aZn3D/evidence.json",
+    "sha256": "2aef60b33d235cc70aaeeede78a4bcc0e3af262832e25722250b4c3efd80b7c3"
+  },
+  "startedAt": "2026-09-28T08:58:35.215Z",
+  "finishedAt": "2026-09-28T08:59:20.551Z",
+  "requestLimit": 25,
+  "requestsUsed": 9,
+  "automaticRetries": false,
+  "credentialsConfigured": {
+    "openalexKeyConfigured": false,
+    "ncbiKeyConfigured": false,
+    "ncbiEmailConfigured": false
+  },
+  "scope": "Real provider calls through the existing ConnectorService; text/metadata baseline, not original-PDF or permanent availability verification",
+  "sources": [
+    {
+      "source": "alphaxiv",
+      "query": "machine learning",
+      "limit": 1,
+      "startedAt": "2026-09-28T08:58:35.215Z",
+      "finishedAt": "2026-09-28T08:58:48.327Z",
+      "discovery": {
+        "status": "succeeded",
+        "recordId": "be837bca-1fd5-41f1-88ed-ce5fcb4b17af",
+        "ids": [
+          {
+            "source": "alphaxiv",
+            "id": "2606.11746",
+            "contentKind": "metadata",
+            "fullTextRead": false
+          }
+        ]
+      },
+      "read": {
+        "status": "succeeded",
+        "recordId": "5a6c6984-f786-48f7-aeee-4745c77b1845",
+        "id": "2606.11746",
+        "requestedId": "2606.11746",
+        "contentKind": "full_text",
+        "fullTextRead": true,
+        "versionAssurance": "requested-address-unverified",
+        "pageMapping": "unavailable",
+        "providerVersions": [],
+        "license": null,
+        "licenseObservation": "not recorded in this baseline evidence",
+        "artifactDigest": "f1e3bbfadf1e1bd8ff56d37fc9781461d1fa5b4dfecc8cd7dbf78f62b7c2dee3"
+      }
+    },
+    {
+      "source": "openalex",
+      "query": "machine learning",
+      "limit": 1,
+      "startedAt": "2026-09-28T08:58:48.328Z",
+      "finishedAt": "2026-09-28T08:58:55.927Z",
+      "discovery": {
+        "status": "succeeded",
+        "recordId": "0877dd53-03e3-438d-a24d-b824ed3c51cc",
+        "ids": [
+          {
+            "source": "openalex",
+            "id": "10.48550/arxiv.1201.0490",
+            "doi": "10.48550/arxiv.1201.0490",
+            "contentKind": "metadata",
+            "fullTextRead": false
+          }
+        ]
+      },
+      "read": {
+        "status": "succeeded",
+        "recordId": "efc70e47-2532-400b-a452-e89ca9905b4b",
+        "id": "10.48550/arxiv.1201.0490",
+        "requestedId": "10.48550/arxiv.1201.0490",
+        "contentKind": "abstract",
+        "fullTextRead": false,
+        "versionAssurance": "provider-record",
+        "pageMapping": "unavailable",
+        "providerVersions": [],
+        "license": null,
+        "licenseObservation": "not recorded in this baseline evidence",
+        "artifactDigest": "6c75ec8f983b7774b25ad1543ca4160cb15729120c6a5b7aa42e493bfc925a48"
+      }
+    },
+    {
+      "source": "biorxiv",
+      "query": "cancer",
+      "limit": 1,
+      "startedAt": "2026-09-28T08:58:55.928Z",
+      "finishedAt": "2026-09-28T08:59:02.607Z",
+      "discovery": {
+        "status": "succeeded",
+        "recordId": "e81c3763-3771-4a76-bd39-73edb5193604",
+        "ids": [
+          {
+            "source": "biorxiv",
+            "id": "10.1101/322859",
+            "doi": "10.1101/322859",
+            "contentKind": "metadata",
+            "fullTextRead": false
+          }
+        ]
+      },
+      "read": {
+        "status": "succeeded",
+        "recordId": "a7114891-5957-46dc-ab98-6bdd68427d74",
+        "id": "10.1101/322859",
+        "requestedId": "10.1101/322859",
+        "contentKind": "abstract",
+        "fullTextRead": false,
+        "versionAssurance": "provider-record",
+        "pageMapping": "unavailable",
+        "providerVersions": [
+          {
+            "doi": "10.1101/322859",
+            "version": "1",
+            "date": "2018-05-15"
+          },
+          {
+            "doi": "10.1101/322859",
+            "version": "2",
+            "date": "2019-07-03"
+          }
+        ],
+        "license": null,
+        "licenseObservation": "not recorded in this baseline evidence",
+        "artifactDigest": "1608d57a4cf19dcfc831805dcc5da144d7907057eb794480ffdc19f6d3b69938"
+      }
+    },
+    {
+      "source": "pubmed",
+      "query": "cancer",
+      "limit": 1,
+      "startedAt": "2026-09-28T08:59:02.608Z",
+      "finishedAt": "2026-09-28T08:59:07.621Z",
+      "discovery": {
+        "status": "failed",
+        "errorCode": "CONNECTOR_ALL_FAILED",
+        "sourceErrors": [
+          {
+            "source": "pubmed",
+            "status": "failed",
+            "count": 0,
+            "error": "CONNECTOR_UNAVAILABLE"
+          }
+        ],
+        "ids": []
+      },
+      "read": null
+    },
+    {
+      "source": "crossref",
+      "query": "machine learning",
+      "limit": 1,
+      "startedAt": "2026-09-28T08:59:07.622Z",
+      "finishedAt": "2026-09-28T08:59:20.550Z",
+      "discovery": {
+        "status": "succeeded",
+        "recordId": "d508dc6a-0721-4e19-812b-7133011df4e3",
+        "ids": [
+          {
+            "source": "crossref",
+            "id": "10.1093/oso/9780198828044.003.0003",
+            "doi": "10.1093/oso/9780198828044.003.0003",
+            "contentKind": "metadata",
+            "fullTextRead": false
+          }
+        ]
+      },
+      "read": {
+        "status": "succeeded",
+        "recordId": "74bade86-8a00-46cb-84b6-2ddaffdfa174",
+        "id": "10.1093/oso/9780198828044.003.0003",
+        "requestedId": "10.1093/oso/9780198828044.003.0003",
+        "contentKind": "metadata",
+        "fullTextRead": false,
+        "versionAssurance": "provider-record",
+        "pageMapping": "unavailable",
+        "providerVersions": [],
+        "license": null,
+        "licenseObservation": "not recorded in this baseline evidence",
+        "artifactDigest": "94680099dc0fe240f97e2ad735e8124f6472b313d03b71be223bc791cbe762f3"
+      }
+    }
+  ],
+  "requestLedger": [
+    {
+      "id": "33716b67-7524-4406-8c64-cb2e74e430ad",
+      "source": "alphaxiv",
+      "host": "api.alphaxiv.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:58:35.217Z",
+      "bytes": 40629
+    },
+    {
+      "id": "22c81bde-c02e-48b8-8cd3-f7a68bd59c81",
+      "source": "alphaxiv",
+      "host": "www.alphaxiv.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:58:41.769Z",
+      "bytes": 90528
+    },
+    {
+      "id": "82a655fc-3251-4cac-a018-6cfd103e6c2a",
+      "source": "openalex",
+      "host": "api.openalex.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:58:48.329Z",
+      "bytes": 1814
+    },
+    {
+      "id": "e5796efc-309c-4cb6-b4fa-0dc6aae2d046",
+      "source": "openalex",
+      "host": "api.openalex.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:58:55.196Z",
+      "bytes": 29409
+    },
+    {
+      "id": "9448e853-2bdb-4fdf-8588-3eb1f93b04e1",
+      "source": "biorxiv",
+      "host": "api.openalex.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:58:55.929Z",
+      "bytes": 2922
+    },
+    {
+      "id": "5c3010d1-2911-40b2-8665-08e8ccd2d2e2",
+      "source": "biorxiv",
+      "host": "api.biorxiv.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:58:56.389Z",
+      "bytes": 4204
+    },
+    {
+      "id": "06e1c984-d9c4-4c21-a54c-ae78a29b24b9",
+      "source": "pubmed",
+      "host": "eutils.ncbi.nlm.nih.gov",
+      "status": "failed-or-unknown",
+      "startedAt": "2026-09-28T08:59:02.609Z",
+      "error": "CONNECTOR_UNAVAILABLE"
+    },
+    {
+      "id": "9c0b1af8-7883-43d2-bbc7-211ae05ce375",
+      "source": "crossref",
+      "host": "api.crossref.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:59:07.622Z",
+      "bytes": 364
+    },
+    {
+      "id": "40c889c4-09fd-4bbf-9767-1f9148cdfea6",
+      "source": "crossref",
+      "host": "api.crossref.org",
+      "status": "succeeded",
+      "startedAt": "2026-09-28T08:59:14.233Z",
+      "bytes": 2412
+    }
+  ],
+  "requests": [
+    {
+      "host": "api.alphaxiv.org",
+      "path": "/search/v2/paper/discover/keyword",
+      "startedAt": "2026-09-28T08:58:35.219Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "finishedAt": "2026-09-28T08:58:41.712Z"
+    },
+    {
+      "host": "www.alphaxiv.org",
+      "path": "/abs/2606.11746.md",
+      "startedAt": "2026-09-28T08:58:41.770Z",
+      "httpStatus": 200,
+      "contentType": "text/markdown; charset=utf-8",
+      "finishedAt": "2026-09-28T08:58:48.132Z"
+    },
+    {
+      "host": "api.openalex.org",
+      "path": "/works",
+      "startedAt": "2026-09-28T08:58:48.330Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "finishedAt": "2026-09-28T08:58:55.190Z"
+    },
+    {
+      "host": "api.openalex.org",
+      "path": "/works/doi:10.48550%2Farxiv.1201.0490",
+      "startedAt": "2026-09-28T08:58:55.197Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "finishedAt": "2026-09-28T08:58:55.655Z"
+    },
+    {
+      "host": "api.openalex.org",
+      "path": "/works",
+      "startedAt": "2026-09-28T08:58:55.930Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "finishedAt": "2026-09-28T08:58:56.381Z"
+    },
+    {
+      "host": "api.biorxiv.org",
+      "path": "/details/biorxiv/10.1101/322859/na/json",
+      "startedAt": "2026-09-28T08:58:56.390Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "finishedAt": "2026-09-28T08:59:02.601Z"
+    },
+    {
+      "host": "eutils.ncbi.nlm.nih.gov",
+      "path": "/entrez/eutils/esearch.fcgi",
+      "startedAt": "2026-09-28T08:59:02.609Z",
+      "transportFailed": true,
+      "finishedAt": "2026-09-28T08:59:07.619Z"
+    },
+    {
+      "host": "api.crossref.org",
+      "path": "/works",
+      "startedAt": "2026-09-28T08:59:07.623Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "finishedAt": "2026-09-28T08:59:14.229Z"
+    },
+    {
+      "host": "api.crossref.org",
+      "path": "/works/10.1093%2Foso%2F9780198828044.003.0003",
+      "startedAt": "2026-09-28T08:59:14.233Z",
+      "httpStatus": 200,
+      "contentType": "application/json",
+      "finishedAt": "2026-09-28T08:59:20.544Z"
+    }
+  ],
+  "limitations": [
+    "PubMed failed before receiving an HTTP response (CONNECTOR_UNAVAILABLE); not an empty result, authentication rejection or observed HTTP 429.",
+    "OpenAlex search and abstract retrieval succeeded without a configured API key; this does not establish keyless PDF access.",
+    "alphaXiv full_text is provider Markdown with requested-address-unverified version assurance and no original PDF page binding.",
+    "bioRxiv providerVersions records v1 and v2; existing selection chooses highest version v2. License was not captured by the old baseline record."
+  ]
+}

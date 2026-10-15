@@ -1,0 +1,57 @@
+{
+  "batch": "task-paper-to-document",
+  "projectId": "8ae896b9-d3b9-49ae-945c-b1039c2dd7f6",
+  "paperReadId": "3b9dae58-0427-45bb-8ce2-a953fd2cfd8c",
+  "documentVersionId": "79ddac00-bcd3-43eb-9f98-73d5e27b39dd",
+  "doi": "10.1080/00031305.1973.10478966",
+  "grantId": "11dfec5d-3450-4f5b-8aa8-18e82780a9a8",
+  "taskId": "725a9c24-62d3-40ed-aa0a-b3cbc1192e59",
+  "contentKind": "metadata",
+  "pageMapping": "unavailable",
+  "source": {
+    "kind": "connector",
+    "provider": "crossref",
+    "requestedId": "10.1080/00031305.1973.10478966",
+    "resolvedId": "10.1080/00031305.1973.10478966",
+    "requestedVersion": null,
+    "reportedVersion": null,
+    "versionAssurance": "provider-record",
+    "sourceUrl": "https://doi.org/10.1080/00031305.1973.10478966"
+  },
+  "original": {
+    "artifactId": "da5bced6-e6ca-415e-a230-3e0b8591f378",
+    "sha256": "74a9a6c879bc5259ac216289a489fc2acfc4228f1058b61b25139ec23e1930af",
+    "bytes": 3540
+  },
+  "derivedText": {
+    "artifactId": "da05ca7e-6774-4941-be9b-6967cedf74f5",
+    "sha256": "e45595b02c13e4257fbf16570ba8a8a69add16860f82d4e9b90cdc42b7ca3661",
+    "bytes": 4974
+  },
+  "idempotency": {
+    "replaySameId": true,
+    "conflictCode": "IDEMPOTENCY_CONFLICT",
+    "foreignProjectCode": "SCOPE_DENIED"
+  },
+  "newExternalCalls": 0,
+  "newModelUsage": 0,
+  "newRuns": 0,
+  "retainedHistory": {
+    "unchangedRows": 9,
+    "oldNativeSessionSha256": "4c3625fa7a279fa04bb4964032bbd3a2b963867873180530d0872ba370237126"
+  },
+  "validation": {
+    "regression": {
+      "tests": 873,
+      "passed": 851,
+      "failed": 0,
+      "skipped": 22
+    },
+    "cleanBuild": {
+      "identical": true,
+      "files": 471,
+      "distManifestSha256": "f9d7210ab435a96ca3937c1a06f5e86bff4221708243aecd660d6ebf6aa8e1e6"
+    },
+    "independentReview": "Astra: no confirmed blocker"
+  }
+}

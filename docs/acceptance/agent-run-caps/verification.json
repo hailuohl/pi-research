@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-08",
+  "baseline": "1e666ad13a605999b088f8bfdcad602aa29e65ff",
+  "acceptance": [
+    {
+      "condition": "Production worker exceeds 12 turns and 40 tools with all receipts successful",
+      "status": "passed",
+      "providerRequests": 46,
+      "successfulToolReceipts": 46
+    },
+    {
+      "condition": "Real host tick preserves a valid worker past simulated 300 seconds and manual interruption fences late IPC",
+      "status": "passed",
+      "elapsedRuntime": "simulated 300001 ms"
+    },
+    {
+      "condition": "Provider failure, rejected tool retry, manual abort and accepted result settlement remain valid",
+      "status": "passed"
+    },
+    {
+      "condition": "Reopen the same native file and ID with the complete saved history prefix",
+      "status": "passed"
+    }
+  ],
+  "checks": {
+    "beforeRegression": {
+      "status": "failed-as-expected",
+      "tests": 6,
+      "pass": 2,
+      "fail": 4,
+      "skipped": 0,
+      "duration_ms": 5188.31,
+      "log": ".validation/agent-run-caps-20261008/before-regression.log",
+      "logSha256": "a3bc8762b32ceae42d2368af2cb6e09bdfcff5e0fe2d2d30eed98ea1c1d9bbdc"
+    },
+    "related": {
+      "status": "passed",
+      "command": "node --test --test-concurrency=1 tests/unit/pi-sdk-contract.test.mjs tests/integration/worker-lifecycle.test.mjs tests/integration/task-finish-host.test.mjs",
+      "exitCode": 0,
+      "tests": 27,
+      "pass": 27,
+      "fail": 0,
+      "skipped": 0,
+      "duration_ms": 24726.3319,
+      "log": ".validation/agent-run-caps-20261008/related.log",
+      "logSha256": "204dcb0a412d5baa95e58699cdb7ba790052527749d66edfaae6ca4e24099e9f"
+    },
+    "fullRegression": {
+      "status": "passed",
+      "command": "npm run test:core",
+      "exitCode": 0,
+      "tests": 1403,
+      "pass": 1379,
+      "fail": 0,
+      "skipped": 24,
+      "duration_ms": 869770.553,
+      "log": ".validation/agent-run-caps-20261008/full-regression.log",
+      "logSha256": "6e2f1d572175d82a4d916690c5900619ba5cff86d7b33b64496f2c1c230ad082",
+      "skipCategories": [
+        "Optional Docker and compiler environments",
+        "POSIX-only permission checks on Windows"
+      ],
+      "criticalPathSkipped": false
+    },
+    "cleanBuild": {
+      "status": "passed",
+      "npmCiExitCode": 0,
+      "buildExitCode": 0,
+      "typecheckExitCode": 0,
+      "identical": true,
+      "files": 622,
+      "manifestSha256": "a969f90838b4cdf064a16ed83709f73be2a9ca025cb1a0062c114c22fbd0130e",
+      "summary": ".validation/agent-run-caps-20261008/source/.validation/clean-build-01hwCy/summary.json"
+    }
+  },
+  "review": {
+    "status": "passed",
+    "baseline": "1e666ad13a605999b088f8bfdcad602aa29e65ff",
+    "diffPath": ".validation/agent-run-caps-20261008/review.diff",
+    "diffSha256": "A6FD1F9E7921BFB4023AF8D4B5BDF3710A6FFDB1096F9ADCB3EA045E44E0D147",
+    "filesPath": ".validation/agent-run-caps-20261008/review-files.json",
+    "blockers": [],
+    "nonBlockers": [],
+    "scope": "Frozen production source, tests, README and generated backend artifacts"
+  },
+  "agents": [
+    {
+      "task": "remove_agent_run_caps",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "verification": "Requested; runtime metadata not echoed"
+    },
+    {
+      "task": "review_agent_run_caps",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "verification": "Requested; runtime metadata not echoed"
+    }
+  ],
+  "serviceActivation": {
+    "status": "blocked",
+    "action": "Stop and restart the idle existing backend to load the rebuilt code",
+    "reason": "Automatic approval review returned blocked by policy without a more specific explanation",
+    "actionExecuted": false,
+    "oldServicePreserved": true,
+    "requiredAction": "Manually restart the idle backend; source and distribution are already updated"
+  },
+  "notRun": [
+    "External paid provider replay",
+    "Actual wait longer than 300 seconds",
+    "Browser layout",
+    "Direct parent-disconnect and 30-second timeout replay; unchanged paths statically reviewed"
+  ],
+  "deliveryRecord": ".validation/agent-run-caps-20261008/delivery.json"
+}

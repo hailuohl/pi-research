@@ -1,0 +1,233 @@
+{
+  "date": "2026-10-05",
+  "base": "0852c80b0326ef7ae52bf606db77850ecc2653e4",
+  "boundary": "trusted-host",
+  "fixture": "actual frontend + actual Pi SDK + local fixed SSE, no external model",
+  "checks": [
+    {
+      "name": "unchecked-ack-blocks-submit",
+      "result": {
+        "checked": false,
+        "dialogVisible": true,
+        "missing": true
+      }
+    },
+    {
+      "name": "ui-enable",
+      "result": {
+        "captionHeight": 24,
+        "dialogClosed": true,
+        "label": "完全访问"
+      }
+    },
+    {
+      "name": "ui-revoke",
+      "result": {
+        "dialogClosed": true,
+        "label": "完全访问 · 可启用"
+      }
+    },
+    {
+      "name": "mobile-confirm-dialog",
+      "result": {
+        "checked": false,
+        "rect": {
+          "height": 496.3645935058594,
+          "width": 350.66668701171875,
+          "x": 12,
+          "y": 173.8125
+        },
+        "withinViewport": true
+      }
+    },
+    {
+      "name": "cancel-and-escape-focus",
+      "result": {
+        "dialogClosed": true,
+        "focus": "启用本机完全访问"
+      }
+    }
+  ],
+  "geometry": [
+    {
+      "clientWidth": 1440,
+      "rects": {
+        ".composer": {
+          "height": 138.0625,
+          "width": 747.3333740234375,
+          "x": 313.3333435058594,
+          "y": 637.6041870117188
+        },
+        ".composer-caption": {
+          "height": 24,
+          "width": 748.6666870117188,
+          "x": 312.66668701171875,
+          "y": 785.3333740234375
+        },
+        ".composer-control-left": {
+          "height": 30,
+          "width": 225,
+          "x": 335.3333435058594,
+          "y": 728.5
+        },
+        ".composer-submit-control": {
+          "height": 30,
+          "width": 69.33333587646484,
+          "x": 969.3333740234376,
+          "y": 728.5
+        },
+        ".inspector": {
+          "height": 767,
+          "width": 320,
+          "x": 1104,
+          "y": 61
+        },
+        ".main-pane": {
+          "height": 767,
+          "width": 806,
+          "x": 284,
+          "y": 61
+        },
+        ".sidebar": {
+          "height": 812,
+          "width": 252,
+          "x": 16,
+          "y": 16
+        },
+        ".topbar": {
+          "height": 45,
+          "width": 1140,
+          "x": 284,
+          "y": 16
+        }
+      },
+      "scrollWidth": 1440,
+      "viewport": [
+        1440,
+        844
+      ]
+    },
+    {
+      "clientWidth": 1024,
+      "rects": {
+        ".composer": {
+          "height": 174.0625,
+          "width": 414.3333435058594,
+          "x": 275.3333435058594,
+          "y": 606.2708740234375
+        },
+        ".composer-caption": {
+          "height": 23.33333396911621,
+          "width": 415.6666870117187,
+          "x": 274.66668701171875,
+          "y": 790
+        },
+        ".composer-control-left": {
+          "height": 30,
+          "width": 370.3333435058594,
+          "x": 297.3333435058594,
+          "y": 694
+        },
+        ".composer-submit-control": {
+          "height": 30,
+          "width": 69.33333587646484,
+          "x": 598.3333740234375,
+          "y": 733.1666870117188
+        },
+        ".inspector": {
+          "height": 775,
+          "width": 285,
+          "x": 727,
+          "y": 57
+        },
+        ".main-pane": {
+          "height": 775,
+          "width": 461,
+          "x": 252,
+          "y": 57
+        },
+        ".sidebar": {
+          "height": 820,
+          "width": 228,
+          "x": 12,
+          "y": 12
+        },
+        ".topbar": {
+          "height": 45,
+          "width": 760,
+          "x": 252,
+          "y": 12
+        }
+      },
+      "scrollWidth": 1024,
+      "viewport": [
+        1024,
+        844
+      ]
+    },
+    {
+      "clientWidth": 375,
+      "rects": {
+        ".composer": {
+          "height": 190.6666717529297,
+          "width": 316,
+          "x": 29.33333396911621,
+          "y": 869.03125
+        },
+        ".composer-caption": {
+          "height": 23.33333396911621,
+          "width": 317.3333435058594,
+          "x": 28.666667938232425,
+          "y": 1069.3646240234375
+        },
+        ".composer-control-left": {
+          "height": 30,
+          "width": 272,
+          "x": 51.33333587646485,
+          "y": 973.3646240234376
+        },
+        ".composer-submit-control": {
+          "height": 30,
+          "width": 69.33333587646484,
+          "x": 254,
+          "y": 1012.53125
+        },
+        ".inspector": {
+          "height": 164,
+          "width": 354.66668701171875,
+          "x": 10,
+          "y": 1123.3646240234375
+        },
+        ".main-pane": {
+          "height": 1056.3646240234375,
+          "width": 354.66668701171875,
+          "x": 10,
+          "y": 55
+        },
+        ".sidebar": {
+          "height": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        ".topbar": {
+          "height": 45,
+          "width": 354.66668701171875,
+          "x": 10,
+          "y": 10
+        }
+      },
+      "scrollWidth": 375,
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  ],
+  "browserLogs": [],
+  "layoutComparison": {
+    "desktop": "与原1440基线矩形完全一致",
+    "tablet": "与原1024输入区/工具基线一致，说明行23.333333969px",
+    "mobile": "保留原栏宽、输入区和说明行高度；消息内容不同，不比较纵向绝对位置"
+  }
+}

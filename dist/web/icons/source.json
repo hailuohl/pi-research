@@ -1,0 +1,14 @@
+{
+  "library": "Lucide",
+  "revision": "aace268b9be318c4f6d8a09a35139f860d07d9c5",
+  "icons": [
+    "database",
+    "paperclip",
+    "cpu",
+    "book-open",
+    "network",
+    "microscope",
+    "link"
+  ],
+  "source": "https://github.com/lucide-icons/lucide/tree/aace268b9be318c4f6d8a09a35139f860d07d9c5/icons"
+}

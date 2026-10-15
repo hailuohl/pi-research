@@ -1,0 +1,22 @@
+{
+  "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+  "manifestDigest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+  "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf",
+  "command": [
+    "python",
+    "main.py"
+  ],
+  "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+  "imageId": "sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+  "containerId": "256f040f83f846ef0683fbba974b5a616b979493d00bfe41647a06fecc33676d",
+  "exitCode": 1,
+  "state": "failed",
+  "integrity": "incomplete",
+  "error": "Missing expected formal artifact: metrics.json; Missing expected formal artifact: predictions.csv; Missing expected formal artifact: model.json; metrics.json: 缺少有效的已归档指标文件; metrics.json: 必需产物未归档为普通文件; predictions.csv: 必需产物未归档为普通文件; model.json: 必需产物未归档为普通文件",
+  "artifactIds": [
+    "52438855-52ef-4cb4-8d87-5555a38f5e45",
+    "80467a30-e8b0-4666-9d9c-17dd9be1de3f",
+    "e0dc1fdf-cfea-43f9-8ce5-4d206a5361fe"
+  ],
+  "scientificConclusion": false
+}

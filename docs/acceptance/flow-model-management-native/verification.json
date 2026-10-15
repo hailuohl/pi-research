@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-08",
+  "baseline": "d4b173e4b541856700d21cad97caf53721c284b8",
+  "acceptance": "RESULT.md",
+  "review": {
+    "status": "passed",
+    "kind": "independent targeted critical review",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeConfiguration": "not echoed",
+    "threadId": "01a1182d-afe8-7462-bde3-79fec69bf003",
+    "finalTurnId": "01a11aa8-9a90-7040-8901-1667d982fe46",
+    "remainingBlockers": 0,
+    "sourceFileCount": 56,
+    "trackedPatchSha256": "1f61e0ca0d64b01c24eb6082e403567ed1bd49855b16274d9789602531a5726f",
+    "sourceFileManifestSha256": "8a512fb4891b1822cf17d080c7b2b91024dd97810f932098a2e35568f989bf40",
+    "note": "The tracked patch excludes new files; the file manifest covers all 56 changed or added source/test files. Reviewed source was frozen."
+  },
+  "implementation": [
+    {
+      "task": "provider_backend",
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "high",
+      "runtimeConfiguration": "not echoed"
+    },
+    {
+      "task": "settings_context",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeConfiguration": "not echoed"
+    },
+    {
+      "task": "settings_frontend",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeConfiguration": "not echoed"
+    }
+  ],
+  "checks": [
+    {
+      "name": "first-management-checks",
+      "status": "failed then repaired",
+      "tests": 83,
+      "pass": 82,
+      "fail": 1,
+      "followup": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0
+      }
+    },
+    {
+      "name": "native-management-related",
+      "status": "passed",
+      "tests": 80,
+      "pass": 80,
+      "fail": 0
+    },
+    {
+      "name": "first-full-regression",
+      "status": "failed then repaired",
+      "tests": 1355,
+      "pass": 1326,
+      "fail": 5,
+      "skip": 24,
+      "affectedRecheck": {
+        "tests": 80,
+        "pass": 80,
+        "fail": 0
+      }
+    },
+    {
+      "name": "review-repair-checks",
+      "status": "failed fixture then repaired",
+      "tests": 47,
+      "pass": 46,
+      "fail": 1,
+      "affectedRecheck": {
+        "tests": 16,
+        "pass": 16,
+        "fail": 0
+      }
+    },
+    {
+      "name": "final-full-regression",
+      "command": "npm run test:core",
+      "status": "passed",
+      "tests": 1375,
+      "pass": 1351,
+      "fail": 0,
+      "skip": 24,
+      "note": "Before the final two-file safeData/UI test repair. Skips are Docker, isolated compiler and POSIX environment checks; not counted as passed."
+    },
+    {
+      "name": "last-ui-affected-recheck",
+      "status": "passed",
+      "tests": 40,
+      "pass": 40,
+      "fail": 0,
+      "skip": 0,
+      "note": "After the final two-file repair; exercises actual load(false)/safeData path, key sentinel exclusion, restored notice and default eligibility."
+    },
+    {
+      "name": "final-clean-build",
+      "command": "npm run verify:build",
+      "status": "passed",
+      "node": "24.19.0",
+      "platform": "win32",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "identical": true,
+      "files": 613,
+      "lockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719",
+      "distManifestSha256": "18f7bea87e0023f3d482edcffda08fc594671a8199440b201e94eb6074fca013"
+    },
+    {
+      "name": "browser-key-flow",
+      "status": "passed",
+      "evidence": "browser-evidence.json",
+      "synthetic": true,
+      "paidProvider": false
+    }
+  ],
+  "limitations": [
+    "Paid remote providers and account-specific capabilities were not exercised.",
+    "The 24 environment-specific skips remain unverified.",
+    "Native PDF/video input is whole-file only; no page/time-range clipping.",
+    "Legacy backups without a model catalog snapshot cannot recover previously excluded catalog/tombstones."
+  ],
+  "rawEvidenceRoot": ".validation/model-management-20261008",
+  "logs": [
+    {
+      "path": "management-tests.log",
+      "sha256": "7df4caae07045e36d34f0b17a78b29156bea47f63ee5b202d891b7384d0cd862"
+    },
+    {
+      "path": "management-recheck.log",
+      "sha256": "b1be667325bf37903926973b6f97915bc766f41f97de828507e5ec687ccc1da4"
+    },
+    {
+      "path": "native-related-successful-build.log",
+      "sha256": "5b676c5c6cf6dc226596b54a443a4d5109bbc7c19667a070e68668202dfcdad6"
+    },
+    {
+      "path": "full-regression.log",
+      "sha256": "efe12afb3821a9cb60f7b5d35f0be5855209f9259c90fec14251f852f0d291a7"
+    },
+    {
+      "path": "affected-regression.log",
+      "sha256": "0aa347955cd3bbceeb3c5b4899502dbeada526040f91456a3f34b2d5ca0e271a"
+    },
+    {
+      "path": "repair-checks.log",
+      "sha256": "2890f6aab562ceff9f077605583740d7176299f654e3ecb111d93ed9f161a235"
+    },
+    {
+      "path": "repair-ui-recheck.log",
+      "sha256": "c244c2ad1319910494bfc0570d36e13f109f91b05f503e8edc485d52d2a7664c"
+    },
+    {
+      "path": "delivery-full-regression.log",
+      "sha256": "8f4051ec8619dcdfc4a34758f98cafa64492e80b01f0341361fba73558f464a4"
+    },
+    {
+      "path": "restore-ui-final-recheck.log",
+      "sha256": "2f139180cddcd1304127daacbe834f02e7969f5102d97fa63ce3191aa1436464"
+    },
+    {
+      "path": "delivery-verify-build.log",
+      "sha256": "a48c1051d8ba3142ac1c979d7b363707fd09d88ca6f04ac5a9819b1374857473"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "browser": "Playwright Chromium",
+  "reason": "Browser plugin is not available in this session",
+  "viewports": [],
+  "passed": false,
+  "url": "http://127.0.0.1:44171",
+  "error": "Page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR at http://127.0.0.1:44171/#token=[redacted]\n"
+}

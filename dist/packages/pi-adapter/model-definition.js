@@ -1,0 +1,105 @@
+import { ensure } from '../domain/errors.js';
+import { nativeAvailability } from './native-request-types.js';
+import { object, text, integer, oneOf } from '../contracts/validation.js';
+export const PI_THINKING = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+export const CAPABILITY_KEYS = ['text', 'image', 'pdf', 'video', 'structuredOutput', 'nativeWebSearch', 'midConversationSystem'];
+export const MODEL_OVERRIDE_FIELDS = ['name', 'nativeProfile', 'contextWindow', 'maxTokens', 'reasoning', 'parameters', 'structuredOutput', ...CAPABILITY_KEYS.map(k => 'capabilities.' + k)];
+const forbidden = new Set(['__proto__', 'constructor', 'prototype']);
+function json(value, depth = 0) { ensure(depth <= 16, 'INVALID_INPUT', 'JSON嵌套最多16层', 400); if (value === null || typeof value === 'string' || typeof value === 'boolean')
+    return value; if (typeof value === 'number') {
+    ensure(Number.isFinite(value), 'INVALID_INPUT', 'JSON数字必须有限', 400);
+    return value;
+} if (Array.isArray(value)) {
+    ensure(value.length <= 200, 'INVALID_INPUT', 'JSON数组最多200项', 400);
+    return value.map(v => json(v, depth + 1));
+} const x = object(value); ensure(Object.keys(x).every(k => !forbidden.has(k)), 'INVALID_INPUT', 'JSON包含禁止的属性', 400); return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, json(v, depth + 1)])); }
+export function jsonObject(value) { const x = object(json(value)); ensure(Buffer.byteLength(JSON.stringify(x)) <= 16384, 'INVALID_INPUT', 'JSON参数最多16 KiB', 400); return x; }
+const parameterKeys = ['temperature', 'top_p', 'top_k', 'min_p', 'frequency_penalty', 'presence_penalty', 'repetition_penalty', 'seed', 'reasoning_effort', 'reasoning', 'thinking', 'output_config', 'enable_thinking', 'chat_template_kwargs'];
+export function modelParameters(value, api) {
+    const x = jsonObject(value);
+    ensure(Object.keys(x).every(k => parameterKeys.includes(k)), 'INVALID_INPUT', '参数只能设置采样或推理字段，不能覆盖模型、消息、工具或传输', 400);
+    const numeric = { temperature: [0, 2], top_p: [0, 1], top_k: [0, 1000], min_p: [0, 1], frequency_penalty: [-2, 2], presence_penalty: [-2, 2], repetition_penalty: [0, 4], seed: [0, 2147483647] };
+    for (const [k, [min, max]] of Object.entries(numeric))
+        if (x[k] !== undefined)
+            ensure(typeof x[k] === 'number' && x[k] >= min && x[k] <= max && (!['top_k', 'seed'].includes(k) || Number.isInteger(x[k])), 'INVALID_INPUT', k + '超出允许范围', 400);
+    const nested = (key, keys) => { if (x[key] === undefined)
+        return; const v = object(x[key]); ensure(Object.keys(v).every(k => keys.includes(k)), 'INVALID_INPUT', key + '包含不支持字段', 400); for (const [k, value] of Object.entries(v)) {
+        if (['enabled', 'exclude', 'enable_thinking', 'preserve_thinking'].includes(k))
+            ensure(typeof value === 'boolean', 'INVALID_INPUT', key + '.' + k + '必须是布尔值', 400);
+        else if (['max_tokens', 'budget_tokens', 'thinking_budget'].includes(k))
+            integer(value, key + '.' + k, 0, 1000000);
+        else if (k === 'type')
+            oneOf(value, ['enabled', 'disabled', 'adaptive'], 'thinking.type');
+        else if (k === 'effort') {
+            const effort = text(value, key + '.effort', 64);
+            ensure(/^[A-Za-z0-9_-]+$/.test(effort), 'INVALID_INPUT', '推理effort格式无效', 400);
+        }
+    } };
+    nested('reasoning', ['effort', 'enabled', 'max_tokens', 'exclude']);
+    nested('thinking', ['type', 'budget_tokens']);
+    nested('output_config', ['effort']);
+    nested('chat_template_kwargs', ['enable_thinking', 'preserve_thinking', 'thinking_budget']);
+    if (x.reasoning_effort !== undefined)
+        text(x.reasoning_effort, 'reasoning_effort', 64);
+    if (x.enable_thinking !== undefined)
+        ensure(typeof x.enable_thinking === 'boolean', 'INVALID_INPUT', 'enable_thinking必须为布尔值', 400);
+    if (api === 'anthropic-messages')
+        ensure(Object.keys(x).every(k => ['temperature', 'top_p', 'top_k', 'thinking', 'output_config'].includes(k)), 'INVALID_INPUT', 'Anthropic不支持此参数映射', 400);
+    if (api === 'openai-responses')
+        ensure(Object.keys(x).every(k => ['temperature', 'top_p', 'reasoning'].includes(k)), 'INVALID_INPUT', 'Responses不支持此参数映射', 400);
+    if (api === 'openai-completions')
+        ensure(x.output_config === undefined, 'INVALID_INPUT', 'Chat Completions不支持output_config', 400);
+    return x;
+}
+export function defaultModelDefinition(model) { return { model, name: model, nativeProfile: 'none', contextWindow: 32768, maxTokens: 4096, capabilities: { text: true, image: false, pdf: false, video: false, structuredOutput: false, nativeWebSearch: false, midConversationSystem: false }, reasoning: { defaultLevel: 'off', levels: PI_THINKING.map(id => ({ id, label: id === 'off' ? 'none' : id, piLevel: id, parameters: {} })) }, parameters: {}, structuredOutput: null, configuration: { mode: 'manual', overrides: [] } }; }
+export function validateModelDefinition(value, api) {
+    const x = object(value);
+    ensure(Object.keys(x).every(k => ['model', 'name', 'nativeProfile', 'contextWindow', 'maxTokens', 'capabilities', 'reasoning', 'parameters', 'structuredOutput', 'configuration'].includes(k)), 'INVALID_INPUT', '模型定义包含未知字段', 400);
+    const model = text(x.model, 'model', 160), name = text(x.name, 'name', 160), nativeProfile = oneOf(x.nativeProfile, ['none', 'openai', 'anthropic', 'qwen', 'openrouter'], 'nativeProfile');
+    ensure(nativeProfile === 'none' || nativeProfile === 'anthropic' && api === 'anthropic-messages' || nativeProfile === 'qwen' && api === 'openai-completions' || ['openai', 'openrouter'].includes(nativeProfile) && api !== 'anthropic-messages', 'INVALID_INPUT', '原生适配与API格式不兼容', 400);
+    const contextWindow = integer(x.contextWindow, 'contextWindow', 256, 10000000), maxTokens = integer(x.maxTokens, 'maxTokens', 1, contextWindow), cap = object(x.capabilities);
+    ensure(Object.keys(cap).length === CAPABILITY_KEYS.length && CAPABILITY_KEYS.every(k => typeof cap[k] === 'boolean') && cap.text === true, 'INVALID_INPUT', '能力必须包含全部布尔字段且启用文本', 400);
+    const reasoning = object(x.reasoning);
+    ensure(Object.keys(reasoning).every(k => ['defaultLevel', 'levels'].includes(k)) && Array.isArray(reasoning.levels) && reasoning.levels.length >= 1 && reasoning.levels.length <= 16, 'INVALID_INPUT', '推理等级必须有1至16项', 400);
+    const levels = reasoning.levels.map(v => { const l = object(v); ensure(Object.keys(l).every(k => ['id', 'label', 'piLevel', 'parameters'].includes(k)), 'INVALID_INPUT', '推理等级包含未知字段', 400); const id = text(l.id, 'level.id', 64); ensure(/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(id), 'INVALID_INPUT', '推理等级ID格式无效', 400); return { id, label: text(l.label, 'level.label', 80), piLevel: oneOf(l.piLevel, PI_THINKING, 'piLevel'), parameters: modelParameters(l.parameters, api) }; });
+    const defaultLevel = text(reasoning.defaultLevel, 'defaultLevel', 64);
+    ensure(new Set(levels.map(l => l.id)).size === levels.length && levels.some(l => l.id === defaultLevel), 'INVALID_INPUT', '推理等级重复或缺少默认等级', 400);
+    const cfg = object(x.configuration), mode = oneOf(cfg.mode, ['matched', 'manual'], 'mode');
+    ensure(Object.keys(cfg).every(k => ['mode', 'overrides'].includes(k)) && Array.isArray(cfg.overrides) && cfg.overrides.every(k => typeof k === 'string' && MODEL_OVERRIDE_FIELDS.includes(k)), 'INVALID_INPUT', '手动覆盖字段无效', 400);
+    let structuredOutput = null;
+    if (x.structuredOutput !== null) {
+        const s = object(x.structuredOutput);
+        ensure(Object.keys(s).every(k => ['name', 'schema', 'strict'].includes(k)) && typeof s.strict === 'boolean' && cap.structuredOutput === true, 'INVALID_INPUT', '结构化输出须启用能力并提供明确schema', 400);
+        const schema = jsonObject(s.schema);
+        ensure(schema.type === 'object', 'INVALID_INPUT', '结构化输出schema根必须是object', 400);
+        const refs = (v) => { if (v && typeof v === 'object') {
+            if (!Array.isArray(v) && v.$ref !== undefined)
+                ensure(typeof v.$ref === 'string' && v.$ref.startsWith('#'), 'INVALID_INPUT', 'schema不接受远程引用', 400);
+            Object.values(v).forEach(refs);
+        } };
+        refs(schema);
+        structuredOutput = { name: text(s.name, 'schema.name', 64), schema, strict: s.strict };
+    }
+    return { model, name, nativeProfile, contextWindow, maxTokens, capabilities: cap, reasoning: { defaultLevel, levels }, parameters: modelParameters(x.parameters, api), structuredOutput, configuration: { mode, overrides: [...new Set(cfg.overrides)] } };
+}
+export function effectiveCapabilities(model, api = 'openai-completions') { const native = nativeAvailability(api, model); return Object.fromEntries(CAPABILITY_KEYS.map(k => [k, k === 'pdf' || k === 'video' || k === 'nativeWebSearch' ? { ...native[k], ...(k !== 'nativeWebSearch' && native[k].state === 'available' ? { reason: '可随聊天附件发送整文件；配置不代表真实接口已验证' } : {}) } : { declared: model.capabilities[k], state: !model.capabilities[k] ? 'disabled' : 'available', reason: !model.capabilities[k] ? '未声明启用' : k === 'structuredOutput' && !model.structuredOutput ? '已接入格式参数；设置 JSON Schema 后才请求结构化输出' : '已接入当前SDK参数与授权守卫' }])); }
+export function resolvedThinking(model, id) { const level = model?.reasoning.levels.find(l => l.id === id); ensure(!model || level, 'MODEL_REASONING_UNAVAILABLE', '该推理等级已移除或未配置'); return level?.piLevel ?? oneOf(id, PI_THINKING, 'thinking'); }
+/** The application alone owns messages/tools/auth/dispatch; user JSON can only change validated parameter roots. */
+export function modelPayload(payload, model, thinking, api) {
+    const x = object(payload), level = model.reasoning.levels.find(l => l.id === thinking);
+    ensure(level, 'MODEL_REASONING_UNAVAILABLE', '推理等级已变化');
+    const result = { ...x };
+    for (const [k, v] of Object.entries({ ...model.parameters, ...level.parameters }))
+        result[k] = v;
+    if (model.structuredOutput) {
+        const f = model.structuredOutput;
+        if (api === 'anthropic-messages')
+            result.output_config = { ...object(result.output_config ?? {}), format: { type: 'json_schema', schema: f.schema } };
+        else if (api === 'openai-responses')
+            result.text = { ...object(result.text ?? {}), format: { type: 'json_schema', name: f.name, schema: f.schema, strict: f.strict } };
+        else
+            result.response_format = { type: 'json_schema', json_schema: { name: f.name, schema: f.schema, strict: f.strict } };
+    }
+    return result;
+}
+//# sourceMappingURL=model-definition.js.map

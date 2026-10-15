@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-13",
+  "baseline": "aba58a4d727dbff0b9f4ef9366a35e7e9ee1112d",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "upstreamReference": {
+    "repository": "alphaXiv/OpenResearch",
+    "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
+    "path": "agent-skills/orx-paper/SKILL.md"
+  },
+  "previousBundleId": "7491426e81c2bd54888da1bd03fa517c8c001a981d4356e92024f50259ef863b",
+  "bundleId": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7",
+  "review": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeEcho": "not available",
+    "result": "no blocking or non-blocking code findings",
+    "patchSha256": "ad8d0a08706364150cd97e93533c06bf1c5f32d074a2c23f33c234319835d75b",
+    "snapshot": ".validation/2026-10-13-paper-writing-guidance/review-snapshot.json",
+    "reviewedFiles": 61,
+    "hashesStillMatch": true,
+    "forwardCheck": "two synthetic writing scenarios, independent subagent; not Pi provider end-to-end"
+  },
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeEcho": "not available"
+  },
+  "checks": {
+    "fullRegression": {
+      "command": "npm run test:core",
+      "exitCode": 0,
+      "tests": 1946,
+      "pass": 1921,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 25,
+      "todo": 0,
+      "duration_ms": 1247893.1534,
+      "log": ".validation/2026-10-13-paper-writing-guidance/full-regression.log",
+      "logSha256": "9aac5716c9e74dfc41552d2d8d48f164971e564819168179849cd7c0cdfb3431",
+      "skips": [
+        "POSIX backup preserves distinct case-sensitive sibling paths",
+        "optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery",
+        "isolated compiler: pdflatex",
+        "isolated compiler: xelatex",
+        "isolated compiler: lualatex",
+        "isolated compiler: chinese",
+        "isolated compiler: lua-chinese-budget",
+        "isolated compiler: bibtex",
+        "isolated compiler: biber",
+        "isolated compiler: missing-image",
+        "isolated compiler: missing-package",
+        "isolated compiler: undefined-reference",
+        "isolated compiler: shell-blocked",
+        "isolated compiler: lua-blocked",
+        "isolated compiler: forged-result",
+        "isolated compiler: lua-forged-host-result",
+        "isolated compiler: pdf-before-error",
+        "isolated compiler: absolute-write-blocked",
+        "isolated compiler: biber-remote-blocked",
+        "isolated compiler: biber-nonutf8-control",
+        "isolated compiler: timeout",
+        "optional real Docker preserves ordinary and executable source modes",
+        "POSIX source modes reflect actual exec bits and writes retain exact normal permission bits"
+      ]
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "exitCode": 0,
+      "identical": true,
+      "files": 661,
+      "distManifestSha256": "8cd8fe0b3e8317d1f1eef88fa38feeda620dd2ba7d7edcbf37ea000865a8fc2c",
+      "summary": ".validation/clean-build-DYvMig/summary.json"
+    },
+    "skillFormat": {
+      "status": "passed",
+      "skills": 2,
+      "log": ".validation/2026-10-13-paper-writing-guidance/skill-frontmatter-system-python.log",
+      "initialFailure": "Bundled Python lacked yaml; existing system Python with PyYAML used, no dependency installed"
+    },
+    "runtimeBinding": {
+      "evidence": ".validation/2026-10-13-paper-writing-guidance/builtin-binding.json",
+      "newBundleId": "2c41de1dd7daeef40043ec76e4a5eeaa6819b575987d3c884c476b434424d5f7",
+      "newPaperDigest": "7854b3113fe080f5e422d601428c968dddc6efcf4f8344ea8a565118e4e51759",
+      "oldDigestRetained": true,
+      "unknownBundleRejected": true,
+      "modelRequests": 0
+    },
+    "directed": {
+      "reportedPass": 41,
+      "independentlyArchived": false,
+      "supersededBy": "fullRegression"
+    },
+    "unrelatedFilesUnchanged": true
+  },
+  "notRun": [
+    "Real provider generation of a complete manuscript",
+    "Additional live Docker or browser acceptance outside the core suite",
+    "Production restart or existing project skill-configuration change",
+    "Rewriting existing manuscripts"
+  ]
+}

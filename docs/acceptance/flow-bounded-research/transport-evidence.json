@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "operation": "report_inspect",
+      "digest": "54d04b44dab9c2fd7e7f9a5a0bb9805745a47265b00101dd415fa4805111b05c",
+      "httpCliAgreement": true,
+      "validity": "current",
+      "integrity": "verified",
+      "runCount": 4,
+      "researchCampaignCount": 1
+    },
+    {
+      "operation": "campaign_plan_inspect",
+      "digest": "d922612c8b5201ea0e337054a1cf91958f291fa3b151a5ac9f947edcb90ad208",
+      "httpCliAgreement": true
+    },
+    {
+      "operation": "campaign_comparison",
+      "digest": "db033147c85202a9a2b82bf6cb37e7b8961ddac64c105830a87ac2fe6e1f0416",
+      "httpCliAgreement": true
+    }
+  ],
+  "authenticatedDownload": {
+    "bytes": 71348,
+    "digest": "35573fb10691b2f0c9d0f7f7e429ea096454010851d4c3e86d8502385ba6b70c",
+    "matchesDeliveredArchive": true
+  },
+  "browserDownloadLocationVerified": false
+}

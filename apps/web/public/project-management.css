@@ -1,0 +1,18 @@
+.sidebar-project-actions { display: flex; align-items: center; gap: 4px; margin: 0 7px 14px; flex-shrink: 0; }
+.sidebar .sidebar-project-actions .new-project { margin: 0; }
+.project-management-trigger { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; white-space: nowrap; color: var(--muted); font-size: 12px; }
+.project-management-toolbar { display: flex; align-items: center; gap: 12px; }
+.project-management-group h3 { margin: 22px 0 10px; }
+.project-management-group ul { list-style: none; margin: 0; padding: 0; }
+.project-management-group li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.project-management-group li > div:first-child { min-width: 0; overflow-wrap: anywhere; }
+.project-management-group small, .project-confirmation code { display: block; color: var(--muted); margin-top: 4px; }
+.project-management-group .actions { flex-shrink: 0; }
+.project-confirmation { padding: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--canvas); }
+.project-confirmation button { margin-top: 12px; }
+.project-confirmation code, .project-purge-status > code { overflow-wrap: anywhere; }
+.project-confirmation label { margin-top: 16px; }
+.project-purge-status textarea { font-family: Consolas, monospace; overflow-wrap: anywhere; }
+.project-readonly-notice { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 18px; color: var(--muted); background: var(--green-soft); border-bottom: 1px solid var(--line); }
+.project-readonly-notice .text-button { margin-left: auto; }
+@media (max-width: 520px) { .project-management-group li { align-items: flex-start; flex-direction: column; gap: 8px; } }

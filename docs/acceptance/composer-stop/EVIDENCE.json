@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-03",
+  "scope": "发送与停止共用输入框右下角按钮，沿用既有interrupt及排队接口",
+  "acceptance": [
+    {
+      "id": 1,
+      "description": "空闲发送；排队或运行时空草稿原位停止；移除另列停止按钮",
+      "result": "passed"
+    },
+    {
+      "id": 2,
+      "description": "运行时文字或附件仍使用发送到队列，Enter不会触发停止",
+      "result": "passed"
+    },
+    {
+      "id": 3,
+      "description": "停止只针对精确当前会话，busy、归档、task、卸载或旧会话回调不触发；失败保持可重试",
+      "result": "passed"
+    },
+    {
+      "id": 4,
+      "description": "停止与自然结束恢复发送；重开保留中止历史；科研运行不取消",
+      "result": "passed"
+    }
+  ],
+  "regression": {
+    "beforeFailed": 3,
+    "relatedPassed": 32,
+    "full": {
+      "tests": 1022,
+      "passed": 999,
+      "skipped": 23,
+      "failed": 0
+    }
+  },
+  "cleanBuild": {
+    "identical": true,
+    "files": 505,
+    "distManifestSha256": "a4ae50764a84b3c5991a3bca824440451fd36b229dd514258cca6c3cdba6b49e",
+    "lockSha256": "aacaba3da779a9bbafabe3bf0446d44ec7512c5a611f804ed6d96f017de0a2eb"
+  },
+  "review": {
+    "model": "gpt-6-sol",
+    "blockers": 0
+  },
+  "browser": {
+    "mode": "本地固定SSE响应，经真实控制器及固定版本Pi SDK；不调用外部供应商",
+    "runningStopAtSendPosition": true,
+    "draftBecomesQueueSend": true,
+    "clearedDraftBecomesStop": true,
+    "stopActuallyInterrupted": true,
+    "naturalCompletionRestoresSend": true,
+    "refreshRestoresSend": true,
+    "retainedCancelledMessage": true
+  },
+  "evidencePaths": {
+    "logs": ".validation/composer-stop/",
+    "live": ".validation/composer-stop/live-evidence.json",
+    "screenshot": ".validation/composer-stop/01-running-stop.jpg",
+    "cleanBuild": ".validation/clean-build-uuxRLa/summary.json"
+  },
+  "backlog": [
+    "停止失败的新增测试使用简化perform stub；应用级错误提示沿用既有路径，本批未新增该界面故障注入。"
+  ]
+}

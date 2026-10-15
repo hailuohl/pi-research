@@ -1,0 +1,58 @@
+{
+  "batch": "crossref-metadata-evidence-report",
+  "projectId": "8ae896b9-d3b9-49ae-945c-b1039c2dd7f6",
+  "documentVersionId": "79ddac00-bcd3-43eb-9f98-73d5e27b39dd",
+  "paperReadId": "3b9dae58-0427-45bb-8ce2-a953fd2cfd8c",
+  "doi": "10.1080/00031305.1973.10478966",
+  "contentKind": "metadata",
+  "pageMapping": "unavailable",
+  "sourceArtifactSha256": [
+    "74a9a6c879bc5259ac216289a489fc2acfc4228f1058b61b25139ec23e1930af",
+    "e45595b02c13e4257fbf16570ba8a8a69add16860f82d4e9b90cdc42b7ca3661"
+  ],
+  "evidenceIds": [
+    "78885e31-a1ef-4d7f-9ec0-3f9857338a5c",
+    "6079a36e-cb88-45d0-9acd-8877737da805"
+  ],
+  "exactQuotes": [
+    "10.1080\\/00031305.1973.10478966",
+    "Graphs in Statistical Analysis"
+  ],
+  "claimId": "f01990c9-b529-4c7e-a631-51dd201fb29c",
+  "claimStatus": "accepted",
+  "statement": "Crossref 书目元数据将 DOI 10.1080/00031305.1973.10478966 与题名《Graphs in Statistical Analysis》关联。",
+  "limitations": [
+    "仅核对 Crossref 书目元数据；未读取论文全文，也未验证论文科学结论。"
+  ],
+  "reportId": "8eda4fb0-f34a-47c7-8365-08156c6c3dbd",
+  "reportIntegrity": "verified",
+  "reportValidity": "current",
+  "reportEvidenceReferenceIds": [
+    "50e6b3b9aa0e2e9a5e449e232532612b38a544afed9266717a55be28c3eea7fb",
+    "963dd3e6656e38eae3b03d7067964e8e2543f3f7f8cf542dd8d34a44f9662ebf"
+  ],
+  "exportArtifactId": "24150d0c-bc80-43c1-9d45-460ffa827e2d",
+  "exportSha256": "791e2c594884257ef6f29c80a5308161a1a04055cb28516b962f11bb6fbde407",
+  "archiveEntries": [
+    "artifacts/74a9a6c879bc5259ac216289a489fc2acfc4228f1058b61b25139ec23e1930af",
+    "artifacts/e45595b02c13e4257fbf16570ba8a8a69add16860f82d4e9b90cdc42b7ca3661",
+    "report.md",
+    "manifest.json",
+    "README.md"
+  ],
+  "failureChecks": {
+    "foreignProjectRejected": true,
+    "invalidIntervalRejected": true,
+    "prematureReportCode": "CLAIM_NOT_ACCEPTED",
+    "metadataParseCode": "DOCUMENT_NOT_PDF"
+  },
+  "newExternalCalls": 0,
+  "newModelUsage": 0,
+  "newRuns": 0,
+  "retainedHistory": {
+    "unchangedRows": 7,
+    "nativeSessionSha256": "4c3625fa7a279fa04bb4964032bbd3a2b963867873180530d0872ba370237126"
+  },
+  "codeBase": "a9af1ab29c9277298f12f2bf825c3999b51cc52b",
+  "codeChanged": false
+}

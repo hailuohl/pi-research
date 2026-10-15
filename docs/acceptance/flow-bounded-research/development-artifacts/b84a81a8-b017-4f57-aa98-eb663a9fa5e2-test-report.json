@@ -1,0 +1,23 @@
+{
+  "purpose": "development-test",
+  "jobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+  "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "-v",
+    "test_main.py"
+  ],
+  "image": "python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+  "imageId": "sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f",
+  "exitCode": 0,
+  "status": "succeeded",
+  "integrity": "complete",
+  "artifactIds": [
+    "c36c63ef-32c7-438f-9887-6d5050c983d2",
+    "1a1a0218-72d6-4082-9048-3304c21cb17b"
+  ],
+  "recovered": false,
+  "scientificConclusion": false
+}

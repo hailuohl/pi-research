@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-09-29T18:47:12.092Z",
+  "scope": "isolated owner HTTP ZIP import + browser review/download; native file chooser was previously verified, not repeated in this batch",
+  "projectId": "648c4861-7916-439e-995d-e38ee79e9369",
+  "revision": {
+    "id": "c83be6b4-b50b-4296-9223-89fddd80ba1b",
+    "contentDigest": "959c118c7e7ea9ed5663e4615a334b1ac102427e3c52a2467aa0cf612da68199",
+    "authorization": "text-with-static-assets",
+    "license": null,
+    "files": [
+      {
+        "path": "assets/figure.png",
+        "digest": "9248c17b78443dbb151f1a391fadc5eb2bd79b5684b79015342bdb3963b11918",
+        "size": 2021,
+        "mediaType": "image/png"
+      },
+      {
+        "path": "SKILL.md",
+        "digest": "16af20cc3a5149e2a50ea36af139bbf32dbfa018d5320782be5addefaf15118b",
+        "size": 149
+      }
+    ]
+  },
+  "session": {
+    "id": "95f445b2-cd71-4c4b-bfff-84b40fa0b30f",
+    "skillBundleId": "bdc4f58a019d06598a6d74085b87df4820bed7da6d3d1e4bf8cd91582a25dd26",
+    "selectedSkillIds": [
+      "binary-figure-proof"
+    ],
+    "state": "idle",
+    "generation": 0
+  },
+  "boundary": {
+    "invalidZipCode": "SKILL_IMAGE_INVALID",
+    "revisionsAfterInvalid": 0,
+    "revisionsAfterValid": 1,
+    "ownerPngDigest": "9248c17b78443dbb151f1a391fadc5eb2bd79b5684b79015342bdb3963b11918",
+    "ownerPngSize": 2021,
+    "ownerBytesEqualSource": true,
+    "agentBinaryReadCode": "SKILL_RESOURCE_BINARY",
+    "revocationId": "caffaa7b-e87f-4aca-b324-6d3501cdc6f5",
+    "newStartReadyAfterRevoke": false,
+    "historicalOwnerReadAfterRevoke": true,
+    "modelUsageRows": 0,
+    "jobRows": 0,
+    "formalRuns": 0
+  },
+  "browser": {
+    "revisionAndUnknownLicenseVisible": true,
+    "reviewedAndEnabled": true,
+    "fixedPngDigestVisible": true,
+    "downloadActionInvoked": true,
+    "serviceReopenRetainedSessionBundle": true,
+    "revokedVersionVisible": true,
+    "newStartBlocked": true,
+    "historicalPngReadAfterRevoke": true,
+    "nativeFileSelectorReverifiedThisBatch": false
+  },
+  "verification": {
+    "fullRegression": "Only two pre-fix skill-manager UI wording assertions failed; no unrelated failure observed",
+    "affectedUiAfterFix": {"passed": 8, "failed": 0},
+    "skillUnitAndHttpAfterPngFix": {"passed": 6, "failed": 0},
+    "cleanBuild": {"npmCiPassed": true, "buildAndTypecheckPassed": true, "distFiles": 465, "overlayMismatches": 0},
+    "independentReview": {"blockersFound": 2, "blockersClosed": 2, "remainingBlockers": 0}
+  }
+}

@@ -1,0 +1,741 @@
+{
+  "schemaVersion": 1,
+  "fixtureDigest": "b02f6849ec07c53c73d526ca8dcb78be641aa29d46f4fd1151cd29f662017978",
+  "disclosure": "Authored deterministic fixture, not real papers, not material-performance claims, and not an external benchmark.",
+  "comparisonKind": "Same supplied text, raw full-file context versus optional lexical/MMR context packaging; not model QA or scientific accuracy.",
+  "variants": [
+    {
+      "label": "fixed",
+      "version": "0.2.2",
+      "sourceDigests": [
+        {
+          "name": "positive-copy-a.txt",
+          "digest": "384d7b1963b57c4739008d6c7971ca4a2af7e24f66c0ea9dd36046b17163b616"
+        },
+        {
+          "name": "positive-copy-b.txt",
+          "digest": "384d7b1963b57c4739008d6c7971ca4a2af7e24f66c0ea9dd36046b17163b616"
+        },
+        {
+          "name": "positive-copy-c.txt",
+          "digest": "384d7b1963b57c4739008d6c7971ca4a2af7e24f66c0ea9dd36046b17163b616"
+        },
+        {
+          "name": "negative-observation.txt",
+          "digest": "bea6b6a1e3e938cb8b51eee58f31cef31225778c818c8915054ce358bfd5e2be"
+        },
+        {
+          "name": "measurement-method.txt",
+          "digest": "8496a98daee535cfbe484b6e96c7e33a861bc631507a7cc044e55fefbc49b487"
+        },
+        {
+          "name": "numerical-fixture.txt",
+          "digest": "4b51fe1aa9647d4476c0ff74e0ad9a7552506e81d418954336bf815a6f2ff7f1"
+        },
+        {
+          "name": "中文示例.txt",
+          "digest": "32d9ce05170662cd89fab00c2acbaf1ab67816beab40ddd22739cf251b75765d"
+        },
+        {
+          "name": "irrelevant-manual.txt",
+          "digest": "8b132d869032f3fa54e74435d7e8b16bd9a6eae4009d8fd2c3fc0826b0436b41"
+        }
+      ],
+      "networkCalls": 0,
+      "modelUsageRecords": 0,
+      "runsCreated": 0,
+      "claimsCreated": 0,
+      "cases": [
+        {
+          "id": "numeric-source",
+          "query": "calibration constant Q7",
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "retrieval": "not available; raw reading remains usable"
+        },
+        {
+          "id": "chinese-source",
+          "query": "吸附构型",
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "retrieval": "not available; raw reading remains usable"
+        },
+        {
+          "id": "contradictory-sources",
+          "query": "adsorption protocol",
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 2,
+            "expectedGroupsTotal": 2,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "retrieval": "not available; raw reading remains usable"
+        },
+        {
+          "id": "no-lexical-answer",
+          "query": "photosynthetic chlorophyll",
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 0,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 0,
+            "exactSourceQuotes": true
+          },
+          "retrieval": "not available; raw reading remains usable"
+        },
+        {
+          "id": "synonym-limit",
+          "query": "sorption procedure",
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "retrieval": "not available; raw reading remains usable"
+        }
+      ]
+    },
+    {
+      "label": "enhanced",
+      "version": "0.3.0-experimental",
+      "sourceDigests": [
+        {
+          "name": "positive-copy-a.txt",
+          "digest": "384d7b1963b57c4739008d6c7971ca4a2af7e24f66c0ea9dd36046b17163b616"
+        },
+        {
+          "name": "positive-copy-b.txt",
+          "digest": "384d7b1963b57c4739008d6c7971ca4a2af7e24f66c0ea9dd36046b17163b616"
+        },
+        {
+          "name": "positive-copy-c.txt",
+          "digest": "384d7b1963b57c4739008d6c7971ca4a2af7e24f66c0ea9dd36046b17163b616"
+        },
+        {
+          "name": "negative-observation.txt",
+          "digest": "bea6b6a1e3e938cb8b51eee58f31cef31225778c818c8915054ce358bfd5e2be"
+        },
+        {
+          "name": "measurement-method.txt",
+          "digest": "8496a98daee535cfbe484b6e96c7e33a861bc631507a7cc044e55fefbc49b487"
+        },
+        {
+          "name": "numerical-fixture.txt",
+          "digest": "4b51fe1aa9647d4476c0ff74e0ad9a7552506e81d418954336bf815a6f2ff7f1"
+        },
+        {
+          "name": "中文示例.txt",
+          "digest": "32d9ce05170662cd89fab00c2acbaf1ab67816beab40ddd22739cf251b75765d"
+        },
+        {
+          "name": "irrelevant-manual.txt",
+          "digest": "8b132d869032f3fa54e74435d7e8b16bd9a6eae4009d8fd2c3fc0826b0436b41"
+        }
+      ],
+      "networkCalls": 0,
+      "modelUsageRecords": 0,
+      "runsCreated": 0,
+      "claimsCreated": 0,
+      "cases": [
+        {
+          "id": "numeric-source",
+          "query": "calibration constant Q7",
+          "note": null,
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "serializedResponseBytes": 1698
+          },
+          "topK": {
+            "status": "matches",
+            "returnedCharacters": 86,
+            "returnedSnippets": 1,
+            "groups": [
+              "calibration"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 0,
+              "uniqueChunks": 13,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1941
+          },
+          "mmrWithoutGrouping": {
+            "status": "matches",
+            "returnedCharacters": 86,
+            "returnedSnippets": 1,
+            "groups": [
+              "calibration"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "groupedDefault": {
+            "status": "matches",
+            "returnedCharacters": 86,
+            "returnedSnippets": 1,
+            "groups": [
+              "calibration"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1940
+          },
+          "mmr": {
+            "status": "matches",
+            "returnedCharacters": 86,
+            "returnedSnippets": 1,
+            "groups": [
+              "calibration"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            }
+          },
+          "evidenceVerified": true
+        },
+        {
+          "id": "chinese-source",
+          "query": "吸附构型",
+          "note": null,
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "serializedResponseBytes": 1698
+          },
+          "topK": {
+            "status": "matches",
+            "returnedCharacters": 49,
+            "returnedSnippets": 1,
+            "groups": [
+              "chinese"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 0,
+              "uniqueChunks": 13,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1983
+          },
+          "mmrWithoutGrouping": {
+            "status": "matches",
+            "returnedCharacters": 49,
+            "returnedSnippets": 1,
+            "groups": [
+              "chinese"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "groupedDefault": {
+            "status": "matches",
+            "returnedCharacters": 49,
+            "returnedSnippets": 1,
+            "groups": [
+              "chinese"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1982
+          },
+          "mmr": {
+            "status": "matches",
+            "returnedCharacters": 49,
+            "returnedSnippets": 1,
+            "groups": [
+              "chinese"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 1,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 1,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            }
+          },
+          "evidenceVerified": true
+        },
+        {
+          "id": "contradictory-sources",
+          "query": "adsorption protocol",
+          "note": null,
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 2,
+            "expectedGroupsTotal": 2,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "serializedResponseBytes": 1698
+          },
+          "topK": {
+            "status": "matches",
+            "returnedCharacters": 351,
+            "returnedSnippets": 3,
+            "groups": [
+              "positive-duplicate"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 2,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 6,
+              "exactDuplicatesGrouped": 0,
+              "uniqueChunks": 13,
+              "candidatesConsidered": 6,
+              "candidateLimitReached": false,
+              "resultsTruncated": true
+            },
+            "serializedResponseBytes": 3167
+          },
+          "mmrWithoutGrouping": {
+            "status": "matches",
+            "returnedCharacters": 351,
+            "returnedSnippets": 3,
+            "groups": [
+              "positive-duplicate"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 2,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "groupedDefault": {
+            "status": "matches",
+            "returnedCharacters": 442,
+            "returnedSnippets": 3,
+            "groups": [
+              "positive-duplicate",
+              "method",
+              "negative-control"
+            ],
+            "expectedGroupsPresent": 2,
+            "expectedGroupsTotal": 2,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 4,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 4,
+              "candidateLimitReached": false,
+              "resultsTruncated": true
+            },
+            "serializedResponseBytes": 3705
+          },
+          "mmr": {
+            "status": "matches",
+            "returnedCharacters": 442,
+            "returnedSnippets": 3,
+            "groups": [
+              "positive-duplicate",
+              "method",
+              "negative-control"
+            ],
+            "expectedGroupsPresent": 2,
+            "expectedGroupsTotal": 2,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 4,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 4,
+              "candidateLimitReached": false,
+              "resultsTruncated": true
+            }
+          },
+          "evidenceVerified": true
+        },
+        {
+          "id": "no-lexical-answer",
+          "query": "photosynthetic chlorophyll",
+          "note": null,
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 0,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 0,
+            "exactSourceQuotes": true,
+            "serializedResponseBytes": 1698
+          },
+          "topK": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 0,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 0,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 0,
+              "exactDuplicatesGrouped": 0,
+              "uniqueChunks": 13,
+              "candidatesConsidered": 0,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1379
+          },
+          "mmrWithoutGrouping": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 0,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 0,
+            "exactSourceQuotes": true
+          },
+          "groupedDefault": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 0,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 0,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 0,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 0,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1378
+          },
+          "mmr": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 0,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 0,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 0,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 0,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            }
+          },
+          "evidenceVerified": true
+        },
+        {
+          "id": "synonym-limit",
+          "query": "sorption procedure",
+          "note": "Deliberately requires a terminology mapping the lexical retriever does not implement; not a claim of semantic equivalence or an external QA benchmark.",
+          "rawContext": {
+            "returnedCharacters": 1192,
+            "returnedSnippets": 8,
+            "groups": [
+              "positive-duplicate",
+              "negative-control",
+              "method",
+              "calibration",
+              "chinese",
+              "irrelevant"
+            ],
+            "expectedGroupsPresent": 1,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 1,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "serializedResponseBytes": 1698
+          },
+          "topK": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 0,
+              "exactDuplicatesGrouped": 0,
+              "uniqueChunks": 13,
+              "candidatesConsidered": 0,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1371
+          },
+          "mmrWithoutGrouping": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true
+          },
+          "groupedDefault": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 0,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 0,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            },
+            "serializedResponseBytes": 1370
+          },
+          "mmr": {
+            "status": "no_lexical_match",
+            "returnedCharacters": 0,
+            "returnedSnippets": 0,
+            "groups": [],
+            "expectedGroupsPresent": 0,
+            "expectedGroupsTotal": 1,
+            "literalTargetsPresent": 0,
+            "literalTargetsTotal": 1,
+            "exactSourceQuotes": true,
+            "coverage": {
+              "sourceCount": 8,
+              "totalChunks": 13,
+              "matchingChunks": 0,
+              "exactDuplicatesGrouped": 2,
+              "uniqueChunks": 11,
+              "candidatesConsidered": 0,
+              "candidateLimitReached": false,
+              "resultsTruncated": false
+            }
+          },
+          "evidenceVerified": true
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Small authored fixture; not held-out or external benchmark.",
+    "Baseline keeps all text and therefore maximal source coverage; reduced payload can lose useful context.",
+    "No LLM, PDF parsing, dense embeddings, answer generation, material models or billed provider calls. Reported characters count quotations only; metadata may make small-corpus JSON larger.",
+    "MMR ablation holds corpus/scorer/limit fixed and changes only relevance weight."
+  ],
+  "sameInputBytes": true
+}

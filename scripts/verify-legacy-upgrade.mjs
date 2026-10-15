@@ -1,0 +1,13 @@
+/** Compatibility probe using a trusted v0.1.0/v0.2.0 release in a NEW disposable data directory. */
+import {mkdtempSync,rmSync,readFileSync} from 'node:fs';import {tmpdir} from 'node:os';import {join,resolve} from 'node:path';import {spawnSync} from 'node:child_process';import assert from 'node:assert/strict';
+import {ResearchApp} from '../dist/packages/research-app.js';import {USER} from '../dist/packages/domain/types.js';import {digest} from '../dist/packages/storage/store.js';
+const old=resolve(process.argv[2]??'');const sourceVersion=JSON.parse(readFileSync(join(old,'package.json'),'utf8')).version;assert.ok(['0.1.0','0.2.0','0.2.1','0.2.2'].includes(sourceVersion),'Pass an extracted, trusted v0.1.0 through v0.2.2 release directory');
+const data=mkdtempSync(join(tmpdir(),'pi-legacy-probe-'));let app;
+try{
+ const child=spawnSync(process.execPath,[join(old,'dist/apps/cli/index.js'),'demo','--data',data,'--json'],{cwd:old,encoding:'utf8',timeout:60000});assert.equal(child.status,0,child.stderr);const legacy=JSON.parse(child.stdout);
+ app=new ResearchApp(data,resolve(import.meta.dirname,'..'));const ids=legacy.runIds,original=ids.map(id=>app.runs.get(USER,id)),hashes=original.map(digest),report=app.store.get('artifact',legacy.reportId),bytes=readFileSync(report.path),before=digest(bytes);
+ const c=app.campaigns.create(USER,legacy.projectId,{rootSessionId:legacy.sessionId,baselineExperimentId:original[0].experimentId,goal:'兼容升级，不重跑旧实验',autoAnalyze:false});const a=app.store.get('approval',c.approvalId);app.approvals.decide(USER,a.id,a.version,true);let next=app.campaigns.activate(USER,c.id,c.version);
+ const intent=app.store.list('run-intent',legacy.projectId).find(i=>i.runId===original[0].id);app.campaigns.enroll(USER,c.id,{expectedVersion:next.version,intentId:intent.id});app.campaigns.observe();app.wakeups.reconcile();assert.equal(app.store.list('run').length,4);assert.equal(app.campaigns.observations(USER,c.id)[0].validation,'verified');
+ assert.deepEqual(ids.map(id=>digest(app.runs.get(USER,id))),hashes);assert.equal(digest(readFileSync(report.path)),before);assert.equal(app.store.list('model-usage').length,0);
+ console.log(JSON.stringify({passed:true,sourceVersion,targetVersion:JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8')).version,originalRunsUnchanged:4,originalReportUnchanged:true,existingRunEnrolledWithoutRerun:true,sameAbsoluteDataDirectory:true,livePiVerified:false,note:'Does not prove arbitrary data-directory relocation or concurrent-version migration.'},null,2));
+}finally{app?.close();rmSync(data,{recursive:true,force:true});}

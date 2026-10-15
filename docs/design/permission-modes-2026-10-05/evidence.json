@@ -1,0 +1,206 @@
+{
+  "date": "2026-10-05",
+  "kind": "offline-design-only",
+  "baseline": "86dcf3c90e135391c28f1301c29a09f09006cfbf",
+  "checks": [
+    {
+      "name": "keyboard-radio-select-readonly",
+      "result": {
+        "allowDisabled": true,
+        "menuOpen": false,
+        "mode": "只读",
+        "oldActionInvalidated": "旧请求已失效",
+        "writeCardHidden": true
+      }
+    },
+    {
+      "name": "escape-focus-return",
+      "result": {
+        "focus": "permission-trigger",
+        "open": false
+      }
+    },
+    {
+      "name": "auto-edit-no-old-request-release",
+      "result": {
+        "allowDisabled": true,
+        "commandRule": "新命令仍需确认；有效固定授权内继续",
+        "mode": "自动编辑",
+        "state": "旧请求已失效"
+      },
+      "toolNote": "setChecked观察时菜单已因change关闭；后续DOM确认实际选择，后续使用click验证"
+    },
+    {
+      "name": "full-unavailable-no-elevation",
+      "result": {
+        "current": "自动编辑",
+        "enableDisabled": true,
+        "focus": "close-full",
+        "open": true
+      }
+    },
+    {
+      "name": "full-dialog-escape-focus",
+      "result": {
+        "current": "自动编辑",
+        "focus": "permission-trigger",
+        "open": false
+      }
+    },
+    {
+      "name": "default-does-not-change-session",
+      "result": {
+        "current": "自动编辑",
+        "status": "项目默认：只读（仅演示；当前会话仍为自动编辑）"
+      }
+    },
+    {
+      "name": "reject-diff-flow",
+      "result": {
+        "buttonsDisabled": true,
+        "diffVisible": true,
+        "result": "已拒绝本次变更（演示），没有修改文件。",
+        "state": "已拒绝"
+      }
+    },
+    {
+      "name": "approve-demo-no-file-write",
+      "result": {
+        "buttonsDisabled": true,
+        "result": "已演示批准这份固定变更。原型没有修改任何真实文件。",
+        "state": "已演示批准"
+      }
+    },
+    {
+      "name": "viewport-1024",
+      "result": {
+        "height": 844,
+        "menu": {
+          "height": 351,
+          "width": 326,
+          "x": 0,
+          "y": 4
+        },
+        "scrollWidth": 1024,
+        "width": 1024,
+        "withinViewport": true
+      }
+    },
+    {
+      "name": "viewport-390",
+      "result": {
+        "height": 844,
+        "menu": {
+          "height": 351.00006103515625,
+          "width": 326,
+          "x": 30.666667938232425,
+          "y": 446.0540161132813
+        },
+        "scrollWidth": 375,
+        "width": 390,
+        "withinViewport": true
+      }
+    },
+    {
+      "name": "mobile-dialog",
+      "result": {
+        "dialog": {
+          "height": 349.3125,
+          "width": 342.66668701171875,
+          "x": 16,
+          "y": 247.34375
+        },
+        "enableDisabled": true,
+        "height": 844,
+        "width": 390,
+        "withinViewport": true
+      }
+    },
+    {
+      "name": "mobile-settings",
+      "result": {
+        "current": "变更前确认",
+        "scrollWidth": 375,
+        "settingsVisible": true,
+        "width": 390
+      }
+    },
+    {
+      "name": "viewport-1024-settled",
+      "result": {
+        "height": 844,
+        "menu": {
+          "height": 350.9999694824219,
+          "width": 326,
+          "x": 274.66668701171875,
+          "y": 429.9567565917969
+        },
+        "scrollWidth": 1024,
+        "width": 1024,
+        "withinViewport": true
+      }
+    },
+    {
+      "name": "outside-click-dismiss",
+      "result": {
+        "menuOpen": false
+      }
+    }
+  ],
+  "browserLogs": [],
+  "staticCheck": {
+    "scriptSyntax": "pass",
+    "noNetworkOrStorageApis": "pass",
+    "cspConnectBlocked": "pass",
+    "method": "Node vm.Script parse + assert no fetch/XHR/WebSocket/sendBeacon/storage + CSP connect-src none"
+  },
+  "notRun": [
+    "生产后端四档权限执行（未实施）",
+    "宿主执行/隔离/认证/撤权反例（未实施）",
+    "正式前端外层尺寸回归（本批未改正式前端）",
+    "完整生产代码回归与构建（仅设计与离线HTML）"
+  ],
+  "assertionSummary": {
+    "status": "pass",
+    "checked": "只读/旧审批/完全访问门槛/默认范围/菜单与弹窗视口/外部关闭；仅离线原型"
+  },
+  "snapshot": {
+    "design": "086DCE1B44DA456BF108001891B50EF810E681F3E0A408854D98C93D9A6EABDC",
+    "prototype": "8DD3EE8A3BB09EBF2EE406CFED23B26B9E5818DC11FB98BFC55DDC2AB6D9225D"
+  },
+  "independentReview": {
+    "task": "permission_design_independent_review",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeEcho": "unavailable",
+    "result": "no-blocker-for-design-only",
+    "nonBlocking": [
+      "生产审批卡补文件目标版本/摘要",
+      "受管effect鉴权与full raw shell内部I/O区别"
+    ],
+    "productionValidation": false
+  },
+  "models": [
+    {
+      "task": "four_permission_policy_design",
+      "requestedModel": "gpt-6-astra",
+      "requestedEffort": "high",
+      "runtimeEcho": "unavailable",
+      "scope": "read-only architecture"
+    },
+    {
+      "task": "permission_ui_references",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtimeEcho": "unavailable",
+      "scope": "read-only official sources"
+    }
+  ],
+  "viewportRestore": {
+    "requested": "reset",
+    "observed": {
+      "width": 451,
+      "height": 616
+    }
+  }
+}

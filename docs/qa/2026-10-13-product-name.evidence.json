@@ -1,0 +1,111 @@
+{
+  "task": "NAME-20261013",
+  "date": "2026-10-13",
+  "baseline": "80922b8dcdd911bb4f57acb4f0c40944ae38646d",
+  "productName": "研舟π",
+  "acceptance": {
+    "displayAndEntryPoints": "passed",
+    "technicalIdentifiersAndHistory": "unchanged",
+    "buildAndNameChecks": "passed",
+    "preExistingChanges": "preserved-and-excluded"
+  },
+  "checks": {
+    "build": {
+      "command": "npm run build",
+      "exitCode": 0
+    },
+    "name": {
+      "cli": "研舟π 0.3.1-experimental",
+      "backup": "研舟π backup · 本地私有数据备份",
+      "htmlTitle": true,
+      "bootText": true,
+      "currentAgentIdentity": true,
+      "sourceAndDistribution": true,
+      "technicalPackageNameUnchanged": true
+    },
+    "regression": {
+      "command": "npm run test:core",
+      "exitCode": 0,
+      "tests": 1948,
+      "pass": 1923,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 25,
+      "todo": 0,
+      "duration_ms": 1263002.0839
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "exitCode": 0,
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "files": 661,
+      "identical": true,
+      "distManifestSha256": "c63ed520c65f031c9282767c4ff31a4a5ca9bd4fec2e0eedf67ba1abe15c9368"
+    },
+    "browser": {
+      "title": "研舟π · 科研工作台",
+      "sidebarName": "研舟π",
+      "reloadPreservesName": true,
+      "url": "http://127.0.0.1:4794/",
+      "screenshot": ".validation/product-name-20261013/brand-label.png"
+    },
+    "independentReview": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "medium",
+      "configurationVerification": "已请求，运行时未回显",
+      "baseline": "80922b8dcdd911bb4f57acb4f0c40944ae38646d",
+      "filesSha256": {
+        "README.md": "e1d966281289d791785c845ea1b5d8fd0ca934d6ba8df75dacbc0e4c60c607f6",
+        "apps/cli/backup.ts": "e0cb33ff390e0e13db361b9ad73eed806236259dc19ef180d92dce7c7c0ae227",
+        "apps/cli/index.ts": "db239f44a4eb5bee707e47214027f5c089c15f7f4879a5ac292e9dc7dcc016fc",
+        "apps/server/index.ts": "cc70eae31f47eae885871ecb1270acd9e41c72a07c4857a9bcf6fae5c1e02bb3",
+        "apps/web/public/index.html": "c6dc9f5b41a0b1002a8cba226e294eaada695ea8dcc372b1ac2f6116d54a5e35",
+        "apps/web/src/app.tsx": "5d87548f0cc5d2507035865c8ab5b395042d16bae5f6b9508916112df63e3e1c",
+        "dist/apps/cli/backup.js": "d399daaf5b308b641fabbc44d547f6cd12825d3a601ba6f7e6879ec542b01ff3",
+        "dist/apps/cli/index.js": "f72422b9be65637cc5ef6e53c370d773096c0e54c14d9acf19fdc19378b51f1d",
+        "dist/apps/cli/index.js.map": "cdb7cb64351506aa626a0debb83466bb25b764252972cb65f9a81c353c9a584f",
+        "dist/apps/server/index.js": "53c0b7b20ab0e0a01ae9b57479dc095d2e9a8418a0950158f5d13c98c94a9f62",
+        "dist/apps/server/index.js.map": "e33a2a680ac58eabb166d27622c4a2881f64adff59264b51b069f8ef22e58773",
+        "dist/packages/pi-adapter/options.js": "f2c048d9b21aeb2f4ecd39972ae0094b3dd9dc52957c6a27ecd3bad681f08bf5",
+        "dist/packages/pi-adapter/options.js.map": "db46a5ad78738b766d2dbff69178bda947c6f3d52284eeae2f54812c1e24f3fc",
+        "dist/packages/publications/export.js": "668ed6de9198d31166ba94174a1dad17a95e92060cfecf8fee1e9b2f08479f41",
+        "dist/packages/publications/export.js.map": "7148fffa8864990d0282009e3764a278c15c238244c4a05adc99d59c36834559",
+        "dist/web/assets/app.js": "d37626a6fea08a5bea71db7b1e11bd02c8b54248877eba110315f719ad62d4b2",
+        "dist/web/assets/main.js": "3a222e5538a79f38c5ae1683bc0e9e2bf89f59367ced32b394e9638653af9b9e",
+        "dist/web/index.html": "c6dc9f5b41a0b1002a8cba226e294eaada695ea8dcc372b1ac2f6116d54a5e35",
+        "package.json": "7ff3d4c8f035146639cb4f231f3f85b4ff2b4d10927c4ba1517ae4a857a79471",
+        "packages/pi-adapter/options.ts": "3c30950611ee8639578ca6a41e85f2fd6d9b30034a77012df346e4c71a8b2f4c",
+        "packages/publications/export.ts": "ff0b9d66fc79100a547f660f251661e4a0aeed2387c66fa94e8bf8e50e0b3619"
+      },
+      "patchSha256": "231e77056a3e352b4be6ec99a7a170afd8cd39162ec9d5a7f0cfa5e76cc8a674",
+      "blockingFindings": 0,
+      "nonBlockingFindings": 0
+    }
+  },
+  "preExistingChangesSha256": {
+    "apps/web/public/styles.css": "28752c2cd2b07e581ba74db96fcecf85a9f956031c4e0e667e6fdd6942495197",
+    "dist/web/styles.css": "28752c2cd2b07e581ba74db96fcecf85a9f956031c4e0e667e6fdd6942495197",
+    "docs/reference-baseline/OPENRESEARCH-COMPARISON.md": "57655c0f434da59c5e87377e2d615293498bd581e6c96e0b03206006aaf23afe",
+    "docs/reference-baseline/capability-matrix.json": "91f3f36fe008d915e0b827adc972304ef728c9661dd3ff7ee2147744167d60d4",
+    "docs/specs/project-design.txt": "251e12b2201f1cbb87f497f5771f20d0011a20f73e2ec324ce613141e958a6f7"
+  },
+  "limitations": [
+    "25项既有平台或环境检查跳过，未记作通过。",
+    "未重启现有后台服务；已加载的Agent提示和成果包README将在下次正常启动时更新。",
+    "干净构建核对当前工作副本；原有在途样式保持并排除本批提交。"
+  ],
+  "rawEvidenceDirectory": ".validation/product-name-20261013"
+}

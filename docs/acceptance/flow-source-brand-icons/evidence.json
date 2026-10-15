@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-02",
+  "scope": "website source logos, compact composer, immediate source selection",
+  "behavior": {
+    "websiteLogoIds": ["alphaxiv", "openalex", "biorxiv", "pubmed", "crossref"],
+    "localStaticAssets": true,
+    "menuWidthBefore": 270,
+    "menuWidthAfter": 218,
+    "menuHeightAfter": 179.33334350585938,
+    "rowHeightBefore": 32,
+    "rowHeightAfter": 28,
+    "textareaMinHeightBefore": 80,
+    "textareaMinHeightAfter": 64,
+    "saveButtonCount": 0,
+    "checkboxImmediatelyPersists": true,
+    "uncheckedSourcesSkippedByExistingConnectorService": true,
+    "failedUpdateReloadsConfirmedFlags": true,
+    "unconfirmedStateDisabledAndReopenRetries": true,
+    "versionedSerialAndUnmountFencing": true,
+    "chatAttachmentModelAndQueueLogicPreserved": true
+  },
+  "tests": {
+    "fullBeforeImmediateSteering": {"total": 948, "passed": 925, "skipped": 23, "failed": 0, "durationMs": 463880.1491},
+    "finalAffectedRegression": {"passed": 39, "failed": 0, "durationMs": 2008.7328}
+  },
+  "review": {"model": "gpt-6-sol", "blockingFindings": 0},
+  "browser": {
+    "widths": [390, 1280],
+    "logosLoaded": 5,
+    "saveButtonCount": 0,
+    "checkedAfterEnableAndReload": true,
+    "checkedAfterDisableAndReload": false,
+    "horizontalOverflow": false,
+    "consoleErrors": 0,
+    "providerCalls": 0,
+    "literatureRequests": 0,
+    "researchRecordsDeleted": 0,
+    "previewSelectionRestored": true
+  },
+  "cleanBuild": {
+    "node": "24.19.0",
+    "files": 496,
+    "identical": true,
+    "distManifestSha256": "d0571790cf51d639906f0cf09d690ad454a019d3222ba86ef6bf168e0d6970e0",
+    "summary": ".validation/clean-build-EzYeIT/summary.json"
+  },
+  "rawEvidence": ".validation/source-brand-icons/"
+}

@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "sourceVersion": "0.1.0",
+  "targetVersion": "0.2.0",
+  "originalRunsUnchanged": 4,
+  "originalReportUnchanged": true,
+  "existingRunEnrolledWithoutRerun": true,
+  "sameAbsoluteDataDirectory": true,
+  "livePiVerified": false,
+  "note": "Does not prove arbitrary data-directory relocation or concurrent-version migration."
+}

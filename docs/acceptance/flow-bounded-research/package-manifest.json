@@ -1,0 +1,2543 @@
+{
+  "formatVersion": 1,
+  "report": {
+    "id": "d6b1a226-aea6-4469-bda5-b2fabbfb6232",
+    "artifactId": "defed3cc-1797-4733-8ec2-fc7998b037b9",
+    "title": "固定研究方案与有界修复验收",
+    "formatVersion": 1,
+    "integrity": "verified",
+    "validity": "current",
+    "reasons": [],
+    "references": [
+      {
+        "type": "research-comparison",
+        "targetId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+        "label": "固定研究比较 04cb3e03-e22e-442d-bfb1-e3c74660d367",
+        "digest": "87e3dd3ced4e2ed3e690b77cdfd04703e4965fb9ca163af217a698a5c8295554",
+        "id": "a60dfe7d5ba31ba3662300c7595b93c638afb17c142cfe2f5a58fa7e0a5b143b"
+      },
+      {
+        "type": "experiment-plan",
+        "targetId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+        "label": "固定研究方案 ac89a09f-4893-4f64-a33f-88c5999495e6",
+        "digest": "e1290b7c639091835647660580d319ed6edb40cbc502040ac60084b9a3873c39",
+        "id": "966d335933631b6ba612aa8404583bb87f002c82a272a9fd950760001974c7f8"
+      },
+      {
+        "type": "experiment-plan",
+        "targetId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+        "label": "固定研究方案 8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+        "digest": "5e6eff0ea29aa191be5f069d15b1cb66d5b38aa0e5e51c5d549a9cdbce83e49f",
+        "id": "31002ee1af17f4138f9721989b757644a3a070286a3812a15296792ce0bfaae9"
+      },
+      {
+        "type": "experiment-plan",
+        "targetId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+        "label": "固定研究方案 1643eb42-a2a6-4531-9725-4f011502b52b",
+        "digest": "d922612c8b5201ea0e337054a1cf91958f291fa3b151a5ac9f947edcb90ad208",
+        "id": "9ee67ccdb3593b4136f60b70a31fc62e4c593535f303ac284fbef9eed5351192"
+      },
+      {
+        "type": "artifact",
+        "targetId": "c635e6b8-be64-4f85-a2a8-8d25ea9d8471",
+        "label": "metrics.json",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "d15bc211d75cf880de400374bf308c15daeab8e55be5f618a4f03069be12ad00"
+      },
+      {
+        "type": "evidence",
+        "targetId": "b5ec55cc-0f1a-4650-8d13-5abf0380f89c",
+        "label": "真实运行输出指标（解释仍需审核）",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+      },
+      {
+        "type": "artifact",
+        "targetId": "b668e920-5719-4578-b1ca-7518f836f255",
+        "label": "metrics.json",
+        "digest": "7135a163043f87ea9b4c15e7936250bf3f8179f1252dba433aa876975fa91f73",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "id": "0fd99c46a176d10c243305b69b11acccdf6bb33aff66b5dd75f1025a3a02da00"
+      },
+      {
+        "type": "evidence",
+        "targetId": "1da32244-9ce3-4876-9813-9ec115d22c44",
+        "label": "真实运行输出指标（解释仍需审核）",
+        "digest": "7135a163043f87ea9b4c15e7936250bf3f8179f1252dba433aa876975fa91f73",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "id": "bd7e95985fb22d0970f497e3187c69c74f541f9060d56524e606cebd6d694d27"
+      },
+      {
+        "type": "artifact",
+        "targetId": "9d1646a4-b235-467c-8bec-e4bf7a2e5899",
+        "label": "metrics.json",
+        "digest": "5b2c3cd4d52c64478c4763b92c97db9fca44ea0be608a4db9b3f2c74e277efda",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "id": "6ddfe5dc564d47128d4fa4157e90044c187e68867c4108f214bfb1b9540d2e1a"
+      },
+      {
+        "type": "evidence",
+        "targetId": "cb2f3e9d-8da5-43da-b817-a2b6c8e4f78d",
+        "label": "真实运行输出指标（解释仍需审核）",
+        "digest": "5b2c3cd4d52c64478c4763b92c97db9fca44ea0be608a4db9b3f2c74e277efda",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "id": "965fe297a150f31ac394018f41928792d7ac638a31119eaf9e5e7851a1d68a48"
+      },
+      {
+        "type": "run",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "label": "Run ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+        "id": "64a53514d128703de8f880b3ed105f6c542aec76227629a9c53efd3ddaf60f97"
+      },
+      {
+        "type": "artifact",
+        "targetId": "9655e139-97dd-484f-8f68-1b7dd8d4435e",
+        "label": "model.json",
+        "digest": "80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "1c750c3fb5ed9a1556e98a5785fa42d6e6d6a6100f5caef8d51f9c3fe05ce1f8"
+      },
+      {
+        "type": "artifact",
+        "targetId": "84411932-b54b-4398-be59-68fbd73386f6",
+        "label": "predictions.csv",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "40c6aba13e6264a548bf19e91a6b14b58b004db5473d308b0d3cf54f1d36f56c"
+      },
+      {
+        "type": "artifact",
+        "targetId": "5e83a064-dfcb-4776-bb40-940bfd27a201",
+        "label": "stdout.log",
+        "digest": "7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "21cb2a21ffd27b283318d7fc830fe671c59ff37e0b3d15aaa64b7bb3d8fa9132"
+      },
+      {
+        "type": "artifact",
+        "targetId": "6cd2b1a3-6f76-4fe4-b935-5687c85bf79a",
+        "label": "stderr.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "f7dbafa59f308a367a2f5268fcc7552ff4055e35c58fa840472a2b74f48cb700"
+      },
+      {
+        "type": "artifact",
+        "targetId": "8b9e594c-ca81-4bfb-91c5-7381289335a1",
+        "label": "execution.json",
+        "digest": "4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "id": "145a2c4b543cfe85399d7b5e61ab16ea34b1aafb969f3439728061b24f2b4a4d"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "config.json",
+        "digest": "f91a8e608c044d16c872ce4c75f0709407ab63ea5e0aba9452c81ee9353c8f33",
+        "label": "config.json",
+        "relation": "exact",
+        "id": "6e27f5ab6ec2a3c39f587bd517548fa96289a4a0675dacd2ed9605f3f67433ed"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "data.csv",
+        "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+        "label": "data.csv",
+        "relation": "exact",
+        "id": "abefe8e969aed717a17a472bcbf4a425bd32bd64ce1b6d6552a5bd31e841c9fa"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "main.py",
+        "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+        "label": "main.py",
+        "relation": "exact",
+        "id": "602e97a6c77279689f7742483d3860ed683e5bf048641d43fa28e482505e92f9"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "README.md",
+        "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+        "label": "README.md",
+        "relation": "exact",
+        "id": "60f9f6ac7bacb85271b10612337cfabf04d968c2d860add2d19b416045a98bd9"
+      },
+      {
+        "type": "run-source",
+        "targetId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "path": "test_main.py",
+        "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+        "label": "test_main.py",
+        "relation": "exact",
+        "id": "65720765cf3e62af89830771991776ac39e62707da667222e00632fb540299f5"
+      },
+      {
+        "type": "development-job",
+        "targetId": "074803b8-5d7c-4892-b78d-725db988e7d7",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5",
+        "relation": "exact",
+        "label": "该源码版本的开发测试",
+        "id": "4f5b088b8909139c7ecc3d304150f5e73563b65e816a0992b64fc84dbbe2360b"
+      },
+      {
+        "type": "artifact",
+        "targetId": "f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a",
+        "label": "stdout.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "id": "4a2d8eca3e979900287da3c127dc9bf4e4d182812ecba24e26a013cb2d2894fe"
+      },
+      {
+        "type": "artifact",
+        "targetId": "6a31fde5-077a-4437-b750-89aea3bfff10",
+        "label": "stderr.log",
+        "digest": "50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+        "id": "ee7153b3bc26526b8cf22e40d68f6b2c9c5e94b56f476c2674846952bc697ea3"
+      },
+      {
+        "type": "artifact",
+        "targetId": "d0c4e3d0-e6ff-4ad2-b32c-75d017304786",
+        "label": "test-report.json",
+        "digest": "6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+        "id": "cc74e4d710e578cf6fb436b3167f21094235a92e998bda076e9bdb289627aaaa"
+      },
+      {
+        "type": "development-review",
+        "targetId": "4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3",
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "digest": "db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc",
+        "relation": "exact",
+        "label": "该源码版本的独立审查",
+        "id": "09ab325da5d58c6fa73253513f9bbe5757fe59045761fb3cbea67f0494c6a56b"
+      },
+      {
+        "type": "artifact",
+        "targetId": "ecfc93f7-2f82-4b0d-82f9-fe950676456c",
+        "label": "development-review-manifest.json",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "id": "bc11213e3038d37d8341f54ea5807336736cba83cf36d758907fab60e0b719b0"
+      },
+      {
+        "type": "evidence",
+        "targetId": "235c2f4a-4760-45e7-b15c-1e9a03443c4f",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "id": "a05105db4eb5c14d8fc6cbc6ab7ea926694da4769da9a2e4a2fdefce19544b04"
+      },
+      {
+        "type": "artifact",
+        "targetId": "1bd1306d-f6da-4a44-987a-6b1d746c65e0",
+        "label": "development-review-test-report.json",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "id": "cafd1a8154f1e063dd1f44b4840d2c9851f9951b078016d32b2d416899fcb3cc"
+      },
+      {
+        "type": "evidence",
+        "targetId": "1ca8106b-789a-411f-8663-0b8a4649db92",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "id": "8f62c9500f47669ab8f2dea81a24a4f830582391511346b7a7dd425457a7dedc"
+      },
+      {
+        "type": "artifact",
+        "targetId": "ce9238fc-aa03-4350-8ada-64a7fd29e098",
+        "label": "development-review-stdout.json",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "id": "43196cfe4de283fe22f957762556d256177d74e71ea8cb830af667d0f7a73fbf"
+      },
+      {
+        "type": "evidence",
+        "targetId": "51577370-5ff9-4375-9a72-3edf6d8123e8",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "id": "90efad6c66b338a5fdcbcde2a82f23db9545c3f3929d41c8489ac1955aa1a721"
+      },
+      {
+        "type": "artifact",
+        "targetId": "81d735f1-c612-42a1-9861-b0da17913835",
+        "label": "development-review-stderr.json",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "id": "3f0fbb957170eac7d9d589943d814808522add4fd51f8cae17b1cb91b4d5b814"
+      },
+      {
+        "type": "evidence",
+        "targetId": "8679e01e-cfe2-4c40-aec4-5eb2c3e17f20",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "id": "ed3883756d05e9f1d64ea60c5536e2c1b5cb9ba6c4b16994a0da4269000ac11a"
+      },
+      {
+        "type": "run",
+        "targetId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "label": "Run 18d75977-85ef-4946-a148-e2966ef2b18a",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "digest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+        "id": "c986b11f08c148a358e181f0955cd916332bb52ba4ab07215a9c676e46a94116"
+      },
+      {
+        "type": "artifact",
+        "targetId": "52438855-52ef-4cb4-8d87-5555a38f5e45",
+        "label": "stdout.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "id": "bd39ef1eb4c16afc6ff44d2f9d30bb74866b5a4148c68b69dbb0b7053766d2a1"
+      },
+      {
+        "type": "artifact",
+        "targetId": "80467a30-e8b0-4666-9d9c-17dd9be1de3f",
+        "label": "stderr.log",
+        "digest": "fb368f00096e7266d1cbb883431971ade7ed288b86197d46b30600b7a9e39421",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "id": "7bdfc454252b95bcd7b8c45c9bfb7a7948ec9ed8747ddda68064230f89ffa700"
+      },
+      {
+        "type": "artifact",
+        "targetId": "b87fe290-8f32-4182-bb9e-96fdd55b7cb4",
+        "label": "execution.json",
+        "digest": "3d18d275a01740f9fcc022f3629ac381cf3f25ed3e8ce6fccc188144d7937066",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "id": "124fbf74c4fb89763f12a36844d1200f1753df4eb7a189f112ae96bdc3206842"
+      },
+      {
+        "type": "run-source",
+        "targetId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "path": "config.json",
+        "digest": "c26f045a138fd3333b29d0089f4da9e9486251c7c4df0373b6f79e965f0d7710",
+        "label": "config.json",
+        "relation": "exact",
+        "id": "70ba20047c2c90e47c0f15f4cf85a740a958e953dd3850fb27f7705b593a3a59"
+      },
+      {
+        "type": "run-source",
+        "targetId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "path": "data.csv",
+        "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+        "label": "data.csv",
+        "relation": "exact",
+        "id": "72274f9bc0055b76b660b1e1588d6357938604517c74c1d7cbfc077dd64ed29e"
+      },
+      {
+        "type": "run-source",
+        "targetId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "path": "main.py",
+        "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+        "label": "main.py",
+        "relation": "exact",
+        "id": "56104ada43adf5b52ab31f3af91f29a9bd954a99d3f8c4aaf08439df409e8722"
+      },
+      {
+        "type": "run-source",
+        "targetId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "path": "README.md",
+        "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+        "label": "README.md",
+        "relation": "exact",
+        "id": "dacc5f933105fc3c09293c157bd33f0f22eec5fc5ee2a68d3df01b82bc2aa4a1"
+      },
+      {
+        "type": "run-source",
+        "targetId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "path": "test_main.py",
+        "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+        "label": "test_main.py",
+        "relation": "exact",
+        "id": "f3939688e4fc81e6761751a8cfb1aab84ddc600751d63aa239a7d65e41fd6f28"
+      },
+      {
+        "type": "development-job",
+        "targetId": "074803b8-5d7c-4892-b78d-725db988e7d7",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "digest": "87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5",
+        "relation": "ancestry",
+        "label": "祖先版本的开发测试",
+        "id": "04a45d7163c0e1c8a6e9e6bc0592c0ae38f862e344c9c3d2b5a3404e1d08f418"
+      },
+      {
+        "type": "development-review",
+        "targetId": "4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3",
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "digest": "db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc",
+        "relation": "ancestry",
+        "label": "祖先版本的独立审查",
+        "id": "29505edb4ac01c7a588d7e3ff3c2348db10d4d34de907ac5524d619b1652ce2b"
+      },
+      {
+        "type": "run",
+        "targetId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "label": "Run 4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "digest": "001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053",
+        "id": "b6874c5622270a6450de30d321fe51d2fbc3f28c1555621bc6f0de26c7509867"
+      },
+      {
+        "type": "artifact",
+        "targetId": "f04a28bf-bb68-4a71-88d8-432eed5b4228",
+        "label": "model.json",
+        "digest": "3ddb4910e87ef8b6b813effe7b3af66a0270d48a73e8f14cc9b0b96e40466789",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "id": "b6b627499abff22a6253e1932c8feefa2e8c09e0c5712c83eb89f62c4061cb88"
+      },
+      {
+        "type": "artifact",
+        "targetId": "b238dee6-07b2-474e-ac44-6e59c1f12434",
+        "label": "predictions.csv",
+        "digest": "f4011de2ef62fdeee585539320030e770735aad3d03804829679b3e59bfa56ed",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "id": "2011e56fd919d8c9ca015c596d3a0e5c724abca5fa4b10849b5c063e97ccdc59"
+      },
+      {
+        "type": "artifact",
+        "targetId": "f806296b-86e3-4abe-b783-ee4a647957a5",
+        "label": "stdout.log",
+        "digest": "1c9fca698c9be5bf66d55799754896ab988118f87402f612ff08cbd50d2b5326",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "id": "f5844cc52edfda440a1c51bb67acad744ee01f8db3e7b4d67e76e950701a8ba9"
+      },
+      {
+        "type": "artifact",
+        "targetId": "e0edefa3-35af-4382-86e1-a11e4e784274",
+        "label": "stderr.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "id": "32eb9b310abd0c3d764a819c7c0efae6fb385920fb31f514a098cc2222866e92"
+      },
+      {
+        "type": "artifact",
+        "targetId": "14b6552b-f78e-4022-82f5-13db8f2ceed4",
+        "label": "execution.json",
+        "digest": "fe650daf9de42b09479053459287708b08f2bcb9e3677edfb4da9cb604c65e06",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "id": "c748bb1a1888f82c1dcb2b4f3feb8103df95028a9a767e06809354b67cdcc53c"
+      },
+      {
+        "type": "run-source",
+        "targetId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "path": "config.json",
+        "digest": "5b758aa4b049d19deae4b07bbf1a29d6bdf7ee3610afd6a593869b7d41f4285e",
+        "label": "config.json",
+        "relation": "exact",
+        "id": "e257a3895174af57e266e9aabafaedf029448920cec1b82ccad2d0f4dacb2776"
+      },
+      {
+        "type": "run-source",
+        "targetId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "path": "data.csv",
+        "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+        "label": "data.csv",
+        "relation": "exact",
+        "id": "eda2953c31500f43f6c40a7e26a7ad8889f1fb00f781f489adbf1ff9d641f2df"
+      },
+      {
+        "type": "run-source",
+        "targetId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "path": "main.py",
+        "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+        "label": "main.py",
+        "relation": "exact",
+        "id": "861c987b66e3b34324373dad60376dccb847bf8fa9894465333e09ae055411a8"
+      },
+      {
+        "type": "run-source",
+        "targetId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "path": "README.md",
+        "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+        "label": "README.md",
+        "relation": "exact",
+        "id": "b3165d50eaccab370c34633be2c03b2f94d399bcc1c02f0541898a1d4a6214df"
+      },
+      {
+        "type": "run-source",
+        "targetId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "path": "test_main.py",
+        "digest": "6225a00e06883781af724768d4d67c13862b9327ff37f1886d5e30f104b22196",
+        "label": "test_main.py",
+        "relation": "exact",
+        "id": "b318c21524480fa497859c4ada614675ac8c58a35042b8cd0028a8b74221af1e"
+      },
+      {
+        "type": "development-job",
+        "targetId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "digest": "c7a426e7271e1911392f25db36886ac9d3beebc9e22468bd0b3726fba41b2a54",
+        "relation": "exact",
+        "label": "该源码版本的开发测试",
+        "id": "ecd68e0ff190f263f3fbbf9bf9f75d9c1e832e8e1f98c8a887e3673464e0ec1b"
+      },
+      {
+        "type": "artifact",
+        "targetId": "c36c63ef-32c7-438f-9887-6d5050c983d2",
+        "label": "stdout.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "id": "7351cb999b2cc2cda4f5d801f727b5a7e3d5ac6894383495a6085af266464f72"
+      },
+      {
+        "type": "artifact",
+        "targetId": "1a1a0218-72d6-4082-9048-3304c21cb17b",
+        "label": "stderr.log",
+        "digest": "2796e6718fe26905a061c713866039d9ccf2440752b61f77c383165af8716212",
+        "id": "730bd0fad44e0d09b62357f79ffa556e223650e3c25754f0c2bd11d17432d321"
+      },
+      {
+        "type": "artifact",
+        "targetId": "b84a81a8-b017-4f57-aa98-eb663a9fa5e2",
+        "label": "test-report.json",
+        "digest": "23a987c98bb461fb2b9d3e2c5c5a2c7b41305650a41c67a94f79a13f1c379bda",
+        "id": "36d78907c833462161a4a93ec929f34631711812e9f1c1cce91dabc9e37a42ac"
+      },
+      {
+        "type": "development-review",
+        "targetId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "digest": "b1644fb0b063099e760173d44ac71e9c79873ce31ad80a384c13322ba82c926b",
+        "relation": "exact",
+        "label": "该源码版本的独立审查",
+        "id": "60f3a07f2dca4ffa136f71eda045499a481fc2f667458ed29e9c7e5c1adc91d8"
+      },
+      {
+        "type": "artifact",
+        "targetId": "34d9ecbd-9c8a-4c14-a1b8-e16ba9b16916",
+        "label": "development-review-manifest.json",
+        "digest": "883fbab873522eb63112298a97701e5ff41438699de8e3b8d55917cf35f7646a",
+        "id": "493e040089cf08d7236bc4be101c199b7c0550a2674dca47a99fca3abe9426f3"
+      },
+      {
+        "type": "evidence",
+        "targetId": "17208bec-fed8-4fb8-bd73-f23a9db40ff5",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "883fbab873522eb63112298a97701e5ff41438699de8e3b8d55917cf35f7646a",
+        "id": "b81cac7448c4ca133b1d8cb09d57da73c3ab383cea225a497f2c0ea539bd36af"
+      },
+      {
+        "type": "artifact",
+        "targetId": "53f0a537-2bd7-4500-a9a3-1a87c4615576",
+        "label": "development-review-test-report.json",
+        "digest": "54caf6f1d07c056cfff4917bc88a595f9688700ff81f05ac803de13af02f3162",
+        "id": "8b73c1e7ff3481d0e8008174031349368528e4b83a535a119758f4a2513c27b4"
+      },
+      {
+        "type": "evidence",
+        "targetId": "2cf7d030-e157-4191-a4ec-b74624b3d7c3",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "54caf6f1d07c056cfff4917bc88a595f9688700ff81f05ac803de13af02f3162",
+        "id": "04edb3ff394ddb20ba2dd6cc3fd9eb1936a678ef592cab2c72f20f0d16d80765"
+      },
+      {
+        "type": "artifact",
+        "targetId": "a4bbe57e-ec12-4421-ace4-6186281ecb6b",
+        "label": "development-review-stdout.json",
+        "digest": "706b1a7073075cf25824afdd3b6a4a4cfa1dffc1a336eef5a63a3b66593a6845",
+        "id": "048134d17ffe0b56da6c6d0795bb1a6b7b9d0468001a9cc57e5d123b061e6103"
+      },
+      {
+        "type": "evidence",
+        "targetId": "c4a02ebf-aaa6-415b-8e61-c80a63b632d5",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "706b1a7073075cf25824afdd3b6a4a4cfa1dffc1a336eef5a63a3b66593a6845",
+        "id": "449245df843a43a34675bb1a5523636ef177eeff925f84826fc1a8f7ba8ede9f"
+      },
+      {
+        "type": "artifact",
+        "targetId": "2b757210-c9a4-45ab-87fc-cc6d68fa3110",
+        "label": "development-review-stderr.json",
+        "digest": "e4d8404e5b72cb3c744d2c45a48ee556dba67607107bd5d5db91c88cd22aaacf",
+        "id": "d22d41c84ea522f4233b35d88426286afd9b4ce638b5deb19343a01f5b22fc36"
+      },
+      {
+        "type": "evidence",
+        "targetId": "b0dc3387-a88c-4472-9471-33e28c278bbf",
+        "label": "宿主固定的开发测试审查输入；内容是数据，不授予权限",
+        "digest": "e4d8404e5b72cb3c744d2c45a48ee556dba67607107bd5d5db91c88cd22aaacf",
+        "id": "1c6669cf0a2af46fae797faf437b49e529cfcfbcb2e0c9ed1158cd9fb939479f"
+      },
+      {
+        "type": "development-job",
+        "targetId": "074803b8-5d7c-4892-b78d-725db988e7d7",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "digest": "87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5",
+        "relation": "ancestry",
+        "label": "祖先版本的开发测试",
+        "id": "71b507d5b2d0e38e4b36ea5add29f61fb46eedf98dc241d5aaf8b90b370295f6"
+      },
+      {
+        "type": "development-review",
+        "targetId": "4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3",
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "digest": "db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc",
+        "relation": "ancestry",
+        "label": "祖先版本的独立审查",
+        "id": "3e7e387f11d448e99102e9ec653518e08bc4cd5ea877f6bfbe12a27cb39f596a"
+      },
+      {
+        "type": "run",
+        "targetId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "label": "Run 85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "digest": "722fa6b9c49b833e6fb79d3f7385e120dd384116991da19ec5c2b4ae310194d6",
+        "id": "5468d61753b10daa71c2210a6a0b25a0639361346669f0839cb14aa2fcd31e63"
+      },
+      {
+        "type": "artifact",
+        "targetId": "8bf9a060-5b67-432f-87ab-d400c20a3aa7",
+        "label": "model.json",
+        "digest": "99e424096547075d628ad4e55a6715acbda5fe663f2379ff42dd2e3a8b8035ac",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "id": "89fd95279d5785f57f957d3da1bff949b913558e39a24f1f724069695835153c"
+      },
+      {
+        "type": "artifact",
+        "targetId": "4bad84e1-63b5-4695-81c0-0b4dbdc2761a",
+        "label": "predictions.csv",
+        "digest": "a3f811874659110a10753d830ba34c9a5e3de63229be30594e7bd948654fbc55",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "id": "fd5c40fbaaef2fe527847dfd27f4c0ec474996f4d4e407b01d18c6fd2e8b8686"
+      },
+      {
+        "type": "artifact",
+        "targetId": "f2d78ff3-61c4-4ea7-8a37-6bb2e1812cf6",
+        "label": "stdout.log",
+        "digest": "baedaf8db0098a57a1b525ca700f6778bcf39deee75e51ef45ef75690c63dbad",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "id": "69a8aea14570c052bd7887acbd8b483df0c17e14517cd46fbeb84ef6919c71da"
+      },
+      {
+        "type": "artifact",
+        "targetId": "de976af2-a18d-4e62-81c3-5d9ada4af843",
+        "label": "stderr.log",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "id": "affc193388f12bb6f4ae40dd7d391e0a110d10fd3ce8bfa8ce34b874ffbaf1c5"
+      },
+      {
+        "type": "artifact",
+        "targetId": "2e1f344d-52da-483d-aab5-9b8da7431ffe",
+        "label": "execution.json",
+        "digest": "e069c541bb36b682a3968e88095caf7bf232f2ae0e0ca2e11aa0e5229b05f58d",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "id": "a3ce622cf3b9090bc8a4b6d6298af9bb755a40171a4b0eb2228b441f4c31ad59"
+      },
+      {
+        "type": "run-source",
+        "targetId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "path": "config.json",
+        "digest": "d83a686cce5d9222aed7a6c35e568caf633a1830420d262150458e30ad9f6221",
+        "label": "config.json",
+        "relation": "exact",
+        "id": "deb5d15e3dd0ef3660a91f3d84c503d0a3461e8752af3b9eb43e63da7eb6dfb6"
+      },
+      {
+        "type": "run-source",
+        "targetId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "path": "data.csv",
+        "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+        "label": "data.csv",
+        "relation": "exact",
+        "id": "686037e7fd0648e9462954cd161d4be1435bc9f5bfec59a6169931695759b95f"
+      },
+      {
+        "type": "run-source",
+        "targetId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "path": "main.py",
+        "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+        "label": "main.py",
+        "relation": "exact",
+        "id": "7e0989d2711a17c8d98557bf9e4205671b49be8db04add5b1805c42b192f0704"
+      },
+      {
+        "type": "run-source",
+        "targetId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "path": "README.md",
+        "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+        "label": "README.md",
+        "relation": "exact",
+        "id": "5edaec6a7340701121127f9b4cb2d2db6633d4d1fd3dc8fd618f47a140fe4312"
+      },
+      {
+        "type": "run-source",
+        "targetId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "path": "test_main.py",
+        "digest": "6225a00e06883781af724768d4d67c13862b9327ff37f1886d5e30f104b22196",
+        "label": "test_main.py",
+        "relation": "exact",
+        "id": "68b98c9e56b18e86ff4d0d4aea9a88eb8df467466890bfd0cabdd7a2d07e63a9"
+      },
+      {
+        "type": "development-job",
+        "targetId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "digest": "c7a426e7271e1911392f25db36886ac9d3beebc9e22468bd0b3726fba41b2a54",
+        "relation": "ancestry",
+        "label": "祖先版本的开发测试",
+        "id": "3d04c55d19b2affb676321e4d03ee904449010e207039eb5fd00ce9b993f8558"
+      },
+      {
+        "type": "development-review",
+        "targetId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "digest": "b1644fb0b063099e760173d44ac71e9c79873ce31ad80a384c13322ba82c926b",
+        "relation": "ancestry",
+        "label": "祖先版本的独立审查",
+        "id": "85c040e537eec7d4885161a73ac1a513d16f9ffb70dcb30d44b5d9f41ba85a2d"
+      },
+      {
+        "type": "development-job",
+        "targetId": "074803b8-5d7c-4892-b78d-725db988e7d7",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "digest": "87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5",
+        "relation": "ancestry",
+        "label": "祖先版本的开发测试",
+        "id": "902b055614f62cf9c2c15c8c5eb35603d6471815605fba7a9cd7cb4da5273b40"
+      },
+      {
+        "type": "development-review",
+        "targetId": "4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3",
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "digest": "db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc",
+        "relation": "ancestry",
+        "label": "祖先版本的独立审查",
+        "id": "175bede2de4570846c23b665674aa682cbbe20ade71162897eff9c53042c77e4"
+      }
+    ],
+    "runs": [
+      {
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+        "revision": 1,
+        "state": "succeeded",
+        "integrity": "complete",
+        "judgment": "pending",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+        "gitCommit": "61dcde6a882f4852a48fa8930e320babd7d23951",
+        "metrics": [
+          {
+            "name": "mse",
+            "value": 0.000050345031695457565,
+            "unit": "squared-target",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          },
+          {
+            "name": "train_mse",
+            "value": 0.00004962382619455619,
+            "unit": "未定义",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          },
+          {
+            "name": "r2",
+            "value": 0.9999474271448613,
+            "unit": "未定义",
+            "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911"
+          }
+        ]
+      },
+      {
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+        "revision": 1,
+        "state": "failed",
+        "integrity": "incomplete",
+        "judgment": "pending",
+        "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf",
+        "gitCommit": "f7741bcacdb618325c6ffa3a4f9e276cf1a01db8",
+        "metrics": []
+      },
+      {
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+        "revision": 1,
+        "state": "succeeded",
+        "integrity": "complete",
+        "judgment": "pending",
+        "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+        "gitCommit": "4471db27b7718fdc1c4a495bcfdfaa3de86d2aa4",
+        "metrics": [
+          {
+            "name": "mse",
+            "value": 0.00005135731444943983,
+            "unit": "squared-target",
+            "referenceId": "bd7e95985fb22d0970f497e3187c69c74f541f9060d56524e606cebd6d694d27"
+          },
+          {
+            "name": "train_mse",
+            "value": 0.00004921126609753724,
+            "unit": "未定义",
+            "referenceId": "bd7e95985fb22d0970f497e3187c69c74f541f9060d56524e606cebd6d694d27"
+          },
+          {
+            "name": "r2",
+            "value": 0.9999463700674737,
+            "unit": "未定义",
+            "referenceId": "bd7e95985fb22d0970f497e3187c69c74f541f9060d56524e606cebd6d694d27"
+          }
+        ]
+      },
+      {
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "experimentId": "17d51894-e2b3-4a11-886a-1b400d73e7df",
+        "revision": 1,
+        "state": "succeeded",
+        "integrity": "complete",
+        "judgment": "pending",
+        "sourceDigest": "3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70",
+        "gitCommit": "917b892871827e4e6be25bcf65ce6c556a5597b1",
+        "metrics": [
+          {
+            "name": "mse",
+            "value": 0.000051416001308461135,
+            "unit": "squared-target",
+            "referenceId": "965fe297a150f31ac394018f41928792d7ac638a31119eaf9e5e7851a1d68a48"
+          },
+          {
+            "name": "train_mse",
+            "value": 0.00004920642594527707,
+            "unit": "未定义",
+            "referenceId": "965fe297a150f31ac394018f41928792d7ac638a31119eaf9e5e7851a1d68a48"
+          },
+          {
+            "name": "r2",
+            "value": 0.9999463087836561,
+            "unit": "未定义",
+            "referenceId": "965fe297a150f31ac394018f41928792d7ac638a31119eaf9e5e7851a1d68a48"
+          }
+        ]
+      }
+    ],
+    "researchCampaigns": [
+      {
+        "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+        "state": "stopped",
+        "primaryMetric": "mse",
+        "unit": "squared-target",
+        "conclusion": "requires_review",
+        "referenceId": "a60dfe7d5ba31ba3662300c7595b93c638afb17c142cfe2f5a58fa7e0a5b143b",
+        "planReferences": [
+          {
+            "planRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+            "referenceId": "966d335933631b6ba612aa8404583bb87f002c82a272a9fd950760001974c7f8"
+          },
+          {
+            "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+            "referenceId": "31002ee1af17f4138f9721989b757644a3a070286a3812a15296792ce0bfaae9"
+          },
+          {
+            "planRevisionId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+            "referenceId": "9ee67ccdb3593b4136f60b70a31fc62e4c593535f303ac284fbef9eed5351192"
+          }
+        ]
+      }
+    ]
+  },
+  "bindingsDigest": "218ce8b5104215b4e1e2f7b458d011e840408bd05ce19ef8293ff7e9ab133853",
+  "stateDigest": "284faf305c88bd760ab1884c0423a6bd124552144149d7d482c87fb810e2751c",
+  "bindings": {
+    "runs": [
+      {
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+        "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+        "artifactIds": [
+          "c635e6b8-be64-4f85-a2a8-8d25ea9d8471",
+          "9655e139-97dd-484f-8f68-1b7dd8d4435e",
+          "84411932-b54b-4398-be59-68fbd73386f6",
+          "5e83a064-dfcb-4776-bb40-940bfd27a201",
+          "6cd2b1a3-6f76-4fe4-b935-5687c85bf79a",
+          "8b9e594c-ca81-4bfb-91c5-7381289335a1"
+        ],
+        "evidenceIds": [
+          "b5ec55cc-0f1a-4650-8d13-5abf0380f89c"
+        ]
+      },
+      {
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "manifestDigest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+        "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf",
+        "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+        "artifactIds": [
+          "52438855-52ef-4cb4-8d87-5555a38f5e45",
+          "80467a30-e8b0-4666-9d9c-17dd9be1de3f",
+          "e0dc1fdf-cfea-43f9-8ce5-4d206a5361fe",
+          "b87fe290-8f32-4182-bb9e-96fdd55b7cb4"
+        ],
+        "evidenceIds": []
+      },
+      {
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "manifestDigest": "001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053",
+        "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+        "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+        "artifactIds": [
+          "b668e920-5719-4578-b1ca-7518f836f255",
+          "f04a28bf-bb68-4a71-88d8-432eed5b4228",
+          "b238dee6-07b2-474e-ac44-6e59c1f12434",
+          "f806296b-86e3-4abe-b783-ee4a647957a5",
+          "e0edefa3-35af-4382-86e1-a11e4e784274",
+          "14b6552b-f78e-4022-82f5-13db8f2ceed4"
+        ],
+        "evidenceIds": [
+          "1da32244-9ce3-4876-9813-9ec115d22c44"
+        ]
+      },
+      {
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "manifestDigest": "722fa6b9c49b833e6fb79d3f7385e120dd384116991da19ec5c2b4ae310194d6",
+        "sourceDigest": "3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70",
+        "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+        "artifactIds": [
+          "9d1646a4-b235-467c-8bec-e4bf7a2e5899",
+          "8bf9a060-5b67-432f-87ab-d400c20a3aa7",
+          "4bad84e1-63b5-4695-81c0-0b4dbdc2761a",
+          "f2d78ff3-61c4-4ea7-8a37-6bb2e1812cf6",
+          "de976af2-a18d-4e62-81c3-5d9ada4af843",
+          "2e1f344d-52da-483d-aab5-9b8da7431ffe"
+        ],
+        "evidenceIds": [
+          "cb2f3e9d-8da5-43da-b817-a2b6c8e4f78d"
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+        "files": [
+          {
+            "path": "config.json",
+            "size": 27,
+            "digest": "f91a8e608c044d16c872ce4c75f0709407ab63ea5e0aba9452c81ee9353c8f33",
+            "mode": "100644"
+          },
+          {
+            "path": "data.csv",
+            "size": 8657,
+            "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+            "mode": "100644"
+          },
+          {
+            "path": "main.py",
+            "size": 2617,
+            "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+            "mode": "100644"
+          },
+          {
+            "path": "README.md",
+            "size": 61,
+            "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+            "mode": "100644"
+          },
+          {
+            "path": "test_main.py",
+            "size": 2308,
+            "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+            "mode": "100644"
+          }
+        ]
+      },
+      {
+        "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+        "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf",
+        "files": [
+          {
+            "path": "config.json",
+            "size": 29,
+            "digest": "c26f045a138fd3333b29d0089f4da9e9486251c7c4df0373b6f79e965f0d7710",
+            "mode": "100644"
+          },
+          {
+            "path": "data.csv",
+            "size": 8657,
+            "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+            "mode": "100644"
+          },
+          {
+            "path": "main.py",
+            "size": 2617,
+            "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+            "mode": "100644"
+          },
+          {
+            "path": "README.md",
+            "size": 61,
+            "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+            "mode": "100644"
+          },
+          {
+            "path": "test_main.py",
+            "size": 2308,
+            "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+            "mode": "100644"
+          }
+        ]
+      },
+      {
+        "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+        "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+        "files": [
+          {
+            "path": "config.json",
+            "size": 27,
+            "digest": "5b758aa4b049d19deae4b07bbf1a29d6bdf7ee3610afd6a593869b7d41f4285e",
+            "mode": "100644"
+          },
+          {
+            "path": "data.csv",
+            "size": 8657,
+            "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+            "mode": "100644"
+          },
+          {
+            "path": "main.py",
+            "size": 2617,
+            "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+            "mode": "100644"
+          },
+          {
+            "path": "README.md",
+            "size": 61,
+            "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+            "mode": "100644"
+          },
+          {
+            "path": "test_main.py",
+            "size": 2667,
+            "digest": "6225a00e06883781af724768d4d67c13862b9327ff37f1886d5e30f104b22196",
+            "mode": "100644"
+          }
+        ]
+      },
+      {
+        "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+        "sourceDigest": "3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70",
+        "files": [
+          {
+            "path": "config.json",
+            "size": 27,
+            "digest": "d83a686cce5d9222aed7a6c35e568caf633a1830420d262150458e30ad9f6221",
+            "mode": "100644"
+          },
+          {
+            "path": "data.csv",
+            "size": 8657,
+            "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+            "mode": "100644"
+          },
+          {
+            "path": "main.py",
+            "size": 2617,
+            "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+            "mode": "100644"
+          },
+          {
+            "path": "README.md",
+            "size": 61,
+            "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+            "mode": "100644"
+          },
+          {
+            "path": "test_main.py",
+            "size": 2667,
+            "digest": "6225a00e06883781af724768d4d67c13862b9327ff37f1886d5e30f104b22196",
+            "mode": "100644"
+          }
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "c635e6b8-be64-4f85-a2a8-8d25ea9d8471",
+        "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+        "size": 93,
+        "title": "metrics.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "b668e920-5719-4578-b1ca-7518f836f255",
+        "digest": "7135a163043f87ea9b4c15e7936250bf3f8179f1252dba433aa876975fa91f73",
+        "size": 92,
+        "title": "metrics.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "9d1646a4-b235-467c-8bec-e4bf7a2e5899",
+        "digest": "5b2c3cd4d52c64478c4763b92c97db9fca44ea0be608a4db9b3f2c74e277efda",
+        "size": 93,
+        "title": "metrics.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "9655e139-97dd-484f-8f68-1b7dd8d4435e",
+        "digest": "80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+        "size": 91,
+        "title": "model.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "84411932-b54b-4398-be59-68fbd73386f6",
+        "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+        "size": 3463,
+        "title": "predictions.csv",
+        "mediaType": "text/csv"
+      },
+      {
+        "id": "5e83a064-dfcb-4776-bb40-940bfd27a201",
+        "digest": "7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+        "size": 120,
+        "title": "stdout.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "6cd2b1a3-6f76-4fe4-b935-5687c85bf79a",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "title": "stderr.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "8b9e594c-ca81-4bfb-91c5-7381289335a1",
+        "digest": "4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+        "size": 944,
+        "title": "execution.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "title": "stdout.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "6a31fde5-077a-4437-b750-89aea3bfff10",
+        "digest": "50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+        "size": 513,
+        "title": "stderr.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "d0c4e3d0-e6ff-4ad2-b32c-75d017304786",
+        "digest": "6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+        "size": 677,
+        "title": "test-report.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "ecfc93f7-2f82-4b0d-82f9-fe950676456c",
+        "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+        "size": 1521,
+        "title": "development-review-manifest.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "1bd1306d-f6da-4a44-987a-6b1d746c65e0",
+        "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+        "size": 1076,
+        "title": "development-review-test-report.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "ce9238fc-aa03-4350-8ada-64a7fd29e098",
+        "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+        "size": 323,
+        "title": "development-review-stdout.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "81d735f1-c612-42a1-9861-b0da17913835",
+        "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+        "size": 848,
+        "title": "development-review-stderr.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "52438855-52ef-4cb4-8d87-5555a38f5e45",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "title": "stdout.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "80467a30-e8b0-4666-9d9c-17dd9be1de3f",
+        "digest": "fb368f00096e7266d1cbb883431971ade7ed288b86197d46b30600b7a9e39421",
+        "size": 379,
+        "title": "stderr.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "b87fe290-8f32-4182-bb9e-96fdd55b7cb4",
+        "digest": "3d18d275a01740f9fcc022f3629ac381cf3f25ed3e8ce6fccc188144d7937066",
+        "size": 1163,
+        "title": "execution.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "f04a28bf-bb68-4a71-88d8-432eed5b4228",
+        "digest": "3ddb4910e87ef8b6b813effe7b3af66a0270d48a73e8f14cc9b0b96e40466789",
+        "size": 113,
+        "title": "model.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "b238dee6-07b2-474e-ac44-6e59c1f12434",
+        "digest": "f4011de2ef62fdeee585539320030e770735aad3d03804829679b3e59bfa56ed",
+        "size": 3457,
+        "title": "predictions.csv",
+        "mediaType": "text/csv"
+      },
+      {
+        "id": "f806296b-86e3-4abe-b783-ee4a647957a5",
+        "digest": "1c9fca698c9be5bf66d55799754896ab988118f87402f612ff08cbd50d2b5326",
+        "size": 119,
+        "title": "stdout.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "e0edefa3-35af-4382-86e1-a11e4e784274",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "title": "stderr.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "14b6552b-f78e-4022-82f5-13db8f2ceed4",
+        "digest": "fe650daf9de42b09479053459287708b08f2bcb9e3677edfb4da9cb604c65e06",
+        "size": 944,
+        "title": "execution.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "c36c63ef-32c7-438f-9887-6d5050c983d2",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "title": "stdout.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "1a1a0218-72d6-4082-9048-3304c21cb17b",
+        "digest": "2796e6718fe26905a061c713866039d9ccf2440752b61f77c383165af8716212",
+        "size": 619,
+        "title": "stderr.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "b84a81a8-b017-4f57-aa98-eb663a9fa5e2",
+        "digest": "23a987c98bb461fb2b9d3e2c5c5a2c7b41305650a41c67a94f79a13f1c379bda",
+        "size": 677,
+        "title": "test-report.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "34d9ecbd-9c8a-4c14-a1b8-e16ba9b16916",
+        "digest": "883fbab873522eb63112298a97701e5ff41438699de8e3b8d55917cf35f7646a",
+        "size": 1521,
+        "title": "development-review-manifest.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "53f0a537-2bd7-4500-a9a3-1a87c4615576",
+        "digest": "54caf6f1d07c056cfff4917bc88a595f9688700ff81f05ac803de13af02f3162",
+        "size": 1076,
+        "title": "development-review-test-report.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "a4bbe57e-ec12-4421-ace4-6186281ecb6b",
+        "digest": "706b1a7073075cf25824afdd3b6a4a4cfa1dffc1a336eef5a63a3b66593a6845",
+        "size": 323,
+        "title": "development-review-stdout.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "2b757210-c9a4-45ab-87fc-cc6d68fa3110",
+        "digest": "e4d8404e5b72cb3c744d2c45a48ee556dba67607107bd5d5db91c88cd22aaacf",
+        "size": 955,
+        "title": "development-review-stderr.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "8bf9a060-5b67-432f-87ab-d400c20a3aa7",
+        "digest": "99e424096547075d628ad4e55a6715acbda5fe663f2379ff42dd2e3a8b8035ac",
+        "size": 138,
+        "title": "model.json",
+        "mediaType": "application/json"
+      },
+      {
+        "id": "4bad84e1-63b5-4695-81c0-0b4dbdc2761a",
+        "digest": "a3f811874659110a10753d830ba34c9a5e3de63229be30594e7bd948654fbc55",
+        "size": 3466,
+        "title": "predictions.csv",
+        "mediaType": "text/csv"
+      },
+      {
+        "id": "f2d78ff3-61c4-4ea7-8a37-6bb2e1812cf6",
+        "digest": "baedaf8db0098a57a1b525ca700f6778bcf39deee75e51ef45ef75690c63dbad",
+        "size": 120,
+        "title": "stdout.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "de976af2-a18d-4e62-81c3-5d9ada4af843",
+        "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "title": "stderr.log",
+        "mediaType": "text/plain"
+      },
+      {
+        "id": "2e1f344d-52da-483d-aab5-9b8da7431ffe",
+        "digest": "e069c541bb36b682a3968e88095caf7bf232f2ae0e0ca2e11aa0e5229b05f58d",
+        "size": 885,
+        "title": "execution.json",
+        "mediaType": "application/json"
+      }
+    ],
+    "claims": [],
+    "proposals": [
+      {
+        "id": "c33ac936-68d7-4cd1-b02d-d28da7aa862f",
+        "digest": "610499a32bb7593cfd49121d110f51d8703998485b8ece9553a16b410a46aec4",
+        "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+        "reviewId": "4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3",
+        "reviewAcceptanceId": "2728883fa23a1c0c1c66479374767bcff67356d6b4dfc33028f6cb7b72d576a5",
+        "jobId": "074803b8-5d7c-4892-b78d-725db988e7d7"
+      },
+      {
+        "id": "e0d71444-9b2c-408e-be4b-eac0cc9f8640",
+        "digest": "e7d118c5d388da7ca2206b25c723345499a02f12598e4abf7ea7198aad91a52e",
+        "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+        "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+        "reviewAcceptanceId": "492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a",
+        "jobId": "eb2d707a-278c-46cc-b115-f71db7086ec2"
+      }
+    ],
+    "objects": [
+      {
+        "referenceId": "a60dfe7d5ba31ba3662300c7595b93c638afb17c142cfe2f5a58fa7e0a5b143b",
+        "mediaType": "application/json",
+        "content": "{\n  \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n  \"state\": \"stopped\",\n  \"primaryMetric\": \"mse\",\n  \"direction\": \"min\",\n  \"unit\": \"squared-target\",\n  \"plans\": [\n    {\n      \"plan\": {\n        \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n        \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n        \"decisionId\": \"c808afd8-818e-4f90-ac36-0963503317f9\",\n        \"decisionApprovalId\": \"ed946f27-909e-4a87-be94-5e698b7c21bb\",\n        \"campaignApprovalId\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n        \"campaignPlanDigest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\",\n        \"parentSource\": {\n          \"snapshotId\": \"0033fa0f82608594c8a05099375f753e8a995110462b9e6ce592790578f649c6\",\n          \"experimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n          \"revision\": 1,\n          \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n        },\n        \"contractDigest\": \"9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9\",\n        \"hypothesis\": \"固定程序应在999阶大于180个训练样本可拟合范围时拒绝输入，不产生伪造指标。\",\n        \"controlRunIds\": [\n          \"ca819399-1714-4aaa-b50e-ef1700b3991f\"\n        ],\n        \"changedFactors\": [\n          \"polynomialDegree 从2改为999；源码算法与数据保持父版本。\"\n        ],\n        \"dataSplit\": \"固定合成data.csv共240行，前180训练/后60测试；无额外数据产物，数据随固定父源码归档。\",\n        \"dataArtifactIds\": [],\n        \"primaryMetric\": \"mse\",\n        \"guardrailMetrics\": [],\n        \"repetitions\": {\n          \"count\": 1,\n          \"rationale\": \"确定性软件错误分支验收一次，不用于不确定性或外部有效性估计。\"\n        },\n        \"successCriteria\": \"记录真实退出与not enough data points错误；无指标时不得声称获得科学结果。\",\n        \"inconclusiveCriteria\": \"失败无测量时科研问题未回答，需用户明确核对失败语义后才能提出Repair。\",\n        \"stoppingCriteria\": \"最多2轮；修复链最多2次尝试；最终比较后停止，不自动追加候选或运行。\",\n        \"controlBindings\": [\n          {\n            \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n            \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\",\n            \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n            \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n            \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n            \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n          }\n        ],\n        \"dataBindings\": [],\n        \"inputRuns\": [\n          {\n            \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n            \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n            \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n            \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n            \"terminal\": true,\n            \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n            \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\"\n          }\n        ],\n        \"observationIds\": [\n          \"43c663cb383c53d802e1539504b788221e895354788498f62c46fa2386ef86a5\"\n        ],\n        \"inputDigest\": \"0b6ae9be60b731ab57494d42e002141efcc81efb17f5dcc22089126d4b00d326\",\n        \"digest\": \"11ab506171ec45aceedcdc950748f7ee45797074bd56698233f48e0f95ad2f1a\",\n        \"id\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n        \"kind\": \"experiment-plan-revision\",\n        \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n        \"version\": 1,\n        \"createdAt\": \"2026-09-28T22:41:19.047Z\",\n        \"updatedAt\": \"2026-09-28T22:41:19.047Z\"\n      },\n      \"candidates\": [\n        {\n          \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n          \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n          \"planRevisionId\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n          \"decisionId\": \"c808afd8-818e-4f90-ac36-0963503317f9\",\n          \"spec\": {\n            \"title\": \"输入点不足的无结果候选\",\n            \"hypothesis\": \"999阶应触发已有输入验证；仅软件失败路径验收。\",\n            \"config\": {\n              \"polynomialDegree\": 999\n            },\n            \"implementation\": \"config\"\n          },\n          \"parentSource\": {\n            \"snapshotId\": \"0033fa0f82608594c8a05099375f753e8a995110462b9e6ce592790578f649c6\",\n            \"experimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n            \"revision\": 1,\n            \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n          },\n          \"state\": \"prepared\",\n          \"id\": \"9a2b455a-1108-462c-a369-5d0d00849e00\",\n          \"kind\": \"research-candidate\",\n          \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n          \"version\": 2,\n          \"createdAt\": \"2026-09-28T22:47:31.240Z\",\n          \"updatedAt\": \"2026-09-28T22:47:31.349Z\",\n          \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n          \"intentId\": \"4628e213-fffd-4b03-96f3-595593cdffa3\",\n          \"runApprovalId\": \"b72cda9d-feca-44bb-bb50-076465d1b3da\"\n        }\n      ],\n      \"validity\": \"current\",\n      \"reasons\": []\n    },\n    {\n      \"plan\": {\n        \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n        \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n        \"decisionId\": \"0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc\",\n        \"decisionApprovalId\": \"21d10dcd-398e-4c34-ab05-6239e34d2bce\",\n        \"campaignApprovalId\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n        \"campaignPlanDigest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\",\n        \"parentSource\": {\n          \"snapshotId\": \"21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16\",\n          \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n          \"revision\": 1,\n          \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\"\n        },\n        \"contractDigest\": \"9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9\",\n        \"hypothesis\": \"将无效999阶修复为3阶，并使协议测试依照配置检查阶数与系数数量，可恢复同一数据切分下的真实输出。\",\n        \"controlRunIds\": [\n          \"ca819399-1714-4aaa-b50e-ef1700b3991f\"\n        ],\n        \"changedFactors\": [\n          \"polynomialDegree由999改为3。\",\n          \"私有test_main.py补充输入边界检查并按配置验证输出协议，保留样本数、切分和产物字段检查。\"\n        ],\n        \"dataSplit\": \"固定父源码内data.csv 240行，前180训练/后60测试，数据不改；无额外数据产物。\",\n        \"dataArtifactIds\": [],\n        \"primaryMetric\": \"mse\",\n        \"guardrailMetrics\": [],\n        \"repetitions\": {\n          \"count\": 1,\n          \"rationale\": \"确定性软件修复验收一次，不估计泛化能力或方法优越性。\"\n        },\n        \"successCriteria\": \"真实开发测试通过，独立审查接受固定来源，单独批准整合与Run；实际归档metrics/model/predictions后人工检查。\",\n        \"inconclusiveCriteria\": \"缺失产物、失败或审查拒绝时保留状态，不声称科研结论。\",\n        \"stoppingCriteria\": \"共享修复链最多2次尝试，最多2轮；下一轮比较后停止，不自动重试模型或Run。\",\n        \"previousRevisionId\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n        \"controlBindings\": [\n          {\n            \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n            \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\",\n            \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n            \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n            \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n            \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n          }\n        ],\n        \"dataBindings\": [],\n        \"inputRuns\": [\n          {\n            \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n            \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n            \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n            \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n            \"terminal\": true,\n            \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n            \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\"\n          },\n          {\n            \"intentId\": \"4628e213-fffd-4b03-96f3-595593cdffa3\",\n            \"approvalId\": \"b72cda9d-feca-44bb-bb50-076465d1b3da\",\n            \"manifestDigest\": \"828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5\",\n            \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\",\n            \"terminal\": true,\n            \"runId\": \"18d75977-85ef-4946-a148-e2966ef2b18a\",\n            \"contentDigest\": \"c730912181f72317f7e8bc413af9fe0ae78fa9dcb7ac3a8819d5901f47288112\",\n            \"answerReviewId\": \"af18ce1d-c26d-4223-9cfc-38418e846816\"\n          }\n        ],\n        \"observationIds\": [\n          \"dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d\"\n        ],\n        \"inputDigest\": \"7b10ccc0e5e3b2c9f3195054c1c861c494f9de18d5f60857745349a99aee5410\",\n        \"digest\": \"cb460bc39204dcf3e08e3e9d9050bf9b5520baf57f43f662553787f13b6dd964\",\n        \"id\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n        \"kind\": \"experiment-plan-revision\",\n        \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n        \"version\": 1,\n        \"createdAt\": \"2026-09-28T22:51:08.303Z\",\n        \"updatedAt\": \"2026-09-28T22:51:08.303Z\"\n      },\n      \"candidates\": [\n        {\n          \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n          \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n          \"planRevisionId\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n          \"decisionId\": \"0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc\",\n          \"spec\": {\n            \"title\": \"Pi受审三阶修复\",\n            \"hypothesis\": \"修复无效参数并完善配置相关测试，保留算法与数据，恢复可复核数值输出。\",\n            \"implementation\": \"reviewed-code\"\n          },\n          \"parentSource\": {\n            \"snapshotId\": \"21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16\",\n            \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n            \"revision\": 1,\n            \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\"\n          },\n          \"state\": \"prepared\",\n          \"repairOfMemberId\": \"3a79bb33-bbb7-4e89-8112-643566b01756\",\n          \"repairRootMemberId\": \"3a79bb33-bbb7-4e89-8112-643566b01756\",\n          \"id\": \"56b11824-343a-4098-ae9e-23c2b87320ef\",\n          \"kind\": \"research-candidate\",\n          \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n          \"version\": 3,\n          \"createdAt\": \"2026-09-28T22:51:38.279Z\",\n          \"updatedAt\": \"2026-09-28T23:00:16.562Z\",\n          \"sessionId\": \"ad469e07-43a3-4dda-be0b-fccebb65cbcc\",\n          \"proposalId\": \"e0d71444-9b2c-408e-be4b-eac0cc9f8640\",\n          \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n          \"intentId\": \"50e0ce8e-864e-49cd-887e-0c17763caf4b\",\n          \"testJobId\": \"eb2d707a-278c-46cc-b115-f71db7086ec2\",\n          \"reviewId\": \"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\",\n          \"reviewAcceptanceId\": \"492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a\",\n          \"integrationApprovalId\": \"13d287ba-bcf3-4578-80f2-3dcd99280a82\",\n          \"testApprovalId\": \"43c55c23-205e-4fe0-a2ca-6db824aef4fa\",\n          \"reviewApprovalId\": \"690f519d-8a37-4ad5-9996-7513717f1115\",\n          \"runApprovalId\": \"6c03e537-fe67-43c5-a979-5a07b6c27750\"\n        }\n      ],\n      \"validity\": \"current\",\n      \"reasons\": []\n    },\n    {\n      \"plan\": {\n        \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n        \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n        \"decisionId\": \"0b1c2c48-837d-404d-95ef-b1ebcecca90f\",\n        \"decisionApprovalId\": \"48e4b625-67e3-4444-a080-d9ff537dd203\",\n        \"campaignApprovalId\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n        \"campaignPlanDigest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\",\n        \"parentSource\": {\n          \"snapshotId\": \"747c93dfe13712d69d05aedc21e1ea52acf97533cb2534afe2e2b8c485a67709\",\n          \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n          \"revision\": 1,\n          \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\"\n        },\n        \"contractDigest\": \"9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9\",\n        \"hypothesis\": \"在相同合成数据和切分下观察三阶改四阶对持出MSE的实际变化，不预设改善。\",\n        \"controlRunIds\": [\n          \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n          \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\"\n        ],\n        \"changedFactors\": [\n          \"仅polynomialDegree从3改为4；父Run固定main.py、data.csv和test_main.py保持原字节。\"\n        ],\n        \"dataSplit\": \"固定合成data.csv共240行，前180训练/后60测试，与两项对照同字节；无额外数据产物。\",\n        \"dataArtifactIds\": [],\n        \"primaryMetric\": \"mse\",\n        \"guardrailMetrics\": [],\n        \"repetitions\": {\n          \"count\": 1,\n          \"rationale\": \"确定性软件参数路径验收一次；未估计方差，不据此判断外部科学有效性。\"\n        },\n        \"successCriteria\": \"单独批准Run后得到真实指标与三项完整产物，核对固定来源并人工比较单位一致的MSE。祖先三阶测试不追认为四阶新测试。\",\n        \"inconclusiveCriteria\": \"运行失败或产物不完整时保留失败与无结论；单次合成数据的差异不代表方法收益。\",\n        \"stoppingCriteria\": \"本活动最多2轮，本候选结束后提交Stop，不追加候选，不自动调用模型或新Run。\",\n        \"previousRevisionId\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n        \"controlBindings\": [\n          {\n            \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n            \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\",\n            \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n            \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n            \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n            \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n          },\n          {\n            \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n            \"contentDigest\": \"dc925517a2b5d72049ad3401e244a6400c5e43a95f2de520241845b0988ea3a3\",\n            \"intentId\": \"50e0ce8e-864e-49cd-887e-0c17763caf4b\",\n            \"approvalId\": \"6c03e537-fe67-43c5-a979-5a07b6c27750\",\n            \"manifestDigest\": \"001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053\",\n            \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\"\n          }\n        ],\n        \"dataBindings\": [],\n        \"inputRuns\": [\n          {\n            \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n            \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n            \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n            \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n            \"terminal\": true,\n            \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n            \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\"\n          },\n          {\n            \"intentId\": \"4628e213-fffd-4b03-96f3-595593cdffa3\",\n            \"approvalId\": \"b72cda9d-feca-44bb-bb50-076465d1b3da\",\n            \"manifestDigest\": \"828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5\",\n            \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\",\n            \"terminal\": true,\n            \"runId\": \"18d75977-85ef-4946-a148-e2966ef2b18a\",\n            \"contentDigest\": \"c730912181f72317f7e8bc413af9fe0ae78fa9dcb7ac3a8819d5901f47288112\",\n            \"answerReviewId\": \"af18ce1d-c26d-4223-9cfc-38418e846816\"\n          },\n          {\n            \"intentId\": \"50e0ce8e-864e-49cd-887e-0c17763caf4b\",\n            \"approvalId\": \"6c03e537-fe67-43c5-a979-5a07b6c27750\",\n            \"manifestDigest\": \"001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053\",\n            \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\",\n            \"terminal\": true,\n            \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n            \"contentDigest\": \"dc925517a2b5d72049ad3401e244a6400c5e43a95f2de520241845b0988ea3a3\"\n          }\n        ],\n        \"observationIds\": [\n          \"f72a4b78571405b6e8f3e09798c17e3443442116b40e15f7b8fca7dab5d79e8b\"\n        ],\n        \"inputDigest\": \"af5ac2728e6c34743854f6c5b8e0c154046e2702e52ae2ff793cc07c088823eb\",\n        \"digest\": \"d2a662f15159c213f0844e90e88e975735ca4a68a42ce2b759644affa16e3702\",\n        \"id\": \"1643eb42-a2a6-4531-9725-4f011502b52b\",\n        \"kind\": \"experiment-plan-revision\",\n        \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n        \"version\": 1,\n        \"createdAt\": \"2026-09-28T23:02:12.137Z\",\n        \"updatedAt\": \"2026-09-28T23:02:12.137Z\"\n      },\n      \"candidates\": [\n        {\n          \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n          \"roundId\": \"85fa8411-45fd-4b92-a02b-5c59afee6dec\",\n          \"planRevisionId\": \"1643eb42-a2a6-4531-9725-4f011502b52b\",\n          \"decisionId\": \"0b1c2c48-837d-404d-95ef-b1ebcecca90f\",\n          \"spec\": {\n            \"title\": \"第二轮四阶参数候选\",\n            \"hypothesis\": \"固定三阶修复来源，观察四阶MSE；只做软件验收比较。\",\n            \"config\": {\n              \"polynomialDegree\": 4\n            },\n            \"implementation\": \"config\"\n          },\n          \"parentSource\": {\n            \"snapshotId\": \"747c93dfe13712d69d05aedc21e1ea52acf97533cb2534afe2e2b8c485a67709\",\n            \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n            \"revision\": 1,\n            \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\"\n          },\n          \"state\": \"prepared\",\n          \"id\": \"2f1b17a3-17f2-4231-8864-148c5ea24776\",\n          \"kind\": \"research-candidate\",\n          \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n          \"version\": 2,\n          \"createdAt\": \"2026-09-28T23:02:36.236Z\",\n          \"updatedAt\": \"2026-09-28T23:02:37.067Z\",\n          \"experimentId\": \"17d51894-e2b3-4a11-886a-1b400d73e7df\",\n          \"intentId\": \"8a5e2b91-f807-4475-980a-7d6afb04d8da\",\n          \"runApprovalId\": \"c1498780-3adf-4e1f-855c-ddfa94a5e5e8\"\n        }\n      ],\n      \"validity\": \"current\",\n      \"reasons\": []\n    }\n  ],\n  \"results\": [\n    {\n      \"observationId\": \"43c663cb383c53d802e1539504b788221e895354788498f62c46fa2386ef86a5\",\n      \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n      \"experimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n      \"validation\": \"verified\",\n      \"metrics\": {\n        \"mse\": 0.000050345031695457565,\n        \"train_mse\": 0.00004962382619455619,\n        \"r2\": 0.9999474271448613\n      },\n      \"evidenceIds\": [\n        \"b5ec55cc-0f1a-4650-8d13-5abf0380f89c\"\n      ]\n    },\n    {\n      \"observationId\": \"dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d\",\n      \"runId\": \"18d75977-85ef-4946-a148-e2966ef2b18a\",\n      \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n      \"candidateId\": \"9a2b455a-1108-462c-a369-5d0d00849e00\",\n      \"planRevisionId\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n      \"validation\": \"incomplete\",\n      \"metrics\": {},\n      \"evidenceIds\": []\n    },\n    {\n      \"observationId\": \"f72a4b78571405b6e8f3e09798c17e3443442116b40e15f7b8fca7dab5d79e8b\",\n      \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n      \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n      \"candidateId\": \"56b11824-343a-4098-ae9e-23c2b87320ef\",\n      \"planRevisionId\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n      \"validation\": \"verified\",\n      \"metrics\": {\n        \"mse\": 0.00005135731444943983,\n        \"train_mse\": 0.00004921126609753724,\n        \"r2\": 0.9999463700674737\n      },\n      \"evidenceIds\": [\n        \"1da32244-9ce3-4876-9813-9ec115d22c44\"\n      ]\n    },\n    {\n      \"observationId\": \"fbc33d41ce5b37625b2a1a6da455028c29023ea8268d69723855640dc7fb1418\",\n      \"runId\": \"85360021-a5af-457d-a315-c1f55b1bb6b3\",\n      \"experimentId\": \"17d51894-e2b3-4a11-886a-1b400d73e7df\",\n      \"candidateId\": \"2f1b17a3-17f2-4231-8864-148c5ea24776\",\n      \"planRevisionId\": \"1643eb42-a2a6-4531-9725-4f011502b52b\",\n      \"validation\": \"verified\",\n      \"metrics\": {\n        \"mse\": 0.000051416001308461135,\n        \"train_mse\": 0.00004920642594527707,\n        \"r2\": 0.9999463087836561\n      },\n      \"evidenceIds\": [\n        \"cb2f3e9d-8da5-43da-b817-a2b6c8e4f78d\"\n      ]\n    }\n  ],\n  \"controls\": [\n    {\n      \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n      \"experimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n      \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n      \"metrics\": {\n        \"mse\": 0.000050345031695457565,\n        \"train_mse\": 0.00004962382619455619,\n        \"r2\": 0.9999474271448613\n      },\n      \"evidenceIds\": [\n        \"b5ec55cc-0f1a-4650-8d13-5abf0380f89c\"\n      ]\n    },\n    {\n      \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n      \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n      \"manifestDigest\": \"001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053\",\n      \"metrics\": {\n        \"mse\": 0.00005135731444943983,\n        \"train_mse\": 0.00004921126609753724,\n        \"r2\": 0.9999463700674737\n      },\n      \"evidenceIds\": [\n        \"1da32244-9ce3-4876-9813-9ec115d22c44\"\n      ]\n    }\n  ],\n  \"blockers\": [\n    \"已完成两轮软件验收，按预定上限停止。二阶对照MSE=0.000050345031695457565，三阶修复=0.00005135731444943983，四阶=0.000051416001308461135，单位squared-target；两项候选都没有降低持出误差。999阶失败无指标，保留unanswered和独立修复链。仅固定240行合成数据/180-60切分的单次流程检查，不得称为外部发现或多Agent收益证明；不追加候选，不自动调用模型或Run。\"\n  ],\n  \"conclusion\": \"requires_review\",\n  \"unappliedPlans\": [],\n  \"campaign\": {\n    \"id\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n    \"version\": 9,\n    \"goal\": \"本地软件验收，最多2轮。已有degree2固定Run作对照；第1轮用degree999确认输入点不足的无结果失败，单独批准私有修复至degree3，经真实测试、独立审查、整合后再Run；第2轮从修复Run的固定来源准备degree4，比较后停止。仅固定合成240行与180/60切分，不预设方法优越性，不产生新科学结论。决定、测试、审查、整合和正式Run分别批准，不自动发布。\",\n    \"roundNumber\": 2,\n    \"currentRoundId\": \"85fa8411-45fd-4b92-a02b-5c59afee6dec\",\n    \"focusExperimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n    \"baselineExperimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n    \"contractDigest\": \"9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9\",\n    \"limits\": {\n      \"maxRounds\": 2,\n      \"maxCandidatesPerRound\": 6,\n      \"maxUnansweredRunsPerNode\": 2,\n      \"maxConsecutiveRegressions\": 3,\n      \"maxAnalysisAttempts\": 2\n    },\n    \"state\": \"stopped\",\n    \"approvalId\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n    \"planDigest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\"\n  },\n  \"approvals\": [\n    {\n      \"id\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n      \"subjectKind\": \"campaign\",\n      \"subjectId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"digest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\",\n      \"scope\": \"campaign.activate\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"ed946f27-909e-4a87-be94-5e698b7c21bb\",\n      \"subjectKind\": \"campaign-decision\",\n      \"subjectId\": \"c808afd8-818e-4f90-ac36-0963503317f9\",\n      \"digest\": \"3ae1aa3360ce009e1f02e102d76d7162c6980d12d2f21192ccfcaa37622b85e8\",\n      \"scope\": \"campaign.decision\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"21d10dcd-398e-4c34-ab05-6239e34d2bce\",\n      \"subjectKind\": \"campaign-decision\",\n      \"subjectId\": \"0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc\",\n      \"digest\": \"b6b1785c95834900f092817709d6a439d603dbf0ee42c923a0f030837c085d77\",\n      \"scope\": \"campaign.decision\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"48e4b625-67e3-4444-a080-d9ff537dd203\",\n      \"subjectKind\": \"campaign-decision\",\n      \"subjectId\": \"0b1c2c48-837d-404d-95ef-b1ebcecca90f\",\n      \"digest\": \"1b1888ad829d867645fbe0b4f4d9ba26eb0e6f6e52f9ab8dd6962d4c9dc2809f\",\n      \"scope\": \"campaign.decision\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"9e30229e-5c0c-4c00-bc47-523c2534a2d5\",\n      \"subjectKind\": \"campaign-decision\",\n      \"subjectId\": \"9f1cedd8-a0d6-43bf-9378-b34cbf8bf443\",\n      \"digest\": \"a649dbfd7aec0f5680505723dc8535a9f0109f832d2ffb3e15c52be224802b26\",\n      \"scope\": \"campaign.decision\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n      \"subjectKind\": \"run-intent\",\n      \"subjectId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n      \"digest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n      \"scope\": \"run.submit\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"b72cda9d-feca-44bb-bb50-076465d1b3da\",\n      \"subjectKind\": \"run-intent\",\n      \"subjectId\": \"4628e213-fffd-4b03-96f3-595593cdffa3\",\n      \"digest\": \"828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5\",\n      \"scope\": \"run.submit\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"13d287ba-bcf3-4578-80f2-3dcd99280a82\",\n      \"subjectKind\": \"change-proposal\",\n      \"subjectId\": \"e0d71444-9b2c-408e-be4b-eac0cc9f8640\",\n      \"digest\": \"e7d118c5d388da7ca2206b25c723345499a02f12598e4abf7ea7198aad91a52e\",\n      \"scope\": \"change.integrate\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"43c55c23-205e-4fe0-a2ca-6db824aef4fa\",\n      \"subjectKind\": \"development-task\",\n      \"subjectId\": \"49ac9d20-b826-4f6e-9630-52e29d690c3c\",\n      \"digest\": \"c7a426e7271e1911392f25db36886ac9d3beebc9e22468bd0b3726fba41b2a54\",\n      \"scope\": \"development.test\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"690f519d-8a37-4ad5-9996-7513717f1115\",\n      \"subjectKind\": \"team\",\n      \"subjectId\": \"0a2f0915-597d-484d-baf8-324ae31a0fb3\",\n      \"digest\": \"806e115e419ceda8359fd3ed0a385f3ee790baee52a15c6df3ce87024ef42d0e\",\n      \"scope\": \"collaboration\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"6c03e537-fe67-43c5-a979-5a07b6c27750\",\n      \"subjectKind\": \"run-intent\",\n      \"subjectId\": \"50e0ce8e-864e-49cd-887e-0c17763caf4b\",\n      \"digest\": \"001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053\",\n      \"scope\": \"run.submit\",\n      \"status\": \"approved\"\n    },\n    {\n      \"id\": \"c1498780-3adf-4e1f-855c-ddfa94a5e5e8\",\n      \"subjectKind\": \"run-intent\",\n      \"subjectId\": \"8a5e2b91-f807-4475-980a-7d6afb04d8da\",\n      \"digest\": \"722fa6b9c49b833e6fb79d3f7385e120dd384116991da19ec5c2b4ae310194d6\",\n      \"scope\": \"run.submit\",\n      \"status\": \"approved\"\n    }\n  ],\n  \"decisions\": [\n    {\n      \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n      \"action\": \"refill\",\n      \"reason\": \"保留已有二阶Run作为对照。仅验证输入点不足时的明确无结果失败和后续受审修复流程，不比较科学优越性，不改动原Run。\",\n      \"observationIds\": [\n        \"43c663cb383c53d802e1539504b788221e895354788498f62c46fa2386ef86a5\"\n      ],\n      \"candidates\": [\n        {\n          \"title\": \"输入点不足的无结果候选\",\n          \"hypothesis\": \"999阶应触发已有输入验证；仅软件失败路径验收。\",\n          \"config\": {\n            \"polynomialDegree\": 999\n          },\n          \"implementation\": \"config\"\n        }\n      ],\n      \"inputDigest\": \"0b6ae9be60b731ab57494d42e002141efcc81efb17f5dcc22089126d4b00d326\",\n      \"planRevisionId\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n      \"planDigest\": \"11ab506171ec45aceedcdc950748f7ee45797074bd56698233f48e0f95ad2f1a\",\n      \"approvalId\": \"ed946f27-909e-4a87-be94-5e698b7c21bb\",\n      \"decisionDigest\": \"3ae1aa3360ce009e1f02e102d76d7162c6980d12d2f21192ccfcaa37622b85e8\",\n      \"status\": \"applied\",\n      \"id\": \"c808afd8-818e-4f90-ac36-0963503317f9\",\n      \"kind\": \"campaign-decision\",\n      \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n      \"version\": 2,\n      \"createdAt\": \"2026-09-28T22:41:19.048Z\",\n      \"updatedAt\": \"2026-09-28T22:47:31.351Z\",\n      \"appliedAt\": \"2026-09-28T22:47:31.351Z\",\n      \"effects\": {\n        \"experimentIds\": [\n          \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\"\n        ],\n        \"intentIds\": [\n          \"4628e213-fffd-4b03-96f3-595593cdffa3\"\n        ],\n        \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n        \"stopped\": false,\n        \"candidateIds\": [\n          \"9a2b455a-1108-462c-a369-5d0d00849e00\"\n        ]\n      }\n    },\n    {\n      \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n      \"action\": \"repair\",\n      \"reason\": \"失败Run 18d75977在fit_polynomial输入检查时退出：not enough data points，未归档数值产物。已单独评议为unanswered。保留失败Run，另建私有受审修复，所有测试、审查、整合与Run分别批准。\",\n      \"observationIds\": [\n        \"dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d\"\n      ],\n      \"candidates\": [\n        {\n          \"title\": \"Pi受审三阶修复\",\n          \"hypothesis\": \"修复无效参数并完善配置相关测试，保留算法与数据，恢复可复核数值输出。\",\n          \"implementation\": \"reviewed-code\"\n        }\n      ],\n      \"inputDigest\": \"7b10ccc0e5e3b2c9f3195054c1c861c494f9de18d5f60857745349a99aee5410\",\n      \"planRevisionId\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n      \"planDigest\": \"cb460bc39204dcf3e08e3e9d9050bf9b5520baf57f43f662553787f13b6dd964\",\n      \"approvalId\": \"21d10dcd-398e-4c34-ab05-6239e34d2bce\",\n      \"decisionDigest\": \"b6b1785c95834900f092817709d6a439d603dbf0ee42c923a0f030837c085d77\",\n      \"status\": \"applied\",\n      \"id\": \"0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc\",\n      \"kind\": \"campaign-decision\",\n      \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n      \"version\": 2,\n      \"createdAt\": \"2026-09-28T22:51:08.304Z\",\n      \"updatedAt\": \"2026-09-28T22:51:38.280Z\",\n      \"appliedAt\": \"2026-09-28T22:51:38.280Z\",\n      \"effects\": {\n        \"experimentIds\": [],\n        \"intentIds\": [],\n        \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n        \"stopped\": false,\n        \"candidateIds\": [\n          \"56b11824-343a-4098-ae9e-23c2b87320ef\"\n        ]\n      }\n    },\n    {\n      \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n      \"action\": \"promote\",\n      \"reason\": \"三阶修复Run 4265e905已成功并归档，mse约5.136e-5 squared-target，略高于二阶对照约5.035e-5。选择它作为固定父来源仅为验证修复子树进入下一轮，非最佳方法判定；最后一轮只改degree4，比较后停止。\",\n      \"observationIds\": [\n        \"f72a4b78571405b6e8f3e09798c17e3443442116b40e15f7b8fca7dab5d79e8b\"\n      ],\n      \"candidates\": [\n        {\n          \"title\": \"第二轮四阶参数候选\",\n          \"hypothesis\": \"固定三阶修复来源，观察四阶MSE；只做软件验收比较。\",\n          \"config\": {\n            \"polynomialDegree\": 4\n          },\n          \"implementation\": \"config\"\n        }\n      ],\n      \"selectedRunId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n      \"inputDigest\": \"af5ac2728e6c34743854f6c5b8e0c154046e2702e52ae2ff793cc07c088823eb\",\n      \"planRevisionId\": \"1643eb42-a2a6-4531-9725-4f011502b52b\",\n      \"planDigest\": \"d2a662f15159c213f0844e90e88e975735ca4a68a42ce2b759644affa16e3702\",\n      \"approvalId\": \"48e4b625-67e3-4444-a080-d9ff537dd203\",\n      \"decisionDigest\": \"1b1888ad829d867645fbe0b4f4d9ba26eb0e6f6e52f9ab8dd6962d4c9dc2809f\",\n      \"status\": \"applied\",\n      \"id\": \"0b1c2c48-837d-404d-95ef-b1ebcecca90f\",\n      \"kind\": \"campaign-decision\",\n      \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n      \"version\": 2,\n      \"createdAt\": \"2026-09-28T23:02:12.138Z\",\n      \"updatedAt\": \"2026-09-28T23:02:37.069Z\",\n      \"appliedAt\": \"2026-09-28T23:02:37.069Z\",\n      \"effects\": {\n        \"experimentIds\": [\n          \"17d51894-e2b3-4a11-886a-1b400d73e7df\"\n        ],\n        \"intentIds\": [\n          \"8a5e2b91-f807-4475-980a-7d6afb04d8da\"\n        ],\n        \"roundId\": \"85fa8411-45fd-4b92-a02b-5c59afee6dec\",\n        \"stopped\": false,\n        \"candidateIds\": [\n          \"2f1b17a3-17f2-4231-8864-148c5ea24776\"\n        ]\n      }\n    },\n    {\n      \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"roundId\": \"85fa8411-45fd-4b92-a02b-5c59afee6dec\",\n      \"action\": \"stop\",\n      \"reason\": \"已完成两轮软件验收，按预定上限停止。二阶对照MSE=0.000050345031695457565，三阶修复=0.00005135731444943983，四阶=0.000051416001308461135，单位squared-target；两项候选都没有降低持出误差。999阶失败无指标，保留unanswered和独立修复链。仅固定240行合成数据/180-60切分的单次流程检查，不得称为外部发现或多Agent收益证明；不追加候选，不自动调用模型或Run。\",\n      \"observationIds\": [\n        \"fbc33d41ce5b37625b2a1a6da455028c29023ea8268d69723855640dc7fb1418\"\n      ],\n      \"candidates\": [],\n      \"inputDigest\": \"de110242d6f25a775605c0aab091346b2392b65787218b988f2ea4bf8ac79e70\",\n      \"approvalId\": \"9e30229e-5c0c-4c00-bc47-523c2534a2d5\",\n      \"decisionDigest\": \"a649dbfd7aec0f5680505723dc8535a9f0109f832d2ffb3e15c52be224802b26\",\n      \"status\": \"applied\",\n      \"id\": \"9f1cedd8-a0d6-43bf-9378-b34cbf8bf443\",\n      \"kind\": \"campaign-decision\",\n      \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n      \"version\": 2,\n      \"createdAt\": \"2026-09-28T23:06:07.076Z\",\n      \"updatedAt\": \"2026-09-28T23:06:23.975Z\",\n      \"appliedAt\": \"2026-09-28T23:06:23.975Z\",\n      \"effects\": {\n        \"experimentIds\": [],\n        \"intentIds\": [],\n        \"roundId\": \"85fa8411-45fd-4b92-a02b-5c59afee6dec\",\n        \"stopped\": true\n      }\n    }\n  ],\n  \"digest\": \"a64898616c7e98d970a588807e6a53040e276142a1cbfe199135eb2bfaed0040\"\n}"
+      },
+      {
+        "referenceId": "966d335933631b6ba612aa8404583bb87f002c82a272a9fd950760001974c7f8",
+        "mediaType": "application/json",
+        "content": "{\n  \"plan\": {\n    \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n    \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n    \"decisionId\": \"c808afd8-818e-4f90-ac36-0963503317f9\",\n    \"decisionApprovalId\": \"ed946f27-909e-4a87-be94-5e698b7c21bb\",\n    \"campaignApprovalId\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n    \"campaignPlanDigest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\",\n    \"parentSource\": {\n      \"snapshotId\": \"0033fa0f82608594c8a05099375f753e8a995110462b9e6ce592790578f649c6\",\n      \"experimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n      \"revision\": 1,\n      \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n    },\n    \"contractDigest\": \"9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9\",\n    \"hypothesis\": \"固定程序应在999阶大于180个训练样本可拟合范围时拒绝输入，不产生伪造指标。\",\n    \"controlRunIds\": [\n      \"ca819399-1714-4aaa-b50e-ef1700b3991f\"\n    ],\n    \"changedFactors\": [\n      \"polynomialDegree 从2改为999；源码算法与数据保持父版本。\"\n    ],\n    \"dataSplit\": \"固定合成data.csv共240行，前180训练/后60测试；无额外数据产物，数据随固定父源码归档。\",\n    \"dataArtifactIds\": [],\n    \"primaryMetric\": \"mse\",\n    \"guardrailMetrics\": [],\n    \"repetitions\": {\n      \"count\": 1,\n      \"rationale\": \"确定性软件错误分支验收一次，不用于不确定性或外部有效性估计。\"\n    },\n    \"successCriteria\": \"记录真实退出与not enough data points错误；无指标时不得声称获得科学结果。\",\n    \"inconclusiveCriteria\": \"失败无测量时科研问题未回答，需用户明确核对失败语义后才能提出Repair。\",\n    \"stoppingCriteria\": \"最多2轮；修复链最多2次尝试；最终比较后停止，不自动追加候选或运行。\",\n    \"controlBindings\": [\n      {\n        \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n        \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\",\n        \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n        \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n        \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n        \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n      }\n    ],\n    \"dataBindings\": [],\n    \"inputRuns\": [\n      {\n        \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n        \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n        \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n        \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n        \"terminal\": true,\n        \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n        \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\"\n      }\n    ],\n    \"observationIds\": [\n      \"43c663cb383c53d802e1539504b788221e895354788498f62c46fa2386ef86a5\"\n    ],\n    \"inputDigest\": \"0b6ae9be60b731ab57494d42e002141efcc81efb17f5dcc22089126d4b00d326\",\n    \"digest\": \"11ab506171ec45aceedcdc950748f7ee45797074bd56698233f48e0f95ad2f1a\",\n    \"id\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n    \"kind\": \"experiment-plan-revision\",\n    \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n    \"version\": 1,\n    \"createdAt\": \"2026-09-28T22:41:19.047Z\",\n    \"updatedAt\": \"2026-09-28T22:41:19.047Z\"\n  },\n  \"candidates\": [\n    {\n      \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n      \"planRevisionId\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n      \"decisionId\": \"c808afd8-818e-4f90-ac36-0963503317f9\",\n      \"spec\": {\n        \"title\": \"输入点不足的无结果候选\",\n        \"hypothesis\": \"999阶应触发已有输入验证；仅软件失败路径验收。\",\n        \"config\": {\n          \"polynomialDegree\": 999\n        },\n        \"implementation\": \"config\"\n      },\n      \"parentSource\": {\n        \"snapshotId\": \"0033fa0f82608594c8a05099375f753e8a995110462b9e6ce592790578f649c6\",\n        \"experimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n        \"revision\": 1,\n        \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n      },\n      \"state\": \"prepared\",\n      \"id\": \"9a2b455a-1108-462c-a369-5d0d00849e00\",\n      \"kind\": \"research-candidate\",\n      \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n      \"version\": 2,\n      \"createdAt\": \"2026-09-28T22:47:31.240Z\",\n      \"updatedAt\": \"2026-09-28T22:47:31.349Z\",\n      \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n      \"intentId\": \"4628e213-fffd-4b03-96f3-595593cdffa3\",\n      \"runApprovalId\": \"b72cda9d-feca-44bb-bb50-076465d1b3da\"\n    }\n  ],\n  \"validity\": \"current\",\n  \"reasons\": []\n}"
+      },
+      {
+        "referenceId": "31002ee1af17f4138f9721989b757644a3a070286a3812a15296792ce0bfaae9",
+        "mediaType": "application/json",
+        "content": "{\n  \"plan\": {\n    \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n    \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n    \"decisionId\": \"0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc\",\n    \"decisionApprovalId\": \"21d10dcd-398e-4c34-ab05-6239e34d2bce\",\n    \"campaignApprovalId\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n    \"campaignPlanDigest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\",\n    \"parentSource\": {\n      \"snapshotId\": \"21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16\",\n      \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n      \"revision\": 1,\n      \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\"\n    },\n    \"contractDigest\": \"9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9\",\n    \"hypothesis\": \"将无效999阶修复为3阶，并使协议测试依照配置检查阶数与系数数量，可恢复同一数据切分下的真实输出。\",\n    \"controlRunIds\": [\n      \"ca819399-1714-4aaa-b50e-ef1700b3991f\"\n    ],\n    \"changedFactors\": [\n      \"polynomialDegree由999改为3。\",\n      \"私有test_main.py补充输入边界检查并按配置验证输出协议，保留样本数、切分和产物字段检查。\"\n    ],\n    \"dataSplit\": \"固定父源码内data.csv 240行，前180训练/后60测试，数据不改；无额外数据产物。\",\n    \"dataArtifactIds\": [],\n    \"primaryMetric\": \"mse\",\n    \"guardrailMetrics\": [],\n    \"repetitions\": {\n      \"count\": 1,\n      \"rationale\": \"确定性软件修复验收一次，不估计泛化能力或方法优越性。\"\n    },\n    \"successCriteria\": \"真实开发测试通过，独立审查接受固定来源，单独批准整合与Run；实际归档metrics/model/predictions后人工检查。\",\n    \"inconclusiveCriteria\": \"缺失产物、失败或审查拒绝时保留状态，不声称科研结论。\",\n    \"stoppingCriteria\": \"共享修复链最多2次尝试，最多2轮；下一轮比较后停止，不自动重试模型或Run。\",\n    \"previousRevisionId\": \"ac89a09f-4893-4f64-a33f-88c5999495e6\",\n    \"controlBindings\": [\n      {\n        \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n        \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\",\n        \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n        \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n        \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n        \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n      }\n    ],\n    \"dataBindings\": [],\n    \"inputRuns\": [\n      {\n        \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n        \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n        \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n        \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n        \"terminal\": true,\n        \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n        \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\"\n      },\n      {\n        \"intentId\": \"4628e213-fffd-4b03-96f3-595593cdffa3\",\n        \"approvalId\": \"b72cda9d-feca-44bb-bb50-076465d1b3da\",\n        \"manifestDigest\": \"828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5\",\n        \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\",\n        \"terminal\": true,\n        \"runId\": \"18d75977-85ef-4946-a148-e2966ef2b18a\",\n        \"contentDigest\": \"c730912181f72317f7e8bc413af9fe0ae78fa9dcb7ac3a8819d5901f47288112\",\n        \"answerReviewId\": \"af18ce1d-c26d-4223-9cfc-38418e846816\"\n      }\n    ],\n    \"observationIds\": [\n      \"dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d\"\n    ],\n    \"inputDigest\": \"7b10ccc0e5e3b2c9f3195054c1c861c494f9de18d5f60857745349a99aee5410\",\n    \"digest\": \"cb460bc39204dcf3e08e3e9d9050bf9b5520baf57f43f662553787f13b6dd964\",\n    \"id\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n    \"kind\": \"experiment-plan-revision\",\n    \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n    \"version\": 1,\n    \"createdAt\": \"2026-09-28T22:51:08.303Z\",\n    \"updatedAt\": \"2026-09-28T22:51:08.303Z\"\n  },\n  \"candidates\": [\n    {\n      \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n      \"planRevisionId\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n      \"decisionId\": \"0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc\",\n      \"spec\": {\n        \"title\": \"Pi受审三阶修复\",\n        \"hypothesis\": \"修复无效参数并完善配置相关测试，保留算法与数据，恢复可复核数值输出。\",\n        \"implementation\": \"reviewed-code\"\n      },\n      \"parentSource\": {\n        \"snapshotId\": \"21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16\",\n        \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n        \"revision\": 1,\n        \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\"\n      },\n      \"state\": \"prepared\",\n      \"repairOfMemberId\": \"3a79bb33-bbb7-4e89-8112-643566b01756\",\n      \"repairRootMemberId\": \"3a79bb33-bbb7-4e89-8112-643566b01756\",\n      \"id\": \"56b11824-343a-4098-ae9e-23c2b87320ef\",\n      \"kind\": \"research-candidate\",\n      \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n      \"version\": 3,\n      \"createdAt\": \"2026-09-28T22:51:38.279Z\",\n      \"updatedAt\": \"2026-09-28T23:00:16.562Z\",\n      \"sessionId\": \"ad469e07-43a3-4dda-be0b-fccebb65cbcc\",\n      \"proposalId\": \"e0d71444-9b2c-408e-be4b-eac0cc9f8640\",\n      \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n      \"intentId\": \"50e0ce8e-864e-49cd-887e-0c17763caf4b\",\n      \"testJobId\": \"eb2d707a-278c-46cc-b115-f71db7086ec2\",\n      \"reviewId\": \"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\",\n      \"reviewAcceptanceId\": \"492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a\",\n      \"integrationApprovalId\": \"13d287ba-bcf3-4578-80f2-3dcd99280a82\",\n      \"testApprovalId\": \"43c55c23-205e-4fe0-a2ca-6db824aef4fa\",\n      \"reviewApprovalId\": \"690f519d-8a37-4ad5-9996-7513717f1115\",\n      \"runApprovalId\": \"6c03e537-fe67-43c5-a979-5a07b6c27750\"\n    }\n  ],\n  \"validity\": \"current\",\n  \"reasons\": []\n}"
+      },
+      {
+        "referenceId": "9ee67ccdb3593b4136f60b70a31fc62e4c593535f303ac284fbef9eed5351192",
+        "mediaType": "application/json",
+        "content": "{\n  \"plan\": {\n    \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n    \"roundId\": \"ee9a4cea-dca1-440c-ab22-29ff3af51ecb\",\n    \"decisionId\": \"0b1c2c48-837d-404d-95ef-b1ebcecca90f\",\n    \"decisionApprovalId\": \"48e4b625-67e3-4444-a080-d9ff537dd203\",\n    \"campaignApprovalId\": \"aed6f851-dac8-4569-8bb7-4d242a762d6c\",\n    \"campaignPlanDigest\": \"f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597\",\n    \"parentSource\": {\n      \"snapshotId\": \"747c93dfe13712d69d05aedc21e1ea52acf97533cb2534afe2e2b8c485a67709\",\n      \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n      \"revision\": 1,\n      \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\"\n    },\n    \"contractDigest\": \"9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9\",\n    \"hypothesis\": \"在相同合成数据和切分下观察三阶改四阶对持出MSE的实际变化，不预设改善。\",\n    \"controlRunIds\": [\n      \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n      \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\"\n    ],\n    \"changedFactors\": [\n      \"仅polynomialDegree从3改为4；父Run固定main.py、data.csv和test_main.py保持原字节。\"\n    ],\n    \"dataSplit\": \"固定合成data.csv共240行，前180训练/后60测试，与两项对照同字节；无额外数据产物。\",\n    \"dataArtifactIds\": [],\n    \"primaryMetric\": \"mse\",\n    \"guardrailMetrics\": [],\n    \"repetitions\": {\n      \"count\": 1,\n      \"rationale\": \"确定性软件参数路径验收一次；未估计方差，不据此判断外部科学有效性。\"\n    },\n    \"successCriteria\": \"单独批准Run后得到真实指标与三项完整产物，核对固定来源并人工比较单位一致的MSE。祖先三阶测试不追认为四阶新测试。\",\n    \"inconclusiveCriteria\": \"运行失败或产物不完整时保留失败与无结论；单次合成数据的差异不代表方法收益。\",\n    \"stoppingCriteria\": \"本活动最多2轮，本候选结束后提交Stop，不追加候选，不自动调用模型或新Run。\",\n    \"previousRevisionId\": \"8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3\",\n    \"controlBindings\": [\n      {\n        \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n        \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\",\n        \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n        \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n        \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n        \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\"\n      },\n      {\n        \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n        \"contentDigest\": \"dc925517a2b5d72049ad3401e244a6400c5e43a95f2de520241845b0988ea3a3\",\n        \"intentId\": \"50e0ce8e-864e-49cd-887e-0c17763caf4b\",\n        \"approvalId\": \"6c03e537-fe67-43c5-a979-5a07b6c27750\",\n        \"manifestDigest\": \"001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053\",\n        \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\"\n      }\n    ],\n    \"dataBindings\": [],\n    \"inputRuns\": [\n      {\n        \"intentId\": \"549d47a0-a0cf-47ff-b55a-b260c0c1b09d\",\n        \"approvalId\": \"0648fa82-6beb-4dc3-a217-a8ed9e7dd7af\",\n        \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n        \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n        \"terminal\": true,\n        \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n        \"contentDigest\": \"43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1\"\n      },\n      {\n        \"intentId\": \"4628e213-fffd-4b03-96f3-595593cdffa3\",\n        \"approvalId\": \"b72cda9d-feca-44bb-bb50-076465d1b3da\",\n        \"manifestDigest\": \"828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5\",\n        \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\",\n        \"terminal\": true,\n        \"runId\": \"18d75977-85ef-4946-a148-e2966ef2b18a\",\n        \"contentDigest\": \"c730912181f72317f7e8bc413af9fe0ae78fa9dcb7ac3a8819d5901f47288112\",\n        \"answerReviewId\": \"af18ce1d-c26d-4223-9cfc-38418e846816\"\n      },\n      {\n        \"intentId\": \"50e0ce8e-864e-49cd-887e-0c17763caf4b\",\n        \"approvalId\": \"6c03e537-fe67-43c5-a979-5a07b6c27750\",\n        \"manifestDigest\": \"001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053\",\n        \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\",\n        \"terminal\": true,\n        \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n        \"contentDigest\": \"dc925517a2b5d72049ad3401e244a6400c5e43a95f2de520241845b0988ea3a3\"\n      }\n    ],\n    \"observationIds\": [\n      \"f72a4b78571405b6e8f3e09798c17e3443442116b40e15f7b8fca7dab5d79e8b\"\n    ],\n    \"inputDigest\": \"af5ac2728e6c34743854f6c5b8e0c154046e2702e52ae2ff793cc07c088823eb\",\n    \"digest\": \"d2a662f15159c213f0844e90e88e975735ca4a68a42ce2b759644affa16e3702\",\n    \"id\": \"1643eb42-a2a6-4531-9725-4f011502b52b\",\n    \"kind\": \"experiment-plan-revision\",\n    \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n    \"version\": 1,\n    \"createdAt\": \"2026-09-28T23:02:12.137Z\",\n    \"updatedAt\": \"2026-09-28T23:02:12.137Z\"\n  },\n  \"candidates\": [\n    {\n      \"campaignId\": \"04cb3e03-e22e-442d-bfb1-e3c74660d367\",\n      \"roundId\": \"85fa8411-45fd-4b92-a02b-5c59afee6dec\",\n      \"planRevisionId\": \"1643eb42-a2a6-4531-9725-4f011502b52b\",\n      \"decisionId\": \"0b1c2c48-837d-404d-95ef-b1ebcecca90f\",\n      \"spec\": {\n        \"title\": \"第二轮四阶参数候选\",\n        \"hypothesis\": \"固定三阶修复来源，观察四阶MSE；只做软件验收比较。\",\n        \"config\": {\n          \"polynomialDegree\": 4\n        },\n        \"implementation\": \"config\"\n      },\n      \"parentSource\": {\n        \"snapshotId\": \"747c93dfe13712d69d05aedc21e1ea52acf97533cb2534afe2e2b8c485a67709\",\n        \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n        \"revision\": 1,\n        \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\"\n      },\n      \"state\": \"prepared\",\n      \"id\": \"2f1b17a3-17f2-4231-8864-148c5ea24776\",\n      \"kind\": \"research-candidate\",\n      \"projectId\": \"d6f863b3-f795-4523-9947-67f633eb4ce9\",\n      \"version\": 2,\n      \"createdAt\": \"2026-09-28T23:02:36.236Z\",\n      \"updatedAt\": \"2026-09-28T23:02:37.067Z\",\n      \"experimentId\": \"17d51894-e2b3-4a11-886a-1b400d73e7df\",\n      \"intentId\": \"8a5e2b91-f807-4475-980a-7d6afb04d8da\",\n      \"runApprovalId\": \"c1498780-3adf-4e1f-855c-ddfa94a5e5e8\"\n    }\n  ],\n  \"validity\": \"current\",\n  \"reasons\": []\n}"
+      },
+      {
+        "referenceId": "a92a163ec08f0a6f4d790c9bc9f846e9322ce0d8160c33ceeedece0125a7f911",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"b5ec55cc-0f1a-4650-8d13-5abf0380f89c\",\n  \"artifactId\": \"c635e6b8-be64-4f85-a2a8-8d25ea9d8471\",\n  \"digest\": \"1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 93\n  },\n  \"quote\": \"{\\\"mse\\\": 5.0345031695457565e-05, \\\"train_mse\\\": 4.962382619455619e-05, \\\"r2\\\": 0.9999474271448613}\",\n  \"description\": \"真实运行输出指标（解释仍需审核）\",\n  \"type\": \"run\",\n  \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\"\n}"
+      },
+      {
+        "referenceId": "bd7e95985fb22d0970f497e3187c69c74f541f9060d56524e606cebd6d694d27",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"1da32244-9ce3-4876-9813-9ec115d22c44\",\n  \"artifactId\": \"b668e920-5719-4578-b1ca-7518f836f255\",\n  \"digest\": \"7135a163043f87ea9b4c15e7936250bf3f8179f1252dba433aa876975fa91f73\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 92\n  },\n  \"quote\": \"{\\\"mse\\\": 5.135731444943983e-05, \\\"train_mse\\\": 4.921126609753724e-05, \\\"r2\\\": 0.9999463700674737}\",\n  \"description\": \"真实运行输出指标（解释仍需审核）\",\n  \"type\": \"run\",\n  \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\"\n}"
+      },
+      {
+        "referenceId": "965fe297a150f31ac394018f41928792d7ac638a31119eaf9e5e7851a1d68a48",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"cb2f3e9d-8da5-43da-b817-a2b6c8e4f78d\",\n  \"artifactId\": \"9d1646a4-b235-467c-8bec-e4bf7a2e5899\",\n  \"digest\": \"5b2c3cd4d52c64478c4763b92c97db9fca44ea0be608a4db9b3f2c74e277efda\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 93\n  },\n  \"quote\": \"{\\\"mse\\\": 5.1416001308461135e-05, \\\"train_mse\\\": 4.920642594527707e-05, \\\"r2\\\": 0.9999463087836561}\",\n  \"description\": \"真实运行输出指标（解释仍需审核）\",\n  \"type\": \"run\",\n  \"runId\": \"85360021-a5af-457d-a315-c1f55b1bb6b3\"\n}"
+      },
+      {
+        "referenceId": "64a53514d128703de8f880b3ed105f6c542aec76227629a9c53efd3ddaf60f97",
+        "mediaType": "application/json",
+        "content": "{\n  \"runId\": \"ca819399-1714-4aaa-b50e-ef1700b3991f\",\n  \"experimentId\": \"81fb8999-5d47-4731-ba01-6f80daa2d79e\",\n  \"revision\": 1,\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"judgment\": \"pending\",\n  \"exitCode\": 0,\n  \"metrics\": {\n    \"mse\": 0.000050345031695457565,\n    \"train_mse\": 0.00004962382619455619,\n    \"r2\": 0.9999474271448613\n  },\n  \"startedAt\": \"2026-09-28T06:04:12.831Z\",\n  \"endedAt\": \"2026-09-28T06:04:14.397Z\",\n  \"manifestDigest\": \"ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"gitCommit\": \"61dcde6a882f4852a48fa8930e320babd7d23951\",\n  \"contract\": {\n    \"runner\": \"docker\",\n    \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n    \"command\": [\n      \"python\",\n      \"main.py\"\n    ],\n    \"environment\": {},\n    \"datasetVersion\": \"synthetic-quadratic-csv-v1\",\n    \"evaluationProtocolVersion\": \"deterministic-split-180-60-v1\",\n    \"metrics\": {\n      \"mse\": {\n        \"unit\": \"squared-target\",\n        \"direction\": \"min\"\n      }\n    },\n    \"expectedArtifacts\": [\n      \"metrics.json\",\n      \"predictions.csv\",\n      \"model.json\"\n    ],\n    \"timeoutSeconds\": 60,\n    \"cpus\": 1,\n    \"memoryMb\": 256,\n    \"dockerContext\": \"desktop-linux\",\n    \"networkPolicy\": \"none\",\n    \"pids\": 128,\n    \"workMb\": 256,\n    \"logBytes\": 16777216,\n    \"outputBytes\": 134217728\n  }\n}"
+      },
+      {
+        "referenceId": "4f5b088b8909139c7ecc3d304150f5e73563b65e816a0992b64fc84dbbe2360b",
+        "mediaType": "application/json",
+        "content": "{\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"manifestDigest\": \"87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5\",\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"exitCode\": 0,\n  \"command\": [\n    \"python\",\n    \"-m\",\n    \"unittest\",\n    \"-v\",\n    \"test_main.py\"\n  ],\n  \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"imageId\": \"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"artifactIds\": [\n    \"f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a\",\n    \"6a31fde5-077a-4437-b750-89aea3bfff10\",\n    \"d0c4e3d0-e6ff-4ad2-b32c-75d017304786\"\n  ],\n  \"relation\": \"exact\"\n}"
+      },
+      {
+        "referenceId": "09ab325da5d58c6fa73253513f9bbe5757fe59045761fb3cbea67f0494c6a56b",
+        "mediaType": "application/json",
+        "content": "{\n  \"reviewId\": \"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\",\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"reviewDigest\": \"db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc\",\n  \"taskId\": \"853c095c-f714-4702-a20b-08db475b6f58\",\n  \"attemptId\": \"6bd2af1b-fc75-463e-96e8-2b4ba22c0e54\",\n  \"verdict\": \"accept\",\n  \"acceptance\": \"accepted\",\n  \"summary\": \"独立审查通过。固定候选（sourceDigest b8f9aaa5…）的 main.py 实现带部分选主元的正规方程求解最小二乘多项式拟合，输入校验与输出契约（metrics.json/model.json/predictions.csv → PI_OUTPUT_DIR）实现正确；test_main.py 包含 5 个单元/协议测试，覆盖系数恢复、预测、空数据、奇异矩阵和端到端输出。manifest、结果（exitCode 0、integrity complete）、stderr（空）与 unittest 日志（5 tests OK）全部与候选 digest 一致。测试成功仅证明开发测试通过，不代表科学假设成立。\",\n  \"reviewAcceptanceId\": \"2728883fa23a1c0c1c66479374767bcff67356d6b4dfc33028f6cb7b72d576a5\",\n  \"requiredEvidenceIds\": [\n    \"235c2f4a-4760-45e7-b15c-1e9a03443c4f\",\n    \"1ca8106b-789a-411f-8663-0b8a4649db92\",\n    \"51577370-5ff9-4375-9a72-3edf6d8123e8\",\n    \"8679e01e-cfe2-4c40-aec4-5eb2c3e17f20\"\n  ],\n  \"relation\": \"exact\"\n}"
+      },
+      {
+        "referenceId": "a05105db4eb5c14d8fc6cbc6ab7ea926694da4769da9a2e4a2fdefce19544b04",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"235c2f4a-4760-45e7-b15c-1e9a03443c4f\",\n  \"artifactId\": \"ecfc93f7-2f82-4b0d-82f9-fe950676456c\",\n  \"digest\": \"142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 1521\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\\\",\\n  \\\"jobId\\\": \\\"074803b8-5d7c-4892-b78d-725db988e7d7\\\",\\n  \\\"sourceDigest\\\": \\\"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\\\",\\n  \\\"producerSessionId\\\": \\\"7b7ef384-b639-4ba9-ae38-6dd32de63292\\\",\\n  \\\"baseSourceRevisionId\\\": \\\"598fffd8129a938a2d89a18f0d110df1d4f0f9e27271b21813bfa102aaca3e95\\\",\\n  \\\"files\\\": [\\n    {\\n      \\\"path\\\": \\\"config.json\\\",\\n      \\\"size\\\": 27,\\n      \\\"digest\\\": \\\"f91a8e608c044d16c872ce4c75f0709407ab63ea5e0aba9452c81ee9353c8f33\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"data.csv\\\",\\n      \\\"size\\\": 8657,\\n      \\\"digest\\\": \\\"6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"main.py\\\",\\n      \\\"size\\\": 2617,\\n      \\\"digest\\\": \\\"ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"README.md\\\",\\n      \\\"size\\\": 61,\\n      \\\"digest\\\": \\\"20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"test_main.py\\\",\\n      \\\"size\\\": 2308,\\n      \\\"digest\\\": \\\"9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    }\\n  ],\\n  \\\"command\\\": [\\n    \\\"python\\\",\\n    \\\"-m\\\",\\n    \\\"unittest\\\",\\n    \\\"-v\\\",\\n    \\\"test_main.py\\\"\\n  ],\\n  \\\"image\\\": \\\"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\",\\n  \\\"imageId\\\": \\\"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\",\\n  \\\"dataArtifacts\\\": []\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "8f62c9500f47669ab8f2dea81a24a4f830582391511346b7a7dd425457a7dedc",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"1ca8106b-789a-411f-8663-0b8a4649db92\",\n  \"artifactId\": \"1bd1306d-f6da-4a44-987a-6b1d746c65e0\",\n  \"digest\": \"e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 1076\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\\\",\\n  \\\"jobId\\\": \\\"074803b8-5d7c-4892-b78d-725db988e7d7\\\",\\n  \\\"artifactId\\\": \\\"d0c4e3d0-e6ff-4ad2-b32c-75d017304786\\\",\\n  \\\"digest\\\": \\\"6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25\\\",\\n  \\\"size\\\": 677,\\n  \\\"excerpt\\\": \\\"{\\\\n  \\\\\\\"purpose\\\\\\\": \\\\\\\"development-test\\\\\\\",\\\\n  \\\\\\\"jobId\\\\\\\": \\\\\\\"074803b8-5d7c-4892-b78d-725db988e7d7\\\\\\\",\\\\n  \\\\\\\"sourceDigest\\\\\\\": \\\\\\\"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\\\\\\\",\\\\n  \\\\\\\"command\\\\\\\": [\\\\n    \\\\\\\"python\\\\\\\",\\\\n    \\\\\\\"-m\\\\\\\",\\\\n    \\\\\\\"unittest\\\\\\\",\\\\n    \\\\\\\"-v\\\\\\\",\\\\n    \\\\\\\"test_main.py\\\\\\\"\\\\n  ],\\\\n  \\\\\\\"image\\\\\\\": \\\\\\\"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\\\\\",\\\\n  \\\\\\\"imageId\\\\\\\": \\\\\\\"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\\\\\",\\\\n  \\\\\\\"exitCode\\\\\\\": 0,\\\\n  \\\\\\\"status\\\\\\\": \\\\\\\"succeeded\\\\\\\",\\\\n  \\\\\\\"integrity\\\\\\\": \\\\\\\"complete\\\\\\\",\\\\n  \\\\\\\"artifactIds\\\\\\\": [\\\\n    \\\\\\\"f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a\\\\\\\",\\\\n    \\\\\\\"6a31fde5-077a-4437-b750-89aea3bfff10\\\\\\\"\\\\n  ],\\\\n  \\\\\\\"recovered\\\\\\\": false,\\\\n  \\\\\\\"scientificConclusion\\\\\\\": false\\\\n}\\\",\\n  \\\"truncated\\\": false\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "90efad6c66b338a5fdcbcde2a82f23db9545c3f3929d41c8489ac1955aa1a721",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"51577370-5ff9-4375-9a72-3edf6d8123e8\",\n  \"artifactId\": \"ce9238fc-aa03-4350-8ada-64a7fd29e098\",\n  \"digest\": \"562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 323\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\\\",\\n  \\\"jobId\\\": \\\"074803b8-5d7c-4892-b78d-725db988e7d7\\\",\\n  \\\"artifactId\\\": \\\"f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a\\\",\\n  \\\"digest\\\": \\\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\\\",\\n  \\\"size\\\": 0,\\n  \\\"excerpt\\\": \\\"\\\",\\n  \\\"truncated\\\": false\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "ed3883756d05e9f1d64ea60c5536e2c1b5cb9ba6c4b16994a0da4269000ac11a",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"8679e01e-cfe2-4c40-aec4-5eb2c3e17f20\",\n  \"artifactId\": \"81d735f1-c612-42a1-9861-b0da17913835\",\n  \"digest\": \"ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 848\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\\\",\\n  \\\"jobId\\\": \\\"074803b8-5d7c-4892-b78d-725db988e7d7\\\",\\n  \\\"artifactId\\\": \\\"6a31fde5-077a-4437-b750-89aea3bfff10\\\",\\n  \\\"digest\\\": \\\"50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f\\\",\\n  \\\"size\\\": 513,\\n  \\\"excerpt\\\": \\\"test_empty_data_rejected (test_main.FitTests.test_empty_data_rejected) ... ok\\\\ntest_exact_quadratic_coefficients (test_main.FitTests.test_exact_quadratic_coefficients) ... ok\\\\ntest_predict_valid (test_main.FitTests.test_predict_valid) ... ok\\\\ntest_singular_input_rejected (test_main.FitTests.test_singular_input_rejected) ... ok\\\\ntest_fixed_data_and_outputs (test_main.ProtocolTests.test_fixed_data_and_outputs) ... ok\\\\n\\\\n----------------------------------------------------------------------\\\\nRan 5 tests in 0.094s\\\\n\\\\nOK\\\\n\\\",\\n  \\\"truncated\\\": false\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "c986b11f08c148a358e181f0955cd916332bb52ba4ab07215a9c676e46a94116",
+        "mediaType": "application/json",
+        "content": "{\n  \"runId\": \"18d75977-85ef-4946-a148-e2966ef2b18a\",\n  \"experimentId\": \"2137a61c-5d97-47ca-8fdd-39e4853c1dfe\",\n  \"revision\": 1,\n  \"state\": \"failed\",\n  \"integrity\": \"incomplete\",\n  \"judgment\": \"pending\",\n  \"exitCode\": 1,\n  \"startedAt\": \"2026-09-28T22:48:12.521Z\",\n  \"endedAt\": \"2026-09-28T22:48:17.326Z\",\n  \"manifestDigest\": \"828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5\",\n  \"sourceDigest\": \"608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf\",\n  \"gitCommit\": \"f7741bcacdb618325c6ffa3a4f9e276cf1a01db8\",\n  \"contract\": {\n    \"runner\": \"docker\",\n    \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n    \"command\": [\n      \"python\",\n      \"main.py\"\n    ],\n    \"environment\": {},\n    \"datasetVersion\": \"synthetic-quadratic-csv-v1\",\n    \"evaluationProtocolVersion\": \"deterministic-split-180-60-v1\",\n    \"metrics\": {\n      \"mse\": {\n        \"unit\": \"squared-target\",\n        \"direction\": \"min\"\n      }\n    },\n    \"expectedArtifacts\": [\n      \"metrics.json\",\n      \"predictions.csv\",\n      \"model.json\"\n    ],\n    \"timeoutSeconds\": 60,\n    \"cpus\": 1,\n    \"memoryMb\": 256,\n    \"dockerContext\": \"desktop-linux\",\n    \"networkPolicy\": \"none\",\n    \"pids\": 128,\n    \"workMb\": 256,\n    \"logBytes\": 16777216,\n    \"outputBytes\": 134217728\n  }\n}"
+      },
+      {
+        "referenceId": "04a45d7163c0e1c8a6e9e6bc0592c0ae38f862e344c9c3d2b5a3404e1d08f418",
+        "mediaType": "application/json",
+        "content": "{\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"manifestDigest\": \"87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5\",\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"exitCode\": 0,\n  \"command\": [\n    \"python\",\n    \"-m\",\n    \"unittest\",\n    \"-v\",\n    \"test_main.py\"\n  ],\n  \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"imageId\": \"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"artifactIds\": [\n    \"f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a\",\n    \"6a31fde5-077a-4437-b750-89aea3bfff10\",\n    \"d0c4e3d0-e6ff-4ad2-b32c-75d017304786\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      },
+      {
+        "referenceId": "29505edb4ac01c7a588d7e3ff3c2348db10d4d34de907ac5524d619b1652ce2b",
+        "mediaType": "application/json",
+        "content": "{\n  \"reviewId\": \"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\",\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"reviewDigest\": \"db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc\",\n  \"taskId\": \"853c095c-f714-4702-a20b-08db475b6f58\",\n  \"attemptId\": \"6bd2af1b-fc75-463e-96e8-2b4ba22c0e54\",\n  \"verdict\": \"accept\",\n  \"acceptance\": \"accepted\",\n  \"summary\": \"独立审查通过。固定候选（sourceDigest b8f9aaa5…）的 main.py 实现带部分选主元的正规方程求解最小二乘多项式拟合，输入校验与输出契约（metrics.json/model.json/predictions.csv → PI_OUTPUT_DIR）实现正确；test_main.py 包含 5 个单元/协议测试，覆盖系数恢复、预测、空数据、奇异矩阵和端到端输出。manifest、结果（exitCode 0、integrity complete）、stderr（空）与 unittest 日志（5 tests OK）全部与候选 digest 一致。测试成功仅证明开发测试通过，不代表科学假设成立。\",\n  \"reviewAcceptanceId\": \"2728883fa23a1c0c1c66479374767bcff67356d6b4dfc33028f6cb7b72d576a5\",\n  \"requiredEvidenceIds\": [\n    \"235c2f4a-4760-45e7-b15c-1e9a03443c4f\",\n    \"1ca8106b-789a-411f-8663-0b8a4649db92\",\n    \"51577370-5ff9-4375-9a72-3edf6d8123e8\",\n    \"8679e01e-cfe2-4c40-aec4-5eb2c3e17f20\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      },
+      {
+        "referenceId": "b6874c5622270a6450de30d321fe51d2fbc3f28c1555621bc6f0de26c7509867",
+        "mediaType": "application/json",
+        "content": "{\n  \"runId\": \"4265e905-7bba-4d94-a9b3-d9897f6bfd81\",\n  \"experimentId\": \"45262f0e-3c94-4ede-a5a1-c2d09a783a57\",\n  \"revision\": 1,\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"judgment\": \"pending\",\n  \"exitCode\": 0,\n  \"metrics\": {\n    \"mse\": 0.00005135731444943983,\n    \"train_mse\": 0.00004921126609753724,\n    \"r2\": 0.9999463700674737\n  },\n  \"startedAt\": \"2026-09-28T23:01:04.163Z\",\n  \"endedAt\": \"2026-09-28T23:01:09.085Z\",\n  \"manifestDigest\": \"001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053\",\n  \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\",\n  \"gitCommit\": \"4471db27b7718fdc1c4a495bcfdfaa3de86d2aa4\",\n  \"contract\": {\n    \"runner\": \"docker\",\n    \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n    \"command\": [\n      \"python\",\n      \"main.py\"\n    ],\n    \"environment\": {},\n    \"datasetVersion\": \"synthetic-quadratic-csv-v1\",\n    \"evaluationProtocolVersion\": \"deterministic-split-180-60-v1\",\n    \"metrics\": {\n      \"mse\": {\n        \"unit\": \"squared-target\",\n        \"direction\": \"min\"\n      }\n    },\n    \"expectedArtifacts\": [\n      \"metrics.json\",\n      \"predictions.csv\",\n      \"model.json\"\n    ],\n    \"timeoutSeconds\": 60,\n    \"cpus\": 1,\n    \"memoryMb\": 256,\n    \"dockerContext\": \"desktop-linux\",\n    \"networkPolicy\": \"none\",\n    \"pids\": 128,\n    \"workMb\": 256,\n    \"logBytes\": 16777216,\n    \"outputBytes\": 134217728\n  }\n}"
+      },
+      {
+        "referenceId": "ecd68e0ff190f263f3fbbf9bf9f75d9c1e832e8e1f98c8a887e3673464e0ec1b",
+        "mediaType": "application/json",
+        "content": "{\n  \"jobId\": \"eb2d707a-278c-46cc-b115-f71db7086ec2\",\n  \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\",\n  \"manifestDigest\": \"c7a426e7271e1911392f25db36886ac9d3beebc9e22468bd0b3726fba41b2a54\",\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"exitCode\": 0,\n  \"command\": [\n    \"python\",\n    \"-m\",\n    \"unittest\",\n    \"-v\",\n    \"test_main.py\"\n  ],\n  \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"imageId\": \"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"artifactIds\": [\n    \"c36c63ef-32c7-438f-9887-6d5050c983d2\",\n    \"1a1a0218-72d6-4082-9048-3304c21cb17b\",\n    \"b84a81a8-b017-4f57-aa98-eb663a9fa5e2\"\n  ],\n  \"relation\": \"exact\"\n}"
+      },
+      {
+        "referenceId": "60f3a07f2dca4ffa136f71eda045499a481fc2f667458ed29e9c7e5c1adc91d8",
+        "mediaType": "application/json",
+        "content": "{\n  \"reviewId\": \"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\",\n  \"jobId\": \"eb2d707a-278c-46cc-b115-f71db7086ec2\",\n  \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\",\n  \"reviewDigest\": \"b1644fb0b063099e760173d44ac71e9c79873ce31ad80a384c13322ba82c926b\",\n  \"taskId\": \"7f136510-8595-4660-b71d-5d2897eeab3d\",\n  \"attemptId\": \"53ade3e1-aed8-4294-b6b1-d71f0660c75c\",\n  \"verdict\": \"accept\",\n  \"acceptance\": \"accepted\",\n  \"summary\": \"审查固定候选 b88b1037…：通过 development_review_source_list/read 核对源码（main.py、test_main.py 等 5 个文件），文件 digest 与清单证据一致，测试确在该候选上运行。代码实现最小二乘多项式拟合（正规方程 + 部分主元 Gauss-Jordan），对负 degree、空数据、奇异矩阵、点数不足均有 ValueError 防护；测试报告显示 6/6 通过（Ran 6 tests, OK），exitCode 0，integrity complete，stderr 为空（与空 artifact 一致）。实现与测试断言相符，无科学结论声明（scientificConclusion=false 正确）。审查意见：验收通过。\",\n  \"reviewAcceptanceId\": \"492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a\",\n  \"requiredEvidenceIds\": [\n    \"17208bec-fed8-4fb8-bd73-f23a9db40ff5\",\n    \"2cf7d030-e157-4191-a4ec-b74624b3d7c3\",\n    \"c4a02ebf-aaa6-415b-8e61-c80a63b632d5\",\n    \"b0dc3387-a88c-4472-9471-33e28c278bbf\"\n  ],\n  \"relation\": \"exact\"\n}"
+      },
+      {
+        "referenceId": "b81cac7448c4ca133b1d8cb09d57da73c3ab383cea225a497f2c0ea539bd36af",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"17208bec-fed8-4fb8-bd73-f23a9db40ff5\",\n  \"artifactId\": \"34d9ecbd-9c8a-4c14-a1b8-e16ba9b16916\",\n  \"digest\": \"883fbab873522eb63112298a97701e5ff41438699de8e3b8d55917cf35f7646a\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 1521\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\\\",\\n  \\\"jobId\\\": \\\"eb2d707a-278c-46cc-b115-f71db7086ec2\\\",\\n  \\\"sourceDigest\\\": \\\"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\\\",\\n  \\\"producerSessionId\\\": \\\"ad469e07-43a3-4dda-be0b-fccebb65cbcc\\\",\\n  \\\"baseSourceRevisionId\\\": \\\"21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16\\\",\\n  \\\"files\\\": [\\n    {\\n      \\\"path\\\": \\\"config.json\\\",\\n      \\\"size\\\": 27,\\n      \\\"digest\\\": \\\"5b758aa4b049d19deae4b07bbf1a29d6bdf7ee3610afd6a593869b7d41f4285e\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"data.csv\\\",\\n      \\\"size\\\": 8657,\\n      \\\"digest\\\": \\\"6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"main.py\\\",\\n      \\\"size\\\": 2617,\\n      \\\"digest\\\": \\\"ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"README.md\\\",\\n      \\\"size\\\": 61,\\n      \\\"digest\\\": \\\"20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    },\\n    {\\n      \\\"path\\\": \\\"test_main.py\\\",\\n      \\\"size\\\": 2667,\\n      \\\"digest\\\": \\\"6225a00e06883781af724768d4d67c13862b9327ff37f1886d5e30f104b22196\\\",\\n      \\\"mode\\\": \\\"100644\\\"\\n    }\\n  ],\\n  \\\"command\\\": [\\n    \\\"python\\\",\\n    \\\"-m\\\",\\n    \\\"unittest\\\",\\n    \\\"-v\\\",\\n    \\\"test_main.py\\\"\\n  ],\\n  \\\"image\\\": \\\"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\",\\n  \\\"imageId\\\": \\\"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\",\\n  \\\"dataArtifacts\\\": []\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "04edb3ff394ddb20ba2dd6cc3fd9eb1936a678ef592cab2c72f20f0d16d80765",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"2cf7d030-e157-4191-a4ec-b74624b3d7c3\",\n  \"artifactId\": \"53f0a537-2bd7-4500-a9a3-1a87c4615576\",\n  \"digest\": \"54caf6f1d07c056cfff4917bc88a595f9688700ff81f05ac803de13af02f3162\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 1076\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\\\",\\n  \\\"jobId\\\": \\\"eb2d707a-278c-46cc-b115-f71db7086ec2\\\",\\n  \\\"artifactId\\\": \\\"b84a81a8-b017-4f57-aa98-eb663a9fa5e2\\\",\\n  \\\"digest\\\": \\\"23a987c98bb461fb2b9d3e2c5c5a2c7b41305650a41c67a94f79a13f1c379bda\\\",\\n  \\\"size\\\": 677,\\n  \\\"excerpt\\\": \\\"{\\\\n  \\\\\\\"purpose\\\\\\\": \\\\\\\"development-test\\\\\\\",\\\\n  \\\\\\\"jobId\\\\\\\": \\\\\\\"eb2d707a-278c-46cc-b115-f71db7086ec2\\\\\\\",\\\\n  \\\\\\\"sourceDigest\\\\\\\": \\\\\\\"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\\\\\\\",\\\\n  \\\\\\\"command\\\\\\\": [\\\\n    \\\\\\\"python\\\\\\\",\\\\n    \\\\\\\"-m\\\\\\\",\\\\n    \\\\\\\"unittest\\\\\\\",\\\\n    \\\\\\\"-v\\\\\\\",\\\\n    \\\\\\\"test_main.py\\\\\\\"\\\\n  ],\\\\n  \\\\\\\"image\\\\\\\": \\\\\\\"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\\\\\",\\\\n  \\\\\\\"imageId\\\\\\\": \\\\\\\"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\\\\\\\",\\\\n  \\\\\\\"exitCode\\\\\\\": 0,\\\\n  \\\\\\\"status\\\\\\\": \\\\\\\"succeeded\\\\\\\",\\\\n  \\\\\\\"integrity\\\\\\\": \\\\\\\"complete\\\\\\\",\\\\n  \\\\\\\"artifactIds\\\\\\\": [\\\\n    \\\\\\\"c36c63ef-32c7-438f-9887-6d5050c983d2\\\\\\\",\\\\n    \\\\\\\"1a1a0218-72d6-4082-9048-3304c21cb17b\\\\\\\"\\\\n  ],\\\\n  \\\\\\\"recovered\\\\\\\": false,\\\\n  \\\\\\\"scientificConclusion\\\\\\\": false\\\\n}\\\",\\n  \\\"truncated\\\": false\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "449245df843a43a34675bb1a5523636ef177eeff925f84826fc1a8f7ba8ede9f",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"c4a02ebf-aaa6-415b-8e61-c80a63b632d5\",\n  \"artifactId\": \"a4bbe57e-ec12-4421-ace4-6186281ecb6b\",\n  \"digest\": \"706b1a7073075cf25824afdd3b6a4a4cfa1dffc1a336eef5a63a3b66593a6845\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 323\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\\\",\\n  \\\"jobId\\\": \\\"eb2d707a-278c-46cc-b115-f71db7086ec2\\\",\\n  \\\"artifactId\\\": \\\"c36c63ef-32c7-438f-9887-6d5050c983d2\\\",\\n  \\\"digest\\\": \\\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\\\",\\n  \\\"size\\\": 0,\\n  \\\"excerpt\\\": \\\"\\\",\\n  \\\"truncated\\\": false\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "1c6669cf0a2af46fae797faf437b49e529cfcfbcb2e0c9ed1158cd9fb939479f",
+        "mediaType": "application/json",
+        "content": "{\n  \"evidenceId\": \"b0dc3387-a88c-4472-9471-33e28c278bbf\",\n  \"artifactId\": \"2b757210-c9a4-45ab-87fc-cc6d68fa3110\",\n  \"digest\": \"e4d8404e5b72cb3c744d2c45a48ee556dba67607107bd5d5db91c88cd22aaacf\",\n  \"locator\": {\n    \"start\": 0,\n    \"end\": 955\n  },\n  \"quote\": \"{\\n  \\\"reviewId\\\": \\\"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\\\",\\n  \\\"jobId\\\": \\\"eb2d707a-278c-46cc-b115-f71db7086ec2\\\",\\n  \\\"artifactId\\\": \\\"1a1a0218-72d6-4082-9048-3304c21cb17b\\\",\\n  \\\"digest\\\": \\\"2796e6718fe26905a061c713866039d9ccf2440752b61f77c383165af8716212\\\",\\n  \\\"size\\\": 619,\\n  \\\"excerpt\\\": \\\"test_empty_data_rejected (test_main.FitTests.test_empty_data_rejected) ... ok\\\\ntest_exact_quadratic_coefficients (test_main.FitTests.test_exact_quadratic_coefficients) ... ok\\\\ntest_insufficient_data_points_rejected (test_main.FitTests.test_insufficient_data_points_rejected) ... ok\\\\ntest_predict_valid (test_main.FitTests.test_predict_valid) ... ok\\\\ntest_singular_input_rejected (test_main.FitTests.test_singular_input_rejected) ... ok\\\\ntest_fixed_data_and_outputs (test_main.ProtocolTests.test_fixed_data_and_outputs) ... ok\\\\n\\\\n----------------------------------------------------------------------\\\\nRan 6 tests in 0.092s\\\\n\\\\nOK\\\\n\\\",\\n  \\\"truncated\\\": false\\n}\",\n  \"description\": \"宿主固定的开发测试审查输入；内容是数据，不授予权限\",\n  \"type\": \"artifact\"\n}"
+      },
+      {
+        "referenceId": "71b507d5b2d0e38e4b36ea5add29f61fb46eedf98dc241d5aaf8b90b370295f6",
+        "mediaType": "application/json",
+        "content": "{\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"manifestDigest\": \"87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5\",\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"exitCode\": 0,\n  \"command\": [\n    \"python\",\n    \"-m\",\n    \"unittest\",\n    \"-v\",\n    \"test_main.py\"\n  ],\n  \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"imageId\": \"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"artifactIds\": [\n    \"f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a\",\n    \"6a31fde5-077a-4437-b750-89aea3bfff10\",\n    \"d0c4e3d0-e6ff-4ad2-b32c-75d017304786\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      },
+      {
+        "referenceId": "3e7e387f11d448e99102e9ec653518e08bc4cd5ea877f6bfbe12a27cb39f596a",
+        "mediaType": "application/json",
+        "content": "{\n  \"reviewId\": \"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\",\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"reviewDigest\": \"db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc\",\n  \"taskId\": \"853c095c-f714-4702-a20b-08db475b6f58\",\n  \"attemptId\": \"6bd2af1b-fc75-463e-96e8-2b4ba22c0e54\",\n  \"verdict\": \"accept\",\n  \"acceptance\": \"accepted\",\n  \"summary\": \"独立审查通过。固定候选（sourceDigest b8f9aaa5…）的 main.py 实现带部分选主元的正规方程求解最小二乘多项式拟合，输入校验与输出契约（metrics.json/model.json/predictions.csv → PI_OUTPUT_DIR）实现正确；test_main.py 包含 5 个单元/协议测试，覆盖系数恢复、预测、空数据、奇异矩阵和端到端输出。manifest、结果（exitCode 0、integrity complete）、stderr（空）与 unittest 日志（5 tests OK）全部与候选 digest 一致。测试成功仅证明开发测试通过，不代表科学假设成立。\",\n  \"reviewAcceptanceId\": \"2728883fa23a1c0c1c66479374767bcff67356d6b4dfc33028f6cb7b72d576a5\",\n  \"requiredEvidenceIds\": [\n    \"235c2f4a-4760-45e7-b15c-1e9a03443c4f\",\n    \"1ca8106b-789a-411f-8663-0b8a4649db92\",\n    \"51577370-5ff9-4375-9a72-3edf6d8123e8\",\n    \"8679e01e-cfe2-4c40-aec4-5eb2c3e17f20\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      },
+      {
+        "referenceId": "5468d61753b10daa71c2210a6a0b25a0639361346669f0839cb14aa2fcd31e63",
+        "mediaType": "application/json",
+        "content": "{\n  \"runId\": \"85360021-a5af-457d-a315-c1f55b1bb6b3\",\n  \"experimentId\": \"17d51894-e2b3-4a11-886a-1b400d73e7df\",\n  \"revision\": 1,\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"judgment\": \"pending\",\n  \"exitCode\": 0,\n  \"metrics\": {\n    \"mse\": 0.000051416001308461135,\n    \"train_mse\": 0.00004920642594527707,\n    \"r2\": 0.9999463087836561\n  },\n  \"startedAt\": \"2026-09-28T23:04:33.594Z\",\n  \"endedAt\": \"2026-09-28T23:04:38.549Z\",\n  \"manifestDigest\": \"722fa6b9c49b833e6fb79d3f7385e120dd384116991da19ec5c2b4ae310194d6\",\n  \"sourceDigest\": \"3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70\",\n  \"gitCommit\": \"917b892871827e4e6be25bcf65ce6c556a5597b1\",\n  \"contract\": {\n    \"runner\": \"docker\",\n    \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n    \"command\": [\n      \"python\",\n      \"main.py\"\n    ],\n    \"environment\": {},\n    \"datasetVersion\": \"synthetic-quadratic-csv-v1\",\n    \"evaluationProtocolVersion\": \"deterministic-split-180-60-v1\",\n    \"metrics\": {\n      \"mse\": {\n        \"unit\": \"squared-target\",\n        \"direction\": \"min\"\n      }\n    },\n    \"expectedArtifacts\": [\n      \"metrics.json\",\n      \"predictions.csv\",\n      \"model.json\"\n    ],\n    \"timeoutSeconds\": 60,\n    \"cpus\": 1,\n    \"memoryMb\": 256,\n    \"dockerContext\": \"desktop-linux\",\n    \"networkPolicy\": \"none\",\n    \"pids\": 128,\n    \"workMb\": 256,\n    \"logBytes\": 16777216,\n    \"outputBytes\": 134217728\n  }\n}"
+      },
+      {
+        "referenceId": "3d04c55d19b2affb676321e4d03ee904449010e207039eb5fd00ce9b993f8558",
+        "mediaType": "application/json",
+        "content": "{\n  \"jobId\": \"eb2d707a-278c-46cc-b115-f71db7086ec2\",\n  \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\",\n  \"manifestDigest\": \"c7a426e7271e1911392f25db36886ac9d3beebc9e22468bd0b3726fba41b2a54\",\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"exitCode\": 0,\n  \"command\": [\n    \"python\",\n    \"-m\",\n    \"unittest\",\n    \"-v\",\n    \"test_main.py\"\n  ],\n  \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"imageId\": \"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"artifactIds\": [\n    \"c36c63ef-32c7-438f-9887-6d5050c983d2\",\n    \"1a1a0218-72d6-4082-9048-3304c21cb17b\",\n    \"b84a81a8-b017-4f57-aa98-eb663a9fa5e2\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      },
+      {
+        "referenceId": "85c040e537eec7d4885161a73ac1a513d16f9ffb70dcb30d44b5d9f41ba85a2d",
+        "mediaType": "application/json",
+        "content": "{\n  \"reviewId\": \"fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd\",\n  \"jobId\": \"eb2d707a-278c-46cc-b115-f71db7086ec2\",\n  \"sourceDigest\": \"b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4\",\n  \"reviewDigest\": \"b1644fb0b063099e760173d44ac71e9c79873ce31ad80a384c13322ba82c926b\",\n  \"taskId\": \"7f136510-8595-4660-b71d-5d2897eeab3d\",\n  \"attemptId\": \"53ade3e1-aed8-4294-b6b1-d71f0660c75c\",\n  \"verdict\": \"accept\",\n  \"acceptance\": \"accepted\",\n  \"summary\": \"审查固定候选 b88b1037…：通过 development_review_source_list/read 核对源码（main.py、test_main.py 等 5 个文件），文件 digest 与清单证据一致，测试确在该候选上运行。代码实现最小二乘多项式拟合（正规方程 + 部分主元 Gauss-Jordan），对负 degree、空数据、奇异矩阵、点数不足均有 ValueError 防护；测试报告显示 6/6 通过（Ran 6 tests, OK），exitCode 0，integrity complete，stderr 为空（与空 artifact 一致）。实现与测试断言相符，无科学结论声明（scientificConclusion=false 正确）。审查意见：验收通过。\",\n  \"reviewAcceptanceId\": \"492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a\",\n  \"requiredEvidenceIds\": [\n    \"17208bec-fed8-4fb8-bd73-f23a9db40ff5\",\n    \"2cf7d030-e157-4191-a4ec-b74624b3d7c3\",\n    \"c4a02ebf-aaa6-415b-8e61-c80a63b632d5\",\n    \"b0dc3387-a88c-4472-9471-33e28c278bbf\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      },
+      {
+        "referenceId": "902b055614f62cf9c2c15c8c5eb35603d6471815605fba7a9cd7cb4da5273b40",
+        "mediaType": "application/json",
+        "content": "{\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"manifestDigest\": \"87063f48e7a9a4815a6db4379b3e6360c7ee1c49b0a227f3bfd62ac758b051c5\",\n  \"state\": \"succeeded\",\n  \"integrity\": \"complete\",\n  \"exitCode\": 0,\n  \"command\": [\n    \"python\",\n    \"-m\",\n    \"unittest\",\n    \"-v\",\n    \"test_main.py\"\n  ],\n  \"image\": \"python@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"imageId\": \"sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f\",\n  \"artifactIds\": [\n    \"f1d2088b-6fc4-4c99-bbdd-dc83dbba5e7a\",\n    \"6a31fde5-077a-4437-b750-89aea3bfff10\",\n    \"d0c4e3d0-e6ff-4ad2-b32c-75d017304786\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      },
+      {
+        "referenceId": "175bede2de4570846c23b665674aa682cbbe20ade71162897eff9c53042c77e4",
+        "mediaType": "application/json",
+        "content": "{\n  \"reviewId\": \"4b2e2fd092eb6cce6a441fb2394d6c498bd9ab3fa530de96211f2df941a6a0d3\",\n  \"jobId\": \"074803b8-5d7c-4892-b78d-725db988e7d7\",\n  \"sourceDigest\": \"b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80\",\n  \"reviewDigest\": \"db3534e9ebfbc1652e1676f70bde8efd6e6e6fdd234124ec80da7875c90e1cfc\",\n  \"taskId\": \"853c095c-f714-4702-a20b-08db475b6f58\",\n  \"attemptId\": \"6bd2af1b-fc75-463e-96e8-2b4ba22c0e54\",\n  \"verdict\": \"accept\",\n  \"acceptance\": \"accepted\",\n  \"summary\": \"独立审查通过。固定候选（sourceDigest b8f9aaa5…）的 main.py 实现带部分选主元的正规方程求解最小二乘多项式拟合，输入校验与输出契约（metrics.json/model.json/predictions.csv → PI_OUTPUT_DIR）实现正确；test_main.py 包含 5 个单元/协议测试，覆盖系数恢复、预测、空数据、奇异矩阵和端到端输出。manifest、结果（exitCode 0、integrity complete）、stderr（空）与 unittest 日志（5 tests OK）全部与候选 digest 一致。测试成功仅证明开发测试通过，不代表科学假设成立。\",\n  \"reviewAcceptanceId\": \"2728883fa23a1c0c1c66479374767bcff67356d6b4dfc33028f6cb7b72d576a5\",\n  \"requiredEvidenceIds\": [\n    \"235c2f4a-4760-45e7-b15c-1e9a03443c4f\",\n    \"1ca8106b-789a-411f-8663-0b8a4649db92\",\n    \"51577370-5ff9-4375-9a72-3edf6d8123e8\",\n    \"8679e01e-cfe2-4c40-aec4-5eb2c3e17f20\"\n  ],\n  \"relation\": \"ancestry\"\n}"
+      }
+    ],
+    "researchCampaigns": [
+      {
+        "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+        "snapshot": {
+          "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+          "state": "stopped",
+          "primaryMetric": "mse",
+          "direction": "min",
+          "unit": "squared-target",
+          "plans": [
+            {
+              "plan": {
+                "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+                "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+                "decisionId": "c808afd8-818e-4f90-ac36-0963503317f9",
+                "decisionApprovalId": "ed946f27-909e-4a87-be94-5e698b7c21bb",
+                "campaignApprovalId": "aed6f851-dac8-4569-8bb7-4d242a762d6c",
+                "campaignPlanDigest": "f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597",
+                "parentSource": {
+                  "snapshotId": "0033fa0f82608594c8a05099375f753e8a995110462b9e6ce592790578f649c6",
+                  "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+                  "revision": 1,
+                  "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80"
+                },
+                "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+                "hypothesis": "固定程序应在999阶大于180个训练样本可拟合范围时拒绝输入，不产生伪造指标。",
+                "controlRunIds": [
+                  "ca819399-1714-4aaa-b50e-ef1700b3991f"
+                ],
+                "changedFactors": [
+                  "polynomialDegree 从2改为999；源码算法与数据保持父版本。"
+                ],
+                "dataSplit": "固定合成data.csv共240行，前180训练/后60测试；无额外数据产物，数据随固定父源码归档。",
+                "dataArtifactIds": [],
+                "primaryMetric": "mse",
+                "guardrailMetrics": [],
+                "repetitions": {
+                  "count": 1,
+                  "rationale": "确定性软件错误分支验收一次，不用于不确定性或外部有效性估计。"
+                },
+                "successCriteria": "记录真实退出与not enough data points错误；无指标时不得声称获得科学结果。",
+                "inconclusiveCriteria": "失败无测量时科研问题未回答，需用户明确核对失败语义后才能提出Repair。",
+                "stoppingCriteria": "最多2轮；修复链最多2次尝试；最终比较后停止，不自动追加候选或运行。",
+                "controlBindings": [
+                  {
+                    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+                    "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1",
+                    "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+                    "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+                    "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+                    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80"
+                  }
+                ],
+                "dataBindings": [],
+                "inputRuns": [
+                  {
+                    "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+                    "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+                    "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+                    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+                    "terminal": true,
+                    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+                    "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1"
+                  }
+                ],
+                "observationIds": [
+                  "43c663cb383c53d802e1539504b788221e895354788498f62c46fa2386ef86a5"
+                ],
+                "inputDigest": "0b6ae9be60b731ab57494d42e002141efcc81efb17f5dcc22089126d4b00d326",
+                "digest": "11ab506171ec45aceedcdc950748f7ee45797074bd56698233f48e0f95ad2f1a",
+                "id": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+                "kind": "experiment-plan-revision",
+                "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+                "version": 1,
+                "createdAt": "2026-09-28T22:41:19.047Z",
+                "updatedAt": "2026-09-28T22:41:19.047Z"
+              },
+              "candidates": [
+                {
+                  "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+                  "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+                  "planRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+                  "decisionId": "c808afd8-818e-4f90-ac36-0963503317f9",
+                  "spec": {
+                    "title": "输入点不足的无结果候选",
+                    "hypothesis": "999阶应触发已有输入验证；仅软件失败路径验收。",
+                    "config": {
+                      "polynomialDegree": 999
+                    },
+                    "implementation": "config"
+                  },
+                  "parentSource": {
+                    "snapshotId": "0033fa0f82608594c8a05099375f753e8a995110462b9e6ce592790578f649c6",
+                    "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+                    "revision": 1,
+                    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80"
+                  },
+                  "state": "prepared",
+                  "id": "9a2b455a-1108-462c-a369-5d0d00849e00",
+                  "kind": "research-candidate",
+                  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+                  "version": 2,
+                  "createdAt": "2026-09-28T22:47:31.240Z",
+                  "updatedAt": "2026-09-28T22:47:31.349Z",
+                  "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+                  "intentId": "4628e213-fffd-4b03-96f3-595593cdffa3",
+                  "runApprovalId": "b72cda9d-feca-44bb-bb50-076465d1b3da"
+                }
+              ],
+              "validity": "current",
+              "reasons": []
+            },
+            {
+              "plan": {
+                "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+                "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+                "decisionId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+                "decisionApprovalId": "21d10dcd-398e-4c34-ab05-6239e34d2bce",
+                "campaignApprovalId": "aed6f851-dac8-4569-8bb7-4d242a762d6c",
+                "campaignPlanDigest": "f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597",
+                "parentSource": {
+                  "snapshotId": "21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16",
+                  "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+                  "revision": 1,
+                  "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf"
+                },
+                "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+                "hypothesis": "将无效999阶修复为3阶，并使协议测试依照配置检查阶数与系数数量，可恢复同一数据切分下的真实输出。",
+                "controlRunIds": [
+                  "ca819399-1714-4aaa-b50e-ef1700b3991f"
+                ],
+                "changedFactors": [
+                  "polynomialDegree由999改为3。",
+                  "私有test_main.py补充输入边界检查并按配置验证输出协议，保留样本数、切分和产物字段检查。"
+                ],
+                "dataSplit": "固定父源码内data.csv 240行，前180训练/后60测试，数据不改；无额外数据产物。",
+                "dataArtifactIds": [],
+                "primaryMetric": "mse",
+                "guardrailMetrics": [],
+                "repetitions": {
+                  "count": 1,
+                  "rationale": "确定性软件修复验收一次，不估计泛化能力或方法优越性。"
+                },
+                "successCriteria": "真实开发测试通过，独立审查接受固定来源，单独批准整合与Run；实际归档metrics/model/predictions后人工检查。",
+                "inconclusiveCriteria": "缺失产物、失败或审查拒绝时保留状态，不声称科研结论。",
+                "stoppingCriteria": "共享修复链最多2次尝试，最多2轮；下一轮比较后停止，不自动重试模型或Run。",
+                "previousRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+                "controlBindings": [
+                  {
+                    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+                    "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1",
+                    "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+                    "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+                    "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+                    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80"
+                  }
+                ],
+                "dataBindings": [],
+                "inputRuns": [
+                  {
+                    "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+                    "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+                    "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+                    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+                    "terminal": true,
+                    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+                    "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1"
+                  },
+                  {
+                    "intentId": "4628e213-fffd-4b03-96f3-595593cdffa3",
+                    "approvalId": "b72cda9d-feca-44bb-bb50-076465d1b3da",
+                    "manifestDigest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+                    "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf",
+                    "terminal": true,
+                    "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+                    "contentDigest": "c730912181f72317f7e8bc413af9fe0ae78fa9dcb7ac3a8819d5901f47288112",
+                    "answerReviewId": "af18ce1d-c26d-4223-9cfc-38418e846816"
+                  }
+                ],
+                "observationIds": [
+                  "dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d"
+                ],
+                "inputDigest": "7b10ccc0e5e3b2c9f3195054c1c861c494f9de18d5f60857745349a99aee5410",
+                "digest": "cb460bc39204dcf3e08e3e9d9050bf9b5520baf57f43f662553787f13b6dd964",
+                "id": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+                "kind": "experiment-plan-revision",
+                "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+                "version": 1,
+                "createdAt": "2026-09-28T22:51:08.303Z",
+                "updatedAt": "2026-09-28T22:51:08.303Z"
+              },
+              "candidates": [
+                {
+                  "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+                  "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+                  "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+                  "decisionId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+                  "spec": {
+                    "title": "Pi受审三阶修复",
+                    "hypothesis": "修复无效参数并完善配置相关测试，保留算法与数据，恢复可复核数值输出。",
+                    "implementation": "reviewed-code"
+                  },
+                  "parentSource": {
+                    "snapshotId": "21ebed844778b137589d77dd78710f36834c3ffb3c58c562328dbcfe09476f16",
+                    "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+                    "revision": 1,
+                    "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf"
+                  },
+                  "state": "prepared",
+                  "repairOfMemberId": "3a79bb33-bbb7-4e89-8112-643566b01756",
+                  "repairRootMemberId": "3a79bb33-bbb7-4e89-8112-643566b01756",
+                  "id": "56b11824-343a-4098-ae9e-23c2b87320ef",
+                  "kind": "research-candidate",
+                  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+                  "version": 3,
+                  "createdAt": "2026-09-28T22:51:38.279Z",
+                  "updatedAt": "2026-09-28T23:00:16.562Z",
+                  "sessionId": "ad469e07-43a3-4dda-be0b-fccebb65cbcc",
+                  "proposalId": "e0d71444-9b2c-408e-be4b-eac0cc9f8640",
+                  "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+                  "intentId": "50e0ce8e-864e-49cd-887e-0c17763caf4b",
+                  "testJobId": "eb2d707a-278c-46cc-b115-f71db7086ec2",
+                  "reviewId": "fd38b5911538456423def47c99c042f6e29f822343d0bced8a31e1d57a2d7dfd",
+                  "reviewAcceptanceId": "492f8929edf2d6b194c1702585f3ff03c369539cd949ab409c728206ee50ee2a",
+                  "integrationApprovalId": "13d287ba-bcf3-4578-80f2-3dcd99280a82",
+                  "testApprovalId": "43c55c23-205e-4fe0-a2ca-6db824aef4fa",
+                  "reviewApprovalId": "690f519d-8a37-4ad5-9996-7513717f1115",
+                  "runApprovalId": "6c03e537-fe67-43c5-a979-5a07b6c27750"
+                }
+              ],
+              "validity": "current",
+              "reasons": []
+            },
+            {
+              "plan": {
+                "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+                "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+                "decisionId": "0b1c2c48-837d-404d-95ef-b1ebcecca90f",
+                "decisionApprovalId": "48e4b625-67e3-4444-a080-d9ff537dd203",
+                "campaignApprovalId": "aed6f851-dac8-4569-8bb7-4d242a762d6c",
+                "campaignPlanDigest": "f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597",
+                "parentSource": {
+                  "snapshotId": "747c93dfe13712d69d05aedc21e1ea52acf97533cb2534afe2e2b8c485a67709",
+                  "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+                  "revision": 1,
+                  "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4"
+                },
+                "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+                "hypothesis": "在相同合成数据和切分下观察三阶改四阶对持出MSE的实际变化，不预设改善。",
+                "controlRunIds": [
+                  "ca819399-1714-4aaa-b50e-ef1700b3991f",
+                  "4265e905-7bba-4d94-a9b3-d9897f6bfd81"
+                ],
+                "changedFactors": [
+                  "仅polynomialDegree从3改为4；父Run固定main.py、data.csv和test_main.py保持原字节。"
+                ],
+                "dataSplit": "固定合成data.csv共240行，前180训练/后60测试，与两项对照同字节；无额外数据产物。",
+                "dataArtifactIds": [],
+                "primaryMetric": "mse",
+                "guardrailMetrics": [],
+                "repetitions": {
+                  "count": 1,
+                  "rationale": "确定性软件参数路径验收一次；未估计方差，不据此判断外部科学有效性。"
+                },
+                "successCriteria": "单独批准Run后得到真实指标与三项完整产物，核对固定来源并人工比较单位一致的MSE。祖先三阶测试不追认为四阶新测试。",
+                "inconclusiveCriteria": "运行失败或产物不完整时保留失败与无结论；单次合成数据的差异不代表方法收益。",
+                "stoppingCriteria": "本活动最多2轮，本候选结束后提交Stop，不追加候选，不自动调用模型或新Run。",
+                "previousRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+                "controlBindings": [
+                  {
+                    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+                    "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1",
+                    "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+                    "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+                    "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+                    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80"
+                  },
+                  {
+                    "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+                    "contentDigest": "dc925517a2b5d72049ad3401e244a6400c5e43a95f2de520241845b0988ea3a3",
+                    "intentId": "50e0ce8e-864e-49cd-887e-0c17763caf4b",
+                    "approvalId": "6c03e537-fe67-43c5-a979-5a07b6c27750",
+                    "manifestDigest": "001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053",
+                    "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4"
+                  }
+                ],
+                "dataBindings": [],
+                "inputRuns": [
+                  {
+                    "intentId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+                    "approvalId": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+                    "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+                    "sourceDigest": "b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80",
+                    "terminal": true,
+                    "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+                    "contentDigest": "43d50f0ef76a5a49d333d5cf80e5c71b6bd047178209232792688bd2c311b4a1"
+                  },
+                  {
+                    "intentId": "4628e213-fffd-4b03-96f3-595593cdffa3",
+                    "approvalId": "b72cda9d-feca-44bb-bb50-076465d1b3da",
+                    "manifestDigest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+                    "sourceDigest": "608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf",
+                    "terminal": true,
+                    "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+                    "contentDigest": "c730912181f72317f7e8bc413af9fe0ae78fa9dcb7ac3a8819d5901f47288112",
+                    "answerReviewId": "af18ce1d-c26d-4223-9cfc-38418e846816"
+                  },
+                  {
+                    "intentId": "50e0ce8e-864e-49cd-887e-0c17763caf4b",
+                    "approvalId": "6c03e537-fe67-43c5-a979-5a07b6c27750",
+                    "manifestDigest": "001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053",
+                    "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4",
+                    "terminal": true,
+                    "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+                    "contentDigest": "dc925517a2b5d72049ad3401e244a6400c5e43a95f2de520241845b0988ea3a3"
+                  }
+                ],
+                "observationIds": [
+                  "f72a4b78571405b6e8f3e09798c17e3443442116b40e15f7b8fca7dab5d79e8b"
+                ],
+                "inputDigest": "af5ac2728e6c34743854f6c5b8e0c154046e2702e52ae2ff793cc07c088823eb",
+                "digest": "d2a662f15159c213f0844e90e88e975735ca4a68a42ce2b759644affa16e3702",
+                "id": "1643eb42-a2a6-4531-9725-4f011502b52b",
+                "kind": "experiment-plan-revision",
+                "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+                "version": 1,
+                "createdAt": "2026-09-28T23:02:12.137Z",
+                "updatedAt": "2026-09-28T23:02:12.137Z"
+              },
+              "candidates": [
+                {
+                  "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+                  "roundId": "85fa8411-45fd-4b92-a02b-5c59afee6dec",
+                  "planRevisionId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+                  "decisionId": "0b1c2c48-837d-404d-95ef-b1ebcecca90f",
+                  "spec": {
+                    "title": "第二轮四阶参数候选",
+                    "hypothesis": "固定三阶修复来源，观察四阶MSE；只做软件验收比较。",
+                    "config": {
+                      "polynomialDegree": 4
+                    },
+                    "implementation": "config"
+                  },
+                  "parentSource": {
+                    "snapshotId": "747c93dfe13712d69d05aedc21e1ea52acf97533cb2534afe2e2b8c485a67709",
+                    "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+                    "revision": 1,
+                    "sourceDigest": "b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4"
+                  },
+                  "state": "prepared",
+                  "id": "2f1b17a3-17f2-4231-8864-148c5ea24776",
+                  "kind": "research-candidate",
+                  "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+                  "version": 2,
+                  "createdAt": "2026-09-28T23:02:36.236Z",
+                  "updatedAt": "2026-09-28T23:02:37.067Z",
+                  "experimentId": "17d51894-e2b3-4a11-886a-1b400d73e7df",
+                  "intentId": "8a5e2b91-f807-4475-980a-7d6afb04d8da",
+                  "runApprovalId": "c1498780-3adf-4e1f-855c-ddfa94a5e5e8"
+                }
+              ],
+              "validity": "current",
+              "reasons": []
+            }
+          ],
+          "results": [
+            {
+              "observationId": "43c663cb383c53d802e1539504b788221e895354788498f62c46fa2386ef86a5",
+              "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+              "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+              "validation": "verified",
+              "metrics": {
+                "mse": 0.000050345031695457565,
+                "train_mse": 0.00004962382619455619,
+                "r2": 0.9999474271448613
+              },
+              "evidenceIds": [
+                "b5ec55cc-0f1a-4650-8d13-5abf0380f89c"
+              ]
+            },
+            {
+              "observationId": "dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d",
+              "runId": "18d75977-85ef-4946-a148-e2966ef2b18a",
+              "experimentId": "2137a61c-5d97-47ca-8fdd-39e4853c1dfe",
+              "candidateId": "9a2b455a-1108-462c-a369-5d0d00849e00",
+              "planRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+              "validation": "incomplete",
+              "metrics": {},
+              "evidenceIds": []
+            },
+            {
+              "observationId": "f72a4b78571405b6e8f3e09798c17e3443442116b40e15f7b8fca7dab5d79e8b",
+              "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+              "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+              "candidateId": "56b11824-343a-4098-ae9e-23c2b87320ef",
+              "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+              "validation": "verified",
+              "metrics": {
+                "mse": 0.00005135731444943983,
+                "train_mse": 0.00004921126609753724,
+                "r2": 0.9999463700674737
+              },
+              "evidenceIds": [
+                "1da32244-9ce3-4876-9813-9ec115d22c44"
+              ]
+            },
+            {
+              "observationId": "fbc33d41ce5b37625b2a1a6da455028c29023ea8268d69723855640dc7fb1418",
+              "runId": "85360021-a5af-457d-a315-c1f55b1bb6b3",
+              "experimentId": "17d51894-e2b3-4a11-886a-1b400d73e7df",
+              "candidateId": "2f1b17a3-17f2-4231-8864-148c5ea24776",
+              "planRevisionId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+              "validation": "verified",
+              "metrics": {
+                "mse": 0.000051416001308461135,
+                "train_mse": 0.00004920642594527707,
+                "r2": 0.9999463087836561
+              },
+              "evidenceIds": [
+                "cb2f3e9d-8da5-43da-b817-a2b6c8e4f78d"
+              ]
+            }
+          ],
+          "controls": [
+            {
+              "runId": "ca819399-1714-4aaa-b50e-ef1700b3991f",
+              "experimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+              "manifestDigest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+              "metrics": {
+                "mse": 0.000050345031695457565,
+                "train_mse": 0.00004962382619455619,
+                "r2": 0.9999474271448613
+              },
+              "evidenceIds": [
+                "b5ec55cc-0f1a-4650-8d13-5abf0380f89c"
+              ]
+            },
+            {
+              "runId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+              "experimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+              "manifestDigest": "001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053",
+              "metrics": {
+                "mse": 0.00005135731444943983,
+                "train_mse": 0.00004921126609753724,
+                "r2": 0.9999463700674737
+              },
+              "evidenceIds": [
+                "1da32244-9ce3-4876-9813-9ec115d22c44"
+              ]
+            }
+          ],
+          "blockers": [
+            "已完成两轮软件验收，按预定上限停止。二阶对照MSE=0.000050345031695457565，三阶修复=0.00005135731444943983，四阶=0.000051416001308461135，单位squared-target；两项候选都没有降低持出误差。999阶失败无指标，保留unanswered和独立修复链。仅固定240行合成数据/180-60切分的单次流程检查，不得称为外部发现或多Agent收益证明；不追加候选，不自动调用模型或Run。"
+          ],
+          "conclusion": "requires_review",
+          "unappliedPlans": [],
+          "campaign": {
+            "id": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+            "version": 9,
+            "goal": "本地软件验收，最多2轮。已有degree2固定Run作对照；第1轮用degree999确认输入点不足的无结果失败，单独批准私有修复至degree3，经真实测试、独立审查、整合后再Run；第2轮从修复Run的固定来源准备degree4，比较后停止。仅固定合成240行与180/60切分，不预设方法优越性，不产生新科学结论。决定、测试、审查、整合和正式Run分别批准，不自动发布。",
+            "roundNumber": 2,
+            "currentRoundId": "85fa8411-45fd-4b92-a02b-5c59afee6dec",
+            "focusExperimentId": "45262f0e-3c94-4ede-a5a1-c2d09a783a57",
+            "baselineExperimentId": "81fb8999-5d47-4731-ba01-6f80daa2d79e",
+            "contractDigest": "9396a9175d96d5c6cd380b74cbbfb195ed8c6c9c586878633de8114a56ac31d9",
+            "limits": {
+              "maxRounds": 2,
+              "maxCandidatesPerRound": 6,
+              "maxUnansweredRunsPerNode": 2,
+              "maxConsecutiveRegressions": 3,
+              "maxAnalysisAttempts": 2
+            },
+            "state": "stopped",
+            "approvalId": "aed6f851-dac8-4569-8bb7-4d242a762d6c",
+            "planDigest": "f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597"
+          },
+          "approvals": [
+            {
+              "id": "aed6f851-dac8-4569-8bb7-4d242a762d6c",
+              "subjectKind": "campaign",
+              "subjectId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+              "digest": "f48e8cb4687cb89db173ae1ca115c40981898ae8f2c75a4438168181228fb597",
+              "scope": "campaign.activate",
+              "status": "approved"
+            },
+            {
+              "id": "ed946f27-909e-4a87-be94-5e698b7c21bb",
+              "subjectKind": "campaign-decision",
+              "subjectId": "c808afd8-818e-4f90-ac36-0963503317f9",
+              "digest": "3ae1aa3360ce009e1f02e102d76d7162c6980d12d2f21192ccfcaa37622b85e8",
+              "scope": "campaign.decision",
+              "status": "approved"
+            },
+            {
+              "id": "21d10dcd-398e-4c34-ab05-6239e34d2bce",
+              "subjectKind": "campaign-decision",
+              "subjectId": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+              "digest": "b6b1785c95834900f092817709d6a439d603dbf0ee42c923a0f030837c085d77",
+              "scope": "campaign.decision",
+              "status": "approved"
+            },
+            {
+              "id": "48e4b625-67e3-4444-a080-d9ff537dd203",
+              "subjectKind": "campaign-decision",
+              "subjectId": "0b1c2c48-837d-404d-95ef-b1ebcecca90f",
+              "digest": "1b1888ad829d867645fbe0b4f4d9ba26eb0e6f6e52f9ab8dd6962d4c9dc2809f",
+              "scope": "campaign.decision",
+              "status": "approved"
+            },
+            {
+              "id": "9e30229e-5c0c-4c00-bc47-523c2534a2d5",
+              "subjectKind": "campaign-decision",
+              "subjectId": "9f1cedd8-a0d6-43bf-9378-b34cbf8bf443",
+              "digest": "a649dbfd7aec0f5680505723dc8535a9f0109f832d2ffb3e15c52be224802b26",
+              "scope": "campaign.decision",
+              "status": "approved"
+            },
+            {
+              "id": "0648fa82-6beb-4dc3-a217-a8ed9e7dd7af",
+              "subjectKind": "run-intent",
+              "subjectId": "549d47a0-a0cf-47ff-b55a-b260c0c1b09d",
+              "digest": "ba249ba120996ebb95290b45b94f97f384833a6f601c5b470f8128876a7572d3",
+              "scope": "run.submit",
+              "status": "approved"
+            },
+            {
+              "id": "b72cda9d-feca-44bb-bb50-076465d1b3da",
+              "subjectKind": "run-intent",
+              "subjectId": "4628e213-fffd-4b03-96f3-595593cdffa3",
+              "digest": "828ced1af1f94f9d1f38f3726b9bbeccebc5d6c9f240359f1686a9b0c61c64c5",
+              "scope": "run.submit",
+              "status": "approved"
+            },
+            {
+              "id": "13d287ba-bcf3-4578-80f2-3dcd99280a82",
+              "subjectKind": "change-proposal",
+              "subjectId": "e0d71444-9b2c-408e-be4b-eac0cc9f8640",
+              "digest": "e7d118c5d388da7ca2206b25c723345499a02f12598e4abf7ea7198aad91a52e",
+              "scope": "change.integrate",
+              "status": "approved"
+            },
+            {
+              "id": "43c55c23-205e-4fe0-a2ca-6db824aef4fa",
+              "subjectKind": "development-task",
+              "subjectId": "49ac9d20-b826-4f6e-9630-52e29d690c3c",
+              "digest": "c7a426e7271e1911392f25db36886ac9d3beebc9e22468bd0b3726fba41b2a54",
+              "scope": "development.test",
+              "status": "approved"
+            },
+            {
+              "id": "690f519d-8a37-4ad5-9996-7513717f1115",
+              "subjectKind": "team",
+              "subjectId": "0a2f0915-597d-484d-baf8-324ae31a0fb3",
+              "digest": "806e115e419ceda8359fd3ed0a385f3ee790baee52a15c6df3ce87024ef42d0e",
+              "scope": "collaboration",
+              "status": "approved"
+            },
+            {
+              "id": "6c03e537-fe67-43c5-a979-5a07b6c27750",
+              "subjectKind": "run-intent",
+              "subjectId": "50e0ce8e-864e-49cd-887e-0c17763caf4b",
+              "digest": "001b7d5a82bb1dfacc8eb72091650e7f2234e1fd02498de2e132f707d9416053",
+              "scope": "run.submit",
+              "status": "approved"
+            },
+            {
+              "id": "c1498780-3adf-4e1f-855c-ddfa94a5e5e8",
+              "subjectKind": "run-intent",
+              "subjectId": "8a5e2b91-f807-4475-980a-7d6afb04d8da",
+              "digest": "722fa6b9c49b833e6fb79d3f7385e120dd384116991da19ec5c2b4ae310194d6",
+              "scope": "run.submit",
+              "status": "approved"
+            }
+          ],
+          "decisions": [
+            {
+              "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+              "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+              "action": "refill",
+              "reason": "保留已有二阶Run作为对照。仅验证输入点不足时的明确无结果失败和后续受审修复流程，不比较科学优越性，不改动原Run。",
+              "observationIds": [
+                "43c663cb383c53d802e1539504b788221e895354788498f62c46fa2386ef86a5"
+              ],
+              "candidates": [
+                {
+                  "title": "输入点不足的无结果候选",
+                  "hypothesis": "999阶应触发已有输入验证；仅软件失败路径验收。",
+                  "config": {
+                    "polynomialDegree": 999
+                  },
+                  "implementation": "config"
+                }
+              ],
+              "inputDigest": "0b6ae9be60b731ab57494d42e002141efcc81efb17f5dcc22089126d4b00d326",
+              "planRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+              "planDigest": "11ab506171ec45aceedcdc950748f7ee45797074bd56698233f48e0f95ad2f1a",
+              "approvalId": "ed946f27-909e-4a87-be94-5e698b7c21bb",
+              "decisionDigest": "3ae1aa3360ce009e1f02e102d76d7162c6980d12d2f21192ccfcaa37622b85e8",
+              "status": "applied",
+              "id": "c808afd8-818e-4f90-ac36-0963503317f9",
+              "kind": "campaign-decision",
+              "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+              "version": 2,
+              "createdAt": "2026-09-28T22:41:19.048Z",
+              "updatedAt": "2026-09-28T22:47:31.351Z",
+              "appliedAt": "2026-09-28T22:47:31.351Z",
+              "effects": {
+                "experimentIds": [
+                  "2137a61c-5d97-47ca-8fdd-39e4853c1dfe"
+                ],
+                "intentIds": [
+                  "4628e213-fffd-4b03-96f3-595593cdffa3"
+                ],
+                "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+                "stopped": false,
+                "candidateIds": [
+                  "9a2b455a-1108-462c-a369-5d0d00849e00"
+                ]
+              }
+            },
+            {
+              "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+              "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+              "action": "repair",
+              "reason": "失败Run 18d75977在fit_polynomial输入检查时退出：not enough data points，未归档数值产物。已单独评议为unanswered。保留失败Run，另建私有受审修复，所有测试、审查、整合与Run分别批准。",
+              "observationIds": [
+                "dbf071dd48bc6fee4e407542f4b0553d762c9c9c8bc2c6f0d8174dce3ac3619d"
+              ],
+              "candidates": [
+                {
+                  "title": "Pi受审三阶修复",
+                  "hypothesis": "修复无效参数并完善配置相关测试，保留算法与数据，恢复可复核数值输出。",
+                  "implementation": "reviewed-code"
+                }
+              ],
+              "inputDigest": "7b10ccc0e5e3b2c9f3195054c1c861c494f9de18d5f60857745349a99aee5410",
+              "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+              "planDigest": "cb460bc39204dcf3e08e3e9d9050bf9b5520baf57f43f662553787f13b6dd964",
+              "approvalId": "21d10dcd-398e-4c34-ab05-6239e34d2bce",
+              "decisionDigest": "b6b1785c95834900f092817709d6a439d603dbf0ee42c923a0f030837c085d77",
+              "status": "applied",
+              "id": "0ccfdd9a-ab99-46a8-b564-44f9fbbb6bfc",
+              "kind": "campaign-decision",
+              "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+              "version": 2,
+              "createdAt": "2026-09-28T22:51:08.304Z",
+              "updatedAt": "2026-09-28T22:51:38.280Z",
+              "appliedAt": "2026-09-28T22:51:38.280Z",
+              "effects": {
+                "experimentIds": [],
+                "intentIds": [],
+                "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+                "stopped": false,
+                "candidateIds": [
+                  "56b11824-343a-4098-ae9e-23c2b87320ef"
+                ]
+              }
+            },
+            {
+              "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+              "roundId": "ee9a4cea-dca1-440c-ab22-29ff3af51ecb",
+              "action": "promote",
+              "reason": "三阶修复Run 4265e905已成功并归档，mse约5.136e-5 squared-target，略高于二阶对照约5.035e-5。选择它作为固定父来源仅为验证修复子树进入下一轮，非最佳方法判定；最后一轮只改degree4，比较后停止。",
+              "observationIds": [
+                "f72a4b78571405b6e8f3e09798c17e3443442116b40e15f7b8fca7dab5d79e8b"
+              ],
+              "candidates": [
+                {
+                  "title": "第二轮四阶参数候选",
+                  "hypothesis": "固定三阶修复来源，观察四阶MSE；只做软件验收比较。",
+                  "config": {
+                    "polynomialDegree": 4
+                  },
+                  "implementation": "config"
+                }
+              ],
+              "selectedRunId": "4265e905-7bba-4d94-a9b3-d9897f6bfd81",
+              "inputDigest": "af5ac2728e6c34743854f6c5b8e0c154046e2702e52ae2ff793cc07c088823eb",
+              "planRevisionId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+              "planDigest": "d2a662f15159c213f0844e90e88e975735ca4a68a42ce2b759644affa16e3702",
+              "approvalId": "48e4b625-67e3-4444-a080-d9ff537dd203",
+              "decisionDigest": "1b1888ad829d867645fbe0b4f4d9ba26eb0e6f6e52f9ab8dd6962d4c9dc2809f",
+              "status": "applied",
+              "id": "0b1c2c48-837d-404d-95ef-b1ebcecca90f",
+              "kind": "campaign-decision",
+              "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+              "version": 2,
+              "createdAt": "2026-09-28T23:02:12.138Z",
+              "updatedAt": "2026-09-28T23:02:37.069Z",
+              "appliedAt": "2026-09-28T23:02:37.069Z",
+              "effects": {
+                "experimentIds": [
+                  "17d51894-e2b3-4a11-886a-1b400d73e7df"
+                ],
+                "intentIds": [
+                  "8a5e2b91-f807-4475-980a-7d6afb04d8da"
+                ],
+                "roundId": "85fa8411-45fd-4b92-a02b-5c59afee6dec",
+                "stopped": false,
+                "candidateIds": [
+                  "2f1b17a3-17f2-4231-8864-148c5ea24776"
+                ]
+              }
+            },
+            {
+              "campaignId": "04cb3e03-e22e-442d-bfb1-e3c74660d367",
+              "roundId": "85fa8411-45fd-4b92-a02b-5c59afee6dec",
+              "action": "stop",
+              "reason": "已完成两轮软件验收，按预定上限停止。二阶对照MSE=0.000050345031695457565，三阶修复=0.00005135731444943983，四阶=0.000051416001308461135，单位squared-target；两项候选都没有降低持出误差。999阶失败无指标，保留unanswered和独立修复链。仅固定240行合成数据/180-60切分的单次流程检查，不得称为外部发现或多Agent收益证明；不追加候选，不自动调用模型或Run。",
+              "observationIds": [
+                "fbc33d41ce5b37625b2a1a6da455028c29023ea8268d69723855640dc7fb1418"
+              ],
+              "candidates": [],
+              "inputDigest": "de110242d6f25a775605c0aab091346b2392b65787218b988f2ea4bf8ac79e70",
+              "approvalId": "9e30229e-5c0c-4c00-bc47-523c2534a2d5",
+              "decisionDigest": "a649dbfd7aec0f5680505723dc8535a9f0109f832d2ffb3e15c52be224802b26",
+              "status": "applied",
+              "id": "9f1cedd8-a0d6-43bf-9378-b34cbf8bf443",
+              "kind": "campaign-decision",
+              "projectId": "d6f863b3-f795-4523-9947-67f633eb4ce9",
+              "version": 2,
+              "createdAt": "2026-09-28T23:06:07.076Z",
+              "updatedAt": "2026-09-28T23:06:23.975Z",
+              "appliedAt": "2026-09-28T23:06:23.975Z",
+              "effects": {
+                "experimentIds": [],
+                "intentIds": [],
+                "roundId": "85fa8411-45fd-4b92-a02b-5c59afee6dec",
+                "stopped": true
+              }
+            }
+          ],
+          "digest": "a64898616c7e98d970a588807e6a53040e276142a1cbfe199135eb2bfaed0040"
+        },
+        "snapshotDigest": "87e3dd3ced4e2ed3e690b77cdfd04703e4965fb9ca163af217a698a5c8295554",
+        "referenceId": "a60dfe7d5ba31ba3662300c7595b93c638afb17c142cfe2f5a58fa7e0a5b143b",
+        "planReferences": [
+          {
+            "planRevisionId": "ac89a09f-4893-4f64-a33f-88c5999495e6",
+            "referenceId": "966d335933631b6ba612aa8404583bb87f002c82a272a9fd950760001974c7f8"
+          },
+          {
+            "planRevisionId": "8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3",
+            "referenceId": "31002ee1af17f4138f9721989b757644a3a070286a3812a15296792ce0bfaae9"
+          },
+          {
+            "planRevisionId": "1643eb42-a2a6-4531-9725-4f011502b52b",
+            "referenceId": "9ee67ccdb3593b4136f60b70a31fc62e4c593535f303ac284fbef9eed5351192"
+          }
+        ]
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "artifacts/142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+      "digest": "142c7fd68fa5b013f671259337312c405bdff2e10a4b1c87370d4626c7c53d30",
+      "size": 1521
+    },
+    {
+      "path": "artifacts/1c9fca698c9be5bf66d55799754896ab988118f87402f612ff08cbd50d2b5326",
+      "digest": "1c9fca698c9be5bf66d55799754896ab988118f87402f612ff08cbd50d2b5326",
+      "size": 119
+    },
+    {
+      "path": "artifacts/1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+      "digest": "1d94893e8e4a0eaf42fcd4dab3044f754991fb43f8b98728acb07185e822a841",
+      "size": 93
+    },
+    {
+      "path": "artifacts/23a987c98bb461fb2b9d3e2c5c5a2c7b41305650a41c67a94f79a13f1c379bda",
+      "digest": "23a987c98bb461fb2b9d3e2c5c5a2c7b41305650a41c67a94f79a13f1c379bda",
+      "size": 677
+    },
+    {
+      "path": "artifacts/2796e6718fe26905a061c713866039d9ccf2440752b61f77c383165af8716212",
+      "digest": "2796e6718fe26905a061c713866039d9ccf2440752b61f77c383165af8716212",
+      "size": 619
+    },
+    {
+      "path": "artifacts/3d18d275a01740f9fcc022f3629ac381cf3f25ed3e8ce6fccc188144d7937066",
+      "digest": "3d18d275a01740f9fcc022f3629ac381cf3f25ed3e8ce6fccc188144d7937066",
+      "size": 1163
+    },
+    {
+      "path": "artifacts/3ddb4910e87ef8b6b813effe7b3af66a0270d48a73e8f14cc9b0b96e40466789",
+      "digest": "3ddb4910e87ef8b6b813effe7b3af66a0270d48a73e8f14cc9b0b96e40466789",
+      "size": 113
+    },
+    {
+      "path": "artifacts/4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+      "digest": "4ce0df0efaf7d5c0a3d7185b08cc362472f6143b4140ae262ab81470307c3445",
+      "size": 944
+    },
+    {
+      "path": "artifacts/50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+      "digest": "50f322ad282b7cce903e369c2986b389762f3a3d3e9f1cca75ff662267fecb1f",
+      "size": 513
+    },
+    {
+      "path": "artifacts/54caf6f1d07c056cfff4917bc88a595f9688700ff81f05ac803de13af02f3162",
+      "digest": "54caf6f1d07c056cfff4917bc88a595f9688700ff81f05ac803de13af02f3162",
+      "size": 1076
+    },
+    {
+      "path": "artifacts/562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+      "digest": "562b722a69803360bd7c12bef785adaf2f73eafc40b00981318a8f9889766c8e",
+      "size": 323
+    },
+    {
+      "path": "artifacts/5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+      "digest": "5a54951e5e1e45a0d7a9a29118f3e7a3a57797190819633c63fb88bd17fed547",
+      "size": 3463
+    },
+    {
+      "path": "artifacts/5b2c3cd4d52c64478c4763b92c97db9fca44ea0be608a4db9b3f2c74e277efda",
+      "digest": "5b2c3cd4d52c64478c4763b92c97db9fca44ea0be608a4db9b3f2c74e277efda",
+      "size": 93
+    },
+    {
+      "path": "artifacts/6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+      "digest": "6054e34be7ead085fe3d8c7f3197e54c8aa2131cc1163c6b8961593bdf35bd25",
+      "size": 677
+    },
+    {
+      "path": "artifacts/706b1a7073075cf25824afdd3b6a4a4cfa1dffc1a336eef5a63a3b66593a6845",
+      "digest": "706b1a7073075cf25824afdd3b6a4a4cfa1dffc1a336eef5a63a3b66593a6845",
+      "size": 323
+    },
+    {
+      "path": "artifacts/7135a163043f87ea9b4c15e7936250bf3f8179f1252dba433aa876975fa91f73",
+      "digest": "7135a163043f87ea9b4c15e7936250bf3f8179f1252dba433aa876975fa91f73",
+      "size": 92
+    },
+    {
+      "path": "artifacts/7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+      "digest": "7c71d0daecf52d29f620e0eab7c93949ec14a10333ce11840ea9d68be4e9abc6",
+      "size": 120
+    },
+    {
+      "path": "artifacts/80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+      "digest": "80674682c410ff98830a9d3f99d57e028990ab54794fb02c553cb1ed767e2037",
+      "size": 91
+    },
+    {
+      "path": "artifacts/883fbab873522eb63112298a97701e5ff41438699de8e3b8d55917cf35f7646a",
+      "digest": "883fbab873522eb63112298a97701e5ff41438699de8e3b8d55917cf35f7646a",
+      "size": 1521
+    },
+    {
+      "path": "artifacts/99e424096547075d628ad4e55a6715acbda5fe663f2379ff42dd2e3a8b8035ac",
+      "digest": "99e424096547075d628ad4e55a6715acbda5fe663f2379ff42dd2e3a8b8035ac",
+      "size": 138
+    },
+    {
+      "path": "artifacts/a3f811874659110a10753d830ba34c9a5e3de63229be30594e7bd948654fbc55",
+      "digest": "a3f811874659110a10753d830ba34c9a5e3de63229be30594e7bd948654fbc55",
+      "size": 3466
+    },
+    {
+      "path": "artifacts/baedaf8db0098a57a1b525ca700f6778bcf39deee75e51ef45ef75690c63dbad",
+      "digest": "baedaf8db0098a57a1b525ca700f6778bcf39deee75e51ef45ef75690c63dbad",
+      "size": 120
+    },
+    {
+      "path": "artifacts/e069c541bb36b682a3968e88095caf7bf232f2ae0e0ca2e11aa0e5229b05f58d",
+      "digest": "e069c541bb36b682a3968e88095caf7bf232f2ae0e0ca2e11aa0e5229b05f58d",
+      "size": 885
+    },
+    {
+      "path": "artifacts/e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+      "digest": "e28e930cc842c5f7cbab7ff5d47d035b93c70818777cf87a822c7f6d8364cddf",
+      "size": 1076
+    },
+    {
+      "path": "artifacts/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "artifacts/e4d8404e5b72cb3c744d2c45a48ee556dba67607107bd5d5db91c88cd22aaacf",
+      "digest": "e4d8404e5b72cb3c744d2c45a48ee556dba67607107bd5d5db91c88cd22aaacf",
+      "size": 955
+    },
+    {
+      "path": "artifacts/ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+      "digest": "ef7530e55b49ccb87919a1ba6f03e4e383d8e9d2d62f96edbde4d567319b4460",
+      "size": 848
+    },
+    {
+      "path": "artifacts/f4011de2ef62fdeee585539320030e770735aad3d03804829679b3e59bfa56ed",
+      "digest": "f4011de2ef62fdeee585539320030e770735aad3d03804829679b3e59bfa56ed",
+      "size": 3457
+    },
+    {
+      "path": "artifacts/fb368f00096e7266d1cbb883431971ade7ed288b86197d46b30600b7a9e39421",
+      "digest": "fb368f00096e7266d1cbb883431971ade7ed288b86197d46b30600b7a9e39421",
+      "size": 379
+    },
+    {
+      "path": "artifacts/fe650daf9de42b09479053459287708b08f2bcb9e3677edfb4da9cb604c65e06",
+      "digest": "fe650daf9de42b09479053459287708b08f2bcb9e3677edfb4da9cb604c65e06",
+      "size": 944
+    },
+    {
+      "path": "plans/1643eb42-a2a6-4531-9725-4f011502b52b.json",
+      "digest": "b0cacae28dc7bc6c442f8cd99fb346827c1f2065c531edb286ea5224c1d86e94",
+      "size": 6566
+    },
+    {
+      "path": "plans/8aef0c53-2e23-4d9d-9fbc-0b5413f5cad3.json",
+      "digest": "cb7f53ec97ec59177075a652a714947c6b937f6a4b35991d26c2dea035dad98b",
+      "size": 6232
+    },
+    {
+      "path": "plans/ac89a09f-4893-4f64-a33f-88c5999495e6.json",
+      "digest": "8e8a75105cb1f9026ebd0711ed9e7d599cc2ec2b1b7c906010020933e3bde392",
+      "size": 4809
+    },
+    {
+      "path": "report.md",
+      "digest": "b2bfca8e33c0c2b7edb02d2382e9e901dc7ec416353316cbef170eaeb9638a33",
+      "size": 18733
+    },
+    {
+      "path": "research/04cb3e03-e22e-442d-bfb1-e3c74660d367.json",
+      "digest": "dc3265139cc4f2a98a9a14150e9d63e64244eace95813c441f79c95c3e50816a",
+      "size": 34915
+    },
+    {
+      "path": "sources/3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70/config.json",
+      "mode": "100644",
+      "digest": "d83a686cce5d9222aed7a6c35e568caf633a1830420d262150458e30ad9f6221",
+      "size": 27
+    },
+    {
+      "path": "sources/3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70/data.csv",
+      "mode": "100644",
+      "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+      "size": 8657
+    },
+    {
+      "path": "sources/3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70/main.py",
+      "mode": "100644",
+      "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+      "size": 2617
+    },
+    {
+      "path": "sources/3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70/README.md",
+      "mode": "100644",
+      "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+      "size": 61
+    },
+    {
+      "path": "sources/3ac65d48359267d479f8c0b25e473181de198650a0458e6074d4c491680a8a70/test_main.py",
+      "mode": "100644",
+      "digest": "6225a00e06883781af724768d4d67c13862b9327ff37f1886d5e30f104b22196",
+      "size": 2667
+    },
+    {
+      "path": "sources/608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf/config.json",
+      "mode": "100644",
+      "digest": "c26f045a138fd3333b29d0089f4da9e9486251c7c4df0373b6f79e965f0d7710",
+      "size": 29
+    },
+    {
+      "path": "sources/608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf/data.csv",
+      "mode": "100644",
+      "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+      "size": 8657
+    },
+    {
+      "path": "sources/608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf/main.py",
+      "mode": "100644",
+      "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+      "size": 2617
+    },
+    {
+      "path": "sources/608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf/README.md",
+      "mode": "100644",
+      "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+      "size": 61
+    },
+    {
+      "path": "sources/608d0c9564e2435dc86d86d4c735ad177763fcb8c4dce1cdd4f5863aaa4866bf/test_main.py",
+      "mode": "100644",
+      "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+      "size": 2308
+    },
+    {
+      "path": "sources/b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4/config.json",
+      "mode": "100644",
+      "digest": "5b758aa4b049d19deae4b07bbf1a29d6bdf7ee3610afd6a593869b7d41f4285e",
+      "size": 27
+    },
+    {
+      "path": "sources/b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4/data.csv",
+      "mode": "100644",
+      "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+      "size": 8657
+    },
+    {
+      "path": "sources/b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4/main.py",
+      "mode": "100644",
+      "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+      "size": 2617
+    },
+    {
+      "path": "sources/b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4/README.md",
+      "mode": "100644",
+      "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+      "size": 61
+    },
+    {
+      "path": "sources/b88b1037a2251586738dcc8fc057f540da34387972375229bbc4a31c768f03b4/test_main.py",
+      "mode": "100644",
+      "digest": "6225a00e06883781af724768d4d67c13862b9327ff37f1886d5e30f104b22196",
+      "size": 2667
+    },
+    {
+      "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/config.json",
+      "mode": "100644",
+      "digest": "f91a8e608c044d16c872ce4c75f0709407ab63ea5e0aba9452c81ee9353c8f33",
+      "size": 27
+    },
+    {
+      "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/data.csv",
+      "mode": "100644",
+      "digest": "6becb20c18f1099daca88b7fe00576bc27502159c2d4c16a72bdf37eb37cb60b",
+      "size": 8657
+    },
+    {
+      "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/main.py",
+      "mode": "100644",
+      "digest": "ace85cae0d1079d7a93aea21ae5b46e775f72254460abffca81b698903a732d8",
+      "size": 2617
+    },
+    {
+      "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/README.md",
+      "mode": "100644",
+      "digest": "20789f1d5f13bf5e5703aa81452c9135a8c7b2d6306c4cf14db4e1f5d02e931c",
+      "size": 61
+    },
+    {
+      "path": "sources/b8f9aaa5a47dd861e637e9c5405b81b8255ecde883057f49bf6db0de98da1b80/test_main.py",
+      "mode": "100644",
+      "digest": "9e77d6b792349c0a8a5144fd46ca1deec7073d6941ca65d66a60fd32e132328f",
+      "size": 2308
+    }
+  ]
+}

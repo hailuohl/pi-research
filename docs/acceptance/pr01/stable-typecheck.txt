@@ -1,0 +1,4 @@
+
+> pi-research@0.2.3 typecheck
+> tsc -p tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit
+

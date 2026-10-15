@@ -1,0 +1,88 @@
+{
+  "flow": "fixed-anscombe-comparison-to-figure-manuscript-package",
+  "source": {
+    "rDataSha256": "02f29379f282fcf909ff988b3fde2be2d5591975ba27ed0efd8714a91629223e",
+    "campaignId": "f63df7ca-807c-4041-8a86-739cc2a37db9",
+    "runIds": [
+      "01982d5c-5696-45b8-b9ad-f0d0da384ebe",
+      "73ccf6f6-7993-43ae-bacf-147113aa66ff"
+    ],
+    "loocvMse": [2.204181036321706, 0.0000031116060756864716]
+  },
+  "figure": {
+    "jobId": "5708de3a-f501-4248-8f71-132cdd8e37ea",
+    "approvalId": "cf6ecf4c-37b6-456d-8556-74f9d86135cb",
+    "manifestDigest": "67ee3cb6ef23055d42f74908942afa47f1b102633c5d671fd88cc3c550da9b51",
+    "sourceDigest": "363a8dc6be211861e304e87800494a208ea051c912c2234dc0cb382aa832b4c8",
+    "plotScriptSha256": "813d6ffd1bb8b333e5b5c89bdfcfbcdf2f53783ba1b27f588ae72e256ab36f69",
+    "inputArtifactIds": [
+      "0b5c563b-2fff-406f-99ba-05175a380e60",
+      "8f3ac8c6-d9de-4bac-aead-5edddbd7e87d",
+      "a023d289-4ab6-4805-84bb-3c5261f43026",
+      "6de4d388-7239-41dc-bb66-fb9d4b0d55e2"
+    ],
+    "inputSha256": [
+      "3e91fa94d6f859c24852da2b22f5b79e5a5ca9026c6e02b36286768debf79547",
+      "3d91e8afeafb166032fc41b174d4870abe8e3700b55c13409619189e0368c92d",
+      "6bcef701437acba740d3160eb76619cf22e9549213429f0dbcfde18023f17308",
+      "068a53b718d939183a2b0a5ca13a3532e7b02fbc06f14f1be574170e768c84de"
+    ],
+    "state": "succeeded",
+    "integrity": "complete",
+    "pointsPerSeries": 11,
+    "pngArtifactId": "e0dd93a9-10f9-4549-9a81-aa28cb7a0eb8",
+    "pngSha256": "ff39e2295d8a85ad74450bb32c9606edf976193d6baf743a3134f9b22351f42a",
+    "figureDataSha256": "aea915e2ebccc45b0ba69cea449123cec936ba481c7c552ed63daa5ba99f8d61",
+    "unapprovedSubmit": "APPROVAL_REQUIRED"
+  },
+  "manuscript": {
+    "revisionId": "597c6c41-0457-481f-ba09-2c1e90c4c166",
+    "sourceDigest": "7a1163b2cbacf8ab73e840fe21344afd87891c3f1a89279243cc886962c06b03",
+    "texSha256": "fd9f2273c60c81dc8ca509d029bd0ea38764002bf6d61a72d6c4ee4b08c711db",
+    "figureProvenance": "sandbox-job 5708de3a-f501-4248-8f71-132cdd8e37ea",
+    "buildJobId": "8bb10f68-882d-4588-a581-79cc2a354dac",
+    "buildApprovalId": "db58e645-fa4d-48e8-a776-500639ace7cb",
+    "resultId": "8e2098b3b7fe0fc7f479d0f6dc084d515d6a951c431ee1c9f1d6a2de83646579",
+    "compilerImageId": "sha256:358ed6f3ebb3c9389024592cc51e66ce2fbd553533c7bd0b500a06062f6e5dab",
+    "engine": "xelatex",
+    "state": "succeeded",
+    "integrity": "complete",
+    "unapprovedSubmit": "APPROVAL_REQUIRED",
+    "pdfSha256": "11b36b062f8767a56018036388afeea08eea1ae9a2601c889e45f49704ee6acd",
+    "pdfBytes": 110839,
+    "pages": 2,
+    "diagnostics": 0,
+    "paperReview": "not-reviewed"
+  },
+  "delivery": {
+    "reportId": "cdb82969-85e5-4d7a-9e7c-b61602060b76",
+    "reportSha256": "c38a8cc912edd8093cc4de81467ab6acdf3134b03590ab42f3711905f77bdf41",
+    "reportIntegrity": "verified",
+    "reportValidity": "current",
+    "archiveSha256": "3d6d189e6b0a68d3c8a4e9dddb7a4941b004e0296300f9c3973f901c9ec21f30",
+    "archiveBytes": 736528,
+    "archiveEntries": 38,
+    "fixedFilesVerified": 36,
+    "editableTexAndPdfAndPlotInputsPresent": true
+  },
+  "history": {
+    "priorNonSettingsRowsUnchanged": 107,
+    "priorPmcReportCurrent": true,
+    "reopened": true,
+    "browserRefreshReportAndRevisionReopened": true,
+    "browserRefreshBuildIdListed": true
+  },
+  "verification": {
+    "focusedPass": 28,
+    "focusedFail": 0,
+    "focusedSkip": 1,
+    "realDockerFigureJobs": 1,
+    "realDockerCompilerJobs": 1,
+    "newNumericalRuns": 0,
+    "modelUsageRecords": 0,
+    "browserCriticalPath": "passed",
+    "pdfPagesVisuallyChecked": 2,
+    "productCodeChanged": false,
+    "independentReview": "no blocking finding"
+  }
+}

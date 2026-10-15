@@ -1,0 +1,49 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {writeFileSync,chmodSync} from 'node:fs';
+import {join} from 'node:path';
+import {setup,USER} from '../support/research.mjs';
+import {configureModelManagement} from '../../dist/packages/pi-adapter/model-management.js';
+import {readModelState} from '../../dist/packages/pi-adapter/model-connections.js';
+import {defaultModelDefinition} from '../../dist/packages/pi-adapter/model-definition.js';
+import {attachmentTypes,nativeMessageFiles,nativeInputFiles,nativeAttachmentFile} from '../../dist/packages/pi-adapter/attachments.js';
+import {publicRecord} from '../../dist/packages/domain/public-record.js';
+import {attachmentPayload,inputEnvelope,NATIVE_ATTACHMENT_BYTES} from '../../dist/packages/pi-adapter/attachment-input.js';
+import {digest} from '../../dist/packages/storage/store.js';
+import {imageContextReferences} from '../../dist/packages/pi-adapter/publication-image.js';
+const pdf=Buffer.from('%PDF-1.7\nfixed upload\n'),png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAFElEQVR4nGMUiVrAgA0wYRUdtBIA11ABHtwYMtoAAAAASUVORK5CYII=','base64');
+const modify=(s,action,fields)=>configureModelManagement(s.app.context,USER,{expectedVersion:readModelState(s.dir).version,action,...fields},crypto.randomUUID());
+async function managed(s,api='openai-completions',profile='openai'){const definition=defaultModelDefinition('fixture');definition.nativeProfile=profile;Object.assign(definition.capabilities,{image:true,pdf:true,video:true});await modify(s,'provider.upsert',{provider:'managed',value:{name:'Offline attachment',baseUrl:'https://example.invalid/v1',api,apiKey:'FAKE_attachment_key'}});await modify(s,'model.upsert',{provider:'managed',model:'fixture',value:definition});const row=s.app.sessions.get(USER,s.session.id);s.app.store.update('session',row.id,row.version,{model:{provider:'managed',model:'fixture',thinking:'off'}});return definition;}
+const importFile=(s,bytes=pdf,type='application/pdf')=>s.app.documents.import(USER,s.project.id,{title:'file',mediaType:type,contentBase64:bytes.toString('base64')},crypto.randomUUID());
+test('model types, fixed upload identities, delivered scope, retry and failed branch stay fenced',async()=>{
+ const s=setup();try{
+  const doc=importFile(s);assert.deepEqual(attachmentTypes(s.dir,s.session).types.map(t=>t.mediaType),['text/plain','text/markdown']);assert.throws(()=>s.app.sessions.send(USER,s.session.id,{content:'new PDF',attachmentDocumentIds:[doc.id],legacy:true}),{code:'MODEL_ATTACHMENT_UNSUPPORTED'});
+  const definition=await managed(s),row=s.app.sessions.get(USER,s.session.id);assert.ok(attachmentTypes(s.dir,row).types.some(t=>t.mediaType==='image/png'));assert.ok(!attachmentTypes(s.dir,row).types.some(t=>t.mediaType==='video/mp4'));
+  const message=s.app.sessions.send(USER,row.id,{content:'native PDF',attachmentDocumentIds:[doc.id]});assert.equal(message.attachments[0].inputMode,'native');assert.deepEqual(nativeMessageFiles(s.app.store,row,message),[]);
+  assert.throws(()=>nativeAttachmentFile(s.app.store,row,{...message.attachments[0],messageId:message.id}),{code:'MODEL_ATTACHMENT_SCOPE_DENIED'});
+  let current=s.app.store.update('message',message.id,message.version,{status:'running'});assert.deepEqual(Buffer.from(nativeMessageFiles(s.app.store,row,current)[0].data,'base64'),pdf);
+  const other=s.app.sessions.create(USER,s.project.id,{title:'Other'});assert.throws(()=>nativeAttachmentFile(s.app.store,other,{...message.attachments[0],messageId:message.id}),{code:'MODEL_ATTACHMENT_SCOPE_DENIED'});
+  current=s.app.store.update('message',message.id,current.version,{status:'failed'});const failed=s.app.sessions.branch(USER,row.id,message.id),copy=s.app.sessions.messages(USER,failed.id)[0];assert.deepEqual(copy.attachments,message.attachments);assert.equal(copy.nativeAttachmentsDisabled,true);assert.deepEqual(nativeMessageFiles(s.app.store,failed,copy),[]);
+  const retry=s.app.sessions.retry(USER,row.id,message.id);assert.deepEqual(retry.attachments,message.attachments);s.app.store.update('message',retry.id,retry.version,{status:'cancelled'});
+  const lowered={...definition,capabilities:{...definition.capabilities,pdf:false}};await modify(s,'model.upsert',{provider:'managed',model:'fixture',value:lowered});assert.throws(()=>s.app.sessions.retry(USER,row.id,message.id),{code:'MODEL_ATTACHMENT_UNSUPPORTED'});assert.deepEqual(s.app.store.get('message',message.id).attachments,message.attachments);
+  await modify(s,'model.upsert',{provider:'managed',model:'fixture',value:definition});current=s.app.store.update('message',message.id,current.version,{status:'completed'});const completed=s.app.sessions.branch(USER,row.id,message.id),kept=s.app.sessions.messages(USER,completed.id)[0];assert.equal(kept.nativeAttachmentsDisabled,undefined);assert.equal(nativeMessageFiles(s.app.store,completed,kept).length,1);
+  let carrier=s.app.store.create('message',s.project.id,{sessionId:row.id,role:'user',content:'synthetic carrier',mode:'prompt',status:'completed',nativeAttachmentContextIds:[message.id]});assert.equal(nativeInputFiles(s.app.store,row,carrier).length,1);assert.equal(publicRecord(carrier).nativeAttachmentContextIds,undefined);const publicInput=s.app.sessions.send(USER,row.id,{content:'body cannot freeze files',nativeAttachmentContextIds:[message.id]});assert.equal(publicInput.nativeAttachmentContextIds,undefined);
+  carrier=s.app.store.update('message',carrier.id,carrier.version,{nativeAttachmentContextIds:[message.id,message.id]});assert.throws(()=>nativeInputFiles(s.app.store,row,carrier),{code:'MODEL_ATTACHMENT_CONTEXT_INVALID'});
+  const later=s.app.store.create('message',s.project.id,{sessionId:row.id,role:'user',content:'future source',mode:'prompt',status:'completed',attachments:message.attachments});carrier=s.app.store.update('message',carrier.id,carrier.version,{nativeAttachmentContextIds:[later.id]});assert.throws(()=>nativeInputFiles(s.app.store,row,carrier),{code:'MODEL_ATTACHMENT_CONTEXT_INVALID'});
+  carrier=s.app.store.update('message',carrier.id,carrier.version,{status:'failed',nativeAttachmentContextIds:[]});const emptyRetry=s.app.sessions.retry(USER,row.id,carrier.id);assert.deepEqual(emptyRetry.nativeAttachmentContextIds,[],'explicit retry retains an empty frozen scope');
+  const artifact=s.app.store.get('artifact',doc.original.artifactId),path=s.app.store.paths.physical(artifact.path);chmodSync(path,0o600);writeFileSync(path,Buffer.from('corrupt'));assert.throws(()=>nativeMessageFiles(s.app.store,row,current),{code:'ARTIFACT_CORRUPTED'});
+ }finally{s.close();}
+});
+test('legacy catalog explicitly declared images are available, while image attachment injection never relaxes page-image guards',()=>{
+ const s=setup();try{const row=s.app.sessions.get(USER,s.session.id);writeFileSync(join(s.dir,'models.json'),JSON.stringify({providers:{legacy:{api:'openai-completions',models:[{id:'images',input:['text','image']}]}}}));const current=s.app.store.update('session',row.id,row.version,{model:{provider:'legacy',model:'images',thinking:'off'}});assert.ok(attachmentTypes(s.dir,current).types.some(t=>t.mediaType==='image/png'));assert.ok(!attachmentTypes(s.dir,current).types.some(t=>t.mediaType==='application/pdf'));const image=importFile(s,png,'image/png');assert.equal(s.app.sessions.send(USER,current.id,{content:'image',attachmentDocumentIds:[image.id]}).attachments[0].inputMode,'native');assert.throws(()=>imageContextReferences({messages:[{role:'user',content:[{type:'image',data:png.toString('base64'),mimeType:'image/png'}]}]},true,true),{code:'MODEL_IMAGE_UNBOUND'});assert.throws(()=>importFile(s,pdf,'image/png'),{code:'DOCUMENT_FORMAT_INVALID'});}finally{s.close();}
+});
+test('wire adapters use only final host envelopes, hash-checked bytes and the complete actual file total',()=>{
+ for(const [api,profile] of [['openai-completions','openai'],['openai-responses','openai'],['anthropic-messages','anthropic']]){
+  const definition=defaultModelDefinition('fixture');definition.nativeProfile=profile;Object.assign(definition.capabilities,{image:true,pdf:true});const envelope=inputEnvelope('message'),file={reference:{messageId:'message',documentVersionId:'doc',artifactId:'art',title:'fixed.pdf',mediaType:'application/pdf',size:pdf.length,digest:digest(pdf),inputMode:'native'},data:pdf.toString('base64')},manifest={envelope,files:[file]},message={role:'user',content:'request'+envelope},key=api==='openai-responses'?'input':'messages',body={model:'fixture',[key]:[{role:'user',content:'old context'},message]},context={messages:[message]};
+  const result=attachmentPayload(body,context,api,definition,[manifest]);assert.equal(result.references.length,1);assert.equal(result.payload[key][0].content,'old context');const block=result.payload[key][1].content[1],data=api==='anthropic-messages'?block.source.data:api==='openai-responses'?block.file_data:block.file.file_data;assert.deepEqual(Buffer.from(data.replace(/^data:application\/pdf;base64,/,''),'base64'),pdf);
+  const copied={role:'user',content:'quoted '+envelope+inputEnvelope('new-text')};assert.deepEqual(attachmentPayload({[key]:[copied]},{messages:[copied]},api,definition,[manifest,{envelope:inputEnvelope('new-text'),files:[]}]).references,[]);
+  assert.deepEqual(attachmentPayload(body,{messages:[{role:'user',content:'compacted without marker'}]},api,definition,[manifest]).references,[]);
+  assert.throws(()=>attachmentPayload(body,context,api,definition,[{...manifest,files:[{...file,data:Buffer.from('changed').toString('base64')}]}]),{code:'MODEL_ATTACHMENT_INVALID'});
+  const large=Buffer.alloc(NATIVE_ATTACHMENT_BYTES/2+1,65),largeFile={...file,reference:{...file.reference,size:large.length,digest:digest(large)},data:large.toString('base64')};assert.throws(()=>attachmentPayload(body,context,api,definition,[{...manifest,files:[largeFile,largeFile]}]),{code:'MODEL_ATTACHMENT_LIMIT'});
+ }
+});

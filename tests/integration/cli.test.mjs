@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {tmpdir} from 'node:os';
+import {spawn} from 'node:child_process';
+import {Store} from '../../dist/packages/storage/store.js';
+function cli(args){return new Promise((resolve,reject)=>{const p=spawn(process.execPath,['dist/apps/cli/index.js',...args],{cwd:process.cwd(),env:{...process.env,NODE_NO_WARNINGS:'1'},stdio:['ignore','pipe','pipe']});let out='',err='';p.stdout.on('data',b=>out+=b);p.stderr.on('data',b=>err+=b);const timer=setTimeout(()=>{p.kill();reject(new Error('CLI timeout'));},15000);p.on('error',reject);p.on('exit',code=>{clearTimeout(timer);resolve({code,out,err});});});}
+test('doctor runs from prebuilt distribution without npm or a model key',async()=>{const r=await cli(['doctor','--json']);assert.equal(r.code,0,r.err);const d=JSON.parse(r.out);assert.equal(d.version,JSON.parse(readFileSync('package.json','utf8')).version);assert.equal(d.pi.liveVerified,false);assert.equal(typeof d.node,'string');assert.equal(d.backends.localTrustedExample,true);});
+test('CLI demo performs real baseline/candidate/retained-parent runs and creates evidence report',async()=>{const dir=mkdtempSync(join(tmpdir(),'pi-cli-'));try{const r=await cli(['demo','--data',dir,'--json']);assert.equal(r.code,0,r.err);const d=JSON.parse(r.out);assert.equal(d.aiUsed,false);assert.equal(d.runIds.length,4);const db=new Store(join(dir,'state.db'));try{const runs=d.runIds.map(id=>db.get('run',id));assert.ok(runs.every(r=>r.state==='succeeded'&&r.integrity==='complete'));assert.ok(runs[1].metrics.mse<runs[0].metrics.mse);const e=db.get('experiment',d.retainedChildId);assert.equal(e.parentId,d.retainedParentId);const a=db.get('artifact',d.reportId);assert.match(readFileSync(db.paths.physical(a.path),'utf8'),/实测值/);assert.equal(db.list('approval').filter(a=>a.status==='approved').length,4);}finally{db.close();}}finally{rmSync(dir,{recursive:true,force:true});}});

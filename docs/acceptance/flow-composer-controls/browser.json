@@ -1,0 +1,608 @@
+{
+  "date": "2026-10-06",
+  "baseline": "c42a78e322304387c5ea6ebd67250619ecf1e94d",
+  "checks": [
+    {
+      "name": "permission-modal-boundary",
+      "dialogOutsideComposer": true,
+      "nestedForms": 0,
+      "draftPreservedOnEnableAndRevoke": true,
+      "messageCountBefore": 2,
+      "messageCountAfter": 2,
+      "unexpectedDraftMessages": 0
+    },
+    {
+      "name": "current-model-save",
+      "current": {
+        "provider": "offline-composer",
+        "model": "Code Light",
+        "thinking": "high"
+      },
+      "projectDefault": {
+        "provider": "offline-composer",
+        "model": "Research Pro",
+        "thinking": "off"
+      }
+    },
+    {
+      "name": "model-home",
+      "focus": "Research Prooffline-composer"
+    },
+    {
+      "name": "model-arrow",
+      "focus": "Code Lightoffline-composer"
+    },
+    {
+      "name": "model-escape",
+      "result": {
+        "focus": "会话模型与思考等级",
+        "open": false
+      }
+    },
+    {
+      "name": "outside-input-click",
+      "result": {
+        "focus": null,
+        "open": true
+      }
+    },
+    {
+      "name": "outside-heading-click",
+      "result": {
+        "activeTag": "BODY",
+        "open": false
+      }
+    },
+    {
+      "name": "model-tab",
+      "result": {
+        "focus": "会话权限：变更前确认",
+        "open": false
+      }
+    },
+    {
+      "name": "input-click-target-diagnostic",
+      "result": {
+        "className": "composer-model-menu",
+        "coveredByModelMenu": true,
+        "target": "DIV"
+      }
+    }
+  ],
+  "viewports": [
+    {
+      "chat": {
+        "height": 767,
+        "width": 806,
+        "x": 284,
+        "y": 61
+      },
+      "clientWidth": 1440,
+      "composer": {
+        "height": 131.7291717529297,
+        "width": 747.3333740234375,
+        "x": 313.3333435058594,
+        "y": 643.9375
+      },
+      "inspector": {
+        "height": 767,
+        "width": 320,
+        "x": 1104,
+        "y": 61
+      },
+      "left": {
+        "height": 30,
+        "width": 225,
+        "x": 335.3333435058594,
+        "y": 731.6666870117188
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 536.3333740234375,
+        "y": 527.3333740234375
+      },
+      "model": {
+        "height": 30,
+        "width": 160,
+        "x": 696.3333740234375,
+        "y": 731.6666870117188
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 101,
+        "x": 862.3333740234375,
+        "y": 731.6666870117188
+      },
+      "permissionInside": true,
+      "scrollY": 0,
+      "send": {
+        "height": 30,
+        "width": 69.33333587646484,
+        "x": 969.3333740234376,
+        "y": 731.6666870117188
+      },
+      "sidebar": {
+        "height": 812,
+        "width": 252,
+        "x": 16,
+        "y": 16
+      },
+      "topbar": {
+        "height": 45,
+        "width": 1140,
+        "x": 284,
+        "y": 16
+      },
+      "width": 1440
+    },
+    {
+      "chat": {
+        "height": 767,
+        "width": 646,
+        "x": 284,
+        "y": 61
+      },
+      "clientWidth": 1280,
+      "composer": {
+        "height": 131.7291717529297,
+        "width": 587.3333740234375,
+        "x": 313.3333435058594,
+        "y": 643.9375
+      },
+      "inspector": {
+        "height": 767,
+        "width": 320,
+        "x": 944,
+        "y": 61
+      },
+      "left": {
+        "height": 30,
+        "width": 225,
+        "x": 335.3333435058594,
+        "y": 731.6666870117188
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 376.3333435058594,
+        "y": 527.3333740234375
+      },
+      "model": {
+        "height": 30,
+        "width": 124,
+        "x": 572.3333740234375,
+        "y": 731.6666870117188
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 101,
+        "x": 702.3333740234375,
+        "y": 731.6666870117188
+      },
+      "permissionInside": true,
+      "scrollY": 0,
+      "send": {
+        "height": 30,
+        "width": 69.33333587646484,
+        "x": 809.3333740234375,
+        "y": 731.6666870117188
+      },
+      "sidebar": {
+        "height": 812,
+        "width": 252,
+        "x": 16,
+        "y": 16
+      },
+      "topbar": {
+        "height": 45,
+        "width": 980,
+        "x": 284,
+        "y": 16
+      },
+      "width": 1280
+    },
+    {
+      "chat": {
+        "height": 775,
+        "width": 461,
+        "x": 252,
+        "y": 57
+      },
+      "clientWidth": 1024,
+      "composer": {
+        "height": 167.7291717529297,
+        "width": 414.3333435058594,
+        "x": 275.3333435058594,
+        "y": 612.6041870117188
+      },
+      "inspector": {
+        "height": 775,
+        "width": 285,
+        "x": 727,
+        "y": 57
+      },
+      "left": {
+        "height": 30,
+        "width": 370.3333435058594,
+        "x": 297.3333435058594,
+        "y": 700.3333740234375
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 174.33334350585938,
+        "y": 532
+      },
+      "model": {
+        "height": 30,
+        "width": 197,
+        "x": 297.3333435058594,
+        "y": 736.3333740234375
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 92,
+        "x": 500.3333435058594,
+        "y": 736.3333740234375
+      },
+      "permissionInside": true,
+      "scrollY": 0,
+      "send": {
+        "height": 30,
+        "width": 69.33333587646484,
+        "x": 598.3333740234375,
+        "y": 736.3333740234375
+      },
+      "sidebar": {
+        "height": 820,
+        "width": 228,
+        "x": 12,
+        "y": 12
+      },
+      "topbar": {
+        "height": 45,
+        "width": 760,
+        "x": 252,
+        "y": 12
+      },
+      "width": 1024
+    },
+    {
+      "chat": {
+        "height": 646.78125,
+        "width": 354.66668701171875,
+        "x": 10,
+        "y": 11
+      },
+      "clientWidth": 375,
+      "composer": {
+        "height": 184.33334350585935,
+        "width": 316,
+        "x": 29.33333396911621,
+        "y": 421.78125
+      },
+      "inspector": {
+        "height": 164,
+        "width": 354.66668701171875,
+        "x": 10,
+        "y": 669.78125
+      },
+      "left": {
+        "height": 30,
+        "width": 272,
+        "x": 51.33333587646485,
+        "y": 526.1146240234375
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 16,
+        "y": 357.78125
+      },
+      "model": {
+        "height": 30,
+        "width": 98.66667175292967,
+        "x": 51.33333587646485,
+        "y": 562.1146240234375
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 92,
+        "x": 156,
+        "y": 562.1146240234375
+      },
+      "permissionInside": true,
+      "scrollY": 44,
+      "send": {
+        "height": 30,
+        "width": 69.33333587646484,
+        "x": 254,
+        "y": 562.1146240234375
+      },
+      "sidebar": {
+        "height": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "topbar": {
+        "height": 45,
+        "width": 354.66668701171875,
+        "x": 10,
+        "y": -34
+      },
+      "width": 390
+    }
+  ],
+  "initialViewports": [
+    {
+      "chat": {
+        "height": 767,
+        "width": 806,
+        "x": 284,
+        "y": 61
+      },
+      "clientWidth": 1440,
+      "composer": {
+        "height": 131.7291717529297,
+        "width": 747.3333740234375,
+        "x": 313.3333435058594,
+        "y": 643.9375
+      },
+      "height": 844,
+      "inspector": {
+        "height": 767,
+        "width": 320,
+        "x": 1104,
+        "y": 61
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 536.3333740234375,
+        "y": 527.3333740234375
+      },
+      "model": {
+        "height": 30,
+        "width": 160,
+        "x": 696.3333740234375,
+        "y": 731.6666870117188
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 101,
+        "x": 862.3333740234375,
+        "y": 731.6666870117188
+      },
+      "permissionInside": true,
+      "scrollY": 0,
+      "send": {
+        "height": 30,
+        "width": 69.33333587646484,
+        "x": 969.3333740234376,
+        "y": 731.6666870117188
+      },
+      "sidebar": {
+        "height": 812,
+        "width": 252,
+        "x": 16,
+        "y": 16
+      },
+      "topbar": {
+        "height": 45,
+        "width": 1140,
+        "x": 284,
+        "y": 16
+      },
+      "width": 1440
+    },
+    {
+      "chat": {
+        "height": 767,
+        "width": 646,
+        "x": 284,
+        "y": 61
+      },
+      "clientWidth": 1280,
+      "composer": {
+        "height": 155.7291717529297,
+        "width": 587.3333740234375,
+        "x": 313.3333435058594,
+        "y": 619.9375
+      },
+      "height": 844,
+      "inspector": {
+        "height": 767,
+        "width": 320,
+        "x": 944,
+        "y": 61
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 380.3229370117187,
+        "y": 515.3333740234375
+      },
+      "model": {
+        "height": 30,
+        "width": 146.6979217529297,
+        "x": 553.625,
+        "y": 719.6666870117188
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 101,
+        "x": 706.3229370117188,
+        "y": 719.6666870117188
+      },
+      "permissionInside": true,
+      "scrollY": 0,
+      "send": {
+        "height": 43.33333587646485,
+        "width": 65.34375,
+        "x": 813.3229370117188,
+        "y": 713
+      },
+      "sidebar": {
+        "height": 812,
+        "width": 252,
+        "x": 16,
+        "y": 16
+      },
+      "topbar": {
+        "height": 45,
+        "width": 980,
+        "x": 284,
+        "y": 16
+      },
+      "width": 1280
+    },
+    {
+      "chat": {
+        "height": 775,
+        "width": 461,
+        "x": 252,
+        "y": 57
+      },
+      "clientWidth": 1024,
+      "composer": {
+        "height": 167.7291717529297,
+        "width": 414.3333435058594,
+        "x": 275.3333435058594,
+        "y": 612.6041870117188
+      },
+      "height": 844,
+      "inspector": {
+        "height": 775,
+        "width": 285,
+        "x": 727,
+        "y": 57
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 174.33334350585938,
+        "y": 532
+      },
+      "model": {
+        "height": 30,
+        "width": 197,
+        "x": 297.3333435058594,
+        "y": 736.3333740234375
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 92,
+        "x": 500.3333435058594,
+        "y": 736.3333740234375
+      },
+      "permissionInside": true,
+      "scrollY": 0,
+      "send": {
+        "height": 30,
+        "width": 69.33333587646484,
+        "x": 598.3333740234375,
+        "y": 736.3333740234375
+      },
+      "sidebar": {
+        "height": 820,
+        "width": 228,
+        "x": 12,
+        "y": 12
+      },
+      "topbar": {
+        "height": 45,
+        "width": 760,
+        "x": 252,
+        "y": 12
+      },
+      "width": 1024
+    },
+    {
+      "chat": {
+        "height": 646.78125,
+        "width": 354.66668701171875,
+        "x": 10,
+        "y": 11
+      },
+      "clientWidth": 375,
+      "composer": {
+        "height": 184.33334350585935,
+        "width": 316,
+        "x": 29.33333396911621,
+        "y": 421.78125
+      },
+      "height": 844,
+      "inspector": {
+        "height": 164,
+        "width": 354.66668701171875,
+        "x": 10,
+        "y": 669.78125
+      },
+      "menu": {
+        "height": 196.33334350585935,
+        "width": 320,
+        "x": 16,
+        "y": 357.78125
+      },
+      "model": {
+        "height": 30,
+        "width": 98.66667175292967,
+        "x": 51.33333587646485,
+        "y": 562.1146240234375
+      },
+      "nestedForms": 0,
+      "overflow": false,
+      "permission": {
+        "height": 30,
+        "width": 92,
+        "x": 156,
+        "y": 562.1146240234375
+      },
+      "permissionInside": true,
+      "scrollY": 44,
+      "send": {
+        "height": 30,
+        "width": 69.33333587646484,
+        "x": 254,
+        "y": 562.1146240234375
+      },
+      "sidebar": {
+        "height": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "topbar": {
+        "height": 45,
+        "width": 354.66668701171875,
+        "x": 10,
+        "y": -34
+      },
+      "width": 390
+    }
+  ],
+  "actual4794": {
+    "error": false,
+    "modelButton": true,
+    "nativeModelSelect": false,
+    "nestedForms": 0,
+    "permissionInside": true,
+    "permissionOutside": false
+  }
+}

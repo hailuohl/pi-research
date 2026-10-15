@@ -1,0 +1,20 @@
+{
+  "flow": "biorxiv-versioned-original-pdf",
+  "acceptance": "deferred-provider-rate-limit",
+  "doi": "10.1101/322859",
+  "requestedVersion": "2",
+  "taskId": "e6d32691-51f8-4b76-8881-98ba7ebd3e60",
+  "taskState": "failed",
+  "errorCode": "CONNECTOR_RATE_LIMITED",
+  "httpStatus": 429,
+  "httpAttempts": 1,
+  "newPaperReads": 0,
+  "newDocumentVersions": 0,
+  "newArtifacts": 0,
+  "oldRowsUnchangedExcludingConnectorSettings": 55,
+  "oldHistoryReopened": true,
+  "openAlexKeyConfigured": false,
+  "browserSkipped": true,
+  "piAndDockerCalls": 0,
+  "sourceCodeChanged": false
+}

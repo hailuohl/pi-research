@@ -1,0 +1,19 @@
+{
+  "synthetic": true,
+  "preview": "http://127.0.0.1:4803/",
+  "provider": "http://127.0.0.1:4804/v1",
+  "checks": [
+    "models independent save and minimal SDK test passed",
+    "GitHub CLI status and template library retained",
+    "whole PDF plus Responses web_search prepare -> approve -> one dispatch -> receipt",
+    "Qwen-profile whole MP4 prepare -> approve -> one dispatch -> receipt",
+    "reload retained receipts without execute",
+    "390px and repaired 320px no horizontal overflow",
+    "Tab focus stays in dialog; Escape returns trigger"
+  ],
+  "lastGeometry": {
+    "open": false,
+    "scrollWidth": 305,
+    "width": 305
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "batch": 1,
+  "localDate": "2026-10-03",
+  "acceptance": {
+    "clarifyingToConfirmed": true,
+    "immutableHistoryReopened": true,
+    "evidenceCurrent": true,
+    "agentContinuedAfterUserConfirmation": true,
+    "leaseAndInvalidReceiptRegressionsPassed": true
+  },
+  "checks": {
+    "full": {
+      "total": 972,
+      "passed": 947,
+      "skipped": 23,
+      "failedBeforeContractFixtureUpdates": 2
+    },
+    "targetedAfterNecessaryFixes": {
+      "total": 27,
+      "passed": 27,
+      "failed": 0
+    },
+    "independentReview": "Astra: passed after the necessary receipt/read correction",
+    "cleanBuild": {
+      "identical": true,
+      "files": 502,
+      "manifestSha256": "86a428180fc42f22c0b3b77f938ee5e6eec6abb72a2827414dd3fc21b72ef766"
+    }
+  },
+  "live": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "finalState": "idle",
+    "revision": 2,
+    "status": "confirmed",
+    "evidenceCount": 1,
+    "history": [
+      {
+        "revision": 2,
+        "status": "confirmed"
+      },
+      {
+        "revision": 1,
+        "status": "clarifying"
+      }
+    ],
+    "toolCalls": [
+      "research_brief_inspect",
+      "research_brief_save",
+      "artifact_read",
+      "evidence_register",
+      "research_brief_save",
+      "research_brief_inspect",
+      "project_inspect"
+    ],
+    "modelHttpFinished": 11,
+    "runCount": 0,
+    "sourceOrigin": "user-provided software acceptance instructions; no peer-reviewed-paper claim"
+  },
+  "privateArtifactsLocation": ".validation/research-brief/"
+}

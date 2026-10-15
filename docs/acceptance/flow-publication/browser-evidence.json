@@ -1,0 +1,26 @@
+{
+  "projectId": "8e7e45d0-ff95-4c5d-bf05-ec8e7dc592ef",
+  "surface": "Local workbench, Reports and results, isolated copy of prior real skill/figure project",
+  "method": "Actual in-app browser interaction, screenshots and read-only DOM observations",
+  "finalRevisionId": "fe5e19df-eb14-42f2-8d05-7ebf6ad38378",
+  "finalJobId": "fb89073a-c8f7-458d-867f-a18ba907608e",
+  "checks": [
+    {"name": "Explicit compiler configuration", "result": "Configured fixed 358ed6f3 image and desktop-linux target through form"},
+    {"name": "Template and immutable draft", "result": "Selected article-xelatex, saved missing-figure draft, separately prepared, approved and submitted build"},
+    {"name": "Real error navigation", "result": "missing_image at main.tex line 13; diagnostic selected that line; no successful PDF link", "screenshot": "missing-image-diagnostic.png"},
+    {"name": "Fixed asset and bibliography", "result": "Cloned draft into new revision, bound prior figure artifact and references.bib; Biber build converged in 3 passes"},
+    {"name": "Visual correction", "result": "Intermediate syntax-success PDF had overflowing Chinese paragraphs; preserved it, created third revision with XeTeX Chinese line breaking, reapproved and rebuilt"},
+    {"name": "Final PDF review", "result": "Viewed both final page images; Chinese text, figure and bibliography fit; final build log has no Overfull hbox", "pages": ["compiled-page-1.png", "compiled-page-2.png"]},
+    {"name": "Narrow viewport", "width": 390, "documentScrollWidth": 375, "previewComplete": true, "previewNaturalWidth": 1132, "previewNaturalHeight": 1600, "screenshot": "compiled-mobile.png"},
+    {"name": "Reload identity", "result": "Fixed revision and job restored; physical page reset to 1, then page 2 selected again"},
+    {"name": "Historical invalidation", "result": "After existing approval service invalidated only the intermediate job in the acceptance copy, selected that job again; UI displayed APPROVAL_STALE and preserved historical PDF", "screenshot": "historical-stale.png"},
+    {"name": "Downloads", "result": "Invoked PDF and source-manifest download entries; authenticated HTTP bytes independently verified; browser destination not confirmed"},
+    {"name": "Final state", "result": "Returned to final valid revision/job, desktop viewport and physical page 2", "screenshot": "compiled-desktop.png"}
+  ],
+  "limits": [
+    "No independent browser console-error collection was performed",
+    "Historical validity was observed after reselecting the affected job, not as a live on-screen invalidation transition",
+    "Native OS file picker submission was not revalidated; fixed asset mapping and text editing were exercised",
+    "No new model request was made; embedded figure came from the previously verified sandbox job"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "batch": "flow-openalex-pagination",
+  "date": "2026-09-29",
+  "baseCommit": "142eaae0294e04f4a0c377cac0e5be5d15abe16d",
+  "scope": "Owner OpenAlex keyword/default first page, explicit next page, refreshable history",
+  "realAcceptance": {
+    "projectId": "1f81f8aa-0766-4b03-90fe-9b2e6f862811",
+    "taskIds": ["b95c7b00-7c91-4ecf-92f3-20ae0154133d", "11f5d58b-5db5-47d9-b225-e69714235648"],
+    "searchIds": ["5b91aa24-a10a-4778-8cbd-19a2845afe58", "50ceb622-6511-44c8-8aad-90ad2d7a1070"],
+    "rawCounts": [8, 8],
+    "newIdCountOnPage2": 8,
+    "httpRequests": 2,
+    "disabledContinuation": {"httpStatus": 409, "code": "CONNECTOR_SETTINGS_CHANGED", "extraHttpRequests": 0},
+    "browserRefreshRetainedBothPages": true,
+    "localEvidenceSha256": "b0bf40af536672817ee597c287c1f00cc152e4bfecfce30feed2f29c7217dea6",
+    "localScreenshotSha256": "99dcaada70e729679b6c6930daefd7ef998594e0fe885131d49519c03d9ff122"
+  },
+  "validation": {
+    "backendFocused": {"tests": 32, "passed": 32},
+    "httpAndUiFocused": {"tests": 11, "passed": 11},
+    "fullRegression": {"tests": 797, "passed": 775, "skipped": 22, "failed": 0, "localLogSha256": "685ff3a1962b8196e7acf8a259110403dd519c6f164ecb7d0098d8cbca344c97"},
+    "cleanBuild": {"files": 450, "identical": true, "npmCi": 0, "build": 0, "typecheck": 0, "manifestSha256": "fd05a0b1f735f18c6e9cfacafad365cf246f7790761d8fda893adae5c05101b0"},
+    "independentReview": {"model": "gpt-6-astra", "blockersFound": 1, "blockersFixed": 1, "remaining": 0},
+    "protectedConcurrentWorkUnchanged": true
+  }
+}

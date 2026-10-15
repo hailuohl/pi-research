@@ -1,0 +1,14 @@
+node_modules/
+.pi-research/
+.pi-runtime/
+.env
+*.log
+.superpowers/
+test-results/
+
+__pycache__/
+*.pyc
+.validation/
+model-connections.json*
+environment-variables.json*
+.workbuddy/
