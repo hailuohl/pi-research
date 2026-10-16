@@ -4,6 +4,8 @@ import {existsSync,readFileSync,readdirSync,mkdirSync,symlinkSync} from 'node:fs
 import {join,resolve} from 'node:path';
 import {setup,USER} from '../support/research.mjs';
 import {AgentHost} from '../../dist/packages/scheduler/agent-host.js';
+import {safeToolDiagnostic,toolResultDiagnostic,toolFailureMessage} from '../../dist/packages/pi-adapter/tool-diagnostic.js';
+import {DomainError} from '../../dist/packages/domain/errors.js';
 
 async function failedTool(s,error,tool='artifact_read'){
  const session=s.app.store.get('session',s.session.id);s.app.store.update('session',session.id,session.version,{state:'running',generation:1,leaseUntil:Date.now()+60000});
@@ -12,6 +14,24 @@ async function failedTool(s,error,tool='artifact_read'){
  await host.onMessage(a,{type:'tool',tool,toolCallId:'private-call-id-canary',requestId:1,input:{artifactId:'private-input-canary'}},join(s.dir,'sessions',session.id));
  return {host,a,sent};
 }
+
+test('permission failures retain a fixed safe diagnostic through SDK results and public host notices',async()=>{
+ const code='PERMISSION_DENIED',privateMessage='private-error-canary sk-secret-canary D:/private-data/file.txt';
+ const diagnostic=safeToolDiagnostic({},code,privateMessage);
+ assert.deepEqual(diagnostic,{code});
+ assert.deepEqual(toolResultDiagnostic({},{content:[{type:'text',text:`${code}: ${privateMessage}`}]}),{code});
+ assert.equal(safeToolDiagnostic({},`${code}suffix`,privateMessage),undefined);
+ const message=toolFailureMessage('artifact_read',diagnostic);
+ assert.match(message,/PERMISSION_DENIED/);assert.match(message,/授权/);assert.doesNotMatch(message,/private-|sk-secret|D:\//);
+ const s=setup();try{
+  const {host,a,sent}=await failedTool(s,new DomainError(code,privateMessage,403));
+  const response=sent.at(-1).error;assert.equal(response.code,code);
+  assert.deepEqual(toolResultDiagnostic({},{content:[{type:'text',text:`${response.code}: ${response.message}`}]}),{code});
+  await host.onMessage(a,{type:'tool_execution_end',tool:'artifact_read',toolCallId:'private-call-id-canary',isError:true},join(s.dir,'sessions',s.session.id));
+  const notice=s.app.sessions.messages(USER,s.session.id).filter(m=>m.role==='system').at(-1);
+  assert.equal(notice.status,'failed');assert.equal(notice.content,message);assert.doesNotMatch(notice.content,/private-|sk-secret|D:\//);
+ }finally{s.close();}
+});
 
 test('internal tool failures persist safe local diagnostics and correlate the public failure without raw values',async()=>{
  const s=setup();try{

@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-16",
+  "baseline": "f9af6442578921c62f05ec0d04dfc666ee62fe12",
+  "patchSha256": "86d9f8638761fe1d78d596432088fd858e9729119bed8020a1f3fb1093f32c99",
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeEchoed": false
+  },
+  "review": {
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeEchoed": false,
+    "status": "passed",
+    "independentTests": {
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "checks": {
+    "red": {
+      "tests": 14,
+      "passed": 12,
+      "failed": 2,
+      "expectedFailures": 2
+    },
+    "related": {
+      "tests": 61,
+      "passed": 61,
+      "failed": 0,
+      "skipped": 0
+    },
+    "fullRegression": {
+      "tests": 1990,
+      "passed": 1965,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 25,
+      "exitCode": 0
+    },
+    "cleanBuild": {
+      "installExitCode": 0,
+      "buildExitCode": 0,
+      "typecheckExitCode": 0,
+      "identical": true,
+      "files": 667,
+      "summary": ".validation/clean-build-RNQ6nW/summary.json"
+    },
+    "protectedFilesUnchanged": 5,
+    "live": {
+      "httpProbes": {
+        "passed": 9,
+        "failed": 0
+      },
+      "projectState": {
+        "passed": 5,
+        "failed": 0
+      },
+      "assets": {
+        "passed": 14,
+        "failed": 0
+      },
+      "browserReloadOnline": true,
+      "consoleWarnings": 0,
+      "consoleErrors": 0,
+      "historicalFailureNoticePreserved": true
+    }
+  },
+  "activation": {
+    "status": "passed",
+    "port": 4794,
+    "oldPid": 246812,
+    "newPid": 95792,
+    "terminalSession": 57878,
+    "dataDirectoryPreserved": true,
+    "userStoppedOldService": true,
+    "buildActivated": true
+  },
+  "history": {
+    "baselineCounts": {
+      "project": 7,
+      "session": 52,
+      "message": 3678,
+      "experiment": 11,
+      "run": 8,
+      "artifact": 536,
+      "evidence": 109,
+      "manuscript-revision": 13,
+      "document-version": 2,
+      "report": 2,
+      "team": 22,
+      "team-plan": 22,
+      "task": 30,
+      "task-attempt": 26,
+      "task-result": 23
+    },
+    "duringTestsOldRecordsChanged": 0,
+    "duringTestsOldRecordsMissing": 0,
+    "afterRestart": {
+      "status": "passed",
+      "kinds": 15,
+      "records": 4541,
+      "missing": 0,
+      "changed": 0,
+      "new": 0
+    }
+  },
+  "rawEvidenceDirectory": ".validation/task-context-fix-20261016",
+  "limitations": [
+    "25 optional tests skipped; not counted as passed",
+    "No new configured model request was made; real SDK behavior covered by existing local fixtures",
+    "Historical failed messages are preserved and are not rewritten with the new hint"
+  ]
+}

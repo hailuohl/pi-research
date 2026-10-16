@@ -9,6 +9,7 @@ const recoveryHints = {
     VERSION_CONFLICT:'重新读取最新版本，比较修改后再提交新请求，不覆盖其他操作的修改。',
     FILE_VERSION_CONFLICT:'重新读取文件及摘要，比较修改后再保存，不覆盖其他操作的修改。',
     TASK_SCOPE_DENIED:'资源不在任务批准范围内。只使用当前任务的固定输入与已授权上游成果。',
+    PERMISSION_DENIED:'当前身份没有此操作所需授权。只使用当前会话或宿主派发任务的可用工具，不伪造身份或重复尝试；需要额外授权时交回用户处理。',
     SCOPE_DENIED:'当前身份不能访问该资源。使用本会话获准来源，不更换 ID 绕过限制。',
     AUTOMATION_SCOPE_DENIED:'资源不在本次自动分析的固定来源内。停止此操作，交回用户交互主会话处理。',
     SESSION_AUTOMATION_ACTION_UNAPPROVED:'自动唤醒不能执行此写入。交回用户交互主会话处理，不自动扩大授权。',
