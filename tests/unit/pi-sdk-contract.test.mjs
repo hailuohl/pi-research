@@ -7,7 +7,7 @@ import {pathToFileURL, fileURLToPath} from 'node:url';
 import {buildSessionOptions, buildCustomTools} from '../../dist/packages/pi-adapter/options.js';
 import {TOOL_DEFINITIONS} from '../../dist/packages/research-tools/definitions.js';
 import {inspectPi, locatePi, piFailure} from '../../dist/packages/pi-adapter/runtime.js';
-import {safeToolDiagnostic,toolResultDiagnostic} from '../../dist/packages/pi-adapter/tool-diagnostic.js';
+import {safeToolDiagnostic,toolResultDiagnostic,toolFailureMessage} from '../../dist/packages/pi-adapter/tool-diagnostic.js';
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 test('tool diagnostics expose only fixed reasons and static schema paths from the pinned SDK text result',()=>{
@@ -20,8 +20,25 @@ test('tool diagnostics expose only fixed reasons and static schema paths from th
  for(const text of ['$.input.private-secret-key: 未知字段','$.input.steps[0].private-secret-key: 类型不正确','$.input.expectedRevisionId: private parameter value','$.input.expectedRevisionId\nprivate-secret: 缺少必需字段','$.input.steps[private-secret].title: 文本格式不正确'])assert.deepEqual(toolResultDiagnostic(tool.parameters,result('INVALID_INPUT: '+text)),{code:'INVALID_INPUT'});
  const [dynamic]=buildCustomTools([{name:'run_prepare',...TOOL_DEFINITIONS.run_prepare}],async()=>{});
  assert.deepEqual(safeToolDiagnostic(dynamic.parameters,'INVALID_INPUT','$.input.config.private-secret: 类型不正确'),{code:'INVALID_INPUT'});
- for(const text of ['VERSION_CONFLICT: private values','INVALID_INPUTsuffix','APPROVAL_REQUIREDsuffix','private error text'])assert.equal(toolResultDiagnostic(tool.parameters,result(text)),undefined);
+ assert.deepEqual(toolResultDiagnostic(tool.parameters,result('VERSION_CONFLICT: private values')),{code:'VERSION_CONFLICT'});
+ for(const text of ['VERSION_CONFLICTsuffix','INVALID_INPUTsuffix','APPROVAL_REQUIREDsuffix','private error text'])assert.equal(toolResultDiagnostic(tool.parameters,result(text)),undefined);
  assert.equal(toolResultDiagnostic(tool.parameters,{content:[{type:'text',text:'INVALID_INPUT: $.input: 类型不正确'},{type:'text',text:'private values'}]}),undefined);
+});
+
+test('known workflow failures retain safe codes without forwarding private error details',()=>{
+ const [tool]=buildCustomTools([{name:'research_brief_save',...TOOL_DEFINITIONS.research_brief_save}],async()=>{});
+ for(const code of ['VERSION_CONFLICT','BRIEF_NOT_CONFIRMED','BRIEF_REFERENCE_MISMATCH','NOT_FOUND','ARTIFACT_TEXT_REQUIRED','TASK_SCOPE_DENIED','LOG_RESET']){
+  const diagnostic=safeToolDiagnostic(tool.parameters,code,'private-source-path and private-parameter-value');
+  assert.deepEqual(diagnostic,{code});
+  assert.deepEqual(toolResultDiagnostic(tool.parameters,{content:[{type:'text',text:code+': private-source-path'}]}),{code});
+  assert.doesNotMatch(JSON.stringify(diagnostic),/private/);
+  assert.match(toolFailureMessage(tool.name,diagnostic),new RegExp(code));
+  assert.doesNotMatch(toolFailureMessage(tool.name,diagnostic),/private/);
+ }
+ for(const code of ['VERSION_CONFLICTsuffix','__proto__','constructor','UNRECOGNIZED_FAILURE'])assert.equal(safeToolDiagnostic(tool.parameters,code,'private value'),undefined);
+ assert.match(toolFailureMessage(tool.name,{code:'VERSION_CONFLICT'}),/重新读取/);
+ assert.match(toolFailureMessage(tool.name,{code:'INVALID_INPUT',path:'$.input',reason:'缺少必需字段'}),/\{"input":\{\}\}/);
+ assert.match(toolFailureMessage(tool.name),/对应任务的诊断/);
 });
 
 test('unknown brief fields identify only their containing object in safe tool diagnostics',()=>{

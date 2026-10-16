@@ -67,6 +67,7 @@ export declare class WakeupService {
                     size: number;
                     sourceAcceptanceId?: string;
                 }[];
+                threadLimit?: number;
                 approvalResumeDigest?: string;
                 workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
                 purpose: "development-test";
@@ -160,6 +161,7 @@ export declare class WakeupService {
                     size: number;
                     sourceAcceptanceId?: string;
                 }[];
+                threadLimit?: number;
                 approvalResumeDigest?: string;
                 workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
                 purpose: "development-test";

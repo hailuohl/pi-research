@@ -117,6 +117,7 @@ export class DevelopmentService {
                 validateSourceRevision(this.app.context, pid, s.sourceRevisionId);
             const inputSnapshot = this.app.store.paths.referenceSnapshot(snapshotDirectory(this.app.store.paths.physical(s.workspace), join(this.app.context.dataDir, 'snapshots')));
             const manifest = { ...(resume ? { approvalResumeDigest: digest(resume) } : {}), purpose: 'development-test', sessionId: s.id, inputSnapshot, command, environmentImageDigest: image, dockerContext, resources, networkPolicy: 'none', deadline, expectedArtifacts, dataArtifacts,
+                ...(!working ? { threadLimit: resources.cpus } : working.threadLimit === undefined ? {} : { threadLimit: working.threadLimit }),
                 ...(s.sourceRevisionId ? { sourceRevisionId: s.sourceRevisionId } : {}), ...(s.taskId ? { scopeTaskId: s.taskId, scopeAttemptId: actor.attemptId, scopeGeneration: actor.generation } : { sessionGeneration: s.generation }) };
             // A user may approve an assistant workspace, but cannot invent its attempt identity.
             if (s.taskId && actor.type === 'user') {
@@ -171,6 +172,7 @@ export class DevelopmentService {
         if (active)
             this.app.researchAutomation.assertApproval(approval, true);
         const m = t.manifest, s = this.app.store.get('session', t.sessionId, pid);
+        ensure(m.threadLimit === undefined || Number.isSafeInteger(m.threadLimit) && m.threadLimit >= 1 && m.threadLimit <= 8, 'MANIFEST_CORRUPTED', '开发测试线程上限无效');
         if (deadline && s.workingGrantId)
             ensure(m.workingGrant?.id === s.workingGrantId, 'WORKING_GRANT_REQUIRED', '会话已绑定授权；旧单次清单不能绕过范围或计次，请重新准备');
         if (m.workingGrant) {
@@ -332,11 +334,16 @@ export class DevelopmentService {
                 integrity = 'incomplete';
                 errors.push('archive failed: unsafe or excessive output');
             }
-            for (const path of j.manifest.expectedArtifacts)
-                if (!collected.has(path)) {
-                    integrity = 'incomplete';
-                    errors.push(`archive failed: required output/${path}`);
-                }
+            const missing = j.manifest.expectedArtifacts.filter(path => !collected.has(path));
+            for (const path of missing) {
+                integrity = 'incomplete';
+                errors.push(`archive failed: required output/${path}`);
+            }
+            if (missing.length) {
+                errors.push('声明产物路径相对 PI_OUTPUT_DIR（/output）；只收集 /output，工作目录文件须由代码写入该目录或显式复制');
+                if (missing.some(path => path.startsWith('output/') && collected.has(path.slice(7))))
+                    errors.push('预期路径可能多写了 output/ 前缀；请核对实际目录，不会自动改写路径');
+            }
             if (result.incomplete) {
                 integrity = 'incomplete';
                 errors.push('archive failed: execution evidence incomplete');
@@ -359,7 +366,7 @@ export class DevelopmentService {
             if (state === 'succeeded' && (result.exitCode !== 0 || integrity !== 'complete'))
                 state = 'failed';
             const error = [result.error ? diagnostic(result.error, j.startRequested) : '', ...errors].filter(Boolean).join('; ') || undefined;
-            const report = { purpose: 'development-test', jobId: id, sourceDigest: j.sourceDigest, command: j.manifest.command, image: j.manifest.environmentImageDigest, imageId: j.imageId, exitCode: result.exitCode, status: state, integrity, artifactIds: [...artifactIds], error, recovered: !!result.recovered, scientificConclusion: false };
+            const report = { purpose: 'development-test', jobId: id, sourceDigest: j.sourceDigest, command: j.manifest.command, image: j.manifest.environmentImageDigest, imageId: j.imageId, ...(j.manifest.threadLimit === undefined ? {} : { threadLimit: j.manifest.threadLimit }), exitCode: result.exitCode, status: state, integrity, artifactIds: [...artifactIds], error, recovered: !!result.recovered, scientificConclusion: false };
             const a = this.app.evidence.put(pid, 'test-report.json', Buffer.from(JSON.stringify(report, null, 2)), 'application/json', `development:${id}`, extra);
             artifactIds.push(a.id);
             const next = this.app.store.update('sandbox-job', id, j.version, { state, integrity, exitCode: result.exitCode, error, endedAt: now(), leaseUntil: 0, stdoutArtifactId: stdout?.id, stderrArtifactId: stderr?.id, reportArtifactId: a.id, artifactIds, logTruncated: !!result.logTruncated });

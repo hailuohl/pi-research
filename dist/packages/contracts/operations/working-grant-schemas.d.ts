@@ -29,6 +29,11 @@ export declare const WORKING_GRANT_REFERENCE_SCHEMA: {
 export declare const WORKING_GRANT_SCHEMA: {
     readonly type: "object";
     readonly properties: {
+        readonly threadLimit: {
+            readonly type: "integer";
+            readonly minimum: number;
+            readonly maximum: number;
+        };
         readonly kind: {
             readonly const: "working-grant";
         };
@@ -592,6 +597,11 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
     readonly working_grant_prepare: {
         readonly type: "object";
         readonly properties: {
+            readonly threadLimit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
             readonly kind: {
                 readonly const: "working-grant";
             };
@@ -1057,6 +1067,11 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
     readonly working_grant_inspect: {
         readonly type: "object";
         readonly properties: {
+            readonly threadLimit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
             readonly kind: {
                 readonly const: "working-grant";
             };
@@ -1522,6 +1537,11 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
     readonly working_grant_activate: {
         readonly type: "object";
         readonly properties: {
+            readonly threadLimit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
             readonly kind: {
                 readonly const: "working-grant";
             };
@@ -1987,6 +2007,11 @@ export declare const WORKING_GRANT_OUTPUT_SCHEMAS: {
     readonly working_grant_revoke: {
         readonly type: "object";
         readonly properties: {
+            readonly threadLimit: {
+                readonly type: "integer";
+                readonly minimum: number;
+                readonly maximum: number;
+            };
             readonly kind: {
                 readonly const: "working-grant";
             };

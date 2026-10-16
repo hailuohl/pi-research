@@ -168,6 +168,8 @@ export async function retireUncertainStart(job, fence, run = docker, read = insp
 }
 export function createArgs(job) {
     const m = job.manifest, r = m.resources;
+    if (m.threadLimit !== undefined && (!Number.isSafeInteger(m.threadLimit) || m.threadLimit < 1 || m.threadLimit > 8))
+        throw new Error('Invalid sandbox thread limit');
     const mount = (path, target, readonly) => {
         if (/[\0\r\n,]/.test(path))
             throw new Error('Unsupported bind mount path');
@@ -176,6 +178,7 @@ export function createArgs(job) {
     return ['create', '--pull', 'never', '--name', job.containerName, '--label', `${JOB_LABEL}=${job.id}`, '--label', `${MANIFEST_LABEL}=${job.manifestDigest}`,
         ...(r.gpu ? ['--gpus', r.gpu.deviceIds.length === 1 ? 'device=' + r.gpu.deviceIds[0] : '"device=' + r.gpu.deviceIds.join(',') + '"', '--env', 'NVIDIA_DRIVER_CAPABILITIES=compute,utility'] : []),
         '--env', 'NVIDIA_VISIBLE_DEVICES=' + (r.gpu ? r.gpu.deviceIds.join(',') : 'void'), '--env', 'CUDA_VISIBLE_DEVICES=' + (r.gpu ? r.gpu.deviceIds.join(',') : '-1'),
+        ...(m.threadLimit === undefined ? [] : ['OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS', 'BLIS_NUM_THREADS'].flatMap(key => ['--env', `${key}=${m.threadLimit}`])),
         '--network', 'none', '--read-only', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--pids-limit', String(r.pids), '--cpus', String(r.cpus), '--memory', `${r.memoryMb}m`, '--memory-swap', `${r.memoryMb}m`, '--user', '65532:65532',
         '--tmpfs', `/work:rw,nosuid,nodev,exec,uid=65532,gid=65532,mode=1777,size=${r.workMb}m`, '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,uid=65532,gid=65532,mode=1777,size=32m',
         ...mount(join(job.controlDir, 'source'), '/source', true), ...mount(join(job.controlDir, 'bootstrap.sh'), '/pi-bootstrap.sh', true), ...m.dataArtifacts.flatMap(a => mount(join(job.controlDir, 'data', a.id), `/data/${a.id}`, true)), ...mount(job.outputDir, '/output', false),

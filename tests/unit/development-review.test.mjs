@@ -24,7 +24,7 @@ test('review preparation needs explicit collaboration, creates one stable approv
  const s=setup();try{const reviews=service(s),{job}=tested(s);assert.throws(()=>reviews.prepare(USER,s.project.id,{jobId:job.id}),{code:'MULTI_AGENT_DISABLED'});assert.equal(s.app.store.list('development-review').length,0);
   enable(s);const r=reviews.prepare(USER,s.project.id,{jobId:job.id});assert.equal(r.status,'awaiting_approval');assert.equal(r.requiredEvidenceIds.length,4);assert.equal(r.sourceDigest,job.sourceDigest);assert.equal(r.producerSessionId,s.session.id);
   assert.deepEqual(reviews.prepare(USER,s.project.id,{jobId:job.id}),r);assert.equal(s.app.store.list('team').length,1);assert.equal(s.app.teams.claim(r.teamId),null);
-  const manifest=s.app.evidence.verify(s.project.id,r.manifestEvidenceId);const parsed=JSON.parse(manifest.quote);assert.equal(parsed.sourceDigest,job.sourceDigest);assert.ok(parsed.files.some(f=>f.path==='review-candidate.py'));assert.equal(JSON.stringify(r).includes(s.dir.replaceAll('\\','\\\\')),false);
+  const manifest=s.app.evidence.verify(s.project.id,r.manifestEvidenceId);const parsed=JSON.parse(manifest.quote);assert.equal(parsed.sourceDigest,job.sourceDigest);assert.equal(parsed.threadLimit,1);assert.ok(parsed.files.some(f=>f.path==='review-candidate.py'));assert.equal(JSON.stringify(r).includes(s.dir.replaceAll('\\','\\\\')),false);
   const emptyLog=JSON.parse(s.app.evidence.verify(s.project.id,r.testEvidenceIds[2]).quote);assert.equal(emptyLog.artifactId,job.stderrArtifactId);assert.equal(emptyLog.size,0);assert.equal(emptyLog.excerpt,'');
  }finally{s.close();}
 });

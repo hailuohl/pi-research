@@ -3,6 +3,7 @@ import type { Approval, Row, SourceSnapshot } from '../domain/types.js';
 import type { SandboxManifest, SandboxJob, WorkingGrantReference } from '../execution/contracts.js';
 import type { WorkingGrant } from './working-grant-types.js';
 export declare function workingGrantPayload(g: WorkingGrant): {
+    threadLimit?: number | undefined;
     developmentTaskId: string;
     templateManifestDigest: string;
     sessionId: string;

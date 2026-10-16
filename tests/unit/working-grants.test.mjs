@@ -8,12 +8,15 @@ import {setup,USER,approve} from '../support/research.mjs';
 import {actor,result} from '../support/collaboration.mjs';
 import {digest} from '../../dist/packages/storage/store.js';
 import {readSourceMode,snapshotDirectory} from '../../dist/packages/workspace/files.js';
+import {workingGrantPayload,assertWorkingGrantManifest} from '../../dist/packages/policy/working-grant-validation.js';
 
 const input={command:['python','check.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`,resources:{cpus:2,memoryMb:512}};
 const physical=(s,reference)=>s.app.store.paths.physical(reference);
-function prepared(s,extra={}){
+function prepared(s,extra={},legacy=false){
  const workspace=physical(s,s.session.workspace);s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});writeFileSync(join(workspace,'check.py'),'assert 2 + 2 == 4\n');writeFileSync(join(workspace,'editable.txt'),'1234');writeFileSync(join(workspace,'second.txt'),'1234');
- const template=s.app.development.prepare(USER,s.project.id,s.session.id,input),grant=s.app.workingGrants.prepare(USER,s.project.id,{developmentTaskId:template.id,editablePaths:['editable.txt','second.txt'],maxTests:2,maxChangedBytes:16,expiresAt:new Date(Date.now()+60000).toISOString(),...extra});return {template,grant};
+ const template=s.app.development.prepare(USER,s.project.id,s.session.id,input);
+ if(legacy){const stored=s.app.store.get('development-task',template.id),manifest={...stored.manifest};delete manifest.threadLimit;const manifestDigest=digest(manifest);s.app.store.update('development-task',stored.id,stored.version,{manifest,manifestDigest});const approval=s.app.store.get('approval',template.grantId);s.app.store.update('approval',approval.id,approval.version,{digest:manifestDigest});}
+ const grant=s.app.workingGrants.prepare(USER,s.project.id,{developmentTaskId:template.id,editablePaths:['editable.txt','second.txt'],maxTests:2,maxChangedBytes:16,expiresAt:new Date(Date.now()+60000).toISOString(),...extra});return {template,grant};
 }
 function active(s,extra={}){const {template,grant}=prepared(s,extra);approve(s.app,grant.approvalId);return {template,grant:s.app.workingGrants.activate(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version})};}
 function prepareTest(s,extra={}){return s.app.development.prepare(USER,s.project.id,s.session.id,{...input,...extra});}
@@ -56,9 +59,17 @@ test('cancellation and unknown jobs retain submitted slots; failed enqueue rolls
 }finally{s.close();}});
 
 test('fixed test scope rejects command/image/data changes and resource increases while allowing lower resources',()=>{const s=setup();try{
- active(s);for(const bad of [{command:['python','other.py']},{environmentImageDigest:`python@sha256:${'b'.repeat(64)}`},{dockerContext:'other'},{expectedArtifacts:['new.txt']},{resources:{cpus:3}},{resources:{memoryMb:1024}}])assert.throws(()=>prepareTest(s,bad),{code:'WORKING_GRANT_TEST_DENIED'});
- const lower=prepareTest(s,{resources:{cpus:1,memoryMb:256}});assert.equal(lower.manifest.resources.cpus,1);assert.equal(lower.manifest.resources.memoryMb,256);assert.equal(s.app.development.submit(USER,s.project.id,lower.id).state,'queued');
+ const {grant}=active(s);assert.equal(grant.threadLimit,2);for(const bad of [{command:['python','other.py']},{environmentImageDigest:`python@sha256:${'b'.repeat(64)}`},{dockerContext:'other'},{expectedArtifacts:['new.txt']},{resources:{cpus:3}},{resources:{memoryMb:1024}}])assert.throws(()=>prepareTest(s,bad),{code:'WORKING_GRANT_TEST_DENIED'});
+ const lower=prepareTest(s,{resources:{cpus:1,memoryMb:256}});assert.equal(lower.manifest.resources.cpus,1);assert.equal(lower.manifest.resources.memoryMb,256);assert.equal(lower.manifest.threadLimit,2);assert.equal(s.app.development.submit(USER,s.project.id,lower.id).state,'queued');
+ const stored=s.app.store.get('development-task',lower.id);for(const threadLimit of [undefined,1,3])assert.throws(()=>assertWorkingGrantManifest(grant,{...stored.manifest,threadLimit}),{code:'WORKING_GRANT_TEST_DENIED'});
 }finally{s.close();}});
+
+test('legacy WorkingGrant digest and derived manifests retain the absence of a thread limit',()=>{const s=setup();try{
+ const {grant}=prepared(s,{},true),legacy=s.app.store.get('working-grant',grant.id);assert.equal(Object.hasOwn(legacy,'threadLimit'),false);
+ const payload=workingGrantPayload(legacy);assert.equal(Object.hasOwn(payload,'threadLimit'),false);const expected={developmentTaskId:legacy.developmentTaskId,templateManifestDigest:legacy.templateManifestDigest,sessionId:legacy.sessionId,sourceRevisionId:legacy.sourceRevisionId,model:legacy.model,baselineSnapshot:legacy.baselineSnapshot,command:legacy.command,environmentImageDigest:legacy.environmentImageDigest,dockerContext:legacy.dockerContext,resources:legacy.resources,dataArtifacts:legacy.dataArtifacts,expectedArtifacts:legacy.expectedArtifacts,editablePaths:legacy.editablePaths,maxTests:legacy.maxTests,maxChangedBytes:legacy.maxChangedBytes,expiresAt:legacy.expiresAt,approvalId:legacy.approvalId};assert.equal(digest(payload),digest(expected));
+ const hash=digest(expected);assert.equal(grant.digest,hash);approve(s.app,grant.approvalId);s.app.workingGrants.activate(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version});
+ const derived=prepareTest(s,{resources:{cpus:1}});assert.equal(Object.hasOwn(derived.manifest,'threadLimit'),false);assert.equal(s.app.development.submit(USER,s.project.id,derived.id).state,'queued');assert.equal(s.app.store.get('working-grant',grant.id).digest,hash);
+ }finally{s.close();}});
 
 test('expiration blocks new effects and queued launch but does not invalidate completed immutable results',()=>{const s=setup(),clock=Date.now;try{
  const {grant}=active(s),complete=finished(s,prepareTest(s)),pending=prepareTest(s),queued=s.app.development.submit(USER,s.project.id,pending.id);Date.now=()=>Date.parse(grant.expiresAt)+1;

@@ -2,6 +2,7 @@ import type {ModelConfig,Row,SourceSnapshot} from '../domain/types.js';
 import type {SandboxManifest,SandboxResources} from '../execution/contracts.js';
 
 export interface WorkingGrant {
+    threadLimit?:number;
     developmentTaskId:string; templateManifestDigest:string; sessionId:string; sourceRevisionId:string; model:ModelConfig;
     baselineSnapshot:SourceSnapshot; command:string[]; environmentImageDigest:string; dockerContext:string;
     resources:SandboxResources; dataArtifacts:SandboxManifest['dataArtifacts']; expectedArtifacts:string[];

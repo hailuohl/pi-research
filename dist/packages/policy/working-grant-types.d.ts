@@ -1,6 +1,7 @@
 import type { ModelConfig, Row, SourceSnapshot } from '../domain/types.js';
 import type { SandboxManifest, SandboxResources } from '../execution/contracts.js';
 export interface WorkingGrant {
+    threadLimit?: number;
     developmentTaskId: string;
     templateManifestDigest: string;
     sessionId: string;

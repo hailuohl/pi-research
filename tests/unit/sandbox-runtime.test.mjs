@@ -34,6 +34,14 @@ test('Docker argv confines mounts, privileges and shell bootstrap to container',
  assert.throws(() => createArgs({...job, outputDir: 'x,dst=/host'}), /Unsupported/);
 });
 
+test('frozen thread limits override image defaults without changing legacy Docker argv',()=>{
+ const keys=['OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','BLIS_NUM_THREADS'];
+ const legacy=createArgs(job);assert.ok(!legacy.some(arg=>keys.some(key=>arg.startsWith(key+'='))));
+ const args=createArgs({...job,manifest:{...job.manifest,threadLimit:2}});
+ for(const key of keys){assert.equal(args.filter(arg=>arg.startsWith(key+'=')).length,1);assert.ok(args.includes(key+'=2'));}
+ for(const threadLimit of [0,9,1.5,'2',null])assert.throws(()=>createArgs({...job,manifest:{...job.manifest,threadLimit}}),/thread/i);
+});
+
 test('created CPU containers must override inherited image GPU visibility before starting',()=>{
  const container={Config:{Labels:{},Env:['NVIDIA_VISIBLE_DEVICES=all']},HostConfig:{DeviceRequests:[]},State:{Status:'created'}};
  assert.throws(()=>assertContainerStartPolicy(job,container),/GPU_POLICY_MISMATCH/);container.Config.Env=['NVIDIA_VISIBLE_DEVICES=void','CUDA_VISIBLE_DEVICES=-1'];assert.doesNotThrow(()=>assertContainerStartPolicy(job,container));container.HostConfig.DeviceRequests=[{DeviceIDs:['GPU-11111111-1111-1111-1111-111111111111']}];assert.throws(()=>assertContainerStartPolicy(job,container),/GPU_POLICY_MISMATCH/);

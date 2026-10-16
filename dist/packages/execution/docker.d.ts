@@ -10,6 +10,7 @@ export interface DockerJob {
     controlDir: string;
     outputDir: string;
     manifest: {
+        threadLimit?: number;
         inputSnapshot: SourceSnapshot;
         dataArtifacts: Array<{
             id: string;

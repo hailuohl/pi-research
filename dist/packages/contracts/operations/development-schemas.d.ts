@@ -467,6 +467,11 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                         maxLength: number;
                     };
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
                     readonly purpose: {
                         readonly const: "development-test";
                     };
@@ -974,6 +979,11 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         type: "string";
                         description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                         maxLength: number;
+                    };
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
                     };
                     readonly purpose: {
                         readonly const: "development-test";
@@ -1581,6 +1591,11 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                             maxLength: number;
                         };
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly purpose: {
                             readonly const: "development-test";
                         };
@@ -2087,6 +2102,11 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             type: "string";
                             description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                             maxLength: number;
+                        };
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
                         };
                         readonly purpose: {
                             readonly const: "development-test";
@@ -2661,6 +2681,11 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                         type: "string";
                         description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                         maxLength: number;
+                    };
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
                     };
                     readonly purpose: {
                         readonly const: "development-test";

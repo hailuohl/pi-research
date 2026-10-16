@@ -14,6 +14,7 @@ export interface SandboxResources {
     logBytes: number;
 }
 export interface SandboxManifest {
+    threadLimit?: number;
     approvalResumeDigest?: string;
     workingGrant?: WorkingGrantReference;
     purpose: 'development-test';

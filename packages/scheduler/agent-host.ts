@@ -15,7 +15,7 @@ import { SYSTEM } from '../domain/types.js';
 import { ToolDispatcher } from '../research-tools/dispatcher.js';
 import {TOOL_DEFINITIONS} from '../research-tools/definitions.js';
 import {s as schema} from '../contracts/operations/schema.js';
-import {safeToolDiagnostic,type ToolDiagnostic} from '../pi-adapter/tool-diagnostic.js';
+import {safeToolDiagnostic,toolFailureMessage,type ToolDiagnostic} from '../pi-adapter/tool-diagnostic.js';
 import type { Wakeup } from './wakeups.js';
 import { inspectPi } from '../pi-adapter/runtime.js';
 import {emptyLengthAssistant,EMPTY_LENGTH_FAILURE} from '../pi-adapter/options.js';
@@ -415,7 +415,7 @@ export class AgentHost {
                 this.app.store.event(s.projectId, 'session.activity', {sessionId:s.id,generation:a.generation,tool,status:m.type === 'tool_execution_start' ? 'running' : failed&&!approvalRequired ? 'failed' : 'completed'});
                 if (failedCallId !== null) {
                     if (!seen.has(failedCallId)) {
-                        const content=approvalRequired?`工具 ${tool} 需要用户确认本次操作，请处理当前审批卡。`:diagnostic?.code==='INVALID_INPUT'?`工具 ${tool} 调用失败（INVALID_INPUT${diagnostic.path?` — ${diagnostic.path}: ${diagnostic.reason}`:'：输入不符合工具要求'}）。请按完整调用示例核对参数。`:`工具 ${tool} 调用失败。请查看智能体说明或对应任务的诊断。`;
+                        const content=approvalRequired?`工具 ${tool} 需要用户确认本次操作，请处理当前审批卡。`:toolFailureMessage(tool,diagnostic);
                         const notice = this.app.store.create<Message>('message', s.projectId, {sessionId:s.id,generation:a.generation,role:'system',content,mode:'follow_up',status:approvalRequired?'completed':'failed'});
                         this.app.store.event(s.projectId, 'session.message_completed', {sessionId:s.id,messageId:notice.id});
                         noticeSaved=true;

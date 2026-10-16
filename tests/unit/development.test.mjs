@@ -4,6 +4,7 @@ import {writeFileSync,readFileSync,mkdirSync,chmodSync,readdirSync,symlinkSync} 
 import {join} from 'node:path';
 import {setup,USER,approve} from '../support/research.mjs';
 import {DevelopmentService} from '../../dist/packages/development/service.js';
+import {digest} from '../../dist/packages/storage/store.js';
 
 const input={command:['python','main.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`,expectedArtifacts:['result.txt']};
 const physical=(app,reference)=>app.store.paths.physical(reference);
@@ -15,6 +16,25 @@ function fixture(s,d,t,{state='succeeded',exitCode=0,missing=false,...rest}={}){
  if(!missing)writeFileSync(join(outputDir,'result.txt'),'unit fixture result');
  return d.finalize(j.jobId,{state,exitCode,...rest});
 }
+
+test('new development freezes CPU thread limit while legacy approvals and reports keep their original manifest',()=>{
+ const s=setup();try{const d=ready(s),t=d.prepare(USER,s.project.id,s.session.id,{...input,resources:{cpus:2}});
+  assert.equal(t.manifest.threadLimit,2);const stored=s.app.store.get('development-task',t.id),manifest={...stored.manifest};delete manifest.threadLimit;
+  const manifestDigest=digest(manifest);s.app.store.update('development-task',t.id,stored.version,{manifest,manifestDigest});const approval=s.app.store.get('approval',t.grantId);s.app.store.update('approval',approval.id,approval.version,{digest:manifestDigest});approve(s.app,t.grantId);
+  const before=JSON.stringify(manifest),j=fixture(s,d,t);assert.equal(j.state,'succeeded');assert.equal(JSON.stringify(j.manifest),before);assert.equal(j.manifestDigest,manifestDigest);
+  const report=JSON.parse(s.app.evidence.read(USER,j.reportArtifactId).bytes);assert.equal(Object.hasOwn(report,'threadLimit'),false);
+ }finally{s.close();}
+});
+
+test('missing development outputs explain the output root without rewriting paths or old failures',()=>{
+ const s=setup();try{const d=ready(s),t=approved(s,d,{...input,expectedArtifacts:['output/result.txt']}),j=fixture(s,d,t);
+  assert.equal(j.state,'failed');assert.equal(j.integrity,'incomplete');assert.match(j.error,/PI_OUTPUT_DIR.*\/output/);assert.match(j.error,/工作目录.*显式复制/);assert.match(j.error,/可能多写.*output\//);
+  const bytes=s.app.evidence.read(USER,j.reportArtifactId).bytes;assert.equal(d.finalize(j.id,{state:'succeeded',exitCode:0}).state,'failed');assert.deepEqual(s.app.evidence.read(USER,j.reportArtifactId).bytes,bytes);
+  const next=approved(s,d,{...input,expectedArtifacts:['output/result.txt']}),dto=d.submit(USER,s.project.id,next.id),row=s.app.store.get('sandbox-job',dto.id);mkdirSync(join(physical(s.app,row.outputDir),'output'));writeFileSync(join(physical(s.app,row.outputDir),'output/result.txt'),'valid nested output');
+  const good=d.finalize(row.id,{state:'succeeded',exitCode:0});assert.equal(good.state,'succeeded');assert.equal(good.integrity,'complete');assert.equal(JSON.parse(s.app.evidence.read(USER,good.reportArtifactId).bytes).threadLimit,1);
+  const absent=fixture(s,d,approved(s,d),{missing:true});assert.equal(absent.state,'failed');assert.match(absent.error,/PI_OUTPUT_DIR/);assert.doesNotMatch(absent.error,/可能多写/);
+ }finally{s.close();}
+});
 
 test('development freezes actual edited private source and requires exact user approval',()=>{
  const s=setup();try{const d=ready(s),t=d.prepare(USER,s.project.id,s.session.id,input),r=s.app.store.get('development-task',t.id);
@@ -32,7 +52,7 @@ test('development freezes actual edited private source and requires exact user a
 
 test('strict inputs reject host paths, non-pinned images, excessive resources and arbitrary fields',()=>{
  const s=setup();try{const d=ready(s);for(const bad of [
-  {...input,mounts:['/secret']},{...input,grantId:'forged'},{...input,environmentImageDigest:'python:latest'},
+  {...input,mounts:['/secret']},{...input,grantId:'forged'},{...input,environmentImageDigest:'python:latest'},{...input,threadLimit:2},{...input,environment:{OMP_NUM_THREADS:'2'}},
   {...input,resources:{cpus:9}},{...input,resources:{network:true}},{...input,expectedArtifacts:['../secret']},
   {...input,dataArtifactIds:Array(11).fill('x')},{...input,deadline:new Date(0).toISOString()},{...input,command:[]},
  ])assert.throws(()=>d.prepare(USER,s.project.id,s.session.id,bad));assert.equal(s.app.store.list('development-task').length,0);
