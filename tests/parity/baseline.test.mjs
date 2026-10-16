@@ -52,7 +52,7 @@ test('build fails explicitly without local dependencies even when a global compi
   } finally { rmSync(dir, {recursive: true, force: true}); }
 });
 
-test('prebuilt CLI and authenticated HTTP core start in a directory without node_modules', () => {
+test('prebuilt CLI and local HTTP core start in a directory without node_modules', () => {
   const dir = mkdtempSync(join(tmpdir(), 'pi-prebuilt-'));
   try {
     for (const file of ['dist', 'skills', 'examples', 'package.json']) cpSync(join(root, file), join(dir, file), {recursive: true});
@@ -70,7 +70,7 @@ test('prebuilt CLI and authenticated HTTP core start in a directory without node
         const port = await service.listen(), base = 'http://127.0.0.1:' + port;
         assert.equal((await fetch(base + '/api/health')).status, 200);
         assert.equal((await fetch(base + '/api/bootstrap')).status, 200);
-        assert.equal((await fetch(base + '/api/bootstrap', {headers:{Origin:'https://other.invalid'}})).status, 403);
+        assert.equal((await fetch(base + '/api/bootstrap', {headers:{Origin:'https://other.invalid'}})).status, 200);
         assert.match(await (await fetch(base + '/')).text(), /<html/);
       } finally { await service.close(); }
     `], {cwd: dir, env, encoding: 'utf8', timeout: 15000});

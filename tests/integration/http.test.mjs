@@ -1,7 +1,7 @@
 import {request as httpRequest} from 'node:http';import test from 'node:test';import assert from 'node:assert/strict';import {mkdtempSync,rmSync,existsSync,readFileSync,writeFileSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';import {randomUUID} from 'node:crypto';
 import {createHttpServer} from '../../dist/apps/server/http.js';
 async function setup(withoutSdk=false){const dir=mkdtempSync(join(tmpdir(),'pi-http-')),server=createHttpServer({dataDir:dir,repoRoot:withoutSdk?dir:process.cwd(),port:0});const port=await server.listen();const base=`http://127.0.0.1:${port}`;return {server,base,async request(path,body,headers={}){const r=await fetch(base+'/api'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json','Idempotency-Key':randomUUID(),...headers},...(body!==undefined?{body:JSON.stringify(body)}:{})});return {status:r.status,body:await r.json()};},async close(){await server.close();rmSync(dir,{recursive:true,force:true});}};}
-test('local API opens without a token and rejects cross-origin writes',async()=>{const s=await setup();try{const opened=await fetch(s.base+'/api/bootstrap');assert.equal(opened.status,200);assert.equal(s.server.server.address().address,'127.0.0.1');assert.equal(existsSync(join(s.server.app.context.dataDir,'access.token')),false);const origin=await s.request('/projects',{name:'forbidden'},{Origin:'https://attacker.example'});assert.equal(origin.status,403);assert.equal(s.server.app.store.list('project').length,0);}finally{await s.close();}});
+test('local API opens without a token and accepts cross-origin writes',async()=>{const s=await setup();try{const opened=await fetch(s.base+'/api/bootstrap');assert.equal(opened.status,200);assert.equal(s.server.server.address().address,'127.0.0.1');assert.equal(existsSync(join(s.server.app.context.dataDir,'access.token')),false);const origin=await s.request('/projects',{name:'cross-origin'},{Origin:'https://client.example'});assert.equal(origin.status,200);assert.equal(s.server.app.store.list('project')[0].id,origin.body.id);}finally{await s.close();}});
 test('capability reads expose verified local paths and retain unverified scope without creating work',async()=>{const s=await setup(true);try{
  const opened=await fetch(s.base+'/api/capabilities');assert.equal(opened.status,200);
  const catalog=await s.request('/capabilities'),bootstrap=await s.request('/bootstrap');assert.equal(catalog.status,200);assert.deepEqual(bootstrap.body.capabilities,catalog.body);
@@ -20,12 +20,14 @@ test('missing Pi is an actionable error, not a fake assistant response',async()=
 test('approval + fixed snapshot + actual Run complete over HTTP',async()=>{const s=await setup();try{const p=(await s.request('/projects',{name:'HTTP实验',template:'curve-fit'})).body;const e=(await s.request('/experiments',{projectId:p.id,title:'二阶拟合',hypothesis:'验证流水线',config:{polynomialDegree:2,ridge:0.000001}})).body;const intent=(await s.request('/run-intents',{experimentId:e.id})).body;const refused=await s.request(`/run-intents/${intent.id}/submit`,{});assert.equal(refused.status,409);const a=s.server.app.store.get('approval',intent.approvalId);await s.request(`/approvals/${a.id}/decide`,{expectedVersion:a.version,approved:true});const run=(await s.request(`/run-intents/${intent.id}/submit`,{})).body;let done;for(let i=0;i<60;i++){await new Promise(r=>setTimeout(r,100));done=s.server.app.store.get('run',run.id);if(done.state==='succeeded')break;}assert.equal(done.state,'succeeded');assert.ok(done.metrics.mse<0.01);const report=(await s.request('/reports',{projectId:p.id,title:'结果记录',runIds:[run.id]})).body;const content=await fetch(s.base+`/api/artifacts/${report.id}/content`,{headers:{}});assert.equal(content.headers.get('x-content-type-options'),'nosniff');assert.match(await content.text(),/mse/);}finally{await s.close();}});
 
 
-test('browser cross-site metadata is rejected for page, health, API, event and download requests',async()=>{const s=await setup();try{
- for(const path of ['/','/api/health','/api/bootstrap','/api/events/stream','/api/artifacts/not-found/content']){
-  const response=await fetch(s.base+path,{headers:{'Sec-Fetch-Site':'cross-site'}});assert.equal(response.status,403,path);assert.equal((await response.json()).error.code,'ORIGIN_DENIED');
+test('cross-site headers reach page, health, API, event and download routes',async()=>{const s=await setup();try{
+ for(const headers of [{'Sec-Fetch-Site':'cross-site'},{Origin:'https://client.example'}]){
+  for(const [path,status] of [['/',200],['/api/health',200],['/api/bootstrap',200],['/api/events/stream',200],['/api/artifacts/not-found/content',404]]){
+   const response=await fetch(s.base+path,{headers});try{assert.equal(response.status,status,path);}finally{await response.body?.cancel();}
+  }
  }
  for(const site of ['none','same-origin'])assert.equal((await fetch(s.base+'/api/bootstrap',{headers:{'Sec-Fetch-Site':site}})).status,200);
- const written=await s.request('/projects',{name:'blocked-metadata'},{'Sec-Fetch-Site':'cross-site'});assert.equal(written.status,403);assert.equal(s.server.app.store.list('project').length,0);
+ const written=await s.request('/projects',{name:'cross-site'},{'Sec-Fetch-Site':'cross-site',Origin:'https://client.example'});assert.equal(written.status,200);assert.equal(s.server.app.store.list('project')[0].id,written.body.id);
 }finally{await s.close();}});
 
 test('retired short token bytes and project history survive restart without being read or replaced',async()=>{

@@ -25,7 +25,7 @@ test('event HTTP pages retain durable ordered cursors, project isolation, safe i
   const large=await s.get(`/events?projectId=${a.id}&after=1000000`);assert.equal(large.status,200);assert.equal(large.value.cursor,1000005);
   for(const query of ['after=-1','after=9007199254740992','after=1.5','limit=501','limit=0','after=0&after=1','token=forbidden'])assert.equal((await s.get('/events?'+query)).status,400,query);
   assert.equal((await s.get('/events?projectId=not-found')).status,404);
-  assert.equal((await fetch(s.base+'/events')).status,200);assert.equal((await s.get('/events',{Origin:'http://other.invalid'})).status,403);
+  assert.equal((await fetch(s.base+'/events')).status,200);assert.equal((await s.get('/events',{Origin:'http://other.invalid'})).status,200);
   const before=store.eventCursor(a.id);store.event(a.id,'fixture.oversize',{body:'x'.repeat(100000)});for(let n=0;n<8;n++)store.event(a.id,'fixture.medium',{body:'x'.repeat(60000)});
   const bounded=(await s.get(`/events?projectId=${a.id}&after=${before}`)).value;assert.equal(bounded.items.length,9);assert.equal(bounded.items[0].omitted,true);assert.equal(bounded.items[0].payload,null);assert.ok(bounded.items.filter(item=>!item.omitted).reduce((sum,item)=>sum+Buffer.byteLength(JSON.stringify(item.payload)),0)<=EVENT_PAGE_PAYLOAD_BYTES);assert.equal(bounded.cursor,bounded.latestCursor);
  }finally{await s.close();}

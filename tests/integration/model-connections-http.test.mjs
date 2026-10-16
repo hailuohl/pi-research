@@ -47,10 +47,9 @@ test('owner HTTP configuration reaches the real Pi Worker, survives restart and 
   port=await service.listen();assert.equal((await ok('/settings/model-connections')).version,0);
   const project=await ok('/projects',{name:'Provider configuration fixture'}),oldSession=await ok('/sessions',{projectId:project.id,title:'Existing untouched session'}),oldModel=oldSession.model;
   const config={expectedVersion:0,provider:'new-configured-provider',name:'Local fixture',baseUrl:`http://127.0.0.1:${fixture.address().port}/v1`,api:'openai-completions',apiKey:fakeKey};
-  assert.equal((await call('/settings/model-connections',config,'origin-denied',{headers:{origin:'https://other.invalid'}})).status,403);
   assert.equal((await call('/settings/model-connections',config,'method-denied',{method:'PUT'})).status,405);
   assert.equal((await call('/settings/model-connections?x=1',config,'query-denied')).status,405);
-  const saved=await ok('/settings/model-connections',config,'save-connection');assert.equal(saved.connections[0].hasApiKey,true);assert.equal(saved.liveVerified,false);assert.equal(requests.length,0);assert.deepEqual(await ok('/settings/model-connections',config,'save-connection'),saved);
+  const saved=await ok('/settings/model-connections',config,'save-connection',{headers:{origin:'https://other.invalid'}});assert.equal(saved.connections[0].hasApiKey,true);assert.equal(saved.liveVerified,false);assert.equal(requests.length,0);assert.deepEqual(await ok('/settings/model-connections',config,'save-connection'),saved);
   assert.equal((await call('/settings/model-connections',{...config,name:'stale'},'stale')).value.error.code,'VERSION_CONFLICT');
   const bootstrap=await ok('/bootstrap'),model=await ok('/settings/model',{provider:config.provider,model:'unknown-text-model',thinking:'off',expectedVersion:bootstrap.modelVersion});assert.equal(model.version,1);
   assert.equal((await call('/settings/model',{provider:config.provider,model:'wrong',thinking:'off',expectedVersion:0})).value.error.code,'VERSION_CONFLICT');

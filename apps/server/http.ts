@@ -35,9 +35,6 @@ export function createHttpServer(options: ServerOptions) {
         try {
             const allowed = [`127.0.0.1:${port}`, `localhost:${port}`];
             ensure(allowed.includes(req.headers.host ?? ''), 'HOST_DENIED', '只允许回环地址访问', 403);
-            ensure(req.headers['sec-fetch-site'] !== 'cross-site', 'ORIGIN_DENIED', '拒绝跨站请求', 403);
-            if (req.headers.origin)
-                ensure(req.headers.origin === `http://${req.headers.host}`, 'ORIGIN_DENIED', '拒绝跨站请求', 403);
             const url = new URL(req.url ?? '/', `http://${req.headers.host}`), path = url.pathname;
             if (path === '/api/health') {
                 ensure(req.method === 'GET', 'METHOD_NOT_ALLOWED', '请求方法不支持', 405);

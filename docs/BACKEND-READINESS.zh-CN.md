@@ -15,7 +15,7 @@
 - `GET /api/operations`：当前 **144** 项精确输入/输出契约。owner 使用 `POST /api/operations/<id>`，请求为 `{projectId, sessionId?, input}`；写操作提供 `Idempotency-Key`。这里的 `sessionId` 只选择工作区，不授予 Agent 身份。
 - CLI：`node dist/apps/cli/index.js operation <id> --project <id> --input-file <JSON文件> [--session <id>] [--key <id>] [--data <数据目录>]`。Pi 使用同一 Registry，由 Host 派发真实角色、Task/Attempt 与租约，无法通过 owner HTTP 请求伪造。
 
-服务限本地回环、Host 白名单、同源 Origin 与 Fetch Metadata 边界；工作台无需访问令牌。科研数据、数据库、原生会话和认证文件保留本机；源码远端备份不等于科研成果对外发布。
+服务限本地回环与 Host 白名单；工作台无需访问令牌，HTTP 入口不再按 Origin 或 Sec-Fetch-Site 拒绝请求。科研数据、数据库、原生会话和认证文件保留本机；源码远端备份不等于科研成果对外发布。
 
 ## 可用与受限清单
 

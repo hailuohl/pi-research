@@ -8,11 +8,11 @@ import {createHttpServer} from '../../dist/apps/server/http.js';
 import {setup,USER,approve} from '../support/research.mjs';
 import {configureEnvironment} from '../../dist/packages/runtime/environment.js';
 
-test('environment HTTP is local owner only, versioned and write-only across restart and deletion',async()=>{
+test('environment HTTP accepts cross-origin writes and remains versioned and write-only across restart and deletion',async()=>{
  const dir=mkdtempSync(join(tmpdir(),'pi-environment-http-')),token='fixture-private-http-token';let service=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0}),port=await service.listen();
  const call=async(body,extra={})=>{const response=await fetch(`http://127.0.0.1:${port}/api/settings/environment${extra.query??''}`,{method:extra.method??(body===undefined?'GET':'POST'),headers:{'content-type':'application/json','idempotency-key':extra.key??randomUUID(),...extra.headers},...(body===undefined?{}:{body:JSON.stringify(body)})});const value=await response.json();assert.ok(!JSON.stringify(value).includes(token));return {status:response.status,value};};
- try{assert.deepEqual((await call()).value,{version:0,variables:[],scope:'local'});const input={action:'set',expectedVersion:0,name:'FIXTURE_TOKEN',value:token},saved=await call(input,{key:'saved'});assert.equal(saved.status,200);assert.deepEqual(await call(input,{key:'saved'}),saved);
-  assert.equal((await call({...input,expectedVersion:1},{headers:{origin:'https://foreign.invalid'}})).status,403);assert.equal((await call(input,{method:'PUT'})).status,405);assert.equal((await call(undefined,{query:'?name=FIXTURE_TOKEN'})).status,400);
+ try{assert.deepEqual((await call()).value,{version:0,variables:[],scope:'local'});const input={action:'set',expectedVersion:0,name:'FIXTURE_TOKEN',value:token},saved=await call(input,{key:'saved',headers:{origin:'https://foreign.invalid'}});assert.equal(saved.status,200);assert.deepEqual(await call(input,{key:'saved'}),saved);
+  assert.equal((await call(input,{method:'PUT'})).status,405);assert.equal((await call(undefined,{query:'?name=FIXTURE_TOKEN'})).status,400);
   assert.equal((await call(input)).value.error.code,'VERSION_CONFLICT');assert.equal((await call({...input,expectedVersion:1,name:'NODE_OPTIONS'})).status,400);
   await service.close();service=createHttpServer({dataDir:dir,repoRoot:process.cwd(),port:0});port=await service.listen();assert.equal((await call()).value.variables[0].hasValue,true);
   assert.equal((await call({action:'delete',expectedVersion:1,name:'FIXTURE_TOKEN'})).status,200);assert.deepEqual((await call()).value.variables,[]);
