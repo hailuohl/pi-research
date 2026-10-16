@@ -1,6 +1,6 @@
 const recoveryHints = {
     NOT_FOUND: '未找到指定资源。先读取当前会话或任务的索引，使用实际返回的 ID，不猜测 ID。',
-    ARTIFACT_TEXT_REQUIRED: '该产物不支持文本读取。改用对应类型的读取入口，不重复按文本读取。',
+    ARTIFACT_TEXT_REQUIRED: '产物不是有效文本或超过读取范围。当前独立开发审查可按原日志 artifactId 分页；其他文本上限 2 MiB，二进制产物使用对应类型入口，不重复尝试相同请求。',
     BRIEF_REQUIRED: '先读取当前研究计划，并等待用户确认后再准备运行或文稿。',
     BRIEF_NOT_CONFIRMED: '当前最新研究计划尚未确认。先读取计划并等待用户确认，再继续运行或制稿。',
     BRIEF_REFERENCE_MISMATCH: '重新读取当前已确认研究计划；文稿引用只能选用该计划列出的证据。',
@@ -22,7 +22,7 @@ const recoveryHints = {
     SOURCE_DISABLED: '所选来源尚未启用。等待用户启用来源，不自行修改来源设置。',
     SESSION_ACTION_CONSUMED: '该固定批准已消费或效果待核对。回读真实状态，不自动重放操作。',
     SESSION_ACTION_EXECUTION_DENIED: '此入口只执行已批准的固定文本保存。使用对应操作的原有批准流程。',
-    INTERNAL_ERROR: '内部异常。保留本次操作记录并核对本地诊断；效果不明时不自动重试。',
+    INTERNAL_ERROR: '内部异常。按诊断ID核对本机记录；未给出ID表示诊断未保存。效果不明时不自动重试。',
 };
 const reasons = new Set(['需要有限、无循环的 JSON 值', '需要 JSON 对象', 'JSON 不支持 Symbol 字段', '不符合允许的结构', '不符合固定值', '不在允许的取值内', '类型不正确', '文本长度超出范围', '文本格式不正确', '需要有效 YYYY-MM-DD 日期', '数值超出范围', '数组长度超出范围', '数组不允许重复项', '对象字段数量超出范围', '缺少必需字段', '未知字段']);
 /** Only static schema properties and array indices may become public diagnostic paths. */
@@ -58,11 +58,11 @@ export function safeToolDiagnostic(schema, code, message) {
     return { code };
 }
 /** Recovery text is fixed; raw errors can contain paths, credentials, or private input. */
-export function toolFailureMessage(tool, diagnostic) {
+export function toolFailureMessage(tool, diagnostic, diagnosticId) {
     if (diagnostic?.code === 'INVALID_INPUT')
         return `工具 ${tool} 调用失败（INVALID_INPUT${diagnostic.path ? ` — ${diagnostic.path}: ${diagnostic.reason}` : '：输入不符合工具要求'}）。请按完整调用示例核对参数；无参数工具也必须传 {"input":{}}。`;
     if (diagnostic && Object.hasOwn(recoveryHints, diagnostic.code))
-        return `工具 ${tool} 调用失败（${diagnostic.code}）。${recoveryHints[diagnostic.code]}`;
+        return `工具 ${tool} 调用失败（${diagnostic.code}）。${recoveryHints[diagnostic.code]}${diagnosticId && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(diagnosticId) ? ` 诊断ID：${diagnosticId}` : ''}`;
     return `工具 ${tool} 调用失败。请查看智能体说明或对应任务的诊断。`;
 }
 /** Pinned Pi wraps a thrown error in exactly one text block; never forward that result. */

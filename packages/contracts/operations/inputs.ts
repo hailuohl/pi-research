@@ -69,7 +69,7 @@ export const INPUT_SCHEMAS = {
     campaign_decision_submit: s.object({ campaignId: id, expectedVersion: version, action: s.enum(['repair', 'refill', 'promote', 'stop']), observationIds: { ...strings(), minItems: 1, uniqueItems: true }, reason: s.string(8000), selectedRunId: id, candidates: s.nullable(s.array(candidate, 24)),experimentPlan:EXPERIMENT_PLAN_INPUT_SCHEMA }, ['campaignId', 'expectedVersion', 'action', 'observationIds', 'reason']),
     change_proposal_prepare: s.object({ testJobId: id, baseExperimentId: id, expectedRevision: version, title: s.string(200), hypothesis: s.string(), changes: s.array(s.object({ path: s.string(1000), artifactId: s.nullable(id), expectedDigest: s.nullable(s.string(64)) }, ['path', 'artifactId', 'expectedDigest']), 50, 1) }, ['baseExperimentId', 'expectedRevision', 'title', 'hypothesis', 'changes']),
     reviewed_change_prepare:s.object({reviewId:id,title:s.string(200),hypothesis:s.string()},['reviewId','title','hypothesis']),
-    artifact_read: s.object({ artifactId: id, cursor: s.nullable(s.integer(0, 2 * 1024 * 1024)) }, ['artifactId']),
+    artifact_read: s.object({ artifactId: id, cursor: s.nullable(s.integer(0, 16 * 1024 * 1024)) }, ['artifactId']),
     session_action_execute: s.object({actionId:id},['actionId']),
     session_action_inspect: s.object({actionId:id},['actionId']),
     session_notice_read: s.object({ messageId: id, cursor: s.nullable(s.integer(0, Number.MAX_SAFE_INTEGER)) }, ['messageId']),

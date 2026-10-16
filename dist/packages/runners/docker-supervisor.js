@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
+import { executionTimeStatus } from '../execution/completion-time.js';
 import { DockerAdapter } from './docker.js';
 /** Runs inside the detached supervisor process; the caller owns SQLite and approval authority. */
 export async function superviseDockerRun(initial, callbacks) {
@@ -160,6 +161,18 @@ export async function superviseDockerRun(initial, callbacks) {
                 throw new Error('Formal owned container disappeared during monitoring');
             }
             if (['exited', 'dead'].includes(container.State.Status)) {
+                if (!stopping) {
+                    const timing = executionTimeStatus(run.startedAt, container.State, run.manifest.contract.timeoutSeconds);
+                    if (timing === 'invalid') {
+                        logsIncomplete = true;
+                        stopping = 'failed';
+                        reason = 'Invalid container completion time';
+                    }
+                    else if (timing === 'exceeded') {
+                        stopping = 'failed';
+                        reason = 'Formal run timeout exceeded';
+                    }
+                }
                 await finish(stopping ?? (container.State.ExitCode === 0 ? 'succeeded' : 'failed'), container.State.ExitCode, reason ?? (container.State.Error || undefined));
                 return;
             }
@@ -171,11 +184,17 @@ export async function superviseDockerRun(initial, callbacks) {
                 throw new Error(`Unknown formal container state: ${container.State.Status}`);
             if (run.state !== 'running' && run.state !== 'cancelling')
                 update({}, { state: 'running' });
+            const timing = executionTimeStatus(run.startedAt, container.State, run.manifest.contract.timeoutSeconds, undefined, Date.now());
             if (run.cancelRequested) {
                 stopping = 'cancelled';
                 reason = 'Formal run cancellation requested';
             }
-            else if (Date.now() >= Date.parse(run.startedAt ?? container.State.StartedAt) + run.manifest.contract.timeoutSeconds * 1000) {
+            else if (timing === 'invalid') {
+                logsIncomplete = true;
+                stopping = 'failed';
+                reason = 'Invalid container execution time';
+            }
+            else if (timing === 'exceeded') {
                 stopping = 'failed';
                 reason = 'Formal run timeout exceeded';
             }

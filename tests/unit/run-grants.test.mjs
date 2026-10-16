@@ -6,12 +6,27 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {setup,USER,approve,campaign,enroll,submit,fixtureFinish} from '../support/research.mjs';
 import {assertRunGrantRun} from '../../dist/packages/policy/run-grant-validation.js';
+import {digest} from '../../dist/packages/storage/store.js';
+import {RUN_GRANT_SCHEMA} from '../../dist/packages/contracts/operations/run-grant-schemas.js';
+import {validateSchema} from '../../dist/packages/contracts/operations/schema.js';
 
 function intent(s,degree=2){const e=s.app.experiments.create(USER,s.project.id,{title:`fixed ${degree}`,parentId:s.baseline.id,config:{polynomialDegree:degree,ridge:0.000001}});return s.app.runs.prepare(USER,e.id);}
 function prepare(s,intents=[intent(s),intent(s,3)],extra={}){return s.app.runGrants.prepare(USER,s.project.id,{sessionId:s.session.id,intentIds:intents.map(i=>i.id),maxRuns:1,expiresAt:new Date(Date.now()+60000).toISOString(),...extra});}
 function activate(s,g){approve(s.app,g.approvalId);return s.app.runGrants.activate(USER,s.project.id,{grantId:g.id,expectedVersion:g.version});}
 function active(s,extra={}){const intents=[intent(s),intent(s,3)],grant=activate(s,prepare(s,intents,extra));return {intents,grant};}
 function agent(s,sessionId=s.session.id){let session=s.app.sessions.get(USER,sessionId);session=s.app.store.update('session',session.id,session.version,{state:'running',generation:session.generation+1,leaseUntil:Date.now()+60000});return {type:'agent',projectId:s.project.id,sessionId,role:'coordinator',generation:session.generation};}
+
+test('RunGrant inspection shows newly frozen threads while grants containing old intents never add them',()=>{
+ const s=setup();try{
+  const contract={runner:'docker',image:'python@sha256:'+'a'.repeat(64),command:['python','main.py'],environment:{},datasetVersion:'fixture',evaluationProtocolVersion:'fixture',metrics:{mse:{unit:'fixture',direction:'min'}},expectedArtifacts:['metrics.json'],cpus:2,memoryMb:256};
+  const fresh=s.app.experiments.create(USER,s.project.id,{title:'Fresh thread contract',contract}),freshIntent=s.app.runs.prepare(USER,fresh.id);
+  let legacy=s.app.experiments.create(USER,s.project.id,{title:'Old thread contract',contract});const oldContract={...legacy.contract};delete oldContract.threadLimit;legacy=s.app.store.update('experiment',legacy.id,legacy.version,{contract:oldContract,contractDigest:digest(oldContract)});
+  const prepared=s.app.runs.prepare(USER,legacy.id),oldManifest={...prepared.manifest};delete oldManifest.threadLimit;const oldDigest=digest(oldManifest),old=s.app.store.get('run-intent',prepared.id),approval=s.app.store.get('approval',prepared.approvalId);
+  const legacyIntent=s.app.store.update('run-intent',old.id,old.version,{manifest:oldManifest,manifestDigest:oldDigest});s.app.store.update('approval',approval.id,approval.version,{digest:oldDigest});
+  const grant=prepare(s,[freshIntent,legacyIntent],{maxRuns:2});validateSchema(RUN_GRANT_SCHEMA,grant);assert.equal(grant.manifests.find(m=>m.intentId===freshIntent.id).threadLimit,2);assert.equal(Object.hasOwn(grant.manifests.find(m=>m.intentId===legacyIntent.id),'threadLimit'),false);
+  activate(s,grant);const run=s.app.runs.submit(USER,legacyIntent.id);assert.equal(run.manifestDigest,oldDigest);assert.equal(Object.hasOwn(run.manifest,'threadLimit'),false);assert.equal(Object.hasOwn(run.manifest.contract,'threadLimit'),false);assert.equal(run.manifest.contractDigest,legacy.contractDigest);
+ }finally{s.close();}
+});
 
 test('RunGrant activation preserves exact manifest and original approval IDs without starting anything',()=>{const s=setup();try{
  const intents=[intent(s),intent(s,3)],grant=prepare(s,intents);assert.equal(grant.effectiveState,'draft');assert.equal(JSON.stringify(grant).includes('snapshotPath'),false);assert.equal(s.app.store.list('run').length,0);assert.throws(()=>s.app.runGrants.activate(USER,s.project.id,{grantId:grant.id,expectedVersion:grant.version}),{code:'APPROVAL_REQUIRED'});

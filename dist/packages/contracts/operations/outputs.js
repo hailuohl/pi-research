@@ -38,25 +38,26 @@ const runScheduling = object({ observedAt: string, queue: { anyOf: [object({ sta
 const sourceFile = object({ path: string, size: integer, digest: string, mode: enumeration('100644', '100755') }, ['mode']);
 const snapshot = object({ digest: string, path: string, files: array(sourceFile) });
 const contract = object({
-    localRuntimeId: string, gpu: GPU_SCHEMA,
+    localRuntimeId: string, gpu: GPU_SCHEMA, threadLimit: { type: 'integer', minimum: 1, maximum: 64 },
     command: strings,
     environment: { type: 'object', additionalProperties: string },
     datasetVersion: string, evaluationProtocolVersion: string,
     metrics: { type: 'object', additionalProperties: object({ unit: string, direction: enumeration('min', 'max') }) },
     expectedArtifacts: strings, timeoutSeconds: integer, runner: enumeration('trusted-example', 'local', 'docker', 'ssh'),
     sshTargetId: string, image: string, cpus: integer, memoryMb: integer, dockerContext: string, pids: integer, workMb: integer, logBytes: integer, outputBytes: integer, networkPolicy: { enum: ['none', 'host'] }
-}, ['localRuntimeId', 'gpu', 'sshTargetId', 'image', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy']);
+}, ['localRuntimeId', 'gpu', 'threadLimit', 'sshTargetId', 'image', 'dockerContext', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy']);
 const sshTarget = object({ id: string, version: integer, hostKeyDigest: string, configDigest: string, engineId: string, protocolDigest: string, targetId: string, gpuProtocol: boolean }, ['gpuProtocol']);
 const researchBriefRef = object({ id: string, digest: string, revision: integer, rootSessionId: string });
 const runAnalysis = object({ rootSessionId: string, model: object({ provider: string, model: string, thinking: { type: 'string', minLength: 1, maxLength: 64 } }), maxAttempts: { const: 1 } });
 const manifest = object({
+    threadLimit: { type: 'integer', minimum: 1, maximum: 64 },
     localRuntime: LOCAL_RUNTIME_SCHEMA, localExecution: LOCAL_EXECUTION_SCHEMA, gpuTarget: GPU_TARGET_SCHEMA,
     analysis: runAnalysis,
     researchBrief: researchBriefRef,
     experimentId: string, experimentVersion: integer, experimentRevision: integer,
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
     sourceFiles: array(sourceFile), createdAt: string, sourceRevisionId: string, gitCommit: string, sshTarget
-}, ['localRuntime', 'localExecution', 'gpuTarget', 'sourceRevisionId', 'gitCommit', 'sshTarget', 'researchBrief', 'analysis']);
+}, ['threadLimit', 'localRuntime', 'localExecution', 'gpuTarget', 'sourceRevisionId', 'gitCommit', 'sshTarget', 'researchBrief', 'analysis']);
 const runnerExecution = object({ backend: enumeration('local', 'docker', 'ssh'), sshHandle: string, dockerContext: string, containerName: string, containerId: string, imageId: string, controlDir: string, generation: integer, leaseUntil: number, startRequested: boolean, recoveryCount: integer, logTruncated: boolean, logsIncomplete: boolean, outputExceeded: boolean }, ['sshHandle', 'containerId', 'imageId', 'logTruncated', 'logsIncomplete', 'outputExceeded']);
 const taskResult = object({
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,

@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {digest} from '../../dist/packages/storage/store.js';
 import childProcess from 'node:child_process';
-import {syncBuiltinESMExports} from 'node:module';
+import {registerHooks, syncBuiltinESMExports} from 'node:module';
 import {EventEmitter} from 'node:events';
 import {PassThrough} from 'node:stream';
 
@@ -39,7 +39,7 @@ test('frozen thread limits override image defaults without changing legacy Docke
  const legacy=createArgs(job);assert.ok(!legacy.some(arg=>keys.some(key=>arg.startsWith(key+'='))));
  const args=createArgs({...job,manifest:{...job.manifest,threadLimit:2}});
  for(const key of keys){assert.equal(args.filter(arg=>arg.startsWith(key+'=')).length,1);assert.ok(args.includes(key+'=2'));}
- for(const threadLimit of [0,9,1.5,'2',null])assert.throws(()=>createArgs({...job,manifest:{...job.manifest,threadLimit}}),/thread/i);
+ for(const threadLimit of [0,65,1.5,'2',null])assert.throws(()=>createArgs({...job,manifest:{...job.manifest,threadLimit}}),/thread/i);
 });
 
 test('created CPU containers must override inherited image GPU visibility before starting',()=>{
@@ -95,4 +95,75 @@ test('ambiguous start recovery removes created container without restarting and 
  assert.deepEqual(calls, [['rm', 'owned-id'], ['kill', 'owned-id']]);
  await assert.rejects(retireUncertainStart(job, () => {}, async () => '', async () => {throw new Error('daemon unavailable');}), /daemon unavailable/);
  await assert.rejects(retireUncertainStart(job, () => {throw new Error('lease lost');}, async () => {throw new Error('must not execute');}, async () => created), /lease lost/);
+});
+
+test('development worker rejects late or unprovable completion but accepts timely late observations', async t => {
+ const root = mkdtempSync(join(tmpdir(), 'sandbox-time-')), originalArgv = process.argv;
+ const hook = registerHooks({load(url, context, nextLoad) {
+  if (url.endsWith('/dist/packages/research-app.js')) return {format: 'module', shortCircuit: true, source: 'export class ResearchApp { constructor() {return globalThis.__sandboxTimeApp;} }'};
+  return nextLoad(url, context);
+ }});
+ try {
+  for (const [name, offset, expected, deadlineOffset, expectedIncomplete, oversized, cancel] of [
+   ['late exit', 1050, 'timed_out'], ['timely exit observed late', 950, 'succeeded'],
+   ['deadline precedes runtime limit', 850, 'timed_out', 800],
+   ['missing exit time', undefined, 'failed', undefined, true], ['invalid exit time', 'invalid', 'failed', undefined, true],
+   ['zero exit time', '0001-01-01T00:00:00Z', 'failed', undefined, true], ['exit before start', -1, 'failed', undefined, true],
+   ['timeout retains priority over excessive output', 1050, 'timed_out', undefined, true, true],
+   ['observed cancellation retains priority over excessive output', 1050, 'cancelled', undefined, true, true, true],
+  ]) await t.test(name, async t => {
+   const base = Date.now(), controlDir = join(root, name, 'control'), outputDir = join(root, name, 'output');
+   mkdirSync(controlDir, {recursive: true}); mkdirSync(outputDir, {recursive: true});
+   let row = {id: 'job', version: 1, generation: 1, leaseUntil: base + 60000, recoveryCount: 0, state: 'preparing', startRequested: false,
+    controlDir, outputDir, containerName: 'fixture', manifestDigest: 'fixture', manifest: {environmentImageDigest: job.manifest.environmentImageDigest, dockerContext: 'fixture',
+     deadline: new Date(base + (deadlineOffset ?? 10000)).toISOString(), inputSnapshot: {files: []}, dataArtifacts: [], resources: {timeoutSeconds: 1, logBytes: 10000, outputBytes: 10000}}};
+   if (oversized) writeFileSync(join(outputDir, 'oversized'), 'x'.repeat(10001));
+   let result, observedNow = base, started = false, runningObservation = false;
+   const container = () => {const status = !started ? 'created' : cancel && !runningObservation ? (runningObservation = true, 'running') : 'exited'; return {Id: 'fixture', Image: 'fixture', Config: {Labels: {'pi-research.sandbox-job': 'job', 'pi-research.manifest': 'fixture'}, Env: ['NVIDIA_VISIBLE_DEVICES=void', 'CUDA_VISIBLE_DEVICES=-1']},
+    State: {Status: status, Running: status === 'running', ExitCode: 0, StartedAt: row.startedAt,
+     ...(offset === undefined || !started ? {} : {FinishedAt: typeof offset === 'number' ? new Date(Date.parse(row.startedAt) + offset).toISOString() : offset})}};};
+   const store = {paths: {physical: p => p, physicalSnapshot: s => s}, get: () => row, transaction: fn => fn(), update: (_kind, _id, _version, value) => (row = {...row, ...value, version: row.version + 1}), close: () => {}};
+   globalThis.__sandboxTimeApp = {store, compute: {verifyTarget: async () => {}, stop: async () => {}}, development: {assertCurrent: () => {}, finalize: (_id, value) => {result = value; row.state = value.state;}}};
+   t.mock.method(Date, 'now', () => observedNow);
+   t.mock.method(childProcess, 'spawn', (program, args) => {
+    assert.equal(program, 'docker');
+    const child = new EventEmitter(); child.stdout = new PassThrough(); child.stderr = new PassThrough(); child.kill = () => {};
+    queueMicrotask(() => {
+     const command = args[2]; let output = '';
+     if (command === 'context') output = JSON.stringify([{Endpoints: {docker: {Host: 'unix:///fixture'}}}]);
+     else if (command === 'info') output = 'linux';
+     else if (command === 'image') output = 'fixture';
+     else if (command === 'inspect') output = JSON.stringify([container()]);
+     else if (command === 'start') {started = true; if (cancel) row.cancelRequested = true; observedNow = Date.parse(row.startedAt) + 1150; output = 'complete log';}
+     else if (command === 'kill') {} else assert.fail('Unexpected Docker operation: ' + command);
+     child.stdout.end(output); child.stderr.end(); child.emit('close', 0);
+    });
+    return child;
+   }); syncBuiltinESMExports();
+   process.argv = [process.execPath, 'worker', root, root, 'job', '1'];
+   try {
+    await import(new URL('../../dist/apps/execution-worker/index.js?timing=' + encodeURIComponent(name), import.meta.url));
+    assert.equal(result?.state, expected); assert.equal(result.exitCode, 0);
+    if (expectedIncomplete) {assert.equal(result.incomplete, true); if (expected === 'failed') assert.match(result.error, /completion time/i);}
+    assert.equal(readFileSync(join(controlDir, 'stdout.log'), 'utf8'), 'complete log');
+   } finally {t.mock.restoreAll(); syncBuiltinESMExports();}
+  });
+ } finally {hook.deregister(); process.argv = originalArgv; delete globalThis.__sandboxTimeApp; rmSync(root, {recursive: true, force: true});}
+});
+
+test('Docker timing validates fallback starts, exact boundaries and immutable deadline cutoffs', async()=>{
+ const {executionTimeStatus:status}=await import('../../dist/packages/execution/completion-time.js');
+ const start='2026-10-16T00:00:00.000Z',at=offset=>new Date(Date.parse(start)+offset).toISOString();
+ assert.equal(status(undefined,{StartedAt:start,FinishedAt:at(950)},1),'within');
+ assert.equal(status(start,{StartedAt:at(500),FinishedAt:at(1050)},1),'exceeded');
+ assert.equal(status(start,{FinishedAt:at(1000)},1),'exceeded');
+ assert.equal(status(start,{FinishedAt:'2026-10-16T00:00:00.999999999Z'},1),'within');
+ assert.equal(status(start,{FinishedAt:at(900)},1,at(800)),'exceeded');
+ assert.equal(status(start,{FinishedAt:at(900)},1,new Date(Date.parse(start)+5000).toUTCString()),'within');
+ assert.equal(status(start,{},1,undefined,Date.parse(at(1000))),'exceeded');
+ for(const startedAt of ['', 'invalid', '0001-01-01T00:00:00Z'])assert.equal(status(startedAt,{StartedAt:start,FinishedAt:at(900)},1),'invalid');
+ for(const FinishedAt of [undefined,'','invalid','0','0001-01-01T00:00:00Z',at(-1)])assert.equal(status(start,{FinishedAt},1),'invalid');
+ assert.equal(status(undefined,{FinishedAt:at(900)},1),'invalid');
+ assert.equal(status(start,{FinishedAt:at(900)},1,'invalid'),'invalid');
+ for(const timeout of [NaN,Infinity,0,-1])assert.equal(status(start,{FinishedAt:at(900)},timeout),'invalid');
 });

@@ -33,6 +33,7 @@ interface Active {
         code: string;
         pendingActionId?: string;
         diagnostic?: ToolDiagnostic;
+        diagnosticId?: string;
     }>;
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;

@@ -158,8 +158,10 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
             case 'workspace_list': return listFiles(ownOrProject());
             case 'artifact_read': {
                 const {artifact,bytes}=app.evidence.read(actor,text(x.artifactId,'artifactId',100));
-                ensure(!bytes.includes(0) && bytes.length<=2*1024*1024,'ARTIFACT_TEXT_REQUIRED','该产物不能通过文本工具读取',415);
-                const content=new TextDecoder('utf-8',{fatal:true}).decode(bytes),cursor=integer(x.cursor??0,'cursor',0,content.length),end=Math.min(cursor+16000,content.length);
+                const limit=bytes.length>2*1024*1024?app.developmentReviews.archivedLogLimit(actor,pid,artifact.id)??2*1024*1024:2*1024*1024;
+                ensure(!bytes.includes(0)&&bytes.length<=limit,'ARTIFACT_TEXT_REQUIRED','产物不是可读文本或超过当前读取范围',415);
+                let content:string;try{content=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch{throw new DomainError('ARTIFACT_TEXT_REQUIRED','产物不是有效 UTF-8 文本',415);}
+                const cursor=integer(x.cursor??0,'cursor',0,content.length),end=Math.min(cursor+16000,content.length);
                 return {artifactId:artifact.id,digest:artifact.digest,title:artifact.title,mediaType:artifact.mediaType,content:content.slice(cursor,end),cursor:end,complete:end===content.length};
             }
             case 'artifact_create': return app.evidence.put(pid, text(x.title, 'title', 200), Buffer.from(text(x.content, 'content', 2 * 1024 * 1024, true)), text(x.mediaType ?? 'text/plain', 'mediaType', 100), actor.type === 'user' ? 'user' : `agent:${session!.id}`, actor.taskId ? { taskId: actor.taskId } : actor.wakeupId ? { wakeupId: actor.wakeupId } : {});

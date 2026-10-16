@@ -189,6 +189,11 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: 1;
+                        readonly maximum: 64;
+                    };
                     readonly localRuntime: {
                         readonly type: "object";
                         readonly properties: {
@@ -435,6 +440,11 @@ export declare const OUTPUT_SCHEMAS: {
                                 };
                                 readonly required: readonly ["vendor", "deviceIds"];
                                 readonly additionalProperties: false;
+                            };
+                            readonly threadLimit: {
+                                readonly type: "integer";
+                                readonly minimum: 1;
+                                readonly maximum: 64;
                             };
                             readonly command: {
                                 readonly type: "array";
@@ -2355,6 +2365,11 @@ export declare const OUTPUT_SCHEMAS: {
                         };
                         readonly required: readonly ["vendor", "deviceIds"];
                         readonly additionalProperties: false;
+                    };
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: 1;
+                        readonly maximum: 64;
                     };
                     readonly command: {
                         readonly type: "array";
@@ -10139,6 +10154,11 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: 1;
+                        readonly maximum: 64;
+                    };
                     readonly localRuntime: {
                         readonly type: "object";
                         readonly properties: {
@@ -10385,6 +10405,11 @@ export declare const OUTPUT_SCHEMAS: {
                                 };
                                 readonly required: readonly ["vendor", "deviceIds"];
                                 readonly additionalProperties: false;
+                            };
+                            readonly threadLimit: {
+                                readonly type: "integer";
+                                readonly minimum: 1;
+                                readonly maximum: 64;
                             };
                             readonly command: {
                                 readonly type: "array";
@@ -10792,6 +10817,11 @@ export declare const OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: 1;
+                        readonly maximum: 64;
+                    };
                     readonly localRuntime: {
                         readonly type: "object";
                         readonly properties: {
@@ -11038,6 +11068,11 @@ export declare const OUTPUT_SCHEMAS: {
                                 };
                                 readonly required: readonly ["vendor", "deviceIds"];
                                 readonly additionalProperties: false;
+                            };
+                            readonly threadLimit: {
+                                readonly type: "integer";
+                                readonly minimum: 1;
+                                readonly maximum: 64;
                             };
                             readonly command: {
                                 readonly type: "array";
@@ -20873,9 +20908,19 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";
@@ -21559,9 +21604,19 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";
@@ -22245,9 +22300,19 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";
@@ -22931,9 +22996,19 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";

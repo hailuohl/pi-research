@@ -1,5 +1,5 @@
 import type {ResearchApp} from '../research-app.js';
-import type {Actor,Approval,Row,Session,Task} from '../domain/types.js';
+import type {Actor,Approval,Artifact,Row,Session,Task} from '../domain/types.js';
 import type {SandboxJob} from '../execution/contracts.js';
 import {object,text,integer} from '../contracts/validation.js';
 import {scope} from '../policy/permissions.js';
@@ -60,6 +60,20 @@ export class DevelopmentReviewService {
         const r=this.app.store.get<DevelopmentReview>('development-review',task.reviewId,task.projectId!),target=assertDevelopmentReviewTarget(this.app.store,task.projectId!,r);
         ensure(target.task.id===task.id&&task.execution!=='superseded','DEVELOPMENT_REVIEW_STALE','审查任务已被替代');
         this.app.approvals.assert(r.approvalId,task.projectId!,target.team.id,target.team.planDigest,'collaboration');
+    }
+    archivedLogLimit(actor:Actor,pid:string,artifactId:string):number|undefined {
+        if(actor.type!=='agent'||actor.role!=='reviewer'||!actor.taskId)return;
+        const task=this.app.store.get<Task>('task',actor.taskId,pid);if(!task.reviewId)return;
+        const r=this.app.store.get<DevelopmentReview>('development-review',task.reviewId,pid);
+        ensure(r.taskId===task.id&&actor.sessionId!==r.producerSessionId,'TASK_SCOPE_DENIED','日志只属于当前独立审查任务',403);
+        this.access(actor,pid,r,true);
+        const job=this.app.store.get<SandboxJob>('sandbox-job',r.jobId,pid),index=artifactId===job.stdoutArtifactId?1:artifactId===job.stderrArtifactId?2:-1;
+        if(index<0)return;
+        const artifact=this.app.store.get<Artifact>('artifact',artifactId,pid),wrapper=JSON.parse(this.app.evidence.verify(pid,r.testEvidenceIds[index]).quote);
+        ensure(job.artifactIds.includes(artifactId)&&wrapper.reviewId===r.id&&wrapper.jobId===job.id&&wrapper.artifactId===artifactId&&wrapper.digest===artifact.digest&&wrapper.size===artifact.size,'DEVELOPMENT_REVIEW_STALE','日志不再匹配最初固定审查证据');
+        const limit=job.manifest.resources.logBytes;
+        ensure(Number.isSafeInteger(limit)&&limit>=1&&limit<=16*1024*1024,'MANIFEST_CORRUPTED','审查日志上限无效');
+        return limit;
     }
     sourceList(actor:Actor,pid:string,id:string) {
         const r=this.app.store.get<DevelopmentReview>('development-review',id,pid);this.access(actor,pid,r,actor.type==='agent');const job=this.app.store.get<SandboxJob>('sandbox-job',r.jobId,pid);ensure(job.sourceDigest===r.sourceDigest,'DEVELOPMENT_REVIEW_CORRUPTED','审查目标摘要不符');verifySnapshot(this.app.store.paths.physical(job.manifest.inputSnapshot.path),job.manifest.inputSnapshot.files);return {reviewId:r.id,jobId:r.jobId,sourceDigest:r.sourceDigest,files:job.manifest.inputSnapshot.files};

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
 import { ResearchApp } from '../../packages/research-app.js';
 import { physicalDockerJob, docker, dockerEnv, inspect as inspectDocker, preflight, createArgs, stageInputs, retireUncertainStart } from '../../packages/execution/docker.js';
+import { executionTimeStatus } from '../../packages/execution/completion-time.js';
 import { LEASE_MS } from '../../packages/execution/service.js';
 import { SANDBOX_TERMINAL } from '../../packages/execution/contracts.js';
 const [dataDir, repoRoot, jobId, rawGeneration] = process.argv.slice(2);
@@ -211,10 +212,24 @@ try {
                 throw new Error('Owned container is confirmed missing during monitoring');
             }
             if (container.State.Status === 'exited' || container.State.Status === 'dead') {
+                if (!stopping) {
+                    const timing = executionTimeStatus(job.startedAt, container.State, job.manifest.resources.timeoutSeconds, job.manifest.deadline);
+                    if (timing === 'invalid') {
+                        incomplete = true;
+                        stopping = 'failed';
+                        reason = 'Invalid container completion time';
+                    }
+                    else if (timing === 'exceeded') {
+                        stopping = 'timed_out';
+                        reason = 'Sandbox deadline or timeout exceeded';
+                    }
+                }
                 if (outputSize(store.paths.physical(job.outputDir)) > job.manifest.resources.outputBytes) {
                     incomplete = true;
-                    stopping = 'failed';
-                    reason = 'Sandbox output limit exceeded';
+                    if (!stopping) {
+                        stopping = 'failed';
+                        reason = 'Sandbox output limit exceeded';
+                    }
                 }
                 await finish(stopping ?? (container.State.ExitCode === 0 ? 'succeeded' : 'failed'), container.State.ExitCode, reason ?? (container.State.Error || undefined));
                 break;
@@ -227,11 +242,17 @@ try {
                 throw new Error(`Uncertain container state: ${container.State.Status}`);
             if (job.state !== 'running')
                 job = patch({ state: 'running' });
+            const timing = executionTimeStatus(job.startedAt, container.State, job.manifest.resources.timeoutSeconds, job.manifest.deadline, Date.now());
             if (job.cancelRequested) {
                 stopping = 'cancelled';
                 reason = 'Cancellation requested';
             }
-            else if (Date.now() >= Math.min(Date.parse(job.manifest.deadline), Date.parse(job.startedAt ?? container.State.StartedAt) + job.manifest.resources.timeoutSeconds * 1000)) {
+            else if (timing === 'invalid') {
+                incomplete = true;
+                stopping = 'failed';
+                reason = 'Invalid container execution time';
+            }
+            else if (timing === 'exceeded') {
                 stopping = 'timed_out';
                 reason = 'Sandbox deadline or timeout exceeded';
             }

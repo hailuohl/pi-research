@@ -7,8 +7,11 @@ export function formalDockerJob(run) {
     const c = run.manifest.contract;
     if (c.runner !== 'docker' || !c.image)
         throw new Error('Formal Docker adapter requires a pinned Docker contract');
+    const threadLimit = run.manifest.threadLimit ?? c.threadLimit;
+    if (run.manifest.threadLimit !== undefined && (!Number.isSafeInteger(run.manifest.threadLimit) || run.manifest.threadLimit < 1 || run.manifest.threadLimit > 64 || c.threadLimit !== undefined && run.manifest.threadLimit !== c.threadLimit))
+        throw new Error('Invalid formal Docker thread limit');
     return { id: run.id, manifestDigest: run.manifestDigest, containerName: run.execution.containerName, containerId: run.execution.containerId, startRequested: run.execution.startRequested, outputDir: run.outputDir, controlDir: run.execution.controlDir,
-        manifest: { inputSnapshot: { path: run.manifest.snapshotPath, digest: run.manifest.snapshotDigest, files: run.manifest.sourceFiles }, dataArtifacts: run.manifest.dataArtifacts ?? [], command: c.command, environmentImageDigest: c.image, dockerContext: run.execution.dockerContext,
+        manifest: { ...(threadLimit === undefined ? {} : { threadLimit }), inputSnapshot: { path: run.manifest.snapshotPath, digest: run.manifest.snapshotDigest, files: run.manifest.sourceFiles }, dataArtifacts: run.manifest.dataArtifacts ?? [], command: c.command, environmentImageDigest: c.image, dockerContext: run.execution.dockerContext,
             resources: { ...(c.gpu ? { gpu: c.gpu } : {}), cpus: c.cpus, memoryMb: c.memoryMb, pids: c.pids ?? 512, workMb: c.workMb ?? 1024, logBytes: c.logBytes ?? 16 * 1024 * 1024 } } };
 }
 export class DockerAdapter {

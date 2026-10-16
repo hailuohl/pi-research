@@ -145,6 +145,7 @@ export interface Approval {
     decidedAt?: string;
 }
 export interface ResearchContract {
+    threadLimit?: number;
     command: string[];
     environment: Record<string, string>;
     datasetVersion: string;
@@ -184,6 +185,7 @@ export interface Experiment {
     revision: number;
 }
 export interface Manifest {
+    threadLimit?: number;
     localRuntime?: import('../runners/local-runtime.js').LocalRuntime;
     localExecution?: {isolation:'none';resourceEnforcement:'advisory';networkIsolation:false};
     gpuTarget?: import('../runners/gpu.js').GpuTarget;

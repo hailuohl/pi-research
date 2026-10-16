@@ -68,7 +68,7 @@ export interface Container {
         Running: boolean;
         ExitCode: number;
         StartedAt: string;
-        FinishedAt: string;
+        FinishedAt?: string;
         Error?: string;
     };
 }

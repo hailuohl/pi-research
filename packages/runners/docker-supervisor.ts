@@ -1,6 +1,7 @@
 import {appendFileSync, existsSync, lstatSync, mkdirSync, readdirSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {setTimeout as pause} from 'node:timers/promises';
+import {executionTimeStatus} from '../execution/completion-time.js';
 import {DockerAdapter} from './docker.js';
 import type {DockerRun, DockerRunResult, DockerSupervisorCallbacks, RunExecution, RunnerProcess} from './adapter.js';
 
@@ -110,12 +111,21 @@ export async function superviseDockerRun(initial: DockerRun, callbacks: DockerSu
         while (true) {
             const run = current(); container = await adapter.inspect();
             if (!container) {logsIncomplete = true; throw new Error('Formal owned container disappeared during monitoring');}
-            if (['exited', 'dead'].includes(container.State.Status)) {await finish(stopping ?? (container.State.ExitCode === 0 ? 'succeeded' : 'failed'), container.State.ExitCode, reason ?? (container.State.Error || undefined)); return;}
+            if (['exited', 'dead'].includes(container.State.Status)) {
+                if (!stopping) {
+                    const timing = executionTimeStatus(run.startedAt, container.State, run.manifest.contract.timeoutSeconds);
+                    if (timing === 'invalid') {logsIncomplete = true; stopping = 'failed'; reason = 'Invalid container completion time';}
+                    else if (timing === 'exceeded') {stopping = 'failed'; reason = 'Formal run timeout exceeded';}
+                }
+                await finish(stopping ?? (container.State.ExitCode === 0 ? 'succeeded' : 'failed'), container.State.ExitCode, reason ?? (container.State.Error || undefined)); return;
+            }
             if (container.State.Status === 'created' && Date.now() - Date.parse(run.startedAt!) < 10000) {await pause(100); continue;}
             if (!container.State.Running) throw new Error(`Unknown formal container state: ${container.State.Status}`);
             if (run.state !== 'running' && run.state !== 'cancelling') update({}, {state: 'running'});
+            const timing = executionTimeStatus(run.startedAt, container.State, run.manifest.contract.timeoutSeconds, undefined, Date.now());
             if (run.cancelRequested) {stopping = 'cancelled'; reason = 'Formal run cancellation requested';}
-            else if (Date.now() >= Date.parse(run.startedAt ?? container.State.StartedAt) + run.manifest.contract.timeoutSeconds * 1000) {stopping = 'failed'; reason = 'Formal run timeout exceeded';}
+            else if (timing === 'invalid') {logsIncomplete = true; stopping = 'failed'; reason = 'Invalid container execution time';}
+            else if (timing === 'exceeded') {stopping = 'failed'; reason = 'Formal run timeout exceeded';}
             else if (logTruncated || streamResult?.error || streamResult?.signal) {stopping = 'failed'; reason = 'Formal run log stream incomplete'; logsIncomplete = true;}
             else if (outputOverLimit()) {stopping = 'failed'; reason = 'Formal run output limit exceeded'; outputExceeded = true;}
             else {try {callbacks.assertGrant(run);} catch (error) {stopping = 'failed'; reason = (error as Error).message;}}

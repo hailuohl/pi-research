@@ -52,7 +52,7 @@ export class RunGrantService {
         if (g.state === 'revoked')
             reasons.push('RUN_GRANT_REVOKED');
         const remaining = Math.max(0, g.maxRuns - uses.length), effectiveState = g.state === 'revoked' ? 'revoked' : reasons.length ? 'stale' : g.state === 'draft' ? 'draft' : Date.now() >= Date.parse(g.expiresAt) ? 'expired' : remaining === 0 ? 'exhausted' : 'active';
-        return { ...g, effectiveState, validity: reasons.length ? 'stale' : 'current', reasons, usage: { limit: g.maxRuns, used: uses.length, remaining, unit: 'run-submission' }, uses, manifests: g.entries.map(entry => { const m = this.app.store.get('run-intent', entry.intentId, pid).manifest; return { ...entry, contract: m.contract, files: m.sourceFiles }; }) };
+        return { ...g, effectiveState, validity: reasons.length ? 'stale' : 'current', reasons, usage: { limit: g.maxRuns, used: uses.length, remaining, unit: 'run-submission' }, uses, manifests: g.entries.map(entry => { const m = this.app.store.get('run-intent', entry.intentId, pid).manifest; return { ...entry, ...(m.threadLimit === undefined ? {} : { threadLimit: m.threadLimit }), contract: m.contract, files: m.sourceFiles }; }) };
     }
     prepare(actor, pid, value) {
         userOnly(actor);

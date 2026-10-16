@@ -101,7 +101,7 @@ export async function probeDockerTarget(context:string):Promise<{targetId:string
     if(info.OSType!=='linux'||typeof info.ID!=='string'||!/^[A-Za-z0-9._:-]{1,200}$/.test(info.ID))throw new Error('A Linux Docker engine identity is required');
     return {targetId:'docker-'+digest(info.ID),engineId:info.ID,endpoint:endpoint.startsWith('npipe:')?endpoint.toLowerCase():endpoint,...(typeof info.ServerVersion==='string'&&info.ServerVersion.length<=200?{serverVersion:info.ServerVersion}:{}),...(Number.isSafeInteger(info.NCPU)&&info.NCPU>0?{cpus:info.NCPU}:{}),...(Number.isFinite(info.MemTotal)&&info.MemTotal>0?{memoryMb:Math.floor(info.MemTotal/1048576)}:{})};
 }
-export interface Container {Id: string; Image: string; Config: {Labels: Record<string, string>;Env?:string[]}; HostConfig?:{DeviceRequests?:Array<{DeviceIDs?:string[]}>}; State: {Status: string; Running: boolean; ExitCode: number; StartedAt: string; FinishedAt: string; Error?: string};}
+export interface Container {Id: string; Image: string; Config: {Labels: Record<string, string>;Env?:string[]}; HostConfig?:{DeviceRequests?:Array<{DeviceIDs?:string[]}>}; State: {Status: string; Running: boolean; ExitCode: number; StartedAt: string; FinishedAt?: string; Error?: string};}
 /** Inspect only before a new start; legacy running containers retain their existing lifecycle. */
 export function assertContainerStartPolicy(job:DockerJob,container:Container):void {
     const gpu=job.manifest.resources.gpu,env=container.Config.Env??[];
@@ -141,7 +141,7 @@ export async function retireUncertainStart(job: DockerJob, fence: () => unknown,
 }
 export function createArgs(job: DockerJob): string[] {
     const m = job.manifest, r = m.resources;
-    if(m.threadLimit!==undefined&&(!Number.isSafeInteger(m.threadLimit)||m.threadLimit<1||m.threadLimit>8))throw new Error('Invalid sandbox thread limit');
+    if(m.threadLimit!==undefined&&(!Number.isSafeInteger(m.threadLimit)||m.threadLimit<1||m.threadLimit>64))throw new Error('Invalid sandbox thread limit');
     const mount = (path: string, target: string, readonly: boolean) => {
         if (/[\0\r\n,]/.test(path)) throw new Error('Unsupported bind mount path');
         return ['--mount', `type=bind,src=${path},dst=${target}${readonly ? ',readonly' : ''}`];

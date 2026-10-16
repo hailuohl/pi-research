@@ -14,6 +14,7 @@ import { ToolDispatcher } from '../research-tools/dispatcher.js';
 import { TOOL_DEFINITIONS } from '../research-tools/definitions.js';
 import { s as schema } from '../contracts/operations/schema.js';
 import { safeToolDiagnostic, toolFailureMessage } from '../pi-adapter/tool-diagnostic.js';
+import { saveLocalToolDiagnostic } from '../pi-adapter/local-tool-diagnostic.js';
 import { inspectPi } from '../pi-adapter/runtime.js';
 import { emptyLengthAssistant, EMPTY_LENGTH_FAILURE } from '../pi-adapter/options.js';
 import { asError, ensure, DomainError } from '../domain/errors.js';
@@ -531,11 +532,21 @@ export class AgentHost {
             }
             catch (e) {
                 const error = asError(e);
+                let diagnosticId;
+                if (error.code === 'INTERNAL_ERROR') {
+                    try {
+                        const owner = this.app.store.get('session', a.sessionId);
+                        if (owner.projectId === a.actor.projectId)
+                            diagnosticId = saveLocalToolDiagnostic(this.app.context.dataDir, this.app.context.repoRoot, owner.id, tool, callId, e);
+                    }
+                    catch { }
+                    error.message = diagnosticId ? `内部异常。诊断ID：${diagnosticId}` : '内部异常，诊断未保存；请核对本机数据目录权限和磁盘空间。';
+                }
                 const definition = TOOL_DEFINITIONS[tool];
                 const pendingActionId = error.code === 'APPROVAL_REQUIRED' ? this.pendingSessionAction(a, tool, error.details) : undefined;
-                (a.toolErrors ??= new Map()).set(callId, { tool, code: error.code, pendingActionId, diagnostic: definition ? safeToolDiagnostic(definition.inputSchema, error.code, error.message) : undefined });
+                (a.toolErrors ??= new Map()).set(callId, { tool, code: error.code, pendingActionId, diagnostic: definition ? safeToolDiagnostic(definition.inputSchema, error.code, error.message) : undefined, ...(diagnosticId ? { diagnosticId } : {}) });
                 if (!a.exitObserved && a.child.connected)
-                    a.child.send({ type: 'tool_response', requestId: m.requestId, error: { code: error.code, message: this.clean(error.message) } });
+                    a.child.send({ type: 'tool_response', requestId: m.requestId, error: { code: error.code, message: this.clean(error.message), ...(diagnosticId ? { diagnosticId } : {}) } });
             }
             return;
         }
@@ -580,7 +591,7 @@ export class AgentHost {
                 this.app.store.event(s.projectId, 'session.activity', { sessionId: s.id, generation: a.generation, tool, status: m.type === 'tool_execution_start' ? 'running' : failed && !approvalRequired ? 'failed' : 'completed' });
                 if (failedCallId !== null) {
                     if (!seen.has(failedCallId)) {
-                        const content = approvalRequired ? `工具 ${tool} 需要用户确认本次操作，请处理当前审批卡。` : toolFailureMessage(tool, diagnostic);
+                        const content = approvalRequired ? `工具 ${tool} 需要用户确认本次操作，请处理当前审批卡。` : toolFailureMessage(tool, diagnostic, error?.diagnosticId);
                         const notice = this.app.store.create('message', s.projectId, { sessionId: s.id, generation: a.generation, role: 'system', content, mode: 'follow_up', status: approvalRequired ? 'completed' : 'failed' });
                         this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, messageId: notice.id });
                         noticeSaved = true;

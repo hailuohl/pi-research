@@ -50,6 +50,7 @@ export class ExperimentService {
             if (parent) { ensure(parent.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能派生新源码'); assertExperimentSourceCurrent(this.c.store, parent); }
             if(x.expectedParentRevision!==undefined)ensure(parent!.revision===integer(x.expectedParentRevision,'expectedParentRevision',1),'EXPERIMENT_REVISION_CHANGED','父实验修订已变化，请重新读取配置再准备候选');
             const contract = parent ? parent.contract : x.contract ? validateContract(x.contract) : structuredClone(EXAMPLE_CONTRACT);
+            if (!parent && contract.runner === 'docker') contract.threadLimit ??= contract.cpus;
             if (parent && x.contract)
                 ensure(digest(x.contract) === parent.contractDigest, 'CONTRACT_CHANGED', '子实验必须继承固定运行契约', 400);
             const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');

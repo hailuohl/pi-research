@@ -65,6 +65,7 @@ export type RunGrantDTO = Row<RunGrant> & {
     };
     uses: Array<Row<RunGrantUse>>;
     manifests: Array<RunGrantEntry & {
+        threadLimit?: number;
         contract: ResearchContract;
         files: SourceSnapshot['files'];
     }>;

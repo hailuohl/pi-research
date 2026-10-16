@@ -41,6 +41,7 @@ export declare class DevelopmentReviewService {
         reviewId: string;
     };
     assertTaskCurrent(task: Row<Task>): void;
+    archivedLogLimit(actor: Actor, pid: string, artifactId: string): number | undefined;
     sourceList(actor: Actor, pid: string, id: string): {
         reviewId: string;
         jobId: string;

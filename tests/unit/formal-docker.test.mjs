@@ -61,3 +61,59 @@ test('optional formal Docker supervisor: success, integrity limits, cancellation
   rmSync(root, {recursive: true, force: true});
  }
 });
+
+test('formal Docker completion uses actual exit time rather than delayed polling', async t => {
+ mkdirSync(join(process.cwd(), '.validation'), {recursive: true});
+ const root = mkdtempSync(join(process.cwd(), '.validation', 'formal-time-'));
+ try {
+  for (const [name, finishedOffset, expected, error] of [
+   ['late exit', 1050, 'failed', /timeout/],
+   ['timely exit observed late', 950, 'succeeded'],
+   ['missing exit time', undefined, 'failed', /completion time/i],
+   ['invalid exit time', 'invalid', 'failed', /completion time/i],
+   ['exit before start', -1, 'failed', /completion time/i],
+  ]) await t.test(name, async t => {
+   const run = fixture(root, 'fixture', {timeoutSeconds: 1}), control = controls(run);
+   writeFileSync(join(run.outputDir, 'metrics.json'), '{}');
+   let started = false, observedNow = Date.now();
+   const container = {Id: 'fixture', State: {Status: 'created', Running: false, ExitCode: 0, StartedAt: '', FinishedAt: ''}};
+   t.mock.method(Date, 'now', () => observedNow);
+   t.mock.method(DockerAdapter.prototype, 'preflight', async function () {this.imageId = 'fixture';});
+   t.mock.method(DockerAdapter.prototype, 'inspect', async () => container);
+   t.mock.method(DockerAdapter.prototype, 'submit', async () => container);
+   t.mock.method(DockerAdapter.prototype, 'start', async () => {
+    assert.equal(started, false); started = true;
+    const start = Date.parse(control.row.startedAt); observedNow = start + 1150;
+    container.State = {Status: 'exited', Running: false, ExitCode: 0, StartedAt: control.row.startedAt,
+     ...(finishedOffset === undefined ? {} : {FinishedAt: typeof finishedOffset === 'number' ? new Date(start + finishedOffset).toISOString() : finishedOffset})};
+    return {completion: Promise.resolve({exitCode: 0}), detach: async () => {}};
+   });
+   await superviseDockerRun(run, control.callbacks);
+   assert.equal(control.result.state, expected);
+   assert.equal(control.result.exitCode, 0);
+   if (error) assert.match(control.result.error, error);
+   t.mock.restoreAll();
+  });
+ } finally {rmSync(root, {recursive: true, force: true});}
+});
+
+test('formal Docker argv uses only a frozen thread field, including the formal 64 CPU bound',()=>{
+ const run=fixture(join(process.cwd(),'.validation'),'fixture',{cpus:64,threadLimit:64});
+ try {
+  const mapped=formalDockerJob(run),args=createArgs(mapped);assert.equal(mapped.manifest.threadLimit,64);
+  for(const key of ['OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','BLIS_NUM_THREADS'])assert.ok(args.includes(key+'=64'));
+  delete run.manifest.contract.threadLimit;const legacy=formalDockerJob(run);assert.equal(Object.hasOwn(legacy.manifest,'threadLimit'),false);assert.ok(!createArgs(legacy).some(arg=>arg.startsWith('OMP_NUM_THREADS=')));
+ }finally{rmSync(join(process.cwd(),'.validation',run.id),{recursive:true,force:true});}
+});
+
+test('formal Docker manifest threads are applied and conflicts reject before container creation',()=>{
+ const run=fixture(join(process.cwd(),'.validation'),'fixture',{cpus:2});
+ try {
+  run.manifest.threadLimit=2;const mapped=formalDockerJob(run);assert.equal(mapped.manifest.threadLimit,2);assert.ok(createArgs(mapped).includes('OMP_NUM_THREADS=2'));
+  for(const threadLimit of [0,65,1.5,'2',null]){run.manifest.threadLimit=threadLimit;assert.throws(()=>formalDockerJob(run),/thread/i);}
+  run.manifest.threadLimit=2;run.manifest.contract.threadLimit=1;assert.throws(()=>new DockerAdapter(run,()=>{}),/thread/i);
+  run.manifest.contract.threadLimit=2;assert.equal(formalDockerJob(run).manifest.threadLimit,2);
+  delete run.manifest.threadLimit;assert.equal(formalDockerJob(run).manifest.threadLimit,2);
+  delete run.manifest.contract.threadLimit;assert.equal(Object.hasOwn(formalDockerJob(run).manifest,'threadLimit'),false);
+ }finally{rmSync(join(process.cwd(),'.validation',run.id),{recursive:true,force:true});}
+});

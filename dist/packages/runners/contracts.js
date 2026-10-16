@@ -13,7 +13,9 @@ export function validateContract(value) {
         ensure(digest(x) === digest(EXAMPLE_CONTRACT), 'CONTRACT_INVALID', '可信示例使用固定运行契约', 400);
         return structuredClone(EXAMPLE_CONTRACT);
     }
-    ensure(Object.keys(x).every(k => ['runner', 'localRuntimeId', 'gpu', 'image', 'command', 'environment', 'datasetVersion', 'evaluationProtocolVersion', 'metrics', 'expectedArtifacts', 'timeoutSeconds', 'cpus', 'memoryMb', 'dockerContext', 'sshTargetId', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy'].includes(k)), 'CONTRACT_INVALID', '运行契约包含未知字段', 400);
+    ensure(Object.keys(x).every(k => ['runner', 'localRuntimeId', 'gpu', 'image', 'command', 'environment', 'datasetVersion', 'evaluationProtocolVersion', 'metrics', 'expectedArtifacts', 'timeoutSeconds', 'cpus', 'threadLimit', 'memoryMb', 'dockerContext', 'sshTargetId', 'pids', 'workMb', 'logBytes', 'outputBytes', 'networkPolicy'].includes(k)), 'CONTRACT_INVALID', '运行契约包含未知字段', 400);
+    ensure(runner === 'docker' || x.threadLimit === undefined, 'CONTRACT_INVALID', '线程上限仅支持 Docker 运行契约', 400);
+    const threadLimit = x.threadLimit === undefined ? undefined : integer(x.threadLimit, 'threadLimit', 1, 64);
     const gpu = x.gpu === undefined ? undefined : validateGpu(x.gpu);
     const localRuntimeId = runner === 'local' ? text(x.localRuntimeId, 'localRuntimeId', 80) : undefined;
     ensure(runner === 'local' ? x.image === undefined && x.dockerContext === undefined && x.sshTargetId === undefined : x.localRuntimeId === undefined, 'CONTRACT_INVALID', '运行时字段与后端不符', 400);
@@ -47,7 +49,7 @@ export function validateContract(value) {
     }
     const dockerContext = text(x.dockerContext ?? 'default', 'dockerContext', 100);
     ensure(/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(dockerContext), 'CONTRACT_INVALID', 'Docker context 无效', 400);
-    return { runner, ...(image ? { image } : {}), command, environment: {}, datasetVersion: text(x.datasetVersion, 'datasetVersion', 200), evaluationProtocolVersion: text(x.evaluationProtocolVersion, 'evaluationProtocolVersion', 200), metrics: parsed, expectedArtifacts, timeoutSeconds: integer(x.timeoutSeconds ?? 300, 'timeoutSeconds', 1, 86400), cpus: integer(x.cpus ?? 1, 'cpus', 1, 64), memoryMb: integer(x.memoryMb ?? 1024, 'memoryMb', 64, 65536), ...(runner === 'local' ? { localRuntimeId } : runner === 'ssh' ? { sshTargetId } : { dockerContext }), ...(gpu ? { gpu } : {}), networkPolicy: runner === 'local' ? 'host' : 'none', pids: integer(x.pids ?? 128, 'pids', 16, 512), workMb: integer(x.workMb ?? 256, 'workMb', 16, 1024), logBytes: integer(x.logBytes ?? 16 * 1024 * 1024, 'logBytes', 1, 16 * 1024 * 1024), outputBytes: integer(x.outputBytes ?? 128 * 1024 * 1024, 'outputBytes', 1, 128 * 1024 * 1024) };
+    return { runner, ...(threadLimit === undefined ? {} : { threadLimit }), ...(image ? { image } : {}), command, environment: {}, datasetVersion: text(x.datasetVersion, 'datasetVersion', 200), evaluationProtocolVersion: text(x.evaluationProtocolVersion, 'evaluationProtocolVersion', 200), metrics: parsed, expectedArtifacts, timeoutSeconds: integer(x.timeoutSeconds ?? 300, 'timeoutSeconds', 1, 86400), cpus: integer(x.cpus ?? 1, 'cpus', 1, 64), memoryMb: integer(x.memoryMb ?? 1024, 'memoryMb', 64, 65536), ...(runner === 'local' ? { localRuntimeId } : runner === 'ssh' ? { sshTargetId } : { dockerContext }), ...(gpu ? { gpu } : {}), networkPolicy: runner === 'local' ? 'host' : 'none', pids: integer(x.pids ?? 128, 'pids', 16, 512), workMb: integer(x.workMb ?? 256, 'workMb', 16, 1024), logBytes: integer(x.logBytes ?? 16 * 1024 * 1024, 'logBytes', 1, 16 * 1024 * 1024), outputBytes: integer(x.outputBytes ?? 128 * 1024 * 1024, 'outputBytes', 1, 128 * 1024 * 1024) };
 }
 export function verifyTrustedExample(manifest, repoRoot, paths) {
     if (manifest.contract.runner !== 'trusted-example')

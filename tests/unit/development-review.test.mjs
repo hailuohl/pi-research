@@ -11,14 +11,36 @@ import {invalidationClosure,expireDerivations} from '../../dist/packages/evidenc
 
 function service(s){const reviews=s.app.developmentReviews??new DevelopmentReviewService(s.app);s.app.teams.reviewValidator=task=>reviews.assertTaskCurrent(task);return reviews;}
 function enable(s){const p=s.app.projects.get(USER,s.project.id);if(!p.settings.enabled)s.app.projects.settings(USER,p.id,{expectedVersion:p.version,enabled:true});}
-function tested(s,extra={}) {
+function tested(s,extra={},stdout='UNIT FIXTURE: passing test log\n') {
  s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});writeFileSync(join(physical(s.app,s.session.workspace),'review-candidate.py'),'assert 1 + 1 == 2\n');
  const t=s.app.development.prepare(USER,s.project.id,s.session.id,{command:['python','review-candidate.py'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`,...extra});approve(s.app,t.grantId);
- const dto=s.app.development.submit(USER,s.project.id,t.id),j=s.app.store.get('sandbox-job',dto.id),controlDir=physical(s.app,j.controlDir);writeFileSync(join(controlDir,'stdout.log'),'UNIT FIXTURE: passing test log\n');writeFileSync(join(controlDir,'stderr.log'),'');
+ const dto=s.app.development.submit(USER,s.project.id,t.id),j=s.app.store.get('sandbox-job',dto.id),controlDir=physical(s.app,j.controlDir);writeFileSync(join(controlDir,'stdout.log'),stdout);writeFileSync(join(controlDir,'stderr.log'),'');
  const job=s.app.development.finalize(j.id,{state:'succeeded',exitCode:0});return {t,job};
 }
 function claim(s,review){approve(s.app,review.approvalId);s.app.teams.activate(USER,review.teamId);const claimed=s.app.teams.claim(review.teamId);assert.ok(claimed);return claimed;}
 function submitReview(s,c,r,verdict='accept'){return s.app.teams.submit(actor(c),result({verdict,evidenceIds:r.requiredEvidenceIds}));}
+
+test('independent reviewers page beyond 2 MiB only in their frozen archived development logs',()=>{
+ const s=setup();try{
+  enable(s);const reviews=service(s),text='L'.repeat(2*1024*1024+16001)+'fixed-log-tail', {job,t}=tested(s,{resources:{logBytes:4*1024*1024}},text),r=reviews.prepare(USER,s.project.id,{jobId:job.id}),c=claim(s,r),who=actor(c);
+  const read=(artifactId,cursor)=>s.app.operations.execute(who,'artifact_read',{artifactId,cursor},{projectId:s.project.id,sessionId:who.sessionId,idempotencyKey:crypto.randomUUID()});
+  const first=read(job.stdoutArtifactId,2*1024*1024);assert.equal(first.content,text.slice(2*1024*1024,first.cursor));assert.equal(first.complete,false);
+  const tail=read(job.stdoutArtifactId,first.cursor);assert.equal(tail.content,'Lfixed-log-tail');assert.equal(tail.complete,true);assert.equal(tail.digest,s.app.store.get('artifact',job.stdoutArtifactId).digest);
+  assert.throws(()=>s.app.operations.execute(USER,'artifact_read',{artifactId:job.stdoutArtifactId},{projectId:s.project.id}),{code:'ARTIFACT_TEXT_REQUIRED'});
+  assert.throws(()=>s.app.development.logs(who,s.project.id,job.id,'stdout',0),{code:'TASK_SCOPE_DENIED'});
+  const unrelated=s.app.evidence.put(s.project.id,'other log',Buffer.from(text),'text/plain','user');assert.throws(()=>read(unrelated.id,0),{code:'TASK_SCOPE_DENIED'});
+  s.app.approvals.stale(t.id);assert.throws(()=>read(job.stdoutArtifactId,first.cursor),{code:'APPROVAL_STALE'});
+ }finally{s.close();}
+});
+
+test('large review log exceptions remain tied to the original archived wrapper identity',()=>{
+ const s=setup();try{
+  enable(s);const reviews=service(s),text='L'.repeat(2*1024*1024+1),{job}=tested(s,{resources:{logBytes:4*1024*1024}},text),r=reviews.prepare(USER,s.project.id,{jobId:job.id}),c=claim(s,r),who=actor(c);
+  const replacement=s.app.evidence.put(s.project.id,'replacement log',Buffer.from(text+'changed'),'text/plain',`development:${job.id}`),stored=s.app.store.get('sandbox-job',job.id);
+  s.app.store.update('sandbox-job',stored.id,stored.version,{stdoutArtifactId:replacement.id,artifactIds:[...stored.artifactIds,replacement.id]});
+  assert.throws(()=>s.app.operations.execute(who,'artifact_read',{artifactId:replacement.id,cursor:0},{projectId:s.project.id,sessionId:who.sessionId,idempotencyKey:crypto.randomUUID()}),{code:'DEVELOPMENT_REVIEW_STALE'});
+ }finally{s.close();}
+});
 
 test('review preparation needs explicit collaboration, creates one stable approval target and preserves input provenance',()=>{
  const s=setup();try{const reviews=service(s),{job}=tested(s);assert.throws(()=>reviews.prepare(USER,s.project.id,{jobId:job.id}),{code:'MULTI_AGENT_DISABLED'});assert.equal(s.app.store.list('development-review').length,0);

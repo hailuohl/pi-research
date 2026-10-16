@@ -18,6 +18,15 @@ test('nested JSON TeX escapes do not fabricate UNC paths while host markers and 
 
 function finished(s,experiment=s.baseline){const i=s.app.runs.prepare(USER,experiment.id);approve(s.app,i.approvalId);return fixtureFinish(s,s.app.runs.submit(USER,i.id));}
 function report(s,input){const artifact=s.app.reports.create(USER,s.project.id,input),record=s.app.store.list('report',s.project.id).find(r=>r.artifactId===artifact.id);return {artifact,record};}
+
+test('fixed Run references expose manifest-frozen threads for legacy contracts without changing the contract',()=>{
+ const s=setup();try{
+  const contract={runner:'docker',image:'python@sha256:'+'a'.repeat(64),command:['python','main.py'],environment:{},datasetVersion:'fixture',evaluationProtocolVersion:'fixture',metrics:{mse:{unit:'fixture',direction:'min'}},expectedArtifacts:['metrics.json'],cpus:2,memoryMb:256};
+  let e=s.app.experiments.create(USER,s.project.id,{title:'Legacy contract new run',contract});const legacy={...e.contract};delete legacy.threadLimit;e=s.app.store.update('experiment',e.id,e.version,{contract:legacy,contractDigest:digest(legacy)});
+  const run=finished(s,e);assert.equal(run.manifest.threadLimit,2);const {record}=report(s,{runIds:[run.id]}),info=s.app.reports.inspect(USER,s.project.id,record.id),ref=info.references.find(r=>r.type==='run'),data=JSON.parse(s.app.reports.readReference(USER,s.project.id,record.id,ref.id).content);
+  assert.equal(data.threadLimit,2);assert.equal(Object.hasOwn(data.contract,'threadLimit'),false);assert.equal(digest(data.contract),e.contractDigest);
+ }finally{s.close();}
+});
 function reviewedChild(s){
  s.app.sources.prepare(USER,s.project.id,s.session.id,{experimentId:s.baseline.id,revision:1});writeFileSync(join(physical(s,s.session.workspace),'config.json'),JSON.stringify({polynomialDegree:2,ridge:0.000001}));
  const task=s.app.development.prepare(USER,s.project.id,s.session.id,{command:['python','-c','assert True'],environmentImageDigest:`python@sha256:${'a'.repeat(64)}`});approve(s.app,task.grantId);const dto=s.app.development.submit(USER,s.project.id,task.id),j=s.app.store.get('sandbox-job',dto.id),controlDir=physical(s,j.controlDir);writeFileSync(join(controlDir,'stdout.log'),'UNIT FIXTURE: successful test');writeFileSync(join(controlDir,'stderr.log'),'');const job=s.app.development.finalize(j.id,{state:'succeeded',exitCode:0});

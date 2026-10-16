@@ -422,9 +422,19 @@ export declare const RUN_GRANT_SCHEMA: {
             readonly items: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly threadLimit: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
                     readonly contract: {
                         readonly type: "object";
                         readonly properties: {
+                            readonly threadLimit: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
                             readonly command: {
                                 readonly maxItems?: number | undefined;
                                 readonly type: "array";
@@ -1240,9 +1250,19 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";
@@ -1926,9 +1946,19 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";
@@ -2612,9 +2642,19 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";
@@ -3298,9 +3338,19 @@ export declare const RUN_GRANT_OUTPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly threadLimit: {
+                            readonly type: "integer";
+                            readonly minimum: number;
+                            readonly maximum: number;
+                        };
                         readonly contract: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly threadLimit: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
                                 readonly command: {
                                     readonly maxItems?: number | undefined;
                                     readonly type: "array";

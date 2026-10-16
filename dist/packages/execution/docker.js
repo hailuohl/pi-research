@@ -168,7 +168,7 @@ export async function retireUncertainStart(job, fence, run = docker, read = insp
 }
 export function createArgs(job) {
     const m = job.manifest, r = m.resources;
-    if (m.threadLimit !== undefined && (!Number.isSafeInteger(m.threadLimit) || m.threadLimit < 1 || m.threadLimit > 8))
+    if (m.threadLimit !== undefined && (!Number.isSafeInteger(m.threadLimit) || m.threadLimit < 1 || m.threadLimit > 64))
         throw new Error('Invalid sandbox thread limit');
     const mount = (path, target, readonly) => {
         if (/[\0\r\n,]/.test(path))
