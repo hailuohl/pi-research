@@ -49,6 +49,7 @@ interface Active {
     toolErrors?: Map<string,{tool:string;code:string;pendingActionId?:string;diagnostic?:ToolDiagnostic;diagnosticId?:string}>;
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;
+    approvalNoticeId?:string;
     deltaTail?:string;
 }
 const redact = (s: string) => s.replace(/\bsk-[A-Za-z0-9_-]{12,}\b/g, '[REDACTED]').replace(/Bearer\s+[^\s"']+/gi, 'Bearer [REDACTED]');
@@ -131,6 +132,7 @@ export class AgentHost {
                         const m=this.app.store.transaction(()=>{
                             const latest=this.app.store.get<Session>('session',s.id),input=this.app.store.get<Message>('message',queued.id,latest.projectId!);
                             if(!this.valid(active)||!canSteerSession(this.app.store,latest)||input.sessionId!==latest.id||input.status!=='queued'||input.mode!=='steer'||(input.steerGeneration!==undefined&&input.steerGeneration!==active.generation)||JSON.stringify(input.permission)!==JSON.stringify(active.actor.permission))return null;
+                            if(input.approvalNoticeId&&this.app.sessionPermissions.canExposeFixedTextExecution(latest.id,input.approvalNoticeId)!==this.advertisedTools(active).has('session_action_execute'))return null;
                             return this.app.store.update<Message>('message',input.id,input.version,{status:'running',generation:active.generation});
                         });
                         if(!m)continue;
@@ -241,7 +243,8 @@ export class AgentHost {
         if(configuredConnection)assertModelEnabled(this.app.context.dataDir,claimed.model,configuredConnection);
         const catalogFingerprint=publicationImageCatalog(join(this.app.context.dataDir,'models.json'),connectionSnapshot.catalog);
         actor.researchModelDigest=digest({model:claimed.model,connectionVersion:connectionSnapshot.version,connectionDigest:digest(connectionSnapshot.connection??null),catalogDigest:catalogFingerprint});
-        const toolDefinitions=this.tools.definitions(claimed.role,!!wakeupId,claimed.id,!!continuationId,!!approvalResumeId);
+        const approvalNoticeId=reservation.message?.approvalNoticeId;
+        const toolDefinitions=this.tools.definitions(claimed.role,!!wakeupId,claimed.id,!!continuationId,!!approvalResumeId,approvalNoticeId);
         const isolatedRunAnalysis=!!wakeupId&&this.app.wakeups.get(SYSTEM,wakeupId).sourceKind==='run-result';
         const home = join(this.app.context.dataDir, 'sessions', claimed.id), agentDir = join(home, 'agent'), sessionDir = isolatedRunAnalysis?join(home,'pi-analysis',wakeupId!):join(home, 'pi');
         mkdirSync(agentDir, { recursive: true, mode: 0o700 });
@@ -259,7 +262,7 @@ export class AgentHost {
             // Windows locks a process cwd; keep the replaceable workspace only in the SDK options.
             const spawned = (this.dependencies.fork??fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: home, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
             // Retain the child before commit: a commit failure is not proof of zero model use.
-            active = {catalogFingerprint,admissionId:slot.id,child:spawned,sessionId:claimed.id,generation:claimed.generation,actor,currentMessageId:messageId??null,callIdActors:new Map(),messageIds:messageId?[messageId]:[],consumedIds:new Set(messageId?[messageId]:[]),attemptId:attempt?.id,lastHeartbeat:Date.now(),sent:new Set(),ended:false,advertisedTools:new Set(toolDefinitions.map(tool=>tool.name))};
+            active = {catalogFingerprint,admissionId:slot.id,child:spawned,sessionId:claimed.id,generation:claimed.generation,actor,currentMessageId:approvalNoticeId?null:messageId??null,callIdActors:new Map(),messageIds:messageId?[messageId]:[],consumedIds:new Set(messageId?[messageId]:[]),attemptId:attempt?.id,lastHeartbeat:Date.now(),sent:new Set(),ended:false,advertisedTools:new Set(toolDefinitions.map(tool=>tool.name)),approvalNoticeId};
             this.active.set(claimed.id,active);
             spawned.on('error',error=>this.finish(active!,this.clean(error.message)));
             spawned.once('exit',code=>{active!.exitObserved=true;if(active!.ended)this.exited(active!,code);});
@@ -321,6 +324,7 @@ export class AgentHost {
         const approval=this.app.store.maybe<Approval>('approval',action.approvalId);
         if(approval?.projectId===a.actor.projectId&&approval.subjectKind==='session-action'&&approval.subjectId===action.id&&approval.scope==='session.action'&&approval.status==='pending')return action.id;
     }
+    private advertisedTools(a:Active){return a.advertisedTools??=new Set(this.tools.definitions(a.actor.role!,!!a.actor.wakeupId,a.sessionId,!!a.actor.continuationId,!!a.actor.approvalResumeId,a.approvalNoticeId).map(definition=>definition.name));}
     private contextRecoveryEligible(a:Active):boolean {
         const s=this.app.store.get<Session>('session',a.sessionId),input=a.currentMessageId?this.app.store.maybe<Message>('message',a.currentMessageId):undefined;
         if(!this.valid(a)||s.role!=='coordinator'||s.taskId||s.teamId||s.parentSessionId||a.actor.taskId||a.actor.attemptId||a.actor.wakeupId||a.actor.continuationId||a.actor.approvalResumeId||!a.actor.permission||a.actor.permission.mode==='readOnly')return false;
@@ -402,7 +406,7 @@ export class AgentHost {
         if (m?.type === 'tool_execution_start' || m?.type === 'tool_execution_end') {
             const tool = String(m.tool ?? '');
             // Revocation fences effects, but must not erase the final failure event for an already advertised tool.
-            if (!(a.advertisedTools??new Set(this.tools.definitions(a.actor.role!,!!a.actor.wakeupId,a.sessionId,!!a.actor.continuationId,!!a.actor.approvalResumeId).map(definition=>definition.name))).has(tool)) return;
+            if (!this.advertisedTools(a).has(tool)) return;
             const callId=String(m.toolCallId??tool),record=a.toolErrors?.get(callId),error=record?.tool===tool?record:undefined;
             if(m.type==='tool_execution_start'&&typeof m.toolCallId==='string'){
                 const actors=a.callIdActors??=new Map();
@@ -438,7 +442,7 @@ export class AgentHost {
         }
         if (m?.type === 'assistant_message') {
             a.deltaTail='';
-            const allowed = a.advertisedTools??new Set(this.tools.definitions(a.actor.role!, !!a.actor.wakeupId,a.sessionId,!!a.actor.continuationId,!!a.actor.approvalResumeId).map(definition => definition.name));
+            const allowed = this.advertisedTools(a);
             const toolCalls = Array.isArray(m.toolCalls) ? m.toolCalls.filter((name:unknown):name is string => typeof name === 'string' && allowed.has(name)).slice(0,64) : [];
             const emptyLength=emptyLengthAssistant({...m,toolCalls}),messageError=emptyLength?EMPTY_LENGTH_FAILURE:m.error?this.clean(String(m.error)):undefined;
             if(emptyLength)a.pendingEmptyLength=EMPTY_LENGTH_FAILURE;
@@ -461,8 +465,8 @@ export class AgentHost {
         }
         if(m?.type==='input_consumed'&&a.messageIds.includes(m.messageId)&&a.sent.has(m.messageId)){
             const input=this.app.store.maybe<Message>('message',m.messageId);
-            const ordinary=input?.projectId===s.projectId&&input.sessionId===s.id&&input.role==='user'&&input.origin!=='automation'&&!input.wakeupId&&!input.approvalNoticeId&&!input.queueRemoved&&input.status==='running'&&input.generation===a.generation;
-            if(ordinary){a.consumedIds.add(m.messageId);a.currentMessageId=m.messageId;}else a.currentMessageId=null;
+            const valid=input?.projectId===s.projectId&&input.sessionId===s.id&&input.role==='user'&&input.origin!=='automation'&&!input.wakeupId&&!input.queueRemoved&&input.status==='running'&&input.generation===a.generation;
+            if(valid){a.consumedIds.add(m.messageId);a.currentMessageId=input.approvalNoticeId?null:m.messageId;}else a.currentMessageId=null;
         }
         if(m?.type==='control_error'&&a.messageIds.includes(m.messageId))this.failInput(a,m.messageId,this.clean(String(m.error??'Worker 未接受输入')));
         if (m?.type === 'message_ack' && !a.messageIds.includes(m.messageId) && a.actor.taskId && a.sent.has(m.messageId)) {

@@ -37,6 +37,7 @@ interface Active {
     }>;
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;
+    approvalNoticeId?: string;
     deltaTail?: string;
 }
 /** Dependency injection is in-process test infrastructure only; HTTP/config never select a replacement worker. */
@@ -89,6 +90,7 @@ export declare class AgentHost {
     private exited;
     private valid;
     private pendingSessionAction;
+    private advertisedTools;
     private contextRecoveryEligible;
     private onMessage;
     private failInput;

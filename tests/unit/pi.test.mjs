@@ -15,6 +15,11 @@ test('Pi restore uses exact stored session path, never most recent',()=>{
 });
 test('missing Pi package is reported, never replaced by simulated AI',()=>{const result=inspectPi('/definitely-not-installed',{provider:'',model:'',thinking:'off'});assert.equal(result.ready,false);assert.equal(result.code,'PI_NOT_INSTALLED');assert.equal(result.liveVerified,false);});
 test('research instructions separate model guesses from measured evidence',()=>{assert.match(systemInstruction('analyst'),/未运行/);assert.match(systemInstruction('reviewer'),/独立/);assert.match(systemInstruction('coordinator'),/不能自行批准/);});
+test('approval instructions follow the advertised fixed execution capability',()=>{
+ const hidden=systemInstruction('coordinator',false,'confirm',false),visible=systemInstruction('coordinator',false,'confirm',true);
+ assert.doesNotMatch(hidden,/session_action_execute/);assert.match(visible,/session_action_execute/);
+ for(const instruction of [hidden,visible])for(const text of ['session_action_inspect','完整 input','blocked','已消费','unknown'])assert.ok(instruction.includes(text),text);
+});
 test('coordinator instructions advance exact authorized compute and retain manual approval boundaries',()=>{
     const instruction=systemInstruction('coordinator'),steps=['workspace_prepare_from_revision','workspace_write','development_prepare','development_review_prepare','reviewed_change_prepare'];
     for(let i=0;i<steps.length;i++){assert.ok(instruction.includes(steps[i]));if(i)assert.ok(instruction.indexOf(steps[i])>instruction.indexOf(steps[i-1]));}

@@ -51,6 +51,18 @@ export class SessionPermissionService {
     }
     inspectAction(actor:Actor,sessionId:string,actionId:string){return this.app.store.readSnapshot(()=>{
         const session=this.app.sessions.get(actor,sessionId);interactiveCoordinator(actor,session.projectId!,session);
+        return this.inspectFixedAction(session,actionId);
+    });}
+    canExposeFixedTextExecution(sessionId:string,approvalNoticeId?:string):boolean{
+        if(approvalNoticeId===undefined)return true;
+        try{return this.app.store.readSnapshot(()=>{
+            const session=this.app.store.get<Session>('session',sessionId);
+            if(session.role!=='coordinator'||session.taskId||session.teamId||session.state!=='running'||session.leaseUntil<=Date.now())return false;
+            const fixed=this.inspectFixedAction(session,approvalNoticeId);
+            return FIXED_TEXT_ACTIONS.has(fixed.operation)&&!!fixed.input&&!fixed.blockedReason;
+        });}catch{return false;}
+    }
+    private inspectFixedAction(session:Row<Session>,actionId:string){
         const action=this.app.store.get<Action>('session-action',actionId,session.projectId!);ensure(action.sessionId===session.id,'SCOPE_DENIED','只能回查当前主会话的固定操作',403);
         const approval=this.app.store.get<Approval>('approval',action.approvalId,session.projectId!);
         const result={actionId:action.id,operation:action.operation,state:action.state,approvalStatus:approval.status,input:null as Record<string,unknown>|null,blockedReason:null as string|null};
@@ -59,7 +71,7 @@ export class SessionPermissionService {
         // Return all fixed bytes or none: a partial or masked input cannot replay the approved tuple.
         try{this.assertActionInput(action.input);}catch(error){return {...result,blockedReason:error instanceof DomainError?error.code:'SESSION_ACTION_INPUT_PROTECTED'};}
         return {...result,input:action.input};
-    });}
+    }
     root(sessionId:string):Row<Session>{const s=this.app.store.get<Session>('session',sessionId);if(s.teamId)return this.app.store.get<Session>('session',this.app.store.get<Team>('team',s.teamId,s.projectId!).rootSessionId,s.projectId!);return s;}
     capture(sessionId:string,restricted=false):PermissionReference {const s=this.root(sessionId),p=this.app.store.maybe<Permission>('session-permission',s.id),host=this.app.hostAccess.status({type:'user'},s.id);return {rootSessionId:s.id,epoch:p?.epoch??0,hostEpoch:host.epoch,mode:host.enabled&&!restricted&&sessionId===s.id?'fullAccess':p?.mode??'legacy'};}
     assert(ref:PermissionReference,effect=true){const current=this.capture(ref.rootSessionId),p=this.app.store.maybe<Permission>('session-permission',ref.rootSessionId);ensure(current.epoch===ref.epoch&&current.hostEpoch===ref.hostEpoch&&(current.mode===ref.mode||current.mode==='fullAccess'&&ref.mode===(p?.mode??'legacy')),'SESSION_PERMISSION_STALE','会话权限已变化；需要用户明确重试',403);ensure(!effect||ref.mode!=='readOnly','SESSION_READ_ONLY','只读会话不能产生副作用',403);}

@@ -50,6 +50,8 @@ export declare class SessionPermissionService {
         approvalStatus: "stale" | "pending" | "approved" | "rejected";
         blockedReason: string | null;
     };
+    canExposeFixedTextExecution(sessionId: string, approvalNoticeId?: string): boolean;
+    private inspectFixedAction;
     root(sessionId: string): Row<Session>;
     capture(sessionId: string, restricted?: boolean): PermissionReference;
     assert(ref: PermissionReference, effect?: boolean): void;

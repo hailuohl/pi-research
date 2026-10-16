@@ -135,7 +135,7 @@ process.on('message', async (message) => {
             return result;
         });
         const definition = raw.connection?.models?.find(m => m.model === raw.model.model && !m.controlOnly), thinking = resolvedThinking(definition, raw.model.thinking);
-        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role, raw.tools.some(tool => tool.name === 'host_execute'), raw.permissionMode) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking }, customTools, modelRuntime, model);
+        const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role, raw.tools.some(tool => tool.name === 'host_execute'), raw.permissionMode, raw.tools.some(tool => tool.name === 'session_action_execute')) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
         recoveryEligible = raw.contextRecoveryEligible === true && raw.managedHttp === true && raw.role === 'coordinator' && raw.permissionMode !== 'readOnly';
         const armRecovery = () => { if (recoveryEligible && !recoveryAttempted && !stopping && !taskSubmitted && !providerFailure && !imageFailure && !recoveryFailure) {

@@ -22,6 +22,28 @@ function prepare(s,a,name,input){assert.throws(()=>call(s,a,name,input),{code:'A
 function decide(s,row,approved=true){s.app.sessionPermissions.decide(USER,s.session.id,row.id,{expectedVersion:row.version,expectedApprovalVersion:row.approval.version,approved});}
 const brief={expectedRevisionId:null,question:'Fixed plan',scope:'Exact replay',constraints:[],successCriteria:[],clarificationQuestions:['Confirm scope'],literatureSummary:'AC-OPF: '+('fixed source evidence; '.repeat(300)),hypotheses:[],evidenceIds:[],steps:[],status:'clarifying'};
 
+test('approval catalogs focus only the exact notice and inspect fixed text validity without updating old records',()=>{
+ for(const change of ['valid','network','non-text','missing','other-session','pending','completed','failed','unknown','source','epoch','approval','protected','protection-unavailable']){const s=fixture();try{
+  const a=actor(s),operation=change==='network'?'literature_search':change==='non-text'?'experiment_plan_submit':'workspace_write',input=operation==='literature_search'?{query:'fixed search'}:operation==='experiment_plan_submit'?{title:'Fixed candidate'}:{path:'focused.txt',content:'fixed-private-value',expectedDigest:null};
+  const pending=prepare(s,a,operation,input);if(change!=='pending')decide(s,pending);
+  const neighbor=prepare(s,a,'artifact_create',{title:'Neighbor',content:'separate valid text'});decide(s,neighbor);
+  let id=pending.id;
+  if(change==='missing')id='missing-action';
+  if(change==='other-session'){const row=s.app.store.get('session-action',id);s.app.store.update('session-action',id,row.version,{sessionId:s.app.sessions.create(USER,s.project.id,{}).id});}
+  if(['completed','failed','unknown'].includes(change)){const row=s.app.store.get('session-action',id);s.app.store.update('session-action',id,row.version,{state:change});}
+  if(change==='source')writeFileSync(join(s.app.store.paths.physical(s.session.workspace),'focused.txt'),'external');
+  if(change==='epoch'){const p=s.app.store.get('session-permission',s.session.id);s.app.store.update('session-permission',p.id,p.version,{epoch:p.epoch+1});}
+  if(change==='approval')s.app.approvals.stale(id);
+  if(change==='protected')configureEnvironment(s.app.context,USER,{action:'set',expectedVersion:0,name:'FOCUSED_SECRET',value:input.content},'focused-secret');
+  if(change==='protection-unavailable')writeFileSync(join(s.dir,'model-connections.json'),'{broken');
+  const before=s.app.store.db.prepare('SELECT kind,id,version,data FROM records ORDER BY rowid').all(),tools=new ToolDispatcher(s.app),names=tools.definitions('coordinator',false,s.session.id,false,false,id).map(t=>t.name);
+  assert.equal(names.includes('session_action_execute'),change==='valid',change);assert.ok(names.includes('session_action_inspect'));assert.equal(names.includes('task_context_read'),false);
+  assert.deepEqual(s.app.store.db.prepare('SELECT kind,id,version,data FROM records ORDER BY rowid').all(),before,change+' catalog is read-only');
+  assert.ok(tools.definitions('coordinator',false,s.session.id).some(t=>t.name==='session_action_execute'),'ordinary human catalog remains unchanged');
+  assert.ok(tools.definitions('coordinator',false,undefined,false,false,id).some(t=>t.name==='session_action_execute'),'static preflight remains unchanged');
+ }finally{s.close();}}
+});
+
 for(const operation of ['workspace_write','research_brief_save','artifact_create'])test(`F1 receipt race rejects bound ${operation} replay and preserves ordinary caller idempotency`,()=>{
  const s=fixture();let other;try{
   const a=actor(s),secret='receipt-race-protected-fixed-input',input=operation==='workspace_write'?{path:'fixed.txt',content:secret,expectedDigest:null}:operation==='research_brief_save'?{...brief,literatureSummary:secret}:{title:'Fixed text',content:secret},pending=prepare(s,a,operation,input);decide(s,pending);other=new ResearchApp(s.dir,process.cwd());
@@ -192,4 +214,29 @@ for(const mode of ['inspect','execute'])test(`real Pi approval notice uses fixed
   assert.equal(service.app.store.list('research-brief').length,1);assert.equal(service.app.store.list('research-brief')[0].literatureSummary,brief.literatureSummary);assert.equal(service.app.store.get('session-action',pending.id).state,'completed');
   assert.ok(requests.some(r=>r.tools.some(t=>t.function.name==='session_action_'+mode)));await call(`/sessions/${root.id}/permission-actions/${pending.id}/decide`,{expectedVersion:pending.version,expectedApprovalVersion:pending.approval.version,approved:true},'decide-once');assert.equal(service.app.store.list('research-brief').length,1);
  }finally{if(priorKey===undefined)delete process.env.PI_API_KEY;else process.env.PI_API_KEY=priorKey;await service.close();await new Promise(r=>fixture.close(r));rmSync(dir,{recursive:true,force:true});}
+});
+
+test('resumed real Pi network approval hides fixed text execution on every SDK request beside another approved text action',async()=>{
+ const s=fixture(),requests=[],calls=[],input={query:'fixed offline V2G evidence',limit:2};let actionId,replayed;
+ const server=createServer(async(req,res)=>{
+  let body='';for await(const chunk of req)body+=chunk;const request=JSON.parse(body);requests.push(request);let tool;
+  if(actionId){const last=request.messages.at(-1);if(last?.role!=='tool')tool={name:'session_action_inspect',input:{actionId}};else if(request.messages.at(-2)?.tool_calls?.[0]?.function?.name==='session_action_inspect'){const fixed=JSON.parse(last.content);replayed=fixed.input;tool={name:fixed.operation,input:fixed.input};}}
+  res.writeHead(200,{'content-type':'text/event-stream'});const chunk=(delta,finish_reason=null)=>res.write(`data: ${JSON.stringify({id:'network-'+requests.length,object:'chat.completion.chunk',created:1,model:request.model,choices:[{index:0,delta,finish_reason}]})}\n\n`);
+  if(tool){calls.push(tool);chunk({role:'assistant',tool_calls:[{index:0,id:'network-call-'+requests.length,type:'function',function:{name:tool.name,arguments:JSON.stringify({input:tool.input})}}]});chunk({},'tool_calls');}else{chunk({role:'assistant',content:'Offline fixture completed.'});chunk({},'stop');}res.end('data: [DONE]\n\n');
+ });await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ writeFileSync(join(s.dir,'models.json'),JSON.stringify({providers:{'offline-network':{api:'openai-completions',baseUrl:`http://127.0.0.1:${server.address().port}/v1`,apiKey:'offline-dummy',models:[{id:'fixture',contextWindow:32768,maxTokens:4096}]}}}));
+ const row=s.app.store.get('session',s.session.id);s.app.store.update('session',row.id,row.version,{model:{provider:'offline-network',model:'fixture',thinking:'off'}});
+ const {AgentHost}=await import('../../dist/packages/scheduler/agent-host.js'),{fork}=await import('node:child_process');const host=new AgentHost(s.app,{fork:(entry,args,options)=>fork(entry,args,{...options,env:{...options.env,PI_API_KEY:undefined,PI_OFFLINE:'1'}})});
+ const complete=async()=>{const end=Date.now()+25000;while(Date.now()<end){if(!host.active.size)return;await delay(15);}throw Error('network approval fixture timed out');};
+ try{
+  const first=s.app.sessions.send(USER,row.id,{content:'Create a persistent native history'});host.tick();await complete();assert.equal(s.app.store.get('message',first.id).status,'completed');const nativePath=s.app.store.get('session',row.id).piSessionPath;assert.ok(nativePath);
+  const a=actor(s),network=prepare(s,a,'literature_search',input),text=prepare(s,a,'artifact_create',{title:'Neighbor text',content:'must remain approved'});decide(s,network);decide(s,text);
+  const textNotice=s.app.sessions.messages(USER,row.id).find(m=>m.approvalNoticeId===text.id);s.app.sessions.queueAction(USER,row.id,{messageId:textNotice.id,expectedVersion:textNotice.version,action:'cancel'});
+  const current=s.app.store.get('session',row.id);s.app.store.update('session',row.id,current.version,{state:'queued',leaseUntil:0});
+  s.app.literature.search=async(projectId,query,limit,key,validate)=>{validate?.();assert.equal(projectId,s.project.id);assert.equal(query,input.query);assert.equal(limit,input.limit);return s.app.store.create('literature-search',projectId,{query,source:'crossref',retrievedAt:new Date().toISOString(),coverage:'metadata-only',items:[]});};
+  actionId=network.id;const start=requests.length;host.tick();const active=host.active.get(row.id);await complete();
+  assert.deepEqual(replayed,input);assert.deepEqual(calls.map(c=>c.name),['session_action_inspect','literature_search']);assert.equal(s.app.store.get('session-action',network.id).state,'completed');assert.equal(s.app.store.get('session-action',text.id).state,'approved');assert.equal(s.app.store.get('session',row.id).piSessionPath,nativePath);
+  const resumed=requests.slice(start);assert.equal(resumed.length,3);for(const request of resumed){assert.equal(request.tools.some(t=>t.function.name==='session_action_execute'),false);assert.ok(request.tools.some(t=>t.function.name==='session_action_inspect'));assert.doesNotMatch(JSON.stringify(request.messages.filter(m=>m.role==='system')),/session_action_execute/);}
+  assert.equal(active.currentMessageId,null,'approval input is never an ordinary research origin');
+ }finally{await host.stop();server.closeAllConnections();await new Promise(r=>server.close(r));s.close();}
 });

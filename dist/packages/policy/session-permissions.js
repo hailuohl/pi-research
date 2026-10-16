@@ -45,27 +45,46 @@ export class SessionPermissionService {
         return this.app.store.readSnapshot(() => {
             const session = this.app.sessions.get(actor, sessionId);
             interactiveCoordinator(actor, session.projectId, session);
-            const action = this.app.store.get('session-action', actionId, session.projectId);
-            ensure(action.sessionId === session.id, 'SCOPE_DENIED', '只能回查当前主会话的固定操作', 403);
-            const approval = this.app.store.get('approval', action.approvalId, session.projectId);
-            const result = { actionId: action.id, operation: action.operation, state: action.state, approvalStatus: approval.status, input: null, blockedReason: null };
-            if (action.state !== 'approved' || approval.status !== 'approved')
-                return { ...result, blockedReason: 'SESSION_ACTION_NOT_APPROVED' };
-            try {
-                this.validate(action.policy, session.id, action.operation, action.input, action.id);
-            }
-            catch {
-                return { ...result, blockedReason: 'SESSION_ACTION_STALE' };
-            }
-            // Return all fixed bytes or none: a partial or masked input cannot replay the approved tuple.
-            try {
-                this.assertActionInput(action.input);
-            }
-            catch (error) {
-                return { ...result, blockedReason: error instanceof DomainError ? error.code : 'SESSION_ACTION_INPUT_PROTECTED' };
-            }
-            return { ...result, input: action.input };
+            return this.inspectFixedAction(session, actionId);
         });
+    }
+    canExposeFixedTextExecution(sessionId, approvalNoticeId) {
+        if (approvalNoticeId === undefined)
+            return true;
+        try {
+            return this.app.store.readSnapshot(() => {
+                const session = this.app.store.get('session', sessionId);
+                if (session.role !== 'coordinator' || session.taskId || session.teamId || session.state !== 'running' || session.leaseUntil <= Date.now())
+                    return false;
+                const fixed = this.inspectFixedAction(session, approvalNoticeId);
+                return FIXED_TEXT_ACTIONS.has(fixed.operation) && !!fixed.input && !fixed.blockedReason;
+            });
+        }
+        catch {
+            return false;
+        }
+    }
+    inspectFixedAction(session, actionId) {
+        const action = this.app.store.get('session-action', actionId, session.projectId);
+        ensure(action.sessionId === session.id, 'SCOPE_DENIED', '只能回查当前主会话的固定操作', 403);
+        const approval = this.app.store.get('approval', action.approvalId, session.projectId);
+        const result = { actionId: action.id, operation: action.operation, state: action.state, approvalStatus: approval.status, input: null, blockedReason: null };
+        if (action.state !== 'approved' || approval.status !== 'approved')
+            return { ...result, blockedReason: 'SESSION_ACTION_NOT_APPROVED' };
+        try {
+            this.validate(action.policy, session.id, action.operation, action.input, action.id);
+        }
+        catch {
+            return { ...result, blockedReason: 'SESSION_ACTION_STALE' };
+        }
+        // Return all fixed bytes or none: a partial or masked input cannot replay the approved tuple.
+        try {
+            this.assertActionInput(action.input);
+        }
+        catch (error) {
+            return { ...result, blockedReason: error instanceof DomainError ? error.code : 'SESSION_ACTION_INPUT_PROTECTED' };
+        }
+        return { ...result, input: action.input };
     }
     root(sessionId) { const s = this.app.store.get('session', sessionId); if (s.teamId)
         return this.app.store.get('session', this.app.store.get('team', s.teamId, s.projectId).rootSessionId, s.projectId); return s; }
