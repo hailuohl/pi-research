@@ -56,6 +56,21 @@ that is not a claim of endorsement, behavioral parity or completed cloning.
 ## OpenResearch skills and literature protocol adaptation
 Copyright (c) 2026 alphaXiv. MIT; full text in `third_party/openresearch/LICENSE`. Based on commit 3037f727e80e0ab20c61a87c613a50dde009a835. The current `skills/piresearch` release adapts twelve thematic modules plus the overview to existing Pi Research tools and role boundaries; historical releases retain their original scope. Six figure references and the selected matplotlib/TikZ assets are adapted from the same verified upstream revision. The figure assets retain their license notices when copied into a work product. Loading a resource does not execute it. `packages/connectors` ports selected literature protocol behavior from Rust `src/client.rs` to TypeScript and adds independent validation, cancellation, settings and bounded requests. No ORX application runtime, hosted account or telemetry is included. Source identities and the current adaptation scope are recorded in `third_party/openresearch/source-manifest.json`.
 
+## Scientific Agent Skills method adaptation
+
+Copyright (c) 2025 K-Dense Inc. MIT; full text in
+`third_party/scientific-agent-skills/LICENSE`. Eight method references are adapted
+from `K-Dense-AI/scientific-agent-skills` at commit
+`a1043ef544e3a100c28e70a736b6cf32554d0677`: experimental design, statistical power,
+exploratory data analysis, statistical analysis, uncertainty and units, hypothesis
+generation, scientific critical thinking, and systematic literature review.
+They are rewritten in Chinese for the existing Pi Research roles, tools, evidence
+and approval boundaries. Upstream scripts, Python dependencies, hosted services,
+image generation and advertising instructions are not bundled. Source paths,
+hashes and adapted resource locations are recorded in
+`third_party/scientific-agent-skills/source-manifest.json`; the existing skill
+modules retain their separate OpenResearch provenance.
+
 ## Optional isolated PDF parser
 
 `scripts/pdf-parser` uses pypdfium2 5.13.0 (BSD-3-Clause / Apache-2.0 and bundled PDFium dependency licenses) and Pillow 11.3.0 (MIT-CMU). Wheel hashes are fixed in `requirements.lock`; wheels and built images are not committed. The setup script retains the wheels' license directories, including pypdfium2's `LICENSES` and `BUILD_LICENSES`, inside the image. The fixed Python base image retains its upstream notices. See [parser setup](scripts/pdf-parser/README.md) and the upstream [pypdfium2](https://pypi.org/project/pypdfium2/5.13.0/) and [Pillow](https://pypi.org/project/Pillow/11.3.0/) distributions.

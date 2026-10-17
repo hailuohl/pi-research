@@ -9,6 +9,10 @@ description: "用真实数据制作论文级 matplotlib/TikZ 图，保留打印�
 
 先确定图要回答的问题和数据来源，按下方六类入口读取适用参考。保存脚本、实际生成并归档图由具备相应工具和批准的执行者完成，再写图注、放入固定稿件检查真实版面。交付真实图文件及其脚本、输入与版本关联；没有数据时交付明确标注的软件示例或缺口，不把示例画成实测结果。
 
+## 统计区间和测量误差先定含义
+
+比较效应、置信区间、配对/簇或重复样本的汇总图，先用 `research_skill_read({input:{skillId:"pi-research-evidence",resource:"references/statistical-analysis.md"}})`。测量不确定度、单位转换、相关输入、覆盖因子或±，用 `research_skill_read({input:{skillId:"pi-research-evidence",resource:"references/uncertainty-and-units.md"}})`。所有本技能角色均可读这些方法，按实际问题加载；用独立单位说明n，区分SD、SEM、统计区间、预测区间与测量覆盖区间，不把图模板/单次运行变成误差条依据。真实计算与生成仍走下文获准执行，缺依据就标未验证。
+
 ## 必须满足的科学与版式要求
 
 1. **按最终打印尺寸制作**。资源中的 `COLUMN=3.25`、`TEXT=5.5`、`WIDE=6.75` 单位为英寸，按实际模板列宽选择。8 英寸图缩至3.25英寸会把字号缩成不可读的3pt。论文仍用 `width=\linewidth`，但它不是救济错误尺寸的办法：双栏 `WIDE` 必须放 `figure*`，普通 `figure` 会把它再缩半。
@@ -113,7 +117,7 @@ Pi Research 不实现上游 `<file path="..." />` 根目录解析器。不能加
 
 ## 在真实版面上检查
 
-图表先从真实获准数据生成并归档，放入固定文稿实际编译。准备编译、读取页图或修订前，必须读 [paper/references/build-and-review.md](../pi-research-paper/references/build-and-review.md)。交互主协调者按其中 publication_page_image_read 准确页面批准流程读取已有页 PNG，再检查缩到列宽后的字体、轴/单位、数据遮挡、图例和图注；图种参考与统计方法仍要按需读取。
+图表先从真实获准数据生成并归档，放入固定文稿实际编译。具备paper读取权限的coordinator/writer/reviewer准备编译、读取页图或修订前，必须读 [paper/references/build-and-review.md](../pi-research-paper/references/build-and-review.md)；analyst交回图注/数据依据，由具备权限者处理文稿操作。交互主协调者按其中 publication_page_image_read 准确页面批准流程读取已有页 PNG，再检查缩到列宽后的字体、轴/单位、数据遮挡、图例和图注；图种参考与统计方法仍要按需读取。
 
 脚本退出码、PDF生成和模型自述都不能代替实际图片到达模型。仅检查已读页，工具实际拒绝、超限或撤权时记录具体未完成项，不绕过模型目录或权限校验；视觉可读性不证明数据、误差条或结论正确。Task/reviewer 不自动拥有该图片工具，不把主协调者布局观察当独立科学审查。修图后重新实际编译并看新页，不能重复交付旧图。
 

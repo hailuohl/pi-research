@@ -1,5 +1,5 @@
 {
-  "bundleId": "5f147a56da6ba9ad7e665a7dfb5bcbe08ab9818a2c1645c6c5be325f0703df04",
+  "bundleId": "1a4077f0830b90bb503e98fc1968a0171caa8136bbb35645487206c484b384e7",
   "skills": [
     {
       "id": "pi-research-overview",
@@ -33,7 +33,7 @@
         "designer"
       ],
       "path": "skills/piresearch/pi-research-create/SKILL.md",
-      "digest": "b787b1b6053155cc860027b720494c73adc41f474c4588bab807250d2bd8bb07",
+      "digest": "784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f",
       "resources": [],
       "source": {
         "repository": "alphaXiv/OpenResearch",
@@ -45,7 +45,7 @@
     {
       "id": "pi-research-experiment-tree",
       "name": "pi-research-experiment-tree",
-      "description": "Use before the first launch, planning or changing experiments, shaping rounds, interpreting completions, repairing, promoting, stopping, or reporting progress.",
+      "description": "规划可检验假设、实验设计与样本量/重复依据；在首次启动、调整实验轮次、解释完成结果、修复、晋级、停止或汇报研究进展时使用。",
       "roles": [
         "coordinator",
         "designer",
@@ -53,8 +53,21 @@
         "reviewer"
       ],
       "path": "skills/piresearch/pi-research-experiment-tree/SKILL.md",
-      "digest": "b30dfc80f3f5667100b6135fe91bd098b7bc03a5b1e5aa8d4aa22c2fc7823b0b",
-      "resources": [],
+      "digest": "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58",
+      "resources": [
+        {
+          "path": "references/experimental-design.md",
+          "digest": "f1e7a22064392cdca2e0542f3bc41761269ec4f84431202c9fadf15fd1e411ea"
+        },
+        {
+          "path": "references/statistical-power.md",
+          "digest": "d6a104044ae5801bfe04fcc47f6cae4a30c3ee55346aa552deaccbf4a75c5d2b"
+        },
+        {
+          "path": "references/hypothesis-generation.md",
+          "digest": "b522415de2ed40d9e9d47a6596760818a6a24e82cc937f954945a8a5dc89cfa8"
+        }
+      ],
       "source": {
         "repository": "alphaXiv/OpenResearch",
         "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
@@ -136,7 +149,7 @@
     {
       "id": "pi-research-evidence",
       "name": "pi-research-evidence",
-      "description": "Design verifiable run outputs and check logs or source evidence before judging claims or writing results; distinguish measurements, reported values, image observations, and interpretation.",
+      "description": "检查数据质量、统计结果、测量不确定性与科学主张支持程度；设计可核验运行输出，回读日志和原始来源，区分实测、论文报告值、图片观察与解释。",
       "roles": [
         "coordinator",
         "literature",
@@ -147,8 +160,25 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-evidence/SKILL.md",
-      "digest": "d9543d251a007a5de6ab2b6fdeec1c2380ec31cf84744ad43d6d9ceab0cefea9",
-      "resources": [],
+      "digest": "a775882f5bc3f76f9ff5b03e4d2271616c87bfddad2fc08e50137f2df866a9a2",
+      "resources": [
+        {
+          "path": "references/exploratory-data-analysis.md",
+          "digest": "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7"
+        },
+        {
+          "path": "references/statistical-analysis.md",
+          "digest": "f5c10c4f52c32a3d08ade671bbaaba2ac9fedd9d452516129809024227a5de5a"
+        },
+        {
+          "path": "references/uncertainty-and-units.md",
+          "digest": "04fc291850cabe3f73aae2f0e8d3554fd3b6cffe79989e4224961d061e025a8d"
+        },
+        {
+          "path": "references/scientific-critical-thinking.md",
+          "digest": "5964657e879eb6a9a10be78a820a9f5fa5e20e3e501d5776367a24ffa18363a9"
+        }
+      ],
       "source": {
         "repository": "alphaXiv/OpenResearch",
         "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
@@ -170,7 +200,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-reports/SKILL.md",
-      "digest": "2b6dc0328698eb2786b3442d1d6e20e92c0c7ed04065b22e73dfe7d957bd64f9",
+      "digest": "2aebbef9046afe6c18f67c08b0bd554879527720764a5534de7c26bc8c07aacb",
       "resources": [
         {
           "path": "references/fixed-report.md",
@@ -195,7 +225,7 @@
         "reviewer"
       ],
       "path": "skills/piresearch/pi-research-figures/SKILL.md",
-      "digest": "a62fe00df21805747b4741b14be6bb51f54d49c07ca6d1c2c03c7c56ea45e08b",
+      "digest": "7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89",
       "resources": [
         {
           "path": "references/curves.md",
@@ -295,7 +325,7 @@
         "reviewer"
       ],
       "path": "skills/piresearch/pi-research-paper/SKILL.md",
-      "digest": "fe4edcda3b213e8ea097ef1706a638c7173f069ff02e9248b00dfe51c6122c7f",
+      "digest": "405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733",
       "resources": [
         {
           "path": "assets/starter-main.tex",
@@ -311,7 +341,7 @@
         },
         {
           "path": "references/scientific-review.md",
-          "digest": "6bb7ed4d485c581d9a1eab01b925e5ae5d3d4066d6a678551e0592a1b221092f"
+          "digest": "913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c"
         }
       ],
       "source": {
@@ -364,7 +394,7 @@
     {
       "id": "pi-research-lit-review",
       "name": "pi-research-lit-review",
-      "description": "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索。",
+      "description": "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索，明确系统/范围综述时读取专用方法。",
       "roles": [
         "coordinator",
         "literature",
@@ -374,7 +404,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-lit-review/SKILL.md",
-      "digest": "484dd1258f7afbf9af05a59220b42f94e21544df7b5ab94850da4a8c5082c396",
+      "digest": "e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff",
       "resources": [
         {
           "path": "references/document-reading.md",
@@ -383,6 +413,10 @@
         {
           "path": "references/discovery-permissions.md",
           "digest": "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193"
+        },
+        {
+          "path": "references/systematic-review.md",
+          "digest": "056ebe41093feb81cb9b222b70f09eb852b176d6b5b3be54f46ee73ac1a2f3f6"
         }
       ],
       "source": {

@@ -2,6 +2,12 @@
 
 论文写作、科学审查或按意见修订前，用 `research_skill_read` 读取当前会话固定的 paper 主技能和本 resource。本文约束如何使用已获准输入，不授予读取其他来源、执行命令、修改审核状态或扩大任务范围的权限。正文与独立来源记录继续分层；真实引用、科学符号、单位、负结果和限制应保留。
 
+## 方法深度按问题补齐
+
+本resource继续负责下文逐条核对和限定修订，不以方法资源替代真实来源。涉及分析选择/依赖结构、效应区间、诊断或阴性结果时，用 `research_skill_read({input:{skillId:"pi-research-evidence",resource:"references/statistical-analysis.md"}})`；涉及测量模型、协方差、Type A/B、覆盖因子或有效数字时读 `pi-research-evidence` 的 `references/uncertainty-and-units.md`；偏倚、识别性与结论外推时读 `pi-research-evidence` 的 `references/scientific-critical-thinking.md`，均以该skillId和精确resource调用research_skill_read。paper所有角色均可读取evidence方法；需要设计或样本量补证交主协调者，writer不被路由到不可读create/experiment-tree。
+
+统计置信区间、测量覆盖区间和样本SD各自核对来源与含义；不能将本参考中的一般规则或新增方法文字写成检查已执行。独立reviewer仍按固定输入与现有Task合同处理，缺原始数值或计算证据保留验证缺口。
+
 ## 从原始记录到每条主张
 
 先实际读取获准的固定文稿、数据和证据内容；目录、摘要、引用 ID、构建通过和上轮助手总结不能代替原始数值。分页产物继续读取主张所需部分，未读范围明确记录。为关键主张核对条件/组别、指标定义与方向、原始值及精度、比较顺序、单位、检验、校正族和来源位置，必要时在独立来源记录列出对应关系，不把内部 ID 填进正文。

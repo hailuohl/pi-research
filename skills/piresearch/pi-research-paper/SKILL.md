@@ -9,6 +9,12 @@ description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿�
 
 **论文写作、科学审查或限定修订前，必须读取 [references/scientific-review.md](references/scientific-review.md)**：核对原始数值、比较方向、单位、检验与校正族，区分优化目标、事后评价和机制；限定修订固定原稿与获准替换清单，保存后实际回读并核对真实 diff，缺少比较能力不得声称逐字保留已验证。
 
+## 按承重问题补读方法
+
+写作或科学审查涉及组别比较、统计效应/区间、检验与多重族时，用 `research_skill_read({input:{skillId:"pi-research-evidence",resource:"references/statistical-analysis.md"}})`；测量模型、单位、误差传播或±读 `pi-research-evidence` 的 `references/uncertainty-and-units.md`；偏倚、机制/因果与适用范围读 `pi-research-evidence` 的 `references/scientific-critical-thinking.md`。均通过该skillId和精确resource调用research_skill_read。这些方法接入上述scientific-review的原始依据核对，不另建一套证据登记或审查权限。
+
+明确系统/范围综述稿件才按 `pi-research-lit-review` 读取 `references/systematic-review.md`；普通related work沿原检索规模。writer不读取不可读的create/experiment-tree，设计及重复依据不足交主协调者补齐；没有实际计算/来源就保留未验证，不根据示例补造区间、样本量或PRISMA数字。
+
 ## 1. 先选模板
 
 交互主协调者先用 `publication_templates`（`{"input":{}}`）查看真实目录，按用户指定的模板/投稿样式、正文语言和引擎约束筛选。已有明确选择就沿用；发现实际不兼容或环境缺口时保留该选择并说明问题，不自动替换模板。未指定时，只有一套适用个人模板就直接使用，没有适用个人模板就选择匹配引擎的 builtin。仅有多个真实适用且样式仍需用户决定的候选时询问，并继续整理已知正文。内置基础入口为 `article-pdflatex`、`article-xelatex` 或 `article-lualatex`，主文件均为 `main.tex`、默认 `bibliography:none`；三种引擎入口不自动构成三种待选投稿样式，也不是会议/期刊模板全集。语言/字体要求仍须核对实际文件和环境，不能因选了引擎就称兼容。

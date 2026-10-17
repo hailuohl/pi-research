@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "5f147a56da6ba9ad7e665a7dfb5bcbe08ab9818a2c1645c6c5be325f0703df04";
+export declare const BUNDLE_ID = "1a4077f0830b90bb503e98fc1968a0171caa8136bbb35645487206c484b384e7";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -19,7 +19,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when starting or importing a project, selecting a baseline/parent, defining a fixed run contract, or creating a reproduction experiment.";
     readonly roles: readonly ["coordinator", "designer"];
     readonly path: "skills/piresearch/pi-research-create/SKILL.md";
-    readonly digest: "b787b1b6053155cc860027b720494c73adc41f474c4588bab807250d2bd8bb07";
+    readonly digest: "784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -30,11 +30,20 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-experiment-tree";
     readonly name: "pi-research-experiment-tree";
-    readonly description: "Use before the first launch, planning or changing experiments, shaping rounds, interpreting completions, repairing, promoting, stopping, or reporting progress.";
+    readonly description: "规划可检验假设、实验设计与样本量/重复依据；在首次启动、调整实验轮次、解释完成结果、修复、晋级、停止或汇报研究进展时使用。";
     readonly roles: readonly ["coordinator", "designer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-experiment-tree/SKILL.md";
-    readonly digest: "b30dfc80f3f5667100b6135fe91bd098b7bc03a5b1e5aa8d4aa22c2fc7823b0b";
-    readonly resources: readonly [];
+    readonly digest: "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58";
+    readonly resources: readonly [{
+        readonly path: "references/experimental-design.md";
+        readonly digest: "f1e7a22064392cdca2e0542f3bc41761269ec4f84431202c9fadf15fd1e411ea";
+    }, {
+        readonly path: "references/statistical-power.md";
+        readonly digest: "d6a104044ae5801bfe04fcc47f6cae4a30c3ee55346aa552deaccbf4a75c5d2b";
+    }, {
+        readonly path: "references/hypothesis-generation.md";
+        readonly digest: "b522415de2ed40d9e9d47a6596760818a6a24e82cc937f954945a8a5dc89cfa8";
+    }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
         readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
@@ -95,11 +104,23 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-evidence";
     readonly name: "pi-research-evidence";
-    readonly description: "Design verifiable run outputs and check logs or source evidence before judging claims or writing results; distinguish measurements, reported values, image observations, and interpretation.";
+    readonly description: "检查数据质量、统计结果、测量不确定性与科学主张支持程度；设计可核验运行输出，回读日志和原始来源，区分实测、论文报告值、图片观察与解释。";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
-    readonly digest: "d9543d251a007a5de6ab2b6fdeec1c2380ec31cf84744ad43d6d9ceab0cefea9";
-    readonly resources: readonly [];
+    readonly digest: "a775882f5bc3f76f9ff5b03e4d2271616c87bfddad2fc08e50137f2df866a9a2";
+    readonly resources: readonly [{
+        readonly path: "references/exploratory-data-analysis.md";
+        readonly digest: "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7";
+    }, {
+        readonly path: "references/statistical-analysis.md";
+        readonly digest: "f5c10c4f52c32a3d08ade671bbaaba2ac9fedd9d452516129809024227a5de5a";
+    }, {
+        readonly path: "references/uncertainty-and-units.md";
+        readonly digest: "04fc291850cabe3f73aae2f0e8d3554fd3b6cffe79989e4224961d061e025a8d";
+    }, {
+        readonly path: "references/scientific-critical-thinking.md";
+        readonly digest: "5964657e879eb6a9a10be78a820a9f5fa5e20e3e501d5776367a24ffa18363a9";
+    }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
         readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
@@ -112,7 +133,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-reports/SKILL.md";
-    readonly digest: "2b6dc0328698eb2786b3442d1d6e20e92c0c7ed04065b22e73dfe7d957bd64f9";
+    readonly digest: "2aebbef9046afe6c18f67c08b0bd554879527720764a5534de7c26bc8c07aacb";
     readonly resources: readonly [{
         readonly path: "references/fixed-report.md";
         readonly digest: "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc";
@@ -129,7 +150,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "用真实数据制作论文级 matplotlib/TikZ 图，保留打印尺寸、统计区间、矢量输出及来源；分别执行脚本自检、获准视觉检查与科学论证核查，按图的问题读取参考。";
     readonly roles: readonly ["coordinator", "analyst", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-figures/SKILL.md";
-    readonly digest: "a62fe00df21805747b4741b14be6bb51f54d49c07ca6d1c2c03c7c56ea45e08b";
+    readonly digest: "7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89";
     readonly resources: readonly [{
         readonly path: "references/curves.md";
         readonly digest: "767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df";
@@ -203,7 +224,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿用模板和配套资产，固定稿件，构建、检查并交付源码与实际结果。普通研究报告使用reports。";
     readonly roles: readonly ["coordinator", "writer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-paper/SKILL.md";
-    readonly digest: "fe4edcda3b213e8ea097ef1706a638c7173f069ff02e9248b00dfe51c6122c7f";
+    readonly digest: "405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733";
     readonly resources: readonly [{
         readonly path: "assets/starter-main.tex";
         readonly digest: "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974";
@@ -215,7 +236,7 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly digest: "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192";
     }, {
         readonly path: "references/scientific-review.md";
-        readonly digest: "6bb7ed4d485c581d9a1eab01b925e5ae5d3d4066d6a678551e0592a1b221092f";
+        readonly digest: "913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -254,16 +275,19 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-lit-review";
     readonly name: "pi-research-lit-review";
-    readonly description: "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索。";
+    readonly description: "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索，明确系统/范围综述时读取专用方法。";
     readonly roles: readonly ["coordinator", "literature", "designer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-lit-review/SKILL.md";
-    readonly digest: "484dd1258f7afbf9af05a59220b42f94e21544df7b5ab94850da4a8c5082c396";
+    readonly digest: "e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff";
     readonly resources: readonly [{
         readonly path: "references/document-reading.md";
         readonly digest: "0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140";
     }, {
         readonly path: "references/discovery-permissions.md";
         readonly digest: "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193";
+    }, {
+        readonly path: "references/systematic-review.md";
+        readonly digest: "056ebe41093feb81cb9b222b70f09eb852b176d6b5b3be54f46ee73ac1a2f3f6";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

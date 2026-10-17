@@ -17,6 +17,16 @@ description: "Use when starting or importing a project, selecting a baseline/par
 
 `project_inspect({input:{}})` 查看项目输入索引及实验/Run ID。`workspace_read({input:{path:"README.md",source:"project"}})` 仅主协调者可读当前项目输入；目标实验改用固定 experiment_source_read。缺目录/文件就报告，不猜其他项目路径。
 
+## 研究问题到设计与重复依据
+
+coordinator/designer在创建真实研究实验前，按需要用 `research_skill_read` 读取 `pi-research-experiment-tree`：候选解释、竞争预测与反证读 `references/hypothesis-generation.md`；实验单位、对照、随机化/区组与技术重复读 `references/experimental-design.md`；样本量、功效、MDE及重复依据读 `references/statistical-power.md`。例如：
+
+```json
+{"input":{"skillId":"pi-research-experiment-tree","resource":"references/statistical-power.md"}}
+```
+
+给定数据形成方案前，先按全角色可读的 `pi-research-evidence` 主技能读取 `references/exploratory-data-analysis.md` 核对实际格式、扫描范围、缺失语义和主体/时间切分。将输入版本、独立单位、假设与设计依据存于现有研究计划/获准Artifact；假设、预算或声明不能替代实测，缺效应/方差时不补造样本量。方法资源不授予安装、联网、脚本执行或正式Run批准，也不增加contract/config字段。
+
 ## 首次执行前确定运行契约
 
 先明确基线问题、假设、实现版本、数据/切分版本、评价协议、主指标及方向/单位、必需产物、时间和计算边界。将可复现环境准备留在提交的脚本/固定镜像，遵守项目既有 Python 环境政策，不自动安装依赖。

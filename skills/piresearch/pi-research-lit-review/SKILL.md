@@ -1,6 +1,6 @@
 ---
 name: pi-research-lit-review
-description: "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索。"
+description: "用原始研究证据解释、比较科学或技术概念，适用于研究主张、架构问题、文献综述与related work，即使用户未点名论文；按问题缩放检索，明确系统/范围综述时读取专用方法。"
 ---
 
 # 文献检索与原文引导阅读
@@ -8,6 +8,12 @@ description: "用原始研究证据解释、比较科学或技术概念，适用
 科学解释和比较也需要检索，不只在用户要求引用时才使用。主协调者负责完整检索策略、排序与综合，不把整个循环交给子代理。已有独立文献Task可在明确简报、来源/目标与本尝试授权内整理资料；不据此新建助手、读取全项目或扩大检索。
 
 先使用用户已启用且适合主题的文献连接器；成功检索后不能为了熟悉或偏爱的论文追加泛Web搜索，可用聚焦连接器查询或paper_read。上游把一般Web搜索作为相关连接器无有用结果后的回退；本项目没有默认通用Web检索工具，因此不足时报告缺口并让用户交接已授权来源，不能自行启用服务或用host_execute绕过来源开关。选定原PDF作为证据访问时无需为了形式先打开摘要。
+
+## 明确系统/范围综述时
+
+只有用户明确要求系统综述、范围综述、系统性证据综合/筛选或其协议时，先用 `research_skill_read({input:{skillId:"pi-research-lit-review",resource:"references/systematic-review.md"}})` 读取 [references/systematic-review.md](references/systematic-review.md)，核对纳排、检索记录、record/report/study关联、偏倚与PRISMA计数。普通科学问答、找论文、related work和叙述性综述仍按下文规模处理，不自动升级全库筛查。现有候选池、检索轮次、HTTP与来源/全文权限仍适用；覆盖不足就交付部分综述或协议及缺口，不能宣称穷尽。
+
+需要评价承重主张时，各角色可读取 `pi-research-evidence` 的 `references/scientific-critical-thinking.md`；统计解释读其 `references/statistical-analysis.md`。literature/writer不被要求读取不可读的create/experiment-tree，设计或计算准备由具备权限者接收具体缺口。
 
 ## 先判断资料与阅读路径
 

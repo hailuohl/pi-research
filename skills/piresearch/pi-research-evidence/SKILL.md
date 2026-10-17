@@ -1,11 +1,24 @@
 ---
 name: pi-research-evidence
-description: "Design verifiable run outputs and check logs or source evidence before judging claims or writing results; distinguish measurements, reported values, image observations, and interpretation."
+description: "检查数据质量、统计结果、测量不确定性与科学主张支持程度；设计可核验运行输出，回读日志和原始来源，区分实测、论文报告值、图片观察与解释。"
 ---
 
 # 运行输出、原文与科学证据
 
 运行日志是观察渠道，固定metrics.json、原始数据及来源清单也是证据。运行前使实际提交程序打印能判断结果的信息；运行后必须读回，不能从状态/记忆/模型总结推导数字。
+
+## 按问题读取方法资源
+
+本技能及以下resource供所有现有角色按需读取。使用当前会话固定的 `research_skill_read`，不因方法要求扩大Task输入或执行权限：
+
+| 具体触发 | resource |
+|---|---|
+| CSV/TSV输入结构、扫描覆盖、缺失语义、异常值、分组/实体/时间泄漏或建模前检查 | [references/exploratory-data-analysis.md](references/exploratory-data-analysis.md) |
+| 组别比较、检验/回归选择、效应与置信区间、多重比较、诊断或阴性结果解释 | [references/statistical-analysis.md](references/statistical-analysis.md) |
+| 测量模型、Type A/B、单位换算、协方差传播、覆盖因子、有效数字或误差条含义 | [references/uncertainty-and-units.md](references/uncertainty-and-units.md) |
+| 科学主张支持程度、偏倚/混杂、机制/因果识别、适用范围或证据质量 | [references/scientific-critical-thinking.md](references/scientific-critical-thinking.md) |
+
+例如 `research_skill_read({input:{skillId:"pi-research-evidence",resource:"references/statistical-analysis.md"}})`；其余使用同skillId与表中精确resource。结果及所需叙述沿现有Artifact/研究计划/Task输出保存，不能发明Evidence/Claim平行账本或接口字段。没有数据、计算结果、适用解析路径、依赖或权限时保留未知与具体缺口；不执行上游脚本、不自动安装/联网，也不把方法说明当分析已完成。
 
 ## 分页读取真实日志
 

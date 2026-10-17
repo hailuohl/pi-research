@@ -1,6 +1,6 @@
 ---
 name: pi-research-experiment-tree
-description: "Use before the first launch, planning or changing experiments, shaping rounds, interpreting completions, repairing, promoting, stopping, or reporting progress."
+description: "规划可检验假设、实验设计与样本量/重复依据；在首次启动、调整实验轮次、解释完成结果、修复、晋级、停止或汇报研究进展时使用。"
 ---
 
 # 实验树与持续研究
@@ -9,9 +9,21 @@ description: "Use before the first launch, planning or changing experiments, sha
 
 仅当计划中的 Run 要建立基线或检验项目相关研究假设时创建节点；节点上的代码改动必须服务于该基线或假设。无关清理、重构、bug 修复或依赖更新留在既有开发流程，不为它们创建实验节点。必要的 provisional 修复仍按下节受控处理；若研究问题本身是内存、运行时间或稳定性，相关测量可构成节点目的，不把例外泛化成任意维护节点。
 
+## 按问题读取研究方法
+
+先用 `research_skill_read` 读取当前会话固定版本的对应resource；coordinator、designer、analyst、reviewer均可读取本技能。只读方法不增加数据、建节点或执行权限：
+
+| 具体触发 | resource |
+|---|---|
+| 从观察/研究问题提出候选解释、竞争假设、可区分预测或反证条件 | [references/hypothesis-generation.md](references/hypothesis-generation.md) |
+| 分配实验单位、对照、随机化/区组、批次、多因素或重复测量，核对伪重复 | [references/experimental-design.md](references/experimental-design.md) |
+| 需要多少独立样本/重复、SESOI、事前功效、固定预算MDE或重复依据 | [references/statistical-power.md](references/statistical-power.md) |
+
+例如 `research_skill_read({input:{skillId:"pi-research-experiment-tree",resource:"references/experimental-design.md"}})`；其余使用同skillId与表中精确resource。需要哪些方法就读哪些，不默认启动额外分析。数据检查、统计解释、测量不确定度和主张评价使用全角色可读的 `pi-research-evidence` 主技能及其对应resource。方法记录沿已有研究计划/Artifact及Campaign字段，不新增schema；缺效应、方差、独立单位或执行依据保留未知，不能编造样本量、结果或预注册。
+
 ## 首次执行前
 
-遵守当前项目 Python/依赖政策，核对实际训练/评价命令、已存在镜像及所选本地/SSH环境；只有仍未明确的执行要求才交用户补齐。持久环境准备和执行配方写进版本化脚本/固定镜像，首次基线contract固定入口，不在命令或env上扫描参数。先读pi-research-create及pi-research-compute选定后端参考。
+遵守当前项目 Python/依赖政策，核对实际训练/评价命令、已存在镜像及所选本地/SSH环境；只有仍未明确的执行要求才交用户补齐。持久环境准备和执行配方写进版本化脚本/固定镜像，首次基线contract固定入口，不在命令或env上扫描参数。coordinator/designer先读pi-research-create；analyst/reviewer只核对获准计划与输入，创建准备交具备权限者。执行后端方法读可用的pi-research-compute选定参考，读取不增加执行权限。
 
 记录可检验假设、真实对照、主指标/单位、护栏、数据切分、重复次数、成功/不确定/停止条件。条件是研究声明，活动成功/助手完成不会自行证明科学成功。
 

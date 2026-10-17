@@ -12,7 +12,7 @@
 
 随后移除远程实例技能及占位、云资源管理和完整远程工作台部署规划，保留13个内置技能；GPU扩展及既有资源调度保持，见[继续清理记录](docs/acceptance/flow-compute-related-cleanup/RESULT.md)。
 
-技能已按当前已完成功能完整适配，提供24份按需资源，包括计算参考、完整绘图方法/样式/示例及论文模板。现有入口、用户操作与未完成产品功能明确区分，见[已完成功能及上游差异](docs/openresearch/CURRENT-SKILLS.zh-CN.md)和[本批验证](docs/acceptance/flow-skill-adaptation/RESULT.md)。
+技能已按当前已完成功能适配，提供38份按需资源，包括计算、绘图、文稿交付与8项科研方法。新增实验设计、功效规划、数据检查、统计分析、测量不确定性、假设生成、批判性评价和系统综述方法，沿现有角色与固定版本加载；方法参考不等于新增自动计算工具。见[当前功能及上游差异](docs/openresearch/CURRENT-SKILLS.zh-CN.md)和[方法补强验收](docs/acceptance/flow-scientific-methods-20261017/RESULT.md)。
 
 历史目标（2026-09-29）：曾要求对齐OpenResearch前端，并把桌面分发及自建托管范围移出当时排期。该排期由上面的当前阶段目标取代；已有成果与在途改动继续保留。
 
@@ -47,7 +47,7 @@ node dist/apps/server/index.js
 
 ## 实际提供
 
-- 13个技能模块（12个上游主题＋总览），24份按需资源（2份计算、20份图表方法/资产/示例、2份文稿模板）；按角色和发布哈希加载，读取资源不自动执行代码。
+- 13个技能模块（12个上游主题＋总览），38份按需资源；新增8项方法挂在实验树、证据与文献技能中，按角色和发布哈希加载，读取资源不自动执行代码。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
 - 当前 134 个操作通过 OperationRegistry 统一验证输入/输出、权限与幂等；包括固定源码、测试/审查、有限授权、文献/文档、文稿/报告、历史分页、消息附件和资源配置。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。owner HTTP 的 sessionId 不授予Agent身份，现有批准边界保持。

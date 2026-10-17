@@ -9,6 +9,12 @@ description: "Write and save evidence-backed research reports and run comparison
 
 区分三个对象：**原始日志**记录程序输出；**Agent 分析报告**是根据实际证据撰写并保存的正文；**系统固定报告**是用户选择来源后生成的确定性历史记录，不会重新调用模型写分析。Agent 正文不会自动合并进固定报告列表或成果导出包；保存正文不表示固定报告已创建。
 
+## 按分析问题补读方法
+
+输入数据质量、缺失/分组/时间切分问题读 `pi-research-evidence` 的 `references/exploratory-data-analysis.md`；组间比较、检验/模型、效应与区间、校正族和阴性结果解释读 `references/statistical-analysis.md`；测量模型/单位/±读 `references/uncertainty-and-units.md`；偏倚、竞争解释、机制/因果与适用范围读 `references/scientific-critical-thinking.md`。例如 `research_skill_read({input:{skillId:"pi-research-evidence",resource:"references/statistical-analysis.md"}})`，其余使用同skillId与精确resource；所有本技能角色均可读取。
+
+方法结果融入下文已有正文与来源记录，不另建统计/Evidence账本；缺数据、支持格式、计算或权限时交付已支持内容与具体缺口，不能用声明补造结果。需要新设计与重复依据时交具备权限的协调者，普通报告不自动升级系统综述或新计算。
+
 ## 默认流程：从问题到正文
 
 1. 根据用户问题明确报告用途、比较对象和判断标准；已有信息足够就继续，不为固定格式追加提问。
@@ -23,7 +29,7 @@ description: "Write and save evidence-backed research reports and run comparison
 
 ## 先看已有组织再写
 
-当前工具包含 workspace_list/read 时查看自己的相关源文件，用可用的 project_inspect/task_result_read 查看获准产物索引；自动分析不假设拥有工作区或 artifact_read。报告按研究主题/交付物分组，优先复用已有相关目录；描述性名称，不在根不断积累report1/report2，不为空目录提前搭架子。绘图前读pi-research-figures，论文读pi-research-paper，运行结论读pi-research-evidence。
+当前工具包含 workspace_list/read 时查看自己的相关源文件，用可用的 project_inspect/task_result_read 查看获准产物索引；自动分析不假设拥有工作区或 artifact_read。报告按研究主题/交付物分组，优先复用已有相关目录；描述性名称，不在根不断积累report1/report2，不为空目录提前搭架子。coordinator/analyst/writer/reviewer绘图前读pi-research-figures；coordinator/writer/reviewer准备论文读pi-research-paper，其他角色交接给具备权限者；所有角色的运行结论读pi-research-evidence。
 
 私有草稿目录可以保留上游的组织示例（仅当这些实际输出存在）：
 
