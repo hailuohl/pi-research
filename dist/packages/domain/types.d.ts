@@ -12,6 +12,8 @@ export type Role = 'coordinator' | 'literature' | 'designer' | 'implementer' | '
 export interface Actor {
     /** Host-only current input and validated continuation; never tool arguments. */
     messageId?: string;
+    /** Host-only consumed approval notice, captured separately from human research input. */
+    approvalNoticeMessageId?: string;
     researchModelDigest?: string;
     continuationId?: string;
     approvalResumeId?: string;

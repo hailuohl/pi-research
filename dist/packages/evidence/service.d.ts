@@ -14,7 +14,7 @@ export declare class EvidenceService {
         artifact: Row<Artifact>;
         bytes: NonSharedBuffer;
     };
-    register(actor: Actor, projectId: string, artifactId: string, start: number, end: number, description: string, type?: Evidence['type'], runId?: string): Row<Evidence>;
+    register(actor: Actor, projectId: string, artifactId: string, start: number | undefined, end: number | undefined, description: string, type?: Evidence['type'], runId?: string, exactQuote?: string): Row<Evidence>;
     verify(projectId: string, evidenceId: string, current?: boolean): Row<Evidence>;
     /** Host local search only; no caller-supplied authority flag or new agent tool. */
     registerProviderText(actor: Actor, projectId: string, providerText: ProviderTextEvidenceLink, start: number, end: number, description: string): Row<Evidence>;

@@ -44,16 +44,33 @@ export class EvidenceService {
     publishPrepared(projectId, prepared) { this.c.store.get('project', projectId); return this.c.store.create('artifact', projectId, prepared); }
     put(projectId, title, bytes, mediaType = 'text/plain', origin = 'user', extra = {}) { return this.publishPrepared(projectId, this.prepareArtifact(projectId, title, bytes, mediaType, origin, extra)); }
     read(actor, id) { const a = this.c.store.get('artifact', id); scope(actor, a.projectId); assertProjectReadable(this.c.store, a.projectId, actor); ensure(a.origin !== 'native-continuation' || actor.type !== 'agent', 'NATIVE_CONTINUATION_PRIVATE', '原生续跑材料不向普通助手提供', 403); assertPmcArtifactRead(this.c.store, actor, a.projectId, id); assertPdfArtifactRead(this.c.store, actor, a.projectId, id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
-    register(actor, projectId, artifactId, start, end, description, type = 'artifact', runId) {
+    register(actor, projectId, artifactId, start, end, description, type = 'artifact', runId, exactQuote) {
         scope(actor, projectId);
         const a = this.c.store.get('artifact', artifactId, projectId);
         ensure(a.origin !== 'native-continuation', 'NATIVE_CONTINUATION_PRIVATE', '原生续跑协议材料不能登记为科研证据或导出来源', 403);
         assertDiscoveryArtifact(this.c.store, projectId, a);
         const { bytes } = this.read(actor, a.id);
         ensure(bytes.length <= 2 * 1024 * 1024 && !bytes.includes(0), 'EVIDENCE_TEXT_REQUIRED', '需要可定位的文本产物', 400);
-        const content = bytes.toString('utf8');
-        integer(start, 'start', 0, content.length);
-        integer(end, 'end', start + 1, content.length);
+        let content;
+        try {
+            content = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+        }
+        catch {
+            ensure(false, 'EVIDENCE_TEXT_REQUIRED', '需要有效 UTF-8 文本', 400);
+        }
+        if (exactQuote !== undefined) {
+            text(exactQuote, 'exactQuote', 16000);
+            if (start === undefined && end === undefined) {
+                start = content.indexOf(exactQuote);
+                ensure(start >= 0, 'EVIDENCE_QUOTE_NOT_FOUND', 'exactQuote 必须逐字来自实际正文，保留空格和换行；请重新读取原文，不能猜测位置或省略内容', 400);
+                ensure(content.indexOf(exactQuote, start + 1) < 0, 'EVIDENCE_QUOTE_AMBIGUOUS', '原文有重复片段；请扩展 exactQuote 包含唯一上下文，或提供已核对的 UTF-16 start/end', 400);
+                end = start + exactQuote.length;
+            }
+        }
+        start = integer(start, 'start', 0, content.length);
+        end = integer(end, 'end', start + 1, content.length);
+        if (exactQuote !== undefined)
+            ensure(content.slice(start, end) === exactQuote, 'EVIDENCE_QUOTE_MISMATCH', '指定范围与 exactQuote 不一致；请核对原文，不估算位置', 400);
         if (runId)
             this.c.store.get('run', runId, projectId);
         return this.c.store.create('evidence', projectId, { type, artifactId: a.id, digest: a.digest, locator: { start, end }, quote: content.slice(start, end), description: text(description, 'description', 2000), ...(runId ? { runId } : {}) });

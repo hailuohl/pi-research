@@ -86,6 +86,10 @@ test('all existing public tools have closed, literal success contracts exercised
   s.app.sessionPermissions.decide(USER,fixedSession.id,fixedAction.id,{expectedVersion:fixedAction.version,expectedApprovalVersion:fixedAction.approval.version,approved:true});
   const fixedRead=await call('session_action_inspect',{actionId:fixedAction.id},fixedActor);assert.deepEqual(fixedRead.input,fixedInput);assert.equal(fixedRead.blockedReason,null);
   const fixedSaved=await call('session_action_execute',{actionId:fixedAction.id},fixedActor);assert.equal(fixedSaved.operation,'workspace_write');assert.equal(fixedSaved.result.digest,digest(Buffer.from(fixedInput.content)));
+  await assert.rejects(tools.execute(fixedActor,'artifact_create',{title:'Resume contract',content:'Fixed approved artifact'},'schema-resume-prepare'),{code:'APPROVAL_REQUIRED'});
+  const resumeAction=s.app.sessionPermissions.status(USER,fixedSession.id).actions.at(-1);s.app.sessionPermissions.decide(USER,fixedSession.id,resumeAction.id,{expectedVersion:resumeAction.version,expectedApprovalVersion:resumeAction.approval.version,approved:true});
+  const resumeNotice=s.app.sessions.messages(USER,fixedSession.id).find(m=>m.approvalNoticeId===resumeAction.id);s.app.store.update('message',resumeNotice.id,resumeNotice.version,{status:'running',generation:1});
+  const resumed=await call('session_action_resume',{}, {...fixedActor,permission:s.app.sessionPermissions.capture(fixedSession.id),approvalNoticeMessageId:resumeNotice.id});assert.equal(resumed.operation,'artifact_create');assert.equal(resumed.actionId,resumeAction.id);
   const actionMessage=s.app.store.create('message',s.project.id,{sessionId:s.session.id,role:'user',content:'Read saved reports',mode:'prompt',status:'running',generation:1});
   const actionActor={...root,messageId:actionMessage.id,researchModelDigest:s.app.researchAutomation.modelIdentity(s.app.store.get('session',s.session.id))};
   const action=await call('research_action_prepare',{kind:'history',history:{kind:'reports'}},actionActor);
@@ -117,7 +121,7 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('workspace_read',{path:'sample.txt'});
   const artifact=await call('artifact_create',{title:'text.txt',content:'measured original text'});
   await call('artifact_read',{artifactId:artifact.id});
-  const evidence=await call('evidence_register',{artifactId:artifact.id,start:0,end:8,description:'fixture quotation'});
+  const evidence=await call('evidence_register',{artifactId:artifact.id,exactQuote:'measured'});
   await call('evidence_read',{evidenceId:evidence.id});
   const brief=await call('research_brief_save',{expectedRevisionId:null,question:'A fixed research question',scope:'Controlled comparison',constraints:[],successCriteria:['Check real metrics'],clarificationQuestions:[],literatureSummary:'Original source fixture',hypotheses:[{statement:'A hypothesis for later testing',evidenceIds:[evidence.id]}],evidenceIds:[evidence.id],steps:[{title:'Baseline',description:'Separate run approval required'}],status:'ready'});
   await call('research_brief_inspect');

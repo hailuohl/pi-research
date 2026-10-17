@@ -38,6 +38,7 @@ interface Active {
     contextMessageIds?: string[];
     advertisedTools?: Set<string>;
     approvalNoticeId?: string;
+    currentApprovalNoticeMessageId?: string;
     deltaTail?: string;
 }
 /** Dependency injection is in-process test infrastructure only; HTTP/config never select a replacement worker. */

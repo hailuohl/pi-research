@@ -50,6 +50,14 @@ export declare class SessionPermissionService {
         approvalStatus: "stale" | "pending" | "approved" | "rejected";
         blockedReason: string | null;
     };
+    boundNoticeAction(actor: Actor, sessionId: string): string;
+    resumeAction(actor: Actor, sessionId: string, signal?: AbortSignal): Promise<{
+        actionId: string;
+        operation: string;
+        result: unknown;
+    }>;
+    canResumeOperation(operation: string): boolean;
+    canExposeResume(sessionId: string, approvalNoticeId?: string): boolean;
     canExposeFixedTextExecution(sessionId: string, approvalNoticeId?: string): boolean;
     private inspectFixedAction;
     root(sessionId: string): Row<Session>;

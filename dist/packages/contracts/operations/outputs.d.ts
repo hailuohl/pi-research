@@ -1425,8 +1425,20 @@ export declare const OUTPUT_SCHEMAS: {
         readonly additionalProperties: false;
     };
     readonly evidence_register: {
-        readonly type: "object";
         readonly properties: {
+            readonly verification: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly quote: {
+                        readonly const: "source-bytes-verified";
+                    };
+                    readonly interpretation: {
+                        readonly const: "unverified";
+                    };
+                };
+                readonly required: ("quote" | "interpretation")[];
+                readonly additionalProperties: false;
+            };
             readonly id: {
                 readonly type: "string";
             };
@@ -1449,7 +1461,6 @@ export declare const OUTPUT_SCHEMAS: {
             readonly updatedAt: {
                 readonly type: "string";
             };
-        } & {
             readonly type: {
                 readonly type: "string";
                 readonly enum: ["artifact", "run", "paper", "code"];
@@ -1527,12 +1538,25 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("artifactId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "type" | "digest" | "description" | "locator" | "quote")[];
+        readonly required: readonly [...("artifactId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "type" | "digest" | "description" | "locator" | "quote")[], "verification"];
+        readonly type: "object";
         readonly additionalProperties: false;
     };
     readonly evidence_read: {
-        readonly type: "object";
         readonly properties: {
+            readonly verification: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly quote: {
+                        readonly const: "source-bytes-verified";
+                    };
+                    readonly interpretation: {
+                        readonly const: "unverified";
+                    };
+                };
+                readonly required: ("quote" | "interpretation")[];
+                readonly additionalProperties: false;
+            };
             readonly id: {
                 readonly type: "string";
             };
@@ -1555,7 +1579,6 @@ export declare const OUTPUT_SCHEMAS: {
             readonly updatedAt: {
                 readonly type: "string";
             };
-        } & {
             readonly type: {
                 readonly type: "string";
                 readonly enum: ["artifact", "run", "paper", "code"];
@@ -1633,7 +1656,24 @@ export declare const OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("artifactId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "type" | "digest" | "description" | "locator" | "quote")[];
+        readonly required: readonly [...("artifactId" | "kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "type" | "digest" | "description" | "locator" | "quote")[], "verification"];
+        readonly type: "object";
+        readonly additionalProperties: false;
+    };
+    readonly session_action_resume: {
+        readonly type: "object";
+        readonly properties: {
+            readonly actionId: {
+                readonly type: "string";
+            };
+            readonly operation: {
+                readonly type: "string";
+            };
+            readonly result: {
+                readonly description: "Exact operation result, validated by that operation output contract.";
+            };
+        };
+        readonly required: ("operation" | "result" | "actionId")[];
         readonly additionalProperties: false;
     };
     readonly session_action_execute: {

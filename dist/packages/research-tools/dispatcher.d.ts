@@ -4,9 +4,9 @@ export declare class ToolDispatcher {
     private app;
     constructor(app: ResearchApp);
     definitions(role: NonNullable<Actor['role']>, automation?: boolean, sessionId?: string, continuation?: boolean, approvalResume?: boolean, approvalNoticeId?: string): {
+        inputSchema: import("../contracts/operations/schema.js").JsonSchema;
         description: string;
         example: unknown;
-        inputSchema: import("../contracts/operations/schema.js").JsonSchema;
         outputSchema?: import("../contracts/operations/schema.js").JsonSchema;
         name: string;
     }[];

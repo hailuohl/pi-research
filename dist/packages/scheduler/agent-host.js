@@ -108,6 +108,8 @@ export class AgentHost {
                             const latest = this.app.store.get('session', s.id), input = this.app.store.get('message', queued.id, latest.projectId);
                             if (!this.valid(active) || !canSteerSession(this.app.store, latest) || input.sessionId !== latest.id || input.status !== 'queued' || input.mode !== 'steer' || (input.steerGeneration !== undefined && input.steerGeneration !== active.generation) || JSON.stringify(input.permission) !== JSON.stringify(active.actor.permission))
                                 return null;
+                            if (input.approvalNoticeId && this.app.sessionPermissions.canExposeResume(latest.id, input.approvalNoticeId) !== this.advertisedTools(active).has('session_action_resume'))
+                                return null;
                             if (input.approvalNoticeId && this.app.sessionPermissions.canExposeFixedTextExecution(latest.id, input.approvalNoticeId) !== this.advertisedTools(active).has('session_action_execute'))
                                 return null;
                             return this.app.store.update('message', input.id, input.version, { status: 'running', generation: active.generation });
@@ -312,7 +314,7 @@ export class AgentHost {
                 // Windows locks a process cwd; keep the replaceable workspace only in the SDK options.
                 const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: home, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
                 // Retain the child before commit: a commit failure is not proof of zero model use.
-                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, currentMessageId: approvalNoticeId ? null : messageId ?? null, callIdActors: new Map(), messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)), approvalNoticeId };
+                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, currentMessageId: approvalNoticeId ? null : messageId ?? null, callIdActors: new Map(), messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)), approvalNoticeId, currentApprovalNoticeMessageId: approvalNoticeId ? messageId : undefined };
                 this.active.set(claimed.id, active);
                 spawned.on('error', error => this.finish(active, this.clean(error.message)));
                 spawned.once('exit', code => { active.exitObserved = true; if (active.ended)
@@ -529,6 +531,7 @@ export class AgentHost {
                     ensure(publicationImageCatalog(join(this.app.context.dataDir, 'models.json')) === a.catalogFingerprint, 'MODEL_IMAGE_CATALOG_CHANGED', '模型目录已改变，图片不能读取');
                 const binding = a.callIdActors?.get(callId);
                 ensure(!binding || binding.tool === tool, 'SCOPE_DENIED', '工具调用来源不匹配', 403);
+                ensure(tool !== 'session_action_resume' || binding, 'SESSION_ACTION_NOTICE_REQUIRED', '批准恢复需要合法工具开始边界', 403);
                 ensure(tool !== 'research_action_prepare' || binding, 'RESEARCH_ACTION_ORIGIN_REQUIRED', '人工请求需要合法工具开始边界', 403);
                 const result = await this.tools.execute(binding?.actor ?? a.actor, String(m.tool), m.input, String(m.toolCallId));
                 if (!a.exitObserved && a.child.connected)
@@ -581,7 +584,7 @@ export class AgentHost {
                 const actors = a.callIdActors ??= new Map();
                 // Keep the source captured at tool start even if a later steer is consumed.
                 if (!actors.has(callId))
-                    actors.set(callId, { tool, actor: { ...a.actor, messageId: a.currentMessageId === undefined ? a.actor.messageId : a.currentMessageId ?? undefined } });
+                    actors.set(callId, { tool, actor: { ...a.actor, approvalNoticeMessageId: a.currentApprovalNoticeMessageId, messageId: a.currentMessageId === undefined ? a.actor.messageId : a.currentMessageId ?? undefined } });
             }
             const failed = m.type === 'tool_execution_end' && (m.isError || error);
             const reported = safeToolDiagnostic(schema.object({ input: TOOL_DEFINITIONS[tool].inputSchema }, ['input']), m.diagnostic?.code, `${m.diagnostic?.path}: ${m.diagnostic?.reason}`);
@@ -648,9 +651,12 @@ export class AgentHost {
             if (valid) {
                 a.consumedIds.add(m.messageId);
                 a.currentMessageId = input.approvalNoticeId ? null : m.messageId;
+                a.currentApprovalNoticeMessageId = input.approvalNoticeId ? input.id : undefined;
             }
-            else
+            else {
                 a.currentMessageId = null;
+                a.currentApprovalNoticeMessageId = undefined;
+            }
         }
         if (m?.type === 'control_error' && a.messageIds.includes(m.messageId))
             this.failInput(a, m.messageId, this.clean(String(m.error ?? 'Worker 未接受输入')));

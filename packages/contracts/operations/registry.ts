@@ -29,7 +29,7 @@ export interface OperationScope {
     sessionId?: string;
     idempotencyKey?: string;
     signal?: AbortSignal;
-    /** Host-only binding for the fixed text executor; never a transport or model argument. */
+    /** Host-only binding for fixed execution; never a transport or model argument. */
     approvedActionId?: string;
     /** Only trusted legacy adapters provide these, never request JSON. */
     legacy?: {scope: string; input: unknown};
@@ -160,12 +160,12 @@ function executeRegistered(c: OperationContext, name: string, x: Record<string, 
                 const {artifact,bytes}=app.evidence.read(actor,text(x.artifactId,'artifactId',100));
                 const limit=bytes.length>2*1024*1024?app.developmentReviews.archivedLogLimit(actor,pid,artifact.id)??2*1024*1024:2*1024*1024;
                 ensure(!bytes.includes(0)&&bytes.length<=limit,'ARTIFACT_TEXT_REQUIRED','产物不是可读文本或超过当前读取范围',415);
-                let content:string;try{content=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}catch{throw new DomainError('ARTIFACT_TEXT_REQUIRED','产物不是有效 UTF-8 文本',415);}
+                let content:string;try{content=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}catch{throw new DomainError('ARTIFACT_TEXT_REQUIRED','产物不是有效 UTF-8 文本',415);}
                 const cursor=integer(x.cursor??0,'cursor',0,content.length),end=Math.min(cursor+16000,content.length);
                 return {artifactId:artifact.id,digest:artifact.digest,title:artifact.title,mediaType:artifact.mediaType,content:content.slice(cursor,end),cursor:end,complete:end===content.length};
             }
             case 'artifact_create': return app.evidence.put(pid, text(x.title, 'title', 200), Buffer.from(text(x.content, 'content', 2 * 1024 * 1024, true)), text(x.mediaType ?? 'text/plain', 'mediaType', 100), actor.type === 'user' ? 'user' : `agent:${session!.id}`, actor.taskId ? { taskId: actor.taskId } : actor.wakeupId ? { wakeupId: actor.wakeupId } : {});
-            case 'evidence_register': return app.evidence.register(actor, pid, text(x.artifactId, 'artifactId', 100), integer(x.start, 'start', 0), integer(x.end, 'end', 1), text(x.description, 'description', 2000));
+            case 'evidence_register': return app.evidence.register(actor, pid, text(x.artifactId, 'artifactId', 100), x.exactQuote===undefined?integer(x.start, 'start', 0):x.start as number|undefined, x.exactQuote===undefined?integer(x.end, 'end', 1):x.end as number|undefined, x.exactQuote===undefined?text(x.description, 'description', 2000):'原文片段；解释与研究断言未核验','artifact',undefined,x.exactQuote as string|undefined);
             case 'evidence_read': return app.evidence.verify(pid, text(x.evidenceId, 'evidenceId', 100), false);
             case 'experiment_plan_submit': return app.experiments.create(actor, pid, x, session?.id);
             case 'run_inspect': {
@@ -347,6 +347,7 @@ const SPECS: OperationSpec[] = [
     make('connector_status', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'connector_status', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'connector_status', x)}),
     make('session_action_inspect',{idempotencyPolicy:'read-only',requiresSession:true,authorize:(c)=>{interactiveCoordinator(c.actor,c.projectId,c.session!);},preconditions:noPrecondition,execute:(c,x)=>c.app.sessionPermissions.inspectAction(c.actor,c.session!.id,x.actionId as string)}),
     make('session_action_execute',{idempotencyPolicy:'key-required',requiresSession:true,authorize:(c)=>{interactiveCoordinator(c.actor,c.projectId,c.session!);},preconditions:noPrecondition,execute:(c,x)=>c.app.sessionPermissions.executeAction(c.actor,c.session!.id,x.actionId as string,c.signal)}),
+    make('session_action_resume',{idempotencyPolicy:'key-required',asynchronous:true,requiresSession:true,authorize:(c)=>{c.app.sessionPermissions.boundNoticeAction(c.actor,c.session!.id);},preconditions:noPrecondition,execute:(c)=>c.app.sessionPermissions.resumeAction(c.actor,c.session!.id,c.signal)}),
     make('session_notice_read', {idempotencyPolicy: 'read-only', requiresSession: true, authorize: (c, x) => authorizeRegistered(c, 'session_notice_read', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'session_notice_read', x)}),
     make('project_inspect', {idempotencyPolicy: 'read-only', authorize: (c, x) => {if(x.githubCommit!==undefined&&c.actor.type==='agent')interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'project_inspect'));else authorizeRegistered(c,'project_inspect',x);}, preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'project_inspect', x)}),
     make('workspace_list', {idempotencyPolicy: 'read-only', authorize: (c, x) => authorizeRegistered(c, 'workspace_list', x), preconditions: noPrecondition, execute: (c, x) => executeRegistered(c, 'workspace_list', x)}),
@@ -458,7 +459,7 @@ export class OperationRegistry {
         let key = options.idempotencyKey;
         let permission:ReturnType<ResearchApp['sessionPermissions']['guard']>;
         // Fixed execution rechecks consumption each time; only its original operation stores a receipt.
-        const cached = !['session_action_execute','session_action_inspect','research_brief_inspect','research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
+        const cached = !['session_action_resume','session_action_execute','session_action_inspect','research_brief_inspect','research_history_list'].includes(id) && (actor.type === 'agent' || spec.idempotencyPolicy === 'key-required');
         if (cached||spec.idempotencyPolicy==='key-required') ensure(typeof key === 'string' && key.trim() && key.length <= 200, 'OPERATION_ID_REQUIRED', '写操作需要 Idempotency-Key', 400);
         const context: OperationContext = {...options, app: this.app, actor, session, validate: () => {
             ensure(!options.signal?.aborted, 'CONNECTOR_CANCELLED', '连接请求已取消或超时', 409);
@@ -474,9 +475,10 @@ export class OperationRegistry {
             if (actor.taskId || actor.wakeupId) (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field] as string);
         }
         spec.authorize(context, input);
+        if(id==='evidence_register'&&actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId&&!options.approvedActionId)ensure(typeof input.exactQuote==='string','EVIDENCE_EXACT_QUOTE_REQUIRED','请从实际读取的正文复制 exactQuote；不接受猜测位置与自由描述。解释和研究断言另行提出，不作为已验证证据',400);
         if(options.approvedActionId){
             interactiveCoordinator(actor,pid,session!);
-            ensure(['workspace_write','research_brief_save','artifact_create'].includes(id),'SESSION_ACTION_EXECUTION_DENIED','固定执行入口不允许此操作',403);
+            ensure(['workspace_write','research_brief_save','artifact_create'].includes(id)||this.app.sessionPermissions.canResumeOperation(id)&&this.app.sessionPermissions.boundNoticeAction(actor,session!.id)===options.approvedActionId,'SESSION_ACTION_EXECUTION_DENIED','固定恢复仅允许列明操作且必须绑定当前批准通知',403);
             permission=this.app.store.transaction(()=>{
                 this.app.sessionPermissions.validate(actor.permission??this.app.sessionPermissions.capture(session!.id),session!.id,id,input,options.approvedActionId);
                 let fixed:ReturnType<ResearchApp['sessionPermissions']['guard']>;
@@ -499,7 +501,7 @@ export class OperationRegistry {
         const request = {name: id,...(proposalOwner||intentOwner||experimentOwner||manuscriptOwner||agentPublicationOwner?{rootSessionId:proposalOwner??intentOwner??experimentOwner??manuscriptOwner??agentPublicationOwner}:{}),input:id==='document_import'?{...input,contentBase64:undefined,contentDigest:digest(input.contentBase64 as string)}:['skill_package_import','skill_package_upload','manuscript_create','publication_template_import'].includes(id)?{inputDigest:digest(input)}:input}, operationScope = actor.type === 'agent' ? `agent:${session!.id}` : `operation:user:${pid}:${workspaceId ?? 'project'}`;
         const output = (value: unknown) => {
             // Validate the wire value: optional undefined properties are omitted by all transports.
-            const result: unknown = JSON.parse(JSON.stringify(publicRecords(value)));
+            const result: unknown = JSON.parse(JSON.stringify(publicRecords(['evidence_register','evidence_read'].includes(id)?{...value as object,verification:{quote:'source-bytes-verified',interpretation:'unverified'}}:value)));
             validateSchema(spec.outputSchema, result, 'output');
             return result;
         };
@@ -556,6 +558,8 @@ export class OperationRegistry {
         };
         // Host execution owns its durable intent/receipt. Never reconstruct or rerun an unknown command.
         if(id==='host_execute'){context.validate();return Promise.resolve(invoke()).then(value=>{context.validate();this.app.hostAccess.assertAgent(actor);return output(value);});}
+        // The nested operation owns its exact approval and receipt, including asynchronous failures.
+        if(id==='session_action_resume'){context.validate();return Promise.resolve(invoke()).then(output);}
         if (spec.asynchronous) {
             // Owner receipts remain readable after archival; only new effects require a writable project.
             if(actor.type==='agent')context.validate();
