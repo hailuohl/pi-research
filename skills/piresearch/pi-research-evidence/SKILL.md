@@ -55,7 +55,21 @@ STEP <实际步数> <指标名称>=<实际值> <单位>
 SUMMARY <具体变体与结果/限制>
 ```
 
-metrics.json必须由实际程序写入、符合固定contract指标；不能artifact_create自己编一个metrics.json然后声称Run实测。随包curve-fit为固定程序，不修改它绕过trusted-example哈希；新输出代码需受管开发/整合并经local、Docker或SSH正式Run；设备探测不能冒充GPU数值实测。
+metrics.json必须由实际程序写入，是**平铺的JSON对象，每个值都是有限数字**，且包含固定contract声明的全部指标键。字符串、布尔值、null、数组、嵌套对象及非有限数不合法；版本、摘要、单位、文字判词和分层详情放analysis.json等已声明分析产物。输出前逐键检查类型、有限性和契约键覆盖；不能把不可计算指标改写为0来通过校验，应报告失败或缺口。
+
+合法格式示意（仅演示结构，键须匹配实际契约，数值须实际计算）：
+
+```json
+{"error_mean": 0.4, "sample_count": 12}
+```
+
+非法格式示意（JSON语法有效，但不是合法metrics）：
+
+```json
+{"error_mean": {"value": 0.4}, "version": "v1", "verdict": "inconclusive"}
+```
+
+不能artifact_create自己编一个metrics.json然后声称Run实测。随包curve-fit为固定程序，不修改它绕过trusted-example哈希；新输出代码需受管开发/整合并经local、Docker或SSH正式Run；设备探测不能冒充GPU数值实测。
 
 ## 报告前验证
 

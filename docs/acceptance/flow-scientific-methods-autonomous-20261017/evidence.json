@@ -1,0 +1,1097 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-17T11:40:32.737Z",
+  "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+  "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+  "verdict": "Automatic discovery passed in this task; natural scientific/code correctness FAILED; no formal Run or final research report",
+  "acceptance": {
+    "taskRelevantNaturalReads": "passed: 3 main skills + 8 methods before write/save",
+    "ordinaryQuestionExclusion": "passed: 0 tool calls",
+    "scientificCodeAndProtocol": "blocked: 6 independently verified findings",
+    "researchReport": "not run because first plan blocked",
+    "approvalsAndReopen": "passed for rejection and history; formal Run approval path not exercised",
+    "engineeringValidation": "See exact completed/unfinished checks below"
+  },
+  "criteria": {
+    "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+    "task": "Same alcohol-only linear vs quadratic OLS comparison; new Pi project/session; same public raw inputs; no previous generated code, reports or wine outcomes sent to Pi",
+    "promptSha256": "bd344996849655ebb4d3c67c113efdae586999453ecb8280f4e257b4af462e4e",
+    "promptUnchanged": true,
+    "modelPolicy": "Existing zai-coding-cn/glm-5.3/low unchanged",
+    "noExtraMethodReminders": true,
+    "criteria": [
+      "Task-relevant methods selected/read naturally; ordinary irrelevant requests not forced to read all eight",
+      "Plan and code scientifically valid or explicitly bounded; no unsupported numeric diagnostics",
+      "Report correctly reflects actual frozen computation, estimates, uncertainty and missing planning",
+      "Existing precise approvals and historical/fixed-version preservation retained",
+      "Relevant/full/build checks plus independently reviewed real Pi first-attempt evidence; failures remain failures"
+    ],
+    "operatorPolicy": "Only normal exact approvals and neutral stage transitions; no coverage reminder, scientific correction or reference answer. Blocking plan/code/report errors stop acceptance and remain observed failures. Provider transport retry only after terminal failure, recorded separately."
+  },
+  "prompt": {
+    "path": ".validation/scientific-methods-autonomous-20261017/phase1.txt",
+    "sha256": "bd344996849655ebb4d3c67c113efdae586999453ecb8280f4e257b4af462e4e"
+  },
+  "environment": {
+    "piSdk": "0.87.1",
+    "model": {
+      "provider": "zai-coding-cn",
+      "model": "glm-5.3",
+      "thinking": "low"
+    },
+    "projectId": "e8bb7195-db0b-4324-bec5-aa4444b27226",
+    "researchSessionId": "3bbe08e0-7d5a-498a-aab8-85c4180c1a1a",
+    "controlSessionId": "0735fce0-54e7-47c9-9394-2c3e5a5f6f54",
+    "appRuntime": "Fixed baseline plus reviewed patch in isolated validation build; existing user services untouched",
+    "hostAccess": false,
+    "formalRuns": 0,
+    "formalDockerExecution": false,
+    "dockerProbe": "verified",
+    "newNetworkResearch": false,
+    "providerRetries": 0
+  },
+  "inputs": {
+    "sameBytesAsPreviousTrial": true,
+    "csvSha256": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+    "artifacts": [
+      {
+        "name": "winequality-red.csv",
+        "artifactId": "2273b48e-95b9-4c7a-b0b1-ca6940bdcdf2",
+        "digest": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e"
+      },
+      {
+        "name": "winequality.names",
+        "artifactId": "af2255c9-894d-4631-9c24-f51e2f8303e9",
+        "digest": "15d215e73b39105952380fd487e4ce1bf5a6b83a425abb285c2ec55193d3ca92"
+      },
+      {
+        "name": "source-manifest.json",
+        "artifactId": "ca226113-aefd-4f7b-a1cc-01fbcbd2cf74",
+        "digest": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5"
+      },
+      {
+        "name": "candidate-literature.json",
+        "artifactId": "d761d184-3f70-4dff-9a5c-b14fa3fa1893",
+        "digest": "3aa073635c657b63be921e9f9c629d2b37130e36a27ca221bfbee228e24bb71a"
+      }
+    ],
+    "sourceManifest": {
+      "path": ".validation/scientific-methods-autonomous-20261017/inputs/source-manifest.json",
+      "sha256": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5"
+    },
+    "literature": "Operator-provided 4 metadata/abstract records; no new Pi searches or full-text reading"
+  },
+  "naturalObservation": {
+    "initialPrompt": {
+      "messageId": "3839905e-c431-4ed4-8729-39753f31d0b9",
+      "at": "2026-10-17T11:18:16.049Z",
+      "sha256": "bd344996849655ebb4d3c67c113efdae586999453ecb8280f4e257b4af462e4e",
+      "identicalToPreviousTrial": true,
+      "methodReminder": false
+    },
+    "extraHumanPrompts": 0,
+    "firstTurn": {
+      "finishedAt": "2026-10-17T11:22:46.147Z",
+      "generation": 1,
+      "files": [
+        {
+          "name": "protocol.md",
+          "bytes": 7522,
+          "sha256": "86ca1ce7903631b0861a56db05fc1b2bec734322d29f763ebc63161a625d1246"
+        },
+        {
+          "name": "compare.py",
+          "bytes": 10879,
+          "sha256": "0d4f9f85e972a2c4be68aa11962e10aa2c61c2a2021e4dceaba716fecae72777"
+        }
+      ],
+      "actualModel": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3",
+        "thinking": "low"
+      },
+      "formalRuns": 0,
+      "extraHumanPrompts": 0,
+      "recordedAt": "2026-10-17T11:25:13.942Z"
+    },
+    "reads": [
+      {
+        "callId": "call_1a466f360f6e4e2fb4535041",
+        "time": "2026-10-17T11:18:52.564Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "SKILL.md",
+        "completed": true,
+        "success": true,
+        "digest": "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_3fe834e6c4e6431c8c50d19a",
+        "time": "2026-10-17T11:18:52.564Z",
+        "skillId": "pi-research-evidence",
+        "resource": "SKILL.md",
+        "completed": true,
+        "success": true,
+        "digest": "a775882f5bc3f76f9ff5b03e4d2271616c87bfddad2fc08e50137f2df866a9a2",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_861b90d5ebc246189676b96f",
+        "time": "2026-10-17T11:18:52.564Z",
+        "skillId": "pi-research-lit-review",
+        "resource": "SKILL.md",
+        "completed": true,
+        "success": true,
+        "digest": "e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_a44e95ef38d84b60bc097eb1",
+        "time": "2026-10-17T11:18:58.472Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "references/experimental-design.md",
+        "completed": true,
+        "success": true,
+        "digest": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_b78ad859e0b24934a57fc1b4",
+        "time": "2026-10-17T11:18:58.472Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "references/statistical-power.md",
+        "completed": true,
+        "success": true,
+        "digest": "65e021eff940babd846d42f5cc82c62f0bc8c1fba06f3aac1660a62ad9fc8ca4",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_243867debdb74c5e9c3485ff",
+        "time": "2026-10-17T11:18:58.472Z",
+        "skillId": "pi-research-evidence",
+        "resource": "references/exploratory-data-analysis.md",
+        "completed": true,
+        "success": true,
+        "digest": "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_93ada2faaa084a3b9389e0ba",
+        "time": "2026-10-17T11:18:58.472Z",
+        "skillId": "pi-research-evidence",
+        "resource": "references/statistical-analysis.md",
+        "completed": true,
+        "success": true,
+        "digest": "be7a5c25bc561ea0872b13fa0c57aedc9de61df0166367efd5acd2db963f71d6",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_90ddd6f65ec84f6da67c57d3",
+        "time": "2026-10-17T11:18:58.472Z",
+        "skillId": "pi-research-evidence",
+        "resource": "references/uncertainty-and-units.md",
+        "completed": true,
+        "success": true,
+        "digest": "22231a0885d936564f494bd0ed255577ed6a44b088dda6f513f1b9c77d49539f",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_55ad40e86e5d4bba8db0109c",
+        "time": "2026-10-17T11:18:58.472Z",
+        "skillId": "pi-research-lit-review",
+        "resource": "references/systematic-review.md",
+        "completed": true,
+        "success": true,
+        "digest": "858d0ad853ece3593850ecd7976c704e94ca0034e15236e15287ab9686e3ad62",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_6c17d42bd4af45ddb684a0a4",
+        "time": "2026-10-17T11:19:02.225Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "references/hypothesis-generation.md",
+        "completed": true,
+        "success": true,
+        "digest": "5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      },
+      {
+        "callId": "call_e678c43195194435b9efdffd",
+        "time": "2026-10-17T11:19:02.225Z",
+        "skillId": "pi-research-evidence",
+        "resource": "references/scientific-critical-thinking.md",
+        "completed": true,
+        "success": true,
+        "digest": "dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c",
+        "bundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009"
+      }
+    ],
+    "toolCounts": {
+      "project_inspect": 2,
+      "workspace_list": 1,
+      "workspace_read": 4,
+      "research_skill_read": 11,
+      "workspace_write": 2,
+      "research_brief_save": 2
+    },
+    "errors": [
+      {
+        "callId": "call_886edbbfa47447c187c52bf1",
+        "tool": "project_inspect",
+        "code": "INVALID_INPUT"
+      },
+      {
+        "callId": "call_c17902ed3a6745caa625e35c",
+        "tool": "research_brief_save",
+        "code": "INVALID_INPUT"
+      },
+      {
+        "callId": "call_775be86163ae4d20acd97074",
+        "tool": "research_brief_save",
+        "code": "APPROVAL_REQUIRED"
+      }
+    ],
+    "mainSkillReads": 3,
+    "methodReads": 8,
+    "allBeforeFirstWriteOrSave": true,
+    "ordinaryControl": {
+      "state": "idle",
+      "sessionId": "0735fce0-54e7-47c9-9394-2c3e5a5f6f54",
+      "skillBundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+      "toolCalls": [],
+      "answers": [
+        "2+2等于4。"
+      ]
+    },
+    "http": {
+      "coverage": "managed-fetch",
+      "totalRequests": 11,
+      "bySession": {
+        "3bbe08e0-7d5a-498a-aab8-85c4180c1a1a": 10,
+        "0735fce0-54e7-47c9-9394-2c3e5a5f6f54": 1
+      },
+      "states": {
+        "succeeded": 11
+      }
+    },
+    "sdkReportedUsage": {
+      "records": 10,
+      "input": 113838,
+      "output": 10664,
+      "cacheRead": 794240,
+      "totalTokens": 918742,
+      "note": "Research-session SDK counters including cache; not billing, and not a cost comparison to the longer previous trial"
+    }
+  },
+  "scientificReview": {
+    "reviewer": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtimeVerification": "requested; runtime metadata not echoed"
+    },
+    "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+    "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+    "status": "blocked_real_pi_first_attempt",
+    "productPatchBlockers": [],
+    "scientificArtifactBlockers": [
+      {
+        "id": "S1",
+        "kind": "runtime_contract",
+        "file": "compare.py",
+        "line": 216,
+        "endLine": 225,
+        "problem": "metrics.json contains strings and nested objects; actual platform accepts only flat finite numeric values",
+        "evidence": "AST-evaluated metrics_out on synthetic finite model metrics was rejected by actual isolated finiteMetrics: INVALID_METRICS, protocolVersion is not a finite number. linear, quadratic, inputSha256 and verdict also nonnumeric. packages/runners/artifacts.ts:67-71 marks integrity invalid.",
+        "minimumFix": "Move metadata and verdict to analysis.json and flatten numeric metrics with the agreed contract keys."
+      },
+      {
+        "id": "S2",
+        "kind": "scientific_inference",
+        "file": "compare.py",
+        "line": 176,
+        "endLine": 181,
+        "related": "protocol.md:16-18,38-43; pending research_brief_save H2",
+        "problem": "A below-threshold point estimate with a CI containing zero is labeled no_practical_gain; this does not establish equivalence or absence of a meaningful gain.",
+        "evidence": "Original verdict branch with delta_rmse=0.01, SESOI=0.02, paired squared-error CI=[-0.1,0.1] produces no_practical_gain. Protocol further equates a zero-crossing CI with negligible improvement/linear sufficiency. The 0.02 criterion is explicitly not domain validated.",
+        "minimumFix": "Use not demonstrated/inconclusive for failed superiority criteria; only claim negligible/no practical benefit with justified equivalence bounds and a matching interval."
+      },
+      {
+        "id": "S3",
+        "kind": "algorithm_protocol_mismatch",
+        "file": "compare.py",
+        "line": 194,
+        "endLine": 202,
+        "related": "protocol.md:44; compare.py:249-250",
+        "problem": "Every purported fold independently shuffles the full stratum then takes its prefix. This is repeated holdout, not five disjoint exhaustive CV folds.",
+        "evidence": "Exact isolated membership loop on 20 rows (2 strata of 10) leaves rows 3,5,13,15 never validated and validates rows 2,7,12,17 twice. Each split itself remains train/validation disjoint; the defect is cross-fold membership/description, not direct within-split leakage.",
+        "minimumFix": "Create one fixed stratified partition into five folds and use each exactly once; or accurately predefine/name repeated holdout and its limitations."
+      },
+      {
+        "id": "S4",
+        "kind": "quantity_mislabeling",
+        "file": "compare.py",
+        "line": 183,
+        "endLine": 184,
+        "related": "compare.py:246-247; protocol.md:50",
+        "problem": "1.96 times SE is the approximate 95% CI half-width, not an MDE at a specified target power.",
+        "evidence": "For synthetic SE=1, implementation is 1.959963984540054; no target power or alternative-distribution calculation exists. Calling it posthoc descriptive does not make the quantity an MDE.",
+        "minimumFix": "Name and report CI half-width/observed precision, leave MDE uncomputed, or implement a justified design- and power-matched scenario calculation."
+      },
+      {
+        "id": "S5",
+        "kind": "unsupported_source_attribution",
+        "file": "protocol.md",
+        "line": 55,
+        "related": "protocol.md:7; actual winequality.names attribute section",
+        "problem": "The protocol attributes alcohol %vol to UCI field documentation, but none of the four supplied inputs declares this unit.",
+        "evidence": "winequality.names lists alcohol without a unit; source-manifest supplies provenance, not variable units; candidate records contain no alcohol unit. No network retrieval occurred.",
+        "minimumFix": "Retain original alcohol scale and explicitly unknown documented unit; label any %vol interpretation as unverified."
+      },
+      {
+        "id": "S6",
+        "kind": "unsupported_study_count",
+        "file": "protocol.md",
+        "line": 70,
+        "related": "protocol.md:66-68; final assistant reply",
+        "problem": "Three unique report candidates are declared to be exactly three studies although study/report relationships are not established; one candidate is itself a systematic review.",
+        "evidence": "Same DOI supports merging the two Cortez records into one report candidate. Remaining abstract/metadata summaries do not establish independent study identities or a one-study-per-report mapping. The final reply repeats 3 studies/3 reports.",
+        "minimumFix": "Report 4 records and 3 unique report candidates; state study linkage/count unresolved and preserve each record disposition."
+      }
+    ],
+    "nonblocking": [
+      {
+        "id": "N1",
+        "file": "compare.py",
+        "line": 232,
+        "problem": "Predictions are rounded to six decimals while aggregate metrics use unrounded values; direct recomputation from CSV is approximate.",
+        "risk": "At most 0.5e-6 quality-point rounding per prediction; no evidence this alone changes the 0.02 threshold. Retaining full float text would improve exact auditability."
+      },
+      {
+        "id": "N2",
+        "file": "protocol.md",
+        "line": 18,
+        "problem": "This line calls a positive test RMSE difference worse, contradicting the linear-minus-quadratic definition at line 38.",
+        "risk": "Prose sign error. Actual delta computation and gain branch use the correct positive-is-better sign."
+      },
+      {
+        "id": "N3",
+        "file": "protocol.md",
+        "line": 39,
+        "problem": "Protocol promises a t statistic but code outputs mean/SD/SE/z-based CI only.",
+        "risk": "Delivery mismatch; no missing t-statistic is fabricated by the script."
+      }
+    ],
+    "verificationGaps": [
+      "Formal wine Run and final Chinese result report not executed/reviewed because first-attempt plan/code contains blockers; no wine numeric result is claimed",
+      "Full regression final summary pending; not marked passed",
+      "Generated script contains no independent numerical self-checks; reviewer synthetic OLS examples only cover two exact, well-conditioned cases",
+      "RESULT.md links evidence.json, which was not yet present at delivery-state review; main agent notified to complete the compact evidence file"
+    ],
+    "checks": [
+      {
+        "name": "source-snapshot",
+        "status": "pass",
+        "details": "66 listed files independently SHA256 checked; no mismatch"
+      },
+      {
+        "name": "release-integrity",
+        "status": "pass",
+        "details": "22 existing release metadata entries unchanged against baseline; current release matches manifest; 51 main/resource source files independently SHA256 checked"
+      },
+      {
+        "name": "static-flow",
+        "status": "pass",
+        "details": "Read changed method resources/report/overview/system instructions and runtime binding, role, bootstrap and worker call paths; no blocker found"
+      },
+      {
+        "name": "related-tests",
+        "status": "reviewed-log-pass",
+        "details": "related.log reports 26 passed, 0 failed, 0 skipped; reviewer did not rerun"
+      },
+      {
+        "name": "clean-build",
+        "status": "reviewed-log-pass",
+        "details": "clean-build.log reports PASS; reviewer did not rerun"
+      },
+      {
+        "name": "isolated-compiled-snapshot",
+        "status": "pass",
+        "details": "9 compiled files and 66 listed source files independently SHA256 checked in actual validation runtime copy; no mismatch"
+      },
+      {
+        "name": "real-pi-natural-read",
+        "status": "pass",
+        "details": "Independently parsed native JSONL: one user prompt containing exact phase1 text plus standard host marker only; 3 main skills and 8 method resources returned true content digests matching frozen manifest before any write/plan save"
+      },
+      {
+        "name": "isolated-synthetic-checks",
+        "status": "pass_reproduced_failures",
+        "details": "review_numeric_checks.py AST-extracts original pure functions/fold loop/verdict/metrics assignment. Exact OLS expected coefficients [2,3] and [2,3,4] pass; CV, inference and actual finiteMetrics rejection reproduced. Whole wine script never executed."
+      },
+      {
+        "name": "ordinary-question-control",
+        "status": "pass",
+        "details": "Reviewed ordinary-control.json and independently parsed corresponding native JSONL: assistant answers 2+2 equals 4, toolCalls=0, method reads=0. Only this ordinary question is covered."
+      },
+      {
+        "name": "rejection-reopen-retention",
+        "status": "pass",
+        "details": "Read before-reopen.json/after-reopen.json and preservation script; independently compared sessions/files/artifacts/rejectedAction/runCount sections for exact equality, checked actual bytes/hash for 2 native sessions and 2 drafts. 4 input Artifact digest entries equal; artifact bytes were checked by reviewed reopen-check.mjs, not rerun by reviewer. Generation=1, binding unchanged, action rejected, Run=0. state.json records successful user-view reopen with no new Pi message."
+      },
+      {
+        "name": "delivery-statements",
+        "status": "pass_with_pending_evidence_file",
+        "details": "Read RESULT.md, README.md and docs/openresearch/CURRENT-SKILLS.zh-CN.md: all distinguish 8/8 automatic reads from 6 unresolved scientific/runtime blockers; formal Run and result report unexecuted; no overall scientific pass claim. RESULT evidence.json link target still absent at review time; notified main agent."
+      }
+    ],
+    "scope": "Read-only review. No product/test/Pi workspace/approval/DB modifications; no services or formal research runs started.",
+    "realPiSnapshot": {
+      "projectId": "e8bb7195-db0b-4324-bec5-aa4444b27226",
+      "sessionId": "3bbe08e0-7d5a-498a-aab8-85c4180c1a1a",
+      "generation": 1,
+      "state": "idle",
+      "model": "zai-coding-cn/glm-5.3/low",
+      "protocolSha256": "86ca1ce7903631b0861a56db05fc1b2bec734322d29f763ebc63161a625d1246",
+      "codeSha256": "0d4f9f85e972a2c4be68aa11962e10aa2c61c2a2021e4dceaba716fecae72777",
+      "pendingActionId": "c41b2bc76e5bd7298fbf1aa6afa1d126975421f31ec8334743089fbb252271bf"
+    },
+    "deliveryStateReview": {
+      "checkedAt": "2026-10-17T11:32:04.1950506Z",
+      "scope": "Delivery statements and preservation evidence only; no source re-review, numerical rerun or regression rerun",
+      "status": "blocked_real_pi_first_attempt",
+      "scientificBlockersRetained": 6,
+      "actionState": "rejected",
+      "runCount": 0,
+      "report": "not_executed",
+      "ordinaryControl": "one question, zero tools and zero method reads",
+      "reopen": "same native bytes, drafts, artifact digest entries, IDs, generation and bundle; no new Pi message",
+      "fullRegression": "pending",
+      "numericOutputStorage": "Previous synthetic stdout is in tool audit only; no standalone output file was written. review_numeric_checks.py and prior review.json reproduction details retained."
+    }
+  },
+  "refusal": {
+    "at": "2026-10-17T11:26:00.959Z",
+    "actionId": "c41b2bc76e5bd7298fbf1aa6afa1d126975421f31ec8334743089fbb252271bf",
+    "reason": "Independent review: invalid metrics schema; mislabeled CV/MDE; unsupported absence-of-gain, units and study claims",
+    "correctivePromptSent": false,
+    "formalRunSubmitted": false
+  },
+  "reopen": {
+    "before": {
+      "sessions": [
+        {
+          "id": "3bbe08e0-7d5a-498a-aab8-85c4180c1a1a",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a14995-84d9-7176-b098-716accadd226",
+          "nativePath": "pi-data:/sessions/3bbe08e0-7d5a-498a-aab8-85c4180c1a1a/pi/2026-10-17T11-18-18-073Z_01a14995-84d9-7176-b098-716accadd226.jsonl",
+          "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+          "bytes": 382466,
+          "sha256": "51d788cedcf81cb667ae4e3f78782dd7d381f9b5cdcb9c29410ebbdcd8816f2b"
+        },
+        {
+          "id": "0735fce0-54e7-47c9-9394-2c3e5a5f6f54",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a14997-fc65-7739-bba7-c8b6409ffc95",
+          "nativePath": "pi-data:/sessions/0735fce0-54e7-47c9-9394-2c3e5a5f6f54/pi/2026-10-17T11-20-59-749Z_01a14997-fc65-7739-bba7-c8b6409ffc95.jsonl",
+          "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+          "bytes": 134994,
+          "sha256": "9e03d74984b59c75144ab0f603531619ef7d4da3c476070fc7138d6d822eb714"
+        }
+      ],
+      "files": [
+        {
+          "name": "protocol.md",
+          "bytes": 7522,
+          "sha256": "86ca1ce7903631b0861a56db05fc1b2bec734322d29f763ebc63161a625d1246"
+        },
+        {
+          "name": "compare.py",
+          "bytes": 10879,
+          "sha256": "0d4f9f85e972a2c4be68aa11962e10aa2c61c2a2021e4dceaba716fecae72777"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "2273b48e-95b9-4c7a-b0b1-ca6940bdcdf2",
+          "digest": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+          "bytes": 84199
+        },
+        {
+          "id": "af2255c9-894d-4631-9c24-f51e2f8303e9",
+          "digest": "15d215e73b39105952380fd487e4ce1bf5a6b83a425abb285c2ec55193d3ca92",
+          "bytes": 3305
+        },
+        {
+          "id": "ca226113-aefd-4f7b-a1cc-01fbcbd2cf74",
+          "digest": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5",
+          "bytes": 613
+        },
+        {
+          "id": "d761d184-3f70-4dff-9a5c-b14fa3fa1893",
+          "digest": "3aa073635c657b63be921e9f9c629d2b37130e36a27ca221bfbee228e24bb71a",
+          "bytes": 2882
+        }
+      ],
+      "rejectedAction": {
+        "id": "c41b2bc76e5bd7298fbf1aa6afa1d126975421f31ec8334743089fbb252271bf",
+        "state": "rejected"
+      },
+      "runCount": 0
+    },
+    "after": {
+      "sessions": [
+        {
+          "id": "3bbe08e0-7d5a-498a-aab8-85c4180c1a1a",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a14995-84d9-7176-b098-716accadd226",
+          "nativePath": "pi-data:/sessions/3bbe08e0-7d5a-498a-aab8-85c4180c1a1a/pi/2026-10-17T11-18-18-073Z_01a14995-84d9-7176-b098-716accadd226.jsonl",
+          "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+          "bytes": 382466,
+          "sha256": "51d788cedcf81cb667ae4e3f78782dd7d381f9b5cdcb9c29410ebbdcd8816f2b"
+        },
+        {
+          "id": "0735fce0-54e7-47c9-9394-2c3e5a5f6f54",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a14997-fc65-7739-bba7-c8b6409ffc95",
+          "nativePath": "pi-data:/sessions/0735fce0-54e7-47c9-9394-2c3e5a5f6f54/pi/2026-10-17T11-20-59-749Z_01a14997-fc65-7739-bba7-c8b6409ffc95.jsonl",
+          "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+          "bytes": 134994,
+          "sha256": "9e03d74984b59c75144ab0f603531619ef7d4da3c476070fc7138d6d822eb714"
+        }
+      ],
+      "files": [
+        {
+          "name": "protocol.md",
+          "bytes": 7522,
+          "sha256": "86ca1ce7903631b0861a56db05fc1b2bec734322d29f763ebc63161a625d1246"
+        },
+        {
+          "name": "compare.py",
+          "bytes": 10879,
+          "sha256": "0d4f9f85e972a2c4be68aa11962e10aa2c61c2a2021e4dceaba716fecae72777"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "2273b48e-95b9-4c7a-b0b1-ca6940bdcdf2",
+          "digest": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+          "bytes": 84199
+        },
+        {
+          "id": "af2255c9-894d-4631-9c24-f51e2f8303e9",
+          "digest": "15d215e73b39105952380fd487e4ce1bf5a6b83a425abb285c2ec55193d3ca92",
+          "bytes": 3305
+        },
+        {
+          "id": "ca226113-aefd-4f7b-a1cc-01fbcbd2cf74",
+          "digest": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5",
+          "bytes": 613
+        },
+        {
+          "id": "d761d184-3f70-4dff-9a5c-b14fa3fa1893",
+          "digest": "3aa073635c657b63be921e9f9c629d2b37130e36a27ca221bfbee228e24bb71a",
+          "bytes": 2882
+        }
+      ],
+      "rejectedAction": {
+        "id": "c41b2bc76e5bd7298fbf1aa6afa1d126975421f31ec8334743089fbb252271bf",
+        "state": "rejected"
+      },
+      "runCount": 0,
+      "checkedAt": "2026-10-17T11:29:09.784Z",
+      "unchanged": true
+    },
+    "ownerView": {
+      "at": "2026-10-17T11:29:09.946Z",
+      "sessionId": "3bbe08e0-7d5a-498a-aab8-85c4180c1a1a",
+      "generation": 1,
+      "state": "idle",
+      "noNewPiMessage": true
+    },
+    "extraPiMessages": 0
+  },
+  "validation": {
+    "related": {
+      "command": "node --test --test-concurrency=1 tests/unit/openresearch-skills.test.mjs tests/unit/builtin-skill-releases.test.mjs tests/unit/scientific-methods-skills.test.mjs",
+      "state": "completed",
+      "tests": 26,
+      "pass": 26,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-20261017/related.log",
+        "sha256": "7288ca05762bf3e86c824f0b41165d15bd94327f86421482084c9c7bb5278b2f"
+      }
+    },
+    "regression": {
+      "command": "npm run test:core",
+      "state": "completed",
+      "tests": 2011,
+      "pass": 1986,
+      "fail": 0,
+      "skipped": 25,
+      "cancelled": 0,
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-20261017/regression.log",
+        "sha256": "139f900399a7bb6f1bad3d02193e0881656449f1d9701a85c717f3c5cd5f75d2"
+      },
+      "skipMeaning": "Windows-inapplicable POSIX and opt-in Docker/compiler checks are not passes"
+    },
+    "parity": {
+      "command": "npm run test:parity",
+      "state": "completed",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-20261017/parity.log",
+        "sha256": "1718092eb16a47a18ae405d53b5c75cf72d9f6a7510ca123d5c3419ec26ca083"
+      }
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "identical": true,
+      "files": 667,
+      "distManifestSha256": "c3d73d481036bef47d8c6c475549f5497bbfc2e16d650bbe15a9a12cf5742b5c",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-20261017/clean-build.log",
+        "sha256": "c2e6646009bac50ad5f1f61bcc8b2c73ce876883d973b7b93c29df046c0500d1"
+      }
+    },
+    "skillCreator": {
+      "status": "passed for overview and reports with python -X utf8",
+      "initialFailure": "Default Windows GBK decoder failed before validation; UTF-8 invocation passed without changing skill content"
+    },
+    "independentSynthetic": {
+      "script": {
+        "path": ".validation/scientific-methods-autonomous-20261017/review_numeric_checks.py",
+        "sha256": "2afadd8348f059d0d2cf24d153f2e53e907c13f2ce623602762f2851c03dd2e4"
+      },
+      "wineProgramExecuted": false,
+      "rawOutputLocation": "Original tool audit; precise cases and observations in independent review",
+      "checks": "Definition-derived OLS examples passed; original AST fold membership, verdict and metrics shape reproduced failures; actual platform finiteMetrics rejected nested/string shape"
+    }
+  },
+  "snapshots": {
+    "source": {
+      "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+      "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+      "files": [
+        {
+          "path": "packages/pi-adapter/options.ts",
+          "sha256": "83298e2048294ed8c8cef5fbcc370640cc923b511522f2a99da322055dba4804"
+        },
+        {
+          "path": "packages/skills/manifest.ts",
+          "sha256": "a6a9843ebf38b8eae182fc0b8cd108150cc831bba0d21698998c8f19fab56b8e"
+        },
+        {
+          "path": "packages/skills/releases.ts",
+          "sha256": "8d5a117f5acbd158ffd9e4b87a50933432d4f38102642b09dc5c04e98c723e9a"
+        },
+        {
+          "path": "skills/piresearch/manifest.json",
+          "sha256": "0cab740fb9921e568141bee732d17c7f777fa4b9262dfb0435017d3673835350"
+        },
+        {
+          "path": "skills/piresearch/pi-research-evidence/references/scientific-critical-thinking.md",
+          "sha256": "dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c"
+        },
+        {
+          "path": "skills/piresearch/pi-research-evidence/references/statistical-analysis.md",
+          "sha256": "be7a5c25bc561ea0872b13fa0c57aedc9de61df0166367efd5acd2db963f71d6"
+        },
+        {
+          "path": "skills/piresearch/pi-research-evidence/references/uncertainty-and-units.md",
+          "sha256": "22231a0885d936564f494bd0ed255577ed6a44b088dda6f513f1b9c77d49539f"
+        },
+        {
+          "path": "skills/piresearch/pi-research-experiment-tree/references/experimental-design.md",
+          "sha256": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8"
+        },
+        {
+          "path": "skills/piresearch/pi-research-experiment-tree/references/hypothesis-generation.md",
+          "sha256": "5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400"
+        },
+        {
+          "path": "skills/piresearch/pi-research-experiment-tree/references/statistical-power.md",
+          "sha256": "65e021eff940babd846d42f5cc82c62f0bc8c1fba06f3aac1660a62ad9fc8ca4"
+        },
+        {
+          "path": "skills/piresearch/pi-research-lit-review/references/systematic-review.md",
+          "sha256": "858d0ad853ece3593850ecd7976c704e94ca0034e15236e15287ab9686e3ad62"
+        },
+        {
+          "path": "skills/piresearch/pi-research-overview/SKILL.md",
+          "sha256": "6404a908a6acc2817fdc5c8d6d89dc46752a70039cdde1f66158a007088cf7f6"
+        },
+        {
+          "path": "skills/piresearch/pi-research-reports/SKILL.md",
+          "sha256": "c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47"
+        },
+        {
+          "path": "skills/releases/index.json",
+          "sha256": "97e7ec74cd759ce63df6a95434dfc18c73d2ce4a5f9c15ca21461285c8078455"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759",
+          "sha256": "075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140",
+          "sha256": "0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07",
+          "sha256": "0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192",
+          "sha256": "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121",
+          "sha256": "1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f",
+          "sha256": "205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3",
+          "sha256": "21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/22231a0885d936564f494bd0ed255577ed6a44b088dda6f513f1b9c77d49539f",
+          "sha256": "22231a0885d936564f494bd0ed255577ed6a44b088dda6f513f1b9c77d49539f"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/2a5b44288e2e4bff06940f9b54cf97a7e4127d4ca205330e27816487c286914b",
+          "sha256": "2a5b44288e2e4bff06940f9b54cf97a7e4127d4ca205330e27816487c286914b"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7",
+          "sha256": "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58",
+          "sha256": "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/3cd6bbd9f5492b06ef73f6148222be91ab75271bcd11c55f8f4f6368c102373d",
+          "sha256": "3cd6bbd9f5492b06ef73f6148222be91ab75271bcd11c55f8f4f6368c102373d"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733",
+          "sha256": "405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/45650778bba66dba9088db083dd899ae745a037ae6966c631dfd7dc05eec64af",
+          "sha256": "45650778bba66dba9088db083dd899ae745a037ae6966c631dfd7dc05eec64af"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc",
+          "sha256": "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/525c7bdc434bc2ef0295ee95afa706afb7bcd16a4a3812d97e19e05c14e769b4",
+          "sha256": "525c7bdc434bc2ef0295ee95afa706afb7bcd16a4a3812d97e19e05c14e769b4"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400",
+          "sha256": "5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71",
+          "sha256": "554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/6404a908a6acc2817fdc5c8d6d89dc46752a70039cdde1f66158a007088cf7f6",
+          "sha256": "6404a908a6acc2817fdc5c8d6d89dc46752a70039cdde1f66158a007088cf7f6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/65e021eff940babd846d42f5cc82c62f0bc8c1fba06f3aac1660a62ad9fc8ca4",
+          "sha256": "65e021eff940babd846d42f5cc82c62f0bc8c1fba06f3aac1660a62ad9fc8ca4"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/6db10e33e3a91f9c6d9adfa69884b7896393702ed4cf5cf11e267e3697ed4f0d",
+          "sha256": "6db10e33e3a91f9c6d9adfa69884b7896393702ed4cf5cf11e267e3697ed4f0d"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/6fbf9c102ed78c525d714657c401ee704067d2e73bfcd4b4efef2a23cd15600a",
+          "sha256": "6fbf9c102ed78c525d714657c401ee704067d2e73bfcd4b4efef2a23cd15600a"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df",
+          "sha256": "767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/7827d755d20f87b92fe768650378acb99a265864943cc8fa7b47db750a8f08d3",
+          "sha256": "7827d755d20f87b92fe768650378acb99a265864943cc8fa7b47db750a8f08d3"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f",
+          "sha256": "784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89",
+          "sha256": "7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/7d752a66966a28121d584afdd7a80e44830c5f982ea27169b81d72490f0c954d",
+          "sha256": "7d752a66966a28121d584afdd7a80e44830c5f982ea27169b81d72490f0c954d"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/858d0ad853ece3593850ecd7976c704e94ca0034e15236e15287ab9686e3ad62",
+          "sha256": "858d0ad853ece3593850ecd7976c704e94ca0034e15236e15287ab9686e3ad62"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/8a344e384560508b45df77f537c8a104ba6cf5419912fdec36132e64c8109a18",
+          "sha256": "8a344e384560508b45df77f537c8a104ba6cf5419912fdec36132e64c8109a18"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974",
+          "sha256": "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c",
+          "sha256": "913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/95f5d38d28360e4a74da1cbd9c673cf91ac8195c91805985e5dba60394d10823",
+          "sha256": "95f5d38d28360e4a74da1cbd9c673cf91ac8195c91805985e5dba60394d10823"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193",
+          "sha256": "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/a7291d6ada6d73ef62875fc37a4bf1b4b0a26fcc2061d47a80b08b14fafd0a80",
+          "sha256": "a7291d6ada6d73ef62875fc37a4bf1b4b0a26fcc2061d47a80b08b14fafd0a80"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/a775882f5bc3f76f9ff5b03e4d2271616c87bfddad2fc08e50137f2df866a9a2",
+          "sha256": "a775882f5bc3f76f9ff5b03e4d2271616c87bfddad2fc08e50137f2df866a9a2"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6",
+          "sha256": "ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/ad4d96da66228cc19f0d4318395cff154f7138b7281aa52fe8b5855d660e13d1",
+          "sha256": "ad4d96da66228cc19f0d4318395cff154f7138b7281aa52fe8b5855d660e13d1"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/b0c6b3ed17d2e5bba2550b4683fc6905b65df553bd46b1ca5c2a825557dad08e",
+          "sha256": "b0c6b3ed17d2e5bba2550b4683fc6905b65df553bd46b1ca5c2a825557dad08e"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8",
+          "sha256": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/be7a5c25bc561ea0872b13fa0c57aedc9de61df0166367efd5acd2db963f71d6",
+          "sha256": "be7a5c25bc561ea0872b13fa0c57aedc9de61df0166367efd5acd2db963f71d6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47",
+          "sha256": "c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9",
+          "sha256": "c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7",
+          "sha256": "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6",
+          "sha256": "d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/d40e7130f36d437711d433bab1e6bd71c2329479ac520af24323ba296ecb5f7e",
+          "sha256": "d40e7130f36d437711d433bab1e6bd71c2329479ac520af24323ba296ecb5f7e"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c",
+          "sha256": "dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491",
+          "sha256": "e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff",
+          "sha256": "e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae",
+          "sha256": "ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/f61dce7691b5aead2fe5c296d480f4bc85b5037026ecda6cf6f95c21589480a9",
+          "sha256": "f61dce7691b5aead2fe5c296d480f4bc85b5037026ecda6cf6f95c21589480a9"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/f871360e181f4e50513d9ce2a26846d9dd341779b4eede7c76ad14ed0b22b1b7",
+          "sha256": "f871360e181f4e50513d9ce2a26846d9dd341779b4eede7c76ad14ed0b22b1b7"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/manifest.json",
+          "sha256": "7fb607e49a20d78e3477de3ac8394a7c2a9c5bbd01aba183f6b1a27a70824606"
+        }
+      ],
+      "unrelated": [
+        {
+          "path": "apps/web/public/styles.css",
+          "sha256": "28752c2cd2b07e581ba74db96fcecf85a9f956031c4e0e667e6fdd6942495197"
+        },
+        {
+          "path": "dist/web/styles.css",
+          "sha256": "28752c2cd2b07e581ba74db96fcecf85a9f956031c4e0e667e6fdd6942495197"
+        },
+        {
+          "path": "docs/reference-baseline/OPENRESEARCH-COMPARISON.md",
+          "sha256": "57655c0f434da59c5e87377e2d615293498bd581e6c96e0b03206006aaf23afe"
+        },
+        {
+          "path": "docs/reference-baseline/capability-matrix.json",
+          "sha256": "91f3f36fe008d915e0b827adc972304ef728c9661dd3ff7ee2147744167d60d4"
+        },
+        {
+          "path": "docs/specs/project-design.txt",
+          "sha256": "251e12b2201f1cbb87f497f5771f20d0011a20f73e2ec324ce613141e958a6f7"
+        }
+      ]
+    },
+    "compiled": [
+      {
+        "path": "dist/packages/pi-adapter/options.js",
+        "sha256": "40be2a72c65e1f4a877418a3c338ebb81469fc9e6d8feda4e2f0db9368edd579"
+      },
+      {
+        "path": "dist/packages/pi-adapter/options.js.map",
+        "sha256": "179447e6780a44dcbf4ea87d9cdb99cb94326faa0c2362342b80f3d89f73a7ce"
+      },
+      {
+        "path": "dist/packages/skills/manifest.d.ts",
+        "sha256": "630377e9e2a9d07440b6ccbad86c2be33b9e90f0380d1582ad1cbbdd4589cf27"
+      },
+      {
+        "path": "dist/packages/skills/manifest.js",
+        "sha256": "ec622bd6dcadc34af4191c64098c0e2a30db7d28c715f5ad0b9f6d41cd884435"
+      },
+      {
+        "path": "dist/packages/skills/releases.d.ts",
+        "sha256": "b9fde65986223d70f6b24108eb32fa834e3e7379b94b633e79aaae18a682cfd5"
+      },
+      {
+        "path": "dist/packages/skills/releases.js",
+        "sha256": "8bcf0c2227802fe8de35c56cffb7f8e2e1b306eab37b24f45fda607658c9074a"
+      },
+      {
+        "path": "dist/packages/skills/releases.js.map",
+        "sha256": "41ee544302fba29d714c10af47781708df1186c2f13d0980bfa911701964d95b"
+      },
+      {
+        "path": "dist/packages/skills/runtime.d.ts",
+        "sha256": "cc9fc66aeee7f38fa29050a152179832072050e37c1ae14f43bb3ef0b3ccad2e"
+      },
+      {
+        "path": "dist/packages/skills/service.d.ts",
+        "sha256": "34b06284686211368bda81463d1d55495927737d9094a213597f17ae7fe296da"
+      }
+    ]
+  },
+  "instrumentation": {
+    "setupRecovery": {
+      "at": "2026-10-17T11:18:52.794Z",
+      "cause": "Initial local driver started before compiled-copy completion (bundle unavailable); preserved project and inputs, no model session existed at that failure. One incorrect owner inspection name failed before first model turn; host subsequently bound exact configured bundle at normal start.",
+      "usesIsolatedBuild": true,
+      "binding": {
+        "sessionId": "3bbe08e0-7d5a-498a-aab8-85c4180c1a1a",
+        "version": 16,
+        "skillBundleId": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+        "skillIds": [],
+        "ready": true,
+        "missing": []
+      }
+    },
+    "byteCopyCheck": "Initial strict byte comparison stopped at an unrelated CRLF-only dist file; semantic comparison confirmed unchanged Git content and copied only 9 owned compiled files",
+    "observer": "Initial native path preceded first JSONL flush; exists guard added; no model retry or replacement session",
+    "nonScientificErrors": true
+  },
+  "localEvidence": {
+    "directory": ".validation/scientific-methods-autonomous-20261017/",
+    "files": [
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/criteria.json",
+        "sha256": "e4f9a36e2f31844f42d337fa06788335ec78ade22921fab4d69cb607770166ff"
+      },
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/natural-read-observation.json",
+        "sha256": "6e05f620fb9d9852f2b3ec6a8725d6aca6ddbe80d5b51af835b8cc06b0a635a3"
+      },
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/observation.json",
+        "sha256": "2de86e157f15728d6d8664c19adf333196228a20a02e3538b3e159973166bcf2"
+      },
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/review.json",
+        "sha256": "eb78d206d010a79c311d1b6655ac770c59eae8f8d4aaae3f087c92c75d2ae9fe"
+      },
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/before-reopen.json",
+        "sha256": "50e4add09ee97dabd6f60460797a5ab4ffbe2b177793847d82c89f1a1dddf0bd"
+      },
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/after-reopen.json",
+        "sha256": "aa5a8809e92f2ab0ee4e9e5c5473cccb5bc0c35a59d3b119127c910a77438ef1"
+      },
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/model-http.json",
+        "sha256": "495ae9093097b22c7cdf1ec069b9e3425f813eb72f55dc4bacfccc145ef8d159"
+      },
+      {
+        "path": ".validation/scientific-methods-autonomous-20261017/ordinary-control.json",
+        "sha256": "c2f265e98777fbf021350b83aa6921af3d3fe9d4a44b922b1cd16a0ef354e2df"
+      }
+    ],
+    "notCommitted": "Raw input files, native dialogues, runtime DB, model-generated unapproved drafts, full logs and credentials"
+  },
+  "notRun": [
+    "Formal Docker research Run",
+    "Final research report",
+    "Browser UI",
+    "Full-text review",
+    "Actual power/MDE calculation",
+    "Other model/effort or multi-task reliability"
+  ],
+  "deliveryNotes": {
+    "independentReviewerSawEvidenceMissingWhileAuthoring": true,
+    "evidenceFileNowGenerated": true,
+    "scientificBlockersRetained": true
+  }
+}

@@ -1,0 +1,1240 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-17T11:52:17.227Z",
+  "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+  "bundle": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+  "verdict": "Second fresh-session trial FAILED scientific/runtime and behavior acceptance; no formal Run or report",
+  "scope": "Targeted second correction after preserved first-candidate failure; one original scientific user prompt per candidate, not an assisted continuation",
+  "criteria": {
+    "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+    "task": "Same alcohol-only linear vs quadratic OLS comparison; new Pi project/session; same public raw inputs; no previous generated code, reports or wine outcomes sent to Pi",
+    "promptSha256": "bd344996849655ebb4d3c67c113efdae586999453ecb8280f4e257b4af462e4e",
+    "promptUnchanged": true,
+    "modelPolicy": "Existing zai-coding-cn/glm-5.3/low unchanged",
+    "noExtraMethodReminders": true,
+    "criteria": [
+      "Task-relevant methods selected/read naturally; ordinary irrelevant requests not forced to read all eight",
+      "Plan and code scientifically valid or explicitly bounded; no unsupported numeric diagnostics",
+      "Report correctly reflects actual frozen computation, estimates, uncertainty and missing planning",
+      "Existing precise approvals and historical/fixed-version preservation retained",
+      "Relevant/full/build checks plus independently reviewed real Pi first-attempt evidence; failures remain failures"
+    ],
+    "operatorPolicy": "Only normal exact approvals and neutral stage transitions; no coverage reminder, scientific correction or reference answer. Blocking plan/code/report errors stop acceptance and remain observed failures. Provider transport retry only after terminal failure, recorded separately.",
+    "previousCandidateTrial": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009: natural 8/8 reads, six scientific/runtime blockers, no formal Run; preserved without correction",
+    "attemptPurpose": "One new-session retest after targeted reusable method checks; previous failure remains failed"
+  },
+  "prompt": {
+    "path": ".validation/scientific-methods-autonomous-v2-20261017/phase1.txt",
+    "sha256": "bd344996849655ebb4d3c67c113efdae586999453ecb8280f4e257b4af462e4e"
+  },
+  "comparison": {
+    "firstCandidate": {
+      "bundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+      "mainSkills": 3,
+      "methods": 8,
+      "scientificBlockers": 6,
+      "extraHumanReminders": 0,
+      "formalRuns": 0,
+      "evidence": "../flow-scientific-methods-autonomous-20261017/evidence.json"
+    },
+    "secondCandidate": {
+      "mainSkills": 1,
+      "methods": 7,
+      "scientificBlockers": 5,
+      "behaviorBlockers": 2,
+      "extraHumanReminders": 0,
+      "formalRuns": 0
+    },
+    "interpretation": "Two observations of one fixed task/model, not a reliability rate or proof that more text causes improvement; neither trial establishes correct autonomous research"
+  },
+  "environment": {
+    "piSdk": "0.87.1",
+    "model": {
+      "provider": "zai-coding-cn",
+      "model": "glm-5.3",
+      "thinking": "low"
+    },
+    "projectId": "fc350f20-4550-45da-bd14-2f11adbb1a1f",
+    "sessionId": "b788ec49-2b73-4105-8122-f912a7938a5a",
+    "controlSessionId": "3a97bc81-f859-4371-994c-6533918e16c9",
+    "isolatedBuild": true,
+    "hostFullAccess": false,
+    "newNetworkResearch": false,
+    "providerRetries": 0,
+    "dockerProbe": "verified",
+    "formalDockerExecution": false
+  },
+  "inputs": {
+    "artifacts": [
+      {
+        "name": "winequality-red.csv",
+        "artifactId": "457d0bbe-05a9-447e-9117-15546c331350",
+        "digest": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e"
+      },
+      {
+        "name": "winequality.names",
+        "artifactId": "f60198ab-c11e-4f84-a316-5ab9f91a712f",
+        "digest": "15d215e73b39105952380fd487e4ce1bf5a6b83a425abb285c2ec55193d3ca92"
+      },
+      {
+        "name": "source-manifest.json",
+        "artifactId": "9bec6f9d-a66f-41a6-8115-a9986477a5ca",
+        "digest": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5"
+      },
+      {
+        "name": "candidate-literature.json",
+        "artifactId": "328dce6b-cae5-406b-95d9-2e494ac40d62",
+        "digest": "3aa073635c657b63be921e9f9c629d2b37130e36a27ca221bfbee228e24bb71a"
+      }
+    ],
+    "bytesIdenticalToPrior": true,
+    "previousGeneratedCodeAndOutcomesProvided": false,
+    "sourceManifest": {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/inputs/source-manifest.json",
+      "sha256": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5"
+    }
+  },
+  "naturalObservation": {
+    "initialPrompt": {
+      "messageId": "5c2908e2-2fc5-49a4-b3e4-998daaeedd53",
+      "at": "2026-10-17T11:39:47.268Z",
+      "sha256": "bd344996849655ebb4d3c67c113efdae586999453ecb8280f4e257b4af462e4e",
+      "identicalToPreviousTrial": true,
+      "methodReminder": false
+    },
+    "finalFiles": {
+      "finishedAt": "2026-10-17T11:44:19.912Z",
+      "generation": 1,
+      "files": [
+        {
+          "name": "protocol.md",
+          "bytes": 8580,
+          "sha256": "ed989ba282770769c7243f3bb562184c5c5931edec9718373187cb3d2e6a72c1"
+        },
+        {
+          "name": "compare.py",
+          "bytes": 10353,
+          "sha256": "f43deef95557ba9cb5c5a3ed68d9e86520544c483ed97f098d8bf14efda88095"
+        }
+      ],
+      "actualModel": {
+        "provider": "zai-coding-cn",
+        "model": "glm-5.3",
+        "thinking": "low"
+      },
+      "formalRuns": 0,
+      "extraHumanPrompts": 0,
+      "recordedAt": "2026-10-17T11:45:17.001Z"
+    },
+    "skillReads": [
+      {
+        "callId": "call_eabcb8bf66dc4c0082a56df4",
+        "time": "2026-10-17T11:39:55.713Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "SKILL.md",
+        "completed": true,
+        "success": true,
+        "digest": "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      },
+      {
+        "callId": "call_e9963c1eb9f6454a9133edb3",
+        "time": "2026-10-17T11:40:08.821Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "references/hypothesis-generation.md",
+        "completed": true,
+        "success": true,
+        "digest": "5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      },
+      {
+        "callId": "call_5b98324e3e944579a9f81132",
+        "time": "2026-10-17T11:40:08.821Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "references/experimental-design.md",
+        "completed": true,
+        "success": true,
+        "digest": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      },
+      {
+        "callId": "call_df63a1a589be43319aaed940",
+        "time": "2026-10-17T11:40:08.821Z",
+        "skillId": "pi-research-experiment-tree",
+        "resource": "references/statistical-power.md",
+        "completed": true,
+        "success": true,
+        "digest": "bdc1bb8c1bfbdc30359172a24d685de42b98b23a516ad96c1ee13451779b830e",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      },
+      {
+        "callId": "call_d8f6f8b1b4f74e0db95f3448",
+        "time": "2026-10-17T11:40:22.150Z",
+        "skillId": "pi-research-evidence",
+        "resource": "references/exploratory-data-analysis.md",
+        "completed": true,
+        "success": true,
+        "digest": "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      },
+      {
+        "callId": "call_970988b4242a4dd999f6b9c5",
+        "time": "2026-10-17T11:40:22.150Z",
+        "skillId": "pi-research-evidence",
+        "resource": "references/statistical-analysis.md",
+        "completed": true,
+        "success": true,
+        "digest": "21e17af76ce4dafa290ec0d9cf9001def138fc626b761b6a0fb8c256e606a236",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      },
+      {
+        "callId": "call_5d07466573fb4623b6ac4dcf",
+        "time": "2026-10-17T11:40:22.150Z",
+        "skillId": "pi-research-evidence",
+        "resource": "references/uncertainty-and-units.md",
+        "completed": true,
+        "success": true,
+        "digest": "dfef4a9f4bf559383cee0b75358ed83cfa08f8a1f0265845926d8d2c6febc3b4",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      },
+      {
+        "callId": "call_0f98774ec74c411385a4380a",
+        "time": "2026-10-17T11:40:22.150Z",
+        "skillId": "pi-research-lit-review",
+        "resource": "references/systematic-review.md",
+        "completed": true,
+        "success": true,
+        "digest": "999f4d46f7f1544f7a9c34faabd7efe32e627c320ce9c4a4da0e4f493a547235",
+        "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620"
+      }
+    ],
+    "toolCounts": {
+      "research_brief_inspect": 1,
+      "workspace_list": 1,
+      "research_skill_read": 8,
+      "workspace_read": 5,
+      "workspace_write": 4,
+      "research_brief_save": 2
+    },
+    "toolErrors": [
+      {
+        "callId": "call_4a941adc569348b497b4f48a",
+        "tool": "research_brief_save",
+        "code": "INVALID_INPUT"
+      },
+      {
+        "callId": "call_e2fd41222e9a4b8e975d3b1d",
+        "tool": "research_brief_save",
+        "code": "APPROVAL_REQUIRED"
+      }
+    ],
+    "rereadAfterWrites": false,
+    "ordinaryControl": {
+      "state": "idle",
+      "sessionId": "3a97bc81-f859-4371-994c-6533918e16c9",
+      "skillBundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+      "toolCalls": [],
+      "answers": [
+        "2+2 = 4"
+      ]
+    },
+    "http": {
+      "coverage": "managed-fetch",
+      "totalRequests": 13,
+      "bySession": {
+        "3a97bc81-f859-4371-994c-6533918e16c9": 1,
+        "b788ec49-2b73-4105-8122-f912a7938a5a": 12
+      },
+      "states": {
+        "succeeded": 13
+      }
+    },
+    "sdkReportedResearchUsage": {
+      "records": 12,
+      "input": 111101,
+      "output": 18676,
+      "cacheRead": 1049600,
+      "totalTokens": 1179377,
+      "note": "Includes cache counters; not a bill or performance comparison to longer workflows"
+    }
+  },
+  "independentReview": {
+    "reviewer": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtimeVerification": "requested; runtime metadata not echoed",
+      "continuation": "Targeted follow-up by independent reviewer of first candidate; only new differences and new outputs reviewed"
+    },
+    "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+    "bundle": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+    "previousCandidate": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+    "previousReview": "../scientific-methods-autonomous-20261017/review.json",
+    "previousFailure": "First candidate six scientific/runtime blockers and untouched failure evidence retained; not superseded by this case",
+    "status": "blocked_v2_real_pi_first_attempt",
+    "productPatchBlockers": [],
+    "scientificArtifactBlockers": [
+      {
+        "id": "V2-S1",
+        "kind": "runtime_contract",
+        "file": "compare.py",
+        "line": 170,
+        "endLine": 182,
+        "problem": "Final metrics.json still contains string, array and nested-object values, invalid for actual flat finite-number metric schema.",
+        "evidence": "Isolated AST evaluation with finite synthetic metrics, then actual V2 finiteMetrics, rejects INVALID_METRICS: primary_metric is not a finite number. Eight keys have nonnumeric values; no wine main was run.",
+        "minimumFix": "Flat finite numeric metrics with agreed contract keys; move descriptions, decisions and nested detail to analysis.json."
+      },
+      {
+        "id": "V2-S2",
+        "kind": "unsupported_precision_and_power_forecast",
+        "file": "protocol.md",
+        "line": 51,
+        "related": "protocol.md:50; final assistant reply precision section",
+        "problem": "Despite explicitly lacking variance/effect inputs and doing no planning calculation, protocol predicts CI halfwidth 0.01-0.02 and high probability of detecting gains at least SESOI.",
+        "evidence": "No variance model, justified scenario, power target or actual precision calculation supports either numerical range or detection-probability claim. These are not labeled explicit assumed scenarios; the final reply repeats the range.",
+        "minimumFix": "Leave precision/detection ability unknown with required inputs, or provide explicitly assumed and justified scenarios with actual matched calculations."
+      },
+      {
+        "id": "V2-S3",
+        "kind": "unsupported_universal_practical_significance",
+        "file": "protocol.md",
+        "line": 41,
+        "problem": "An explicitly unvalidated analytical 0.02 threshold is nevertheless described as negligible in any use.",
+        "evidence": "Score resolution of one point and an expected RMSE percentage do not establish universal utility or a domain SESOI. Same paragraph acknowledges no domain validation.",
+        "minimumFix": "Limit conclusions to the declared operational threshold and retain scientific/practical relevance as unvalidated; remove universal negligibility claim."
+      },
+      {
+        "id": "V2-S4",
+        "kind": "unsupported_study_identity",
+        "file": "protocol.md",
+        "line": 61,
+        "problem": "Shared DOI is still used to confirm the same study, beyond what report-level metadata establishes.",
+        "evidence": "Two supplied records share the Cortez DOI, supporting one report candidate. No source-text registration/cohort/sample mapping establishes study identity; V2 correctly leaves other study links unconfirmed but this relation remains overstated.",
+        "minimumFix": "Describe same report candidate; study identity/linkage remains unknown unless supported by actual study text."
+      },
+      {
+        "id": "V2-S5",
+        "kind": "sensitivity_scope_mismatch",
+        "file": "compare.py",
+        "line": 157,
+        "endLine": 162,
+        "related": "protocol.md:19,45; analysis sensitivity_with_duplicates:203-206",
+        "problem": "Claimed full-data duplicate sensitivity actually only reweights test records with already fixed deduplicated-training models. Duplicated training rows are counted but not refit.",
+        "evidence": "tr2_n is only a count; pred_l and pred_q close over beta_l/beta_q fitted at lines121-122 on unique training rows. Thus duplicate-training influence and the extreme-point component of H3 are not tested.",
+        "minimumFix": "Accurately predefine this as fixed-model test-reweighting sensitivity and limit H3 claims; if duplicate-training impact is intended, refit both models on mapped duplicate-inclusive training rows under an approved protocol."
+      }
+    ],
+    "nonblocking": [
+      {
+        "id": "V2-N1",
+        "file": "protocol.md",
+        "line": 33,
+        "related": "compare.py:108",
+        "problem": "Protocol names random.Random(20261017) but implementation uses seed+int(quality) for each stratum.",
+        "evidence": "Synthetic stratum3 with IDs0..9: documented-seed interpretation selects [2,6,9], actual code selects [1,2,4].",
+        "risk": "Documentation/reproducibility mismatch. Actual code still defines one fixed deterministic split shared by both models before any outcome; no evidence of seed search or leakage."
+      },
+      {
+        "id": "V2-N2",
+        "file": "compare.py",
+        "line": 169,
+        "problem": "Predictions remain rounded to six decimals while metrics use full precision.",
+        "risk": "CSV-based aggregate recomputation is approximate; no evidence this alone changes the 0.02 gate."
+      },
+      {
+        "id": "V2-N3",
+        "file": "protocol.md",
+        "line": 26,
+        "problem": "Fractional alcohol values are conjectured to reflect replacement by means of duplicate records without provenance evidence.",
+        "risk": "Decimals alone do not identify data processing history. It is tentative wording and does not alter the implemented dataset; keep as an unverified possibility or remove."
+      }
+    ],
+    "verificationGaps": [
+      "Formal wine Run and final result report not executed/reviewed because final plan/code has blockers; no wine outcome claimed",
+      "V2 ordinary-question control and rejection/reopen evidence not yet supplied",
+      "Reviewer synthetic numerical cases cover selected functions/branches only; Pi did not execute its self-check in an approved formal Run",
+      "First-candidate full regression is applicable only to frozen original source and unchanged runtime, not proof of V2 scientific behavior"
+    ],
+    "checks": [
+      {
+        "name": "source-snapshot",
+        "status": "pass",
+        "details": "119 listed current source/release files independently SHA256 checked, zero mismatch"
+      },
+      {
+        "name": "incremental-release-integrity",
+        "status": "pass",
+        "details": "23 previous release metadata entries unchanged against first-candidate isolated snapshot (including ee); new manifest digest valid and 51 main/resource source bytes match declared digests"
+      },
+      {
+        "name": "change-scope",
+        "status": "pass",
+        "details": "Compared all 51 skills/resource source files with first-candidate isolated snapshot: exactly the six authorized sources differ. Runtime/options source hash unchanged. Reviewed only new rules and examples; no extra tools/API/dependency/permissions changes identified."
+      },
+      {
+        "name": "scientific-incremental-rules",
+        "status": "pass",
+        "details": "New K-fold coverage/count invariants are sufficient with unique unit IDs; cross-zero CI is not equivalence, CI halfwidth is distinct from power-defined MDE; unit/study mapping requires actual source text or unknown. Reread is limited to current approved tools and does not authorize execution."
+      },
+      {
+        "name": "metrics-json-examples",
+        "status": "pass",
+        "details": "Parsed JSON blocks; new error_mean/sample_count flat-number example accepted by actual unchanged platform finiteMetrics; nested-value/version/verdict counterexample rejected with INVALID_METRICS. Only shape checked, not scientific numbers or actual contract keys."
+      },
+      {
+        "name": "kfold-assertion-example",
+        "status": "pass",
+        "details": "review_new_examples.py runs exact new fenced assertion snippet on synthetic cases: valid partition accepted; duplicate across folds, duplicate inside fold, missing, unexpected and empty fold all rejected. No research computation."
+      },
+      {
+        "name": "isolated-runtime-snapshot",
+        "status": "pass",
+        "details": "All 119 source/release files and 9 compiled snapshot files independently SHA256 checked in actual V2 validation copy; zero mismatch. options.js and its map unchanged from first-candidate compiled snapshot."
+      },
+      {
+        "name": "final-v2-native-evidence",
+        "status": "fail_behavior_requirements",
+        "details": "One original user message, 8 successful content/digest-verified skill reads (1 main+7 methods); no critical method or evidence/literature main read; no post-write artifact reread. Final native SHA c7e8325ecbc46c39eaaa7fa9702f5419ebcc4387172bf9aa3126a2cc6ad42ecc."
+      },
+      {
+        "name": "v2-isolated-numerical-fragments",
+        "status": "pass_examples_and_reproduced_schema_failure",
+        "details": "review_v2_numeric_checks.py extracts only ols/self_check/metrics and selected main AST fragments. Solver selfcheck, independent linear [2,3], singular rejection, metrics exact example, three decision cases and constant-pair bootstrap all pass. Actual V2 finiteMetrics rejects generated synthetic metrics_obj. Whole wine script/main/load_rows never executed."
+      },
+      {
+        "name": "v2-related-tests",
+        "status": "reviewed-log-pass",
+        "details": "26 passed, 0 failed, 0 skipped; reviewer did not rerun."
+      },
+      {
+        "name": "v2-clean-build",
+        "status": "reviewed-log-pass",
+        "details": "clean-build.log reports PASS for clean-build-Y0TYdm summary; reviewer did not rerun."
+      },
+      {
+        "name": "original-full-regression",
+        "status": "reviewed-log-pass-with-skips",
+        "details": "First-candidate frozen runtime full regression completed: 2011 tests, 1986 pass, 0 fail, 25 skipped. Reuse limited to unchanged runtime/source coverage; no claim V2 text or live science validated by it."
+      }
+    ],
+    "scope": "Only new differences and evidence. No product/test/Pi workspace/approval/DB mutations, no services, no formal Run or full regression started.",
+    "behaviorBlockers": [
+      {
+        "id": "V2-W1",
+        "kind": "relevant_method_coverage",
+        "evidence": "Final native JSONL contains 8 research_skill_read results: only experiment-tree main plus 7 method resources. scientific-critical-thinking, evidence main and lit-review main are not read; all are readable and relevant to this source-evaluation/design task.",
+        "criterion": "Task-relevant methods and main skills read naturally before decisions",
+        "limitation": "Not a blanket rule to read eight methods for every task. This particular task requires the omitted critical evaluation and parent main skills."
+      },
+      {
+        "id": "V2-W2",
+        "kind": "saved_artifact_reread_missing",
+        "evidence": "Five workspace_read calls all read project inputs before the first write; zero workspace_read after 4 workspace_write calls and before ready submission. Natural assistant nevertheless says reread found dead code; no controlled read backs that claim.",
+        "criterion": "V2 added rule requires actual reread of saved draft/source before ready; text-only self-review is not that operation."
+      }
+    ],
+    "observedImprovements": [
+      "Alcohol unit now explicitly unknown/unverified rather than falsely attributed to UCI.",
+      "No MDE is calculated or falsely named; CI precision forecast remains a separate unsupported claim.",
+      "Original faulty K-fold routine is absent, not revalidated as repaired.",
+      "Main inference now bootstraps paired test rows on delta RMSE directly and explicitly conditions on fixed trained models/split.",
+      "Cross-zero low point estimate with CI exceeding threshold now yields inconclusive; same-scale CI upper bound below the threshold is a valid operational exclusion rule, not the old non-significance error.",
+      "Final OLS self-check has correct independently derived y values and coefficients; reviewer isolated check, independent linear example and singular rejection pass."
+    ],
+    "realPiSnapshot": {
+      "projectId": "fc350f20-4550-45da-bd14-2f11adbb1a1f",
+      "sessionId": "b788ec49-2b73-4105-8122-f912a7938a5a",
+      "generation": 1,
+      "state": "idle",
+      "model": "zai-coding-cn/glm-5.3/low",
+      "protocolSha256": "ed989ba282770769c7243f3bb562184c5c5931edec9718373187cb3d2e6a72c1",
+      "codeSha256": "f43deef95557ba9cb5c5a3ed68d9e86520544c483ed97f098d8bf14efda88095",
+      "pendingActionId": "6f2b6e63362fc2c7d27963fa374ad8b8710b380a1e932d66351b7784b5923aec"
+    }
+  },
+  "rejection": {
+    "at": "2026-10-17T11:47:45.528Z",
+    "actionId": "6f2b6e63362fc2c7d27963fa374ad8b8710b380a1e932d66351b7784b5923aec",
+    "reason": "Independent review confirms invalid metrics shape, unsupported general utility/precision/power claims and study mapping; natural coverage/readback incomplete",
+    "correctivePromptSent": false,
+    "formalRunSubmitted": false
+  },
+  "reopen": {
+    "before": {
+      "sessions": [
+        {
+          "id": "b788ec49-2b73-4105-8122-f912a7938a5a",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a149a9-3949-7581-b92a-f8587269290d",
+          "nativePath": "pi-data:/sessions/b788ec49-2b73-4105-8122-f912a7938a5a/pi/2026-10-17T11-39-49-450Z_01a149a9-3949-7581-b92a-f8587269290d.jsonl",
+          "bundle": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+          "bytes": 374858,
+          "sha256": "c7e8325ecbc46c39eaaa7fa9702f5419ebcc4387172bf9aa3126a2cc6ad42ecc"
+        },
+        {
+          "id": "3a97bc81-f859-4371-994c-6533918e16c9",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a149ad-eca0-70d8-bb60-6a73217752d2",
+          "nativePath": "pi-data:/sessions/3a97bc81-f859-4371-994c-6533918e16c9/pi/2026-10-17T11-44-57-504Z_01a149ad-eca0-70d8-bb60-6a73217752d2.jsonl",
+          "bundle": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+          "bytes": 135429,
+          "sha256": "5d382056e27b67b87e0d593a19c3ded8a80e87df21b4c1df8df0c165def122e0"
+        }
+      ],
+      "files": [
+        {
+          "name": "protocol.md",
+          "bytes": 8580,
+          "sha256": "ed989ba282770769c7243f3bb562184c5c5931edec9718373187cb3d2e6a72c1"
+        },
+        {
+          "name": "compare.py",
+          "bytes": 10353,
+          "sha256": "f43deef95557ba9cb5c5a3ed68d9e86520544c483ed97f098d8bf14efda88095"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "457d0bbe-05a9-447e-9117-15546c331350",
+          "digest": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+          "bytes": 84199
+        },
+        {
+          "id": "f60198ab-c11e-4f84-a316-5ab9f91a712f",
+          "digest": "15d215e73b39105952380fd487e4ce1bf5a6b83a425abb285c2ec55193d3ca92",
+          "bytes": 3305
+        },
+        {
+          "id": "9bec6f9d-a66f-41a6-8115-a9986477a5ca",
+          "digest": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5",
+          "bytes": 613
+        },
+        {
+          "id": "328dce6b-cae5-406b-95d9-2e494ac40d62",
+          "digest": "3aa073635c657b63be921e9f9c629d2b37130e36a27ca221bfbee228e24bb71a",
+          "bytes": 2882
+        }
+      ],
+      "rejectedAction": {
+        "id": "6f2b6e63362fc2c7d27963fa374ad8b8710b380a1e932d66351b7784b5923aec",
+        "state": "rejected"
+      },
+      "runCount": 0
+    },
+    "after": {
+      "sessions": [
+        {
+          "id": "b788ec49-2b73-4105-8122-f912a7938a5a",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a149a9-3949-7581-b92a-f8587269290d",
+          "nativePath": "pi-data:/sessions/b788ec49-2b73-4105-8122-f912a7938a5a/pi/2026-10-17T11-39-49-450Z_01a149a9-3949-7581-b92a-f8587269290d.jsonl",
+          "bundle": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+          "bytes": 374858,
+          "sha256": "c7e8325ecbc46c39eaaa7fa9702f5419ebcc4387172bf9aa3126a2cc6ad42ecc"
+        },
+        {
+          "id": "3a97bc81-f859-4371-994c-6533918e16c9",
+          "state": "idle",
+          "generation": 1,
+          "nativeId": "01a149ad-eca0-70d8-bb60-6a73217752d2",
+          "nativePath": "pi-data:/sessions/3a97bc81-f859-4371-994c-6533918e16c9/pi/2026-10-17T11-44-57-504Z_01a149ad-eca0-70d8-bb60-6a73217752d2.jsonl",
+          "bundle": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+          "bytes": 135429,
+          "sha256": "5d382056e27b67b87e0d593a19c3ded8a80e87df21b4c1df8df0c165def122e0"
+        }
+      ],
+      "files": [
+        {
+          "name": "protocol.md",
+          "bytes": 8580,
+          "sha256": "ed989ba282770769c7243f3bb562184c5c5931edec9718373187cb3d2e6a72c1"
+        },
+        {
+          "name": "compare.py",
+          "bytes": 10353,
+          "sha256": "f43deef95557ba9cb5c5a3ed68d9e86520544c483ed97f098d8bf14efda88095"
+        }
+      ],
+      "artifacts": [
+        {
+          "id": "457d0bbe-05a9-447e-9117-15546c331350",
+          "digest": "4a402cf041b025d4566d954c3b9ba8635a3a8a01e039005d97d6a710278cf05e",
+          "bytes": 84199
+        },
+        {
+          "id": "f60198ab-c11e-4f84-a316-5ab9f91a712f",
+          "digest": "15d215e73b39105952380fd487e4ce1bf5a6b83a425abb285c2ec55193d3ca92",
+          "bytes": 3305
+        },
+        {
+          "id": "9bec6f9d-a66f-41a6-8115-a9986477a5ca",
+          "digest": "9183efb877e7ab2d347664155b206a342ee99ae8ce9c547af36bcdc7fe736fa5",
+          "bytes": 613
+        },
+        {
+          "id": "328dce6b-cae5-406b-95d9-2e494ac40d62",
+          "digest": "3aa073635c657b63be921e9f9c629d2b37130e36a27ca221bfbee228e24bb71a",
+          "bytes": 2882
+        }
+      ],
+      "rejectedAction": {
+        "id": "6f2b6e63362fc2c7d27963fa374ad8b8710b380a1e932d66351b7784b5923aec",
+        "state": "rejected"
+      },
+      "runCount": 0,
+      "checkedAt": "2026-10-17T11:49:34.715Z",
+      "unchanged": true
+    },
+    "ownerView": {
+      "at": "2026-10-17T11:49:34.848Z",
+      "sessionId": "b788ec49-2b73-4105-8122-f912a7938a5a",
+      "generation": 1,
+      "state": "idle",
+      "noNewPiMessage": true
+    },
+    "noAdditionalPiMessage": true
+  },
+  "verification": {
+    "fullRegression": {
+      "command": "npm run test:core",
+      "snapshotBundle": "ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009",
+      "tests": 2011,
+      "pass": 1986,
+      "fail": 0,
+      "skip": 25,
+      "cancelled": 0,
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-20261017/regression.log",
+        "sha256": "139f900399a7bb6f1bad3d02193e0881656449f1d9701a85c717f3c5cd5f75d2"
+      },
+      "coverage": "First-candidate frozen snapshot. Reused only for unchanged runtime; not rerun or claimed as exact second-candidate full test. 25 skips not passes."
+    },
+    "secondCandidateRelated": {
+      "command": "node --test --test-concurrency=1 tests/unit/openresearch-skills.test.mjs tests/unit/builtin-skill-releases.test.mjs tests/unit/scientific-methods-skills.test.mjs",
+      "tests": 26,
+      "pass": 26,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-v2-20261017/related.log",
+        "sha256": "6da1d5efbbabbbaf1c16bf1dab72953d7deaa6c03cbee8f1796b634b78a49bcf"
+      }
+    },
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "identical": true,
+      "files": 667,
+      "distManifestSha256": "07456b65705c4ce27339c366509af99f590672bcbcf81bc5d540b21c6ef48e21",
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0
+        },
+        {
+          "name": "build",
+          "exitCode": 0
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0
+        }
+      ],
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-v2-20261017/clean-build.log",
+        "sha256": "0bcaef76e6def6aa53b536d86d0291d5c05cfe099d1c6d9cc272f344bf1bfd73"
+      }
+    },
+    "firstCandidateParity": {
+      "command": "npm run test:parity",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "log": {
+        "path": ".validation/scientific-methods-autonomous-20261017/parity.log",
+        "sha256": "1718092eb16a47a18ae405d53b5c75cf72d9f6a7510ca123d5c3419ec26ca083"
+      },
+      "rerunForSecondCandidate": false
+    },
+    "differenceFromFirst": {
+      "compiledChangedFromFirst": [
+        "packages/skills/manifest.d.ts",
+        "packages/skills/manifest.js",
+        "packages/skills/releases.d.ts",
+        "packages/skills/releases.js",
+        "packages/skills/releases.js.map",
+        "packages/skills/runtime.d.ts",
+        "packages/skills/service.d.ts"
+      ],
+      "runtimeCodeUnchanged": true,
+      "reuseFirstFullRegressionForUnchangedRuntime": true,
+      "newRelatedAndCleanBuildRequired": true
+    },
+    "skillValidation": "overview/evidence UTF-8 quick_validate passed; reports validated in first candidate"
+  },
+  "snapshots": {
+    "source": {
+      "baseline": "b8afe9a858dd5ce4d9aec6297419fb1a8ce8732b",
+      "bundle": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+      "files": [
+        {
+          "path": "packages/pi-adapter/options.ts",
+          "sha256": "83298e2048294ed8c8cef5fbcc370640cc923b511522f2a99da322055dba4804"
+        },
+        {
+          "path": "packages/skills/manifest.ts",
+          "sha256": "9b8f233b2deda75206b38ab89b2b725bdcd26db5c1e61bb34aac8f118ecfb4ac"
+        },
+        {
+          "path": "packages/skills/releases.ts",
+          "sha256": "8176a95258b722a0d951dddb92c6047fb19c9d30ee690ba14f5b7e8b6923df9b"
+        },
+        {
+          "path": "skills/piresearch/manifest.json",
+          "sha256": "edaf3c12ef84c9cde1684186d533dc2e3b0cb4e56805b95f7664b8ea9d9bbc97"
+        },
+        {
+          "path": "skills/piresearch/pi-research-evidence/SKILL.md",
+          "sha256": "5b8062350f3886c0b3b77858a05cb21e2548d5fa0697c4a6068a9ea71bb7a686"
+        },
+        {
+          "path": "skills/piresearch/pi-research-evidence/references/scientific-critical-thinking.md",
+          "sha256": "dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c"
+        },
+        {
+          "path": "skills/piresearch/pi-research-evidence/references/statistical-analysis.md",
+          "sha256": "21e17af76ce4dafa290ec0d9cf9001def138fc626b761b6a0fb8c256e606a236"
+        },
+        {
+          "path": "skills/piresearch/pi-research-evidence/references/uncertainty-and-units.md",
+          "sha256": "dfef4a9f4bf559383cee0b75358ed83cfa08f8a1f0265845926d8d2c6febc3b4"
+        },
+        {
+          "path": "skills/piresearch/pi-research-experiment-tree/references/experimental-design.md",
+          "sha256": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8"
+        },
+        {
+          "path": "skills/piresearch/pi-research-experiment-tree/references/hypothesis-generation.md",
+          "sha256": "5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400"
+        },
+        {
+          "path": "skills/piresearch/pi-research-experiment-tree/references/statistical-power.md",
+          "sha256": "bdc1bb8c1bfbdc30359172a24d685de42b98b23a516ad96c1ee13451779b830e"
+        },
+        {
+          "path": "skills/piresearch/pi-research-lit-review/references/systematic-review.md",
+          "sha256": "999f4d46f7f1544f7a9c34faabd7efe32e627c320ce9c4a4da0e4f493a547235"
+        },
+        {
+          "path": "skills/piresearch/pi-research-overview/SKILL.md",
+          "sha256": "39575e3973d6849826cd939749ad7ea06b6520d5bf7cb27b0f7130f7cd99a2e1"
+        },
+        {
+          "path": "skills/piresearch/pi-research-reports/SKILL.md",
+          "sha256": "c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47"
+        },
+        {
+          "path": "skills/releases/index.json",
+          "sha256": "5a0bf4d5f13de3d00a883992c9819acd991d1bfcffcb07c870a08c5e0bb4e8b6"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759",
+          "sha256": "075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140",
+          "sha256": "0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07",
+          "sha256": "0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192",
+          "sha256": "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121",
+          "sha256": "1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f",
+          "sha256": "205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3",
+          "sha256": "21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/21e17af76ce4dafa290ec0d9cf9001def138fc626b761b6a0fb8c256e606a236",
+          "sha256": "21e17af76ce4dafa290ec0d9cf9001def138fc626b761b6a0fb8c256e606a236"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/2a5b44288e2e4bff06940f9b54cf97a7e4127d4ca205330e27816487c286914b",
+          "sha256": "2a5b44288e2e4bff06940f9b54cf97a7e4127d4ca205330e27816487c286914b"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7",
+          "sha256": "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58",
+          "sha256": "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/39575e3973d6849826cd939749ad7ea06b6520d5bf7cb27b0f7130f7cd99a2e1",
+          "sha256": "39575e3973d6849826cd939749ad7ea06b6520d5bf7cb27b0f7130f7cd99a2e1"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/3cd6bbd9f5492b06ef73f6148222be91ab75271bcd11c55f8f4f6368c102373d",
+          "sha256": "3cd6bbd9f5492b06ef73f6148222be91ab75271bcd11c55f8f4f6368c102373d"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733",
+          "sha256": "405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/45650778bba66dba9088db083dd899ae745a037ae6966c631dfd7dc05eec64af",
+          "sha256": "45650778bba66dba9088db083dd899ae745a037ae6966c631dfd7dc05eec64af"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc",
+          "sha256": "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/525c7bdc434bc2ef0295ee95afa706afb7bcd16a4a3812d97e19e05c14e769b4",
+          "sha256": "525c7bdc434bc2ef0295ee95afa706afb7bcd16a4a3812d97e19e05c14e769b4"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400",
+          "sha256": "5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71",
+          "sha256": "554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/5b8062350f3886c0b3b77858a05cb21e2548d5fa0697c4a6068a9ea71bb7a686",
+          "sha256": "5b8062350f3886c0b3b77858a05cb21e2548d5fa0697c4a6068a9ea71bb7a686"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/6db10e33e3a91f9c6d9adfa69884b7896393702ed4cf5cf11e267e3697ed4f0d",
+          "sha256": "6db10e33e3a91f9c6d9adfa69884b7896393702ed4cf5cf11e267e3697ed4f0d"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/6fbf9c102ed78c525d714657c401ee704067d2e73bfcd4b4efef2a23cd15600a",
+          "sha256": "6fbf9c102ed78c525d714657c401ee704067d2e73bfcd4b4efef2a23cd15600a"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df",
+          "sha256": "767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/7827d755d20f87b92fe768650378acb99a265864943cc8fa7b47db750a8f08d3",
+          "sha256": "7827d755d20f87b92fe768650378acb99a265864943cc8fa7b47db750a8f08d3"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f",
+          "sha256": "784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89",
+          "sha256": "7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/7d752a66966a28121d584afdd7a80e44830c5f982ea27169b81d72490f0c954d",
+          "sha256": "7d752a66966a28121d584afdd7a80e44830c5f982ea27169b81d72490f0c954d"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/8a344e384560508b45df77f537c8a104ba6cf5419912fdec36132e64c8109a18",
+          "sha256": "8a344e384560508b45df77f537c8a104ba6cf5419912fdec36132e64c8109a18"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974",
+          "sha256": "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c",
+          "sha256": "913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/95f5d38d28360e4a74da1cbd9c673cf91ac8195c91805985e5dba60394d10823",
+          "sha256": "95f5d38d28360e4a74da1cbd9c673cf91ac8195c91805985e5dba60394d10823"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/999f4d46f7f1544f7a9c34faabd7efe32e627c320ce9c4a4da0e4f493a547235",
+          "sha256": "999f4d46f7f1544f7a9c34faabd7efe32e627c320ce9c4a4da0e4f493a547235"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193",
+          "sha256": "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/a7291d6ada6d73ef62875fc37a4bf1b4b0a26fcc2061d47a80b08b14fafd0a80",
+          "sha256": "a7291d6ada6d73ef62875fc37a4bf1b4b0a26fcc2061d47a80b08b14fafd0a80"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6",
+          "sha256": "ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/ad4d96da66228cc19f0d4318395cff154f7138b7281aa52fe8b5855d660e13d1",
+          "sha256": "ad4d96da66228cc19f0d4318395cff154f7138b7281aa52fe8b5855d660e13d1"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/b0c6b3ed17d2e5bba2550b4683fc6905b65df553bd46b1ca5c2a825557dad08e",
+          "sha256": "b0c6b3ed17d2e5bba2550b4683fc6905b65df553bd46b1ca5c2a825557dad08e"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/bdc1bb8c1bfbdc30359172a24d685de42b98b23a516ad96c1ee13451779b830e",
+          "sha256": "bdc1bb8c1bfbdc30359172a24d685de42b98b23a516ad96c1ee13451779b830e"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8",
+          "sha256": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47",
+          "sha256": "c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9",
+          "sha256": "c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7",
+          "sha256": "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6",
+          "sha256": "d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/d40e7130f36d437711d433bab1e6bd71c2329479ac520af24323ba296ecb5f7e",
+          "sha256": "d40e7130f36d437711d433bab1e6bd71c2329479ac520af24323ba296ecb5f7e"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c",
+          "sha256": "dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/dfef4a9f4bf559383cee0b75358ed83cfa08f8a1f0265845926d8d2c6febc3b4",
+          "sha256": "dfef4a9f4bf559383cee0b75358ed83cfa08f8a1f0265845926d8d2c6febc3b4"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491",
+          "sha256": "e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff",
+          "sha256": "e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae",
+          "sha256": "ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/f61dce7691b5aead2fe5c296d480f4bc85b5037026ecda6cf6f95c21589480a9",
+          "sha256": "f61dce7691b5aead2fe5c296d480f4bc85b5037026ecda6cf6f95c21589480a9"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/blobs/f871360e181f4e50513d9ce2a26846d9dd341779b4eede7c76ad14ed0b22b1b7",
+          "sha256": "f871360e181f4e50513d9ce2a26846d9dd341779b4eede7c76ad14ed0b22b1b7"
+        },
+        {
+          "path": "skills/releases/65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620/manifest.json",
+          "sha256": "3b465295c4f5f0c60f4a4dbf98aa8cd3eed66c92e0eacb8cbab68e8e1023d1c5"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759",
+          "sha256": "075ef98881cf7f6fd8a747115b89fd401137ce182d332f5114b2023a42825759"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140",
+          "sha256": "0d9ce18da2ddd1a7effee54219b3760a9b9e55d144339e920ff9b4c48ddf4140"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07",
+          "sha256": "0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192",
+          "sha256": "162935f26fa70e766db47ce56c87dd6a3279c8f250faa010077f4f3dbcdae192"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121",
+          "sha256": "1939fcc9ab3c99141b7257f4f19ac92dd5aafd694f065cbf10ef8c7425b8d121"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f",
+          "sha256": "205353be185f959be1b8c83bdc686c93dd6e8be7ea9d4aa007c38a1e3742523f"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3",
+          "sha256": "21a1f640df88384656908cba48b3cb2eab7d0656834683d8ce34d874f8e7fbc3"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/22231a0885d936564f494bd0ed255577ed6a44b088dda6f513f1b9c77d49539f",
+          "sha256": "22231a0885d936564f494bd0ed255577ed6a44b088dda6f513f1b9c77d49539f"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/2a5b44288e2e4bff06940f9b54cf97a7e4127d4ca205330e27816487c286914b",
+          "sha256": "2a5b44288e2e4bff06940f9b54cf97a7e4127d4ca205330e27816487c286914b"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7",
+          "sha256": "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58",
+          "sha256": "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/3cd6bbd9f5492b06ef73f6148222be91ab75271bcd11c55f8f4f6368c102373d",
+          "sha256": "3cd6bbd9f5492b06ef73f6148222be91ab75271bcd11c55f8f4f6368c102373d"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733",
+          "sha256": "405ff266347ac9316b620616292d5854bb68fc25a5a9322c9f632828c9ad2733"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/45650778bba66dba9088db083dd899ae745a037ae6966c631dfd7dc05eec64af",
+          "sha256": "45650778bba66dba9088db083dd899ae745a037ae6966c631dfd7dc05eec64af"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc",
+          "sha256": "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/525c7bdc434bc2ef0295ee95afa706afb7bcd16a4a3812d97e19e05c14e769b4",
+          "sha256": "525c7bdc434bc2ef0295ee95afa706afb7bcd16a4a3812d97e19e05c14e769b4"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400",
+          "sha256": "5498b771883f6645889205cbf2d1fefbc433273e04b39ad31481a94d263ea400"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71",
+          "sha256": "554796ae3f887cd70dc99c3eeaa42b3163f45e4d979dac57c56505aea096cc71"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/6404a908a6acc2817fdc5c8d6d89dc46752a70039cdde1f66158a007088cf7f6",
+          "sha256": "6404a908a6acc2817fdc5c8d6d89dc46752a70039cdde1f66158a007088cf7f6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/65e021eff940babd846d42f5cc82c62f0bc8c1fba06f3aac1660a62ad9fc8ca4",
+          "sha256": "65e021eff940babd846d42f5cc82c62f0bc8c1fba06f3aac1660a62ad9fc8ca4"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/6db10e33e3a91f9c6d9adfa69884b7896393702ed4cf5cf11e267e3697ed4f0d",
+          "sha256": "6db10e33e3a91f9c6d9adfa69884b7896393702ed4cf5cf11e267e3697ed4f0d"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/6fbf9c102ed78c525d714657c401ee704067d2e73bfcd4b4efef2a23cd15600a",
+          "sha256": "6fbf9c102ed78c525d714657c401ee704067d2e73bfcd4b4efef2a23cd15600a"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df",
+          "sha256": "767af116d4f4519e3f6a59fe47e503cf4d796a68541b2ebdca4c365861bca4df"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/7827d755d20f87b92fe768650378acb99a265864943cc8fa7b47db750a8f08d3",
+          "sha256": "7827d755d20f87b92fe768650378acb99a265864943cc8fa7b47db750a8f08d3"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f",
+          "sha256": "784f8d0be5837e9826eb3d7a7f97c651578de7732e8f6cf4f10cecf298dd937f"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89",
+          "sha256": "7c68699a594c76541cc8c35f4c7b3bc18ff62a705867ce8ee8bad61fd07caf89"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/7d752a66966a28121d584afdd7a80e44830c5f982ea27169b81d72490f0c954d",
+          "sha256": "7d752a66966a28121d584afdd7a80e44830c5f982ea27169b81d72490f0c954d"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/858d0ad853ece3593850ecd7976c704e94ca0034e15236e15287ab9686e3ad62",
+          "sha256": "858d0ad853ece3593850ecd7976c704e94ca0034e15236e15287ab9686e3ad62"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/8a344e384560508b45df77f537c8a104ba6cf5419912fdec36132e64c8109a18",
+          "sha256": "8a344e384560508b45df77f537c8a104ba6cf5419912fdec36132e64c8109a18"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974",
+          "sha256": "90df19bd739a5412b60265ac86b76e69c12356e71506ce7f62ef85dc39cfd974"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c",
+          "sha256": "913d1af5e5549029757f8add6fba81020bf3b6f60a78caa1c93a14c2362a247c"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/95f5d38d28360e4a74da1cbd9c673cf91ac8195c91805985e5dba60394d10823",
+          "sha256": "95f5d38d28360e4a74da1cbd9c673cf91ac8195c91805985e5dba60394d10823"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193",
+          "sha256": "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/a7291d6ada6d73ef62875fc37a4bf1b4b0a26fcc2061d47a80b08b14fafd0a80",
+          "sha256": "a7291d6ada6d73ef62875fc37a4bf1b4b0a26fcc2061d47a80b08b14fafd0a80"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/a775882f5bc3f76f9ff5b03e4d2271616c87bfddad2fc08e50137f2df866a9a2",
+          "sha256": "a775882f5bc3f76f9ff5b03e4d2271616c87bfddad2fc08e50137f2df866a9a2"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6",
+          "sha256": "ab7fa4c06d8b33d40b1f5d83b59658caea9fa3efe7873a29cee35fc14cf895b6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/ad4d96da66228cc19f0d4318395cff154f7138b7281aa52fe8b5855d660e13d1",
+          "sha256": "ad4d96da66228cc19f0d4318395cff154f7138b7281aa52fe8b5855d660e13d1"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/b0c6b3ed17d2e5bba2550b4683fc6905b65df553bd46b1ca5c2a825557dad08e",
+          "sha256": "b0c6b3ed17d2e5bba2550b4683fc6905b65df553bd46b1ca5c2a825557dad08e"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8",
+          "sha256": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/be7a5c25bc561ea0872b13fa0c57aedc9de61df0166367efd5acd2db963f71d6",
+          "sha256": "be7a5c25bc561ea0872b13fa0c57aedc9de61df0166367efd5acd2db963f71d6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47",
+          "sha256": "c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9",
+          "sha256": "c57204ba9da2ca018498dc9a397fc8cb17bd7b2603828e67338cf5566e40b8c9"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7",
+          "sha256": "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6",
+          "sha256": "d25e98f2759bf8f2e8580a923f61ecc023ba4a35bc0992eb24fffe73828b9ff6"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/d40e7130f36d437711d433bab1e6bd71c2329479ac520af24323ba296ecb5f7e",
+          "sha256": "d40e7130f36d437711d433bab1e6bd71c2329479ac520af24323ba296ecb5f7e"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c",
+          "sha256": "dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491",
+          "sha256": "e8ace80016ba452dfc6664a386df8b2103a325218d1f31a270e18ebafc11a491"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff",
+          "sha256": "e9e16567a44057c0d8b056c0dc6f82729880138eba6916158ecd8634d10647ff"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae",
+          "sha256": "ece8bda7304cbba8530fb21a8fea0c819f2475e610633eaeb4e947183947a6ae"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/f61dce7691b5aead2fe5c296d480f4bc85b5037026ecda6cf6f95c21589480a9",
+          "sha256": "f61dce7691b5aead2fe5c296d480f4bc85b5037026ecda6cf6f95c21589480a9"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/blobs/f871360e181f4e50513d9ce2a26846d9dd341779b4eede7c76ad14ed0b22b1b7",
+          "sha256": "f871360e181f4e50513d9ce2a26846d9dd341779b4eede7c76ad14ed0b22b1b7"
+        },
+        {
+          "path": "skills/releases/ee525c7337715b07f1382494158f6eeaa3984e48b251d2c313478a179043b009/manifest.json",
+          "sha256": "7fb607e49a20d78e3477de3ac8394a7c2a9c5bbd01aba183f6b1a27a70824606"
+        }
+      ]
+    },
+    "compiled": [
+      {
+        "path": "dist/packages/pi-adapter/options.js",
+        "sha256": "40be2a72c65e1f4a877418a3c338ebb81469fc9e6d8feda4e2f0db9368edd579"
+      },
+      {
+        "path": "dist/packages/pi-adapter/options.js.map",
+        "sha256": "179447e6780a44dcbf4ea87d9cdb99cb94326faa0c2362342b80f3d89f73a7ce"
+      },
+      {
+        "path": "dist/packages/skills/manifest.d.ts",
+        "sha256": "e7e5f7037ce12635a56262eaab50e3196b601fd731d210f34e11c13f80aa9bb8"
+      },
+      {
+        "path": "dist/packages/skills/manifest.js",
+        "sha256": "345a4bd9ebf305347e91ba2f53c56cb640b65c59f8775a051ee3fcf183a06aaa"
+      },
+      {
+        "path": "dist/packages/skills/releases.d.ts",
+        "sha256": "d8379df22c65306aa3a64c8c71c67978b3d7899e34999b073eea3613cf275eab"
+      },
+      {
+        "path": "dist/packages/skills/releases.js",
+        "sha256": "22b8b2e5d58df27ec5d94e2ece55ca375a44fee3990b2a099990994128f36c2f"
+      },
+      {
+        "path": "dist/packages/skills/releases.js.map",
+        "sha256": "900512ae86eedebee0ae203c2532c69f7dbd831de5eac9a3eef4d388f9927e1f"
+      },
+      {
+        "path": "dist/packages/skills/runtime.d.ts",
+        "sha256": "d0649ceaedba5b5498eae2b3a89a882a4a9bb1df53feca34118ec15ba7b32b37"
+      },
+      {
+        "path": "dist/packages/skills/service.d.ts",
+        "sha256": "5c4584b113e95a715c580e98bceeed8b971fb7eaf7af3d56d1025eb02028ef2d"
+      }
+    ]
+  },
+  "evidenceFiles": [
+    {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/review.json",
+      "sha256": "b1db1654784f2e1beabfaf5f926d6ba76171191b3633d17b3ddaf7ad8595e7a9"
+    },
+    {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/observation.json",
+      "sha256": "e67da963520b895b9a9e66317f5ee2eeadb9dbdaa4663edcfe529345eb76b10b"
+    },
+    {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/before-reopen.json",
+      "sha256": "e10bed837cf149f77a19b5c863f95a490e8c51d69fe2fdd9d9f3a81cbc981e24"
+    },
+    {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/after-reopen.json",
+      "sha256": "a556d2794175dff01f91dcf330f5781e14966ae794de7e78dbe46d6f06a215e0"
+    },
+    {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/model-http.json",
+      "sha256": "33f69d9180c87b930ae8c1f2994fbdaa1262bc8c4b4a6160e9abf55318f5ae20"
+    },
+    {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/ordinary-control.json",
+      "sha256": "ba4579dc75d80445140a840e4dfe5a141c1ee5c8211bc4bfca04c891159e357c"
+    },
+    {
+      "path": ".validation/scientific-methods-autonomous-v2-20261017/review_new_examples.py",
+      "sha256": "b76770998b1d8d4a63a254bac77fbb5a3b41fe8ec05f68578c63fc14b2a4aea6"
+    }
+  ],
+  "localOnly": "Raw public inputs, native dialogues, DB, unapproved model drafts, synthetic-check scripts and full logs remain in .validation; no credentials or raw native histories committed",
+  "notRun": [
+    "Full wine script or formal Docker research Run",
+    "Final scientific report",
+    "Browser UI",
+    "Full-text systematic review",
+    "Actual power/MDE calculation",
+    "Other model/effort or multi-task reliability"
+  ]
+}

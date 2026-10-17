@@ -33,6 +33,8 @@ GRADE适用时按结局与比较评价证据体，给偏倚、不一致、间接
 
 先给证据支持的有限结论，再列竞争解释、关键假设与缺口。区分“不支持该主张”“有相反证据”“尚不能判断”；不能把未知写成错误，或把不显著写成证实无效。说明哪个额外对照、测量、来源或独立重复能改变判断，不能为消除疑问擅自新增计算或扩大读取。
 
+逐条把结论代回实际判据和承重来源：检查证据支持的是未过判据、相反效应、等效还是领域上可忽略，以及竞争解释是否真的被所做分析区分。缺少相应界值、计算或对照时，保留较窄结论与具体缺口，不由一次未达标推断其原因。
+
 统计细节按 `research_skill_read({input:{skillId:"pi-research-evidence",resource:"references/statistical-analysis.md"}})`；测量细节同技能 `references/uncertainty-and-units.md`。需要新假设/设计时交具备该权限的coordinator/designer；reviewer/analyst可在可读实验树资源范围提供方法意见，literature/writer不被要求读取不可读create/experiment-tree。
 
 沿现有Artifact或Task结果正文保存来源、评价与限制，不创建平行证据等级/Claim账本。论文独立reviewer仍按现有paper科学审查及任务合同给verdict，不自行改稿或采纳Claim。旧结论保留原版本与当时来源，新证据更新状态并注明原因，不覆盖历史。
