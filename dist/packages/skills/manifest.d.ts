@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "1a4077f0830b90bb503e98fc1968a0171caa8136bbb35645487206c484b384e7";
+export declare const BUNDLE_ID = "102e4006ccf2cf55439402e59771014af258268d3ed4416ca53c1e9a74d8bdfa";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; choose the workflow for the user's goal and preserve the cardinal research rules.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "c7074be92ec9bfc86f455d5310bf037b3fbde7bcb6af784f7e9b7baa172b4f50";
+    readonly digest: "de77f83ce10aa39844572518b273f1bac1ebea447a063630eb2bb0b683a124cc";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

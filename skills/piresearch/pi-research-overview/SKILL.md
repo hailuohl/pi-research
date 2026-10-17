@@ -28,18 +28,36 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 
 | 用户目标 | 技能与预期产物 |
 |---|---|
+| 新研究问题、研究方案、假设、设计或样本量依据 | 先按下方方法触发表读取命中的主技能及资源，再形成可检验方案；不是只有建节点或已有Run才读方法 |
 | 新建、导入或复现项目 | `pi-research-create`：核对真实任务和来源，建立基线与固定合同；随包曲线拟合仅是示例 |
 | 改进已有实验 | `pi-research-experiment-tree`：读取正确父修订，完成一轮同父比较，再决定修复、补选、保留或停止 |
 | 实现代码、保存或核对来源 | `pi-research-git`：私有工作区、提交及正式整合；本地完成、GitHub同步入队与准确SHA/ref确认分别报告 |
 | 运行、开发检查或处理等待/恢复 | `pi-research-compute`：先确定本地/Docker/SSH执行位置，再读对应参考；开发检查和正式Run分别批准，unknown不重跑 |
 | 委派独立工作 | `pi-research-agent-delegation`：真实输入、输出和验收简报；主协调者核对文件与证据后才使用助手结论 |
-| 查找或阅读文献、原文与图表 | `pi-research-lit-review`：主协调者保留检索排序；固定解析、获准页图与Task DiscoveryGrant按相应参考处理 |
-| 核查日志、指标和证据效力 | `pi-research-evidence`：真实来源、完整性与限制；项目源码不能替代固定实验或运行快照 |
+| 查找或阅读文献、原文与图表 | `pi-research-lit-review`：主协调者保留检索排序；明确系统性筛选/综述时先读下表专用资源；固定解析、获准页图与Task DiscoveryGrant按相应参考处理 |
+| 检查数据、选择统计方法、解释单位/不确定度或核查证据效力 | `pi-research-evidence`：按下表读取方法，核对真实来源、完整性与限制；项目源码不能替代固定实验或运行快照 |
 | 交付研究报告 | `pi-research-reports`：Agent 读取真实证据、比较解释并保存完整 Markdown 正文；系统固定报告和本地成果包仍由用户入口生成，正文不会自动并入；操作前读取其 `references/fixed-report.md` |
 | 制作科研图表 | `pi-research-figures`：先读取技能及对应图种参考，交付真实图形、代码与数据来源 |
 | 撰写、构建或修订论文 | `pi-research-paper`：沿真实模板保存正文/资产、固定稿件并核查构建；提交构建仍用户入口，页图读取需准确页范围/目的模型批准 |
 | 使用个人技能或模板 | `pi-research-customize`：用户技能上传开启与固定版本；跨项目模板上传/查看或获准的Agent生成入库 |
 | 记录实际产品问题 | `pi-research-feedback`：可复现的脱敏描述及本地保存状态；没有自动发送维护团队入口 |
+
+### 研究方法触发表
+
+收到新研究问题、方案或分析要求时，按实际需求匹配下表，不要求用户点名技能。`pi-research-experiment-tree` 仅coordinator/designer/analyst/reviewer可读，`pi-research-lit-review` 除implementer外可读，`pi-research-evidence` 全角色可读。命中当前角色可读项时，须先通过 `research_skill_read` 读取主技能及对应resource，再选择方法、写方案或作判断；不可读项通过既有Task结果或主协调者交接具体方法需求，不调用被禁止入口或扩大权限。只读本题相关项，不要求八项全读，普通问答不强制走整套研究流程。
+
+| 实际需求 | 主技能 | resource |
+|---|---|---|
+| 提出候选解释、竞争假设、可区分预测或反证条件 | `pi-research-experiment-tree` | `references/hypothesis-generation.md` |
+| 研究/实验协议：独立单位、对照、随机化/区组、批次、重复测量或伪重复 | `pi-research-experiment-tree` | `references/experimental-design.md` |
+| 样本量/独立重复依据、区间精度、事前功效、SESOI或固定预算MDE | `pi-research-experiment-tree` | `references/statistical-power.md` |
+| 给定数据的建模前检查、缺失/异常/重复、实体/分组/时间泄漏与切分 | `pi-research-evidence` | `references/exploratory-data-analysis.md` |
+| 模型/检验选择或比较、效应与区间、多重比较、诊断或阴性结果 | `pi-research-evidence` | `references/statistical-analysis.md` |
+| 测量模型、单位换算、测量不确定度/传播、有效数字或误差条含义 | `pi-research-evidence` | `references/uncertainty-and-units.md` |
+| 评价主张支持程度、偏倚/混杂、机制/因果解释或适用范围 | `pi-research-evidence` | `references/scientific-critical-thinking.md` |
+| 用户明确要求系统综述、范围综述、系统性证据综合/筛选或其协议 | `pi-research-lit-review` | `references/systematic-review.md` |
+
+例如先 `research_skill_read({input:{skillId:"pi-research-experiment-tree"}})`，再 `research_skill_read({input:{skillId:"pi-research-experiment-tree",resource:"references/statistical-power.md"}})`；同一固定会话已读且仍适用的内容可复用。普通找论文、related work或叙述性综述不触发系统筛选。缺输入、适用方法、计算或权限时记录具体缺口，不能补造样本量、功效、分析结果或已读记录；方法读取不增加权限，沿用下述固定版本与调用边界。
 
 `host_execute` 仅限用户明确开启本机完全访问的交互主协调会话，argv 原样执行、不自动 Shell 拼接。它不是默认 Shell；所有领域审批、正式 Run、网络发现/证据/发布动作仍走领域入口，不能借它绕过工具拒绝。
 
