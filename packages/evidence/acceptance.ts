@@ -1,3 +1,4 @@
+import {formalReportAcceptanceBasis} from '../publications/formal-report-review-types.js';
 import {assertDiscoveryArtifact} from '../policy/discovery-grant-validation.js';
 import type { Store } from '../storage/store.js';
 import { digest } from '../storage/store.js';
@@ -26,6 +27,7 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
             'TASK_NOT_ACCEPTED', '结果不是当前已采纳的完整任务成果');
         visiting.add(id);
         const developmentReview=developmentReviewAcceptanceBasis(store,projectId,t);
+        const formalReportReview=formalReportAcceptanceBasis(store,projectId,t);
         const team=store.get<Team>('team',t.teamId,projectId);
         let source: {snapshotId:string;sourceDigest:string;experimentId:string;revision:number}|undefined;
         if(team.sourceRevisionId) {
@@ -71,7 +73,7 @@ export function taskAcceptanceBasis(store: Store, projectId: string, taskId: str
             }
         }
         const reviewTarget = t.reviewOf ? all.find(d => d.teamId === t.teamId && d.key === t.reviewOf) : undefined;
-        nodes.set(id,{...(developmentReview?{developmentReview}:{}),...(source?{source}:{}),id,attemptId:a.id,resultId:r.id,resultDigest:r.digest,inputDigest:a.inputDigest,
+        nodes.set(id,{...(formalReportReview?{formalReportReview}:{}),...(developmentReview?{developmentReview}:{}),...(source?{source}:{}),id,attemptId:a.id,resultId:r.id,resultDigest:r.digest,inputDigest:a.inputDigest,
             generation:t.generation,planVersion:t.planVersion,directiveVersion:t.directiveVersion,
             dependencies:t.dependencies,reviewOf:t.reviewOf ?? null,reviewTargetDigest:reviewTarget?.result ? digest(reviewTarget.result) : null,
             reviews:reviews.map(r=>r.id),manualReviewId:manual?.id ?? null,

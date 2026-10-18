@@ -2,6 +2,7 @@ import { SYSTEM } from '../domain/types.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { finiteMetrics } from '../contracts/validation.js';
+import { assertMethodSnapshot, assertMethodArchive, closedPaired } from '../research-workflows/method-contracts.js';
 /** Shared report/observation verifier; persistence status alone is never proof. */
 export function verifyRunRecord(run, evidence) {
     ensure(run.manifestDigest === digest(run.manifest), 'MANIFEST_CORRUPTED', '运行清单摘要不一致');
@@ -21,6 +22,20 @@ export function verifyRunRecord(run, evidence) {
     const measured = finiteMetrics(JSON.parse(matches[0].bytes.toString('utf8')));
     ensure(digest(measured) === digest(run.metrics), 'METRIC_EVIDENCE_MISMATCH', '数据库指标与不可变原始产物不一致');
     ensure(Object.keys(run.manifest.contract.metrics).every(k => typeof measured[k] === 'number'), 'INVALID_METRICS', '缺少契约声明指标');
+    if (run.manifest.methodContractDigest)
+        ensure(run.manifest.researchBrief, 'METHOD_CONTRACT_CORRUPTED', '方法运行缺少原研究计划');
+    const methods = run.manifest.researchBrief ? evidence.fixedResearchMethods(run.projectId, run.manifest.researchBrief, run.manifest.methodContractDigest) : undefined;
+    if (methods) {
+        if (closedPaired(methods.contract) && run.execution) {
+            const receipt = artifacts.find(a => a.artifact.title === 'execution.json');
+            ensure(receipt, 'METHOD_RESULT_CORRUPTED', '缺少完整Run归档回执');
+            const body = JSON.parse(receipt.bytes.toString('utf8'));
+            ensure(digest([...body.artifactIds].sort()) === digest(run.artifactIds.filter(id => id !== receipt.artifact.id).sort()), 'METHOD_RESULT_CORRUPTED', '正式全产物清单与原回执不符');
+        }
+        assertMethodSnapshot(methods.contract, run.manifest.sourceFiles, 'formal');
+        const archived = artifacts.map(a => ({ ...a.artifact, bytes: a.bytes }));
+        assertMethodArchive(methods.contract, methods.protocol, { ...matches[0].artifact, bytes: matches[0].bytes }, measured, { sourceDigest: run.manifest.snapshotDigest, subjectId: run.id }, closedPaired(methods.contract) ? archived.filter(a => !run.execution || !['stdout.log', 'stderr.log', 'diagnostic.log', 'execution.json'].includes(a.title)) : archived, undefined, { sourceFiles: run.manifest.sourceFiles, logs: archived.filter(a => !!run.execution && ['stdout.log', 'stderr.log', 'diagnostic.log'].includes(a.title)), successful: run.state === 'succeeded' });
+    }
     return measured;
 }
 //# sourceMappingURL=run-verifier.js.map

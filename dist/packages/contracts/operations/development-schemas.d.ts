@@ -96,6 +96,13 @@ export declare const DEVELOPMENT_INPUT_SCHEMAS: {
                 };
                 readonly minItems: number;
             };
+            readonly metricArtifact: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
             readonly dataArtifactIds: {
                 readonly maxItems?: number | undefined;
                 readonly type: "array";
@@ -460,6 +467,111 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly syntheticFixture: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly fixtureRef: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly id: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly digest: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly size: {
+                                        readonly type: "integer";
+                                        readonly minimum: number;
+                                        readonly maximum: number;
+                                    };
+                                    readonly generatorVersion: {
+                                        readonly const: "numeric-regression-v1";
+                                    };
+                                    readonly profile: {
+                                        readonly const: "numeric-regression-v1";
+                                    };
+                                    readonly seed: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly splitDigest: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                };
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly additionalProperties: false;
+                            };
+                            readonly inputPath: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly inputArgumentIndex: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                        };
+                        readonly required: ("fixtureRef" | "inputPath" | "inputArgumentIndex")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly methodContractDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly researchBrief: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly digest: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly revision: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            readonly rootSessionId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                        };
+                        readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly approvalResumeDigest: {
                         minLength: number;
                         pattern: string;
@@ -654,6 +766,13 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                         readonly minItems: number;
+                    };
+                    readonly metricArtifact: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                     readonly dataArtifacts: {
                         readonly maxItems?: number | undefined;
@@ -973,6 +1092,111 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly syntheticFixture: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly fixtureRef: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly id: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly digest: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly size: {
+                                        readonly type: "integer";
+                                        readonly minimum: number;
+                                        readonly maximum: number;
+                                    };
+                                    readonly generatorVersion: {
+                                        readonly const: "numeric-regression-v1";
+                                    };
+                                    readonly profile: {
+                                        readonly const: "numeric-regression-v1";
+                                    };
+                                    readonly seed: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly splitDigest: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                };
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly additionalProperties: false;
+                            };
+                            readonly inputPath: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly inputArgumentIndex: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                        };
+                        readonly required: ("fixtureRef" | "inputPath" | "inputArgumentIndex")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly methodContractDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly researchBrief: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly digest: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly revision: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            readonly rootSessionId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                        };
+                        readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly approvalResumeDigest: {
                         minLength: number;
                         pattern: string;
@@ -1167,6 +1391,13 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                         readonly minItems: number;
+                    };
+                    readonly metricArtifact: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                     readonly dataArtifacts: {
                         readonly maxItems?: number | undefined;
@@ -1584,6 +1815,111 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                 readonly manifest: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly syntheticFixture: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly fixtureRef: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly id: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly digest: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly size: {
+                                            readonly type: "integer";
+                                            readonly minimum: number;
+                                            readonly maximum: number;
+                                        };
+                                        readonly generatorVersion: {
+                                            readonly const: "numeric-regression-v1";
+                                        };
+                                        readonly profile: {
+                                            readonly const: "numeric-regression-v1";
+                                        };
+                                        readonly seed: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly splitDigest: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                    };
+                                    readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                                    readonly additionalProperties: false;
+                                };
+                                readonly inputPath: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly inputArgumentIndex: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                            };
+                            readonly required: ("fixtureRef" | "inputPath" | "inputArgumentIndex")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly methodContractDigest: {
+                            minLength: number;
+                            pattern: string;
+                            type: "string";
+                            description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            maxLength: number;
+                        };
+                        readonly researchBrief: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly id: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly digest: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly revision: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly rootSessionId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                            };
+                            readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+                            readonly additionalProperties: false;
+                        };
                         readonly approvalResumeDigest: {
                             minLength: number;
                             pattern: string;
@@ -1778,6 +2114,13 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                             readonly minItems: number;
+                        };
+                        readonly metricArtifact: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
                         };
                         readonly dataArtifacts: {
                             readonly maxItems?: number | undefined;
@@ -2096,6 +2439,111 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                 readonly manifest: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly syntheticFixture: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly fixtureRef: {
+                                    readonly type: "object";
+                                    readonly properties: {
+                                        readonly id: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly digest: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly size: {
+                                            readonly type: "integer";
+                                            readonly minimum: number;
+                                            readonly maximum: number;
+                                        };
+                                        readonly generatorVersion: {
+                                            readonly const: "numeric-regression-v1";
+                                        };
+                                        readonly profile: {
+                                            readonly const: "numeric-regression-v1";
+                                        };
+                                        readonly seed: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                        readonly splitDigest: {
+                                            readonly pattern?: string | undefined;
+                                            readonly type: "string";
+                                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                            readonly minLength: number;
+                                            readonly maxLength: number;
+                                        };
+                                    };
+                                    readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                                    readonly additionalProperties: false;
+                                };
+                                readonly inputPath: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly inputArgumentIndex: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                            };
+                            readonly required: ("fixtureRef" | "inputPath" | "inputArgumentIndex")[];
+                            readonly additionalProperties: false;
+                        };
+                        readonly methodContractDigest: {
+                            minLength: number;
+                            pattern: string;
+                            type: "string";
+                            description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            maxLength: number;
+                        };
+                        readonly researchBrief: {
+                            readonly type: "object";
+                            readonly properties: {
+                                readonly id: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly digest: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                                readonly revision: {
+                                    readonly type: "integer";
+                                    readonly minimum: number;
+                                    readonly maximum: number;
+                                };
+                                readonly rootSessionId: {
+                                    readonly pattern?: string | undefined;
+                                    readonly type: "string";
+                                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                    readonly minLength: number;
+                                    readonly maxLength: number;
+                                };
+                            };
+                            readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+                            readonly additionalProperties: false;
+                        };
                         readonly approvalResumeDigest: {
                             minLength: number;
                             pattern: string;
@@ -2290,6 +2738,13 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                                 readonly maxLength: number;
                             };
                             readonly minItems: number;
+                        };
+                        readonly metricArtifact: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
                         };
                         readonly dataArtifacts: {
                             readonly maxItems?: number | undefined;
@@ -2675,6 +3130,111 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
             readonly manifest: {
                 readonly type: "object";
                 readonly properties: {
+                    readonly syntheticFixture: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly fixtureRef: {
+                                readonly type: "object";
+                                readonly properties: {
+                                    readonly id: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly digest: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly size: {
+                                        readonly type: "integer";
+                                        readonly minimum: number;
+                                        readonly maximum: number;
+                                    };
+                                    readonly generatorVersion: {
+                                        readonly const: "numeric-regression-v1";
+                                    };
+                                    readonly profile: {
+                                        readonly const: "numeric-regression-v1";
+                                    };
+                                    readonly seed: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                    readonly splitDigest: {
+                                        readonly pattern?: string | undefined;
+                                        readonly type: "string";
+                                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                        readonly minLength: number;
+                                        readonly maxLength: number;
+                                    };
+                                };
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly additionalProperties: false;
+                            };
+                            readonly inputPath: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly inputArgumentIndex: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                        };
+                        readonly required: ("fixtureRef" | "inputPath" | "inputArgumentIndex")[];
+                        readonly additionalProperties: false;
+                    };
+                    readonly methodContractDigest: {
+                        minLength: number;
+                        pattern: string;
+                        type: "string";
+                        description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        maxLength: number;
+                    };
+                    readonly researchBrief: {
+                        readonly type: "object";
+                        readonly properties: {
+                            readonly id: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly digest: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                            readonly revision: {
+                                readonly type: "integer";
+                                readonly minimum: number;
+                                readonly maximum: number;
+                            };
+                            readonly rootSessionId: {
+                                readonly pattern?: string | undefined;
+                                readonly type: "string";
+                                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                                readonly minLength: number;
+                                readonly maxLength: number;
+                            };
+                        };
+                        readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+                        readonly additionalProperties: false;
+                    };
                     readonly approvalResumeDigest: {
                         minLength: number;
                         pattern: string;
@@ -2869,6 +3429,13 @@ export declare const DEVELOPMENT_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                         readonly minItems: number;
+                    };
+                    readonly metricArtifact: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
                     };
                     readonly dataArtifacts: {
                         readonly maxItems?: number | undefined;

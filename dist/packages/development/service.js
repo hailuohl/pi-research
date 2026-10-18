@@ -5,7 +5,7 @@ import { mkdirSync, readdirSync, chmodSync, rmdirSync, existsSync } from 'node:f
 import { join, dirname, basename } from 'node:path';
 import { SANDBOX_TERMINAL } from '../execution/contracts.js';
 import { ensure, asError } from '../domain/errors.js';
-import { object, text, integer, strings } from '../contracts/validation.js';
+import { object, text, integer, strings, finiteMetrics } from '../contracts/validation.js';
 import { scope, ROLE_TOOLS } from '../policy/permissions.js';
 import { assertProjectReadable, assertProjectWritable, assertExperimentSourceCurrent } from '../policy/lifecycle.js';
 import { digest, now } from '../storage/store.js';
@@ -16,12 +16,18 @@ import { captureAcceptance, assertAcceptanceCurrent } from '../evidence/acceptan
 import { assertWorkspaceReady } from '../workspace/git-service.js';
 import { readLogPage } from '../execution/log-page.js';
 import { assertWorkingGrantReference, assertWorkingGrantManifest, assertWorkingGrantJob } from '../policy/working-grant-validation.js';
+import { fixedResearchBrief } from '../research-workflows/briefs.js';
+import { closedPaired, isPlan, methodHostPaths, assertMethodSnapshot, assertDevelopmentMethodArchive, assertFrozenMethod, methodAttachments, methodResult, methodSyntheticFixture } from '../research-workflows/method-contracts.js';
+import { assertSyntheticManifest, assertSyntheticFixture } from '../research-workflows/synthetic-fixtures.js';
 const MiB = 1024 * 1024;
 const DEFAULTS = { cpus: 1, memoryMb: 256, pids: 64, timeoutSeconds: 60, workMb: 128, outputBytes: 32 * MiB, logBytes: 2 * MiB };
 const LIMITS = { cpus: 8, memoryMb: 8192, pids: 512, timeoutSeconds: 600, workMb: 1024, outputBytes: 128 * MiB, logBytes: 16 * MiB };
 const MINIMUMS = { cpus: 1, memoryMb: 64, pids: 16, timeoutSeconds: 1, workMb: 16, outputBytes: 1, logBytes: 1 };
 const publicManifest = (m) => ({ ...m, inputSnapshot: { digest: m.inputSnapshot.digest, files: m.inputSnapshot.files }, dataArtifacts: m.dataArtifacts.map(({ path, ...a }) => a) });
 function diagnostic(error, started) {
+    const metricCode = error.match(/\b(METRIC_ARTIFACT_INVALID_UTF8|METRIC_ARTIFACT_INVALID_JSON|INVALID_METRICS)\b/);
+    if (metricCode)
+        return metricCode[1];
     for (const [pattern, code] of [[/DOCKER_IMAGE_UNAVAILABLE|no such image|image.*not found/i, 'DOCKER_IMAGE_UNAVAILABLE'], [/DOCKER_ENGINE_UNAVAILABLE|connect|daemon|ENOENT|pipe/i, 'DOCKER_ENGINE_UNAVAILABLE'], [/DOCKER_CONTEXT_DENIED|only local|context/i, 'DOCKER_CONTEXT_DENIED'], [/LINUX_CONTAINER_REQUIRED|linux containers/i, 'LINUX_CONTAINER_REQUIRED'], [/OUTPUT_LIMIT|output limit/i, 'OUTPUT_LIMIT'], [/LOG_INCOMPLETE|log limit|log stream|recovered execution/i, 'LOG_INCOMPLETE'], [/ARCHIVE_INCOMPLETE|archive failed/i, 'ARCHIVE_INCOMPLETE'], [/SOURCE_STALE|source or approval/i, 'SOURCE_STALE'], [/TIME_LIMIT|timeout|timed out/i, 'TIME_LIMIT']])
         if (pattern.test(error))
             return code;
@@ -83,12 +89,26 @@ export class DevelopmentService {
         ensure(bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '数据产物校验失败');
         return { id: a.id, digest: a.digest, size: a.size, path: a.path, ...(sourceAcceptanceId ? { sourceAcceptanceId } : {}) };
     }
+    validateSyntheticPreparation(actor, pid, sessionId, value) {
+        const s = this.access(actor, pid, sessionId), selected = this.app.methodContracts.requirements(s).some(r => r === 'structured-paired-protocol' || r === 'closed-paired-evidence'), row = s.researchBriefId ? this.app.store.get('research-brief', s.researchBriefId, pid) : undefined;
+        if (!selected && !['method-contract-v3', 'method-contract-v4'].includes(row?.methodContract?.compilerVersion ?? ''))
+            return;
+        this.app.methodContracts.assertSelected(s, row?.methodContract);
+        ensure(row, 'METHOD_STRUCTURED_PLAN_REQUIRED', '先保存并确认v3完整计划');
+        const brief = fixedResearchBrief(this.app.store, pid, { id: row.id, digest: row.digest, revision: row.revision, rootSessionId: s.id }), binding = methodSyntheticFixture(brief.methodContract);
+        const x = object(value);
+        ensure(x.metricArtifact !== undefined || s.workingGrantId, 'METHOD_METRIC_REQUIRED', 'v3开发检查必须固定metricArtifact');
+        ensure(Array.isArray(x.command), 'INVALID_INPUT', '需要固定argv');
+        ensure(x.dataArtifactIds === undefined || Array.isArray(x.dataArtifactIds) && x.dataArtifactIds.length === 1 && x.dataArtifactIds[0] === binding.fixtureRef.id, 'SYNTHETIC_FIXTURE_DATA_DENIED', 'v3不能把真实/本地数据声明为fixture输入');
+        const a = assertSyntheticFixture(this.app.store, pid, binding.fixtureRef, s.id).artifact;
+        assertSyntheticManifest(this.app.store, pid, s.id, binding, binding, x.command, [{ id: a.id, digest: a.digest, size: a.size, path: a.path }]);
+    }
     prepare(actor, pid, sessionId, value) {
         ensure(!actor.approvalResumeId, 'AUTOMATION_SCOPE_DENIED', '批准恢复不能准备新测试', 403);
         return this.app.store.transaction(() => {
             const s = this.access(actor, pid, sessionId, true), x = object(value), resume = this.app.researchAutomation.captureResume(actor);
             const working = this.app.workingGrants.forPreparation(actor, pid, sessionId);
-            ensure(Object.keys(x).every(k => ['title', 'command', 'environmentImageDigest', 'dockerContext', 'resources', 'deadline', 'expectedArtifacts', 'dataArtifactIds'].includes(k)), 'INVALID_INPUT', '开发测试参数包含未授权字段', 400);
+            ensure(Object.keys(x).every(k => ['title', 'command', 'environmentImageDigest', 'dockerContext', 'resources', 'deadline', 'expectedArtifacts', 'metricArtifact', 'dataArtifactIds'].includes(k)), 'INVALID_INPUT', '开发测试参数包含未授权字段', 400);
             ensure(Array.isArray(x.command) && x.command.length > 0 && x.command.length <= 64, 'INVALID_INPUT', '需要 1–64 个 argv', 400);
             const command = x.command.map((a, i) => text(a, 'command', 1000, i > 0));
             ensure(command.every(a => !a.includes('\0')), 'INVALID_INPUT', 'argv 不能含 NUL', 400);
@@ -109,14 +129,48 @@ export class DevelopmentService {
                 ensure(p.split('/').every(Boolean), 'PATH_DENIED', '产物必须是规范相对路径', 400);
             }
             ensure(new Set(expectedArtifacts).size === expectedArtifacts.length, 'INVALID_INPUT', '预期产物重复', 400);
+            const metricArtifact = x.metricArtifact === undefined ? working?.metricArtifact : text(x.metricArtifact, 'metricArtifact', 1000);
+            if (metricArtifact !== undefined)
+                ensure(expectedArtifacts.includes(metricArtifact), 'INVALID_INPUT', 'metricArtifact 必须同时列入 expectedArtifacts', 400);
             const ids = strings(x.dataArtifactIds ?? working?.dataArtifacts.map(a => a.id) ?? [], 'dataArtifactIds', 10);
             ensure(new Set(ids).size === ids.length, 'INVALID_INPUT', '数据产物重复', 400);
-            const dataArtifacts = ids.map(id => this.data({ ...actor, taskId: s.taskId }, pid, id));
+            const currentBrief = metricArtifact !== undefined && s.role === 'coordinator' && !s.taskId ? this.app.researchBriefs.captureDevelopmentReference(actor, pid, s.id) : undefined;
+            const researchBrief = working ? working.researchBrief : currentBrief;
+            const fixedBrief = researchBrief ? fixedResearchBrief(this.app.store, pid, researchBrief) : undefined;
+            this.app.methodContracts.assertSelected(s, fixedBrief?.methodContract, this.app.methodContracts.requirements(s, fixedBrief?.methodRequirements));
+            const syntheticFixture = methodSyntheticFixture(fixedBrief?.methodContract);
+            let dataArtifacts;
+            if (syntheticFixture) {
+                ensure(x.dataArtifactIds === undefined || ids.length === 1 && ids[0] === syntheticFixture.fixtureRef.id, 'SYNTHETIC_FIXTURE_DATA_DENIED', '本模式只允许宿主fixture，不能另给本地/真实数据artifact');
+                const a = assertSyntheticFixture(this.app.store, pid, syntheticFixture.fixtureRef, s.id).artifact;
+                dataArtifacts = [{ id: a.id, digest: a.digest, size: a.size, path: a.path }];
+                assertSyntheticManifest(this.app.store, pid, s.id, syntheticFixture, syntheticFixture, command, dataArtifacts);
+            }
+            else
+                dataArtifacts = ids.map(id => this.data({ ...actor, taskId: s.taskId }, pid, id));
             ensure(dataArtifacts.reduce((n, a) => n + a.size, 0) <= 128 * MiB, 'ARTIFACT_TOO_LARGE', '输入数据超过 128 MiB', 413);
+            if (metricArtifact !== undefined && (this.app.methodContracts.requirements(s, fixedBrief?.methodRequirements).length || fixedBrief?.sourceInputs?.length && this.app.methodContracts.supports(s)))
+                ensure(fixedBrief?.methodContract, 'METHOD_CONTRACT_REQUIRED', '所选方法或新技能包的来源绑定科学开发需要方法契约；先编译规范附件并ready、回读、确认研究计划');
+            if (fixedBrief?.methodContract) {
+                ensure(metricArtifact !== undefined, 'METHOD_METRIC_REQUIRED', '方法契约开发必须固定metricArtifact');
+                ensure(!expectedArtifacts.some(p => methodHostPaths(fixedBrief.methodContract).includes(p)), 'METHOD_ARTIFACT_RESERVED', 'methods-*规范方法产物由宿主归档，不得列为候选输出');
+                for (const p of fixedBrief.methodContract.specification.quantitative.type === 'comparison' ? fixedBrief.methodContract.specification.quantitative.decisionOutputs ?? [] : [])
+                    ensure(expectedArtifacts.includes(p.artifactPath), 'METHOD_DECISION_OUTPUT_INVALID', '声明判定原文必须列入expectedArtifacts');
+            }
+            const quantitative = fixedBrief?.methodContract?.specification.quantitative;
+            if (quantitative?.type === 'comparison' && quantitative.template === 'paired-rmse-delta-v1')
+                ensure(expectedArtifacts.includes(quantitative.witness.artifactPath), 'METHOD_WITNESS_REQUIRED', '预测见证文件必须列入expectedArtifacts');
+            if (quantitative && isPlan(quantitative))
+                ensure(expectedArtifacts.includes(quantitative.witness.artifactPath) && expectedArtifacts.includes(quantitative.provenanceArtifact), 'METHOD_WITNESS_REQUIRED', 'v3必须声明预测见证及fit provenance原文');
+            if (closedPaired(fixedBrief?.methodContract)) {
+                const q = closedPaired(fixedBrief?.methodContract);
+                ensure(metricArtifact === 'metrics.json' && expectedArtifacts.length === 3 && ['metrics.json', q.witness.artifactPath, q.provenanceArtifact].every(p => expectedArtifacts.includes(p)), 'METHOD_OUTPUT_PROFILE_INVALID', '新profile只声明三类原始候选证据，派生CSV/事实由宿主生成');
+            }
             if (s.sourceRevisionId)
                 validateSourceRevision(this.app.context, pid, s.sourceRevisionId);
             const inputSnapshot = this.app.store.paths.referenceSnapshot(snapshotDirectory(this.app.store.paths.physical(s.workspace), join(this.app.context.dataDir, 'snapshots')));
-            const manifest = { ...(resume ? { approvalResumeDigest: digest(resume) } : {}), purpose: 'development-test', sessionId: s.id, inputSnapshot, command, environmentImageDigest: image, dockerContext, resources, networkPolicy: 'none', deadline, expectedArtifacts, dataArtifacts,
+            assertMethodSnapshot(fixedBrief?.methodContract, inputSnapshot.files);
+            const manifest = { ...(syntheticFixture ? { syntheticFixture } : {}), ...(fixedBrief?.methodContract ? { methodContractDigest: fixedBrief.methodContract.contractDigest } : {}), ...(resume ? { approvalResumeDigest: digest(resume) } : {}), ...(researchBrief ? { researchBrief } : {}), purpose: 'development-test', sessionId: s.id, inputSnapshot, command, environmentImageDigest: image, dockerContext, resources, networkPolicy: 'none', deadline, expectedArtifacts, ...(metricArtifact === undefined ? {} : { metricArtifact }), dataArtifacts,
                 ...(!working ? { threadLimit: resources.cpus } : working.threadLimit === undefined ? {} : { threadLimit: working.threadLimit }),
                 ...(s.sourceRevisionId ? { sourceRevisionId: s.sourceRevisionId } : {}), ...(s.taskId ? { scopeTaskId: s.taskId, scopeAttemptId: actor.attemptId, scopeGeneration: actor.generation } : { sessionGeneration: s.generation }) };
             // A user may approve an assistant workspace, but cannot invent its attempt identity.
@@ -172,7 +226,21 @@ export class DevelopmentService {
         if (active)
             this.app.researchAutomation.assertApproval(approval, true);
         const m = t.manifest, s = this.app.store.get('session', t.sessionId, pid);
+        if (m.researchBrief) {
+            ensure(m.researchBrief.rootSessionId === s.id, 'BRIEF_REFERENCE_MISMATCH', '开发测试研究来源不属于本会话');
+            const brief = fixedResearchBrief(this.app.store, pid, m.researchBrief);
+            ensure(m.methodContractDigest === brief.methodContract?.contractDigest, 'METHOD_CONTRACT_CORRUPTED', '测试方法契约标识与原计划不一致');
+            assertMethodSnapshot(brief.methodContract, m.inputSnapshot.files);
+            const expected = methodSyntheticFixture(brief.methodContract);
+            if (expected)
+                assertSyntheticManifest(this.app.store, pid, s.id, expected, m.syntheticFixture, m.command, m.dataArtifacts);
+            else
+                ensure(!m.syntheticFixture, 'SYNTHETIC_FIXTURE_BINDING_INVALID', '旧计划不能自添fixture身份');
+        }
+        else
+            ensure(!m.methodContractDigest && !m.syntheticFixture, 'METHOD_CONTRACT_CORRUPTED', '测试方法契约缺少原研究计划');
         ensure(m.threadLimit === undefined || Number.isSafeInteger(m.threadLimit) && m.threadLimit >= 1 && m.threadLimit <= 8, 'MANIFEST_CORRUPTED', '开发测试线程上限无效');
+        ensure(m.metricArtifact === undefined || typeof m.metricArtifact === 'string' && m.expectedArtifacts.includes(m.metricArtifact), 'MANIFEST_CORRUPTED', '指标产物未绑定预期产物');
         if (deadline && s.workingGrantId)
             ensure(m.workingGrant?.id === s.workingGrantId, 'WORKING_GRANT_REQUIRED', '会话已绑定授权；旧单次清单不能绕过范围或计次，请重新准备');
         if (m.workingGrant) {
@@ -310,7 +378,26 @@ export class DevelopmentService {
             if (existsSync(join(this.app.store.paths.physical(j.controlDir), 'diagnostic.log')))
                 archive(this.app.store.paths.physical(j.controlDir), 'diagnostic.log', j.manifest.resources.logBytes, 'text/plain');
             let size = 0, count = 0;
-            const collected = new Set();
+            const collected = new Map();
+            let methodBrief, fixtureContext;
+            try {
+                methodBrief = j.manifest.researchBrief ? fixedResearchBrief(this.app.store, pid, j.manifest.researchBrief) : undefined;
+            }
+            catch (error) {
+                integrity = 'invalid';
+                errors.push(`METHOD_SOURCE_INVALID: ${asError(error).code}`);
+            }
+            if (methodBrief) {
+                const expected = methodSyntheticFixture(methodBrief.methodContract);
+                try {
+                    if (expected)
+                        fixtureContext = assertSyntheticManifest(this.app.store, pid, j.sessionId, expected, j.manifest.syntheticFixture, j.manifest.command, j.manifest.dataArtifacts);
+                }
+                catch (error) {
+                    integrity = 'invalid';
+                    errors.push(`SYNTHETIC_FIXTURE_INVALID: ${asError(error).code}`);
+                }
+            }
             const collect = (relative = '') => {
                 for (const entry of readdirSync(safePath(this.app.store.paths.physical(j.outputDir), relative, true), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
                     ensure(++count <= 5000, 'OUTPUT_LIMIT', '输出文件数量超过上限');
@@ -322,7 +409,7 @@ export class DevelopmentService {
                         const a = archive(this.app.store.paths.physical(j.outputDir), path, j.manifest.resources.outputBytes - size, 'application/octet-stream', false, `output/${path}`);
                         if (a) {
                             size += a.size;
-                            collected.add(path);
+                            collected.set(path, a);
                         }
                     }
                 }
@@ -334,10 +421,40 @@ export class DevelopmentService {
                 integrity = 'incomplete';
                 errors.push('archive failed: unsafe or excessive output');
             }
+            if (methodBrief?.methodContract && methodHostPaths(methodBrief.methodContract).some(name => collected.has(name))) {
+                integrity = 'invalid';
+                errors.push('METHOD_ARTIFACT_RESERVED: candidate occupied host methods artifact');
+            }
             const missing = j.manifest.expectedArtifacts.filter(path => !collected.has(path));
             for (const path of missing) {
                 integrity = 'incomplete';
                 errors.push(`archive failed: required output/${path}`);
+            }
+            if (j.manifest.metricArtifact && collected.has(j.manifest.metricArtifact)) {
+                const artifact = collected.get(j.manifest.metricArtifact), bytes = this.app.evidence.read({ type: 'user' }, artifact.id).bytes;
+                let code = 'METRIC_ARTIFACT_INVALID_UTF8';
+                try {
+                    const raw = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+                    code = 'METRIC_ARTIFACT_INVALID_JSON';
+                    const value = JSON.parse(raw);
+                    code = 'INVALID_METRICS';
+                    const metrics = finiteMetrics(value);
+                    if (methodBrief?.methodContract && !methodHostPaths(methodBrief.methodContract).some(name => collected.has(name))) {
+                        const contract = methodBrief.methodContract, compiled = assertFrozenMethod(this.app.store, pid, contract, methodBrief.sourceInputs), archived = [...collected.entries()].map(([title, a]) => ({ ...a, title, bytes: this.app.evidence.read({ type: 'user' }, a.id).bytes }));
+                        code = 'METHOD_RESULT_INVALID';
+                        const methodOutput = methodResult(contract, { ...artifact, title: j.manifest.metricArtifact, bytes }, metrics, { sourceDigest: j.sourceDigest, subjectId: j.id }, archived, fixtureContext, { sourceFiles: j.manifest.inputSnapshot.files, logs: artifactIds.filter(id => !this.app.store.get('artifact', id).title.startsWith('output/')).map(id => { const a = this.app.store.get('artifact', id); return { ...a, bytes: this.app.evidence.read({ type: 'user' }, id).bytes }; }), successful: result.state === 'succeeded' && result.exitCode === 0 }), attachments = methodAttachments(contract, compiled.protocol, methodOutput, archived);
+                        ensure(size + [...attachments.values()].reduce((n, b) => n + b.length, 0) <= j.manifest.resources.outputBytes, 'METHOD_OUTPUT_LIMIT', '宿主方法附件与候选输出合计超过固定归档字节上限');
+                        for (const [name, body] of attachments) {
+                            const a = this.app.evidence.put(pid, `output/${name}`, body, name.endsWith('.md') ? 'text/markdown' : name.endsWith('.csv') ? 'text/csv' : 'application/json', `development:${id}`, extra);
+                            artifactIds.push(a.id);
+                            collected.set(name, a);
+                        }
+                    }
+                }
+                catch (error) {
+                    integrity = 'invalid';
+                    errors.push(`${code}: ${asError(error).code}: output/${j.manifest.metricArtifact}`);
+                }
             }
             if (missing.length) {
                 errors.push('声明产物路径相对 PI_OUTPUT_DIR（/output）；只收集 /output，工作目录文件须由代码写入该目录或显式复制');
@@ -383,6 +500,10 @@ export class DevelopmentService {
         for (const id of j.artifactIds) {
             const a = this.app.store.get('artifact', id, pid), bytes = readStableFile(dirname(this.app.store.paths.physical(a.path)), basename(this.app.store.paths.physical(a.path)), 32 * MiB);
             ensure(bytes.length === a.size && digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '测试归档产物已改变');
+        }
+        if (j.manifest.researchBrief) {
+            const brief = fixedResearchBrief(this.app.store, pid, j.manifest.researchBrief);
+            assertDevelopmentMethodArchive(this.app.store, j, brief.methodContract, assertFrozenMethod(this.app.store, pid, brief.methodContract, brief.sourceInputs)?.protocol);
         }
         return this.inspect(actor, pid, id);
     }

@@ -63,7 +63,23 @@ GitHub配置、暂停/恢复/重试与状态是用户设置入口，不是Agent�
 
 读 pi-research-compute 的 references/docker.md（开发检查只使用 Docker），使用 development_prepare 固定当前私有源码、真实镜像摘要、command、有限资源与expectedArtifacts，另行用户开发批准再 development_submit。开发作业输出及完整性是真实检查证据；退出码0或助手自报“完成”不够。WorkingGrant 若适用仍限定源/文件/镜像/命令，不因有 Shell 文本就可执行。
 
+候选将产出正式数值指标时，开发检查声明`metricArtifact:"metrics.json"`并把该路径列入`expectedArtifacts`；宿主对实际归档文件执行与正式Run相同的平铺有限数字校验，格式失败即使退出码0也不会通过。合成检查须经过生产代码同一指标计算/序列化路径，不能另写一个与实现无关的合法JSON充数；开发检查不作为科研发现。`dataArtifactIds`只声明运行实际需要的挂载；已确认研究计划的`sourceInputs`作为独立审查来源另行固定，因此合成检查不需要提前计算真实数据结果。没有实际读取的输入不会被宿主自动补成已读。
+
+新方法契约绑定的检查还会由宿主生成保留名称`methods-results.json`，包含实际指标依据和冻结规则的判定；候选不可自行写这个文件。规范协议文件必须与`research_method_compile`返回内容逐字相同；代码修复保留规则，规则变更另行ready/回读/确认。声明的`decisionOutputs`必须列入预期产物，宿主比对实际归档标签；不再把手写分支或自报检查通过当成协议一致性证据。独立审查读取规范附件及真实方法产物，仍核对自由正文和指标计算是否科学成立。
+
+配对RMSE模板要求`witness.artifactPath`列入开发及正式运行的`expectedArtifacts`。候选将共同测试记录的ID、响应与两模型预测保存为该JSON内的完整数组；宿主验证实际归档见证并重算结果，拒绝重复ID、非有限数、退化区间或与绑定指标不符的输出。该见证纳入独立审查必读及重开核验。
+
+`paired-rmse-plan-v2`使用`paired-evidence-only-v1`闭合输出合同、固定宿主夹具、完整protocol角色和结构化精度判据，具体读`pi-research-evidence`的`references/paired-polynomial-comparison.md`。候选只产出三种原始证据JSON，成功日志为空，不声明decisionOutputs；宿主统一导出区间、判定、事实块和test-only predictions.csv。开发见证完整test集合与observed对应夹具，正式Run沿另外批准的真实输入。实际训练来源、共享代码路径、独立性及自由解释仍由固定候选审查核对。
+
 主协调者可 development_review_prepare({input:{jobId:"<成功完整的实际jobId>"}}) 准备独立检查，用户批准后调度；审查读其固定来源及日志，不用被继续修改的当前工作区。passed及依赖仍有效时 reviewed_change_prepare 输入 `{"reviewId":"<真实reviewId>","title":"已审实现","hypothesis":"具体变化与测量"}` 准备整合；或按允许范围 change_proposal_prepare 明列 baseExperimentId/expectedRevision/changes，其中 artifactId 是实际产物，expectedDigest 是父对应文件摘要，新文件为null、删除文件 artifactId:null。整合仍由用户批准执行。
+
+绑定新来源协议的审查会显示固定科研输入、候选文件和实际测试产物。Reviewer用现有候选读取及`artifact_read`读正文；响应中的`reviewReadId`只证明本次任务读到的准确区间，不授予额外权限。分页须覆盖完整必需输入，不能把最后一页的complete或清单包装当作全文读取。
+
+这类审查的`task_result_submit`须附`developmentAssessment`（stage为pre_run）：分别核对实现与测试、输入证据、独立单位与区间、阈值解释、主张边界；用实际返回的`reviewReadId`和该页唯一的逐字`quote`引用依据。当前阻断填blockingGaps并reject/disputed/blocked；未来正式结果和报告核验填deferredChecks。宿主核对实际读取、定位及结构，科学解释仍须由Reviewer判断，不能把格式通过等同方法正确。旧审查不自动获得这些保证。
+
+闭合profile的审查还须覆盖准确inventory中的全部材料，对每个开放表面提供`surfaceComparisons`：定位claim及其authority引文，引用实际fact/rule/case并解释一致、冲突或未解决之处。现有科学矛盾不能记为deferred或非阻断；完整读取和宿主计算正确都不替自由文字背书。具体字段以当前工具schema和审查清单为准。
+
+收到真实审查结果后回读准确review和意见，修订后重新测试、准备新审查，不能把旧accept沿用到新源码。审查/阶段通知不授予后台修改、运行或额外次数，仍沿本会话当前权限及批准执行。
 
 commit只保存私有历史，不自动合并、不批准开发检查/正式运行。正式run_prepare使用**实验**固定源码而不是会话HEAD；整合成子实验后读取新源码索引再准备Run，防止跑到旧版本。
 

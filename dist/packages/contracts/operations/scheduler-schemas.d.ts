@@ -174,7 +174,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 readonly type: "string";
             };
         };
-        readonly required: ("context" | "targetId" | "backend" | "observedAt")[];
+        readonly required: ("targetId" | "context" | "backend" | "observedAt")[];
         readonly additionalProperties: false;
     };
     readonly compute_queue_inspect: {
@@ -242,7 +242,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("version" | "limits" | "targetId")[];
+                readonly required: ("version" | "targetId" | "limits")[];
                 readonly additionalProperties: false;
             };
             readonly usage: {
@@ -391,7 +391,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                                     readonly additionalProperties: false;
                                 };
                             };
-                            readonly required: ("version" | "limits" | "targetId")[];
+                            readonly required: ("version" | "targetId" | "limits")[];
                             readonly additionalProperties: false;
                         };
                         readonly usage: {
@@ -621,7 +621,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "limits" | "targetId")[];
+        readonly required: ("version" | "targetId" | "limits")[];
         readonly additionalProperties: false;
     };
     readonly agent_capacity_inspect: {
@@ -758,11 +758,11 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("projectId" | "available" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "assistantHeld" | "byRole" | "blockedBy" | "counts" | "assistantAvailable")[];
+                readonly required: ("projectId" | "available" | "byRole" | "blockedBy" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "counts" | "assistantHeld" | "assistantAvailable")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "available" | "maxWorkers" | "unit" | "httpConcurrencyMeasured" | "counts")[];
+        readonly required: ("version" | "available" | "unit" | "maxWorkers" | "httpConcurrencyMeasured" | "counts")[];
         readonly additionalProperties: false;
     };
     readonly agent_capacity_configure: {
@@ -899,11 +899,11 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                         };
                     };
                 };
-                readonly required: ("projectId" | "available" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "assistantHeld" | "byRole" | "blockedBy" | "counts" | "assistantAvailable")[];
+                readonly required: ("projectId" | "available" | "byRole" | "blockedBy" | "maxActiveAgents" | "maxConcurrentAssistants" | "effectiveMaxAgents" | "counts" | "assistantHeld" | "assistantAvailable")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "available" | "maxWorkers" | "unit" | "httpConcurrencyMeasured" | "counts")[];
+        readonly required: ("version" | "available" | "unit" | "maxWorkers" | "httpConcurrencyMeasured" | "counts")[];
         readonly additionalProperties: false;
     };
     readonly model_http_inspect: {
@@ -1010,7 +1010,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("scope" | "available" | "configuration" | "coverage" | "nextCursor" | "supportedApis" | "items" | "unit" | "counts" | "legacyWorkerCount")[];
+        readonly required: ("scope" | "available" | "configuration" | "nextCursor" | "coverage" | "unit" | "items" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
     readonly model_http_configure: {
@@ -1117,7 +1117,7 @@ export declare const SCHEDULER_OUTPUT_SCHEMAS: {
                 }];
             };
         };
-        readonly required: ("scope" | "available" | "configuration" | "coverage" | "nextCursor" | "supportedApis" | "items" | "unit" | "counts" | "legacyWorkerCount")[];
+        readonly required: ("scope" | "available" | "configuration" | "nextCursor" | "coverage" | "unit" | "items" | "counts" | "supportedApis" | "legacyWorkerCount")[];
         readonly additionalProperties: false;
     };
 };

@@ -4,6 +4,28 @@ export interface CapabilityRequirement {
     backends: string[];
     artifactIds: string[];
 }
+export interface SkillPrerequisite {
+    skillId: string;
+    resource?: string;
+}
+export type MethodRequirement = 'literature-identity' | 'quantitative-decision' | 'structured-paired-protocol' | 'closed-paired-evidence';
+export interface SkillText {
+    id: string;
+    resource: string;
+    content: string;
+    digest: string;
+    bundleId: string;
+    source: {
+        repository: string;
+        commit: string;
+        path: string;
+        blob: string;
+    };
+    methodRequirements?: MethodRequirement[];
+}
+export interface SkillRead extends SkillText {
+    prerequisites?: SkillText[];
+}
 export interface SkillPackageRevision {
     packageId: string;
     revisionTag: string;

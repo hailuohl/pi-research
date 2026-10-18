@@ -1,3 +1,5 @@
+import { formalReviewInputs } from '../publications/formal-report-review-types.js';
+import type { DevelopmentReviewInputBinding } from '../development/reviews-types.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Project, Row, Session, Team, Task, TaskAttempt, TaskSpec } from '../domain/types.js';
 import type { SessionService } from '../pi-adapter/sessions.js';
@@ -29,9 +31,10 @@ export declare class TeamService {
             sourceRevisionId?: undefined;
         };
     };
-    create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean): Row<Team>;
+    create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean, developmentReviewInputs?: DevelopmentReviewInputBinding, formalReportReviewInputs?: ReturnType<typeof formalReviewInputs>): Row<Team>;
     activate(actor: Actor, id: string): Row<Team>;
     private assertInputsCurrent;
+    private requireFormalReportRoute;
     assertPermission(t: Row<Team>): void;
     private assertDispatchPlan;
     /** Claim and reserve atomically. No network, model or process launch in this transaction. */
@@ -81,7 +84,7 @@ export declare class TeamService {
     cancel(actor: Actor, taskId: string): Row<Task>;
     directive(actor: Actor, id: string, value: unknown): Row<{
         teamId: string;
-        kind: "follow_up" | "steer" | "revise";
+        kind: "steer" | "follow_up" | "revise";
         content: string;
         taskIds: string[];
         directiveVersion: number;

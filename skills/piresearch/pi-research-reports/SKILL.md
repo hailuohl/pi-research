@@ -1,6 +1,6 @@
 ---
 name: pi-research-reports
-description: "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports."
+description: "Write and save evidence-backed research reports and run comparisons; prepare fixed-source independent review of formal Run reports, analysis handoffs, fixed report records, and local result exports."
 ---
 
 # 研究分析报告与成果交付
@@ -21,7 +21,7 @@ description: "Write and save evidence-backed research reports and run comparison
 2. 用当前可用的 project_inspect 或 task_result_read 找到获准真实输入，按 pi-research-evidence 使用实际工具读取 run_inspect、run_logs、artifact_read、evidence_read 和运行时固定源码。自动分析缺 artifact_read/源码读取工具时使用获准日志与证据并标未覆盖范围，交由交互主协调者补核；任务总结、Run 状态和最新工作区不能替代原始证据。
 3. 比较实际结果，核对数据/切分版本、固定合同、评价协议、单位和指标方向。差值或相对变化注明计算依据；跨合同结果写清不可比条件，不直接当同条件排名。没有对照、关键数据或验证时，继续写现有证据支持的内容，准确列出缺口，不补造数值或结论。
 4. 撰写研究问题、方法、实际结果、分析、局限和来源，按任务调整组织。正文和图表标题用有含义的科学/实验名称，保留指标单位；区分本项目实测、论文报告值、图片观察和模型解释。解释应连接结果与问题，说明支持程度、替代解释和下一步，而非复述日志。运行成功不等于假设成立。
-5. 由具备保存和回读工具的执行者保存实际正文并核对内容与摘要，再交付正文入口、主要结论与限制。只读 Task 先用既有 `task_result_submit` 交回意见、分析与来源，由获准主协调者/writer 保存和回读；没有保存工具时交回正文及缺口，不声称已保存，有保存但缺回读工具时区分已保存与尚未回读。分别说明 Agent 正文的保存状态和系统固定报告的创建/导出状态；没有执行的操作明确未执行。
+5. 由具备保存和回读工具的执行者保存实际正文并核对内容与摘要。正式 Run 的研究报告需要独立审查时，接下节的固定材料审查流程，再交付正文入口、主要结论与限制。只读 Task 先用既有 `task_result_submit` 交回意见、分析与来源，由获准主协调者/writer 保存和回读；没有保存工具时交回正文及缺口，不声称已保存，有保存但缺回读工具时区分已保存与尚未回读。分别说明 Agent 正文的保存状态和系统固定报告的创建/导出状态；没有执行的操作明确未执行。
 
 失败、没测、没编译、停止理由及矛盾结果应进入适用的正文限制。科学数值来自实际读取的来源，不从模型记忆填；图注明实际数据、脚本、版本及来源。Sandbox 图形执行证明固定作业来源，不证明逐点科学数值，更不能冒充正式 Run。
 
@@ -69,6 +69,16 @@ transformer-sweep/
 ```
 
 示例的 tool 标明 artifact_create，Pi 调用参数为 `{input: ...}`；占位内容必须替换为实际写好的完整正文。具备回读工具的执行者用返回的 id 作为 artifact_read 的 artifactId，分页至完整正文核对 digest 和内容；工作区文件用 workspace_read 核对实际路径与 digest。没有回读工具时沿上面的交接处理。回读确认保存成功，不代替科学证据核验。writer 先读授权输入，不从他人措辞猜测 Claim 已 accepted；没有 claim_read 工具时按任务固定交付范围与用户选择，尚未核验标候选。
+
+## 正式 Run 研究报告的独立审查
+
+对已成功完整、绑定受支持 paired 方法的正式 Run，主协调者在保存并完整回读实际报告 artifact 后，使用 `formal_report_review_prepare({input:{runId:"实际 Run ID",reportArtifactId:"实际报告 artifact ID"}})`。该入口自动冻结准确报告、Run、原始输入、全部运行档案及宿主数据质量事实，再进入正常的独立审查审批；不通过通用协作任务手工拼接材料权限。系统固定 `report_*` 记录、文稿 PDF 审查和本入口是不同对象。
+
+审查者先用 `formal_report_review_inspect({input:{reviewId:"实际审查 ID"}})` 核对完整 inventory，再按其中身份分页读 `artifact_read` 和 `formal_report_review_source_read`；每份材料包括空日志都须取得真实读取回执。`evidence_read` 的登记摘录、摘要或最后一页不能替代原文件全文。缺失、截断、来源失效或格式不受支持时保留缺口，不用既有 accept 或一句“都读过”替代。
+
+宿主输入事实只来自固定原表和声明的预处理，分别列明原始计数、处理后计数及实际运行见证；它不会执行候选代码或重新拟合。把报告的数据性质、缺失/重复、数值范围等陈述逐项对照这些事实和原文，区分观测数据、数据采集说明与模型推断。事实计算和完整读取均不证明领域意义、独立性或自然语言解释正确。
+
+按工具返回的结构提交 `formalReportAssessment`（`stage:'post_run_report'`）及实际 `reviewReadId` 的逐字引用；五区检查引用准确报告，输入证据区另引原始来源与宿主事实。修订另存新 artifact 并真实回读，保留原报告和原审查。`mechanically_complete` 与 native verdict 分别报告；科学采纳仍需实质核验，不能将材料齐全当作整篇报告科学通过。
 
 ## 固定报告、引用回查与本地导出
 

@@ -187,6 +187,7 @@ export interface Experiment {
     revision: number;
 }
 export interface Manifest {
+    methodContractDigest?:string;
     threadLimit?: number;
     localRuntime?: import('../runners/local-runtime.js').LocalRuntime;
     localExecution?: {isolation:'none';resourceEnforcement:'advisory';networkIsolation:false};
@@ -340,6 +341,7 @@ export interface Task extends TaskSpec {
     runGrantId?: string;
     /** Host-created binding for an independent review of one fixed manuscript build. */
     publicationReviewId?: string;
+    formalReportReviewId?: string;
     /** Host-created binding for an independent review of a fixed development result. */
     reviewId?: string;
     teamId: string;
@@ -371,6 +373,8 @@ export interface TaskAttempt {
     error?: string;
 }
 export interface TaskResult {
+    developmentAssessment?: import('../development/review-assessment.js').DevelopmentAssessment;
+    formalReportAssessment?: import('../publications/formal-report-review-types.js').FormalReportAssessment;
     summary: string;
     outcome: 'completed' | 'partial' | 'blocked';
     evidenceIds: string[];

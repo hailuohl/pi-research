@@ -1,5 +1,19 @@
 # 统计分析：先确定目标，再解释结果
 
+需要固定数值比较判据时，使用`research_method_compile`的受支持模板并把生成协议绑定到研究计划。宿主对实际归档指标执行冻结规则；`methods-results.json`是操作判据结果，不证明领域效用、因果或研究假设成立。候选代码原则上只算数值；保留其他判定字段时用`decisionOutputs`显式绑定，其实际输出必须与宿主结果一致。自由统计解释仍需来源及独立科学核对。
+
+单输入变量的线性与二次回归比较，先读取本技能`references/paired-polynomial-comparison.md`，使用其中`paired-rmse-plan-v2`完整协议与宿主合成夹具流程。它将开发来源和精度条件一并冻结；不要先套下面的旧模板、再手写另一份协议补条件。
+
+其它适用的共同测试记录回归RMSE差可用`paired-rmse-delta-v1`。将固定模型的真实测试预测写入JSON产物，数组只包含测试记录；宿主由每条响应和两预测重算RMSE、正向增益及配对delta近似95%区间，并核对3个平铺数值指标。这个模板不提供开发夹具或完整协议角色约束。接口如下，路径、字段、单位及阈值换成本研究实际选择：
+
+```json
+{"type":"comparison","template":"paired-rmse-delta-v1","outcomeUnit":"response points","witness":{"artifactPath":"analysis.json","recordsPointer":"/testPredictions","idField":"rowId","observedField":"observed","baselinePredictionField":"baselinePrediction","candidatePredictionField":"candidatePrediction"},"metrics":{"baselineRmse":"baseline_rmse","candidateRmse":"candidate_rmse","gain":"rmse_gain"},"minimumGain":1}
+```
+
+该对象放在`specification.quantitative`；`minimumGain:1`仅展示字段类型，不是推荐阈值。见证路径须列入`expectedArtifacts`；每条记录包含非空唯一字符串ID及3个有限数字，字段映射互异。候选保留实际预测和3个指标即可，无需另写一套权威区间或判定；从宿主产物回读区间、单位、方法和判定。宿主对指标的固定数值容差仅容纳序列化舍入，判定使用未舍入的重算量。
+
+此模板推断固定拟合、共同测试总体上的RMSE差，使用配对平方损失的协方差和delta梯度，因此增益与区间共享响应单位。固定95%是渐近近似；需要测试对独立同分布、平方损失有限协方差、正RMSE及非退化一阶方差，不覆盖训练、模型选择或重拟合变异。少于2条、零RMSE或零SE明确不支持；n≥2不是覆盖率保证。固定配额分层、聚类、时间依赖或重复CV不能据唯一ID自动取得iid假设。设计不适用时明确缺口，不能让见证的可重算性代替科学依据。其它目标的`positive-benefit-v1`仅验证所供数值上的分支一致性，不校验量纲或统计公式。
+
 在比较组别、检验假设、做相关/回归、检查统计假设、解释效应与区间或撰写统计结果时读取。计算方法不授予数据、代码或执行权限；没有实际计算输出不能补造统计量、区间或诊断通过状态。
 
 ## 固定问题与分析单位

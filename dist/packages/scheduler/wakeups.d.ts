@@ -67,6 +67,9 @@ export declare class WakeupService {
                     size: number;
                     sourceAcceptanceId?: string;
                 }[];
+                methodContractDigest?: string;
+                syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+                researchBrief?: import("../domain/types.js").ResearchBriefRef;
                 threadLimit?: number;
                 approvalResumeDigest?: string;
                 workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -80,6 +83,7 @@ export declare class WakeupService {
                 networkPolicy: "none";
                 deadline: string;
                 expectedArtifacts: string[];
+                metricArtifact?: string;
                 scopeTaskId?: string;
                 scopeAttemptId?: string;
                 scopeGeneration?: number;
@@ -161,6 +165,9 @@ export declare class WakeupService {
                     size: number;
                     sourceAcceptanceId?: string;
                 }[];
+                methodContractDigest?: string;
+                syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+                researchBrief?: import("../domain/types.js").ResearchBriefRef;
                 threadLimit?: number;
                 approvalResumeDigest?: string;
                 workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -174,6 +181,7 @@ export declare class WakeupService {
                 networkPolicy: "none";
                 deadline: string;
                 expectedArtifacts: string[];
+                metricArtifact?: string;
                 scopeTaskId?: string;
                 scopeAttemptId?: string;
                 scopeGeneration?: number;
@@ -196,7 +204,7 @@ export declare class WakeupService {
         } | {
             id: string;
             experimentId: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "cancelling" | "submitting";
+            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
             integrity: "incomplete" | "pending" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
@@ -222,7 +230,7 @@ export declare class WakeupService {
         team: {
             id: string;
             goal: string;
-            state: "failed" | "cancelled" | "active" | "completed" | "partial" | "paused" | "awaiting_approval" | "draining";
+            state: "failed" | "cancelled" | "active" | "completed" | "partial" | "awaiting_approval" | "paused" | "draining";
         };
         tasks: {
             id: string;
@@ -269,7 +277,7 @@ export declare class WakeupService {
         purpose: string;
         run: {
             id: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "cancelling" | "submitting";
+            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
             integrity: "incomplete" | "pending" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;

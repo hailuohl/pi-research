@@ -9,11 +9,12 @@ import { digest } from '../storage/store.js';
 import { readText, listFiles, readSourceMode } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { scope, userOnly, interactiveCoordinator } from './permissions.js';
+import { assertSyntheticFixture } from '../research-workflows/synthetic-fixtures.js';
 const gitTuple = (job) => ({ id: job.id, action: job.action, sessionId: job.sessionId, sourceRevisionId: job.sourceRevisionId, snapshot: job.snapshot, expectedHead: job.expectedHead, branch: job.branch, workspace: job.workspace, previousWorkspace: job.previousWorkspace, message: job.message, commitDate: job.commitDate });
 // Explicit effects: idempotency receipts do not make an operation a pure read.
-const READ = new Set(['session_action_inspect', 'research_action_inspect', 'research_history_list', 'execution_environment_list', 'development_review_inspect', 'development_review_source_list', 'development_review_source_read', 'run_source_list', 'run_source_read', 'workspace_history_inspect', 'workspace_history_diff', 'workspace_history_operation', 'development_inspect', 'development_logs', 'experiment_source_list', 'experiment_source_read', 'experiment_source_diff', 'research_skill_list', 'research_skill_read', 'connector_status', 'project_inspect', 'workspace_list', 'workspace_read', 'evidence_read', 'artifact_read', 'run_inspect', 'run_logs', 'task_inspect', 'task_result_read', 'task_context_read', 'session_notice_read', 'research_brief_inspect', 'session_attachment_read', 'campaign_inspect', 'publication_templates', 'publication_template_inspect', 'publication_template_read', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list', 'approval_request']);
+const READ = new Set(['formal_report_review_inspect', 'formal_report_review_source_read', 'research_method_compile', 'session_action_inspect', 'research_action_inspect', 'research_history_list', 'execution_environment_list', 'development_review_inspect', 'development_review_source_list', 'development_review_source_read', 'run_source_list', 'run_source_read', 'workspace_history_inspect', 'workspace_history_diff', 'workspace_history_operation', 'development_inspect', 'development_logs', 'experiment_source_list', 'experiment_source_read', 'experiment_source_diff', 'research_skill_list', 'research_skill_read', 'connector_status', 'project_inspect', 'workspace_list', 'workspace_read', 'evidence_read', 'artifact_read', 'run_inspect', 'run_logs', 'task_inspect', 'task_result_read', 'task_context_read', 'session_notice_read', 'research_brief_inspect', 'session_attachment_read', 'campaign_inspect', 'publication_templates', 'publication_template_inspect', 'publication_template_read', 'manuscript_list', 'manuscript_inspect', 'manuscript_source_read', 'publication_status', 'publication_inspect', 'publication_result', 'publication_build_list', 'publication_review_inspect', 'publication_review_list', 'approval_request']);
 const EDIT = new Set(['workspace_write', 'workspace_history_set_mode', 'workspace_prepare_from_revision']);
-const WRITE = new Set(['research_action_prepare', PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL, 'research_brief_save', 'development_review_prepare', 'reviewed_change_prepare', 'development_prepare', 'development_cancel', 'change_proposal_prepare', 'artifact_create', 'evidence_register', 'experiment_plan_submit', 'run_prepare', 'collaboration_plan_submit', 'agent_delegate', 'campaign_prepare', 'campaign_enroll', 'campaign_decision_submit', 'publication_template_import', 'manuscript_create', 'publication_prepare', 'publication_review_prepare', 'text_evidence_search', 'task_result_submit']);
+const WRITE = new Set(['formal_report_review_prepare', 'research_fixture_prepare', 'research_action_prepare', PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL, 'research_brief_save', 'development_review_prepare', 'reviewed_change_prepare', 'development_prepare', 'development_cancel', 'change_proposal_prepare', 'artifact_create', 'evidence_register', 'experiment_plan_submit', 'run_prepare', 'collaboration_plan_submit', 'agent_delegate', 'campaign_prepare', 'campaign_enroll', 'campaign_decision_submit', 'publication_template_import', 'manuscript_create', 'publication_prepare', 'publication_review_prepare', 'text_evidence_search', 'task_result_submit']);
 const EXECUTE = new Set(['session_action_resume', 'session_action_execute', 'host_execute', 'workspace_history_commit', 'development_submit', 'run_submit']);
 const FIXED_TEXT_ACTIONS = new Set(['workspace_write', 'research_brief_save', 'artifact_create']);
 // Images and other effects retain their original tool adapters and approval recovery paths.
@@ -219,6 +220,20 @@ export class SessionPermissionService {
         }
         const brief = ['experiment_plan_submit', 'run_prepare', 'manuscript_create'].includes(operation) && s.role === 'coordinator' && s.researchBriefId ? this.app.store.get('research-brief', s.researchBriefId, s.projectId) : undefined;
         const researchBrief = brief ? { id: brief.id, digest: brief.digest, revision: brief.revision, status: brief.status, rootSessionId: brief.rootSessionId } : null;
+        const draftFiles = operation === 'research_brief_save' && input.status === 'ready' && input.draftFiles !== undefined ? this.app.draftReads.validate(s, input.draftFiles) : undefined;
+        const sourceInputs = operation === 'research_brief_save' ? this.app.researchBriefs.sourceInputFingerprint(s.id, input.expectedRevisionId) : undefined;
+        let fixtureFingerprint;
+        const currentBrief = ['research_brief_save', 'development_prepare'].includes(operation) && s.researchBriefId ? this.app.store.get('research-brief', s.researchBriefId, s.projectId) : undefined;
+        const requested = operation === 'research_brief_save' ? input.methodContract?.specification?.quantitative : undefined, q = (requested ?? currentBrief?.methodContract?.specification.quantitative);
+        let fixtureRef = ['research_brief_save', 'development_prepare'].includes(operation) && (q?.template === 'paired-rmse-plan-v1' || q?.template === 'paired-rmse-plan-v2') ? q.developmentData?.fixtureRef : undefined;
+        if (operation === 'development_submit') {
+            const task = this.app.store.get('development-task', input.developmentTaskId, s.projectId);
+            fixtureRef = task.manifest.syntheticFixture?.fixtureRef;
+        }
+        if (fixtureRef) {
+            const fixed = assertSyntheticFixture(this.app.store, s.projectId, fixtureRef, s.id);
+            fixtureFingerprint = { fixtureRef: fixed.fixtureRef };
+        }
         let publicationImage;
         if (operation === PUBLICATION_IMAGE_TOOL) {
             const { data, ...page } = this.app.publicationBuilds.pageImage({ type: 'user' }, s.projectId, input.publicationResultId, input.pageNumber);
@@ -231,7 +246,7 @@ export class SessionPermissionService {
             integer(input.pageNumber, 'pageNumber', source.firstPage, source.lastPage);
             documentImage = { ...source, catalog: publicationImageCatalog(join(this.app.context.dataDir, 'models.json')) };
         }
-        return { fingerprint: digest({ ...(publicationImage ? { publicationImage } : {}), ...(documentImage ? { documentImage } : {}), workspace: s.workspace, sourceWorkspace, workspaceFiles, researchBrief, model: s.model, role: s.role, taskId: s.taskId, attemptId: task?.attemptId, sourceRevisionId: s.sourceRevisionId, sourceDigest: s.sourceDigest, refs, targets, before, connectors: settings ? { version: settings.version, enabled: settings.enabled, requestLimit: settings.requestLimit } : null }), before };
+        return { fingerprint: digest({ ...(fixtureFingerprint ? { fixtureFingerprint } : {}), ...(publicationImage ? { publicationImage } : {}), ...(documentImage ? { documentImage } : {}), ...(draftFiles === undefined ? {} : { draftFiles }), ...(sourceInputs === undefined ? {} : { sourceInputs }), workspace: s.workspace, sourceWorkspace, workspaceFiles, researchBrief, model: s.model, role: s.role, taskId: s.taskId, attemptId: task?.attemptId, sourceRevisionId: s.sourceRevisionId, sourceDigest: s.sourceDigest, refs, targets, before, connectors: settings ? { version: settings.version, enabled: settings.enabled, requestLimit: settings.requestLimit } : null }), before };
     }
     guard(actor, operation, input, callId) {
         if (actor.type !== 'agent')

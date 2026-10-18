@@ -7,6 +7,14 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 
 本项目管理本地项目、实验树、源码快照、执行与证据。总览只保留必须始终遵守的规则及入口；具体工作先按需读取对应模块。Pi是唯一Agent执行内核，不调用ORX CLI、服务或数据库。默认内置技能始终开启，技能文本不签发工具、计算、联网或发布权限。
 
+读取资源时，宿主在同一返回的`prerequisites`中交付其父SKILL及固定发行声明的前置方法，每份保留独立content/digest/bundleId。它们已随本次工具结果到达，不必为计数重复调用；正文交付不等于理解正确或科学验收。旧发行只加载其原有声明，不静默补入新版本方法。
+
+资源返回的`methodRequirements`会在本会话的后续方案/开发检查中形成方法契约要求；读取本身不授权执行。准备有代码草稿的研究方案时，用`research_method_compile({input:{specification:…}})`编译规范协议，将返回的`protocol`原样保存并回读，再向`research_brief_save`传`methodContract:{protocolPath:实际规范文件路径,specification:…}`，该文件同样列入`draftFiles`。完整结构化流程直接将生成内容保存为所需的`protocol.md`并声明唯一protocol角色；旧附件型模板可另选附件路径。编译只处理实际读过的获准输入，不运行实验；解释引用规范规则，不再手写另一套判定。
+
+`specification`含`version:1`、`literatureSources`和`quantitative`。每个文献源声明`{path,digest,recordsPointer,recordIdField,doiField}`，宿主从原JSON数组取全部记录；没有文献源时明确空范围。数值描述用`quantitative:{type:"descriptive"}`。单输入线性与二次回归比较，先读`pi-research-evidence`的`references/paired-polynomial-comparison.md`，使用`paired-rmse-plan-v2`完整协议与固定合成开发输入；其它回归RMSE差按统计分析资源选择`paired-rmse-delta-v1`见证模板。宿主从实际预测重算增益与区间，但适用假设仍需审查。其它比较可用`{type:"comparison",template:"positive-benefit-v1",gain:{metric,unit},interval:{lowerMetric,upperMetric,unit},minimumGain}`，该旧模板只验证所供数字的规则。模板不适用就说明缺口，不把比较改称描述来绕过。
+
+门槛由本研究事前选定，增益定向为越大越有益、零表示无点估计改善。候选代码输出测量见证与数值，宿主用冻结规则生成`methods-results.json`。若代码另有判定字段，必须在`decisionOutputs:[{artifactPath,jsonPointer}]`声明并接受实际归档比对。
+
 ## 研究任务先完成方法选择
 
 研究设计、数据分析或科学结果解释需要先选择方法，再写方案、代码或结论。读取必要输入后，把用户要求和完成交付必需的决策逐项与下方“研究方法触发表”匹配，不只匹配用户是否说出了方法术语；一个任务可能同时涉及设计、数据、推断、测量与文献，不能用读过统计分析代替其他命中项。仅在当前角色可读范围，用 `research_skill_read` 实际读取各命中主技能及resource；同一固定会话已读且适用的可复用，不能把初始目录当作已经读过方法正文。
@@ -14,6 +22,10 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 在本次方案或分析草稿保留一个简短的“需求 → 已读方法 → 本题决策及依据/缺口”对应表，再按这些决策实现和解释。比如单位核查的产物是可追溯单位或明确未知，功效规划的产物可以是有依据的输入与待计算状态；不是为凑齐表格编造单位、样本量或结果。保存前对照用户要求，补齐漏掉的相关读取与决策；不相关项不读、不为其增加实验。普通问答、对象查询和纯格式修改直接完成，不套用研究流程。
 
 方法选择表帮助检查覆盖，不证明方法正确。写完研究方案/代码后，先用当前获准的读取工具回读实际保存的草稿及源码，按命中的方法逐项核对，再提交ready计划或最终分析：公式与量名是否一致，切分/重采样代码是否实现所述设计，指标输出是否满足平台schema，单位和文献身份是否有实际来源文本依据，判据失败是否被误写成科学假设被否定。发现矛盾先在获准工作区修正并回读；缺少读取/计算条件明确标未核验，不以文字审阅冒充执行。检查需要执行时仍走现有批准流程，不调用宿主或自行增加Run。审批等待和角色边界优先适用。
+
+私有草稿的真实`workspace_read`会返回`draftReadId`。Agent提交ready时，用`draftFiles:[{path,readId}]`声明当前工作区实际写过的文件；`readId`取各文件最后一次写入后的真实返回。宿主核对当前字节、写入版本与会话，缺读/旧读会在申请批准前拒绝；改稿后重新回读，不能猜凭据或用旧调用回放刷新它。纯概念计划没有文件时可留空。确认之后改了绑定草稿，可按准确的新批准检查修复代码，但正式执行前须形成新ready修订并重新确认；旧审查不会覆盖新代码。
+
+当前研究起点实际读取的项目文件会由宿主冻结到计划的`sourceInputs`，随后沿确认的计划进入新开发审查的准确批准范围。它只记录实际读到的版本，不代表项目全部文件都已读，也不代表数据校验已执行；在计划中把尚待运行的检查与已观察事实分开。运行挂载用的`dataArtifactIds`另行声明，合成检查不必为审查而读取真实数据。
 
 ## 四条不可破坏的研究规则
 

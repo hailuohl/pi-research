@@ -2,9 +2,16 @@ import { type TextCorpusGrantReference } from '../policy/text-corpus-grants.js';
 import type { ProviderTextEvidenceLink } from '../documents/types.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Artifact, Evidence, Claim, Row } from '../domain/types.js';
+/** Host reference validation shares the complete evidence chain with the ordinary service. */
+export declare function verifyEvidence(c: Pick<AppContext, 'store'>, projectId: string, evidenceId: string, current?: boolean): Row<Evidence>;
 export declare class EvidenceService {
     private c;
     constructor(c: AppContext);
+    /** Host-only: reuse the original confirmed brief; never resolve to its latest revision. */
+    fixedResearchMethods(projectId: string, ref: import('../domain/types.js').ResearchBriefRef, expectedContractDigest?: string): {
+        contract: import("../research-workflows/method-contracts.js").FrozenMethodContract;
+        protocol: string;
+    } | undefined;
     /** Host-only staging: immutable CAS bytes, without publishing any database record. */
     prepareArtifact(projectId: string, title: string, bytes: Buffer, mediaType?: string, origin?: string, extra?: Partial<Artifact>): Artifact;
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */

@@ -6,6 +6,11 @@ import { integer, object, oneOf, text } from '../contracts/validation.js';
 import { assertProjectWritable } from '../policy/lifecycle.js';
 import { scope, userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
+import type {DraftFile} from './draft-reads.js';
+import {assertSourceInputs,type ResearchSourceInput} from './source-inputs.js';
+import type {Store} from '../storage/store.js';
+import {verifyEvidence} from '../evidence/service.js';
+import {assertFrozenMethod,validateProtocolRoles,type FrozenMethodContract,type MethodRequirement,type DraftRole,type ProtocolDocument} from './method-contracts.js';
 
 export interface ResearchBrief {
     rootSessionId: string;
@@ -20,6 +25,12 @@ export interface ResearchBrief {
     hypotheses: Array<{statement: string; evidenceIds: string[]}>;
     evidenceIds: string[];
     steps: Array<{title: string; description: string}>;
+    draftFiles?: DraftFile[];
+    sourceInputs?: ResearchSourceInput[];
+    methodContract?:FrozenMethodContract;
+    methodRequirements?:MethodRequirement[];
+    draftRoles?:DraftRole[];
+    protocolDocument?:ProtocolDocument;
     status: 'clarifying' | 'ready' | 'confirmed';
     digest: string;
 }
@@ -32,7 +43,7 @@ export interface ResearchBriefInspection {
     blockedReason?: string;
 }
 
-type BriefContent = Omit<ResearchBrief, 'rootSessionId' | 'revision' | 'previousRevisionId' | 'status' | 'digest'>;
+type BriefContent = Omit<ResearchBrief, 'rootSessionId' | 'revision' | 'previousRevisionId' | 'status' | 'digest' | 'draftFiles' | 'sourceInputs' | 'methodContract' | 'methodRequirements' | 'draftRoles' | 'protocolDocument'>;
 const SAVE_FIELDS = ['question','scope','constraints','successCriteria','clarificationQuestions','literatureSummary','hypotheses','evidenceIds','steps','status','expectedRevisionId'] as const;
 
 function exactObject(value: unknown, fields: readonly string[], name: string) {
@@ -47,7 +58,8 @@ function textList(value: unknown, name: string, maxItems: number, maxText: numbe
 }
 
 function parseContent(value: unknown) {
-    const x = exactObject(value, SAVE_FIELDS, '研究简报');
+    const x = object(value);
+    ensure(SAVE_FIELDS.every(k=>Object.hasOwn(x,k))&&Object.keys(x).every(k=>SAVE_FIELDS.includes(k as typeof SAVE_FIELDS[number])||k==='draftFiles'||k==='methodContract'||k==='draftRoles'),'INVALID_INPUT','研究简报字段缺失或包含未知字段',400);
     const constraints = textList(x.constraints, 'constraints', 16, 1000);
     const successCriteria = textList(x.successCriteria, 'successCriteria', 12, 1000);
     const clarificationQuestions = textList(x.clarificationQuestions, 'clarificationQuestions', 12, 1000);
@@ -74,7 +86,7 @@ function parseContent(value: unknown) {
         successCriteria, clarificationQuestions, literatureSummary: text(x.literatureSummary, 'literatureSummary', 8000, true),
         hypotheses, evidenceIds, steps,
     };
-    return { content, status, expectedRevisionId };
+    return { content, status, expectedRevisionId, draftFiles:x.draftFiles,methodContract:x.methodContract,draftRoles:x.draftRoles };
 }
 
 function payload(brief: ResearchBrief) {
@@ -84,10 +96,25 @@ function payload(brief: ResearchBrief) {
         question: brief.question, scope: brief.scope, constraints: brief.constraints,
         successCriteria: brief.successCriteria, clarificationQuestions: brief.clarificationQuestions,
         literatureSummary: brief.literatureSummary, hypotheses: brief.hypotheses, evidenceIds: brief.evidenceIds, steps: brief.steps,
+        ...(brief.draftFiles===undefined?{}:{draftFiles:brief.draftFiles}),
+        ...(brief.sourceInputs===undefined?{}:{sourceInputs:brief.sourceInputs}),
+        ...(brief.methodContract===undefined?{}:{methodContract:brief.methodContract}),
+        ...(brief.methodRequirements===undefined?{}:{methodRequirements:brief.methodRequirements}),
+        ...(brief.draftRoles===undefined?{}:{draftRoles:brief.draftRoles}),...(brief.protocolDocument===undefined?{}:{protocolDocument:brief.protocolDocument}),
     };
 }
 
 function isIntact(brief: ResearchBrief) { return brief.digest === digest(payload(brief)); }
+function assertBriefMethods(store:Store,pid:string,brief:ResearchBrief,phase?:'formal') {assertFrozenMethod(store,pid,brief.methodContract,brief.sourceInputs,brief.rootSessionId,phase);if(brief.methodContract?.compilerVersion==='method-contract-v3'){validateProtocolRoles(brief.methodContract,brief.draftFiles,brief.draftRoles);ensure(digest(brief.protocolDocument)===digest({path:brief.methodContract.protocolPath,digest:brief.methodContract.protocolDigest,compilerVersion:brief.methodContract.compilerVersion}),'METHOD_PROTOCOL_ROLE_INVALID','唯一完整protocolDocument绑定缺失或已改变');}}
+
+export function fixedResearchBrief(store:Store,projectId:string,ref:ResearchBriefRef,phase?:'formal') {
+    const root=store.get<Session>('session',ref.rootSessionId,projectId);
+    ensure(root.role==='coordinator'&&!root.taskId&&!root.teamId,'INVALID_ROOT_SESSION','研究简报只属于项目主协调会话');
+    const row=store.get<ResearchBrief>('research-brief',ref.id,projectId);
+    ensure(row.rootSessionId===ref.rootSessionId&&row.id===ref.id&&row.digest===ref.digest&&row.revision===ref.revision,'BRIEF_REFERENCE_MISMATCH','固定研究简报引用与原记录不一致');
+    ensure(row.status==='confirmed','BRIEF_NOT_CONFIRMED','固定研究计划尚未确认');ensure(isIntact(row),'BRIEF_CORRUPTED','研究简报内容校验失败');
+    assertSourceInputs(store,projectId,row.rootSessionId,row.sourceInputs);assertBriefMethods(store,projectId,row,phase);for(const evidenceId of row.evidenceIds)verifyEvidence({store},projectId,evidenceId,true);return row;
+}
 
 function briefRow(row: Row<ResearchBrief>): Row<ResearchBrief> {
     return { id: row.id, kind: row.kind, projectId: row.projectId, version: row.version, createdAt: row.createdAt, updatedAt: row.updatedAt,
@@ -122,7 +149,7 @@ export class ResearchBriefService {
         }
     }
 
-    capture(actor: Actor, projectId: string, rootSessionId: string): ResearchBriefRef | undefined {
+    capture(actor: Actor, projectId: string, rootSessionId: string,phase?:'formal'): ResearchBriefRef | undefined {
         const root = this.root(actor, projectId, rootSessionId, true), id = root.researchBriefId;
         if (id === undefined) return undefined;
         const row = this.app.store.get<ResearchBrief>('research-brief', id, projectId);
@@ -130,10 +157,13 @@ export class ResearchBriefService {
         ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '当前最新研究计划尚未确认');
         ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
         this.checkEvidence(actor, projectId, row.evidenceIds);
+        assertSourceInputs(this.app.store,projectId,root.id,row.sourceInputs);
+        assertBriefMethods(this.app.store,projectId,row,phase);
+        this.app.draftReads.assertCurrent(root,row.draftFiles);
         return { id: row.id, digest: row.digest, revision: row.revision, rootSessionId: row.rootSessionId };
     }
 
-    assertReference(actor: Actor, projectId: string, rootSessionId: string, ref: ResearchBriefRef): void {
+    assertReference(actor: Actor, projectId: string, rootSessionId: string, ref: ResearchBriefRef,phase?:'formal'): void {
         const root = this.root(actor, projectId, rootSessionId);
         ensure(ref.rootSessionId === root.id, 'BRIEF_REFERENCE_MISMATCH', '研究简报引用不属于当前主会话');
         const row = this.app.store.get<ResearchBrief>('research-brief', ref.id, projectId);
@@ -142,22 +172,38 @@ export class ResearchBriefService {
         ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '固定研究计划尚未确认');
         ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
         this.checkEvidence(actor, projectId, row.evidenceIds);
+        assertSourceInputs(this.app.store,projectId,root.id,row.sourceInputs);
+        assertBriefMethods(this.app.store,projectId,row,phase);
+    }
+
+    captureDevelopmentReference(actor:Actor,projectId:string,sessionId:string):ResearchBriefRef|undefined {
+        const root=this.root(actor,projectId,sessionId,true);if(root.researchBriefId===undefined)return;
+        const row=this.app.store.get<ResearchBrief>('research-brief',root.researchBriefId,projectId),ref={id:row.id,digest:row.digest,revision:row.revision,rootSessionId:root.id};
+        this.assertReference(actor,projectId,root.id,ref);return ref;
     }
 
     /** Host-only: validate admission evidence without granting access to brief contents. */
-    assertAdmission(projectId: string, ref: ResearchBriefRef): void {
-        const root = this.app.store.get<Session>('session', ref.rootSessionId, projectId);
-        ensure(root.role === 'coordinator' && !root.taskId && !root.teamId, 'INVALID_ROOT_SESSION', '研究简报只属于项目主协调会话');
-        const row = this.app.store.get<ResearchBrief>('research-brief', ref.id, projectId);
-        ensure(row.rootSessionId === ref.rootSessionId && row.id === ref.id && row.digest === ref.digest && row.revision === ref.revision,
-            'BRIEF_REFERENCE_MISMATCH', '固定研究简报引用与原记录不一致');
-        ensure(row.status === 'confirmed', 'BRIEF_NOT_CONFIRMED', '固定研究计划尚未确认');
-        ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
-        for (const evidenceId of row.evidenceIds) this.app.evidence.verify(projectId, evidenceId, true);
+    assertAdmission(projectId: string, ref: ResearchBriefRef,phase?:'formal'): void {
+        fixedResearchBrief(this.app.store,projectId,ref,phase);
+    }
+
+    validateReadyDrafts(actor:Actor,projectId:string,sessionId:string,input:unknown) {
+        const parsed=parseContent(input);
+        const root=this.root(actor,projectId,sessionId,true),drafts=parsed.status==='ready'&&(actor.type==='agent'||parsed.draftFiles!==undefined)?this.app.draftReads.validate(root,parsed.draftFiles):undefined;
+        this.sourceInputFingerprint(sessionId,parsed.expectedRevisionId);const previous=root.researchBriefId?this.app.store.get<ResearchBrief>('research-brief',root.researchBriefId,projectId):undefined;
+        if(parsed.status==='ready')this.app.methodContracts.validateReady(root,parsed.methodContract,previous?.sourceInputs,drafts,previous?.methodContract,this.app.methodContracts.requirements(root,previous?.methodRequirements),parsed.draftRoles??previous?.draftRoles);
+    }
+
+    sourceInputFingerprint(sessionId:string,expectedRevisionId:string|null) {
+        const root=this.app.store.get<Session>('session',sessionId),previous=root.researchBriefId?this.app.store.get<ResearchBrief>('research-brief',root.researchBriefId,root.projectId!):undefined;
+        ensure((root.researchBriefId??null)===expectedRevisionId,'VERSION_CONFLICT','研究简报已变化，请重新读取后保存');
+        if(previous)ensure(previous.rootSessionId===root.id&&isIntact(previous),'BRIEF_CORRUPTED','当前研究简报版本损坏');
+        const inputs=this.app.sourceInputs.preview(root,expectedRevisionId,previous?.sourceInputs??[]);
+        return inputs.length||previous?.sourceInputs!==undefined?inputs:undefined;
     }
 
     save(actor: Actor, projectId: string, sessionId: string, input: unknown): Row<ResearchBrief> {
-        const { content, status, expectedRevisionId } = parseContent(input);
+        const { content, status, expectedRevisionId, draftFiles:requestedDraftFiles,methodContract:requestedMethodContract,draftRoles:requestedRoles } = parseContent(input);
         return this.app.store.transaction(() => {
             const root = this.root(actor, projectId, sessionId, true), previousId = root.researchBriefId ?? null;
             ensure(previousId === expectedRevisionId, 'VERSION_CONFLICT', '研究简报已变化，请重新读取后再保存');
@@ -166,8 +212,15 @@ export class ResearchBriefService {
                 ensure(previous.rootSessionId === root.id && isIntact(previous), 'BRIEF_CORRUPTED', '当前研究简报版本损坏，不能继续修订');
             }
             this.checkEvidence(actor, projectId, content.evidenceIds);
+            const draftFiles=status==='ready'&&(actor.type==='agent'||requestedDraftFiles!==undefined)?this.app.draftReads.validate(root,requestedDraftFiles):undefined;
+            const methodRequirements=this.app.methodContracts.requirements(root,previous?.methodRequirements);
+            if(status==='ready')this.app.methodContracts.validateReady(root,requestedMethodContract,previous?.sourceInputs,draftFiles,previous?.methodContract,methodRequirements,requestedRoles??previous?.draftRoles);
+            const sourceInputs=this.app.sourceInputs.freeze(root,expectedRevisionId,previous?.sourceInputs??[]);
+            const methodContract=requestedMethodContract===undefined?previous?.methodContract:this.app.methodContracts.freeze(root,requestedMethodContract,sourceInputs,draftFiles);
+            assertFrozenMethod(this.app.store,projectId,methodContract,sourceInputs,root.id);
+            const draftRoles=status==='ready'?validateProtocolRoles(methodContract,draftFiles,requestedRoles??previous?.draftRoles):previous?.draftRoles,protocolDocument=methodContract?.compilerVersion==='method-contract-v3'?{path:methodContract.protocolPath,digest:methodContract.protocolDigest,compilerVersion:methodContract.compilerVersion}:undefined;
             const revision = (previous?.revision ?? 0) + 1;
-            const fixed = { rootSessionId: root.id, revision, ...(previous ? { previousRevisionId: previous.id } : {}), ...content };
+            const fixed = { rootSessionId: root.id, revision, ...(previous ? { previousRevisionId: previous.id } : {}), ...content,...(draftFiles===undefined?{}:{draftFiles}),sourceInputs,...(methodContract?{methodContract}:{}),...(methodRequirements.length?{methodRequirements}:{}),...(draftRoles?{draftRoles}:{}),...(protocolDocument?{protocolDocument}:{}) };
             const row = this.app.store.create<ResearchBrief>('research-brief', projectId, { ...fixed, status, digest: digest(fixed) }, randomUUID());
             this.app.store.update<Session>('session', root.id, root.version, { researchBriefId: row.id });
             this.app.store.event(projectId, 'session.research_brief_saved', { sessionId: root.id, briefId: row.id, revision, status });
@@ -218,6 +271,9 @@ export class ResearchBriefService {
             ensure(row.version === expectedVersion, 'VERSION_CONFLICT', '研究简报已变化，请刷新后重试');
             ensure(isIntact(row), 'BRIEF_CORRUPTED', '研究简报内容校验失败');
             this.checkEvidence(actor, projectId, row.evidenceIds);
+            assertSourceInputs(this.app.store,projectId,root.id,row.sourceInputs);
+            assertBriefMethods(this.app.store,projectId,row);
+            this.app.draftReads.assertCurrent(root,row.draftFiles);
             const next = this.app.store.update<ResearchBrief>('research-brief', row.id, row.version, { status: 'confirmed' });
             this.app.store.event(projectId, 'session.research_brief_confirmed', { sessionId: root.id, briefId: row.id, revision: row.revision, digest: row.digest });
             return next;

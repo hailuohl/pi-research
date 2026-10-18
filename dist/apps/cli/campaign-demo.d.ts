@@ -12,7 +12,7 @@ export declare function campaignDemo(app: ResearchApp, progress?: (message: stri
     runs: {
         id: string;
         experimentId: string;
-        state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "cancelling" | "submitting";
+        state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
         integrity: "incomplete" | "pending" | "complete" | "invalid";
         metrics: Record<string, number> | undefined;
         snapshotDigest: string;

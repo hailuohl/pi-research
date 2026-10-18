@@ -23,6 +23,7 @@ import type {Corpus,Configuration} from '../../text-evidence/service.js';
 import type {DocumentVersion} from '../../documents/types.js';
 import {assertCorpusDocument} from '../../policy/text-corpus-grants.js';
 import {assertDiscoveryDocument} from '../../policy/discovery-grant-validation.js';
+import {assertSyntheticFixture,type SyntheticFixtureRef} from '../../research-workflows/synthetic-fixtures.js';
 
 export interface OperationScope {
     projectId: string;
@@ -225,6 +226,8 @@ const SPECS: OperationSpec[] = [
     })}),
     make('host_execute',{requiresSession:true,asynchronous:true,idempotencyPolicy:'key-required',authorize:(c)=>{c.app.hostAccess.assertAgent(c.actor);},preconditions:(c)=>{c.app.hostAccess.assertAgent(c.actor);},execute:(c,x)=>c.app.hostAccess.execute(c.actor,x,c.idempotencyKey!)}),
     make('research_brief_save',{idempotencyPolicy:'key-required',requiresSession:true,authorize:c=>{c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id);},preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.researchBriefs.save(c.actor,c.projectId,c.session!.id,x)}),
+    make('research_method_compile',{idempotencyPolicy:'read-only',requiresSession:true,authorize:c=>{c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id);},preconditions:noPrecondition,execute:(c,x)=>c.app.methodContracts.compile(c.actor,c.projectId,c.session!.id,x)}),
+    make('research_fixture_prepare',{idempotencyPolicy:'key-required',requiresSession:true,authorize:c=>{c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id);},preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.syntheticFixtures.prepare(c.actor,c.projectId,c.session!.id,x)}),
     make('research_brief_inspect',{idempotencyPolicy:'read-only',requiresSession:true,authorize:noPrecondition,preconditions:noPrecondition,execute:(c,x)=>c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id,x.briefId as string|undefined)}),
     make('research_brief_confirm',{idempotencyPolicy:'key-required',requiresSession:true,authorize:(c,x)=>{userOnly(c.actor);c.app.researchBriefs.inspect(c.actor,c.projectId,c.session!.id,x.briefId as string);},preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.researchBriefs.confirm(c.actor,c.projectId,c.session!.id,x)}),
     make('text_corpus_grant_prepare',{idempotencyPolicy:'key-required',authorize:c=>userOnly(c.actor),preconditions:noPrecondition,execute:(c,x)=>c.app.textCorpusGrants.prepare(c.actor,c.projectId,x)}),
@@ -312,6 +315,9 @@ const SPECS: OperationSpec[] = [
     make('report_inspect',{idempotencyPolicy:'read-only',authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.reports.inspect(c.actor,c.projectId,x.reportId as string)}),
     make('report_reference_read',{idempotencyPolicy:'read-only',authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.reports.readReference(c.actor,c.projectId,x.reportId as string,x.referenceId as string,x.cursor as number|undefined,x.limit as number|undefined)}),
     make('report_export',{idempotencyPolicy:'key-required',asynchronous:true,authorize:(c,x)=>{userOnly(c.actor);recordScope('report','reportId')(c,x);},preconditions:noPrecondition,execute:(c,x)=>c.app.exports.create(c.actor,c.projectId,{reportId:x.reportId as string},c.idempotencyKey!,c.validate)}),
+    make('formal_report_review_prepare',{idempotencyPolicy:'key-required',authorize:c=>{if(c.actor.type==='agent')interactiveCoordinator(c.actor,c.projectId,c.app.operations.authorizeAgent(c.actor,'formal_report_review_prepare'));else userOnly(c.actor);},preconditions:noPrecondition,execute:(c,x)=>c.app.formalReportReviews.prepare(c.actor,c.projectId,x)}),
+    make('formal_report_review_inspect',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.formalReportReviews.authorize(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.formalReportReviews.inspect(c.actor,c.projectId,x.reviewId as string)}),
+    make('formal_report_review_source_read',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.formalReportReviews.inspect(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.formalReportReviews.sourceRead(c.actor,c.projectId,x.reviewId as string,x.path as string,x.cursor as number|undefined,x.limit as number|undefined)}),
     make('development_review_prepare',{idempotencyPolicy:'key-required',authorize:(c,x)=>{c.app.development.inspect(c.actor,c.projectId,x.jobId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.prepare(c.actor,c.projectId,x)}),
     make('development_review_inspect',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.developmentReviews.inspect(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.inspect(c.actor,c.projectId,x.reviewId as string)}),
     make('development_review_source_list',{idempotencyPolicy:'read-only',authorize:(c,x)=>{c.app.developmentReviews.sourceList(c.actor,c.projectId,x.reviewId as string);},preconditions:noPrecondition,execute:(c,x)=>c.app.developmentReviews.sourceList(c.actor,c.projectId,x.reviewId as string)}),
@@ -386,16 +392,22 @@ const SPECS: OperationSpec[] = [
     }, preconditions: noPrecondition,
         execute: (c, x) => c.app.runs.submit(c.actor, x.intentId as string)}),
     make('workspace_read', {idempotencyPolicy: 'read-only', authorize: workspaceScope, preconditions: noPrecondition,
-        execute: (c, x) => x.source === 'project' ? c.app.projects.readFile(c.actor, c.projectId, x.path as string) : readText(c.app.store.paths.physical(c.session!.workspace), x.path as string)}),
+        execute: (c, x) => {
+            if(x.source==='project')return c.app.projects.readFile(c.actor,c.projectId,x.path as string);
+            const file=readText(c.app.store.paths.physical(c.session!.workspace),x.path as string);
+            return {...file,...c.app.draftReads.recordRead(c.actor,c.session!,file,c.idempotencyKey!)};
+        }}),
     make('workspace_write', {idempotencyPolicy: 'key-required', authorize: (c, x) => {
         workspaceScope(c, x);
         ensure(c.actor.type === 'user' || x.source !== 'project', 'SCOPE_DENIED', '不能通过助手写入项目共享工作区', 403);
     }, preconditions: (c, x) => {
         assertProjectWritable(c.app.store, c.projectId);
         if (x.source !== 'project') {ensure(c.session!.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');assertWorkspaceReady(c.app.context,c.session!.id);c.app.workingGrants.assertWrite(c.actor,c.projectId,c.session!.id,x.path as string,x.content as string);}
-    }, execute: (c, x) => x.source === 'project'
-        ? c.app.projects.writeFile(c.actor, c.projectId, x.path as string, x.content as string, x.expectedDigest as string | null)
-        : writeText(c.app.store.paths.physical(c.session!.workspace), x.path as string, x.content as string, x.expectedDigest as string | null, c.app.store)}),
+    }, execute: (c, x) => {
+        if(x.source==='project')return c.app.projects.writeFile(c.actor,c.projectId,x.path as string,x.content as string,x.expectedDigest as string|null);
+        const file=writeText(c.app.store.paths.physical(c.session!.workspace),x.path as string,x.content as string,x.expectedDigest as string|null,c.app.store);
+        c.app.draftReads.recordWrite(c.session!,file,c.idempotencyKey!);return file;
+    }}),
     make('change_proposal_prepare', {idempotencyPolicy: 'key-required', authorize: recordScope('experiment', 'baseExperimentId'), preconditions: noPrecondition,
         execute: (c, x) => c.app.changes.prepare(c.actor, c.projectId, x, c.session?.id)}),
     make('task_result_submit', {idempotencyPolicy: 'key-required', authorize: c => {
@@ -475,6 +487,13 @@ export class OperationRegistry {
             if (actor.taskId || actor.wakeupId) (actor.taskId ? this.app.teams : this.app.wakeups).assertResource(actor, kind, input[field] as string);
         }
         spec.authorize(context, input);
+        if(id==='development_prepare')this.app.development.validateSyntheticPreparation(actor,pid,session!.id,input);
+        if(id==='research_brief_save') {
+            const mapped=actor.type==='agent'?this.app.store.maybe<{actionId:string}>('permission-call',digest({sessionId:session!.id,callId:key})):undefined;
+            const receiptRequest={name:id,input},receiptKeys=[key!,...(mapped?[`permission-action:${mapped.actionId}`]:[])];
+            const replay=receiptKeys.some(receiptKey=>actor.type==='agent'?this.app.store.agentOperationResult(session!.id,receiptKey,receiptRequest).found:this.app.store.operationResult(`operation:user:${pid}:${session!.id}`,receiptKey,receiptRequest).found);
+            if(!replay)this.app.researchBriefs.validateReadyDrafts(actor,pid,session!.id,input);
+        }
         if(id==='evidence_register'&&actor.type==='agent'&&actor.role==='coordinator'&&!actor.taskId&&!actor.wakeupId&&!options.approvedActionId)ensure(typeof input.exactQuote==='string','EVIDENCE_EXACT_QUOTE_REQUIRED','请从实际读取的正文复制 exactQuote；不接受猜测位置与自由描述。解释和研究断言另行提出，不作为已验证证据',400);
         if(options.approvedActionId){
             interactiveCoordinator(actor,pid,session!);
@@ -530,8 +549,15 @@ export class OperationRegistry {
             ensure(new Set(found.map(entry => digest(entry.value))).size <= 1, 'LEGACY_OPERATION_AMBIGUOUS', '旧版本存在不同幂等结果，禁止重复执行');
             return found[0];
         };
-        const save = (value: unknown) => {
-            const result = output(value);
+        const save = (value: unknown,fresh=true) => {
+            let result = output(value);
+            if(fresh&&id==='research_skill_read'&&actor.type==='agent'){context.validate();this.app.methodContracts.recordSkillRead(actor,session,result);}
+            if(fresh&&actor.type==='agent'&&['workspace_read','artifact_read','development_review_source_read','run_source_read','formal_report_review_source_read'].includes(id)) {
+                context.validate();
+                let extra=id==='workspace_read'&&input.source==='project'?this.app.sourceInputs.recordRead(actor,session,result as {path:string;content:string;digest:string;size:number},key!):id==='artifact_read'||id==='development_review_source_read'?this.app.developmentReviews.recordReading(actor,pid,id,input,result as Record<string,unknown>,key!):undefined;
+                if(['artifact_read','run_source_read','formal_report_review_source_read'].includes(id))extra=this.app.formalReportReviews.recordReading(actor,pid,id,input,result as Record<string,unknown>,key!)??extra;
+                if(extra)result=output({...result as object,...extra});
+            }
             const write = () => cached ? this.app.store.operation(operationScope, key!, request, () => result) : result;
             const saved=legacy ? this.app.store.operation(legacy.scope, key!, legacy.input, write) : write();
             if(permission?.actionId)this.app.sessionPermissions.complete(permission.actionId);
@@ -642,11 +668,14 @@ export class OperationRegistry {
                     ensure(view.brief,'BRIEF_EVIDENCE_UNAVAILABLE','该研究计划修订当前不可读取，请重新核对来源',403);
                     return output(view.brief);
                 }
+                if(id==='research_fixture_prepare'){const fixed=previous.value as {fixtureRef:SyntheticFixtureRef};assertSyntheticFixture(this.app.store,pid,fixed.fixtureRef,session!.id);return output(previous.value);}
                 if(id==='text_evidence_search')this.app.textEvidence.verifyReplay(actor,pid,input);
+                if(id==='task_result_submit'&&actor.taskId&&this.app.store.list<{taskId:string}>('formal-report-review',pid).some(r=>r.taskId===actor.taskId))return output(this.app.teams.submit(actor,input));
+                if(id.startsWith('formal_report_review_'))return output(spec.execute(context,input));
                 if(actor.type==='agent'&&id==='publication_review_prepare')return output(spec.execute(context,input));
                 if(actor.type==='agent'&&['publication_templates','publication_template_inspect','publication_template_read','manuscript_list','manuscript_inspect','manuscript_source_read','publication_status','publication_inspect','publication_result','publication_build_list','publication_review_inspect','publication_review_list'].includes(id))return output(spec.execute(context,input));
                 if(actor.type==='user'&&assertProjectReadable(this.app.store,pid,actor).status==='archived')return output(previous.value);
-                return save(previous.value);
+                return save(previous.value,false);
             }
             // An already submitted intent is owner history, even under a new readback key.
             if(actor.type==='user'&&id==='run_submit'&&assertProjectReadable(this.app.store,pid,actor).status==='archived') {

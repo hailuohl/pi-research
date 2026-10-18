@@ -1,0 +1,47 @@
+# 单输入线性与二次回归：固定协议和合成检查
+
+当本轮比较仅含同一数值输入的一次、二次多项式回归，并以共同测试记录上的RMSE差为主要目标时读取。本流程采用`paired-rmse-plan-v1`完整结构化协议；其它模型或复杂设计继续按统计分析资源选择适用能力，不能为使用此模板改掉研究问题。读取本资源或准备本流程夹具后，当前主协调会话的后续计划须保持结构化协议，不能降回旧模板或描述模式消除要求。读取不批准执行，也不改变其它会话。
+
+## 准备真实研究范围与独立开发输入
+
+实际读取获准原始输入和字典，固定正式输入的path/digest、predictorField、outcomeField、去重/缺失策略、训练边界、划分与科学限制。正式CSV原文供方案和审查使用；只允许合成开发时，不能复制、改名、抽取或轻微改动这些真实记录来充当合成输入。
+
+主协调者调用：
+
+```json
+{"input":{"profile":"numeric-regression-v1"}}
+```
+
+这是`research_fixture_prepare`的输入。返回实际`fixtureRef`和`inputPath`；用获准`artifact_read`读取该夹具。它由宿主独立生成，不接收数据数组、拟合参数、URL或生成脚本，同一会话/profile重试复用首次固定版本。它只是数值管道检查，不能用于推断本研究功效、阈值或真实结果。
+
+夹具JSON提供每行`rowId`、`partition`、`x`与`observed`。保留其明确train/test分配和原始数字；不要重新抽样、去掉不满意的行或另造预测见证。正式CSV和开发JSON可以各有输入适配器，但后续fit、predict、指标和序列化必须调用同一实际实现。审查仍核对这条调用链，不能以声明代替代码。
+
+## 生成唯一规范协议
+
+`research_method_compile`的`specification`仍含`version:1`与真实`literatureSources`；`quantitative`选`type:"comparison"`、`template:"paired-rmse-plan-v1"`。沿用实际`outcomeUnit`、`witness`、`metrics`、`minimumGain`和需要时的`decisionOutputs`，另填写：
+
+- `developmentData:{mode:"host-synthetic-only",profile:"numeric-regression-v1",fixtureRef,inputArgumentIndex}`。fixtureRef原样来自工具；inputArgumentIndex是开发命令中实际数据参数的位置。例如`["python","compare.py",inputPath]`的位置为2。
+- `plan.formalInput:{path,digest,predictorField,outcomeField}`，path/digest来自真实读取，不用夹具冒充正式数据。
+- `plan.models:{baseline:{family:"polynomial",degree:1},candidate:{family:"polynomial",degree:2}}`。
+- `plan.preprocessing:{duplicates,missing,scaling:"training-only"}`；duplicates选`retain`或`drop-exact`，missing选`reject`或`drop-complete-case`，按本研究依据选择。
+- `plan.split:{testFraction,seed}`，固定正式单次划分，不看结果再选。开发使用夹具已固定分配。
+- `precisionGate:null`表示区间宽度只作描述；若精度确实是预定判据，则填`{maxHalfWidth:正有限数}`，单位与RMSE一致。非null时宽度超界先判inconclusive，再走既有增益分支；不能另写未进入此字段的精度门槛。
+- `provenanceArtifact:"fit-provenance.json"`。该JSON包含`trainRowIds`字符串数组、`models.baseline.coefficients`的2个有限数、`models.candidate.coefficients`的3个有限数，以及非空`sharedEntryPoint`说明。系数对应实际实现的坐标与基函数，另提供必要的训练缩放/诊断元数据，供独立核验。
+
+把编译返回的完整`protocol`原样保存为所需的`protocol.md`，它就是本流程的规范协议，不再另写第二份判据正文。竞争解释、数据质量依据、文献内容层级或未验证假设需要额外记录时，可写简短研究笔记并引用规范结果；笔记中的科学矛盾仍会阻断验收。
+
+保存并回读当前协议、实现及笔记。`research_brief_save`沿既有`draftFiles`提供实际readId，同时加`draftRoles:[{path,role}]`；role只用`protocol`、`implementation`或`notes`，覆盖全部draftFiles且恰好一个protocol。`methodContract.protocolPath`指向该文件。完整字节、角色和读取版本由宿主核对。规则、夹具或策略改变须新编译、回读与确认，旧记录不改写。
+
+## 开发、正式运行与阅读证据
+
+开发清单的命令在所声明参数位置使用工具返回的`inputPath`。宿主按固定计划注入唯一夹具数据，不接受本地“synthetic.csv”替代，也不能额外挂载真实数据。准备和启动前重新验证夹具/批准/来源。开发仍需正常批准；读取或准备夹具不增加次数、计算或宿主权限。
+
+`expectedArtifacts`包含原指标、预测文件、`witness.artifactPath`和`provenanceArtifact`；`metricArtifact`仍指向实际平铺有限数值JSON。见证中的测试ID必须完整等于夹具test集合，observed逐条对应；来源产物的训练ID集合也须完整对应。输出来源匹配后宿主才重算配对RMSE增益、同量纲区间与结构化精度判定。候选不自行写宿主保留产物或另算权威标签。
+
+输出身份校验不能证明任意代码没有使用其它训练数据。独立审查必须读夹具原文、来源记录、当前源码、实际预测见证及训练来源产物，核对实际训练输入和共享路径；不要从文件名、canonical分支、摘要存在或测试成功推出“合成”。不运行的分支不记作已验证。
+
+正式Run使用另外获准、冻结的真实输入，保留正式CSV读取/校验和已确认的划分；不套开发夹具的test集合。正式结果仍用同一RMSE公式和判定策略，回读真实宿主结果后再写结论。区间宽度不是事前功效或保证精度；操作阈值不是已验证领域效用。合成检查结果不作为真实科研发现。
+
+## 本地能力边界
+
+这是Pi Research的本地执行契约说明。RMSE区间的适用条件仍见统计分析及生成协议：固定拟合、独立测试对、有限矩及非退化方差等假设均需实际审查。该流程不认证未知物理单位、独立实体、因果作用或有限样本覆盖率，也不提供通用合成数据平台。

@@ -1,7 +1,10 @@
 import type { ModelConfig, Row, SourceSnapshot } from '../domain/types.js';
 import type { SandboxManifest, SandboxResources } from '../execution/contracts.js';
 export interface WorkingGrant {
+    syntheticFixture?: SandboxManifest['syntheticFixture'];
+    researchBrief?: import('../domain/types.js').ResearchBriefRef;
     threadLimit?: number;
+    metricArtifact?: string;
     developmentTaskId: string;
     templateManifestDigest: string;
     sessionId: string;

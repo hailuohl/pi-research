@@ -317,7 +317,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("documentVersionId" | "start" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "reportedVersion" | "end" | "rawArtifactId")[];
+                            readonly required: ("documentVersionId" | "start" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "end" | "rawArtifactId")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -377,7 +377,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("experimentId" | "runId" | "revision" | "sourceDigest" | "state" | "integrity" | "metrics" | "judgment")[];
+                    readonly required: ("experimentId" | "runId" | "revision" | "state" | "sourceDigest" | "metrics" | "integrity" | "judgment")[];
                     readonly additionalProperties: false;
                 };
             };
@@ -565,12 +565,12 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("campaignId" | "state" | "primaryMetric" | "conclusion" | "unit" | "referenceId" | "planReferences")[];
+                    readonly required: ("campaignId" | "state" | "unit" | "conclusion" | "primaryMetric" | "referenceId" | "planReferences")[];
                     readonly additionalProperties: false;
                 };
             };
         };
-        readonly required: ("runs" | "artifactId" | "id" | "title" | "validity" | "reasons" | "integrity" | "formatVersion" | "references")[];
+        readonly required: ("runs" | "artifactId" | "id" | "title" | "validity" | "reasons" | "formatVersion" | "integrity" | "references")[];
         readonly additionalProperties: false;
     };
     readonly report_reference_read: {
@@ -675,7 +675,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                 readonly type: "string";
                             };
                         };
-                        readonly required: ("documentVersionId" | "start" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "reportedVersion" | "end" | "rawArtifactId")[];
+                        readonly required: ("documentVersionId" | "start" | "reportedVersion" | "textArtifactDigest" | "textArtifactId" | "documentDigest" | "rawDigest" | "end" | "rawArtifactId")[];
                         readonly additionalProperties: false;
                     };
                 };
@@ -698,7 +698,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                 readonly type: "boolean";
             };
         };
-        readonly required: ("cursor" | "content" | "complete" | "mediaType" | "end" | "reference")[];
+        readonly required: ("cursor" | "content" | "complete" | "reference" | "end" | "mediaType")[];
         readonly additionalProperties: false;
     };
 };

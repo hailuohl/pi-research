@@ -10,6 +10,7 @@ import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, existsSync, writeFileSync, openSync, closeSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
+import { fixedResearchBrief } from '../research-workflows/briefs.js';
 import { ensure, asError } from '../domain/errors.js';
 import { scope, userOnly, toolAllowed } from '../policy/permissions.js';
 import { digest, now } from '../storage/store.js';
@@ -20,6 +21,7 @@ import { readLogPage } from '../execution/log-page.js';
 import { hasEnvironmentSecrets, redactEnvironment } from '../runtime/environment.js';
 import { ComputeQueue } from '../scheduler/compute-queue.js';
 import { assertRunGrantActor, assertRunGrantIntent, assertRunGrantRun, consumeRunGrant } from '../policy/run-grant-validation.js';
+import { closedPaired, isPlan, methodHostPaths, assertMethodSnapshot } from '../research-workflows/method-contracts.js';
 export const TERMINAL = ['succeeded', 'failed', 'cancelled'];
 export class RunService {
     c;
@@ -99,7 +101,7 @@ export class RunService {
             else
                 ensure(!requiresBrief, 'RUN_SESSION_REQUIRED', '绑定了研究计划的实验需要主会话才能准备运行');
             ensure(root?.researchBriefId === undefined || this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
-            const researchBrief = rootSessionId ? this.briefs?.capture(actor, e.projectId, rootSessionId) : undefined;
+            const researchBrief = rootSessionId ? this.briefs?.capture(actor, e.projectId, rootSessionId, 'formal') : undefined;
             ensure(!requiresBrief || researchBrief, 'BRIEF_REQUIRED', '绑定了研究计划的实验需要当前主会话的已确认研究计划');
             if (autoAnalyze) {
                 ensure(root, 'RUN_SESSION_REQUIRED', '自动结果分析需要指定交互主会话');
@@ -111,6 +113,23 @@ export class RunService {
             const snap = snapshotDirectory(this.c.store.paths.physical(e.workspace), join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
             const binding = revision ? this.c.store.maybe('git-source-binding', revision.id) : undefined;
             const manifest = { experimentId: e.id, experimentVersion: e.version, experimentRevision: e.revision, contract: structuredClone(e.contract), contractDigest: e.contractDigest, snapshotDigest: snap.digest, snapshotPath: this.c.store.paths.reference(snap.path), sourceFiles: snap.files, createdAt: now(), ...(analysis ? { analysis } : {}), ...(researchBrief ? { researchBrief } : {}), ...(revision?.sourceDigest === snap.digest ? { sourceRevisionId: revision.id, ...(binding && binding.sourceDigest === snap.digest ? { gitCommit: binding.gitCommit } : {}) } : {}) };
+            const methodContract = researchBrief ? fixedResearchBrief(this.c.store, e.projectId, researchBrief, 'formal').methodContract : undefined;
+            if (methodContract) {
+                manifest.methodContractDigest = methodContract.contractDigest;
+                assertMethodSnapshot(methodContract, manifest.sourceFiles, 'formal');
+                ensure(!manifest.contract.expectedArtifacts.some(p => methodHostPaths(methodContract).includes(p)), 'METHOD_ARTIFACT_RESERVED', '方法产物由宿主生成，不得列为候选必需输出');
+                for (const output of methodContract.specification.quantitative.type === 'comparison' ? methodContract.specification.quantitative.decisionOutputs ?? [] : [])
+                    ensure(manifest.contract.expectedArtifacts.includes(output.artifactPath), 'METHOD_DECISION_OUTPUT_INVALID', '正式契约必须声明所有冻结decisionOutputs原文');
+            }
+            const quantitative = methodContract?.specification.quantitative;
+            if (quantitative?.type === 'comparison' && quantitative.template === 'paired-rmse-delta-v1')
+                ensure(manifest.contract.expectedArtifacts.includes(quantitative.witness.artifactPath), 'METHOD_WITNESS_REQUIRED', '正式运行契约必须声明完整预测见证文件');
+            if (closedPaired(methodContract)) {
+                const q = closedPaired(methodContract);
+                ensure(manifest.contract.expectedArtifacts.length === 3 && ['metrics.json', q.witness.artifactPath, q.provenanceArtifact].every(p => manifest.contract.expectedArtifacts.includes(p)) && Object.keys(manifest.contract.metrics).length === 3 && Object.values(q.metrics).every(k => Object.hasOwn(manifest.contract.metrics, k)), 'METHOD_OUTPUT_PROFILE_INVALID', '新profile正式Run仅声明三类原始证据及准确三个指标');
+            }
+            if (quantitative && isPlan(quantitative))
+                ensure(manifest.contract.expectedArtifacts.includes(quantitative.witness.artifactPath) && manifest.contract.expectedArtifacts.includes(quantitative.provenanceArtifact), 'METHOD_WITNESS_REQUIRED', '完整计划正式Run需实际预测见证及fit provenance');
             if (manifest.contract.runner === 'docker')
                 manifest.threadLimit = manifest.contract.threadLimit ?? manifest.contract.cpus;
             if (manifest.contract.runner === 'local') {
@@ -166,10 +185,10 @@ export class RunService {
                 const teamId = actor.teamId;
                 const ownRoot = actor.type === 'agent' && actor.role === 'coordinator' && !actor.taskId && !actor.attemptId && (!actor.wakeupId || !!actor.continuationId) && !teamId && actor.sessionId === ref.rootSessionId;
                 if (actor.type === 'user' || ownRoot)
-                    this.briefs.assertReference(actor, intent.projectId, ref.rootSessionId, ref);
+                    this.briefs.assertReference(actor, intent.projectId, ref.rootSessionId, ref, 'formal');
                 else {
                     ensure(intent.runGrant, 'RUN_GRANT_SCOPE_DENIED', '该会话不能读取此研究简报', 403);
-                    this.briefs.assertAdmission(intent.projectId, ref);
+                    this.briefs.assertAdmission(intent.projectId, ref, 'formal');
                 }
             }
             this.researchSourceGuard?.(intent.experimentId, 'submit', intent.id);
@@ -233,7 +252,13 @@ export class RunService {
             intent.manifestDigest === run.manifestDigest && digest(intent.manifest) === run.manifestDigest && digest(run.manifest) === run.manifestDigest, 'APPROVAL_STALE', '作业、运行意向与已批准快照不一致');
         if (admission && intent.manifest.researchBrief) {
             ensure(this.briefs, 'BRIEF_CAPTURE_UNAVAILABLE', '研究简报服务未初始化');
-            this.briefs.assertAdmission(run.projectId, intent.manifest.researchBrief);
+            this.briefs.assertAdmission(run.projectId, intent.manifest.researchBrief, 'formal');
+        }
+        if (admission) {
+            if (run.manifest.methodContractDigest)
+                ensure(run.manifest.researchBrief, 'METHOD_CONTRACT_CORRUPTED', '方法运行缺少冻结研究计划');
+            const methods = run.manifest.researchBrief ? this.evidence.fixedResearchMethods(run.projectId, run.manifest.researchBrief, run.manifest.methodContractDigest) : undefined;
+            assertMethodSnapshot(methods?.contract, run.manifest.sourceFiles, 'formal');
         }
         ensure(e.revision === run.manifest.experimentRevision && e.contractDigest === run.manifest.contractDigest, 'APPROVAL_STALE', '实验方案已修改，请重新准备并批准');
         ensure(digest(run.manifest.contract) === run.manifest.contractDigest && digest(run.manifest.sourceFiles) === run.manifest.snapshotDigest, 'MANIFEST_CORRUPTED', '运行契约或源码清单摘要不符');
@@ -375,7 +400,7 @@ export class RunService {
                 this.c.store.event(r.projectId, 'run.finalized', { runId: id, state, integrity: 'invalid', permissionStale: true });
                 return stopped;
             }
-            const collected = collectRunArtifacts(r, this.evidence, this.c.store.paths), { metrics, artifactIds, evidenceIds, errors } = collected;
+            const collected = collectRunArtifacts(r, this.evidence, this.c.store.paths, state === 'succeeded' && exitCode === 0), { metrics, artifactIds, evidenceIds, errors } = collected;
             let integrity = collected.integrity;
             if (facts?.incomplete && integrity !== 'invalid')
                 integrity = 'incomplete';

@@ -1,0 +1,76 @@
+{
+  "specification": {
+    "version": 1,
+    "literatureSources": [],
+    "quantitative": {
+      "type": "comparison",
+      "template": "paired-rmse-plan-v1",
+      "outcomeUnit": "toy units",
+      "witness": {
+        "artifactPath": "analysis.json",
+        "recordsPointer": "/testPredictions",
+        "idField": "rowId",
+        "observedField": "observed",
+        "baselinePredictionField": "baselinePrediction",
+        "candidatePredictionField": "candidatePrediction"
+      },
+      "metrics": {
+        "baselineRmse": "baseline",
+        "candidateRmse": "candidate",
+        "gain": "gain"
+      },
+      "minimumGain": 0.02,
+      "precisionGate": null,
+      "developmentData": {
+        "mode": "host-synthetic-only",
+        "profile": "numeric-regression-v1",
+        "fixtureRef": {
+          "id": "probe-fixture",
+          "digest": "cd3e3df4e07e909f090fafc01e9e1d8f1f8dadfe40cbeed082ca5b5b0924ee40",
+          "size": 12843,
+          "generatorVersion": "numeric-regression-v1",
+          "profile": "numeric-regression-v1",
+          "seed": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "splitDigest": "4d9bb27594e52df31326cca1027a61aadaa3fc3573282d214875ff5a26ffbd0a"
+        },
+        "inputArgumentIndex": 2
+      },
+      "plan": {
+        "formalInput": {
+          "path": "formal.csv",
+          "digest": "81bf9fa83c6f7f151bd491a98cd7d933de3965289e3ebd77c6c425f7eaa16392",
+          "predictorField": "x",
+          "outcomeField": "y"
+        },
+        "models": {
+          "baseline": {
+            "family": "polynomial",
+            "degree": 1
+          },
+          "candidate": {
+            "family": "polynomial",
+            "degree": 2
+          }
+        },
+        "preprocessing": {
+          "duplicates": "retain",
+          "missing": "reject",
+          "scaling": "training-only"
+        },
+        "split": {
+          "testFraction": 0.25,
+          "seed": 17
+        }
+      },
+      "provenanceArtifact": "fit.json"
+    }
+  },
+  "contractDigest": "b11526e8baaded8d7058fdf68dbfaf5d4fa0fb4d5781bfb164b98d43e616240b",
+  "protocolDigest": "c42fa04feddbd9c14bf58e9a3de20b699604437b30b995a47b6eb65995f6f6d6",
+  "attachments": {
+    "methods-protocol.md": "c42fa04feddbd9c14bf58e9a3de20b699604437b30b995a47b6eb65995f6f6d6",
+    "methods-ledger.json": "51dc8a36e03815646417e6046db4986a1d3cceeca570d3c8f5464c56c6903811",
+    "methods-boundaries.json": "f98098cce836d6d28394bef0b43b2bb9eb9f55220b2ed7153839a3df3279c044",
+    "methods-results.json": "5341904d91d871c012d740d967f7e59f9eae51d03a128c5ae58a78be2243891b"
+  }
+}

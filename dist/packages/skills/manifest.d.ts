@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620";
+export declare const BUNDLE_ID = "4f49f6cde539fd582c1c8d2caa8bca4f937457ea68c14ccbb79a3219ff2c5091";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; choose the workflow for the user's goal and preserve the cardinal research rules.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "39575e3973d6849826cd939749ad7ea06b6520d5bf7cb27b0f7130f7cd99a2e1";
+    readonly digest: "1bae37997d13b740a1020bd95ef88138411e6899f124441c5a81eb8066e09abf";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -33,10 +33,11 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "规划可检验假设、实验设计与样本量/重复依据；在首次启动、调整实验轮次、解释完成结果、修复、晋级、停止或汇报研究进展时使用。";
     readonly roles: readonly ["coordinator", "designer", "analyst", "reviewer"];
     readonly path: "skills/piresearch/pi-research-experiment-tree/SKILL.md";
-    readonly digest: "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58";
+    readonly digest: "ff0786573b1431c774bc584c60e882c5cdf44151312afcf02160ba689e1c64e3";
     readonly resources: readonly [{
         readonly path: "references/experimental-design.md";
-        readonly digest: "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8";
+        readonly digest: "a0aecd732223d685039031147821b11074b0306cbd960a4e2ac83dc6cd1cbb72";
+        readonly methodRequirements: readonly ["quantitative-decision"];
     }, {
         readonly path: "references/statistical-power.md";
         readonly digest: "bdc1bb8c1bfbdc30359172a24d685de42b98b23a516ad96c1ee13451779b830e";
@@ -50,13 +51,17 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly path: "agent-skills/orx-experiment-tree/SKILL.md";
         readonly blob: "e888fc9d179ddfae87c4a0732224cf354a9c5430";
     };
+    readonly prerequisites: readonly [{
+        readonly skillId: "pi-research-evidence";
+        readonly resource: "references/scientific-critical-thinking.md";
+    }];
 }, {
     readonly id: "pi-research-git";
     readonly name: "pi-research-git";
     readonly description: "Use before reading, editing, committing or comparing experiment code, coordinating worktree ownership, or diagnosing stale source.";
     readonly roles: readonly ["coordinator", "implementer", "reviewer", "designer"];
     readonly path: "skills/piresearch/pi-research-git/SKILL.md";
-    readonly digest: "0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07";
+    readonly digest: "db281259c4b6fc5a0ed461b469b950e11500c62180630372fba911d97acda784";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -107,13 +112,18 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "检查数据质量、统计结果、测量不确定性与科学主张支持程度；设计可核验运行输出，回读日志和原始来源，区分实测、论文报告值、图片观察与解释。";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
-    readonly digest: "5b8062350f3886c0b3b77858a05cb21e2548d5fa0697c4a6068a9ea71bb7a686";
+    readonly digest: "360adc5b6ee62d08cecc290c17660df48ecaffc28addb2d814d61994434f2f0c";
     readonly resources: readonly [{
         readonly path: "references/exploratory-data-analysis.md";
         readonly digest: "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7";
     }, {
         readonly path: "references/statistical-analysis.md";
-        readonly digest: "21e17af76ce4dafa290ec0d9cf9001def138fc626b761b6a0fb8c256e606a236";
+        readonly digest: "4b94c40e5b2fd76e8d2e9f7c56752ab9128c842787418f7937cdf47127fc44d7";
+        readonly methodRequirements: readonly ["quantitative-decision"];
+    }, {
+        readonly path: "references/paired-polynomial-comparison.md";
+        readonly digest: "1eba414b008acfcbbed5f696e2d057370cafe298c341d06f8610b6a594104b16";
+        readonly methodRequirements: readonly ["structured-paired-protocol", "closed-paired-evidence"];
     }, {
         readonly path: "references/uncertainty-and-units.md";
         readonly digest: "dfef4a9f4bf559383cee0b75358ed83cfa08f8a1f0265845926d8d2c6febc3b4";
@@ -130,10 +140,10 @@ export declare const SKILL_MANIFEST: readonly [{
 }, {
     readonly id: "pi-research-reports";
     readonly name: "pi-research-reports";
-    readonly description: "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports.";
+    readonly description: "Write and save evidence-backed research reports and run comparisons; prepare fixed-source independent review of formal Run reports, analysis handoffs, fixed report records, and local result exports.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-reports/SKILL.md";
-    readonly digest: "c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47";
+    readonly digest: "4820d58829830192e36d2b2cbeff10e2ab7f45c82d0656af7b32813ce4a9d165";
     readonly resources: readonly [{
         readonly path: "references/fixed-report.md";
         readonly digest: "4d9a3a6df3262015e69eeb80abaa203ca31c82f3013eade6d7e0edf1de5b73bc";
@@ -144,6 +154,13 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly path: "agent-skills/orx-reports/SKILL.md";
         readonly blob: "313d3ca61372e5f2e101cac6e78828393d03ad87";
     };
+    readonly prerequisites: readonly [{
+        readonly skillId: "pi-research-evidence";
+        readonly resource: "references/exploratory-data-analysis.md";
+    }, {
+        readonly skillId: "pi-research-evidence";
+        readonly resource: "references/scientific-critical-thinking.md";
+    }];
 }, {
     readonly id: "pi-research-figures";
     readonly name: "pi-research-figures";
@@ -287,7 +304,8 @@ export declare const SKILL_MANIFEST: readonly [{
         readonly digest: "9b26d75b3f6df622c44daed8381826d0afb0d7a6845c09f8bc1315343be19193";
     }, {
         readonly path: "references/systematic-review.md";
-        readonly digest: "999f4d46f7f1544f7a9c34faabd7efe32e627c320ce9c4a4da0e4f493a547235";
+        readonly digest: "ba53d57c35bf0fdc1c37efd1a2add4e09d40be46d7b3923757a5679acf6cffda";
+        readonly methodRequirements: readonly ["literature-identity"];
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";

@@ -30,7 +30,7 @@ export declare class GitService {
         sourceDigest?: undefined;
     } | {
         sessionId: string;
-        state: "failed" | "pending" | "conflict" | "ready";
+        state: "failed" | "pending" | "ready" | "conflict";
         sourceRevisionId: string;
         branch: string;
         head: string | undefined;
@@ -55,7 +55,7 @@ export declare class GitService {
         sourceDigest: string;
         files: {
             path: string;
-            status: "added" | "deleted" | "modified";
+            status: "added" | "modified" | "deleted";
             beforeDigest: string | null;
             afterDigest: string | null;
             beforeMode: "100644" | "100755" | null;

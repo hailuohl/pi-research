@@ -1,3 +1,4 @@
+import {FORMAL_REPORT_OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/formal-report-review-schemas.js';
 import {RUN_GRANT_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/run-grant-schemas.js';
 import {WORKING_GRANT_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/working-grant-schemas.js';
 import {DISCOVERY_GRANT_INPUT_SCHEMAS} from '../../dist/packages/contracts/operations/discovery-grant-schemas.js';
@@ -111,6 +112,8 @@ test('all existing public tools have closed, literal success contracts exercised
   try{const challenge=await owner('ssh_target_challenge',{id:'schema-onboard',host:'onboard.invalid',user:'research',identityFile,remoteRoot:'/srv/schema/jobs',expectedVersion:0});await owner('ssh_target_confirm',{challengeId:challenge.challengeId,fingerprint:challenge.fingerprint});await owner('ssh_target_setup',{id:'schema-onboard',expectedVersion:1});}finally{s.app.sshTargets.scan=scan;s.app.sshTargets.onboarding=onboarding;}
   await call('research_skill_list');
   await call('research_skill_read',{skillId:'pi-research-overview'});
+  const methods=await call('research_method_compile',{specification:{version:1,literatureSources:[],quantitative:{type:'descriptive'}}});assert.equal(methods.compilerVersion,'method-contract-v1');assert.deepEqual(methods.specification.quantitative,{type:'descriptive'});
+  const fixtureRoot=s.app.sessions.create(USER,s.project.id,{title:'UNIT separate fixture workflow'});s.app.store.update('session',fixtureRoot.id,fixtureRoot.version,{state:'running',generation:1,leaseUntil:Date.now()+120000});const fixture=await call('research_fixture_prepare',{profile:'numeric-regression-v1'},{...root,sessionId:fixtureRoot.id});assert.equal(fixture.inputPath,`/data/${fixture.fixtureRef.id}`);assert.equal(fixture.fixtureRef.generatorVersion,'numeric-regression-v1');
   await call('connector_status');
   await call('project_inspect');
   const preparedCampaign=await call('campaign_prepare',{goal:'schema fixture',baselineExperimentId:s.baseline.id});
@@ -118,12 +121,12 @@ test('all existing public tools have closed, literal success contracts exercised
   const projectIndex=await call('project_inspect');assert.deepEqual(projectIndex.campaigns,[{id:preparedCampaign.id,goal:'schema fixture',state:'draft'}]);
   await call('workspace_list',{source:'project'});
   await call('workspace_write',{path:'sample.txt',content:'sample',expectedDigest:null});
-  await call('workspace_read',{path:'sample.txt'});
+  const sampleRead=await call('workspace_read',{path:'sample.txt'});
   const artifact=await call('artifact_create',{title:'text.txt',content:'measured original text'});
   await call('artifact_read',{artifactId:artifact.id});
   const evidence=await call('evidence_register',{artifactId:artifact.id,exactQuote:'measured'});
   await call('evidence_read',{evidenceId:evidence.id});
-  const brief=await call('research_brief_save',{expectedRevisionId:null,question:'A fixed research question',scope:'Controlled comparison',constraints:[],successCriteria:['Check real metrics'],clarificationQuestions:[],literatureSummary:'Original source fixture',hypotheses:[{statement:'A hypothesis for later testing',evidenceIds:[evidence.id]}],evidenceIds:[evidence.id],steps:[{title:'Baseline',description:'Separate run approval required'}],status:'ready'});
+  const brief=await call('research_brief_save',{draftFiles:[{path:'sample.txt',readId:sampleRead.draftReadId}],expectedRevisionId:null,question:'A fixed research question',scope:'Controlled comparison',constraints:[],successCriteria:['Check real metrics'],clarificationQuestions:[],literatureSummary:'Original source fixture',hypotheses:[{statement:'A hypothesis for later testing',evidenceIds:[evidence.id]}],evidenceIds:[evidence.id],steps:[{title:'Baseline',description:'Separate run approval required'}],status:'ready'});
   await call('research_brief_inspect');
   check('research_brief_confirm',s.app.operations.execute(USER,'research_brief_confirm',{briefId:brief.id,expectedVersion:brief.version},{projectId:s.project.id,sessionId:s.session.id,idempotencyKey:'schema-brief-confirm'}));
   const notice=s.app.sessions.system(s.session.id,'host notice');
@@ -189,7 +192,7 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('change_proposal_prepare',{baseExperimentId:s.baseline.id,expectedRevision:1,title:'patch',hypothesis:'fixture',changes:[{path:'new.txt',expectedDigest:null,artifactId:changeArtifact.id}]});
   // Source-access and grant operations are covered by their own feature tests;
   // text-evidence.test.mjs exercises all four TextCorpusGrant operations through Registry.
-  const expected=Object.keys(TOOL_DEFINITIONS).filter(name=>!Object.hasOwn(SESSION_HISTORY_INPUT_SCHEMAS,name)&&!Object.hasOwn(RUN_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(WORKING_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(DISCOVERY_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(RESEARCH_PLAN_INPUT_SCHEMAS,name)&&!Object.hasOwn(SOURCE_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(DEVELOPMENT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(GIT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REVIEW_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REPORT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SCHEDULER_INPUT_SCHEMAS,name)&&!Object.hasOwn(DOCUMENT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SKILL_INPUT_SCHEMAS,name)&&!Object.hasOwn(PUBLICATION_INPUT_SCHEMAS,name)&&!['docker_connection_probe','ssh_target_inspect','ssh_target_preferences_configure'].includes(name)&&name!=='reviewed_change_prepare'&&!name.startsWith('text_corpus_grant_'));
+  const expected=Object.keys(TOOL_DEFINITIONS).filter(name=>!Object.hasOwn(SESSION_HISTORY_INPUT_SCHEMAS,name)&&!Object.hasOwn(RUN_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(WORKING_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(DISCOVERY_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(RESEARCH_PLAN_INPUT_SCHEMAS,name)&&!Object.hasOwn(SOURCE_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(DEVELOPMENT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(GIT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REVIEW_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(FORMAL_REPORT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REPORT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SCHEDULER_INPUT_SCHEMAS,name)&&!Object.hasOwn(DOCUMENT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SKILL_INPUT_SCHEMAS,name)&&!Object.hasOwn(PUBLICATION_INPUT_SCHEMAS,name)&&!['docker_connection_probe','ssh_target_inspect','ssh_target_preferences_configure'].includes(name)&&name!=='reviewed_change_prepare'&&!name.startsWith('text_corpus_grant_'));
   assert.deepEqual([...seen].sort(),expected.sort());
   const corrupt=structuredClone(evidence);corrupt.locator.typo=1;
   assert.throws(()=>validateSchema(OUTPUT_SCHEMAS.evidence_read,corrupt,'output'),{code:'INVALID_OUTPUT'});

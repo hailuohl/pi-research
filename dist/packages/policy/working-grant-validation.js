@@ -1,9 +1,10 @@
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { verifySnapshot } from '../workspace/files.js';
+import { assertSyntheticManifest } from '../research-workflows/synthetic-fixtures.js';
 export function workingGrantPayload(g) {
     const { developmentTaskId, templateManifestDigest, sessionId, sourceRevisionId, model, baselineSnapshot, command, environmentImageDigest, dockerContext, resources, dataArtifacts, expectedArtifacts, editablePaths, maxTests, maxChangedBytes, expiresAt, approvalId } = g;
-    return { developmentTaskId, templateManifestDigest, sessionId, sourceRevisionId, model, baselineSnapshot, command, environmentImageDigest, dockerContext, resources, dataArtifacts, expectedArtifacts, editablePaths, maxTests, maxChangedBytes, expiresAt, approvalId, ...(g.threadLimit === undefined ? {} : { threadLimit: g.threadLimit }) };
+    return { developmentTaskId, templateManifestDigest, sessionId, sourceRevisionId, model, baselineSnapshot, command, environmentImageDigest, dockerContext, resources, dataArtifacts, expectedArtifacts, editablePaths, maxTests, maxChangedBytes, expiresAt, approvalId, ...(g.threadLimit === undefined ? {} : { threadLimit: g.threadLimit }), ...(g.metricArtifact === undefined ? {} : { metricArtifact: g.metricArtifact }), ...(g.researchBrief === undefined ? {} : { researchBrief: g.researchBrief }), ...(g.syntheticFixture === undefined ? {} : { syntheticFixture: g.syntheticFixture }) };
 }
 export const workingGrantReference = (g) => ({ id: g.id, digest: g.digest, approvalId: g.approvalId });
 export function assertWorkingGrantRecord(store, pid, id) {
@@ -11,7 +12,10 @@ export function assertWorkingGrantRecord(store, pid, id) {
     ensure(g.threadLimit === undefined || Number.isSafeInteger(g.threadLimit) && g.threadLimit >= 1 && g.threadLimit <= 8, 'WORKING_GRANT_CORRUPTED', '私有实现授权的线程上限无效');
     ensure(digest(workingGrantPayload(g)) === g.digest && digest(g.baselineSnapshot.files) === g.baselineSnapshot.digest, 'WORKING_GRANT_CORRUPTED', '私有实现授权的固定内容已改变');
     const template = store.get('development-task', g.developmentTaskId, pid);
-    ensure(template.manifestDigest === g.templateManifestDigest && digest(template.manifest) === g.templateManifestDigest && template.manifest.threadLimit === g.threadLimit, 'WORKING_GRANT_TEMPLATE_STALE', '原测试模板已改变');
+    ensure(template.manifestDigest === g.templateManifestDigest && digest(template.manifest) === g.templateManifestDigest && template.manifest.threadLimit === g.threadLimit && template.manifest.metricArtifact === g.metricArtifact && digest(template.manifest.researchBrief) === digest(g.researchBrief), 'WORKING_GRANT_TEMPLATE_STALE', '原测试模板已改变');
+    ensure(digest(template.manifest.syntheticFixture) === digest(g.syntheticFixture), 'WORKING_GRANT_TEMPLATE_STALE', '固定fixture字段不能丢弃或替换');
+    if (g.syntheticFixture)
+        assertSyntheticManifest(store, pid, g.sessionId, g.syntheticFixture, template.manifest.syntheticFixture, template.manifest.command, template.manifest.dataArtifacts);
     const approval = store.get('approval', g.approvalId, pid);
     ensure(approval.subjectKind === 'working-grant' && approval.subjectId === g.id && approval.digest === g.digest && approval.scope === 'working-grant.activate' && !approval.workingGrant, 'APPROVAL_STALE', '私有实现授权的原批准身份不符');
     return { grant: g, approval };
@@ -46,7 +50,8 @@ export function assertWorkingGrantDelta(g, files) {
 export function assertWorkingGrantManifest(g, m) {
     ensure(m.sessionId === g.sessionId && m.sourceRevisionId === g.sourceRevisionId && !m.scopeTaskId && !m.scopeAttemptId && m.scopeGeneration === undefined, 'WORKING_GRANT_SCOPE_CHANGED', '测试会话或固定来源不属于本授权');
     const resources = Object.entries(g.resources).every(([key, limit]) => Number.isSafeInteger(m.resources[key]) && m.resources[key] > 0 && m.resources[key] <= limit) && Object.keys(m.resources).every(key => key in g.resources);
-    ensure(digest(m.command) === digest(g.command) && m.environmentImageDigest === g.environmentImageDigest && m.dockerContext === g.dockerContext && m.threadLimit === g.threadLimit && resources && digest(m.dataArtifacts) === digest(g.dataArtifacts) && digest(m.expectedArtifacts) === digest(g.expectedArtifacts) && m.networkPolicy === 'none', 'WORKING_GRANT_TEST_DENIED', '测试命令、镜像、线程上限、数据、资源或预期产物超出固定授权');
+    ensure(digest(m.command) === digest(g.command) && m.environmentImageDigest === g.environmentImageDigest && m.dockerContext === g.dockerContext && m.threadLimit === g.threadLimit && m.metricArtifact === g.metricArtifact && digest(m.researchBrief) === digest(g.researchBrief) && resources && digest(m.dataArtifacts) === digest(g.dataArtifacts) && digest(m.expectedArtifacts) === digest(g.expectedArtifacts) && m.networkPolicy === 'none', 'WORKING_GRANT_TEST_DENIED', '测试命令、镜像、线程上限、数据、资源或产物契约超出固定授权');
+    ensure(digest(m.syntheticFixture) === digest(g.syntheticFixture), 'WORKING_GRANT_TEST_DENIED', '不能丢弃/替换私有授权固定的fixture策略');
     ensure(Number.isFinite(Date.parse(m.deadline)) && Date.parse(m.deadline) <= Date.parse(g.expiresAt), 'WORKING_GRANT_TEST_DENIED', '测试期限超出授权期限');
     ensure(digest(m.inputSnapshot.files) === m.inputSnapshot.digest, 'MANIFEST_CORRUPTED', '测试源码清单摘要不符');
     assertWorkingGrantDelta(g, m.inputSnapshot.files);

@@ -1,9 +1,11 @@
+import { parseFormalReportAssessment } from '../publications/formal-report-review-types.js';
 import { object, text, strings, oneOf } from '../contracts/validation.js';
 import { ensure } from '../domain/errors.js';
+import { parseDevelopmentAssessment } from '../development/review-assessment.js';
 export function parseTaskResult(value) {
     const x = object(value);
     ensure(Array.isArray(x.claims ?? []) && (x.claims ?? []).length <= 24, 'INVALID_INPUT', '结论候选需要数组且不超过24条', 400);
-    return { summary: text(x.summary, 'summary', 16000), outcome: oneOf(x.outcome, ['completed', 'partial', 'blocked'], 'outcome'), evidenceIds: strings(x.evidenceIds ?? [], 'evidenceIds', 100), artifactIds: strings(x.artifactIds ?? [], 'artifactIds', 100), claims: (x.claims ?? []).map(raw => { const p = object(raw); return { statement: text(p.statement, 'statement', 8000), evidenceIds: strings(p.evidenceIds, 'evidenceIds', 100), limitations: strings(p.limitations ?? [], 'limitations', 30) }; }), unresolvedQuestions: strings(x.unresolvedQuestions ?? [], 'unresolvedQuestions', 30), ...(x.verdict ? { verdict: oneOf(x.verdict, ['accept', 'reject', 'disputed'], 'verdict') } : {}) };
+    return { ...(x.formalReportAssessment === undefined ? {} : { formalReportAssessment: parseFormalReportAssessment(x.formalReportAssessment) }), ...(x.developmentAssessment === undefined ? {} : { developmentAssessment: parseDevelopmentAssessment(x.developmentAssessment) }), summary: text(x.summary, 'summary', 16000), outcome: oneOf(x.outcome, ['completed', 'partial', 'blocked'], 'outcome'), evidenceIds: strings(x.evidenceIds ?? [], 'evidenceIds', 100), artifactIds: strings(x.artifactIds ?? [], 'artifactIds', 100), claims: (x.claims ?? []).map(raw => { const p = object(raw); return { statement: text(p.statement, 'statement', 8000), evidenceIds: strings(p.evidenceIds, 'evidenceIds', 100), limitations: strings(p.limitations ?? [], 'limitations', 30) }; }), unresolvedQuestions: strings(x.unresolvedQuestions ?? [], 'unresolvedQuestions', 30), ...(x.verdict ? { verdict: oneOf(x.verdict, ['accept', 'reject', 'disputed'], 'verdict') } : {}) };
 }
 /** Enforce the declared deliverables, rather than trusting a model's outcome. */
 export function validateDeliverables(task, result, read) {

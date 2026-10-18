@@ -1,4 +1,6 @@
+import {FORMAL_REPORT_INPUT_SCHEMAS,FORMAL_REPORT_ASSESSMENT_SCHEMA} from './formal-report-review-schemas.js';
 import {RESEARCH_ACTION_INPUT_SCHEMAS} from './research-action-schemas.js';
+import {METHOD_INPUT_SCHEMAS} from './method-contract-schemas.js';
 import {EXECUTION_ENVIRONMENT_INPUT_SCHEMAS,GPU_SCHEMA,LOCAL_RUNTIME_SCHEMA,LOCAL_EXECUTION_SCHEMA,GPU_TARGET_SCHEMA} from './execution-environment-schemas.js';
 import {HOST_EXECUTION_INPUT_SCHEMA} from './host-access-schemas.js';
 import {RESEARCH_BRIEF_INPUT_SCHEMAS} from './research-brief-schemas.js';
@@ -17,6 +19,7 @@ import {RUN_GRANT_INPUT_SCHEMAS} from './run-grant-schemas.js';
 import {DISCOVERY_GRANT_INPUT_SCHEMAS} from './discovery-grant-schemas.js';
 import {SOURCE_INPUT_SCHEMAS} from './source-schemas.js';
 import { s, type JsonSchema, type InferSchema } from './schema.js';
+import {DEVELOPMENT_ASSESSMENT_SCHEMA} from './development-assessment-schemas.js';
 
 const id = s.string(100), version = s.integer(1), cursor = s.nullable(s.integer(0)), source = s.nullable(s.enum(['session', 'project']));
 const strings = (max = 100) => s.array(s.string(1000), max);
@@ -49,6 +52,7 @@ const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    ...METHOD_INPUT_SCHEMAS,
     ...RESEARCH_ACTION_INPUT_SCHEMAS,
     ...EXECUTION_ENVIRONMENT_INPUT_SCHEMAS,
     host_execute:HOST_EXECUTION_INPUT_SCHEMA,
@@ -56,7 +60,7 @@ export const INPUT_SCHEMAS = {
     ...RESEARCH_PLAN_INPUT_SCHEMAS,
     ...SKILL_INPUT_SCHEMAS,
     ...PUBLICATION_INPUT_SCHEMAS,
-    ...DEVELOPMENT_INPUT_SCHEMAS, ...WORKING_GRANT_INPUT_SCHEMAS, ...RUN_GRANT_INPUT_SCHEMAS, ...DISCOVERY_GRANT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS,...SCHEDULER_INPUT_SCHEMAS, ...SESSION_HISTORY_INPUT_SCHEMAS,
+    ...DEVELOPMENT_INPUT_SCHEMAS, ...WORKING_GRANT_INPUT_SCHEMAS, ...RUN_GRANT_INPUT_SCHEMAS, ...DISCOVERY_GRANT_INPUT_SCHEMAS, ...GIT_INPUT_SCHEMAS, ...REVIEW_INPUT_SCHEMAS, ...FORMAL_REPORT_INPUT_SCHEMAS, ...REPORT_INPUT_SCHEMAS,...SCHEDULER_INPUT_SCHEMAS, ...SESSION_HISTORY_INPUT_SCHEMAS,
     ...SOURCE_INPUT_SCHEMAS,...DOCUMENT_INPUT_SCHEMAS,
     research_skill_list: s.object({}),
     research_skill_read: s.object({ skillId: id, resource: s.string(200) }, ['skillId']),
@@ -107,7 +111,7 @@ export const INPUT_SCHEMAS = {
     task_result_read: s.object({ taskId: id }, ['taskId']),
     task_context_read: s.object({}),
     task_progress_report: s.object({ message: s.string(2000) }, ['message']),
-    task_result_submit: s.object({ summary: s.string(16000), outcome: s.enum(['completed', 'partial', 'blocked']), evidenceIds: s.nullable(strings()), artifactIds: s.nullable(strings()), claims: s.nullable(s.array(s.object({ statement: s.string(8000), evidenceIds: strings(), limitations: s.nullable(strings(30)) }, ['statement', 'evidenceIds']), 24)), unresolvedQuestions: s.nullable(strings(30)), verdict: s.enum(['accept', 'reject', 'disputed']) }, ['summary', 'outcome']),
+    task_result_submit: s.object({ formalReportAssessment:FORMAL_REPORT_ASSESSMENT_SCHEMA,developmentAssessment:DEVELOPMENT_ASSESSMENT_SCHEMA,summary: s.string(16000), outcome: s.enum(['completed', 'partial', 'blocked']), evidenceIds: s.nullable(strings()), artifactIds: s.nullable(strings()), claims: s.nullable(s.array(s.object({ statement: s.string(8000), evidenceIds: strings(), limitations: s.nullable(strings(30)) }, ['statement', 'evidenceIds']), 24)), unresolvedQuestions: s.nullable(strings(30)), verdict: s.enum(['accept', 'reject', 'disputed']) }, ['summary', 'outcome']),
 } as const satisfies Record<string, JsonSchema>;
 
 export type OperationInput<N extends keyof typeof INPUT_SCHEMAS> = InferSchema<(typeof INPUT_SCHEMAS)[N]>;

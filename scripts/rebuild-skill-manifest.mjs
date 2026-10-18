@@ -28,6 +28,20 @@ for(const s of m.skills){
  s.digest=sha(sourceBytes(s.path));const paths=new Set();
  for(const r of s.resources){const parts=r.path.split('/');if(!parts.length||parts.some(p=>!p||p==='.'||p==='..'||/[\\:\x00-\x1f]/.test(p)||['.pi','.git','.codex','hooks','extensions'].includes(p.toLowerCase())||/^agents(?:\.|$)/i.test(p))||paths.has(r.path.toLowerCase()))throw Error('unsafe resource path');paths.add(r.path.toLowerCase());r.digest=sha(sourceBytes(join(dirname(s.path),r.path)));}
 }
+const active=new Set(),checked=new Set();
+for(const skill of m.skills)for(const resource of skill.resources)if(resource.methodRequirements!==undefined){const requirements=resource.methodRequirements;if(!Array.isArray(requirements)||requirements.length===0||requirements.length>4||new Set(requirements).size!==requirements.length||requirements.some(r=>!['literature-identity','quantitative-decision','structured-paired-protocol','closed-paired-evidence'].includes(r)))throw Error('invalid method requirements');}
+function prerequisites(skill){
+ if(active.has(skill.id))throw Error('cyclic skill prerequisite: '+skill.id);if(checked.has(skill.id))return;active.add(skill.id);
+ const dependencies=skill.prerequisites??[];if(!Array.isArray(dependencies)||dependencies.length>8)throw Error('invalid skill prerequisites');const seen=new Set();
+ for(const dependency of dependencies){
+  if(!dependency||typeof dependency!=='object'||Object.keys(dependency).some(k=>!['skillId','resource'].includes(k))||typeof dependency.skillId!=='string'||dependency.resource!==undefined&&typeof dependency.resource!=='string')throw Error('invalid skill prerequisite');
+  const target=m.skills.find(s=>s.id===dependency.skillId),key=`${dependency.skillId}/${dependency.resource??'SKILL.md'}`;if(!target||seen.has(key)||!skill.roles.every(role=>target.roles.includes(role)))throw Error('unavailable or role-incompatible skill prerequisite');seen.add(key);
+  if(dependency.resource!==undefined&&!target.resources.some(r=>r.path===dependency.resource))throw Error('unknown prerequisite resource');
+  prerequisites(target);
+ }
+ active.delete(skill.id);checked.add(skill.id);
+}
+for(const skill of m.skills)prerequisites(skill);
 m.bundleId=sha(JSON.stringify(m.skills));
 const release={...m,manifestDigest:sha(JSON.stringify(m.skills))},dir=safe(join('skills/releases',m.bundleId));
 if(!releases.some(r=>r.bundleId===m.bundleId)){

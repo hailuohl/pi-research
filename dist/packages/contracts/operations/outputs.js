@@ -1,4 +1,7 @@
+import { FORMAL_REPORT_OUTPUT_SCHEMAS, FORMAL_REPORT_CONTEXT_SCHEMA, FORMAL_REPORT_ASSESSMENT_SCHEMA } from './formal-report-review-schemas.js';
+import { DRAFT_ROLE_SCHEMA, PROTOCOL_DOCUMENT_SCHEMA } from './method-contract-schemas.js';
 import { RESEARCH_ACTION_OUTPUT_SCHEMAS } from './research-action-schemas.js';
+import { METHOD_OUTPUT_SCHEMAS, METHOD_REQUIREMENTS_SCHEMA } from './method-contract-schemas.js';
 import { EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS, GPU_SCHEMA, LOCAL_RUNTIME_SCHEMA, LOCAL_EXECUTION_SCHEMA, GPU_TARGET_SCHEMA } from './execution-environment-schemas.js';
 import { HOST_EXECUTION_OUTPUT_SCHEMA } from './host-access-schemas.js';
 import { RESEARCH_BRIEF_OUTPUT_SCHEMAS } from './research-brief-schemas.js';
@@ -18,6 +21,9 @@ import { RUN_GRANT_OUTPUT_SCHEMAS, RUN_GRANT_REFERENCE_SCHEMA } from './run-gran
 import { DISCOVERY_GRANT_OUTPUT_SCHEMAS } from './discovery-grant-schemas.js';
 import { DISCOVERY_GRANT_REFERENCE_SCHEMA } from './document-schemas.js';
 import { SOURCE_OUTPUT_SCHEMAS } from './source-schemas.js';
+import { DEVELOPMENT_ASSESSMENT_SCHEMA, REVIEW_INVENTORY_SCHEMA, REVIEW_BRIEF_ARTIFACT_SCHEMA } from './development-assessment-schemas.js';
+import { RESEARCH_SOURCE_INPUT_SCHEMA, RESEARCH_BRIEF_REFERENCE_SCHEMA } from './research-brief-schemas.js';
+import { REVIEW_TEST_ARTIFACT_SCHEMA } from './review-schemas.js';
 const string = { type: 'string' };
 const number = { type: 'number' };
 const integer = { type: 'integer' };
@@ -53,17 +59,18 @@ const manifest = object({
     threadLimit: { type: 'integer', minimum: 1, maximum: 64 },
     localRuntime: LOCAL_RUNTIME_SCHEMA, localExecution: LOCAL_EXECUTION_SCHEMA, gpuTarget: GPU_TARGET_SCHEMA,
     analysis: runAnalysis,
-    researchBrief: researchBriefRef,
+    researchBrief: researchBriefRef, methodContractDigest: string,
     experimentId: string, experimentVersion: integer, experimentRevision: integer,
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
     sourceFiles: array(sourceFile), createdAt: string, sourceRevisionId: string, gitCommit: string, sshTarget
-}, ['threadLimit', 'localRuntime', 'localExecution', 'gpuTarget', 'sourceRevisionId', 'gitCommit', 'sshTarget', 'researchBrief', 'analysis']);
+}, ['threadLimit', 'localRuntime', 'localExecution', 'gpuTarget', 'sourceRevisionId', 'gitCommit', 'sshTarget', 'researchBrief', 'analysis', 'methodContractDigest']);
 const runnerExecution = object({ backend: enumeration('local', 'docker', 'ssh'), sshHandle: string, dockerContext: string, containerName: string, containerId: string, imageId: string, controlDir: string, generation: integer, leaseUntil: number, startRequested: boolean, recoveryCount: integer, logTruncated: boolean, logsIncomplete: boolean, outputExceeded: boolean }, ['sshHandle', 'containerId', 'imageId', 'logTruncated', 'logsIncomplete', 'outputExceeded']);
 const taskResult = object({
+    formalReportAssessment: FORMAL_REPORT_ASSESSMENT_SCHEMA, developmentAssessment: DEVELOPMENT_ASSESSMENT_SCHEMA,
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,
     claims: array(object({ statement: string, evidenceIds: strings, limitations: strings })),
     unresolvedQuestions: strings, verdict: enumeration('accept', 'reject', 'disputed')
-}, ['verdict']);
+}, ['verdict', 'developmentAssessment', 'formalReportAssessment']);
 const campaign = row('campaign', {
     goal: string, rootSessionId: string, rootModel: object({ provider: string, model: string, thinking: { type: 'string', minLength: 1, maxLength: 64 } }), baselineExperimentId: string, focusExperimentId: string, contractDigest: string, primaryMetric: string, direction: enumeration('min', 'max'), state: enumeration('draft', 'active', 'paused', 'stopped'), currentRoundId: string, roundNumber: integer,
     limits: object({ maxRounds: integer, maxCandidatesPerRound: integer, maxUnansweredRunsPerNode: integer, maxConsecutiveRegressions: integer, maxAnalysisAttempts: integer, deadline: string }, ['deadline']),
@@ -97,7 +104,7 @@ const CORE_OUTPUT_SCHEMAS = {
         }, ['startedAt', 'endedAt', 'metrics'])),
         cursor: integer, hasMore: boolean
     }),
-    workspace_read: object({ path: string, content: string, digest: string, size: integer }),
+    workspace_read: object({ path: string, content: string, digest: string, size: integer, draftReadId: string, sourceInputReadBlockedReason: enumeration('BRIEF_SOURCE_PATH_INVALID', 'BRIEF_SOURCE_ENCODING_INVALID'), draftReadBlockedReason: enumeration('BRIEF_DRAFT_CHANGED', 'BRIEF_DRAFT_ENCODING_INVALID') }, ['draftReadId', 'draftReadBlockedReason', 'sourceInputReadBlockedReason']),
     workspace_write: object({ path: string, digest: string, size: integer }),
     change_proposal_prepare: row('change-proposal', {
         baseExperimentId: string, baseRevision: integer, baseSnapshot: snapshot, contractDigest: string,
@@ -176,6 +183,7 @@ const contextTask = object({ id: string, key: string, result: taskResult }, ['re
 const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string, discoveryGrant: DISCOVERY_GRANT_REFERENCE_SCHEMA }, ['wakeupId', 'runId', 'taskId', 'discoveryGrant']);
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    ...METHOD_OUTPUT_SCHEMAS,
     ...RESEARCH_ACTION_OUTPUT_SCHEMAS,
     host_execute: HOST_EXECUTION_OUTPUT_SCHEMA,
     ...RESEARCH_BRIEF_OUTPUT_SCHEMAS,
@@ -183,7 +191,7 @@ export const OUTPUT_SCHEMAS = {
     ...RESEARCH_PLAN_OUTPUT_SCHEMAS,
     ...SKILL_OUTPUT_SCHEMAS,
     ...PUBLICATION_OUTPUT_SCHEMAS,
-    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...RUN_GRANT_OUTPUT_SCHEMAS, ...DISCOVERY_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS, ...SCHEDULER_OUTPUT_SCHEMAS, ...SESSION_HISTORY_OUTPUT_SCHEMAS,
+    ...DEVELOPMENT_OUTPUT_SCHEMAS, ...WORKING_GRANT_OUTPUT_SCHEMAS, ...RUN_GRANT_OUTPUT_SCHEMAS, ...DISCOVERY_GRANT_OUTPUT_SCHEMAS, ...GIT_OUTPUT_SCHEMAS, ...REVIEW_OUTPUT_SCHEMAS, ...FORMAL_REPORT_OUTPUT_SCHEMAS, ...REPORT_OUTPUT_SCHEMAS, ...SCHEDULER_OUTPUT_SCHEMAS, ...SESSION_HISTORY_OUTPUT_SCHEMAS,
     ...CORE_OUTPUT_SCHEMAS,
     ...SOURCE_OUTPUT_SCHEMAS, ...DOCUMENT_OUTPUT_SCHEMAS,
     run_inspect: { ...CORE_OUTPUT_SCHEMAS.run_submit, properties: { ...CORE_OUTPUT_SCHEMAS.run_submit.properties, scheduling: runScheduling } },
@@ -198,7 +206,7 @@ export const OUTPUT_SCHEMAS = {
     }),
     reviewed_change_prepare: CORE_OUTPUT_SCHEMAS.change_proposal_prepare,
     workspace_list: array(object({ path: string, size: integer, digest: string }, ['digest'])),
-    artifact_read: object({ artifactId: string, digest: string, title: string, mediaType: string, content: string, cursor: integer, complete: boolean }),
+    artifact_read: object({ artifactId: string, digest: string, title: string, mediaType: string, content: string, cursor: integer, complete: boolean, reviewReadId: string }, ['reviewReadId']),
     artifact_create: artifact,
     report_create: artifact,
     report_export: artifact,
@@ -210,20 +218,20 @@ export const OUTPUT_SCHEMAS = {
     session_notice_read: object({ messageId: string, content: string, cursor: integer, complete: boolean }),
     run_logs: object({ content: string, cursor: integer, complete: boolean, start: integer, size: integer, identity: nullableString }),
     run_source_list: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, files: array(sourceFile) }, ['gitCommit']),
-    run_source_read: object({ runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, path: string, size: integer, digest: string, mode: enumeration('100644', '100755'), cursor: integer, end: integer, complete: boolean, content: string }, ['gitCommit', 'mode']),
+    run_source_read: object({ reviewReadId: string, runId: string, experimentId: string, revision: integer, sourceDigest: string, gitCommit: string, path: string, size: integer, digest: string, mode: enumeration('100644', '100755'), cursor: integer, end: integer, complete: boolean, content: string }, ['gitCommit', 'mode', 'reviewReadId']),
     approval_request: array(row('approval', { subjectKind: string, subjectId: string, digest: string, scope: string, status: enumeration('pending', 'approved', 'rejected', 'stale'), reason: string, decidedAt: string, fullAccess: FULL_ACCESS_REFERENCE_SCHEMA, workingGrant: WORKING_GRANT_REFERENCE_SCHEMA, runGrant: RUN_GRANT_REFERENCE_SCHEMA }, ['decidedAt', 'workingGrant', 'runGrant', 'fullAccess'])),
     experiment_plan_submit: row('experiment', { researchBrief: researchBriefRef, title: string, hypothesis: string, parentId: nullableString, lifecycle: enumeration('provisional', 'frozen', 'archived'), changeProposalId: string, contract, contractDigest: string, workspace: string, notes: strings, revision: integer }, ['changeProposalId', 'researchBrief']),
     collaboration_plan_submit: team,
     agent_delegate: team,
     task_inspect: array(row('task', {
         key: string, role, objective: string, dependencies: strings, critical: boolean, reviewOf: string, required: boolean, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings,
-        teamId: string, sessionId: string, discoveryGrantId: string, runGrantId: string, execution, acceptance, planVersion: integer, directiveVersion: integer, attemptCount: integer, generation: integer, attemptId: string, blockReason: string, result: taskResult, reviewId: string, publicationReviewId: string, skillIds: strings
-    }, ['critical', 'reviewOf', 'required', 'inputEvidenceIds', 'expectedOutputs', 'acceptanceRuleIds', 'sessionId', 'discoveryGrantId', 'runGrantId', 'attemptId', 'blockReason', 'result', 'reviewId', 'publicationReviewId', 'skillIds'])),
+        teamId: string, sessionId: string, discoveryGrantId: string, runGrantId: string, execution, acceptance, planVersion: integer, directiveVersion: integer, attemptCount: integer, generation: integer, attemptId: string, blockReason: string, result: taskResult, reviewId: string, publicationReviewId: string, formalReportReviewId: string, skillIds: strings
+    }, ['critical', 'reviewOf', 'required', 'inputEvidenceIds', 'expectedOutputs', 'acceptanceRuleIds', 'sessionId', 'discoveryGrantId', 'runGrantId', 'attemptId', 'blockReason', 'result', 'reviewId', 'publicationReviewId', 'formalReportReviewId', 'skillIds'])),
     task_result_read: object({ id: string, key: string, execution, acceptance, result: taskResult }, ['result']),
-    task_context_read: nullable(object({ skillBundleId: string, skillIds: strings, discoveryGrant: DISCOVERY_GRANT_REFERENCE_SCHEMA, runGrant: RUN_GRANT_REFERENCE_SCHEMA, runIntentIds: strings, schemaVersion: { const: 1 }, taskId: string, teamId: string, goal: string, objective: string, role, planVersion: integer, directiveVersion: integer, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings, upstream: array(contextTask), reviewOf: nullable(contextTask), restrictions: strings, stopConditions: strings, source: object({ snapshotId: string, experimentId: string, revision: integer, sourceDigest: string }), developmentReview: object({ reviewId: string, jobId: string, sourceDigest: string, manifestEvidenceId: string, testEvidenceIds: strings }), publicationReview: object({ reviewId: string, publicationResultId: string, revisionId: string, jobId: string, sourceDigest: string, pdfDigest: string, digest: string, requiredEvidenceIds: strings, artifactIds: strings }) }, ['source', 'developmentReview', 'publicationReview', 'skillBundleId', 'skillIds', 'discoveryGrant', 'runGrant', 'runIntentIds'])),
+    task_context_read: nullable(object({ skillBundleId: string, skillIds: strings, discoveryGrant: DISCOVERY_GRANT_REFERENCE_SCHEMA, runGrant: RUN_GRANT_REFERENCE_SCHEMA, runIntentIds: strings, schemaVersion: { const: 1 }, taskId: string, teamId: string, goal: string, objective: string, role, planVersion: integer, directiveVersion: integer, inputEvidenceIds: strings, expectedOutputs: array(expectedOutput), acceptanceRuleIds: strings, upstream: array(contextTask), reviewOf: nullable(contextTask), restrictions: strings, stopConditions: strings, source: object({ snapshotId: string, experimentId: string, revision: integer, sourceDigest: string }), developmentReview: object({ surfaceInventory: REVIEW_INVENTORY_SCHEMA, briefArtifact: REVIEW_BRIEF_ARTIFACT_SCHEMA, draftRoles: { type: 'array', items: DRAFT_ROLE_SCHEMA, maxItems: 5000 }, protocolDocument: PROTOCOL_DOCUMENT_SCHEMA, reviewId: string, jobId: string, sourceDigest: string, manifestEvidenceId: string, testEvidenceIds: strings, protocolVersion: { type: 'integer', minimum: 1, maximum: 2 }, researchBrief: RESEARCH_BRIEF_REFERENCE_SCHEMA, sourceInputs: { type: 'array', items: RESEARCH_SOURCE_INPUT_SCHEMA, maxItems: 32 }, testArtifacts: { type: 'array', items: REVIEW_TEST_ARTIFACT_SCHEMA, maxItems: 5011 } }, ['protocolVersion', 'researchBrief', 'sourceInputs', 'testArtifacts', 'draftRoles', 'protocolDocument', 'surfaceInventory', 'briefArtifact']), formalReportReview: FORMAL_REPORT_CONTEXT_SCHEMA, publicationReview: object({ reviewId: string, publicationResultId: string, revisionId: string, jobId: string, sourceDigest: string, pdfDigest: string, digest: string, requiredEvidenceIds: strings, artifactIds: strings }) }, ['source', 'developmentReview', 'publicationReview', 'formalReportReview', 'skillBundleId', 'skillIds', 'discoveryGrant', 'runGrant', 'runIntentIds'])),
     task_progress_report: object({ seq: integer, id: string, projectId: nullableString, type: { const: 'task.progress' }, payload: object({ sessionId: string, taskId: string, message: string }, ['taskId']), createdAt: string }),
     research_skill_list: object({ bundleId: string, builtinBundleId: string, revisionIds: strings, skills: array(object({ id: string, description: string, digest: string, resources: strings, source: skillSource, revisionId: string, requirements: SKILL_REQUIREMENTS_SCHEMA }, ['revisionId', 'requirements'])) }, ['builtinBundleId', 'revisionIds']),
-    research_skill_read: object({ id: string, resource: string, content: string, digest: string, bundleId: string, source: skillSource }),
+    research_skill_read: object({ id: string, resource: string, content: string, digest: string, bundleId: string, source: skillSource, methodRequirements: METHOD_REQUIREMENTS_SCHEMA, prerequisites: array(object({ id: string, resource: string, content: string, digest: string, bundleId: string, source: skillSource, methodRequirements: METHOD_REQUIREMENTS_SCHEMA }, ['methodRequirements'])) }, ['prerequisites', 'methodRequirements']),
     connector_status: object({
         version: integer, enabled: object({ alphaxiv: boolean, openalex: boolean, biorxiv: boolean, pubmed: boolean, crossref: boolean }), requestLimit: integer, requestsUsed: integer,
         credentials: object({ openalexKeyConfigured: boolean, ncbiKeyConfigured: boolean, ncbiEmailConfigured: boolean }),

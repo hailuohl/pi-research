@@ -593,7 +593,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 readonly enum: readonly ["text-only", "text-with-static-assets"];
             };
         };
-        readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
+        readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "roles" | "contentDigest" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
         readonly additionalProperties: false;
     };
     readonly skill_package_upload: {
@@ -701,7 +701,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["text-only", "text-with-static-assets"];
                     };
                 };
-                readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "roles" | "contentDigest" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly configuration: {
@@ -841,7 +841,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["text-only", "text-with-static-assets"];
                     };
                 };
-                readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "roles" | "contentDigest" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly configuration: {
@@ -1014,7 +1014,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                     readonly enum: readonly ["text-only", "text-with-static-assets"];
                                 };
                             };
-                            readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
+                            readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "roles" | "contentDigest" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                             readonly additionalProperties: false;
                         };
                         readonly reviews: {
@@ -1164,7 +1164,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                                     readonly type: "string";
                                 };
                             };
-                            readonly required: ("path" | "commit" | "blob" | "repository")[];
+                            readonly required: ("path" | "repository" | "commit" | "blob")[];
                             readonly additionalProperties: false;
                         };
                     };
@@ -1281,7 +1281,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                         readonly enum: readonly ["text-only", "text-with-static-assets"];
                     };
                 };
-                readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "authorization" | "contentDigest" | "roles" | "packageId" | "revisionTag" | "requirements")[];
+                readonly required: ("kind" | "projectId" | "id" | "version" | "createdAt" | "updatedAt" | "license" | "description" | "files" | "roles" | "contentDigest" | "authorization" | "packageId" | "revisionTag" | "requirements")[];
                 readonly additionalProperties: false;
             };
             readonly reviews: {

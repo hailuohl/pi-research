@@ -1,0 +1,112 @@
+import { ensure, asError } from '../domain/errors.js';
+import { object, text, integer } from '../contracts/validation.js';
+import { scope, interactiveCoordinator } from '../policy/permissions.js';
+import { assertProjectWritable } from '../policy/lifecycle.js';
+import { verifyRunRecord } from '../evidence/run-verifier.js';
+import { fixedResearchBrief } from '../research-workflows/briefs.js';
+import { digest } from '../storage/store.js';
+import { renderFormalInputFacts } from '../research-workflows/formal-input-facts.js';
+import { ASSESSMENT_AREAS } from '../development/review-assessment.js';
+import { recordFixedRead } from '../development/fixed-review-reading.js';
+import { assertFormalReviewCurrent, formalArtifactText, formalFacts, formalPermissionEpochs, formalReadingChecks, formalReportAcceptanceBasis, formalReviewInputs, formalReviewTargets, formalRunBinding, formalTaskSpec } from './formal-report-review-types.js';
+const USER = { type: 'user' };
+export class FormalReportReviewService {
+    app;
+    constructor(app) {
+        this.app = app;
+    }
+    access(actor, pid, r) { scope(actor, pid); ensure(actor.type === 'user' || actor.type === 'agent' && (actor.role === 'coordinator' && !actor.taskId && actor.sessionId === r.rootSessionId || actor.role === 'reviewer' && actor.taskId === r.taskId), 'TASK_SCOPE_DENIED', '只能读取本主会话或本独立任务的正式报告审查', 403); if (actor.type === 'agent') {
+        if (actor.taskId)
+            this.app.teams.active(actor);
+        else
+            interactiveCoordinator(actor, pid, this.app.store.get('session', r.rootSessionId, pid));
+    } }
+    authorize(actor, pid, id) { const r = this.app.store.get('formal-report-review', id, pid); this.access(actor, pid, r); return r; }
+    prepare(actor, pid, value) {
+        const x = object(value);
+        ensure(Object.keys(x).every(k => ['runId', 'reportArtifactId'].includes(k)), 'INVALID_INPUT', '正式报告准备只接受runId和reportArtifactId');
+        scope(actor, pid);
+        const runId = text(x.runId, 'runId', 100), reportId = text(x.reportArtifactId, 'reportArtifactId', 100);
+        return this.app.store.transaction(() => {
+            assertProjectWritable(this.app.store, pid);
+            const run = this.app.store.get('run', runId, pid), intent = this.app.store.get('run-intent', run.intentId, pid);
+            ensure(intent.rootSessionId, 'FORMAL_REPORT_ROOT_REQUIRED', '正式报告Run需要原主会话');
+            const root = this.app.store.get('session', intent.rootSessionId, pid);
+            ensure(root.role === 'coordinator' && !root.taskId && !root.teamId && root.state !== 'archived', 'FORMAL_REPORT_ROOT_REQUIRED', '需要未归档的原主协调会话');
+            ensure(actor.type === 'user' || actor.type === 'agent' && actor.sessionId === root.id, 'TASK_SCOPE_DENIED', '正式报告Run不属于当前主会话', 403);
+            if (actor.type === 'agent')
+                interactiveCoordinator(actor, pid, root);
+            ensure(run.state === 'succeeded' && run.integrity === 'complete' && run.exitCode === 0, 'FORMAL_REPORT_RUN_INCOMPLETE', '仅审查成功完整的正式Run');
+            verifyRunRecord(run, this.app.evidence);
+            const { artifact: report } = formalArtifactText(this.app.store, pid, reportId);
+            this.app.textCorpusGrants.authorizeContent(actor, pid, 'artifact_read', { artifactId: reportId });
+            this.app.evidence.read(actor, reportId);
+            ensure(!report.origin.startsWith('host:formal-report-review:') && ['text/plain', 'text/markdown'].includes(report.mediaType), 'FORMAL_REPORT_TEXT_REQUIRED', '报告须为获准的不可变UTF-8文本artifact');
+            const id = digest({ projectId: pid, runId, runManifestDigest: run.manifestDigest, reportArtifactId: reportId, reportDigest: report.digest, reviewProtocolVersion: 1 }), old = this.app.store.maybe('formal-report-review', id);
+            if (old) {
+                assertFormalReviewCurrent(this.app.store, pid, old);
+                return this.inspect(actor, pid, id);
+            }
+            const brief = fixedResearchBrief(this.app.store, pid, run.manifest.researchBrief, 'formal'), facts = formalFacts(this.app.store, pid, run);
+            ensure(facts.processed.policySatisfied, 'FORMAL_INPUT_POLICY_UNSUPPORTED', '固定数值表不满足原冻结missing/有限数值策略；未抽样或重fit');
+            ensure(this.app.store.get('project', pid).settings.enabled, 'MULTI_AGENT_DISABLED', '请先启用现有项目协作');
+            const targets = [], artifactTargets = new Map();
+            const addArtifact = (kind, id, logicalPath) => { const { artifact: a } = formalArtifactText(this.app.store, pid, id); if (actor.type === 'agent' && !a.origin.startsWith(`host:formal-report-review:${id}`)) {
+                this.app.textCorpusGrants.authorizeContent(actor, pid, 'artifact_read', { artifactId: id });
+                this.app.evidence.read(actor, id);
+            } const prior = artifactTargets.get(id); if (prior) {
+                if (!prior.roles.includes(kind))
+                    prior.roles.push(kind);
+                return;
+            } const target = { targetId: `artifact:${id}`, kind, roles: [kind], path: logicalPath ?? a.title, digest: a.digest, size: a.size, artifactId: id, artifactRecordDigest: digest(a) }; targets.push(target); artifactTargets.set(id, target); };
+            addArtifact('report', report.id);
+            for (const f of run.manifest.sourceFiles)
+                targets.push({ targetId: `run_source:${run.id}:${f.path}`, kind: 'run_source', roles: ['run_source'], path: f.path, digest: f.digest, size: f.size });
+            for (const input of brief.sourceInputs ?? [])
+                addArtifact('fixed_input', input.artifactId, input.path);
+            for (const id of run.artifactIds)
+                addArtifact('run_artifact', id);
+            const owned = (kind, title, content) => { ensure(Buffer.byteLength(content) <= 2 * 1024 * 1024, 'FORMAL_REPORT_SCOPE_TOO_LARGE', '完整宿主事实/brief超过2MiB文本限制'); const a = this.app.evidence.put(pid, title, Buffer.from(content), title.endsWith('.json') ? 'application/json' : 'text/markdown', `host:formal-report-review:${id}`); const target = { targetId: `artifact:${a.id}`, kind, roles: [kind], path: a.title, digest: a.digest, size: a.size, artifactId: a.id, artifactRecordDigest: digest(a) }; targets.push(target); };
+            owned('brief', 'formal-report-brief.json', JSON.stringify(brief, null, 2));
+            owned('host_facts', 'formal-input-facts.json', JSON.stringify(facts, null, 2));
+            owned('host_facts', 'formal-input-facts.md', renderFormalInputFacts(facts));
+            ensure(targets.length <= 5104 && targets.reduce((n, t) => n + t.size, 0) <= 32 * 1024 * 1024, 'FORMAL_REPORT_SCOPE_TOO_LARGE', '完整正式审查超过5104目标或32MiB，不支持截断/采样替代全文');
+            const inputs = { id, protocolVersion: 1, rootSessionId: root.id, runId: run.id, manifestDigest: run.manifestDigest, sourceDigest: run.manifest.snapshotDigest, researchBrief: run.manifest.researchBrief, methodContractDigest: brief.methodContract.contractDigest, reportArtifactId: report.id, reportDigest: report.digest, targets, factsDigest: digest(facts) };
+            // Validate every source text before exposing an approved partial scope.
+            formalReviewTargets(this.app.store, pid, inputs).forEach(t => t.read());
+            const wrapper = JSON.stringify(formalReviewInputs(inputs), null, 2);
+            ensure(Buffer.byteLength(wrapper) <= 2 * 1024 * 1024, 'FORMAL_REPORT_SCOPE_TOO_LARGE', '完整正式审查清单超过2MiB');
+            const artifact = this.app.evidence.put(pid, 'formal-report-review-target.json', Buffer.from(wrapper), 'application/json', `host:formal-report-review:${id}`), e = this.app.evidence.register(USER, pid, artifact.id, 0, wrapper.length, '固定正式Run与准确报告审查范围；wrapper不等于全文读取'), requiredEvidenceIds = [e.id];
+            const team = this.app.teams.create(actor, root.id, { goal: `独立审查正式Run研究报告 ${run.id}`, autoSummarize: false, budget: 1, tasks: [{ key: 'formal_report_review', role: 'reviewer', objective: `审查固定正式报告 formalReportReviewId=${id}。task_context_read.formalReportReview给出准确报告、全部Run源/原始输入、全部实际归档（含空logs）、完整brief和宿主数据质量事实。使用artifact_read、run_source_read或formal_report_review_source_read逐页实际阅读全文；evidence摘录、list或只首尾不算全文。比较准确报告断言与实际原始数据/字典、宿主质量事实、数量/区间/单位/规则和科学边界，记录具体原文定位与影响。提交formalReportAssessment={stage:'post_run_report',checks:[${ASSESSMENT_AREAS.join(', ')}],deferredChecks:[]}，每项{area,finding,references:[{readId,quote}],blockingGaps:[]}。每区定位报告，implementation_and_tests及independent_units_and_intervals另引实际Run归档，input_evidence同时引Run源与host_facts。quote必须来自本attempt实际返回片段，逐字且唯一。accept需完整读取且无当前blockingGaps；缺资料或矛盾作reject/disputed/blocked并保留实读引用。claims必须为空。机械完成和native意见不等于科学采纳；宿主facts不替代报告全文实质核定。`, dependencies: [], inputEvidenceIds: requiredEvidenceIds, acceptanceRuleIds: ['evidence-required'] }] }, false, undefined, formalReviewInputs(inputs));
+            const task = this.app.teams.tasks(USER, team.id)[0];
+            this.app.store.update('task', task.id, task.version, { formalReportReviewId: id });
+            const { id: _, ...inputData } = inputs, data = { ...inputData, runBindingDigest: digest(formalRunBinding(run)), permissionEpochs: formalPermissionEpochs(this.app.store, root.id), teamId: team.id, taskId: task.id, approvalId: team.approvalId, planDigest: team.planDigest, taskSpecDigest: digest(formalTaskSpec(task)), requiredEvidenceIds };
+            this.app.store.create('formal-report-review', pid, { ...data, digest: digest(data) }, id);
+            return this.inspect(actor, pid, id);
+        });
+    }
+    inspect(actor, pid, id) { const r = this.app.store.get('formal-report-review', id, pid); this.access(actor, pid, r); const task = this.app.store.get('task', r.taskId, pid), grant = this.app.store.get('approval', r.approvalId, pid); let status = grant.status === 'pending' ? 'awaiting_approval' : grant.status === 'rejected' ? 'rejected' : task.execution === 'running' ? 'running' : 'pending', blockingMessage; try {
+        assertFormalReviewCurrent(this.app.store, pid, r);
+        verifyRunRecord(this.app.store.get('run', r.runId, pid), this.app.evidence);
+        if (task.result) {
+            if (task.result.verdict === 'accept' && task.acceptance === 'accepted') {
+                formalReportAcceptanceBasis(this.app.store, pid, task);
+                status = 'mechanically_complete';
+            }
+            else
+                status = task.result.verdict === 'reject' ? 'rejected' : task.result.verdict === 'disputed' ? 'disputed' : 'blocked';
+        }
+    }
+    catch (error) {
+        status = 'stale';
+        blockingMessage = asError(error).message;
+    } return { id: r.id, ...formalReviewInputs(r), digest: r.digest, teamId: r.teamId, taskId: r.taskId, approvalId: r.approvalId, requiredEvidenceIds: r.requiredEvidenceIds, status, scientificAcceptance: 'requires_researcher_review', readingChecks: formalReadingChecks(this.app.store, pid, r, task), assessmentRequiredAreas: [...ASSESSMENT_AREAS], ...(task.result?.verdict ? { nativeVerdict: task.result.verdict } : {}), ...(blockingMessage ? { blockingMessage } : {}) }; }
+    assertTaskCurrent(task) { if (!task.formalReportReviewId)
+        return; const r = this.app.store.get('formal-report-review', task.formalReportReviewId, task.projectId); assertFormalReviewCurrent(this.app.store, task.projectId, r); verifyRunRecord(this.app.store.get('run', r.runId, task.projectId), this.app.evidence); this.app.approvals.assert(r.approvalId, task.projectId, r.teamId, r.planDigest, 'collaboration'); }
+    sourceRead(actor, pid, id, path, cursor = 0, limit = 16000) { const r = this.app.store.get('formal-report-review', id, pid); this.access(actor, pid, r); assertFormalReviewCurrent(this.app.store, pid, r); const t = formalReviewTargets(this.app.store, pid, r).find(t => t.kind === 'run_source' && t.path === path); ensure(t, 'NOT_FOUND', '固定正式Run源没有该文件', 404); const content = t.read(); integer(cursor, 'cursor', 0, content.length); integer(limit, 'limit', 1, 64000); const end = Math.min(content.length, cursor + limit); return { reviewId: r.id, runId: r.runId, targetId: t.targetId, path: t.path, digest: t.digest, cursor, end, content: content.slice(cursor, end), complete: end === content.length }; }
+    recordReading(actor, pid, operation, input, output, callId) { if (actor.type !== 'agent' || actor.role !== 'reviewer' || !actor.taskId)
+        return; const task = this.app.store.get('task', actor.taskId, pid); if (!task.formalReportReviewId)
+        return; const r = this.app.store.get('formal-report-review', task.formalReportReviewId, pid); this.access(actor, pid, r); const targets = formalReviewTargets(this.app.store, pid, r), target = operation === 'artifact_read' ? targets.find(t => t.artifactId === input.artifactId) : operation === 'run_source_read' && input.runId === r.runId || operation === 'formal_report_review_source_read' && input.reviewId === r.id ? targets.find(t => t.kind === 'run_source' && t.path === input.path) : undefined; if (!target)
+        return; ensure(output.digest === target.digest, 'FORMAL_REPORT_READ_INVALID', '读取摘要与固定目标不符'); return recordFixedRead(this.app.store, pid, 'formal-report-review-read', actor, r, target, operation === 'artifact_read' ? input.cursor ?? 0 : output.cursor, operation === 'artifact_read' ? output.cursor : output.end, output.content, callId, 'FORMAL_REPORT_READ_INVALID'); }
+}
+//# sourceMappingURL=formal-report-reviews.js.map

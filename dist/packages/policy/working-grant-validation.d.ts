@@ -3,6 +3,9 @@ import type { Approval, Row, SourceSnapshot } from '../domain/types.js';
 import type { SandboxManifest, SandboxJob, WorkingGrantReference } from '../execution/contracts.js';
 import type { WorkingGrant } from './working-grant-types.js';
 export declare function workingGrantPayload(g: WorkingGrant): {
+    syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding | undefined;
+    researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
+    metricArtifact?: string | undefined;
     threadLimit?: number | undefined;
     developmentTaskId: string;
     templateManifestDigest: string;

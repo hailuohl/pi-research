@@ -1,3 +1,4 @@
+import { FormalReportReviewService } from './publications/formal-report-reviews.js';
 import { ResearchActionService } from './research-workflows/actions.js';
 import { ResearchAutomationService } from './policy/research-automation.js';
 import { LocalRuntimeService } from './runners/local-runtime.js';
@@ -36,6 +37,10 @@ import { WakeupService } from './scheduler/wakeups.js';
 import { DecisionService } from './research-workflows/decision-service.js';
 import { CampaignService } from './research-workflows/campaign-service.js';
 import { ResearchBriefService } from './research-workflows/briefs.js';
+import { MethodContractService } from './research-workflows/method-contracts.js';
+import { SyntheticFixtureService } from './research-workflows/synthetic-fixtures.js';
+import { DraftReadService } from './research-workflows/draft-reads.js';
+import { SourceInputService } from './research-workflows/source-inputs.js';
 import { ResearchPlanService } from './research-workflows/plans.js';
 import { ReportService } from './publications/reports.js';
 import { LiteratureService } from './literature/service.js';
@@ -62,6 +67,7 @@ export declare class ResearchApp {
     readonly runGrants: RunGrantService;
     readonly publicationBuilds: PublicationBuildService;
     readonly publicationTemplates: PublicationTemplateLibrary;
+    readonly formalReportReviews: FormalReportReviewService;
     readonly publicationReviews: PublicationReviewService;
     readonly documents: DocumentService;
     readonly documentParsing: DocumentParsingService;
@@ -86,6 +92,10 @@ export declare class ResearchApp {
     readonly campaigns: CampaignService;
     readonly researchPlans: ResearchPlanService;
     readonly researchBriefs: ResearchBriefService;
+    readonly methodContracts: MethodContractService;
+    readonly syntheticFixtures: SyntheticFixtureService;
+    readonly draftReads: DraftReadService;
+    readonly sourceInputs: SourceInputService;
     readonly literature: LiteratureService;
     readonly reports: ReportService;
     readonly sessions: SessionService;

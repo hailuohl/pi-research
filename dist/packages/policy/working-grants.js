@@ -38,6 +38,8 @@ export class WorkingGrantService {
         return path;
     }
     origin(g) {
+        if (g.researchBrief)
+            this.app.researchBriefs.assertAdmission(g.projectId, g.researchBrief);
         validateSourceRevision(this.app.context, g.projectId, g.sourceRevisionId);
         verifySnapshot(this.app.store.paths.physical(g.baselineSnapshot.path), g.baselineSnapshot.files);
         for (const a of g.dataArtifacts) {
@@ -92,7 +94,7 @@ export class WorkingGrantService {
             ensure(paths.length > 0 && new Set(paths.map(p => process.platform === 'win32' ? p.toLowerCase() : p)).size === paths.length, 'INVALID_INPUT', '需要不重复的精确可编辑路径', 400);
             const expiresAt = text(x.expiresAt, 'expiresAt', 50);
             ensure(Number.isFinite(Date.parse(expiresAt)) && Date.parse(expiresAt) > Date.now() && Date.parse(expiresAt) <= Date.now() + 24 * 60 * 60 * 1000, 'INVALID_INPUT', '授权期限必须在未来24小时内', 400);
-            const fixed = { developmentTaskId: template.id, templateManifestDigest: template.manifestDigest, sessionId: s.id, sourceRevisionId: s.sourceRevisionId, model: s.model, baselineSnapshot: m.inputSnapshot, command: m.command, environmentImageDigest: m.environmentImageDigest, dockerContext: m.dockerContext, ...(m.threadLimit === undefined ? {} : { threadLimit: m.threadLimit }), resources: m.resources, dataArtifacts: m.dataArtifacts, expectedArtifacts: m.expectedArtifacts, editablePaths: paths, maxTests: integer(x.maxTests, 'maxTests', 1, 20), maxChangedBytes: integer(x.maxChangedBytes, 'maxChangedBytes', 1, maxBytes), expiresAt: new Date(expiresAt).toISOString() };
+            const fixed = { developmentTaskId: template.id, templateManifestDigest: template.manifestDigest, sessionId: s.id, sourceRevisionId: s.sourceRevisionId, model: s.model, baselineSnapshot: m.inputSnapshot, command: m.command, environmentImageDigest: m.environmentImageDigest, dockerContext: m.dockerContext, ...(m.threadLimit === undefined ? {} : { threadLimit: m.threadLimit }), resources: m.resources, dataArtifacts: m.dataArtifacts, expectedArtifacts: m.expectedArtifacts, ...(m.syntheticFixture === undefined ? {} : { syntheticFixture: m.syntheticFixture }), ...(m.metricArtifact === undefined ? {} : { metricArtifact: m.metricArtifact }), ...(m.researchBrief === undefined ? {} : { researchBrief: m.researchBrief }), editablePaths: paths, maxTests: integer(x.maxTests, 'maxTests', 1, 20), maxChangedBytes: integer(x.maxChangedBytes, 'maxChangedBytes', 1, maxBytes), expiresAt: new Date(expiresAt).toISOString() };
             const id = randomUUID(), approval = this.app.approvals.request(pid, 'working-grant', id, '', 'working-grant.activate', `只授权指定私有文件及最多${fixed.maxTests}次固定开发测试提交；不授权模型、网络、审查、整合或正式Run`), hash = digest({ ...fixed, approvalId: approval.id });
             this.app.store.update('approval', approval.id, approval.version, { digest: hash });
             const g = this.app.store.create('working-grant', pid, { ...fixed, digest: hash, approvalId: approval.id, state: 'draft' }, id);

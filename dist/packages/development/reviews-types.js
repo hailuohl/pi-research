@@ -8,7 +8,12 @@ import { verifySnapshot } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { assertAcceptanceCurrent } from '../evidence/acceptance.js';
 import { assertWorkingGrantJob } from '../policy/working-grant-validation.js';
-export function reviewPayload(r) { const { jobId, sourceDigest, producerSessionId, baseSourceRevisionId, teamId, taskId, approvalId, manifestEvidenceId, testEvidenceIds, requiredEvidenceIds } = r; return { jobId, sourceDigest, producerSessionId, ...(baseSourceRevisionId ? { baseSourceRevisionId } : {}), teamId, taskId, approvalId, manifestEvidenceId, testEvidenceIds, requiredEvidenceIds }; }
+import { fixedResearchBrief } from '../research-workflows/briefs.js';
+import { DEVELOPMENT_REVIEW_PROTOCOL, BEARING_REVIEW_PROTOCOL, buildReviewInventory, validateDevelopmentAssessment } from './review-assessment.js';
+import { assertFrozenMethod, assertDevelopmentMethodArchive, methodRequiredPaths, closedPaired } from '../research-workflows/method-contracts.js';
+const bearingBinding = (r) => r.surfaceInventory === undefined ? {} : { briefArtifact: r.briefArtifact, surfaceInventory: r.surfaceInventory };
+export function reviewInputBinding(r) { return { reviewId: r.id, jobId: r.jobId, ...bearingBinding(r), ...(r.dataArtifacts === undefined ? {} : { dataArtifacts: r.dataArtifacts }), ...(r.protocolVersion === undefined ? {} : { protocolVersion: r.protocolVersion, researchBrief: r.researchBrief, sourceInputs: r.sourceInputs, testArtifacts: r.testArtifacts }), ...(r.protocolDocument === undefined ? {} : { protocolDocument: r.protocolDocument, draftRoles: r.draftRoles }) }; }
+export function reviewPayload(r) { const { jobId, sourceDigest, producerSessionId, baseSourceRevisionId, teamId, taskId, approvalId, manifestEvidenceId, testEvidenceIds, requiredEvidenceIds } = r; return { jobId, sourceDigest, producerSessionId, ...bearingBinding(r), ...(baseSourceRevisionId ? { baseSourceRevisionId } : {}), teamId, taskId, approvalId, manifestEvidenceId, testEvidenceIds, requiredEvidenceIds, ...(r.dataArtifacts === undefined ? {} : { dataArtifacts: r.dataArtifacts }), ...(r.protocolVersion === undefined ? {} : { protocolVersion: r.protocolVersion, researchBrief: r.researchBrief, sourceInputs: r.sourceInputs, testArtifacts: r.testArtifacts }), ...(r.protocolDocument === undefined ? {} : { protocolDocument: r.protocolDocument, draftRoles: r.draftRoles }) }; }
 /** Shared by dispatch and acceptance: historical records cannot silently acquire a new test target. */
 export function assertDevelopmentReviewTarget(store, pid, r) {
     ensure(digest(reviewPayload(r)) === r.digest, 'DEVELOPMENT_REVIEW_CORRUPTED', '审查绑定摘要已改变');
@@ -18,6 +23,47 @@ export function assertDevelopmentReviewTarget(store, pid, r) {
     ensure(job.state === 'succeeded' && job.integrity === 'complete' && job.exitCode === 0 && job.sourceDigest === r.sourceDigest && job.manifest.inputSnapshot.digest === r.sourceDigest && digest(job.manifest.inputSnapshot.files) === r.sourceDigest && digest(job.manifest) === job.manifestDigest, 'DEVELOPMENT_REVIEW_STALE', '审查测试不是当前成功且完整的固定源码结果');
     const grant = store.get('approval', job.grantId, pid);
     ensure(grant.status === 'approved' && grant.scope === 'development.test' && grant.subjectKind === 'development-task' && grant.subjectId === job.developmentTaskId && grant.digest === job.manifestDigest, 'APPROVAL_STALE', '开发测试审批已失效');
+    if (job.manifest.metricArtifact && job.manifest.researchBrief && fixedResearchBrief(store, pid, job.manifest.researchBrief).sourceInputs !== undefined)
+        ensure(r.protocolVersion === DEVELOPMENT_REVIEW_PROTOCOL || r.protocolVersion === BEARING_REVIEW_PROTOCOL, 'DEVELOPMENT_REVIEW_STALE', '来源绑定的科学测试必须使用原固定审查协议，不能降级为旧accept');
+    if (r.dataArtifacts !== undefined) {
+        const manifest = store.get('evidence', r.manifestEvidenceId, pid);
+        let fixed;
+        try {
+            fixed = JSON.parse(manifest.quote);
+        }
+        catch {
+            ensure(false, 'DEVELOPMENT_REVIEW_CORRUPTED', '固定审查输入清单已损坏');
+        }
+        ensure(fixed && typeof fixed === 'object', 'DEVELOPMENT_REVIEW_CORRUPTED', '固定审查输入清单无效');
+        ensure(digest(r.dataArtifacts) === digest(job.manifest.dataArtifacts.map(({ path, ...a }) => a)) && fixed.reviewId === r.id && digest(fixed.dataArtifacts) === digest(r.dataArtifacts), 'DEVELOPMENT_REVIEW_STALE', '审查数据输入与原测试或获批清单不符');
+        const team = store.get('team', r.teamId, pid), plan = store.list('team-plan', pid).find(p => p.teamId === r.teamId);
+        ensure(plan && plan.digest === team.planDigest && digest(plan.developmentReviewInputs) === digest(reviewInputBinding(r)), 'DEVELOPMENT_REVIEW_STALE', '精确审查数据输入未绑定原团队批准计划');
+    }
+    if (r.protocolVersion !== undefined) {
+        ensure((r.protocolVersion === DEVELOPMENT_REVIEW_PROTOCOL || r.protocolVersion === BEARING_REVIEW_PROTOCOL) && r.researchBrief && digest(r.researchBrief) === digest(job.manifest.researchBrief) && r.researchBrief.rootSessionId === s.id, 'DEVELOPMENT_REVIEW_STALE', '科学审查协议或研究计划引用与测试不符');
+        const brief = fixedResearchBrief(store, pid, r.researchBrief);
+        ensure(brief.sourceInputs !== undefined && digest(brief.sourceInputs) === digest(r.sourceInputs), 'DEVELOPMENT_REVIEW_STALE', '审查研究输入不是原固定计划来源');
+        if (closedPaired(brief.methodContract)) {
+            ensure(r.protocolVersion === BEARING_REVIEW_PROTOCOL && r.briefArtifact && r.surfaceInventory, 'DEVELOPMENT_REVIEW_STALE', '闭合profile不能降级原五区协议或遗漏全部表面');
+            const a = store.get('artifact', r.briefArtifact.id, pid), path = store.paths.physical(a.path), bytes = readStableFile(dirname(path), basename(path), 2 * 1024 * 1024);
+            ensure(a.origin === 'host:development-review' && a.digest === r.briefArtifact.digest && a.size === r.briefArtifact.size && bytes.equals(Buffer.from(JSON.stringify(brief, null, 2))) && digest(bytes) === a.digest && digest(buildReviewInventory(store, pid, r)) === digest(r.surfaceInventory), 'DEVELOPMENT_REVIEW_STALE', '固定brief全文或全部输出inventory不再准确');
+        }
+        const wrapper = JSON.parse(store.get('evidence', r.manifestEvidenceId, pid).quote);
+        if (r.protocolVersion === BEARING_REVIEW_PROTOCOL)
+            ensure(digest(wrapper.briefArtifact) === digest(r.briefArtifact) && digest(wrapper.surfaceInventory) === digest(r.surfaceInventory), 'DEVELOPMENT_REVIEW_STALE', '批准清单未绑定准确全文/inventory');
+        ensure(wrapper.protocolVersion === r.protocolVersion && digest(wrapper.researchBrief) === digest(r.researchBrief) && digest(wrapper.sourceInputs) === digest(r.sourceInputs) && digest(wrapper.testArtifacts) === digest(r.testArtifacts), 'DEVELOPMENT_REVIEW_STALE', '审查清单未绑定准确协议、来源和测试产物');
+        if (brief.protocolDocument)
+            ensure(digest(r.protocolDocument) === digest(brief.protocolDocument) && digest(r.draftRoles) === digest(brief.draftRoles) && digest(wrapper.protocolDocument) === digest(r.protocolDocument) && digest(wrapper.draftRoles) === digest(r.draftRoles), 'DEVELOPMENT_REVIEW_STALE', '完整protocol角色/全文绑定不能被降级或替换');
+        const metrics = job.artifactIds.map(id => store.get('artifact', id, pid)).filter(a => a.title === `output/${job.manifest.metricArtifact}`);
+        ensure(metrics.length === 1 && r.testArtifacts && new Set(r.testArtifacts.map(a => a.id)).size === r.testArtifacts.length, 'DEVELOPMENT_REVIEW_STALE', '指标产物或测试归档绑定缺失');
+        const required = r.protocolVersion === BEARING_REVIEW_PROTOCOL ? [...job.artifactIds] : [job.reportArtifactId, metrics[0].id, ...(brief.methodContract ? methodRequiredPaths(brief.methodContract).map(path => { const match = job.artifactIds.map(id => store.get('artifact', id, pid)).filter(a => a.title === `output/${path}`); ensure(match.length === 1, 'METHOD_RESULT_CORRUPTED', `缺少唯一的方法审查产物：${path}`); return match[0].id; }) : [])];
+        ensure(digest(r.testArtifacts.filter(a => a.required).map(a => a.id).sort()) === digest(required.sort()), 'DEVELOPMENT_REVIEW_STALE', '必须固定原测试报告、实际指标和规范方法产物');
+        assertDevelopmentMethodArchive(store, job, brief.methodContract, assertFrozenMethod(store, pid, brief.methodContract, brief.sourceInputs)?.protocol);
+        for (const bound of r.testArtifacts) {
+            const a = store.get('artifact', bound.id, pid);
+            ensure(job.artifactIds.includes(a.id) && a.digest === bound.digest && a.size === bound.size && a.title === bound.path, 'DEVELOPMENT_REVIEW_STALE', '测试产物不属于原准确归档');
+        }
+    }
     if (r.baseSourceRevisionId) {
         const source = store.get('source-revision', r.baseSourceRevisionId, pid);
         ensure(source.sourceDigest === source.snapshot.digest && digest(source.snapshot.files) === source.sourceDigest, 'SNAPSHOT_CORRUPTED', '基础源码摘要已改变');
@@ -55,6 +101,7 @@ export function developmentReviewAcceptanceBasis(store, pid, task) {
     const review = store.get('development-review', task.reviewId, pid), target = assertDevelopmentReviewTarget(store, pid, review), approval = store.get('approval', review.approvalId, pid);
     ensure(target.task.id === task.id && approval.status === 'approved' && approval.digest === target.team.planDigest && approval.scope === 'collaboration' && approval.subjectId === target.team.id, 'APPROVAL_STALE', '审查计划审批已失效');
     ensure(task.result?.outcome === 'completed' && task.result.verdict === 'accept' && review.requiredEvidenceIds.every(id => task.result.evidenceIds.includes(id)), 'DEVELOPMENT_REVIEW_NOT_PASSED', '必须完成独立审查、接受并引用全部必要输入');
+    validateDevelopmentAssessment(store, pid, review, task, task.result);
     return { reviewId: review.id, digest: review.digest, jobId: review.jobId, sourceDigest: review.sourceDigest, manifestEvidenceId: review.manifestEvidenceId, testEvidenceIds: review.testEvidenceIds, inputAcceptanceIds: target.job.manifest.dataArtifacts.flatMap(a => a.sourceAcceptanceId ? [a.sourceAcceptanceId] : []) };
 }
 //# sourceMappingURL=reviews-types.js.map

@@ -1,5 +1,5 @@
 {
-  "bundleId": "65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620",
+  "bundleId": "4f49f6cde539fd582c1c8d2caa8bca4f937457ea68c14ccbb79a3219ff2c5091",
   "skills": [
     {
       "id": "pi-research-overview",
@@ -15,7 +15,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-overview/SKILL.md",
-      "digest": "39575e3973d6849826cd939749ad7ea06b6520d5bf7cb27b0f7130f7cd99a2e1",
+      "digest": "1bae37997d13b740a1020bd95ef88138411e6899f124441c5a81eb8066e09abf",
       "resources": [],
       "source": {
         "repository": "alphaXiv/OpenResearch",
@@ -53,11 +53,14 @@
         "reviewer"
       ],
       "path": "skills/piresearch/pi-research-experiment-tree/SKILL.md",
-      "digest": "384286676f9d0bf9735e90cd1a626b542830941de6eb81c05bf404f92d8abb58",
+      "digest": "ff0786573b1431c774bc584c60e882c5cdf44151312afcf02160ba689e1c64e3",
       "resources": [
         {
           "path": "references/experimental-design.md",
-          "digest": "bdc8109f57f670c4030ba30fc42546ab312e01f1008a2e7642b23fedac40e6d8"
+          "digest": "a0aecd732223d685039031147821b11074b0306cbd960a4e2ac83dc6cd1cbb72",
+          "methodRequirements": [
+            "quantitative-decision"
+          ]
         },
         {
           "path": "references/statistical-power.md",
@@ -73,7 +76,13 @@
         "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
         "path": "agent-skills/orx-experiment-tree/SKILL.md",
         "blob": "e888fc9d179ddfae87c4a0732224cf354a9c5430"
-      }
+      },
+      "prerequisites": [
+        {
+          "skillId": "pi-research-evidence",
+          "resource": "references/scientific-critical-thinking.md"
+        }
+      ]
     },
     {
       "id": "pi-research-git",
@@ -86,7 +95,7 @@
         "designer"
       ],
       "path": "skills/piresearch/pi-research-git/SKILL.md",
-      "digest": "0d9f486de92ff1fdb2fd888c7356f21fb0f4ba96b108f8a1e450b129064b0d07",
+      "digest": "db281259c4b6fc5a0ed461b469b950e11500c62180630372fba911d97acda784",
       "resources": [],
       "source": {
         "repository": "alphaXiv/OpenResearch",
@@ -160,7 +169,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-evidence/SKILL.md",
-      "digest": "5b8062350f3886c0b3b77858a05cb21e2548d5fa0697c4a6068a9ea71bb7a686",
+      "digest": "360adc5b6ee62d08cecc290c17660df48ecaffc28addb2d814d61994434f2f0c",
       "resources": [
         {
           "path": "references/exploratory-data-analysis.md",
@@ -168,7 +177,18 @@
         },
         {
           "path": "references/statistical-analysis.md",
-          "digest": "21e17af76ce4dafa290ec0d9cf9001def138fc626b761b6a0fb8c256e606a236"
+          "digest": "4b94c40e5b2fd76e8d2e9f7c56752ab9128c842787418f7937cdf47127fc44d7",
+          "methodRequirements": [
+            "quantitative-decision"
+          ]
+        },
+        {
+          "path": "references/paired-polynomial-comparison.md",
+          "digest": "1eba414b008acfcbbed5f696e2d057370cafe298c341d06f8610b6a594104b16",
+          "methodRequirements": [
+            "structured-paired-protocol",
+            "closed-paired-evidence"
+          ]
         },
         {
           "path": "references/uncertainty-and-units.md",
@@ -189,7 +209,7 @@
     {
       "id": "pi-research-reports",
       "name": "pi-research-reports",
-      "description": "Write and save evidence-backed research reports and run comparisons; use for analysis handoffs, fixed report records, or local result exports.",
+      "description": "Write and save evidence-backed research reports and run comparisons; prepare fixed-source independent review of formal Run reports, analysis handoffs, fixed report records, and local result exports.",
       "roles": [
         "coordinator",
         "literature",
@@ -200,7 +220,7 @@
         "writer"
       ],
       "path": "skills/piresearch/pi-research-reports/SKILL.md",
-      "digest": "c1a90173c7d48abfc6d846017ace8ebafdf01ed0dab4e26a9a5fe1fa9d51de47",
+      "digest": "4820d58829830192e36d2b2cbeff10e2ab7f45c82d0656af7b32813ce4a9d165",
       "resources": [
         {
           "path": "references/fixed-report.md",
@@ -212,7 +232,17 @@
         "commit": "3037f727e80e0ab20c61a87c613a50dde009a835",
         "path": "agent-skills/orx-reports/SKILL.md",
         "blob": "313d3ca61372e5f2e101cac6e78828393d03ad87"
-      }
+      },
+      "prerequisites": [
+        {
+          "skillId": "pi-research-evidence",
+          "resource": "references/exploratory-data-analysis.md"
+        },
+        {
+          "skillId": "pi-research-evidence",
+          "resource": "references/scientific-critical-thinking.md"
+        }
+      ]
     },
     {
       "id": "pi-research-figures",
@@ -416,7 +446,10 @@
         },
         {
           "path": "references/systematic-review.md",
-          "digest": "999f4d46f7f1544f7a9c34faabd7efe32e627c320ce9c4a4da0e4f493a547235"
+          "digest": "ba53d57c35bf0fdc1c37efd1a2add4e09d40be46d7b3923757a5679acf6cffda",
+          "methodRequirements": [
+            "literature-identity"
+          ]
         }
       ],
       "source": {

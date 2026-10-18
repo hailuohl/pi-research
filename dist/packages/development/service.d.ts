@@ -7,6 +7,7 @@ export declare class DevelopmentService {
     constructor(app: ResearchApp);
     private access;
     private data;
+    validateSyntheticPreparation(actor: Actor, pid: string, sessionId: string, value: unknown): void;
     prepare(actor: Actor, pid: string, sessionId: string, value: unknown): {
         blockedReason?: string | undefined;
         developmentTaskId: string;
@@ -26,6 +27,9 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            methodContractDigest?: string;
+            syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef;
             threadLimit?: number;
             approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -39,6 +43,7 @@ export declare class DevelopmentService {
             networkPolicy: "none";
             deadline: string;
             expectedArtifacts: string[];
+            metricArtifact?: string;
             scopeTaskId?: string;
             scopeAttemptId?: string;
             scopeGeneration?: number;
@@ -81,6 +86,9 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            methodContractDigest?: string;
+            syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef;
             threadLimit?: number;
             approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -94,6 +102,7 @@ export declare class DevelopmentService {
             networkPolicy: "none";
             deadline: string;
             expectedArtifacts: string[];
+            metricArtifact?: string;
             scopeTaskId?: string;
             scopeAttemptId?: string;
             scopeGeneration?: number;
@@ -149,6 +158,9 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            methodContractDigest?: string;
+            syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef;
             threadLimit?: number;
             approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -162,6 +174,7 @@ export declare class DevelopmentService {
             networkPolicy: "none";
             deadline: string;
             expectedArtifacts: string[];
+            metricArtifact?: string;
             scopeTaskId?: string;
             scopeAttemptId?: string;
             scopeGeneration?: number;
@@ -209,6 +222,9 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            methodContractDigest?: string;
+            syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef;
             threadLimit?: number;
             approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -222,6 +238,7 @@ export declare class DevelopmentService {
             networkPolicy: "none";
             deadline: string;
             expectedArtifacts: string[];
+            metricArtifact?: string;
             scopeTaskId?: string;
             scopeAttemptId?: string;
             scopeGeneration?: number;
@@ -279,6 +296,9 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            methodContractDigest?: string;
+            syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef;
             threadLimit?: number;
             approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -292,6 +312,7 @@ export declare class DevelopmentService {
             networkPolicy: "none";
             deadline: string;
             expectedArtifacts: string[];
+            metricArtifact?: string;
             scopeTaskId?: string;
             scopeAttemptId?: string;
             scopeGeneration?: number;
@@ -348,6 +369,9 @@ export declare class DevelopmentService {
                 size: number;
                 sourceAcceptanceId?: string;
             }[];
+            methodContractDigest?: string;
+            syntheticFixture?: import("../research-workflows/synthetic-fixtures.js").SyntheticFixtureBinding;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef;
             threadLimit?: number;
             approvalResumeDigest?: string;
             workingGrant?: import("../execution/contracts.js").WorkingGrantReference;
@@ -361,6 +385,7 @@ export declare class DevelopmentService {
             networkPolicy: "none";
             deadline: string;
             expectedArtifacts: string[];
+            metricArtifact?: string;
             scopeTaskId?: string;
             scopeAttemptId?: string;
             scopeGeneration?: number;

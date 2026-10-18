@@ -20,7 +20,7 @@ export function assertPmcArtifactRead(store:Store,actor:Actor,pid:string,id:stri
 }
 
 /** Verify saved XML and derived bytes locally; never acquire or refresh a provider record. */
-export function verifyPmcText(c:AppContext,pid:string,id:string,expected?:ProviderTextEvidenceLink,artifactId?:string){
+export function verifyPmcText(c:Pick<AppContext,'store'>,pid:string,id:string,expected?:ProviderTextEvidenceLink,artifactId?:string){
  const d=c.store.get<DocumentVersion>('document-version',id,pid),v=d.source.reportedVersion;
  ensure(d.contentKind==='provider-text'&&d.source.kind==='connector'&&d.source.provider==='pubmed'&&d.source.versionAssurance==='provider-record'&&!!v&&/^PMC[1-9]\d*\.[1-9]\d*$/.test(v)&&d.source.resolvedId===v&&d.source.requestedVersion===null&&!!d.source.requestedId&&/^[1-9]\d{0,11}$/.test(d.source.requestedId)&&d.pageMapping==='unavailable'&&!d.scopeSessionId&&!d.scopeTaskId&&!d.discoveryGrant&&d.license.assurance==='provider-reported'&&!!d.license.value&&d.original.mediaType==='application/xml'&&d.derivedText?.mediaType==='text/plain'&&d.rawResponseArtifactIds?.[0]===d.original.artifactId,'PMC_SOURCE_INVALID','只接受已固定的 owner PMC OA XML 与派生全文');
  const read=(ref:DocumentVersion['original'],origin:string)=>{const a=c.store.get<Artifact>('artifact',ref.artifactId,pid),bytes=readFileSync(c.store.paths.physical(a.path));ensure(a.origin===origin&&!a.taskId&&!a.runId&&!a.wakeupId&&!a.discoveryGrant&&a.digest===ref.digest&&a.size===ref.size&&a.mediaType===ref.mediaType&&bytes.length===ref.size&&digest(bytes)===ref.digest,'PMC_SOURCE_INVALID','PMC 来源产物描述或字节已改变');return bytes;};

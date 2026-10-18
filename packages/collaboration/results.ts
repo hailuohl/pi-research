@@ -1,10 +1,12 @@
+import {parseFormalReportAssessment} from '../publications/formal-report-review-types.js';
 import { object, text, strings, oneOf } from '../contracts/validation.js';
 import { ensure } from '../domain/errors.js';
 import type { TaskResult, Task } from '../domain/types.js';
+import {parseDevelopmentAssessment} from '../development/review-assessment.js';
 export function parseTaskResult(value: unknown): TaskResult {
     const x = object(value);
     ensure(Array.isArray(x.claims ?? []) && (x.claims as unknown[] ?? []).length <= 24, 'INVALID_INPUT', '结论候选需要数组且不超过24条', 400);
-    return { summary: text(x.summary, 'summary', 16000), outcome: oneOf(x.outcome, ['completed', 'partial', 'blocked'] as const, 'outcome'), evidenceIds: strings(x.evidenceIds ?? [], 'evidenceIds', 100), artifactIds: strings(x.artifactIds ?? [], 'artifactIds', 100), claims: (x.claims as unknown[] ?? []).map(raw => { const p = object(raw); return { statement: text(p.statement, 'statement', 8000), evidenceIds: strings(p.evidenceIds, 'evidenceIds', 100), limitations: strings(p.limitations ?? [], 'limitations', 30) }; }), unresolvedQuestions: strings(x.unresolvedQuestions ?? [], 'unresolvedQuestions', 30), ...(x.verdict ? { verdict: oneOf(x.verdict, ['accept', 'reject', 'disputed'] as const, 'verdict') } : {}) };
+    return { ...(x.formalReportAssessment===undefined?{}:{formalReportAssessment:parseFormalReportAssessment(x.formalReportAssessment)}), ...(x.developmentAssessment===undefined?{}:{developmentAssessment:parseDevelopmentAssessment(x.developmentAssessment)}),summary: text(x.summary, 'summary', 16000), outcome: oneOf(x.outcome, ['completed', 'partial', 'blocked'] as const, 'outcome'), evidenceIds: strings(x.evidenceIds ?? [], 'evidenceIds', 100), artifactIds: strings(x.artifactIds ?? [], 'artifactIds', 100), claims: (x.claims as unknown[] ?? []).map(raw => { const p = object(raw); return { statement: text(p.statement, 'statement', 8000), evidenceIds: strings(p.evidenceIds, 'evidenceIds', 100), limitations: strings(p.limitations ?? [], 'limitations', 30) }; }), unresolvedQuestions: strings(x.unresolvedQuestions ?? [], 'unresolvedQuestions', 30), ...(x.verdict ? { verdict: oneOf(x.verdict, ['accept', 'reject', 'disputed'] as const, 'verdict') } : {}) };
 }
 
 /** Enforce the declared deliverables, rather than trusting a model's outcome. */

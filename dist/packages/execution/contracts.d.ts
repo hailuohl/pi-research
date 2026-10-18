@@ -14,6 +14,9 @@ export interface SandboxResources {
     logBytes: number;
 }
 export interface SandboxManifest {
+    methodContractDigest?: string;
+    syntheticFixture?: import('../research-workflows/synthetic-fixtures.js').SyntheticFixtureBinding;
+    researchBrief?: import('../domain/types.js').ResearchBriefRef;
     threadLimit?: number;
     approvalResumeDigest?: string;
     workingGrant?: WorkingGrantReference;
@@ -28,6 +31,7 @@ export interface SandboxManifest {
     networkPolicy: 'none';
     deadline: string;
     expectedArtifacts: string[];
+    metricArtifact?: string;
     dataArtifacts: Array<{
         id: string;
         digest: string;

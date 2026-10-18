@@ -125,7 +125,44 @@ export class SkillService {
         ensure(!lstatSync(current).isSymbolicLink(), 'SKILL_PATH_DENIED', '技能路径不能包含符号链接', 403);
     } const stat = lstatSync(target); ensure(stat.isFile(), 'SKILL_PATH_DENIED', '技能不是普通文件', 403); ensure(stat.size <= MAX_FILE, 'SKILL_TOO_LARGE', '技能资源超过大小限制', 413); const bytes = readFileSync(target); ensure(bytes.length <= MAX_FILE && digest(bytes) === expected, 'SKILL_INTEGRITY_FAILED', '受管技能摘要不匹配；拒绝加载未审核内容'); return bytes; }
     verified(path, expected, rootPath = this.root) { return content(this.verifiedBytes(path, expected, rootPath)); }
-    read(role, id, resource, builtinBundleId = BUNDLE_ID) { const release = this.builtin(builtinBundleId), e = release.skills.find(e => e.id === id); ensure(e, 'SKILL_NOT_FOUND', '技能不在受管清单内', 404); ensure(e.roles.includes(role), 'SKILL_SCOPE_DENIED', '该角色无此技能入口', 403); const r = resource ? e.resources.find(r => r.path === resource) : undefined; ensure(!resource || r, 'SKILL_RESOURCE_NOT_FOUND', '资源不在受管清单内', 404); const hash = r?.digest ?? e.digest, path = release.archived ? join('skills/releases', builtinBundleId, 'blobs', hash) : resource ? join(dirname(e.path), resource) : e.path; return { id, resource: resource ?? 'SKILL.md', content: this.verified(path, hash), digest: hash, bundleId: builtinBundleId, source: e.source }; }
+    builtinText(role, id, resource, builtinBundleId = BUNDLE_ID) { const release = this.builtin(builtinBundleId), e = release.skills.find(e => e.id === id); ensure(e, 'SKILL_NOT_FOUND', '技能不在受管清单内', 404); ensure(e.roles.includes(role), 'SKILL_SCOPE_DENIED', '该角色无此技能入口', 403); const r = resource ? e.resources.find(r => r.path === resource) : undefined; ensure(!resource || r, 'SKILL_RESOURCE_NOT_FOUND', '资源不在受管清单内', 404); const hash = r?.digest ?? e.digest, path = release.archived ? join('skills/releases', builtinBundleId, 'blobs', hash) : resource ? join(dirname(e.path), resource) : e.path; const requirements = r && 'methodRequirements' in r ? r.methodRequirements : undefined; return { id, resource: resource ?? 'SKILL.md', content: this.verified(path, hash), digest: hash, bundleId: builtinBundleId, source: e.source, ...(requirements ? { methodRequirements: [...requirements] } : {}) }; }
+    bundleMethodRequirements(pid, role, bundleId) { const { builtinBundleId, disabledBuiltinIds } = this.resolveBundle(pid, bundleId), requirements = new Set(); for (const skill of this.builtin(builtinBundleId).skills) {
+        if (disabledBuiltinIds.includes(skill.id) || !skill.roles.includes(role))
+            continue;
+        for (const resource of skill.resources)
+            if ('methodRequirements' in resource)
+                for (const requirement of this.builtinText(role, skill.id, resource.path, builtinBundleId).methodRequirements ?? [])
+                    requirements.add(requirement);
+    } return [...requirements].sort(); }
+    prerequisites(builtinBundleId, id) { const entry = this.builtin(builtinBundleId).skills.find(e => e.id === id); return entry && 'prerequisites' in entry ? entry.prerequisites : []; }
+    contextualRead(target, read, dependencies) {
+        const key = (id, resource = 'SKILL.md') => `${id}/${resource}`, targetKey = key(target.id, target.resource), seen = new Set([targetKey]), visiting = new Set([targetKey]), prerequisites = [];
+        let bytes = Buffer.byteLength(target.content);
+        const visit = (id, resource) => {
+            const identity = key(id, resource);
+            ensure(!visiting.has(identity), 'SKILL_PREREQUISITE_CYCLE', '技能前置依赖存在循环');
+            if (seen.has(identity))
+                return;
+            ensure(seen.size + visiting.size <= 32, 'SKILL_CONTEXT_TOO_LARGE', '技能前置依赖过多');
+            visiting.add(identity);
+            const item = read(id, resource);
+            bytes += Buffer.byteLength(item.content);
+            ensure(bytes <= 1024 * 1024, 'SKILL_CONTEXT_TOO_LARGE', '技能及前置正文超过1MiB');
+            if (resource !== undefined)
+                visit(id);
+            for (const dependency of dependencies(id))
+                visit(dependency.skillId, dependency.resource);
+            visiting.delete(identity);
+            seen.add(identity);
+            prerequisites.push(item);
+        };
+        if (target.resource !== 'SKILL.md')
+            visit(target.id);
+        for (const dependency of dependencies(target.id))
+            visit(dependency.skillId, dependency.resource);
+        return prerequisites.length ? { ...target, prerequisites } : target;
+    }
+    read(role, id, resource, builtinBundleId = BUNDLE_ID) { const read = (name, path) => this.builtinText(role, name, path, builtinBundleId); return this.contextualRead(read(id, resource), read, name => this.prerequisites(builtinBundleId, name)); }
     bootstrap(role) { return this.bootstrapEntries(role, BUNDLE_ID, this.list(role), this.read(role, 'pi-research-overview').content); }
     bootstrapEntries(role, bundleId, entries, overview, builtinBundleId = BUNDLE_ID) { const prompt = `\n\n受管科研技能包 ${bundleId}\n以下是可按需读取的技能，不是额外权限。使用 research_skill_read({input:{skillId:"...",resource?:"..."}})，不要调用不存在的 read/Shell/orx 工具。仅技能目录/总览进入初始上下文，按触发条件读取相关模块。文本审阅不批准执行脚本。\n${entries.map(e => `${e.id}: ${e.description}`).join('\n')}\n\n${overview}`; return { bundleId, prompt, skills: entries.map(e => ({ name: e.id, description: e.description, filePath: e.revisionId ? join(this.c.dataDir, 'skill-blobs', e.digest) : builtinBundleId === BUNDLE_ID ? join(this.root, 'skills/piresearch', e.id, 'SKILL.md') : join(this.root, 'skills/releases', builtinBundleId, 'blobs', e.digest), baseDir: e.revisionId ? join(this.c.dataDir, 'skill-blobs') : builtinBundleId === BUNDLE_ID ? join(this.root, 'skills/piresearch', e.id) : join(this.root, 'skills/releases', builtinBundleId, 'blobs'), source: 'pi-research-reviewed-bundle', disableModelInvocation: false })) }; }
     owner(actor, pid, write = false) { userOnly(actor); scope(actor, pid); if (write)
@@ -312,8 +349,19 @@ export class SkillService {
     revisionText(r, resource) { const f = r.files.find(f => f.path === resource); ensure(f, 'SKILL_RESOURCE_NOT_FOUND', '资源不在冻结技能清单内', 404); ensure(f.mediaType !== 'image/png', 'SKILL_RESOURCE_BINARY', 'Agent 技能读取仅支持 UTF-8 文本资源', 400); return { resource, content: content(this.revisionBytes(r, f)), digest: f.digest }; }
     entry(r) { return { id: r.packageId, description: r.description, digest: r.files.find(f => f.path === 'SKILL.md').digest, resources: r.files.filter(f => f.path !== 'SKILL.md').map(f => f.path), source: { repository: 'user-import', commit: r.contentDigest, path: 'SKILL.md', blob: r.contentDigest }, revisionId: r.id, requirements: r.requirements }; }
     bundleCatalog(pid, role, bundleId) { const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); return { bundleId, builtinBundleId, revisionIds: revisions.map(r => r.id), skills: [...this.list(role, builtinBundleId).filter(e => !disabledBuiltinIds.includes(e.id)), ...revisions.filter(r => r.roles.includes(role)).map(r => this.entry(r))] }; }
-    bundleRead(pid, role, bundleId, id, resource) { const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); ensure(!disabledBuiltinIds.includes(id), 'SKILL_DISABLED', '技能在此固定包中已关闭', 403); if (this.builtin(builtinBundleId).skills.some(e => e.id === id))
-        return { ...this.read(role, id, resource, builtinBundleId), bundleId }; const r = revisions.find(r => r.packageId === id); ensure(r, 'SKILL_NOT_FOUND', '技能不在固定包清单内', 404); ensure(r.roles.includes(role), 'SKILL_SCOPE_DENIED', '该角色无此技能入口', 403); return { id, ...this.revisionText(r, resource ?? 'SKILL.md'), bundleId, source: this.entry(r).source }; }
+    bundleRead(pid, role, bundleId, id, resource) {
+        const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId);
+        const read = (name, path) => {
+            ensure(!disabledBuiltinIds.includes(name), 'SKILL_DISABLED', '技能在此固定包中已关闭', 403);
+            if (this.builtin(builtinBundleId).skills.some(e => e.id === name))
+                return { ...this.builtinText(role, name, path, builtinBundleId), bundleId };
+            const r = revisions.find(r => r.packageId === name);
+            ensure(r, 'SKILL_NOT_FOUND', '技能不在固定包清单内', 404);
+            ensure(r.roles.includes(role), 'SKILL_SCOPE_DENIED', '该角色无此技能入口', 403);
+            return { id: name, ...this.revisionText(r, path ?? 'SKILL.md'), bundleId, source: this.entry(r).source };
+        };
+        return this.contextualRead(read(id, resource), read, name => this.prerequisites(builtinBundleId, name));
+    }
     bundleBootstrap(pid, role, bundleId) { const { skills, builtinBundleId } = this.bundleCatalog(pid, role, bundleId); return this.bootstrapEntries(role, bundleId, skills, skills.some(e => e.id === 'pi-research-overview') ? this.bundleRead(pid, role, bundleId, 'pi-research-overview').content : '', builtinBundleId); }
     ensureBundleStartAllowed(pid, bundleId) { const { builtinBundleId, revisions, disabledBuiltinIds } = this.resolveBundle(pid, bundleId); for (const entry of this.builtin(builtinBundleId).skills.filter(e => !disabledBuiltinIds.includes(e.id))) {
         const role = entry.roles[0];

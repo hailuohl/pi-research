@@ -15,8 +15,22 @@ import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { text, integer, strings } from '../contracts/validation.js';
 import {environmentSecrets,redactEnvironment} from '../runtime/environment.js';
+import {fixedResearchBrief} from '../research-workflows/briefs.js';
+import type {ResearchBrief} from '../research-workflows/briefs.js';
+import {assertFrozenMethod} from '../research-workflows/method-contracts.js';
+function readEvidenceArtifact(c:Pick<AppContext,'store'>,actor:Actor,id:string) {const a=c.store.get<Artifact>('artifact',id);scope(actor,a.projectId!);assertProjectReadable(c.store,a.projectId!,actor);ensure(a.origin!=='native-continuation'||actor.type!=='agent','NATIVE_CONTINUATION_PRIVATE','原生续跑材料不向普通助手提供',403);assertPmcArtifactRead(c.store,actor,a.projectId!,id);assertPdfArtifactRead(c.store,actor,a.projectId!,id);const bytes=readFileSync(c.store.paths.physical(a.path));ensure(digest(bytes)===a.digest,'ARTIFACT_CORRUPTED','产物内容校验失败',409);return {artifact:a,bytes};}
+
+/** Host reference validation shares the complete evidence chain with the ordinary service. */
+export function verifyEvidence(c:Pick<AppContext,'store'>,projectId:string,evidenceId:string,current=true) {const e=c.store.get<Evidence>('evidence',evidenceId,projectId);const {artifact,bytes}=readEvidenceArtifact(c,{type:'system'},e.artifactId);ensure(artifact.projectId===projectId&&artifact.digest===e.digest&&bytes.toString('utf8').slice(e.locator.start,e.locator.end)===e.quote,'EVIDENCE_INVALID','证据引用或内容已失效',409);if(current)assertDiscoveryArtifact(c.store,projectId,artifact);if(e.providerText)verifyPmcText(c,projectId,e.providerText.documentVersionId,e.providerText,e.artifactId);if(e.document){const link=verifyDocumentLink(c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(c.store,projectId,link.document);}return e;}
+
 export class EvidenceService {
     constructor(private c: AppContext) { }
+    /** Host-only: reuse the original confirmed brief; never resolve to its latest revision. */
+    fixedResearchMethods(projectId:string,ref:import('../domain/types.js').ResearchBriefRef,expectedContractDigest?:string) {
+        const original=this.c.store.get<ResearchBrief>('research-brief',ref.id,projectId);
+        if(!original.methodContract&&expectedContractDigest===undefined)return undefined;
+        const brief=fixedResearchBrief(this.c.store,projectId,ref,'formal');ensure(brief.methodContract&&brief.methodContract.contractDigest===expectedContractDigest,'METHOD_CONTRACT_CORRUPTED','方法清单标识缺失或不符合原冻结计划');const compiled=assertFrozenMethod(this.c.store,projectId,brief.methodContract,brief.sourceInputs,brief.rootSessionId,'formal');return {contract:brief.methodContract,protocol:compiled!.protocol};
+    }
     /** Host-only staging: immutable CAS bytes, without publishing any database record. */
     prepareArtifact(projectId: string, title: string, bytes: Buffer, mediaType = 'text/plain', origin = 'user', extra: Partial<Artifact> = {}):Artifact {
         this.c.store.get('project', projectId);
@@ -37,7 +51,7 @@ export class EvidenceService {
     /** Receives only host-prepared descriptors; callers fence authorization inside the publish transaction. */
     publishPrepared(projectId:string,prepared:Artifact){this.c.store.get('project',projectId);return this.c.store.create<Artifact>('artifact',projectId,prepared);}
     put(projectId:string,title:string,bytes:Buffer,mediaType='text/plain',origin='user',extra:Partial<Artifact>={}){return this.publishPrepared(projectId,this.prepareArtifact(projectId,title,bytes,mediaType,origin,extra));}
-    read(actor: Actor, id: string) { const a = this.c.store.get<Artifact>('artifact', id); scope(actor, a.projectId!);assertProjectReadable(this.c.store,a.projectId!,actor); ensure(a.origin!=='native-continuation'||actor.type!=='agent','NATIVE_CONTINUATION_PRIVATE','原生续跑材料不向普通助手提供',403); assertPmcArtifactRead(this.c.store,actor,a.projectId!,id); assertPdfArtifactRead(this.c.store,actor,a.projectId!,id); const bytes = readFileSync(this.c.store.paths.physical(a.path)); ensure(digest(bytes) === a.digest, 'ARTIFACT_CORRUPTED', '产物内容校验失败', 409); return { artifact: a, bytes }; }
+    read(actor: Actor, id: string) {return readEvidenceArtifact(this.c,actor,id);}
     register(actor: Actor, projectId: string, artifactId: string, start: number|undefined, end: number|undefined, description: string, type: Evidence['type'] = 'artifact', runId?: string, exactQuote?:string) {
         scope(actor, projectId);
         const a = this.c.store.get<Artifact>('artifact', artifactId, projectId);
@@ -62,7 +76,7 @@ export class EvidenceService {
             this.c.store.get('run', runId, projectId);
         return this.c.store.create<Evidence>('evidence', projectId, { type, artifactId: a.id, digest: a.digest, locator: { start, end }, quote: content.slice(start, end), description: text(description, 'description', 2000), ...(runId ? { runId } : {}) });
     }
-    verify(projectId: string, evidenceId: string, current=true) { const e = this.c.store.get<Evidence>('evidence', evidenceId, projectId); const { artifact, bytes } = this.read({ type: 'system' }, e.artifactId); ensure(artifact.projectId === projectId && artifact.digest === e.digest && bytes.toString('utf8').slice(e.locator.start, e.locator.end) === e.quote, 'EVIDENCE_INVALID', '证据引用或内容已失效', 409); if(current)assertDiscoveryArtifact(this.c.store,projectId,artifact); if(e.providerText)verifyPmcText(this.c,projectId,e.providerText.documentVersionId,e.providerText,e.artifactId); if(e.document){const link=verifyDocumentLink(this.c,projectId,e.document,e.artifactId);if(current)assertDiscoveryDocument(this.c.store,projectId,link.document);} return e; }
+    verify(projectId: string, evidenceId: string, current=true) {return verifyEvidence(this.c,projectId,evidenceId,current);}
     /** Host local search only; no caller-supplied authority flag or new agent tool. */
     registerProviderText(actor:Actor,projectId:string,providerText:ProviderTextEvidenceLink,start:number,end:number,description:string){
         pmcOwner(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);

@@ -337,7 +337,6 @@ export declare class PublicationBuildService {
         }>;
         status: "succeeded" | "failed" | "timed_out" | "non_convergent";
         sourceDigest: string;
-        diagnostics: import("./build-types.js").BuildDiagnostic[];
         formatVersion: 1;
         profileId: typeof PUBLICATION_PROFILE;
         engine: PublicationEngine;
@@ -346,6 +345,7 @@ export declare class PublicationBuildService {
         hadErrors: boolean;
         converged: boolean;
         passes: number;
+        diagnostics: import("./build-types.js").BuildDiagnostic[];
     };
     /** Resolve only archived output while retaining existing source/grant restrictions. */
     pageImage(actor: Actor, pid: string, resultId: string, pageNumber: number): {
