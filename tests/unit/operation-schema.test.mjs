@@ -6,7 +6,7 @@ import { TOOL_DEFINITIONS } from '../../dist/packages/research-tools/definitions
 import { ROLE_TOOLS } from '../../dist/packages/policy/permissions.js';
 
 test('every advertised tool example satisfies its exact input contract', () => {
-    assert.equal(Object.keys(INPUT_SCHEMAS).length, 169);
+    assert.equal(Object.keys(INPUT_SCHEMAS).length, 170);
     assert.deepEqual(Object.keys(INPUT_SCHEMAS).sort(), Object.keys(TOOL_DEFINITIONS).sort());
     for (const [name, definition] of Object.entries(TOOL_DEFINITIONS)){
         assert.doesNotThrow(() => validateSchema(INPUT_SCHEMAS[name], definition.example), name);
@@ -20,6 +20,9 @@ test('every Agent tool satisfies the pinned Worker object schema contract',()=>{
 
 test('operation schemas reject missing/unknown fields and invalid primitive values', () => {
     const invalid = [
+        ['publication_citation_check', {}],
+        ['publication_citation_check', {revisionId:'r',source:'extra'}],
+        ['publication_citation_check', {revisionId:'r',metadataArtifactIds:Array(33).fill('a')}],
         ['run_submit', { intentId: 'i', experimentId: 'extra' }],
         ['workspace_write', { path: 'a', content: 'a' }],
         ['change_proposal_prepare', { baseExperimentId: 'e', expectedRevision: 1, title: 't', hypothesis: 'h', changes: [{ path: 'a', artifactId: 'a', expectedDigest: null, source: 'project' }] }],

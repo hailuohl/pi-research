@@ -1,9 +1,11 @@
 ---
 name: pi-research-paper
-description: "创建或修订真实LaTeX论文、预印本或章节草稿；沿用模板和配套资产，固定稿件，构建、检查并交付源码与实际结果。普通研究报告使用reports。"
+description: "创建或修订真实LaTeX论文、预印本或章节草稿；也可仅检查固定TeX/Bib的引用结构和获准元数据，不改稿。沿用模板和配套资产，构建并交付真实结果；普通研究报告使用reports。"
 ---
 
 # 从写作目标到真实论文交付
+
+用户仅要求引用完整性、缺失/重复 citation key 或书目字段核对时，先读 [references/citation-integrity.md](references/citation-integrity.md)，走限定引用检查分支。交互主协调者对真实固定 revision 调用 `publication_citation_check`，宿主只保存检查报告；writer/reviewer 将准确稿件与元数据 ID 交回主协调者，不把此专用工具作为共同前置。该请求不触发下述写正文、模板选择、编译、统计方法合同或完整科学审查流程。
 
 首次写作请求就保存真实 TeX 文件，不只返回大纲。按用户目标和现有证据写正文；没有实测结果也可交付草稿，但明确标注尚未测量、缺少对照或引用限制。保存源码、固定稿件、编译成功、视觉检查和科学核对是分别报告的状态。
 

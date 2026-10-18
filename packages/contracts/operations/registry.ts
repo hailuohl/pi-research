@@ -241,6 +241,7 @@ const SPECS: OperationSpec[] = [
     make('publication_review_prepare',{idempotencyPolicy:'key-required',authorize:c=>publicationAccess(c,'publication_review_prepare'),preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.publicationReviews.prepare(c.actor,c.projectId,x)}),
     make('publication_review_inspect',{idempotencyPolicy:'read-only',authorize:c=>publicationAccess(c,'publication_review_inspect'),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationReviews.inspect(c.actor,c.projectId,x.reviewId as string)}),
     make('publication_review_list',{idempotencyPolicy:'read-only',authorize:c=>publicationAccess(c,'publication_review_list'),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationReviews.list(c.actor,c.projectId,{resultId:x.resultId as string})}),
+    make('publication_citation_check',{idempotencyPolicy:'key-required',authorize:(c,x)=>{publicationAccess(c,'publication_citation_check');c.app.publicationBuilds.citationInputs(c.actor,c.projectId,x);},preconditions:c=>assertProjectWritable(c.app.store,c.projectId),execute:(c,x)=>c.app.publicationBuilds.citationCheck(c.actor,c.projectId,x,c.validate)}),
     make('publication_templates',{idempotencyPolicy:'read-only',authorize:c=>publicationAccess(c,'publication_templates'),preconditions:noPrecondition,execute:c=>c.app.publicationBuilds.templates(c.actor,c.projectId)}),
     make('publication_template_import',{idempotencyPolicy:'key-required',authorize:c=>publicationAccess(c,'publication_template_import'),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationTemplates.import(c.actor,x,c.idempotencyKey!,c.validate,c.projectId)}),
     make('publication_template_inspect',{idempotencyPolicy:'read-only',authorize:c=>publicationAccess(c,'publication_template_inspect'),preconditions:noPrecondition,execute:(c,x)=>c.app.publicationTemplates.inspect(c.actor,x.templateId as string,c.projectId)}),
@@ -645,9 +646,10 @@ export class OperationRegistry {
         try {return this.app.store.transaction(() => {
             if(permission)this.app.sessionPermissions.assert(permission.reference,false);
             // PDF authority must be current under the same writer lock as cached receipt return.
-            if(['text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit','session_attachment_read'].includes(id))spec.authorize(context,input);
+            if(['publication_citation_check','text_evidence_search','artifact_read','evidence_register','evidence_read','run_submit','session_attachment_read'].includes(id))spec.authorize(context,input);
             const previous = lookup();
             if (previous) {
+                if(id==='publication_citation_check'){context.validate();return output(this.app.publicationBuilds.replayCitationCheck(actor,pid,input,previous.value as ReturnType<ResearchApp['publicationBuilds']['citationCheck']>));}
                 ensure(!options.approvedActionId,'SESSION_ACTION_NOT_APPROVED','固定批准已被其它调用消费，请回查结果，不重复执行',409);
                 if(['research_action_prepare','research_action_inspect','research_action_decide'].includes(id)){
                     context.validate();spec.authorize(context,input);

@@ -16,6 +16,7 @@ import { snapshotDirectory, verifySnapshot, safePath } from '../workspace/files.
 import { readStableFile } from '../workspace/stable-file.js';
 import { docker, preflight, dockerEnv } from '../execution/docker.js';
 import { PUBLICATION_PROFILE, PUBLICATION_RESOURCES, PUBLICATION_TERMINAL } from './build-types.js';
+import { CITATION_CHECKER_VERSION, checkCitations, readCitationMetadata, serializeCitationReport } from './citations.js';
 const terminal = (state) => PUBLICATION_TERMINAL.includes(state);
 const closed = (x, keys, optional = []) => { const v = object(x); ensure(keys.every(k => k in v) && Object.keys(v).every(k => keys.includes(k) || optional.includes(k)), 'PUBLICATION_INVALID', '字段不符'); return v; };
 export function compilerProfile(repoRoot) { const root = join(repoRoot, 'scripts', 'document-build'), lockDigest = digest(readFileSync(join(root, 'debian-packages.lock.json'))), scriptDigest = digest(readFileSync(join(root, 'build.py'))), dockerfileDigest = digest(readFileSync(join(root, 'Dockerfile'))), profileDigest = digest(JSON.stringify({ profileId: PUBLICATION_PROFILE, lockDigest, scriptDigest, dockerfileDigest })); return { profileId: PUBLICATION_PROFILE, lockDigest, scriptDigest, dockerfileDigest, profileDigest }; }
@@ -117,6 +118,37 @@ export class PublicationBuildService {
     templates(actor, pid) { this.coordinator(actor, pid); return this.app.publicationTemplates.list(actor, pid); }
     revisions(actor, pid, cursor = 0, limit = 30) { const root = this.coordinator(actor, pid); integer(cursor, 'cursor', 0, Number.MAX_SAFE_INTEGER); integer(limit, 'limit', 1, 100); const rows = this.app.store.db.prepare("SELECT rowid,data FROM records WHERE kind='manuscript-revision' AND project_id=? AND rowid>? " + (root ? "AND json_extract(data,'$.rootSessionId')=? " : '') + 'ORDER BY rowid LIMIT ?').all(pid, cursor, ...(root ? [root.id] : []), limit + 1); return { items: rows.slice(0, limit).map(r => { const revision = JSON.parse(r.data); this.assertAgentRevision(actor, pid, revision); return revision; }), nextCursor: rows.length > limit ? Number(rows[limit - 1].rowid) : null }; }
     revision(actor, pid, id) { this.coordinator(actor, pid); const r = this.app.store.get('manuscript-revision', id, pid); this.assertRevision(r, true); this.assertAgentRevision(actor, pid, r); return r; }
+    citationInputs(actor, pid, value) {
+        const x = closed(value, ['revisionId'], ['metadataArtifactIds']), r = this.revision(actor, pid, text(x.revisionId, 'revisionId', 100)), ids = x.metadataArtifactIds ?? [];
+        ensure(Array.isArray(ids) && ids.length <= 32 && new Set(ids).size === ids.length, 'CITATION_METADATA_INVALID', 'metadataArtifactIds 最多32个唯一主产物ID');
+        const files = r.files.map(f => { this.assertSource(actor, pid, f, true, false, r); const { artifact, bytes } = this.app.evidence.read(actor, f.artifactId); return { path: f.path, artifactId: f.artifactId, digest: f.digest, size: f.size, artifactRecordDigest: digest(artifact), ...(/\.(tex|bib|sty|cls)$/i.test(f.path) ? { content: new TextDecoder('utf-8', { fatal: true }).decode(bytes) } : {}) }; });
+        const metadata = ids.map(id => readCitationMetadata(this.app, actor, pid, text(id, 'metadataArtifactId', 100)));
+        const binding = { revisionId: r.id, revisionDigest: digest(r), sourceDigest: r.sourceDigest, checkerVersion: CITATION_CHECKER_VERSION, files: files.map(({ content, ...f }) => f), metadata: metadata.map(m => m.binding) };
+        return { revision: r, files: files.filter((f) => f.content !== undefined).map(({ path, content }) => ({ path, content })), metadata: metadata.map(m => m.metadata), binding };
+    }
+    citationCheck(actor, pid, value, validate = () => { }) {
+        return this.app.store.transaction(() => {
+            validate();
+            assertProjectWritable(this.app.store, pid);
+            const input = this.citationInputs(actor, pid, value), report = { ...checkCitations(input.files, input.revision.mainFile, input.metadata), binding: input.binding }, content = serializeCitationReport(report), bytes = Buffer.from(content);
+            validate();
+            this.coordinator(actor, pid);
+            const artifact = this.app.evidence.put(pid, 'citation-integrity-report.json', bytes, 'application/json', 'host:publication-citation-check');
+            ensure(this.app.evidence.read(actor, artifact.id).bytes.equals(bytes), 'CITATION_REPORT_CORRUPTED', '保存后的引用报告字节不符');
+            return { revisionId: input.revision.id, sourceDigest: input.revision.sourceDigest, checkerVersion: CITATION_CHECKER_VERSION, bindingDigest: digest(input.binding), reportKind: 'historical_snapshot', scientificClaimSupport: 'not_assessed', literalStructure: report.literalStructure.status, identityComparison: report.identityComparison.status, truncated: report.truncated, reportArtifact: { artifactId: artifact.id, digest: artifact.digest, bytes: artifact.size } };
+        });
+    }
+    replayCitationCheck(actor, pid, value, prior) {
+        const input = this.citationInputs(actor, pid, value);
+        ensure(prior.bindingDigest === digest(input.binding) && prior.revisionId === input.revision.id && prior.sourceDigest === input.revision.sourceDigest && prior.checkerVersion === CITATION_CHECKER_VERSION, 'CITATION_SOURCE_CHANGED', '原检查的稿件、元数据记录或检查器已改变');
+        this.app.textCorpusGrants.authorizeContent(actor, pid, 'artifact_read', { artifactId: prior.reportArtifact.artifactId });
+        const { artifact, bytes } = this.app.evidence.read(actor, prior.reportArtifact.artifactId);
+        ensure(artifact.projectId === pid && artifact.origin === 'host:publication-citation-check' && artifact.digest === prior.reportArtifact.digest && artifact.size === prior.reportArtifact.bytes && bytes.length === artifact.size, 'CITATION_REPORT_CORRUPTED', '原引用报告的产物绑定改变');
+        const report = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+        ensure(digest(report.binding) === prior.bindingDigest && report.checkerVersion === CITATION_CHECKER_VERSION && report.reportKind === 'historical_snapshot' && report.scientificClaimSupport === 'not_assessed', 'CITATION_REPORT_CORRUPTED', '原引用报告与固定来源绑定不符');
+        this.coordinator(actor, pid);
+        return prior;
+    }
     readSource(actor, pid, id, path, cursor = 0, limit = 64000) { const r = this.revision(actor, pid, id), file = r.files.find(f => f.path === path); ensure(file, 'NOT_FOUND', '文稿文件不存在', 404); ensure(file.mediaType.startsWith('text/'), 'PUBLICATION_BINARY_FILE', '二进制文件请使用资产下载'); const { artifact, bytes } = this.app.evidence.read(actor, file.artifactId); ensure(artifact.projectId === pid && artifact.digest === file.digest && bytes.length === file.size, 'PUBLICATION_SOURCE_CORRUPTED', '文稿文件摘要不符'); const content = new TextDecoder('utf-8', { fatal: true }).decode(bytes); integer(cursor, 'cursor', 0, content.length); integer(limit, 'limit', 1, 64000); let end = Math.min(content.length, cursor + limit); if (end < content.length && /[\uD800-\uDBFF]/.test(content[end - 1])) {
         ensure(end > cursor + 1, 'WINDOW_TOO_SMALL', '读取窗口不能容纳完整字符');
         end--;

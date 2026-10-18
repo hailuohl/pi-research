@@ -29,6 +29,76 @@ export declare class PublicationBuildService {
         nextCursor: number | null;
     };
     revision(actor: Actor, pid: string, id: string): Row<ManuscriptRevision>;
+    citationInputs(actor: Actor, pid: string, value: unknown): {
+        revision: Row<ManuscriptRevision>;
+        files: {
+            path: string;
+            content: string;
+        }[];
+        metadata: {
+            artifactId: string;
+            paperReadId: string;
+            doi: string;
+            title: any[];
+            author: any[] | undefined;
+            years: number[];
+        }[];
+        binding: {
+            revisionId: string;
+            revisionDigest: string;
+            sourceDigest: string;
+            checkerVersion: string;
+            files: {
+                path: string;
+                artifactId: string;
+                digest: string;
+                size: number;
+                artifactRecordDigest: string;
+            }[];
+            metadata: {
+                artifactId: string;
+                artifactDigest: string;
+                artifactRecordDigest: string;
+                paperReadId: string;
+                paperReadDigest: string;
+                source: string;
+                contentKind: string;
+                idInSource: string;
+            }[];
+        };
+    };
+    citationCheck(actor: Actor, pid: string, value: unknown, validate?: () => void): {
+        revisionId: string;
+        sourceDigest: string;
+        checkerVersion: string;
+        bindingDigest: string;
+        reportKind: "historical_snapshot";
+        scientificClaimSupport: "not_assessed";
+        literalStructure: string;
+        identityComparison: string;
+        truncated: boolean;
+        reportArtifact: {
+            artifactId: string;
+            digest: string;
+            bytes: number;
+        };
+    };
+    replayCitationCheck(actor: Actor, pid: string, value: unknown, prior: ReturnType<PublicationBuildService['citationCheck']>): {
+        revisionId: string;
+        sourceDigest: string;
+        checkerVersion: string;
+        bindingDigest: string;
+        reportKind: "historical_snapshot";
+        scientificClaimSupport: "not_assessed";
+        literalStructure: string;
+        identityComparison: string;
+        truncated: boolean;
+        reportArtifact: {
+            artifactId: string;
+            digest: string;
+            bytes: number;
+        };
+    };
     readSource(actor: Actor, pid: string, id: string, path: string, cursor?: number, limit?: number): {
         path: string;
         content: string;

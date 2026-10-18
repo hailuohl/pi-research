@@ -31738,6 +31738,60 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: readonly ["jobId", "stream", "content", "cursor", "complete", "start", "size", "identity"];
         readonly additionalProperties: false;
     };
+    readonly publication_citation_check: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly checkerVersion: {
+                readonly type: "string";
+            };
+            readonly bindingDigest: {
+                readonly type: "string";
+            };
+            readonly reportKind: {
+                readonly const: "historical_snapshot";
+            };
+            readonly scientificClaimSupport: {
+                readonly const: "not_assessed";
+            };
+            readonly literalStructure: {
+                readonly enum: readonly ["passed", "failed", "incomplete"];
+            };
+            readonly identityComparison: {
+                readonly enum: readonly ["not_compared", "matched", "conflicts", "incomplete"];
+            };
+            readonly truncated: {
+                readonly type: "boolean";
+            };
+            readonly reportArtifact: {
+                readonly type: "object";
+                readonly properties: {
+                    artifactId: {
+                        readonly type: "string";
+                    };
+                    digest: {
+                        readonly type: "string";
+                    };
+                    bytes: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("artifactId" | "digest" | "bytes")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("revisionId" | "sourceDigest" | "truncated" | "reportKind" | "scientificClaimSupport" | "literalStructure" | "identityComparison" | "reportArtifact" | "checkerVersion" | "bindingDigest")[];
+        readonly additionalProperties: false;
+    };
     readonly publication_page_image_read: {
         readonly type: "object";
         readonly properties: {
@@ -40218,7 +40272,7 @@ export declare const OUTPUT_SCHEMAS: {
                         readonly additionalProperties: false;
                     };
                 };
-                readonly required: ("format" | "recordsPointer" | "fields" | "partitions")[];
+                readonly required: ("format" | "fields" | "recordsPointer" | "partitions")[];
                 readonly additionalProperties: false;
             };
         };

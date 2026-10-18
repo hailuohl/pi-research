@@ -19,6 +19,7 @@ const TOOL_METADATA = {
     publication_review_prepare: { description: '用户或同主会话协调者入口：为精确成功构建准备独立论文审查；Agent只能审查同主会话文稿，不能提交PDF/PMC原文证据；另行用户批准后启动。', example: { resultId: 'publication-result-id', inputEvidenceIds: [] } },
     publication_review_inspect: { description: '用户或原主会话协调者入口：回查固定审查目标、意见和有效性；任务完成不表示科学审查通过。', example: { reviewId: 'publication-review-id' } },
     publication_review_list: { description: '用户或同主会话协调者入口：列出精确构建的论文审查。', example: { resultId: 'publication-result-id' } },
+    publication_citation_check: { description: '用户或交互主协调者：只读固定revision的TeX/Bib及明确提供的成功Crossref paper_read主metadata，检查字面引用结构与实际书目字段。宿主原样保存historical_snapshot报告到Artifact；这是本地报告写入，遵守原会话批准。返回reportArtifact，正文用artifact_read按cursor完整读取；同键先复验来源后返回原报告。无metadata仍检查结构并注明未提供比对资料；不联网、不改稿、不认证科学主张或当前来源有效性。', example: { revisionId: 'manuscript-id', metadataArtifactIds: [] } },
     publication_templates: { description: '用户或交互协调者入口：列出内置与跨项目个人文稿模板的固定目录；自定义模板正文按文件读取，保存和选用不自动编译。', example: {} },
     publication_template_import: { description: '用户或交互主协调者入口：将实际生成的TeX及配套文件保存为跨项目个人模板；提供files内联Base64或zipBase64，同名产生独立版本。遵守会话动作批准，不读取任意磁盘路径、不编译、不授予Task全局写入权。', example: { title: 'Article template', engine: 'pdflatex', mainFile: 'main.tex', bibliography: 'none', files: [{ path: 'main.tex', contentBase64: 'XGRvY3VtZW50Y2xhc3N7YXJ0aWNsZX0KXGJlZ2lue2RvY3VtZW50fQpUZW1wbGF0ZS4KXGVuZHtkb2N1bWVudH0K' }] } },
     publication_template_inspect: { description: '用户或交互主协调者入口：读取指定固定模板的引擎、主文件和文件清单，不读取其他项目证据。', example: { templateId: 'template-id' } },

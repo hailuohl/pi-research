@@ -81,6 +81,32 @@ export declare const PUBLICATION_REVIEW_SCHEMA: {
     readonly additionalProperties: false;
 };
 export declare const PUBLICATION_INPUT_SCHEMAS: {
+    readonly publication_citation_check: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly metadataArtifactIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+        };
+        readonly required: readonly ["revisionId"];
+        readonly additionalProperties: false;
+    };
     readonly publication_page_image_read: {
         readonly type: "object";
         readonly properties: {
@@ -538,6 +564,60 @@ export declare const PUBLICATION_INPUT_SCHEMAS: {
     };
 };
 export declare const PUBLICATION_OUTPUT_SCHEMAS: {
+    readonly publication_citation_check: {
+        readonly type: "object";
+        readonly properties: {
+            readonly revisionId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceDigest: {
+                readonly type: "string";
+            };
+            readonly checkerVersion: {
+                readonly type: "string";
+            };
+            readonly bindingDigest: {
+                readonly type: "string";
+            };
+            readonly reportKind: {
+                readonly const: "historical_snapshot";
+            };
+            readonly scientificClaimSupport: {
+                readonly const: "not_assessed";
+            };
+            readonly literalStructure: {
+                readonly enum: readonly ["passed", "failed", "incomplete"];
+            };
+            readonly identityComparison: {
+                readonly enum: readonly ["not_compared", "matched", "conflicts", "incomplete"];
+            };
+            readonly truncated: {
+                readonly type: "boolean";
+            };
+            readonly reportArtifact: {
+                readonly type: "object";
+                readonly properties: {
+                    artifactId: {
+                        readonly type: "string";
+                    };
+                    digest: {
+                        readonly type: "string";
+                    };
+                    bytes: {
+                        readonly type: "integer";
+                    };
+                };
+                readonly required: ("artifactId" | "digest" | "bytes")[];
+                readonly additionalProperties: false;
+            };
+        };
+        readonly required: ("revisionId" | "sourceDigest" | "truncated" | "reportKind" | "scientificClaimSupport" | "literalStructure" | "identityComparison" | "reportArtifact" | "checkerVersion" | "bindingDigest")[];
+        readonly additionalProperties: false;
+    };
     readonly publication_page_image_read: {
         readonly type: "object";
         readonly properties: {
