@@ -1,0 +1,1131 @@
+{
+  "status": "25-skips-classified-no-new-batch-blocker",
+  "baseline": "f8896fd249f41c8f33e38266e46c7257e9304860",
+  "auditBaseline": "5aeabd2ef1da31ef133e9f6324d82d5236ea9eca",
+  "platform": "win32",
+  "node": "v24.19.0",
+  "localDate": "2026-10-18",
+  "timezone": "Asia/Shanghai",
+  "sourceLogs": {
+    "citation": {
+      "path": "D:\\项目\\pi research\\tmp\\citation-integrity-implementation-20261018\\.validation\\citation-integrity\\full-main.log",
+      "sha256": "156c6a997b4813f5c85a812cfc527e03d3cb3282e236b20660fdc81c0e0dbdde"
+    },
+    "scientific": {
+      "path": ".validation/scientific-report-guard-20261018/full-regression.log",
+      "sha256": "a481ba2c6a0d3d1cf6d01b88bd5e17514c3fbb918360148af5f6eba586e2b774"
+    },
+    "same25Names": true
+  },
+  "counts": {
+    "optional-compiler": 19,
+    "optional-docker": 2,
+    "posix": 4
+  },
+  "entries": [
+    {
+      "id": 1,
+      "name": "POSIX backup preserves distinct case-sensitive sibling paths",
+      "file": "tests/integration/data-backup.test.mjs",
+      "line": 181,
+      "category": "posix",
+      "purpose": "大小写敏感文件系统的备份/恢复",
+      "originalCitationLogLine": 76,
+      "originalScienceLogLine": 76,
+      "reporterReason": "SKIP",
+      "skipCondition": "process.platform === win32；非 Windows 运行还检查实际文件系统大小写",
+      "reasonEvidence": "Windows platform exclusion",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "非 Windows 平台行为"
+    },
+    {
+      "id": 2,
+      "name": "optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery",
+      "file": "tests/unit/formal-docker.test.mjs",
+      "line": 32,
+      "category": "optional-docker",
+      "purpose": "底层 Docker 监管、输出限额、取消/超时/创建态恢复",
+      "originalCitationLogLine": 857,
+      "originalScienceLogLine": 856,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_TEST_FORMAL_DOCKER !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实容器底层行为"
+    },
+    {
+      "id": 3,
+      "name": "isolated compiler: pdflatex",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 12,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "pdfLaTeX 基本排版",
+      "originalCitationLogLine": 940,
+      "originalScienceLogLine": 935,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 4,
+      "name": "isolated compiler: xelatex",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 13,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "XeLaTeX 基本排版",
+      "originalCitationLogLine": 941,
+      "originalScienceLogLine": 936,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 5,
+      "name": "isolated compiler: lualatex",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 14,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "LuaLaTeX 基本排版",
+      "originalCitationLogLine": 942,
+      "originalScienceLogLine": 937,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 6,
+      "name": "isolated compiler: chinese",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 15,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "XeLaTeX 中文字体",
+      "originalCitationLogLine": 943,
+      "originalScienceLogLine": 938,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 7,
+      "name": "isolated compiler: lua-chinese-budget",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 16,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "LuaLaTeX 中文字体与既有内存限额",
+      "originalCitationLogLine": 944,
+      "originalScienceLogLine": 939,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 8,
+      "name": "isolated compiler: bibtex",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 17,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "BibTeX 后端实际排版",
+      "originalCitationLogLine": 945,
+      "originalScienceLogLine": 940,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 9,
+      "name": "isolated compiler: biber",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 18,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "Biber 后端实际排版",
+      "originalCitationLogLine": 946,
+      "originalScienceLogLine": 941,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 10,
+      "name": "isolated compiler: missing-image",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 19,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "缺失图像编译诊断",
+      "originalCitationLogLine": 947,
+      "originalScienceLogLine": 942,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 11,
+      "name": "isolated compiler: missing-package",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 20,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "缺失宏包编译诊断",
+      "originalCitationLogLine": 948,
+      "originalScienceLogLine": 943,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 12,
+      "name": "isolated compiler: undefined-reference",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 21,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "\\ref 标签未定义导致非收敛（非 citation key）",
+      "originalCitationLogLine": 949,
+      "originalScienceLogLine": 944,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 13,
+      "name": "isolated compiler: shell-blocked",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 22,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "编译器 shell escape 隔离",
+      "originalCitationLogLine": 950,
+      "originalScienceLogLine": 945,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 14,
+      "name": "isolated compiler: lua-blocked",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 23,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "Lua 原生能力隔离",
+      "originalCitationLogLine": 951,
+      "originalScienceLogLine": 946,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 15,
+      "name": "isolated compiler: forged-result",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 24,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "TeX 不能伪造宿主编译结果",
+      "originalCitationLogLine": 952,
+      "originalScienceLogLine": 947,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 16,
+      "name": "isolated compiler: lua-forged-host-result",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 25,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "Lua 不能伪造宿主结果",
+      "originalCitationLogLine": 953,
+      "originalScienceLogLine": 948,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 17,
+      "name": "isolated compiler: pdf-before-error",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 26,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "产生 PDF 后报错仍失败",
+      "originalCitationLogLine": 954,
+      "originalScienceLogLine": 949,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 18,
+      "name": "isolated compiler: absolute-write-blocked",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 27,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "阻止绝对路径写入",
+      "originalCitationLogLine": 955,
+      "originalScienceLogLine": 950,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 19,
+      "name": "isolated compiler: biber-remote-blocked",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 28,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "阻止 Biber 远程书目读取",
+      "originalCitationLogLine": 956,
+      "originalScienceLogLine": 951,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 20,
+      "name": "isolated compiler: biber-nonutf8-control",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 29,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "拒绝 Biber 非 UTF-8 控制文件",
+      "originalCitationLogLine": 957,
+      "originalScienceLogLine": 952,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 21,
+      "name": "isolated compiler: timeout",
+      "file": "tests/unit/latex-runtime-live.test.mjs",
+      "line": 30,
+      "declarationLine": 32,
+      "category": "optional-compiler",
+      "purpose": "编译超时",
+      "originalCitationLogLine": 958,
+      "originalScienceLogLine": 953,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_LATEX_LIVE !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实编译器/隔离行为"
+    },
+    {
+      "id": 22,
+      "name": "optional real Docker preserves ordinary and executable source modes",
+      "file": "tests/unit/sandbox-runtime.test.mjs",
+      "line": 56,
+      "category": "optional-docker",
+      "purpose": "容器内保留普通与可执行文件模式",
+      "originalCitationLogLine": 1679,
+      "originalScienceLogLine": 1659,
+      "reporterReason": "SKIP",
+      "skipCondition": "PI_TEST_DOCKER_MODES !== 1",
+      "reasonEvidence": "Original skip plus exact source condition proves flag was not 1; absence versus other value was not captured, Docker availability cannot be inferred",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "真实容器底层行为"
+    },
+    {
+      "id": 23,
+      "name": "POSIX source modes reflect actual exec bits and writes retain exact normal permission bits",
+      "file": "tests/unit/source-modes.test.mjs",
+      "line": 67,
+      "category": "posix",
+      "purpose": "POSIX 可执行位与写入保留权限",
+      "originalCitationLogLine": 1936,
+      "originalScienceLogLine": 1916,
+      "reporterReason": "SKIP",
+      "skipCondition": "process.platform === win32",
+      "reasonEvidence": "Windows platform exclusion",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "非 Windows 平台行为"
+    },
+    {
+      "id": 24,
+      "name": "privileged creation uses no-follow directory fds, never replaces files, and never repairs existing permissions",
+      "file": "tests/unit/ssh-onboarding-bootstrap.test.mjs",
+      "line": 60,
+      "category": "posix",
+      "purpose": "SSH 安装器的 POSIX dir_fd/属主/权限规则",
+      "originalCitationLogLine": 1940,
+      "originalScienceLogLine": 1920,
+      "reporterReason": "POSIX dir_fd and ownership require Linux bootstrap integration",
+      "skipCondition": "process.platform === win32",
+      "reasonEvidence": "Windows platform exclusion",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "非 Windows 平台行为"
+    },
+    {
+      "id": 25,
+      "name": "SSH start keeps nested source directories traversable under umask 077",
+      "file": "tests/unit/ssh-protocol.test.mjs",
+      "line": 115,
+      "category": "posix",
+      "purpose": "SSH 启动时 umask 077 下嵌套目录可遍历",
+      "originalCitationLogLine": 1960,
+      "originalScienceLogLine": 1940,
+      "reporterReason": "POSIX permission modes are unavailable on Windows",
+      "skipCondition": "process.platform === win32",
+      "reasonEvidence": "Windows platform exclusion",
+      "batchImpact": "No newly identified acceptance blocker",
+      "rerun": "not-needed-for-this-batch; remains unverified",
+      "remainingScope": "非 Windows 平台行为"
+    }
+  ],
+  "acceptance": [
+    "All 25 original skips reconciled to test declarations and exact skip conditions",
+    "Impacts decided from changed call paths and still-applicable evidence, never by naming similarity or skip=pass",
+    "Run only necessary direct checks; no uncovered direct blocker found, so no product suites were rerun",
+    "Retain original logs, previous skip counts, histories and five protected in-flight files"
+  ],
+  "reasoning": {
+    "compiler": "No compiler scripts or skipped fixtures changed since pre-adaptation assessment. citationCheck calls checkCitations and Artifact persistence, not publication submission or Docker. bibtex/biber test compilation; undefined-reference tests ref labels, not bibliography keys.",
+    "formalDocker": "Skipped fixture calls superviseDockerRun with its own controls.finalize callback; it does not call RunService.finalize or collectRunArtifacts. Those changed science paths have method/bearing/formal-origin tests and prior real Run evidence. Docker adapter/supervisor unchanged; their skipped live modes are not a substitute for the science archive checks.",
+    "posix": "Unchanged backup, mode and SSH platform-specific paths; current scope neither changes these policies nor promises Linux acceptance."
+  },
+  "evidenceReuse": {
+    "unchangedSkippedTestsAndBackendFiles": [
+      {
+        "path": "tests/integration/data-backup.test.mjs",
+        "gitBlob": "ad3b103f4a0a72f5d09a81969a357295f8abb171",
+        "sha256": "f90452a113a4ff9bd59562cf2bdfa60f06f2c6a9d910be366ef5a20dc3f0d152"
+      },
+      {
+        "path": "tests/unit/formal-docker.test.mjs",
+        "gitBlob": "422ff474c51c42c464d692a37da22833edd4ca59",
+        "sha256": "c4f1ce9b1327e61760dcf342a912cf284faccb2c7e9ce8be3508794642cfe902"
+      },
+      {
+        "path": "tests/unit/latex-runtime-live.test.mjs",
+        "gitBlob": "5a87b0430640d5a1ef61ab84f0f166470c9919d5",
+        "sha256": "e6ed1747ac1613b6bfcdf2b9d81c8d4661de31f0d735f4181c7bfdacfc133b77"
+      },
+      {
+        "path": "tests/unit/sandbox-runtime.test.mjs",
+        "gitBlob": "32bdad330868ad72c03718509d68df31061a3c5f",
+        "sha256": "b472c50861874c48737be7c805f676e487b42484bd8d58bc679d527ee08d6fe0"
+      },
+      {
+        "path": "tests/unit/source-modes.test.mjs",
+        "gitBlob": "ab1275475c08c1b16f91d36cc3f69c8be8be360b",
+        "sha256": "0724396dff44643baf688e6885d39b9a02407fe5f8fa251b9ed8fbf08fe194a6"
+      },
+      {
+        "path": "tests/unit/ssh-onboarding-bootstrap.test.mjs",
+        "gitBlob": "c9a7d40e14ff69242f4d2898839bb4ce38897261",
+        "sha256": "4ec8b4d0103c8804dc2493c19e3e7437f34b8a5d07390ac1d674483d9e8d9a9d"
+      },
+      {
+        "path": "tests/unit/ssh-protocol.test.mjs",
+        "gitBlob": "f4c04a83ba5f9449bfd2b527e7537618cb882dbd",
+        "sha256": "1ff550f558c5bbac0df6e1691b7905f14988351c2dbc77411672f735d13b2a94"
+      },
+      {
+        "path": "packages/execution/docker.ts",
+        "gitBlob": "84144fd5f29905e649b615043d5278b4c9e36995",
+        "sha256": "bf96e1a5218de7d01e9204cdecc4b93da4aefbbec827672ff7a8a109692b09a4"
+      },
+      {
+        "path": "packages/runners/docker.ts",
+        "gitBlob": "451c1dd009c0ec934ea3a251bbc36548094543bb",
+        "sha256": "305c915290fcf9a829a8c6566056a388a2d646b70220186e148d540db4345d9d"
+      },
+      {
+        "path": "packages/runners/docker-supervisor.ts",
+        "gitBlob": "5bbd873f84c92d5942078c75c119376ff0c60c61",
+        "sha256": "6ac13e5cd7d580bbd453bc79ad14327b144ef66ebb73f2ee0e39b1ade7c4b350"
+      },
+      {
+        "path": "packages/storage/backup.ts",
+        "gitBlob": "ec5f5bfdaba158375f867bc89e4be733931b809a",
+        "sha256": "fe1b4fd7ab775a9126ee4235538a18ad7f9bac1b8d356ea56e9626fb1427fe75"
+      },
+      {
+        "path": "packages/workspace/files.ts",
+        "gitBlob": "ccd97719d0e99ef9001ba77ebfce73215e142d33",
+        "sha256": "ff6ab62c8b51a08cf76e7ef0d1b5bdaf065e45f59bf3e55239740419391181b1"
+      },
+      {
+        "path": "scripts/ssh-onboarding.py",
+        "gitBlob": "04d2f0c3f497451edaa0c3ba7ef6c579cdda6930",
+        "sha256": "bffa7d8efe92fe928653b7728f80b3bc531057e9b53f552cfe4f3d01612eb741"
+      },
+      {
+        "path": "scripts/ssh-runner.py",
+        "gitBlob": "46a504380a172e60330edaeb6fc4bf13cdbeafe8",
+        "sha256": "a3a47f0974ddf6f666b7fa83f5f1931e59cb907a007f3ad5218ea32ce047e0bd"
+      },
+      {
+        "path": "scripts/document-build/build.py",
+        "gitBlob": "d1b810ab3a187d46d5dc7a23083a0a182fd1c0fb",
+        "sha256": "9a3b18dad43f1cd661a3cf35a8742eb38691ef8ba65940e085363fe4daa48d4f"
+      },
+      {
+        "path": "scripts/document-build/Dockerfile",
+        "gitBlob": "5fedf52ee2981b0d862d2946fabb7e2fe83a89dc",
+        "sha256": "d4b1d3f077834fb0e8e7f37963ae6e4bd43091638898a12ab38ee512796d8e9f"
+      }
+    ],
+    "finalDeliveryNonDocFilesVerified": 207,
+    "codeManifestDigest": "24ff6a7610e474527bf8309befac5d9ad05c2521e65711e0f1fb2b59d9431aa3",
+    "scienceLiteralNamedTestsAlreadyPassed": 105,
+    "scienceCoverage": [
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "a successful method skill read automatically blocks ready drafts without a frozen method contract",
+        "logLine": 1046
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "a method compiler previews only sources actually read in the current root",
+        "logLine": 1047
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "DOI grouping never converts records, duplicate IDs, or multiple study assertions into studies",
+        "logLine": 1048
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "independent expected branches cover the 1% versus 2% error and exact zero/threshold boundaries",
+        "logLine": 1049
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "method reads alone stay pure; empty-source metric checks stay compatible; source-bound checks cannot skip methods",
+        "logLine": 1050
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "normal skill, source, ready, development and review consumes the frozen protocol and all actual method artifacts",
+        "logLine": 1051
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "protocol changes require a fresh ready protocol; implementation-only repairs retain the fixed rule",
+        "logLine": 1052
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "wrong declared decisions, malformed metrics and candidate occupation of host result names fail and preserve archives",
+        "logLine": 1053
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "current-root source reads and exact source digests cannot be replaced by foreign or cached stale source text",
+        "logLine": 1054
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "reopen recomputes method results even when tampered artifact metadata matches its new bytes",
+        "logLine": 1055
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "formal archiving and verifier use the same frozen method on actual metric archives",
+        "logLine": 1056
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "activation consumes actual prerequisite metadata only after output validation; old bundles remain unchanged",
+        "logLine": 1057
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "source, threshold and marker mutations cannot silently downgrade a frozen method contract",
+        "logLine": 1058
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "compiler and archive enforce existing text, fixed-save and output byte limits before publishing method artifacts",
+        "logLine": 1059
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "independent review cannot accept until actual host methods results were read, then accepts with the original receipt protocol",
+        "logLine": 1060
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "same-file decision pointers require one review artifact and still validate every independent value",
+        "logLine": 1061
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "candidate output namespaces stay distinct from control reports and logs for decisions and metrics",
+        "logLine": 1062
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "method revalidation checks all control artifact bytes and origins before selecting candidate outputs",
+        "logLine": 1063
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "paired RMSE witness derives the RMSE interval rather than accepting a mislabeled paired MSE interval",
+        "logLine": 1064
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "legacy descriptive and supplied-metric v1 contracts retain pre-upgrade golden bytes",
+        "logLine": 1065
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "paired witness quantities scale linearly, shift unchanged and retain paired covariance under reversal",
+        "logLine": 1066
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "paired witness rejects invalid rows, mappings, pointers, degenerate RMSE/SE and nonfinite arithmetic",
+        "logLine": 1067
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "paired metric tolerance is serialization only; decisions use unrounded host gain and compiler identity cannot downgrade",
+        "logLine": 1068
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "paired witness reads only unique same-subject archive bytes and rejects foreign, changed or synthetic metric bindings",
+        "logLine": 1069
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "development and formal archives compute the same paired witness quantities with their own exact subject bindings",
+        "logLine": 1070
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "a wrong paired gain fails actual finalization, retaining original measurements without host inference results",
+        "logLine": 1071
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "new witness, metrics and derived interval tampering fail reopen and review admission while original records remain",
+        "logLine": 1072
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "actual prediction witness is an independently required review read and its unread bytes block acceptance",
+        "logLine": 1073
+      },
+      {
+        "file": "tests/unit/method-contracts.test.mjs",
+        "name": "legacy source mappings and declared decisions preserve the pre-upgrade protocol and all archived bytes",
+        "logLine": 1074
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "genuine host ledger, results, report and predictions authorities pass without a conflicting path subset",
+        "logLine": 500
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "raw evidence and diagnostics never become authority, and quote/case/coverage errors locate the exact assertion",
+        "logLine": 501
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "authority target identity rejects candidate notes sharing host paths while genuine archived host quotes pass",
+        "logLine": 502
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "v4 pending exact fixture approval allows intact ready and development requests without executing them",
+        "logLine": 503
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "v3 pending exact fixture approval keeps the same intact and corrupted boundaries for both calls",
+        "logLine": 506
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "actual new resource/profile selection is sticky without changing old fixture replies or ordinary sessions",
+        "logLine": 507
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "actual historical cc resource read keeps its v3 requirement and compiler instead of acquiring the new profile",
+        "logLine": 508
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "pre-profile v3 contract/protocol/results/four attachments keep independently captured frozen bytes",
+        "logLine": 509
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "closed output spec rejects unsupported aliases, profile omissions and input/host/output path collisions",
+        "logLine": 510
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "valid profile produces one stage-qualified fact source and host test-only CSV and survives reopening",
+        "logLine": 511
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "all unknown renamed files/keys and successful free logs reject after preserving the original archive",
+        "logLine": 512
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "failure traceback is preserved and host exports count toward the same approved output budget",
+        "logLine": 513
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "new review binds complete brief, all candidate and actual outputs/logs, including empty read receipts and surface comparisons",
+        "logLine": 514
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "brief, notes, host facts and original archive membership tampering invalidate fixed acceptance/reopen",
+        "logLine": 515
+      },
+      {
+        "file": "tests/unit/bearing-method-outputs.test.mjs",
+        "name": "formal profile shares evaluator and closed surfaces, emits formal facts without fixture membership, and reopens",
+        "logLine": 516
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "dedicated formal report review approves one attempt and a blocked result exhausts it without changing generic budgets",
+        "logLine": 873
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "formal report prepare is a registered exact fixed scope, with raw data facts and no Run mutations",
+        "logLine": 874
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "old generic accept does not satisfy the new formal coverage or assessment gate",
+        "logLine": 875
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "real full reads including empty logs reach only mechanical completion; wrong prose is not machine-accepted science",
+        "logLine": 876
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "only evidence wrappers, a report tail or skipped empty logs cannot count as full coverage",
+        "logLine": 877
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "exact quote, facts/source references, current gaps and old attempts stay independent guards",
+        "logLine": 878
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "full raw Run source API reads also issue exact receipts, and output failure/cached calls add none",
+        "logLine": 879
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "report/facts/source/archive changes, root permission revocation and plan replacement stale the same guard",
+        "logLine": 880
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "another root/report has no access; partial disputed keeps actual receipts and never marks scientific acceptance",
+        "logLine": 881
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "new report identity has a distinct review; same-byte report receipts cannot cross that binding",
+        "logLine": 882
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "generic formal report routing blocks the exact report and Run before writes and deduplicates real identities",
+        "logLine": 883
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "generic formal report routing leaves ambiguous Runs, multiple Markdown and unrelated plan shapes alone",
+        "logLine": 884
+      },
+      {
+        "file": "tests/unit/formal-report-review.test.mjs",
+        "name": "generic formal report routing ignores cross-root and failed Runs while dedicated host preparation stays normal",
+        "logLine": 885
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "code and wrappers alone cannot accept a new source-bound scientific review",
+        "logLine": 1717
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "four exact project reads survive clarifying/ready and reopen without inventing a CSV body read",
+        "logLine": 1718
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "stale or blocked input reads preserve ordinary content, require a fresh read and stale pending approvals",
+        "logLine": 1719
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "scientific development repairs use a fixed confirmed brief while formal capture still enforces current drafts",
+        "logLine": 1720
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "exact original inputs and actual report/metric are granted, unrelated and current project files are excluded",
+        "logLine": 1721
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "last-page completeness is insufficient; merged intervals, empty reads and reopened receipts cover the fixed targets",
+        "logLine": 1722
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "quotes, areas and blocking gaps are enforced; cross-attempt receipts cannot be reused",
+        "logLine": 1723
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "reject or blocked assessment keeps partial evidence without manufacturing a passed status",
+        "logLine": 1724
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "forged accepted stored results cannot bypass the shared assessment/reading gate",
+        "logLine": 1725
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "output or permission failures issue no usable read receipts",
+        "logLine": 1726
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "project reads with failed output or noncanonical paths cannot silently become frozen inputs",
+        "logLine": 1727
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "old grants keep absent brief/protocol fields, while new grants freeze the exact source-bound brief",
+        "logLine": 1728
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "corrupted frozen source bytes revoke review reading and acceptance without changing historical metadata",
+        "logLine": 1729
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "fixed brief evidence corruption and source revocation block every scientific review acceptance path",
+        "logLine": 1730
+      },
+      {
+        "file": "tests/unit/scientific-review-protocol.test.mjs",
+        "name": "a successful project read anchors to the brief current under its write lock, not the captured session",
+        "logLine": 1731
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "ready save refuses files never read before creating an approval card",
+        "logLine": 1697
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "new reads bind all written draft files; user/project/foreign reads cannot mint credentials",
+        "logLine": 1698
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "same-hash new writes invalidate old reads while cached reads/writes preserve their original version",
+        "logLine": 1699
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "external draft mutation stays readable and recovers through managed rewrite plus a fresh read",
+        "logLine": 1700
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "confirm and new capture reject altered drafts while fixed confirmed references preserve history",
+        "logLine": 1701
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "draft receipts survive reopen, reject missing files and accept same-byte workspace restoration",
+        "logLine": 1702
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "draft paths reject aliases/duplicates and credentials do not survive a workspace reference change",
+        "logLine": 1703
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "a rejected ready operation stays rejected and an approved save rechecks same-byte new writes",
+        "logLine": 1704
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "pending draft approval becomes stale before owner decision when bytes or write version change",
+        "logLine": 1705
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "conceptual plans and legacy brief digests retain their existing semantics",
+        "logLine": 1706
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "owner manual ready saves remain unbound unless draftFiles are explicitly supplied",
+        "logLine": 1707
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "metric contract rejects exit-zero nested/string/nonfinite/invalid UTF8 metrics and keeps original bytes",
+        "logLine": 1708
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "finite metrics pass and legacy same-named files receive no inferred metric contract",
+        "logLine": 1709
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "metric contracts are explicit expected outputs and changing them invalidates approval",
+        "logLine": 1710
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "WorkingGrant retains the exact metric contract across derived approvals and rejects removal/replacement",
+        "logLine": 1711
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "reviewers can read the original fixed data inputs and no related sibling evidence or artifacts",
+        "logLine": 1712
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "review data binding tampering or corrupt original bytes fails before resource access",
+        "logLine": 1713
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "new review plans reject non-text or excessive inputs without expanding artifact read limits",
+        "logLine": 1714
+      },
+      {
+        "file": "tests/unit/scientific-method-checkpoints.test.mjs",
+        "name": "ordinary development review objectives and legacy read rights are preserved",
+        "logLine": 1715
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "fixture preparation is parameter-free, single-seed replayable, root-scoped and independent of real source values",
+        "logLine": 1976
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "only an actually selected structured flow is sticky, and exactly one whole protocol role is frozen",
+        "logLine": 1977
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "precision policy is the first shared predicate; null is descriptive and exact equality does not filter",
+        "logLine": 1978
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "v3 scaling instruction includes both outcome-unit thresholds only when a precision gate is present",
+        "logLine": 1979
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "raw-as-synthetic argv, missing fixture refs and extra real inputs reject before executable approval",
+        "logLine": 1980
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "normal development automatically freezes only the host fixture, and its complete test membership is checked",
+        "logLine": 1981
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "missing, extra, changed observed and training-row witness substitutions fail despite internally matching metrics",
+        "logLine": 1982
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "fixture tampering is rejected at owner approval, before start, reopen and review without replacing the seed",
+        "logLine": 1983
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "WorkingGrant keeps the same fixture binding and cannot derive a legacy or replacement-data manifest",
+        "logLine": 1984
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "fixture source and fit provenance are required actual reads; reviewer resource reads do not mutate producer requirements",
+        "logLine": 1985
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "negative control: handling another marked artificial array remains invisible to membership and is never certified synthetic-only execution",
+        "logLine": 1986
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "formal origin uses the same measurement and precision policy without development fixture membership or a synthetic claim",
+        "logLine": 1987
+      },
+      {
+        "file": "tests/unit/synthetic-method-plan.test.mjs",
+        "name": "legacy paired v2 compiler, protocol and four archived attachments retain their pre-v3 golden bytes",
+        "logLine": 1988
+      },
+      {
+        "file": "tests/unit/scientific-methods-skills.test.mjs",
+        "name": "eight methods obey existing roles and retain exact session versions across upgrade, reopen and rollback",
+        "logLine": 1716
+      }
+    ],
+    "scienceTestsUnchangedSinceFullRun": true,
+    "citationAffected": {
+      "passed": 44,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": "D:\\项目\\pi research\\tmp\\citation-integrity-implementation-20261018\\.validation\\citation-integrity\\affected-main.log",
+        "sha256": "df35625a1f76ce9899bc201c43e2e54ddac78fa38b5d2c3d8fc2b7f522cac45d"
+      }
+    },
+    "independentParserProbes": {
+      "passed": 24,
+      "source": {
+        "path": "D:\\项目\\pi research\\tmp\\citation-integrity-implementation-20261018\\.validation\\citation-integrity\\review\\recheck-evidence.json",
+        "sha256": "561dfc027f01055429a68895043da56ff3caa848ad02647c301951be4916066f"
+      }
+    },
+    "cleanBuild": {
+      "files": 709,
+      "identical": true,
+      "summary": {
+        "path": "D:\\项目\\pi research\\tmp\\citation-integrity-implementation-20261018\\.validation\\clean-build-elXmCQ\\summary.json",
+        "sha256": "61d07bec05a7392b4f8621c2560b2bba6f19d68b77b254952105c1f260d6a38e"
+      }
+    },
+    "native": {
+      "source": {
+        "path": "D:\\项目\\pi research\\pi-research\\.validation\\citation-integrity-20261018\\native-reopen.json",
+        "sha256": "978a5117470fe3b0cbdef91c00a611d059ae29d9f7eff7f9d2006b76dd4670b0"
+      },
+      "independentReview": {
+        "path": "D:\\项目\\pi research\\tmp\\citation-integrity-implementation-20261018\\.validation\\citation-integrity\\review\\native-review-evidence.json",
+        "sha256": "c39df91cfb77a96af4e1b0af763a34c9dbc559c0ef3380d029653704499480d2"
+      },
+      "scientificRecord": "docs/acceptance/flow-scientific-method-contracts/evidence.json"
+    }
+  },
+  "newExecution": {
+    "kind": "read-only evidence/byte/log reconciliation",
+    "productTestCasesRun": 0,
+    "skippedCasesTurnedIntoPass": 0,
+    "newBuilds": 0,
+    "newModelRuns": 0,
+    "newDockerRuns": 0,
+    "newBrowserRuns": 0,
+    "newNetworkSourceRequests": 0
+  },
+  "limitations": [
+    "Original 25 skipped cases remain skipped/unverified; this audit does not certify their platform/live behavior",
+    "No new complete suite or clean build; current immutable code matches the already tested files",
+    "Prior scientific and native-assistance limitations remain unchanged"
+  ],
+  "protectedFilesUnchanged": true,
+  "productCodeChanges": false,
+  "review": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "high",
+    "runtimeEchoVerified": false,
+    "scope": "Independent skip relevance and final evidence facts; no repeat code audit"
+  },
+  "recordedAt": "2026-10-18T15:51:41.637Z"
+}
