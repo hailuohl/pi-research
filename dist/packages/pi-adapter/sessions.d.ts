@@ -3,14 +3,16 @@ import { type PreparedModelSelection } from './model-management.js';
 import { type ParsedAttachmentPair, type ParsedAttachmentMetadata } from './attachments.js';
 import type { AppContext } from '../domain/context.js';
 import type { Actor, Session, Message, ModelConfig, Role, Row, MessageAttachment } from '../domain/types.js';
+import type { SkillService } from '../skills/service.js';
 export declare class SessionService {
     private c;
+    private skills;
     onStop?: (sessionId: string, reason: string) => void;
     parsedAttachmentMetadata?: (actor: Actor, session: Row<Session>, pair: ParsedAttachmentPair) => ParsedAttachmentMetadata;
     permissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
     taskPermissionCapture?: (sessionId: string) => import('../policy/session-permissions.js').PermissionReference;
     permissionBranch?: (originalId: string, branchId: string) => void;
-    constructor(c: AppContext);
+    constructor(c: AppContext, skills: SkillService);
     model(): ModelConfig;
     models(): ModelConfig[];
     configure(actor: Actor, value: unknown): Row<{
@@ -25,6 +27,7 @@ export declare class SessionService {
         teamId?: string;
         taskId?: string;
         workspace?: string;
+        skillBundleId?: string;
     }): Row<Session>;
     send(actor: Actor, id: string, value: unknown): Row<Message>;
     sendApprovalNotice(actor: Actor, id: string, value: unknown, approvalNoticeId: string): Row<Message>;

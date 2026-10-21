@@ -35,10 +35,15 @@ function missingSkills(app:ResearchApp,pid:string,role:Session['role'],bundleId:
     return missing;
 }
 function requireReady(missing:SkillMissing[]) {ensure(!missing.length,'SKILL_CAPABILITY_MISSING',missing.map(m=>`${m.skillId||'bundle'} ${m.kind}:${m.value} — ${m.reason}`).join('; '));}
-export function prepareTaskSkills(app:ResearchApp,task:Row<Task>):string {
+export function prepareTaskSkills(app:ResearchApp,task:Row<Task>,preparedSession?:Row<Session>):string {
     const previous=task.attemptId?app.store.get<TaskAttempt>('task-attempt',task.attemptId,task.projectId!):undefined;
     ensure(!previous||previous.skillBundleId,'SKILL_BINDING_UNKNOWN','旧任务尝试未记录技能包；请建立新任务');
-    const bundleId=previous?.skillBundleId??app.skills.configuration(task.projectId!).bundleId;
+    if(preparedSession){
+        ensure(preparedSession.projectId===task.projectId&&preparedSession.taskId===task.id&&preparedSession.teamId===task.teamId&&preparedSession.role===task.role,'SKILL_BINDING_MISMATCH','预备会话不属于此任务');
+        ensure(preparedSession.skillBundleId,'SKILL_BINDING_UNKNOWN','预备任务会话未记录技能包；请建立新任务');
+        ensure(!previous||previous.skillBundleId===preparedSession.skillBundleId,'SKILL_BINDING_MISMATCH','任务尝试与预备会话技能包不一致');
+    }
+    const bundleId=previous?.skillBundleId??preparedSession?.skillBundleId??app.skills.configuration(task.projectId!).bundleId;
     requireReady(missingSkills(app,task.projectId!,task.role,bundleId,task.skillIds??[],false,app.teams.resourcesForTask(task).artifactIds));return bundleId;
 }
 export function prepareSessionSkills(app:ResearchApp,s:Row<Session>,actor?:Actor):string {

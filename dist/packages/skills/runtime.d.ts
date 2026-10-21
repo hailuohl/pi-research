@@ -32,7 +32,7 @@ export declare function readCatalog(app: ResearchApp, actor: Actor, pid: string)
     }[];
 };
 export declare function readSkill(app: ResearchApp, actor: Actor, pid: string, id: string, resource?: string): import("./types.js").SkillRead;
-export declare function prepareTaskSkills(app: ResearchApp, task: Row<Task>): string;
+export declare function prepareTaskSkills(app: ResearchApp, task: Row<Task>, preparedSession?: Row<Session>): string;
 export declare function prepareSessionSkills(app: ResearchApp, s: Row<Session>, actor?: Actor): string;
 export declare function inspectSessionSkills(app: ResearchApp, actor: Actor, pid: string, sessionId: string): {
     sessionId: string;

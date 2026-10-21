@@ -34,7 +34,7 @@ import type {RunGrantReference,RunGrantUse} from '../policy/run-grant-types.js';
 import {assertRunGrantRecord,assertRunGrantTaskBinding,runGrantReference} from '../policy/run-grant-validation.js';
 import {connectorSettings} from '../connectors/settings.js';
 export class TeamService {
-    skillPreflight?: (task:Row<Task>)=>string;
+    skillPreflight?: (task:Row<Task>,preparedSession?:Row<Session>)=>string;
     reviewValidator?: (task:Row<Task>)=>void;
     private validateReview(task:Row<Task>) {const formal=this.c.store.list<FormalReportReview>('formal-report-review',task.projectId!).find(r=>r.taskId===task.id);if(formal)ensure(task.formalReportReviewId===formal.id,'FORMAL_REPORT_REVIEW_STALE','正式报告任务不能清除审查绑定降级');if(task.reviewId||task.publicationReviewId||task.formalReportReviewId){ensure(this.reviewValidator,'REVIEW_UNAVAILABLE','审查校验器尚未接入');this.reviewValidator(task);}}
     constructor(private c: AppContext, private sessions: SessionService, private approvals: ApprovalService, private budget: BudgetService, private evidence: EvidenceService) { }
@@ -171,8 +171,10 @@ export class TeamService {
                     this.c.store.update<Task>('task', task.id, task.version, { execution: 'blocked', blockReason: '已达到任务尝试上限' });
                     continue;
                 }
+                const generation=task.generation+1,prepareId=digest({taskId:task.id,generation});
+                let prepared=this.c.store.maybe<{attemptId:string;sessionId:string}>('task-workspace',prepareId);
                 let skillBundleId:string|undefined;
-                try { skillBundleId=this.skillPreflight?.(task); }
+                try { skillBundleId=this.skillPreflight?.(task,prepared?this.c.store.get<Session>('session',prepared.sessionId,p.id):undefined); }
                 catch(error) { const e=asError(error);this.c.store.update<Task>('task',task.id,task.version,{execution:'blocked',blockReason:`${e.code} — ${e.message}`});continue; }
                 // Do not let a retry consume the last credit promised to final synthesis.
                 if (!this.budget.canReserve(t.id,(t.autoSummarize ? 1 : 0)+1)) {
@@ -181,24 +183,22 @@ export class TeamService {
                     this.refresh(id);
                     return null;
                 }
-                const generation=task.generation+1,source=t.sourceRevisionId?validateSourceRevision(this.c,p.id,t.sourceRevisionId):undefined;
-                let prepared:Row<{attemptId:string;sessionId:string}>|undefined;
-                if(p.gitHistoryEnabled&&source) {
-                    const prepareId=digest({taskId:task.id,generation});prepared=this.c.store.maybe('task-workspace',prepareId);
-                    if(!prepared){const attemptId=randomUUID(),workspace=join(this.c.dataDir,'workspaces',id,task.id,attemptId);mkdirSync(workspace,{recursive:true,mode:0o700});const s=this.sessions.create(SYSTEM,p.id,{title:`${task.role} · ${task.objective.slice(0,60)}`},{role:task.role,teamId:id,taskId:task.id,workspace});copySourceRevision(source,workspace,true,this.c.store.paths);const bound=this.c.store.update<Session>('session',s.id,s.version,{sourceRevisionId:source.id,sourceDigest:source.sourceDigest,...(taskGrant?{discoveryGrantId:taskGrant.id}:{})});queueWorkspaceHistory(this.c,bound,source,t.permission);prepared=this.c.store.create('task-workspace',p.id,{attemptId,sessionId:s.id},prepareId);}
+                const source=t.sourceRevisionId?validateSourceRevision(this.c,p.id,t.sourceRevisionId):undefined;
+                if(!prepared&&p.gitHistoryEnabled&&source){const attemptId=randomUUID(),workspace=join(this.c.dataDir,'workspaces',id,task.id,attemptId);mkdirSync(workspace,{recursive:true,mode:0o700});const s=this.sessions.create(SYSTEM,p.id,{title:`${task.role} · ${task.objective.slice(0,60)}`},{role:task.role,teamId:id,taskId:task.id,workspace,skillBundleId});copySourceRevision(source,workspace,true,this.c.store.paths);const bound=this.c.store.update<Session>('session',s.id,s.version,{sourceRevisionId:source.id,sourceDigest:source.sourceDigest,...(taskGrant?{discoveryGrantId:taskGrant.id}:{})});queueWorkspaceHistory(this.c,bound,source,t.permission);prepared=this.c.store.create('task-workspace',p.id,{attemptId,sessionId:s.id},prepareId);}
+                if(prepared) {
                     const w=this.c.store.get<GitWorkspace>('git-workspace',prepared.sessionId);
                     if(w.state!=='ready')return null;
                 }
                 if(prepareOnly)return null;
                 const attemptId=prepared?.attemptId??randomUUID(),reservation=this.budget.reserve(p.id,t.id,attemptId,1);
                 let workspace=join(this.c.dataDir,'workspaces',id,task.id,attemptId);mkdirSync(workspace,{recursive:true,mode:0o700});
-                const session=prepared?this.c.store.get<Session>('session',prepared.sessionId):this.sessions.create(SYSTEM,p.id,{title:`${task.role} · ${task.objective.slice(0,60)}`},{role:task.role,teamId:id,taskId:task.id,workspace});workspace=this.c.store.paths.physical(session.workspace);
+                const session=prepared?this.c.store.get<Session>('session',prepared.sessionId):this.sessions.create(SYSTEM,p.id,{title:`${task.role} · ${task.objective.slice(0,60)}`},{role:task.role,teamId:id,taskId:task.id,workspace,skillBundleId});workspace=this.c.store.paths.physical(session.workspace);
                 const plan = this.c.store.list<{
                     teamId: string;
                     model: Session['model'];
                 }>('team-plan', p.id).find(x => x.teamId === id)!;
                 if(source&&!prepared) copySourceRevision(source,workspace,true,this.c.store.paths);
-                this.c.store.update<Session>('session', session.id, session.version, { model: plan.model, skillBundleId, skillIds:task.skillIds, ...(source?{sourceRevisionId:source.id,sourceDigest:source.sourceDigest}:{}),...(taskGrant?{discoveryGrantId:taskGrant.id}:{}),...(runGrant?{runGrantId:runGrant.id}:{}) });
+                this.c.store.update<Session>('session', session.id, session.version, { model: plan.model, skillIds:task.skillIds, ...(source?{sourceRevisionId:source.id,sourceDigest:source.sourceDigest}:{}),...(taskGrant?{discoveryGrantId:taskGrant.id}:{}),...(runGrant?{runGrantId:runGrant.id}:{}) });
                 const developmentReview=task.reviewId?this.c.store.get<DevelopmentReview>('development-review',task.reviewId,p.id):undefined;
                 const publicationReview=task.publicationReviewId?this.c.store.get<PublicationReview>('publication-review',task.publicationReviewId,p.id):undefined;
                 const formalReportReview=task.formalReportReviewId?this.c.store.get<FormalReportReview>('formal-report-review',task.formalReportReviewId,p.id):undefined;

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {writeFileSync,chmodSync} from 'node:fs';
 import {join} from 'node:path';
-import {setup,USER,approve} from '../support/research.mjs';
+import {setup as currentSetup,USER,approve} from '../support/research.mjs';
 import {actor as taskActor,result} from '../support/collaboration.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {digest} from '../../dist/packages/storage/store.js';
@@ -10,6 +10,8 @@ import {OUTPUT_SCHEMAS} from '../../dist/packages/contracts/operations/outputs.j
 import {ConnectorService} from '../../dist/packages/connectors/service.js';
 import {ConnectorTransport} from '../../dist/packages/connectors/transport.js';
 
+// Review-protocol history predates method contracts; current-bundle admission is checked separately below.
+function setup(){const s=currentSetup();s.session=s.app.store.update('session',s.session.id,s.session.version,{skillBundleId:'65b19e243a1b0571def4f1c664a47d1e723626e8242944c89c057d01f899b620'});return s;}
 const AREAS=['implementation_and_tests','input_evidence','independent_units_and_intervals','threshold_interpretation','claim_boundaries'];
 const plan=(extra={})=>({expectedRevisionId:null,question:'Compare a measured protocol',scope:'Separate synthetic diagnostics from formal results',constraints:[],successCriteria:['Report measured uncertainty'],clarificationQuestions:[],literatureSummary:'Actual source documents',hypotheses:[],evidenceIds:[],steps:[{title:'Compare',description:'Use separately approved formal measurement'}],status:'ready',...extra});
 const sources={'README.md':'Readme: input description; CSV body is not read.\n','manifest.json':'{"description":"measurement protocol manifest"}\n','names.txt':'Names: independent records need source verification.\n','candidate-literature.json':'{"candidate":"A publication record, not a verified study"}\n'};
@@ -104,4 +106,10 @@ test('a successful project read anchors to the brief current under its write loc
  let read;try{read=op(s,who,'workspace_read',{source:'project',path:'new-source.txt'},'read-after-owner-transition');}finally{s.app.store.transaction=transaction;s.app.projects.readFile=readFile;}
  assert.equal(read.content,'Actual read after owner plan transition');assert.equal(currentBriefAtActualRead,ownerBrief.id);const receipt=s.app.store.list('research-input-read').find(r=>r.callId==='read-after-owner-transition');assert.equal(receipt.anchorBriefId,currentBriefAtActualRead);
  const saved=op(s,who,'research_brief_save',plan({expectedRevisionId:ownerBrief.id}));assert.deepEqual(saved.sourceInputs.map(i=>i.path).sort(),['new-source.txt','original-input.txt']);const count=s.app.store.list('research-input-read').length;assert.deepEqual(op(s,who,'workspace_read',{source:'project',path:'new-source.txt'},'read-after-owner-transition'),read);assert.equal(s.app.store.list('research-input-read').length,count);assert.equal(s.app.store.get('research-input-read',receipt.id).anchorBriefId,ownerBrief.id);
+}finally{s.close();}});
+
+test('automatically bound current sessions require a method contract for source-bound metric development',()=>{const s=currentSetup();try{
+ assert.equal(s.session.skillBundleId,s.app.skills.configuration(s.project.id).bundleId);const f=preparePlan(s);
+ assert.throws(()=>s.app.development.prepare(f.who,s.project.id,s.session.id,{command:['python','check.py'],environmentImageDigest:image,metricArtifact:'metrics.json',expectedArtifacts:['metrics.json']}),{code:'METHOD_CONTRACT_REQUIRED'});
+ assert.equal(s.app.store.list('development-task').length,0);assert.equal(s.app.store.list('sandbox-job').length,0);
 }finally{s.close();}});

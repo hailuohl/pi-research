@@ -14,13 +14,14 @@ import { scope, userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { object, text, oneOf, integer } from '../contracts/validation.js';
+import type { SkillService } from '../skills/service.js';
 export class SessionService {
     onStop?:(sessionId:string,reason:string)=>void;
     parsedAttachmentMetadata?: (actor:Actor,session:Row<Session>,pair:ParsedAttachmentPair)=>ParsedAttachmentMetadata;
     permissionCapture?: (sessionId:string)=>import('../policy/session-permissions.js').PermissionReference;
     taskPermissionCapture?: (sessionId:string)=>import('../policy/session-permissions.js').PermissionReference;
     permissionBranch?: (originalId:string,branchId:string)=>void;
-    constructor(private c: AppContext) { }
+    constructor(private c: AppContext, private skills: SkillService) { }
     model(): ModelConfig {
         return this.c.store.maybe<{
             model: ModelConfig;
@@ -85,15 +86,17 @@ export class SessionService {
                 const history=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? LIMIT 1").get(projectId,session.id),worker=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='agent-admission' AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.state')<>'released' LIMIT 1").get(session.id);
                 ensure(!history&&!worker,'SESSION_BUSY','会话已有消息或Worker，不能作为新会话复用');
                 next=!session.model.provider&&!session.model.model?model:prepared.resolve(session.model,true);
-                if(digest(next)!==digest(session.model)){
+                if(digest(next)!==digest(session.model)||!session.skillBundleId){
                     const binding=session.executionPermission||session.sourceRevisionId||session.sourceDigest||session.textCorpusGrantId||session.discoveryGrantId||session.runGrantId||session.workingGrantId||this.c.store.db.prepare("SELECT 1 FROM records WHERE project_id=? AND ((kind IN ('text-corpus-grant','discovery-grant','run-grant','working-grant','session-action','native-request') AND json_extract(data,'$.sessionId')=?) OR (kind='team' AND json_extract(data,'$.rootSessionId')=?)) LIMIT 1").get(projectId,session.id,session.id);
-                    ensure(!binding,'MODEL_BOUND','此空白会话已有固定授权或来源，不能修正模型；请另建会话');
+                    ensure(!binding,'MODEL_BOUND','此空白会话已有固定授权或来源，不能修正模型或技能绑定；请另建会话');
                 }
             }
             if(digest(model)!==digest(prepared.current))this.configure(actor,{...model,expectedVersion:prepared.globalVersion});
             if(!session)return this.create(actor,projectId,x);
-            if(digest(next)===digest(session.model))return session;
-            const updated=this.c.store.update<Session>('session',session.id,session.version,{model:next});this.c.store.event(projectId,'session.model_changed',{sessionId:session.id,model:next});return updated;
+            const modelChanged=digest(next)!==digest(session.model);
+            if(!modelChanged&&session.skillBundleId)return session;
+            const updated=this.c.store.update<Session>('session',session.id,session.version,{model:next,...(!session.skillBundleId?{skillBundleId:this.skills.configuration(projectId).bundleId}:{})});
+            if(modelChanged)this.c.store.event(projectId,'session.model_changed',{sessionId:session.id,model:next});return updated;
         });
     }
     create(actor: Actor, projectId: string, input: unknown, internal?: {
@@ -101,16 +104,22 @@ export class SessionService {
         teamId?: string;
         taskId?: string;
         workspace?: string;
+        skillBundleId?: string;
     }) {
         scope(actor, projectId);
         ensure(actor.type === 'user' || actor.type === 'system', 'PERMISSION_DENIED', '助手会话只能由调度器创建', 403);
-        assertProjectWritable(this.c.store,projectId);
         const x = object(input), id = randomUUID();
-        const workspace = internal?.workspace ? this.c.store.paths.physical(internal.workspace) : join(this.c.dataDir, 'sessions', id, 'workspace');
-        mkdirSync(workspace, { recursive: true, mode: 0o700 });
-        const s = this.c.store.create<Session>('session', projectId, { title: text(x.title ?? '新研究会话', 'title', 160), role: internal?.role ?? 'coordinator', state: 'idle', workspace:this.c.store.paths.reference(workspace), piSessionPath: null, model: this.model(), generation: 0, leaseUntil: 0, ...(internal?.teamId ? { teamId: internal.teamId } : {}), ...(internal?.taskId ? { taskId: internal.taskId } : {}) }, id);
-        this.c.store.event(projectId, 'session.created', { sessionId: id, role: s.role });
-        return s;
+        return this.c.store.transaction(()=>{
+            assertProjectWritable(this.c.store,projectId);
+            const role=internal?.role??'coordinator',skillBundleId=internal?.skillBundleId??this.skills.configuration(projectId).bundleId;
+            if(internal?.skillBundleId!==undefined)this.skills.bundleCatalog(projectId,role,skillBundleId);
+            const title=text(x.title ?? '新研究会话', 'title', 160);
+            const workspace = internal?.workspace ? this.c.store.paths.physical(internal.workspace) : join(this.c.dataDir, 'sessions', id, 'workspace');
+            mkdirSync(workspace, { recursive: true, mode: 0o700 });
+            const s = this.c.store.create<Session>('session', projectId, { title, role, skillBundleId, state: 'idle', workspace:this.c.store.paths.reference(workspace), piSessionPath: null, model: this.model(), generation: 0, leaseUntil: 0, ...(internal?.teamId ? { teamId: internal.teamId } : {}), ...(internal?.taskId ? { taskId: internal.taskId } : {}) }, id);
+            this.c.store.event(projectId, 'session.created', { sessionId: id, role: s.role });
+            return s;
+        });
     }
     send(actor: Actor, id: string, value: unknown) {
         return this.sendMessage(actor,id,value);

@@ -12,7 +12,7 @@ export declare class TeamService {
     private approvals;
     private budget;
     private evidence;
-    skillPreflight?: (task: Row<Task>) => string;
+    skillPreflight?: (task: Row<Task>, preparedSession?: Row<Session>) => string;
     reviewValidator?: (task: Row<Task>) => void;
     private validateReview;
     constructor(c: AppContext, sessions: SessionService, approvals: ApprovalService, budget: BudgetService, evidence: EvidenceService);
