@@ -11,7 +11,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
     state:State={open:false,modelsOpen:false,saving:false,preview:null,visual:null,dragging:false,pointer:false,error:''};
     private alive=true;private trigger=React.createRef<HTMLButtonElement>();private menu=React.createRef<HTMLDivElement>();
     private range=React.createRef<HTMLInputElement>();
-    private pointerStart?:{id:number;x:number};private pending?:{sessionId:string;selection:ModelConfig};
+    private pointerStart?:{id:number;x:number};private pending?:{sessionId:string;selection:ModelConfig};private confirmedSelection?:ModelConfig;
     componentDidMount(){window.addEventListener('resize',this.position);window.addEventListener('scroll',this.position,true);}
     componentWillUnmount(){this.alive=false;window.removeEventListener('resize',this.position);window.removeEventListener('scroll',this.position,true);}
     private models=()=>this.props.management?.providers.filter(p=>p.enabled&&!p.deletedAt&&!p.requiresCredential).flatMap(provider=>provider.models.filter(m=>m.enabled&&!m.deletedAt).map(model=>({provider,model})))??[];
@@ -19,10 +19,11 @@ export class ComposerModelMenu extends React.Component<Props,State> {
     private unavailable=()=>!this.props.management||!!this.props.error;
     private blocked=()=>!this.alive||this.props.disabled||this.props.locked||this.props.busy||this.state.saving||!!this.pending||this.unavailable();
     componentDidUpdate(previous:Readonly<Props>){
-        const changed=previous.sessionId!==this.props.sessionId,currentChanged=key(previous.current)!==key(this.props.current);
-        if(changed){this.pending=undefined;this.setState({saving:false,error:''});this.close();}
+        const changed=previous.sessionId!==this.props.sessionId,currentChanged=key(previous.current)!==key(this.props.current),expected=this.pending?.selection??this.confirmedSelection;
+        if(changed){this.pending=undefined;this.confirmedSelection=undefined;this.setState({saving:false,error:''});this.close();}
         else if(this.props.disabled||this.props.locked||this.unavailable()||this.props.busy&&!this.state.saving)this.close();
-        else if(currentChanged&&(!this.pending||key(this.pending.selection)!==key(this.props.current)))this.close();
+        else if(currentChanged&&(!expected||key(expected)!==key(this.props.current)))this.close();
+        if(currentChanged)this.confirmedSelection=undefined;
         if(previous.management!==this.props.management&&this.state.open){
             const target=this.pending?.selection??this.props.current;
             if(target&&!this.models().some(row=>row.provider.provider===target.provider&&row.model.model===target.model&&row.model.reasoning.levels.some(level=>level.id===target.thinking)))this.close();
@@ -49,15 +50,17 @@ export class ComposerModelMenu extends React.Component<Props,State> {
         if(this.blocked()||!this.models().some(row=>row.provider.provider===model.provider&&row.model.model===model.model&&row.model.reasoning.levels.some(level=>level.id===model.thinking)))return;
         this.pointerStart=undefined;this.setState({modelsOpen:false,error:'',pointer:false,dragging:false});if(key(model)===key(this.props.current)){this.resetPreview();return;}
         if(this.state.preview!==null)this.setState({preview:Math.round(this.state.preview)});
-        const request={sessionId:this.props.sessionId,selection:model};this.pending=request;this.setState({saving:true});
+        const request={sessionId:this.props.sessionId,selection:model};this.pending=request;this.confirmedSelection=undefined;this.setState({saving:true});
         let saved=false;
         try{
             const confirmed=await this.props.onSelect(model);
             if(!this.alive||this.pending!==request||this.props.sessionId!==request.sessionId)return;
             saved=confirmed?.id===request.sessionId&&key(confirmed.model)===key(model);
+            // React may deliver the parent's confirmed props after this promise finishes.
+            if(saved&&key(this.props.current)!==key(model))this.confirmedSelection=model;
             if(!saved)this.setState({error:'模型选择未保存，请核对当前会话后重试。'});
         }catch(error){if(this.alive&&this.pending===request)this.setState({error:error instanceof Error?error.message:String(error)});}
-        finally{if(this.alive&&this.pending===request){this.pending=undefined;if(!saved||key(this.props.current)!==key(model))this.resetPreview();this.setState({saving:false});}}
+        finally{if(this.alive&&this.pending===request){this.pending=undefined;if(!saved)this.resetPreview();this.setState({saving:false});}}
     };
     private chooseModel=(provider:string,model:string)=>{
         if(this.blocked())return;const row=this.models().find(row=>row.provider.provider===provider&&row.model.model===model);if(!row)return;

@@ -74,8 +74,8 @@ test('save is serialized, keeps the popover during its own busy refresh and clos
 
 test('undefined, thrown conflicts and wrong receipts restore the confirmed value',async()=>{
  for(const callback of [async()=>undefined,async()=>{throw Error('VERSION_CONFLICT');},async()=>({id:'other-session',model:low}),async()=>({id:'fixture',model:other})]){
-  const {view}=picker({onSelect:callback});view.setState({preview:0,visual:0});await view.choose(low);
-  assert.equal(view.props.current,high);assert.equal(view.state.preview,null);assert.equal(view.state.visual,null);assert.equal(view.state.saving,false);assert.ok(view.state.error);
+  const {view}=picker({onSelect:callback});view.setState({open:true,preview:0,visual:0});await view.choose(low);
+  assert.equal(view.props.current,high);assert.equal(view.state.preview,null);assert.equal(view.state.visual,null);assert.equal(view.state.saving,false);assert.equal(view.state.open,true);assert.ok(view.state.error);
  }
 });
 
@@ -113,6 +113,26 @@ test('fast save confirmation preserves the CSS target without treating the previ
  const previousWindow=globalThis.window;globalThis.window={matchMedia:()=>({matches:false})};t.after(()=>{if(previousWindow===undefined)delete globalThis.window;else globalThis.window=previousWindow;});
  const {view}=picker({onSelect:async selection=>{const previous=view.props;view.props={...view.props,current:selection};view.componentDidUpdate(previous);return {id:'fixture',model:selection};}});
  view.setState({open:true});view.preview(0);assert.equal(view.props.current,high);assert.equal(view.state.visual,0);await view.commit();assert.deepEqual(view.props.current,low);assert.equal(view.state.visual,0);assert.equal(view.state.open,true);
+});
+
+test('a receipt before React delivers confirmed props keeps the panel open for another keyboard selection',async()=>{
+ const {view,selected}=picker();view.setState({open:true});
+ let range=find(view,e=>e.props?.type==='range');range.props.onChange({currentTarget:{value:'0'}});range.props.onKeyUp({key:'ArrowLeft'});
+ await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(selected,[low]);assert.equal(view.props.current,high);
+ const previous=view.props;view.props={...previous,current:low};view.componentDidUpdate(previous);
+ assert.equal(view.state.open,true);assert.equal(view.state.visual,0);
+ range=find(view,e=>e.props?.type==='range');range.props.onChange({currentTarget:{value:'1'}});range.props.onKeyUp({key:'ArrowRight'});
+ await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(selected,[low,high]);
+ const before=view.props;view.props={...before,current:high};view.componentDidUpdate(before);assert.equal(view.state.open,true);
+ view.close();view.toggle({newState:'open'});assert.equal(view.state.open,true);assert.equal(view.state.preview,null);assert.match(JSON.stringify(view.render()),/深入研究/);
+});
+
+test('an unrelated model change after a successful receipt still closes the panel',async()=>{
+ for(const current of [other,undefined]){
+  const {view}=picker();view.setState({open:true});await view.choose(low);
+  const previous=view.props;view.props={...previous,current};view.componentDidUpdate(previous);assert.equal(view.state.open,false);
+ }
+ const {view}=picker();view.setState({open:true});const previous=view.props;view.props={...previous,current:undefined};view.componentDidUpdate(previous);assert.equal(view.state.open,false);
 });
 
 test('model list replaces the strength panel and ultra uses twelve decorative particles',()=>{

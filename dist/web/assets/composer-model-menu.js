@@ -58,19 +58,21 @@ class ComposerModelMenu extends React.Component {
       if (this.state.preview !== null) this.setState({ preview: Math.round(this.state.preview) });
       const request = { sessionId: this.props.sessionId, selection: model };
       this.pending = request;
+      this.confirmedSelection = void 0;
       this.setState({ saving: true });
       let saved = false;
       try {
         const confirmed = await this.props.onSelect(model);
         if (!this.alive || this.pending !== request || this.props.sessionId !== request.sessionId) return;
         saved = confirmed?.id === request.sessionId && key(confirmed.model) === key(model);
+        if (saved && key(this.props.current) !== key(model)) this.confirmedSelection = model;
         if (!saved) this.setState({ error: "\u6A21\u578B\u9009\u62E9\u672A\u4FDD\u5B58\uFF0C\u8BF7\u6838\u5BF9\u5F53\u524D\u4F1A\u8BDD\u540E\u91CD\u8BD5\u3002" });
       } catch (error) {
         if (this.alive && this.pending === request) this.setState({ error: error instanceof Error ? error.message : String(error) });
       } finally {
         if (this.alive && this.pending === request) {
           this.pending = void 0;
-          if (!saved || key(this.props.current) !== key(model)) this.resetPreview();
+          if (!saved) this.resetPreview();
           this.setState({ saving: false });
         }
       }
@@ -146,13 +148,15 @@ class ComposerModelMenu extends React.Component {
     window.removeEventListener("scroll", this.position, true);
   }
   componentDidUpdate(previous) {
-    const changed = previous.sessionId !== this.props.sessionId, currentChanged = key(previous.current) !== key(this.props.current);
+    const changed = previous.sessionId !== this.props.sessionId, currentChanged = key(previous.current) !== key(this.props.current), expected = this.pending?.selection ?? this.confirmedSelection;
     if (changed) {
       this.pending = void 0;
+      this.confirmedSelection = void 0;
       this.setState({ saving: false, error: "" });
       this.close();
     } else if (this.props.disabled || this.props.locked || this.unavailable() || this.props.busy && !this.state.saving) this.close();
-    else if (currentChanged && (!this.pending || key(this.pending.selection) !== key(this.props.current))) this.close();
+    else if (currentChanged && (!expected || key(expected) !== key(this.props.current))) this.close();
+    if (currentChanged) this.confirmedSelection = void 0;
     if (previous.management !== this.props.management && this.state.open) {
       const target = this.pending?.selection ?? this.props.current;
       if (target && !this.models().some((row) => row.provider.provider === target.provider && row.model.model === target.model && row.model.reasoning.levels.some((level) => level.id === target.thinking))) this.close();
