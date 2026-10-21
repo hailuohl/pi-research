@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-21T12:08:28.066Z",
+  "purpose": "编写设计时的事实对照；不要求后续Codex回退到此HEAD。已提交源码与当前dirty工作树须一并理解。",
+  "repository": {
+    "path": "D:\\项目\\pi research\\pi-research",
+    "head": "388110292f046e5f2fc7f9e52879867495df64b5",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "remote": "https://github.com/hailuohl/pi-research.git",
+    "remoteVisibility": "private",
+    "remoteVerifiedAt": "2026-10-21T12:11:00Z",
+    "aheadOfUpstream": 0
+  },
+  "workingTree": {
+    "statusCommand": "git status --porcelain=v1 --untracked-files=normal",
+    "dirtyEntries": 321,
+    "stagedFilesAtObservation": [],
+    "warning": "normal模式将未跟踪目录合并为条目；不能与--untracked-files=all计数比较。此文件不是全部dirty文件清单；实施时重建本批相关清单。"
+  },
+  "runtime": {
+    "node": "v24.19.0",
+    "packageManagerDeclared": "npm@11.17.0",
+    "typescript": "5.8.3",
+    "react": "19.3.0",
+    "piSdk": "0.87.1",
+    "versionSource": "package.json；不要求依赖升级"
+  },
+  "sourceHashes": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "26667f08a74e364dc86a6b457f7cc5f581e170f693286384877bd6e0ad3ac06e",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7ff3d4c8f035146639cb4f231f3f85b4ff2b4d10927c4ba1517ae4a857a79471",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "apps/web/src/app.tsx",
+      "sha256": "5d87548f0cc5d2507035865c8ab5b395042d16bae5f6b9508916112df63e3e1c",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "apps/web/src/chat-workflows.tsx",
+      "sha256": "0ab93a58f3306704fd5697bae41c76d8fbb4ea4f11aead1b86985dff3937175f",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "apps/web/src/research-action-cards.tsx",
+      "sha256": "c93b28d6cb6f0a95bc497efdf2bd3e46b945b527b9abb23bb2654698451791ac",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "packages/research-workflows/briefs.ts",
+      "sha256": "8a599c4fe0d428f3a19efb9127d2ef01c71e0dc9b104a137167bbd0010df64ad",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "packages/research-workflows/method-contracts.ts",
+      "sha256": "5c40e949cb0d6b34a349cc4603fd68b09889617ea9937d562a2be22a892cb8b1",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "packages/policy/research-automation.ts",
+      "sha256": "88a7e702195f36ad2aa2e5abc8198f61584cb3be11878ee567f873d218908e85",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "packages/domain/types.ts",
+      "sha256": "882ac2132e20458b08144321c398d6aec7e3ef83ca4593c3f76e40a6dcbbafac",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "packages/storage/store.ts",
+      "sha256": "ab8b4535eae59dcfb80ec01700402671f82e9171bb2788e7af8f351f7f5b818d",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "packages/research-app.ts",
+      "sha256": "3fa2cf62fcb94ada4b04a75dc713d6c759199c12822acc8d241880050d7cdcb7",
+      "observedAt": "2026-10-21T12:08:28.066Z"
+    },
+    {
+      "path": "packages/contracts/operations/registry.ts",
+      "sha256": "cd617036bb308cacf5657deb48257e6daa9645b4ad387912890c99623ed4c5c3",
+      "observedAt": "2026-10-21T12:24:00Z"
+    },
+    {
+      "path": "packages/storage/backup.ts",
+      "sha256": "ecbc2c45d87e234df319dea5a6f03df9112b0021b4afb60a6f68a0bc4251e0de",
+      "observedAt": "2026-10-21T12:24:00Z"
+    },
+    {
+      "path": "packages/storage/project-purge.ts",
+      "sha256": "8904c4b0726d1567c6330685314cb9314ac94e186b1ada70bf1f86dae2122e3c",
+      "observedAt": "2026-10-21T12:24:00Z"
+    },
+    {
+      "path": "packages/collaboration/team-service.ts",
+      "sha256": "365efa2818ec2978c3fd61a3154ca352edf3d15045faba8d99ee094785772882",
+      "observedAt": "2026-10-21T12:24:00Z"
+    },
+    {
+      "path": "packages/policy/session-permissions.ts",
+      "sha256": "28b6bafbde16826087468870568c445075f112c71f1a7ea069d81b405aebe563",
+      "observedAt": "2026-10-21T12:24:00Z"
+    },
+    {
+      "path": "apps/agent-worker/index.ts",
+      "sha256": "854ebd39cfd127b165a114da9cda7118ce39efa7fb1c92e3021079479e778ee4",
+      "observedAt": "2026-10-21T12:24:00Z"
+    }
+  ],
+  "verifiedPaths": {
+    "operationRegistry": "packages/contracts/operations/registry.ts",
+    "agentHost": "packages/scheduler/agent-host.ts",
+    "teamService": "packages/collaboration/team-service.ts",
+    "briefService": "packages/research-workflows/briefs.ts",
+    "invalidation": "packages/evidence/invalidation.ts",
+    "backup": "packages/storage/backup.ts",
+    "purge": "packages/storage/project-purge.ts"
+  },
+  "scripts": {
+    "build": "npm run build",
+    "typecheck": "npm run typecheck",
+    "fullRegression": "npm test",
+    "alreadyBuiltRegression": "npm run test:core",
+    "cleanBuild": "npm run verify:build",
+    "parity": "npm run test:parity",
+    "live": "npm run test:live",
+    "upgrade": "npm run test:upgrade",
+    "browser": "没有核实到npm run test:browser；使用实际可用浏览器工具，记录真实操作与当前构建。"
+  },
+  "priorReviewEvidence": {
+    "scope": "前次只读评估；仅用于现有基线背景，不作为本计划新增功能的完成证据。",
+    "typecheck": {
+      "status": "passed",
+      "elapsedSeconds": 21.41
+    },
+    "cleanBuild": {
+      "status": "passed_in_isolated_review_copy",
+      "builtFiles": 724,
+      "comparedFiles": 724,
+      "hashesIdentical": true
+    },
+    "focusedTests": {
+      "status": "passed",
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "elapsedSeconds": 76.22,
+      "files": [
+        "tests/unit/operation-schema.test.mjs",
+        "tests/unit/builtin-skill-releases.test.mjs",
+        "tests/unit/run-scheduling.test.mjs",
+        "tests/unit/research-handoff-contention.test.mjs",
+        "tests/unit/scientific-claims-core.test.mjs"
+      ]
+    },
+    "temporaryEvidenceRoot": "C:\\Users\\HAILUO~1\\AppData\\Local\\Temp\\pi-research-review-20261021-JIFItk",
+    "evidenceFiles": [
+      "review-source-manifest.json",
+      "review-build.log",
+      "review-tests.log",
+      "review-summary.json"
+    ],
+    "evidenceRetention": "本机临时目录；若已清理不得声称仍可复查。需要实际文件时先核对存在性。",
+    "notRun": [
+      "完整产品回归",
+      "真实Pi",
+      "Docker/SSH/DFT关键路径",
+      "真实浏览器用户旅程"
+    ],
+    "applicability": "任何后续相关源码、依赖或环境变化均需判断证据是否仍适用。"
+  },
+  "knownRisks": [
+    {
+      "id": "R01",
+      "status": "previous_isolated_reproduction",
+      "location": "packages/runners/service.ts",
+      "summary": "control创建/日志打开异常可能遗留launching标记；当前版本需重查"
+    },
+    {
+      "id": "R02",
+      "status": "code_path_analysis",
+      "location": "apps/agent-worker/index.ts; packages/policy/host-access.ts; packages/scheduler/agent-host.ts",
+      "summary": "RPC 30秒观察窗口与最多60秒宿主命令及停止过程不一致；尚未定向live复现"
+    }
+  ],
+  "designTurnProductVerification": {
+    "status": "not_run",
+    "reason": "本轮仅写设计与接续文档，产品实现尚未开始。"
+  },
+  "latestReadOnlyVerification": {
+    "observedAt": "2026-10-21T12:41:40.483Z",
+    "head": "388110292f046e5f2fc7f9e52879867495df64b5",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "dirtyEntriesNormal": 321,
+    "dirtyEntriesAll": 1176,
+    "stagedFiles": [],
+    "allOriginalSelectedHashesUnchanged": true,
+    "preDocumentStatusHash": "01d31e0a9cd729beb6a42a8a2d0d3c9b82bb46a417d4cd8c4a190c8f9998b2cb",
+    "hashes": [
+      {
+        "path": "AGENTS.md",
+        "sha256": "26667f08a74e364dc86a6b457f7cc5f581e170f693286384877bd6e0ad3ac06e"
+      },
+      {
+        "path": "package.json",
+        "sha256": "7ff3d4c8f035146639cb4f231f3f85b4ff2b4d10927c4ba1517ae4a857a79471"
+      },
+      {
+        "path": "apps/web/src/app.tsx",
+        "sha256": "5d87548f0cc5d2507035865c8ab5b395042d16bae5f6b9508916112df63e3e1c"
+      },
+      {
+        "path": "apps/web/src/chat-workflows.tsx",
+        "sha256": "0ab93a58f3306704fd5697bae41c76d8fbb4ea4f11aead1b86985dff3937175f"
+      },
+      {
+        "path": "apps/web/src/research-action-cards.tsx",
+        "sha256": "c93b28d6cb6f0a95bc497efdf2bd3e46b945b527b9abb23bb2654698451791ac"
+      },
+      {
+        "path": "packages/research-workflows/briefs.ts",
+        "sha256": "8a599c4fe0d428f3a19efb9127d2ef01c71e0dc9b104a137167bbd0010df64ad"
+      },
+      {
+        "path": "packages/research-workflows/method-contracts.ts",
+        "sha256": "5c40e949cb0d6b34a349cc4603fd68b09889617ea9937d562a2be22a892cb8b1"
+      },
+      {
+        "path": "packages/policy/research-automation.ts",
+        "sha256": "88a7e702195f36ad2aa2e5abc8198f61584cb3be11878ee567f873d218908e85"
+      },
+      {
+        "path": "packages/domain/types.ts",
+        "sha256": "882ac2132e20458b08144321c398d6aec7e3ef83ca4593c3f76e40a6dcbbafac"
+      },
+      {
+        "path": "packages/storage/store.ts",
+        "sha256": "ab8b4535eae59dcfb80ec01700402671f82e9171bb2788e7af8f351f7f5b818d"
+      },
+      {
+        "path": "packages/research-app.ts",
+        "sha256": "3fa2cf62fcb94ada4b04a75dc713d6c759199c12822acc8d241880050d7cdcb7"
+      },
+      {
+        "path": "packages/contracts/operations/registry.ts",
+        "sha256": "cd617036bb308cacf5657deb48257e6daa9645b4ad387912890c99623ed4c5c3"
+      },
+      {
+        "path": "packages/storage/backup.ts",
+        "sha256": "ecbc2c45d87e234df319dea5a6f03df9112b0021b4afb60a6f68a0bc4251e0de"
+      },
+      {
+        "path": "packages/storage/project-purge.ts",
+        "sha256": "8904c4b0726d1567c6330685314cb9314ac94e186b1ada70bf1f86dae2122e3c"
+      },
+      {
+        "path": "packages/collaboration/team-service.ts",
+        "sha256": "365efa2818ec2978c3fd61a3154ca352edf3d15045faba8d99ee094785772882"
+      },
+      {
+        "path": "packages/policy/session-permissions.ts",
+        "sha256": "28b6bafbde16826087468870568c445075f112c71f1a7ea069d81b405aebe563"
+      },
+      {
+        "path": "apps/agent-worker/index.ts",
+        "sha256": "854ebd39cfd127b165a114da9cda7118ce39efa7fb1c92e3021079479e778ee4"
+      },
+      {
+        "path": "packages/scheduler/agent-host.ts",
+        "sha256": "7b9f813ee9b7bc198e08db56e9e16177bff7eeb96b9b50997982cc21b5cd6623"
+      },
+      {
+        "path": ".node-version",
+        "sha256": "7e8a2fa94951112b894a3dbe3d05efef5e9263741fa49125f0a70f40fedab4cc"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719"
+      }
+    ]
+  }
+}
