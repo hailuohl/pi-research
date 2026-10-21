@@ -26,7 +26,9 @@ test('eight methods obey existing roles and retain exact session versions across
   assert.notEqual(current,previous);
   const oldCatalog=s.app.skills.bundleCatalog(pid,'coordinator',previous);
   const newCatalog=s.app.skills.bundleCatalog(pid,'coordinator',current);
-  assert.deepEqual(newCatalog.skills.map(e=>e.id),oldCatalog.skills.map(e=>e.id));
+  const currentIds=newCatalog.skills.map(e=>e.id);
+  assert.equal(currentIds.filter(id=>id==='pi-research-code-debugging').length,1);
+  assert.deepEqual(currentIds.filter(id=>id!=='pi-research-code-debugging'),oldCatalog.skills.map(e=>e.id));
   const priorRelease=JSON.parse(readFileSync(join(root,'skills/releases',previous,'manifest.json'),'utf8'));
   const nextRelease=JSON.parse(readFileSync(join(root,'skills/piresearch/manifest.json'),'utf8'));
   for(const {skillId,resource} of methods){

@@ -1,11 +1,11 @@
-export declare const BUNDLE_ID = "6a24cca1c370257471bff9896d31f5e78d5ef313c29d7172e32d1055189b9be9";
+export declare const BUNDLE_ID = "2596e69858f668445f440cd902b3afa94a53673a8a3a379a2329556dfe5f1aa0";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
     readonly description: "Use when starting, resuming, or handing over research in Pi Research; choose the workflow for the user's goal and preserve the cardinal research rules.";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-overview/SKILL.md";
-    readonly digest: "1bae37997d13b740a1020bd95ef88138411e6899f124441c5a81eb8066e09abf";
+    readonly digest: "9b350567ccc900dc1e5b9ff37d9e23329bc95085a9d4b6db88bf37d6eb433957";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
@@ -61,13 +61,27 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use before reading, editing, committing or comparing experiment code, coordinating worktree ownership, or diagnosing stale source.";
     readonly roles: readonly ["coordinator", "implementer", "reviewer", "designer"];
     readonly path: "skills/piresearch/pi-research-git/SKILL.md";
-    readonly digest: "db281259c4b6fc5a0ed461b469b950e11500c62180630372fba911d97acda784";
+    readonly digest: "a717080170cb7067bbe8361745b582c98e9091bbf3cc5d560242a06abeebf613";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
         readonly commit: "3037f727e80e0ab20c61a87c613a50dde009a835";
         readonly path: "agent-skills/orx-git/SKILL.md";
         readonly blob: "13af3bae031a9434c111c9c5ef77bbb8c80cc3bf";
+    };
+}, {
+    readonly id: "pi-research-code-debugging";
+    readonly name: "pi-research-code-debugging";
+    readonly description: "Use when debugging research code, failed development checks, incorrect metrics or artifacts, or adding a regression test before a code fix; reviewers inspect fixed evidence read-only.";
+    readonly roles: readonly ["coordinator", "implementer", "reviewer"];
+    readonly path: "skills/piresearch/pi-research-code-debugging/SKILL.md";
+    readonly digest: "ff17641ba49936d5b70f51fc6ad2c22fd3566fdcd4e17cd5f7c54b897967efa5";
+    readonly resources: readonly [];
+    readonly source: {
+        readonly repository: "hailuohl/pi-research";
+        readonly commit: "c087e1b64ad0c8e205d5178602fadfe46b06aab4";
+        readonly path: "skills/piresearch/pi-research-git/SKILL.md";
+        readonly blob: "88551aa3d83bb3a828599b4fd6bf43e7ccfb366c";
     };
 }, {
     readonly id: "pi-research-agent-delegation";

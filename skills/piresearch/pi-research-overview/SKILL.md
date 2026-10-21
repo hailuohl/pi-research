@@ -52,6 +52,7 @@ description: "Use when starting, resuming, or handing over research in Pi Resear
 | 新建、导入或复现项目 | `pi-research-create`：核对真实任务和来源，建立基线与固定合同；随包曲线拟合仅是示例 |
 | 改进已有实验 | `pi-research-experiment-tree`：读取正确父修订，完成一轮同父比较，再决定修复、补选、保留或停止 |
 | 实现代码、保存或核对来源 | `pi-research-git`：私有工作区、提交及正式整合；本地完成、GitHub同步入队与准确SHA/ref确认分别报告 |
+| 调试研究代码、失败检查或补回归测试 | `pi-research-code-debugging`：固定失败来源，单一假设定位，先失败后通过的回归证据，再沿既有开发检查、独立审查与整合 |
 | 运行、开发检查或处理等待/恢复 | `pi-research-compute`：先确定本地/Docker/SSH执行位置，再读对应参考；开发检查和正式Run分别批准，unknown不重跑 |
 | 委派独立工作 | `pi-research-agent-delegation`：真实输入、输出和验收简报；主协调者核对文件与证据后才使用助手结论 |
 | 查找或阅读文献、原文与图表 | `pi-research-lit-review`：主协调者保留检索排序；明确系统性筛选/综述时先读下表专用资源；固定解析、获准页图与Task DiscoveryGrant按相应参考处理 |

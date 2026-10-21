@@ -61,6 +61,8 @@ GitHub配置、暂停/恢复/重试与状态是用户设置入口，不是Agent�
 
 ## 开发验证与正式整合
 
+调试失败或补回归测试时，coordinator/implementer/reviewer先读`pi-research-code-debugging`；reviewer只读固定证据，执行与整合继续沿本节和compute流程。
+
 读 pi-research-compute 的 references/docker.md（开发检查只使用 Docker），使用 development_prepare 固定当前私有源码、真实镜像摘要、command、有限资源与expectedArtifacts，另行用户开发批准再 development_submit。开发作业输出及完整性是真实检查证据；退出码0或助手自报“完成”不够。WorkingGrant 若适用仍限定源/文件/镜像/命令，不因有 Shell 文本就可执行。
 
 候选将产出正式数值指标时，开发检查声明`metricArtifact:"metrics.json"`并把该路径列入`expectedArtifacts`；宿主对实际归档文件执行与正式Run相同的平铺有限数字校验，格式失败即使退出码0也不会通过。合成检查须经过生产代码同一指标计算/序列化路径，不能另写一个与实现无关的合法JSON充数；开发检查不作为科研发现。`dataArtifactIds`只声明运行实际需要的挂载；已确认研究计划的`sourceInputs`作为独立审查来源另行固定，因此合成检查不需要提前计算真实数据结果。没有实际读取的输入不会被宿主自动补成已读。

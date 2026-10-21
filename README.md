@@ -12,7 +12,7 @@
 
 随后移除远程实例技能及占位、云资源管理和完整远程工作台部署规划，保留13个内置技能；GPU扩展及既有资源调度保持，见[继续清理记录](docs/acceptance/flow-compute-related-cleanup/RESULT.md)。
 
-技能已按当前已完成功能适配，提供38份按需资源，包括计算、绘图、文稿交付与8项科研方法。新增实验设计、功效规划、数据检查、统计分析、测量不确定性、假设生成、批判性评价和系统综述方法，沿现有角色与固定版本加载；方法参考不等于新增自动计算工具。见[当前功能及上游差异](docs/openresearch/CURRENT-SKILLS.zh-CN.md)和[方法补强验收](docs/acceptance/flow-scientific-methods-20261017/RESULT.md)。
+技能已按当前已完成功能适配，提供41份按需资源，包括计算、绘图、文稿交付与8项科研方法。新增实验设计、功效规划、数据检查、统计分析、测量不确定性、假设生成、批判性评价和系统综述方法，沿现有角色与固定版本加载；方法参考不等于新增自动计算工具。见[当前功能及上游差异](docs/openresearch/CURRENT-SKILLS.zh-CN.md)和[方法补强验收](docs/acceptance/flow-scientific-methods-20261017/RESULT.md)。
 
 2026-10-17的[真实Pi科研实测](docs/acceptance/flow-scientific-methods-live-20261017/RESULT.md)发现自动触发仍不足：原入口自然读取0/8，补充方法触发表后相同提示读取2/8，提醒后才读齐8/8；代码与科学解释还需独立复核纠正。已补强入口并保留失败证据，不能据此宣称八项方法已能全自动正确使用。
 
@@ -53,7 +53,7 @@ node dist/apps/server/index.js
 
 ## 实际提供
 
-- 13个技能模块（12个上游主题＋总览），38份按需资源；新增8项方法挂在实验树、证据与文献技能中，按角色和发布哈希加载，读取资源不自动执行代码。
+- 14个技能模块（12个上游主题＋总览＋原创研究代码调试），41份按需资源；调试技能复用现有开发批准、独立审查与证据流程，8项科研方法挂在实验树、证据与文献技能中，按角色和发布哈希加载，读取资源不自动执行代码。
 - alphaXiv关键词/语义候选与提取文本、OpenAlex元数据/摘要、bioRxiv候选/摘要、PubMed候选/摘要、Crossref元数据。四个新来源默认关闭；Crossref保留原默认。
 - API、CLI、Pi工具与工作台共用同一业务服务；不调用ORX。原始文本/响应单独保存，不把摘要说成全文。
 - 当前 134 个操作通过 OperationRegistry 统一验证输入/输出、权限与幂等；包括固定源码、测试/审查、有限授权、文献/文档、文稿/报告、历史分页、消息附件和资源配置。可通过 `GET /api/operations` 查看定义，或 `operation <id> --project <id> --input <JSON>` 调用；大输入可改用 `--input-file <JSON文件>`。owner HTTP 的 sessionId 不授予Agent身份，现有批准边界保持。
