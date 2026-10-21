@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "runtimeCodeCommit": "3918881d28e7661012f2cdd483fa5191c2583121",
+  "originalBundle": "2596e69858f668445f440cd902b3afa94a53673a8a3a379a2329556dfe5f1aa0",
+  "revisedBundle": "76710206b59393c7c65d3754d6a7016481b87ce9a528c896b85e66d8b35312da",
+  "naturalTrigger": {
+    "firstTool": "research_skill_read",
+    "callId": "call_7f3a650f90ff45ad847c02f5",
+    "fixedBundle": "2596e69858f668445f440cd902b3afa94a53673a8a3a379a2329556dfe5f1aa0",
+    "skillDigest": "ff17641ba49936d5b70f51fc6ad2c22fd3566fdcd4e17cd5f7c54b897967efa5",
+    "exactArchivedBodyDelivered": true,
+    "beforeFirstWrite": true,
+    "promptDidNotNameSkill": true
+  },
+  "models": {
+    "producer": {
+      "models": [
+        {
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        }
+      ],
+      "thinking": [
+        "low"
+      ]
+    },
+    "originalReviewer": {
+      "models": [
+        {
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        }
+      ],
+      "thinking": [
+        "low"
+      ]
+    },
+    "supplementalReviewer": {
+      "models": [
+        {
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3"
+        }
+      ],
+      "thinking": [
+        "low"
+      ]
+    },
+    "implementationAgent": {
+      "requestedModel": "gpt-6.1-sol",
+      "requestedEffort": "high",
+      "runtime": "not echoed"
+    }
+  },
+  "jobs": [
+    {
+      "id": "2963c08c-cf38-4650-ae2f-de372c835262",
+      "state": "failed",
+      "integrity": "complete",
+      "exitCode": 1,
+      "sourceDigest": "4b3492b6c0cf256da87520d8577d3b8ca7dcd1740e4481d1683c069fe93e0f20",
+      "manifestDigest": "0f24d4c74055a516f5ce6cd55f04a3d2318ac3e70beb08b756732ff6f7d46b5a",
+      "imageId": "sha256:f9ce79cbb5c0345507763834b6e7597912b939006bf949a5f38fd96d8eb56b12",
+      "containerId": "974c959fb07dcbdfa88fbb9384de7effc044ce3280524be8ca1cf77809af03a3",
+      "command": [
+        "python",
+        "check_metric.py",
+        "metric.py"
+      ],
+      "grantId": "b981fece-74ac-44f4-b798-12e9099400ac"
+    },
+    {
+      "id": "9af9ff74-b907-4437-8791-cafbbbda9dd1",
+      "state": "succeeded",
+      "integrity": "complete",
+      "exitCode": 0,
+      "sourceDigest": "a51591fef60e5e23ddac8eecdebef5bda04d1e07edebc2f28edc0c5c6e79b8eb",
+      "manifestDigest": "dca74210f940920a762b74baa088fd183623ddf240f76d58813cf5ce27909e71",
+      "imageId": "sha256:f9ce79cbb5c0345507763834b6e7597912b939006bf949a5f38fd96d8eb56b12",
+      "containerId": "5b3a76b821ace40e4a3d253cc9954b6d586fc84262d224903d7a2674c0ccb6d4",
+      "command": [
+        "python",
+        "audit_regression.py"
+      ],
+      "grantId": "0bd3af7a-322e-4116-aad7-a966b005b474"
+    }
+  ],
+  "regression": {
+    "redGreenArtifactId": "6500401d-4e48-414b-a92d-1058f3ec25a7",
+    "digest": "3ad571fa50792eae1eb1434d2fc8e3892f1a84379b546d606a2ed79ce7b41d6d",
+    "testSha256": "8e8bcea9efe1d2898d3c722ff00ae3b707e69d06204b456eb111933ffca15586",
+    "beforeSourceSha256": "ac7e80d9b1a195e37cfef3bf5472a6287de2ce1b0bf5322452e6d43f986e1cd8",
+    "afterSourceSha256": "1b95601520e4818292a84d0a95a09a564686e7fa0653be2f92ae5ef5feedb18e",
+    "fixedFixtureDigests": {
+      "baseline_metric.py": "ac7e80d9b1a195e37cfef3bf5472a6287de2ce1b0bf5322452e6d43f986e1cd8",
+      "check_metric.py": "8e8bcea9efe1d2898d3c722ff00ae3b707e69d06204b456eb111933ffca15586",
+      "audit_regression.py": "7cb2c8c8761dac173e17b460a48dcbb0f2e4eecfb6be6dec2edeb1a00795c8db",
+      "README.md": "5882ae8728496b2b9d47ce763386ff6ba43749b07c60f1f583c8098272801d16"
+    },
+    "originalFailureObserved": true,
+    "sameTestRedGreen": true
+  },
+  "unapprovedSubmitRejections": [
+    {
+      "operation": "development_submit",
+      "id": "7479a104-40a3-48a2-8508-b614b772209a",
+      "code": "APPROVAL_REQUIRED",
+      "manifestDigest": "0f24d4c74055a516f5ce6cd55f04a3d2318ac3e70beb08b756732ff6f7d46b5a"
+    },
+    {
+      "operation": "development_submit",
+      "id": "962eb4a2-4dcb-4018-b9b4-421ee6e72445",
+      "code": "APPROVAL_REQUIRED",
+      "manifestDigest": "dca74210f940920a762b74baa088fd183623ddf240f76d58813cf5ce27909e71"
+    }
+  ],
+  "originalReview": {
+    "id": "a02f2e1fd6f2aadb6127d03867ca8b89edc8084ea679833bc971525f14bf0e59",
+    "taskId": "70edb8b4-0c6d-48c4-bb08-5d0fc0f61ccc",
+    "sessionId": "21a881d0-3365-40a7-89aa-1f2bcef2b82f",
+    "verdict": "accept",
+    "skillRead": false,
+    "rawRegressionRead": false,
+    "independentClosureBeforeOriginalIntegration": false
+  },
+  "supplementalReview": {
+    "taskId": "3fec499a-9dc5-4ed8-92e6-8557b99ff6c2",
+    "teamId": "f377e1c1-91e7-468d-9e88-e64d3ba10a4d",
+    "approvalId": "dafdc80d-ee87-4ff2-a3c2-dd04e6ab042a",
+    "approvalDigest": "38ed1b129ecfb49c5ead7ae76694000be578403a7c0c09f0c1b52f45b5689ddc",
+    "sessionId": "d234a2b1-295c-41d6-a256-7913579cbf39",
+    "bundle": "76710206b59393c7c65d3754d6a7016481b87ce9a528c896b85e66d8b35312da",
+    "verdict": "accept",
+    "allInputsReadInFull": true,
+    "rawInputCount": 12,
+    "reads": [
+      {
+        "target": "supplemental-artifact:8f9d746c-0b10-4f98-b026-3f3a40cecb4d",
+        "digest": "7cb2c8c8761dac173e17b460a48dcbb0f2e4eecfb6be6dec2edeb1a00795c8db",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:eeaf9a89-c37e-45e2-9daa-42e90d64ad4c",
+        "digest": "ac7e80d9b1a195e37cfef3bf5472a6287de2ce1b0bf5322452e6d43f986e1cd8",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:ac92d47b-5e0f-4018-a9ae-74fbb00b4544",
+        "digest": "8e8bcea9efe1d2898d3c722ff00ae3b707e69d06204b456eb111933ffca15586",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:cbb1d9e0-8cc2-4690-872e-3dc479fd7ece",
+        "digest": "1b95601520e4818292a84d0a95a09a564686e7fa0653be2f92ae5ef5feedb18e",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:fcf1797f-84df-45e5-8fb9-1266a62e2409",
+        "digest": "5882ae8728496b2b9d47ce763386ff6ba43749b07c60f1f583c8098272801d16",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:6500401d-4e48-414b-a92d-1058f3ec25a7",
+        "digest": "3ad571fa50792eae1eb1434d2fc8e3892f1a84379b546d606a2ed79ce7b41d6d",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:6bf56d1d-be95-4ae1-aeb7-14e9a5363704",
+        "digest": "041d4226018bf6b5904a6d0f28c2246bdc52f6ae3e68b3894a935c929d173bc3",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:ef869f6c-2de7-4fe2-b9aa-36cd1ddd5a80",
+        "digest": "f96d2a81eae92f6b1e3756f595bb7b8c63ebcb2dd243483e39b9e3cebab3aa33",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:4b114a97-dba9-424d-a425-5edf7020f67f",
+        "digest": "cc090e69808556b5328ae97e23e79d5e82a8b9f90848b40f0756b6306b6c2fbc",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:b407580a-2ad8-4855-b170-8cba87c3fe3b",
+        "digest": "fb6d4e6970387b0beb12c0e84e62dfdd4dd8f6f2b0804c916d617383b6eb64dc",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:bbb2ee0d-0c08-4543-8303-1ab41d66e9f5",
+        "digest": "13d9396f59ea85c860ecd8217c349b2ad4c48f0938941589c08009e8edb8662e",
+        "pages": 1
+      },
+      {
+        "target": "supplemental-artifact:6cd4711e-9588-4069-87a8-9aa7e3c5280e",
+        "digest": "b798f5b73f69a65be8a5bd411a91ffed50032d7d6d63b408fde9df989586af81",
+        "pages": 1
+      }
+    ],
+    "emptyStderrDelivery": {
+      "kind": "verified-complete-wrapper",
+      "artifactId": "bbb2ee0d-0c08-4543-8303-1ab41d66e9f5",
+      "targetArtifactId": "948ed7b8-89cc-4bae-b0ff-9edb3e9d37e7",
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "directOriginalAccessClaimed": false
+    },
+    "skillReads": [
+      {
+        "callId": "call_f6fa2b9395d1437abfa95d8e",
+        "digest": "03d5ccf4162e1ff94b9244b62c0c8dec38994ac3ba224b6248038dca22fe2ccf"
+      }
+    ]
+  },
+  "reopen": {
+    "originalRecordsUnchangedSinceBeforeSupplement": true,
+    "allComparedRecordsUnchanged": true,
+    "artifactDigestsUnchanged": true,
+    "nativeBytesRetained": true,
+    "originalFailureFilesUnchanged": true,
+    "crossProjectRejected": true,
+    "jobCount": 2,
+    "scientificRunCount": 0,
+    "childExperimentId": "749fb673-4459-4ffb-802f-c29eef70c309",
+    "childSourceDigest": "a51591fef60e5e23ddac8eecdebef5bda04d1e07edebc2f28edc0c5c6e79b8eb",
+    "histories": [
+      {
+        "sessionId": "627ebd84-86ae-47f6-a1a2-4ad0a000d505",
+        "sha256": "54935259f17e9fd2da34cdbb9eee36b08dafd0fa29e9914c37deb9c01e840a40",
+        "bytes": 704753
+      },
+      {
+        "sessionId": "21a881d0-3365-40a7-89aa-1f2bcef2b82f",
+        "sha256": "82ce96752329e16d068070a4eaa95c22d26b9c61de3296a1264741fcb62e0fd0",
+        "bytes": 103087
+      },
+      {
+        "sessionId": "d234a2b1-295c-41d6-a256-7913579cbf39",
+        "sha256": "7d80e4bc0e511ab18522d1a1679f1cb3cd434350ce7ebd5b3a147376088724e0",
+        "bytes": 114015
+      }
+    ]
+  },
+  "passedAfterSupplement": true,
+  "originalDefaultReviewComplete": false,
+  "qualification": "Supplemental delivery acceptance does not make the original default independent review complete or a first-pass success.",
+  "privateEvidenceRoot": ".validation/research-debugging-live-20261021/",
+  "originalFailureEvidenceSha256": "955b0eb012a73eaa0c49a6667203d5ebd8c6c79d21a1d6d2a5098fd81c7d938f"
+}

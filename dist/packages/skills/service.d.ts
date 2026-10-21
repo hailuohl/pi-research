@@ -19,7 +19,7 @@ type CatalogEntry = {
 export declare class SkillService {
     private root;
     private context?;
-    readonly bundleId = "2596e69858f668445f440cd902b3afa94a53673a8a3a379a2329556dfe5f1aa0";
+    readonly bundleId = "76710206b59393c7c65d3754d6a7016481b87ce9a528c896b85e66d8b35312da";
     constructor(root: string, context?: AppContext | undefined);
     private get c();
     private builtin;

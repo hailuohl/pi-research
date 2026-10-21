@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "2596e69858f668445f440cd902b3afa94a53673a8a3a379a2329556dfe5f1aa0";
+export declare const BUNDLE_ID = "76710206b59393c7c65d3754d6a7016481b87ce9a528c896b85e66d8b35312da";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -75,7 +75,7 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "Use when debugging research code, failed development checks, incorrect metrics or artifacts, or adding a regression test before a code fix; reviewers inspect fixed evidence read-only.";
     readonly roles: readonly ["coordinator", "implementer", "reviewer"];
     readonly path: "skills/piresearch/pi-research-code-debugging/SKILL.md";
-    readonly digest: "ff17641ba49936d5b70f51fc6ad2c22fd3566fdcd4e17cd5f7c54b897967efa5";
+    readonly digest: "03d5ccf4162e1ff94b9244b62c0c8dec38994ac3ba224b6248038dca22fe2ccf";
     readonly resources: readonly [];
     readonly source: {
         readonly repository: "hailuohl/pi-research";

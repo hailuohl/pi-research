@@ -27,7 +27,7 @@ coordinator组织定位和受管流程，implementer在获准私有工作区实�
 
 生产数值指标必须经同一生产计算/序列化路径，保留git技能现有`metricArtifact:"metrics.json"`、平铺有限数字及`expectedArtifacts`要求；方法见证、`methods-results.json`与`decisionOutputs`也沿原契约，不手写合法JSON充数。开发检查是软件证据，正式科学结论仍须整合后的固定源码和另行批准的正式Run。
 
-修复后成功完整的开发作业通过`development_review_prepare`进入用户批准的独立review；reviewer核对固定候选及红/绿证据、测试是否真实暴露原错、修复范围和方法边界。记录失败日志的固定位置并随现有获准交接交付；审查缺少关键证据时报告验证缺口，不自行运行补证。修订后重新检查并准备新审查，不沿用旧accept。有效passed结果再用`reviewed_change_prepare`准备用户批准整合，重读子实验ID/revision及源码后才走`run_prepare`/`run_submit`，具体字段和边界以git/compute技能及当前工具schema为准。
+修复后成功完整的开发作业通过`development_review_prepare`进入用户批准的独立review；reviewer核对固定候选及红/绿证据、测试是否真实暴露原错、修复范围和方法边界。红/绿回归收据必须通过`artifact_read`实际读完获准归档正文，核对旧/新源码与测试摘要、命令、退出码和目标失败；源码中的assert、产物清单、报告摘要、退出码0或作者描述不能替代该读取。记录失败日志的固定位置并随现有获准交接交付；原失败作业不会自动进入成功作业的审查授权，缺少关键证据时报告验证缺口、不得accept，不自行运行或扩权补证。修订后重新检查并准备新审查，不沿用旧accept。有效passed结果再用`reviewed_change_prepare`准备用户批准整合，重读子实验ID/revision及源码后才走`run_prepare`/`run_submit`，具体字段和边界以git/compute技能及当前工具schema为准。
 
 交付简记：故障与固定来源、单一假设及观察、实际变更、红/绿检查命令和jobId/日志/产物位置、通过/失败/未运行、独立审查及整合状态、剩余限制。保留原证据，不复制大份原始日志或敏感数据。
 
