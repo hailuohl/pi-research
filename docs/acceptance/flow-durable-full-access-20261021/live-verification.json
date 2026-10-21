@@ -1,0 +1,281 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "runtimeCommit": "45136508cc208121d598b6c3e1ae209e85e70f33",
+  "endpoint": "http://127.0.0.1:4794/",
+  "sdkVersion": "0.87.1",
+  "realPiWorker": true,
+  "fixtureWorker": false,
+  "model": {
+    "provider": "zai-coding-cn",
+    "model": "glm-5.3",
+    "thinkingRequested": "low",
+    "thinkingRuntimeEchoed": false
+  },
+  "validation": {
+    "id": "cd17657a-1bee-4ab3-80b0-a3f0563c29df",
+    "projectId": "29cc52e6-73ad-4df9-8688-9964b511a534",
+    "sessionId": "21aa6e31-70c9-4bc7-96b6-0ca4ddd23cbb",
+    "checks": [
+      {
+        "id": "new-scope2-authority-unchanged",
+        "status": "passed",
+        "evidence": {
+          "epoch": 1,
+          "scope": 2,
+          "limits": {
+            "development": null,
+            "run": null,
+            "continuations": null,
+            "durationMs": null
+          },
+          "recoverAfterRestart": true
+        }
+      },
+      {
+        "id": "same-continuation-fixed-proof",
+        "status": "passed",
+        "evidence": {
+          "id": "4891825119934288feff0136d6f8349d2e648d4a2e75a1b6414a71fe9824ded2",
+          "digest": "520d9d3348c054c3091f3ffab48278ee7a53f95a83493b1307ab5318bc8d25e7",
+          "state": "completed"
+        }
+      },
+      {
+        "id": "restart-keeps-original-execution",
+        "status": "passed",
+        "evidence": {
+          "runId": "90f4104b-578c-4c9a-bb24-0e5d886cb3f8",
+          "executionId": "9e06a363-7eb9-4c84-8212-90693020817a",
+          "nativeStartSha256": "6bcd108165c853023156f0f98c3891f841a55c58808abaf49cd6ab2da28374f8",
+          "pid": 82356
+        }
+      },
+      {
+        "id": "parent-and-failed-source-retained",
+        "status": "passed",
+        "evidence": {
+          "mainSha256": "518f87fd49131b6f46e9e27ac1b49751a68a677f16a2c9197bfb8d6fe6f66a9f",
+          "testPath": "test.py",
+          "testSha256": "6f53e546448d22daa27420889ca0ca345d5e240b0d9e3d1d24481202635fd3b7"
+        }
+      },
+      {
+        "id": "original-failure-has-verifiable-diagnostic",
+        "status": "passed",
+        "evidence": {
+          "runId": "90f4104b-578c-4c9a-bb24-0e5d886cb3f8",
+          "diagnosticReportSha256": "d3c0c6515d7cf52fb08da1b9efa7d446cfcc2158814f53493b7cf9b775c77aa5",
+          "kind": "local-nonzero-exit"
+        }
+      },
+      {
+        "id": "unique-authorization-job-and-intent-links",
+        "status": "passed",
+        "evidence": {
+          "authorizations": 3,
+          "consumed": 3
+        }
+      },
+      {
+        "id": "real-development-test-passed-with-unchanged-tests",
+        "status": "passed",
+        "evidence": {
+          "jobId": "b421cafb-db9c-4411-9b61-a8d56d323196",
+          "containerId": "4b63096f24bff235003d5a10d0fdf7802056773b01b69f22c705f24cf0863e8d",
+          "sourceDigest": "825c8898e325eb611733f411b052247cd84bfb89a93f22bc52c5b096a2a792c7",
+          "mainSha256": "5828bcd016d96cbc128a348def78a2effcf7021bf8bf6c0f74dd723a8d11d7b8"
+        }
+      },
+      {
+        "id": "repair-child-and-run-use-exact-tested-source",
+        "status": "passed",
+        "evidence": {
+          "childId": "ea4f03ff-a8aa-4703-8fcf-5527a76fa9b0",
+          "runId": "cd2efd8c-aab3-479f-921c-34588081b069",
+          "failedRunId": "90f4104b-578c-4c9a-bb24-0e5d886cb3f8",
+          "testedJobId": "b421cafb-db9c-4411-9b61-a8d56d323196",
+          "sourceDigest": "825c8898e325eb611733f411b052247cd84bfb89a93f22bc52c5b096a2a792c7",
+          "contractDigest": "a2a821efb06ee1f5b6d39e07fbb6cf0b7a337ceb03c7b846ffc4ef24a8de62bb"
+        }
+      },
+      {
+        "id": "new-run-metric-is-archived-measured-six",
+        "status": "passed",
+        "evidence": {
+          "runId": "cd2efd8c-aab3-479f-921c-34588081b069",
+          "metrics": {
+            "value": 6
+          },
+          "metricSha256": "e13bd7510843f1667b7516f19564e4008fe4579d2782b46ec37099aa8698d629"
+        }
+      },
+      {
+        "id": "completed-checkpoint-references-real-run-and-test",
+        "status": "passed",
+        "evidence": {
+          "continuationId": "4891825119934288feff0136d6f8349d2e648d4a2e75a1b6414a71fe9824ded2",
+          "state": "completed",
+          "scientificConclusion": false,
+          "runIds": [
+            "90f4104b-578c-4c9a-bb24-0e5d886cb3f8",
+            "cd2efd8c-aab3-479f-921c-34588081b069"
+          ],
+          "developmentJobIds": [
+            "b421cafb-db9c-4411-9b61-a8d56d323196"
+          ]
+        }
+      },
+      {
+        "id": "owner-model-work-settled-and-workers-exited",
+        "status": "passed",
+        "evidence": {
+          "sessionState": "idle",
+          "releasedWorkers": 4,
+          "unsettledHttp": 0
+        }
+      },
+      {
+        "id": "actual-provider-http-and-positive-usage",
+        "status": "passed",
+        "evidence": {
+          "provider": "zai-coding-cn",
+          "model": "glm-5.3",
+          "configuredThinking": "low",
+          "thinkingRuntimeEchoed": false,
+          "httpStates": {
+            "succeeded": 15
+          },
+          "reportedTotalTokens": 495655,
+          "usageRecords": 15
+        }
+      },
+      {
+        "id": "budget-identity-and-captured-ledger-retained",
+        "status": "passed",
+        "evidence": {
+          "id": "4891825119934288feff0136d6f8349d2e648d4a2e75a1b6414a71fe9824ded2",
+          "createdAt": "2026-10-21T05:08:12.876Z",
+          "limit": null,
+          "used": 3,
+          "reserved": 0,
+          "unknown": 0,
+          "available": null,
+          "unit": "agent-attempt",
+          "capturedReservationBaseline": false
+        }
+      },
+      {
+        "id": "no-computation-was-duplicated-after-restart",
+        "status": "passed",
+        "evidence": {
+          "originalParentRuns": 1,
+          "originalIntentJobs": 1,
+          "originalRunResultWakeups": 1
+        }
+      }
+    ],
+    "status": "passed",
+    "modelHttpStates": {
+      "succeeded": 15
+    },
+    "reportedTotalTokens": 495655,
+    "usageRecords": 15,
+    "budget": {
+      "limit": null,
+      "used": 3,
+      "reserved": 0,
+      "unknown": 0,
+      "available": null
+    }
+  },
+  "restart": {
+    "kind": "controller outage during existing local computation; original detached supervisor completed while controller was down",
+    "generation1ClosedAt": "2026-10-21T05:09:25.799Z",
+    "originalRunArchivedAt": "2026-10-21T05:09:37.352Z",
+    "generation2StartedAt": "2026-10-21T05:09:50.578Z",
+    "generation2Pid": 135260,
+    "grantReenabledAfterRestart": false,
+    "originalRunSupervisorGeneration": 1,
+    "originalRunRecoveryCount": 0,
+    "shellAccessAfterRestart": false,
+    "researchAutomationAfterRestart": true
+  },
+  "history": {
+    "oldRecords": 11928,
+    "missing": 0,
+    "unexpectedChanges": 0,
+    "changedTransientKinds": [
+      "compute-connection",
+      "research-runtime"
+    ],
+    "oldEventPrefixCount": 102729,
+    "postInitialRestartEventPrefixSha256": "ab412ca8b3cb7ccc96a61762549f9cdd772a3a91591c5cec3ee017dbc48292b3",
+    "postInitialRestartEventPrefixUnchanged": true,
+    "preUpgradeEventContentDigestAvailable": false,
+    "filesVerified": 605,
+    "fileKinds": {
+      "native": 47,
+      "artifact": 558
+    },
+    "fileBaselineAt": "2026-10-21T04:13:19.067Z",
+    "nativeReferences": 48,
+    "nativeReferencesAvailable": 48,
+    "nativeFilesWithPriorHash": 47,
+    "firstUpgradeCompleteNativeByteBaselineAvailable": false
+  },
+  "backup": {
+    "created": false,
+    "status": "BACKUP_BUSY: existing unknown task-attempts retained",
+    "existingUnknownAttempts": 3,
+    "guardBypassed": false
+  },
+  "frontend": {
+    "layoutChanged": false,
+    "stylesheetSha256": "86fda0ca449070565816bb6163d1508bff0ac8bdefa0bfc1a2270cd77305cde9",
+    "stylesheetMatchesPreviousDeployment": true
+  },
+  "independentReview": {
+    "modelRequested": "gpt-6-astra",
+    "effortRequested": "xhigh",
+    "runtimeMetadata": "not echoed",
+    "status": "passed",
+    "deploymentTrackedFilesMatched": 4056,
+    "actualEvidenceChecksRecomputedReadOnly": 14,
+    "nonblockingObserverBaselineGuard": "tightened: later stages require an existing event baseline and strict true comparison; affected check rerun passed"
+  },
+  "proofHashes": {
+    "verify-live.mjs": "201f91dcadcf0a85edecb51b100a150186bc76e8cfc3208375c30219e2e571b4",
+    "summary-validation.json": "52cc5b67a600d17b95e7128e9d0734c5ddcc0e7d93c75784fd01076f320bd7c3",
+    "serve.mjs": "c7bdc1352fc641e77de62047a55538dc4e2a1524b3c03718ee316abc624c97e2",
+    "init-live.mjs": "8763fe305834555269d708a33140661d1dc7a338ae5e4a1091f6c86d134f3075",
+    "observe.mjs": "5fcf1ef3bf94e418280347f7b4ef7577f5bd03c54027280a8ce13e77cfe401c6",
+    "restart-capture.json": "162c1e5e97f95b8db65e93d0c433174fbc66d297f68da381741d33402abd73d7",
+    "history-after-initial-restart.json": "1f18c40b3385b28d3717ac1c5838ec574eddd131736e6a49867f8abff8586a0c",
+    "history-final-live-settled.json": "6d8900dd5a259e23b756a5c2ae2b1987af6ea4e4797d38aa87181fa9790e6ada",
+    "retained-files.json": "3b30fe14ffd32e0993ecbcfdb6b97e78137b111c453446b981dde5d131c7309c",
+    "check-history.mjs": "785a2039c290a54f1a7df26db316d2462da31fe3a9170571e3a544e264cfc8ec"
+  },
+  "limitations": [
+    "Synthetic arithmetic platform verification; not a scientific-validity result.",
+    "The original supervisor continued unchanged; supervisor crash takeover was not injected.",
+    "Prepared-only interruption and interruption of an active model HTTP request were not exercised.",
+    "Timeout, concurrency, revoke, pause and unknown-result branches reuse applicable prior automated checks; no new live negative injection.",
+    "Before the initial upgrade, old record hashes and event count/last were captured; event content digest begins after that restart.",
+    "47 native files match a prior activation hash baseline; all 48 old native references exist, but one lacks the initial byte hash baseline.",
+    "Restart capture has budget identity but no reservation detail baseline; preservation of an interrupted unknown model reservation was not independently demonstrated.",
+    "No full restorable data backup was created; the existing backup guard remains blocked by old unknown task-attempts."
+  ],
+  "privacy": "Only synthetic verification IDs, digests, state, metrics and usage are saved here. Credentials, database, original conversation bodies and raw logs remain outside Git.",
+  "delegation": {
+    "boundary": {
+      "modelRequested": "gpt-6-astra",
+      "effortRequested": "high"
+    },
+    "readOnlyVerifier": {
+      "modelRequested": "gpt-6.1-sol",
+      "effortRequested": "high"
+    },
+    "runtimeMetadata": "requested; not echoed; main/global configuration unchanged"
+  }
+}
