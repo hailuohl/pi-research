@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {setup,USER,approve} from '../support/research.mjs';
 import {ResearchApp} from '../../dist/packages/research-app.js';
 import {digest} from '../../dist/packages/storage/store.js';
+import {actor,startTeam,spec} from '../support/collaboration.mjs';
 
 function ready(expectedRevisionId=null,overrides={}){return {expectedRevisionId,question:'How does the intervention change the measured outcome?',scope:'A fixed local comparison.',constraints:[],successCriteria:['Report the measured difference.'],clarificationQuestions:[],literatureSummary:'',hypotheses:[],evidenceIds:[],steps:[{title:'Measure',description:'Run the fixed comparison.'}],status:'ready',...overrides};}
 function confirm(s,rootId=s.session.id,question='Fixed question',evidenceIds=[]){const root=s.app.store.get('session',rootId,s.project.id),row=s.app.researchBriefs.save(USER,s.project.id,rootId,ready(root.researchBriefId??null,{question,evidenceIds}));return s.app.researchBriefs.confirm(USER,s.project.id,rootId,{briefId:row.id,expectedVersion:row.version});}
@@ -56,12 +57,18 @@ test('a different root can reuse baseline source only with its own current brief
 }finally{s.close();}});
 
 test('a dropped intermediate brief binding still requires a fresh confirmed root before Run preparation',()=>{const s=setup();try{
- const first=confirm(s),parent=experiment(s),designer={type:'agent',projectId:s.project.id,sessionId:s.session.id,role:'designer',taskId:'task-fixture',attemptId:'attempt-fixture'};
+ const first=confirm(s),parent=experiment(s),team=startTeam(s,[spec('designer-key',{role:'designer'})]),claim=s.app.teams.claim(team.id),designer=actor(claim),designerSession=s.app.store.get('session',designer.sessionId,s.project.id);
+ assert.equal(designerSession.role,'designer');assert.equal(designerSession.taskId,claim.task.id);assert.notEqual(designer.sessionId,s.session.id);
  const child=s.app.experiments.create(designer,s.project.id,{title:'Unbound designer child',hypothesis:'Fixture.',parentId:parent.id});assert.equal(child.researchBrief,undefined);
  const emptyRoot=s.app.sessions.create(USER,s.project.id,{title:'Empty root'});
  assert.throws(()=>s.app.runs.prepare(USER,child.id),{code:'RUN_SESSION_REQUIRED'});
  assert.throws(()=>s.app.runs.prepare(USER,child.id,emptyRoot.id),{code:'BRIEF_REQUIRED'});
  const intent=s.app.runs.prepare(USER,child.id,s.session.id);assert.equal(intent.manifest.researchBrief.id,first.id);
+ const pending=s.app.researchBriefs.save(USER,s.project.id,s.session.id,ready(first.id,{question:'Unconfirmed newer brief'}));assert.equal(pending.status,'ready');
+ const intentsBefore=s.app.store.list('run-intent').length,approvalsBefore=s.app.store.list('approval').length;
+ assert.throws(()=>s.app.runs.prepare(USER,child.id,s.session.id),{code:'BRIEF_NOT_CONFIRMED'});assert.equal(s.app.store.list('run-intent').length,intentsBefore);assert.equal(s.app.store.list('approval').length,approvalsBefore);
+ const latest=s.app.researchBriefs.confirm(USER,s.project.id,s.session.id,{briefId:pending.id,expectedVersion:pending.version}),latestIntent=s.app.runs.prepare(USER,child.id,s.session.id);
+ assert.equal(latestIntent.manifest.researchBrief.id,latest.id);assert.equal(s.app.store.get('run-intent',intent.id).manifest.researchBrief.id,first.id);
 }finally{s.close();}});
 
 test('tampered ref digest is rejected and fixed refs survive reopening',()=>{const s=setup();try{

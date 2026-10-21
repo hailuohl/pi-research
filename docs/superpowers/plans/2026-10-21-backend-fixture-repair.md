@@ -38,7 +38,7 @@
 - [x] 仅将旧 kind/path SDK 输入改为实际公开的 readInput，显式校验定位输入存在。
 - [x] 运行该集成文件全部用例；按相关性核对 closeout/routing/重开检查或有效旧证据。
 - [x] 冻结补丁及测试哈希，独立 Astra/xhigh 只读复核；必要修复仅复查受影响部分。
-- [ ] 主代理提交可应用补丁、计划与 QA 记录并推送，明确未跟踪源文件的集成边界。
+- [x] 主代理提交可应用补丁、计划与 QA 记录并推送，明确未跟踪源文件的集成边界。已核对远端 `bc6f86131984d3528b59492c38d436f4f89ac736`。
 
 ## 批次二：合法科研会话准备实验与 Run
 
@@ -48,8 +48,11 @@
 
 **验收：** 真实 designer 的子实验不直接绑定简报，但祖先 Run 必须使用当前已确认根；新 ready 未确认时拒绝且不新增 intent/approval；真实 reviewer 及非法指标来源保持原拒绝；schema/pin/parent/active-root 与权限前置条件不削弱；固定引用重开后保留。
 
-- [ ] 保存并复用两项原失败证据，先核实夹具会话角色与 task/attempt 对应关系。
-- [ ] 用真实 designer claim 替换伪造根身份；补新 ready 拒绝、零副作用和确认后新 revision 断言。
-- [ ] 将 reviewer 角色移至第四参并断言实际 role，保留 `METHOD_METRICS_SOURCE_DENIED` 等既有断言。
-- [ ] 运行 brief-runs 全文件、scientific-claims-workflow 的 metric source 相关用例，复用仍有效的其他通过项。
-- [ ] 独立 Astra/xhigh 复核权限、错误优先级、零副作用与历史保留；主代理检查差异并提交/推送本批文件及补丁。
+- [x] 保存并复用两项原失败证据，先核实夹具会话角色与 task/attempt 对应关系。
+- [x] 用真实 designer claim 替换伪造根身份；补新 ready 拒绝、零副作用和确认后新 revision 断言。
+- [x] 将 reviewer 角色移至第四参并断言实际 role，保留 `METHOD_METRICS_SOURCE_DENIED` 等既有断言。
+- [x] 旧 d18 pin 使用自身支持的 claims v1：关闭默认编译、移除 v2 专用 assessments、显式断言实际 pin 和 method-contract-v5，再保留旧来源拒绝与显式指标批准断言。该前提缺陷在修复 reviewer 后才可达，不修改生产 guard。
+- [x] 运行 brief-runs 全文件、scientific-claims-workflow 的 metric source 相关用例，复用仍有效的其他通过项。
+- [x] 独立 Astra/xhigh 复核权限、错误优先级、零副作用与历史保留，主代理核对实际差异。
+
+批次二提交／推送的实际 SHA、分支、GitHub 链接以 `.validation/backend-fixture-repair-20261021/batch2-delivery.json` 回执记录，源文件与补丁边界见该批 QA。
