@@ -1,0 +1,144 @@
+{
+  "date": "2026-10-21",
+  "baselineCommit": "faf288193d5eae1f47980e5f0de345d2c086dbcc",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "movedFiles": 125,
+  "trackedFilesMoved": 103,
+  "bytesPreserved": 7856788,
+  "allMovedFilesSha256Match": true,
+  "allOriginalMovedPathsAbsent": true,
+  "protectedFilesChecked": 3996,
+  "protectedFilesChanged": [],
+  "existingIndexUnchanged": true,
+  "manifestSha256": "b1260b1b46d00e618b2fea0f4b87421a2925bcd594c39a665b70c174863a3b7e",
+  "historicalLinksIndexed": 69,
+  "historicalMissingTargets": 0,
+  "validation": {
+    "mainSnapshot": "faf2881 committed baseline minus this batch relocation; unrelated in-flight source excluded",
+    "mainRegression": {
+      "command": "node --test --test-concurrency=1 tests/unit/*.test.mjs tests/integration/*.test.mjs",
+      "actualController": {
+        "ProcessId": 106752,
+        "Started": "2026-10-21T09:21:20.7791014+08:00",
+        "ExitCode": 0,
+        "ObservedBy": "Opened process handle before completion; original test controller, no restart"
+      },
+      "counts": {
+        "tests": 2174,
+        "suites": 0,
+        "pass": 2149,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 25,
+        "todo": 0
+      },
+      "log": "tmp/dumate-separation-20261021/test-core.log"
+    },
+    "outerSupervisor": {
+      "npmCommand": "npm run test:core",
+      "pythonExitCode": 1,
+      "npmExitCode": null,
+      "status": "Python supervisor timed out after 900 seconds and terminated its npm child; npm exit was not captured. Original Node test controller continued and its actual exit/result was observed without restart"
+    },
+    "initialInstallBuildTypecheck": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0,
+        "elapsedSeconds": 10.368,
+        "log": "npm-ci.log"
+      },
+      {
+        "name": "build",
+        "exitCode": 0,
+        "elapsedSeconds": 15.965,
+        "log": "build.log"
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0,
+        "elapsedSeconds": 13.719,
+        "log": "typecheck.log"
+      }
+    ],
+    "cleanBuild": {
+      "command": "npm run verify:build",
+      "exitCode": 0,
+      "sourceInitiallyHadDist": false,
+      "steps": [
+        {
+          "name": "npm-ci",
+          "exitCode": 0,
+          "log": "D:\\项目\\pi research\\tmp\\dumate-separation-20261021\\main-snapshot\\.validation\\clean-build-gVsbO6\\npm-ci.log"
+        },
+        {
+          "name": "build",
+          "exitCode": 0,
+          "log": "D:\\项目\\pi research\\tmp\\dumate-separation-20261021\\main-snapshot\\.validation\\clean-build-gVsbO6\\build.log"
+        },
+        {
+          "name": "typecheck",
+          "exitCode": 0,
+          "log": "D:\\项目\\pi research\\tmp\\dumate-separation-20261021\\main-snapshot\\.validation\\clean-build-gVsbO6\\typecheck.log"
+        }
+      ],
+      "identical": true,
+      "files": 709,
+      "distManifestSha256": "41e19611547aa882dac7411d1d89a29a6e45b3e8f4af95895de1a64d96987920",
+      "summary": "tmp/dumate-separation-20261021/main-snapshot/.validation/clean-build-gVsbO6/summary.json"
+    },
+    "standalone": {
+      "tests": 22,
+      "passed": 20,
+      "skipped": 2,
+      "failed": 0,
+      "skipReason": "Windows symbolic-link privileges; skips are not passes",
+      "summary": "tmp/dumate-separation-20261021/standalone-summary.json"
+    },
+    "zipCrc": {
+      "checked": 15,
+      "passed": 15
+    },
+    "notRun": [
+      "DuMate platform installation/model calls",
+      "real research rerun",
+      "platform visual QA",
+      "unrelated in-flight feature validation"
+    ]
+  },
+  "agentRequests": {
+    "inventory": {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "runtimeEcho": false
+    },
+    "independentReview": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "runtimeEcho": false
+    }
+  },
+  "rawEvidence": "tmp/dumate-separation-20261021; previous tmp/dumate-* and pi-research/.validation remain in place",
+  "protectedFileScope": "Previously tracked files outside the move set, plus 30 ignored Python cache files; untracked file contents were not comprehensively hashed.",
+  "initialWorktreePathsAndStatusesPreserved": true,
+  "historicalGitObjectsRecoverable": 103,
+  "historicalGitEolNote": "Original disk bytes are preserved at the destinations; historical Git checkout can apply existing EOL normalization.",
+  "independentReview": {
+    "status": "passed; no blocking findings",
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeEcho": false,
+    "baselineCommit": "faf288193d5eae1f47980e5f0de345d2c086dbcc",
+    "reviewedEvidenceSha256": "1c41e761dbb60d64e86e9a0ad19ae5df2b8c8d8935e4e03e9f33803c5d09a046",
+    "frozenSnapshot": "tmp/dumate-separation-20261021/review-snapshot.json",
+    "blockingFindings": [],
+    "nonBlockingNotes": [
+      "900-second outer supervisor limit was too short; original test controller completed without restart.",
+      "Historical Git checkout can apply existing EOL normalization; relocated disk bytes are preserved."
+    ],
+    "coverageLimits": [
+      "Platform installation/model calls, real research, platform visual QA and unrelated in-flight features not rerun.",
+      "Skipped paths remain unverified; untracked contents were not comprehensively hashed."
+    ],
+    "capacityInterruption": "Same reviewer resumed after a capacity error; prior static verification was preserved, and final evidence was independently checked."
+  }
+}

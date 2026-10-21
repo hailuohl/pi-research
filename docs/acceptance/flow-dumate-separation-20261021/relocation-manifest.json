@@ -1,0 +1,1016 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "workspaceRoot": "D:\\项目\\pi research",
+  "baselineCommit": "faf288193d5eae1f47980e5f0de345d2c086dbcc",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "repository": "https://github.com/hailuohl/pi-research",
+  "files": [
+    {
+      "source": "pi-research/docs/DUMATE-MIGRATION-PLAN.zh-CN.md",
+      "destination": "dumate/docs/DUMATE-MIGRATION-PLAN.zh-CN.md",
+      "category": "dumate",
+      "bytes": 36504,
+      "sha256": "17db6f749fa062b454c83e6ce0701bf4f5fa527399fd36bffb0b4af3d82ef5f2",
+      "gitPath": "docs/DUMATE-MIGRATION-PLAN.zh-CN.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/CONTEST-APPLICATION-1.0.1-DRAFT.zh-CN.md",
+      "destination": "archive/legacy-contests-20261021/dumate/CONTEST-APPLICATION-1.0.1-DRAFT.zh-CN.md",
+      "category": "legacy-contest",
+      "bytes": 8573,
+      "sha256": "e94c65f52bb09d071781cf07431dad8cae318ba8de81d1b0e45364039069f3ee",
+      "gitPath": "docs/acceptance/flow-dumate-core/CONTEST-APPLICATION-1.0.1-DRAFT.zh-CN.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/CONTEST-APPLICATION-1.0.1.zh-CN.md",
+      "destination": "archive/legacy-contests-20261021/dumate/CONTEST-APPLICATION-1.0.1.zh-CN.md",
+      "category": "legacy-contest",
+      "bytes": 9260,
+      "sha256": "58467ecb3cc63839fdc45bc42020ffbe43bad6518de2ee151c509ccb9c2f7dbe",
+      "gitPath": "docs/acceptance/flow-dumate-core/CONTEST-APPLICATION-1.0.1.zh-CN.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/CONTEST-APPLICATION-DRAFT.zh-CN.md",
+      "destination": "archive/legacy-contests-20261021/dumate/CONTEST-APPLICATION-DRAFT.zh-CN.md",
+      "category": "legacy-contest",
+      "bytes": 7306,
+      "sha256": "3cf8a144091d17db6b802ef2ac14e36596c4ba41588d630c433f5ee803c7f9a5",
+      "gitPath": "docs/acceptance/flow-dumate-core/CONTEST-APPLICATION-DRAFT.zh-CN.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/PROGRESS.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/PROGRESS.md",
+      "category": "dumate",
+      "bytes": 5072,
+      "sha256": "23312d42dad40014fb6b50d9c9f6b140f6a2fa936aa39a5ce24e223baaedfd1c",
+      "gitPath": "docs/acceptance/flow-dumate-core/PROGRESS.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/application-pdf-summary-1.0.1.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/application-pdf-summary-1.0.1.json",
+      "category": "dumate",
+      "bytes": 1070,
+      "sha256": "37eac7a09af5d56111d85ac07719f4d6ab00b6b39d2d237cdbed808543c41577",
+      "gitPath": "docs/acceptance/flow-dumate-core/application-pdf-summary-1.0.1.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/application-pdf-summary-final.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/application-pdf-summary-final.json",
+      "category": "dumate",
+      "bytes": 914,
+      "sha256": "a4224cc04e8bbebdd32bb113966be4fb288e9bfdb027fc2194512a345bd0d2cf",
+      "gitPath": "docs/acceptance/flow-dumate-core/application-pdf-summary-final.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/application-pdf-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/application-pdf-summary.json",
+      "category": "dumate",
+      "bytes": 1188,
+      "sha256": "a28150590658b418238d2f6f1f22983a6e3e8d4d4025c19a66fef2a60d32d7d6",
+      "gitPath": "docs/acceptance/flow-dumate-core/application-pdf-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/clean-package-check.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/clean-package-check.json",
+      "category": "dumate",
+      "bytes": 492,
+      "sha256": "60f886879a87c15077959100db9191a588dcc637d7d2b0b17342f55b28f4f957",
+      "gitPath": "docs/acceptance/flow-dumate-core/clean-package-check.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/completion-requirements-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/completion-requirements-summary.json",
+      "category": "dumate",
+      "bytes": 2225,
+      "sha256": "a2d4bc2516a33a5c0eb7f354e765c495b496d07e894a8110831d01f5654f235e",
+      "gitPath": "docs/acceptance/flow-dumate-core/completion-requirements-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/demo-manifest.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/demo-manifest.json",
+      "category": "dumate",
+      "bytes": 2196,
+      "sha256": "56e0cbc3901fe82e8e52f477219353927629381e41024e89b7f5c3e45269e616",
+      "gitPath": "docs/acceptance/flow-dumate-core/demo-manifest.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/final-desktop-delivery.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/final-desktop-delivery.json",
+      "category": "dumate",
+      "bytes": 3437,
+      "sha256": "92d34a8c2b66d71df1231f16907f91262243a83cbf04cd3b976d268a4df50bf1",
+      "gitPath": "docs/acceptance/flow-dumate-core/final-desktop-delivery.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/independent-review-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/independent-review-summary.json",
+      "category": "dumate",
+      "bytes": 2608,
+      "sha256": "1bc0fe3ec559b04ecdc6d6a4af271cb30edada74567c886ff6e3d1b87aecff6a",
+      "gitPath": "docs/acceptance/flow-dumate-core/independent-review-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/installed-package-1.0.1.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/installed-package-1.0.1.json",
+      "category": "dumate",
+      "bytes": 3242,
+      "sha256": "c6ec192ff521ae415fa5fff73d0313679cbd0d0e35e630ba4aa65fa89da04c31",
+      "gitPath": "docs/acceptance/flow-dumate-core/installed-package-1.0.1.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/legacy-regression-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/legacy-regression-summary.json",
+      "category": "dumate",
+      "bytes": 4112,
+      "sha256": "2998c85b7b1221d759cf93a5ad57caf5c08c5ee6b6c600a2119714b9e538fa90",
+      "gitPath": "docs/acceptance/flow-dumate-core/legacy-regression-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/native-multiagent-probe.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/native-multiagent-probe.json",
+      "category": "dumate",
+      "bytes": 2588,
+      "sha256": "703a83e58379a1ce90381e60a0e2c26a5e1f2739b8d334b481eb10a55ec7905e",
+      "gitPath": "docs/acceptance/flow-dumate-core/native-multiagent-probe.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/native-p1-download-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/native-p1-download-summary.json",
+      "category": "dumate",
+      "bytes": 3844,
+      "sha256": "846f2f29843d0eb441b09f1fa5f84feba99016e1ddb1df54b862aadf6667cbe8",
+      "gitPath": "docs/acceptance/flow-dumate-core/native-p1-download-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/native-p2-postplatform-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/native-p2-postplatform-summary.json",
+      "category": "dumate",
+      "bytes": 9703,
+      "sha256": "26d42f146fc62d5c49955ecbf23275fddbe7413f169cec7d6009559d30d112a2",
+      "gitPath": "docs/acceptance/flow-dumate-core/native-p2-postplatform-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/native-p2-provenance-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/native-p2-provenance-summary.json",
+      "category": "dumate",
+      "bytes": 1407,
+      "sha256": "baf0c713ed4a9efd55aa59297fcd3e8f98a7be05af7527316f176a59c1eaa551",
+      "gitPath": "docs/acceptance/flow-dumate-core/native-p2-provenance-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/native-workflow-screenshot-index.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/native-workflow-screenshot-index.json",
+      "category": "dumate",
+      "bytes": 2346,
+      "sha256": "18ccfe5e50e81c7be54980a9e2ea0e8085fa5824d0d4e07a602969c199279b7b",
+      "gitPath": "docs/acceptance/flow-dumate-core/native-workflow-screenshot-index.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/native-workflow-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/native-workflow-summary.json",
+      "category": "dumate",
+      "bytes": 4198,
+      "sha256": "4dc097b51a9d68518fc0ec9f5a5aa2c6e126be1b0f9db973e75090addc4b1f32",
+      "gitPath": "docs/acceptance/flow-dumate-core/native-workflow-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/package-1.0.1-candidate.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/package-1.0.1-candidate.json",
+      "category": "dumate",
+      "bytes": 2345,
+      "sha256": "39988c69c7f170d822a3d255af889e12796dce382fe64ef62502617daf025ae5",
+      "gitPath": "docs/acceptance/flow-dumate-core/package-1.0.1-candidate.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/package-1.0.1-validation.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/package-1.0.1-validation.json",
+      "category": "dumate",
+      "bytes": 3228,
+      "sha256": "7a45abfca4cc430b4ee4a29266b41c257b4107a848f42a465bcc4849f13cf863",
+      "gitPath": "docs/acceptance/flow-dumate-core/package-1.0.1-validation.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/package-manifest.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/package-manifest.json",
+      "category": "dumate",
+      "bytes": 1871,
+      "sha256": "85345a8fea1b3e036bae2612f7d266f8b1ea6c3b5f83d5a6df1f750793fd98af",
+      "gitPath": "docs/acceptance/flow-dumate-core/package-manifest.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/platform-status.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/platform-status.json",
+      "category": "dumate",
+      "bytes": 3619,
+      "sha256": "ec38075f8d8080c2fd10e8525b791f8a3e9f55cfa6718dde9ba9665dc96d6b3f",
+      "gitPath": "docs/acceptance/flow-dumate-core/platform-status.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/probe-configured-python.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/probe-configured-python.json",
+      "category": "dumate",
+      "bytes": 333,
+      "sha256": "e6fc00882531d7335bd341645d2ebbb579524b79066b7e904ef91951f7119db9",
+      "gitPath": "docs/acceptance/flow-dumate-core/probe-configured-python.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-core/probe-default-python.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-core/probe-default-python.json",
+      "category": "dumate",
+      "bytes": 343,
+      "sha256": "315b72d70f43e4974fc8224174197830a072c0699c13b90ab640253c0f1a1f4b",
+      "gitPath": "docs/acceptance/flow-dumate-core/probe-default-python.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-full-alignment/PLAN.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-full-alignment/PLAN.md",
+      "category": "dumate",
+      "bytes": 3973,
+      "sha256": "fa26398f21bb693472974ec758bce1a03b337eed7c60f5c98b714bc98c9ae271",
+      "gitPath": "docs/acceptance/flow-dumate-full-alignment/PLAN.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-full-alignment/PROGRESS.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-full-alignment/PROGRESS.md",
+      "category": "dumate",
+      "bytes": 4275,
+      "sha256": "90bc14b106b93e14a256b5227767aa3db0934942dc87ce1e0c9fb50f7da9041c",
+      "gitPath": "docs/acceptance/flow-dumate-full-alignment/PROGRESS.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-full-alignment/RESULT.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-full-alignment/RESULT.md",
+      "category": "dumate",
+      "bytes": 2916,
+      "sha256": "5c73cf2d33fc189f23d5b4cbba4f69c22dfb2c57b9a5a576ccc45432f58ea1b8",
+      "gitPath": "docs/acceptance/flow-dumate-full-alignment/RESULT.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-full-alignment/evidence.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-full-alignment/evidence.json",
+      "category": "dumate",
+      "bytes": 10024,
+      "sha256": "3c8edc6cbb0df9749bc65d3b3cf5ccd25b543abdc5646a114b9837e8064a4a49",
+      "gitPath": "docs/acceptance/flow-dumate-full-alignment/evidence.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-full-alignment/package-manifest.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-full-alignment/package-manifest.json",
+      "category": "dumate",
+      "bytes": 8243,
+      "sha256": "98221179f9f7bc747544555d4509fe6c403c2a8613a2b122e1e4941a3de24ff6",
+      "gitPath": "docs/acceptance/flow-dumate-full-alignment/package-manifest.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-migration-plan/RESULT.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-migration-plan/RESULT.md",
+      "category": "dumate",
+      "bytes": 4393,
+      "sha256": "b9bc39f0eae26bc3e25fcdcf8ccea3eb80d98840a89c6ab775c0a56e97f57b24",
+      "gitPath": "docs/acceptance/flow-dumate-migration-plan/RESULT.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-paper-layout/PROGRESS.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-paper-layout/PROGRESS.md",
+      "category": "dumate",
+      "bytes": 2958,
+      "sha256": "abfaf33db2be257b50b65fa2a1396a06a67297d2691223332fb76d05df27d1f6",
+      "gitPath": "docs/acceptance/flow-dumate-paper-layout/PROGRESS.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-paper-layout/layout-summary.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-paper-layout/layout-summary.json",
+      "category": "dumate",
+      "bytes": 8171,
+      "sha256": "689b5853e90602a49f6b5f24952bd427f240873d0ab9b4be97ebd06538ed12ae",
+      "gitPath": "docs/acceptance/flow-dumate-paper-layout/layout-summary.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-pure-plan/RESULT.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-pure-plan/RESULT.md",
+      "category": "dumate",
+      "bytes": 3835,
+      "sha256": "058ee8202134cdb388d8b1f329492dece619fbe931b64214fa18237450180994",
+      "gitPath": "docs/acceptance/flow-dumate-pure-plan/RESULT.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-scatter/RESULT.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-scatter/RESULT.md",
+      "category": "dumate",
+      "bytes": 3546,
+      "sha256": "004718d932ad4229ed6c8c053d086c282fbc762eb986dcbfd2fbf03b943dd915",
+      "gitPath": "docs/acceptance/flow-dumate-scatter/RESULT.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-scatter/evidence.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-scatter/evidence.json",
+      "category": "dumate",
+      "bytes": 5481,
+      "sha256": "370ee6eb9c32929c63c933a2acf99d7be72fe56b75c9f1bc3c81ca6e32646b5e",
+      "gitPath": "docs/acceptance/flow-dumate-scatter/evidence.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-scatter/package-manifest.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-scatter/package-manifest.json",
+      "category": "dumate",
+      "bytes": 3452,
+      "sha256": "179fa93a3b48a77360dd0afba26c939cea12e1ca1e92358b657e5f504ae714f9",
+      "gitPath": "docs/acceptance/flow-dumate-scatter/package-manifest.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-scientific-review/RESULT.md",
+      "destination": "dumate/docs/acceptance/flow-dumate-scientific-review/RESULT.md",
+      "category": "dumate",
+      "bytes": 3566,
+      "sha256": "1d0039e08aeb168edc7b5758d4794ec14d60c4586702acdd6b29b17bb6490686",
+      "gitPath": "docs/acceptance/flow-dumate-scientific-review/RESULT.md"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-scientific-review/evidence.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-scientific-review/evidence.json",
+      "category": "dumate",
+      "bytes": 5520,
+      "sha256": "a8518f96cb1572ab2636e2fcea3ef99ac9c596724ac7804d3f8fea605f221c6e",
+      "gitPath": "docs/acceptance/flow-dumate-scientific-review/evidence.json"
+    },
+    {
+      "source": "pi-research/docs/acceptance/flow-dumate-scientific-review/package-manifest.json",
+      "destination": "dumate/docs/acceptance/flow-dumate-scientific-review/package-manifest.json",
+      "category": "dumate",
+      "bytes": 3198,
+      "sha256": "6a501d25bad51a9a330442c44d760258b40f713e47a3bd3be3f52c299a91834d",
+      "gitPath": "docs/acceptance/flow-dumate-scientific-review/package-manifest.json"
+    },
+    {
+      "source": "pi-research/output/pdf/yan-zhou-pi-application-1.0.1.pdf",
+      "destination": "archive/legacy-contests-20261021/dumate/yan-zhou-pi-application-1.0.1.pdf",
+      "category": "legacy-contest",
+      "bytes": 12325,
+      "sha256": "0ac5ac931be530e400effcbe7572f2dfeb9f5d2bd8023382231fec8af3660dac",
+      "gitPath": "output/pdf/yan-zhou-pi-application-1.0.1.pdf"
+    },
+    {
+      "source": "pi-research/output/pdf/yan-zhou-pi-application-draft-1.0.0.pdf",
+      "destination": "archive/legacy-contests-20261021/dumate/yan-zhou-pi-application-draft-1.0.0.pdf",
+      "category": "legacy-contest",
+      "bytes": 10796,
+      "sha256": "45b68514d17c64f7fd7e1b7efb112e61e2b9dd615aa80a00da9c147206694bde",
+      "gitPath": "output/pdf/yan-zhou-pi-application-draft-1.0.0.pdf"
+    },
+    {
+      "source": "pi-research/output/pdf/yan-zhou-pi-application-draft-1.0.1.pdf",
+      "destination": "archive/legacy-contests-20261021/dumate/yan-zhou-pi-application-draft-1.0.1.pdf",
+      "category": "legacy-contest",
+      "bytes": 11862,
+      "sha256": "13c4a171b0f23d54c84daddd24fa893b0fc79b6515f19a66e01982d284ceca84",
+      "gitPath": "output/pdf/yan-zhou-pi-application-draft-1.0.1.pdf"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/LICENSES/alphaXiv-MIT.txt",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/LICENSES/alphaXiv-MIT.txt",
+      "category": "dumate",
+      "bytes": 1065,
+      "sha256": "c84f7f49136436f347d86e71adb0a6bc132f0b5a3817d84bf572edee71bf33e7",
+      "gitPath": "skills/dumate/yan-zhou-pi/LICENSES/alphaXiv-MIT.txt"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/PROVENANCE.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/PROVENANCE.md",
+      "category": "dumate",
+      "bytes": 4235,
+      "sha256": "5ae78ff85dfc31286f9fe106432810c7b44a8d75c9a2ed3d210b51e180e0d7eb",
+      "gitPath": "skills/dumate/yan-zhou-pi/PROVENANCE.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/README.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/README.md",
+      "category": "dumate",
+      "bytes": 14710,
+      "sha256": "15cced9462ed0579db20f47aae42d41eeef67d05149dae4193103003e11f8c61",
+      "gitPath": "skills/dumate/yan-zhou-pi/README.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/SKILL.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/SKILL.md",
+      "category": "dumate",
+      "bytes": 4429,
+      "sha256": "e309b4edbfa8b4b1a8e40d66b6b2946bd602efcfc2c7b50815a73d077bf843cf",
+      "gitPath": "skills/dumate/yan-zhou-pi/SKILL.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/assets/figstyle.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/assets/figstyle.py",
+      "category": "dumate",
+      "bytes": 23200,
+      "sha256": "99c172e94c9c71863304924c34fa03926abf132eec2386b9363b52f589a89d1a",
+      "gitPath": "skills/dumate/yan-zhou-pi/assets/figstyle.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/analysis.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/analysis.md",
+      "category": "dumate",
+      "bytes": 896,
+      "sha256": "dff7e7d99fc7e85ba6990838072ed94f200e2d07e70caa2bfdcbf9d20dd82d81",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/analysis.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/chart-suite.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/chart-suite.md",
+      "category": "dumate",
+      "bytes": 5033,
+      "sha256": "4f5f321ada10e9ef20ef15d120252454a4beeab76b35fe5d90b8252b43273858",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/chart-suite.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/charts/comparison.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/charts/comparison.md",
+      "category": "dumate",
+      "bytes": 1556,
+      "sha256": "0040aac19c73d82921703fdced9724475645fe7773c9daffdc96d12bf6dad275",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/charts/comparison.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/charts/curves.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/charts/curves.md",
+      "category": "dumate",
+      "bytes": 1539,
+      "sha256": "097e8a3e0296c4e565a112075990cc1fe6ea3cf7ddfce21aa3a0c0cb022d195e",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/charts/curves.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/charts/diagram.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/charts/diagram.md",
+      "category": "dumate",
+      "bytes": 1954,
+      "sha256": "92a3165ab4a1686f8bf65de0c7f48510b954c5163f3dee4e810e753356453685",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/charts/diagram.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/charts/matrix.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/charts/matrix.md",
+      "category": "dumate",
+      "bytes": 1668,
+      "sha256": "1899841eb74ac301d69d919fb245101389dd9f9ea8de03f418d569a37b1196c3",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/charts/matrix.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/charts/pareto.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/charts/pareto.md",
+      "category": "dumate",
+      "bytes": 1121,
+      "sha256": "73e61d2f49b0eb7a24a74760fc0d3c8db5ad08b2f27610fb6794614ea0cd3fc8",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/charts/pareto.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/charts/scaling.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/charts/scaling.md",
+      "category": "dumate",
+      "bytes": 1625,
+      "sha256": "bd5b6ecafd63e86d08cd20a895f3f4b7fc72dee863899c6afe63e8a9754c0eb0",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/charts/scaling.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/complex-manuscript.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/complex-manuscript.md",
+      "category": "dumate",
+      "bytes": 7476,
+      "sha256": "3f73a4649358be740666ada6b1862c58422667f27f7b861b5aecf2a30361979c",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/complex-manuscript.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/current-review.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/current-review.md",
+      "category": "dumate",
+      "bytes": 2760,
+      "sha256": "6a46d1b2a07cfe0f3cea75b11ea5ad00f677a885df1c07b869a13834e77a952b",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/current-review.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/evidence.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/evidence.md",
+      "category": "dumate",
+      "bytes": 907,
+      "sha256": "514749e031ff99b4f457b6024e351713cc544c732782ac8b251ae98fd3808dbd",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/evidence.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/figures.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/figures.md",
+      "category": "dumate",
+      "bytes": 1106,
+      "sha256": "5c3209e4ff5a89e98b6bd3e1f7d00c1275295a37a66ffe4b581ea1585ebec7c4",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/figures.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/literature.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/literature.md",
+      "category": "dumate",
+      "bytes": 986,
+      "sha256": "5b3df1312268e3ae89da8ca1f03c84284e5d3873abf150b860a83c559a3f30ec",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/literature.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/manuscript.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/manuscript.md",
+      "category": "dumate",
+      "bytes": 4670,
+      "sha256": "16f6c8a2aff4af29a13515e328bfb5e63aaadf1fda5657730e06b03ff5f8e01a",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/manuscript.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/pdf-pages.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/pdf-pages.md",
+      "category": "dumate",
+      "bytes": 2260,
+      "sha256": "16c633b2c4132fd82eac42a800d71f021a86102d5d2df8fb68b616c255c6bf06",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/pdf-pages.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/planning.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/planning.md",
+      "category": "dumate",
+      "bytes": 2777,
+      "sha256": "434bdf21fe4ece2a6c1b579942a73b108a5a7f912aff61c5008b628a58cdc387",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/planning.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/recovery.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/recovery.md",
+      "category": "dumate",
+      "bytes": 2066,
+      "sha256": "17ab0c2d01fb3d3988e3f682a834c262c2bcc89e877d2173ee0176dbaa4d8a13",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/recovery.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/revision-workflow.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/revision-workflow.md",
+      "category": "dumate",
+      "bytes": 3494,
+      "sha256": "76d621a06d1161e5ba17a840035792a8cdd50d65959ef742410a9f760a8a5a0c",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/revision-workflow.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/scatter.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/scatter.md",
+      "category": "dumate",
+      "bytes": 2622,
+      "sha256": "3869e678a627c95120ab543f51e3d9291c801dc928f0e69a5b143c76422a28ac",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/scatter.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/scientific-review.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/scientific-review.md",
+      "category": "dumate",
+      "bytes": 7499,
+      "sha256": "0a4dfb78da89bb773ed3880d44900247f9e83172baa409f98609415cffce8af5",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/scientific-review.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/source-search.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/source-search.md",
+      "category": "dumate",
+      "bytes": 4311,
+      "sha256": "d40216f47142da123f88eec37f625ab305096da5f2a5ff33311a11a0df6040e9",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/source-search.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/statistics.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/statistics.md",
+      "category": "dumate",
+      "bytes": 4002,
+      "sha256": "8d2c9e9389a926e7d6001bf02843de012b837c57be65b3a856c7a97ff90ee19a",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/statistics.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/references/templates.md",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/references/templates.md",
+      "category": "dumate",
+      "bytes": 3391,
+      "sha256": "9aef5a0cd2a1d406275019e407c641ae871c1f39156f8e06583385d637dcd957",
+      "gitPath": "skills/dumate/yan-zhou-pi/references/templates.md"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/alignment_common.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/alignment_common.py",
+      "category": "dumate",
+      "bytes": 6091,
+      "sha256": "f0812ac801146eda0a38987d8b599a98f66431121663f6bd0c8513d048ca4bf5",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/alignment_common.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/chart_methods.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/chart_methods.py",
+      "category": "dumate",
+      "bytes": 28864,
+      "sha256": "12df34c506cd71a477c2fe736e038241f87b30e275fa246030d7ed8a5cb2905f",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/chart_methods.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/chart_suite.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/chart_suite.py",
+      "category": "dumate",
+      "bytes": 25616,
+      "sha256": "59680e2376597d4db2eef37ac782990c7f29169f38e747063b243466fcd7edc3",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/chart_suite.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/check_revision.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/check_revision.py",
+      "category": "dumate",
+      "bytes": 7038,
+      "sha256": "a3c87e8008b9748abe98feca95d6bdd56936f14b1bfdc9871755ae00522160af",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/check_revision.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/document_ast.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/document_ast.py",
+      "category": "dumate",
+      "bytes": 45363,
+      "sha256": "981acc2c80690cf5c1142a4087406825c8d8b9a248b34e4ae4ca8081526d70ed",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/document_ast.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/document_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/document_workflow.py",
+      "category": "dumate",
+      "bytes": 35546,
+      "sha256": "1bd6639a96976e1b4c743a9fdfcdab81644fa4056590ace93a2811c96e3f30c5",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/document_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/format_paper.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/format_paper.py",
+      "category": "dumate",
+      "bytes": 17846,
+      "sha256": "d3ff99ea22e205ebb3fa5217482b42b6e759b1ccf76bb43dc791245317ed9dbf",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/format_paper.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/literature_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/literature_workflow.py",
+      "category": "dumate",
+      "bytes": 35802,
+      "sha256": "e80471424b61a5dc0316c9bbbb069b20704b51ff955de9aad7273d2f82fe2835",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/literature_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/pdf_pages.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/pdf_pages.py",
+      "category": "dumate",
+      "bytes": 7450,
+      "sha256": "5826076caee9a8f963d6225043c709b043c9e33999331d7f3c90ae09556aef97",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/pdf_pages.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/plan_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/plan_workflow.py",
+      "category": "dumate",
+      "bytes": 9584,
+      "sha256": "34d9cb6c443deaec05df132f2ee696970b10f07c14a01a1ac2a9c20c91a75a02",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/plan_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/plot_fonts.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/plot_fonts.py",
+      "category": "dumate",
+      "bytes": 3591,
+      "sha256": "215a73b5e60b2b1321d5ac32ef20fcdd16e6fbe8792fdcc2fe9f3519af6a4db5",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/plot_fonts.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/plot_scatter.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/plot_scatter.py",
+      "category": "dumate",
+      "bytes": 8676,
+      "sha256": "015fae1e14ebbc74cbe34c3a16579453b95df02f0bf90541168df7f344b09d92",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/plot_scatter.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/research.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/research.py",
+      "category": "dumate",
+      "bytes": 39731,
+      "sha256": "d21aa9bdcc9a19e5f424a9d2b83a9c9b76f362d536bf0a2a1d4b874e798e5b67",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/research.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/review_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/review_workflow.py",
+      "category": "dumate",
+      "bytes": 11734,
+      "sha256": "55a14f3aea5e3b750a96131da22d9264054cd3b78069174eb1d1586b7e9ee9b6",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/review_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/revise_paper.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/revise_paper.py",
+      "category": "dumate",
+      "bytes": 10987,
+      "sha256": "2345e656e3734747379e33879094290bf07ab3c2948b179665a38ece7562a34a",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/revise_paper.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/statistics_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/statistics_workflow.py",
+      "category": "dumate",
+      "bytes": 19056,
+      "sha256": "812cdc9cdd2e8ba04478967da2ed0a587de890f248cf20c1122bcad101ccd31f",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/statistics_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/template_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/template_workflow.py",
+      "category": "dumate",
+      "bytes": 30404,
+      "sha256": "0f41560de9d3cafc7701b7bb5c65e3a8717512a0c2a5afdfa403b86325beb22d",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/template_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/scripts/workflow_status.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/scripts/workflow_status.py",
+      "category": "dumate",
+      "bytes": 3664,
+      "sha256": "e822cbeaa35589dab52e18e2b211186d2b1557dc7f9261d7ecf7135c54375553",
+      "gitPath": "skills/dumate/yan-zhou-pi/scripts/workflow_status.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_alignment_io.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_alignment_io.py",
+      "category": "dumate",
+      "bytes": 13952,
+      "sha256": "e440076061b530783f9d363ef5424111c0eb8c489f563a606e744f0b829c0391",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_alignment_io.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_chart_suite.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_chart_suite.py",
+      "category": "dumate",
+      "bytes": 17850,
+      "sha256": "fb768ee1cee63e32424242596a18f44807f37a32e401b3f07dc512e7af4d3a04",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_chart_suite.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_check_revision.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_check_revision.py",
+      "category": "dumate",
+      "bytes": 11075,
+      "sha256": "bda799ccd99a9e8291997582b39285b2a16555278316c84c042a660093169bff",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_check_revision.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_document_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_document_workflow.py",
+      "category": "dumate",
+      "bytes": 14281,
+      "sha256": "2ec6b4f9ac59481721ef0e047d08bc4bd195244515b280f1b67b12276dd1fc24",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_document_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_format_paper.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_format_paper.py",
+      "category": "dumate",
+      "bytes": 12327,
+      "sha256": "c459c3c33e1d0a91821d737a2da52f8770e035cd4a9dbf2fcb706970077157f1",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_format_paper.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_plan_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_plan_workflow.py",
+      "category": "dumate",
+      "bytes": 4950,
+      "sha256": "e019b4c8d3041fc50540df9ff1d8c8cff7de4bc9e97353d0ce5493799106c836",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_plan_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_plot_scatter.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_plot_scatter.py",
+      "category": "dumate",
+      "bytes": 21273,
+      "sha256": "7e019ce8fa26e193b5ca4fb0fc57b34b14651a87094bcd6a00696367860a8890",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_plot_scatter.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_research.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_research.py",
+      "category": "dumate",
+      "bytes": 18982,
+      "sha256": "3a438d200e45c1185439d2b19998ba2d6621f249ba5fd7a1dbb08fedd9d19554",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_research.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_review_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_review_workflow.py",
+      "category": "dumate",
+      "bytes": 7873,
+      "sha256": "dcaaec23a028462125929d983d3d3cc6a68ca6c89e3417a2d2f10c3daa4e876b",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_review_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_revise_paper.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_revise_paper.py",
+      "category": "dumate",
+      "bytes": 7518,
+      "sha256": "a3265bd6339cc51c137b93da701d20b5fce53e1800516c02472863ed0acf020d",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_revise_paper.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_statistics_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_statistics_workflow.py",
+      "category": "dumate",
+      "bytes": 8287,
+      "sha256": "0e09acc662073182358dfdcb4ff0168ca52a86d415dd04d7d3b7158af9c79c91",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_statistics_workflow.py"
+    },
+    {
+      "source": "pi-research/skills/dumate/yan-zhou-pi/tests/test_template_workflow.py",
+      "destination": "dumate/skills/dumate/yan-zhou-pi/tests/test_template_workflow.py",
+      "category": "dumate",
+      "bytes": 9184,
+      "sha256": "05b18e946bbb291eda3c16aa5a81ae1f5bb554954aa38c9b9801fb1af835136c",
+      "gitPath": "skills/dumate/yan-zhou-pi/tests/test_template_workflow.py"
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.0.1-scientific-review.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.0.1-scientific-review.zip",
+      "category": "dumate-release",
+      "bytes": 40174,
+      "sha256": "72856cd382bcae6b617a5780c3cf05af9e054d26a7bd77ad425a588a21de2b46",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.0.2-scientific-review.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.0.2-scientific-review.zip",
+      "category": "dumate-release",
+      "bytes": 48288,
+      "sha256": "d99b436b96500226e6345cd82df96994f4ffbd1cb11063415f9c86a08aed662e",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.0.3-scatter-final.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.0.3-scatter-final.zip",
+      "category": "dumate-release",
+      "bytes": 53497,
+      "sha256": "a5bdf5f2f0769392b81f0b5eb8eda0d7fc153b2f8e4a3c109e8c5a82118f4401",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.0.3-scatter.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.0.3-scatter.zip",
+      "category": "dumate-release",
+      "bytes": 53361,
+      "sha256": "ccac6e1cfa40dd9cf705ca5be9ec481a9592823ba3f4ca9b43ae8d53e978c9ed",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.0-full-alignment-candidate-2.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.0-full-alignment-candidate-2.zip",
+      "category": "dumate-release",
+      "bytes": 164812,
+      "sha256": "5a991c0176369ca6a17985b4d2771ee4a61f67f9a9a6fa270ae3741774d71ac2",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.0-full-alignment-candidate-3.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.0-full-alignment-candidate-3.zip",
+      "category": "dumate-release",
+      "bytes": 165031,
+      "sha256": "c921ab5864a3b5bb68f7bc3a72dc00e6717869ef7bc3a232149491dc07169fdc",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.0-full-alignment-candidate-4.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.0-full-alignment-candidate-4.zip",
+      "category": "dumate-release",
+      "bytes": 165075,
+      "sha256": "455d02c6085c0cc573b54e1d905fe35fd93423bd08fe0325983d74f7cfd7fdc2",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.0-full-alignment-candidate-5.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.0-full-alignment-candidate-5.zip",
+      "category": "dumate-release",
+      "bytes": 165281,
+      "sha256": "671ea516d0fd55866a22a8c9b17781e56e2b147ab7988bd347951459c558c16f",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.0-full-alignment-candidate.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.0-full-alignment-candidate.zip",
+      "category": "dumate-release",
+      "bytes": 157074,
+      "sha256": "fe4917d28e4744d352f8c5840ba65463e62a9613307b9cd83b2f09059cf1d4fd",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.0-full-alignment-final.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.0-full-alignment-final.zip",
+      "category": "dumate-release",
+      "bytes": 165281,
+      "sha256": "671ea516d0fd55866a22a8c9b17781e56e2b147ab7988bd347951459c558c16f",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.1-review-compatibility-candidate.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.1-review-compatibility-candidate.zip",
+      "category": "dumate-release",
+      "bytes": 167292,
+      "sha256": "4859020fa850ca9e9c73c46ffb6b73d2ff5ff7f18b05835abfb279045dd9706e",
+      "gitPath": null
+    },
+    {
+      "source": "output/dumate/yan-zhou-pi-1.1.1-review-compatibility-final.zip",
+      "destination": "dumate/releases/yan-zhou-pi-1.1.1-review-compatibility-final.zip",
+      "category": "dumate-release",
+      "bytes": 167292,
+      "sha256": "4859020fa850ca9e9c73c46ffb6b73d2ff5ff7f18b05835abfb279045dd9706e",
+      "gitPath": null
+    },
+    {
+      "source": "output/pdf/研舟π-PiResearch-秒哒赛道应用方案.pdf",
+      "destination": "archive/legacy-contests-20261021/previous-submissions/研舟π-PiResearch-秒哒赛道应用方案.pdf",
+      "category": "legacy-contest",
+      "bytes": 1181662,
+      "sha256": "cca68e67494db06b43d1ed21f5e39474053130ac633be2c9bd5ff9b9fd7c80f7",
+      "gitPath": null
+    },
+    {
+      "source": "output/pdf/研舟π-秒哒赛道应用方案.pdf",
+      "destination": "archive/legacy-contests-20261021/previous-submissions/研舟π-秒哒赛道应用方案.pdf",
+      "category": "legacy-contest",
+      "bytes": 1115355,
+      "sha256": "6cc7ac82a2706d060824b4dfc8322272b82cf9cd09f52a80ceec08f116ea7026",
+      "gitPath": null
+    },
+    {
+      "source": "output/pdf/研舟π科研证据工作台-含Chrome真实截图.pdf",
+      "destination": "archive/legacy-contests-20261021/previous-submissions/研舟π科研证据工作台-含Chrome真实截图.pdf",
+      "category": "legacy-contest",
+      "bytes": 896677,
+      "sha256": "371770e6b7c9775b1b7b536116b5d4b3ba42dcc074ef2cbd4735f3044332ddfa",
+      "gitPath": null
+    },
+    {
+      "source": "output/pdf/研舟π科研证据工作台-秒哒参赛应用方案.pdf",
+      "destination": "archive/legacy-contests-20261021/previous-submissions/研舟π科研证据工作台-秒哒参赛应用方案.pdf",
+      "category": "legacy-contest",
+      "bytes": 496310,
+      "sha256": "313c141845dc0231af3ef9e908146f07da4866ab738903e9f2c311095df3786b",
+      "gitPath": null
+    },
+    {
+      "source": "output/应用证明-2026-10-14/研舟π应用证明—武汉嘉兰川科技有限公司（待核签）.docx",
+      "destination": "archive/legacy-contests-20261021/application-proofs/应用证明-2026-10-14/研舟π应用证明—武汉嘉兰川科技有限公司（待核签）.docx",
+      "category": "legacy-contest",
+      "bytes": 12998,
+      "sha256": "efaefe5d5963e8cf67410c7957e922878ffd4e662b8b77c07dbcea56b0ff4afb",
+      "gitPath": null
+    },
+    {
+      "source": "output/应用证明-2026-10-14/研舟π应用证明—武汉磐电科技股份有限公司（待核签）.docx",
+      "destination": "archive/legacy-contests-20261021/application-proofs/应用证明-2026-10-14/研舟π应用证明—武汉磐电科技股份有限公司（待核签）.docx",
+      "category": "legacy-contest",
+      "bytes": 13353,
+      "sha256": "ed1f2dbfee95237c579903f1f99dc621ec621b94d73f72492ba459c161912929",
+      "gitPath": null
+    },
+    {
+      "source": "output/应用证明-2026-10-14/研舟π应用证明（待核签）.docx",
+      "destination": "archive/legacy-contests-20261021/application-proofs/应用证明-2026-10-14/研舟π应用证明（待核签）.docx",
+      "category": "legacy-contest",
+      "bytes": 21160,
+      "sha256": "b1078eefa07ed737a0122ba9d9f77b57f98398ddce0ff66e7b323fec76085448",
+      "gitPath": null
+    },
+    {
+      "source": "output/研舟π-Chrome当次实拍原图.zip",
+      "destination": "archive/legacy-contests-20261021/submission-assets/研舟π-Chrome当次实拍原图.zip",
+      "category": "legacy-contest",
+      "bytes": 1029454,
+      "sha256": "d5e9b434ec64796fddb7478e2b9110f6516d9912be2bf9a8723940f484c57bb0",
+      "gitPath": null
+    },
+    {
+      "source": "output/研舟π-Chrome真实截图原件.zip",
+      "destination": "archive/legacy-contests-20261021/submission-assets/研舟π-Chrome真实截图原件.zip",
+      "category": "legacy-contest",
+      "bytes": 267653,
+      "sha256": "5f411562070f0f149e7a858462eb7ab26a6ba71245a7445001f219b39fae61ed",
+      "gitPath": null
+    },
+    {
+      "source": "output/研舟π-PiResearch-方案配图.zip",
+      "destination": "archive/legacy-contests-20261021/submission-assets/研舟π-PiResearch-方案配图.zip",
+      "category": "legacy-contest",
+      "bytes": 469197,
+      "sha256": "7c0ac333a53429f38be83ded87811e775f11cc52af7cba7c670b1734b2bf66c7",
+      "gitPath": null
+    }
+  ],
+  "retainedEvidenceRoots": [
+    "tmp",
+    ".worktrees",
+    "pi-research/.validation"
+  ],
+  "historicalPaths": "Historical documents are byte-preserved. Resolve original paths using this map; raw logs, databases, native conversations, working copies and ignored caches stay in place."
+}
