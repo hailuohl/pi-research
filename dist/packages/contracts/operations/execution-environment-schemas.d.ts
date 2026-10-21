@@ -23,6 +23,9 @@ export declare const GPU_SCHEMA: {
 export declare const LOCAL_RUNTIME_SCHEMA: {
     readonly type: "object";
     readonly properties: {
+        readonly protocolVersion: {
+            readonly const: 2;
+        };
         readonly id: {
             readonly pattern?: string | undefined;
             readonly type: "string";
@@ -803,6 +806,9 @@ export declare const EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS: {
     readonly local_runtime_configure: {
         readonly type: "object";
         readonly properties: {
+            readonly protocolVersion: {
+                readonly const: 2;
+            };
             readonly id: {
                 readonly pattern?: string | undefined;
                 readonly type: "string";
@@ -894,6 +900,9 @@ export declare const EXECUTION_ENVIRONMENT_OUTPUT_SCHEMAS: {
                         readonly items: {
                             readonly type: "object";
                             readonly properties: {
+                                readonly protocolVersion: {
+                                    readonly const: 2;
+                                };
                                 readonly id: {
                                     readonly pattern?: string | undefined;
                                     readonly type: "string";

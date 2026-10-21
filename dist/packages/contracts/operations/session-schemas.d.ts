@@ -646,7 +646,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("artifactId" | "documentVersionId" | "title" | "digest" | "size" | "mediaType")[];
+                                readonly required: ("artifactId" | "documentVersionId" | "size" | "digest" | "title" | "mediaType")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -869,7 +869,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("artifactId" | "documentVersionId" | "title" | "digest" | "size" | "mediaType")[];
+                                readonly required: ("artifactId" | "documentVersionId" | "size" | "digest" | "title" | "mediaType")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1171,7 +1171,7 @@ export declare const SESSION_HISTORY_OUTPUT_SCHEMAS: {
                 readonly maximum: number;
             };
         };
-        readonly required: readonly [...("artifactId" | "documentVersionId" | "title" | "digest" | "size" | "mediaType")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
+        readonly required: readonly [...("artifactId" | "documentVersionId" | "size" | "digest" | "title" | "mediaType")[], "messageId", "content", "cursor", "end", "total", "complete", "status", "cursorUnit"];
         readonly additionalProperties: false;
     };
 };

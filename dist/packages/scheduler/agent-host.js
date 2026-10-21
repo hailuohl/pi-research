@@ -1,3 +1,4 @@
+import { assertResearchReference } from '../policy/research-automation.js';
 import { digest } from '../storage/store.js';
 import { publicationImageCatalog, imageReference, documentImageReference, CONTEXT_IMAGE_BYTES, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL } from '../pi-adapter/publication-image.js';
 import { modelConnectionSnapshot, assertModelEnabled } from '../pi-adapter/model-connections.js';
@@ -98,7 +99,7 @@ export class AgentHost {
                             continue;
                         }
                     }
-                    this.app.store.transaction(() => { this.admission.heartbeat(active.admissionId, this.ownerHost, active.generation); const latest = this.app.store.get('session', s.id); ensure(latest.generation === active.generation, 'LEASE_EXPIRED', '会话已失效'); this.app.store.update('session', latest.id, latest.version, { leaseUntil: Date.now() + 30000 }); if (a)
+                    this.app.store.transaction(() => { ensure(this.valid(active), 'LEASE_EXPIRED', '会话或持续任务owner已失效'); this.admission.heartbeat(active.admissionId, this.ownerHost, active.generation); const latest = this.app.store.get('session', s.id); ensure(latest.generation === active.generation, 'LEASE_EXPIRED', '会话已失效'); this.app.store.update('session', latest.id, latest.version, { leaseUntil: Date.now() + 30000 }); if (a)
                         this.app.teams.heartbeat(a.id); });
                     active.lastHeartbeat = Date.now();
                 }
@@ -233,7 +234,12 @@ export class AgentHost {
                     return null;
             }
             const continuationId = input?.wakeupId ? this.app.wakeups.get(SYSTEM, input.wakeupId).continuationId : undefined;
-            const permission = this.app.sessionPermissions.capture(latest.id, !!input?.wakeupId && !continuationId);
+            const continuation = continuationId ? store.get('research-continuation', continuationId, latest.projectId) : undefined;
+            if (continuation) {
+                ensure(this.app.researchAutomation.isOwner(), 'AUTOMATION_RUNTIME_EXPIRED', '当前进程已失去持续任务owner');
+                assertResearchReference(store, latest.projectId, { continuationId: continuation.id, digest: continuation.digest }, true);
+            }
+            const permission = continuation?.permission ?? this.app.sessionPermissions.capture(latest.id, !!input?.wakeupId);
             if (input && !input.permission)
                 ensure(permission.epoch === 0 && permission.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧排队输入没有当前权限依据，请用户明确重试');
             if (input?.permission)
@@ -307,6 +313,8 @@ export class AgentHost {
             // Explicit local variables only; never inherit host credentials or interpreter options.
             const child = store.transaction(() => {
                 // Serialize the final revocation check with process creation across controllers.
+                if (continuationId)
+                    ensure(this.app.researchAutomation.isOwner(), 'AUTOMATION_RUNTIME_EXPIRED', '当前进程已失去持续任务owner');
                 this.app.skills.ensureBundleStartAllowed(claimed.projectId, bundleId);
                 const marked = this.admission.markSpawnRequested(slot.id, this.ownerHost, claimed.generation);
                 store.update('agent-admission', marked.id, marked.version, { httpManagedVersion: 1 });
@@ -388,6 +396,8 @@ export class AgentHost {
         }
     }
     valid(a) {
+        if (a.actor.continuationId && !this.app.researchAutomation.isOwner())
+            return false;
         if (a.admissionId) {
             try {
                 this.admission.assertOwned(a.admissionId, this.ownerHost, a.generation);

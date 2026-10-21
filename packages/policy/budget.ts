@@ -2,7 +2,7 @@ import { Store } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 interface Budget {
     ownerId: string;
-    limit: number;
+    limit: number | null;
     unit: 'agent-attempt';
 }
 interface Reservation {
@@ -15,8 +15,9 @@ interface Reservation {
 /** Scheduling credits are a hard attempt limit, not a provider billing guarantee. */
 export class BudgetService {
     constructor(private store: Store) { }
-    configure(projectId: string, ownerId: string, limit: number) { ensure(Number.isSafeInteger(limit) && limit >= 0, 'INVALID_INPUT', '无效额度', 400); return this.store.create<Budget>('budget', projectId, { ownerId, limit, unit: 'agent-attempt' }, ownerId); }
-    summary(ownerId: string) { const budget = this.store.get<Budget>('budget', ownerId); const rs = this.store.list<Reservation>('reservation', budget.projectId!).filter(x => x.ownerId === ownerId); const used = rs.reduce((s, r) => s + (r.state === 'settled' ? r.used : 0), 0); const reserved = rs.reduce((s, r) => s + (r.state === 'reserved' ? r.amount : 0), 0); const unknown = rs.reduce((s, r) => s + (r.state === 'unknown' ? r.amount : 0), 0); return { limit: budget.limit, used, reserved, unknown, available: budget.limit - used - reserved - unknown, unit: budget.unit }; }
+    configure(projectId: string, ownerId: string, limit: number | null) { ensure(limit===null||Number.isSafeInteger(limit) && limit >= 0, 'INVALID_INPUT', '无效额度', 400); return this.store.create<Budget>('budget', projectId, { ownerId, limit, unit: 'agent-attempt' }, ownerId); }
+    summary(ownerId: string) { const budget = this.store.get<Budget>('budget', ownerId); const rs = this.store.list<Reservation>('reservation', budget.projectId!).filter(x => x.ownerId === ownerId); const used = rs.reduce((s, r) => s + (r.state === 'settled' ? r.used : 0), 0); const reserved = rs.reduce((s, r) => s + (r.state === 'reserved' ? r.amount : 0), 0); const unknown = rs.reduce((s, r) => s + (r.state === 'unknown' ? r.amount : 0), 0); return { limit: budget.limit, used, reserved, unknown, available: budget.limit===null?null:budget.limit - used - reserved - unknown, unit: budget.unit }; }
+    canReserve(ownerId:string,amount:number){const available=this.summary(ownerId).available;return available===null||available>=amount;}
     reserve(projectId: string, ownerId: string, subjectId: string, amount: number) {
         return this.store.transaction(() => {
             this.store.get('budget', ownerId, projectId);
@@ -26,7 +27,7 @@ export class BudgetService {
                 ensure(old.amount === amount, 'IDEMPOTENCY_CONFLICT', '已存在不同额度的预留');
                 return old;
             }
-            ensure(this.summary(ownerId).available >= amount, 'BUDGET_EXCEEDED', '团队执行额度不足');
+            ensure(this.canReserve(ownerId,amount), 'BUDGET_EXCEEDED', '团队执行额度不足');
             return this.store.create<Reservation>('reservation', projectId, { ownerId, subjectId, amount, used: 0, state: 'reserved' });
         });
     }

@@ -12,6 +12,11 @@ const DEFAULTS = { maxRuns: 1, maxDevelopment: 1, maxJobs: 2, cpus: null, memory
 const dockerObservations = new WeakMap();
 const sourceKind = (kind) => kind === 'publication' ? 'publication-build-job' : kind === 'document' ? 'document-parse-job' : kind === 'development' ? 'sandbox-job' : 'run';
 const LEGACY_SSH_QUEUED_SQL = "q.backend='ssh' AND EXISTS(SELECT 1 FROM records legacy WHERE legacy.kind='run' AND legacy.id=q.id AND COALESCE(json_extract(legacy.data,'$.manifest.sshTarget.gpuProtocol'),0)<>1)";
+const PAUSED_START_SQL = `EXISTS(SELECT 1 FROM records job
+JOIN records auth ON auth.kind='research-authorization' AND auth.project_id=job.project_id AND auth.id=CASE q.kind WHEN 'run' THEN json_extract(job.data,'$.intentId') WHEN 'development' THEN json_extract(job.data,'$.developmentTaskId') END
+JOIN records task ON task.kind='research-continuation' AND task.project_id=job.project_id AND task.id=json_extract(auth.data,'$.continuationId')
+WHERE job.id=q.id AND job.project_id=q.project_id AND job.kind=CASE q.kind WHEN 'run' THEN 'run' WHEN 'development' THEN 'sandbox-job' END
+AND json_extract(task.data,'$.state')='paused' AND COALESCE(json_extract(job.data,'$.execution.startRequested'),json_extract(job.data,'$.startRequested'),0)=0)`;
 // ponytail: CPU Docker and new GPU jobs do not overlap during upgrades; add per-job isolation proof only if concurrent CPU/GPU scheduling is needed.
 const GPU_BUSY_SQL = `q.kind='run' AND EXISTS(SELECT 1 FROM records candidate WHERE candidate.kind='run' AND candidate.id=q.id AND COALESCE(json_array_length(candidate.data,'$.manifest.contract.gpu.deviceIds'),0)>0 AND (
 EXISTS(SELECT 1 FROM json_each(candidate.data,'$.manifest.contract.gpu.deviceIds') d JOIN compute_gpu_claims g ON g.uuid=d.value WHERE g.kind<>q.kind OR g.id<>q.id)
@@ -74,7 +79,7 @@ export class ComputeQueue {
         return this.c.store.db.prepare(`WITH eligible AS (
 SELECT q.* FROM compute_queue q JOIN compute_limits h ON h.target_id='host' LEFT JOIN compute_limits t ON t.target_id=q.target_id
 WHERE q.phase='queued' AND q.bound=1 AND q.next_attempt_at<=? AND (q.backend IN ('trusted-example','local') OR EXISTS(SELECT 1 FROM compute_contexts c WHERE c.context=q.context_name AND c.status='ready' AND c.engine_id=q.engine_id AND c.endpoint=q.endpoint AND c.next_probe_at>?))
-AND NOT (${GPU_BUSY_SQL}) AND NOT (${LEGACY_SSH_QUEUED_SQL})
+AND NOT (${GPU_BUSY_SQL}) AND NOT (${LEGACY_SSH_QUEUED_SQL}) AND NOT (${PAUSED_START_SQL})
 AND ${acceptable('cpus', 'q.cpu_millis', 1000)} AND ${acceptable('memoryMb', 'q.memory_mb')}
 AND (${effective('maxJobs')})>=1 AND json_extract(h.data,'$.maxJobs')>=1
 AND (q.kind='run' AND (${effective('maxRuns')})>=1 AND json_extract(h.data,'$.maxRuns')>=1 OR q.kind='development' AND (${effective('maxDevelopment')})>=1 AND json_extract(h.data,'$.maxDevelopment')>=1 OR q.kind IN ('document','publication'))),
@@ -85,8 +90,8 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
     candidates(kind, limit = 8) {
         integer(limit, 'limit', 1, 256);
         this.bindCachedQueued();
-        const recovered = this.c.store.db.prepare("SELECT * FROM compute_queue WHERE kind=? AND held=1 AND backend IN ('docker','ssh') AND lease_until<=? AND next_attempt_at<=? ORDER BY sequence LIMIT ?").all(kind, Date.now(), Date.now(), limit);
-        const ids = recovered.filter(r => this.targetReady(r)).map(r => r.id), next = this.next();
+        const recovered = this.c.store.db.prepare(`SELECT q.* FROM compute_queue q WHERE kind=? AND held=1 AND backend IN ('docker','ssh','local') AND lease_until<=? AND next_attempt_at<=? AND NOT (${PAUSED_START_SQL}) ORDER BY sequence LIMIT ?`).all(kind, Date.now(), Date.now(), limit);
+        const ids = recovered.filter(r => (r.backend !== 'local' || !!this.c.store.get('run', r.id).execution?.localExecutionId) && this.targetReady(r)).map(r => r.id), next = this.next();
         if (ids.length < limit && next?.kind === kind)
             ids.push(next.id);
         return ids;
@@ -106,8 +111,10 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         return this.c.store.transaction(() => {
             this.bindCachedQueued();
             const q = this.row(kind, id);
+            if (this.c.store.db.prepare(`SELECT 1 FROM compute_queue q WHERE kind=? AND id=? AND (${PAUSED_START_SQL})`).get(kind, id))
+                return null;
             if (q.held) {
-                if (['trusted-example', 'local'].includes(q.backend) || q.lease_until > Date.now() || q.next_attempt_at > Date.now() || !this.targetReady(q))
+                if (q.backend === 'trusted-example' || q.backend === 'local' && !this.c.store.get('run', id).execution?.localExecutionId || q.lease_until > Date.now() || q.next_attempt_at > Date.now() || !this.targetReady(q))
                     return null;
                 if (q.kind === 'run' && !this.c.store.get('run', id).execution?.startRequested && this.gpuBusy(q))
                     return null;

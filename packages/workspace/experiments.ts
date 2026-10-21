@@ -33,6 +33,7 @@ export class ExperimentService {
     create(actor: Actor, projectId: string, input: unknown, selectedRootSessionId?: string) {
         scope(actor, projectId);
         const x = object(input);
+        ensure(!x.repair||actor.continuationId,'AUTOMATION_REPAIR_DENIED','技术修复候选需要当前持久任务身份');
         ensure(x.expectedParentRevision===undefined||!!x.parentId,'INVALID_INPUT','expectedParentRevision需要parentId');
         return this.c.store.transaction(() => {
             assertProjectWritable(this.c.store,projectId);
@@ -63,7 +64,7 @@ export class ExperimentService {
                 writeFileSync(dest, readFileSync(safePath(source, f.path)), { mode: 0o600 });
             }
             copySourceModes(source,workspace,listFiles(source));
-            if (x.config !== undefined) {
+            if (x.config !== undefined && !x.repair) {
                 object(x.config);
                 writeFileSync(join(workspace, 'config.json'), JSON.stringify(x.config, null, 2), { mode: 0o600 });
             }

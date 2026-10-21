@@ -42,7 +42,7 @@ export class LocalRuntimeService {
         this.c = c;
     }
     file() { return join(this.c.dataDir, 'local-runtimes.json'); }
-    protocol() { return digest(['local-windows-runner.ps1', 'local-posix-runner.mjs'].map(name => digest(readFileSync(join(this.c.repoRoot, 'scripts', name))))); }
+    protocol(version) { return digest((version === 2 ? ['local-windows-runner-v2.ps1', 'local-posix-runner-v2.mjs', 'local-windows-launcher-v2.mjs'] : ['local-windows-runner.ps1', 'local-posix-runner.mjs']).map(name => digest(readFileSync(join(this.c.repoRoot, 'scripts', name))))); }
     read() { return existsSync(this.file()) ? JSON.parse(readFileSync(this.file(), 'utf8')) : {}; }
     list() { return Object.values(this.read()).map(({ executable, ...publicRuntime }) => publicRuntime); }
     configure(actor, value) {
@@ -67,12 +67,17 @@ export class LocalRuntimeService {
             return runtime;
         });
     }
-    frozen(id) { const p = this.resolve(id); const { executable, ...runtime } = p; return runtime; }
+    frozen(id) { const p = this.resolve(id); const { executable, digest: oldDigest, ...runtime } = p, fields = { ...runtime, protocolVersion: 2, protocolDigest: this.protocol(2) }; return { ...fields, digest: digest(fields) }; }
     resolve(id, expected) {
         const runtime = this.read()[id];
         ensure(runtime, 'LOCAL_RUNTIME_UNAVAILABLE', '请先配置本机运行时', 409);
         const { executable, ...publicRuntime } = runtime;
         ensure(runtime.hostId === hostIdentity() && runtime.protocolDigest === this.protocol() && existsSync(executable) && digest(readFileSync(executable)) === runtime.executableDigest, 'LOCAL_RUNTIME_CHANGED', '本机、监管协议或运行时程序已变化，请重新准备运行', 409);
+        if (expected?.protocolVersion === 2) {
+            const { digest: oldDigest, ...fields } = publicRuntime, derived = { ...fields, protocolVersion: 2, protocolDigest: this.protocol(2) }, bound = { ...derived, digest: digest(derived) };
+            ensure(digest(bound) === digest(expected), 'LOCAL_RUNTIME_CHANGED', '运行时配置或v2协议与批准清单不同', 409);
+            return { ...bound, executable };
+        }
         if (expected)
             ensure(digest(publicRuntime) === digest(expected), 'LOCAL_RUNTIME_CHANGED', '运行时配置与批准清单不同', 409);
         return runtime;

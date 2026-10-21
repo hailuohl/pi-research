@@ -63,6 +63,10 @@ export function readRoute(app, host, path, url) {
     const [kind, id, action] = parts;
     if (kind === 'projects' && id && action === 'github' && parts.length === 3)
         return app.github.inspect(USER, id);
+    if (kind === 'sessions' && id && action === 'research-continuations')
+        return app.researchAutomation.list(USER, id);
+    if (kind === 'research-continuations' && id)
+        return app.researchAutomation.inspect(USER, id);
     if (kind === 'sessions' && id && action === 'host-access')
         return app.hostAccess.status(USER, id);
     if (kind === 'sessions' && id && action === 'permissions')
@@ -199,6 +203,10 @@ export function writeRoute(app, host, path, body, method = 'POST') {
         const parts = path.split('/').filter(Boolean);
         ensure(method === 'POST' && parts.length === 5 && parts[4] === 'decide', 'METHOD_NOT_ALLOWED', '审批只接受 decide POST', 405);
         return app.sessionPermissions.decide(USER, id, parts[3], x);
+    }
+    if (kind === 'research-continuations' && id) {
+        ensure(method === 'POST', 'METHOD_NOT_ALLOWED', '任务控制只接受 POST', 405);
+        return app.researchAutomation.control(USER, id, x);
     }
     if (kind === 'sessions' && id && action === 'host-access') {
         ensure(method === 'POST', 'METHOD_NOT_ALLOWED', '宿主权限设置只接受 POST', 405);

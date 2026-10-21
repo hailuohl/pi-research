@@ -233,6 +233,7 @@ const SPECS = [
                     }
                 }), cursor: nextCursor, hasMore: rows.length > limit };
         }) }),
+    make('research_task_checkpoint', { requiresSession: true, idempotencyPolicy: 'key-required', authorize: c => { c.app.researchAutomation.assertActor(c.actor); }, preconditions: noPrecondition, execute: (c, x) => c.app.researchAutomation.checkpoint(c.actor, x) }),
     make('host_execute', { requiresSession: true, asynchronous: true, idempotencyPolicy: 'key-required', authorize: (c) => { c.app.hostAccess.assertAgent(c.actor); }, preconditions: (c) => { c.app.hostAccess.assertAgent(c.actor); }, execute: (c, x) => c.app.hostAccess.execute(c.actor, x, c.idempotencyKey) }),
     make('research_brief_save', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => { c.app.researchBriefs.inspect(c.actor, c.projectId, c.session.id); }, preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, x) => c.app.researchBriefs.save(c.actor, c.projectId, c.session.id, x) }),
     make('research_method_compile', { idempotencyPolicy: 'read-only', requiresSession: true, authorize: c => { c.app.researchBriefs.inspect(c.actor, c.projectId, c.session.id); }, preconditions: noPrecondition, execute: (c, x) => c.app.methodContracts.compile(c.actor, c.projectId, c.session.id, x) }),

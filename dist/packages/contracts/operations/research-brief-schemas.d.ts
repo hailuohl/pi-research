@@ -42,7 +42,7 @@ export declare const RESEARCH_SOURCE_INPUT_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("artifactId" | "digest" | "workspace" | "path" | "size" | "readId")[];
+    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
@@ -75,7 +75,7 @@ export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("rootSessionId" | "id" | "revision" | "digest")[];
+    readonly required: ("rootSessionId" | "id" | "digest" | "revision")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
@@ -559,7 +559,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maximum: number;
                         };
                     };
-                    readonly required: ("sessionId" | "digest" | "workspace" | "path" | "size" | "writeVersion" | "readId")[];
+                    readonly required: ("sessionId" | "path" | "size" | "digest" | "workspace" | "writeVersion" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -611,7 +611,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "digest" | "workspace" | "path" | "size" | "readId")[];
+                    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -672,11 +672,11 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("digest" | "path" | "compilerVersion")[];
+                readonly required: ("path" | "digest" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "revision" | "digest" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "digest" | "revision" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -918,7 +918,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly maximum: number;
                                     };
                                 };
-                                readonly required: ("sessionId" | "digest" | "workspace" | "path" | "size" | "writeVersion" | "readId")[];
+                                readonly required: ("sessionId" | "path" | "size" | "digest" | "workspace" | "writeVersion" | "readId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -970,7 +970,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("artifactId" | "digest" | "workspace" | "path" | "size" | "readId")[];
+                                readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1031,11 +1031,11 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                     readonly maxLength: number;
                                 };
                             };
-                            readonly required: ("digest" | "path" | "compilerVersion")[];
+                            readonly required: ("path" | "digest" | "compilerVersion")[];
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "revision" | "digest" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+                    readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "digest" | "revision" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -1081,7 +1081,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "status" | "revision" | "digest")[];
+                    readonly required: ("id" | "status" | "digest" | "revision")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1361,7 +1361,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maximum: number;
                         };
                     };
-                    readonly required: ("sessionId" | "digest" | "workspace" | "path" | "size" | "writeVersion" | "readId")[];
+                    readonly required: ("sessionId" | "path" | "size" | "digest" | "workspace" | "writeVersion" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1413,7 +1413,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("artifactId" | "digest" | "workspace" | "path" | "size" | "readId")[];
+                    readonly required: ("artifactId" | "path" | "size" | "digest" | "workspace" | "readId")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1474,11 +1474,11 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("digest" | "path" | "compilerVersion")[];
+                readonly required: ("path" | "digest" | "compilerVersion")[];
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "revision" | "digest" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
+        readonly required: ("rootSessionId" | "kind" | "projectId" | "id" | "version" | "status" | "createdAt" | "updatedAt" | "scope" | "digest" | "revision" | "evidenceIds" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "literatureSummary")[];
         readonly additionalProperties: false;
     };
 };

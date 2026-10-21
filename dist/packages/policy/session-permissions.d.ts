@@ -82,6 +82,7 @@ export declare class SessionPermissionService {
         hostAccess: {
             researchAutomation: boolean;
             researchAutomationScope: number;
+            researchAutomationPolicy: import("./host-access.js").ResearchAutomationPolicy | undefined;
             sessionId: string;
             version: number;
             epoch: number;
@@ -142,6 +143,7 @@ export declare class SessionPermissionService {
         hostAccess: {
             researchAutomation: boolean;
             researchAutomationScope: number;
+            researchAutomationPolicy: import("./host-access.js").ResearchAutomationPolicy | undefined;
             sessionId: string;
             version: number;
             epoch: number;
@@ -238,6 +240,7 @@ export declare class SessionPermissionService {
         hostAccess: {
             researchAutomation: boolean;
             researchAutomationScope: number;
+            researchAutomationPolicy: import("./host-access.js").ResearchAutomationPolicy | undefined;
             sessionId: string;
             version: number;
             epoch: number;

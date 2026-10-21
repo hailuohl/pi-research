@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {Store,digest} from '../../dist/packages/storage/store.js';
+import {ComputeQueue} from '../../dist/packages/scheduler/compute-queue.js';
+const USER={type:'user'};
+for(const firstKind of ['run','development'])for(const nextKind of ['run','development'])test(`paused queued ${firstKind} does not block a later ${nextKind} on the same target`,async()=>{const dir=mkdtempSync(join(tmpdir(),'paused-queue-')),store=new Store(join(dir,'state.db')),queue=new ComputeQueue({store,dataDir:dir,repoRoot:process.cwd()},{probe:async()=>({targetId:'same-target',engineId:'fixture',endpoint:'unix:///fixture/docker.sock'})});try{
+ store.create('project','p',{name:'Paused queue fixture'},'p');await queue.probeContext(USER,'default');store.create('research-continuation','p',{state:'paused'},'chain');store.create('research-authorization','p',{continuationId:'chain',subjectKind:firstKind==='run'?'run-intent':'development-task',subjectId:'intent',jobId:'paused'},'intent');const manifest={contract:{runner:'docker',dockerContext:'default',cpus:1,memoryMb:128}},firstManifest=firstKind==='run'?manifest:{dockerContext:'default',resources:{cpus:1,memoryMb:128}},first=store.create(firstKind==='run'?'run':'sandbox-job','p',{...(firstKind==='run'?{intentId:'intent'}:{developmentTaskId:'intent'}),state:'queued',manifest:firstManifest,manifestDigest:digest(firstManifest),...(firstKind==='run'?{execution:{generation:0,leaseUntil:0,startRequested:false}}:{startRequested:false})},'paused');const nextManifest=nextKind==='run'?manifest:{dockerContext:'default',resources:{cpus:1,memoryMb:128}},next=store.create(nextKind==='run'?'run':'sandbox-job','p',{state:'queued',manifest:nextManifest,manifestDigest:digest(nextManifest)},'next');
+ assert.deepEqual(queue.candidates(nextKind),[next.id]);assert.equal(queue.withAdmission(firstKind,first.id,()=>assert.fail('paused job cannot be admitted')),null);const admitted=queue.withAdmission(nextKind,next.id,()=>store.update(next.kind,next.id,next.version,{state:'running'}));assert.equal(admitted.id,next.id);assert.equal(store.get(first.kind,first.id).state,'queued');assert.equal(store.db.prepare('SELECT held FROM compute_queue WHERE id=?').get(first.id).held,0);
+}finally{await queue.stop();store.close();rmSync(dir,{recursive:true,force:true});}});

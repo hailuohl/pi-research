@@ -34,7 +34,7 @@ class HostAccessControl extends React.Component {
     this.showDetails = () => {
       const status = this.state.status;
       if (!status) return;
-      this.dialogEnabled = status.enabled;
+      this.dialogEnabled = status.enabled || !!status.researchAutomation;
       this.dialogPending = !!status.pending;
       this.closeMenu();
       this.trigger.current?.focus();
@@ -91,7 +91,7 @@ class HostAccessControl extends React.Component {
     this.closeMenu();
     this.trigger.current?.focus();
     if (permission.mode === mode) {
-      if (status.pending) await this.save(false);
+      if (status.pending || status.researchAutomation) await this.save(false);
       return;
     }
     this.request++;
@@ -113,7 +113,7 @@ class HostAccessControl extends React.Component {
   async save(enabled) {
     const status = this.state.status;
     if (!status || this.state.saving || this.props.busy) return;
-    if (enabled ? status.enabled || status.pending : !status.enabled && !status.pending) {
+    if (enabled ? status.enabled || status.pending : !status.enabled && !status.pending && !status.researchAutomation) {
       this.setState({ open: false, error: "\u6743\u9650\u72B6\u6001\u5DF2\u53D8\u5316\uFF0C\u8BF7\u91CD\u65B0\u9009\u62E9" });
       return;
     }
@@ -121,7 +121,7 @@ class HostAccessControl extends React.Component {
     this.setState({ saving: true, error: "" });
     await this.props.perform(async () => {
       try {
-        const result = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/host-access`, { enabled, expectedVersion: status.version, ...enabled ? { acknowledgedSameUserAccess: true, acknowledgedResearchAutomation: true, ...status.unknownCommands ? { acknowledgedUnknownEffects: true } : {} } : {} });
+        const result = await api(`/sessions/${encodeURIComponent(this.props.sessionId)}/host-access`, { enabled, expectedVersion: status.version, ...enabled ? { acknowledgedSameUserAccess: true, acknowledgedResearchAutomation: true, researchAutomationPolicy: { version: 2, limits: { development: null, run: null, continuations: null, durationMs: null }, recoverAfterRestart: true }, ...status.unknownCommands ? { acknowledgedUnknownEffects: true } : {} } : {} });
         if (this.alive) {
           if (result.pending) {
             this.dialogEnabled = false;
@@ -175,7 +175,7 @@ class HostAccessControl extends React.Component {
             /* @__PURE__ */ jsx(Icon, { name: "cpu" }),
             /* @__PURE__ */ jsxs("span", { className: "host-permission-copy", children: [
               /* @__PURE__ */ jsx("strong", { children: "\u5B8C\u5168\u8BBF\u95EE" }),
-              /* @__PURE__ */ jsx("small", { children: status?.pending ? "\u8BF7\u6C42\u5DF2\u63A5\u53D7\uFF0C\u5F53\u524D\u6267\u884C\u7ED3\u675F\u540E\u81EA\u52A8\u542F\u7528" : "\u672C\u673A\u6587\u4EF6\u3001\u547D\u4EE4\u4E0E\u7F51\u7EDC \xB7 \u672A\u9694\u79BB" })
+              /* @__PURE__ */ jsx("small", { children: status?.pending ? "\u8BF7\u6C42\u5DF2\u63A5\u53D7\uFF0C\u5F53\u524D\u6267\u884C\u7ED3\u675F\u540E\u81EA\u52A8\u542F\u7528" : status?.researchAutomation && !status.enabled ? "\u6301\u7EED\u7814\u7A76\u5DF2\u6388\u6743 \xB7 Shell \u672A\u542F\u7528" : "\u672C\u673A\u6587\u4EF6\u3001\u547D\u4EE4\u4E0E\u7F51\u7EDC \xB7 \u672A\u9694\u79BB" })
             ] }),
             status?.enabled ? /* @__PURE__ */ jsx(Icon, { name: "check" }) : null
           ] })
@@ -185,29 +185,29 @@ class HostAccessControl extends React.Component {
             "\u5F53\u524D\uFF1A",
             modeLabels[mode]
           ] }),
-          /* @__PURE__ */ jsx("button", { type: "button", role: "menuitem", onClick: status?.enabled || status?.pending ? this.showDetails : () => {
+          /* @__PURE__ */ jsx("button", { type: "button", role: "menuitem", onClick: status?.enabled || status?.pending || status?.researchAutomation ? this.showDetails : () => {
             this.closeMenu();
             this.trigger.current?.focus();
-          }, className: "host-permission-secondary", children: status?.pending ? "\u67E5\u770B\u4E0E\u53D6\u6D88" : status?.enabled ? "\u8303\u56F4\u4E0E\u64A4\u9500" : "\u5173\u95ED" })
+          }, className: "host-permission-secondary", children: status?.pending ? "\u67E5\u770B\u4E0E\u53D6\u6D88" : status?.enabled || status?.researchAutomation ? "\u8303\u56F4\u4E0E\u64A4\u9500" : "\u5173\u95ED" })
         ] }),
         permission && !permission.available ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", children: permission.reason }) : null,
         status && !status.available && !status.enabled ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", children: status.reason }) : null,
         error ? /* @__PURE__ */ jsx("p", { className: "host-permission-reason", role: "status", children: error }) : null
       ] }),
-      open && status ? permissionDialog(/* @__PURE__ */ jsxs(Modal, { title: pending && status.pending ? "\u5B8C\u5168\u8BBF\u95EE\u5F85\u542F\u7528" : enabled || pending ? "\u672C\u673A\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE", onClose: () => {
+      open && status ? permissionDialog(/* @__PURE__ */ jsxs(Modal, { title: pending && status.pending ? "\u5B8C\u5168\u8BBF\u95EE\u5F85\u542F\u7528" : enabled || pending ? status.researchAutomation && !status.enabled ? "\u6301\u7EED\u7814\u7A76\u6388\u6743\uFF08Shell \u672A\u542F\u7528\uFF09" : "\u672C\u673A\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u672C\u673A\u5B8C\u5168\u8BBF\u95EE", onClose: () => {
         if (!saving) this.setState({ open: false });
       }, onSubmit: () => {
         void this.save(!enabled && !pending);
       }, submitLabel: pending && status.pending ? "\u53D6\u6D88\u542F\u7528" : enabled || pending ? "\u64A4\u9500\u5B8C\u5168\u8BBF\u95EE" : "\u542F\u7528\u5B8C\u5168\u8BBF\u95EE", busy: saving || this.props.busy || !enabled && !pending && (!status.available || status.pending), children: [
-        /* @__PURE__ */ jsx("p", { children: "\u4F7F\u7528\u5F53\u524D\u7CFB\u7EDF\u7528\u6237\u6743\u9650\u5185\u7684\u771F\u5B9E\u6587\u4EF6\u3001\u547D\u4EE4\u4E0E\u666E\u901A\u7F51\u7EDC\u3002\u4EC5\u5F53\u524D\u4E3B\u4F1A\u8BDD\u7684\u65B0\u4EFB\u52A1\u4F7F\u7528\uFF1B\u5B50\u4EFB\u52A1\u3001\u5386\u53F2\u4EFB\u52A1\u548C\u666E\u901A\u7ED3\u679C\u901A\u77E5\u4E0D\u7EE7\u627F\u3002\u660E\u786E\u6388\u6743\u7684\u672C\u4EFB\u52A1\u7EC8\u6001\u53EF\u6709\u754C\u7EED\u63A5\u3002" }),
-        /* @__PURE__ */ jsx("p", { children: "\u672C\u6B21\u542F\u7528\u540C\u65F6\u5141\u8BB8\u65B0\u4EFB\u52A1\u81EA\u4E3B\u51C6\u5907\u5E76\u63D0\u4EA4\u5DF2\u6838\u9A8C\u672C\u673A Docker \u5F00\u53D1\u6D4B\u8BD5\uFF0C\u4EE5\u53CA local/\u53EF\u4FE1\u793A\u4F8B\u5B9E\u9A8C\u3002\u6BCF\u4E2A\u4EFB\u52A1\u6700\u591A 3 \u6B21\u5F00\u53D1\u6D4B\u8BD5\u30012 \u6B21\u5B9E\u9A8C\u548C 6 \u6B21\u6A21\u578B\u7EED\u63A5\uFF0C\u6301\u7EED 2 \u5C0F\u65F6\uFF1B\u5931\u8D25\u53EF\u5728\u989D\u5EA6\u5185\u4FEE\u6B63\u540E\u91CD\u65B0\u51BB\u7ED3\u6D4B\u8BD5\u3002\u672A\u77E5\u72B6\u6001\u3001\u5F52\u6863\u4E0D\u5B8C\u6574\u3001\u64A4\u6743\u6216\u5230\u671F\u5373\u505C\u6B62\u3002\u72EC\u7ACB\u5BA1\u67E5\u3001\u6B63\u5F0F\u6574\u5408\u3001\u53D1\u5E03\u3001\u5220\u9664\u3001\u8FDC\u7AEF\u8D44\u6E90\u53CA\u51ED\u636E\u6388\u6743\u4ECD\u987B\u5355\u72EC\u5904\u7406\u3002\u65E7\u5B8C\u5168\u8BBF\u95EE\u987B\u64A4\u9500\u5E76\u91CD\u65B0\u786E\u8BA4\u624D\u80FD\u83B7\u5F97\u6B64\u8303\u56F4\u3002" }),
+        /* @__PURE__ */ jsx("p", { children: "\u4F7F\u7528\u5F53\u524D\u7CFB\u7EDF\u7528\u6237\u6743\u9650\u5185\u7684\u771F\u5B9E\u6587\u4EF6\u3001\u547D\u4EE4\u4E0E\u666E\u901A\u7F51\u7EDC\u3002\u4EC5\u5F53\u524D\u4E3B\u4F1A\u8BDD\u7684\u65B0\u4EFB\u52A1\u4F7F\u7528\uFF1B\u5B50\u4EFB\u52A1\u3001\u5386\u53F2\u4EFB\u52A1\u548C\u666E\u901A\u7ED3\u679C\u901A\u77E5\u4E0D\u7EE7\u627F\u3002\u660E\u786E\u6388\u6743\u7684\u672C\u4EFB\u52A1\u7EC8\u6001\u53EF\u6301\u7EED\u7EED\u63A5\u3002" }),
+        /* @__PURE__ */ jsx("p", { children: "\u672C\u6B21\u542F\u7528\u540C\u65F6\u5141\u8BB8\u65B0\u4EFB\u52A1\u81EA\u4E3B\u51C6\u5907\u5E76\u63D0\u4EA4\u5DF2\u6838\u9A8C\u672C\u673A Docker \u5F00\u53D1\u6D4B\u8BD5\uFF0C\u4EE5\u53CA local/\u53EF\u4FE1\u793A\u4F8B\u5B9E\u9A8C\u3002\u672C\u6B21\u6388\u6743\u7684\u4EFB\u52A1\u603B\u5F00\u53D1\u6D4B\u8BD5\u3001\u5B9E\u9A8C\u3001\u6A21\u578B\u7EED\u63A5\u6B21\u6570\u53CA\u603B\u65F6\u957F\u65E0\u4E0A\u9650\uFF1B\u4FDD\u7559\u5355\u6B21\u8D85\u65F6\u548C\u8D44\u6E90\u9650\u5236\u3002\u53EF\u4FE1\u6280\u672F\u5931\u8D25\u53EF\u4FEE\u6B63\u5019\u9009\u6E90\u7801\u3001\u91CD\u65B0\u6D4B\u8BD5\u540E\u5EFA\u7ACB\u65B0\u5B9E\u9A8C\u3002\u4E2D\u65AD\u540E\u5148\u5BF9\u8D26\u5E76\u6062\u590D\u539F\u4EFB\u52A1\uFF1B\u672A\u77E5\u6267\u884C\u72B6\u6001\u3001\u64A4\u6743\u6216\u79D1\u5B66\u8FB9\u754C\u53D8\u5316\u5373\u505C\u6B62\u3002\u72EC\u7ACB\u5BA1\u67E5\u3001\u6B63\u5F0F\u6574\u5408\u3001\u53D1\u5E03\u3001\u5220\u9664\u3001\u8FDC\u7AEF\u8D44\u6E90\u53CA\u51ED\u636E\u6388\u6743\u4ECD\u987B\u5355\u72EC\u5904\u7406\u3002\u65E7\u5B8C\u5168\u8BBF\u95EE\u987B\u64A4\u9500\u5E76\u91CD\u65B0\u786E\u8BA4\u624D\u80FD\u83B7\u5F97\u6B64\u8303\u56F4\u3002" }),
         /* @__PURE__ */ jsxs("div", { className: "host-access-notice", children: [
           /* @__PURE__ */ jsx("strong", { children: "\u672C\u673A\u53EF\u4FE1\u6A21\u5F0F \xB7 \u672A\u9694\u79BB" }),
           /* @__PURE__ */ jsx("p", { children: "\u547D\u4EE4\u4E5F\u80FD\u63A5\u89E6\u8BE5\u7528\u6237\u7684\u5E94\u7528\u6570\u636E\u3001\u51ED\u636E\u3001\u8FDB\u7A0B\u53CA\u7B2C\u4E09\u65B9\u8D26\u6237\u6743\u9650\u3002\u4E0D\u80FD\u4FDD\u8BC1\u5E94\u7528\u5BA1\u6279\u6570\u636E\u4E0E\u672C\u673A\u547D\u4EE4\u9694\u79BB\u3002" })
         ] }),
-        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u64A4\u9500\u4F1A\u62D2\u7EDD\u65B0\u547D\u4EE4\u5E76\u505C\u6B62\u80FD\u8DDF\u8E2A\u7684\u8FDB\u7A0B\uFF1B\u65E0\u6CD5\u64A4\u56DE\u5DF2\u7ECF\u5199\u5165\u7684\u6587\u4EF6\u3001\u53D1\u51FA\u7684\u8BF7\u6C42\u6216\u4FDD\u8BC1\u6E05\u9664\u8131\u7BA1\u8FDB\u7A0B\u3002\u670D\u52A1\u91CD\u542F\u540E\u9700\u8981\u91CD\u65B0\u542F\u7528\u3002" }),
+        /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u64A4\u9500\u4F1A\u62D2\u7EDD\u65B0\u547D\u4EE4\u5E76\u505C\u6B62\u80FD\u8DDF\u8E2A\u7684\u8FDB\u7A0B\uFF1B\u65E0\u6CD5\u64A4\u56DE\u5DF2\u7ECF\u5199\u5165\u7684\u6587\u4EF6\u3001\u53D1\u51FA\u7684\u8BF7\u6C42\u6216\u4FDD\u8BC1\u6E05\u9664\u8131\u7BA1\u8FDB\u7A0B\u3002\u670D\u52A1\u91CD\u542F\u540E Shell \u547D\u4EE4\u6743\u9650\u5931\u6548\uFF0C\u9700\u8981\u91CD\u65B0\u542F\u7528\uFF1B\u672C\u6B21\u660E\u786E\u6279\u51C6\u7684\u6301\u7EED\u7814\u7A76\u4EFB\u52A1\u53EF\u5BF9\u8D26\u540E\u6062\u590D\u3002" }),
         status.pending ? /* @__PURE__ */ jsx("p", { className: "host-access-note", role: "status", children: "\u542F\u7528\u8BF7\u6C42\u5DF2\u63A5\u53D7\u3002\u5F53\u524D\u6267\u884C\u7EE7\u7EED\uFF0C\u7ED3\u675F\u540E\u540E\u53F0\u81EA\u52A8\u542F\u7528\u5E76\u5904\u7406\u6392\u961F\u6D88\u606F\uFF0C\u65E0\u9700\u518D\u6B21\u64CD\u4F5C\uFF1B\u751F\u6548\u524D\u53EF\u53D6\u6D88\u3002" }) : null,
-        status.revokedOnRestart ? /* @__PURE__ */ jsx("p", { className: "host-access-note", children: "\u4E0A\u6B21\u6388\u6743\u4E0D\u5C5E\u4E8E\u5F53\u524D\u6267\u884C\u7AEF\uFF0C\u9700\u8981\u91CD\u65B0\u542F\u7528\uFF1B\u5386\u53F2\u8BB0\u5F55\u5DF2\u4FDD\u7559\u3002" }) : null,
+        status.revokedOnRestart ? /* @__PURE__ */ jsx("p", { className: "host-access-note", children: "\u4E0A\u6B21 Shell \u6388\u6743\u4E0D\u5C5E\u4E8E\u5F53\u524D\u6267\u884C\u7AEF\uFF0C\u9700\u8981\u91CD\u65B0\u542F\u7528\uFF1B\u5DF2\u6279\u51C6\u7684\u6301\u7EED\u7814\u7A76\u6388\u6743\u4E0E\u5386\u53F2\u8BB0\u5F55\u4ECD\u53EF\u67E5\u770B\u548C\u64A4\u9500\u3002" }) : null,
         status.activeCommands ? /* @__PURE__ */ jsxs("p", { role: "status", children: [
           status.activeCommands,
           " \u6761\u53D7\u7BA1\u547D\u4EE4\u6B63\u5728\u6267\u884C\u6216\u505C\u6B62\u3002"
@@ -224,7 +224,7 @@ class HostAccessControl extends React.Component {
         ] }, job.id)),
         !enabled && !pending ? /* @__PURE__ */ jsxs("label", { className: "host-access-ack", children: [
           /* @__PURE__ */ jsx("input", { type: "checkbox", required: true, "aria-label": "\u63A5\u53D7\u672C\u673A\u5B8C\u5168\u8BBF\u95EE\u7684\u672A\u9694\u79BB\u8303\u56F4" }),
-          "\u6211\u7406\u89E3\u672C\u673A\u672A\u9694\u79BB\u53CA\u4E0A\u8FF0\u6709\u754C\u81EA\u4E3B\u8BA1\u7B97\u8303\u56F4\uFF0C\u5E76\u4E3A\u6B64\u4F1A\u8BDD\u7684\u65B0\u4EFB\u52A1\u542F\u7528\u3002"
+          "\u6211\u7406\u89E3\u672C\u673A\u672A\u9694\u79BB\u53CA\u4E0A\u8FF0\u65E0\u603B\u91CF\u4E0A\u9650\u3001\u5141\u8BB8\u4E2D\u65AD\u540E\u6062\u590D\u7684\u81EA\u4E3B\u8BA1\u7B97\u8303\u56F4\uFF0C\u5E76\u4E3A\u6B64\u4F1A\u8BDD\u7684\u65B0\u4EFB\u52A1\u542F\u7528\u3002"
         ] }) : null,
         !enabled && !pending && status.unknownCommands ? /* @__PURE__ */ jsxs("label", { className: "host-access-ack", children: [
           /* @__PURE__ */ jsx("input", { type: "checkbox", required: true, "aria-label": "\u5DF2\u6838\u5BF9\u672A\u77E5\u547D\u4EE4\u7684\u8FDB\u7A0B\u548C\u5916\u90E8\u6548\u679C" }),

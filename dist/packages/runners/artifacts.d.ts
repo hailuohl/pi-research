@@ -8,4 +8,5 @@ export declare function collectRunArtifacts(run: Row<Run>, evidence: EvidenceSer
     metrics: Record<string, number> | undefined;
     integrity: "incomplete" | "complete" | "invalid";
     errors: string[];
+    diagnosticSafe: boolean;
 };

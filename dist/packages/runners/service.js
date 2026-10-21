@@ -211,7 +211,7 @@ export class RunService {
             consumeRunGrant(this.c.store, intent, runId, actor);
             mkdirSync(outputDir, { recursive: true, mode: 0o777 });
             chmodSync(outputDir, 0o777);
-            const execution = intent.manifest.contract.runner !== 'trusted-example' ? { backend: intent.manifest.contract.runner, dockerContext: intent.manifest.contract.runner === 'local' ? 'local' : intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.dockerContext ?? 'default', ...(intent.manifest.contract.runner === 'ssh' ? { sshHandle: `pi-ssh-${runId}` } : {}), containerName: `pi-research-${runId}`, controlDir: this.c.store.paths.reference(join(this.c.dataDir, 'jobs', runId, 'control')), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
+            const execution = intent.manifest.contract.runner !== 'trusted-example' ? { backend: intent.manifest.contract.runner, ...(intent.manifest.localRuntime?.protocolVersion === 2 ? { localExecutionId: randomUUID() } : {}), dockerContext: intent.manifest.contract.runner === 'local' ? 'local' : intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.dockerContext ?? 'default', ...(intent.manifest.contract.runner === 'ssh' ? { sshHandle: `pi-ssh-${runId}` } : {}), containerName: `pi-research-${runId}`, controlDir: this.c.store.paths.reference(join(this.c.dataDir, 'jobs', runId, 'control')), generation: 0, leaseUntil: 0, startRequested: false, recoveryCount: 0 } : undefined;
             const permission = this.permissionCapture?.(actor, { kind: 'run', subjectId: intent.id, approvalId: intent.approvalId, manifestDigest: intent.manifestDigest });
             const run = this.c.store.create('run', intent.projectId, { permissionOrigin: actor.type === 'user' ? 'owner' : 'agent', ...(permission ? { permission } : {}), experimentId: e.id, intentId: id, manifest: intent.manifest, manifestDigest: intent.manifestDigest, state: 'queued', integrity: 'pending', judgment: 'pending', outputDir: this.c.store.paths.reference(outputDir), cancelRequested: false, artifactIds: [], evidenceIds: [], ...(execution ? { execution } : {}), ...(intent.runGrant ? { runGrant: intent.runGrant } : {}) }, runId);
             if (run.manifest.sshTarget) {
@@ -240,7 +240,7 @@ export class RunService {
     /** Also used just before Docker start and while supervising a running immutable job. */
     assertExecutionGrant(run, admission = !TERMINAL.includes(run.state) && (run.execution ? !run.execution.startRequested : !run.startRequested)) {
         this.assertPermission(run);
-        this.automation?.assertApproval(this.c.store.get('approval', this.c.store.get('run-intent', run.intentId).approvalId), true);
+        this.automation?.assertApproval(this.c.store.get('approval', this.c.store.get('run-intent', run.intentId).approvalId), true, !admission);
         assertRunGrantRun(this.c.store, run, admission);
         this.researchSourceGuard?.(run.experimentId, 'execute', run.intentId);
         assertProjectWritable(this.c.store, run.projectId);
@@ -286,6 +286,8 @@ export class RunService {
     /** Both launch callers hold the same write transaction as their authorization check. */
     cancelBeforeLaunch(run, error) {
         if (run.state !== 'queued' || run.startedAt || run.childPid)
+            return;
+        if (this.automation?.paused(run.intentId))
             return;
         const reason = asError(error);
         this.c.store.update('run', run.id, run.version, { state: 'cancelled', cancelRequested: true, integrity: 'incomplete', endedAt: now(), error: `${reason.code}: ${reason.message}` });
@@ -384,6 +386,22 @@ export class RunService {
         const cursor = integer(x.cursor ?? 0, 'cursor', 0, content.length), limit = integer(x.limit ?? 16000, 'limit', 1, 64000), end = Math.min(content.length, cursor + limit), { files, ...metadata } = meta;
         return { ...metadata, ...f, content: content.slice(cursor, end), cursor, end, complete: end === content.length };
     }
+    assertDiagnostic(actor, id) {
+        const r = this.get(actor, id), d = r.failureDiagnostic;
+        ensure(r.state === 'failed' && r.integrity !== 'invalid' && Number.isSafeInteger(r.exitCode) && r.exitCode > 0 && d?.version === 1 && d.kind === 'local-nonzero-exit' && d.executionId === r.execution?.localExecutionId, 'RUN_DIAGNOSTIC_INVALID', '仅允许可信、已终止的本地普通非零退出诊断');
+        ensure(digest(r.manifest) === r.manifestDigest && digest(r.manifest.sourceFiles) === r.manifest.snapshotDigest, 'RUN_DIAGNOSTIC_INVALID', '诊断清单或源码摘要改变');
+        this.sourceList(actor, id);
+        ensure(r.artifactIds.includes(d.reportArtifactId), 'RUN_DIAGNOSTIC_INVALID', '诊断报告未绑定本Run');
+        const archived = this.evidence.read(actor, d.reportArtifactId);
+        ensure(archived.artifact.digest === d.reportDigest && digest(archived.bytes) === d.reportDigest, 'RUN_DIAGNOSTIC_INVALID', '诊断报告摘要改变');
+        const report = JSON.parse(archived.bytes.toString('utf8')), completion = report.localCompletion;
+        ensure(report.runId === r.id && report.manifestDigest === r.manifestDigest && report.sourceDigest === r.manifest.snapshotDigest && report.state === r.state && report.exitCode === r.exitCode && report.integrity === r.integrity && report.diagnosticSafe === true && completion?.version === 2 && completion.executionId === d.executionId && completion.manifestDigest === r.manifestDigest && completion.stopped === true && completion.cancelled === false && completion.exitCode === r.exitCode && digest(report.artifactIds) === digest(r.artifactIds.filter(a => a !== d.reportArtifactId)), 'RUN_DIAGNOSTIC_INVALID', '诊断终态、来源或完整归档身份改变');
+        for (const artifactId of report.artifactIds) {
+            const a = this.evidence.read(actor, artifactId);
+            ensure(a.artifact.runId === r.id, 'RUN_DIAGNOSTIC_INVALID', '诊断日志或产物不属于本Run');
+        }
+        return { ...d, completion };
+    }
     finalize(id, exitCode, state, error, facts) {
         return this.c.store.transaction(() => {
             let r = this.c.store.get('run', id);
@@ -415,11 +433,15 @@ export class RunService {
             }
             if (errors.length)
                 error = [error, ...errors].filter(Boolean).join('; ').slice(0, 8000);
+            const completion = facts?.localCompletion, diagnosticSafe = r.execution?.backend === 'local' && state === 'failed' && typeof exitCode === 'number' && Number.isSafeInteger(exitCode) && exitCode > 0 && integrity !== 'invalid' && collected.diagnosticSafe && !facts?.incomplete && !facts?.logTruncated && !facts?.outputExceeded && !r.cancelRequested && completion?.version === 2 && completion.executionId === r.execution.localExecutionId && completion.manifestDigest === r.manifestDigest && completion.exitCode === exitCode && completion.stopped === true && completion.cancelled === false;
+            let failureDiagnostic;
             if (r.execution) {
-                const threadLimit = r.manifest.threadLimit ?? r.manifest.contract.threadLimit, report = { runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit, command: r.manifest.contract.command, ...(threadLimit === undefined ? {} : { threadLimit }), ...(r.manifest.localRuntime ? { backend: 'local', localRuntime: r.manifest.localRuntime, localExecution: r.manifest.localExecution } : {}), ...(r.manifest.contract.gpu ? { gpu: r.manifest.contract.gpu, gpuTarget: r.manifest.gpuTarget } : {}), image: r.manifest.contract.image, imageId: r.execution.imageId, containerId: r.execution.containerId, ...(r.execution.backend === 'ssh' ? { backend: 'ssh', sshHandle: r.execution.sshHandle, sshTarget: r.manifest.sshTarget } : {}), exitCode, state, integrity, error, artifactIds: [...artifactIds], scientificConclusion: false }, a = this.evidence.put(r.projectId, 'execution.json', Buffer.from(JSON.stringify(report, null, 2)), 'application/json', 'run', { runId: r.id });
+                const threadLimit = r.manifest.threadLimit ?? r.manifest.contract.threadLimit, report = { runId: r.id, manifestDigest: r.manifestDigest, sourceDigest: r.manifest.snapshotDigest, gitCommit: r.manifest.gitCommit, command: r.manifest.contract.command, ...(completion ? { localCompletion: completion, diagnosticSafe } : {}), ...(threadLimit === undefined ? {} : { threadLimit }), ...(r.manifest.localRuntime ? { backend: 'local', localRuntime: r.manifest.localRuntime, localExecution: r.manifest.localExecution } : {}), ...(r.manifest.contract.gpu ? { gpu: r.manifest.contract.gpu, gpuTarget: r.manifest.gpuTarget } : {}), image: r.manifest.contract.image, imageId: r.execution.imageId, containerId: r.execution.containerId, ...(r.execution.backend === 'ssh' ? { backend: 'ssh', sshHandle: r.execution.sshHandle, sshTarget: r.manifest.sshTarget } : {}), exitCode, state, integrity, error, artifactIds: [...artifactIds], scientificConclusion: false }, a = this.evidence.put(r.projectId, 'execution.json', Buffer.from(JSON.stringify(report, null, 2)), 'application/json', 'run', { runId: r.id });
                 artifactIds.push(a.id);
+                if (diagnosticSafe)
+                    failureDiagnostic = { version: 1, kind: 'local-nonzero-exit', executionId: completion.executionId, reportArtifactId: a.id, reportDigest: a.digest };
             }
-            r = this.c.store.update('run', id, r.version, { state, integrity, judgment: 'pending', answerDisposition: metrics && evidenceIds.length ? 'answered' : 'needs_review', exitCode, endedAt: now(), heartbeat: Date.now(), metrics, artifactIds, evidenceIds, ...(error ? { error } : {}), ...(r.execution ? { execution: { ...r.execution, leaseUntil: 0, logTruncated: facts?.logTruncated ?? r.execution.logTruncated, outputExceeded: facts?.outputExceeded ?? r.execution.outputExceeded } } : {}) });
+            r = this.c.store.update('run', id, r.version, { state, integrity, judgment: 'pending', answerDisposition: metrics && evidenceIds.length ? 'answered' : 'needs_review', exitCode, endedAt: now(), heartbeat: Date.now(), metrics, artifactIds, evidenceIds, ...(failureDiagnostic ? { failureDiagnostic } : {}), ...(error ? { error } : {}), ...(r.execution ? { execution: { ...r.execution, leaseUntil: 0, logTruncated: facts?.logTruncated ?? r.execution.logTruncated, outputExceeded: facts?.outputExceeded ?? r.execution.outputExceeded } } : {}) });
             if (metrics && evidenceIds.length > 0) {
                 const exp = this.c.store.get('experiment', r.experimentId);
                 if (exp.revision === r.manifest.experimentRevision && exp.lifecycle === 'provisional')

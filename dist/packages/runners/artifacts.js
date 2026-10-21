@@ -102,6 +102,7 @@ export function collectRunArtifacts(run, evidence, paths, successful = true) {
                 errors.push(`${name}: ${asError(error).message}`);
             }
         }
+    const diagnosticSafe = !unsafe && !methodInvalid && !errors.length && controlNames.has('stdout.log') && controlNames.has('stderr.log');
     let integrity = unsafe || methodInvalid ? 'invalid' : 'incomplete';
     let metrics;
     const metric = artifacts.get('metrics.json');
@@ -130,6 +131,6 @@ export function collectRunArtifacts(run, evidence, paths, successful = true) {
     missing.forEach(path => errors.push(`${path}: 必需产物未归档为普通文件`));
     if (metrics && !missing.length && !errors.length && integrity !== 'invalid')
         integrity = 'complete';
-    return { artifactIds: [...artifacts.values()].map(a => a.id), evidenceIds, metrics, integrity, errors };
+    return { artifactIds: [...artifacts.values()].map(a => a.id), evidenceIds, metrics, integrity, errors, diagnosticSafe: diagnosticSafe && integrity !== 'invalid' };
 }
 //# sourceMappingURL=artifacts.js.map

@@ -133,7 +133,7 @@ export class SourceAccessService {
             }
             const r = this.resolve(actor, projectId, selector);
             if (actor.continuationId)
-                ensure(this.app.researchAutomation.assertActor(actor).sourceRevisionId === r.id, 'AUTOMATION_SOURCE_CHANGED', '续接不能替换冻结的私有源码来源');
+                this.app.researchAutomation.authorizeSource(actor, r);
             ensure(this.app.store.get('experiment', r.experimentId, projectId).lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能初始化新的工作区');
             ensure(s.state !== 'running' || actor.type === 'agent' && actor.sessionId === s.id, 'SESSION_BUSY', '会话正在运行');
             ensure(!this.app.store.list('task-attempt', projectId).some(a => a.sessionId === s.id && a.state === 'running' && a.id !== actor.attemptId), 'SESSION_BUSY', '另一个任务 Worker 正在使用工作区');

@@ -515,7 +515,7 @@ export declare const REPORT_OUTPUT_SCHEMAS: {
                                         readonly type: "string";
                                     };
                                 };
-                                readonly required: readonly [...("rootSessionId" | "taskId" | "teamId" | "approvalId" | "revisionId" | "jobId" | "id" | "status" | "publicationResultId" | "digest" | "artifactIds" | "validity" | "sourceDigest" | "requiredEvidenceIds" | "pdfDigest")[], "referenceId"];
+                                readonly required: readonly [...("rootSessionId" | "taskId" | "teamId" | "approvalId" | "revisionId" | "jobId" | "id" | "status" | "digest" | "publicationResultId" | "artifactIds" | "validity" | "sourceDigest" | "requiredEvidenceIds" | "pdfDigest")[], "referenceId"];
                                 readonly type: "object";
                                 readonly additionalProperties: false;
                             };

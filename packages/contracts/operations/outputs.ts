@@ -67,7 +67,7 @@ const manifest = object({
     contract, contractDigest: string, snapshotDigest: string, snapshotPath: string,
     sourceFiles: array(sourceFile), createdAt: string,sourceRevisionId:string,gitCommit:string,sshTarget
 },['threadLimit','localRuntime','localExecution','gpuTarget','sourceRevisionId','gitCommit','sshTarget','researchBrief','analysis','methodContractDigest']);
-const runnerExecution=object({backend:enumeration('local','docker','ssh'),sshHandle:string,dockerContext:string,containerName:string,containerId:string,imageId:string,controlDir:string,generation:integer,leaseUntil:number,startRequested:boolean,recoveryCount:integer,logTruncated:boolean,logsIncomplete:boolean,outputExceeded:boolean},['sshHandle','containerId','imageId','logTruncated','logsIncomplete','outputExceeded']);
+const runnerExecution=object({localExecutionId:string,backend:enumeration('local','docker','ssh'),sshHandle:string,dockerContext:string,containerName:string,containerId:string,imageId:string,controlDir:string,generation:integer,leaseUntil:number,startRequested:boolean,recoveryCount:integer,logTruncated:boolean,logsIncomplete:boolean,outputExceeded:boolean},['localExecutionId','sshHandle','containerId','imageId','logTruncated','logsIncomplete','outputExceeded']);
 const taskResult = object({
     formalReportAssessment:FORMAL_REPORT_ASSESSMENT_SCHEMA,developmentAssessment:DEVELOPMENT_ASSESSMENT_SCHEMA,
     summary: string, outcome: enumeration('completed', 'partial', 'blocked'), evidenceIds: strings, artifactIds: strings,
@@ -95,8 +95,8 @@ const CORE_OUTPUT_SCHEMAS = {
         answerDisposition: enumeration('answered', 'unanswered', 'needs_review'), answerReviewId: string,
         outputDir: string, supervisorPid: integer, childPid: integer, heartbeat: number, startedAt: string, endedAt: string,
         exitCode: { anyOf: [integer, { type: 'null' }] }, cancelRequested: boolean,
-        metrics: { type: 'object', additionalProperties: number }, error: string, artifactIds: strings, evidenceIds: strings,execution:runnerExecution,runGrant:RUN_GRANT_REFERENCE_SCHEMA,startRequested:boolean
-    }, ['answerDisposition', 'answerReviewId', 'supervisorPid', 'childPid', 'heartbeat', 'startedAt', 'endedAt', 'exitCode', 'metrics', 'error','execution','runGrant','startRequested']),
+        failureDiagnostic:object({version:{const:1},kind:{const:'local-nonzero-exit'},executionId:string,reportArtifactId:string,reportDigest:string}),metrics: { type: 'object', additionalProperties: number }, error: string, artifactIds: strings, evidenceIds: strings,execution:runnerExecution,runGrant:RUN_GRANT_REFERENCE_SCHEMA,startRequested:boolean
+    }, ['failureDiagnostic','answerDisposition', 'answerReviewId', 'supervisorPid', 'childPid', 'heartbeat', 'startedAt', 'endedAt', 'exitCode', 'metrics', 'error','execution','runGrant','startRequested']),
     run_list: object({
         items: array(object({
             id: string, projectId: string, experimentId: string, intentId: string,
@@ -191,6 +191,7 @@ const artifact = row('artifact', { title: string, digest: string, size: integer,
 export const OUTPUT_SCHEMAS = {
     ...METHOD_OUTPUT_SCHEMAS,
     ...RESEARCH_ACTION_OUTPUT_SCHEMAS,
+    research_task_checkpoint:object({continuationId:string,state:enumeration('completed','waiting','needs_attention'),summary:string,runIds:strings,developmentJobIds:strings,scientificConclusion:{const:false}}),
     host_execute:HOST_EXECUTION_OUTPUT_SCHEMA,
     ...RESEARCH_BRIEF_OUTPUT_SCHEMAS,
     text_corpus_grant_prepare:textCorpusGrant,text_corpus_grant_inspect:textCorpusGrant,text_corpus_grant_activate:textCorpusGrant,text_corpus_grant_revoke:textCorpusGrant,

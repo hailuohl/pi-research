@@ -1,6 +1,7 @@
 import type { AppContext } from '../domain/context.js';
 import type { Actor } from '../domain/types.js';
 export interface LocalRuntime {
+    protocolVersion?: 2;
     id: string;
     version: number;
     executableName: string;

@@ -1,7 +1,18 @@
 import type { Store } from '../storage/store.js';
 import type { Actor, Row } from '../domain/types.js';
+export interface ResearchAutomationPolicy {
+    version: 2;
+    limits: {
+        development: number | null;
+        run: number | null;
+        continuations: number | null;
+        durationMs: number | null;
+    };
+    recoverAfterRestart: boolean;
+}
 export interface HostAccessGrant {
-    researchAutomationScope?: 1;
+    researchAutomationScope?: 1 | 2;
+    researchAutomationPolicy?: ResearchAutomationPolicy;
     researchAutomationAcknowledgedAt?: string;
     sessionId: string;
     epoch: number;
@@ -49,6 +60,7 @@ export declare class HostAccessService {
     status(actor: Actor, sessionId: string): {
         researchAutomation: boolean;
         researchAutomationScope: number;
+        researchAutomationPolicy: ResearchAutomationPolicy | undefined;
         sessionId: string;
         version: number;
         epoch: number;
@@ -76,6 +88,7 @@ export declare class HostAccessService {
     enable(actor: Actor, id: string, input: unknown): {
         researchAutomation: boolean;
         researchAutomationScope: number;
+        researchAutomationPolicy: ResearchAutomationPolicy | undefined;
         sessionId: string;
         version: number;
         epoch: number;
@@ -102,6 +115,7 @@ export declare class HostAccessService {
     revoke(actor: Actor, id: string, input: unknown): {
         researchAutomation: boolean;
         researchAutomationScope: number;
+        researchAutomationPolicy: ResearchAutomationPolicy | undefined;
         sessionId: string;
         version: number;
         epoch: number;

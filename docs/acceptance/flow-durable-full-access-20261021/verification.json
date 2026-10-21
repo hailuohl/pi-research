@@ -1,0 +1,197 @@
+{
+  "task": "durable-full-access",
+  "date": "2026-10-21",
+  "baseCommit": "95c3e16e6b574bbbf1b16f77b6ee2bde9a38b72d",
+  "reviewedTree": "f6580096e1a5afe6e8fb57d25dc3d0d4a7d07c88",
+  "productReviewTree": "f650e8af95d692f82ba08cb06fd3d2d0eb96bb5f",
+  "sourceSha256": "0d3e7d9cd423b3ade59aa740c1ece437f956435f2ed9e7ec8b19730dd63aa4df",
+  "sourceHashes": {
+    "apps/server/routes.ts": "0aa05f9786809659c790ab0bc67442564f51e40df0b2ae5f8b4f914396ecdae4",
+    "apps/web/src/host-access-control.tsx": "30809f163475231a2a514b8eec6bbc6b244f7512b24e9001dd44afd39dd42d67",
+    "packages/collaboration/team-service.ts": "340df5a5ee98e7c40a6808f5f240e9790b8a9e21b82648ab163ab3d7b60b0643",
+    "packages/contracts/operations/execution-environment-schemas.ts": "68def4b785cc7b56ec7a07a37598c0297039c570be120970fdf9ac276db7aaae",
+    "packages/contracts/operations/inputs.ts": "104cc5267d9c62333f9273af997e4dcf06058e29ba3c6286e9f40566cea0681b",
+    "packages/contracts/operations/outputs.ts": "a405e910a4e4286a0111cf25f7343dcf4104745352fbd0f01ff405cc8e7ddb25",
+    "packages/contracts/operations/registry.ts": "46384acb086df362adef010788905d5c083b58b1cd991aaa54d76c0f5048496c",
+    "packages/development/service.ts": "02bfcb409d0f964c4528597b1a3c002d37663321f49683fc4226766b1149270b",
+    "packages/domain/types.ts": "b3cb7858fcc79224aedc68c5d14cf003e6f4cc5c4e7e3abf19b4897c70839721",
+    "packages/execution/service.ts": "4fa3a6d6c9af6ee0619cf509b510ffba9ae3f33cce97b0f18335bebdfa9acec2",
+    "packages/policy/budget.ts": "870f0de58125be09c00afc28e94e4318e4c24f246fd591a52cd02e17f3ef7dba",
+    "packages/policy/host-access.ts": "7b2479371846b75581817cb977561755e70fdf933d16304afa3ac4b76ebdfe08",
+    "packages/policy/lifecycle.ts": "c1fd70c0eb877ce229802b2a880c46bd2f10411429afbf952433cbe03fb4dcd5",
+    "packages/policy/permissions.ts": "696e5e45fb38fd3e90932e5c5d2932245798dea4d42e82adeb0f3f4e7c2657b8",
+    "packages/policy/research-automation.ts": "88a7e702195f36ad2aa2e5abc8198f61584cb3be11878ee567f873d218908e85",
+    "packages/policy/session-permissions.ts": "72cbc6908e7fc25939c124afe3a42282bfdc15f0257b993e44866d71da74d182",
+    "packages/research-app.ts": "f8afc10a3395bb3935e5d2aae6819bc8ca851d5fd7471d3eb84465a856445956",
+    "packages/research-tools/definitions.ts": "d77145c1bc2593b68a59fc01c5a04c53ba5e52ce9d5348324cb58235678e2481",
+    "packages/research-tools/dispatcher.ts": "29662479eae56c77a633a578cad277af00a354802cb51318c34031303fe6b81c",
+    "packages/runners/adapter.ts": "67f214f9b70ff9147d10a1c9ca8f091ee0351decd39eb76782b1bec5464a95f0",
+    "packages/runners/artifacts.ts": "742bad109c82a5b181a6f87ef3abb07c0f7bb44cdffca2259776af29ac96a9ef",
+    "packages/runners/local-runtime.ts": "2750bc7c49304994a4e1a8c78dff9e79bd215713558ffedbd51e3191a26998ee",
+    "packages/runners/local-supervisor-v1.ts": "6e4d00c4f84cd57bfb52132c2e8bf0ac3665af4c815b4eaab58e3156bb7f8c7c",
+    "packages/runners/local-supervisor.ts": "e99b1c36121d80a9ee5d4c5b98bc09ef3752df5c48180a374942bdf838569782",
+    "packages/runners/service.ts": "2a74624f771e3d6827627cd0656bba36ff2c68b4894620821411df29d05297c3",
+    "packages/scheduler/agent-host.ts": "155cb2cec1ecb6ffc060597caaaec96eb13e78edf71d8fde2a3aaefb3f57ad2c",
+    "packages/scheduler/compute-queue.ts": "5c9de97613c30f25634d1263c0d0a7e6ccc6c4cbaafc9136bd7d92379a7e7356",
+    "packages/scheduler/wakeups.ts": "0bc87219d5b15c23aca1983110bb910c6ec4113a3324350b41dc686c60030b20",
+    "packages/workspace/experiments.ts": "97634d9f6a9bbd8bd6c18991f77ba1e43f780a5217e511bd1441285359391d47",
+    "packages/workspace/source-access.ts": "5d426f5c559bc5a2af2c5d04de2af198fb3603410e55c0576cbcff9743e632e1",
+    "scripts/local-posix-runner-v2.mjs": "f0512675f572e1c8aef3195afa9b20d38a6d7895cd2a84221d6bce54a6a26569",
+    "scripts/local-windows-launcher-v2.mjs": "c89e18bfd6481d72b93f22d638a1bbad85f51548f122326113ce02578c42f9ea",
+    "scripts/local-windows-runner-v2.ps1": "c2abc5d4b4eaf8ef908632039371fc45be8c26f479703fb6ac340b2313a98678",
+    "tests/fixtures/durable-full-access-worker.mjs": "eaf692fd2ab34a4513d18ba27969b6c4c817a84800c31dcd5a5823e19d2e7ba1",
+    "tests/fixtures/full-access-fence-worker.mjs": "806470f5354d4d6f81c75fa7b7bd803ddf9ded4f19b8a7c8863fb3a5990a04dd",
+    "tests/integration/durable-full-access-host.test.mjs": "9dbcb10b04cd7fddcaa61c87a988e17cc6692815f69cb47d43f5748b3d799fdc",
+    "tests/integration/durable-local-run.test.mjs": "d8cac2e488a4d9d24394e4a24c9b12e5707e5c8f031a000389177cc578a3f4f0",
+    "tests/integration/full-access-fences.test.mjs": "839b52904bf8d8e8cb1aa7ce30ad2294161918b6c3c64df5dc63bf628f5aab3b",
+    "tests/unit/durable-full-access.test.mjs": "bf32b83576c4e9fc3b189571d7fa5dddd1f6ccaa6160e3bdd839a7647905ddf6",
+    "tests/unit/full-access-paused-queue.test.mjs": "65be2c06bf89c475f6034c09cb9041eb0bce9646c85a848d073ca79c014b5512",
+    "tests/unit/host-access-menu-ui.test.mjs": "8eef870791635ab3ef1fa728abeb63ec5282b9f1172de6470c66d6ecc4a8bfbd",
+    "tests/unit/operation-outputs.test.mjs": "81ace7f41e9349c477ef390a9787d540a5a51c32501b6102583fa2d83f65b0a8",
+    "tests/unit/operation-schema.test.mjs": "9bdd645b75e45511dc3cb77ba5d1cd0a2769f14ca1319add4c639e661efa214b"
+  },
+  "fullRegression": {
+    "command": "npm run test:core",
+    "snapshot": "91b7d5885fdc24d4a6f7ecf94fa8cdb9f0b6093c",
+    "logFile": "full-access-delivery-full-tests.log",
+    "logSha256": "5a75ff1e88f9adb8c7b222ae8ef08c97b246b05d2a314fa349464eddc266bc58",
+    "tests": 2193,
+    "passed": 2166,
+    "failed": 2,
+    "skipped": 25,
+    "status": "completed; two new-tool contract coverage failures corrected by focused follow-up",
+    "failures": [
+      "operation-schema exact tool count omitted checkpoint",
+      "operation-outputs real service coverage omitted checkpoint"
+    ],
+    "unresolvedFailures": 0,
+    "skipReport": [
+      "﹣ POSIX backup preserves distinct case-sensitive sibling paths (0.2483ms) # SKIP",
+      "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.0969ms) # SKIP",
+      "﹣ isolated compiler: pdflatex (1.677ms) # SKIP",
+      "﹣ isolated compiler: xelatex (0.1168ms) # SKIP",
+      "﹣ isolated compiler: lualatex (0.0745ms) # SKIP",
+      "﹣ isolated compiler: chinese (0.0656ms) # SKIP",
+      "﹣ isolated compiler: lua-chinese-budget (0.0767ms) # SKIP",
+      "﹣ isolated compiler: bibtex (0.0975ms) # SKIP",
+      "﹣ isolated compiler: biber (0.0689ms) # SKIP",
+      "﹣ isolated compiler: missing-image (0.0888ms) # SKIP",
+      "﹣ isolated compiler: missing-package (0.0864ms) # SKIP",
+      "﹣ isolated compiler: undefined-reference (0.15ms) # SKIP",
+      "﹣ isolated compiler: shell-blocked (0.0933ms) # SKIP",
+      "﹣ isolated compiler: lua-blocked (0.0592ms) # SKIP",
+      "﹣ isolated compiler: forged-result (0.0594ms) # SKIP",
+      "﹣ isolated compiler: lua-forged-host-result (0.0552ms) # SKIP",
+      "﹣ isolated compiler: pdf-before-error (0.0404ms) # SKIP",
+      "﹣ isolated compiler: absolute-write-blocked (0.0765ms) # SKIP",
+      "﹣ isolated compiler: biber-remote-blocked (0.0403ms) # SKIP",
+      "﹣ isolated compiler: biber-nonutf8-control (0.0461ms) # SKIP",
+      "﹣ isolated compiler: timeout (0.055ms) # SKIP",
+      "﹣ optional real Docker preserves ordinary and executable source modes (0.0901ms) # SKIP",
+      "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.1244ms) # SKIP"
+    ]
+  },
+  "followUpChecks": [
+    {
+      "command": "node --test --test-concurrency=1 tests/unit/research-automation.test.mjs tests/unit/durable-full-access.test.mjs tests/unit/compute-queue.test.mjs tests/unit/agent-admission.test.mjs tests/unit/model-http.test.mjs tests/unit/full-access-paused-queue.test.mjs tests/integration/full-access-fences.test.mjs tests/integration/durable-full-access-host.test.mjs tests/integration/model-http-ipc.test.mjs tests/integration/host-ipc-drain.test.mjs",
+      "snapshot": "f650e8af95d692f82ba08cb06fd3d2d0eb96bb5f",
+      "logFile": "full-access-fix-related.log",
+      "logSha256": "b35335bf6513ab606f878cb8c2766f5fbb3ea979b285516034258ff85699cb8d",
+      "tests": 85,
+      "passed": 85,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/integration/durable-local-run.test.mjs tests/unit/host-access-menu-ui.test.mjs",
+      "snapshot": "f650e8af95d692f82ba08cb06fd3d2d0eb96bb5f",
+      "logFile": "full-access-final-local-ui.log",
+      "logSha256": "e80388d213504ef4dca7d53827f6fc7397890a6d82528277b46cf67d3073598c",
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "node --test --test-concurrency=1 tests/unit/operation-schema.test.mjs tests/unit/operation-outputs.test.mjs",
+      "snapshot": "f6580096e1a5afe6e8fb57d25dc3d0d4a7d07c88",
+      "logFile": "full-access-final-contracts.log",
+      "logSha256": "29b4edbf927acf81a25d4af8bc7f87e1a9c12503f9aacc83c57ff1698f85d25a",
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": "node --test --test-concurrency=1 [14 affected test files; see retained execution receipt]",
+      "snapshot": "original working tree with task merged and unrelated work retained",
+      "logFile": "full-access-original-integrated-tests.log",
+      "logSha256": "49806d7783d64b4b6a7d131d9d39619c76768c76f591b2c31e58ff6e9fdba3cb",
+      "tests": 123,
+      "passed": 123,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "builds": [
+    {
+      "command": "npm run build",
+      "status": "passed",
+      "logSha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+    },
+    {
+      "command": "npm run verify:build",
+      "status": "passed",
+      "snapshot": "f650e8af95d692f82ba08cb06fd3d2d0eb96bb5f; later changes only tests/documentation",
+      "logSha256": "0455514d2fe7e9a3a9bfd4b3ea5f182fdf17460b22613a98a959c7c34758cb28"
+    },
+    {
+      "command": "npm run build",
+      "status": "passed",
+      "snapshot": "original merged working tree",
+      "logSha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+    }
+  ],
+  "parity": {
+    "command": "npm run test:parity",
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "snapshot": "91b7d5885fdc24d4a6f7ecf94fa8cdb9f0b6093c"
+  },
+  "independentReview": {
+    "requestedModel": "gpt-6-astra",
+    "requestedEffort": "xhigh",
+    "runtimeMetadata": "not echoed",
+    "originalBlockers": 3,
+    "remainingBlockers": 0,
+    "productReviewTree": "f650e8af95d692f82ba08cb06fd3d2d0eb96bb5f",
+    "testOnlyFollowUpTree": "f6580096e1a5afe6e8fb57d25dc3d0d4a7d07c88"
+  },
+  "delegation": {
+    "implementation": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh"
+    },
+    "integrationContext": {
+      "model": "gpt-6.1-sol",
+      "effort": "high"
+    },
+    "windowsLifecycleProbe": {
+      "model": "gpt-6-astra",
+      "effort": "high"
+    },
+    "actualRuntimeConfiguration": "requested; not echoed; no main/global configuration changed"
+  },
+  "notRun": [
+    "live online model/provider scientific validation",
+    "POSIX v2 native execution",
+    "25 optional/platform-dependent checks in the full-run skip report"
+  ],
+  "operationalLimits": [
+    "Existing scope1 grants retain their original limits; scope2 requires explicit new consent.",
+    "No running user service was restarted. Existing process loads the new code on normal restart.",
+    "Unknown usage and uncertain native execution remain blocked pending reconciliation."
+  ],
+  "evidenceRetention": "Raw logs and immutable patch/snapshot receipts remain outside Git in the task temporary directory."
+}

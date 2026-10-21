@@ -100,6 +100,14 @@ export declare class RunService {
         sourceDigest: string;
         gitCommit: string | undefined;
     };
+    assertDiagnostic(actor: Actor, id: string): {
+        completion: any;
+        version: 1;
+        kind: "local-nonzero-exit";
+        executionId: string;
+        reportArtifactId: string;
+        reportDigest: string;
+    };
     finalize(id: string, exitCode: number | null, state: 'succeeded' | 'failed' | 'cancelled', error?: string, facts?: DockerRunResult): Row<Run>;
     reviewOutcome(actor: Actor, id: string, value: unknown): Row<Run>;
     reconcile(): void;

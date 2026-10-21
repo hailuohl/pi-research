@@ -1214,6 +1214,34 @@ export declare const INPUT_SCHEMAS: {
                 readonly minimum: number;
                 readonly maximum: number;
             };
+            readonly repair: {
+                readonly type: "object";
+                readonly properties: {
+                    readonly runId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly jobId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                    readonly reviewId: {
+                        readonly pattern?: string | undefined;
+                        readonly type: "string";
+                        readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                        readonly minLength: number;
+                        readonly maxLength: number;
+                    };
+                };
+                readonly required: readonly ["runId", "jobId"];
+                readonly additionalProperties: false;
+            };
             readonly config: {
                 readonly type: "object";
                 readonly additionalProperties: {
@@ -5668,6 +5696,47 @@ export declare const INPUT_SCHEMAS: {
             };
         };
         readonly required: ("expectedVersion" | "briefId")[];
+        readonly additionalProperties: false;
+    };
+    readonly research_task_checkpoint: {
+        readonly type: "object";
+        readonly properties: {
+            readonly state: {
+                readonly enum: readonly ["completed", "waiting", "needs_attention"];
+            };
+            readonly summary: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly runIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+            readonly developmentJobIds: {
+                readonly maxItems?: number | undefined;
+                readonly type: "array";
+                readonly items: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly minItems: number;
+            };
+        };
+        readonly required: readonly ("state" | "runIds" | "summary" | "developmentJobIds")[];
         readonly additionalProperties: false;
     };
     readonly host_execute: {

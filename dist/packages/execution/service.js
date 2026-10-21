@@ -13,7 +13,7 @@ export class ExecutionService {
         for (const id of this.app.compute.queued('development'))
             store.transaction(() => {
                 const job = store.get('sandbox-job', id);
-                if (job.state !== 'queued')
+                if (job.state !== 'queued' || this.app.researchAutomation.paused(job.developmentTaskId))
                     return;
                 try {
                     this.app.development.assertCurrent(job, false);

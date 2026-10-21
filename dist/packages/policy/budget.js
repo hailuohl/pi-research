@@ -5,8 +5,9 @@ export class BudgetService {
     constructor(store) {
         this.store = store;
     }
-    configure(projectId, ownerId, limit) { ensure(Number.isSafeInteger(limit) && limit >= 0, 'INVALID_INPUT', '无效额度', 400); return this.store.create('budget', projectId, { ownerId, limit, unit: 'agent-attempt' }, ownerId); }
-    summary(ownerId) { const budget = this.store.get('budget', ownerId); const rs = this.store.list('reservation', budget.projectId).filter(x => x.ownerId === ownerId); const used = rs.reduce((s, r) => s + (r.state === 'settled' ? r.used : 0), 0); const reserved = rs.reduce((s, r) => s + (r.state === 'reserved' ? r.amount : 0), 0); const unknown = rs.reduce((s, r) => s + (r.state === 'unknown' ? r.amount : 0), 0); return { limit: budget.limit, used, reserved, unknown, available: budget.limit - used - reserved - unknown, unit: budget.unit }; }
+    configure(projectId, ownerId, limit) { ensure(limit === null || Number.isSafeInteger(limit) && limit >= 0, 'INVALID_INPUT', '无效额度', 400); return this.store.create('budget', projectId, { ownerId, limit, unit: 'agent-attempt' }, ownerId); }
+    summary(ownerId) { const budget = this.store.get('budget', ownerId); const rs = this.store.list('reservation', budget.projectId).filter(x => x.ownerId === ownerId); const used = rs.reduce((s, r) => s + (r.state === 'settled' ? r.used : 0), 0); const reserved = rs.reduce((s, r) => s + (r.state === 'reserved' ? r.amount : 0), 0); const unknown = rs.reduce((s, r) => s + (r.state === 'unknown' ? r.amount : 0), 0); return { limit: budget.limit, used, reserved, unknown, available: budget.limit === null ? null : budget.limit - used - reserved - unknown, unit: budget.unit }; }
+    canReserve(ownerId, amount) { const available = this.summary(ownerId).available; return available === null || available >= amount; }
     reserve(projectId, ownerId, subjectId, amount) {
         return this.store.transaction(() => {
             this.store.get('budget', ownerId, projectId);
@@ -16,7 +17,7 @@ export class BudgetService {
                 ensure(old.amount === amount, 'IDEMPOTENCY_CONFLICT', '已存在不同额度的预留');
                 return old;
             }
-            ensure(this.summary(ownerId).available >= amount, 'BUDGET_EXCEEDED', '团队执行额度不足');
+            ensure(this.canReserve(ownerId, amount), 'BUDGET_EXCEEDED', '团队执行额度不足');
             return this.store.create('reservation', projectId, { ownerId, subjectId, amount, used: 0, state: 'reserved' });
         });
     }

@@ -219,7 +219,7 @@ export class TeamService {
                     continue;
                 }
                 // Do not let a retry consume the last credit promised to final synthesis.
-                if (this.budget.summary(t.id).available <= (t.autoSummarize ? 1 : 0)) {
+                if (!this.budget.canReserve(t.id, (t.autoSummarize ? 1 : 0) + 1)) {
                     for (const pending of tasks.filter(x => x.execution === 'pending'))
                         this.c.store.update('task', pending.id, pending.version, { execution: 'blocked', blockReason: '可用任务额度不足；保留主会话综合额度' });
                     this.refresh(id);
@@ -565,7 +565,7 @@ export class TeamService {
         ensure(['active', 'paused', 'partial'].includes(t.state), 'TEAM_STATE_INVALID', '当前团队不能重试');
         ensure(['failed', 'cancelled', 'blocked'].includes(task.execution), 'TASK_NOT_RETRYABLE', '只有失败、取消或部分交付可建立新尝试');
         ensure(task.attemptCount < t.settings.maxTaskAttempts, 'ATTEMPT_LIMIT', '已达到最大尝试次数');
-        ensure(this.budget.summary(t.id).available > (t.autoSummarize ? 1 : 0), 'BUDGET_EXCEEDED', '可用任务额度不足；保留主会话综合额度');
+        ensure(this.budget.canReserve(t.id, (t.autoSummarize ? 1 : 0) + 1), 'BUDGET_EXCEEDED', '可用任务额度不足；保留主会话综合额度');
         return { task, t };
     }
     retryEligibility(actor, taskId) {

@@ -83,7 +83,7 @@ export function retireProjectAuthority(store:Store,pid:string) {
     update('message',['queued'],{status:'cancelled',error:'项目已归档，未开始的请求已取消'},'status');
     update('team',['active','paused','awaiting_approval','draining'],{state:'paused',delegationEnabled:false,blockReason:'项目已归档；需要重新授权'});
     update('campaign',['draft','active','paused'],{state:'stopped',autoAnalyze:false,stopReason:'项目已归档'});
-    update('research-continuation',['active','blocked'],{state:'cancelled',reason:'项目已归档'});
+    update('research-continuation',['active','paused','blocked'],{state:'cancelled',reason:'项目已归档'});
     update('task',['pending','blocked','waiting_user'],{execution:'cancelled'},'execution');
     update('wakeup',['pending'],{state:'superseded',error:'项目已归档',requested:false});
     for(const row of store.list('github-setting',pid))if(row.enabled)store.update('github-setting',row.id,row.version,{enabled:false,epoch:Number(row.epoch)+1,eventCursor:store.eventCursor(pid)});

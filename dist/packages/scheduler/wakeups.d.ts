@@ -6,7 +6,7 @@ export interface Wakeup {
     approvalId?: string;
     resumePermission?: import('../policy/session-permissions.js').PermissionReference;
     continuationId?: string;
-    jobKind?: 'development' | 'run';
+    jobKind?: 'development' | 'run' | 'review' | 'recovery' | 'prepared';
     sourceId: string;
     ownerId: string;
     rootSessionId: string;
@@ -124,18 +124,18 @@ export declare class WakeupService {
         originMessageId: string;
         goal: string;
         limits: {
-            readonly development: 3;
-            readonly run: 2;
-            readonly continuations: 6;
-            readonly durationMs: number;
+            development: number | null;
+            run: number | null;
+            continuations: number | null;
+            durationMs: number | null;
         };
-        expiresAt: string;
+        expiresAt: string | null;
         budget: {
-            limit: number;
+            limit: number | null;
             used: number;
             reserved: number;
             unknown: number;
-            available: number;
+            available: number | null;
             unit: "agent-attempt";
         };
         result: {
@@ -202,12 +202,123 @@ export declare class WakeupService {
             logTruncated: boolean | undefined;
             cancelRequested: boolean;
         } | {
+            verdict?: "disputed" | "reject" | "accept" | undefined;
+            reviewerSessionId?: string | undefined;
+            blockingMessage?: string | undefined;
+            readingChecks?: ({
+                targetId: string;
+                kind: string;
+                path: string;
+                digest: string;
+                total: number;
+                readComplete: boolean;
+                missingIntervals: {
+                    start: number;
+                    end: number;
+                }[];
+                blockedReason?: undefined;
+            } | {
+                targetId: string;
+                kind: string;
+                path: string;
+                digest: string;
+                total: null;
+                readComplete: boolean;
+                missingIntervals: never[];
+                blockedReason: string;
+            })[] | undefined;
+            assessmentRequiredAreas?: ("implementation_and_tests" | "input_evidence" | "independent_units_and_intervals" | "threshold_interpretation" | "claim_boundaries")[] | undefined;
+            digest: string;
+            status: "failed" | "running" | "passed" | "stale" | "pending" | "rejected" | "disputed" | "awaiting_approval";
+            protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
+            draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
+            protocolVersion?: 1 | 2 | undefined;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
+            sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
+            testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
+            dataArtifacts?: Omit<{
+                id: string;
+                digest: string;
+                size: number;
+                path: string;
+                sourceAcceptanceId?: string;
+            }, "path">[] | undefined;
+            teamId: string;
+            taskId: string;
+            approvalId: string;
+            manifestEvidenceId: string;
+            testEvidenceIds: string[];
+            requiredEvidenceIds: string[];
+            baseSourceRevisionId?: string | undefined;
+            briefArtifact?: undefined;
+            surfaceInventory?: undefined;
+            jobId: string;
+            sourceDigest: string;
+            producerSessionId: string;
             id: string;
-            experimentId: string;
-            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
-            integrity: "incomplete" | "pending" | "complete" | "invalid";
-            validation: "incomplete" | "invalid" | "verified";
-            explanation: string;
+            reviewId: string;
+        } | {
+            verdict?: "disputed" | "reject" | "accept" | undefined;
+            reviewerSessionId?: string | undefined;
+            blockingMessage?: string | undefined;
+            readingChecks?: ({
+                targetId: string;
+                kind: string;
+                path: string;
+                digest: string;
+                total: number;
+                readComplete: boolean;
+                missingIntervals: {
+                    start: number;
+                    end: number;
+                }[];
+                blockedReason?: undefined;
+            } | {
+                targetId: string;
+                kind: string;
+                path: string;
+                digest: string;
+                total: null;
+                readComplete: boolean;
+                missingIntervals: never[];
+                blockedReason: string;
+            })[] | undefined;
+            assessmentRequiredAreas?: ("implementation_and_tests" | "input_evidence" | "independent_units_and_intervals" | "threshold_interpretation" | "claim_boundaries")[] | undefined;
+            digest: string;
+            status: "failed" | "running" | "passed" | "stale" | "pending" | "rejected" | "disputed" | "awaiting_approval";
+            protocolDocument?: import("../research-workflows/method-contracts.js").ProtocolDocument | undefined;
+            draftRoles?: import("../research-workflows/method-contracts.js").DraftRole[] | undefined;
+            protocolVersion?: 1 | 2 | undefined;
+            researchBrief?: import("../domain/types.js").ResearchBriefRef | undefined;
+            sourceInputs?: import("../research-workflows/source-inputs.js").ResearchSourceInput[] | undefined;
+            testArtifacts?: import("../development/review-assessment.js").ReviewTestArtifact[] | undefined;
+            dataArtifacts?: Omit<{
+                id: string;
+                digest: string;
+                size: number;
+                path: string;
+                sourceAcceptanceId?: string;
+            }, "path">[] | undefined;
+            teamId: string;
+            taskId: string;
+            approvalId: string;
+            manifestEvidenceId: string;
+            testEvidenceIds: string[];
+            requiredEvidenceIds: string[];
+            baseSourceRevisionId?: string | undefined;
+            briefArtifact: {
+                id: string;
+                digest: string;
+                size: number;
+                path: string;
+            } | undefined;
+            surfaceInventory: import("../development/review-assessment.js").ReviewInventory;
+            jobId: string;
+            sourceDigest: string;
+            producerSessionId: string;
+            id: string;
+            reviewId: string;
+        } | {
             metrics: Record<string, number> | null;
             metricsContract: Record<string, {
                 unit: string;
@@ -217,6 +328,68 @@ export declare class WakeupService {
             error: string | undefined;
             artifactIds: string[];
             evidenceIds: string[];
+            failureDiagnostic?: {
+                completion: any;
+                version: 1;
+                kind: "local-nonzero-exit";
+                executionId: string;
+                reportArtifactId: string;
+                reportDigest: string;
+            } | undefined;
+            id: string;
+            experimentId: string;
+            state: "succeeded" | "failed" | "cancelled" | "unknown" | "queued" | "running" | "submitting" | "cancelling";
+            integrity: "incomplete" | "pending" | "complete" | "invalid";
+            validation: "incomplete" | "invalid" | "verified";
+            explanation: string;
+        } | {
+            authorization: Row<import("../policy/research-automation.js").Authorization> | undefined;
+            instruction: string;
+            interruptedMessageId?: undefined;
+            task?: undefined;
+            receipts?: undefined;
+        } | {
+            interruptedMessageId: string;
+            task: {
+                budget: {
+                    limit: number | null;
+                    used: number;
+                    reserved: number;
+                    unknown: number;
+                    available: number | null;
+                    unit: "agent-attempt";
+                };
+                checkpoint: Row<Record<string, unknown>> | null;
+                authorizations: Row<import("../policy/research-automation.js").Authorization>[];
+                id: string;
+                kind: string;
+                projectId: string | null;
+                version: number;
+                createdAt: string;
+                updatedAt: string;
+                rootSessionId: string;
+                originMessageId: string;
+                originDigest: string;
+                permission: import("../policy/session-permissions.js").PermissionReference;
+                runtimeId: string;
+                modelDigest: string;
+                sourceRevisionId?: string;
+                lifecycleEpoch?: number;
+                expiresAt: string | null;
+                limits: import("../policy/host-access.js").ResearchAutomationPolicy["limits"];
+                policy?: import("../policy/host-access.js").ResearchAutomationPolicy;
+                digest: string;
+                state: "active" | "paused" | "blocked" | "cancelled" | "completed";
+                reason?: string;
+            };
+            receipts: {
+                callId: string;
+                result: {
+                    [k: string]: any;
+                };
+            }[];
+            instruction: string;
+            authorization?: undefined;
         };
         notice: string;
         task?: undefined;

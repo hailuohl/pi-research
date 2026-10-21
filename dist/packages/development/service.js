@@ -224,7 +224,7 @@ export class DevelopmentService {
         const approval = this.app.approvals.assert(t.grantId, pid, id, t.manifestDigest, 'development.test');
         ensure(approval.subjectKind === 'development-task', 'APPROVAL_STALE', '审批类型不匹配');
         if (active)
-            this.app.researchAutomation.assertApproval(approval, true);
+            this.app.researchAutomation.assertApproval(approval, true, 'developmentTaskId' in t && t.startRequested);
         const m = t.manifest, s = this.app.store.get('session', t.sessionId, pid);
         if (m.researchBrief) {
             ensure(m.researchBrief.rootSessionId === s.id, 'BRIEF_REFERENCE_MISMATCH', '开发测试研究来源不属于本会话');

@@ -61,10 +61,10 @@ export declare class ResearchBriefService {
     assertAdmission(projectId: string, ref: ResearchBriefRef, phase?: 'formal'): void;
     validateReadyDrafts(actor: Actor, projectId: string, sessionId: string, input: unknown): void;
     sourceInputFingerprint(sessionId: string, expectedRevisionId: string | null): {
-        digest: string;
-        workspace: string;
         path: string;
         size: number;
+        digest: string;
+        workspace: string;
         readId: string;
         artifactId?: string;
     }[] | undefined;

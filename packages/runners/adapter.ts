@@ -29,6 +29,7 @@ export interface RunExecution {
     leaseUntil: number;
     startRequested: boolean;
     recoveryCount: number;
+    localExecutionId?: string;
     logTruncated?: boolean;
     logsIncomplete?: boolean;
     outputExceeded?: boolean;
@@ -42,6 +43,7 @@ export interface DockerRunResult {
     logTruncated: boolean;
     outputExceeded: boolean;
     generation: number;
+    localCompletion?: {version:2;executionId:string;manifestDigest:string;stopped:true;exitCode:number|null;cancelled:boolean};
 }
 export interface DockerSupervisorCallbacks {
     paths?:DataPaths;

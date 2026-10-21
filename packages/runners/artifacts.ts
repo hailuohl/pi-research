@@ -61,6 +61,7 @@ export function collectRunArtifacts(run: Row<Run>, evidence: EvidenceService, pa
         try{const bytes=!existsSync(path)&&!run.execution.startRequested?Buffer.alloc(0):readStableFile(run.execution.controlDir,name,name==='diagnostic.log'?65536:run.manifest.contract.logBytes??16*1024*1024);artifacts.set(name,evidence.put(run.projectId!,name,publicBytes(bytes),'text/plain','run',{runId:run.id}));controlNames.add(name);}
         catch(error){errors.push(`${name}: ${asError(error).message}`);}
     }
+    const diagnosticSafe=!unsafe&&!methodInvalid&&!errors.length&&controlNames.has('stdout.log')&&controlNames.has('stderr.log');
     let integrity: Run['integrity'] = unsafe||methodInvalid ? 'invalid' : 'incomplete';
     let metrics: Record<string, number> | undefined;
     const metric = artifacts.get('metrics.json');
@@ -76,5 +77,5 @@ export function collectRunArtifacts(run: Row<Run>, evidence: EvidenceService, pa
     const missing = run.manifest.contract.expectedArtifacts.filter(path => !artifacts.has(path));
     missing.forEach(path => errors.push(`${path}: 必需产物未归档为普通文件`));
     if (metrics && !missing.length && !errors.length && integrity !== 'invalid') integrity = 'complete';
-    return {artifactIds: [...artifacts.values()].map(a => a.id), evidenceIds, metrics, integrity, errors};
+    return {artifactIds: [...artifacts.values()].map(a => a.id), evidenceIds, metrics, integrity, errors,diagnosticSafe:diagnosticSafe&&integrity!=='invalid'};
 }

@@ -190,6 +190,25 @@ test('all existing public tools have closed, literal success contracts exercised
   await call('paper_read',{id:'10.1234/test',source:'crossref'});
   const changeArtifact=s.app.evidence.put(s.project.id,'change.txt',Buffer.from('new source'),'text/plain',`agent:${root.sessionId}`);
   await call('change_proposal_prepare',{baseExperimentId:s.baseline.id,expectedRevision:1,title:'patch',hypothesis:'fixture',changes:[{path:'new.txt',expectedDigest:null,artifactId:changeArtifact.id}]});
+  const durable=setup();
+  try {
+   const app=durable.app,pid=durable.project.id,sid=durable.session.id;
+   app.hostAccess.enable(USER,sid,{expectedVersion:0,acknowledgedSameUserAccess:true,acknowledgedResearchAutomation:true,researchAutomationPolicy:{version:2,limits:{development:null,run:null,continuations:null,durationMs:null},recoverAfterRestart:true}});
+   app.researchAutomation.startOwner();
+   const origin=app.sessions.send(USER,sid,{content:'UNIT fixed checkpoint output contract'}),session=app.store.get('session',sid);
+   app.store.update('session',sid,session.version,{state:'running',generation:1,leaseUntil:Date.now()+120000});
+   app.store.update('message',origin.id,origin.version,{status:'running',generation:1});
+   const first={type:'agent',role:'coordinator',projectId:pid,sessionId:sid,messageId:origin.id,generation:1,permission:app.sessionPermissions.capture(sid),researchModelDigest:app.researchAutomation.modelIdentity(session)};
+   app.runs.prepare(first,durable.baseline.id);
+   const input=app.store.get('message',origin.id),running=app.store.get('session',sid);
+   app.store.update('message',input.id,input.version,{status:'completed'});app.store.update('session',sid,running.version,{state:'idle',leaseUntil:0});
+   app.wakeups.reconcile();const wakeup=app.wakeups.list(USER,pid).find(w=>w.jobKind==='prepared');assert.ok(wakeup);
+   const dispatch=app.wakeups.dispatch(wakeup.id,{ready:true});assert.ok(dispatch);const idle=app.store.get('session',sid);
+   app.store.update('session',sid,idle.version,{state:'running',generation:2,leaseUntil:Date.now()+120000});app.store.update('message',dispatch.message.id,dispatch.message.version,{status:'running',generation:2});app.wakeups.markStarted(wakeup.id,sid,2,dispatch.message.id);
+   const continuation={...first,generation:2,messageId:dispatch.message.id,wakeupId:wakeup.id,continuationId:wakeup.continuationId,permission:dispatch.message.permission};
+   const checkpoint=check('research_task_checkpoint',await new ToolDispatcher(app).execute(continuation,'research_task_checkpoint',{state:'waiting',summary:'UNIT existing prepared work awaits the next phase',runIds:[],developmentJobIds:[]},'schema-checkpoint'));
+   assert.equal(checkpoint.continuationId,wakeup.continuationId);assert.equal(checkpoint.scientificConclusion,false);assert.equal(app.researchAutomation.inspect(USER,wakeup.continuationId).checkpoint.state,'waiting');
+  } finally {durable.close();}
   // Source-access and grant operations are covered by their own feature tests;
   // text-evidence.test.mjs exercises all four TextCorpusGrant operations through Registry.
   const expected=Object.keys(TOOL_DEFINITIONS).filter(name=>!Object.hasOwn(SESSION_HISTORY_INPUT_SCHEMAS,name)&&!Object.hasOwn(RUN_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(WORKING_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(DISCOVERY_GRANT_INPUT_SCHEMAS,name)&&!Object.hasOwn(RESEARCH_PLAN_INPUT_SCHEMAS,name)&&!Object.hasOwn(SOURCE_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(DEVELOPMENT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(GIT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REVIEW_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(FORMAL_REPORT_OUTPUT_SCHEMAS,name)&&!Object.hasOwn(REPORT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SCHEDULER_INPUT_SCHEMAS,name)&&!Object.hasOwn(DOCUMENT_INPUT_SCHEMAS,name)&&!Object.hasOwn(SKILL_INPUT_SCHEMAS,name)&&!Object.hasOwn(PUBLICATION_INPUT_SCHEMAS,name)&&!['docker_connection_probe','ssh_target_inspect','ssh_target_preferences_configure'].includes(name)&&name!=='reviewed_change_prepare'&&!name.startsWith('text_corpus_grant_'));

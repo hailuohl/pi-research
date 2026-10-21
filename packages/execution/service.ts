@@ -10,7 +10,7 @@ export class ExecutionService {
         const store = this.app.store;
         this.app.compute.tick();
         for(const id of this.app.compute.queued('development'))store.transaction(()=>{
-            const job=store.get<SandboxJob>('sandbox-job',id);if(job.state!=='queued')return;
+            const job=store.get<SandboxJob>('sandbox-job',id);if(job.state!=='queued'||this.app.researchAutomation.paused(job.developmentTaskId))return;
             try{this.app.development.assertCurrent(job,false);}
             catch(error){this.app.development.finalize(id,{state:'failed',exitCode:null,error:(error as Error).message,incomplete:true});}
         });

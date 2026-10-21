@@ -1,3 +1,4 @@
+import {assertResearchReference,type ResearchContinuation} from '../policy/research-automation.js';
 import {digest} from '../storage/store.js';
 import {publicationImageCatalog,imageReference,documentImageReference,CONTEXT_IMAGE_BYTES,PUBLICATION_IMAGE_TOOL,DOCUMENT_IMAGE_TOOL} from '../pi-adapter/publication-image.js';
 import {modelConnectionSnapshot,assertModelEnabled} from '../pi-adapter/model-connections.js';
@@ -125,7 +126,7 @@ export class AgentHost {
                         try { this.app.teams.active(active.actor); }
                         catch (error) { this.abortProcess(active, this.clean(asError(error).message)); continue; }
                     }
-                    this.app.store.transaction(()=>{this.admission.heartbeat(active.admissionId,this.ownerHost,active.generation);const latest=this.app.store.get<Session>('session',s.id);ensure(latest.generation===active.generation,'LEASE_EXPIRED','会话已失效');this.app.store.update<Session>('session',latest.id,latest.version,{leaseUntil:Date.now()+30000});if(a)this.app.teams.heartbeat(a.id);});
+                    this.app.store.transaction(()=>{ensure(this.valid(active),'LEASE_EXPIRED','会话或持续任务owner已失效');this.admission.heartbeat(active.admissionId,this.ownerHost,active.generation);const latest=this.app.store.get<Session>('session',s.id);ensure(latest.generation===active.generation,'LEASE_EXPIRED','会话已失效');this.app.store.update<Session>('session',latest.id,latest.version,{leaseUntil:Date.now()+30000});if(a)this.app.teams.heartbeat(a.id);});
                     active.lastHeartbeat = Date.now();
                 }
                 if (!s.taskId && !active.actor.wakeupId && !this.app.hostAccess.status({type:'user'},s.id).pending)
@@ -204,7 +205,9 @@ export class AgentHost {
             const input=messageId?store.get<Message>('message',messageId,latest.projectId!):undefined;
             if(input){ensure(input.sessionId===latest.id,'SCOPE_DENIED','消息不属于此会话',403);if(input.status!=='queued')return null;}
             const continuationId=input?.wakeupId?this.app.wakeups.get(SYSTEM,input.wakeupId).continuationId:undefined;
-            const permission=this.app.sessionPermissions.capture(latest.id,!!input?.wakeupId&&!continuationId);
+            const continuation=continuationId?store.get<ResearchContinuation>('research-continuation',continuationId,latest.projectId!):undefined;
+            if(continuation){ensure(this.app.researchAutomation.isOwner(),'AUTOMATION_RUNTIME_EXPIRED','当前进程已失去持续任务owner');assertResearchReference(store,latest.projectId!,{continuationId:continuation.id,digest:continuation.digest},true);}
+            const permission=continuation?.permission??this.app.sessionPermissions.capture(latest.id,!!input?.wakeupId);
             if(input&&!input.permission)ensure(permission.epoch===0&&permission.hostEpoch===0,'SESSION_PERMISSION_STALE','旧排队输入没有当前权限依据，请用户明确重试');
             if(input?.permission)ensure(JSON.stringify(input.permission)===JSON.stringify(permission),'SESSION_PERMISSION_STALE','排队消息权限已变化，请用户明确重试');
             if(latest.teamId){const team=store.get<Team>('team',latest.teamId,latest.projectId!);if(team.permission)this.app.sessionPermissions.assert(team.permission,false);else ensure(permission.epoch===0&&permission.hostEpoch===0,'SESSION_PERMISSION_STALE','旧协作计划没有当前权限依据');}
@@ -259,6 +262,7 @@ export class AgentHost {
         // Explicit local variables only; never inherit host credentials or interpreter options.
         const child = store.transaction(()=>{
             // Serialize the final revocation check with process creation across controllers.
+            if(continuationId)ensure(this.app.researchAutomation.isOwner(),'AUTOMATION_RUNTIME_EXPIRED','当前进程已失去持续任务owner');
             this.app.skills.ensureBundleStartAllowed(claimed.projectId!,bundleId);
             const marked=this.admission.markSpawnRequested(slot.id,this.ownerHost,claimed.generation);store.update('agent-admission',marked.id,marked.version,{httpManagedVersion:1});requested=true;
             // Windows locks a process cwd; keep the replaceable workspace only in the SDK options.
@@ -304,6 +308,7 @@ export class AgentHost {
         try{if(!a.ended)this.finish(a,`Worker 退出（${code}）；请求或工具用量可能需要对账`);this.app.modelHttp.workerExited(a.admissionId,this.ownerHost,a.generation);this.admission.release(a.admissionId,this.ownerHost,a.generation,'confirmed-exit');}finally{if(this.active.get(a.sessionId)===a)this.active.delete(a.sessionId);}
     }
     private valid(a: Active) {
+        if(a.actor.continuationId&&!this.app.researchAutomation.isOwner())return false;
         if(a.admissionId){try{this.admission.assertOwned(a.admissionId,this.ownerHost,a.generation);}catch{return false;}}
         const s = this.app.store.get<Session>('session', a.sessionId);
         if (s.generation !== a.generation || s.state !== 'running' || s.leaseUntil <= Date.now()) return false;

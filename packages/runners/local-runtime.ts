@@ -9,7 +9,7 @@ import {integer,object,text} from '../contracts/validation.js';
 import {userOnly} from '../policy/permissions.js';
 import {digest} from '../storage/store.js';
 
-export interface LocalRuntime {id:string;version:number;executableName:string;runtimeVersion:string;executableDigest:string;hostId:string;platform:string;protocolDigest:string;digest:string;}
+export interface LocalRuntime {protocolVersion?:2;id:string;version:number;executableName:string;runtimeVersion:string;executableDigest:string;hostId:string;platform:string;protocolDigest:string;digest:string;}
 interface PrivateRuntime extends LocalRuntime {executable:string;}
 export function hostIdentity():string {
     let identity=hostname();
@@ -30,7 +30,7 @@ export function localEnvironment(control:string,output:string,gpus?:string[]):No
 export class LocalRuntimeService {
     constructor(private c:AppContext){}
     private file(){return join(this.c.dataDir,'local-runtimes.json');}
-    private protocol(){return digest(['local-windows-runner.ps1','local-posix-runner.mjs'].map(name=>digest(readFileSync(join(this.c.repoRoot,'scripts',name)))));}
+    private protocol(version?:2){return digest((version===2?['local-windows-runner-v2.ps1','local-posix-runner-v2.mjs','local-windows-launcher-v2.mjs']:['local-windows-runner.ps1','local-posix-runner.mjs']).map(name=>digest(readFileSync(join(this.c.repoRoot,'scripts',name)))));}
     private read():Record<string,PrivateRuntime>{return existsSync(this.file())?JSON.parse(readFileSync(this.file(),'utf8')):{};}
     list():LocalRuntime[]{return Object.values(this.read()).map(({executable,...publicRuntime})=>publicRuntime);}
     configure(actor:Actor,value:unknown):LocalRuntime {
@@ -44,10 +44,11 @@ export class LocalRuntimeService {
             const fields={id,version:(old?.version??0)+1,executableName:basename(executable),runtimeVersion,executableDigest:digest(readFileSync(executable)),hostId:hostIdentity(),platform:process.platform,protocolDigest:this.protocol()};
             const runtime={...fields,digest:digest(fields)};all[id]={...runtime,executable};const tmp=this.file()+'.tmp';writeFileSync(tmp,JSON.stringify(all),{mode:0o600});renameSync(tmp,this.file());return runtime;});
     }
-    frozen(id:string):LocalRuntime {const p=this.resolve(id);const {executable,...runtime}=p;return runtime;}
+    frozen(id:string):LocalRuntime {const p=this.resolve(id);const {executable,digest:oldDigest,...runtime}=p,fields={...runtime,protocolVersion:2 as const,protocolDigest:this.protocol(2)};return {...fields,digest:digest(fields)};}
     resolve(id:string,expected?:LocalRuntime):PrivateRuntime {
         const runtime=this.read()[id];ensure(runtime,'LOCAL_RUNTIME_UNAVAILABLE','请先配置本机运行时',409);
         const {executable,...publicRuntime}=runtime;ensure(runtime.hostId===hostIdentity()&&runtime.protocolDigest===this.protocol()&&existsSync(executable)&&digest(readFileSync(executable))===runtime.executableDigest,'LOCAL_RUNTIME_CHANGED','本机、监管协议或运行时程序已变化，请重新准备运行',409);
+        if(expected?.protocolVersion===2){const {digest:oldDigest,...fields}=publicRuntime,derived={...fields,protocolVersion:2 as const,protocolDigest:this.protocol(2)},bound={...derived,digest:digest(derived)};ensure(digest(bound)===digest(expected),'LOCAL_RUNTIME_CHANGED','运行时配置或v2协议与批准清单不同',409);return {...bound,executable};}
         if(expected)ensure(digest(publicRuntime)===digest(expected),'LOCAL_RUNTIME_CHANGED','运行时配置与批准清单不同',409);return runtime;
     }
 }

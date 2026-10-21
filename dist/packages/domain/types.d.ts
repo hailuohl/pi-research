@@ -244,6 +244,13 @@ export interface RunIntent {
     runId?: string;
 }
 export interface Run {
+    failureDiagnostic?: {
+        version: 1;
+        kind: 'local-nonzero-exit';
+        executionId: string;
+        reportArtifactId: string;
+        reportDigest: string;
+    };
     permissionOrigin?: 'owner' | 'agent';
     permission?: import('../policy/session-permissions.js').JobPermission;
     runGrant?: import('../policy/run-grant-types.js').RunGrantReference;
