@@ -3,7 +3,7 @@
   "commit": "a1043ef544e3a100c28e70a736b6cf32554d0677",
   "license": "MIT",
   "copyright": "Copyright (c) 2025 K-Dense Inc.",
-  "scope": "Eight method references rewritten in Chinese for existing Pi Research skills; no upstream runtime, scripts, hosted services or new permissions are included. Existing OpenResearch module provenance remains separate.",
+  "scope": "Eight scientific method references and one regression-library reference rewritten in Chinese for existing Pi Research skills; no upstream runtime, scripts, hosted services or new permissions are included. Existing OpenResearch module provenance remains separate. Regression source frontmatter license declarations are retained separately from the repository MIT license.",
   "files": [
     {
       "path": "LICENSE.md",
@@ -89,6 +89,24 @@
       "sha256": "def9b0ac9ff3d2912922d121062559b22ff3ec36aed94e183eef3338b4e0430f",
       "bytes": 11916,
       "url": "https://github.com/K-Dense-AI/scientific-agent-skills/blob/a1043ef544e3a100c28e70a736b6cf32554d0677/skills/uncertainty-and-units/references/gum-methodology.md"
+    },
+    {
+      "path": "skills/statsmodels/SKILL.md",
+      "git_blob": "0af65089389b2602e857d503c7874154c6c9de4c",
+      "sha256": "9e6c034bb4acbf0972fda18892d2feea907885ac5ad7194d220182d8810295a3",
+      "bytes": 12681,
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills/blob/a1043ef544e3a100c28e70a736b6cf32554d0677/skills/statsmodels/SKILL.md",
+      "adapted_resource": "skills/piresearch/pi-research-evidence/references/regression-libraries.md",
+      "frontmatter_license": "BSD-3-Clause license"
+    },
+    {
+      "path": "skills/scikit-learn/SKILL.md",
+      "git_blob": "9e26cff8bd282c523b645719c817c1415e0ddb3f",
+      "sha256": "a1765797d072ab40094522abe68fb04505d0881f66b7dfceeb8582422dbe488d",
+      "bytes": 13255,
+      "url": "https://github.com/K-Dense-AI/scientific-agent-skills/blob/a1043ef544e3a100c28e70a736b6cf32554d0677/skills/scikit-learn/SKILL.md",
+      "adapted_resource": "skills/piresearch/pi-research-evidence/references/regression-libraries.md",
+      "frontmatter_license": "BSD-3-Clause license"
     }
   ]
 }

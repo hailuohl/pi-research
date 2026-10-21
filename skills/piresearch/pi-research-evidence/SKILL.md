@@ -15,6 +15,7 @@ description: "检查数据质量、统计结果、测量不确定性与科学主
 |---|---|
 | CSV/TSV输入结构、扫描覆盖、缺失语义、异常值、分组/实体/时间泄漏或建模前检查 | [references/exploratory-data-analysis.md](references/exploratory-data-analysis.md) |
 | 组别比较、检验/回归选择、效应与置信区间、多重比较、诊断或阴性结果解释 | [references/statistical-analysis.md](references/statistical-analysis.md) |
+| 用现有scikit-learn实现数值回归，或以statsmodels对同一设计做数值交叉核验 | [references/regression-libraries.md](references/regression-libraries.md) |
 | 测量模型、Type A/B、单位换算、协方差传播、覆盖因子、有效数字或误差条含义 | [references/uncertainty-and-units.md](references/uncertainty-and-units.md) |
 | 科学主张支持程度、偏倚/混杂、机制/因果识别、适用范围或证据质量 | [references/scientific-critical-thinking.md](references/scientific-critical-thinking.md) |
 

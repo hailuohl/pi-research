@@ -4,6 +4,8 @@
 
 单输入变量的线性与二次回归比较，先读取本技能`references/paired-polynomial-comparison.md`，使用其中`paired-rmse-plan-v2`完整协议与宿主合成夹具流程。它将开发来源和精度条件一并冻结；不要先套下面的旧模板、再手写另一份协议补条件。
 
+使用已有scikit-learn实现回归或以statsmodels核对相同设计矩阵时，读取`references/regression-libraries.md`。它只补实现与数值复算方法，不决定研究目标或统计解释；多变量普通Run沿用现有契约，单输入线性/二次配对流程仍须遵守上面的闭合协议。
+
 其它适用的共同测试记录回归RMSE差可用`paired-rmse-delta-v1`。将固定模型的真实测试预测写入JSON产物，数组只包含测试记录；宿主由每条响应和两预测重算RMSE、正向增益及配对delta近似95%区间，并核对3个平铺数值指标。这个模板不提供开发夹具或完整协议角色约束。接口如下，路径、字段、单位及阈值换成本研究实际选择：
 
 ```json

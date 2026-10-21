@@ -64,12 +64,20 @@ from `K-Dense-AI/scientific-agent-skills` at commit
 `a1043ef544e3a100c28e70a736b6cf32554d0677`: experimental design, statistical power,
 exploratory data analysis, statistical analysis, uncertainty and units, hypothesis
 generation, scientific critical thinking, and systematic literature review.
+One additional reference adapts selected statsmodels/scikit-learn implementation
+methods from that same commit. Their SKILL frontmatter says BSD-3-Clause, recorded
+separately in the source manifest; the upstream repository MIT notice is retained.
 They are rewritten in Chinese for the existing Pi Research roles, tools, evidence
 and approval boundaries. Upstream scripts, Python dependencies, hosted services,
 image generation and advertising instructions are not bundled. Source paths,
 hashes and adapted resource locations are recorded in
 `third_party/scientific-agent-skills/source-manifest.json`; the existing skill
 modules retain their separate OpenResearch provenance.
+
+The original `examples/regression-libraries` code uses separately installed
+scientific libraries only in its optional research image. Package license and
+distribution metadata remain in the image; no library binaries or upstream skill
+scripts are vendored. Its resolved environment is recorded with each Run.
 
 ## Optional isolated PDF parser
 

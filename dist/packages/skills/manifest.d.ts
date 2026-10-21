@@ -1,4 +1,4 @@
-export declare const BUNDLE_ID = "45d125ff07c7f1b2b856a624aa140edf887432cc0e84cf181375676df8b65bf2";
+export declare const BUNDLE_ID = "6a24cca1c370257471bff9896d31f5e78d5ef313c29d7172e32d1055189b9be9";
 export declare const SKILL_MANIFEST: readonly [{
     readonly id: "pi-research-overview";
     readonly name: "pi-research-overview";
@@ -112,13 +112,13 @@ export declare const SKILL_MANIFEST: readonly [{
     readonly description: "检查数据质量、统计结果、测量不确定性与科学主张支持程度；设计可核验运行输出，回读日志和原始来源，区分实测、论文报告值、图片观察与解释。";
     readonly roles: readonly ["coordinator", "literature", "designer", "implementer", "analyst", "reviewer", "writer"];
     readonly path: "skills/piresearch/pi-research-evidence/SKILL.md";
-    readonly digest: "360adc5b6ee62d08cecc290c17660df48ecaffc28addb2d814d61994434f2f0c";
+    readonly digest: "303798c91235023ca71abe34d6a2a6f44bdfb0f58445a287a1f5c900b748dd1f";
     readonly resources: readonly [{
         readonly path: "references/exploratory-data-analysis.md";
         readonly digest: "2f6fd4bce9bc499d9cc622671b339f56a7ad1e1cdee2fe3e4a2690ed3711e3d7";
     }, {
         readonly path: "references/statistical-analysis.md";
-        readonly digest: "4b94c40e5b2fd76e8d2e9f7c56752ab9128c842787418f7937cdf47127fc44d7";
+        readonly digest: "cd8480e795a4b1c0d3fd711ccc93546eb8c2d2afd4382d6fc58fc78e8c988a85";
         readonly methodRequirements: readonly ["quantitative-decision"];
     }, {
         readonly path: "references/paired-polynomial-comparison.md";
@@ -130,6 +130,9 @@ export declare const SKILL_MANIFEST: readonly [{
     }, {
         readonly path: "references/scientific-critical-thinking.md";
         readonly digest: "dea70d80c26e4088b17803089d88a52e55bc75e8cd8c6416c5d04bb4a56d8b1c";
+    }, {
+        readonly path: "references/regression-libraries.md";
+        readonly digest: "ccf33cd49371b209bb5d6f20a79ad1a4bd4b2c6f2fdd3ac4ab5af6a3c7a62935";
     }];
     readonly source: {
         readonly repository: "alphaXiv/OpenResearch";
