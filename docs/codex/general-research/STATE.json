@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 2,
-  "planId": "general-research-v1",
-  "updatedAt": "2026-10-21T12:43:05Z",
-  "updatedBy": "design-author",
+  "revision": 4,
+  "planId": "aic-open-source-five-day-sprint-v2",
+  "updatedAt": "2026-10-21T23:55:04.399Z",
+  "updatedBy": "competition-sprint-revision",
   "project": "研舟π / pi-research",
-  "planStatus": "documentation_reviewed_ready",
+  "planStatus": "competition_sprint_ready",
   "overallStatus": "implementation_not_started",
-  "scope": "通用科研工具；产品开发计划，不是产品内Agent任务状态。",
+  "scope": "2026 AIC AI+????MVP???????????????????????",
   "implementationAuthorization": {
     "status": "awaiting_user_start",
-    "note": "本轮只授权编写方案；用户发送实施启动指令后记录其范围，沿会话既有授权接续。"
+    "note": "?????????????????????"
   },
   "designDocument": "../../superpowers/specs/2026-10-21-general-research-design.md",
   "implementationPlan": "../../superpowers/plans/2026-10-21-general-research-plan.md",
@@ -18,21 +18,13 @@
   "validationRef": "VALIDATION.md",
   "decisionsRef": "DECISIONS.md",
   "taskOrder": [
-    "GR00",
-    "GR01",
-    "GR02",
-    "GR03",
-    "GR04",
-    "GR05",
-    "GR06",
-    "GR07",
-    "GR08",
-    "GR09",
-    "GR10",
-    "R01",
-    "R02"
+    "S0",
+    "S1",
+    "S2",
+    "S3",
+    "S4"
   ],
-  "nextTaskId": "GR00",
+  "nextTaskId": "S0",
   "lastCompletedTaskId": null,
   "activeBatch": null,
   "allowedStatuses": [
@@ -47,22 +39,18 @@
   ],
   "tasks": [
     {
-      "id": "GR00",
-      "title": "实施基线与范围",
+      "id": "S0",
+      "title": "??????MVP??",
       "status": "not_started",
       "priority": "P0",
+      "day": "Day 1",
       "dependsOn": [],
-      "requirements": [
-        "全局"
-      ],
       "acceptanceIds": [
-        "A00.1",
-        "A00.2",
-        "A00.3",
-        "A00.4"
+        "S0.1",
+        "S0.2",
+        "S0.3",
+        "S0.4"
       ],
-      "conditional": false,
-      "applicability": "required",
       "owner": null,
       "baseline": null,
       "fileOwnership": [],
@@ -82,27 +70,23 @@
       "implementationCommit": null,
       "remoteStatus": "not_attempted",
       "blockers": [],
-      "nextAction": "在用户启动实施后核对真实代码、授权、工具与文件归属。"
+      "nextAction": "??????????????????????????"
     },
     {
-      "id": "GR01",
-      "title": "稳定资料与成果入口",
+      "id": "S1",
+      "title": "?????????",
       "status": "not_started",
       "priority": "P0",
+      "day": "Day 1-2",
       "dependsOn": [
-        "GR00"
-      ],
-      "requirements": [
-        "F01"
+        "S0"
       ],
       "acceptanceIds": [
-        "A01.1",
-        "A01.2",
-        "A01.3",
-        "A01.4"
+        "S1.1",
+        "S1.2",
+        "S1.3",
+        "S1.4"
       ],
-      "conditional": false,
-      "applicability": "required",
       "owner": null,
       "baseline": null,
       "fileOwnership": [],
@@ -122,27 +106,23 @@
       "implementationCommit": null,
       "remoteStatus": "not_attempted",
       "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
+      "nextAction": "??????????????????????????"
     },
     {
-      "id": "GR02",
-      "title": "项目概览与真实进展",
+      "id": "S2",
+      "title": "?????????????",
       "status": "not_started",
       "priority": "P0",
+      "day": "Day 3",
       "dependsOn": [
-        "GR01"
-      ],
-      "requirements": [
-        "F02"
+        "S1"
       ],
       "acceptanceIds": [
-        "A02.1",
-        "A02.2",
-        "A02.3",
-        "A02.4"
+        "S2.1",
+        "S2.2",
+        "S2.3",
+        "S2.4"
       ],
-      "conditional": false,
-      "applicability": "required",
       "owner": null,
       "baseline": null,
       "fileOwnership": [],
@@ -162,28 +142,25 @@
       "implementationCommit": null,
       "remoteStatus": "not_attempted",
       "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
+      "nextAction": "??????????????????????????"
     },
     {
-      "id": "GR03",
-      "title": "上下文、决定及跨会话接续",
+      "id": "S3",
+      "title": "????????????",
       "status": "not_started",
       "priority": "P0",
+      "day": "Day 4",
       "dependsOn": [
-        "GR02"
-      ],
-      "requirements": [
-        "F03"
+        "S1",
+        "S2"
       ],
       "acceptanceIds": [
-        "A03.1",
-        "A03.2",
-        "A03.3",
-        "A03.4",
-        "A03.5"
+        "S3.1",
+        "S3.2",
+        "S3.3",
+        "S3.4",
+        "S3.5"
       ],
-      "conditional": false,
-      "applicability": "required",
       "owner": null,
       "baseline": null,
       "fileOwnership": [],
@@ -203,27 +180,27 @@
       "implementationCommit": null,
       "remoteStatus": "not_attempted",
       "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
+      "nextAction": "??????????????????????????"
     },
     {
-      "id": "GR04",
-      "title": "研究类型与方法覆盖",
+      "id": "S4",
+      "title": "???????????",
       "status": "not_started",
-      "priority": "P1",
+      "priority": "P0",
+      "day": "Day 5",
       "dependsOn": [
-        "GR03"
-      ],
-      "requirements": [
-        "F04"
+        "S0",
+        "S1",
+        "S2",
+        "S3"
       ],
       "acceptanceIds": [
-        "A04.1",
-        "A04.2",
-        "A04.3",
-        "A04.4"
+        "S4.1",
+        "S4.2",
+        "S4.3",
+        "S4.4",
+        "S4.5"
       ],
-      "conditional": false,
-      "applicability": "required",
       "owner": null,
       "baseline": null,
       "fileOwnership": [],
@@ -243,351 +220,18 @@
       "implementationCommit": null,
       "remoteStatus": "not_attempted",
       "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "GR05",
-      "title": "手工比较表",
-      "status": "not_started",
-      "priority": "P1",
-      "dependsOn": [
-        "GR01"
-      ],
-      "requirements": [
-        "F05"
-      ],
-      "acceptanceIds": [
-        "A05.1",
-        "A05.2",
-        "A05.3",
-        "A05.4",
-        "A05.5"
-      ],
-      "conditional": false,
-      "applicability": "required",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "GR06",
-      "title": "固定范围Agent辅助提取",
-      "status": "not_started",
-      "priority": "P1",
-      "dependsOn": [
-        "GR04",
-        "GR05"
-      ],
-      "requirements": [
-        "F06"
-      ],
-      "acceptanceIds": [
-        "A06.1",
-        "A06.2",
-        "A06.3",
-        "A06.4",
-        "A06.5"
-      ],
-      "conditional": false,
-      "applicability": "required",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "GR07",
-      "title": "证据关系与分歧矩阵",
-      "status": "not_started",
-      "priority": "P1",
-      "dependsOn": [
-        "GR05",
-        "GR03"
-      ],
-      "requirements": [
-        "F07"
-      ],
-      "acceptanceIds": [
-        "A07.1",
-        "A07.2",
-        "A07.3",
-        "A07.4"
-      ],
-      "conditional": false,
-      "applicability": "required",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "GR08",
-      "title": "行动摘要与真实控制",
-      "status": "not_started",
-      "priority": "P1",
-      "dependsOn": [
-        "GR02",
-        "GR03"
-      ],
-      "requirements": [
-        "F08"
-      ],
-      "acceptanceIds": [
-        "A08.1",
-        "A08.2",
-        "A08.3",
-        "A08.4"
-      ],
-      "conditional": false,
-      "applicability": "required",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "GR09",
-      "title": "成果修改、固定与导出",
-      "status": "not_started",
-      "priority": "P1",
-      "dependsOn": [
-        "GR06",
-        "GR07",
-        "GR08"
-      ],
-      "requirements": [
-        "F09"
-      ],
-      "acceptanceIds": [
-        "A09.1",
-        "A09.2",
-        "A09.3",
-        "A09.4",
-        "A09.5"
-      ],
-      "conditional": false,
-      "applicability": "required",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "GR10",
-      "title": "通用旅程与版本收口",
-      "status": "not_started",
-      "priority": "P1",
-      "dependsOn": [
-        "GR01",
-        "GR02",
-        "GR03",
-        "GR04",
-        "GR05",
-        "GR06",
-        "GR07",
-        "GR08",
-        "GR09"
-      ],
-      "requirements": [
-        "全局"
-      ],
-      "acceptanceIds": [
-        "A10.1",
-        "A10.2",
-        "A10.3",
-        "A10.4",
-        "A10.5"
-      ],
-      "conditional": false,
-      "applicability": "required",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "R01",
-      "title": "启动准备失败恢复",
-      "status": "not_started",
-      "priority": "conditional_P0",
-      "dependsOn": [
-        "GR00"
-      ],
-      "requirements": [
-        "INV-07"
-      ],
-      "acceptanceIds": [
-        "AR01.1",
-        "AR01.2",
-        "AR01.3"
-      ],
-      "conditional": true,
-      "applicability": "pending_current_evidence",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
-    },
-    {
-      "id": "R02",
-      "title": "宿主命令最终回执",
-      "status": "not_started",
-      "priority": "conditional_P0",
-      "dependsOn": [
-        "GR00"
-      ],
-      "requirements": [
-        "INV-07"
-      ],
-      "acceptanceIds": [
-        "AR02.1",
-        "AR02.2",
-        "AR02.3"
-      ],
-      "conditional": true,
-      "applicability": "pending_current_evidence",
-      "owner": null,
-      "baseline": null,
-      "fileOwnership": [],
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
-      "verification": {
-        "status": "not_run",
-        "checks": []
-      },
-      "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
-        "blockingFindings": []
-      },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
-      "blockers": [],
-      "nextAction": "满足依赖后读取当前任务与验收。"
+      "nextAction": "??????????????????????????"
     }
   ],
   "blockers": [],
-  "deferredRequests": [],
+  "deferredRequests": [
+    "??????/??????????????????????Agent????????????????????????????????????????"
+  ],
   "delivery": {
     "productStatus": "not_started",
     "remoteStatus": "not_attempted",
-    "note": "产品交付状态不用于表示本次方案文档的保存或Git交付。",
-    "overallStatus": "not_started"
+    "overallStatus": "not_started",
+    "note": "?????????????????????????????????"
   },
   "stateRules": {
     "singleWriter": "当前主代理",
@@ -609,5 +253,238 @@
     ],
     "partialExtractionRecovery": "GR06仅已提交分片/候选保证持久；partial后沿原显式retry，未提交项可重算。"
   },
-  "designEvidenceRef": "DESIGN_QA.md"
+  "designEvidenceRef": "DESIGN_QA.md",
+  "longTermPlan": {
+    "planId": "general-research-v1",
+    "status": "deferred_until_after_aicomp_submission",
+    "tasks": [
+      {
+        "id": "GR00",
+        "title": "实施基线与范围",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [],
+        "acceptanceIds": [
+          "A00.1",
+          "A00.2",
+          "A00.3",
+          "A00.4"
+        ]
+      },
+      {
+        "id": "GR01",
+        "title": "稳定资料与成果入口",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR00"
+        ],
+        "acceptanceIds": [
+          "A01.1",
+          "A01.2",
+          "A01.3",
+          "A01.4"
+        ]
+      },
+      {
+        "id": "GR02",
+        "title": "项目概览与真实进展",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR01"
+        ],
+        "acceptanceIds": [
+          "A02.1",
+          "A02.2",
+          "A02.3",
+          "A02.4"
+        ]
+      },
+      {
+        "id": "GR03",
+        "title": "上下文、决定及跨会话接续",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR02"
+        ],
+        "acceptanceIds": [
+          "A03.1",
+          "A03.2",
+          "A03.3",
+          "A03.4",
+          "A03.5"
+        ]
+      },
+      {
+        "id": "GR04",
+        "title": "研究类型与方法覆盖",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR03"
+        ],
+        "acceptanceIds": [
+          "A04.1",
+          "A04.2",
+          "A04.3",
+          "A04.4"
+        ]
+      },
+      {
+        "id": "GR05",
+        "title": "手工比较表",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR01"
+        ],
+        "acceptanceIds": [
+          "A05.1",
+          "A05.2",
+          "A05.3",
+          "A05.4",
+          "A05.5"
+        ]
+      },
+      {
+        "id": "GR06",
+        "title": "固定范围Agent辅助提取",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR04",
+          "GR05"
+        ],
+        "acceptanceIds": [
+          "A06.1",
+          "A06.2",
+          "A06.3",
+          "A06.4",
+          "A06.5"
+        ]
+      },
+      {
+        "id": "GR07",
+        "title": "证据关系与分歧矩阵",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR05",
+          "GR03"
+        ],
+        "acceptanceIds": [
+          "A07.1",
+          "A07.2",
+          "A07.3",
+          "A07.4"
+        ]
+      },
+      {
+        "id": "GR08",
+        "title": "行动摘要与真实控制",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR02",
+          "GR03"
+        ],
+        "acceptanceIds": [
+          "A08.1",
+          "A08.2",
+          "A08.3",
+          "A08.4"
+        ]
+      },
+      {
+        "id": "GR09",
+        "title": "成果修改、固定与导出",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR06",
+          "GR07",
+          "GR08"
+        ],
+        "acceptanceIds": [
+          "A09.1",
+          "A09.2",
+          "A09.3",
+          "A09.4",
+          "A09.5"
+        ]
+      },
+      {
+        "id": "GR10",
+        "title": "通用旅程与版本收口",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR01",
+          "GR02",
+          "GR03",
+          "GR04",
+          "GR05",
+          "GR06",
+          "GR07",
+          "GR08",
+          "GR09"
+        ],
+        "acceptanceIds": [
+          "A10.1",
+          "A10.2",
+          "A10.3",
+          "A10.4",
+          "A10.5"
+        ]
+      },
+      {
+        "id": "R01",
+        "title": "启动准备失败恢复",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR00"
+        ],
+        "acceptanceIds": [
+          "AR01.1",
+          "AR01.2",
+          "AR01.3"
+        ]
+      },
+      {
+        "id": "R02",
+        "title": "宿主命令最终回执",
+        "status": "deferred",
+        "originalStatus": "not_started",
+        "dependsOn": [
+          "GR00"
+        ],
+        "acceptanceIds": [
+          "AR02.1",
+          "AR02.2",
+          "AR02.3"
+        ]
+      }
+    ]
+  },
+  "competition": {
+    "name": "??????????????????AI+???????",
+    "recommendedTrack": "AI?????????????????????",
+    "officialDeadlineLocal": "2026-10-30T20:00:00+08:00",
+    "targetCoreCompletionLocal": "2026-10-26T20:00:00+08:00",
+    "rulesUrl": "https://www.aicomp.cn/tracks/tracks-5/4924.html",
+    "rulesVerifiedAt": "2026-10-21",
+    "submissionRequirements": [
+      "????<=20?",
+      "????<=300?",
+      "????PDF??<=15??<=10MB",
+      "??MP4 3-5???<=300MB",
+      "????????????",
+      "???????????"
+    ],
+    "anonymity": "???????????????Logo???????",
+    "verifyAgainBeforeSubmission": true
+  }
 }
