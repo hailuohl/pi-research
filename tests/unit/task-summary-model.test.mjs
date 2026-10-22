@@ -54,6 +54,7 @@ test('successful execution is not represented as a scientific conclusion', () =>
   assert.deepEqual(summary.validationEvidence.command, ['python','run.py']);
   assert.equal(summary.validationEvidence.exitCode, 0);
   assert.equal(summary.validationEvidence.sourceDigest, 'm1');
+  assert.equal(summary.recordedVerificationStatus,'pass');
 });
 
 test('failed development validation is distinct from missing or skipped validation', () => {
@@ -67,6 +68,11 @@ test('failed development validation is distinct from missing or skipped validati
   assert.match(summary.blocker, /assertion failed/);
   assert.deepEqual(summary.validationEvidence.command, ['npm', 'test']);
   assert.equal(summary.validationEvidence.exitCode, 1);
+});
+
+test('development history exposes original manifest, inputs and actual execution times without inventing statistics',()=>{
+ const summary=summarizeSessionWork(base({developmentTasks:[{id:'task',sessionId:'s1',title:'Check',jobId:'job',sourceDigest:'source',manifest:{command:['test'],dataArtifacts:[{id:'input',digest:'input-digest'}]}}],sandboxJobs:[{id:'job',sessionId:'s1',developmentTaskId:'task',state:'succeeded',integrity:'complete',exitCode:0,sourceDigest:'source',manifestDigest:'manifest',startedAt:'start',endedAt:'end',artifactIds:[]}]}),session);
+ assert.equal(summary.source.id,'job');assert.equal(summary.validationEvidence.manifestDigest,'manifest');assert.equal(summary.validationEvidence.startedAt,'start');assert.equal(summary.validationEvidence.endedAt,'end');assert.deepEqual(summary.validationEvidence.inputDigests,[{id:'input',digest:'input-digest'}]);assert.equal(summary.validationEvidence.testCounts,undefined);
 });
 
 test('stale ResearchBrief sources block continuation and remain explicitly stale', () => {

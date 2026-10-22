@@ -12,6 +12,7 @@ import { DomainError, ensure } from '../../packages/domain/errors.js';
 import { object, text, integer, bool, strings, oneOf } from '../../packages/contracts/validation.js';
 import { CAPABILITIES } from '../../packages/contracts/capabilities.js';
 import { eventQuery } from './event-stream.js';
+import { readValidation } from '../../packages/evidence/validation.js';
 /** Apply the lifecycle boundary before by-ID routes reach their individual services. */
 export function guardProjectRoute(app, path, write = false) {
     const [kind, id, action] = path.split('/').filter(Boolean);
@@ -61,6 +62,13 @@ export function readRoute(app, host, path, url) {
         return research;
     const parts = path.split('/').filter(Boolean);
     const [kind, id, action] = parts;
+    if (kind === 'projects' && id && action === 'validation') {
+        const keys = ['kind', 'id', 'sessionId', 'manifestDigest', 'sourceDigest'];
+        ensure(path === `/projects/${id}/validation` && parts.length === 3 && [...url.searchParams.keys()].every(k => keys.includes(k)) && keys.every(k => url.searchParams.getAll(k).length === 1), 'INVALID_INPUT', '核验只接受准确路径及单一对象绑定');
+        const manifestDigest = text(url.searchParams.get('manifestDigest'), 'manifestDigest', 64), sourceDigest = text(url.searchParams.get('sourceDigest'), 'sourceDigest', 64);
+        ensure(/^[a-f0-9]{64}$/.test(manifestDigest) && /^[a-f0-9]{64}$/.test(sourceDigest), 'INVALID_INPUT', '核验摘要必须是 SHA-256');
+        return readValidation(app, { projectId: id, sessionId: text(url.searchParams.get('sessionId'), 'sessionId', 100), kind: oneOf(url.searchParams.get('kind'), ['run', 'development-job'], 'kind'), id: text(url.searchParams.get('id'), 'id', 100), manifestDigest, sourceDigest });
+    }
     if (kind === 'projects' && id && action === 'github' && parts.length === 3)
         return app.github.inspect(USER, id);
     if (kind === 'sessions' && id && action === 'research-continuations')

@@ -11,6 +11,7 @@ import {runGrantUsable} from './run-grants.js';
 import {PublicationDialogue} from './publication-dialogue.js';
 import {summarizeSessionWork} from './task-summary-model.js';
 import type {SessionWorkSummary} from './task-summary-model.js';
+import type {ValidationBinding,ValidationResult} from './models.js';
 export {summarizeSessionWork};
 
 export function proposalSession(data:ProjectState,proposal:Row<ChangeProposal>):string|undefined {
@@ -25,8 +26,12 @@ const summaryCaptions:Record<string,string>={
     not_assessed:'未评估',needs_review:'待研究判断',reviewed:'已有判断记录',complete:'完整',pending:'待定',incomplete:'不完整',
 };
 function summaryCaption(value:string){return summaryCaptions[value]??value;}
+function validationReason(value:string){
+    const captions:Record<string,string>={SOURCE_CHANGED:'本次读取的源码摘要与原快照不同',EXPERIMENT_REVISION_CHANGED:'当前实验修订与原运行不同',EXPERIMENT_CONTRACT_CHANGED:'当前计算契约与原运行不同',READ_MISSING:'所需文件或记录缺失，尚不能完成核验',READ_DENIED:'所需文件当前不可读取',READ_FAILED:'本次读取未完成',SOURCE_UNREADABLE:'源码或固定快照当前不可读取',ARTIFACT_CHANGED:'读取期间文件发生变化，尚不能确认',ARTIFACT_CORRUPTED:'归档产物摘要校验失败',SNAPSHOT_CORRUPTED:'固定快照字节、大小或模式校验失败',MANIFEST_CORRUPTED:'原固定清单摘要或身份校验失败',RECEIPT_INVALID:'本次回执核对失败，当前结果不可复用',RECEIPT_NOT_VERIFIED:'尚无本次成功回执核验',CHANGE_SOURCE_STALE:'来源审查或采纳已失效',ACCEPTANCE_STALE:'来源采纳记录已变化',DEVELOPMENT_SOURCE_STALE:'开发来源绑定已变化',SESSION_PERMISSION_STALE:'原会话权限依据已变化',WORKING_GRANT_REVOKED:'原开发授权已撤销',RUN_GRANT_REVOKED:'原运行授权已撤销',APPROVAL_STALE:'原批准依据已变化'};
+    return (captions[value]??'宿主校验未能确认此项证据')+'（'+value+'）';
+}
 
-function SessionWorkSummaryCard({summary,onRun}:{summary:SessionWorkSummary;onRun:(runId:string,experimentId:string)=>void}) {
+function SessionWorkSummaryCard({summary,onRun,onCheck,validation,pending=false,unavailable=false,checked=false,busy=false}:{summary:SessionWorkSummary;onRun:(runId:string,experimentId:string)=>void;onCheck?:()=>void;validation?:ValidationResult|null;pending?:boolean;unavailable?:boolean;checked?:boolean;busy?:boolean}) {
     const isRun=summary.source.kind==='run'&&!!summary.experimentId;
     return <details className="workflow-card session-work-summary" open={['blocked','unknown','failed','awaiting_confirmation','awaiting_approval','ready_to_submit','running','stopping','completed_with_issue'].includes(summary.operationStatus)}>
         <summary>当前任务摘要 <Badge value={summary.operationStatus} caption={summaryCaption(summary.operationStatus)}/></summary>
@@ -34,21 +39,27 @@ function SessionWorkSummaryCard({summary,onRun}:{summary:SessionWorkSummary;onRu
         <p><strong>范围：</strong>{summary.scope||'尚未明确固定范围'}</p>
         <div className="summary-status-grid">
             <p><strong>执行状态：</strong>{summaryCaption(summary.operationStatus)}</p>
-            <p><strong>验证状态：</strong><Badge value={summary.verificationStatus} caption={summaryCaption(summary.verificationStatus)}/></p>
+            <p><strong>历史验证状态（原固定快照）：</strong><Badge value={summary.recordedVerificationStatus??summary.verificationStatus} caption={summaryCaption(summary.recordedVerificationStatus??summary.verificationStatus)}/></p>
             <p><strong>科学判断：</strong>{summaryCaption(summary.scientificStatus)}</p>
         </div>
+        {summary.recordedVerificationStatus&&summary.verificationStatus==='stale'?<p>当前已知来源状态：已失效；原固定回执保留。</p>:null}
+        {onCheck?<div aria-live="polite"><p>本次回执核对：{pending?'核对中':validation?summaryCaption(validation.receiptCheck):unavailable||checked?'未知':'未核对'}</p><p>当前适用性：{unavailable?'未知':pending?'核对中':validation?.applicability==='current'?'核对时观察到一致':validation?.applicability==='stale'?'来源已变化，不能复用':validation||checked?'未知':'未核对'}</p>{validation?<><p className="small muted">本次读取观察时间：{validation.checkedAt}。此后外部编辑需重新核对；本次核对不改变原回执或科学判断。</p>{validation.receiptReason?<p>回执核对说明：{validationReason(validation.receiptReason)}</p>:null}{validation.applicabilityReason?<p>适用性说明：{validationReason(validation.applicabilityReason)}</p>:null}</>:null}<button type="button" className="secondary compact" disabled={busy||pending||unavailable} onClick={onCheck}>核对当前适用性</button></div>:null}
         {summary.blocker?<p role="status" className="inline-warning"><strong>阻塞/限制：</strong>{summary.blocker}</p>:null}
         <p><strong>下一步：</strong>{summary.nextAction}</p>
         <details>
             <summary>验证依据与原始记录</summary>
             <p>原始对象：{summary.source.kind} · {summary.source.id}</p>
             <p>固定快照摘要：{summary.snapshotDigest??'未记录，不能据此认定当前源码已验证'}</p>
+            {validation?<p>本次观察源码摘要：{validation.observedSourceDigest??'未能读取'}</p>:null}
             {summary.validationEvidence?<div className="validation-evidence-detail">
+                <p>固定清单摘要：{summary.validationEvidence.manifestDigest??'未记录'}</p>
+                <p>固定输入摘要：{summary.validationEvidence.inputDigests?.length?summary.validationEvidence.inputDigests.map(a=>a.id+' · '+a.digest).join('；'):'未提供'}</p>
                 <p>固定命令：{summary.validationEvidence.command?.length?JSON.stringify(summary.validationEvidence.command):'未记录'}</p>
                 <p>实际退出码：{summary.validationEvidence.exitCode===undefined?'未记录':summary.validationEvidence.exitCode===null?'未知/未返回':summary.validationEvidence.exitCode}</p>
                 <p>产物完整性：{summary.validationEvidence.integrity?summaryCaption(summary.validationEvidence.integrity):'未记录'}</p>
                 <p>执行时间：{summary.validationEvidence.startedAt??'未记录'} → {summary.validationEvidence.endedAt??'未记录'}</p>
                 {summary.validationEvidence.metrics&&Object.keys(summary.validationEvidence.metrics).length?<p>实际指标：{Object.entries(summary.validationEvidence.metrics).map(([name,value])=>name+'='+number(value)).join(' · ')}</p>:null}
+                <p>标准测试统计（总数/通过/失败/跳过）：未提供</p>
             </div>:<p>当前没有实际验证回执；不能把计划、审批或文件存在视为验证通过。</p>}
             <p>归档产物：{summary.artifactIds.length?summary.artifactIds.map(short).join('、'):'暂无已登记产物'}</p>
             <p className="small muted">验证通过仅表示记录中的工程检查满足其执行条件；不等于科学结论成立。未运行、未知和过期状态不会被当作通过。</p>
@@ -58,13 +69,42 @@ function SessionWorkSummaryCard({summary,onRun}:{summary:SessionWorkSummary;onRu
 }
 
 export class ChatWorkflows extends React.Component<{
-    data:ProjectState;session:Row<Session>;busy:boolean;perform:Perform;
+    data:ProjectState;session:Row<Session>;busy:boolean;perform:Perform;readCurrent?:boolean;validationPerform?:Perform;
     onSession:(id:string)=>void;onExperiment:(id:string)=>void;onRun:(runId:string,experimentId:string)=>void;
-},{previews:Record<string,any>;runIntentRevision:number}> {
-    state={previews:{} as Record<string,any>,runIntentRevision:0};
+},{previews:Record<string,any>;runIntentRevision:number;validationResult:ValidationResult|null;validationPending:boolean;validationChecked:boolean}> {
+    state={previews:{} as Record<string,any>,runIntentRevision:0,validationResult:null as ValidationResult|null,validationPending:false,validationChecked:false};
     private mounted=true;private readEpoch=0;
+    private validationEpoch=0;private validationData:ProjectState|null=null;
     private messageKeys=new Map<string,string>();private approvedRunIntents=new Set<string>();private queuedRunIntents=new Set<string>();
-    componentWillUnmount(){this.mounted=false;this.readEpoch++;}
+    componentWillUnmount(){this.mounted=false;this.readEpoch++;this.validationEpoch++;}
+    private validationBinding(props=this.props):ValidationBinding|null {
+        const summary=summarizeSessionWork(props.data,props.session),kind=summary?.source.kind;
+        if(!summary||(kind!=='run'&&kind!=='development-job'))return null;
+        const manifestDigest=summary.validationEvidence?.manifestDigest,sourceDigest=summary.validationEvidence?.sourceDigest;
+        if(!manifestDigest||!sourceDigest)return null;
+        return {projectId:props.data.project.id,sessionId:props.session.id,kind,id:summary.source.id,manifestDigest,sourceDigest};
+    }
+    componentDidUpdate(previous:Readonly<ChatWorkflows['props']>){
+        const scopeChanged=previous.data.project.id!==this.props.data.project.id||previous.session.id!==this.props.session.id||JSON.stringify(this.validationBinding(previous))!==JSON.stringify(this.validationBinding());
+        const disconnected=this.props.readCurrent===false;
+        const changed=scopeChanged||disconnected||!this.state.validationPending&&(previous.data!==this.props.data||this.props.busy&&!previous.busy);
+        if(changed&&(this.state.validationPending||this.state.validationResult||scopeChanged)){
+            this.validationEpoch++;this.validationData=null;this.setState({validationResult:null,validationPending:false,validationChecked:!scopeChanged});
+        }
+    }
+    async checkCurrentValidation(){
+        const binding=this.validationBinding();if(!binding||this.props.busy||this.props.readCurrent===false)return;
+        const epoch=++this.validationEpoch,matches=()=>this.mounted&&epoch===this.validationEpoch&&this.props.readCurrent!==false&&JSON.stringify(this.validationBinding())===JSON.stringify(binding);
+        this.validationData=null;this.setState({validationResult:null,validationPending:true,validationChecked:true});
+        let executed=false;
+        try{
+            const result=await (this.props.validationPerform??this.props.perform)(async()=>{executed=true;return api(`/projects/${binding.projectId}/validation?${new URLSearchParams({kind:binding.kind,id:binding.id,sessionId:binding.sessionId,manifestDigest:binding.manifestDigest,sourceDigest:binding.sourceDigest})}`);});
+            if(!matches())return;
+            if(executed&&result&&Object.entries(binding).every(([k,v])=>result[k]===v)&&['pass','fail','unknown','not_run'].includes(result.receiptCheck)&&['current','stale','unknown'].includes(result.applicability)&&typeof result.checkedAt==='string'&&(result.applicability!=='current'||summarizeSessionWork(this.props.data,this.props.session)?.verificationStatus!=='stale')){
+                this.validationData=this.props.data;this.setState({validationResult:result});
+            }
+        }finally{if(this.mounted&&epoch===this.validationEpoch)this.setState({validationPending:false});}
+    }
     call(name:string,input:unknown={}){return api(`/operations/${name}`,{projectId:this.props.data.project.id,sessionId:this.props.session.id,input});}
     decide(approval:Row<Approval>,approved:boolean){return api(`/approvals/${approval.id}/decide`,{expectedVersion:approval.version,approved});}
     async approved(approval:Row<Approval>|undefined){
@@ -192,7 +232,7 @@ export class ChatWorkflows extends React.Component<{
             ...proposals.filter(p=>p.state==='applied'&&p.sourceValidity!=='stale').map(p=>p.id),
         ]);
         const content=<section className="chat-workflows" aria-label="当前对话任务"><p className="small muted">在对话中提出任务；待确认事项显示在这里。</p>
-            {summary?<SessionWorkSummaryCard summary={summary} onRun={this.props.onRun}/>:null}
+            {summary?<SessionWorkSummaryCard summary={summary} onRun={this.props.onRun} onCheck={this.validationBinding()?()=>void this.checkCurrentValidation():undefined} validation={this.validationData===data&&!busy?this.state.validationResult:null} pending={this.state.validationPending} checked={this.state.validationChecked} unavailable={this.props.readCurrent===false} busy={busy}/>:null}
             {this.researchBriefCard(disabled)}
             <PublicationDialogue data={data} session={session} disabled={disabled} busy={busy} perform={perform}/>
             {campaigns.slice().reverse().map(c=>this.campaignCard(c,disabled))}

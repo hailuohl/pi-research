@@ -67,6 +67,7 @@ function runSummary(data, session) {
       const operationStatus = run.state === "unknown" ? "unknown" : run.state === "cancelling" ? "stopping" : run.state === "succeeded" && !valid ? "completed_with_issue" : failed ? run.state === "cancelled" ? "cancelled" : "failed" : valid ? "completed" : "running";
       const verificationStatus = run.state === "unknown" || run.state === "cancelling" ? "unknown" : run.state === "cancelled" ? "not_run" : failed ? "fail" : staleSource ? "stale" : valid ? "pass" : run.state === "succeeded" ? "unknown" : "not_run";
       return status(operationStatus, verificationStatus, {
+        recordedVerificationStatus: verificationStatus === "stale" ? valid ? "pass" : run.state === "succeeded" ? "unknown" : "not_run" : verificationStatus,
         goal: experiment?.title ?? "\u6B63\u5F0F\u8FD0\u884C " + run.id,
         scope: "\u56FA\u5B9A\u6B63\u5F0F\u8FD0\u884C " + run.id,
         source: sourceRef("run", run),
@@ -74,6 +75,8 @@ function runSummary(data, session) {
         snapshotDigest: run.manifest?.snapshotDigest ?? run.manifestDigest ?? intent.manifestDigest,
         artifactIds: [...run.artifactIds ?? []],
         validationEvidence: {
+          manifestDigest: run.manifestDigest,
+          inputDigests: run.manifest?.dataArtifacts?.map((a) => ({ id: a.id, digest: a.digest })),
           sourceDigest: run.manifest?.snapshotDigest ?? run.manifestDigest ?? intent.manifestDigest,
           command: run.manifest?.contract?.command,
           exitCode: run.exitCode,
@@ -158,7 +161,7 @@ function developmentSummary(data, session) {
       source: sourceRef("development-job", job),
       snapshotDigest: job.sourceDigest ?? task.sourceDigest,
       artifactIds: [...job.artifactIds ?? []],
-      validationEvidence: { sourceDigest: job.sourceDigest ?? task.sourceDigest, command: task.manifest.command, exitCode: job.exitCode, integrity: job.integrity, artifactIds: [...job.artifactIds ?? []] },
+      validationEvidence: { manifestDigest: job.manifestDigest ?? task.manifestDigest, inputDigests: task.manifest.dataArtifacts?.map((a) => ({ id: a.id, digest: a.digest })), sourceDigest: job.sourceDigest ?? task.sourceDigest, command: task.manifest.command, exitCode: job.exitCode, integrity: job.integrity, startedAt: job.startedAt, endedAt: job.endedAt, artifactIds: [...job.artifactIds ?? []] },
       blocker: job.error ?? (job.state === "timed_out" ? "\u5F00\u53D1\u6D4B\u8BD5\u5DF2\u8D85\u65F6\uFF0C\u4E0D\u80FD\u89C6\u4E3A\u9A8C\u8BC1\u901A\u8FC7\u3002" : job.state === "succeeded" && !passed ? "\u6D4B\u8BD5\u7ED3\u679C\u7684\u9000\u51FA\u7801\u6216\u5B8C\u6574\u6027\u8BC1\u636E\u4E0D\u8DB3\u3002" : ""),
       nextAction: job.state === "unknown" || stopping ? "\u6838\u5BF9\u540C\u4E00\u4E2A\u539F\u6D4B\u8BD5\u4F5C\u4E1A\u7684\u771F\u5B9E\u72B6\u6001\u4E0E\u505C\u6B62\u56DE\u6267\uFF1B\u4E0D\u8981\u76F2\u76EE\u91CD\u65B0\u63D0\u4EA4\u3002" : job.state === "cancelled" ? "\u4FDD\u7559\u539F\u6D4B\u8BD5\u4F5C\u4E1A\u4E0E\u53D6\u6D88\u8BB0\u5F55\uFF1B\u6CA1\u6709\u53EF\u590D\u7528\u7684\u9A8C\u8BC1\u901A\u8FC7\u8BC1\u636E\u3002" : passed ? "\u6D4B\u8BD5\u901A\u8FC7\u4EC5\u8BC1\u660E\u672C\u6B21\u56FA\u5B9A\u6E90\u7801\u548C\u547D\u4EE4\u7684\u68C0\u67E5\u901A\u8FC7\uFF0C\u4E0D\u4EE3\u8868\u79D1\u5B66\u7ED3\u8BBA\u6210\u7ACB\u3002" : failed ? "\u67E5\u770B\u5931\u8D25\u65E5\u5FD7\u548C\u5F52\u6863\u4EA7\u7269\uFF0C\u5B9A\u4F4D\u539F\u56E0\u540E\u518D\u51B3\u5B9A\u662F\u5426\u4FEE\u590D\u3002" : "\u7B49\u5F85\u539F\u6D4B\u8BD5\u4F5C\u4E1A\u7ED3\u675F\u540E\u518D\u8BFB\u53D6\u9A8C\u8BC1\u7ED3\u679C\u3002"
     });

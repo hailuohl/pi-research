@@ -1,4 +1,5 @@
 import type {WorkingGrantDTO} from '../../../dist/packages/policy/working-grant-types.js';
+export type {ValidationBinding,ValidationResult} from '../../../dist/packages/evidence/validation.js';
 import type {RunGrantDTO} from '../../../dist/packages/policy/run-grant-types.js';
 import type {DiscoveryGrantDTO} from '../../../dist/packages/policy/discovery-grant-types.js';
 export type {DiscoveryGrantDTO} from '../../../dist/packages/policy/discovery-grant-types.js';
@@ -48,12 +49,14 @@ export interface DevelopmentManifestDTO {
     resources:Record<string,number>; expectedArtifacts:string[]; sourceRevisionId?:string;
 }
 export interface DevelopmentTaskDTO {
+    manifestDigest?:string;
     id:string; sessionId:string; title:string; sourceDigest:string; grantId:string;
     state:string; jobId?:string; manifest:DevelopmentManifestDTO;
     effectiveState?:string; canSubmit?:boolean; blockedReason?:string;
     createdAt?:string; updatedAt?:string;
 }
 export interface SandboxJobDTO {
+    manifestDigest?:string;startedAt?:string;endedAt?:string;
     id:string; jobId?:string; developmentTaskId:string; sessionId:string; sourceDigest:string;
     state:string; integrity:string; exitCode?:number|null; error?:string; artifactIds:string[];
     manifest:DevelopmentManifestDTO;

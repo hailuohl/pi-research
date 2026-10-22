@@ -86,3 +86,9 @@ test('A to B to A rejects late B success and failure, including a queued selecti
     assert.equal(app.state.projectId,'a');assert.equal(app.state.data.project.id,'a');assert.equal(app.state.messages[0].id,'message-a-session');assert.equal(app.state.projectReadError,'');
   }
 });
+
+test('manual operations preserve the actual receipt after failed final refresh and pass connection freshness to the task panel',async t=>{
+ const {app,hook}=fixture(t);Object.assign(app.state,{boot,projectId:'a',sessionId:'a-session',data:snapshot('a'),connected:true});
+ assert.equal(nodes(main(app)).find(n=>n.type?.name==='Chat').props.readCurrent,true);
+ hook(()=>Promise.reject(Error('Refresh unavailable')));const receipt={receiptCheck:'pass',applicability:'current'},result=await app.perform(async()=>receipt);assert.equal(result,receipt);assert.equal(app.state.connected,false);assert.equal(app.state.data.project.id,'a');const chat=nodes(main(app)).find(n=>n.type?.name==='Chat');assert.equal(chat.props.readCurrent,false);assert.equal(await chat.props.validationPerform(async()=>receipt),undefined,'D3 alone withholds current after its failed final refresh');
+});

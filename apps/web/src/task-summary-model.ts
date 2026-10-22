@@ -6,6 +6,8 @@ export type SessionWorkOperationStatus =
   | 'cancelled' | 'blocked' | 'unknown';
 export type SessionWorkVerificationStatus = 'pass' | 'fail' | 'skip' | 'not_run' | 'unknown' | 'stale';
 export interface SessionWorkValidationEvidence {
+  manifestDigest?: string;
+  inputDigests?: Array<{id:string;digest:string}>;
   sourceDigest?: string;
   command?: string[];
   exitCode?: number | null;
@@ -20,6 +22,7 @@ export interface SessionWorkSummary {
   scope: string;
   operationStatus: SessionWorkOperationStatus;
   verificationStatus: SessionWorkVerificationStatus;
+  recordedVerificationStatus?: SessionWorkVerificationStatus;
   scientificStatus: 'not_assessed' | 'needs_review' | 'reviewed';
   source: {kind: string; id: string};
   snapshotDigest?: string;
@@ -101,12 +104,15 @@ function runSummary(data: ProjectState, session: Row<Session>): SessionWorkSumma
         : valid ? 'pass'
         : run.state === 'succeeded' ? 'unknown' : 'not_run';
       return status(operationStatus, verificationStatus, {
+        recordedVerificationStatus:verificationStatus==='stale'?(valid?'pass':run.state==='succeeded'?'unknown':'not_run'):verificationStatus,
         goal: experiment?.title ?? ('正式运行 ' + run.id),
         scope: '固定正式运行 ' + run.id,
         source: sourceRef('run', run), experimentId: run.experimentId,
         snapshotDigest: run.manifest?.snapshotDigest ?? run.manifestDigest ?? intent.manifestDigest,
         artifactIds: [...(run.artifactIds ?? [])],
         validationEvidence: {
+          manifestDigest: run.manifestDigest,
+          inputDigests: (run.manifest as any)?.dataArtifacts?.map((a:any)=>({id:a.id,digest:a.digest})),
           sourceDigest: run.manifest?.snapshotDigest ?? run.manifestDigest ?? intent.manifestDigest,
           command: run.manifest?.contract?.command,
           exitCode: run.exitCode, integrity: run.integrity,
@@ -188,7 +194,7 @@ function developmentSummary(data: ProjectState, session: Row<Session>): SessionW
       goal: task.title, scope: '固定开发测试 ' + task.id,
       source: sourceRef('development-job', job), snapshotDigest: job.sourceDigest ?? task.sourceDigest,
       artifactIds: [...(job.artifactIds ?? [])],
-      validationEvidence: {sourceDigest: job.sourceDigest ?? task.sourceDigest, command: task.manifest.command, exitCode: job.exitCode, integrity: job.integrity, artifactIds: [...(job.artifactIds ?? [])]},
+      validationEvidence: {manifestDigest:job.manifestDigest??task.manifestDigest,inputDigests:task.manifest.dataArtifacts?.map(a=>({id:a.id,digest:a.digest})),sourceDigest: job.sourceDigest ?? task.sourceDigest, command: task.manifest.command, exitCode: job.exitCode, integrity: job.integrity, startedAt:job.startedAt,endedAt:job.endedAt,artifactIds: [...(job.artifactIds ?? [])]},
       blocker: job.error ?? (job.state === 'timed_out' ? '开发测试已超时，不能视为验证通过。' : job.state === 'succeeded' && !passed ? '测试结果的退出码或完整性证据不足。' : ''),
       nextAction: job.state === 'unknown' || stopping ? '核对同一个原测试作业的真实状态与停止回执；不要盲目重新提交。'
         : job.state === 'cancelled' ? '保留原测试作业与取消记录；没有可复用的验证通过证据。'

@@ -1,4 +1,4 @@
-import { jsx, jsxs } from "react/jsx-runtime";
+import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { api } from "./api.js";
 import { Badge } from "./ui.js";
@@ -40,7 +40,11 @@ const summaryCaptions = {
 function summaryCaption(value) {
   return summaryCaptions[value] ?? value;
 }
-function SessionWorkSummaryCard({ summary, onRun }) {
+function validationReason(value) {
+  const captions = { SOURCE_CHANGED: "\u672C\u6B21\u8BFB\u53D6\u7684\u6E90\u7801\u6458\u8981\u4E0E\u539F\u5FEB\u7167\u4E0D\u540C", EXPERIMENT_REVISION_CHANGED: "\u5F53\u524D\u5B9E\u9A8C\u4FEE\u8BA2\u4E0E\u539F\u8FD0\u884C\u4E0D\u540C", EXPERIMENT_CONTRACT_CHANGED: "\u5F53\u524D\u8BA1\u7B97\u5951\u7EA6\u4E0E\u539F\u8FD0\u884C\u4E0D\u540C", READ_MISSING: "\u6240\u9700\u6587\u4EF6\u6216\u8BB0\u5F55\u7F3A\u5931\uFF0C\u5C1A\u4E0D\u80FD\u5B8C\u6210\u6838\u9A8C", READ_DENIED: "\u6240\u9700\u6587\u4EF6\u5F53\u524D\u4E0D\u53EF\u8BFB\u53D6", READ_FAILED: "\u672C\u6B21\u8BFB\u53D6\u672A\u5B8C\u6210", SOURCE_UNREADABLE: "\u6E90\u7801\u6216\u56FA\u5B9A\u5FEB\u7167\u5F53\u524D\u4E0D\u53EF\u8BFB\u53D6", ARTIFACT_CHANGED: "\u8BFB\u53D6\u671F\u95F4\u6587\u4EF6\u53D1\u751F\u53D8\u5316\uFF0C\u5C1A\u4E0D\u80FD\u786E\u8BA4", ARTIFACT_CORRUPTED: "\u5F52\u6863\u4EA7\u7269\u6458\u8981\u6821\u9A8C\u5931\u8D25", SNAPSHOT_CORRUPTED: "\u56FA\u5B9A\u5FEB\u7167\u5B57\u8282\u3001\u5927\u5C0F\u6216\u6A21\u5F0F\u6821\u9A8C\u5931\u8D25", MANIFEST_CORRUPTED: "\u539F\u56FA\u5B9A\u6E05\u5355\u6458\u8981\u6216\u8EAB\u4EFD\u6821\u9A8C\u5931\u8D25", RECEIPT_INVALID: "\u672C\u6B21\u56DE\u6267\u6838\u5BF9\u5931\u8D25\uFF0C\u5F53\u524D\u7ED3\u679C\u4E0D\u53EF\u590D\u7528", RECEIPT_NOT_VERIFIED: "\u5C1A\u65E0\u672C\u6B21\u6210\u529F\u56DE\u6267\u6838\u9A8C", CHANGE_SOURCE_STALE: "\u6765\u6E90\u5BA1\u67E5\u6216\u91C7\u7EB3\u5DF2\u5931\u6548", ACCEPTANCE_STALE: "\u6765\u6E90\u91C7\u7EB3\u8BB0\u5F55\u5DF2\u53D8\u5316", DEVELOPMENT_SOURCE_STALE: "\u5F00\u53D1\u6765\u6E90\u7ED1\u5B9A\u5DF2\u53D8\u5316", SESSION_PERMISSION_STALE: "\u539F\u4F1A\u8BDD\u6743\u9650\u4F9D\u636E\u5DF2\u53D8\u5316", WORKING_GRANT_REVOKED: "\u539F\u5F00\u53D1\u6388\u6743\u5DF2\u64A4\u9500", RUN_GRANT_REVOKED: "\u539F\u8FD0\u884C\u6388\u6743\u5DF2\u64A4\u9500", APPROVAL_STALE: "\u539F\u6279\u51C6\u4F9D\u636E\u5DF2\u53D8\u5316" };
+  return (captions[value] ?? "\u5BBF\u4E3B\u6821\u9A8C\u672A\u80FD\u786E\u8BA4\u6B64\u9879\u8BC1\u636E") + "\uFF08" + value + "\uFF09";
+}
+function SessionWorkSummaryCard({ summary, onRun, onCheck, validation, pending = false, unavailable = false, checked = false, busy = false }) {
   const isRun = summary.source.kind === "run" && !!summary.experimentId;
   return /* @__PURE__ */ jsxs("details", { className: "workflow-card session-work-summary", open: ["blocked", "unknown", "failed", "awaiting_confirmation", "awaiting_approval", "ready_to_submit", "running", "stopping", "completed_with_issue"].includes(summary.operationStatus), children: [
     /* @__PURE__ */ jsxs("summary", { children: [
@@ -61,14 +65,41 @@ function SessionWorkSummaryCard({ summary, onRun }) {
         summaryCaption(summary.operationStatus)
       ] }),
       /* @__PURE__ */ jsxs("p", { children: [
-        /* @__PURE__ */ jsx("strong", { children: "\u9A8C\u8BC1\u72B6\u6001\uFF1A" }),
-        /* @__PURE__ */ jsx(Badge, { value: summary.verificationStatus, caption: summaryCaption(summary.verificationStatus) })
+        /* @__PURE__ */ jsx("strong", { children: "\u5386\u53F2\u9A8C\u8BC1\u72B6\u6001\uFF08\u539F\u56FA\u5B9A\u5FEB\u7167\uFF09\uFF1A" }),
+        /* @__PURE__ */ jsx(Badge, { value: summary.recordedVerificationStatus ?? summary.verificationStatus, caption: summaryCaption(summary.recordedVerificationStatus ?? summary.verificationStatus) })
       ] }),
       /* @__PURE__ */ jsxs("p", { children: [
         /* @__PURE__ */ jsx("strong", { children: "\u79D1\u5B66\u5224\u65AD\uFF1A" }),
         summaryCaption(summary.scientificStatus)
       ] })
     ] }),
+    summary.recordedVerificationStatus && summary.verificationStatus === "stale" ? /* @__PURE__ */ jsx("p", { children: "\u5F53\u524D\u5DF2\u77E5\u6765\u6E90\u72B6\u6001\uFF1A\u5DF2\u5931\u6548\uFF1B\u539F\u56FA\u5B9A\u56DE\u6267\u4FDD\u7559\u3002" }) : null,
+    onCheck ? /* @__PURE__ */ jsxs("div", { "aria-live": "polite", children: [
+      /* @__PURE__ */ jsxs("p", { children: [
+        "\u672C\u6B21\u56DE\u6267\u6838\u5BF9\uFF1A",
+        pending ? "\u6838\u5BF9\u4E2D" : validation ? summaryCaption(validation.receiptCheck) : unavailable || checked ? "\u672A\u77E5" : "\u672A\u6838\u5BF9"
+      ] }),
+      /* @__PURE__ */ jsxs("p", { children: [
+        "\u5F53\u524D\u9002\u7528\u6027\uFF1A",
+        unavailable ? "\u672A\u77E5" : pending ? "\u6838\u5BF9\u4E2D" : validation?.applicability === "current" ? "\u6838\u5BF9\u65F6\u89C2\u5BDF\u5230\u4E00\u81F4" : validation?.applicability === "stale" ? "\u6765\u6E90\u5DF2\u53D8\u5316\uFF0C\u4E0D\u80FD\u590D\u7528" : validation || checked ? "\u672A\u77E5" : "\u672A\u6838\u5BF9"
+      ] }),
+      validation ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+          "\u672C\u6B21\u8BFB\u53D6\u89C2\u5BDF\u65F6\u95F4\uFF1A",
+          validation.checkedAt,
+          "\u3002\u6B64\u540E\u5916\u90E8\u7F16\u8F91\u9700\u91CD\u65B0\u6838\u5BF9\uFF1B\u672C\u6B21\u6838\u5BF9\u4E0D\u6539\u53D8\u539F\u56DE\u6267\u6216\u79D1\u5B66\u5224\u65AD\u3002"
+        ] }),
+        validation.receiptReason ? /* @__PURE__ */ jsxs("p", { children: [
+          "\u56DE\u6267\u6838\u5BF9\u8BF4\u660E\uFF1A",
+          validationReason(validation.receiptReason)
+        ] }) : null,
+        validation.applicabilityReason ? /* @__PURE__ */ jsxs("p", { children: [
+          "\u9002\u7528\u6027\u8BF4\u660E\uFF1A",
+          validationReason(validation.applicabilityReason)
+        ] }) : null
+      ] }) : null,
+      /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", disabled: busy || pending || unavailable, onClick: onCheck, children: "\u6838\u5BF9\u5F53\u524D\u9002\u7528\u6027" })
+    ] }) : null,
     summary.blocker ? /* @__PURE__ */ jsxs("p", { role: "status", className: "inline-warning", children: [
       /* @__PURE__ */ jsx("strong", { children: "\u963B\u585E/\u9650\u5236\uFF1A" }),
       summary.blocker
@@ -89,7 +120,19 @@ function SessionWorkSummaryCard({ summary, onRun }) {
         "\u56FA\u5B9A\u5FEB\u7167\u6458\u8981\uFF1A",
         summary.snapshotDigest ?? "\u672A\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u636E\u6B64\u8BA4\u5B9A\u5F53\u524D\u6E90\u7801\u5DF2\u9A8C\u8BC1"
       ] }),
+      validation ? /* @__PURE__ */ jsxs("p", { children: [
+        "\u672C\u6B21\u89C2\u5BDF\u6E90\u7801\u6458\u8981\uFF1A",
+        validation.observedSourceDigest ?? "\u672A\u80FD\u8BFB\u53D6"
+      ] }) : null,
       summary.validationEvidence ? /* @__PURE__ */ jsxs("div", { className: "validation-evidence-detail", children: [
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u56FA\u5B9A\u6E05\u5355\u6458\u8981\uFF1A",
+          summary.validationEvidence.manifestDigest ?? "\u672A\u8BB0\u5F55"
+        ] }),
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u56FA\u5B9A\u8F93\u5165\u6458\u8981\uFF1A",
+          summary.validationEvidence.inputDigests?.length ? summary.validationEvidence.inputDigests.map((a) => a.id + " \xB7 " + a.digest).join("\uFF1B") : "\u672A\u63D0\u4F9B"
+        ] }),
         /* @__PURE__ */ jsxs("p", { children: [
           "\u56FA\u5B9A\u547D\u4EE4\uFF1A",
           summary.validationEvidence.command?.length ? JSON.stringify(summary.validationEvidence.command) : "\u672A\u8BB0\u5F55"
@@ -111,7 +154,8 @@ function SessionWorkSummaryCard({ summary, onRun }) {
         summary.validationEvidence.metrics && Object.keys(summary.validationEvidence.metrics).length ? /* @__PURE__ */ jsxs("p", { children: [
           "\u5B9E\u9645\u6307\u6807\uFF1A",
           Object.entries(summary.validationEvidence.metrics).map(([name, value]) => name + "=" + number(value)).join(" \xB7 ")
-        ] }) : null
+        ] }) : null,
+        /* @__PURE__ */ jsx("p", { children: "\u6807\u51C6\u6D4B\u8BD5\u7EDF\u8BA1\uFF08\u603B\u6570/\u901A\u8FC7/\u5931\u8D25/\u8DF3\u8FC7\uFF09\uFF1A\u672A\u63D0\u4F9B" })
       ] }) : /* @__PURE__ */ jsx("p", { children: "\u5F53\u524D\u6CA1\u6709\u5B9E\u9645\u9A8C\u8BC1\u56DE\u6267\uFF1B\u4E0D\u80FD\u628A\u8BA1\u5212\u3001\u5BA1\u6279\u6216\u6587\u4EF6\u5B58\u5728\u89C6\u4E3A\u9A8C\u8BC1\u901A\u8FC7\u3002" }),
       /* @__PURE__ */ jsxs("p", { children: [
         "\u5F52\u6863\u4EA7\u7269\uFF1A",
@@ -125,9 +169,11 @@ function SessionWorkSummaryCard({ summary, onRun }) {
 class ChatWorkflows extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { previews: {}, runIntentRevision: 0 };
+    this.state = { previews: {}, runIntentRevision: 0, validationResult: null, validationPending: false, validationChecked: false };
     this.mounted = true;
     this.readEpoch = 0;
+    this.validationEpoch = 0;
+    this.validationData = null;
     this.messageKeys = /* @__PURE__ */ new Map();
     this.approvedRunIntents = /* @__PURE__ */ new Set();
     this.queuedRunIntents = /* @__PURE__ */ new Set();
@@ -135,6 +181,45 @@ class ChatWorkflows extends React.Component {
   componentWillUnmount() {
     this.mounted = false;
     this.readEpoch++;
+    this.validationEpoch++;
+  }
+  validationBinding(props = this.props) {
+    const summary = summarizeSessionWork(props.data, props.session), kind = summary?.source.kind;
+    if (!summary || kind !== "run" && kind !== "development-job") return null;
+    const manifestDigest = summary.validationEvidence?.manifestDigest, sourceDigest = summary.validationEvidence?.sourceDigest;
+    if (!manifestDigest || !sourceDigest) return null;
+    return { projectId: props.data.project.id, sessionId: props.session.id, kind, id: summary.source.id, manifestDigest, sourceDigest };
+  }
+  componentDidUpdate(previous) {
+    const scopeChanged = previous.data.project.id !== this.props.data.project.id || previous.session.id !== this.props.session.id || JSON.stringify(this.validationBinding(previous)) !== JSON.stringify(this.validationBinding());
+    const disconnected = this.props.readCurrent === false;
+    const changed = scopeChanged || disconnected || !this.state.validationPending && (previous.data !== this.props.data || this.props.busy && !previous.busy);
+    if (changed && (this.state.validationPending || this.state.validationResult || scopeChanged)) {
+      this.validationEpoch++;
+      this.validationData = null;
+      this.setState({ validationResult: null, validationPending: false, validationChecked: !scopeChanged });
+    }
+  }
+  async checkCurrentValidation() {
+    const binding = this.validationBinding();
+    if (!binding || this.props.busy || this.props.readCurrent === false) return;
+    const epoch = ++this.validationEpoch, matches = () => this.mounted && epoch === this.validationEpoch && this.props.readCurrent !== false && JSON.stringify(this.validationBinding()) === JSON.stringify(binding);
+    this.validationData = null;
+    this.setState({ validationResult: null, validationPending: true, validationChecked: true });
+    let executed = false;
+    try {
+      const result = await (this.props.validationPerform ?? this.props.perform)(async () => {
+        executed = true;
+        return api(`/projects/${binding.projectId}/validation?${new URLSearchParams({ kind: binding.kind, id: binding.id, sessionId: binding.sessionId, manifestDigest: binding.manifestDigest, sourceDigest: binding.sourceDigest })}`);
+      });
+      if (!matches()) return;
+      if (executed && result && Object.entries(binding).every(([k, v]) => result[k] === v) && ["pass", "fail", "unknown", "not_run"].includes(result.receiptCheck) && ["current", "stale", "unknown"].includes(result.applicability) && typeof result.checkedAt === "string" && (result.applicability !== "current" || summarizeSessionWork(this.props.data, this.props.session)?.verificationStatus !== "stale")) {
+        this.validationData = this.props.data;
+        this.setState({ validationResult: result });
+      }
+    } finally {
+      if (this.mounted && epoch === this.validationEpoch) this.setState({ validationPending: false });
+    }
   }
   call(name, input = {}) {
     return api(`/operations/${name}`, { projectId: this.props.data.project.id, sessionId: this.props.session.id, input });
@@ -509,7 +594,7 @@ class ChatWorkflows extends React.Component {
     ]);
     const content = /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u4EFB\u52A1\uFF1B\u5F85\u786E\u8BA4\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002" }),
-      summary ? /* @__PURE__ */ jsx(SessionWorkSummaryCard, { summary, onRun: this.props.onRun }) : null,
+      summary ? /* @__PURE__ */ jsx(SessionWorkSummaryCard, { summary, onRun: this.props.onRun, onCheck: this.validationBinding() ? () => void this.checkCurrentValidation() : void 0, validation: this.validationData === data && !busy ? this.state.validationResult : null, pending: this.state.validationPending, checked: this.state.validationChecked, unavailable: this.props.readCurrent === false, busy }) : null,
       this.researchBriefCard(disabled),
       /* @__PURE__ */ jsx(PublicationDialogue, { data, session, disabled, busy, perform }),
       campaigns.slice().reverse().map((c) => this.campaignCard(c, disabled)),

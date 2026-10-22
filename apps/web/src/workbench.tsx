@@ -33,6 +33,8 @@ export class Chat extends React.Component<{
     streamTruncated?:boolean;
     activity?:SessionView['progress']['activity'];
     busy:boolean;
+    readCurrent?:boolean;
+    validationPerform?:Perform;
     perform: Perform;
     onModelConfirmed?:(session:Row<Session>)=>void;
     onBranchConfirmed?:(session:Row<Session>)=>void;
@@ -229,7 +231,7 @@ export class Chat extends React.Component<{
  <aside id="chat-task-drawer" className="chat-task-drawer" hidden={!this.state.drawerOpen} aria-labelledby="chat-task-drawer-title"><header><h2 id="chat-task-drawer-title">任务与审批</h2><button type="button" ref={this.drawerClose} className="icon-button" aria-label="关闭任务与审批" onClick={this.closeDrawer}><Icon name="close"/></button></header><div className="chat-task-drawer-content" ref={this.drawerContent}>
  <p className="small muted">本会话的任务、审批与结果通知。操作仍按原有固定范围确认。</p>
  {session&&latest?<PermissionActions key={session.id} sessionId={session.id} projectId={data.project.id} session={session} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform} onPendingChange={this.permissionPending}/>:null}
- {session&&latest?<ChatWorkflows data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onExperiment={this.props.onExperiment} onRun={this.props.onRun}/>:null}
+ {session&&latest?<ChatWorkflows data={data} session={session} busy={this.props.busy} readCurrent={this.props.readCurrent} validationPerform={this.props.validationPerform} perform={this.props.perform} onSession={this.props.onSession} onExperiment={this.props.onExperiment} onRun={this.props.onRun}/>:null}
  {session?<ResearchActionCards data={data} session={session} busy={this.props.busy} perform={this.props.perform} onSession={this.props.onSession} onRun={this.props.onRun} onCampaign={this.props.onCampaign} onRegister={this.props.onRegister} onClaim={this.props.onClaim} onUseDocument={this.props.onUseDocument} onSources={this.props.onSources}/>:null}
  {latest?<WakeupPanel data={data} busy={this.props.busy} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/>:null}
  <p className="small muted chat-drawer-history-note" tabIndex={-1}>历史记录保留在操作审批历史、结果通知和已完成事项中；可展开已有记录。</p>{!latest?<p className="small muted">正在查看消息历史，返回最新消息后显示当前任务与审批。</p>:null}{this.props.archivedHistory}
