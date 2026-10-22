@@ -1,16 +1,16 @@
 {
   "schemaVersion": 1,
-  "revision": 7,
+  "revision": 9,
   "planId": "general-research-product-five-day-v3",
-  "updatedAt": "2026-10-22T02:40:02.037Z",
-  "updatedBy": "product-plan-cleanup",
+  "updatedAt": "2026-10-22T08:39:58.015Z",
+  "updatedBy": "Codex",
   "project": "研舟π / pi-research",
-  "planStatus": "product_plan_ready",
-  "overallStatus": "implementation_not_started",
-  "scope": "????????????????????????unknown?????????????????????",
+  "planStatus": "in_progress",
+  "overallStatus": "in_progress",
+  "scope": "完善当前任务摘要、真实验证证据与中断接续；保留通用科研类型、现有权限、审批与历史。",
   "implementationAuthorization": {
-    "status": "awaiting_user_start",
-    "note": "???????????????????"
+    "status": "authorized",
+    "note": "User explicitly authorized implementation on 2026-10-22; preserve existing in-flight edits and do not reset the worktree."
   },
   "designDocument": "../../superpowers/specs/2026-10-21-general-research-design.md",
   "implementationPlan": "../../superpowers/plans/2026-10-21-general-research-plan.md",
@@ -24,8 +24,8 @@
     "D4",
     "D5"
   ],
-  "nextTaskId": "D1",
-  "lastCompletedTaskId": null,
+  "nextTaskId": "D3",
+  "lastCompletedTaskId": "D2",
   "activeBatch": null,
   "allowedStatuses": [
     "not_started",
@@ -41,7 +41,7 @@
     {
       "id": "D1",
       "title": "???????????",
-      "status": "not_started",
+      "status": "done",
       "priority": "P0",
       "day": "Day 1",
       "dependsOn": [],
@@ -51,10 +51,12 @@
         "D1.3",
         "D1.4"
       ],
-      "owner": null,
+      "owner": "ChatGPT",
       "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
+      "completedAt": "2026-10-22T06:51:00.450Z",
+      "evidenceRefs": [
+        "docs/acceptance/flow-task-summary-20261022/RESULT.md"
+      ],
       "verification": {
         "status": "not_run",
         "checks": []
@@ -68,12 +70,12 @@
       "implementationCommit": null,
       "remoteStatus": "not_attempted",
       "blockers": [],
-      "nextAction": "????????????????????????"
+      "nextAction": "Baseline and existing capability audit recorded; D2 is awaiting live UI verification."
     },
     {
       "id": "D2",
-      "title": "???????????",
-      "status": "not_started",
+      "title": "当前任务摘要与状态可解释性",
+      "status": "done",
       "priority": "P0",
       "day": "Day 2",
       "dependsOn": [
@@ -85,28 +87,63 @@
         "D2.3",
         "D2.4"
       ],
-      "owner": null,
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
+      "owner": "ChatGPT",
+      "startedAt": "2026-10-22T06:51:00.450Z",
+      "completedAt": "2026-10-22T08:39:58.015Z",
+      "evidenceRefs": [
+        "docs/acceptance/flow-task-summary-20261022/RESULT.md",
+        "docs/acceptance/flow-task-summary-20261022/EVIDENCE.json"
+      ],
       "verification": {
-        "status": "not_run",
-        "checks": []
+        "status": "pass",
+        "checks": [
+          {
+            "name": "final-targeted",
+            "pass": 68,
+            "fail": 0,
+            "skip": 0
+          },
+          {
+            "name": "full-regression",
+            "tests": 2411,
+            "pass": 2384,
+            "fail": 0,
+            "cancelled": 0,
+            "skip": 27
+          },
+          {
+            "name": "real-browser",
+            "status": "pass"
+          },
+          {
+            "name": "typecheck-and-clean-build",
+            "status": "pass"
+          }
+        ]
       },
       "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
+        "status": "pass",
+        "reviewer": "independent gpt-6.1-sol / high requested; runtime not echoed",
+        "snapshot": {
+          "head": "5f9e21932240ec09e2b9490a9f67f4b7a2847a02",
+          "files": {
+            "apps/web/src/task-summary-model.ts": "fc8c7f0765aafab8fbc89f6d85aa7c476aacf9735db3f71346c9a2e1c80ae91f",
+            "apps/web/src/chat-workflows.tsx": "0b82d5c2d906a7d038d968a32168717cb1dd4bd28719e9e5abc3153a3bf9a488",
+            "apps/web/src/models.ts": "d6ccc491d46d7a3e2b6fb690fae59ae41eedeb7dd61e200c4519dd751f679a4d",
+            "tests/unit/task-summary-model.test.mjs": "19b971070eb7160b0cdc1ca4600716bd29a2387a3c1d5c2d05899d73115a0be4",
+            "tests/unit/research-brief-ui.test.mjs": "fe6d9c7bfda07fe82b08f733cca40de97dea80e9f0773a36fddd4d22c6667e64"
+          }
+        },
         "blockingFindings": []
       },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
+      "implementationCommit": "aa38c9a19ddaa45ddfc6bd341e41508e1025ba79",
+      "remoteStatus": "synced",
       "blockers": [],
-      "nextAction": "??D1?????????????????"
+      "nextAction": "D2 accepted. Continue D3 by auditing existing validation evidence and stale snapshot checks before implementing a bounded missing slice."
     },
     {
       "id": "D3",
-      "title": "??????????",
+      "title": "验证证据与被验证快照绑定",
       "status": "not_started",
       "priority": "P0",
       "day": "Day 3",
@@ -136,7 +173,7 @@
       "implementationCommit": null,
       "remoteStatus": "not_attempted",
       "blockers": [],
-      "nextAction": "??????????????pass/fail/skip/not_run/stale?"
+      "nextAction": "先审计已有验证、Review、操作回执与产物；只补当前证据绑定和状态失效的真实缺口。"
     },
     {
       "id": "D4",
@@ -222,10 +259,10 @@
     "????/???/????"
   ],
   "delivery": {
-    "productStatus": "not_started",
-    "remoteStatus": "not_attempted",
-    "overallStatus": "not_started",
-    "note": "??????????????????????"
+    "productStatus": "in_progress",
+    "remoteStatus": "synced",
+    "overallStatus": "incomplete",
+    "note": "D2 accepted with real browser checks, final targeted tests, single full regression with explicit skips, clean builds and independent review. Implementation commit synced; D3-D5 remain."
   },
   "stateRules": {
     "singleWriter": "当前主代理",
