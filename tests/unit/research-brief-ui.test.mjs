@@ -41,3 +41,40 @@ test('queue failure keeps the confirmed plan available for retry',async t=>{
   const reopened=view(data(brief({status:'confirmed',version:2})));
   assert.equal(button(reopened,'继续已确认计划').props.disabled,false);
 });
+
+test('current task summary links to the original Run and separates execution, validation and scientific judgment',()=>{
+  const d=data(null);d.experiments=[{id:'experiment',title:'Fixed experiment'}];
+  d.intents=[{id:'intent',rootSessionId:'root',experimentId:'experiment',status:'submitted',runId:'run',manifestDigest:'fixed-manifest',manifest:{}}];
+  d.runs=[{id:'run',experimentId:'experiment',intentId:'intent',state:'unknown',integrity:'pending',exitCode:null,manifestDigest:'fixed-manifest',artifactIds:[]}];
+  let opened;
+  const ui=synchronousState(new ChatWorkflows({data:d,session,busy:false,perform:fn=>fn(),onSession(){},onExperiment(){},onRun:(runId,experimentId)=>opened={runId,experimentId}}));
+  const rendered=ui.render();
+  const summaryNode=nodes(rendered).find(n=>typeof n.type==='function'&&n.type.name==='SessionWorkSummaryCard');
+  assert.ok(summaryNode,'current summary component is mounted in the conversation task panel');
+  const summaryRendered=summaryNode.type(summaryNode.props),text=content(summaryRendered);
+  assert.ok(text.includes('当前任务摘要'));
+  assert.ok(text.includes('状态未知'));
+  assert.ok(text.includes('验证依据与原始记录'));
+  assert.ok(text.includes('不要自动重跑'));
+  assert.ok(text.includes('未评估'));
+  nodes(summaryRendered).find(n=>n.type==='button'&&content(n)==='打开原始运行').props.onClick();
+  assert.deepEqual(opened,{runId:'run',experimentId:'experiment'});
+});
+
+test('an unreadable bound plan mounts a safe summary even when no other task cards exist',()=>{
+  const d=data(null);d.researchBrief={brief:null,latestId:'original-brief',blockedReason:'BRIEF_CORRUPTED',history:[{id:'original-brief',question:'Unreadable private question'}],evidenceChecks:[]};
+  const ui=view(d);ui.props={...ui.props,session:{...session,researchBriefId:'original-brief'}};
+  const summaryNode=nodes(ui.render()).find(n=>typeof n.type==='function'&&n.type.name==='SessionWorkSummaryCard');
+  assert.ok(summaryNode,'the failed brief must not leave an empty task panel');
+  const summaryRendered=summaryNode.type(summaryNode.props),text=content(summaryRendered);
+  assert.match(text,/当前任务摘要/);assert.match(text,/original-brief/);assert.match(text,/执行状态：受阻/);
+  assert.ok(nodes(summaryRendered).some(n=>n.props?.value==='unknown'&&n.props.caption==='状态未知'),'validation remains explicitly unknown');
+  assert.match(text,/原记录/);assert.match(text,/不要自动重跑/);
+  assert.doesNotMatch(text,/Unreadable private question/);
+  assert.equal(nodes(summaryRendered).some(n=>n.type==='button'),false,'failed reads offer no execution action');
+  ui.props={...ui.props,session:{...session,researchBriefId:'another-brief'}};
+  assert.equal(ui.render(),null,'switching sessions must not expose the previous failed brief');
+  ui.props={...ui.props,session:{...session,researchBriefId:'original-brief'}};
+  const reopened=nodes(ui.render()).find(n=>typeof n.type==='function'&&n.type.name==='SessionWorkSummaryCard');
+  assert.equal(reopened.props.summary.source.id,'original-brief');
+});

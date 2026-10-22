@@ -8,8 +8,119 @@ import { ResearchPlanPanel } from "./research-plan.js";
 import { WorkingGrants } from "./working-grants.js";
 import { runGrantUsable } from "./run-grants.js";
 import { PublicationDialogue } from "./publication-dialogue.js";
+import { summarizeSessionWork } from "./task-summary-model.js";
 function proposalSession(data, proposal) {
   return proposal.rootSessionId || (data.reviews ?? []).find((r) => r.id === proposal.reviewId)?.producerSessionId || (data.sandboxJobs ?? []).find((j) => j.id === proposal.testJobId)?.sessionId;
+}
+const summaryCaptions = {
+  confirmed: "\u5DF2\u786E\u8BA4",
+  awaiting_confirmation: "\u5F85\u786E\u8BA4",
+  awaiting_approval: "\u5F85\u5BA1\u6279",
+  ready_to_submit: "\u53EF\u63D0\u4EA4",
+  running: "\u6267\u884C\u4E2D",
+  stopping: "\u505C\u6B62\u72B6\u6001\u5F85\u6838\u5BF9",
+  completed: "\u5DF2\u5B8C\u6210",
+  completed_with_issue: "\u5B8C\u6210\u4F46\u9A8C\u8BC1\u4E0D\u5B8C\u6574",
+  failed: "\u5931\u8D25",
+  cancelled: "\u5DF2\u53D6\u6D88",
+  blocked: "\u53D7\u963B",
+  unknown: "\u72B6\u6001\u672A\u77E5",
+  pass: "\u901A\u8FC7",
+  fail: "\u5931\u8D25",
+  skip: "\u5DF2\u8DF3\u8FC7",
+  not_run: "\u672A\u8FD0\u884C",
+  stale: "\u5DF2\u5931\u6548",
+  not_assessed: "\u672A\u8BC4\u4F30",
+  needs_review: "\u5F85\u7814\u7A76\u5224\u65AD",
+  reviewed: "\u5DF2\u6709\u5224\u65AD\u8BB0\u5F55",
+  complete: "\u5B8C\u6574",
+  pending: "\u5F85\u5B9A",
+  incomplete: "\u4E0D\u5B8C\u6574"
+};
+function summaryCaption(value) {
+  return summaryCaptions[value] ?? value;
+}
+function SessionWorkSummaryCard({ summary, onRun }) {
+  const isRun = summary.source.kind === "run" && !!summary.experimentId;
+  return /* @__PURE__ */ jsxs("details", { className: "workflow-card session-work-summary", open: ["blocked", "unknown", "failed", "awaiting_confirmation", "awaiting_approval", "ready_to_submit", "running", "stopping", "completed_with_issue"].includes(summary.operationStatus), children: [
+    /* @__PURE__ */ jsxs("summary", { children: [
+      "\u5F53\u524D\u4EFB\u52A1\u6458\u8981 ",
+      /* @__PURE__ */ jsx(Badge, { value: summary.operationStatus, caption: summaryCaption(summary.operationStatus) })
+    ] }),
+    /* @__PURE__ */ jsxs("p", { children: [
+      /* @__PURE__ */ jsx("strong", { children: "\u76EE\u6807\uFF1A" }),
+      summary.goal || "\u5F53\u524D\u7814\u7A76\u5DE5\u4F5C"
+    ] }),
+    /* @__PURE__ */ jsxs("p", { children: [
+      /* @__PURE__ */ jsx("strong", { children: "\u8303\u56F4\uFF1A" }),
+      summary.scope || "\u5C1A\u672A\u660E\u786E\u56FA\u5B9A\u8303\u56F4"
+    ] }),
+    /* @__PURE__ */ jsxs("div", { className: "summary-status-grid", children: [
+      /* @__PURE__ */ jsxs("p", { children: [
+        /* @__PURE__ */ jsx("strong", { children: "\u6267\u884C\u72B6\u6001\uFF1A" }),
+        summaryCaption(summary.operationStatus)
+      ] }),
+      /* @__PURE__ */ jsxs("p", { children: [
+        /* @__PURE__ */ jsx("strong", { children: "\u9A8C\u8BC1\u72B6\u6001\uFF1A" }),
+        /* @__PURE__ */ jsx(Badge, { value: summary.verificationStatus, caption: summaryCaption(summary.verificationStatus) })
+      ] }),
+      /* @__PURE__ */ jsxs("p", { children: [
+        /* @__PURE__ */ jsx("strong", { children: "\u79D1\u5B66\u5224\u65AD\uFF1A" }),
+        summaryCaption(summary.scientificStatus)
+      ] })
+    ] }),
+    summary.blocker ? /* @__PURE__ */ jsxs("p", { role: "status", className: "inline-warning", children: [
+      /* @__PURE__ */ jsx("strong", { children: "\u963B\u585E/\u9650\u5236\uFF1A" }),
+      summary.blocker
+    ] }) : null,
+    /* @__PURE__ */ jsxs("p", { children: [
+      /* @__PURE__ */ jsx("strong", { children: "\u4E0B\u4E00\u6B65\uFF1A" }),
+      summary.nextAction
+    ] }),
+    /* @__PURE__ */ jsxs("details", { children: [
+      /* @__PURE__ */ jsx("summary", { children: "\u9A8C\u8BC1\u4F9D\u636E\u4E0E\u539F\u59CB\u8BB0\u5F55" }),
+      /* @__PURE__ */ jsxs("p", { children: [
+        "\u539F\u59CB\u5BF9\u8C61\uFF1A",
+        summary.source.kind,
+        " \xB7 ",
+        summary.source.id
+      ] }),
+      /* @__PURE__ */ jsxs("p", { children: [
+        "\u56FA\u5B9A\u5FEB\u7167\u6458\u8981\uFF1A",
+        summary.snapshotDigest ?? "\u672A\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u636E\u6B64\u8BA4\u5B9A\u5F53\u524D\u6E90\u7801\u5DF2\u9A8C\u8BC1"
+      ] }),
+      summary.validationEvidence ? /* @__PURE__ */ jsxs("div", { className: "validation-evidence-detail", children: [
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u56FA\u5B9A\u547D\u4EE4\uFF1A",
+          summary.validationEvidence.command?.length ? JSON.stringify(summary.validationEvidence.command) : "\u672A\u8BB0\u5F55"
+        ] }),
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u5B9E\u9645\u9000\u51FA\u7801\uFF1A",
+          summary.validationEvidence.exitCode === void 0 ? "\u672A\u8BB0\u5F55" : summary.validationEvidence.exitCode === null ? "\u672A\u77E5/\u672A\u8FD4\u56DE" : summary.validationEvidence.exitCode
+        ] }),
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u4EA7\u7269\u5B8C\u6574\u6027\uFF1A",
+          summary.validationEvidence.integrity ? summaryCaption(summary.validationEvidence.integrity) : "\u672A\u8BB0\u5F55"
+        ] }),
+        /* @__PURE__ */ jsxs("p", { children: [
+          "\u6267\u884C\u65F6\u95F4\uFF1A",
+          summary.validationEvidence.startedAt ?? "\u672A\u8BB0\u5F55",
+          " \u2192 ",
+          summary.validationEvidence.endedAt ?? "\u672A\u8BB0\u5F55"
+        ] }),
+        summary.validationEvidence.metrics && Object.keys(summary.validationEvidence.metrics).length ? /* @__PURE__ */ jsxs("p", { children: [
+          "\u5B9E\u9645\u6307\u6807\uFF1A",
+          Object.entries(summary.validationEvidence.metrics).map(([name, value]) => name + "=" + number(value)).join(" \xB7 ")
+        ] }) : null
+      ] }) : /* @__PURE__ */ jsx("p", { children: "\u5F53\u524D\u6CA1\u6709\u5B9E\u9645\u9A8C\u8BC1\u56DE\u6267\uFF1B\u4E0D\u80FD\u628A\u8BA1\u5212\u3001\u5BA1\u6279\u6216\u6587\u4EF6\u5B58\u5728\u89C6\u4E3A\u9A8C\u8BC1\u901A\u8FC7\u3002" }),
+      /* @__PURE__ */ jsxs("p", { children: [
+        "\u5F52\u6863\u4EA7\u7269\uFF1A",
+        summary.artifactIds.length ? summary.artifactIds.map(short).join("\u3001") : "\u6682\u65E0\u5DF2\u767B\u8BB0\u4EA7\u7269"
+      ] }),
+      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u9A8C\u8BC1\u901A\u8FC7\u4EC5\u8868\u793A\u8BB0\u5F55\u4E2D\u7684\u5DE5\u7A0B\u68C0\u67E5\u6EE1\u8DB3\u5176\u6267\u884C\u6761\u4EF6\uFF1B\u4E0D\u7B49\u4E8E\u79D1\u5B66\u7ED3\u8BBA\u6210\u7ACB\u3002\u672A\u8FD0\u884C\u3001\u672A\u77E5\u548C\u8FC7\u671F\u72B6\u6001\u4E0D\u4F1A\u88AB\u5F53\u4F5C\u901A\u8FC7\u3002" })
+    ] }),
+    isRun ? /* @__PURE__ */ jsx("button", { type: "button", className: "secondary compact", onClick: () => onRun(summary.source.id, summary.experimentId), children: "\u6253\u5F00\u539F\u59CB\u8FD0\u884C" }) : null
+  ] });
 }
 class ChatWorkflows extends React.Component {
   constructor() {
@@ -384,8 +495,9 @@ class ChatWorkflows extends React.Component {
   render() {
     const { data, session, perform, busy, onExperiment } = this.props;
     if (session.taskId || session.role !== "coordinator") return null;
+    const summary = summarizeSessionWork(data, session);
     const disabled = busy || data.project.archived || session.state === "archived", campaigns = (data.campaigns ?? []).filter((c) => c.rootSessionId === session.id), tasks = (data.developmentTasks ?? []).filter((t) => t.sessionId === session.id), jobs = (data.sandboxJobs ?? []).filter((j) => j.sessionId === session.id), reviews = (data.reviews ?? []).filter((r) => r.producerSessionId === session.id), proposals = (data.changeProposals ?? []).filter((p) => proposalSession(data, p) === session.id), unbound = (data.changeProposals ?? []).filter((p) => !proposalSession(data, p)), campaignIntentIds = new Set(campaigns.flatMap((c) => [...data.members.filter((m) => m.campaignId === c.id).map((m) => m.intentId), ...(data.researchCandidates ?? []).filter((v) => v.campaignId === c.id).flatMap((v) => v.intentId ? [v.intentId] : [])])), runIntents = data.intents.filter((i) => i.rootSessionId === session.id && !campaignIntentIds.has(i.id));
-    if (!data.researchBrief?.brief && !campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId && !(data.manuscripts ?? []).some((r) => r.rootSessionId === session.id)) return null;
+    if (!summary && !data.researchBrief?.brief && !campaigns.length && !tasks.length && !jobs.length && !reviews.length && !proposals.length && !unbound.length && !runIntents.length && !session.sourceRevisionId && !(data.manuscripts ?? []).some((r) => r.rootSessionId === session.id)) return null;
     const completedIds = /* @__PURE__ */ new Set([
       ...data.researchBrief?.brief?.status === "confirmed" && data.researchBrief.evidenceChecks.every((e) => e.current) ? ["research-brief"] : [],
       ...runIntents.filter((i) => data.runs.some((r) => r.id === i.runId && r.state === "succeeded")).map((i) => i.id),
@@ -397,6 +509,7 @@ class ChatWorkflows extends React.Component {
     ]);
     const content = /* @__PURE__ */ jsxs("section", { className: "chat-workflows", "aria-label": "\u5F53\u524D\u5BF9\u8BDD\u4EFB\u52A1", children: [
       /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u5728\u5BF9\u8BDD\u4E2D\u63D0\u51FA\u4EFB\u52A1\uFF1B\u5F85\u786E\u8BA4\u4E8B\u9879\u663E\u793A\u5728\u8FD9\u91CC\u3002" }),
+      summary ? /* @__PURE__ */ jsx(SessionWorkSummaryCard, { summary, onRun: this.props.onRun }) : null,
       this.researchBriefCard(disabled),
       /* @__PURE__ */ jsx(PublicationDialogue, { data, session, disabled, busy, perform }),
       campaigns.slice().reverse().map((c) => this.campaignCard(c, disabled)),
@@ -517,5 +630,6 @@ class ChatWorkflows extends React.Component {
 }
 export {
   ChatWorkflows,
-  proposalSession
+  proposalSession,
+  summarizeSessionWork
 };

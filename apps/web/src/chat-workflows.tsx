@@ -9,10 +9,54 @@ import {ResearchPlanPanel} from './research-plan.js';
 import {WorkingGrants} from './working-grants.js';
 import {runGrantUsable} from './run-grants.js';
 import {PublicationDialogue} from './publication-dialogue.js';
+import {summarizeSessionWork} from './task-summary-model.js';
+import type {SessionWorkSummary} from './task-summary-model.js';
+export {summarizeSessionWork};
 
 export function proposalSession(data:ProjectState,proposal:Row<ChangeProposal>):string|undefined {
     return (proposal as any).rootSessionId || (data.reviews??[]).find(r=>r.id===proposal.reviewId)?.producerSessionId || (data.sandboxJobs??[]).find(j=>j.id===proposal.testJobId)?.sessionId;
 }
+
+const summaryCaptions:Record<string,string>={
+    confirmed:'已确认',awaiting_confirmation:'待确认',awaiting_approval:'待审批',ready_to_submit:'可提交',
+    running:'执行中',stopping:'停止状态待核对',completed:'已完成',completed_with_issue:'完成但验证不完整',
+    failed:'失败',cancelled:'已取消',blocked:'受阻',unknown:'状态未知',
+    pass:'通过',fail:'失败',skip:'已跳过',not_run:'未运行',stale:'已失效',
+    not_assessed:'未评估',needs_review:'待研究判断',reviewed:'已有判断记录',complete:'完整',pending:'待定',incomplete:'不完整',
+};
+function summaryCaption(value:string){return summaryCaptions[value]??value;}
+
+function SessionWorkSummaryCard({summary,onRun}:{summary:SessionWorkSummary;onRun:(runId:string,experimentId:string)=>void}) {
+    const isRun=summary.source.kind==='run'&&!!summary.experimentId;
+    return <details className="workflow-card session-work-summary" open={['blocked','unknown','failed','awaiting_confirmation','awaiting_approval','ready_to_submit','running','stopping','completed_with_issue'].includes(summary.operationStatus)}>
+        <summary>当前任务摘要 <Badge value={summary.operationStatus} caption={summaryCaption(summary.operationStatus)}/></summary>
+        <p><strong>目标：</strong>{summary.goal||'当前研究工作'}</p>
+        <p><strong>范围：</strong>{summary.scope||'尚未明确固定范围'}</p>
+        <div className="summary-status-grid">
+            <p><strong>执行状态：</strong>{summaryCaption(summary.operationStatus)}</p>
+            <p><strong>验证状态：</strong><Badge value={summary.verificationStatus} caption={summaryCaption(summary.verificationStatus)}/></p>
+            <p><strong>科学判断：</strong>{summaryCaption(summary.scientificStatus)}</p>
+        </div>
+        {summary.blocker?<p role="status" className="inline-warning"><strong>阻塞/限制：</strong>{summary.blocker}</p>:null}
+        <p><strong>下一步：</strong>{summary.nextAction}</p>
+        <details>
+            <summary>验证依据与原始记录</summary>
+            <p>原始对象：{summary.source.kind} · {summary.source.id}</p>
+            <p>固定快照摘要：{summary.snapshotDigest??'未记录，不能据此认定当前源码已验证'}</p>
+            {summary.validationEvidence?<div className="validation-evidence-detail">
+                <p>固定命令：{summary.validationEvidence.command?.length?JSON.stringify(summary.validationEvidence.command):'未记录'}</p>
+                <p>实际退出码：{summary.validationEvidence.exitCode===undefined?'未记录':summary.validationEvidence.exitCode===null?'未知/未返回':summary.validationEvidence.exitCode}</p>
+                <p>产物完整性：{summary.validationEvidence.integrity?summaryCaption(summary.validationEvidence.integrity):'未记录'}</p>
+                <p>执行时间：{summary.validationEvidence.startedAt??'未记录'} → {summary.validationEvidence.endedAt??'未记录'}</p>
+                {summary.validationEvidence.metrics&&Object.keys(summary.validationEvidence.metrics).length?<p>实际指标：{Object.entries(summary.validationEvidence.metrics).map(([name,value])=>name+'='+number(value)).join(' · ')}</p>:null}
+            </div>:<p>当前没有实际验证回执；不能把计划、审批或文件存在视为验证通过。</p>}
+            <p>归档产物：{summary.artifactIds.length?summary.artifactIds.map(short).join('、'):'暂无已登记产物'}</p>
+            <p className="small muted">验证通过仅表示记录中的工程检查满足其执行条件；不等于科学结论成立。未运行、未知和过期状态不会被当作通过。</p>
+        </details>
+        {isRun?<button type="button" className="secondary compact" onClick={()=>onRun(summary.source.id,summary.experimentId!)}>打开原始运行</button>:null}
+    </details>;
+}
+
 export class ChatWorkflows extends React.Component<{
     data:ProjectState;session:Row<Session>;busy:boolean;perform:Perform;
     onSession:(id:string)=>void;onExperiment:(id:string)=>void;onRun:(runId:string,experimentId:string)=>void;
@@ -135,8 +179,9 @@ export class ChatWorkflows extends React.Component<{
     render(){
         const {data,session,perform,busy,onExperiment}=this.props;
         if(session.taskId||session.role!=='coordinator')return null;
+        const summary=summarizeSessionWork(data,session);
         const disabled=busy||data.project.archived||session.state==='archived',campaigns=(data.campaigns??[]).filter(c=>c.rootSessionId===session.id),tasks=(data.developmentTasks??[]).filter(t=>t.sessionId===session.id),jobs=(data.sandboxJobs??[]).filter(j=>j.sessionId===session.id),reviews=(data.reviews??[]).filter(r=>r.producerSessionId===session.id),proposals=(data.changeProposals??[]).filter(p=>proposalSession(data,p)===session.id),unbound=(data.changeProposals??[]).filter(p=>!proposalSession(data,p)),campaignIntentIds=new Set(campaigns.flatMap(c=>[...data.members.filter(m=>m.campaignId===c.id).map(m=>m.intentId),...(data.researchCandidates??[]).filter(v=>v.campaignId===c.id).flatMap(v=>v.intentId?[v.intentId]:[])])),runIntents=data.intents.filter(i=>i.rootSessionId===session.id&&!campaignIntentIds.has(i.id));
-        if(!data.researchBrief?.brief&&!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId&&!(data.manuscripts??[]).some(r=>r.rootSessionId===session.id))return null;
+        if(!summary&&!data.researchBrief?.brief&&!campaigns.length&&!tasks.length&&!jobs.length&&!reviews.length&&!proposals.length&&!unbound.length&&!runIntents.length&&!session.sourceRevisionId&&!(data.manuscripts??[]).some(r=>r.rootSessionId===session.id))return null;
         const completedIds=new Set<string>([
             ...(data.researchBrief?.brief?.status==='confirmed'&&data.researchBrief.evidenceChecks.every(e=>e.current)?['research-brief']:[]),
             ...runIntents.filter(i=>data.runs.some(r=>r.id===i.runId&&r.state==='succeeded')).map(i=>i.id),
@@ -147,6 +192,7 @@ export class ChatWorkflows extends React.Component<{
             ...proposals.filter(p=>p.state==='applied'&&p.sourceValidity!=='stale').map(p=>p.id),
         ]);
         const content=<section className="chat-workflows" aria-label="当前对话任务"><p className="small muted">在对话中提出任务；待确认事项显示在这里。</p>
+            {summary?<SessionWorkSummaryCard summary={summary} onRun={this.props.onRun}/>:null}
             {this.researchBriefCard(disabled)}
             <PublicationDialogue data={data} session={session} disabled={disabled} busy={busy} perform={perform}/>
             {campaigns.slice().reverse().map(c=>this.campaignCard(c,disabled))}

@@ -50,11 +50,14 @@ export interface DevelopmentManifestDTO {
 export interface DevelopmentTaskDTO {
     id:string; sessionId:string; title:string; sourceDigest:string; grantId:string;
     state:string; jobId?:string; manifest:DevelopmentManifestDTO;
+    effectiveState?:string; canSubmit?:boolean; blockedReason?:string;
+    createdAt?:string; updatedAt?:string;
 }
 export interface SandboxJobDTO {
     id:string; jobId?:string; developmentTaskId:string; sessionId:string; sourceDigest:string;
     state:string; integrity:string; exitCode?:number|null; error?:string; artifactIds:string[];
     manifest:DevelopmentManifestDTO;
+    cancelRequested?:boolean; createdAt?:string; updatedAt?:string;
 }
 export interface DevelopmentReviewDTO {
     id:string; jobId:string; sourceDigest:string; producerSessionId:string;
