@@ -1,3 +1,4 @@
+import { assertModelRestoreCurrent } from '../pi-adapter/model-connections.js';
 import { assertResearchReference } from '../policy/research-automation.js';
 import { SYSTEM } from '../domain/types.js';
 import { inspectObservation, runContentDigest } from '../research-workflows/observations.js';
@@ -139,6 +140,12 @@ export class WakeupService {
         const root = this.app.store.get('session', w.rootSessionId, w.projectId);
         if (root.state === 'archived')
             return { valid: false, reason: '主会话已归档' };
+        try {
+            assertModelRestoreCurrent(this.app.context.dataDir, root.model);
+        }
+        catch (error) {
+            return { valid: true, deferred: true, reason: error.message };
+        }
         let source;
         let model;
         if (w.sourceKind === 'approval-result') {

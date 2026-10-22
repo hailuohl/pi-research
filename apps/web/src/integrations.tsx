@@ -2,6 +2,7 @@ import * as React from 'react';
 import {SectionTitle,Icon} from './ui.js';
 import {SkillManager} from './skill-manager.js';
 import {ComputeConnections} from './compute-connections.js';
+import {ExecutionEnvironments} from './execution-environments.js';
 
 type Panel='skills'|'connectors';
 export class IntegrationsView extends React.Component<{projectId:string;sessionId?:string;refreshToken?:unknown;readOnly?:boolean;onLiterature?:()=>void},{activePanel:Panel;connectionsVisited:boolean}>{
@@ -13,6 +14,6 @@ export class IntegrationsView extends React.Component<{projectId:string;sessionI
   <SectionTitle title="技能与连接器" sub={s.activePanel==='skills'?'上传技能用于新会话。':undefined}/>
   <div className="integration-tabs" role="tablist" aria-label="技能与连接器分类">{(['skills','connectors'] as const).map(panel=><button key={panel} type="button" role="tab" id={this.panelId(panel)+'-tab'} aria-controls={this.panelId(panel)} aria-selected={s.activePanel===panel} tabIndex={s.activePanel===panel?0:-1} onClick={()=>this.setPanel(panel)} onKeyDown={e=>this.tabKey(e,panel)}><Icon name={panel==='skills'?'skills':'link'}/>{panel==='skills'?'技能':'连接器'}</button>)}</div>
   <section className="integration-panel" id={this.panelId('skills')} role="tabpanel" aria-labelledby={this.panelId('skills')+'-tab'} hidden={s.activePanel!=='skills'}><SkillManager key={this.props.projectId} projectId={this.props.projectId} sessionId={this.props.sessionId} refreshToken={this.props.refreshToken} readOnly={this.props.readOnly}/></section>
-  <section className="integration-panel" id={this.panelId('connectors')} role="tabpanel" aria-labelledby={this.panelId('connectors')+'-tab'} hidden={s.activePanel!=='connectors'}>{s.connectionsVisited?<ComputeConnections key={this.props.projectId} projectId={this.props.projectId} active={s.activePanel==='connectors'} refreshToken={this.props.refreshToken} readOnly={this.props.readOnly}/>:null}</section>
+  <section className="integration-panel" id={this.panelId('connectors')} role="tabpanel" aria-labelledby={this.panelId('connectors')+'-tab'} hidden={s.activePanel!=='connectors'}>{s.connectionsVisited?<ComputeConnections key={`${this.props.projectId}:connections`} projectId={this.props.projectId} active={s.activePanel==='connectors'} refreshToken={this.props.refreshToken} readOnly={this.props.readOnly}/>:null}{s.connectionsVisited?<ExecutionEnvironments key={`${this.props.projectId}:environment`} projectId={this.props.projectId} active={s.activePanel==='connectors'} readOnly={this.props.readOnly} localOnly/>:null}</section>
  </div></div>;}
 }

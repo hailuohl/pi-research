@@ -6,6 +6,7 @@ import {GitHubSettings} from './github-controls.js';
 import {TemplateLibraryView} from './template-library-view.js';
 import {ModelManagementPanel} from './model-management-view.js';
 import {LiteratureView} from './literature-view.js';
+import {ConnectorBudget} from './connector-budget.js';
 import {PublicationCompilerConfiguration} from './research-configuration.js';
 export {ModelManagementPanel} from './model-management-view.js';
 
@@ -16,6 +17,6 @@ export class SettingsView extends React.Component<{boot:Bootstrap;data?:ProjectS
   <div id="settings-models" className="settings-panel" hidden={this.state.section!=='models'}><ModelManagementPanel boot={this.props.boot} perform={this.props.perform}/></div>
   <div id="settings-github" className="settings-panel" hidden={this.state.section!=='github'}><GitHubSettings active={this.state.section==='github'} readOnly={this.props.readOnly} projectId={this.props.projectId}/></div>
   <div id="settings-templates" className="settings-panel" hidden={this.state.section!=='templates'}><TemplateLibraryView/></div>
- <div id="settings-sources" className="settings-panel" hidden={this.state.section!=='sources'}>{this.state.section==='sources'&&this.props.data?<><LiteratureView embedded setupOnly data={this.props.data} perform={this.props.perform}/><PublicationCompilerConfiguration projectId={this.props.data.project.id} readOnly={this.props.readOnly} perform={this.props.perform}/></>:null}</div>
+ <div id="settings-sources" className="settings-panel" hidden={this.state.section!=='sources'}>{this.state.section==='sources'&&this.props.data?<><ConnectorBudget key={this.props.data.project.id} projectId={this.props.data.project.id} readOnly={this.props.readOnly}/><LiteratureView embedded setupOnly data={this.props.data} perform={this.props.perform}/><PublicationCompilerConfiguration projectId={this.props.data.project.id} readOnly={this.props.readOnly} perform={this.props.perform}/></>:null}</div>
  </div></div>;}
 }

@@ -153,6 +153,17 @@ class ModelManagementPanel extends React.Component {
     }
     return result;
   }
+  async restoreModel(provider, model) {
+    if (this.pending || this.state.loading || !this.state.data) return;
+    const p = this.state.data.providers.find((p2) => p2.provider === provider);
+    if (!p || p.deletedAt || !p.models.some((m) => m.model === model && m.deletedAt)) return;
+    const result = await this.mutate({ expectedVersion: this.state.data.version, action: "model.restore", provider, model }, `model.restore:${identity(provider, model)}`);
+    if (result && !this.disposed) {
+      this.chooseProvider(provider);
+      this.chooseModel(model);
+      this.setState({ message: "\u6A21\u578B\u5DF2\u6062\u590D\u4E3A\u505C\u7528\u72B6\u6001\uFF1B\u8BF7\u6838\u5BF9\u914D\u7F6E\u540E\u542F\u7528\uFF0C\u518D\u660E\u786E\u9009\u62E9\u7528\u4E8E\u4F1A\u8BDD\u3002\u65E7\u6279\u51C6\u548C\u6392\u961F\u5DE5\u4F5C\u4E0D\u4F1A\u6062\u590D\u3002" });
+    }
+  }
   async saveProvider() {
     const draft = this.providerDraft(), saved = this.provider(), key = identity(this.state.provider);
     if (!this.state.data) return;
@@ -194,7 +205,7 @@ class ModelManagementPanel extends React.Component {
     try {
       if (this.provider()?.deletedAt || this.managedModel()?.deletedAt) throw Error("\u6B64\u6A21\u578B\u6216\u63D0\u4F9B\u5546\u5DF2\u5220\u9664\uFF0C\u8BF7\u9009\u62E9\u5176\u4ED6\u6761\u76EE\uFF1B\u539F\u8349\u7A3F\u4FDD\u7559\u3002");
       const value = this.definitionValue(draft);
-      if (!this.state.model && this.provider()?.models.some((row) => row.model === value.model)) throw Error("\u6A21\u578B ID \u5DF2\u5B58\u5728\uFF0C\u8BF7\u9009\u62E9\u5DF2\u6709\u6A21\u578B\u7F16\u8F91\uFF1B\u5F53\u524D\u8349\u7A3F\u4FDD\u7559\u3002");
+      if (!this.state.model && this.provider()?.models.some((row) => row.model === value.model)) throw Error(this.provider()?.models.some((row) => row.model === value.model && row.deletedAt) ? "\u6A21\u578B ID \u5DF2\u5728\u5220\u9664\u5386\u53F2\u4E2D\uFF0C\u8BF7\u5148\u70B9\u51FB\u201C\u6062\u590D\u4E3A\u505C\u7528\u201D\uFF0C\u518D\u7F16\u8F91\u548C\u542F\u7528\uFF1B\u5F53\u524D\u8349\u7A3F\u4FDD\u7559\u3002" : "\u6A21\u578B ID \u5DF2\u5B58\u5728\uFF0C\u8BF7\u9009\u62E9\u5DF2\u6709\u6A21\u578B\u7F16\u8F91\uFF1B\u5F53\u524D\u8349\u7A3F\u4FDD\u7559\u3002");
       const result = await this.mutate({ expectedVersion: draft.version, action: "model.upsert", provider: this.state.provider, model: value.model, value }, `model:${key}`);
       if (result && !this.disposed) this.setState((current) => {
         const drafts = { ...current.modelDrafts };
@@ -272,7 +283,7 @@ class ModelManagementPanel extends React.Component {
         e.stopPropagation();
         this.closeDelete(target);
       }
-    }, children: /* @__PURE__ */ jsxs(Modal, { title: target.kind === "provider" ? "\u5220\u9664\u63D0\u4F9B\u5546" : "\u5220\u9664\u6A21\u578B", alert: true, description: "\u5220\u9664\u540E\u4FDD\u7559\u5386\u53F2\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u6062\u590D\u6B64\u6807\u8BC6\u3002\u7EE7\u7EED\u5220\u9664\uFF1F", onClose: () => this.closeDelete(target), onSubmit: () => void this.confirmDelete(target), submitLabel: "\u786E\u8BA4\u5220\u9664", busy: this.state.deleteSaving, closeDisabled: this.state.deleteSaving, children: [
+    }, children: /* @__PURE__ */ jsxs(Modal, { title: target.kind === "provider" ? "\u5220\u9664\u63D0\u4F9B\u5546" : "\u5220\u9664\u6A21\u578B", alert: true, description: target.kind === "provider" ? "\u5220\u9664\u540E\u4FDD\u7559\u5386\u53F2\u8BB0\u5F55\uFF0C\u4E0D\u80FD\u6062\u590D\u6B64\u6807\u8BC6\u3002\u7EE7\u7EED\u5220\u9664\uFF1F" : "\u5220\u9664\u540E\u4FDD\u7559\u5386\u53F2\u8BB0\u5F55\uFF0C\u53EF\u4ECE\u5220\u9664\u5386\u53F2\u6062\u590D\u4E3A\u505C\u7528\u3002\u65E7\u6279\u51C6\u4E0E\u6392\u961F\u5DE5\u4F5C\u4E0D\u4F1A\u6062\u590D\u3002\u7EE7\u7EED\u5220\u9664\uFF1F", onClose: () => this.closeDelete(target), onSubmit: () => void this.confirmDelete(target), submitLabel: "\u786E\u8BA4\u5220\u9664", busy: this.state.deleteSaving, closeDisabled: this.state.deleteSaving, children: [
       /* @__PURE__ */ jsxs("p", { children: [
         target.kind === "provider" ? "\u63D0\u4F9B\u5546" : "\u6A21\u578B",
         "\uFF1A",
@@ -358,7 +369,7 @@ class ModelManagementPanel extends React.Component {
   }
   async saveDefault(clear = false) {
     if (this.disposed || this.pending || !this.state.data) return;
-    const selection = this.state.selection, request = clear ? { clear: true, expectedVersion: this.state.defaultVersion } : { ...selection, expectedVersion: this.state.defaultVersion }, body = JSON.stringify(request), scope = "default";
+    const selection = this.state.selection, request = clear ? { clear: true, expectedVersion: this.state.defaultVersion } : { provider: selection.provider, model: selection.model, thinking: selection.thinking, expectedVersion: this.state.defaultVersion }, body = JSON.stringify(request), scope = "default";
     let mutation = this.mutations.get(scope);
     if (mutation?.body !== body) {
       mutation = { body, key: crypto.randomUUID() };
@@ -1172,9 +1183,11 @@ class ModelManagementPanel extends React.Component {
               " \xB7 ",
               m.model,
               " \xB7 \u5220\u9664\u4E8E ",
-              m.deletedAt
+              m.deletedAt,
+              " ",
+              !p.deletedAt ? /* @__PURE__ */ jsx("button", { type: "button", className: "text-button", disabled: s.busy || s.loading, onClick: () => this.restoreModel(p.provider, m.model), children: "\u6062\u590D\u4E3A\u505C\u7528" }) : null
             ] }, identity(p.provider, m.model)))]),
-            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4FDD\u7559\u5BA1\u8BA1\u4E0E\u65E7\u4F1A\u8BDD\u914D\u7F6E\uFF0C\u5DF2\u5220\u9664\u6807\u8BC6\u4E0D\u53EF\u91CD\u65B0\u4F7F\u7528\u3002" })
+            /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4FDD\u7559\u5BA1\u8BA1\u4E0E\u65E7\u4F1A\u8BDD\u914D\u7F6E\u3002\u6A21\u578B\u53EF\u6062\u590D\u4E3A\u505C\u7528\uFF0C\u9700\u53E6\u884C\u542F\u7528\u5E76\u660E\u786E\u9009\u578B\uFF1B\u65E7\u6279\u51C6\u3001\u961F\u5217\u548C\u540E\u53F0\u4EFB\u52A1\u4E0D\u4F1A\u6062\u590D\u3002\u5DF2\u5220\u9664\u63D0\u4F9B\u5546\u4E0D\u80FD\u6062\u590D\u3002" })
           ] })
         ] })
       ] }),

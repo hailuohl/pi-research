@@ -57,7 +57,7 @@ const contract = object({
 }, ['localRuntimeId','gpu','threadLimit','sshTargetId','image','dockerContext','pids','workMb','logBytes','outputBytes','networkPolicy']);
 const sshTarget=object({id:string,version:integer,hostKeyDigest:string,configDigest:string,engineId:string,protocolDigest:string,targetId:string,gpuProtocol:boolean},['gpuProtocol']);
 const researchBriefRef=object({id:string,digest:string,revision:integer,rootSessionId:string});
-const runAnalysis=object({rootSessionId:string,model:object({provider:string,model:string,thinking:{type:'string',minLength:1,maxLength:64}}),maxAttempts:{const:1}});
+const runAnalysis=object({rootSessionId:string,model:object({provider:string,model:string,thinking:{type:'string',minLength:1,maxLength:64},restoreEpoch:{type:'integer',minimum:1,maximum:Number.MAX_SAFE_INTEGER}},['restoreEpoch']),maxAttempts:{const:1}});
 const manifest = object({
     threadLimit:{type:'integer',minimum:1,maximum:64},
     localRuntime:LOCAL_RUNTIME_SCHEMA,localExecution:LOCAL_EXECUTION_SCHEMA,gpuTarget:GPU_TARGET_SCHEMA,
@@ -75,7 +75,7 @@ const taskResult = object({
     unresolvedQuestions: strings, verdict: enumeration('accept', 'reject', 'disputed')
 }, ['verdict','developmentAssessment','formalReportAssessment']);
 const campaign = row('campaign', {
-    goal: string, rootSessionId: string, rootModel: object({ provider: string, model: string, thinking: {type:'string',minLength:1,maxLength:64} }), baselineExperimentId: string, focusExperimentId: string, contractDigest: string, primaryMetric: string, direction: enumeration('min', 'max'), state: enumeration('draft', 'active', 'paused', 'stopped'), currentRoundId: string, roundNumber: integer,
+    goal: string, rootSessionId: string, rootModel: object({ provider: string, model: string, thinking: {type:'string',minLength:1,maxLength:64},restoreEpoch:{type:'integer',minimum:1,maximum:Number.MAX_SAFE_INTEGER} },['restoreEpoch']), baselineExperimentId: string, focusExperimentId: string, contractDigest: string, primaryMetric: string, direction: enumeration('min', 'max'), state: enumeration('draft', 'active', 'paused', 'stopped'), currentRoundId: string, roundNumber: integer,
     limits: object({ maxRounds: integer, maxCandidatesPerRound: integer, maxUnansweredRunsPerNode: integer, maxConsecutiveRegressions: integer, maxAnalysisAttempts: integer, deadline: string }, ['deadline']),
     autoAnalyze: boolean, approvalId: string, planDigest: string, consecutiveRegressions: integer, stopReason: string
 }, ['stopReason']);
@@ -179,7 +179,7 @@ const textEvidenceSearch=row('text-evidence-search', {
     hits:array(searchHit),coverage:object({sourceCount:integer,totalChunks:integer,matchingChunks:integer,exactDuplicatesGrouped:integer,uniqueChunks:integer,candidatesConsidered:integer,candidateLimitReached:boolean,resultsTruncated:boolean}),usage:object({modelCalls:{const:0},networkCalls:{const:0}}),limitations:strings
 },['documents','textCorpusGrant','pmcDocuments']);
 const textCorpusGrant=row('text-corpus-grant',{
-    sessionId:string,model:object({provider:string,model:string,thinking:{type:'string',minLength:1,maxLength:64}}),corpusId:string,configurationVersion:integer,
+    sessionId:string,model:object({provider:string,model:string,thinking:{type:'string',minLength:1,maxLength:64},restoreEpoch:{type:'integer',minimum:1,maximum:Number.MAX_SAFE_INTEGER}},['restoreEpoch']),corpusId:string,configurationVersion:integer,
     documents:array(object({documentVersionId:string,parseResultId:string,sourceDigest:string})),pmcDocuments:array(object({documentVersionId:string,sourceDigest:string})),maxSearches:integer,expiresAt:string,approvalId:string,digest:string,state:enumeration('draft','active','revoked'),activatedAt:string,revokedAt:string,
     effectiveState:enumeration('draft','active','revoked','stale','expired','exhausted'),validity:enumeration('current','stale'),reasons:strings,usage:object({limit:integer,used:integer,remaining:integer,unit:{const:'search'}}),
     uses:array(row('text-corpus-grant-use',{grantId:string,grantDigest:string,sessionId:string,requestDigest:string,searchId:string})),searchResults:array(textEvidenceSearch)

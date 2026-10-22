@@ -3,7 +3,7 @@ import { operationRoute } from './operation-routes.js';
 import { readNativeRoute, writeNativeRoute } from './native-routes.js';
 import { attachmentRoute } from './attachment-routes.js';
 import { writeEnvironment } from './environment-routes.js';
-import { configureModelConnection } from '../../packages/pi-adapter/model-connections.js';
+import { configureModelConnection, bindModelRestoreEpoch } from '../../packages/pi-adapter/model-connections.js';
 import { inspectModelManagement, configureModelManagement, recommendModel, prepareModelSelection } from '../../packages/pi-adapter/model-management.js';
 import { probeModel } from '../../packages/pi-adapter/model-probe.js';
 import http from 'node:http';
@@ -53,7 +53,7 @@ export function createHttpServer(options) {
                     }
                     if (route === '/bootstrap') {
                         const view = await inspectModelManagement(app.context, USER), bootstrap = readRoute(app, host, route, url);
-                        return json({ ...bootstrap, models: view.providers.filter(p => p.enabled && !p.deletedAt && !p.requiresCredential).flatMap(p => p.models.filter(m => m.enabled && !m.deletedAt).flatMap(m => m.reasoning.levels.map(l => ({ provider: p.provider, model: m.model, thinking: l.id })))) });
+                        return json({ ...bootstrap, models: view.providers.filter(p => p.enabled && !p.deletedAt && !p.requiresCredential).flatMap(p => p.models.filter(m => m.enabled && !m.deletedAt).flatMap(m => m.reasoning.levels.map(l => ({ provider: p.provider, model: m.model, thinking: l.id, ...(m.restoreEpoch ? { restoreEpoch: m.restoreEpoch } : {}) })))) });
                     }
                     if (route === '/github/status')
                         return json(await app.github.status({ type: 'user' }));
@@ -169,7 +169,7 @@ export function createHttpServer(options) {
                         if (x.clear !== true) {
                             const raw = route === '/settings/model' ? x : x.model === undefined ? prepared.current : object(x.model);
                             const selected = { provider: text(raw.provider, 'provider', 100), model: text(raw.model, 'model', 160), thinking: text(raw.thinking ?? 'off', 'thinking', 64) };
-                            prepared.resolve(selected);
+                            prepared.resolve(bindModelRestoreEpoch(app.context.dataDir, selected));
                         }
                         return writeRoute(app, host, route, body, req.method);
                     }));

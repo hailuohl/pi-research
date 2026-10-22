@@ -1,7 +1,7 @@
 import {s,type JsonSchema} from './schema.js';
 const id=s.string(100),str=s.string(10000,0),time=s.string(50),int=s.integer(0,Number.MAX_SAFE_INTEGER),bool=s.boolean(),role=s.enum(['coordinator','literature','designer','implementer','analyst','reviewer','writer']);
 const metadata={id,kind:s.string(80),projectId:id,version:s.integer(1),createdAt:time,updatedAt:time};
-const model=s.object({provider:s.string(100,0),model:s.string(160,0),thinking:s.string(64)},['provider','model','thinking']);
+const model=s.object({provider:s.string(100,0),model:s.string(160,0),thinking:s.string(64),restoreEpoch:s.integer(1,Number.MAX_SAFE_INTEGER)},['provider','model','thinking']);
 const catalogFields={...metadata,kind:{const:'session'},title:s.string(160),role,state:s.enum(['idle','queued','running','interrupted','failed','waiting','archived']),model,teamId:id,taskId:id};
 const catalogRequired=['id','kind','projectId','version','createdAt','updatedAt','title','role','state','model'] as const;
 const catalog=s.object(catalogFields,catalogRequired);
@@ -10,7 +10,8 @@ const session=s.object(sessionFields,[...catalogRequired,'workspace','piSessionP
 const attachmentFields={documentVersionId:id,artifactId:id,digest:s.string(64),title:s.string(200),mediaType:s.enum(['application/pdf','text/plain','text/markdown','image/png','image/jpeg','image/webp','image/gif','video/mp4']),size:s.integer(1,33554432)};
 const parsedAttachmentFields={parseResultId:id,resultDigest:s.string(64),pageCount:s.integer(1,100)};
 const attachment=s.object({...attachmentFields,...parsedAttachmentFields,inputMode:{const:'native'}},Object.keys(attachmentFields) as (keyof typeof attachmentFields)[]);
-const messageFields={...metadata,kind:{const:'message'},sessionId:id,role:s.enum(['user','assistant','system']),content:s.string(4000,0),mode:s.enum(['prompt','steer','follow_up']),status:s.enum(['queued','running','completed','failed','cancelled']),contentTruncated:bool,previewTruncated:bool,contentBytes:int,error:str,origin:s.enum(['user','automation']),wakeupId:id,queueRemoved:bool,steerGeneration:int,generation:int,phase:s.enum(['commentary','final_answer']),toolCalls:s.array(s.string(100),64),nativeRequestId:id,nativeAttachmentsDisabled:bool,attachments:s.array(attachment,5)};
+const branchSource:JsonSchema=s.object({sessionId:id,messageId:id},['sessionId','messageId']);
+const messageFields={...metadata,kind:{const:'message'},sessionId:id,role:s.enum(['user','assistant','system']),content:s.string(4000,0),mode:s.enum(['prompt','steer','follow_up']),status:s.enum(['queued','running','completed','failed','cancelled']),contentTruncated:bool,previewTruncated:bool,contentBytes:int,error:str,origin:s.enum(['user','automation']),wakeupId:id,queueRemoved:bool,steerGeneration:int,generation:int,phase:s.enum(['commentary','final_answer']),toolCalls:s.array(s.string(100),64),nativeRequestId:id,branchSource,nativeAttachmentsDisabled:bool,attachments:s.array(attachment,5)};
 const message=s.object(messageFields,['id','kind','projectId','version','createdAt','updatedAt','sessionId','role','content','mode','status','contentTruncated','previewTruncated','contentBytes']);
 export const SESSION_HISTORY_INPUT_SCHEMAS={
  session_list:s.object({query:s.string(160,0),beforeSessionId:id,role:s.enum(['all','coordinator','literature','designer','implementer','analyst','reviewer','writer']),stateFilter:s.enum(['active','archived','all']),limit:s.integer(1,50)}),
@@ -18,7 +19,7 @@ export const SESSION_HISTORY_INPUT_SCHEMAS={
  session_message_read:s.object({sessionId:id,messageId:id,cursor:int,limit:s.integer(4,64000),expectedVersion:s.integer(1)},['sessionId','messageId']),
  session_attachment_read:s.object({messageId:id,documentVersionId:id,cursor:int,limit:s.integer(4,64000)},['messageId','documentVersionId']),
 } as const satisfies Record<string,JsonSchema>;
-export const SESSION_HISTORY_OUTPUT_SCHEMAS={
+export const SESSION_HISTORY_OUTPUT_SCHEMAS:Record<keyof typeof SESSION_HISTORY_INPUT_SCHEMAS,JsonSchema>={
  session_list:s.object({items:s.array(catalog,50),nextCursor:s.nullable(id),query:s.string(160,0),role:s.enum(['all','coordinator','literature','designer','implementer','analyst','reviewer','writer']),stateFilter:s.enum(['active','archived','all']),limit:s.integer(1,50)},['items','nextCursor','query','role','stateFilter','limit']),
  session_view:s.object({session,pendingMessages:s.array(message,20),pendingTotal:int,pendingNextCursor:s.nullable(id),messages:s.array(message,50),history:s.object({beforeMessageId:s.nullable(id),afterMessageId:s.nullable(id),atLatest:bool,previewCharacters:{const:4000},byteLimit:{const:262144},returnedBytes:s.integer(0,262144)},['beforeMessageId','afterMessageId','atLatest','previewCharacters','byteLimit','returnedBytes']),progress:s.object({generation:int,active:bool,canSteer:bool,content:s.string(32000,0),truncated:bool,cursor:int,activity:s.nullable(s.object({tool:s.string(100),status:s.enum(['running','completed','failed'])},['tool','status']))},['generation','active','canSteer','content','truncated','cursor'])},['session','messages','history','progress','pendingMessages','pendingTotal','pendingNextCursor']),
  session_message_read:s.object({sessionId:id,messageId:id,version:s.integer(1),content:s.string(64000,0),cursor:int,end:int,total:int,complete:bool,cursorUnit:{const:'utf8-byte'},sourceTruncated:bool},['sessionId','messageId','version','content','cursor','end','total','complete','cursorUnit','sourceTruncated']),

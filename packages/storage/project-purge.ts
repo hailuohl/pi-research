@@ -19,7 +19,7 @@ const id=(value:unknown)=>{ensure(typeof value==='string'&&/^[A-Za-z0-9][A-Za-z0
 const owned=(r:RecordRow,pid:string)=>r.projectId===pid||r.kind==='project'&&r.id===pid;
 function rows(db:DatabaseSync):RecordRow[]{return db.prepare('SELECT kind,id,project_id,data FROM records ORDER BY kind,id').all().map(raw=>{const value=JSON.parse(String(raw.data));ensure(value.kind===raw.kind&&value.id===raw.id&&value.projectId===raw.project_id,'PURGE_OWNER_INVALID','记录列与JSON归属不一致');return {kind:String(raw.kind),id:String(raw.id),projectId:raw.project_id===null?null:String(raw.project_id),value};});}
 function description(paths:DataPaths,key:string):Entry {
- ensure(!/\.text-write-(pending|stage-|backup-)/.test(key),'PURGE_BUSY','存在未完成文本写入恢复标记');
+ ensure(!/\.text-write-(pending|stage-|backup-)|\.source-prepare-pending/.test(key),'PURGE_BUSY','存在未完成工作区文件恢复标记');
  const path=paths.physical('pi-data:/'+key.split('/').map(encodeURIComponent).join('/')),stat=lstatSync(path);ensure(!stat.isSymbolicLink()&&(stat.isFile()||stat.isDirectory()),'PURGE_PATH_INVALID','清理计划仅支持真实目录和普通文件');
  if(stat.isDirectory())return {key,type:'directory',dev:stat.dev,ino:stat.ino};
  ensure(stat.nlink===1,'PURGE_HARDLINK','普通文件存在额外硬链接，删除前需核对外部原件');
@@ -29,15 +29,19 @@ function description(paths:DataPaths,key:string):Entry {
 }
 function walk(paths:DataPaths,key:string):Entry[]{const entry=description(paths,key);return entry.type==='file'?[entry]:[...readdirSync(paths.physical('pi-data:/'+key.split('/').map(encodeURIComponent).join('/'))).sort().flatMap(name=>walk(paths,key+'/'+name)),entry];}
 function references(paths:DataPaths,records:RecordRow[]){
- const result=new Set<string>();const visit=(value:unknown,key='')=>{
-  if(Array.isArray(value)){value.forEach(v=>visit(v,key));return;}if(value&&typeof value==='object'){for(const [k,v]of Object.entries(value))visit(v,k);return;}
+ const result=new Set<string>();const visit=(value:unknown,key='',recordKind='')=>{
+  if(Array.isArray(value)){value.forEach(v=>visit(v,key));return;}if(value&&typeof value==='object'){for(const [k,v]of Object.entries(value)){
+   // A past command's arguments and cwd describe execution; they do not own resources.
+   if(recordKind==='host-command'&&(k==='cwd'&&typeof v==='string'||k==='argv'&&Array.isArray(v)&&v.every(a=>typeof a==='string')))continue;
+   visit(v,k);
+  }return;}
   if(typeof value!=='string'||!value.startsWith('pi-data:/')&&!isAbsolute(value))return;
   if(FILE_FIELDS.has(key)){result.add(paths.key(value));return;}
   if(value.startsWith('pi-data:/'))ensure(false,'PURGE_UNKNOWN_REFERENCE','存在未识别字段的受管资源引用');
   const normalized=(path:string)=>process.platform==='win32'?path.toLowerCase():path,candidate=normalized(resolve(value));
   const managed=[paths.dataDir,...paths.legacyRoots].some(root=>{const base=normalized(root);return candidate===base||candidate.startsWith(base.endsWith(sep)?base:base+sep);});
   ensure(!managed,'PURGE_UNKNOWN_REFERENCE','存在未识别字段的旧受管路径引用');
- };for(const row of records){visit(row.value);if(row.kind==='skill-package-revision'&&Array.isArray(row.value.files))for(const raw of row.value.files){const file=raw as {digest?:unknown};ensure(typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'PURGE_OWNER_INVALID','技能资源摘要无效');result.add('skill-blobs/'+file.digest);}}return result;
+ };for(const row of records){visit(row.value,'',row.kind);if(row.kind==='skill-package-revision'&&Array.isArray(row.value.files))for(const raw of row.value.files){const file=raw as {digest?:unknown};ensure(typeof file.digest==='string'&&/^[a-f0-9]{64}$/.test(file.digest),'PURGE_OWNER_INVALID','技能资源摘要无效');result.add('skill-blobs/'+file.digest);}}return result;
 }
 function receiptOwnership(db:DatabaseSync){
  for(const op of db.prepare('SELECT scope,response,owner_kind,project_id FROM operations').all()){

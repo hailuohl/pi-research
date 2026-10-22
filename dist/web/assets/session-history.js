@@ -167,6 +167,12 @@ class SessionHistory extends React.Component {
               "\u539F\u751F\u8BF7\u6C42 \xB7 ",
               short(current.nativeRequestId)
             ] }) : null,
+            current.branchSource ? /* @__PURE__ */ jsxs("span", { className: "badge", title: "\u539F\u4F1A\u8BDD " + current.branchSource.sessionId + " \xB7 \u539F\u6D88\u606F " + current.branchSource.messageId, children: [
+              "\u5206\u652F\u6765\u6E90 \xB7 ",
+              short(current.branchSource.sessionId),
+              " / ",
+              short(current.branchSource.messageId)
+            ] }) : null,
             /* @__PURE__ */ jsx("time", { dateTime: message.createdAt, title: message.createdAt, children: date(message.createdAt) }),
             message.queueRemoved ? /* @__PURE__ */ jsx("span", { className: "badge s-cancelled", children: "\u5DF2\u79FB\u51FA\u961F\u5217" }) : message.role === "user" && message.status === "queued" && message.origin !== "automation" && message.wakeupId == null ? /* @__PURE__ */ jsx("span", { className: "badge s-queued", children: message.mode === "prompt" ? "\u5DF2\u53D1\u9001" : "\u5DF2\u63D0\u4EA4 \xB7 \u7B49\u5F85\u5904\u7406" }) : message.status && message.status !== "completed" ? /* @__PURE__ */ jsx(Badge, { value: message.status }) : null
           ] }),

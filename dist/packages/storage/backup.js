@@ -101,7 +101,7 @@ function managedTree(root, destination, privateLocalJobs = new Set()) {
             excluded.push(path + '/');
             return;
         }
-        ensure(!/\.text-write-(pending|stage-|backup-)/.test(path), 'BACKUP_RECOVERY_PENDING', '有未解决的文件恢复，请先对账', 409);
+        ensure(!/\.text-write-(pending|stage-|backup-)/.test(path) && !/\.source-prepare-pending$/.test(path), 'BACKUP_RECOVERY_PENDING', '有未解决的文件恢复，请先对账', 409);
         if (parts.length === 1 && path) {
             ensure(path === 'state.db' || ROOTS.has(path), 'BACKUP_UNKNOWN_CONTENT', '发现未知顶层内容：' + path, 409);
             if (path === 'state.db')
@@ -373,7 +373,7 @@ function manifestAt(backupDir) {
         ensure(!names.has(fold), 'BACKUP_INVALID', '备份有重复或大小写冲突条目', 400);
         names.add(fold);
         ensure(name === '' || name === 'state.db' || ROOTS.has(parts[0]), 'BACKUP_INVALID', '备份包含未知管理树', 400);
-        ensure(!EXCLUDED.has(name) && !/^jobs\/[^/]+\/control\/native-spec\.json$/.test(name) && !(parts[0] === 'sessions' && parts[2] === 'agent') && !/\.text-write-(pending|stage-|backup-)/.test(name) && !name.startsWith('state.db.text-writes/'), 'BACKUP_INVALID', '备份包含认证文件或未解决恢复', 400);
+        ensure(!EXCLUDED.has(name) && !/^jobs\/[^/]+\/control\/native-spec\.json$/.test(name) && !(parts[0] === 'sessions' && parts[2] === 'agent') && !/\.text-write-(pending|stage-|backup-)/.test(name) && !/\.source-prepare-pending$/.test(name) && !name.startsWith('state.db.text-writes/'), 'BACKUP_INVALID', '备份包含认证文件或未解决恢复', 400);
         if (name === '') {
             ensure(raw.type === 'directory', 'BACKUP_INVALID', '数据根无效', 400);
             roots++;

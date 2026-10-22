@@ -1,6 +1,6 @@
 import {sessionCatalog,sessionMessagePage,sessionMessageContent,sessionQueue,canSteerSession,type SessionView} from './session-history.js';
 import {availableSelections,type PreparedModelSelection} from './model-management.js';
-import {assertModelEnabled} from './model-connections.js';
+import {assertModelEnabled,assertModelRestoreCurrent,bindModelRestoreEpoch} from './model-connections.js';
 import {resolvedThinking} from './model-definition.js';
 import {publicRecord} from '../domain/public-record.js';
 import {attachmentReferences,nativeAttachments,type ParsedAttachmentPair,type ParsedAttachmentMetadata} from './attachments.js';
@@ -41,7 +41,7 @@ export class SessionService {
             models?:ModelConfig[];
         }>('app-settings', 'global');
         if(x.expectedVersion!==undefined)ensure((old?.version??0)===integer(x.expectedVersion,'expectedVersion',0),'VERSION_CONFLICT','默认模型已变化，请刷新后核对草稿');
-        const managed=model.provider?assertModelEnabled(this.c.dataDir,model):undefined;if(model.provider)resolvedThinking(managed,model.thinking);
+        if(model.provider)Object.assign(model,bindModelRestoreEpoch(this.c.dataDir,model));const managed=model.provider?assertModelEnabled(this.c.dataDir,model):undefined;if(model.provider)resolvedThinking(managed,model.thinking);
         const models=managed||x.clear===true?(old?.models??[]):[model,...(old?.models??[]).filter(m=>m.provider!==model.provider||m.model!==model.model)];
         ensure(managed||models.length<=20,'MODEL_LIMIT','旧接口最多保存20个模型；更多模型请用独立模型管理');
         if (old)
@@ -63,9 +63,9 @@ export class SessionService {
             const team=this.c.store.db.prepare("SELECT 1 FROM records WHERE kind='team' AND project_id=? AND json_extract(data,'$.rootSessionId')=? AND json_extract(data,'$.state') IN ('awaiting_approval','active','paused','draining') LIMIT 1").get(s.projectId!,id);
             ensure(!grant&&!team,'MODEL_BOUND','此会话已有固定授权或协作计划，请用所选默认模型新建会话');
             const raw=x.model===undefined?this.model():object(x.model);
-            ensure(Object.keys(raw).every(k=>['provider','model','thinking'].includes(k)),'INVALID_INPUT','模型选择包含未知字段');
+            ensure(x.model===undefined||Object.keys(raw).every(k=>['provider','model','thinking'].includes(k)),'INVALID_INPUT','模型选择包含未知字段');
             const model:ModelConfig={provider:text(raw.provider,'provider',100),model:text(raw.model,'model',160),thinking:text(raw.thinking??'off','thinking',64)};
-            resolvedThinking(assertModelEnabled(this.c.dataDir,model),model.thinking);
+            Object.assign(model,bindModelRestoreEpoch(this.c.dataDir,model));resolvedThinking(assertModelEnabled(this.c.dataDir,model),model.thinking);
             ensure(this.models().some(m=>m.provider===model.provider&&m.model===model.model&&m.thinking===model.thinking),'MODEL_NOT_CONFIGURED','先在设置中保存该模型');
             const updated=this.c.store.update<Session>('session',id,s.version,{model});
             this.c.store.event(s.projectId,'session.model_changed',{sessionId:id,model});return updated;
@@ -91,7 +91,7 @@ export class SessionService {
                     ensure(!binding,'MODEL_BOUND','此空白会话已有固定授权或来源，不能修正模型或技能绑定；请另建会话');
                 }
             }
-            if(digest(model)!==digest(prepared.current))this.configure(actor,{...model,expectedVersion:prepared.globalVersion});
+            if(digest(model)!==digest(prepared.current))this.configure(actor,{provider:model.provider,model:model.model,thinking:model.thinking,expectedVersion:prepared.globalVersion});
             if(!session)return this.create(actor,projectId,x);
             const modelChanged=digest(next)!==digest(session.model);
             if(!modelChanged&&session.skillBundleId)return session;
@@ -131,6 +131,7 @@ export class SessionService {
         return this.c.store.transaction(() => {
             const s=this.get(actor,id);
             ensure(s.state !== 'archived', 'SESSION_ARCHIVED', '会话已归档');
+            assertModelRestoreCurrent(this.c.dataDir,s.model);
             ensure(!s.taskId, 'TASK_MESSAGE_REQUIRED', '请通过任务引导发送消息');
             assertProjectWritable(this.c.store,s.projectId!);
             ensure(x.attachmentDocumentIds===undefined||x.parsedDocumentAttachments===undefined,'INVALID_INPUT','上传附件与固定解析附件必须使用互斥入口');
@@ -247,7 +248,7 @@ export class SessionService {
             const branch = this.c.store.update<Session>('session', s.id, s.version, { parentSessionId: id, model: original.model });
             this.permissionBranch?.(id,s.id);
             for (const m of messages.slice(0, index + 1))
-                this.c.store.create<Message>('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved?'cancelled':'completed',...(m.attachments?{attachments:m.attachments}:{}),...(m.queueRemoved?{queueRemoved:true}:{}),...(m.nativeAttachmentsDisabled||m.status!=='completed'&&m.attachments?.some(a=>a.inputMode==='native')?{nativeAttachmentsDisabled:true}:{}) });
+                this.c.store.create<Message>('message', s.projectId, { sessionId: s.id, role: m.role, content: m.content, mode: m.mode, status: m.queueRemoved?'cancelled':'completed',branchSource:{sessionId:id,messageId:m.id},...(m.contentTruncated?{contentTruncated:true}:{}),...(m.phase?{phase:m.phase}:{}),...(m.toolCalls?{toolCalls:m.toolCalls}:{}),...(m.error?{error:m.error}:{}),...(m.origin?{origin:m.origin}:{}),...(m.usage!==undefined?{usage:m.usage}:{}),...(m.attachments?{attachments:m.attachments}:{}),...(m.queueRemoved?{queueRemoved:true}:{}),...(m.nativeAttachmentsDisabled||m.status!=='completed'&&m.attachments?.some(a=>a.inputMode==='native')?{nativeAttachmentsDisabled:true}:{}) });
             this.c.store.event(s.projectId, 'session.branched', { parentId: id, sessionId: s.id, throughMessageId });
             return branch;
         });

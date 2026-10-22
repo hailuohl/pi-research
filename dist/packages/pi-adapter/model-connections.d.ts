@@ -11,6 +11,7 @@ export declare const EMPTY_MODEL_CREDENTIALS: {
     delete: () => Promise<void>;
 };
 export interface StoredModel extends ModelDefinitionInput {
+    restoreEpoch?: number;
     enabled: boolean;
     deletedAt: string | null;
     order: number;
@@ -57,6 +58,7 @@ export declare function inspectModelConnections(c: AppContext, actor: Actor): Co
 export declare function selectedModelConnection(dataDir: string, provider: string): ModelConnection | undefined;
 export declare function modelConnectionCatalog(dataDir: string): {
     models?: ({
+        restoreEpoch?: number | undefined;
         model: string;
         enabled: boolean;
         deletedAt: string | null;
@@ -69,6 +71,7 @@ export declare function modelConnectionCatalog(dataDir: string): {
                 parameters: Record<string, import("./model-management-types.js").JsonValue>;
             }[];
         };
+        restoreEpoch?: number;
         enabled: boolean;
         deletedAt: string | null;
         controlOnly?: boolean;
@@ -97,6 +100,7 @@ export declare function modelConnectionSnapshot(dataDir: string, provider: strin
     connection: ModelConnection | undefined;
     catalog: {
         models?: ({
+            restoreEpoch?: number | undefined;
             model: string;
             enabled: boolean;
             deletedAt: string | null;
@@ -109,6 +113,7 @@ export declare function modelConnectionSnapshot(dataDir: string, provider: strin
                     parameters: Record<string, import("./model-management-types.js").JsonValue>;
                 }[];
             };
+            restoreEpoch?: number;
             enabled: boolean;
             deletedAt: string | null;
             controlOnly?: boolean;
@@ -133,6 +138,10 @@ export declare function modelConnectionSnapshot(dataDir: string, provider: strin
     }[];
 };
 export declare function modelNeedsCredential(connection: ModelConnection | undefined): boolean;
+/** A restored ID is a new execution identity; historical selections stay readable. */
+export declare function assertModelRestoreCurrent(dataDir: string, selected: Pick<ModelConfig, 'provider' | 'model' | 'restoreEpoch'>, captured?: ModelConnection): void;
+/** Only explicit owner selection captures the current restore identity. */
+export declare function bindModelRestoreEpoch(dataDir: string, selected: ModelConfig): ModelConfig;
 export declare function assertModelEnabled(dataDir: string, selected: {
     provider: string;
     model: string;

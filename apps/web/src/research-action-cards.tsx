@@ -38,7 +38,7 @@ export class ResearchActionCard extends React.Component<Props&{request:ResearchA
         const {data,session,request,perform}=this.props;if(request.input.kind!=='history'||request.state!=='pending'||request.reasons.includes('RESEARCH_ACTION_CORRUPTED'))return null;
         const kind=request.input.history.kind,scoped={...data,sessions:[session],textCorpusGrants:(data.textCorpusGrants??[]).filter(g=>g.sessionId===session.id)};
         const onDocument=(document:DocumentLocation)=>{if(this.mounted)this.setState({document});};
-        if(kind==='documents'||this.state.document)return <LiteratureView readOnly embedded data={scoped} session={session} perform={perform} selectedDocument={this.state.document} onDocument={onDocument}/>;
+        if(kind==='documents'||this.state.document)return <LiteratureView readOnly allowDocumentSelection embedded onUseDocument={this.props.onUseDocument} data={scoped} session={session} perform={perform} selectedDocument={this.state.document} onDocument={onDocument}/>;
         if(kind==='reports')return <ReportsView readOnly embedded data={data} perform={perform} selectedReport={this.state.reportId||undefined} onSelect={reportId=>this.setState({reportId})} onDocument={onDocument} onSession={this.props.onSession} onCampaign={this.props.onCampaign} onRun={this.props.onRun}/>;
         return <EvidenceView readOnly embedded data={data} perform={perform} onDocument={onDocument} onRegister={()=>{}} onClaim={()=>{}}/>;
     }

@@ -18,7 +18,7 @@ export interface ModelProbeResult {
 }
 export interface EffectiveCapability {declared:boolean;state:'available'|'disabled'|'unsupported';reason:string;}
 export interface ManagedModel extends ModelDefinitionInput {
- enabled:boolean;deletedAt:string|null;order:number;revision:number;source:'managed'|'legacy';
+ restoreEpoch?:number;enabled:boolean;deletedAt:string|null;order:number;revision:number;source:'managed'|'legacy';
  effectiveCapabilities:Record<keyof ModelCapabilities,EffectiveCapability>;test:ModelProbeResult|null;
 }
 export interface ManagedProvider {
@@ -40,6 +40,7 @@ export type ModelManagementCommand=
  | {expectedVersion:number;action:'model.upsert';provider:string;model:string;value:ModelDefinitionInput}
  | {expectedVersion:number;action:'model.enabled';provider:string;model:string;value:{enabled:boolean}}
  | {expectedVersion:number;action:'model.delete';provider:string;model:string}
+ | {expectedVersion:number;action:'model.restore';provider:string;model:string}
  | {expectedVersion:number;action:'models.reorder';provider:string;value:{models:string[]}};
 export interface ModelRecommendation {
  matched:boolean;source:{provider:string;model:string;sdkVersion:string}|null;value:ModelDefinitionInput|null;

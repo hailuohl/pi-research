@@ -6,11 +6,12 @@ import {short} from './models.js';
 import type {ProjectState,Row,Session,ManuscriptRevision,PublicationBuildJobDTO,PublicationBuildResultDTO,Artifact} from './models.js';
 import type {Perform} from './workbench.js';
 
-export class PublicationDialogue extends React.Component<{data:ProjectState;session:Row<Session>;disabled:boolean;busy?:boolean;perform:Perform},{results:Record<string,PublicationBuildResultDTO>;drafts:Record<string,{content:string;complete:boolean}>;previewJobId:string}> {
-    state={results:{} as Record<string,PublicationBuildResultDTO>,drafts:{} as Record<string,{content:string;complete:boolean}>,previewJobId:''};
+export class PublicationDialogue extends React.Component<{data:ProjectState;session:Row<Session>;disabled:boolean;busy?:boolean;perform:Perform},{results:Record<string,PublicationBuildResultDTO>;drafts:Record<string,{content:string;complete:boolean}>;previewJobId:string;cancellingJobIds:string[]}> {
+    state={results:{} as Record<string,PublicationBuildResultDTO>,drafts:{} as Record<string,{content:string;complete:boolean}>,previewJobId:'',cancellingJobIds:[] as string[]};
     private mounted=true;
+    private cancelling=new Set<string>();
     componentWillUnmount(){this.mounted=false;}
-    componentDidUpdate(previous:Readonly<PublicationDialogue['props']>){if(previous.session.id!==this.props.session.id||previous.data.project.id!==this.props.data.project.id)this.setState({results:{},drafts:{},previewJobId:''});}
+    componentDidUpdate(previous:Readonly<PublicationDialogue['props']>){if(previous.session.id!==this.props.session.id||previous.data.project.id!==this.props.data.project.id)this.setState({results:{},drafts:{},previewJobId:'',cancellingJobIds:[]});}
     private dialogue(){return {projectId:this.props.data.project.id,sessionId:this.props.session.id};}
     private matches(c:ReturnType<PublicationDialogue['dialogue']>){return this.mounted&&c.projectId===this.props.data.project.id&&c.sessionId===this.props.session.id;}
     private call<T=any>(c:ReturnType<PublicationDialogue['dialogue']>,name:string,input:unknown,key?:string){return api<T>(`/operations/${name}`,{...c,input},'POST',undefined,key);}
@@ -29,6 +30,21 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
         if(!approval||!['pending','approved'].includes(approval.status))throw Error('此固定编译尚未取得有效批准。');
         if(approval.status==='pending')await api(`/approvals/${approval.id}/decide`,{expectedVersion:approval.version,approved:true});
         this.assertJob(c,job);await this.call(c,'publication_submit',{jobId:job.id});
+    }
+    async cancel(job:PublicationBuildJobDTO){
+        const c=this.dialogue();this.assertJob(c,job);
+        const {data,session,disabled,busy}=this.props;
+        if(disabled||busy||data.project.archived||session.state==='archived'||session.role!=='coordinator'||session.taskId||session.teamId)throw Error('当前会话不可取消文稿编译。');
+        if(this.cancelling.has(job.id)||job.cancelRequested||!['queued','starting','running','unknown'].includes(job.state))return;
+        this.cancelling.add(job.id);this.setState(s=>({cancellingJobIds:[...s.cancellingJobIds,job.id]}));
+        try{await this.call(c,'publication_cancel',{jobId:job.id},`publication-cancel:${job.id}:${job.manifestDigest}`);}
+        finally{this.cancelling.delete(job.id);if(this.matches(c))this.setState(s=>({cancellingJobIds:s.cancellingJobIds.filter(id=>id!==job.id)}));}
+    }
+    async refreshJob(job:PublicationBuildJobDTO){
+        const c=this.dialogue();this.assertJob(c,job);
+        const fresh=await this.call<PublicationBuildJobDTO>(c,'publication_inspect',{jobId:job.id});
+        this.assertJob(c,job);if(fresh.id!==job.id||fresh.revisionId!==job.revisionId||fresh.manifestDigest!==job.manifestDigest||fresh.sourceDigest!==job.sourceDigest)throw Error('编译任务与固定文稿不一致。');
+        return fresh;
     }
     async result(job:PublicationBuildJobDTO){
         const c=this.dialogue();this.assertJob(c,job);if(!job.resultId)throw Error('编译尚未产生结果。');
@@ -63,7 +79,7 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
         const {data,session,disabled,busy,perform}=this.props,revisions=(data.manuscripts??[]).filter(r=>r.rootSessionId===session.id);
         if(!revisions.length)return null;
         const superseded=new Set(revisions.flatMap(r=>r.previousRevisionId?[r.previousRevisionId]:[]));
-        const needsAttention=(j:PublicationBuildJobDTO)=>['prepared','failed','unknown','timed_out','cancelled'].includes(j.state)||!!j.error||(data.publicationReviews??[]).some(r=>r.publicationResultId===j.resultId&&r.status==='awaiting_approval');
+        const needsAttention=(j:PublicationBuildJobDTO)=>['prepared','queued','starting','running','failed','unknown','timed_out','cancelled'].includes(j.state)||!!j.error||(data.publicationReviews??[]).some(r=>r.publicationResultId===j.resultId&&r.status==='awaiting_approval');
         const isCurrent=(r:Row<ManuscriptRevision>)=>!superseded.has(r.id)||(data.publicationJobs??[]).some(j=>j.revisionId===r.id&&needsAttention(j));
         const renderRevision=(revision:Row<ManuscriptRevision>)=>{const jobs=(data.publicationJobs??[]).filter(j=>j.revisionId===revision.id);return <details className="workflow-card" key={revision.id} open={!jobs.length||jobs.some(needsAttention)}><summary>文稿 · {revision.title}<span>版本 {short(revision.id)}</span></summary>
             {revision.previousRevisionId?<p>修订自 {short(revision.previousRevisionId)} · 旧版本保留</p>:null}
@@ -75,6 +91,9 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
                 <p>编译 {short(job.id)} <Badge value={job.state}/><Badge value={job.integrity}/></p>
                 <details><summary>固定编译范围</summary><p>{job.engine} · {job.mainFile} · {job.resources.cpus} CPU / {job.resources.memoryMb} MB · 最长 {job.resources.timeoutSeconds} 秒</p><p>构建镜像 {short(job.imageDigest)} · 源码 {short(job.sourceDigest)}</p></details>
                 {job.state==='prepared'?<div className="actions wrap"><button className="primary compact" disabled={disabled} onClick={()=>perform(()=>this.submit(job),'固定文稿编译已提交')}>批准并编译</button></div>:null}
+                {['queued','starting','running','unknown'].includes(job.state)?<div className="actions wrap"><button className="text-button danger" disabled={disabled||busy||data.project.archived||session.state==='archived'||job.cancelRequested||this.state.cancellingJobIds.includes(job.id)} onClick={()=>perform(()=>this.cancel(job))}>{this.state.cancellingJobIds.includes(job.id)?'正在请求取消…':'请求取消文稿编译'}</button></div>:null}
+                {job.cancelRequested&&['queued','starting','running','unknown'].includes(job.state)?<p role="status">已请求取消，等待执行器确认；编译尚未确认停止。</p>:null}
+                <button className="text-button" disabled={busy} onClick={()=>perform(()=>this.refreshJob(job))}>刷新此编译状态</button>
                 {job.resultId?<div className="actions wrap"><button className="text-button" disabled={busy} onClick={()=>perform(()=>this.result(job))}>查看编译诊断</button>{job.state==='succeeded'?<><button className="text-button" disabled={busy} onClick={()=>perform(()=>this.preview(job))}>预览 PDF</button><button className="text-button" disabled={disabled} onClick={()=>perform(()=>this.export(job),'固定 PDF、源码及复现材料已打包')}>导出成果包</button></>:null}</div>:null}
                 {job.error?<p role="status">{job.error}</p>:null}
                 {result?<details open><summary>编译诊断 · {result.diagnostics.length} 项</summary>{result.sourceValidity==='stale'?<p>来源已失效，保留历史结果；不能用于新编译或导出。</p>:null}{result.diagnostics.length?result.diagnostics.slice(0,30).map((d,i)=><p key={i}>{d.severity} · {d.message}{d.file?` · ${d.file}:${d.line??''}`:''}</p>):<p>本次固定编译未报告诊断。</p>}</details>:null}

@@ -5,6 +5,7 @@ import { GitHubSettings } from "./github-controls.js";
 import { TemplateLibraryView } from "./template-library-view.js";
 import { ModelManagementPanel } from "./model-management-view.js";
 import { LiteratureView } from "./literature-view.js";
+import { ConnectorBudget } from "./connector-budget.js";
 import { PublicationCompilerConfiguration } from "./research-configuration.js";
 import { ModelManagementPanel as ModelManagementPanel2 } from "./model-management-view.js";
 class SettingsView extends React.Component {
@@ -23,6 +24,7 @@ class SettingsView extends React.Component {
       /* @__PURE__ */ jsx("div", { id: "settings-github", className: "settings-panel", hidden: this.state.section !== "github", children: /* @__PURE__ */ jsx(GitHubSettings, { active: this.state.section === "github", readOnly: this.props.readOnly, projectId: this.props.projectId }) }),
       /* @__PURE__ */ jsx("div", { id: "settings-templates", className: "settings-panel", hidden: this.state.section !== "templates", children: /* @__PURE__ */ jsx(TemplateLibraryView, {}) }),
       /* @__PURE__ */ jsx("div", { id: "settings-sources", className: "settings-panel", hidden: this.state.section !== "sources", children: this.state.section === "sources" && this.props.data ? /* @__PURE__ */ jsxs(Fragment, { children: [
+        /* @__PURE__ */ jsx(ConnectorBudget, { projectId: this.props.data.project.id, readOnly: this.props.readOnly }, this.props.data.project.id),
         /* @__PURE__ */ jsx(LiteratureView, { embedded: true, setupOnly: true, data: this.props.data, perform: this.props.perform }),
         /* @__PURE__ */ jsx(PublicationCompilerConfiguration, { projectId: this.props.data.project.id, readOnly: this.props.readOnly, perform: this.props.perform })
       ] }) : null })

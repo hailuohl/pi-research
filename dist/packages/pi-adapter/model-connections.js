@@ -66,7 +66,7 @@ export function validateModelState(value) {
             const stored = (v.models ?? []);
             modelCount += stored.length;
             ensure(modelCount <= 100, 'MODEL_CONNECTION_LIMIT', '模型目录最多100个模型（包含历史控制条目）', 413);
-            const models = stored.map(item => { const m = object(item), { enabled, deletedAt, order, revision, controlOnly, ...definition } = m; ensure(typeof enabled === 'boolean' && (deletedAt === null || typeof deletedAt === 'string' && Number.isFinite(Date.parse(deletedAt))) && (controlOnly === undefined || typeof controlOnly === 'boolean'), 'MODEL_CONNECTION_INVALID', '模型状态无效', 409); return { ...validateModelDefinition(definition, base.api), enabled, deletedAt: deletedAt, ...(controlOnly ? { controlOnly: true } : {}), order: integer(order, 'order', 0, 100), revision: integer(revision, 'revision', 1, Number.MAX_SAFE_INTEGER) }; });
+            const models = stored.map(item => { const m = object(item), { enabled, deletedAt, order, revision, controlOnly, restoreEpoch, ...definition } = m; ensure(typeof enabled === 'boolean' && (deletedAt === null || typeof deletedAt === 'string' && Number.isFinite(Date.parse(deletedAt))) && (controlOnly === undefined || typeof controlOnly === 'boolean'), 'MODEL_CONNECTION_INVALID', '模型状态无效', 409); return { ...validateModelDefinition(definition, base.api), ...(integer(restoreEpoch ?? 0, 'restoreEpoch', 0, Number.MAX_SAFE_INTEGER) > 0 ? { restoreEpoch: restoreEpoch } : {}), enabled, deletedAt: deletedAt, ...(controlOnly ? { controlOnly: true } : {}), order: integer(order, 'order', 0, 100), revision: integer(revision, 'revision', 1, Number.MAX_SAFE_INTEGER) }; });
             ensure(new Set(models.map(m => m.model)).size === models.length, 'MODEL_CONNECTION_INVALID', '模型ID重复', 409);
             return { ...base, apiKey: keyless ? '' : base.apiKey, enabled: v.enabled ?? true, deletedAt: deletedAt, order: integer(v.order ?? i, 'order', 0, 100), models, credentialRevision: integer(v.credentialRevision ?? 1, 'credentialRevision', 0, Number.MAX_SAFE_INTEGER), ...(v.controlOnly ? { controlOnly: true } : {}), ...(v.requiresCredential ? { requiresCredential: true } : {}) };
         });
@@ -114,7 +114,7 @@ export function inspectModelConnections(c, actor) { userOnly(actor); return view
 export function selectedModelConnection(dataDir, provider) { return modelConnectionSnapshot(dataDir, provider).connection; }
 /** Only endpoint/transport changes alter image approval provenance. Keys never enter its digest. */
 const connectionCatalog = (state) => state.connections.flatMap(p => {
-    const models = (p.models ?? []).filter(m => !m.controlOnly || !m.enabled || m.deletedAt).map(({ name, order, revision, configuration, ...m }) => m.controlOnly ? { model: m.model, enabled: m.enabled, deletedAt: m.deletedAt } : { ...m, reasoning: { defaultLevel: m.reasoning.defaultLevel, levels: m.reasoning.levels.map(({ label, ...level }) => level).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) } }).sort((a, b) => a.model < b.model ? -1 : a.model > b.model ? 1 : 0);
+    const models = (p.models ?? []).filter(m => !m.controlOnly || !m.enabled || m.deletedAt || m.restoreEpoch).map(({ name, order, revision, configuration, ...m }) => m.controlOnly ? { model: m.model, enabled: m.enabled, deletedAt: m.deletedAt, ...(m.restoreEpoch ? { restoreEpoch: m.restoreEpoch } : {}) } : { ...m, reasoning: { defaultLevel: m.reasoning.defaultLevel, levels: m.reasoning.levels.map(({ label, ...level }) => level).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0) } }).sort((a, b) => a.model < b.model ? -1 : a.model > b.model ? 1 : 0);
     if (p.controlOnly && p.enabled !== false && !p.deletedAt && !models.length)
         return [];
     return [{ provider: p.provider, ...(!p.controlOnly ? { baseUrl: p.baseUrl, api: p.api } : {}), ...(p.requiresCredential ? { requiresCredential: true } : {}), ...(p.enabled === false || p.deletedAt ? { enabled: p.enabled, deletedAt: p.deletedAt } : {}), ...(models.length ? { models } : {}) }];
@@ -123,6 +123,10 @@ export function modelConnectionCatalog(dataDir) { return connectionCatalog(readM
 /** One read binds the selected credential/endpoint and its public catalog against A→B→A edits. */
 export function modelConnectionSnapshot(dataDir, provider) { const state = readModelState(dataDir), connection = state.connections.find(c => c.provider === provider); return { version: state.version, connection: connection?.controlOnly ? undefined : connection, catalog: connectionCatalog(state) }; }
 export function modelNeedsCredential(connection) { return !!connection && !connection.controlOnly && !connection.deletedAt && (connection.requiresCredential === true || !connection.apiKey); }
+/** A restored ID is a new execution identity; historical selections stay readable. */
+export function assertModelRestoreCurrent(dataDir, selected, captured) { const connection = captured ?? readModelState(dataDir).connections.find(c => c.provider === selected.provider), model = connection?.models?.find(m => m.model === selected.model); ensure((selected.restoreEpoch ?? 0) === (model?.restoreEpoch ?? 0), 'MODEL_RESTORE_STALE', '此模型已恢复为新的配置身份；请明确重新选择模型或新建会话', 409); }
+/** Only explicit owner selection captures the current restore identity. */
+export function bindModelRestoreEpoch(dataDir, selected) { const { restoreEpoch: ignored, ...model } = selected, epoch = readModelState(dataDir).connections.find(c => c.provider === model.provider)?.models?.find(m => m.model === model.model)?.restoreEpoch; return { ...model, ...(epoch ? { restoreEpoch: epoch } : {}) }; }
 export function assertModelEnabled(dataDir, selected, captured) { const provider = captured ?? readModelState(dataDir).connections.find(c => c.provider === selected.provider); ensure(!provider?.deletedAt && provider?.enabled !== false, 'MODEL_DISABLED', '供应商已停用或删除'); ensure(!modelNeedsCredential(provider), 'MODEL_CREDENTIAL_REQUIRED', '连接从备份恢复后需要重新保存API Key，不能使用环境或原生认证回退'); const model = provider?.models?.find(m => m.model === selected.model); ensure(!provider?.models?.length || model, 'MODEL_NOT_CONFIGURED', '此供应商的模型目录中没有该模型'); ensure(!model?.deletedAt && model?.enabled !== false, 'MODEL_DISABLED', '模型已停用或删除'); ensure(!model || model.controlOnly || selected.thinking === undefined || model.reasoning.levels.some(l => l.id === selected.thinking), 'MODEL_REASONING_UNAVAILABLE', '推理等级已移除或失效'); return model?.controlOnly ? undefined : model; }
 export function mutateModelState(c, expected, key, input, change) {
     text(key, 'Idempotency-Key', 200);
@@ -174,7 +178,7 @@ export function configureModelConnection(c, actor, value, key) {
         ensure(!prior?.deletedAt, 'MODEL_DELETED', '已删除供应商ID不能重新使用');
         const next = parseModelConnection({ ...x, apiKey: x.apiKey === undefined ? prior?.apiKey : x.apiKey });
         for (const m of prior?.models ?? []) {
-            const { enabled, deletedAt, order, revision, controlOnly, ...definition } = m;
+            const { enabled, deletedAt, order, revision, controlOnly, restoreEpoch, ...definition } = m;
             validateModelDefinition(definition, next.api);
         }
         const connections = [...old.connections.filter(v => v.provider !== next.provider), next];

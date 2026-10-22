@@ -7,14 +7,15 @@ import { short } from "./models.js";
 class PublicationDialogue extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { results: {}, drafts: {}, previewJobId: "" };
+    this.state = { results: {}, drafts: {}, previewJobId: "", cancellingJobIds: [] };
     this.mounted = true;
+    this.cancelling = /* @__PURE__ */ new Set();
   }
   componentWillUnmount() {
     this.mounted = false;
   }
   componentDidUpdate(previous) {
-    if (previous.session.id !== this.props.session.id || previous.data.project.id !== this.props.data.project.id) this.setState({ results: {}, drafts: {}, previewJobId: "" });
+    if (previous.session.id !== this.props.session.id || previous.data.project.id !== this.props.data.project.id) this.setState({ results: {}, drafts: {}, previewJobId: "", cancellingJobIds: [] });
   }
   dialogue() {
     return { projectId: this.props.data.project.id, sessionId: this.props.session.id };
@@ -46,6 +47,29 @@ class PublicationDialogue extends React.Component {
     if (approval.status === "pending") await api(`/approvals/${approval.id}/decide`, { expectedVersion: approval.version, approved: true });
     this.assertJob(c, job);
     await this.call(c, "publication_submit", { jobId: job.id });
+  }
+  async cancel(job) {
+    const c = this.dialogue();
+    this.assertJob(c, job);
+    const { data, session, disabled, busy } = this.props;
+    if (disabled || busy || data.project.archived || session.state === "archived" || session.role !== "coordinator" || session.taskId || session.teamId) throw Error("\u5F53\u524D\u4F1A\u8BDD\u4E0D\u53EF\u53D6\u6D88\u6587\u7A3F\u7F16\u8BD1\u3002");
+    if (this.cancelling.has(job.id) || job.cancelRequested || !["queued", "starting", "running", "unknown"].includes(job.state)) return;
+    this.cancelling.add(job.id);
+    this.setState((s) => ({ cancellingJobIds: [...s.cancellingJobIds, job.id] }));
+    try {
+      await this.call(c, "publication_cancel", { jobId: job.id }, `publication-cancel:${job.id}:${job.manifestDigest}`);
+    } finally {
+      this.cancelling.delete(job.id);
+      if (this.matches(c)) this.setState((s) => ({ cancellingJobIds: s.cancellingJobIds.filter((id) => id !== job.id) }));
+    }
+  }
+  async refreshJob(job) {
+    const c = this.dialogue();
+    this.assertJob(c, job);
+    const fresh = await this.call(c, "publication_inspect", { jobId: job.id });
+    this.assertJob(c, job);
+    if (fresh.id !== job.id || fresh.revisionId !== job.revisionId || fresh.manifestDigest !== job.manifestDigest || fresh.sourceDigest !== job.sourceDigest) throw Error("\u7F16\u8BD1\u4EFB\u52A1\u4E0E\u56FA\u5B9A\u6587\u7A3F\u4E0D\u4E00\u81F4\u3002");
+    return fresh;
   }
   async result(job) {
     const c = this.dialogue();
@@ -88,7 +112,7 @@ class PublicationDialogue extends React.Component {
     const { data, session, disabled, busy, perform } = this.props, revisions = (data.manuscripts ?? []).filter((r) => r.rootSessionId === session.id);
     if (!revisions.length) return null;
     const superseded = new Set(revisions.flatMap((r) => r.previousRevisionId ? [r.previousRevisionId] : []));
-    const needsAttention = (j) => ["prepared", "failed", "unknown", "timed_out", "cancelled"].includes(j.state) || !!j.error || (data.publicationReviews ?? []).some((r) => r.publicationResultId === j.resultId && r.status === "awaiting_approval");
+    const needsAttention = (j) => ["prepared", "queued", "starting", "running", "failed", "unknown", "timed_out", "cancelled"].includes(j.state) || !!j.error || (data.publicationReviews ?? []).some((r) => r.publicationResultId === j.resultId && r.status === "awaiting_approval");
     const isCurrent = (r) => !superseded.has(r.id) || (data.publicationJobs ?? []).some((j) => j.revisionId === r.id && needsAttention(j));
     const renderRevision = (revision) => {
       const jobs = (data.publicationJobs ?? []).filter((j) => j.revisionId === revision.id);
@@ -153,6 +177,9 @@ class PublicationDialogue extends React.Component {
               ] })
             ] }),
             job.state === "prepared" ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => perform(() => this.submit(job), "\u56FA\u5B9A\u6587\u7A3F\u7F16\u8BD1\u5DF2\u63D0\u4EA4"), children: "\u6279\u51C6\u5E76\u7F16\u8BD1" }) }) : null,
+            ["queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("div", { className: "actions wrap", children: /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled: disabled || busy || data.project.archived || session.state === "archived" || job.cancelRequested || this.state.cancellingJobIds.includes(job.id), onClick: () => perform(() => this.cancel(job)), children: this.state.cancellingJobIds.includes(job.id) ? "\u6B63\u5728\u8BF7\u6C42\u53D6\u6D88\u2026" : "\u8BF7\u6C42\u53D6\u6D88\u6587\u7A3F\u7F16\u8BD1" }) }) : null,
+            job.cancelRequested && ["queued", "starting", "running", "unknown"].includes(job.state) ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u5DF2\u8BF7\u6C42\u53D6\u6D88\uFF0C\u7B49\u5F85\u6267\u884C\u5668\u786E\u8BA4\uFF1B\u7F16\u8BD1\u5C1A\u672A\u786E\u8BA4\u505C\u6B62\u3002" }) : null,
+            /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => this.refreshJob(job)), children: "\u5237\u65B0\u6B64\u7F16\u8BD1\u72B6\u6001" }),
             job.resultId ? /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
               /* @__PURE__ */ jsx("button", { className: "text-button", disabled: busy, onClick: () => perform(() => this.result(job)), children: "\u67E5\u770B\u7F16\u8BD1\u8BCA\u65AD" }),
               job.state === "succeeded" ? /* @__PURE__ */ jsxs(Fragment, { children: [

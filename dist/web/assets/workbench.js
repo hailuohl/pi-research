@@ -12,13 +12,16 @@ import { WakeupPanel } from "./campaigns.js";
 import { ChatWorkflows, proposalSession } from "./chat-workflows.js";
 import { ResearchActionCards } from "./research-action-cards.js";
 import { ComposerControls } from "./composer-controls.js";
+import { readComposerDraft, saveComposerDraft } from "./composer-draft.js";
 import { api, artifactText, downloadArtifact } from "./api.js";
 import { short, number, date, label } from "./models.js";
 import { Icon, Badge, Modal, nativeSelectButton } from "./ui.js";
 class Chat extends React.Component {
   constructor() {
     super(...arguments);
-    this.state = { draft: "", draftVersion: 0, attachments: [], sending: false, drawerOpen: false, permissionPending: [], sentMessageId: "", renameTarget: null, renameTitle: "", renameError: "", renameSaving: false };
+    this.initialDraft = readComposerDraft(this.props.data.project.id, this.props.session?.id ?? "");
+    this.pendingDraft = this.initialDraft.pending;
+    this.state = { draft: this.initialDraft.draft, draftVersion: this.initialDraft.draftVersion, attachments: this.initialDraft.attachments, draftSaveError: "", sending: false, drawerOpen: false, permissionPending: [], sentMessageId: "", renameTarget: null, renameTitle: "", renameError: "", renameSaving: false };
     this.drawerClose = React.createRef();
     this.drawerContent = React.createRef();
     this.drawerTrigger = null;
@@ -50,6 +53,16 @@ class Chat extends React.Component {
     this.renaming = false;
     this.renameEpoch = 0;
     this.renameInput = React.createRef();
+    this.persistDraft = (projectId = this.props.data.project.id, sessionId = this.props.session?.id ?? "") => {
+      const request = this.pendingSend, pending = request?.projectId === projectId && request.sessionId === sessionId ? { key: request.key, mode: request.body.mode, draft: request.draft, draftVersion: request.draftVersion, attachmentIds: request.attachments.map((a) => a.documentVersionId) } : this.pendingDraft;
+      return saveComposerDraft(projectId, sessionId, { draft: this.state.draft, draftVersion: this.state.draftVersion, attachments: this.state.attachments, ...pending ? { pending } : {} });
+    };
+    this.beforeUnload = (event) => {
+      if (!this.persistDraft() && (this.state.draft || this.state.attachments.length)) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
     this.renameActive = (target) => this.mounted && this.state.renameTarget === target && this.renameEpoch === target.epoch && this.props.data.project.id === target.projectId && this.props.session?.id === target.sessionId && !this.props.data.project.archived;
     this.renameCurrent = (target) => this.renameActive(target) && this.props.session?.version === target.version && this.props.session.title === target.originalTitle;
     this.finishRename = () => {
@@ -127,7 +140,7 @@ class Chat extends React.Component {
       const { session, data } = this.props;
       if (!session || !this.mounted) return Promise.resolve(void 0);
       const saving = (async () => {
-        const confirmed = await api(`/sessions/${session.id}/model`, { expectedVersion: session.version, model });
+        const confirmed = await api(`/sessions/${session.id}/model`, { expectedVersion: session.version, model: { provider: model.provider, model: model.model, thinking: model.thinking } });
         if (!this.mounted || this.props.session?.id !== session.id || this.props.data.project.id !== data.project.id || confirmed.id !== session.id || confirmed.projectId !== data.project.id || confirmed.model.provider !== model.provider || confirmed.model.model !== model.model || confirmed.model.thinking !== model.thinking) return;
         this.props.onModelConfirmed?.(confirmed);
         return confirmed;
@@ -142,7 +155,7 @@ class Chat extends React.Component {
     this.canSend = () => {
       const { data, boot, session, busy, historyAnchor, history } = this.props;
       const runtimeAvailable = boot.runtime.ready || boot.runtime.code === "MODEL_NOT_CONFIGURED";
-      const modelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking));
+      const modelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking && (model.restoreEpoch ?? 0) === (session.model.restoreEpoch ?? 0)));
       return this.mounted && !this.sending && runtimeAvailable && modelAvailable && !busy && !data.project.archived && !!session && session.projectId === data.project.id && !session.taskId && session.state !== "archived" && !historyAnchor && (!history || history.atLatest);
     };
     this.submit = async (event) => {
@@ -151,11 +164,13 @@ class Chat extends React.Component {
       if (!session || !this.canSend() || !this.state.draft.trim() && !this.state.attachments.length) return;
       const { draft, draftVersion } = this.state, attachments = this.state.attachments.slice(), previous = this.pendingSend;
       const unchanged = previous?.projectId === data.project.id && previous.sessionId === session.id && previous.draftVersion === draftVersion && previous.draft === draft && JSON.stringify(previous.attachments) === JSON.stringify(attachments);
-      const mode = session.state === "running" ? "follow_up" : "prompt";
-      const request = unchanged ? previous : { projectId: data.project.id, sessionId: session.id, draft, draftVersion, attachments, body: { content: draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", mode, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} }, key: crypto.randomUUID(), clearUploadError: this.composerControls.current?.captureUploadError() };
+      const saved = readComposerDraft(data.project.id, session.id).pending, resume = saved && saved.draft === draft && saved.draftVersion === draftVersion && JSON.stringify(saved.attachmentIds) === JSON.stringify(attachments.map((a) => a.documentVersionId)) ? saved : void 0;
+      const mode = resume?.mode ?? (session.state === "running" ? "follow_up" : "prompt");
+      const request = unchanged ? previous : { projectId: data.project.id, sessionId: session.id, draft, draftVersion, attachments, body: { content: draft.trim() ? draft : "\u8BF7\u67E5\u770B\u9644\u4EF6\u3002", mode, ...attachments.length ? { attachmentDocumentIds: attachments.map((attachment) => attachment.documentVersionId) } : {} }, key: resume?.key ?? crypto.randomUUID(), clearUploadError: this.composerControls.current?.captureUploadError() };
       const modelSave = this.modelSave;
       const current = () => this.mounted && this.props.data.project.id === request.projectId && this.props.session?.id === request.sessionId;
       this.pendingSend = request;
+      this.persistDraft();
       this.sending = true;
       this.setState({ sending: true });
       try {
@@ -180,7 +195,10 @@ class Chat extends React.Component {
             if (!current()) return;
             throw error;
           }
-          if (this.pendingSend === request) this.pendingSend = void 0;
+          if (this.pendingSend === request) {
+            this.pendingSend = void 0;
+            this.pendingDraft = void 0;
+          }
           if (!this.mounted || this.props.data.project.id !== request.projectId || this.props.session?.id !== request.sessionId) return confirmed;
           this.props.onMessageConfirmed?.(confirmed);
           request.clearUploadError?.();
@@ -194,11 +212,26 @@ class Chat extends React.Component {
       }
     };
   }
+  componentDidMount() {
+    if (typeof window !== "undefined") window.addEventListener?.("beforeunload", this.beforeUnload);
+  }
   componentWillUnmount() {
+    this.persistDraft();
     this.mounted = false;
     this.renameEpoch++;
+    if (typeof window !== "undefined") window.removeEventListener?.("beforeunload", this.beforeUnload);
   }
-  componentDidUpdate(previous) {
+  componentDidUpdate(previous, previousState) {
+    if (previous.data.project.id !== this.props.data.project.id || previous.session?.id !== this.props.session?.id) {
+      this.persistDraft(previous.data.project.id, previous.session?.id ?? "");
+      this.pendingSend = void 0;
+      const restored = readComposerDraft(this.props.data.project.id, this.props.session?.id ?? "");
+      this.pendingDraft = restored.pending;
+      this.setState({ draft: restored.draft, draftVersion: restored.draftVersion, attachments: restored.attachments, draftSaveError: "" });
+    } else if (!previousState || previousState.draft !== this.state.draft || previousState.draftVersion !== this.state.draftVersion || previousState.attachments !== this.state.attachments) {
+      const error = this.persistDraft() ? "" : "\u6D4F\u89C8\u5668\u6682\u65F6\u65E0\u6CD5\u4FDD\u5B58\u8349\u7A3F\uFF0C\u5F53\u524D\u6807\u7B7E\u9875\u5185\u4ECD\u4FDD\u7559\uFF1B\u5173\u95ED\u9875\u9762\u53EF\u80FD\u4E22\u5931\u3002";
+      if (error !== this.state.draftSaveError) this.setState({ draftSaveError: error });
+    }
     if (previous.data.project.id !== this.props.data.project.id || previous.session?.id !== this.props.session?.id || previous.session?.version !== this.props.session?.version || previous.session?.title !== this.props.session?.title || previous.data.project.archived !== this.props.data.project.archived) {
       const request = this.renameRequest;
       const ownRename = request?.sent && this.renameActive(request.target) && this.props.session?.title === request.title && this.props.session.version > request.target.version && (!request.confirmed || this.props.session.version === request.confirmed.version);
@@ -213,7 +246,7 @@ class Chat extends React.Component {
   render() {
     const { data, boot, session, messages } = this.props;
     const runtimeAvailable = boot.runtime.ready || boot.runtime.code === "MODEL_NOT_CONFIGURED";
-    const sessionModelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking));
+    const sessionModelAvailable = !!session?.model.provider && !!session.model.model && (!boot.models || boot.models.some((model) => model.provider === session.model.provider && model.model === session.model.model && model.thinking === session.model.thinking && (model.restoreEpoch ?? 0) === (session.model.restoreEpoch ?? 0)));
     const sessionFailure = session?.state === "failed" ? session.lastError : void 0;
     const canSend = this.canSend();
     const hasDraft = !!this.state.draft.trim() || this.state.attachments.length > 0;
@@ -317,6 +350,7 @@ class Chat extends React.Component {
         ] })
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "composer-wrap", children: [
+        this.state.draftSaveError ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: this.state.draftSaveError }) : null,
         /* @__PURE__ */ jsxs("div", { className: "composer-stack", children: [
           session?.role === "coordinator" ? /* @__PURE__ */ jsx(MessageQueue, { projectId: data.project.id, sessionId: session.id, messages: this.props.pendingMessages, total: this.props.pendingTotal, nextCursor: this.props.pendingNextCursor, canSteer: this.props.canSteer, disabled: data.project.archived || !!session.taskId || session.state === "archived" || !!this.props.historyAnchor || !!this.props.history && !this.props.history.atLatest, busy: this.props.busy, perform: this.props.perform }, data.project.id + ":" + session.id) : null,
           /* @__PURE__ */ jsxs("form", { className: "composer", onSubmit: this.submit, children: [

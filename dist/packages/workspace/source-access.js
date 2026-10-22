@@ -1,6 +1,5 @@
-import { mkdirSync, readdirSync, renameSync, rmdirSync, writeFileSync, existsSync, readFileSync, unlinkSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { ensure } from '../domain/errors.js';
 import { integer, object, text } from '../contracts/validation.js';
 import { scope, ROLE_TOOLS } from '../policy/permissions.js';
@@ -9,6 +8,7 @@ import { digest } from '../storage/store.js';
 import { safePath, snapshotDirectory, verifySnapshot, listFiles, setSourceModes } from './files.js';
 import { queueSourceHistory, queueWorkspaceHistory } from './git-service.js';
 import { readStableFile } from './stable-file.js';
+import { prepareSourceWorkspace } from './source-prepare-recovery.js';
 export const sourceMetadata = (r) => ({ snapshotId: r.id, experimentId: r.experimentId, revision: r.revision, sourceDigest: r.sourceDigest });
 export function validateSourceRevision(c, projectId, id) {
     const r = c.store.get('source-revision', id, projectId);
@@ -138,35 +138,11 @@ export class SourceAccessService {
             ensure(s.state !== 'running' || actor.type === 'agent' && actor.sessionId === s.id, 'SESSION_BUSY', '会话正在运行');
             ensure(!this.app.store.list('task-attempt', projectId).some(a => a.sessionId === s.id && a.state === 'running' && a.id !== actor.attemptId), 'SESSION_BUSY', '另一个任务 Worker 正在使用工作区');
             const gitEnabled = this.app.store.get('project', projectId).gitHistoryEnabled;
+            prepareSourceWorkspace(this.app.store, s, r, staged => copySourceRevision(r, staged, false, this.app.store.paths));
             if (s.sourceRevisionId === r.id) {
                 const w = gitEnabled ? queueWorkspaceHistory(this.app.context, s, r, actor.type === 'agent' ? this.app.sessionPermissions.capture(s.id, true) : undefined, actor.type === 'agent' ? job => this.app.sessionPermissions.captureGit(actor, job) : undefined) : undefined;
                 return { ...sourceMetadata(r), sessionId: s.id, sessionVersion: s.version, prepared: false, ...(w ? { gitState: w.state, gitOperationId: w.operationId } : {}) };
             }
-            const workspace = this.app.store.paths.physical(s.workspace);
-            ensure(!s.sourceRevisionId && readdirSync(workspace).length === 0, 'WORKSPACE_NOT_EMPTY', '工作区非空或已经绑定来源，不能覆盖本地修改');
-            const staged = join(dirname(workspace), 'source-' + randomUUID());
-            mkdirSync(staged, { mode: 0o700 });
-            copySourceRevision(r, staged, false, this.app.store.paths);
-            // Rename a complete directory into place, retaining the empty prior directory on failure.
-            const backup = workspace + '-empty-' + randomUUID();
-            renameSync(workspace, backup);
-            try {
-                renameSync(staged, workspace);
-            }
-            catch (error) {
-                renameSync(backup, workspace);
-                throw error;
-            }
-            const modesFile = workspace + '.source-modes.json', priorModes = existsSync(modesFile) ? readFileSync(modesFile) : null;
-            this.app.store.onRollback(() => { renameSync(workspace, staged); renameSync(backup, workspace); if (priorModes)
-                writeFileSync(modesFile, priorModes);
-            else if (existsSync(modesFile))
-                unlinkSync(modesFile); });
-            setSourceModes(workspace, r.snapshot.files);
-            this.app.store.afterCommit(() => { try {
-                rmdirSync(backup);
-            }
-            catch { /* An empty backup is safe to retain after commit. */ } });
             const next = this.app.store.update('session', s.id, s.version, { sourceRevisionId: r.id, sourceDigest: r.sourceDigest });
             const git = gitEnabled ? queueWorkspaceHistory(this.app.context, next, r, actor.type === 'agent' ? this.app.sessionPermissions.capture(next.id, true) : undefined, actor.type === 'agent' ? job => this.app.sessionPermissions.captureGit(actor, job) : undefined) : undefined;
             this.app.store.event(projectId, 'workspace.source_prepared', { sessionId: s.id, ...sourceMetadata(r) });

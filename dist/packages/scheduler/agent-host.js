@@ -1,7 +1,7 @@
 import { assertResearchReference } from '../policy/research-automation.js';
 import { digest } from '../storage/store.js';
 import { publicationImageCatalog, imageReference, documentImageReference, CONTEXT_IMAGE_BYTES, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL } from '../pi-adapter/publication-image.js';
-import { modelConnectionSnapshot, assertModelEnabled } from '../pi-adapter/model-connections.js';
+import { modelConnectionSnapshot, assertModelEnabled, assertModelRestoreCurrent } from '../pi-adapter/model-connections.js';
 import { environmentVariables, redactEnvironment, redactEnvironmentChunk } from '../runtime/environment.js';
 import { canSteerSession } from '../pi-adapter/session-history.js';
 import { messageInput, nativeMessageFiles, nativeInputFiles, nativeAttachmentFile } from '../pi-adapter/attachments.js';
@@ -55,6 +55,7 @@ export class AgentHost {
         this.timer.unref();
     }
     ensureReady(session) {
+        assertModelRestoreCurrent(this.app.context.dataDir, session.model);
         assertModelEnabled(this.app.context.dataDir, session.model);
         const state = this.inspect(session.model);
         if (!state.ready)
@@ -170,7 +171,7 @@ export class AgentHost {
                     catch (error) {
                         const e = asError(error), latest = this.app.store.get('session', s.id);
                         this.app.store.update('session', s.id, latest.version, { state: 'failed', lastError: `${e.code} — ${e.message}` });
-                        if (e.code === 'SESSION_PERMISSION_STALE') {
+                        if (e.code === 'SESSION_PERMISSION_STALE' || e.code === 'MODEL_RESTORE_STALE') {
                             const m = this.app.store.get('message', next.id);
                             if (m.status === 'queued')
                                 this.app.store.update('message', m.id, m.version, { status: 'failed', error: e.message });
@@ -224,6 +225,7 @@ export class AgentHost {
         const store = this.app.store;
         return store.transaction(() => {
             const latest = store.get('session', session.id);
+            assertModelRestoreCurrent(this.app.context.dataDir, latest.model);
             assertWorkspaceReady(this.app.context, latest.id);
             if (['running', 'archived'].includes(latest.state) || this.app.hostAccess.status({ type: 'user' }, latest.id).pending)
                 return null;
@@ -409,6 +411,12 @@ export class AgentHost {
         const s = this.app.store.get('session', a.sessionId);
         if (s.generation !== a.generation || s.state !== 'running' || s.leaseUntil <= Date.now())
             return false;
+        try {
+            assertModelRestoreCurrent(this.app.context.dataDir, s.model);
+        }
+        catch {
+            return false;
+        }
         if (a.actor.taskId) {
             const task = this.app.store.get('task', a.actor.taskId);
             if (task.execution === 'superseded' || task.generation !== a.actor.generation || task.attemptId !== a.actor.attemptId)

@@ -1,3 +1,4 @@
+import {assertModelRestoreCurrent} from '../pi-adapter/model-connections.js';
 import {assertResearchReference,type ResearchContinuation} from '../policy/research-automation.js';
 import type {SandboxJob,DevelopmentTask} from '../execution/contracts.js';
 import type { ResearchApp } from '../research-app.js';
@@ -138,6 +139,7 @@ export class WakeupService {
         if(project.status!=='active'||!origin||origin.epoch!==project.lifecycleEpoch)return {valid:false,reason:'项目生命周期已变化'};
         const root = this.app.store.get<Session>('session', w.rootSessionId, w.projectId!);
         if (root.state === 'archived') return { valid: false, reason: '主会话已归档' };
+        try{assertModelRestoreCurrent(this.app.context.dataDir,root.model);}catch(error){return {valid:true,deferred:true,reason:(error as Error).message};}
         let source: Source;
         let model: Session['model'];
         if(w.sourceKind==='approval-result') {

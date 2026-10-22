@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-23",
+  "baseHead": "0c6479041fd6d03144129d3483f04d608dc7d6e0",
+  "issueCount": 11,
+  "node": "24.19.0",
+  "platform": "win32",
+  "sourceFiles": 47,
+  "sourceManifestSha256": "3e5924e9825e0ff91c9cdd88b5c2d635fed8cdb0658d60abc3fa3a0c1ccb5783",
+  "tests": {
+    "deliveryInitial": {
+      "pass": 65,
+      "fail": 0,
+      "skip": 0
+    },
+    "deliveryHttpFollowup": {
+      "pass": 23,
+      "fail": 0,
+      "skip": 0
+    },
+    "fullCore": {
+      "status": "complete_with_seven_failures_closed_after_scoped_rechecks",
+      "snapshot": "FULL-CORE-SNAPSHOT.json",
+      "rawExitCode": 1,
+      "tests": 2496,
+      "suites": 0,
+      "pass": 2462,
+      "fail": 7,
+      "cancelled": 0,
+      "skipped": 27,
+      "todo": 0,
+      "duration_ms": 4890476.962,
+      "failureNames": [
+        "existing parsed-result row sends exactly that result to the current coordinator and stays disabled without it",
+        "skill and connector tabs keep both panels and keyed manager mounted while local state persists",
+        "native tab buttons support arrow, Home, End focus and leave Enter and Space native activation",
+        "changed project, session, version, title or archive state invalidates frozen rename and reopening uses the new target",
+        "late rename success or failure cannot update a switched, reopened or unmounted context or replace new dialog input",
+        "a matching refresh before the rename receipt finishes normally without accepting a newer or foreign update",
+        "completed rename closes after the parent commits busy=false, while late completions cannot close a new context"
+      ],
+      "closure": {
+        "documentFixture": "closed:9/9 + independent2/2",
+        "tabs": "closed:16/16 + independent4/4",
+        "renameLifecycle": "closed: delivery206/206 + independent25/25 + real keyed-App browser; original17 assertions unchanged"
+      }
+    },
+    "independentCR1": {
+      "pass": 34,
+      "fail": 0
+    },
+    "independentHttpFollowup": {
+      "pass": 3,
+      "fail": 0
+    },
+    "fixtureFollowup": {
+      "pass": 9,
+      "fail": 0
+    },
+    "tabsFollowup": {
+      "pass": 16,
+      "fail": 0
+    },
+    "independentFixture": {
+      "pass": 2,
+      "fail": 0
+    },
+    "independentTabs": {
+      "pass": 4,
+      "fail": 0
+    },
+    "renameLifecycleFollowup": {
+      "pass": 206,
+      "fail": 0,
+      "skip": 0
+    },
+    "independentRenameLifecycle": {
+      "pass": 25,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "build": {
+    "cleanInstall": "pass",
+    "build": "pass",
+    "typecheck": "pass",
+    "identicalDistFiles": 721,
+    "httpRebuild": "pass",
+    "finalDistManifestSha256": "7eec98738e23e56fc539cbcbe8a4ef9e03499b6e7b7541ee3721d10d4e1e6875"
+  },
+  "reviews": {
+    "ui": "pass",
+    "dataAndPermissions": "pass",
+    "deliveryConflictAdaptation": "pass",
+    "httpFollowup": "pass",
+    "fixtureFollowup": "pass",
+    "tabsFollowup": "pass",
+    "renameLifecycle": "pass"
+  },
+  "preservation": {
+    "untouchedBaselineFilesChecked": 3324,
+    "unexpectedChangesOrMissing": [],
+    "finalOwnedFiles": 47,
+    "mainSourceMatchesSnapshot": true
+  },
+  "evidenceRoot": "tmp/audit-fixes-20261022-nzcpwyi6",
+  "evidence": {
+    "FINAL-SOURCE-SNAPSHOT.json": "3e5924e9825e0ff91c9cdd88b5c2d635fed8cdb0658d60abc3fa3a0c1ccb5783",
+    "FULL-CORE-SNAPSHOT.json": "6b98ec64cb3c94b8c7a07ddd0aeb53b7bcccfa7444ae7276571b0e2940125766",
+    "delivery-regressions.log": "c229901629005d4c9f032a4a163c655f1d232d6d5c2293679ea988e5c94624f6",
+    "delivery-http-regressions.log": "636fea60f1492dcfc077348d53ab16cec84054e028709e8f84d7edbc16135e66",
+    "delivery-http-clean-build.json": "c2db194d93efd55b69eeac7d3802ce3a9911f6e995a0da0c3fd39abee40dbf00",
+    "preservation-check.final.json": "3a1cfab6c1e890d0894c50157d90494b729ff3608745f1e985c494de1d8b4721",
+    "ui-review.json": "0d8a2fb5e3da90abd81e26afa0b44bd3688d37b79bd3d9d51e035dab19e7772c",
+    "critical-review.json": "2cb56c5d7b78c4416f953fb3ea2a82cac965ced9b91dfebe88fbd4d48b7d624f",
+    "critical-review-delivery-scope.json": "e20dba7dffa65332ecd12b778968026974486ead83305d82f2ac04f7354feb3f",
+    "critical-review-model-http.json": "b1372b8abe9279a9b2397eadba3f2fe7bd6fdf44823b34ee72566150dd138365",
+    "browser-qa/result.json": "ce90e73c200f92060ff9ae0c8e678092da8f866cef828688fd5b66d8aa56b58d",
+    "browser-qa/model-http-result.json": "91c9801b6f07ab95166889bf207e1c074f5e467b664a3a610d91b3f6fd1d8be9",
+    "delivery-tabs-clean-build.json": "3b5c431d28e3ddc73a11e9bb9453a5cd3ab8c3f99b628e847626ad360d842bda",
+    "document-fixture-fix.patch": "d17cd219dc13c06b5366d44fe4079830848330976e02b45f99e42ce8de328706",
+    "document-fixture-red.log": "949deae11fc55f3d0e2995abe839ec7600c86b33b17ebe8ff16b2070ceeb044c",
+    "document-fixture-green.log": "64ddbc50ae6fceea6728b70402f4acddf74f5c50cc22c6b78c54a6cf41a64e7d",
+    "integrations-tabs-fix.patch": "616b8728138a0230a6ac9c95db39523dc12a5c15910fcec8e2b44923f17c7da5",
+    "integrations-tabs-red.log": "4f09aba83a3857df434a04ca8748b4c7ad7fbda708cabddeb0173982c9ee633d",
+    "integrations-tabs-green.log": "f18026648729c5c908a41f3b5685f35bedce6e5ff8d21dc676e320dea59c8f63",
+    "ui-review-document-fixture.json": "455c321eb063038d160960d9051bfa61367acfd98908d8e3e28430789b0509de",
+    "ui-review-tabs-followup.json": "7d191c225d376e4ff72f0220b09ee416dd86c084845f319026d9c48dc84449d7",
+    "FINAL-CORE-RESULT.json": "89b832356bd1a5e30eae64582352bc4e5ee897afad949c7cfb3c0f9e9625d8d1",
+    "final-core.log": "1e173666d3ac20dc60d046da5814e3c96de7c13c77cbce22c01604a100022e50",
+    "final-core.exit": "f1b2f662800122bed0ff255693df89c4487fbdcf453d3524a42d4ec20c3d9c04",
+    "rename-fix-evidence.json": "7e3123ef68c8ee38bfea6d237dc19895364198686ddafaa8f240ef170c9d0370",
+    "rename-fix.lf.patch": "a058fc57d932be22a4c43c04d4b800e1191fa202ec89bcb22512a2915238bb34",
+    "rename-fix-new-red.log": "b07120bd14b26c2dc631fbed7b1a70319e2b2554d4a35ae2ef32f099727e33e5",
+    "rename-fix-guard-mutation-red.log": "99c09e4adfd4079d4f51379f83dbe9ad712e458e8bf13f922cfac73d5358dd90",
+    "delivery-rename-regressions.log": "7ddc6e6d16f636c782d13a81cead6c246945e868f19870b28228070bd601747a",
+    "delivery-rename-clean-build.json": "48fe52e7943d29856458aab2e3fa393e4a75c4e4af8f822b2e32359dcca226c0",
+    "critical-review-rename-lifecycle.json": "5a4217f059f1dc8403513c37046c0b5bdef49730022b520588bdc1b6b56bc79f",
+    "browser-qa/rename-draft-result.json": "88f25f7e175ccf571f0f503107be64e71578d4ed71a44e2252c5ac977a617caf",
+    "new-dist-materialization.json": "251ae993053b4661be493b411679105d03930f3ab4741213f615a8e740223c17",
+    "candidate-sensitive-check.final.json": "4a4cb77db8749788148133e81f000db7b1019e7a5113073bc9a41c69358d759e"
+  },
+  "requestedAgentSettings": [
+    "gpt-6-luna/max",
+    "gpt-6.1-sol/high",
+    "gpt-6-astra/high",
+    "gpt-6-astra/xhigh"
+  ],
+  "runtimeModelAndEffortVerification": "Requested explicitly; runtime metadata not echoed",
+  "notRun": [
+    "external model providers",
+    "Docker compile/parser",
+    "real SSH install",
+    "GPU hardware",
+    "mobile browsers"
+  ],
+  "submission": "Acceptance complete; prepared for authorized commit and push. Final SHA/branch/URL recorded in delivery result.",
+  "browser": {
+    "originalFiveFlows": "pass",
+    "restoredModelActualUseFollowup": "pass",
+    "externalProviderUsed": false,
+    "screenshots": 22,
+    "ownProcessesClosed": true,
+    "renameDraftFollowup": "pass"
+  }
+}

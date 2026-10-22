@@ -21,6 +21,7 @@ export type ImageReference = PublicationImageReference | DocumentImageReference;
 /** Only a digest leaves the credential-bearing catalog. Missing catalog means SDK built-ins. */
 export declare function publicationImageCatalog(path: string, connections?: {
     models?: ({
+        restoreEpoch?: number | undefined;
         model: string;
         enabled: boolean;
         deletedAt: string | null;
@@ -33,6 +34,7 @@ export declare function publicationImageCatalog(path: string, connections?: {
                 parameters: Record<string, import("./model-management-types.js").JsonValue>;
             }[];
         };
+        restoreEpoch?: number;
         enabled: boolean;
         deletedAt: string | null;
         controlOnly?: boolean;

@@ -43,6 +43,10 @@ export declare class SessionService {
             version: number;
             createdAt: string;
             updatedAt: string;
+            branchSource?: {
+                sessionId: string;
+                messageId: string;
+            };
             nativeAttachmentContextIds?: string[];
             nativeAttachmentsDisabled?: boolean;
             nativeRequestId?: string;

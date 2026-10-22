@@ -67,7 +67,7 @@ class ResearchActionCard extends React.Component {
     const onDocument = (document) => {
       if (this.mounted) this.setState({ document });
     };
-    if (kind === "documents" || this.state.document) return /* @__PURE__ */ jsx(LiteratureView, { readOnly: true, embedded: true, data: scoped, session, perform, selectedDocument: this.state.document, onDocument });
+    if (kind === "documents" || this.state.document) return /* @__PURE__ */ jsx(LiteratureView, { readOnly: true, allowDocumentSelection: true, embedded: true, onUseDocument: this.props.onUseDocument, data: scoped, session, perform, selectedDocument: this.state.document, onDocument });
     if (kind === "reports") return /* @__PURE__ */ jsx(ReportsView, { readOnly: true, embedded: true, data, perform, selectedReport: this.state.reportId || void 0, onSelect: (reportId) => this.setState({ reportId }), onDocument, onSession: this.props.onSession, onCampaign: this.props.onCampaign, onRun: this.props.onRun });
     return /* @__PURE__ */ jsx(EvidenceView, { readOnly: true, embedded: true, data, perform, onDocument, onRegister: () => {
     }, onClaim: () => {

@@ -9,55 +9,76 @@ class ExecutionEnvironments extends React.Component {
     this.state = { catalog: null, backend: "local", busy: false, error: "", notice: "" };
     this.mounted = false;
     this.epoch = 0;
+    this.readEpoch = 0;
+    this.locked = false;
     this.onFocus = () => {
-      void this.load();
+      if (this.active()) void this.load();
     };
+  }
+  active() {
+    return this.props.active !== false;
   }
   componentDidMount() {
     this.mounted = true;
     window.addEventListener("focus", this.onFocus);
-    void this.load();
+    if (this.active()) void this.load();
   }
   componentWillUnmount() {
     this.mounted = false;
     this.epoch++;
+    this.readEpoch++;
     window.removeEventListener("focus", this.onFocus);
   }
   componentDidUpdate(prev) {
     if (prev.projectId !== this.props.projectId) {
       this.epoch++;
-      this.setState({ catalog: null, error: "", notice: "", busy: false });
-      void this.load();
+      this.readEpoch++;
+      this.locked = false;
+      this.setState({ catalog: null, backend: "local", error: "", notice: "", busy: false });
+      if (this.active()) void this.load();
+    } else {
+      if (prev.active !== this.props.active) {
+        this.readEpoch++;
+        if (this.active()) void this.load();
+      }
+      if (this.props.localOnly && !prev.localOnly && this.state.backend === "ssh") this.setState({ backend: "local" });
     }
   }
-  call(name, input = {}) {
-    return api(`/operations/${name}`, { projectId: this.props.projectId, input });
+  call(name, input = {}, projectId = this.props.projectId) {
+    return api(`/operations/${name}`, { projectId, input });
   }
   async load() {
-    const epoch = ++this.epoch;
+    if (!this.active()) return;
+    const epoch = this.epoch, read = ++this.readEpoch, projectId = this.props.projectId;
     try {
-      const catalog = await this.call("execution_environment_list");
-      if (this.mounted && epoch === this.epoch) this.setState({ catalog });
+      const catalog = await this.call("execution_environment_list", {}, projectId);
+      if (this.mounted && this.active() && projectId === this.props.projectId && epoch === this.epoch && read === this.readEpoch) this.setState({ catalog });
     } catch (e) {
-      if (this.mounted && epoch === this.epoch) this.setState({ error: String(e) });
+      if (this.mounted && this.active() && projectId === this.props.projectId && epoch === this.epoch && read === this.readEpoch) this.setState({ error: String(e) });
     }
   }
   async mutate(name, input, notice, form) {
-    if (this.state.busy) return;
-    const projectId = this.props.projectId;
+    if (this.locked || !this.active() || this.props.readOnly || this.props.localOnly && (name.startsWith("ssh_target_") || name === "gpu_target_probe" && !["local", "docker"].includes(input.backend ?? ""))) return false;
+    const projectId = this.props.projectId, epoch = this.epoch;
+    this.locked = true;
+    this.readEpoch++;
     this.setState({ busy: true, error: "", notice: "" });
     try {
-      await this.call(name, input);
-      if (this.mounted && projectId === this.props.projectId) {
+      await this.call(name, input, projectId);
+      if (this.mounted && epoch === this.epoch && projectId === this.props.projectId) {
         form?.reset();
         this.setState({ notice });
-        await this.load();
       }
     } catch (e) {
-      if (this.mounted && projectId === this.props.projectId) this.setState({ error: String(e) });
+      if (this.mounted && epoch === this.epoch && projectId === this.props.projectId) this.setState({ error: String(e) });
     } finally {
-      if (this.mounted && projectId === this.props.projectId) this.setState({ busy: false });
+      if (this.mounted && epoch === this.epoch && projectId === this.props.projectId) {
+        if (this.active()) await this.load();
+        this.setState({ busy: false });
+        this.locked = false;
+      }
     }
+    return this.mounted && epoch === this.epoch && projectId === this.props.projectId;
   }
   configureRuntime(form) {
     const fd = new FormData(form), id = String(fd.get("id")).trim();
@@ -76,10 +97,13 @@ class ExecutionEnvironments extends React.Component {
     return this.mutate("gpu_target_probe", { backend, ...backend === "local" ? optional("localRuntimeId") : backend === "docker" ? optional("context") : optional("sshTargetId"), ...backend !== "local" ? optional("image") : {} }, "NVIDIA \u8BBE\u5907\u5DF2\u6838\u5BF9\uFF1B\u5B9E\u9645\u5B9E\u9A8C\u4ECD\u9700\u5355\u72EC\u6279\u51C6\u548C\u8FD0\u884C\u3002");
   }
   render() {
-    const { catalog: c, backend, busy, error, notice } = this.state;
+    const { catalog: c, busy, error, notice } = this.state, backend = this.props.localOnly && this.state.backend === "ssh" ? "local" : this.state.backend, disabled = busy || !!this.props.readOnly || !this.active();
     return /* @__PURE__ */ jsxs("section", { className: "surface report-builder", "aria-label": "\u6267\u884C\u73AF\u5883", children: [
       /* @__PURE__ */ jsx("h2", { children: "\u6267\u884C\u73AF\u5883" }),
-      /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u672C\u5730\u3001Docker\u3001SSH\u3002CPU \u53EF\u72EC\u7ACB\u4F7F\u7528\uFF1BGPU \u9996\u671F\u652F\u6301 NVIDIA\u3002\u914D\u7F6E\u4FDD\u5B58\u5728\u5F53\u524D\u7535\u8111\uFF0C\u8FD4\u56DE\u7A97\u53E3\u65F6\u81EA\u52A8\u66F4\u65B0\u3002" }),
+      /* @__PURE__ */ jsxs("p", { className: "small muted", children: [
+        this.props.localOnly ? "\u672C\u5730\u8FD0\u884C\u73AF\u5883\u548C\u672C\u5730/Docker GPU \u6838\u9A8C\u3002" : "\u672C\u5730\u3001Docker\u3001SSH\u3002",
+        "CPU \u53EF\u72EC\u7ACB\u4F7F\u7528\uFF1BGPU \u9996\u671F\u652F\u6301 NVIDIA\u3002\u914D\u7F6E\u4FDD\u5B58\u5728\u5F53\u524D\u7535\u8111\uFF0C\u8FD4\u56DE\u7A97\u53E3\u65F6\u81EA\u52A8\u66F4\u65B0\u3002"
+      ] }),
       error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: error }) : null,
       notice ? /* @__PURE__ */ jsx("p", { role: "status", children: notice }) : null,
       !c ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u6B63\u5728\u8BFB\u53D6\u8FD0\u884C\u73AF\u5883\u2026" }) : /* @__PURE__ */ jsxs(Fragment, { children: [
@@ -102,7 +126,7 @@ class ExecutionEnvironments extends React.Component {
           /* @__PURE__ */ jsx("form", { onSubmit: (e) => {
             e.preventDefault();
             void this.configureRuntime(e.currentTarget);
-          }, children: /* @__PURE__ */ jsxs("fieldset", { disabled: busy, children: [
+          }, children: /* @__PURE__ */ jsxs("fieldset", { disabled, children: [
             /* @__PURE__ */ jsxs("label", { children: [
               "\u8FD0\u884C\u73AF\u5883\u540D\u79F0",
               /* @__PURE__ */ jsx("input", { name: "id", "aria-label": "\u8FD0\u884C\u73AF\u5883\u540D\u79F0", required: true, maxLength: 80, placeholder: "\u4F8B\u5982 python \u6216 node" })
@@ -115,7 +139,7 @@ class ExecutionEnvironments extends React.Component {
             /* @__PURE__ */ jsx("button", { className: "secondary", children: "\u4FDD\u5B58\u8FD0\u884C\u73AF\u5883" })
           ] }) })
         ] }),
-        /* @__PURE__ */ jsxs("details", { children: [
+        !this.props.localOnly ? /* @__PURE__ */ jsxs("details", { children: [
           /* @__PURE__ */ jsxs("summary", { children: [
             "SSH \u76EE\u6807 \xB7 ",
             c.sshTargets.length,
@@ -127,7 +151,7 @@ class ExecutionEnvironments extends React.Component {
               " \xB7 ",
               "verified" in t ? "\u5F85\u6838\u5BF9" : t.gpuProtocol ? "\u5DF2\u6709\u534F\u8BAE\u6838\u9A8C\u8BB0\u5F55 \xB7 GPU \u9700\u53E6\u884C\u6838\u9A8C" : "\u65E7\u7248\u534F\u8BAE \xB7 \u4EC5\u5DF2\u6709\u4F5C\u4E1A"
             ] }),
-            /* @__PURE__ */ jsxs("button", { className: "text-button", disabled: busy, onClick: () => void this.mutate("ssh_target_probe", { id: t.id }, "SSH \u76EE\u6807\u5DF2\u6838\u5BF9\u3002"), children: [
+            /* @__PURE__ */ jsxs("button", { className: "text-button", disabled, onClick: () => void this.mutate("ssh_target_probe", { id: t.id }, "SSH \u76EE\u6807\u5DF2\u6838\u5BF9\u3002"), children: [
               "\u6838\u5BF9 ",
               t.id
             ] })
@@ -135,7 +159,7 @@ class ExecutionEnvironments extends React.Component {
           /* @__PURE__ */ jsx("form", { onSubmit: (e) => {
             e.preventDefault();
             void this.configureSsh(e.currentTarget);
-          }, children: /* @__PURE__ */ jsxs("fieldset", { disabled: busy, children: [
+          }, children: /* @__PURE__ */ jsxs("fieldset", { disabled, children: [
             [{ name: "id", label: "\u76EE\u6807\u540D\u79F0", max: 80 }, { name: "host", label: "SSH \u4E3B\u673A", max: 253 }, { name: "user", label: "SSH \u7528\u6237", max: 64 }, { name: "identityFile", label: "\u672C\u673A\u79C1\u94A5\u6587\u4EF6\u8DEF\u5F84", max: 2e3 }, { name: "knownHostsFile", label: "\u672C\u673A known_hosts \u6587\u4EF6\u8DEF\u5F84", max: 2e3 }, { name: "remoteRoot", label: "\u8FDC\u7AEF\u5DE5\u4F5C\u76EE\u5F55", max: 500 }].map((f) => /* @__PURE__ */ jsxs("label", { children: [
               f.label,
               /* @__PURE__ */ jsx("input", { name: f.name, "aria-label": f.label, required: true, maxLength: f.max, autoComplete: "off" })
@@ -147,15 +171,15 @@ class ExecutionEnvironments extends React.Component {
             /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u8FDC\u7AEF\u9700\u8981 Docker \u548C\u65B0\u7248 ssh-runner-gpu.py\uFF1BCPU \u4E0D\u9700\u8981\u663E\u5361\u3002\u79C1\u94A5\u7559\u5728\u672C\u673A\uFF0C\u65E7\u76EE\u6807\u987B\u5148\u7ED3\u675F\u6216\u53D6\u6D88\u539F\u4F5C\u4E1A\uFF0C\u518D\u66F4\u65B0\u914D\u7F6E\u3002" }),
             /* @__PURE__ */ jsx("button", { className: "secondary", children: "\u4FDD\u5B58 SSH \u76EE\u6807" })
           ] }) })
-        ] }),
+        ] }) : null,
         /* @__PURE__ */ jsxs("details", { children: [
           /* @__PURE__ */ jsxs("summary", { children: [
             "NVIDIA \u8BBE\u5907 \xB7 ",
-            c.gpuTargets.reduce((n, t) => n + t.devices.length, 0),
+            c.gpuTargets.filter((t) => !this.props.localOnly || t.backend === "local" || t.backend === "docker").reduce((n, t) => n + t.devices.length, 0),
             " \u6761\u76EE\u6807\u8BBE\u5907\u8BB0\u5F55"
           ] }),
           /* @__PURE__ */ jsx("p", { className: "small muted", children: "\u4E0B\u5217\u4E3A\u4E0A\u6B21\u6838\u5BF9\u8BB0\u5F55\uFF0C\u4E0D\u4EE3\u8868\u8BBE\u5907\u5F53\u524D\u7A7A\u95F2\u6216\u5B9E\u9A8C\u5DF2\u6210\u529F\u3002\u8FD0\u884C\u524D\u91CD\u65B0\u6838\u5BF9\u8BBE\u5907\uFF1B\u540C\u4E00\u8BBE\u5907\u7684\u5360\u7528\u5728\u672C\u5E94\u7528\u7BA1\u7406\u7684\u4F5C\u4E1A\u95F4\u5171\u4EAB\u3002\u4E3A\u517C\u5BB9\u65E7\u4F5C\u4E1A\uFF0CGPU \u4F1A\u7B49\u5F85 CPU Docker \u4F5C\u4E1A\u548C\u65E7\u7248 SSH \u4F5C\u4E1A\u7ED3\u675F\u3002" }),
-          c.gpuTargets.map((t) => /* @__PURE__ */ jsxs("div", { children: [
+          c.gpuTargets.filter((t) => !this.props.localOnly || t.backend === "local" || t.backend === "docker").map((t) => /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsxs("h3", { children: [
               backendNames[t.backend],
               t.context ? ` \xB7 ${t.context}` : t.sshTargetId ? ` \xB7 ${t.sshTargetId}` : ""
@@ -176,14 +200,14 @@ class ExecutionEnvironments extends React.Component {
           /* @__PURE__ */ jsx("form", { onSubmit: (e) => {
             e.preventDefault();
             void this.probe(e.currentTarget);
-          }, children: /* @__PURE__ */ jsxs("fieldset", { disabled: busy, children: [
+          }, children: /* @__PURE__ */ jsxs("fieldset", { disabled, children: [
             /* @__PURE__ */ jsxs("label", { children: [
               "\u6838\u5BF9 GPU \u7684\u6267\u884C\u4F4D\u7F6E",
               /* @__PURE__ */ jsxs("select", { "aria-label": "\u6838\u5BF9 GPU \u7684\u6267\u884C\u4F4D\u7F6E", value: backend, onChange: (e) => this.setState({ backend: e.target.value, notice: "", error: "" }), children: [
                 nativeSelectButton,
                 /* @__PURE__ */ jsx("option", { value: "local", children: "\u672C\u5730" }),
                 /* @__PURE__ */ jsx("option", { value: "docker", children: "Docker" }),
-                /* @__PURE__ */ jsx("option", { value: "ssh", children: "SSH" })
+                this.props.localOnly ? null : /* @__PURE__ */ jsx("option", { value: "ssh", children: "SSH" })
               ] })
             ] }),
             backend === "local" ? /* @__PURE__ */ jsxs("label", { children: [

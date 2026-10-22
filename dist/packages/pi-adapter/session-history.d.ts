@@ -79,6 +79,10 @@ export declare function sessionQueue(store: Store, session: Row<Session>, value?
         version: number;
         createdAt: string;
         updatedAt: string;
+        branchSource?: {
+            sessionId: string;
+            messageId: string;
+        };
         nativeAttachmentContextIds?: string[];
         nativeAttachmentsDisabled?: boolean;
         nativeRequestId?: string;

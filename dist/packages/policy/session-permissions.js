@@ -1,6 +1,6 @@
 import { CONTINUATION_TOOLS } from './research-automation.js';
 import { redactEnvironment } from '../runtime/environment.js';
-import { readModelState } from '../pi-adapter/model-connections.js';
+import { readModelState, assertModelRestoreCurrent } from '../pi-adapter/model-connections.js';
 import { join } from 'node:path';
 import { publicationImageCatalog, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL, imageReference, documentImageReference } from '../pi-adapter/publication-image.js';
 import { ensure, DomainError } from '../domain/errors.js';
@@ -118,8 +118,8 @@ export class SessionPermissionService {
     }
     root(sessionId) { const s = this.app.store.get('session', sessionId); if (s.teamId)
         return this.app.store.get('session', this.app.store.get('team', s.teamId, s.projectId).rootSessionId, s.projectId); return s; }
-    capture(sessionId, restricted = false) { const s = this.root(sessionId), p = this.app.store.maybe('session-permission', s.id), host = this.app.hostAccess.status({ type: 'user' }, s.id); return { rootSessionId: s.id, epoch: p?.epoch ?? 0, hostEpoch: host.epoch, mode: host.enabled && !restricted && sessionId === s.id ? 'fullAccess' : p?.mode ?? 'legacy' }; }
-    assert(ref, effect = true) { const current = this.capture(ref.rootSessionId), p = this.app.store.maybe('session-permission', ref.rootSessionId); ensure(current.epoch === ref.epoch && current.hostEpoch === ref.hostEpoch && (current.mode === ref.mode || current.mode === 'fullAccess' && ref.mode === (p?.mode ?? 'legacy') || ref.mode === 'fullAccess' && this.app.store.maybe('host-access', ref.rootSessionId)?.researchAutomationScope === 2 && this.app.hostAccess.status({ type: 'user' }, ref.rootSessionId).researchAutomation), 'SESSION_PERMISSION_STALE', '会话权限已变化；需要用户明确重试', 403); ensure(!effect || ref.mode !== 'readOnly', 'SESSION_READ_ONLY', '只读会话不能产生副作用', 403); }
+    capture(sessionId, restricted = false) { const s = this.root(sessionId), p = this.app.store.maybe('session-permission', s.id), host = this.app.hostAccess.status({ type: 'user' }, s.id); return { ...(s.model.restoreEpoch ? { modelRestoreEpoch: s.model.restoreEpoch } : {}), rootSessionId: s.id, epoch: p?.epoch ?? 0, hostEpoch: host.epoch, mode: host.enabled && !restricted && sessionId === s.id ? 'fullAccess' : p?.mode ?? 'legacy' }; }
+    assert(ref, effect = true) { assertModelRestoreCurrent(this.app.context.dataDir, this.root(ref.rootSessionId).model); const current = this.capture(ref.rootSessionId), p = this.app.store.maybe('session-permission', ref.rootSessionId); ensure((current.modelRestoreEpoch ?? 0) === (ref.modelRestoreEpoch ?? 0) && current.epoch === ref.epoch && current.hostEpoch === ref.hostEpoch && (current.mode === ref.mode || current.mode === 'fullAccess' && ref.mode === (p?.mode ?? 'legacy') || ref.mode === 'fullAccess' && this.app.store.maybe('host-access', ref.rootSessionId)?.researchAutomationScope === 2 && this.app.hostAccess.status({ type: 'user' }, ref.rootSessionId).researchAutomation), 'SESSION_PERMISSION_STALE', '会话权限已变化；需要用户明确重试', 403); ensure(!effect || ref.mode !== 'readOnly', 'SESSION_READ_ONLY', '只读会话不能产生副作用', 403); }
     captureJob(actor, execution) { const policy = this.capture(actor.sessionId, true); if (policy.mode !== 'readOnly')
         return { policy }; if (actor.continuationId)
         this.app.researchAutomation.assertActor(actor);
@@ -174,6 +174,7 @@ export class SessionPermissionService {
     source(sessionId, operation, input) {
         const s = this.app.store.get('session', sessionId), refs = ['workingGrantId', 'runGrantId', 'discoveryGrantId', 'textCorpusGrantId'].map(k => { const id = s[k]; if (!id)
             return null; const row = this.app.store.db.prepare('SELECT kind,version,data FROM records WHERE id=? AND project_id=?').get(String(id), s.projectId); return [id, row?.kind, row?.version, row ? digest(JSON.parse(String(row.data))) : null]; });
+        assertModelRestoreCurrent(this.app.context.dataDir, s.model);
         let before;
         if (operation === 'workspace_write') {
             let content = null;
@@ -257,6 +258,7 @@ export class SessionPermissionService {
     guard(actor, operation, input, callId) {
         if (actor.type !== 'agent')
             return undefined;
+        assertModelRestoreCurrent(this.app.context.dataDir, this.app.store.get('session', actor.sessionId).model);
         const current = actor.continuationId ? this.app.researchAutomation.assertActor(actor).permission : this.capture(actor.sessionId, !!actor.wakeupId), ref = actor.permission ?? current;
         ensure(digest(ref) === digest(current), 'SESSION_PERMISSION_STALE', '执行身份的权限已变化', 403);
         ensure(READ.has(operation) || EDIT.has(operation) || WRITE.has(operation) || EXECUTE.has(operation) || NETWORK.has(operation) || operation === 'task_progress_report', 'SESSION_OPERATION_UNCLASSIFIED', '未分类操作不能执行', 403);

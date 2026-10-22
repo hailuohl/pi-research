@@ -3,6 +3,7 @@ import * as React from "react";
 import { SectionTitle, Icon } from "./ui.js";
 import { SkillManager } from "./skill-manager.js";
 import { ComputeConnections } from "./compute-connections.js";
+import { ExecutionEnvironments } from "./execution-environments.js";
 class IntegrationsView extends React.Component {
   constructor() {
     super(...arguments);
@@ -34,7 +35,10 @@ class IntegrationsView extends React.Component {
         panel === "skills" ? "\u6280\u80FD" : "\u8FDE\u63A5\u5668"
       ] }, panel)) }),
       /* @__PURE__ */ jsx("section", { className: "integration-panel", id: this.panelId("skills"), role: "tabpanel", "aria-labelledby": this.panelId("skills") + "-tab", hidden: s.activePanel !== "skills", children: /* @__PURE__ */ jsx(SkillManager, { projectId: this.props.projectId, sessionId: this.props.sessionId, refreshToken: this.props.refreshToken, readOnly: this.props.readOnly }, this.props.projectId) }),
-      /* @__PURE__ */ jsx("section", { className: "integration-panel", id: this.panelId("connectors"), role: "tabpanel", "aria-labelledby": this.panelId("connectors") + "-tab", hidden: s.activePanel !== "connectors", children: s.connectionsVisited ? /* @__PURE__ */ jsx(ComputeConnections, { projectId: this.props.projectId, active: s.activePanel === "connectors", refreshToken: this.props.refreshToken, readOnly: this.props.readOnly }, this.props.projectId) : null })
+      /* @__PURE__ */ jsxs("section", { className: "integration-panel", id: this.panelId("connectors"), role: "tabpanel", "aria-labelledby": this.panelId("connectors") + "-tab", hidden: s.activePanel !== "connectors", children: [
+        s.connectionsVisited ? /* @__PURE__ */ jsx(ComputeConnections, { projectId: this.props.projectId, active: s.activePanel === "connectors", refreshToken: this.props.refreshToken, readOnly: this.props.readOnly }, `${this.props.projectId}:connections`) : null,
+        s.connectionsVisited ? /* @__PURE__ */ jsx(ExecutionEnvironments, { projectId: this.props.projectId, active: s.activePanel === "connectors", readOnly: this.props.readOnly, localOnly: true }, `${this.props.projectId}:environment`) : null
+      ] })
     ] }) });
   }
 }

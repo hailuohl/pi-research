@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type {ModelConfig,ModelManagementView,Row,Session} from './models.js';
 import {Icon} from './ui.js';
-const key=(model?:ModelConfig)=>JSON.stringify(model?[model.provider,model.model,model.thinking]:null);
+const key=(model?:ModelConfig)=>JSON.stringify(model?[model.provider,model.model,model.thinking,model.restoreEpoch??0]:null);
 interface Props {
     sessionId:string;current?:ModelConfig;management?:ModelManagementView|null;error?:string;
     disabled:boolean;busy:boolean;locked:boolean;onSelect:(model:ModelConfig)=>Promise<Row<Session>|undefined>;
@@ -15,7 +15,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
     componentDidMount(){window.addEventListener('resize',this.position);window.addEventListener('scroll',this.position,true);}
     componentWillUnmount(){this.alive=false;window.removeEventListener('resize',this.position);window.removeEventListener('scroll',this.position,true);}
     private models=()=>this.props.management?.providers.filter(p=>p.enabled&&!p.deletedAt&&!p.requiresCredential).flatMap(provider=>provider.models.filter(m=>m.enabled&&!m.deletedAt).map(model=>({provider,model})))??[];
-    private selected=()=>this.models().find(row=>row.provider.provider===this.props.current?.provider&&row.model.model===this.props.current?.model);
+    private selected=()=>this.models().find(row=>row.provider.provider===this.props.current?.provider&&row.model.model===this.props.current?.model&&(row.model.restoreEpoch??0)===(this.props.current?.restoreEpoch??0));
     private unavailable=()=>!this.props.management||!!this.props.error;
     private blocked=()=>!this.alive||this.props.disabled||this.props.locked||this.props.busy||this.state.saving||!!this.pending||this.unavailable();
     componentDidUpdate(previous:Readonly<Props>){
@@ -26,7 +26,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
         if(currentChanged)this.confirmedSelection=undefined;
         if(previous.management!==this.props.management&&this.state.open){
             const target=this.pending?.selection??this.props.current;
-            if(target&&!this.models().some(row=>row.provider.provider===target.provider&&row.model.model===target.model&&row.model.reasoning.levels.some(level=>level.id===target.thinking)))this.close();
+            if(target&&!this.models().some(row=>row.provider.provider===target.provider&&row.model.model===target.model&&(row.model.restoreEpoch??0)===(target.restoreEpoch??0)&&row.model.reasoning.levels.some(level=>level.id===target.thinking)))this.close();
             const old=previous.management?.providers.find(p=>p.provider===this.props.current?.provider)?.models.find(m=>m.model===this.props.current?.model);
             if(JSON.stringify(old?.reasoning.levels.map(level=>level.id))!==JSON.stringify(this.selected()?.model.reasoning.levels.map(level=>level.id)))this.resetPreview();
         }
@@ -47,7 +47,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
         const current=items.indexOf(document.activeElement as HTMLButtonElement),next=event.key==='Home'?0:event.key==='End'?items.length-1:(current+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;items[next].focus({preventScroll:true});
     };
     private choose=async(model:ModelConfig)=>{
-        if(this.blocked()||!this.models().some(row=>row.provider.provider===model.provider&&row.model.model===model.model&&row.model.reasoning.levels.some(level=>level.id===model.thinking)))return;
+        if(this.blocked()||!this.models().some(row=>row.provider.provider===model.provider&&row.model.model===model.model&&(row.model.restoreEpoch??0)===(model.restoreEpoch??0)&&row.model.reasoning.levels.some(level=>level.id===model.thinking)))return;
         this.pointerStart=undefined;this.setState({modelsOpen:false,error:'',pointer:false,dragging:false});if(key(model)===key(this.props.current)){this.resetPreview();return;}
         if(this.state.preview!==null)this.setState({preview:Math.round(this.state.preview)});
         const request={sessionId:this.props.sessionId,selection:model};this.pending=request;this.confirmedSelection=undefined;this.setState({saving:true});
@@ -66,7 +66,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
         if(this.blocked())return;const row=this.models().find(row=>row.provider.provider===provider&&row.model.model===model);if(!row)return;
         const levels=row.model.reasoning.levels,current=this.props.current,same=current?.provider===provider&&current.model===model;
         const thinking=same&&levels.some(level=>level.id===current.thinking)?current.thinking:row.model.reasoning.defaultLevel;
-        if(levels.some(level=>level.id===thinking)){this.resetPreview();return this.choose({provider,model,thinking});}
+        if(levels.some(level=>level.id===thinking)){this.resetPreview();return this.choose({provider,model,thinking,...(row.model.restoreEpoch?{restoreEpoch:row.model.restoreEpoch}:{})});}
     };
     private preview=(value:number)=>{
         const levels=this.selected()?.model.reasoning.levels??[];if(this.blocked()||levels.length<2||!Number.isFinite(value))return;
@@ -76,7 +76,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
     private confirmedIndex=()=>this.selected()?.model.reasoning.levels.findIndex(level=>level.id===this.props.current?.thinking)??-1;
     private commit=()=>{
         const row=this.selected(),index=this.state.preview;if(!row||index===null)return;const level=row.model.reasoning.levels[Math.round(index)];
-        if(level)return this.choose({provider:row.provider.provider,model:row.model.model,thinking:level.id});
+        if(level)return this.choose({provider:row.provider.provider,model:row.model.model,thinking:level.id,...(row.model.restoreEpoch?{restoreEpoch:row.model.restoreEpoch}:{})});
     };
     private pointerDown=(event:React.PointerEvent<HTMLInputElement>)=>{
         if(this.blocked()||event.button!==0)return;this.pointerStart={id:event.pointerId,x:event.clientX};event.currentTarget.setPointerCapture?.(event.pointerId);this.setState({pointer:true,dragging:false});
@@ -123,7 +123,7 @@ export class ComposerModelMenu extends React.Component<Props,State> {
                     {!valid?<p className="composer-model-error" role="status">当前模型或思考等级不可用，请明确选择已配置模型。</p>:null}
                 </div>
                 <div id={id+'-models'} className="composer-model-models-view" data-expanded={this.state.modelsOpen} inert={!this.state.modelsOpen} aria-hidden={!this.state.modelsOpen}>
-                    <div role="group" aria-label="已配置模型">{models.map(row=><button type="button" key={JSON.stringify([row.provider.provider,row.model.model])} role="menuitemradio" aria-checked={current?.provider===row.provider.provider&&current.model===row.model.model} disabled={blocked||!row.model.reasoning.levels.some(level=>level.id===row.model.reasoning.defaultLevel)} className="composer-model-option" onClick={()=>{if(scope())void this.chooseModel(row.provider.provider,row.model.model);}}><span><strong>{row.model.name}</strong><small>{row.provider.name}</small></span>{current?.provider===row.provider.provider&&current.model===row.model.model?<Icon name="check" size={15}/>:null}</button>)}</div>
+                    <div role="group" aria-label="已配置模型">{models.map(row=><button type="button" key={JSON.stringify([row.provider.provider,row.model.model])} role="menuitemradio" aria-checked={current?.provider===row.provider.provider&&current.model===row.model.model&&(current.restoreEpoch??0)===(row.model.restoreEpoch??0)} disabled={blocked||!row.model.reasoning.levels.some(level=>level.id===row.model.reasoning.defaultLevel)} className="composer-model-option" onClick={()=>{if(scope())void this.chooseModel(row.provider.provider,row.model.model);}}><span><strong>{row.model.name}</strong><small>{row.provider.name}</small></span>{current?.provider===row.provider.provider&&current.model===row.model.model&&(current.restoreEpoch??0)===(row.model.restoreEpoch??0)?<Icon name="check" size={15}/>:null}</button>)}</div>
                 </div>
                 <p className={'composer-model-status '+(error?'composer-model-error':'composer-model-note')} role={error?'alert':'status'} aria-live="polite">{this.state.saving?'正在保存…':error||(!models.length?'还没有可用模型，请先在设置中添加。':'\u00a0')}</p>
             </div>

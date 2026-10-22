@@ -76,6 +76,7 @@ export interface ProjectPurgeView {
     offlineRequired: true;
 }
 export interface ModelConfig {
+    restoreEpoch?: number;
     provider: string;
     model: string;
     thinking: string;
@@ -105,6 +106,11 @@ export interface Session {
     parentSessionId?: string;
 }
 export interface Message {
+    /** Historical provenance only; never grants access to the source session or its native request. */
+    branchSource?: {
+        sessionId: string;
+        messageId: string;
+    };
     /** Host-only binding for the history folded into one persisted Pi user input. */
     nativeAttachmentContextIds?: string[];
     nativeAttachmentsDisabled?: boolean;

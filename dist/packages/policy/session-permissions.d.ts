@@ -3,6 +3,7 @@ import type { ResearchApp } from '../research-app.js';
 import type { GitOperation } from '../workspace/git-types.js';
 export type RestrictedMode = 'readOnly' | 'confirm' | 'autoEdit';
 export interface PermissionReference {
+    modelRestoreEpoch?: number;
     rootSessionId: string;
     epoch: number;
     hostEpoch: number;

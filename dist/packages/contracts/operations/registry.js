@@ -9,6 +9,7 @@ import { CONTINUATION_TOOLS, APPROVAL_RESUME_TOOLS } from '../../policy/research
 import { interactiveCoordinator, scope, userOnly, toolAllowed, AUTOMATION_TOOLS } from '../../policy/permissions.js';
 import { assertProjectWritable, assertProjectReadable } from '../../policy/lifecycle.js';
 import { readText, writeText, listFiles } from '../../workspace/files.js';
+import { settleSourcePreparationReceipt } from '../../workspace/source-prepare-recovery.js';
 import { INPUT_SCHEMAS } from './inputs.js';
 import { OUTPUT_SCHEMAS } from './outputs.js';
 import { validateSchema } from './schema.js';
@@ -816,6 +817,11 @@ export class OperationRegistry {
                         return output(this.app.publicationBuilds.replayCitationCheck(actor, pid, input, previous.value));
                     }
                     ensure(!options.approvedActionId, 'SESSION_ACTION_NOT_APPROVED', '固定批准已被其它调用消费，请回查结果，不重复执行', 409);
+                    if (id === 'workspace_prepare_from_revision') {
+                        const result = output(previous.value);
+                        settleSourcePreparationReceipt(this.app.store, pid, session.id, result);
+                        return result;
+                    }
                     if (['research_action_prepare', 'research_action_inspect', 'research_action_decide'].includes(id)) {
                         context.validate();
                         spec.authorize(context, input);

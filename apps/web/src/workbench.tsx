@@ -11,6 +11,7 @@ import { WakeupPanel } from './campaigns.js';
 import {ChatWorkflows,proposalSession} from './chat-workflows.js';
 import {ResearchActionCards} from './research-action-cards.js';
 import {ComposerControls} from './composer-controls.js';
+import {readComposerDraft,saveComposerDraft,type ComposerDraft} from './composer-draft.js';
 import { api, artifactText, downloadArtifact } from './api.js';
 import type { Bootstrap, MessageAttachment, ModelConfig, ProjectState, Row, Session, Message, Experiment, Run, SessionHistoryPage,SessionView } from './models.js';
 import { short, number, date, label } from './models.js';
@@ -53,8 +54,10 @@ export class Chat extends React.Component<{
     onSession: (id:string) => void;
     onExperiment: (id:string) => void;
     onRun: (runId:string,experimentId:string) => void;
-}, {draft:string;draftVersion:number;attachments:MessageAttachment[];sending:boolean;drawerOpen:boolean;permissionPending:string[];sentMessageId:string;renameTarget:RenameTarget|null;renameTitle:string;renameError:string;renameSaving:boolean}> {
-    state={draft:'',draftVersion:0,attachments:[] as MessageAttachment[],sending:false,drawerOpen:false,permissionPending:[] as string[],sentMessageId:'',renameTarget:null as RenameTarget|null,renameTitle:'',renameError:'',renameSaving:false};
+}, {draft:string;draftVersion:number;attachments:MessageAttachment[];draftSaveError:string;sending:boolean;drawerOpen:boolean;permissionPending:string[];sentMessageId:string;renameTarget:RenameTarget|null;renameTitle:string;renameError:string;renameSaving:boolean}> {
+    private initialDraft=readComposerDraft(this.props.data.project.id,this.props.session?.id??'');
+    private pendingDraft:ComposerDraft['pending']=this.initialDraft.pending;
+    state={draft:this.initialDraft.draft,draftVersion:this.initialDraft.draftVersion,attachments:this.initialDraft.attachments,draftSaveError:'',sending:false,drawerOpen:false,permissionPending:[] as string[],sentMessageId:'',renameTarget:null as RenameTarget|null,renameTitle:'',renameError:'',renameSaving:false};
     private drawerClose=React.createRef<HTMLButtonElement>();
     private drawerContent=React.createRef<HTMLDivElement>();
     private drawerTrigger:HTMLButtonElement|null=null;
@@ -83,8 +86,21 @@ export class Chat extends React.Component<{
     private renameEpoch=0;
     private renameInput=React.createRef<HTMLInputElement>();
     private renameRequest?:{target:RenameTarget;title:string;sent:boolean;confirmed?:Row<Session>;finished:boolean};
-    componentWillUnmount(){this.mounted=false;this.renameEpoch++;}
-    componentDidUpdate(previous:Readonly<Chat['props']>){
+    private persistDraft=(projectId=this.props.data.project.id,sessionId=this.props.session?.id??'')=>{
+        const request=this.pendingSend,pending=request?.projectId===projectId&&request.sessionId===sessionId?{key:request.key,mode:request.body.mode as 'prompt'|'follow_up',draft:request.draft,draftVersion:request.draftVersion,attachmentIds:request.attachments.map(a=>a.documentVersionId)}:this.pendingDraft;
+        return saveComposerDraft(projectId,sessionId,{draft:this.state.draft,draftVersion:this.state.draftVersion,attachments:this.state.attachments,...(pending?{pending}:{})});
+    };
+    private beforeUnload=(event:BeforeUnloadEvent)=>{if(!this.persistDraft()&&(this.state.draft||this.state.attachments.length)){event.preventDefault();event.returnValue='';}};
+    componentDidMount(){if(typeof window!=='undefined')window.addEventListener?.('beforeunload',this.beforeUnload);}
+    componentWillUnmount(){this.persistDraft();this.mounted=false;this.renameEpoch++;if(typeof window!=='undefined')window.removeEventListener?.('beforeunload',this.beforeUnload);}
+    componentDidUpdate(previous:Readonly<Chat['props']>,previousState?:Readonly<{draft:string;draftVersion:number;attachments:MessageAttachment[]}>){
+        if(previous.data.project.id!==this.props.data.project.id||previous.session?.id!==this.props.session?.id){
+            this.persistDraft(previous.data.project.id,previous.session?.id??'');this.pendingSend=undefined;
+            const restored=readComposerDraft(this.props.data.project.id,this.props.session?.id??'');
+            this.pendingDraft=restored.pending;
+            this.setState({draft:restored.draft,draftVersion:restored.draftVersion,attachments:restored.attachments,draftSaveError:''});
+        }
+        else if(!previousState||previousState.draft!==this.state.draft||previousState.draftVersion!==this.state.draftVersion||previousState.attachments!==this.state.attachments){const error=this.persistDraft()?'':'浏览器暂时无法保存草稿，当前标签页内仍保留；关闭页面可能丢失。';if(error!==this.state.draftSaveError)this.setState({draftSaveError:error});}
         if(previous.data.project.id!==this.props.data.project.id||previous.session?.id!==this.props.session?.id||previous.session?.version!==this.props.session?.version||previous.session?.title!==this.props.session?.title||previous.data.project.archived!==this.props.data.project.archived){
             const request=this.renameRequest;
             // A refresh can see this rename before its HTTP receipt; verify that exact version on arrival.
@@ -148,7 +164,7 @@ export class Chat extends React.Component<{
         const {session,data}=this.props;
         if(!session||!this.mounted)return Promise.resolve(undefined);
         const saving=(async()=>{
-            const confirmed=await api<Row<Session>>(`/sessions/${session.id}/model`,{expectedVersion:session.version,model});
+            const confirmed=await api<Row<Session>>(`/sessions/${session.id}/model`,{expectedVersion:session.version,model:{provider:model.provider,model:model.model,thinking:model.thinking}});
             if(!this.mounted||this.props.session?.id!==session.id||this.props.data.project.id!==data.project.id||confirmed.id!==session.id||confirmed.projectId!==data.project.id||confirmed.model.provider!==model.provider||confirmed.model.model!==model.model||confirmed.model.thinking!==model.thinking)return;
             this.props.onModelConfirmed?.(confirmed);
             return confirmed;
@@ -161,7 +177,7 @@ export class Chat extends React.Component<{
     private canSend=()=>{
         const {data,boot,session,busy,historyAnchor,history}=this.props;
         const runtimeAvailable=boot.runtime.ready||boot.runtime.code==='MODEL_NOT_CONFIGURED';
-        const modelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking));
+        const modelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking&&(model.restoreEpoch??0)===(session.model.restoreEpoch??0)));
         return this.mounted&&!this.sending&&runtimeAvailable&&modelAvailable&&!busy&&!data.project.archived&&!!session&&session.projectId===data.project.id&&!session.taskId&&session.state!=='archived'&&!historyAnchor&&(!history||history.atLatest);
     };
     private submit=async(event:{preventDefault:()=>void})=>{
@@ -170,11 +186,12 @@ export class Chat extends React.Component<{
         if(!session||!this.canSend()||!this.state.draft.trim()&&!this.state.attachments.length)return;
         const {draft,draftVersion}=this.state,attachments=this.state.attachments.slice(),previous=this.pendingSend;
         const unchanged=previous?.projectId===data.project.id&&previous.sessionId===session.id&&previous.draftVersion===draftVersion&&previous.draft===draft&&JSON.stringify(previous.attachments)===JSON.stringify(attachments);
-        const mode:Message['mode']=session.state==='running'?'follow_up':'prompt';
-        const request=unchanged?previous!:{projectId:data.project.id,sessionId:session.id,draft,draftVersion,attachments,body:{content:draft.trim()?draft:'请查看附件。',mode,...(attachments.length?{attachmentDocumentIds:attachments.map(attachment=>attachment.documentVersionId)}:{})},key:crypto.randomUUID(),clearUploadError:this.composerControls.current?.captureUploadError()};
+        const saved=readComposerDraft(data.project.id,session.id).pending,resume=saved&&saved.draft===draft&&saved.draftVersion===draftVersion&&JSON.stringify(saved.attachmentIds)===JSON.stringify(attachments.map(a=>a.documentVersionId))?saved:undefined;
+        const mode:Message['mode']=resume?.mode??(session.state==='running'?'follow_up':'prompt');
+        const request=unchanged?previous!:{projectId:data.project.id,sessionId:session.id,draft,draftVersion,attachments,body:{content:draft.trim()?draft:'请查看附件。',mode,...(attachments.length?{attachmentDocumentIds:attachments.map(attachment=>attachment.documentVersionId)}:{})},key:resume?.key??crypto.randomUUID(),clearUploadError:this.composerControls.current?.captureUploadError()};
         const modelSave=this.modelSave;
         const current=()=>this.mounted&&this.props.data.project.id===request.projectId&&this.props.session?.id===request.sessionId;
-        this.pendingSend=request;this.sending=true;this.setState({sending:true});
+        this.pendingSend=request;this.persistDraft();this.sending=true;this.setState({sending:true});
         try{
             return await this.props.perform(async()=>{
                 if(modelSave){
@@ -189,7 +206,7 @@ export class Chat extends React.Component<{
                     confirmed=await api<Row<Message>>(`/sessions/${session.id}/messages`,request.body,'POST',undefined,request.key);
                     if(confirmed.projectId!==request.projectId||confirmed.sessionId!==request.sessionId||confirmed.role!=='user'||typeof confirmed.id!=='string'||confirmed.content!==request.body.content||confirmed.mode!==request.body.mode||!Number.isSafeInteger(confirmed.version)||confirmed.version<1||!['queued','running','completed','failed','cancelled'].includes(confirmed.status))throw Error('发送回执与当前会话不一致；草稿与附件已保留。');
                 }catch(error){if(!current())return;throw error;}
-                if(this.pendingSend===request)this.pendingSend=undefined;
+                if(this.pendingSend===request){this.pendingSend=undefined;this.pendingDraft=undefined;}
                 if(!this.mounted||this.props.data.project.id!==request.projectId||this.props.session?.id!==request.sessionId)return confirmed;
                 this.props.onMessageConfirmed?.(confirmed);
                 request.clearUploadError?.();
@@ -202,7 +219,7 @@ export class Chat extends React.Component<{
     render() {
         const { data, boot, session, messages } = this.props;
         const runtimeAvailable=boot.runtime.ready||boot.runtime.code==='MODEL_NOT_CONFIGURED';
-        const sessionModelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking));
+        const sessionModelAvailable=!!session?.model.provider&&!!session.model.model&&(!boot.models||boot.models.some(model=>model.provider===session.model.provider&&model.model===session.model.model&&model.thinking===session.model.thinking&&(model.restoreEpoch??0)===(session.model.restoreEpoch??0)));
         const sessionFailure=session?.state==='failed'?session.lastError:undefined;
         const canSend = this.canSend();
         const hasDraft=!!this.state.draft.trim()||this.state.attachments.length>0;
@@ -236,7 +253,7 @@ export class Chat extends React.Component<{
  {latest?<WakeupPanel data={data} busy={this.props.busy} sessionId={session?.id} perform={this.props.perform} onSession={this.props.onSession}/>:null}
  <p className="small muted chat-drawer-history-note" tabIndex={-1}>历史记录保留在操作审批历史、结果通知和已完成事项中；可展开已有记录。</p>{!latest?<p className="small muted">正在查看消息历史，返回最新消息后显示当前任务与审批。</p>:null}{this.props.archivedHistory}
  </div></aside></div>
- <div className="composer-wrap"><div className="composer-stack">{session?.role==='coordinator'?<MessageQueue key={data.project.id+':'+session.id} projectId={data.project.id} sessionId={session.id} messages={this.props.pendingMessages} total={this.props.pendingTotal} nextCursor={this.props.pendingNextCursor} canSteer={this.props.canSteer} disabled={data.project.archived||!!session.taskId||session.state==='archived'||!!this.props.historyAnchor||!!this.props.history&&!this.props.history.atLatest} busy={this.props.busy} perform={this.props.perform}/>:null}<form className="composer" onSubmit={this.submit}><textarea aria-label="研究问题" placeholder={data.project.archived ? '已归档项目，只读查看历史' : session?.taskId ? '请通过团队任务控件操作' : session?.state==='archived' ? '已归档会话不可发送' : this.props.historyAnchor||this.props.history&&!this.props.history.atLatest ? '返回最新消息后可发送' : !runtimeAvailable ? 'Pi 尚未就绪，请查看上方说明…' : !session ? '选择或新建会话后开始研究…' : !sessionModelAvailable ? '配置 Pi 供应商和模型后，在这里开始研究…' : '描述研究问题…'} value={this.state.draft} disabled={data.project.archived||!!session?.taskId||session?.state==='archived'} onChange={(e: any) => this.setState(current=>({ draft: e.target.value, draftVersion: current.draftVersion+1 }))} onKeyDown={(e: any) => {
+ <div className="composer-wrap">{this.state.draftSaveError?<p role="alert" className="error-text">{this.state.draftSaveError}</p>:null}<div className="composer-stack">{session?.role==='coordinator'?<MessageQueue key={data.project.id+':'+session.id} projectId={data.project.id} sessionId={session.id} messages={this.props.pendingMessages} total={this.props.pendingTotal} nextCursor={this.props.pendingNextCursor} canSteer={this.props.canSteer} disabled={data.project.archived||!!session.taskId||session.state==='archived'||!!this.props.historyAnchor||!!this.props.history&&!this.props.history.atLatest} busy={this.props.busy} perform={this.props.perform}/>:null}<form className="composer" onSubmit={this.submit}><textarea aria-label="研究问题" placeholder={data.project.archived ? '已归档项目，只读查看历史' : session?.taskId ? '请通过团队任务控件操作' : session?.state==='archived' ? '已归档会话不可发送' : this.props.historyAnchor||this.props.history&&!this.props.history.atLatest ? '返回最新消息后可发送' : !runtimeAvailable ? 'Pi 尚未就绪，请查看上方说明…' : !session ? '选择或新建会话后开始研究…' : !sessionModelAvailable ? '配置 Pi 供应商和模型后，在这里开始研究…' : '描述研究问题…'} value={this.state.draft} disabled={data.project.archived||!!session?.taskId||session?.state==='archived'} onChange={(e: any) => this.setState(current=>({ draft: e.target.value, draftVersion: current.draftVersion+1 }))} onKeyDown={(e: any) => {
                 if(e.key!=='Enter'||e.shiftKey||e.isComposing||e.nativeEvent?.isComposing||e.keyCode===229||e.nativeEvent?.keyCode===229)return;
                 e.preventDefault();e.currentTarget.form.requestSubmit();
             }}/><ComposerControls ref={this.composerControls} permissionControl={boot.runtime.hostAccess?.available&&session&&!session.taskId?<HostAccessControl key={session.id} sessionId={session.id} archived={data.project.archived||session.state==='archived'} busy={this.props.busy} perform={this.props.perform}/>:null} key={`${data.project.id}:${session?.id??''}`} boot={boot} projectId={data.project.id} projectArchived={!!data.project.archived} modelLocked={!!session?.workingGrantId||!!session?.textCorpusGrantId||!!session?.discoveryGrantId||!!session?.runGrantId||!!data.teams?.some(team=>team.rootSessionId===session?.id&&!['completed','partial','failed','cancelled'].includes(team.state))} session={session} busy={this.props.busy} perform={this.props.perform} attachments={this.state.attachments} onAddAttachment={attachment=>this.setState(current=>({attachments:[...current.attachments,attachment]}))} onRemoveAttachment={documentVersionId=>this.setState(current=>({attachments:current.attachments.filter(attachment=>attachment.documentVersionId!==documentVersionId)}))} canSend={canSend} hasDraft={hasDraft} onSendModel={model=>session&&this.props.session?.id===session.id&&this.props.data.project.id===data.project.id?this.changeModel(model):Promise.resolve(undefined)}><div className="chat-collaboration-control"><button type="button" role="switch" aria-label="多智能体模式" aria-checked={data.project.settings.enabled ? 'true' : 'false'} title="项目级设置，同项目所有研究会话共享" className={'switch ' + (data.project.settings.enabled ? 'on' : '')} disabled={this.props.busy || data.project.archived || !session || !!session.taskId || session.state === 'archived'} onClick={this.props.onToggle}><span/></button><span>多智能体</span></div></ComposerControls></form></div><div className="composer-caption composer-caption-note"><span aria-hidden="true"/><span>Enter 发送<span className="host-extra-key"> · Shift + Enter 换行 · Ctrl/⌘ + Enter 发送</span></span></div></div>{this.renderRename()}</div>;

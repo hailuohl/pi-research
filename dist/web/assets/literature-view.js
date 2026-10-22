@@ -287,7 +287,7 @@ class LiteratureView extends React.Component {
         ] }) }, document.id)),
         !data.documents?.length ? /* @__PURE__ */ jsx("p", { className: "inline-empty", children: "\u6682\u65E0\u56FA\u5B9A\u6587\u6863\u7248\u672C\u3002" }) : null
       ] }),
-      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { readOnly: this.props.readOnly, document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: data.documents?.length ? "\u9009\u62E9\u7248\u672C\u67E5\u770B\u539F\u6587\u3002" : "\u5BFC\u5165\u6587\u6863\u540E\u9009\u62E9\u7248\u672C\u3002" }) }),
+      s.loading ? /* @__PURE__ */ jsx("p", { role: "status", children: "\u8BFB\u53D6\u56FA\u5B9A\u6587\u6863\u2026" }) : s.document ? /* @__PURE__ */ jsx(DocumentPane, { readOnly: this.props.readOnly, allowDocumentSelection: this.props.allowDocumentSelection, document: s.document, data, perform, session: this.props.session, onUseDocument: this.props.onUseDocument, location: this.props.selectedDocument, onLocation: (target) => this.selectDocument(target) }, s.document.id) : /* @__PURE__ */ jsx(Empty, { title: "\u9009\u62E9\u6587\u6863\u7248\u672C", children: /* @__PURE__ */ jsx("p", { children: data.documents?.length ? "\u9009\u62E9\u7248\u672C\u67E5\u770B\u539F\u6587\u3002" : "\u5BFC\u5165\u6587\u6863\u540E\u9009\u62E9\u7248\u672C\u3002" }) }),
       !this.props.readOnly ? /* @__PURE__ */ jsx(TextEvidencePanel, { configurationOnly: this.props.setupOnly, data, perform, onDocument: (target) => this.selectDocument(target), onSession: this.props.onSession }) : null
     ] });
   }
@@ -313,7 +313,7 @@ class DocumentPane extends React.Component {
     }
   }
   render() {
-    const { document: d, data, perform, session } = this.props, canUse = !this.props.readOnly && !!this.props.onUseDocument && session?.projectId === data.project.id && session.role === "coordinator" && !session.taskId && !session.teamId && session.state !== "archived" && !data.project.archived;
+    const { document: d, data, perform, session } = this.props, canUse = (!this.props.readOnly || !!this.props.allowDocumentSelection) && !!this.props.onUseDocument && d.projectId === data.project.id && session?.projectId === data.project.id && session.role === "coordinator" && !session.taskId && !session.teamId && session.state !== "archived" && !data.project.archived;
     return /* @__PURE__ */ jsxs("section", { className: "surface report-builder", children: [
       /* @__PURE__ */ jsx("h2", { children: d.title }),
       /* @__PURE__ */ jsxs("p", { children: [

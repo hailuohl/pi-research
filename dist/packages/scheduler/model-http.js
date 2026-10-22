@@ -1,5 +1,5 @@
 import { recoverOwnerNativeHttp } from '../pi-adapter/native-http.js';
-import { assertModelEnabled } from '../pi-adapter/model-connections.js';
+import { assertModelEnabled, assertModelRestoreCurrent } from '../pi-adapter/model-connections.js';
 import { digest, now } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { integer, object, text } from '../contracts/validation.js';
@@ -18,7 +18,7 @@ export class ModelHttpService {
     }
     live() { return this.store.db.prepare("SELECT rowid,data FROM records WHERE kind='model-http-request' AND json_extract(data,'$.state') IN ('queued','active','unknown') ORDER BY rowid").all().map(r => ({ sequence: Number(r.rowid), ...JSON.parse(r.data) })); }
     legacy() { return Number(this.store.db.prepare("SELECT count(*) n FROM records WHERE kind='agent-admission' AND json_extract(data,'$.state')<>'released' AND COALESCE(json_extract(data,'$.httpManagedVersion'),0)<>1").get().n); }
-    current(w) { const a = this.store.get('agent-admission', w.admissionId), s = this.store.get('session', w.sessionId, a.projectId); ensure(a.ownerHost === w.ownerHost && a.sessionId === s.id && a.generation === w.generation && a.httpManagedVersion === 1 && a.state === 'running' && a.leaseUntil > Date.now() && s.state === 'running' && s.generation === w.generation && s.leaseUntil > Date.now(), 'MODEL_HTTP_SCOPE_EXPIRED', '模型HTTP请求的原会话或Worker租约已失效'); assertProjectWritable(this.store, s.projectId); return s; }
+    current(w) { const a = this.store.get('agent-admission', w.admissionId), s = this.store.get('session', w.sessionId, a.projectId); ensure(a.ownerHost === w.ownerHost && a.sessionId === s.id && a.generation === w.generation && a.httpManagedVersion === 1 && a.state === 'running' && a.leaseUntil > Date.now() && s.state === 'running' && s.generation === w.generation && s.leaseUntil > Date.now(), 'MODEL_HTTP_SCOPE_EXPIRED', '模型HTTP请求的原会话或Worker租约已失效'); assertProjectWritable(this.store, s.projectId); assertModelRestoreCurrent(this.store.paths.dataDir, s.model); return s; }
     owned(w, key) { const id = digest({ admissionId: w.admissionId, key: text(key, 'requestKey', 100) }), r = this.store.maybe('model-http-request', id); if (r)
         ensure(identityKeys.every(k => r[k] === w[k]), 'MODEL_HTTP_SCOPE_DENIED', '请求不属于原Worker'); return { id, row: r }; }
     acquire(w, key) {

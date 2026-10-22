@@ -15,7 +15,7 @@ const id = (value) => { ensure(typeof value === 'string' && /^[A-Za-z0-9][A-Za-z
 const owned = (r, pid) => r.projectId === pid || r.kind === 'project' && r.id === pid;
 function rows(db) { return db.prepare('SELECT kind,id,project_id,data FROM records ORDER BY kind,id').all().map(raw => { const value = JSON.parse(String(raw.data)); ensure(value.kind === raw.kind && value.id === raw.id && value.projectId === raw.project_id, 'PURGE_OWNER_INVALID', '记录列与JSON归属不一致'); return { kind: String(raw.kind), id: String(raw.id), projectId: raw.project_id === null ? null : String(raw.project_id), value }; }); }
 function description(paths, key) {
-    ensure(!/\.text-write-(pending|stage-|backup-)/.test(key), 'PURGE_BUSY', '存在未完成文本写入恢复标记');
+    ensure(!/\.text-write-(pending|stage-|backup-)|\.source-prepare-pending/.test(key), 'PURGE_BUSY', '存在未完成工作区文件恢复标记');
     const path = paths.physical('pi-data:/' + key.split('/').map(encodeURIComponent).join('/')), stat = lstatSync(path);
     ensure(!stat.isSymbolicLink() && (stat.isFile() || stat.isDirectory()), 'PURGE_PATH_INVALID', '清理计划仅支持真实目录和普通文件');
     if (stat.isDirectory())
@@ -43,14 +43,18 @@ function description(paths, key) {
 function walk(paths, key) { const entry = description(paths, key); return entry.type === 'file' ? [entry] : [...readdirSync(paths.physical('pi-data:/' + key.split('/').map(encodeURIComponent).join('/'))).sort().flatMap(name => walk(paths, key + '/' + name)), entry]; }
 function references(paths, records) {
     const result = new Set();
-    const visit = (value, key = '') => {
+    const visit = (value, key = '', recordKind = '') => {
         if (Array.isArray(value)) {
             value.forEach(v => visit(v, key));
             return;
         }
         if (value && typeof value === 'object') {
-            for (const [k, v] of Object.entries(value))
+            for (const [k, v] of Object.entries(value)) {
+                // A past command's arguments and cwd describe execution; they do not own resources.
+                if (recordKind === 'host-command' && (k === 'cwd' && typeof v === 'string' || k === 'argv' && Array.isArray(v) && v.every(a => typeof a === 'string')))
+                    continue;
                 visit(v, k);
+            }
             return;
         }
         if (typeof value !== 'string' || !value.startsWith('pi-data:/') && !isAbsolute(value))
@@ -66,7 +70,7 @@ function references(paths, records) {
         ensure(!managed, 'PURGE_UNKNOWN_REFERENCE', '存在未识别字段的旧受管路径引用');
     };
     for (const row of records) {
-        visit(row.value);
+        visit(row.value, '', row.kind);
         if (row.kind === 'skill-package-revision' && Array.isArray(row.value.files))
             for (const raw of row.value.files) {
                 const file = raw;

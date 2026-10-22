@@ -109,6 +109,11 @@ export declare const DISCOVERY_GRANT_SCHEMA: {
                     readonly minLength: number;
                     readonly maxLength: number;
                 };
+                readonly restoreEpoch: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
             };
             readonly required: readonly ["provider", "model", "thinking"];
             readonly additionalProperties: false;
@@ -1326,6 +1331,11 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                         readonly minLength: number;
                         readonly maxLength: number;
                     };
+                    readonly restoreEpoch: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];
                 readonly additionalProperties: false;
@@ -2336,6 +2346,11 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                         readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                         readonly minLength: number;
                         readonly maxLength: number;
+                    };
+                    readonly restoreEpoch: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
                     };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];
@@ -3348,6 +3363,11 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                         readonly minLength: number;
                         readonly maxLength: number;
                     };
+                    readonly restoreEpoch: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
+                    };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];
                 readonly additionalProperties: false;
@@ -4358,6 +4378,11 @@ export declare const DISCOVERY_GRANT_OUTPUT_SCHEMAS: {
                         readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
                         readonly minLength: number;
                         readonly maxLength: number;
+                    };
+                    readonly restoreEpoch: {
+                        readonly type: "integer";
+                        readonly minimum: number;
+                        readonly maximum: number;
                     };
                 };
                 readonly required: readonly ["provider", "model", "thinking"];

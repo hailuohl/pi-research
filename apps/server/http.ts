@@ -3,7 +3,7 @@ import {operationRoute} from './operation-routes.js';
 import {readNativeRoute,writeNativeRoute} from './native-routes.js';
 import {attachmentRoute} from './attachment-routes.js';
 import {writeEnvironment} from './environment-routes.js';
-import {configureModelConnection} from '../../packages/pi-adapter/model-connections.js';
+import {configureModelConnection,bindModelRestoreEpoch} from '../../packages/pi-adapter/model-connections.js';
 import {inspectModelManagement,configureModelManagement,recommendModel,prepareModelSelection} from '../../packages/pi-adapter/model-management.js';
 import {probeModel} from '../../packages/pi-adapter/model-probe.js';
 import http from 'node:http';
@@ -48,7 +48,7 @@ export function createHttpServer(options: ServerOptions) {
                     const native=readNativeRoute(app.nativeRequests,route,url);if(native!==undefined)return json(native);
                     if(route==='/settings/model-management'){ensure(url.search==='','INVALID_INPUT','模型管理目录不接受查询参数',400);return json(await inspectModelManagement(app.context,USER));}
                     if(route==='/settings/model-recommendations'){ensure([...url.searchParams.keys()].every(k=>['provider','model'].includes(k))&&url.searchParams.getAll('provider').length===1&&url.searchParams.getAll('model').length===1,'INVALID_INPUT','推荐只接受一个供应商与模型ID',400);return json(await recommendModel(app.context,USER,text(url.searchParams.get('provider'),'provider',100),text(url.searchParams.get('model'),'model',160)));}
-                    if(route==='/bootstrap'){const view=await inspectModelManagement(app.context,USER),bootstrap=readRoute(app,host,route,url) as Record<string,unknown>;return json({...bootstrap,models:view.providers.filter(p=>p.enabled&&!p.deletedAt&&!p.requiresCredential).flatMap(p=>p.models.filter(m=>m.enabled&&!m.deletedAt).flatMap(m=>m.reasoning.levels.map(l=>({provider:p.provider,model:m.model,thinking:l.id}))))});}
+                    if(route==='/bootstrap'){const view=await inspectModelManagement(app.context,USER),bootstrap=readRoute(app,host,route,url) as Record<string,unknown>;return json({...bootstrap,models:view.providers.filter(p=>p.enabled&&!p.deletedAt&&!p.requiresCredential).flatMap(p=>p.models.filter(m=>m.enabled&&!m.deletedAt).flatMap(m=>m.reasoning.levels.map(l=>({provider:p.provider,model:m.model,thinking:l.id,...(m.restoreEpoch?{restoreEpoch:m.restoreEpoch}:{})}))))});}
                     if(route==='/github/status')return json(await app.github.status({type:'user'}));
                     if(route==='/events/stream'){const query=eventQuery(url,true,req.headers['last-event-id'] as string|undefined);if(query.projectId)app.projects.read(USER,query.projectId);events.open(req,res,query);return;}
                     if (route === '/operations') return json(app.operations.specs());
@@ -119,7 +119,7 @@ export function createHttpServer(options: ServerOptions) {
                         if(projectId)assertProjectWritable(app.store,projectId,lifecycleEpoch);
                         prepared.assertCurrent();const x=object(body);
                         if(route==='/sessions'){const session=app.sessions.createRoot(USER,text(x.projectId,'projectId',100),x,prepared);if(x.reuseSessionId===undefined)app.sessionPermissions.initialize(session.id);return session;}
-                        if(x.clear!==true){const raw=route==='/settings/model'?x:x.model===undefined?prepared.current:object(x.model);const selected:ModelConfig={provider:text(raw.provider,'provider',100),model:text(raw.model,'model',160),thinking:text(raw.thinking??'off','thinking',64)};prepared.resolve(selected);}
+                        if(x.clear!==true){const raw=route==='/settings/model'?x:x.model===undefined?prepared.current:object(x.model);const selected:ModelConfig={provider:text(raw.provider,'provider',100),model:text(raw.model,'model',160),thinking:text(raw.thinking??'off','thinking',64)};prepared.resolve(bindModelRestoreEpoch(app.context.dataDir,selected));}
                         return writeRoute(app,host,route,body,req.method);
                     }));
                 }

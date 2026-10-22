@@ -6,7 +6,7 @@ import { object, text, integer } from '../contracts/validation.js';
 import { userOnly } from '../policy/permissions.js';
 import { digest } from '../storage/store.js';
 import { locatePi, PI_VERSION } from './runtime.js';
-import { readModelState, mutateModelState, parseModelConnection, CONNECTION_APIS, EMPTY_MODEL_CREDENTIALS, modelNeedsCredential, assertModelEnabled } from './model-connections.js';
+import { readModelState, mutateModelState, parseModelConnection, CONNECTION_APIS, EMPTY_MODEL_CREDENTIALS, modelNeedsCredential, assertModelEnabled, assertModelRestoreCurrent } from './model-connections.js';
 import { defaultModelDefinition, validateModelDefinition, effectiveCapabilities, MODEL_OVERRIDE_FIELDS, PI_THINKING } from './model-definition.js';
 export const MODEL_PRESETS = [
     { id: 'openai', name: 'OpenAI', group: '官方服务', providerBrand: 'openai', baseUrl: 'https://api.openai.com/v1', api: 'openai-responses' },
@@ -33,6 +33,7 @@ export async function prepareModelSelection(c) {
             if (!selected.provider && !selected.model)
                 return selected;
             ensure(selected.provider && selected.model, 'MODEL_NOT_CONFIGURED', '请完整配置供应商和模型');
+            assertModelRestoreCurrent(c.dataDir, selected);
             const managed = assertModelEnabled(c.dataDir, { provider: selected.provider, model: selected.model }), known = runtime?.getModel(selected.provider, selected.model), definition = managed ?? (known ? recommendedDefinition(selected.model, known) : undefined);
             if (!definition) {
                 ensure(PI_THINKING.includes(selected.thinking), 'MODEL_REASONING_UNAVAILABLE', '无法解析此模型的思考等级，请在设置中明确配置模型');
@@ -50,7 +51,7 @@ export function availableSelections(c) { const state = readModelState(c.dataDir)
         for (const m of (p.models ?? []).sort((a, b) => a.order - b.order))
             if (!m.deletedAt && m.enabled)
                 for (const level of m.reasoning.levels)
-                    result.push({ provider: p.provider, model: m.model, thinking: level.id }); for (const m of saved) {
+                    result.push({ provider: p.provider, model: m.model, thinking: level.id, ...(m.restoreEpoch ? { restoreEpoch: m.restoreEpoch } : {}) }); for (const m of saved) {
     const p = state.connections.find(p => p.provider === m.provider);
     if (p?.deletedAt || p?.enabled === false || modelNeedsCredential(p) || p?.models?.some(x => x.model === m.model))
         continue;
@@ -102,7 +103,7 @@ export async function inspectModelManagement(c, actor, state = readModelState(c.
     for (const id of [...new Set([...state.connections.map(p => p.provider), ...choices.map(m => m.provider)])]) {
         const stored = state.connections.find(p => p.provider === id), known = runtime?.getModels(id)[0], api = stored?.api ?? (CONNECTION_APIS.includes(known?.api ?? '') ? known.api : 'openai-completions');
         const p = stored ?? { provider: id, name: id, baseUrl: known?.baseUrl ?? '', api, apiKey: '', controlOnly: true, enabled: true, deletedAt: null, order: providers.length, models: [] };
-        const models = (p.models ?? []).map(m => { const { controlOnly, ...saved } = m, v = controlOnly ? { ...recommendedDefinition(m.model, runtime?.getModel(id, m.model)), enabled: m.enabled, deletedAt: m.deletedAt, order: m.order, revision: m.revision } : saved; return { ...v, source: controlOnly ? 'legacy' : 'managed', effectiveCapabilities: effectiveCapabilities(v, p.api), test: probe(c, p, m) }; });
+        const models = (p.models ?? []).map(m => { const { controlOnly, ...saved } = m, v = controlOnly ? { ...recommendedDefinition(m.model, runtime?.getModel(id, m.model)), enabled: m.enabled, deletedAt: m.deletedAt, order: m.order, revision: m.revision, ...(m.restoreEpoch ? { restoreEpoch: m.restoreEpoch } : {}) } : saved; return { ...v, source: controlOnly ? 'legacy' : 'managed', effectiveCapabilities: effectiveCapabilities(v, p.api), test: probe(c, p, m) }; });
         if (!p.models?.length)
             for (const choice of choices.filter(m => m.provider === id)) {
                 const value = recommendedDefinition(choice.model, runtime?.getModel(id, choice.model));
@@ -134,7 +135,7 @@ export async function configureModelManagement(c, actor, value, key) {
     let definition;
     const before = readModelState(c.dataDir);
     const beforeProvider = before.connections.find(p => p.provider === provider);
-    const keys = { 'provider.upsert': ['provider', 'value'], 'provider.enabled': ['provider', 'value'], 'provider.delete': ['provider'], 'providers.reorder': ['value'], 'model.upsert': ['provider', 'model', 'value'], 'model.enabled': ['provider', 'model', 'value'], 'model.delete': ['provider', 'model'], 'models.reorder': ['provider', 'value'] };
+    const keys = { 'provider.upsert': ['provider', 'value'], 'provider.enabled': ['provider', 'value'], 'provider.delete': ['provider'], 'providers.reorder': ['value'], 'model.upsert': ['provider', 'model', 'value'], 'model.enabled': ['provider', 'model', 'value'], 'model.delete': ['provider', 'model'], 'model.restore': ['provider', 'model'], 'models.reorder': ['provider', 'value'] };
     ensure(keys[action] && Object.keys(x).length === keys[action].length + 2 && keys[action].every(k => Object.hasOwn(x, k)), 'INVALID_INPUT', '管理操作字段不匹配', 400);
     if (action === 'model.upsert') {
         ensure(beforeProvider && !beforeProvider.controlOnly, 'MODEL_CONNECTION_REQUIRED', '请先保存供应商连接，再添加或编辑模型');
@@ -160,7 +161,7 @@ export async function configureModelManagement(c, actor, value, key) {
             ensure(!p?.deletedAt, 'MODEL_DELETED', '已删除供应商ID不能重新使用');
             const next = parseModelConnection({ ...v, provider, apiKey: v.apiKey === undefined ? p?.apiKey : v.apiKey });
             for (const m of p?.models ?? []) {
-                const { enabled, deletedAt, order, revision, controlOnly, ...d } = m;
+                const { enabled, deletedAt, order, revision, controlOnly, restoreEpoch, ...d } = m;
                 validateModelDefinition(d, next.api);
             }
             ensure(p || s.connections.length < 20, 'MODEL_CONNECTION_LIMIT', '最多20个供应商');
@@ -216,12 +217,20 @@ export async function configureModelManagement(c, actor, value, key) {
             return;
         }
         let m = p.models.find(m => m.model === model);
+        if (action === 'model.restore') {
+            ensure(m?.deletedAt, 'MODEL_NOT_DELETED', '只能明确恢复已删除的模型', 409);
+            m.deletedAt = null;
+            m.enabled = false;
+            m.revision++;
+            m.restoreEpoch = (m.restoreEpoch ?? 0) + 1;
+            return;
+        }
         ensure(!m?.deletedAt, 'MODEL_DELETED', '已删除模型ID不能重新使用');
         if (action === 'model.upsert') {
             ensure(definition, 'INVALID_INPUT', '缺少模型定义');
             ensure(!defaultInUse() || definition.reasoning.levels.some(l => l.id === current.thinking), 'DEFAULT_MODEL_IN_USE', '请先切换或清空使用旧推理等级的默认模型');
             ensure(m || s.connections.reduce((n, p) => n + (p.models?.length ?? 0), 0) < 100, 'MODEL_LIMIT', '模型目录最多100个模型（包含已删除历史）');
-            const next = { ...definition, enabled: m?.enabled ?? true, deletedAt: null, order: m?.order ?? p.models.length, revision: (m?.revision ?? 0) + 1 };
+            const next = { ...definition, ...(m?.restoreEpoch ? { restoreEpoch: m.restoreEpoch } : {}), enabled: m?.enabled ?? true, deletedAt: null, order: m?.order ?? p.models.length, revision: (m?.revision ?? 0) + 1 };
             p.models = m ? p.models.map(v => v.model === model ? next : v) : [...p.models, next];
             return;
         }

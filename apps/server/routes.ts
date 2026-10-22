@@ -79,6 +79,10 @@ export function readRoute(app: ResearchApp, host: AgentHost, path: string, url: 
             const researchActions=publicationRoot?app.researchActions.list(USER,id,publicationRoot):[];
             const manuscripts=publicationRoot?app.store.db.prepare("SELECT data FROM records WHERE kind='manuscript-revision' AND project_id=? AND json_extract(data,'$.rootSessionId')=? ORDER BY rowid DESC LIMIT 30").all(id,publicationRoot).map(r=>JSON.parse(r.data as string)):[];
             const publicationJobs=publicationRoot?app.store.db.prepare("SELECT id FROM records WHERE kind='publication-build-job' AND project_id=? AND json_extract(data,'$.revisionId') IN (SELECT id FROM records WHERE kind='manuscript-revision' AND project_id=? AND json_extract(data,'$.rootSessionId')=?) ORDER BY rowid DESC LIMIT 30").all(id,id,publicationRoot).map(r=>app.publicationBuilds.inspect(USER,id,String(r.id))):[];
+            for(const job of publicationJobs)if(!manuscripts.some(r=>r.id===job.revisionId)){
+                const revision=app.store.get<import('../../packages/publications/build-types.js').ManuscriptRevision>('manuscript-revision',job.revisionId,id);
+                ensure(revision.rootSessionId===publicationRoot,'SCOPE_DENIED','文稿不属于所选主会话',403);manuscripts.push(revision);
+            }
             const publicationReviews=publicationRoot?app.store.db.prepare("SELECT id FROM records WHERE kind='publication-review' AND project_id=? AND json_extract(data,'$.rootSessionId')=? ORDER BY rowid DESC LIMIT 30").all(id,publicationRoot).map(r=>app.publicationReviews.inspect(USER,id,String(r.id))):[];
             const reports=app.store.list<{bindings?:{publications?:Array<{resultId:string}>}}>('report',id).map(r=>({...r,publicationResultIds:r.bindings?.publications?.map(p=>p.resultId)??[]}));
             const publicationResultIds=new Set(publicationJobs.flatMap(j=>j.resultId?[j.resultId]:[])),publicationReportIds=new Set(reports.filter(r=>r.publicationResultIds.some(resultId=>publicationResultIds.has(resultId))).map(r=>r.id));

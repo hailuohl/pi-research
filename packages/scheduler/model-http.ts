@@ -1,6 +1,6 @@
 import type {Store} from '../storage/store.js';
 import {recoverOwnerNativeHttp} from '../pi-adapter/native-http.js';
-import {assertModelEnabled} from '../pi-adapter/model-connections.js';
+import {assertModelEnabled,assertModelRestoreCurrent} from '../pi-adapter/model-connections.js';
 import {digest,now} from '../storage/store.js';
 import type {Actor,Row,Session} from '../domain/types.js';
 import type {AgentAdmission} from './agent-admission.js';
@@ -22,7 +22,7 @@ export class ModelHttpService {
  constructor(private store:Store){store.transaction(()=>{store.db.exec("CREATE INDEX IF NOT EXISTS model_http_state ON records(kind,json_extract(data,'$.state')) WHERE kind='model-http-request'");if(!store.maybe('model-http-capacity','global'))store.create('model-http-capacity',null,{maxRequests:null},'global');});}
  private live(){return this.store.db.prepare("SELECT rowid,data FROM records WHERE kind='model-http-request' AND json_extract(data,'$.state') IN ('queued','active','unknown') ORDER BY rowid").all().map(r=>({sequence:Number(r.rowid),...JSON.parse(r.data as string) as Row<HttpRequest>}));}
  private legacy(){return Number(this.store.db.prepare("SELECT count(*) n FROM records WHERE kind='agent-admission' AND json_extract(data,'$.state')<>'released' AND COALESCE(json_extract(data,'$.httpManagedVersion'),0)<>1").get()!.n);}
- private current(w:ModelHttpIdentity){const a=this.store.get<AgentAdmission>('agent-admission',w.admissionId),s=this.store.get<Session>('session',w.sessionId,a.projectId!);ensure(a.ownerHost===w.ownerHost&&a.sessionId===s.id&&a.generation===w.generation&&a.httpManagedVersion===1&&a.state==='running'&&a.leaseUntil>Date.now()&&s.state==='running'&&s.generation===w.generation&&s.leaseUntil>Date.now(),'MODEL_HTTP_SCOPE_EXPIRED','模型HTTP请求的原会话或Worker租约已失效');assertProjectWritable(this.store,s.projectId!);return s;}
+ private current(w:ModelHttpIdentity){const a=this.store.get<AgentAdmission>('agent-admission',w.admissionId),s=this.store.get<Session>('session',w.sessionId,a.projectId!);ensure(a.ownerHost===w.ownerHost&&a.sessionId===s.id&&a.generation===w.generation&&a.httpManagedVersion===1&&a.state==='running'&&a.leaseUntil>Date.now()&&s.state==='running'&&s.generation===w.generation&&s.leaseUntil>Date.now(),'MODEL_HTTP_SCOPE_EXPIRED','模型HTTP请求的原会话或Worker租约已失效');assertProjectWritable(this.store,s.projectId!);assertModelRestoreCurrent(this.store.paths.dataDir,s.model);return s;}
  private owned(w:ModelHttpIdentity,key:string){const id=digest({admissionId:w.admissionId,key:text(key,'requestKey',100)}),r=this.store.maybe<HttpRequest>('model-http-request',id);if(r)ensure(identityKeys.every(k=>r[k]===w[k]),'MODEL_HTTP_SCOPE_DENIED','请求不属于原Worker');return {id,row:r};}
  acquire(w:ModelHttpIdentity,key:string):{allowed:boolean;requestId:string} {return this.store.transaction(()=>{
   const session=this.current(w),prior=this.owned(w,key);let r=prior.row;

@@ -1,7 +1,7 @@
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 import * as React from "react";
 import { Icon } from "./ui.js";
-const key = (model) => JSON.stringify(model ? [model.provider, model.model, model.thinking] : null);
+const key = (model) => JSON.stringify(model ? [model.provider, model.model, model.thinking, model.restoreEpoch ?? 0] : null);
 class ComposerModelMenu extends React.Component {
   constructor() {
     super(...arguments);
@@ -11,7 +11,7 @@ class ComposerModelMenu extends React.Component {
     this.menu = React.createRef();
     this.range = React.createRef();
     this.models = () => this.props.management?.providers.filter((p) => p.enabled && !p.deletedAt && !p.requiresCredential).flatMap((provider) => provider.models.filter((m) => m.enabled && !m.deletedAt).map((model) => ({ provider, model }))) ?? [];
-    this.selected = () => this.models().find((row) => row.provider.provider === this.props.current?.provider && row.model.model === this.props.current?.model);
+    this.selected = () => this.models().find((row) => row.provider.provider === this.props.current?.provider && row.model.model === this.props.current?.model && (row.model.restoreEpoch ?? 0) === (this.props.current?.restoreEpoch ?? 0));
     this.unavailable = () => !this.props.management || !!this.props.error;
     this.blocked = () => !this.alive || this.props.disabled || this.props.locked || this.props.busy || this.state.saving || !!this.pending || this.unavailable();
     this.position = () => {
@@ -48,7 +48,7 @@ class ComposerModelMenu extends React.Component {
       items[next].focus({ preventScroll: true });
     };
     this.choose = async (model) => {
-      if (this.blocked() || !this.models().some((row) => row.provider.provider === model.provider && row.model.model === model.model && row.model.reasoning.levels.some((level) => level.id === model.thinking))) return;
+      if (this.blocked() || !this.models().some((row) => row.provider.provider === model.provider && row.model.model === model.model && (row.model.restoreEpoch ?? 0) === (model.restoreEpoch ?? 0) && row.model.reasoning.levels.some((level) => level.id === model.thinking))) return;
       this.pointerStart = void 0;
       this.setState({ modelsOpen: false, error: "", pointer: false, dragging: false });
       if (key(model) === key(this.props.current)) {
@@ -85,7 +85,7 @@ class ComposerModelMenu extends React.Component {
       const thinking = same && levels.some((level) => level.id === current.thinking) ? current.thinking : row.model.reasoning.defaultLevel;
       if (levels.some((level) => level.id === thinking)) {
         this.resetPreview();
-        return this.choose({ provider, model, thinking });
+        return this.choose({ provider, model, thinking, ...row.model.restoreEpoch ? { restoreEpoch: row.model.restoreEpoch } : {} });
       }
     };
     this.preview = (value) => {
@@ -99,7 +99,7 @@ class ComposerModelMenu extends React.Component {
       const row = this.selected(), index = this.state.preview;
       if (!row || index === null) return;
       const level = row.model.reasoning.levels[Math.round(index)];
-      if (level) return this.choose({ provider: row.provider.provider, model: row.model.model, thinking: level.id });
+      if (level) return this.choose({ provider: row.provider.provider, model: row.model.model, thinking: level.id, ...row.model.restoreEpoch ? { restoreEpoch: row.model.restoreEpoch } : {} });
     };
     this.pointerDown = (event) => {
       if (this.blocked() || event.button !== 0) return;
@@ -159,7 +159,7 @@ class ComposerModelMenu extends React.Component {
     if (currentChanged) this.confirmedSelection = void 0;
     if (previous.management !== this.props.management && this.state.open) {
       const target = this.pending?.selection ?? this.props.current;
-      if (target && !this.models().some((row) => row.provider.provider === target.provider && row.model.model === target.model && row.model.reasoning.levels.some((level) => level.id === target.thinking))) this.close();
+      if (target && !this.models().some((row) => row.provider.provider === target.provider && row.model.model === target.model && (row.model.restoreEpoch ?? 0) === (target.restoreEpoch ?? 0) && row.model.reasoning.levels.some((level) => level.id === target.thinking))) this.close();
       const old = previous.management?.providers.find((p) => p.provider === this.props.current?.provider)?.models.find((m) => m.model === this.props.current?.model);
       if (JSON.stringify(old?.reasoning.levels.map((level) => level.id)) !== JSON.stringify(this.selected()?.model.reasoning.levels.map((level) => level.id))) this.resetPreview();
     }
@@ -216,14 +216,14 @@ class ComposerModelMenu extends React.Component {
           ] }) }),
           !valid ? /* @__PURE__ */ jsx("p", { className: "composer-model-error", role: "status", children: "\u5F53\u524D\u6A21\u578B\u6216\u601D\u8003\u7B49\u7EA7\u4E0D\u53EF\u7528\uFF0C\u8BF7\u660E\u786E\u9009\u62E9\u5DF2\u914D\u7F6E\u6A21\u578B\u3002" }) : null
         ] }),
-        /* @__PURE__ */ jsx("div", { id: id + "-models", className: "composer-model-models-view", "data-expanded": this.state.modelsOpen, inert: !this.state.modelsOpen, "aria-hidden": !this.state.modelsOpen, children: /* @__PURE__ */ jsx("div", { role: "group", "aria-label": "\u5DF2\u914D\u7F6E\u6A21\u578B", children: models.map((row) => /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": current?.provider === row.provider.provider && current.model === row.model.model, disabled: blocked || !row.model.reasoning.levels.some((level2) => level2.id === row.model.reasoning.defaultLevel), className: "composer-model-option", onClick: () => {
+        /* @__PURE__ */ jsx("div", { id: id + "-models", className: "composer-model-models-view", "data-expanded": this.state.modelsOpen, inert: !this.state.modelsOpen, "aria-hidden": !this.state.modelsOpen, children: /* @__PURE__ */ jsx("div", { role: "group", "aria-label": "\u5DF2\u914D\u7F6E\u6A21\u578B", children: models.map((row) => /* @__PURE__ */ jsxs("button", { type: "button", role: "menuitemradio", "aria-checked": current?.provider === row.provider.provider && current.model === row.model.model && (current.restoreEpoch ?? 0) === (row.model.restoreEpoch ?? 0), disabled: blocked || !row.model.reasoning.levels.some((level2) => level2.id === row.model.reasoning.defaultLevel), className: "composer-model-option", onClick: () => {
           if (scope()) void this.chooseModel(row.provider.provider, row.model.model);
         }, children: [
           /* @__PURE__ */ jsxs("span", { children: [
             /* @__PURE__ */ jsx("strong", { children: row.model.name }),
             /* @__PURE__ */ jsx("small", { children: row.provider.name })
           ] }),
-          current?.provider === row.provider.provider && current.model === row.model.model ? /* @__PURE__ */ jsx(Icon, { name: "check", size: 15 }) : null
+          current?.provider === row.provider.provider && current.model === row.model.model && (current.restoreEpoch ?? 0) === (row.model.restoreEpoch ?? 0) ? /* @__PURE__ */ jsx(Icon, { name: "check", size: 15 }) : null
         ] }, JSON.stringify([row.provider.provider, row.model.model]))) }) }),
         /* @__PURE__ */ jsx("p", { className: "composer-model-status " + (error ? "composer-model-error" : "composer-model-note"), role: error ? "alert" : "status", "aria-live": "polite", children: this.state.saving ? "\u6B63\u5728\u4FDD\u5B58\u2026" : error || (!models.length ? "\u8FD8\u6CA1\u6709\u53EF\u7528\u6A21\u578B\uFF0C\u8BF7\u5148\u5728\u8BBE\u7F6E\u4E2D\u6DFB\u52A0\u3002" : "\xA0") })
       ] })

@@ -15,7 +15,7 @@ import {environmentSecrets} from '../runtime/environment.js';
 import {modelCatalog} from './model-management.js';
 import {locatePi,PI_VERSION} from './runtime.js';
 import {resolvedThinking} from './model-definition.js';
-import {modelConnectionSnapshot,readModelState,assertModelEnabled,type ModelConnection,type StoredModel} from './model-connections.js';
+import {modelConnectionSnapshot,readModelState,assertModelEnabled,assertModelRestoreCurrent,type ModelConnection,type StoredModel} from './model-connections.js';
 import {publicationImageCatalog} from './publication-image.js';
 import {nativeAvailability,nativeEndpoint,nativeRequestBody,NATIVE_FILE_BYTES,NATIVE_RESPONSE_BYTES,type NativeFile} from './native-protocol.js';
 import {acquireOwnerNativeHttp,finishOwnerNativeHttp,recoverOwnerNativeHttp,type OwnerNativeHttpIdentity} from './native-http.js';
@@ -46,11 +46,12 @@ export class NativeRequestService {
  constructor(private app:ResearchApp,private fetcher:typeof fetch=globalThis.fetch){recoverOwnerNativeHttp(app.store);}
  private owner(actor:Actor,sessionId:string,write=true){userOnly(actor);ensure(!actor.taskId&&!actor.wakeupId&&!actor.attemptId&&!actor.sessionId,'NATIVE_OWNER_REQUIRED','原生外发仅接受未绑定任务的本机用户操作',403);const session=this.app.sessions.get(actor,sessionId);scope(actor,session.projectId!);if(write){assertProjectWritable(this.app.store,session.projectId!);ensure(session.role==='coordinator'&&!session.teamId&&!session.taskId&&session.state!=='archived','NATIVE_SCOPE_DENIED','原生外发仅支持未归档的交互主会话',403);}return session;}
  private selected(session:Row<Session>):Captured {
+  assertModelRestoreCurrent(this.app.context.dataDir,session.model);
   const snap=modelConnectionSnapshot(this.app.context.dataDir,session.model.provider),connection=snap.connection;
   ensure(connection&&!connection.controlOnly&&!connection.deletedAt&&connection.enabled!==false,'NATIVE_MANAGED_MODEL_REQUIRED','请先保存并启用模型连接与完整模型定义',409);
   const definition=assertModelEnabled(this.app.context.dataDir,session.model,connection);ensure(definition,'NATIVE_MANAGED_MODEL_REQUIRED','原生外发需要页面保存的完整模型定义',409);
   const permission=this.app.sessionPermissions.capture(session.id);ensure(permission.mode!=='readOnly','SESSION_READ_ONLY','只读会话不能外发原件或原生联网请求',403);
-  const model={provider:session.model.provider,model:session.model.model,thinking:session.model.thinking};
+  const model={...session.model};
   const {name,order,revision,configuration,...metadata}=definition;
   return {connection,definition,model,permission,metadataDigest:digest(metadata),catalogFingerprint:publicationImageCatalog(join(this.app.context.dataDir,'models.json'),snap.catalog),credentialRevision:connection.credentialRevision??1,managementVersion:snap.version};
  }

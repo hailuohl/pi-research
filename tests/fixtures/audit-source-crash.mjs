@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import {basename,join} from 'node:path';
+import {syncBuiltinESMExports} from 'node:module';
+const [data,point]=process.argv.slice(2);
+const rename=fs.renameSync;let armed=false,workspace;
+const rmdir=fs.rmdirSync;
+fs.rmdirSync=path=>{if(armed&&point==='after-commit'&&path.startsWith(workspace+'-empty-'))process.exit(86);return rmdir(path);};
+fs.renameSync=(from,to)=>{
+ if(armed&&point==='before-swap'&&from===workspace)process.exit(86);
+ rename(from,to);
+ if(armed&&point==='after-empty'&&from===workspace)process.exit(86);
+ if(armed&&point==='after-install'&&basename(from).startsWith('source-')&&to===workspace)process.exit(86);
+ if(armed&&point==='after-modes'&&to===workspace+'.source-modes.json')process.exit(86);
+};
+syncBuiltinESMExports();
+const {ResearchApp}=await import('../../dist/packages/research-app.js'),USER={type:'user'};
+const app=new ResearchApp(data,process.cwd()),p=app.projects.create(USER,{name:'Source crash recovery',template:'curve-fit'}),s=app.sessions.create(USER,p.id,{}),e=app.experiments.create(USER,p.id,{title:'Baseline'});
+workspace=app.store.paths.physical(s.workspace);
+fs.writeFileSync(join(data,'test-source.json'),JSON.stringify({projectId:p.id,sessionId:s.id,experimentId:e.id,workspace}));
+armed=true;app.sources.prepare(USER,p.id,s.id,{experimentId:e.id,revision:1});
+throw Error('Crash injection did not fire');

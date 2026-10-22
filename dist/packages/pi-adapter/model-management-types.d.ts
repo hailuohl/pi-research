@@ -57,6 +57,7 @@ export interface EffectiveCapability {
     reason: string;
 }
 export interface ManagedModel extends ModelDefinitionInput {
+    restoreEpoch?: number;
     enabled: boolean;
     deletedAt: string | null;
     order: number;
@@ -146,6 +147,11 @@ export type ModelManagementCommand = {
 } | {
     expectedVersion: number;
     action: 'model.delete';
+    provider: string;
+    model: string;
+} | {
+    expectedVersion: number;
+    action: 'model.restore';
     provider: string;
     model: string;
 } | {
