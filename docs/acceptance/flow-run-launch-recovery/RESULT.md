@@ -20,3 +20,7 @@
 - 全量回归、干净构建和独立复核：最终状态见 evidence.json。
 
 原始日志留在本机 .validation/runtime-reliability-20261022-5tTfrI/，不提交运行数据或大份日志。未运行真实 Pi、Docker、SSH 或 DFT；本批不需要这些后端。
+
+最终验收：工作区全量 2398 项（2371 通过、27 跳过），仅本次改动的交付副本 2226 项（2199 通过、27 跳过），均 0 失败/取消。跳过项为 Docker/隔离 LaTeX 环境及 POSIX/Linux 平台检查，不计为通过。交付副本从空 dist 构建通过，复用当前固定版本依赖；未重新 npm ci。独立 Astra 复核无阻断，审代码哈希未变。
+
+沿用 implementation/pr01-reproducible-baseline；本批仅提交修复、相关测试、对应构建产物及本记录。运行中的服务未重启。

@@ -315,17 +315,24 @@ export class RunService {
             return;
         const run = this.c.store.get('run', id);
         this.launching.add(run.id);
-        const logDir = join(this.c.dataDir, 'jobs', run.id, 'control');
-        mkdirSync(logDir, { recursive: true, mode: 0o700 });
-        const fd = openSync(join(logDir, 'supervisor.log'), 'a', 0o600);
         try {
-            const env = Object.fromEntries(['PATH', 'SystemRoot', 'WINDIR', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'ProgramData', 'ProgramFiles'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
-            const child = spawn(process.execPath, [join(this.c.repoRoot, 'dist', 'apps', 'runner-supervisor', 'index.js'), this.c.dataDir, this.c.repoRoot, run.id], { detached: true, stdio: ['ignore', fd, fd], env, windowsHide: true });
-            child.on('error', () => { this.launching.delete(run.id); });
-            child.unref();
+            const logDir = join(this.c.dataDir, 'jobs', run.id, 'control');
+            mkdirSync(logDir, { recursive: true, mode: 0o700 });
+            const fd = openSync(join(logDir, 'supervisor.log'), 'a', 0o600);
+            try {
+                const env = Object.fromEntries(['PATH', 'SystemRoot', 'WINDIR', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'ProgramData', 'ProgramFiles'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
+                const child = spawn(process.execPath, [join(this.c.repoRoot, 'dist', 'apps', 'runner-supervisor', 'index.js'), this.c.dataDir, this.c.repoRoot, run.id], { detached: true, stdio: ['ignore', fd, fd], env, windowsHide: true });
+                child.on('error', () => { this.launching.delete(run.id); });
+                child.unref();
+            }
+            finally {
+                closeSync(fd);
+            }
         }
-        finally {
-            closeSync(fd);
+        catch (error) {
+            this.launching.delete(run.id);
+            this.c.store.event(run.projectId, 'run.launch_failed', { runId: run.id, code: error.code ?? 'RUN_LAUNCH_FAILED', retryable: true });
+            throw error;
         }
         setTimeout(() => this.launching.delete(run.id), 2000).unref();
     }
