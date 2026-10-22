@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 9,
+  "revision": 11,
   "planId": "general-research-product-five-day-v3",
-  "updatedAt": "2026-10-22T08:39:58.015Z",
+  "updatedAt": "2026-10-22T10:09:51.335Z",
   "updatedBy": "Codex",
   "project": "研舟π / pi-research",
   "planStatus": "in_progress",
@@ -24,9 +24,8 @@
     "D4",
     "D5"
   ],
-  "nextTaskId": "D3",
-  "lastCompletedTaskId": "D2",
-  "activeBatch": null,
+  "nextTaskId": "D4",
+  "lastCompletedTaskId": "D3",
   "allowedStatuses": [
     "not_started",
     "in_progress",
@@ -144,7 +143,7 @@
     {
       "id": "D3",
       "title": "验证证据与被验证快照绑定",
-      "status": "not_started",
+      "status": "done",
       "priority": "P0",
       "day": "Day 3",
       "dependsOn": [
@@ -156,24 +155,103 @@
         "D3.3",
         "D3.4"
       ],
-      "owner": null,
-      "startedAt": null,
-      "completedAt": null,
-      "evidenceRefs": [],
+      "owner": "Codex",
+      "startedAt": "2026-10-22T09:25:22.550Z",
+      "completedAt": "2026-10-22T10:09:51.335Z",
+      "evidenceRefs": [
+        "docs/acceptance/flow-validation-evidence-20261022/RESULT.md",
+        "docs/acceptance/flow-validation-evidence-20261022/EVIDENCE.json"
+      ],
       "verification": {
-        "status": "not_run",
-        "checks": []
+        "status": "pass",
+        "checks": [
+          {
+            "name": "workspace-typecheck",
+            "status": "pass",
+            "exitCode": 0
+          },
+          {
+            "name": "frozen-impact-regression",
+            "status": "pass",
+            "tests": 1072,
+            "pass": 1068,
+            "fail": 0,
+            "skip": 4,
+            "exitCode": 0
+          },
+          {
+            "name": "review-fix-regressions",
+            "status": "pass",
+            "tests": 50,
+            "pass": 50,
+            "fail": 0,
+            "skip": 0,
+            "exitCode": 0
+          },
+          {
+            "name": "clean-scoped-build-and-typecheck",
+            "status": "pass",
+            "exitCode": 0
+          },
+          {
+            "name": "clean-scoped-targeted",
+            "status": "pass",
+            "tests": 49,
+            "pass": 49,
+            "fail": 0,
+            "skip": 0,
+            "exitCode": 0
+          },
+          {
+            "name": "clean-scoped-all-frontend-and-direct-unit-impact",
+            "status": "pass",
+            "tests": 676,
+            "pass": 675,
+            "fail": 0,
+            "skip": 1,
+            "exitCode": 0
+          },
+          {
+            "name": "real-browser",
+            "status": "pass"
+          },
+          {
+            "name": "historical-full-regression-reuse",
+            "status": "reused",
+            "tests": 2411,
+            "pass": 2384,
+            "fail": 0,
+            "skip": 27
+          }
+        ]
       },
       "review": {
-        "status": "not_run",
-        "reviewer": null,
-        "snapshot": null,
+        "status": "pass",
+        "reviewer": "independent gpt-6-astra / xhigh requested; runtime not echoed",
+        "snapshot": {
+          "head": "b88824498312a7c72075054c2e2fa871bea9fd51",
+          "root": "D:\\项目\\pi research\\pi-research",
+          "files": {
+            "apps/server/routes.ts": "afd95d7f8fb4277bcce478bf6a1e7b4a8e4a492836a378b9968283971e50ae60",
+            "apps/web/src/app.tsx": "68db53fce1f44aead13ab98fa5eac97d81d6c86dae32cdbab45ed464c34bd76a",
+            "apps/web/src/chat-workflows.tsx": "5a4738a293cf73ad7765a016a79025b88dcf2abeb6e61f90a7a0f07d937950d1",
+            "apps/web/src/models.ts": "db6c3a73bb3d54bcc1ca5cccb78f6da3974a261004e168a15b10d8bfe0095552",
+            "apps/web/src/task-summary-model.ts": "74b46d32563843860e397873ccbcc9b81a2697eba4ad10ba1e6124d0f73047e9",
+            "apps/web/src/workbench.tsx": "92fec9804c9840312072988e1e4065f848c8806b7832116f6d5314a1ce648b58",
+            "packages/evidence/validation.ts": "b722753e3ce254ff37bfe14a8f887c3b237af82984b6d47b809590a2f9e2a53c",
+            "tests/unit/project-loading-ui.test.mjs": "b60eda64a4fc0dac7ae15a37c9a84960f58b58ab7760558abb2840d3b285189f",
+            "tests/unit/research-brief-ui.test.mjs": "fa9886125f99ff6c48a651549f44a580def7aa692fd69bf8b236033a43c5eb0c",
+            "tests/unit/task-summary-model.test.mjs": "61979d113013fc0408fd75e9b9878037dcacf451d3770eadd67a551b9376cbdb",
+            "tests/unit/validation-read.test.mjs": "23d81613b0e97cadb015d2180a294606ace8db2a35fc3dc4bfe85bdd66c6290c"
+          },
+          "checkedAt": "2026-10-22T09:59:41.625Z"
+        },
         "blockingFindings": []
       },
-      "implementationCommit": null,
-      "remoteStatus": "not_attempted",
+      "implementationCommit": "4a9b4abbbd9331984a5eec9d20ef13f1fb0fb947",
+      "remoteStatus": "synced",
       "blockers": [],
-      "nextAction": "先审计已有验证、Review、操作回执与产物；只补当前证据绑定和状态失效的真实缺口。"
+      "nextAction": "D3 accepted. Continue D4 by observing original pending/unknown operations and existing idempotency before adding a bounded recovery slice."
     },
     {
       "id": "D4",
@@ -499,5 +577,6 @@
         ]
       }
     ]
-  }
+  },
+  "activeBatch": null
 }

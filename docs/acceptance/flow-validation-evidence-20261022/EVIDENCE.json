@@ -1,0 +1,366 @@
+{
+  "taskId": "D3",
+  "batch": "flow-validation-evidence-20261022",
+  "status": "accepted",
+  "base": "b88824498312a7c72075054c2e2fa871bea9fd51",
+  "implementationCommit": "4a9b4abbbd9331984a5eec9d20ef13f1fb0fb947",
+  "branch": "implementation/pr01-reproducible-baseline",
+  "remoteStatus": "synced",
+  "repository": "https://github.com/hailuohl/pi-research",
+  "repositoryVisibility": "private",
+  "checkedAt": "2026-10-22T10:09:51.335Z",
+  "scope": "Selected original Run/development job receipt -> explicit read-only applicability observation -> stale/unknown -> reopen original history",
+  "checks": [
+    {
+      "name": "workspace-typecheck",
+      "command": "npm run typecheck",
+      "status": "pass",
+      "exitCode": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "name": "frozen-impact-regression",
+      "command": "node run-regression.mjs (66 unit files + all 92 integration files, sequential)",
+      "status": "pass",
+      "tests": 1072,
+      "pass": 1068,
+      "fail": 0,
+      "skip": 4,
+      "cancelled": 0,
+      "exitCode": 0,
+      "snapshot": "review-snapshot.json",
+      "log": "regression.log",
+      "note": "Before the four-file independent-review repair; final differences supplemented below."
+    },
+    {
+      "name": "review-fix-regressions",
+      "command": "node --test --test-concurrency=1 tests/unit/validation-read.test.mjs tests/unit/research-brief-ui.test.mjs tests/unit/task-summary-model.test.mjs tests/unit/project-loading-ui.test.mjs",
+      "status": "pass",
+      "tests": 50,
+      "pass": 50,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "exitCode": 0,
+      "log": "affected-green.log",
+      "note": "All three reviewer blockers reproduced before repair in affected-red.log; final affected-repo built successfully."
+    },
+    {
+      "name": "clean-scoped-build-and-typecheck",
+      "command": "npm run build; npm run typecheck",
+      "status": "pass",
+      "exitCode": 0,
+      "snapshot": "HEAD b888244 plus only staged D3 source/tests",
+      "logs": [
+        "delivery-build.log",
+        "delivery-typecheck.log"
+      ]
+    },
+    {
+      "name": "clean-scoped-targeted",
+      "command": "same four targeted test files in delivery-repo",
+      "status": "pass",
+      "tests": 49,
+      "pass": 49,
+      "fail": 0,
+      "skip": 0,
+      "cancelled": 0,
+      "exitCode": 0,
+      "log": "delivery-targeted.log",
+      "note": "One unrelated preexisting processingNotice test excluded from delivery."
+    },
+    {
+      "name": "clean-scoped-all-frontend-and-direct-unit-impact",
+      "command": "node delivery-frontend.mjs (all 66 selected unit files)",
+      "status": "pass",
+      "tests": 676,
+      "pass": 675,
+      "fail": 0,
+      "skip": 1,
+      "cancelled": 0,
+      "exitCode": 0,
+      "log": "delivery-frontend.log"
+    },
+    {
+      "name": "real-browser",
+      "status": "pass",
+      "environment": "Native browser, isolated local server and database, real trusted Node numerical Run; no remote model call",
+      "cases": [
+        "manual original receipt pass/current",
+        "source edit pass/stale",
+        "CAS bytes corrupt fail/unknown",
+        "quiet state failure keeps history and withdraws current",
+        "pending retry hides old pass",
+        "successful GET plus failed final refresh stays unknown",
+        "validation GET failure stays unknown",
+        "project switch fences delayed response",
+        "actual close/reopen retains IDs with unchecked current and no new operations",
+        "final fixed snapshot current/stale/read-failure/reopen smoke"
+      ],
+      "finalReadCountBeforeReopen": 5,
+      "finalReadCountAfterReopen": 5,
+      "finalRunCount": 1,
+      "finalIntentCount": 1,
+      "ownServerStopped": true
+    },
+    {
+      "name": "historical-full-regression-reuse",
+      "status": "reused",
+      "tests": 2411,
+      "pass": 2384,
+      "fail": 0,
+      "skip": 27,
+      "source": "docs/acceptance/flow-task-summary-20261022/EVIDENCE.json",
+      "unchangedSourceFiles": 3370,
+      "unchangedSourceTreeSha256": "e36b66afa62dabf099ac080f2084de65f79d9caf1c2699a6024db241b71c86a7",
+      "note": "Not a newly run whole-repository D3 test. The 3370 unaffected source/test/support files match D2 final-repo exactly; D3 changed surfaces have fresh impact checks."
+    }
+  ],
+  "review": {
+    "status": "pass",
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoningEffort": "xhigh",
+    "runtimeConfiguration": "requested, not echoed by tool",
+    "snapshot": {
+      "head": "b88824498312a7c72075054c2e2fa871bea9fd51",
+      "root": "D:\\项目\\pi research\\pi-research",
+      "files": {
+        "apps/server/routes.ts": "afd95d7f8fb4277bcce478bf6a1e7b4a8e4a492836a378b9968283971e50ae60",
+        "apps/web/src/app.tsx": "68db53fce1f44aead13ab98fa5eac97d81d6c86dae32cdbab45ed464c34bd76a",
+        "apps/web/src/chat-workflows.tsx": "5a4738a293cf73ad7765a016a79025b88dcf2abeb6e61f90a7a0f07d937950d1",
+        "apps/web/src/models.ts": "db6c3a73bb3d54bcc1ca5cccb78f6da3974a261004e168a15b10d8bfe0095552",
+        "apps/web/src/task-summary-model.ts": "74b46d32563843860e397873ccbcc9b81a2697eba4ad10ba1e6124d0f73047e9",
+        "apps/web/src/workbench.tsx": "92fec9804c9840312072988e1e4065f848c8806b7832116f6d5314a1ce648b58",
+        "packages/evidence/validation.ts": "b722753e3ce254ff37bfe14a8f887c3b237af82984b6d47b809590a2f9e2a53c",
+        "tests/unit/project-loading-ui.test.mjs": "b60eda64a4fc0dac7ae15a37c9a84960f58b58ab7760558abb2840d3b285189f",
+        "tests/unit/research-brief-ui.test.mjs": "fa9886125f99ff6c48a651549f44a580def7aa692fd69bf8b236033a43c5eb0c",
+        "tests/unit/task-summary-model.test.mjs": "61979d113013fc0408fd75e9b9878037dcacf451d3770eadd67a551b9376cbdb",
+        "tests/unit/validation-read.test.mjs": "23d81613b0e97cadb015d2180a294606ace8db2a35fc3dc4bfe85bdd66c6290c"
+      },
+      "checkedAt": "2026-10-22T09:59:41.625Z"
+    },
+    "initialBlockingFindings": 3,
+    "remainingBlockingFindings": 0,
+    "remainingNonBlockingFindings": 0,
+    "rechecked": "Only the three repaired blockers: research source approval, permanent RunGrant identity, final-refresh known stale fencing."
+  },
+  "sourceFiles": [
+    "apps/server/routes.ts",
+    "apps/web/src/app.tsx",
+    "apps/web/src/chat-workflows.tsx",
+    "apps/web/src/models.ts",
+    "apps/web/src/task-summary-model.ts",
+    "apps/web/src/workbench.tsx",
+    "packages/evidence/validation.ts",
+    "tests/unit/project-loading-ui.test.mjs",
+    "tests/unit/research-brief-ui.test.mjs",
+    "tests/unit/task-summary-model.test.mjs",
+    "tests/unit/validation-read.test.mjs"
+  ],
+  "generatedFiles": [
+    "dist/apps/server/routes.js",
+    "dist/apps/server/routes.js.map",
+    "dist/packages/evidence/validation.d.ts",
+    "dist/packages/evidence/validation.js",
+    "dist/packages/evidence/validation.js.map",
+    "dist/web/assets/app.js",
+    "dist/web/assets/chat-workflows.js",
+    "dist/web/assets/main.js",
+    "dist/web/assets/task-summary-model.js",
+    "dist/web/assets/workbench.js"
+  ],
+  "deliveryVerification": {
+    "stagedTree": "a79bb00929a663c1aa766cc1c5eaf9660f6d9f0f",
+    "sourceComparedAfterCRLFNormalization": true,
+    "generatedComparedByteForByte": true,
+    "preexistingProcessingNoticeExcluded": true
+  },
+  "knownLimits": [
+    "Applicability is a bounded file-read observation at checkedAt, not a cross-file atomic snapshot or persistent certification.",
+    "Real Docker/SSH/remote Pi and mobile/browser matrix not newly tested; Development strict archive checks use controlled fixtures.",
+    "Standard test counts are absent from generic original receipts and display as 未提供.",
+    "Whole-repository regression was not rerun for D3; unchanged D2 evidence is explicitly reused.",
+    "Preexisting worktree dist files were retained. Only the three new D3 module outputs were added; all committed outputs come from the clean scoped delivery build."
+  ],
+  "failedCheckClassification": [
+    {
+      "check": "final browser first delayed assertion",
+      "cause": "Observation was cleared by a later ordinary project refresh before assertion; immediate post-click read passed. Product intentionally invalidates on new data.",
+      "productChange": false
+    },
+    {
+      "check": "staged source byte equality",
+      "cause": "Windows core.autocrlf; LF-normalized sources match and generated bytes match exactly.",
+      "productChange": false
+    },
+    {
+      "check": "final workspace typecheck before new generated module was present",
+      "exitCode": 2,
+      "cause": "TS2307: web models import ../../../dist/packages/evidence/validation.js; original dist deliberately retained, so the new module was absent.",
+      "resolution": "Added only the three previously absent, tested D3 module outputs; no existing dist file overwritten. Final npm run typecheck exit 0.",
+      "log": "workspace-typecheck-before-new-artifacts.log"
+    }
+  ],
+  "localEvidenceRoot": "D:\\项目\\pi research\\tmp\\validation-evidence-20261022-Jm4sPG",
+  "artifacts": [
+    {
+      "path": "typecheck.log",
+      "sha256": "8651ee5a204d2a9c14e0db4122e99a983e0dc76a4de897aef627a5bea18f10e4"
+    },
+    {
+      "path": "affected-build.log",
+      "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+    },
+    {
+      "path": "affected-red.log",
+      "sha256": "54d9b9c1b3c7c751129674986dbb7e7ee4d52013857ef8521a60de342863788a"
+    },
+    {
+      "path": "affected-green.log",
+      "sha256": "e5cc68dea47e5cc7450da37876f9065faa8e6d940fe6ab80680d0ac6a7b65cb3"
+    },
+    {
+      "path": "regression.log",
+      "sha256": "32fec6bdb386b9c52a9d40c5fccc3d419ffbf0e7de226bbfd77eed30c33230f1"
+    },
+    {
+      "path": "regression-selection.json",
+      "sha256": "36dfde724a4a44d6d918016fb7731dd0bca4d67bba9b79c388a30a07ba2ad4fa"
+    },
+    {
+      "path": "regression-applicability.json",
+      "sha256": "5897a1a603189edad8722238427994a67aaac64f0b2d6bdbe648346809dfd315"
+    },
+    {
+      "path": "delivery-build.log",
+      "sha256": "1b80e80e32db80abb6fe1875e7f5c1aa20a83ac34301da8cdb0561895504d41f"
+    },
+    {
+      "path": "delivery-typecheck.log",
+      "sha256": "8651ee5a204d2a9c14e0db4122e99a983e0dc76a4de897aef627a5bea18f10e4"
+    },
+    {
+      "path": "delivery-targeted.log",
+      "sha256": "7a927d164abbbc6202810e3087bb791fd04c92fc7b6cd2984b64ebed892be3f6"
+    },
+    {
+      "path": "delivery-frontend.log",
+      "sha256": "e52c43368f86da76109d10c2334c8c614d1a0071c4fdd7171d622a82fcd098ea"
+    },
+    {
+      "path": "staged-code-check.json",
+      "sha256": "468270190dc9ab2d342e3652b5c10888aeba8de4a20acd912d735049559812b7"
+    },
+    {
+      "path": "final-review-snapshot.json",
+      "sha256": "4a0c7c5c1ef918862911f9418a3528670d2b950bed8dae815a067683bed38e13"
+    },
+    {
+      "path": "baseline-receipt.txt",
+      "sha256": "98abcbebe695f5e5d05c67c7166516656610a4f2296da181a72d823b23d22b28"
+    },
+    {
+      "path": "read-failure-before.txt",
+      "sha256": "3eac620dfa2fd972768cb0c33d478520ade567523bbd010bd8d27a322e356553"
+    },
+    {
+      "path": "current-pass.txt",
+      "sha256": "f4cdefb316401b5d4c52b6959fde774074c92a1f96409fc87b2ed3617eb19280"
+    },
+    {
+      "path": "source-stale.txt",
+      "sha256": "780de41864beef90aeb6ece857a2979d88b450c7a94a0974a959641a8ee0fc7c"
+    },
+    {
+      "path": "corrupt-evidence.txt",
+      "sha256": "b3ee161a7f7fdbb1193e47a1249b642948eb377e5e75974b00054356e4aab154"
+    },
+    {
+      "path": "read-failure-after.txt",
+      "sha256": "d480943f1acd0121a6e4a3f3402749314b87ef48793089c07f05983c0ac49c67"
+    },
+    {
+      "path": "post-refresh-failure.txt",
+      "sha256": "7bccd22e0842a74103fe4ab1267d25394e44ea73f440b6b9e548b95e24b0d4e0"
+    },
+    {
+      "path": "inspection-read-failure.txt",
+      "sha256": "3e24f94f8e4769a98439111d8e94dff39dd38dd6586787c5dc748e18e4bd850b"
+    },
+    {
+      "path": "late-response-other-project.txt",
+      "sha256": "4917cbb0056ad53d129826961f345bf8aebe08a7e0d0d4e421c008d60007155e"
+    },
+    {
+      "path": "returned-original-unchecked.txt",
+      "sha256": "df42f87b598396e1ae385726b80773d79c81b102dddbc878ddab3dbeeba2e8d7"
+    },
+    {
+      "path": "reopened-unchecked.txt",
+      "sha256": "768609641d74b4a7c6ee45263c38ec7276f72fb9766867f97e8d712634d81f81"
+    },
+    {
+      "path": "final-current.txt",
+      "sha256": "bdaab2263dda73137e45ed3c1350c61a4c974a300700e82f136b788714771660"
+    },
+    {
+      "path": "final-current.jpg",
+      "sha256": "b4f8aa34b160487e1e6d0d9cc55cd2f9dad8915ce96d065dd092ef0d16c0e4d5"
+    },
+    {
+      "path": "final-stale.txt",
+      "sha256": "b361a12416b32327e560bb2eaae13eab2a77f9f734c2f37e2e4b16fc8a0035ba"
+    },
+    {
+      "path": "final-read-failure.txt",
+      "sha256": "6886bd090703f594a64da2e5f866a660a2eec8fa4f7c0314150dc4388e86c66a"
+    },
+    {
+      "path": "final-reopened.txt",
+      "sha256": "4fd7f2d9683a3236607dd138fe2f290a74248055f8c201bb7a1553f1a924150f"
+    },
+    {
+      "path": "final-before-reopen-counts.json",
+      "sha256": "f8e1ed1905ac4b8369f5091b2b703bc50ed9d7e1b94fbf702292d7b2297d7a58"
+    },
+    {
+      "path": "operation-counts.json",
+      "sha256": "f8e1ed1905ac4b8369f5091b2b703bc50ed9d7e1b94fbf702292d7b2297d7a58"
+    },
+    {
+      "path": "workspace-typecheck-before-new-artifacts.log",
+      "sha256": "79fb3924c295b97638813a708b1f529fef9d6c8b92845f0df118e449e6b720af"
+    },
+    {
+      "path": "new-artifact-restoration.json",
+      "sha256": "931eb3ee3c79b184607bb8d8d63df7a7cbbfe6e84db8231548c2c31daee812ae"
+    }
+  ],
+  "finalWorkspaceTypecheckConfirmedAt": "2026-10-22T10:15:56.360Z",
+  "delegation": [
+    {
+      "task": "d3_evidence_audit",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtime": "requested; interface did not echo actual model/effort"
+    },
+    {
+      "task": "d3_validation_design",
+      "requestedModel": "gpt-6-astra",
+      "requestedReasoningEffort": "high",
+      "runtime": "requested; interface did not echo actual model/effort"
+    },
+    {
+      "task": "d3_implementation",
+      "requestedModel": "gpt-6.1-sol",
+      "requestedReasoningEffort": "high",
+      "runtime": "requested; interface did not echo actual model/effort"
+    },
+    {
+      "task": "d3_independent_review",
+      "requestedModel": "gpt-6-astra",
+      "requestedReasoningEffort": "xhigh",
+      "runtime": "requested; interface did not echo actual model/effort"
+    }
+  ]
+}

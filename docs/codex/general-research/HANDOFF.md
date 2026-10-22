@@ -1,13 +1,15 @@
-# 当前交接：D2 已验收，下一项 D3
+# 当前交接：D3 已验收，下一项 D4
 
-日期：2026-10-22。权威状态见 STATE.json；当前 revision 9，D1/D2 done，D3 未开始，整体产品计划未完成。
+2026-10-22。权威状态 STATE.json revision 11：D1/D2/D3 done，D4/D5 not_started，整体计划未完成。前端布局继续暂缓。
 
-当前任务摘要复用原 ResearchBrief/RunIntent/Run/DevelopmentTask/SandboxJob/Team Task，仅做状态投影。已完成真实浏览器的显示、展开、原 Run 导航、无 Run 研究、异常读取、切换与重开；五项状态误报已修复并复核。实际验证：最终定向 68/68，交付副本 23/23，完整回归 2384 pass / 0 fail / 27 skip，干净构建与构建后类型检查通过。跳过不算通过，失败的首次干净 typecheck 启动顺序已单独记录。
+本批完成“原 Run/开发作业证据 → 手动只读核验 → stale/unknown → 重开原身份”。历史工程状态、本次回执核验、当前适用性、科学判断分别显示。复用已有固定清单/输入、sourceManifest、严格验证器和权限/来源守卫；不创建作业、不持久化当前结论。核验只代表 checkedAt 的有界观察，普通刷新会撤回结论，外部编辑需重验。原回执没有标准测试计数时显示未提供。
 
-详情和机器证据见 docs/acceptance/flow-task-summary-20261022/RESULT.md 与 EVIDENCE.json。独立 Sol/high 已请求，接口未回显实际模型/档位；冻结源码哈希已核对，复查无阻断。
+验收与机器证据：`docs/acceptance/flow-validation-evidence-20261022/RESULT.md`、`EVIDENCE.json`。新跑首轮影响集 1068 pass / 0 fail / 4 skip；最终修复定向 50/50；仅含本批改动的交付副本干净构建、类型检查、定向 49/49、完整前端及直接单元影响集 675 pass / 0 fail / 1 skip。D2 完整回归 2384/0/27 仅复用于 3370 个哈希相同的未影响文件，本轮未重跑全仓长测试。
 
-实施提交 aa38c9a19ddaa45ddfc6bd341e41508e1025ba79 已推送至 private 仓库 hailuohl/pi-research 的 implementation/pr01-reproducible-baseline 分支。所有其他在途改动保留；chat-workflows/research-brief-ui 中此前 processingNotice 改动未纳入。主目录 dist 内容未被覆盖；交付产物由仅含本批改动的副本生成。
+真实浏览器使用隔离服务和真实 Node Run，完成成功、源码变更、归档字节损坏、静默读取失败、重试等待、最终刷新失败、挂起请求切项目和实际关页重开；最终 Run/intent 均保持原 1 个，重开无新核验或执行。开发严格归档为受控 fixture，未新验真实 Docker、SSH、远程 Pi 或移动端矩阵。自建端口 62115 的服务及标签页已关闭，原始证据留在 `D:/项目/pi research/tmp/validation-evidence-20261022-Jm4sPG`，未触碰用户服务。
 
-下一步：重新核对 Git/dirty/运行进程，从 D3 审计已有证据、快照/输入绑定、退出码与完整性、pass/fail/skip/not_run/unknown/stale 的缺口，选一个最小切片后实施。随后 D4 恢复与幂等、D5 完整研究旅程，不能因 D2 完成而将这些任务记 done。保留原权限、审批、历史与数据隔离；前端布局继续暂缓。
+独立 Astra/xhigh 请求已记录，运行时未回显。首轮三项阻断（研究来源批准、原 RunGrant 身份、刷新后旧 current）已分别补回归、修复并限定复查关闭。未改权限模型、迁移、依赖或科学判断，也未进行界面重做。
 
-本轮隔离测试服务及标签页已关闭，数据/原日志仍在 D:\项目\pi research\tmp\task-summary-qa-20261022-VMbOMw；未触碰用户服务。异常开发/协作记录为 UI 故障注入，不等于 Docker 或远程模型执行验收。
+代码提交 `4a9b4abbbd9331984a5eec9d20ef13f1fb0fb947` 已推送并核对 private `hailuohl/pi-research` 的 `implementation/pr01-reproducible-baseline` 分支。只提交本批 11 个源码/测试和 10 个生成产物；chat-workflows/research-brief-ui 中原有 processingNotice 内容未纳入。所有其他改动保留，主目录既有 dist 字节未被构建覆盖，仅补入本批此前不存在的新模块三个产物，解决单独 typecheck 的缺声明错误；最终主目录 typecheck 退出码 0。重启任何服务前重新检查进程和构建来源，不能把原主目录旧入口视为本批运行中的版本。
+
+下一步 D4：重新核对 HEAD、分支、暂存区、dirty 和进程，先审计现有 operation/attempt、恢复通知、请求幂等和 unknown 查询。选一条“超时或断连 → 查询原操作 → 重开恢复 → 安全继续”的实际流程，固定 3–5 条验收条件；只在证据表明缺口存在时修复。未知状态不可盲目重提有副作用操作，保留审批、额度、数据隔离和历史。完成 D4 后再做 D5 全旅程集成验收。
