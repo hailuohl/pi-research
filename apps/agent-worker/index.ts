@@ -48,7 +48,15 @@ function send(value: unknown) {
 }
 const display=workerDeltaSender(send);
 function httpRpc(type:'model_http_acquire'|'model_http_finish',key:string,result?:unknown,imageRefs?:unknown[],attachmentRefs?:NativeAttachmentReference[],contextRecovery?:'summary'|'resume'){return new Promise<unknown>((resolve,reject)=>{const requestId=++seq,startedAt=Date.now(),timer=setTimeout(()=>{pending.delete(requestId);reject(new Error(`MODEL_HTTP_CONTROL_TIMEOUT: HTTP额度控制未响应 (${type}, requestId=${requestId}, elapsedMs=${Date.now()-startedAt})`));},30000);pending.set(requestId,{resolve,reject,timer,attachmentRequest:!!attachmentRefs?.length});send({type,requestId,key,result,...(contextRecovery?{contextRecovery}:{}),...(imageRefs?{imageRefs}:{}),...(attachmentRefs?{attachmentRefs}:{})});});}
-function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error('受控工具请求超时')); }, 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
+// Host execution needs its 60-second run budget plus process-tree cleanup and IPC delivery.
+function rpc(tool: string, input: unknown, toolCallId: string) { return new Promise<unknown>((resolve, reject) => { const requestId = ++seq; const timer = setTimeout(() => { pending.delete(requestId); reject(new Error(`受控工具请求超时；结果未确认，请核对原调用，不要自动重试 (tool=${tool}, toolCallId=${toolCallId}, requestId=${requestId})`)); }, tool === 'host_execute' ? 80000 : 30000); pending.set(requestId, { resolve, reject, timer }); send({ type: 'tool', requestId, tool, input, toolCallId }); }); }
+function clearPending() {
+    for (const p of pending.values()) {
+        clearTimeout(p.timer);
+        p.reject(new Error('Worker 正在退出'));
+    }
+    pending.clear();
+}
 process.on('message', async (message) => {
     const raw = message as WorkerMessage;
     if(raw?.type==='delta_ack'){if(!stopping)display.acknowledge(raw.deltaId);return;}
@@ -64,6 +72,7 @@ process.on('message', async (message) => {
     }
     if (raw?.type === 'abort') {
         stopping = true;display.clear();httpStop.abort();
+        clearPending();
         await session?.abort();
         return;
     }
@@ -153,7 +162,7 @@ process.on('message', async (message) => {
         const finishTurn = session.agent.finishTurn;
         session.agent.finishTurn = async (turn, signal) => {
             const decision = await finishTurn?.(turn, signal);
-            if (taskSubmitted) { session!.clearQueue(); return {action: 'end'}; }
+            if (taskSubmitted || stopping) { session!.clearQueue(); return {action: 'end'}; }
             return decision ?? undefined;
         };
         if (session.model?.provider !== raw.model.provider || session.model?.id !== raw.model.model) throw new Error('MODEL_FALLBACK_REFUSED: SDK 尝试切换未经批准的模型');
@@ -222,12 +231,8 @@ process.on('message', async (message) => {
     finally {
         stopping=true;display.clear();
         session?.dispose();
-        for (const p of pending.values()) {
-            clearTimeout(p.timer);
-            p.reject(new Error('Worker 正在退出'));
-        }
-        pending.clear();
+        clearPending();
         setTimeout(() => process.exit(0), 50);
     }
 });
-process.on('disconnect', () => { stopping = true;display.clear();httpStop.abort(); void session?.abort(); setTimeout(() => process.exit(1), 500).unref(); });
+process.on('disconnect', () => { stopping = true;display.clear();httpStop.abort(); clearPending(); void session?.abort(); setTimeout(() => process.exit(1), 500).unref(); });
