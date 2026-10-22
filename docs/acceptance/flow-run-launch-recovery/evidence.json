@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-22",
+  "baseline": "5fb65051ce94094c369dca41b81296ed63f6ae71",
+  "scope": [
+    "packages/runners/service.ts",
+    "tests/unit/run-launch-recovery.test.mjs"
+  ],
+  "regressionBefore": {
+    "failed": 3,
+    "reason": "original Run not eligible after preparation/spawn failure"
+  },
+  "targeted": {
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runnerIntegration": {
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "trustedExample": {
+    "sameRun": true,
+    "sameManifest": true,
+    "state": "succeeded",
+    "integrity": "complete",
+    "reopened": true,
+    "persistedFailureEvents": 1
+  },
+  "fullRegression": {
+    "status": "pending"
+  },
+  "cleanBuild": {
+    "status": "pending"
+  },
+  "independentReview": {
+    "status": "pending"
+  },
+  "modelVerification": {
+    "root": "unchanged",
+    "runtimeEcho": false
+  }
+}
