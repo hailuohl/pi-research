@@ -95,7 +95,7 @@ const TOOL_METADATA: Record<string, {
     model_http_inspect:{description:'用户入口：读取本地受管 Pi 模型 HTTP 请求状态及当前项目有界历史；宿主并发上限为 null，权限与失联状态继续核对。',example:{cursor:0,limit:50}},
     model_http_configure:{description:'用户入口：历史兼容入口；本地 Pi 已取消宿主模型 HTTP 并发上限，配置请求返回 HOST_CAPACITY_DISABLED。',example:{expectedVersion:1,maxRequests:2}},
     report_create:{description:'用户入口：从所选真实终态运行、已采纳结论或成功完整的固定文稿构建生成报告，冻结来源与产物；不授予 Agent 生成最终用户报告的权限。',example:{title:'研究结果记录',runIds:['run-id'],claimIds:[],publicationResultIds:[]}},
-    research_history_list:{description:'用户或当前交互主协调会话：按 documents/evidence/claims/reports、游标和页大小读取本项目已保存资料与成果的安全有界索引。同一研究对话先查索引，再按原受控工具和准确授权读取正文；索引不授正文权限，保存状态不保证来源当前有效性。人工授权、结论确认与报告操作在会话的“项目资料与成果”折叠区域完成。',example:{kind:'documents',cursor:0,limit:20}},
+    research_history_list:{description:'用户或当前交互主协调会话：按 documents/evidence/claims/reports、游标和页大小读取本项目已保存资料与成果的安全有界索引。同一研究对话先查索引，再按原受控工具和准确授权读取正文；索引不授正文权限，保存状态不保证来源当前有效性。人工授权、结论确认与报告操作在当前对话的“任务与审批”中，通过“确认原文检索范围”“确认研究结论”“确认报告来源”等具体卡片完成。',example:{kind:'documents',cursor:0,limit:20}},
     report_list:{description:'用户入口：按项目、游标和页大小读取已保存报告的有界历史摘要；所选报告的当前有效性由 report_inspect 回查。',example:{cursor:0,limit:20}},
     report_inspect:{description:'用户入口：读取固定报告引用及当前来源有效性，保留历史原文。',example:{reportId:'report-id'}},
     report_reference_read:{description:'用户入口：按报告内类型化引用读取原始证据或固定源码，不解析任意 URL。',example:{reportId:'report-id',referenceId:'reference-id',cursor:0,limit:16000}},
