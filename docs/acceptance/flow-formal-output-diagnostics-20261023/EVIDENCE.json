@@ -1,0 +1,19 @@
+{
+  "task": "D2 formal output diagnostics",
+  "baseSha": "25be8132463002276eeada1d9090c65011038a40",
+  "checks": [
+    {"kind": "clean_build", "status": "passed", "exitCode": 0, "log": "d2-delivery-build.log"},
+    {"kind": "clean_focused", "status": "passed", "tests": 26, "failed": 0, "log": "d2-delivery-focused.log"},
+    {"kind": "overlay_impact", "status": "passed", "tests": 51, "failed": 0},
+    {"kind": "overlay_final_test_only_strengthening", "status": "passed", "tests": 1, "failed": 0},
+    {"kind": "mixed_scientific_output_group", "status": "cancelled_not_completed"},
+    {"kind": "real_local_node_negative_positive_reopen", "status": "passed", "synthetic": true, "evidence": "d2-real-run-acceptance.json"},
+    {"kind": "long_error_truncation_regression", "redExitCode": 1, "greenExitCode": 0, "tests": 2, "failed": 0},
+    {"kind": "integrated_impact", "status": "passed", "tests": 116, "failed": 0, "log": "remaining-integrated-focused.log"}
+  ],
+  "fullRegression": {"status": "deferred_to_combined_remaining_integration", "priorBaseline": "docs/acceptance/flow-local-runner-preflight-20261023/EVIDENCE.json"},
+  "modelRequests": {"implementation": "gpt-6-luna/max", "independentReview": "gpt-6.1-sol/high", "runtimeEcho": "unavailable"},
+  "independentReview": {"status": "accepted_after_necessary_fix", "openBlockers": 0, "report": "d2-review.md"},
+  "notRun": ["real_Pi", "real_Docker", "real_SSH", "full_scientific_output_chain"],
+  "rawEvidenceRoot": "D:/项目/pi research/tmp/remaining-defects-20261023"
+}

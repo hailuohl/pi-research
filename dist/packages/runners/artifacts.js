@@ -129,6 +129,10 @@ export function collectRunArtifacts(run, evidence, paths, successful = true) {
         errors.push('metrics.json: 缺少有效的已归档指标文件');
     const missing = run.manifest.contract.expectedArtifacts.filter(path => !artifacts.has(path));
     missing.forEach(path => errors.push(`${path}: 必需产物未归档为普通文件`));
+    if (missing.length) {
+        const outputRoot = run.manifest.contract.runner === 'ssh' ? 'OUTPUT_DIR=/output' : run.manifest.contract.runner === 'docker' ? 'PI_OUTPUT_DIR=/output' : 'PI_OUTPUT_DIR';
+        errors.unshift(`输出提示：expectedArtifacts 中的路径是相对路径，请将必需普通文件直接写入输出归档根目录（${outputRoot}）；只写入工作目录或 stdout 不会归档`);
+    }
     if (metrics && !missing.length && !errors.length && integrity !== 'invalid')
         integrity = 'complete';
     return { artifactIds: [...artifacts.values()].map(a => a.id), evidenceIds, metrics, integrity, errors, diagnosticSafe: diagnosticSafe && integrity !== 'invalid' };
