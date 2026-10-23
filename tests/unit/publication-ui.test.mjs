@@ -58,6 +58,15 @@ test('React publication UI preserves separate prepare, approval and submit and s
  const editorNode=all.find(n=>n.type?.name==='ManuscriptEditor'),editor=sync(new editorNode.type(editorNode.props));nodes(editor.render());v.componentWillUnmount();
 });
 
+test('queued publication viewer tracks the same queue item and clears its unavailable hint when ready',()=>{
+ const ui=view(),queuedJob={...job,state:'queued'},unavailable={kind:'publication',id:job.id,state:'queued',backend:'docker',reason:'target_unavailable',held:false,requested:{cpus:1,memoryMb:256}},data={project:{id:'project',archived:false},artifacts:[],approvals:[],reports:[],compute:{items:[unavailable]}};
+ ui.props={...ui.props,data};ui.state.revision=revision;ui.state.job=queuedJob;ui.state.jobs=[queuedJob];let calls=0;ui.call=async()=>{calls++;};
+ const initial=flatten(ui.render());assert.match(initial,/计算目标暂不可用/);assert.match(initial,/检查所选 Docker context 与连接/);assert.match(initial,/若使用本机 Docker Desktop，请确认已启动/);assert.match(initial,/请求取消文稿构建/);assert.match(initial,/刷新此构建状态/);
+ const previous=ui.props;ui.props={...previous,data:{...data,compute:{items:[{...unavailable,reason:'ready',targetId:'docker-ready'}]}}};ui.componentDidUpdate(previous);
+ const ready=flatten(ui.render());assert.match(ready,/容量检查通过，等待调度/);assert.doesNotMatch(ready,/目标暂不可用|检查所选 Docker context|若使用本机 Docker Desktop/);assert.equal(ui.state.job.id,'build');assert.equal(ui.state.jobs.length,1);assert.equal(calls,0);
+ ui.state.job={...queuedJob,state:'succeeded'};assert.doesNotMatch(flatten(ui.render()),/队列详情暂未加载|调度信息待加载/);ui.componentWillUnmount();
+});
+
 test('read-only and archived fixed viewers hide every write action and preserve the original historical PDF download',async t=>{
  const oldFetch=globalThis.fetch,oldDocument=globalThis.document,oldCreate=URL.createObjectURL,oldRevoke=URL.revokeObjectURL;t.after(()=>{globalThis.fetch=oldFetch;globalThis.document=oldDocument;URL.createObjectURL=oldCreate;URL.revokeObjectURL=oldRevoke;});
  const requests=[],downloads=[];globalThis.fetch=async url=>{requests.push(url);return {ok:true,blob:async()=>new Blob(['original PDF'])};};URL.createObjectURL=()=> 'blob:fixed';URL.revokeObjectURL=()=>{};globalThis.document={body:{appendChild(){}},createElement:()=>({click(){downloads.push(this.download);},remove(){}})};

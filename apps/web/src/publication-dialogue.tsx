@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {api,downloadArtifact} from './api.js';
 import {PublicationPreview} from './publication-view.js';
+import {ComputeWait} from './compute-wait.js';
 import {Badge} from './ui.js';
 import {automaticApprovalLabel,short} from './models.js';
 import type {ProjectState,Row,Session,ManuscriptRevision,PublicationBuildJobDTO,PublicationBuildResultDTO,Artifact} from './models.js';
@@ -90,6 +91,7 @@ export class PublicationDialogue extends React.Component<{data:ProjectState;sess
             {jobs.map(job=>{const approval=data.approvals.find(a=>a.id===job.approvalId),result=this.state.results[job.id],reviews=(data.publicationReviews??[]).filter(r=>r.publicationResultId===job.resultId&&r.rootSessionId===session.id),reportIds=new Set(data.reports.filter(r=>r.publicationResultIds?.includes(job.resultId??'')).map(r=>r.id));return <div key={job.id}>
                 <p>编译 {short(job.id)} <Badge value={job.state}/><Badge value={job.integrity}/></p>{approval?.automaticApproval?<p className="small muted" role="status">{automaticApprovalLabel(approval)}</p>:null}
                 <details><summary>固定编译范围</summary><p>{job.engine} · {job.mainFile} · {job.resources.cpus} CPU / {job.resources.memoryMb} MB · 最长 {job.resources.timeoutSeconds} 秒</p><p>构建镜像 {short(job.imageDigest)} · 源码 {short(job.sourceDigest)}</p></details>
+                {['queued','starting','running','unknown'].includes(job.state)?<ComputeWait data={data} kind="publication" id={job.id}/>:null}
                 {job.state==='prepared'&&!approval?.automaticApproval?<div className="actions wrap"><button className="primary compact" disabled={disabled} onClick={()=>perform(()=>this.submit(job),'固定文稿编译已提交')}>批准并编译</button></div>:null}
                 {['queued','starting','running','unknown'].includes(job.state)?<div className="actions wrap"><button className="text-button danger" disabled={disabled||busy||data.project.archived||session.state==='archived'||job.cancelRequested||this.state.cancellingJobIds.includes(job.id)} onClick={()=>perform(()=>this.cancel(job))}>{this.state.cancellingJobIds.includes(job.id)?'正在请求取消…':'请求取消文稿编译'}</button></div>:null}
                 {job.cancelRequested&&['queued','starting','running','unknown'].includes(job.state)?<p role="status">已请求取消，等待执行器确认；编译尚未确认停止。</p>:null}

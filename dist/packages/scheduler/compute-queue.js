@@ -344,9 +344,9 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         if (r.held && r.next_attempt_at > Date.now())
             return 'recovery_backoff';
         if (r.backend !== 'trusted-example' && r.backend !== 'local') {
-            if (!r.bound)
-                return r.held ? 'legacy_target_unknown' : 'target_unresolved';
             const context = this.context(r.context_name);
+            if (!r.bound)
+                return r.held ? 'legacy_target_unknown' : context?.status === 'unavailable' ? 'target_unavailable' : 'target_unresolved';
             if (context?.status === 'unavailable')
                 return 'target_unavailable';
             if (context?.engine_id !== r.engine_id || context?.endpoint !== r.endpoint)

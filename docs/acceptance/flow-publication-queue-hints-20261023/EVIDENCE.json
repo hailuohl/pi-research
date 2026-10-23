@@ -1,0 +1,118 @@
+{
+  "task": "D5 publication queue diagnostics",
+  "baseSha": "b304a824c1ffcd267dc38487deead910486f1358",
+  "changes": {
+    "stateSchema": false,
+    "dependencies": false,
+    "newTimer": false,
+    "dockerAutoStart": false,
+    "inspectionWrites": false
+  },
+  "checks": [
+    {
+      "kind": "clean_final_package_build",
+      "exitCode": 0,
+      "log": "d5-packaging-build.log"
+    },
+    {
+      "kind": "original_combined_affected",
+      "tests": 116,
+      "passed": 116,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "remaining-integrated-focused.log"
+    },
+    {
+      "kind": "independent_d5_impact",
+      "tests": 48,
+      "passed": 48,
+      "failed": 0,
+      "exitCode": 0,
+      "report": "d5-review.md"
+    },
+    {
+      "kind": "final_package_new_behavior",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "d5-packaging-focused.log"
+    }
+  ],
+  "fullRegression": {
+    "command": "npm run test:core",
+    "exitCode": 1,
+    "tests": 2439,
+    "passed": 2413,
+    "failed": 1,
+    "skipped": 25,
+    "cancelled": 0,
+    "durationMs": 2194382.9349,
+    "log": "remaining-full-regression.log",
+    "onlyFailure": "Existing chat-collaboration approval fixture lacked actual binding metadata",
+    "fixtureOnlyRecheck": {
+      "assertionsPreserved": true,
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "full-fixture-recheck.log"
+    },
+    "fullRunInputsUnchanged": 1125,
+    "finalPackageDifferences": [
+      "tests/unit/chat-collaboration-ui.test.mjs"
+    ],
+    "allCapturedProductionRuntimeHashesMatchFullRun": true,
+    "rawFullRunIsNotAllGreen": true
+  },
+  "browser": {
+    "synthetic": true,
+    "viewports": [
+      "1440x1000",
+      "390x844"
+    ],
+    "actualDialogue": true,
+    "standaloneViewer": "real_component_harness",
+    "sameQueuedJobRetained": true,
+    "newSubmissions": 0,
+    "consoleErrors": 0,
+    "pageErrors": 0,
+    "http500": 0,
+    "evidence": [
+      "browser-d5/browser-evidence.json",
+      "browser-d5-mobile-recheck/browser-evidence.json"
+    ]
+  },
+  "realDockerCli": {
+    "isolatedHomeAndConfig": true,
+    "endpoint": "random nonexistent local npipe",
+    "productionProbeUsed": true,
+    "realConnectionFailed": true,
+    "queueReason": "target_unavailable",
+    "userConfigHashesUnchanged": true,
+    "evidence": "browser-d5/cli-named-pipe-evidence.json",
+    "daemonStartedOrStopped": false,
+    "actualCompilation": false,
+    "actualDaemonRecovery": false
+  },
+  "modelRequests": {
+    "implementation": "gpt-6-luna/max",
+    "independentReview": "gpt-6.1-sol/high",
+    "runtimeEcho": "unavailable"
+  },
+  "independentReview": {
+    "openBlockers": 0,
+    "report": "d5-review.md"
+  },
+  "preservation": {
+    "preExistingProtectedInputs": 3351,
+    "unexpectedChanges": 0,
+    "mainIntegrationMatchesOverlayPaths": 17,
+    "servicesRestarted": false
+  },
+  "deferred": [
+    "D3 exact idle-handoff investigation",
+    "already-approved intent withdrawal"
+  ],
+  "rawEvidenceRoot": "D:/项目/pi research/tmp/remaining-defects-20261023"
+}

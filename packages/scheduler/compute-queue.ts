@@ -185,7 +185,7 @@ SELECT e.* FROM eligible e JOIN heads h ON h.sequence=e.sequence ORDER BY e.sequ
         if(r.backend==='local'&&!r.held&&r.last_error)return 'target_unavailable';
         if(r.held&&r.lease_until>Date.now())return 'worker_active';
         if(r.held&&r.next_attempt_at>Date.now())return 'recovery_backoff';
-        if(r.backend!=='trusted-example'&&r.backend!=='local'){if(!r.bound)return r.held?'legacy_target_unknown':'target_unresolved';const context=this.context(r.context_name!);if(context?.status==='unavailable')return 'target_unavailable';if(context?.engine_id!==r.engine_id||context?.endpoint!==r.endpoint)return 'target_changed';if(!this.targetReady(r,!r.held))return 'target_unresolved';}
+        if(r.backend!=='trusted-example'&&r.backend!=='local'){const context=this.context(r.context_name!);if(!r.bound)return r.held?'legacy_target_unknown':context?.status==='unavailable'?'target_unavailable':'target_unresolved';if(context?.status==='unavailable')return 'target_unavailable';if(context?.engine_id!==r.engine_id||context?.endpoint!==r.endpoint)return 'target_changed';if(!this.targetReady(r,!r.held))return 'target_unresolved';}
         if(r.held)return !['trusted-example','local'].includes(r.backend)?'recovery_due':'manual_recovery_required';
         if(this.tooLarge(r))return 'request_too_large';const capacity=this.capacity(r);if(capacity)return capacity;
         return heads.some(h=>h.target_id===r.target_id&&h.sequence<r.sequence)||next&&next.sequence<r.sequence?'earlier_job':'ready';

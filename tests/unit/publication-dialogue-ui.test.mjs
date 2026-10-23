@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {renderToStaticMarkup} from 'react-dom/server';
 import {synchronousState} from '../support/ui.mjs';
 import {PublicationDialogue} from '../../dist/web/assets/publication-dialogue.js';
 
@@ -18,6 +19,15 @@ test('paper dialogue stays empty without own manuscripts and excludes foreign re
     assert.equal(view({...base(),manuscripts:[]}).render(),null);
     const rendered=text(view({...base(),manuscripts:[revision,{...revision,id:'other',rootSessionId:'other-root',title:'Foreign manuscript'}]}).render());
     assert.match(rendered,/Fixed paper/);assert.doesNotMatch(rendered,/Foreign manuscript/);
+});
+
+test('queued dialogue publication tracks the same queue item and clears its unavailable hint when ready',()=>{
+    const queuedJob={...job,state:'queued'},unavailable={kind:'publication',id:job.id,state:'queued',backend:'docker',reason:'target_unavailable',held:false,requested:{cpus:1,memoryMb:256}},data={...base(),publicationJobs:[queuedJob],compute:{items:[unavailable]}},ui=view(data),requests=[];
+    ui.call=async(...args)=>requests.push(args);
+    const initial=renderToStaticMarkup(ui.render());assert.match(initial,/计算目标暂不可用/);assert.match(initial,/检查所选 Docker context 与连接/);assert.match(initial,/若使用本机 Docker Desktop，请确认已启动/);assert.match(initial,/请求取消文稿编译/);assert.match(initial,/刷新此编译状态/);
+    const previous=ui.props;ui.props={...previous,data:{...data,compute:{items:[{...unavailable,reason:'ready',targetId:'docker-ready'}]}}};ui.componentDidUpdate(previous);
+    const ready=renderToStaticMarkup(ui.render());assert.match(ready,/容量检查通过，等待调度/);assert.doesNotMatch(ready,/目标暂不可用|Docker context|Docker Desktop/);assert.equal(ui.props.data.publicationJobs[0].id,'job');assert.deepEqual(requests,[]);
+    ui.props={...ui.props,data:{...ui.props.data,publicationJobs:[{...queuedJob,state:'succeeded'}]}};assert.doesNotMatch(renderToStaticMarkup(ui.render()),/队列详情暂未加载|调度信息待加载/);
 });
 
 test('changing dialogue while compilation approval returns never submits in the new dialogue',async t=>{

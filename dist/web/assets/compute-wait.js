@@ -4,6 +4,7 @@ function ComputeWait({ data, kind, id }) {
   const item = data.compute?.items.find((i) => i.kind === kind && i.id === id);
   return /* @__PURE__ */ jsxs("div", { className: "small muted", children: [
     /* @__PURE__ */ jsx("p", { children: item ? computeReasonLabels[item.reason] : data.compute ? "\u6B64\u4F5C\u4E1A\u7684\u961F\u5217\u8BE6\u60C5\u6682\u672A\u52A0\u8F7D\uFF0C\u7B49\u5F85\u72B6\u6001\u66F4\u65B0\u3002" : "\u8C03\u5EA6\u4FE1\u606F\u5F85\u52A0\u8F7D\u3002" }),
+    item?.reason === "target_unavailable" && item.backend === "docker" ? /* @__PURE__ */ jsx("p", { children: "\u68C0\u67E5\u6240\u9009 Docker context \u4E0E\u8FDE\u63A5\uFF1B\u82E5\u4F7F\u7528\u672C\u673A Docker Desktop\uFF0C\u8BF7\u786E\u8BA4\u5DF2\u542F\u52A8\u3002" }) : null,
     item ? /* @__PURE__ */ jsxs("p", { children: [
       "\u9700\u6C42 ",
       item.requested.cpus,

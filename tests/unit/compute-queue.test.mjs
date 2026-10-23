@@ -63,6 +63,18 @@ test('single Run scheduling reuses target, capacity, GPU and recovery reasons wi
   const untouched=s.store.db.prepare('SELECT * FROM compute_queue WHERE id=?').get(r.id);s.queue.candidates=s.queue.verifyTarget=s.queue.probeContext=()=>assert.fail('inspection must not bind or probe');schedulingReason(s,r,'legacy_target_unknown');assert.deepEqual(s.store.db.prepare('SELECT * FROM compute_queue WHERE id=?').get(r.id),untouched);
  }finally{await s.close();}
 });
+test('an unbound unheld publication reports an unavailable context without changing its reservation',()=>{
+ const s=setup();try{
+  const job=add(s,'publication'),before=s.store.db.prepare('SELECT * FROM compute_queue WHERE kind=\'publication\' AND id=?').get(job.id);
+  s.store.db.prepare("UPDATE compute_contexts SET status='unavailable' WHERE context='A'").run();
+  const contextBefore=s.store.db.prepare("SELECT * FROM compute_contexts WHERE context='A'").get();
+  s.queue.probe=s.queue.verifyTarget=s.queue.probeContext=()=>assert.fail('inspection must not probe or bind');
+  const item=s.queue.inspect(USER).items.find(candidate=>candidate.kind==='publication'&&candidate.id===job.id);
+  assert.equal(item.reason,'target_unavailable');assert.equal(item.targetId,null);assert.equal(item.held,false);
+  assert.deepEqual(s.store.db.prepare('SELECT * FROM compute_queue WHERE kind=\'publication\' AND id=?').get(job.id),before);
+  assert.deepEqual(s.store.db.prepare("SELECT * FROM compute_contexts WHERE context='A'").get(),contextBefore);
+ }finally{s.close();}
+});
 test('publication jobs reserve one slot, compete with all compute kinds and keep unknown occupancy',async()=>{
  const s=setup();try{
   configure(s,{maxJobs:3,maxRuns:3,maxDevelopment:3,cpus:2,memoryMb:2048});

@@ -4,6 +4,7 @@ import { api, artifactBlob, downloadArtifact } from "./api.js";
 import { verifiedPageImage } from "./literature-view.js";
 import { short, label } from "./models.js";
 import { Badge, nativeSelectButton } from "./ui.js";
+import { ComputeWait } from "./compute-wait.js";
 import { PublicationReviewPanel } from "./publication-review-view.js";
 function publicationPath(path) {
   return !!path && path.length <= 240 && path.split("/").every((part) => /^[A-Za-z0-9_][A-Za-z0-9_. -]*$/.test(part) && !/[. ]$/.test(part) && !/^AGENTS(?:\.|$)/i.test(part) && !/^(con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\.|$)/i.test(part));
@@ -429,6 +430,7 @@ class PublicationView extends React.Component {
               " \xB7 ",
               Object.entries(j.resources).map(([key, value]) => `${key}=${value}`).join(" \xB7 ")
             ] }),
+            ["queued", "starting", "running", "unknown"].includes(j.state) ? /* @__PURE__ */ jsx(ComputeWait, { data: this.props.data, kind: "publication", id: j.id }) : null,
             j.error ? /* @__PURE__ */ jsx("p", { role: "alert", className: "error-text", children: j.error }) : null,
             /* @__PURE__ */ jsxs("div", { className: "actions wrap", children: [
               mutable && j.state === "prepared" && approval?.status === "pending" ? /* @__PURE__ */ jsx("button", { className: "primary", disabled: this.props.data.project.archived || s.busy, onClick: () => void this.run(async () => {
