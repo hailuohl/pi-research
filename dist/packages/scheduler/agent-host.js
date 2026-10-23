@@ -106,7 +106,7 @@ export class AgentHost {
                         this.app.teams.heartbeat(a.id); });
                     active.lastHeartbeat = Date.now();
                 }
-                if (!s.taskId && !active.actor.wakeupId && !this.app.hostAccess.status({ type: 'user' }, s.id).pending)
+                if (!s.taskId && !active.actor.wakeupId && !active.actor.workflowContinuationId && !this.app.hostAccess.status({ type: 'user' }, s.id).pending)
                     for (const queued of this.app.sessions.messages(SYSTEM, s.id).filter(m => m.role === 'user' && m.origin !== 'automation' && !m.wakeupId && m.status === 'queued' && m.mode === 'steer')) {
                         const m = this.app.store.transaction(() => {
                             const latest = this.app.store.get('session', s.id), input = this.app.store.get('message', queued.id, latest.projectId);
@@ -154,24 +154,37 @@ export class AgentHost {
                     this.app.hostAccess.activatePending(grant.sessionId);
             this.app.wakeups.reconcile();
             for (const s of this.app.store.list('session').filter(s => !s.taskId && s.state === 'queued')) {
-                if (this.active.has(s.id) || this.app.hostAccess.status({ type: 'user' }, s.id).pending)
+                const messages = this.app.sessions.messages(SYSTEM, s.id).filter(m => m.status === 'queued');
+                const next = messages.find(m => m.role === 'user' && !m.approvalNoticeId) ?? messages.find(m => m.role === 'user') ?? messages.find(m => m.origin === 'automation');
+                if (this.active.has(s.id) || this.app.hostAccess.status({ type: 'user' }, s.id).pending) {
+                    if (next)
+                        this.app.workflowContinuations.waiting(next);
                     continue;
-                if (!this.inspect(s.model).ready)
+                }
+                if (!this.inspect(s.model).ready) {
+                    if (next)
+                        this.app.workflowContinuations.fail(next, 'WORKFLOW_MODEL_UNAVAILABLE');
                     continue;
+                }
                 try {
                     assertWorkspaceReady(this.app.context, s.id);
                 }
                 catch {
+                    if (next)
+                        this.app.workflowContinuations.fail(next, 'WORKFLOW_WORKSPACE_UNAVAILABLE');
                     continue;
                 }
-                const messages = this.app.sessions.messages(SYSTEM, s.id).filter(m => m.status === 'queued');
-                const next = messages.find(m => m.role === 'user') ?? messages.find(m => m.origin === 'automation');
                 if (next) {
                     try {
                         this.launch(s, next.content, next.id);
                     }
                     catch (error) {
-                        const e = asError(error), latest = this.app.store.get('session', s.id);
+                        const e = asError(error);
+                        if (this.app.workflowContinuations.forMessage(next)) {
+                            this.app.workflowContinuations.fail(next, e.code);
+                            continue;
+                        }
+                        const latest = this.app.store.get('session', s.id);
                         this.app.store.update('session', s.id, latest.version, { state: 'failed', lastError: `${e.code} — ${e.message}` });
                         if (e.code === 'SESSION_PERMISSION_STALE' || e.code === 'MODEL_RESTORE_STALE') {
                             const m = this.app.store.get('message', next.id);
@@ -236,6 +249,7 @@ export class AgentHost {
                 ensure(input.sessionId === latest.id, 'SCOPE_DENIED', '消息不属于此会话', 403);
                 if (input.status !== 'queued')
                     return null;
+                this.app.workflowContinuations.assertClaim(input);
             }
             const continuationId = input?.wakeupId ? this.app.wakeups.get(SYSTEM, input.wakeupId).continuationId : undefined;
             const continuation = continuationId ? store.get('research-continuation', continuationId, latest.projectId) : undefined;
@@ -256,8 +270,11 @@ export class AgentHost {
                     ensure(permission.epoch === 0 && permission.hostEpoch === 0, 'SESSION_PERMISSION_STALE', '旧协作计划没有当前权限依据');
             }
             const slot = this.admission.tryAcquire(latest, latest.generation + 1, this.ownerHost, attempt?.teamId);
-            if (!slot)
+            if (!slot) {
+                if (input)
+                    this.app.workflowContinuations.waiting(input);
                 return null;
+            }
             const next = store.update('session', latest.id, latest.version, { state: 'running', generation: latest.generation + 1, leaseUntil: Date.now() + 30000, lastError: undefined, executionPermission: permission });
             let message;
             if (input) {
@@ -269,7 +286,8 @@ export class AgentHost {
             }
             const wakeupId = messageId ? store.get('message', messageId).wakeupId : undefined;
             const approvalResumeId = wakeupId ? this.app.wakeups.get(SYSTEM, wakeupId).approvalId : undefined;
-            const actor = { researchModelDigest: this.app.researchAutomation.modelIdentity(next), ...(approvalResumeId ? { approvalResumeId } : {}), ...(messageId ? { messageId } : {}), ...(continuationId ? { continuationId } : {}), type: 'agent', projectId: next.projectId, sessionId: next.id, role: next.role, generation: attempt?.generation ?? next.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}), ...(wakeupId ? { wakeupId } : {}) };
+            const workflowContinuationId = this.app.workflowContinuations.forMessage(input);
+            const actor = { ...(workflowContinuationId ? { workflowContinuationId, workflowNoticeMessageId: messageId } : {}), researchModelDigest: this.app.researchAutomation.modelIdentity(next), ...(approvalResumeId ? { approvalResumeId } : {}), ...(!workflowContinuationId && messageId ? { messageId } : {}), ...(continuationId ? { continuationId } : {}), type: 'agent', projectId: next.projectId, sessionId: next.id, role: next.role, generation: attempt?.generation ?? next.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}), ...(wakeupId ? { wakeupId } : {}) };
             // Resolve against the pre-claim generation; the whole claim rolls back on missing capability.
             const bundleId = prepareSessionSkills(this.app, latest, actor);
             ensure(!attempt || attempt.skillBundleId === bundleId, 'SKILL_BINDING_MISMATCH', '任务与会话技能包不一致');
@@ -290,7 +308,8 @@ export class AgentHost {
         const wakeupId = messageId ? store.get('message', messageId).wakeupId : undefined;
         const continuationId = wakeupId ? this.app.wakeups.get(SYSTEM, wakeupId).continuationId : undefined;
         const approvalResumeId = wakeupId ? this.app.wakeups.get(SYSTEM, wakeupId).approvalId : undefined;
-        const actor = { researchModelDigest: this.app.researchAutomation.modelIdentity(claimed), ...(approvalResumeId ? { approvalResumeId } : {}), ...(messageId ? { messageId } : {}), ...(continuationId ? { continuationId } : {}), permission: claimed.executionPermission, ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
+        const workflowContinuationId = this.app.workflowContinuations.forMessage(reservation.message);
+        const actor = { ...(workflowContinuationId ? { workflowContinuationId, workflowNoticeMessageId: messageId, ...(reservation.message?.approvalNoticeId ? { approvalNoticeMessageId: messageId } : {}) } : {}), researchModelDigest: this.app.researchAutomation.modelIdentity(claimed), ...(approvalResumeId ? { approvalResumeId } : {}), ...(!workflowContinuationId && messageId ? { messageId } : {}), ...(continuationId ? { continuationId } : {}), permission: claimed.executionPermission, ...(wakeupId ? { wakeupId } : {}), type: 'agent', projectId: claimed.projectId, sessionId: claimed.id, role: claimed.role, generation: attempt?.generation ?? claimed.generation, ...(attempt ? { taskId: attempt.taskId, attemptId: attempt.id } : {}) };
         let active, requested = false;
         try {
             const bundleId = prepareSessionSkills(this.app, claimed, actor);
@@ -322,6 +341,8 @@ export class AgentHost {
                 // Serialize the final revocation check with process creation across controllers.
                 if (continuationId)
                     ensure(this.app.researchAutomation.isOwner(), 'AUTOMATION_RUNTIME_EXPIRED', '当前进程已失去持续任务owner');
+                if (workflowContinuationId)
+                    this.app.workflowContinuations.assertBindingCurrent(workflowContinuationId);
                 this.app.skills.ensureBundleStartAllowed(claimed.projectId, bundleId);
                 const marked = this.admission.markSpawnRequested(slot.id, this.ownerHost, claimed.generation);
                 store.update('agent-admission', marked.id, marked.version, { httpManagedVersion: 1 });
@@ -329,7 +350,7 @@ export class AgentHost {
                 // Windows locks a process cwd; keep the replaceable workspace only in the SDK options.
                 const spawned = (this.dependencies.fork ?? fork)(this.dependencies.workerEntry ?? join(this.app.context.repoRoot, 'dist/apps/agent-worker/index.js'), [], { cwd: home, env, execArgv: [], stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
                 // Retain the child before commit: a commit failure is not proof of zero model use.
-                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, currentMessageId: approvalNoticeId ? null : messageId ?? null, callIdActors: new Map(), messageIds: messageId ? [messageId] : [], consumedIds: new Set(messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)), approvalNoticeId, currentApprovalNoticeMessageId: approvalNoticeId ? messageId : undefined };
+                active = { catalogFingerprint, admissionId: slot.id, child: spawned, sessionId: claimed.id, generation: claimed.generation, actor, currentMessageId: approvalNoticeId || workflowContinuationId ? null : messageId ?? null, callIdActors: new Map(), messageIds: messageId ? [messageId] : [], consumedIds: new Set(workflowContinuationId ? [] : messageId ? [messageId] : []), attemptId: attempt?.id, lastHeartbeat: Date.now(), sent: new Set(), ended: false, advertisedTools: new Set(toolDefinitions.map(tool => tool.name)), approvalNoticeId, currentApprovalNoticeMessageId: approvalNoticeId ? messageId : undefined };
                 this.active.set(claimed.id, active);
                 spawned.on('error', error => this.finish(active, this.clean(error.message)));
                 spawned.once('exit', code => { active.exitObserved = true; if (active.ended)
@@ -358,7 +379,7 @@ export class AgentHost {
                 prompt += currentEnvelope;
             const currentFiles = input && !wakeupId && !attempt ? nativeInputFiles(store, claimed, input) : [];
             attachmentManifests.push({ envelope: currentEnvelope, files: currentFiles });
-            this.sendInput(worker, { type: 'start', ...(taskModel ? { taskModel } : {}), dataDir: this.app.context.dataDir, contextRecoveryEligible: worker.contextRecoveryEligible, ...(connection ? { connection } : {}), attachmentManifests, managedHttp: true, catalogFingerprint, permissionMode: actor.permission?.mode ?? 'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
+            this.sendInput(worker, { type: 'start', ...(messageId ? { messageId } : {}), ...(taskModel ? { taskModel } : {}), dataDir: this.app.context.dataDir, contextRecoveryEligible: worker.contextRecoveryEligible, ...(connection ? { connection } : {}), attachmentManifests, managedHttp: true, catalogFingerprint, permissionMode: actor.permission?.mode ?? 'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
             store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation: claimed.generation, attemptId: attempt?.id });
         }
         catch (error) {
@@ -403,6 +424,14 @@ export class AgentHost {
         }
     }
     valid(a) {
+        if (a.actor.workflowContinuationId) {
+            try {
+                this.app.workflowContinuations.assertBindingCurrent(a.actor.workflowContinuationId);
+            }
+            catch {
+                return false;
+            }
+        }
         if (a.actor.continuationId && !this.app.researchAutomation.isOwner())
             return false;
         if (a.admissionId) {
@@ -469,6 +498,20 @@ export class AgentHost {
         catch {
             return false;
         }
+    }
+    consumedInputSource(a, s, input) {
+        if (!input || input.projectId !== s.projectId || input.sessionId !== s.id || input.queueRemoved || input.status !== 'running' || input.generation !== a.generation)
+            return false;
+        if (a.actor.workflowContinuationId) {
+            try {
+                this.app.workflowContinuations.assertBindingCurrent(a.actor.workflowContinuationId);
+                return input.id === a.actor.workflowNoticeMessageId && this.app.workflowContinuations.forMessage(input) === a.actor.workflowContinuationId;
+            }
+            catch {
+                return false;
+            }
+        }
+        return input.role === 'user' && input.origin !== 'automation' && !input.wakeupId;
     }
     async onMessage(a, m, sessionDir) {
         if (m?.type === 'model_http_acquire' || m?.type === 'model_http_finish') {
@@ -659,7 +702,7 @@ export class AgentHost {
             const content = this.redact(String(m.content ?? ''));
             this.app.store.transaction(() => {
                 ensure(this.valid(a), 'LEASE_EXPIRED', '旧 Worker 不能保存当前会话输出');
-                const record = this.app.store.create('message', s.projectId, { sessionId: s.id, generation: a.generation, phase: toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer', ...(toolCalls.length ? { toolCalls } : {}), ...(a.actor.wakeupId ? { origin: 'automation', wakeupId: a.actor.wakeupId } : {}), role: 'assistant', content: content.slice(0, 32000), ...(content.length > 32000 ? { contentTruncated: true } : {}), mode: 'prompt', status: messageError ? 'failed' : 'completed', error: messageError, usage: m.usage });
+                const record = this.app.store.create('message', s.projectId, { sessionId: s.id, generation: a.generation, phase: toolCalls.length || m.phase === 'commentary' || m.stopReason === 'toolUse' ? 'commentary' : 'final_answer', ...(toolCalls.length ? { toolCalls } : {}), ...(a.actor.wakeupId ? { origin: 'automation', wakeupId: a.actor.wakeupId } : a.actor.workflowContinuationId ? { origin: 'automation' } : {}), role: 'assistant', content: content.slice(0, 32000), ...(content.length > 32000 ? { contentTruncated: true } : {}), mode: 'prompt', status: messageError ? 'failed' : 'completed', error: messageError, usage: m.usage });
                 this.app.store.event(s.projectId, 'session.message_completed', { sessionId: s.id, generation: s.generation, messageId: record.id });
                 this.app.store.create('model-usage', s.projectId, { sessionId: s.id, attemptId: a.attemptId ?? null, provider: s.model.provider, model: s.model.model, usage: m.usage, status: m.usage ? 'reported' : 'unknown', stopReason: m.stopReason ?? null });
             });
@@ -674,13 +717,14 @@ export class AgentHost {
             if (Number.isSafeInteger(m.deltaId) && !a.exitObserved && a.child.connected)
                 a.child.send({ type: 'delta_ack', deltaId: m.deltaId }, () => { });
         }
-        if (m?.type === 'input_consumed' && a.messageIds.includes(m.messageId) && a.sent.has(m.messageId)) {
+        if (m?.type === 'input_consumed' && a.messageIds.includes(m.messageId) && a.sent.has(m.messageId) && (!a.actor.workflowContinuationId || !a.consumedIds.has(m.messageId))) {
             const input = this.app.store.maybe('message', m.messageId);
-            const valid = input?.projectId === s.projectId && input.sessionId === s.id && input.role === 'user' && input.origin !== 'automation' && !input.wakeupId && !input.queueRemoved && input.status === 'running' && input.generation === a.generation;
-            if (valid) {
-                a.consumedIds.add(m.messageId);
-                a.currentMessageId = input.approvalNoticeId ? null : m.messageId;
-                a.currentApprovalNoticeMessageId = input.approvalNoticeId ? input.id : undefined;
+            if (this.consumedInputSource(a, s, input)) {
+                this.app.store.transaction(() => { ensure(this.valid(a), 'LEASE_EXPIRED', '旧Worker不能确认本轮消费'); const current = this.app.store.get('message', input.id, s.projectId); ensure(this.consumedInputSource(a, s, current), 'MESSAGE_STALE', '消费确认来源已变化'); if (a.actor.workflowContinuationId)
+                    this.app.workflowContinuations.consumed(current, a.generation);
+                else if (current.role === 'user' && current.origin !== 'automation' && !current.wakeupId && !current.approvalNoticeId && !s.taskId && s.role === 'coordinator') {
+                    this.app.workflowContinuations.humanConsumed(s.id, current.id);
+                } a.consumedIds.add(m.messageId); a.currentMessageId = current.approvalNoticeId || a.actor.workflowContinuationId ? null : m.messageId; a.currentApprovalNoticeMessageId = current.approvalNoticeId ? current.id : undefined; });
             }
             else {
                 a.currentMessageId = null;
@@ -704,6 +748,8 @@ export class AgentHost {
             return; if (messageId)
             this.failInput(a, messageId, this.clean(error.message)); if (payload.type === 'start')
             this.finish(a, this.clean(error.message)); };
+        if (messageId)
+            a.sent.add(messageId);
         try {
             a.child.send(payload, failed);
         }

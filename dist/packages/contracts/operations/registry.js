@@ -192,6 +192,7 @@ function executeRegistered(c, name, x) {
     }
 }
 const SPECS = [
+    make('workflow_confirm', { idempotencyPolicy: 'key-required', requiresSession: true, authorize: c => userOnly(c.actor), preconditions: c => assertProjectWritable(c.app.store, c.projectId), execute: (c, input) => c.app.workflowContinuations.confirm(c.actor, c.projectId, c.session.id, input) }),
     make('research_action_prepare', { requiresSession: true, idempotencyPolicy: 'key-required', authorize: c => { c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_action_prepare')); }, preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.prepare(c.actor, c.projectId, c.session.id, x) }),
     make('research_action_inspect', { requiresSession: true, idempotencyPolicy: 'read-only', authorize: c => { c.app.automaticApprovals.coordinator(c.actor, c.projectId, c.app.operations.authorizeAgent(c.actor, 'research_action_inspect')); }, preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.inspect(c.actor, c.projectId, c.session.id, x.requestId) }),
     make('research_action_decide', { requiresSession: true, idempotencyPolicy: 'key-required', authorize: c => userOnly(c.actor), preconditions: noPrecondition, execute: (c, x) => c.app.researchActions.decide(c.actor, c.projectId, c.session.id, x) }),
@@ -488,6 +489,8 @@ export class OperationRegistry {
     specs() { return SPECS.map(({ id, inputSchema, outputSchema, idempotencyPolicy, requiresSession }) => ({ id, inputSchema, outputSchema, idempotencyPolicy, ...(requiresSession ? { requiresSession } : {}) })); }
     /** Identity and fencing still apply to completed-call replay. */
     agentIdentity(actor, name) {
+        if (actor.workflowContinuationId)
+            this.app.workflowContinuations.assertActor(actor);
         ensure(actor.type === 'agent' && actor.sessionId && actor.projectId, 'PERMISSION_DENIED', '需要宿主派发的 Agent 身份', 403);
         const s = this.app.sessions.get(actor, actor.sessionId);
         ensure(s.role === actor.role && s.projectId === actor.projectId && s.taskId === actor.taskId, 'SCOPE_DENIED', '角色或任务与会话归属不一致', 403);

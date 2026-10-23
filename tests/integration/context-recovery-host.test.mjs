@@ -39,8 +39,16 @@ for(const scope of ['readOnly','approval-notice','automation','task','wakeup','c
   if(scope==='task'){const team=startTeam(s,[spec('recovery',{objective:'RECOVERY summary'})]);h.tick();workerSession=s.app.teams.tasks(USER,team.id)[0].sessionId;}
   else{
    if(scope==='readOnly'){const p=s.app.sessionPermissions.status(USER,s.session.id);s.app.sessionPermissions.set(USER,s.session.id,{mode:'readOnly',expectedVersion:p.version,expectedHostVersion:p.hostAccess.version});}
-   const input=s.app.sessions.send(USER,s.session.id,{content:'RECOVERY summary'});
-   if(scope==='approval-notice'||scope==='automation')s.app.store.update('message',input.id,input.version,scope==='approval-notice'?{approvalNoticeId:'fixture-approval'}:{origin:'automation'});
+   if(scope==='approval-notice'){
+    s.app.sessionPermissions.initialize(s.session.id,'confirm');const root=s.app.store.get('session',s.session.id),running=s.app.store.update('session',root.id,root.version,{state:'running',generation:root.generation+1,leaseUntil:Date.now()+60000,skillBundleId:s.app.skills.configuration(s.project.id).bundleId});
+    const actor={type:'agent',role:'coordinator',projectId:s.project.id,sessionId:running.id,generation:running.generation,permission:s.app.sessionPermissions.capture(running.id)};
+    assert.throws(()=>s.app.sessionPermissions.guard(actor,'artifact_create',{title:'Recovery permission fixture',content:'Fixed synthetic approval'},'recovery-approval-notice'),{code:'APPROVAL_REQUIRED'});
+    const action=s.app.sessionPermissions.status(USER,running.id).actions.at(-1);s.app.sessionPermissions.decide(USER,running.id,action.id,{expectedVersion:action.version,expectedApprovalVersion:action.approval.version,approved:true});
+    const notice=s.app.sessions.messages(USER,running.id).find(message=>message.approvalNoticeId===action.id);s.app.store.update('message',notice.id,notice.version,{content:'RECOVERY summary'});const current=s.app.store.get('session',running.id);s.app.store.update('session',current.id,current.version,{state:'queued',leaseUntil:0});
+   }else{
+    const input=s.app.sessions.send(USER,s.session.id,{content:'RECOVERY summary'});
+    if(scope==='automation')s.app.store.update('message',input.id,input.version,{origin:'automation'});
+   }
    h.tick();const active=h.active.get(s.session.id);
    // Check restricted actors without inventing persisted wakeups or jobs that the lifecycle would need to finish.
    if(scope==='wakeup'||scope==='continuation'){assert.equal(h.contextRecoveryEligible({...active,actor:{...active.actor,[scope==='wakeup'?'wakeupId':'continuationId']:'fixture-restricted-actor'}}),false);active.contextRecoveryEligible=false;}

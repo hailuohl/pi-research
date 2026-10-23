@@ -246,6 +246,15 @@ export class SessionService {
         this.c.store.event(s.projectId, 'session.automation_queued', { sessionId: id, messageId: message.id, wakeupId });
         return message;
     }
+    workflowNotice(id, workflowContinuationId, content, permission) {
+        const session = this.c.store.get('session', id);
+        ensure(session.role === 'coordinator' && !session.taskId && !session.teamId && session.state !== 'archived', 'SESSION_BUSY', '主会话不能接收固定续接');
+        const message = this.c.store.create('message', session.projectId, { sessionId: id, role: 'system', origin: 'automation', workflowContinuationId, content, mode: 'prompt', status: 'queued', permission });
+        if (session.state !== 'running')
+            this.c.store.update('session', id, session.version, { state: 'queued', lastError: undefined });
+        this.c.store.event(session.projectId, 'session.automation_queued', { sessionId: id, messageId: message.id });
+        return message;
+    }
     system(id, content) { const s = this.c.store.get('session', id); const m = this.c.store.create('message', s.projectId, { sessionId: id, role: 'system', content, mode: 'follow_up', status: 'completed' }); this.c.store.event(s.projectId, 'session.message_completed', { sessionId: id, messageId: m.id }); return m; }
     /** Host notices are transported as data, never as new system instructions.
      * Delivery is at-least-once until a successful prompt checkpoint is acknowledged. */
@@ -285,6 +294,6 @@ export class SessionService {
             return branch;
         });
     }
-    retry(actor, id, messageId) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.sendMessage(actor, id, { content: m.content, mode: 'prompt', ...(m.attachments ? (m.attachments.some(a => a.parseResultId) ? { parsedDocumentAttachments: m.attachments.map(a => ({ documentVersionId: a.documentVersionId, parseResultId: a.parseResultId })) } : { attachmentDocumentIds: m.attachments.map(a => a.documentVersionId) }) : {}) }, m.attachments?.every(a => !a.inputMode && !a.parseResultId) ? m.attachments : undefined, m.nativeAttachmentContextIds, m.approvalNoticeId); }
+    retry(actor, id, messageId) { userOnly(actor); const m = this.messages(actor, id).find(m => m.id === messageId); ensure(m && !m.workflowContinuationId && !(m.approvalNoticeId && this.c.store.get('session-action', m.approvalNoticeId).workflowContinuationId) && m.role === 'user' && ['failed', 'cancelled'].includes(m.status), 'MESSAGE_NOT_RETRYABLE', '只能重试失败或中断的用户消息'); return this.sendMessage(actor, id, { content: m.content, mode: 'prompt', ...(m.attachments ? (m.attachments.some(a => a.parseResultId) ? { parsedDocumentAttachments: m.attachments.map(a => ({ documentVersionId: a.documentVersionId, parseResultId: a.parseResultId })) } : { attachmentDocumentIds: m.attachments.map(a => a.documentVersionId) }) : {}) }, m.attachments?.every(a => !a.inputMode && !a.parseResultId) ? m.attachments : undefined, m.nativeAttachmentContextIds, m.approvalNoticeId); }
 }
 //# sourceMappingURL=sessions.js.map

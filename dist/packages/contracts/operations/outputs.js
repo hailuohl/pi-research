@@ -185,6 +185,7 @@ const contextTask = object({ id: string, key: string, result: taskResult }, ['re
 const artifact = row('artifact', { title: string, digest: string, size: integer, path: string, mediaType: string, origin: string, wakeupId: string, runId: string, taskId: string, discoveryGrant: DISCOVERY_GRANT_REFERENCE_SCHEMA }, ['wakeupId', 'runId', 'taskId', 'discoveryGrant']);
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    workflow_confirm: WORKFLOW_STATUS_SCHEMA,
     ...METHOD_OUTPUT_SCHEMAS,
     ...RESEARCH_ACTION_OUTPUT_SCHEMAS,
     research_task_checkpoint: object({ continuationId: string, state: enumeration('completed', 'waiting', 'needs_attention'), summary: string, runIds: strings, developmentJobIds: strings, scientificConclusion: { const: false } }),
@@ -263,4 +264,5 @@ export const OUTPUT_SCHEMAS = {
     }, ['plans', 'candidates'])
 };
 export { string, number, integer, boolean, nullableString, strings, enumeration, array, object, row, nullable };
+import { WORKFLOW_STATUS_SCHEMA } from './workflow-continuation-schemas.js';
 //# sourceMappingURL=outputs.js.map

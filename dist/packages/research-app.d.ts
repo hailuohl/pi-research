@@ -55,6 +55,7 @@ import { BudgetService } from './policy/budget.js';
 import { EvidenceService } from './evidence/service.js';
 import { RunService } from './runners/service.js';
 export declare class ResearchApp {
+    readonly workflowContinuations: WorkflowContinuationService;
     readonly automaticApprovals: AutomaticApprovalService;
     readonly researchActions: ResearchActionService;
     readonly computeMonitor: ComputeConnectionMonitor;
@@ -121,3 +122,4 @@ export declare class ResearchApp {
     constructor(dataDir: string, repoRoot: string);
     close(): void | Promise<void>;
 }
+import { WorkflowContinuationService } from './policy/workflow-continuations.js';

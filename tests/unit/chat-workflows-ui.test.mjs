@@ -70,7 +70,7 @@ test('research plan activation uses its fixed version and recovers after the app
   const data=base(),c=campaign(),a={id:c.approvalId,status:'approved',version:2};data.campaigns=[c];data.approvals=[a];
   const requests=[];globalThis.fetch=async(url,init)=>{requests.push({url,body:JSON.parse(init.body)});return{ok:true,json:async()=>({})};};
   await button(view(data),'启动已批准研究计划').props.onClick();
-  assert.deepEqual(requests,[{url:'/api/campaigns/campaign/activate',body:{expectedVersion:1}}]);
+  assert.deepEqual(requests,[{url:'/api/operations/workflow_confirm',body:{projectId:'p',sessionId:'root-a',input:{sourceKind:'campaign',sourceId:c.id,sourceDigest:c.planDigest,expectedVersion:1,approvalId:a.id,expectedApprovalVersion:2}}}]);
   assert.equal(button(view(data,{session:{...session,state:'archived'}}),'启动已批准研究计划').props.disabled,true);
 });
 

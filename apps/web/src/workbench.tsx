@@ -8,7 +8,7 @@ import {ScrollHistory} from './scroll-history.js';
 import {MessageQueue,type QueueMessage} from './message-queue.js';
 import {ComputeWait} from './compute-wait.js';
 import { WakeupPanel } from './campaigns.js';
-import {ChatWorkflows,proposalSession} from './chat-workflows.js';
+import {ChatWorkflows} from './chat-workflows.js';
 import {ResearchActionCards} from './research-action-cards.js';
 import {ComposerControls} from './composer-controls.js';
 import {readComposerDraft,saveComposerDraft,type ComposerDraft} from './composer-draft.js';
@@ -237,7 +237,7 @@ export class Chat extends React.Component<{
                 ...(data.intents??[]).filter(row=>(row.rootSessionId===session.id||row.rootSessionId==null&&campaignIntents.has(row.id))&&row.status==='prepared'&&!row.runId&&!row.runGrant&&!data.approvals.find(approval=>approval.id===row.approvalId)?.runGrant).map(row=>row.approvalId),
                 ...(data.developmentTasks??[]).filter(row=>row.sessionId===session.id&&!row.jobId&&Date.parse(row.manifest?.deadline??'')>Date.now()&&(!session.workingGrantId||row.manifest.workingGrant?.id===session.workingGrantId&&grant?.effectiveState==='active'&&grant.validity==='current'&&Date.parse(grant.expiresAt)>Date.now())).map(row=>row.grantId),
                 ...(data.reviews??[]).filter(row=>row.producerSessionId===session.id&&data.project.settings.enabled&&data.teams.some(team=>team.id===row.teamId&&team.state==='awaiting_approval'&&team.delegationEnabled)).map(row=>row.approvalId),
-                ...(data.changeProposals??[]).filter(row=>proposalSession(data,row)===session.id&&row.state==='prepared'&&row.sourceValidity!=='stale').map(row=>row.approvalId),
+                ...(data.changeProposals??[]).filter(row=>row.rootSessionId===session.id&&row.state==='prepared'&&row.sourceValidity!=='stale').map(row=>row.approvalId),
             ]);
             for(const approval of data.approvals??[])if(approval.status==='pending'&&!approval.automaticApproval&&approvalIds.has(approval.id))pending.add(approval.id);
             for(const request of data.researchActions??[])if(request.projectId===data.project.id&&request.sessionId===session.id&&request.state==='pending'&&!request.automaticApproval)pending.add('research:'+request.id);

@@ -191,6 +191,7 @@ const artifact = row('artifact', { title: string, digest: string, size: integer,
 
 /** All public tool success bodies. Fixed records are closed; only named service-owned dictionaries are open. */
 export const OUTPUT_SCHEMAS = {
+    workflow_confirm:WORKFLOW_STATUS_SCHEMA,
     ...METHOD_OUTPUT_SCHEMAS,
     ...RESEARCH_ACTION_OUTPUT_SCHEMAS,
     research_task_checkpoint:object({continuationId:string,state:enumeration('completed','waiting','needs_attention'),summary:string,runIds:strings,developmentJobIds:strings,scientificConclusion:{const:false}}),
@@ -272,3 +273,4 @@ export const OUTPUT_SCHEMAS = {
 export { string, number, integer, boolean, nullableString, strings, enumeration, array, object, row, nullable };
 
 export type OperationOutput<N extends keyof typeof OUTPUT_SCHEMAS> = InferSchema<(typeof OUTPUT_SCHEMAS)[N]>;
+import {WORKFLOW_STATUS_SCHEMA} from './workflow-continuation-schemas.js';

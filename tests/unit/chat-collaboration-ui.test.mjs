@@ -175,6 +175,10 @@ test('drawer reminders count reachable review, campaign, intent and inferred cha
   project.approvals=['plain','review','draft','stopped','ready','submitted','bound','expired','change','stale'].map(id=>({id:id+'-approval',subjectId:id==='plain'?'plain-team':id==='review'?'review-team':id,status:'pending'}));
   for(const fixedIntent of project.intents){Object.assign(fixedIntent,{projectId:project.project.id,experimentId:'fixture-experiment',version:1,manifestDigest:'manifest-'+fixedIntent.id});Object.assign(project.approvals.find(record=>record.id===fixedIntent.approvalId),{projectId:project.project.id,version:1,subjectKind:'run-intent',scope:'run.submit',digest:fixedIntent.manifestDigest});}
   const view=chat({project}),workflow=elements(view.render()).find(node=>node.type===ChatWorkflows),cards=synchronousState(new ChatWorkflows(workflow.props));
+  assert.deepEqual(elements(view.render()).find(node=>node.props?.className==='chat-pending-count').props.children,['已知待确认 ',3]);
+  const legacyCards=cards.render(),legacyButtons=elements(legacyCards).filter(node=>node.type==='button').map(text);
+  assert.equal(legacyButtons.includes('拒绝代码变更'),false);assert.match(text(legacyCards),/只读保留/);
+  project.changeProposals.find(row=>row.id==='change').rootSessionId='root-a';
   assert.deepEqual(elements(view.render()).find(node=>node.props?.className==='chat-pending-count').props.children,['已知待确认 ',4]);
   const buttons=elements(cards.render()).filter(node=>node.type==='button').map(text);
   for(const label of ['批准并启动独立审查','批准并启动研究计划','确认并让智能体执行','拒绝代码变更'])assert.ok(buttons.includes(label),label);

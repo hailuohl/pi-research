@@ -43,6 +43,8 @@ export declare class SessionService {
             version: number;
             createdAt: string;
             updatedAt: string;
+            workflowContinuationId?: string;
+            workflowConsumedGeneration?: number;
             branchSource?: {
                 sessionId: string;
                 messageId: string;
@@ -84,6 +86,7 @@ export declare class SessionService {
     view(actor: Actor, id: string, input?: unknown): SessionView;
     /** Host-only persisted input; never masquerades as a user-authored message. */
     automation(id: string, wakeupId: string, content: string, permission?: import('../policy/session-permissions.js').PermissionReference): Row<Message>;
+    workflowNotice(id: string, workflowContinuationId: string, content: string, permission: import('../policy/session-permissions.js').PermissionReference): Row<Message>;
     system(id: string, content: string): Row<Message>;
     /** Host notices are transported as data, never as new system instructions.
      * Delivery is at-least-once until a successful prompt checkpoint is acknowledged. */

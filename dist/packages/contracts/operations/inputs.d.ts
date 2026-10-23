@@ -6401,5 +6401,76 @@ export declare const INPUT_SCHEMAS: {
         readonly required: ("profile" | "outputProfile")[];
         readonly additionalProperties: false;
     };
+    readonly workflow_confirm: {
+        anyOf: ({
+            readonly type: "object";
+            readonly properties: {
+                readonly sourceKind: {
+                    readonly const: "brief";
+                };
+                readonly sourceId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly sourceDigest: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly expectedVersion: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+            };
+            readonly required: readonly ["sourceKind", "sourceId", "sourceDigest", "expectedVersion"];
+            readonly additionalProperties: false;
+        } | {
+            readonly type: "object";
+            readonly properties: {
+                readonly sourceKind: {
+                    readonly enum: readonly ["campaign", "change"];
+                };
+                readonly approvalId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly expectedApprovalVersion: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+                readonly sourceId: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly sourceDigest: {
+                    readonly pattern?: string | undefined;
+                    readonly type: "string";
+                    readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                    readonly minLength: number;
+                    readonly maxLength: number;
+                };
+                readonly expectedVersion: {
+                    readonly type: "integer";
+                    readonly minimum: number;
+                    readonly maximum: number;
+                };
+            };
+            readonly required: readonly ["sourceKind", "sourceId", "sourceDigest", "expectedVersion", "approvalId", "expectedApprovalVersion"];
+            readonly additionalProperties: false;
+        })[];
+    };
 };
 export type OperationInput<N extends keyof typeof INPUT_SCHEMAS> = InferSchema<(typeof INPUT_SCHEMAS)[N]>;

@@ -51,6 +51,7 @@ const plan = s.object({ goal: s.string(8000), tasks: s.array(task, 24, 1), budge
 const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    workflow_confirm: WORKFLOW_CONFIRM_INPUT,
     ...METHOD_INPUT_SCHEMAS,
     ...RESEARCH_ACTION_INPUT_SCHEMAS,
     ...EXECUTION_ENVIRONMENT_INPUT_SCHEMAS,
@@ -114,4 +115,5 @@ export const INPUT_SCHEMAS = {
     task_progress_report: s.object({ message: s.string(2000) }, ['message']),
     task_result_submit: s.object({ formalReportAssessment: FORMAL_REPORT_ASSESSMENT_SCHEMA, developmentAssessment: DEVELOPMENT_ASSESSMENT_SCHEMA, summary: s.string(16000), outcome: s.enum(['completed', 'partial', 'blocked']), evidenceIds: s.nullable(strings()), artifactIds: s.nullable(strings()), claims: s.nullable(s.array(s.object({ statement: s.string(8000), evidenceIds: strings(), limitations: s.nullable(strings(30)) }, ['statement', 'evidenceIds']), 24)), unresolvedQuestions: s.nullable(strings(30)), verdict: s.enum(['accept', 'reject', 'disputed']) }, ['summary', 'outcome']),
 };
+import { WORKFLOW_CONFIRM_INPUT } from './workflow-continuation-schemas.js';
 //# sourceMappingURL=inputs.js.map

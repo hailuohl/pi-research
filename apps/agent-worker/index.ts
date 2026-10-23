@@ -26,7 +26,7 @@ type WorkerMessage =
     | {type: 'delta_ack'; deltaId:number}
     | {type: 'abort'}
     | {type: 'steer' | 'follow_up'; content: string; messageId: string;attachmentManifest?:AttachmentManifest}
-    | {type: 'start'; taskModel?:FrozenTaskModel; dataDir:string; contextRecoveryEligible?:boolean; attachmentManifests?:AttachmentManifest[];connection?:Omit<ModelConnection,'apiKey'>; managedHttp?:boolean; catalogFingerprint?:string; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
+    | {type: 'start'; messageId?:string; taskModel?:FrozenTaskModel; dataDir:string; contextRecoveryEligible?:boolean; attachmentManifests?:AttachmentManifest[];connection?:Omit<ModelConnection,'apiKey'>; managedHttp?:boolean; catalogFingerprint?:string; permissionMode?:import('../../packages/policy/session-permissions.js').PermissionReference['mode']; repoRoot: string; workspace: string; agentDir: string; sessionDir: string; modelsPath: string; piSessionPath: string | null; role: Role; model: ModelConfig; prompt: string; history: string | null; hostMessages?: HostNotice[]; skillBundle?: {prompt: string; skills: SessionSetup['skills']}; tools: {name: string; description: string; example: unknown; inputSchema: JsonSchema}[]};
 let session: AgentSession | undefined;
 let providerFailure: string | undefined;
 let taskModelFailure:string|undefined;
@@ -176,6 +176,7 @@ process.on('message', async (message) => {
         };
         if (session.model?.provider !== raw.model.provider || session.model?.id !== raw.model.model) throw new Error('MODEL_FALLBACK_REFUSED: SDK 尝试切换未经批准的模型');
         send({ type: 'ready', sessionFile: session.sessionFile, sessionId: session.sessionId, activeTools: session.getActiveToolNames(), model: { provider: session.model?.provider, id: session.model?.id },...(actualExecution?{thinking:{requested:raw.model.thinking,requestedPiThinking:requestedThinking,piThinking:session.thinkingLevel,parametersDigest:digest(actualExecution.parameters),executionDigest:digest(actualExecution)}}:{}) });
+        const initialPrompt=buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []);
         session.subscribe((e) => {
             if(e.type==='compaction_start'){
                 session!.setAutoCompactionEnabled(false);
@@ -187,9 +188,9 @@ process.on('message', async (message) => {
                 if(!e.result||e.aborted||e.errorMessage)recoveryFailure=COMPACTION_FAILURE;
             }
             if(e.type==='message_start'&&e.message.role==='user'){
-                if(!initialUserSeen)initialUserSeen=true;
+                const body=typeof e.message.content==='string'?e.message.content:e.message.content.filter(p=>p.type==='text').map(p=>p.text).join('');
+                if(!initialUserSeen){initialUserSeen=true;if(raw.messageId&&body===initialPrompt)send({type:'input_consumed',messageId:raw.messageId});}
                 else {
-                    const body=typeof e.message.content==='string'?e.message.content:e.message.content.filter(p=>p.type==='text').map(p=>p.text).join('');
                     // Controlled resource loader has no skills, templates or input extensions; match only the next raw input.
                     const next=queuedInputs[0];
                     if(next&&next.content===body){queuedInputs.shift();send({type:'input_consumed',messageId:next.id});}
@@ -223,7 +224,7 @@ process.on('message', async (message) => {
             const after=branch.slice(branch.indexOf(lastAssistant)+1);
             if(!after.some(entry=>entry.type==='compaction'||entry.type==='context_edit'&&entry.targetId===lastAssistant.id&&entry.replacement===null||entry.type==='message'&&entry.message.role==='toolResult')){pendingEmptyLength=EMPTY_LENGTH_FAILURE;armRecovery();}
         }
-        try{if (!stopping) await session.prompt(buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []));}
+        try{if (!stopping) await session.prompt(initialPrompt);}
         finally{session.setAutoCompactionEnabled(false);recoveryArmed=false;}
         if (!providerFailure && !pendingEmptyLength && !recoveryFailure && !stopping && raw.hostMessages?.length)
             send({type: 'context_ack', messageIds: raw.hostMessages.map((m: {id: string}) => m.id)});

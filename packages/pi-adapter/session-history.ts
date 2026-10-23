@@ -46,6 +46,7 @@ export function sessionMessageContent(store:Store,session:Row<Session>,value:unk
 }
 
 export function canSteerSession(store:Store,session:Row<Session>){
+ if(store.db.prepare("SELECT 1 FROM records m JOIN records a ON a.kind='session-action' AND a.id=json_extract(m.data,'$.approvalNoticeId') WHERE m.kind='message' AND m.project_id=? AND json_extract(m.data,'$.sessionId')=? AND json_extract(m.data,'$.status')='running' AND json_extract(a.data,'$.workflowContinuationId') IS NOT NULL LIMIT 1").get(session.projectId!,session.id))return false;
  return session.state==='running'&&session.leaseUntil>Date.now()&&!session.taskId&&!store.get<{archived:boolean}>('project',session.projectId!).archived&&!!store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.role')='user' AND COALESCE(json_extract(data,'$.origin'),'user')<>'automation' AND json_extract(data,'$.status')='running' LIMIT 1").get(session.projectId!,session.id)&&!store.db.prepare("SELECT 1 FROM records WHERE kind='message' AND project_id=? AND json_extract(data,'$.sessionId')=? AND json_extract(data,'$.status')='running' AND (json_extract(data,'$.role')='system' OR json_extract(data,'$.origin')='automation' OR json_extract(data,'$.wakeupId') IS NOT NULL) LIMIT 1").get(session.projectId!,session.id);
 }
 export function sessionQueue(store:Store,session:Row<Session>,value:unknown={}){

@@ -2,7 +2,7 @@
 export function publicRecord(value) {
     if (!value || typeof value !== 'object')
         return value;
-    const row = value, fields = row.kind === 'development-task' ? ['resume'] : row.kind === 'session' ? ['executionPermission'] : row.kind === 'message' ? ['permission', 'nativeAttachmentContextIds', 'approvalNoticeId'] : row.kind === 'team' || row.kind === 'team-plan' ? ['permission', 'taskPermissionEffects'] : row.kind === 'run' || row.kind === 'sandbox-job' ? ['permission', 'permissionOrigin'] : row.kind === 'git-operation' ? ['permission', 'permissionOrigin', 'approvedAction', 'workingGrant'] : [];
+    const row = value, fields = row.kind === 'development-task' ? ['resume'] : row.kind === 'session' ? ['executionPermission', 'lastConsumedHumanMessageId'] : row.kind === 'message' ? ['permission', 'nativeAttachmentContextIds', 'approvalNoticeId', 'workflowContinuationId', 'workflowConsumedGeneration'] : row.kind === 'team' || row.kind === 'team-plan' ? ['permission', 'taskPermissionEffects'] : row.kind === 'run' || row.kind === 'sandbox-job' ? ['permission', 'permissionOrigin'] : row.kind === 'git-operation' ? ['permission', 'permissionOrigin', 'approvedAction', 'workingGrant'] : [];
     if (!fields.length)
         return value;
     const result = { ...row };

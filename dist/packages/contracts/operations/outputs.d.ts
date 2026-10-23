@@ -39546,6 +39546,64 @@ export declare const OUTPUT_SCHEMAS: {
         readonly required: ("inputFormat" | "fixtureRef" | "inputPath")[];
         readonly additionalProperties: false;
     };
+    readonly workflow_confirm: {
+        readonly type: "object";
+        readonly properties: {
+            readonly id: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceKind: {
+                readonly enum: readonly ["brief", "campaign", "change"];
+            };
+            readonly sourceId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly sourceDigest: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly route: {
+                readonly enum: readonly ["workflow", "existing-handoff"];
+            };
+            readonly state: {
+                readonly enum: readonly ["blocked", "pending", "queued", "running", "completed", "failed", "cancelled", "superseded"];
+            };
+            readonly reasonCode: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly reason: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+            readonly resultId: {
+                readonly pattern?: string | undefined;
+                readonly type: "string";
+                readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                readonly minLength: number;
+                readonly maxLength: number;
+            };
+        };
+        readonly required: readonly ["id", "sourceKind", "sourceId", "sourceDigest", "route", "state"];
+        readonly additionalProperties: false;
+    };
 };
 export { string, number, integer, boolean, nullableString, strings, enumeration, array, object, row, nullable };
 export type OperationOutput<N extends keyof typeof OUTPUT_SCHEMAS> = InferSchema<(typeof OUTPUT_SCHEMAS)[N]>;

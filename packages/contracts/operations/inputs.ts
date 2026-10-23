@@ -53,6 +53,7 @@ const candidate = RESEARCH_CANDIDATE_INPUT_SCHEMA;
 
 /** Shape/primitive validation is shared; permissions, filesystem checks and state-dependent limits stay in services. */
 export const INPUT_SCHEMAS = {
+    workflow_confirm:WORKFLOW_CONFIRM_INPUT,
     ...METHOD_INPUT_SCHEMAS,
     ...RESEARCH_ACTION_INPUT_SCHEMAS,
     ...EXECUTION_ENVIRONMENT_INPUT_SCHEMAS,
@@ -118,3 +119,4 @@ export const INPUT_SCHEMAS = {
 } as const satisfies Record<string, JsonSchema>;
 
 export type OperationInput<N extends keyof typeof INPUT_SCHEMAS> = InferSchema<(typeof INPUT_SCHEMAS)[N]>;
+import {WORKFLOW_CONFIRM_INPUT} from './workflow-continuation-schemas.js';

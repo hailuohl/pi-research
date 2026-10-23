@@ -86,7 +86,7 @@ test('actual Host and pinned SDK consume duplicate and slash-prefix steers in or
   host.tick();await until(()=>events.filter(e=>e.type==='message_ack').length===steers.length);
   assert.equal(s.app.store.get('message',follow.id).status,'queued');assert.equal(requests.length,1);assert.equal(s.app.agentAdmission.snapshot().counts.held,1);
   releaseFirst();await until(()=>host.active.size===0);
-  assert.deepEqual(events.filter(e=>e.type==='input_consumed').map(e=>e.messageId),steers.map(m=>m.id));
+  assert.deepEqual(events.filter(e=>e.type==='input_consumed').map(e=>e.messageId),[initial,...steers].map(m=>m.id));
   for(const m of [initial,...steers])assert.equal(s.app.store.get('message',m.id).status,'completed');
   assert.equal(s.app.store.get('message',follow.id).status,'queued');assert.equal(s.app.agentAdmission.snapshot().counts.held,0);
   const current=s.app.sessions.get(USER,row.id),native=readFileSync(s.app.store.paths.physical(current.piSessionPath),'utf8').trim().split(/\r?\n/).map(JSON.parse),users=native.filter(e=>e.message?.role==='user').map(e=>e.message.content.filter(p=>p.type==='text').map(p=>p.text).join(''));

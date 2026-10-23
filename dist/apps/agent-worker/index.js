@@ -209,6 +209,7 @@ process.on('message', async (message) => {
         if (session.model?.provider !== raw.model.provider || session.model?.id !== raw.model.model)
             throw new Error('MODEL_FALLBACK_REFUSED: SDK 尝试切换未经批准的模型');
         send({ type: 'ready', sessionFile: session.sessionFile, sessionId: session.sessionId, activeTools: session.getActiveToolNames(), model: { provider: session.model?.provider, id: session.model?.id }, ...(actualExecution ? { thinking: { requested: raw.model.thinking, requestedPiThinking: requestedThinking, piThinking: session.thinkingLevel, parametersDigest: digest(actualExecution.parameters), executionDigest: digest(actualExecution) } } : {}) });
+        const initialPrompt = buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []);
         session.subscribe((e) => {
             if (e.type === 'compaction_start') {
                 session.setAutoCompactionEnabled(false);
@@ -227,10 +228,13 @@ process.on('message', async (message) => {
                     recoveryFailure = COMPACTION_FAILURE;
             }
             if (e.type === 'message_start' && e.message.role === 'user') {
-                if (!initialUserSeen)
+                const body = typeof e.message.content === 'string' ? e.message.content : e.message.content.filter(p => p.type === 'text').map(p => p.text).join('');
+                if (!initialUserSeen) {
                     initialUserSeen = true;
+                    if (raw.messageId && body === initialPrompt)
+                        send({ type: 'input_consumed', messageId: raw.messageId });
+                }
                 else {
-                    const body = typeof e.message.content === 'string' ? e.message.content : e.message.content.filter(p => p.type === 'text').map(p => p.text).join('');
                     // Controlled resource loader has no skills, templates or input extensions; match only the next raw input.
                     const next = queuedInputs[0];
                     if (next && next.content === body) {
@@ -282,7 +286,7 @@ process.on('message', async (message) => {
         }
         try {
             if (!stopping)
-                await session.prompt(buildWorkerPrompt(raw.prompt, raw.piSessionPath ? null : raw.history, raw.hostMessages ?? []));
+                await session.prompt(initialPrompt);
         }
         finally {
             session.setAutoCompactionEnabled(false);

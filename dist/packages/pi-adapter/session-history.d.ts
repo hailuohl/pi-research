@@ -79,6 +79,8 @@ export declare function sessionQueue(store: Store, session: Row<Session>, value?
         version: number;
         createdAt: string;
         updatedAt: string;
+        workflowContinuationId?: string;
+        workflowConsumedGeneration?: number;
         branchSource?: {
             sessionId: string;
             messageId: string;

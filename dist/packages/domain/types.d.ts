@@ -10,6 +10,8 @@ export interface Entity {
 export type Row<T = Record<string, unknown>> = Entity & T;
 export type Role = 'coordinator' | 'literature' | 'designer' | 'implementer' | 'analyst' | 'reviewer' | 'writer';
 export interface Actor {
+    workflowContinuationId?: string;
+    workflowNoticeMessageId?: string;
     /** Host-only current input and validated continuation; never tool arguments. */
     messageId?: string;
     /** Host-only consumed approval notice, captured separately from human research input. */
@@ -82,6 +84,7 @@ export interface ModelConfig {
     thinking: string;
 }
 export interface Session {
+    lastConsumedHumanMessageId?: string;
     executionPermission?: import('../policy/session-permissions.js').PermissionReference;
     researchBriefId?: string;
     textCorpusGrantId?: string;
@@ -106,6 +109,8 @@ export interface Session {
     parentSessionId?: string;
 }
 export interface Message {
+    workflowContinuationId?: string;
+    workflowConsumedGeneration?: number;
     /** Historical provenance only; never grants access to the source session or its native request. */
     branchSource?: {
         sessionId: string;

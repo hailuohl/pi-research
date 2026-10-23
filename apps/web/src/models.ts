@@ -76,6 +76,7 @@ export interface CollaborationTaskView extends Row<Task> {
     attempts?:Array<{id:string;generation:number;state:string;createdAt:string;updatedAt:string;error?:string;result?:{outcome:string;summary:string;summaryTruncated:boolean}}>;
 }
 export interface ProjectState {
+    workflowContinuations?:import('../../../dist/packages/policy/workflow-continuations.js').WorkflowStatus[];
     researchActions?:ResearchActionDTO[];
     manuscripts?:Row<ManuscriptRevision>[];
     publicationJobs?:PublicationBuildJobDTO[];

@@ -93,6 +93,7 @@ export declare class AgentHost {
     private pendingSessionAction;
     private advertisedTools;
     private contextRecoveryEligible;
+    private consumedInputSource;
     private onMessage;
     private failInput;
     private sendInput;

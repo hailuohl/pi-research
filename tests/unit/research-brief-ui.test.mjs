@@ -57,20 +57,20 @@ test('confirmation queues the fixed plan once with a stable key and protects swi
   const before=globalThis.fetch;t.after(()=>globalThis.fetch=before);
   const requests=[];globalThis.fetch=async(url,options)=>{requests.push({url,body:JSON.parse(options.body),key:options.headers['Idempotency-Key']??options.headers['idempotency-key']});return {ok:true,json:async()=>({})};};
   const ui=view(data());await ui.continueResearchBrief();
-  assert.equal(requests[0].url,'/api/operations/research_brief_confirm');
-  assert.equal(requests[0].body.sessionId,'root');assert.equal(requests[0].body.input.briefId,'brief');
-  assert.equal(requests[1].url,'/api/sessions/root/messages');assert.match(requests[1].body.content,/digest为"fixed"/);
-  const key=requests[1].key;assert.equal(key,'research-brief-continue:brief:fixed');
+  assert.equal(requests[0].url,'/api/operations/workflow_confirm');
+  assert.equal(requests[0].body.sessionId,'root');assert.deepEqual(requests[0].body.input,{sourceKind:'brief',sourceId:'brief',sourceDigest:'fixed',expectedVersion:1});
+  assert.equal(requests.length,1);
+  const key=requests[0].key;assert.equal(key,'workflow-confirm:brief:brief:fixed:1:0');await ui.continueResearchBrief();assert.equal(requests[1].key,key);
   const reopened=view(data(brief({status:'confirmed',version:2})));await reopened.continueResearchBrief();
-  assert.equal(requests.length,3);assert.equal(requests[2].key,key);
+  assert.equal(requests.length,3);assert.equal(requests[2].url,'/api/operations/workflow_confirm');assert.equal(requests[2].key,'workflow-confirm:brief:brief:fixed:2:0');
   let release;globalThis.fetch=()=>new Promise(resolve=>release=()=>resolve({ok:true,json:async()=>({})}));
   const switched=view(data()),pending=switched.continueResearchBrief();switched.props={...switched.props,session:{...session,id:'other'}};release();
-  await assert.rejects(pending,/当前对话已切换/);
+  await assert.rejects(pending,/当前对话或版本已变化/);
 });
 
 test('queue failure keeps the confirmed plan available for retry',async t=>{
   const before=globalThis.fetch;t.after(()=>globalThis.fetch=before);
-  globalThis.fetch=async(url)=>url.endsWith('/messages')?{ok:false,status:503,json:async()=>({error:{code:'TEST_FAILURE',message:'队列暂不可用'}})}:{ok:true,json:async()=>({})};
+  globalThis.fetch=async(url)=>url.endsWith('/workflow_confirm')?{ok:false,status:503,json:async()=>({error:{code:'TEST_FAILURE',message:'队列暂不可用'}})}:{ok:true,json:async()=>({})};
   await assert.rejects(view(data()).continueResearchBrief(),/队列暂不可用/);
   const reopened=view(data(brief({status:'confirmed',version:2})));
   assert.equal(button(reopened,'继续已确认计划').props.disabled,false);
