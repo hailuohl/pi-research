@@ -36,6 +36,7 @@
       "skipped": 27,
       "skips": [
         "﹣ POSIX backup preserves distinct case-sensitive sibling paths (0.177ms) # SKIP",
+        "﹣ scope2 real local failure advances through a tested changed source into a new successful Run (263.9057ms) # Pinned Python Docker image unavailable",
         "﹣ real IPC, Docker failure/repair and two trusted Run subprocesses continue one frozen goal exactly once (0.6487ms) # SKIP",
         "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.0944ms) # SKIP",
         "﹣ isolated compiler: pdflatex (1.408ms) # SKIP",
@@ -58,7 +59,31 @@
         "﹣ isolated compiler: biber-nonutf8-control (0.0549ms) # SKIP",
         "﹣ isolated compiler: timeout (0.0406ms) # SKIP",
         "﹣ optional real Docker preserves ordinary and executable source modes (0.1144ms) # SKIP",
-        "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.1014ms) # SKIP"
+        "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.1014ms) # SKIP",
+        "﹣ privileged creation uses no-follow directory fds, never replaces files, and never repairs existing permissions (0.1236ms) # POSIX dir_fd and ownership require Linux bootstrap integration",
+        "﹣ SSH start keeps nested source directories traversable under umask 077 (0.1069ms) # POSIX permission modes are unavailable on Windows"
+      ],
+      "skipReasonSummary": [
+        {
+          "category": "真实 LaTeX 编译",
+          "count": 19,
+          "reason": "未启用 PI_LATEX_LIVE=1；覆盖 TeX 引擎、中英文、参考文献、错误处理、隔离和超时。"
+        },
+        {
+          "category": "可选真实 Docker",
+          "count": 2,
+          "reason": "未启用 PI_TEST_FORMAL_DOCKER=1 和 PI_TEST_DOCKER_MODES=1；分别覆盖容器监管和文件执行权限。"
+        },
+        {
+          "category": "固定 Python Docker 镜像探测",
+          "count": 2,
+          "reason": "docker image inspect 未成功；现有日志未区分 CLI、daemon、context 或本地镜像不可用等原因。"
+        },
+        {
+          "category": "POSIX/Linux 专用",
+          "count": 4,
+          "reason": "Windows 平台按测试条件跳过大小写敏感备份、Unix 执行权限、dir_fd/所有权和 SSH umask 077。"
+        }
       ]
     },
     "cleanBuild": {
