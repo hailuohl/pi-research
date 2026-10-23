@@ -76,7 +76,7 @@ export declare const RESEARCH_BRIEF_REFERENCE_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+    readonly required: ("id" | "revision" | "digest" | "rootSessionId")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
@@ -281,7 +281,7 @@ export declare const RESEARCH_BRIEF_INPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("path" | "role")[];
+                    readonly required: ("role" | "path")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -645,7 +645,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("path" | "role")[];
+                    readonly required: ("role" | "path")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -679,7 +679,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "digest" | "projectId" | "status" | "revision" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+        readonly required: ("version" | "id" | "createdAt" | "status" | "revision" | "digest" | "projectId" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
         readonly additionalProperties: false;
     };
     readonly research_brief_inspect: {
@@ -1006,7 +1006,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                                         readonly enum: readonly ["protocol", "implementation", "notes"];
                                     };
                                 };
-                                readonly required: ("path" | "role")[];
+                                readonly required: ("role" | "path")[];
                                 readonly additionalProperties: false;
                             };
                             readonly minItems: number;
@@ -1040,7 +1040,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly additionalProperties: false;
                         };
                     };
-                    readonly required: ("version" | "id" | "createdAt" | "digest" | "projectId" | "status" | "revision" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+                    readonly required: ("version" | "id" | "createdAt" | "status" | "revision" | "digest" | "projectId" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
                     readonly additionalProperties: false;
                 }, {
                     readonly type: "null";
@@ -1086,7 +1086,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly maxLength: number;
                         };
                     };
-                    readonly required: ("id" | "digest" | "status" | "revision")[];
+                    readonly required: ("id" | "status" | "revision" | "digest")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1451,7 +1451,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("path" | "role")[];
+                    readonly required: ("role" | "path")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -1485,7 +1485,7 @@ export declare const RESEARCH_BRIEF_OUTPUT_SCHEMAS: {
                 readonly additionalProperties: false;
             };
         };
-        readonly required: ("version" | "id" | "createdAt" | "digest" | "projectId" | "status" | "revision" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
+        readonly required: ("version" | "id" | "createdAt" | "status" | "revision" | "digest" | "projectId" | "rootSessionId" | "evidenceIds" | "kind" | "constraints" | "successCriteria" | "clarificationQuestions" | "hypotheses" | "steps" | "question" | "scope" | "literatureSummary" | "updatedAt")[];
         readonly additionalProperties: false;
     };
 };

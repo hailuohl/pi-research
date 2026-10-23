@@ -1,3 +1,5 @@
+import { sessionTaskModel } from '../collaboration/task-model.js';
+import { assertTaskModelCurrentSync } from '../pi-adapter/thinking-policy.js';
 import { recoverOwnerNativeHttp } from '../pi-adapter/native-http.js';
 import { assertModelEnabled, assertModelRestoreCurrent } from '../pi-adapter/model-connections.js';
 import { digest, now } from '../storage/store.js';
@@ -11,8 +13,10 @@ const terminal = (state) => !['queued', 'active', 'unknown'].includes(state);
 const identityKeys = ['admissionId', 'ownerHost', 'sessionId', 'generation'];
 export class ModelHttpService {
     store;
-    constructor(store) {
+    repoRoot;
+    constructor(store, repoRoot = process.cwd()) {
         this.store = store;
+        this.repoRoot = repoRoot;
         store.transaction(() => { store.db.exec("CREATE INDEX IF NOT EXISTS model_http_state ON records(kind,json_extract(data,'$.state')) WHERE kind='model-http-request'"); if (!store.maybe('model-http-capacity', 'global'))
             store.create('model-http-capacity', null, { maxRequests: null }, 'global'); });
     }
@@ -25,8 +29,12 @@ export class ModelHttpService {
         return this.store.transaction(() => {
             const session = this.current(w), prior = this.owned(w, key);
             let r = prior.row;
-            if (r?.state !== 'active')
+            if (r?.state !== 'active') {
                 assertModelEnabled(this.store.paths.dataDir, session.model);
+                const frozen = sessionTaskModel(this.store, session);
+                if (frozen)
+                    assertTaskModelCurrentSync({ dataDir: this.store.paths.dataDir, repoRoot: this.repoRoot }, frozen);
+            }
             if (r) {
                 ensure(!terminal(r.state) && r.state !== 'unknown', 'MODEL_HTTP_ALREADY_FINISHED', '已结束或未知的请求不能重新发送');
                 ensure(r.provider === session.model.provider && r.model === session.model.model, 'MODEL_HTTP_MODEL_CHANGED', '请求的固定模型已改变');

@@ -1,3 +1,5 @@
+import { taskModelExecution, selectedCatalogDigest } from '../../packages/pi-adapter/thinking-policy.js';
+import { digest } from '../../packages/storage/store.js';
 import { registerDataProcess } from '../../packages/storage/process-coordination.js';
 import { imageContextReferences, publicationImageCatalog, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL } from '../../packages/pi-adapter/publication-image.js';
 import { applyModelConnection, connectionFetch, safeConnectionStream } from '../../packages/pi-adapter/model-connections.js';
@@ -16,6 +18,7 @@ import { buildSessionOptions, buildCustomTools, systemInstruction, assistantFail
 import { locatePi, inspectPi, piFailure, MODEL_HTTP_TIMEOUT_MS } from '../../packages/pi-adapter/runtime.js';
 let session;
 let providerFailure;
+let taskModelFailure;
 let imageFailure;
 let pendingEmptyLength, recoveryFailure;
 const COMPACTION_FAILURE = 'CONTEXT_COMPACTION_FAILED: 本次上下文恢复未完成，已停止；原始历史与已完成操作保留，请在原会话核对后继续，避免重复副作用。';
@@ -57,6 +60,8 @@ process.on('message', async (message) => {
         pending.delete(raw.requestId);
         if (raw.type === 'model_http_response' && raw.error && (p.attachmentRequest || raw.error.code.startsWith('MODEL_IMAGE_') || raw.error.code.startsWith('MODEL_ATTACHMENT_')))
             imageFailure = `${raw.error.code}: ${raw.error.message}`;
+        if (raw.type === 'model_http_response' && raw.error?.code === 'TASK_MODEL_STALE')
+            taskModelFailure = 'TASK_MODEL_STALE: 原批准的任务模型执行定义已变化，请重新建立并批准计划。';
         raw.error ? p.reject(new Error(`${raw.error.code}: ${raw.error.message}`)) : p.resolve(raw.result);
         return;
     }
@@ -106,6 +111,7 @@ process.on('message', async (message) => {
         if (!installed)
             throw new Error('PI_NOT_INSTALLED');
         const sdk = await import(pathToFileURL(installed.sdkPath).href);
+        const ai = raw.taskModel ? await import(pathToFileURL(installed.aiPath).href) : undefined;
         // The pinned SDK helper also lifts Undici's separate 300-second header/body limit in this Worker only.
         const { configureHttpDispatcher } = await import(new URL('./core/http-dispatcher.js', pathToFileURL(installed.sdkPath)).href);
         if (typeof configureHttpDispatcher !== 'function')
@@ -115,7 +121,7 @@ process.on('message', async (message) => {
         mkdirSync(raw.sessionDir, { recursive: true, mode: 0o700 });
         const catalogBefore = publicationImageCatalog(raw.modelsPath);
         const authPath = join(raw.agentDir, 'auth.json');
-        let modelRuntime = await sdk.ModelRuntime.create({ authPath, modelsPath: raw.modelsPath, ...(raw.connection ? { refreshOnCreate: false } : {}) });
+        let modelRuntime = await sdk.ModelRuntime.create({ authPath, modelsPath: raw.modelsPath, ...(raw.connection || raw.taskModel ? { refreshOnCreate: false, allowModelNetwork: false } : {}) });
         if (raw.connection)
             modelRuntime = await applyModelConnection(sdk, modelRuntime, raw.model, raw.connection, process.env.PI_API_KEY ?? '', authPath);
         const catalogAfter = publicationImageCatalog(raw.modelsPath);
@@ -143,9 +149,14 @@ process.on('message', async (message) => {
                 taskSubmitted = true;
             return result;
         });
-        const definition = raw.connection?.models?.find(m => m.model === raw.model.model && !m.controlOnly), thinking = resolvedThinking(definition, raw.model.thinking);
+        const definition = raw.connection?.models?.find(m => m.model === raw.model.model && !m.controlOnly), requestedThinking = resolvedThinking(definition, raw.model.thinking), thinking = ai ? ai.clampThinkingLevel(model, requestedThinking) : requestedThinking;
+        const actualExecution = raw.taskModel ? taskModelExecution(raw.model, model, definition, selectedCatalogDigest(raw, raw.model, !!raw.connection, thinking), thinking) : undefined;
+        if (raw.taskModel && digest(actualExecution) !== raw.taskModel.digest)
+            throw new Error('TASK_MODEL_STALE: Worker实际SDK执行映射与原批准不符');
         const opts = buildSessionOptions(sdk, { cwd: raw.workspace, agentDir: raw.agentDir, sessionDir: raw.sessionDir, sessionFile: raw.piSessionPath, systemPrompt: systemInstruction(raw.role, raw.tools.some(tool => tool.name === 'host_execute'), raw.permissionMode, raw.tools.some(tool => tool.name === 'session_action_execute')) + (raw.skillBundle?.prompt ?? ''), skills: raw.skillBundle?.skills ?? [], thinking }, customTools, modelRuntime, model);
         ({ session } = await sdk.createAgentSession(opts));
+        if (raw.taskModel && session.thinkingLevel !== thinking)
+            throw new Error('TASK_MODEL_STALE: SDK改变了原批准的思考适配，任务已停止');
         recoveryEligible = raw.contextRecoveryEligible === true && raw.managedHttp === true && raw.role === 'coordinator' && raw.permissionMode !== 'readOnly';
         const armRecovery = () => { if (recoveryEligible && !recoveryAttempted && !stopping && !taskSubmitted && !providerFailure && !imageFailure && !recoveryFailure) {
             recoveryArmed = true;
@@ -197,7 +208,7 @@ process.on('message', async (message) => {
         };
         if (session.model?.provider !== raw.model.provider || session.model?.id !== raw.model.model)
             throw new Error('MODEL_FALLBACK_REFUSED: SDK 尝试切换未经批准的模型');
-        send({ type: 'ready', sessionFile: session.sessionFile, sessionId: session.sessionId, activeTools: session.getActiveToolNames(), model: { provider: session.model?.provider, id: session.model?.id } });
+        send({ type: 'ready', sessionFile: session.sessionFile, sessionId: session.sessionId, activeTools: session.getActiveToolNames(), model: { provider: session.model?.provider, id: session.model?.id }, ...(actualExecution ? { thinking: { requested: raw.model.thinking, requestedPiThinking: requestedThinking, piThinking: session.thinkingLevel, parametersDigest: digest(actualExecution.parameters), executionDigest: digest(actualExecution) } } : {}) });
         session.subscribe((e) => {
             if (e.type === 'compaction_start') {
                 session.setAutoCompactionEnabled(false);
@@ -246,13 +257,13 @@ process.on('message', async (message) => {
                         armRecovery();
                 }
                 else {
-                    providerFailure = imageFailure ?? (e.message.stopReason === 'aborted' && stopping ? providerFailure : failure ?? providerFailure);
+                    providerFailure = taskModelFailure ?? imageFailure ?? (e.message.stopReason === 'aborted' && stopping ? providerFailure : failure ?? providerFailure);
                     if (!failure && (e.message.stopReason === 'stop' || e.message.stopReason === 'toolUse') && e.message.content.some(p => p.type === 'toolCall' || p.type === 'text' && p.text.trim()))
                         pendingEmptyLength = undefined;
                 }
                 const content = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'text').map(p => p.text).join('') : '';
                 const toolCalls = Array.isArray(e.message.content) ? e.message.content.filter(p => p.type === 'toolCall').map(p => p.name).slice(0, 64) : [];
-                send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: imageFailure ?? assistantFailure(e.message) ?? null });
+                send({ type: 'assistant_message', content, toolCalls, phase: toolCalls.length || e.message.stopReason === 'toolUse' ? 'commentary' : 'final_answer', usage: e.message.usage ?? null, stopReason: e.message.stopReason ?? null, error: taskModelFailure ?? imageFailure ?? assistantFailure(e.message) ?? null });
             }
             if (e.type === 'turn_end' && e.message.role === 'assistant' && emptyLengthAssistant(e.message) && e.toolResults.length) {
                 recoveryArmed = false;
@@ -279,7 +290,7 @@ process.on('message', async (message) => {
         }
         if (!providerFailure && !pendingEmptyLength && !recoveryFailure && !stopping && raw.hostMessages?.length)
             send({ type: 'context_ack', messageIds: raw.hostMessages.map((m) => m.id) });
-        providerFailure = imageFailure ?? providerFailure ?? recoveryFailure ?? pendingEmptyLength;
+        providerFailure = taskModelFailure ?? imageFailure ?? providerFailure ?? recoveryFailure ?? pendingEmptyLength;
         if (providerFailure)
             send({ type: 'failure', error: providerFailure });
         else
@@ -287,7 +298,7 @@ process.on('message', async (message) => {
     }
     catch (error) {
         const code = error?.code;
-        send({ type: 'failure', error: imageFailure ?? providerFailure ?? recoveryFailure ?? (pendingEmptyLength ? COMPACTION_FAILURE : piFailure(code?.startsWith('MODEL_IMAGE_') ? `${code}: ${error.message}` : error)) });
+        send({ type: 'failure', error: taskModelFailure ?? imageFailure ?? providerFailure ?? recoveryFailure ?? (pendingEmptyLength ? COMPACTION_FAILURE : piFailure(code?.startsWith('MODEL_IMAGE_') ? `${code}: ${error.message}` : error)) });
     }
     finally {
         stopping = true;

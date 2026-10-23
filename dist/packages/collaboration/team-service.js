@@ -1,3 +1,5 @@
+import { resolveTaskModel } from './task-model.js';
+import { assertTaskModelCurrentSync } from '../pi-adapter/thinking-policy.js';
 import { formalReviewInputs, validateFormalReportAssessment } from '../publications/formal-report-review-types.js';
 import { isPlan } from '../research-workflows/method-contracts.js';
 import { copySourceRevision, sourceMetadata, validateSourceRevision } from '../workspace/source-access.js';
@@ -49,7 +51,9 @@ export class TeamService {
         ensure(s.role === 'coordinator' && !s.taskId, 'DELEGATION_DEPTH_EXCEEDED', '只能从主会话建立团队', 403);
         const p = assertProjectWritable(this.c.store, s.projectId);
         ensure(p.settings.enabled, 'MULTI_AGENT_DISABLED', '项目未开启多智能体协作');
-        const x = object(value), tasks = validateGraph(x.tasks, p.settings.maxTasksPerTeam), goal = text(x.goal, 'goal', 8000), limit = integer(x.budget ?? tasks.length * 2 + 2, 'budget', 1, 100);
+        const x = object(value);
+        ensure(!Object.hasOwn(x, 'taskModels'), 'INVALID_INPUT', '任务模型快照只能由宿主生成', 400);
+        const tasks = validateGraph(x.tasks, p.settings.maxTasksPerTeam), goal = text(x.goal, 'goal', 8000), limit = integer(x.budget ?? tasks.length * 2 + 2, 'budget', 1, 100);
         ensure(limit >= tasks.filter(t => t.required !== false).length, 'BUDGET_EXCEEDED', '额度至少需要覆盖全部必需任务和审查');
         const autoSummarize = bool(x.autoSummarize ?? false, 'autoSummarize');
         ensure(!autoSummarize || limit >= tasks.filter(t => t.required !== false).length + 1, 'BUDGET_EXCEEDED', '自动综合需要额外预留一次主会话尝试');
@@ -60,14 +64,16 @@ export class TeamService {
             validateSourceRevision(this.c, p.id, source.sourceRevisionId);
         return { s, p, tasks, goal, limit, autoSummarize, source };
     }
-    create(actor, rootSessionId, value, inheritSource = true, developmentReviewInputs, formalReportReviewInputs) {
+    create(actor, rootSessionId, value, inheritSource = true, developmentReviewInputs, formalReportReviewInputs, preparedTaskModels) {
         return this.c.store.transaction(() => {
             const { s, p, tasks, goal, limit, autoSummarize, source } = this.validatePlan(actor, rootSessionId, value, inheritSource);
+            ensure(!tasks.some(task => task.thinking !== undefined) || preparedTaskModels, 'TASK_MODEL_PREPARATION_REQUIRED', '显式任务档位必须先由宿主准备执行定义');
+            const taskModels = preparedTaskModels?.resolve(s.model, tasks);
             const permission = this.sessions.taskPermissionCapture?.(rootSessionId), taskPermissionEffects = permission && permission.mode !== 'legacy' ? [...TASK_PERMISSION_EFFECTS] : undefined;
-            const id = randomUUID(), planDigest = digest({ tasks, goal, settings: p.settings, limit, model: s.model, autoSummarize, ...source, ...(developmentReviewInputs ? { developmentReviewInputs } : {}), ...(formalReportReviewInputs ? { formalReportReviewInputs } : {}), ...(taskPermissionEffects ? { taskPermissionEffects, permission } : {}) });
+            const id = randomUUID(), planDigest = digest({ tasks, ...(taskModels ? { taskModels } : {}), goal, settings: p.settings, limit, model: s.model, autoSummarize, ...source, ...(developmentReviewInputs ? { developmentReviewInputs } : {}), ...(formalReportReviewInputs ? { formalReportReviewInputs } : {}), ...(taskPermissionEffects ? { taskPermissionEffects, permission } : {}) });
             const a = this.approvals.request(p.id, 'team', id, planDigest, 'collaboration', `允许 ${tasks.length} 个协作任务，${limit} 次尝试；自动综合=${autoSummarize}；不批准正式计算或代码合并。${taskPermissionEffects ? '授权所列任务角色在固定来源内写私有工作区并产生任务私有产物、证据和草案；不授权新联网、宿主命令、共享写入或自行审批。' : ''}`);
             const team = this.c.store.create('team', p.id, { ...(permission ? { permission } : {}), ...(taskPermissionEffects ? { taskPermissionEffects } : {}), ...source, rootSessionId, goal, state: 'awaiting_approval', settings: { ...p.settings }, delegationEnabled: true, planVersion: 1, directiveVersion: 1, planDigest, approvalId: a.id, summarySent: false, autoSummarize }, id);
-            this.c.store.create('team-plan', p.id, { ...source, teamId: id, planVersion: 1, directiveVersion: 1, tasks, goal, digest: planDigest, model: s.model, ...(developmentReviewInputs ? { developmentReviewInputs } : {}), ...(formalReportReviewInputs ? { formalReportReviewInputs } : {}), ...(taskPermissionEffects ? { taskPermissionEffects, permission } : {}) });
+            this.c.store.create('team-plan', p.id, { ...source, teamId: id, planVersion: 1, directiveVersion: 1, tasks, goal, digest: planDigest, model: s.model, ...(taskModels ? { taskModels, settings: p.settings, limit, autoSummarize } : {}), ...(developmentReviewInputs ? { developmentReviewInputs } : {}), ...(formalReportReviewInputs ? { formalReportReviewInputs } : {}), ...(taskPermissionEffects ? { taskPermissionEffects, permission } : {}) });
             for (const spec of tasks)
                 this.c.store.create('task', p.id, { ...spec, teamId: id, execution: 'pending', acceptance: 'pending', planVersion: 1, directiveVersion: 1, attemptCount: 0, generation: 0 });
             this.budget.configure(p.id, id, limit);
@@ -146,8 +152,17 @@ export class TeamService {
         if (t.sourceRevisionId)
             validateSourceRevision(this.c, p.id, t.sourceRevisionId);
         this.assertInputsCurrent(p.id, tasks);
-        for (const task of tasks)
+        const plan = this.c.store.list('team-plan', p.id).find(plan => plan.teamId === t.id);
+        if (plan?.taskModels)
+            ensure(plan.digest === t.planDigest, 'TASK_MODEL_STALE', '冻结任务模型不属于原团队批准摘要');
+        for (const task of tasks) {
             this.validateReview(task);
+            if (plan) {
+                resolveTaskModel(plan, task);
+                if (plan.taskModels)
+                    assertTaskModelCurrentSync(this.c, plan.taskModels[task.key]);
+            }
+        }
         return p;
     }
     /** Claim and reserve atomically. No network, model or process launch in this transaction. */
@@ -261,7 +276,7 @@ export class TeamService {
                 const plan = this.c.store.list('team-plan', p.id).find(x => x.teamId === id);
                 if (source && !prepared)
                     copySourceRevision(source, workspace, true, this.c.store.paths);
-                this.c.store.update('session', session.id, session.version, { model: plan.model, skillIds: task.skillIds, ...(source ? { sourceRevisionId: source.id, sourceDigest: source.sourceDigest } : {}), ...(taskGrant ? { discoveryGrantId: taskGrant.id } : {}), ...(runGrant ? { runGrantId: runGrant.id } : {}) });
+                this.c.store.update('session', session.id, session.version, { model: resolveTaskModel(plan, task), skillIds: task.skillIds, ...(source ? { sourceRevisionId: source.id, sourceDigest: source.sourceDigest } : {}), ...(taskGrant ? { discoveryGrantId: taskGrant.id } : {}), ...(runGrant ? { runGrantId: runGrant.id } : {}) });
                 const developmentReview = task.reviewId ? this.c.store.get('development-review', task.reviewId, p.id) : undefined;
                 const publicationReview = task.publicationReviewId ? this.c.store.get('publication-review', task.publicationReviewId, p.id) : undefined;
                 const formalReportReview = task.formalReportReviewId ? this.c.store.get('formal-report-review', task.formalReportReviewId, p.id) : undefined;

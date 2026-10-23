@@ -1,3 +1,4 @@
+import { prepareTaskModels, inspectThinkingPolicy } from '../../pi-adapter/thinking-policy.js';
 import { readCatalog, readSkill, inspectSessionSkills, selectSessionSkills } from '../../skills/runtime.js';
 import { attachmentScope, readAttachment } from '../../pi-adapter/attachments.js';
 import { digest } from '../../storage/store.js';
@@ -138,7 +139,7 @@ function executeRegistered(c, name, x) {
                 const runIntents = { items: intentRows.slice(0, 20).map(i => ({ id: String(i.id), experimentId: String(i.experimentId), approvalId: String(i.approvalId), manifestDigest: String(i.manifestDigest), status: i.status, approvalStatus: i.approvalStatus, ...(i.runId ? { runId: String(i.runId) } : {}), ...(i.runGrant ? { runGrant: JSON.parse(String(i.runGrant)) } : {}) })), hasMore: intentRows.length > 20 };
                 const projectFiles = interactive ? listFiles(app.store.paths.physical(project.workspace)) : null;
                 const projectSource = projectFiles ? { files: projectFiles.slice(0, 50).map(f => ({ path: f.path, size: f.size })), hasMore: projectFiles.length > 50 } : null;
-                return { projectSource, textCorpus: app.textEvidence.status(actor, pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: r.evidenceIds.filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns, runIntents, ...(x.githubCommit !== undefined ? { github: app.github.inspectCommit(actor, pid, x.githubCommit) } : {}) };
+                return { ...(interactive ? { thinkingPolicy: inspectThinkingPolicy(app.context, session.model) } : {}), projectSource, textCorpus: app.textEvidence.status(actor, pid), project: { id: pid, name: project.name, collaborationEnabled: project.settings.enabled }, experiments: app.store.list('experiment', pid).filter(e => !grant || runs.some(r => r.experimentId === e.id)).map(e => ({ id: e.id, title: e.title, lifecycle: e.lifecycle, revision: e.revision })), runs: runs.map(r => ({ id: r.id, state: r.state, integrity: r.integrity, evidenceIds: r.evidenceIds.filter(id => !grant || grant.evidenceIds.has(id)) })), evidenceIds: app.store.list('evidence', pid).filter(e => !grant || grant.evidenceIds.has(e.id)).map(e => e.id), campaigns, runIntents, ...(x.githubCommit !== undefined ? { github: app.github.inspectCommit(actor, pid, x.githubCommit) } : {}) };
             };
             return x.githubCommit !== undefined ? app.store.readSnapshot(inspect) : inspect();
         }
@@ -172,7 +173,7 @@ function executeRegistered(c, name, x) {
             return app.runs.logs(actor, x.runId, integer(x.cursor ?? 0, 'cursor', 0, Number.MAX_SAFE_INTEGER), x.stream, x.identity);
         case 'approval_request': return app.store.list('approval', pid).filter(a => a.status === 'pending');
         case 'collaboration_plan_submit':
-        case 'agent_delegate': return app.teams.create(actor, session.id, x);
+        case 'agent_delegate': return app.teams.create(actor, session.id, x, true, undefined, undefined, c.preparedTaskModels);
         case 'task_inspect': {
             const tasks = app.teams.tasks(actor, session?.teamId ?? text(x.teamId, 'teamId', 100));
             const grant = actor.taskId ? app.teams.resources(actor) : actor.wakeupId && !actor.continuationId ? app.wakeups.resources(actor) : null;
@@ -728,6 +729,34 @@ export class OperationRegistry {
         if (id === 'session_action_resume') {
             context.validate();
             return Promise.resolve(invoke()).then(output);
+        }
+        if (['collaboration_plan_submit', 'agent_delegate'].includes(id) && input.tasks.some(t => t.thinking !== undefined)) {
+            const previous = this.app.store.transaction(() => { if (actor.type === 'agent')
+                context.validate(); return lookup(); });
+            if (previous)
+                return output(previous.value);
+            return (async () => {
+                context.validate();
+                ensure(!permission?.consumed, 'SESSION_ACTION_CONSUMED', '固定批准已消费且没有原操作回执，不能重复创建团队');
+                const plan = this.app.teams.validatePlan(context.actor, session.id, input);
+                context.preparedTaskModels = await prepareTaskModels(this.app.context, plan.s, plan.tasks);
+                // SDK preparation has no effects; creation and its durable receipt share one writer transaction.
+                return this.app.store.transaction(() => {
+                    context.validate();
+                    const prior = lookup();
+                    if (prior)
+                        return output(prior.value);
+                    const pending = this.app.store.maybe('operation-pending', digest({ scope: operationScope, key }));
+                    if (pending) {
+                        ensure(pending.hash === digest(request), 'IDEMPOTENCY_CONFLICT', '相同幂等键不能用于不同请求');
+                        ensure(false, 'OPERATION_IN_PROGRESS', '同键旧操作仍在执行或结果待对账，不能重复创建团队');
+                    }
+                    const result = save(invoke());
+                    this.app.store.event(pid, actor.type === 'agent' ? 'tool.executed' : 'operation.executed', { sessionId: session?.id, taskId: actor.taskId, attemptId: actor.attemptId, tool: id, callId: key });
+                    return result;
+                });
+            })().catch(error => { if (permission?.actionId)
+                this.app.sessionPermissions.failed(permission.actionId, error); throw error; });
         }
         if (spec.asynchronous) {
             // Owner receipts remain readable after archival; only new effects require a writable project.

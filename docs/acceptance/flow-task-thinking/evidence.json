@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-23",
+  "baseSha": "2f7b3eb1c64f6580108de0b7d49ca22b114c69f1",
+  "fullRegression": {
+    "snapshot": "R0",
+    "tests": 2407,
+    "passed": 2382,
+    "failed": 0,
+    "skipped": 25,
+    "cancelled": 0,
+    "log": "delivery-full-test.log",
+    "skippedCases": [
+      "﹣ POSIX backup preserves distinct case-sensitive sibling paths (0.2062ms) # SKIP",
+      "﹣ optional formal Docker supervisor: success, integrity limits, cancellation, timeout and created recovery (0.0974ms) # SKIP",
+      "﹣ isolated compiler: pdflatex (1.5478ms) # SKIP",
+      "﹣ isolated compiler: xelatex (0.1043ms) # SKIP",
+      "﹣ isolated compiler: lualatex (0.0839ms) # SKIP",
+      "﹣ isolated compiler: chinese (0.0636ms) # SKIP",
+      "﹣ isolated compiler: lua-chinese-budget (0.0784ms) # SKIP",
+      "﹣ isolated compiler: bibtex (0.0886ms) # SKIP",
+      "﹣ isolated compiler: biber (0.0679ms) # SKIP",
+      "﹣ isolated compiler: missing-image (0.0654ms) # SKIP",
+      "﹣ isolated compiler: missing-package (0.0812ms) # SKIP",
+      "﹣ isolated compiler: undefined-reference (0.1443ms) # SKIP",
+      "﹣ isolated compiler: shell-blocked (0.0767ms) # SKIP",
+      "﹣ isolated compiler: lua-blocked (0.0542ms) # SKIP",
+      "﹣ isolated compiler: forged-result (0.0533ms) # SKIP",
+      "﹣ isolated compiler: lua-forged-host-result (0.066ms) # SKIP",
+      "﹣ isolated compiler: pdf-before-error (0.0737ms) # SKIP",
+      "﹣ isolated compiler: absolute-write-blocked (0.1098ms) # SKIP",
+      "﹣ isolated compiler: biber-remote-blocked (0.0372ms) # SKIP",
+      "﹣ isolated compiler: biber-nonutf8-control (0.0682ms) # SKIP",
+      "﹣ isolated compiler: timeout (0.0618ms) # SKIP",
+      "﹣ optional real Docker preserves ordinary and executable source modes (0.108ms) # SKIP",
+      "﹣ POSIX source modes reflect actual exec bits and writes retain exact normal permission bits (0.0899ms) # SKIP",
+      "﹣ privileged creation uses no-follow directory fds, never replaces files, and never repairs existing permissions (0.124ms) # POSIX dir_fd and ownership require Linux bootstrap integration",
+      "﹣ SSH start keeps nested source directories traversable under umask 077 (0.11ms) # POSIX permission modes are unavailable on Windows"
+    ]
+  },
+  "finalAffected": {
+    "snapshot": "R1",
+    "tests": 41,
+    "passed": 41,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "log": "final-affected-test.log"
+  },
+  "mainIntegration": {
+    "tests": 21,
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "log": "main-integration-test.log"
+  },
+  "cleanBuild": {
+    "node": "24.19.0",
+    "platform": "win32",
+    "files": 740,
+    "identical": true,
+    "lockSha256": "6e9f0697e89d076700ff2c80a174ba6b141ef6d625f56c600b1b4b58aac2c719",
+    "distManifestSha256": "6b097167b9268aaf0a13aa4896e0a28327d407634fb362c07429509ecd32474f",
+    "steps": [
+      {
+        "name": "npm-ci",
+        "exitCode": 0
+      },
+      {
+        "name": "build",
+        "exitCode": 0
+      },
+      {
+        "name": "typecheck",
+        "exitCode": 0
+      }
+    ]
+  },
+  "review": {
+    "result": "no remaining blockers",
+    "fixedFinding": "P1 duplicate teams/receipt rollback",
+    "independentAffectedChecks": 5,
+    "sourceFilesSha256": "7a0b1bdbc28b3e5987e641463c07f37ca84abe8dab841af1712920808e413ae4",
+    "changedSinceR0": [
+      "packages/contracts/operations/registry.ts",
+      "tests/unit/task-thinking.test.mjs"
+    ],
+    "requestedModel": "gpt-6-astra",
+    "requestedReasoning": "xhigh",
+    "runtimeEchoed": false
+  },
+  "implementation": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedReasoning": "xhigh",
+    "runtimeEchoed": false
+  },
+  "limitations": [
+    "Windows only; no other-OS live validation",
+    "HTTP fixtures and pinned Pi SDK; no real provider autonomy/internal-strength validation",
+    "25 optional/platform-specific skips are not passes",
+    "existing service was not restarted"
+  ],
+  "git": {
+    "repository": "hailuohl/pi-research",
+    "visibilityVerified": "private",
+    "branch": "implementation/pr01-reproducible-baseline",
+    "deliveryIdentity": "final reply"
+  }
+}

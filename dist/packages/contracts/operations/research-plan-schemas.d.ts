@@ -1076,7 +1076,7 @@ export declare const RESEARCH_PLAN_INSPECTION_SCHEMA: {
             };
         };
     };
-    readonly required: ("plan" | "validity" | "candidates" | "reasons")[];
+    readonly required: ("candidates" | "plan" | "validity" | "reasons")[];
     readonly additionalProperties: false;
 };
 export declare const RESEARCH_COMPARISON_SCHEMA: {
@@ -1543,7 +1543,7 @@ export declare const RESEARCH_COMPARISON_SCHEMA: {
                         };
                     };
                 };
-                readonly required: ("plan" | "validity" | "candidates" | "reasons")[];
+                readonly required: ("candidates" | "plan" | "validity" | "reasons")[];
                 readonly additionalProperties: false;
             };
         };
@@ -2148,7 +2148,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("plan" | "validity" | "candidates" | "reasons")[];
+        readonly required: ("candidates" | "plan" | "validity" | "reasons")[];
         readonly additionalProperties: false;
     };
     readonly campaign_candidate_prepare: {
@@ -2865,7 +2865,7 @@ export declare const RESEARCH_PLAN_OUTPUT_SCHEMAS: {
                             };
                         };
                     };
-                    readonly required: ("plan" | "validity" | "candidates" | "reasons")[];
+                    readonly required: ("candidates" | "plan" | "validity" | "reasons")[];
                     readonly additionalProperties: false;
                 };
             };

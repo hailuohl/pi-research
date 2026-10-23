@@ -87,7 +87,7 @@ export declare function formalRunBinding(r: Run): {
     manifest: import("../domain/types.js").Manifest;
     manifestDigest: string;
     state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
-    integrity: "pending" | "complete" | "incomplete" | "invalid";
+    integrity: "pending" | "incomplete" | "complete" | "invalid";
     exitCode: number | null | undefined;
     artifactIds: string[];
     evidenceIds: string[];

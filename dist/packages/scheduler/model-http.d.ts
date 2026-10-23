@@ -42,7 +42,8 @@ export interface ModelHttpDTO {
 }
 export declare class ModelHttpService {
     private store;
-    constructor(store: Store);
+    private repoRoot;
+    constructor(store: Store, repoRoot?: string);
     private live;
     private legacy;
     private current;

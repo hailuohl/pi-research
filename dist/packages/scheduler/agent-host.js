@@ -1,3 +1,5 @@
+import { sessionTaskModel } from '../collaboration/task-model.js';
+import { assertSessionTaskModelCurrent, assertTaskModelCurrentSync } from '../pi-adapter/thinking-policy.js';
 import { assertResearchReference } from '../policy/research-automation.js';
 import { digest } from '../storage/store.js';
 import { publicationImageCatalog, imageReference, documentImageReference, CONTEXT_IMAGE_BYTES, PUBLICATION_IMAGE_TOOL, DOCUMENT_IMAGE_TOOL } from '../pi-adapter/publication-image.js';
@@ -294,6 +296,9 @@ export class AgentHost {
             const bundleId = prepareSessionSkills(this.app, claimed, actor);
             const skillBundle = this.app.skills.bundleBootstrap(claimed.projectId, claimed.role, bundleId);
             this.ensureReady(claimed);
+            const taskModel = sessionTaskModel(this.app.store, claimed);
+            if (taskModel)
+                assertTaskModelCurrentSync(this.app.context, taskModel);
             const connectionSnapshot = modelConnectionSnapshot(this.app.context.dataDir, claimed.model.provider), configuredConnection = connectionSnapshot.connection;
             if (configuredConnection)
                 assertModelEnabled(this.app.context.dataDir, claimed.model, configuredConnection);
@@ -353,7 +358,7 @@ export class AgentHost {
                 prompt += currentEnvelope;
             const currentFiles = input && !wakeupId && !attempt ? nativeInputFiles(store, claimed, input) : [];
             attachmentManifests.push({ envelope: currentEnvelope, files: currentFiles });
-            this.sendInput(worker, { type: 'start', dataDir: this.app.context.dataDir, contextRecoveryEligible: worker.contextRecoveryEligible, ...(connection ? { connection } : {}), attachmentManifests, managedHttp: true, catalogFingerprint, permissionMode: actor.permission?.mode ?? 'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
+            this.sendInput(worker, { type: 'start', ...(taskModel ? { taskModel } : {}), dataDir: this.app.context.dataDir, contextRecoveryEligible: worker.contextRecoveryEligible, ...(connection ? { connection } : {}), attachmentManifests, managedHttp: true, catalogFingerprint, permissionMode: actor.permission?.mode ?? 'legacy', skillBundle, repoRoot: this.app.context.repoRoot, workspace: this.app.store.paths.physical(claimed.workspace), agentDir, sessionDir, modelsPath: join(this.app.context.dataDir, 'models.json'), piSessionPath: !isolatedRunAnalysis && claimed.piSessionPath ? this.app.store.paths.physical(claimed.piSessionPath) : null, role: claimed.role, model: claimed.model, tools: toolDefinitions, history: history.length ? JSON.stringify(history) : null, hostMessages, prompt }, messageId);
             store.event(claimed.projectId, 'agent.started', { sessionId: claimed.id, generation: claimed.generation, attemptId: attempt?.id });
         }
         catch (error) {
@@ -471,6 +476,7 @@ export class AgentHost {
             try {
                 let result;
                 if (m.type === 'model_http_acquire') {
+                    await assertSessionTaskModelCurrent(this.app.context, this.app.sessions.get(SYSTEM, a.sessionId));
                     result = this.app.store.transaction(() => {
                         ensure(!a.ended && !a.exitObserved && !a.stopError && this.valid(a), 'MODEL_HTTP_SCOPE_EXPIRED', '会话已停止，不能外发模型请求');
                         if (m.contextRecovery !== undefined) {
@@ -628,6 +634,11 @@ export class AgentHost {
             return;
         }
         if (m?.type === 'ready') {
+            const frozen = sessionTaskModel(this.app.store, s);
+            if (frozen) {
+                ensure(m.thinking?.executionDigest === frozen.digest && m.thinking?.requested === s.model.thinking && m.thinking?.piThinking === frozen.execution.piThinking && m.thinking?.requestedPiThinking === frozen.execution.requestedPiThinking, 'TASK_MODEL_STALE', 'Worker的实际执行映射与批准不符');
+                this.app.store.event(s.projectId, 'task.model_resolved', { sessionId: s.id, taskId: s.taskId, ...m.thinking });
+            }
             ensure(m.model?.provider === s.model.provider && m.model?.id === s.model.model, 'MODEL_FALLBACK_REFUSED', 'Pi 尝试切换未经批准的模型');
             if (m.sessionFile)
                 this.savePath(a, String(m.sessionFile), sessionDir);

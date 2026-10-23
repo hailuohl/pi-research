@@ -1,3 +1,5 @@
+import {sessionTaskModel} from '../collaboration/task-model.js';
+import {assertTaskModelCurrentSync} from '../pi-adapter/thinking-policy.js';
 import type {Store} from '../storage/store.js';
 import {recoverOwnerNativeHttp} from '../pi-adapter/native-http.js';
 import {assertModelEnabled,assertModelRestoreCurrent} from '../pi-adapter/model-connections.js';
@@ -19,14 +21,14 @@ export interface ModelHttpDTO {configuration:{version:number;maxRequests:null};s
 const terminal=(state:ModelHttpState)=>!['queued','active','unknown'].includes(state);
 const identityKeys=['admissionId','ownerHost','sessionId','generation'] as const;
 export class ModelHttpService {
- constructor(private store:Store){store.transaction(()=>{store.db.exec("CREATE INDEX IF NOT EXISTS model_http_state ON records(kind,json_extract(data,'$.state')) WHERE kind='model-http-request'");if(!store.maybe('model-http-capacity','global'))store.create('model-http-capacity',null,{maxRequests:null},'global');});}
+ constructor(private store:Store,private repoRoot=process.cwd()){store.transaction(()=>{store.db.exec("CREATE INDEX IF NOT EXISTS model_http_state ON records(kind,json_extract(data,'$.state')) WHERE kind='model-http-request'");if(!store.maybe('model-http-capacity','global'))store.create('model-http-capacity',null,{maxRequests:null},'global');});}
  private live(){return this.store.db.prepare("SELECT rowid,data FROM records WHERE kind='model-http-request' AND json_extract(data,'$.state') IN ('queued','active','unknown') ORDER BY rowid").all().map(r=>({sequence:Number(r.rowid),...JSON.parse(r.data as string) as Row<HttpRequest>}));}
  private legacy(){return Number(this.store.db.prepare("SELECT count(*) n FROM records WHERE kind='agent-admission' AND json_extract(data,'$.state')<>'released' AND COALESCE(json_extract(data,'$.httpManagedVersion'),0)<>1").get()!.n);}
  private current(w:ModelHttpIdentity){const a=this.store.get<AgentAdmission>('agent-admission',w.admissionId),s=this.store.get<Session>('session',w.sessionId,a.projectId!);ensure(a.ownerHost===w.ownerHost&&a.sessionId===s.id&&a.generation===w.generation&&a.httpManagedVersion===1&&a.state==='running'&&a.leaseUntil>Date.now()&&s.state==='running'&&s.generation===w.generation&&s.leaseUntil>Date.now(),'MODEL_HTTP_SCOPE_EXPIRED','模型HTTP请求的原会话或Worker租约已失效');assertProjectWritable(this.store,s.projectId!);assertModelRestoreCurrent(this.store.paths.dataDir,s.model);return s;}
  private owned(w:ModelHttpIdentity,key:string){const id=digest({admissionId:w.admissionId,key:text(key,'requestKey',100)}),r=this.store.maybe<HttpRequest>('model-http-request',id);if(r)ensure(identityKeys.every(k=>r[k]===w[k]),'MODEL_HTTP_SCOPE_DENIED','请求不属于原Worker');return {id,row:r};}
  acquire(w:ModelHttpIdentity,key:string):{allowed:boolean;requestId:string} {return this.store.transaction(()=>{
   const session=this.current(w),prior=this.owned(w,key);let r=prior.row;
-  if(r?.state!=='active')assertModelEnabled(this.store.paths.dataDir,session.model);
+  if(r?.state!=='active'){assertModelEnabled(this.store.paths.dataDir,session.model);const frozen=sessionTaskModel(this.store,session);if(frozen)assertTaskModelCurrentSync({dataDir:this.store.paths.dataDir,repoRoot:this.repoRoot},frozen);}
   if(r){ensure(!terminal(r.state)&&r.state!=='unknown','MODEL_HTTP_ALREADY_FINISHED','已结束或未知的请求不能重新发送');ensure(r.provider===session.model.provider&&r.model===session.model.model,'MODEL_HTTP_MODEL_CHANGED','请求的固定模型已改变');if(r.state==='active')return {allowed:true,requestId:r.id};}
   else {r=this.store.create<HttpRequest>('model-http-request',session.projectId,{...w,provider:session.model.provider,model:session.model.model,state:'queued',queuedAt:now()},prior.id);this.store.event(session.projectId,'model-http.queued',{requestId:r.id,sessionId:r.sessionId});}
   r=this.store.update<HttpRequest>('model-http-request',r.id,r.version,{state:'active',startedAt:now()});this.store.event(r.projectId,'model-http.started',{requestId:r.id,sessionId:r.sessionId});

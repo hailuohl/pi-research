@@ -178,7 +178,7 @@ export declare class PublicationBuildService {
         revisionId: string;
         approvalId: string;
         state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "starting" | "unknown" | "prepared" | "timed_out";
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
         profileId: "latex-document-v1";
@@ -218,7 +218,7 @@ export declare class PublicationBuildService {
         revisionId: string;
         approvalId: string;
         state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "starting" | "unknown" | "prepared" | "timed_out";
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
         profileId: "latex-document-v1";
@@ -257,7 +257,7 @@ export declare class PublicationBuildService {
         revisionId: string;
         approvalId: string;
         state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "starting" | "unknown" | "prepared" | "timed_out";
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
         profileId: "latex-document-v1";
@@ -296,7 +296,7 @@ export declare class PublicationBuildService {
         revisionId: string;
         approvalId: string;
         state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "starting" | "unknown" | "prepared" | "timed_out";
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
         profileId: "latex-document-v1";
@@ -340,7 +340,7 @@ export declare class PublicationBuildService {
             revisionId: string;
             approvalId: string;
             state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "starting" | "unknown" | "prepared" | "timed_out";
-            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            integrity: "pending" | "incomplete" | "complete" | "invalid";
             manifestDigest: string;
             sourceDigest: string;
             profileId: "latex-document-v1";
@@ -381,7 +381,7 @@ export declare class PublicationBuildService {
         revisionId: string;
         approvalId: string;
         state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "starting" | "unknown" | "prepared" | "timed_out";
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         sourceDigest: string;
         profileId: "latex-document-v1";

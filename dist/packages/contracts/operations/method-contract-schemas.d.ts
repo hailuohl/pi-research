@@ -41,7 +41,7 @@ export declare const SYNTHETIC_FIXTURE_REF_SCHEMA: {
             readonly maxLength: number;
         };
     };
-    readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+    readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
     readonly additionalProperties: false;
 };
 export declare const SYNTHETIC_FIXTURE_BINDING_SCHEMA: {
@@ -90,7 +90,7 @@ export declare const SYNTHETIC_FIXTURE_BINDING_SCHEMA: {
                     readonly maxLength: number;
                 };
             };
-            readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+            readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
             readonly additionalProperties: false;
         };
         readonly inputPath: {
@@ -123,7 +123,7 @@ export declare const DRAFT_ROLE_SCHEMA: {
             readonly enum: readonly ["protocol", "implementation", "notes"];
         };
     };
-    readonly required: ("path" | "role")[];
+    readonly required: ("role" | "path")[];
     readonly additionalProperties: false;
 };
 export declare const PROTOCOL_DOCUMENT_SCHEMA: {
@@ -307,7 +307,7 @@ declare const specificationSchema: {
                         readonly minItems: number;
                     };
                 };
-                readonly required: ("template" | "decisionOutputs" | "type" | "minimumGain" | "gain" | "interval")[];
+                readonly required: ("type" | "template" | "decisionOutputs" | "minimumGain" | "gain" | "interval")[];
                 readonly additionalProperties: false;
             }, {
                 readonly type: "object";
@@ -434,7 +434,7 @@ declare const specificationSchema: {
                         readonly minItems: number;
                     };
                 };
-                readonly required: ("template" | "decisionOutputs" | "type" | "outcomeUnit" | "witness" | "metrics" | "minimumGain")[];
+                readonly required: ("type" | "template" | "decisionOutputs" | "outcomeUnit" | "witness" | "metrics" | "minimumGain")[];
                 readonly additionalProperties: false;
             }, {
                 readonly type: "object";
@@ -628,7 +628,7 @@ declare const specificationSchema: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputArgumentIndex: {
@@ -756,7 +756,7 @@ declare const specificationSchema: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("template" | "decisionOutputs" | "type" | "outcomeUnit" | "witness" | "metrics" | "minimumGain" | "precisionGate" | "developmentData" | "plan" | "provenanceArtifact")[];
+                readonly required: ("type" | "template" | "decisionOutputs" | "outcomeUnit" | "witness" | "metrics" | "minimumGain" | "precisionGate" | "developmentData" | "plan" | "provenanceArtifact")[];
                 readonly additionalProperties: false;
             }, {
                 readonly type: "object";
@@ -948,7 +948,7 @@ declare const specificationSchema: {
                                         readonly maxLength: number;
                                     };
                                 };
-                                readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                                 readonly additionalProperties: false;
                             };
                             readonly inputArgumentIndex: {
@@ -1076,7 +1076,7 @@ declare const specificationSchema: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("template" | "type" | "outcomeUnit" | "witness" | "metrics" | "minimumGain" | "precisionGate" | "developmentData" | "plan" | "provenanceArtifact" | "outputProfile" | "fitImplementation")[];
+                readonly required: ("type" | "template" | "outcomeUnit" | "witness" | "metrics" | "minimumGain" | "precisionGate" | "developmentData" | "plan" | "provenanceArtifact" | "outputProfile" | "fitImplementation")[];
                 readonly additionalProperties: false;
             }];
         };
@@ -1643,7 +1643,7 @@ export declare const METHOD_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "digest" | "size" | "seed" | "generatorVersion" | "profile" | "splitDigest")[];
+                readonly required: ("id" | "seed" | "digest" | "size" | "generatorVersion" | "profile" | "splitDigest")[];
                 readonly additionalProperties: false;
             };
             readonly inputPath: {

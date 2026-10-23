@@ -313,6 +313,8 @@ export interface ExpectedTaskOutput {
     minBytes?: number;
 }
 export interface TaskSpec {
+    thinking?: string;
+    thinkingReason?: string;
     skillIds?: string[];
     key: string;
     role: Exclude<Role, 'coordinator'>;

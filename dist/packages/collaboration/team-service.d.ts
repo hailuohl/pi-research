@@ -1,3 +1,4 @@
+import { type PreparedTaskModels } from '../pi-adapter/thinking-policy.js';
 import { formalReviewInputs } from '../publications/formal-report-review-types.js';
 import type { DevelopmentReviewInputBinding } from '../development/reviews-types.js';
 import type { AppContext } from '../domain/context.js';
@@ -31,7 +32,7 @@ export declare class TeamService {
             sourceRevisionId?: undefined;
         };
     };
-    create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean, developmentReviewInputs?: DevelopmentReviewInputBinding, formalReportReviewInputs?: ReturnType<typeof formalReviewInputs>): Row<Team>;
+    create(actor: Actor, rootSessionId: string, value: unknown, inheritSource?: boolean, developmentReviewInputs?: DevelopmentReviewInputBinding, formalReportReviewInputs?: ReturnType<typeof formalReviewInputs>, preparedTaskModels?: PreparedTaskModels): Row<Team>;
     activateAutomatic(actor: Actor, ref: import('../policy/automatic-approvals.js').AutomaticApprovalReference, id: string): Row<Team>;
     activate(actor: Actor, id: string): Row<Team>;
     private assertInputsCurrent;

@@ -85,6 +85,19 @@ export interface ModelSelection {
     model: string;
     thinking: string;
 }
+export interface ThinkingPolicyExport {
+    schemaVersion: 1;
+    provider: string;
+    model: string;
+    restoreEpoch: number;
+    candidates: {
+        id: string;
+        purpose: string;
+    }[];
+}
+export interface ThinkingPolicy extends ThinkingPolicyExport {
+    version: number;
+}
 export interface ModelPreset {
     id: string;
     name: string;
@@ -102,8 +115,16 @@ export interface ModelManagementView {
     providers: ManagedProvider[];
     presets: ModelPreset[];
     supportedApis: ModelApi[];
+    thinkingPolicies: ThinkingPolicy[];
 }
 export type ModelManagementCommand = {
+    expectedVersion: number;
+    expectedPolicyVersion: number;
+    action: 'model.thinking-policy';
+    provider: string;
+    model: string;
+    value: ThinkingPolicyExport;
+} | {
     expectedVersion: number;
     action: 'provider.upsert';
     provider: string;

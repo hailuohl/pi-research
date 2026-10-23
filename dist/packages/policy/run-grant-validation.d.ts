@@ -1,7 +1,8 @@
+import { type TaskModelPlan } from '../collaboration/task-model.js';
 import type { Store } from '../storage/store.js';
 import type { Actor, Approval, Artifact, Row, Run, RunIntent, Session, Task, TaskAttempt, TaskSpec, Team } from '../domain/types.js';
 import type { RunGrant, RunGrantReference, RunGrantTaskBinding, RunGrantUse } from './run-grant-types.js';
-type TeamPlan = Row<{
+type TeamPlan = Row<TaskModelPlan & {
     sourceRevisionId?: string;
     teamId: string;
     planVersion: number;

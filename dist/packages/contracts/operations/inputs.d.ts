@@ -1628,6 +1628,20 @@ export declare const INPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly thinking: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly thinkingReason: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                         readonly key: {
                             readonly pattern: "^[a-zA-Z0-9_-]+$";
                             readonly type: "string";
@@ -1804,6 +1818,20 @@ export declare const INPUT_SCHEMAS: {
                 readonly items: {
                     readonly type: "object";
                     readonly properties: {
+                        readonly thinking: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
+                        readonly thinkingReason: {
+                            readonly pattern?: string | undefined;
+                            readonly type: "string";
+                            readonly description: "Lengths count Unicode code points; existing services may additionally enforce UTF-16 code-unit limits.";
+                            readonly minLength: number;
+                            readonly maxLength: number;
+                        };
                         readonly key: {
                             readonly pattern: "^[a-zA-Z0-9_-]+$";
                             readonly type: "string";
@@ -5656,7 +5684,7 @@ export declare const INPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("path" | "role")[];
+                    readonly required: ("role" | "path")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;

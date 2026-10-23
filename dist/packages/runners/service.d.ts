@@ -32,7 +32,7 @@ export declare class RunService {
             experimentId: string;
             intentId: string;
             state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
-            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            integrity: "pending" | "incomplete" | "complete" | "invalid";
             judgment: "pending" | "inconclusive" | "supported" | "not_supported";
             manifestDigest: string;
             createdAt: string;

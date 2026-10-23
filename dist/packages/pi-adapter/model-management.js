@@ -1,3 +1,4 @@
+import { thinkingPolicies, saveThinkingPolicy } from './thinking-policy.js';
 import { join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -112,7 +113,7 @@ export async function inspectModelManagement(c, actor, state = readModelState(c.
         providers.push({ provider: id, name: p.name, baseUrl: p.controlOnly ? known?.baseUrl ?? '' : p.baseUrl, api: p.api, hasApiKey: !!p.apiKey, ...(modelNeedsCredential(p) ? { requiresCredential: true } : {}), enabled: p.enabled !== false, deletedAt: p.deletedAt ?? null, order: p.order ?? providers.length, source: stored && !stored.controlOnly ? 'managed' : 'legacy', models: models.sort((a, b) => a.order - b.order), test: probe(c, p) });
     }
     const current = defaultSelection(c), p = providers.find(p => p.provider === current.provider), m = p?.models.find(m => m.model === current.model);
-    return { schemaVersion: 2, version: state.version, defaultModel: current, defaultModelVersion: c.store.maybe('app-settings', 'global')?.version ?? 0, defaultUsable: !!current.provider && !!current.model && !!p && p.enabled && !p.deletedAt && !p.requiresCredential && !!m && m.enabled && !m.deletedAt && m.reasoning.levels.some(l => l.id === current.thinking), providers: providers.sort((a, b) => a.order - b.order), presets: MODEL_PRESETS, supportedApis: [...CONNECTION_APIS] };
+    return { schemaVersion: 2, version: state.version, defaultModel: current, defaultModelVersion: c.store.maybe('app-settings', 'global')?.version ?? 0, defaultUsable: !!current.provider && !!current.model && !!p && p.enabled && !p.deletedAt && !p.requiresCredential && !!m && m.enabled && !m.deletedAt && m.reasoning.levels.some(l => l.id === current.thinking), providers: providers.sort((a, b) => a.order - b.order), presets: MODEL_PRESETS, supportedApis: [...CONNECTION_APIS], thinkingPolicies: thinkingPolicies(c) };
 }
 export async function recommendModel(c, actor, provider, model) { userOnly(actor); text(provider, 'provider', 100); text(model, 'model', 160); const runtime = await modelCatalog(c), state = readModelState(c.dataDir), p = state.connections.find(p => p.provider === provider), existing = p?.models?.find(m => m.model === model); let match = runtime.getModel(provider, model); if (!match) {
     const matches = runtime.getModels().filter(m => m.id === model);
@@ -130,6 +131,10 @@ export async function recommendModel(c, actor, provider, model) { userOnly(actor
 export async function configureModelManagement(c, actor, value, key) {
     userOnly(actor);
     const x = object(value), action = text(x.action, 'action', 40), expected = integer(x.expectedVersion, 'expectedVersion', 0);
+    if (action === 'model.thinking-policy') {
+        await saveThinkingPolicy(c, actor, x, key);
+        return inspectModelManagement(c, actor);
+    }
     ensure(Object.keys(x).every(k => ['expectedVersion', 'action', 'provider', 'model', 'value'].includes(k)), 'INVALID_INPUT', '管理命令包含未知字段', 400);
     const provider = action === 'providers.reorder' ? undefined : text(x.provider, 'provider', 100), model = action.startsWith('model.') ? text(x.model, 'model', 160) : undefined;
     let definition;

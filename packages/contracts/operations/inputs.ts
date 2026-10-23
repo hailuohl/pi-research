@@ -41,6 +41,7 @@ const output = s.object({
     required: s.nullable(s.boolean()), minBytes: s.nullable(s.integer(1, 32 * 1024 * 1024)), title: s.string(200), mediaType: s.string(100),
 }, ['kind', 'schemaId']);
 const task = s.object({
+    thinking:s.string(64),thinkingReason:s.string(1000),
     key: { ...s.string(60), pattern: '^[a-zA-Z0-9_-]+$' },
     role: s.enum(['literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer']),
     objective: s.string(), dependencies: s.nullable(strings(24)), critical: s.boolean(), required: s.boolean(), inputEvidenceIds: s.nullable(strings()),

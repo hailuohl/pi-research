@@ -1602,7 +1602,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("version" | "sessionId" | "ready" | "missing" | "skillIds" | "skillBundleId")[];
+        readonly required: ("version" | "sessionId" | "skillIds" | "ready" | "missing" | "skillBundleId")[];
         readonly additionalProperties: false;
     };
     readonly skill_preflight: {
@@ -1653,7 +1653,7 @@ export declare const SKILL_OUTPUT_SCHEMAS: {
                 };
             };
         };
-        readonly required: ("version" | "sessionId" | "ready" | "missing" | "skillIds" | "skillBundleId")[];
+        readonly required: ("version" | "sessionId" | "skillIds" | "ready" | "missing" | "skillBundleId")[];
         readonly additionalProperties: false;
     };
 };

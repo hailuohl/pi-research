@@ -27,12 +27,15 @@ export interface ManagedProvider {
  baseUrl:string;api:ModelApi;hasApiKey:boolean;models:ManagedModel[];test:ModelProbeResult|null;
 }
 export interface ModelSelection {provider:string;model:string;thinking:string;}
+export interface ThinkingPolicyExport {schemaVersion:1;provider:string;model:string;restoreEpoch:number;candidates:{id:string;purpose:string}[];}
+export interface ThinkingPolicy extends ThinkingPolicyExport {version:number;}
 export interface ModelPreset {id:string;name:string;group:string;providerBrand:string;baseUrl:string;api:ModelApi;}
 export interface ModelManagementView {
  schemaVersion:2;version:number;defaultModel:ModelSelection;defaultModelVersion:number;defaultUsable:boolean;
- providers:ManagedProvider[];presets:ModelPreset[];supportedApis:ModelApi[];
+ providers:ManagedProvider[];presets:ModelPreset[];supportedApis:ModelApi[];thinkingPolicies:ThinkingPolicy[];
 }
 export type ModelManagementCommand=
+ | {expectedVersion:number;expectedPolicyVersion:number;action:'model.thinking-policy';provider:string;model:string;value:ThinkingPolicyExport}
  | {expectedVersion:number;action:'provider.upsert';provider:string;value:{name:string;baseUrl:string;api:ModelApi;apiKey?:string}}
  | {expectedVersion:number;action:'provider.enabled';provider:string;value:{enabled:boolean}}
  | {expectedVersion:number;action:'provider.delete';provider:string}

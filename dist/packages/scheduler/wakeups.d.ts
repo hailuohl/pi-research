@@ -190,7 +190,7 @@ export declare class WakeupService {
             imageId: string | undefined;
             grantId: string;
             state: import("../execution/contracts.js").SandboxState;
-            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            integrity: "pending" | "incomplete" | "complete" | "invalid";
             exitCode: number | null;
             error: string | undefined;
             startedAt: string | undefined;
@@ -339,7 +339,7 @@ export declare class WakeupService {
             id: string;
             experimentId: string;
             state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
-            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            integrity: "pending" | "incomplete" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
         } | {
@@ -451,7 +451,7 @@ export declare class WakeupService {
         run: {
             id: string;
             state: "succeeded" | "failed" | "cancelled" | "queued" | "running" | "unknown" | "submitting" | "cancelling";
-            integrity: "pending" | "complete" | "incomplete" | "invalid";
+            integrity: "pending" | "incomplete" | "complete" | "invalid";
             validation: "incomplete" | "invalid" | "verified";
             explanation: string;
             metrics: Record<string, number> | null;

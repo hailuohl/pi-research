@@ -1,3 +1,4 @@
+import {resolveTaskModel,type TaskModelPlan} from '../collaboration/task-model.js';
 import type {Store} from '../storage/store.js';
 import {digest} from '../storage/store.js';
 import type {Actor,Approval,Artifact,Experiment,Row,Run,RunIntent,Session,Task,TaskAttempt,TaskSpec,Team} from '../domain/types.js';
@@ -7,7 +8,7 @@ import {verifySnapshot} from '../workspace/files.js';
 import {assertExperimentSourceCurrent} from './lifecycle.js';
 import {discoveryTaskSpec,discoveryTeamPlanDigest} from './discovery-grant-validation.js';
 
-type TeamPlan=Row<{sourceRevisionId?:string;teamId:string;planVersion:number;directiveVersion:number;tasks:TaskSpec[];goal:string;digest:string;model:Session['model']}>;
+type TeamPlan=Row<TaskModelPlan&{sourceRevisionId?:string;teamId:string;planVersion:number;directiveVersion:number;tasks:TaskSpec[];goal:string;digest:string;model:Session['model']}>;
 export function runGrantPayload(g:RunGrant){const {sessionId,taskBinding,model,entries,maxRuns,expiresAt,approvalId}=g;return {sessionId,model,entries,maxRuns,expiresAt,approvalId,...(taskBinding?{taskBinding}:{})};}
 export const runGrantReference=(g:Row<RunGrant>):RunGrantReference=>({id:g.id,digest:g.digest,approvalId:g.approvalId});
 export function assertRunGrantRecord(store:Store,pid:string,id:string){
@@ -24,7 +25,7 @@ export function buildRunGrantTaskBinding(store:Store,pid:string,task:Row<Task>){
     const approval=store.get<Approval>('approval',team.approvalId,pid);ensure(approval.subjectKind==='team'&&approval.subjectId===team.id&&approval.digest===team.planDigest&&approval.scope==='collaboration'&&!approval.workingGrant&&!approval.runGrant&&['pending','approved'].includes(approval.status),'RUN_GRANT_TEAM_APPROVAL_STALE','原团队计划批准身份无效');
     const taskSpec=discoveryTaskSpec(task),taskSpecDigest=digest(taskSpec);ensure(plan.teamId===team.id&&plan.planVersion===team.planVersion&&plan.directiveVersion===team.directiveVersion&&plan.digest===team.planDigest&&plan.tasks.some(x=>digest(x)===taskSpecDigest),'RUN_GRANT_TASK_PLAN_INVALID','任务与原始团队计划不符');
     const binding:RunGrantTaskBinding={taskId:task.id,teamId:team.id,teamApprovalId:team.approvalId,planDigest:team.planDigest,planVersion:team.planVersion,directiveVersion:team.directiveVersion,taskSpecDigest,teamPlanId:plan.id,teamPlanVersion:plan.version,teamPlanDigest:discoveryTeamPlanDigest(plan),role:'analyst'};
-    return {binding,model:plan.model,sessionId:team.rootSessionId};
+    return {binding,model:resolveTaskModel(plan,task),sessionId:team.rootSessionId};
 }
 export function assertRunGrantTaskBinding(store:Store,pid:string,grant:Row<RunGrant>,options:{requireUnclaimed?:boolean;requireApprovedTeam?:boolean;allowInvalidTeamApproval?:boolean}={}){
     const b=grant.taskBinding;ensure(b&&b.role==='analyst','RUN_GRANT_TASK_BINDING_REQUIRED','缺少固定 analyst Task 绑定');const task=store.get<Task>('task',b.taskId,pid),team=store.get<Team>('team',b.teamId,pid),plan=store.get<TeamPlan>('team-plan',b.teamPlanId,pid),approval=store.get<Approval>('approval',b.teamApprovalId,pid),root=store.get<Session>('session',team.rootSessionId,pid);
@@ -34,7 +35,7 @@ export function assertRunGrantTaskBinding(store:Store,pid:string,grant:Row<RunGr
     ensure(approval.subjectKind==='team'&&approval.subjectId===team.id&&approval.digest===b.planDigest&&approval.scope==='collaboration'&&!approval.workingGrant&&!approval.runGrant,'RUN_GRANT_TEAM_APPROVAL_STALE','原团队批准身份不符');
     if(!options.allowInvalidTeamApproval)ensure(['pending','approved'].includes(approval.status),'RUN_GRANT_TEAM_APPROVAL_STALE','原团队批准已失效');
     if(options.requireApprovedTeam)ensure(approval.status==='approved','RUN_GRANT_TEAM_APPROVAL_REQUIRED','原团队计划尚未批准');
-    const specDigest=digest(discoveryTaskSpec(task));ensure(plan.id===b.teamPlanId&&plan.version===b.teamPlanVersion&&plan.teamId===team.id&&plan.planVersion===b.planVersion&&plan.directiveVersion===b.directiveVersion&&plan.digest===b.planDigest&&discoveryTeamPlanDigest(plan)===b.teamPlanDigest&&digest(plan.model)===digest(grant.model)&&task.planVersion===b.planVersion&&task.directiveVersion===b.directiveVersion&&specDigest===b.taskSpecDigest&&plan.tasks.some(x=>digest(x)===specDigest),'RUN_GRANT_TASK_PLAN_STALE','冻结团队计划、模型或任务规范已改变');
+    const specDigest=digest(discoveryTaskSpec(task));ensure(plan.id===b.teamPlanId&&plan.version===b.teamPlanVersion&&plan.teamId===team.id&&plan.planVersion===b.planVersion&&plan.directiveVersion===b.directiveVersion&&plan.digest===b.planDigest&&discoveryTeamPlanDigest(plan)===b.teamPlanDigest&&digest(resolveTaskModel(plan,task))===digest(grant.model)&&task.planVersion===b.planVersion&&task.directiveVersion===b.directiveVersion&&specDigest===b.taskSpecDigest&&plan.tasks.some(x=>digest(x)===specDigest),'RUN_GRANT_TASK_PLAN_STALE','冻结团队计划、模型或任务规范已改变');
     if(options.requireUnclaimed)ensure(task.execution==='pending'&&task.attemptCount===0&&!task.attemptId&&!task.sessionId,'RUN_GRANT_TASK_ALREADY_DISPATCHED','只能为尚未派发的 analyst Task 授权');
     return {task,team,plan,approval};
 }

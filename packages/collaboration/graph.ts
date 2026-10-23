@@ -7,6 +7,8 @@ export function validateGraph(value: unknown, maxTasks = 24): TaskSpec[] {
         const x = object(raw);
         const task: TaskSpec = { key: text(x.key, 'key', 60), role: oneOf(x.role, ['literature', 'designer', 'implementer', 'analyst', 'reviewer', 'writer'] as const, 'role'), objective: text(x.objective, 'objective'), dependencies: strings(x.dependencies ?? [], 'dependencies', maxTasks), critical: x.critical === undefined ? false : bool(x.critical, 'critical'), required: x.required === undefined ? true : bool(x.required, 'required'), inputEvidenceIds: strings(x.inputEvidenceIds ?? [], 'inputEvidenceIds') };
         if (x.skillIds !== undefined) task.skillIds = strings(x.skillIds, 'skillIds', 32);
+        if (x.thinking !== undefined) task.thinking = text(x.thinking, 'thinking', 64);
+        if (x.thinkingReason !== undefined) { ensure(x.thinking!==undefined,'INVALID_INPUT','选择理由需要明确档位',400);task.thinkingReason=text(x.thinkingReason,'thinkingReason',1000); }
         ensure(/^[a-zA-Z0-9_-]+$/.test(task.key), 'INVALID_INPUT', '任务 key 只能含字母、数字、下划线和连字符', 400);
         if (x.reviewOf !== undefined)
             task.reviewOf = text(x.reviewOf, 'reviewOf', 60);

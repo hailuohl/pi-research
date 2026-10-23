@@ -1,3 +1,4 @@
+import { resolveTaskModel, taskModelSpec } from '../collaboration/task-model.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { connectorSettings, assertSourceEnabled } from '../connectors/settings.js';
@@ -8,11 +9,8 @@ export function discoveryGrantPayload(g) { const { sessionId, model, settingsVer
 export const discoveryReference = (g) => ({ id: g.id, digest: g.digest, approvalId: g.approvalId });
 export function assertDiscoveryGrantRecord(store, pid, id) { const g = store.get('discovery-grant', id, pid), a = store.get('approval', g.approvalId, pid); ensure(digest(discoveryGrantPayload(g)) === g.digest, 'DISCOVERY_GRANT_CORRUPTED', '固定发现授权已改变'); ensure(a.subjectKind === 'discovery-grant' && a.subjectId === g.id && a.digest === g.digest && a.scope === 'discovery-grant.activate' && !a.workingGrant && !a.runGrant, 'APPROVAL_STALE', '发现授权原批准身份不符'); return { grant: g, approval: a }; }
 export function assertDiscoveryGrantReference(store, pid, ref) { const { grant: g, approval } = assertDiscoveryGrantRecord(store, pid, ref.id); ensure(g.digest === ref.digest && g.approvalId === ref.approvalId, 'DISCOVERY_GRANT_STALE', '发现授权原身份已改变'); ensure(g.state === 'active' && approval.status === 'approved', 'DISCOVERY_GRANT_REVOKED', '发现授权未激活或已撤销'); return g; }
-const specFields = ['skillIds', 'key', 'role', 'objective', 'dependencies', 'critical', 'reviewOf', 'required', 'inputEvidenceIds', 'expectedOutputs', 'acceptanceRuleIds'];
-export function discoveryTaskSpec(task) { const spec = {}; for (const key of specFields)
-    if (task[key] !== undefined)
-        spec[key] = task[key]; return spec; }
-export function discoveryTeamPlanDigest(plan) { return digest({ id: plan.id, ...(plan.sourceRevisionId ? { sourceRevisionId: plan.sourceRevisionId } : {}), teamId: plan.teamId, planVersion: plan.planVersion, directiveVersion: plan.directiveVersion, tasks: plan.tasks, goal: plan.goal, digest: plan.digest, model: plan.model }); }
+export const discoveryTaskSpec = taskModelSpec;
+export function discoveryTeamPlanDigest(plan) { return digest({ id: plan.id, ...(plan.sourceRevisionId ? { sourceRevisionId: plan.sourceRevisionId } : {}), teamId: plan.teamId, planVersion: plan.planVersion, directiveVersion: plan.directiveVersion, tasks: plan.tasks, goal: plan.goal, digest: plan.digest, model: plan.model, ...(plan.taskModels ? { taskModels: plan.taskModels } : {}) }); }
 export function buildDiscoveryTaskBinding(store, pid, task) {
     const team = store.get('team', task.teamId, pid), plans = store.list('team-plan', pid).filter(p => p.teamId === team.id);
     ensure(plans.length === 1, 'DISCOVERY_TASK_PLAN_INVALID', '任务没有唯一的原始团队计划');
@@ -22,7 +20,7 @@ export function buildDiscoveryTaskBinding(store, pid, task) {
     const spec = discoveryTaskSpec(task), specDigest = digest(spec);
     ensure(plan.teamId === team.id && plan.planVersion === team.planVersion && plan.directiveVersion === team.directiveVersion && plan.digest === team.planDigest && plan.tasks.some(x => digest(x) === specDigest), 'DISCOVERY_TASK_PLAN_INVALID', '任务与原始团队计划不符');
     const binding = { taskId: task.id, teamId: team.id, teamApprovalId: team.approvalId, planDigest: team.planDigest, planVersion: team.planVersion, directiveVersion: team.directiveVersion, taskSpecDigest: specDigest, teamPlanId: plan.id, teamPlanVersion: plan.version, teamPlanDigest: discoveryTeamPlanDigest(plan), role: 'literature' };
-    return { binding, model: plan.model, team, plan };
+    return { binding, model: resolveTaskModel(plan, task), team, plan };
 }
 export function assertTaskDiscoveryBinding(store, pid, g, options = {}) {
     const b = g.taskBinding;
@@ -33,7 +31,7 @@ export function assertTaskDiscoveryBinding(store, pid, g, options = {}) {
     ensure(approval.subjectKind === 'team' && approval.subjectId === team.id && approval.digest === b.planDigest && approval.scope === 'collaboration' && !approval.workingGrant && !approval.runGrant && approval.status !== 'rejected' && approval.status !== 'stale', 'DISCOVERY_TASK_APPROVAL_STALE', '原团队批准已失效');
     if (options.requireApproved)
         ensure(approval.status === 'approved', 'DISCOVERY_TASK_APPROVAL_REQUIRED', '原团队计划尚未批准');
-    ensure(plan.id === b.teamPlanId && plan.version === b.teamPlanVersion && plan.teamId === team.id && plan.planVersion === b.planVersion && plan.directiveVersion === b.directiveVersion && plan.digest === b.planDigest && discoveryTeamPlanDigest(plan) === b.teamPlanDigest && digest(plan.model) === digest(g.model), 'DISCOVERY_TASK_PLAN_STALE', '原团队计划记录或模型已改变');
+    ensure(plan.id === b.teamPlanId && plan.version === b.teamPlanVersion && plan.teamId === team.id && plan.planVersion === b.planVersion && plan.directiveVersion === b.directiveVersion && plan.digest === b.planDigest && discoveryTeamPlanDigest(plan) === b.teamPlanDigest && digest(resolveTaskModel(plan, task)) === digest(g.model), 'DISCOVERY_TASK_PLAN_STALE', '原团队计划记录或模型已改变');
     const specDigest = digest(discoveryTaskSpec(task));
     ensure(specDigest === b.taskSpecDigest && plan.tasks.some(x => digest(x) === specDigest), 'DISCOVERY_TASK_SPEC_STALE', '文献任务规范已改变');
     ensure(isTaskDiscoveryScope(g), 'DISCOVERY_TASK_SCOPE_INVALID', '任务发现授权超出固定 Crossref 范围');

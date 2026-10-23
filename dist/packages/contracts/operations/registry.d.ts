@@ -1,3 +1,4 @@
+import { type PreparedTaskModels } from '../../pi-adapter/thinking-policy.js';
 import type { ResearchApp } from '../../research-app.js';
 import type { Actor, Session, Row } from '../../domain/types.js';
 import { type JsonSchema } from './schema.js';
@@ -15,6 +16,7 @@ export interface OperationScope {
     };
 }
 interface OperationContext extends OperationScope {
+    preparedTaskModels?: PreparedTaskModels;
     app: ResearchApp;
     actor: Actor;
     session?: Row<Session>;

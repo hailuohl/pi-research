@@ -1,3 +1,4 @@
+import { resolveTaskModel } from '../collaboration/task-model.js';
 import { digest } from '../storage/store.js';
 import { ensure } from '../domain/errors.js';
 import { verifySnapshot } from '../workspace/files.js';
@@ -36,7 +37,7 @@ export function buildRunGrantTaskBinding(store, pid, task) {
     const taskSpec = discoveryTaskSpec(task), taskSpecDigest = digest(taskSpec);
     ensure(plan.teamId === team.id && plan.planVersion === team.planVersion && plan.directiveVersion === team.directiveVersion && plan.digest === team.planDigest && plan.tasks.some(x => digest(x) === taskSpecDigest), 'RUN_GRANT_TASK_PLAN_INVALID', '任务与原始团队计划不符');
     const binding = { taskId: task.id, teamId: team.id, teamApprovalId: team.approvalId, planDigest: team.planDigest, planVersion: team.planVersion, directiveVersion: team.directiveVersion, taskSpecDigest, teamPlanId: plan.id, teamPlanVersion: plan.version, teamPlanDigest: discoveryTeamPlanDigest(plan), role: 'analyst' };
-    return { binding, model: plan.model, sessionId: team.rootSessionId };
+    return { binding, model: resolveTaskModel(plan, task), sessionId: team.rootSessionId };
 }
 export function assertRunGrantTaskBinding(store, pid, grant, options = {}) {
     const b = grant.taskBinding;
@@ -51,7 +52,7 @@ export function assertRunGrantTaskBinding(store, pid, grant, options = {}) {
     if (options.requireApprovedTeam)
         ensure(approval.status === 'approved', 'RUN_GRANT_TEAM_APPROVAL_REQUIRED', '原团队计划尚未批准');
     const specDigest = digest(discoveryTaskSpec(task));
-    ensure(plan.id === b.teamPlanId && plan.version === b.teamPlanVersion && plan.teamId === team.id && plan.planVersion === b.planVersion && plan.directiveVersion === b.directiveVersion && plan.digest === b.planDigest && discoveryTeamPlanDigest(plan) === b.teamPlanDigest && digest(plan.model) === digest(grant.model) && task.planVersion === b.planVersion && task.directiveVersion === b.directiveVersion && specDigest === b.taskSpecDigest && plan.tasks.some(x => digest(x) === specDigest), 'RUN_GRANT_TASK_PLAN_STALE', '冻结团队计划、模型或任务规范已改变');
+    ensure(plan.id === b.teamPlanId && plan.version === b.teamPlanVersion && plan.teamId === team.id && plan.planVersion === b.planVersion && plan.directiveVersion === b.directiveVersion && plan.digest === b.planDigest && discoveryTeamPlanDigest(plan) === b.teamPlanDigest && digest(resolveTaskModel(plan, task)) === digest(grant.model) && task.planVersion === b.planVersion && task.directiveVersion === b.directiveVersion && specDigest === b.taskSpecDigest && plan.tasks.some(x => digest(x) === specDigest), 'RUN_GRANT_TASK_PLAN_STALE', '冻结团队计划、模型或任务规范已改变');
     if (options.requireUnclaimed)
         ensure(task.execution === 'pending' && task.attemptCount === 0 && !task.attemptId && !task.sessionId, 'RUN_GRANT_TASK_ALREADY_DISPATCHED', '只能为尚未派发的 analyst Task 授权');
     return { task, team, plan, approval };

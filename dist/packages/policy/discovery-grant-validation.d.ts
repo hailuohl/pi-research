@@ -1,3 +1,4 @@
+import { taskModelSpec, type TaskModelPlan } from '../collaboration/task-model.js';
 import type { Store } from '../storage/store.js';
 import type { Actor, Approval, Artifact, Row, Session, Task, TaskSpec, Team } from '../domain/types.js';
 import type { DiscoveryGrant, DiscoveryGrantReference, DiscoveryContext, DiscoveryOperation, DiscoveryCall, DiscoveryTaskBinding } from './discovery-grant-types.js';
@@ -25,7 +26,7 @@ export declare function assertDiscoveryGrantRecord(store: Store, pid: string, id
     approval: Row<Approval>;
 };
 export declare function assertDiscoveryGrantReference(store: Store, pid: string, ref: DiscoveryGrantReference): Row<DiscoveryGrant>;
-type TeamPlan = Row<{
+type TeamPlan = Row<TaskModelPlan & {
     sourceRevisionId?: string;
     teamId: string;
     planVersion: number;
@@ -35,7 +36,7 @@ type TeamPlan = Row<{
     digest: string;
     model: Session['model'];
 }>;
-export declare function discoveryTaskSpec(task: Row<Task>): TaskSpec;
+export declare const discoveryTaskSpec: typeof taskModelSpec;
 export declare function discoveryTeamPlanDigest(plan: TeamPlan): string;
 export declare function buildDiscoveryTaskBinding(store: Store, pid: string, task: Row<Task>): {
     binding: DiscoveryTaskBinding;

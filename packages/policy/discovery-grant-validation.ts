@@ -1,3 +1,4 @@
+import {resolveTaskModel,taskModelSpec,type TaskModelPlan} from '../collaboration/task-model.js';
 import type {Store} from '../storage/store.js';
 import {digest} from '../storage/store.js';
 import type {Actor,Approval,Artifact,Row,Session,Task,TaskAttempt,TaskSpec,Team} from '../domain/types.js';
@@ -15,23 +16,22 @@ export function discoveryGrantPayload(g:DiscoveryGrant){const {sessionId,model,s
 export const discoveryReference=(g:Row<DiscoveryGrant>):DiscoveryGrantReference=>({id:g.id,digest:g.digest,approvalId:g.approvalId});
 export function assertDiscoveryGrantRecord(store:Store,pid:string,id:string){const g=store.get<DiscoveryGrant>('discovery-grant',id,pid),a=store.get<Approval>('approval',g.approvalId,pid);ensure(digest(discoveryGrantPayload(g))===g.digest,'DISCOVERY_GRANT_CORRUPTED','固定发现授权已改变');ensure(a.subjectKind==='discovery-grant'&&a.subjectId===g.id&&a.digest===g.digest&&a.scope==='discovery-grant.activate'&&!a.workingGrant&&!a.runGrant,'APPROVAL_STALE','发现授权原批准身份不符');return {grant:g,approval:a};}
 export function assertDiscoveryGrantReference(store:Store,pid:string,ref:DiscoveryGrantReference){const {grant:g,approval}=assertDiscoveryGrantRecord(store,pid,ref.id);ensure(g.digest===ref.digest&&g.approvalId===ref.approvalId,'DISCOVERY_GRANT_STALE','发现授权原身份已改变');ensure(g.state==='active'&&approval.status==='approved','DISCOVERY_GRANT_REVOKED','发现授权未激活或已撤销');return g;}
-type TeamPlan=Row<{sourceRevisionId?:string;teamId:string;planVersion:number;directiveVersion:number;tasks:TaskSpec[];goal:string;digest:string;model:Session['model']}>;
-const specFields=['skillIds','key','role','objective','dependencies','critical','reviewOf','required','inputEvidenceIds','expectedOutputs','acceptanceRuleIds'] as const;
-export function discoveryTaskSpec(task:Row<Task>):TaskSpec {const spec:Record<string,unknown>={};for(const key of specFields)if(task[key]!==undefined)spec[key]=task[key];return spec as unknown as TaskSpec;}
-export function discoveryTeamPlanDigest(plan:TeamPlan){return digest({id:plan.id,...(plan.sourceRevisionId?{sourceRevisionId:plan.sourceRevisionId}:{}),teamId:plan.teamId,planVersion:plan.planVersion,directiveVersion:plan.directiveVersion,tasks:plan.tasks,goal:plan.goal,digest:plan.digest,model:plan.model});}
+type TeamPlan=Row<TaskModelPlan&{sourceRevisionId?:string;teamId:string;planVersion:number;directiveVersion:number;tasks:TaskSpec[];goal:string;digest:string;model:Session['model']}>;
+export const discoveryTaskSpec=taskModelSpec;
+export function discoveryTeamPlanDigest(plan:TeamPlan){return digest({id:plan.id,...(plan.sourceRevisionId?{sourceRevisionId:plan.sourceRevisionId}:{}),teamId:plan.teamId,planVersion:plan.planVersion,directiveVersion:plan.directiveVersion,tasks:plan.tasks,goal:plan.goal,digest:plan.digest,model:plan.model,...(plan.taskModels?{taskModels:plan.taskModels}:{})});}
 export function buildDiscoveryTaskBinding(store:Store,pid:string,task:Row<Task>){
  const team=store.get<Team>('team',task.teamId,pid),plans=store.list<TeamPlan>('team-plan',pid).filter(p=>p.teamId===team.id);ensure(plans.length===1,'DISCOVERY_TASK_PLAN_INVALID','任务没有唯一的原始团队计划');const plan=plans[0]!;
  const approval=store.get<Approval>('approval',team.approvalId,pid);ensure(approval.subjectKind==='team'&&approval.subjectId===team.id&&approval.digest===team.planDigest&&approval.scope==='collaboration'&&!approval.workingGrant&&!approval.runGrant&&approval.status!=='rejected'&&approval.status!=='stale','DISCOVERY_TASK_APPROVAL_STALE','原团队计划批准身份无效');
  const spec=discoveryTaskSpec(task),specDigest=digest(spec);ensure(plan.teamId===team.id&&plan.planVersion===team.planVersion&&plan.directiveVersion===team.directiveVersion&&plan.digest===team.planDigest&&plan.tasks.some(x=>digest(x)===specDigest),'DISCOVERY_TASK_PLAN_INVALID','任务与原始团队计划不符');
  const binding:DiscoveryTaskBinding={taskId:task.id,teamId:team.id,teamApprovalId:team.approvalId,planDigest:team.planDigest,planVersion:team.planVersion,directiveVersion:team.directiveVersion,taskSpecDigest:specDigest,teamPlanId:plan.id,teamPlanVersion:plan.version,teamPlanDigest:discoveryTeamPlanDigest(plan),role:'literature'};
- return {binding,model:plan.model,team,plan};
+ return {binding,model:resolveTaskModel(plan,task),team,plan};
 }
 export function assertTaskDiscoveryBinding(store:Store,pid:string,g:Row<DiscoveryGrant>,options:{requireUnclaimed?:boolean;requireApproved?:boolean}={}){
  const b=g.taskBinding;ensure(b,'DISCOVERY_TASK_BINDING_REQUIRED','此任务缺少固定发现授权');const task=store.get<Task>('task',b.taskId,pid),team=store.get<Team>('team',b.teamId,pid),plan=store.get<TeamPlan>('team-plan',b.teamPlanId,pid),approval=store.get<Approval>('approval',b.teamApprovalId,pid);
  ensure(task.id===b.taskId&&task.discoveryGrantId===g.id&&task.teamId===b.teamId&&task.role==='literature'&&b.role==='literature','DISCOVERY_TASK_BINDING_REQUIRED','任务发现授权标记或角色不符');
  ensure(team.id===b.teamId&&team.approvalId===b.teamApprovalId&&team.planDigest===b.planDigest&&team.planVersion===b.planVersion&&team.directiveVersion===b.directiveVersion,'DISCOVERY_TASK_PLAN_STALE','原团队计划或批准已改变');
  ensure(approval.subjectKind==='team'&&approval.subjectId===team.id&&approval.digest===b.planDigest&&approval.scope==='collaboration'&&!approval.workingGrant&&!approval.runGrant&&approval.status!=='rejected'&&approval.status!=='stale','DISCOVERY_TASK_APPROVAL_STALE','原团队批准已失效');if(options.requireApproved)ensure(approval.status==='approved','DISCOVERY_TASK_APPROVAL_REQUIRED','原团队计划尚未批准');
- ensure(plan.id===b.teamPlanId&&plan.version===b.teamPlanVersion&&plan.teamId===team.id&&plan.planVersion===b.planVersion&&plan.directiveVersion===b.directiveVersion&&plan.digest===b.planDigest&&discoveryTeamPlanDigest(plan)===b.teamPlanDigest&&digest(plan.model)===digest(g.model),'DISCOVERY_TASK_PLAN_STALE','原团队计划记录或模型已改变');
+ ensure(plan.id===b.teamPlanId&&plan.version===b.teamPlanVersion&&plan.teamId===team.id&&plan.planVersion===b.planVersion&&plan.directiveVersion===b.directiveVersion&&plan.digest===b.planDigest&&discoveryTeamPlanDigest(plan)===b.teamPlanDigest&&digest(resolveTaskModel(plan,task))===digest(g.model),'DISCOVERY_TASK_PLAN_STALE','原团队计划记录或模型已改变');
  const specDigest=digest(discoveryTaskSpec(task));ensure(specDigest===b.taskSpecDigest&&plan.tasks.some(x=>digest(x)===specDigest),'DISCOVERY_TASK_SPEC_STALE','文献任务规范已改变');
  ensure(isTaskDiscoveryScope(g),'DISCOVERY_TASK_SCOPE_INVALID','任务发现授权超出固定 Crossref 范围');
  if(options.requireUnclaimed)ensure(task.execution==='pending'&&task.attemptCount===0&&!task.attemptId&&!task.sessionId,'DISCOVERY_TASK_ALREADY_DISPATCHED','只能为尚未派发的文献任务授权');

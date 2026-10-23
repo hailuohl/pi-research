@@ -88,7 +88,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;
@@ -122,7 +122,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;
@@ -155,7 +155,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;
@@ -188,7 +188,7 @@ export declare class DocumentParsingService {
         documentVersionId: string;
         approvalId: string;
         state: import("./parse-types.js").DocumentParseState;
-        integrity: "pending" | "complete" | "incomplete" | "invalid";
+        integrity: "pending" | "incomplete" | "complete" | "invalid";
         manifestDigest: string;
         rawDigest: string;
         profileId: DocumentParserProfile;

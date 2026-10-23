@@ -384,7 +384,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("path" | "role")[];
+                    readonly required: ("role" | "path")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -452,7 +452,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                readonly required: ("id" | "revision" | "digest" | "rootSessionId")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
@@ -925,7 +925,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                             readonly enum: readonly ["protocol", "implementation", "notes"];
                         };
                     };
-                    readonly required: ("path" | "role")[];
+                    readonly required: ("role" | "path")[];
                     readonly additionalProperties: false;
                 };
                 readonly minItems: number;
@@ -993,7 +993,7 @@ export declare const REVIEW_OUTPUT_SCHEMAS: {
                         readonly maxLength: number;
                     };
                 };
-                readonly required: ("id" | "digest" | "revision" | "rootSessionId")[];
+                readonly required: ("id" | "revision" | "digest" | "rootSessionId")[];
                 readonly additionalProperties: false;
             };
             readonly sourceInputs: {
