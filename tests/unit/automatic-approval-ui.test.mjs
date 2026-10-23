@@ -22,7 +22,8 @@ test('automatic approvals retain all fixed workflow records without repeat appro
  for(const marked of [false,true]){
   const data=base(),approval=id=>({id,status:'approved',version:1,...(marked?{automaticApproval,automaticExecution:{state:'failed',reason:`failed-${id}`}}:{fullAccess:{continuationId:'old-task',digest:'old'}})});
   data.approvals=['run','campaign','decision','change','development','review'].map(approval);
-  data.intents=[{id:'intent',rootSessionId:'root',approvalId:'run',status:'prepared',experimentId:'e',manifestDigest:'fixed',manifest:{}}];
+  data.intents=[{id:'intent',projectId:'p',rootSessionId:'root',approvalId:'run',status:'prepared',experimentId:'e',manifestDigest:'fixed',manifest:{}}];
+  Object.assign(data.approvals.find(record=>record.id==='run'),{projectId:'p',subjectKind:'run-intent',subjectId:'intent',scope:'run.submit',digest:'fixed'});
   data.campaigns=[{id:'campaign',rootSessionId:'root',approvalId:'campaign',state:'draft',rootModel:session.model,limits:{},goal:'Fixed campaign'}];
   data.decisions=[{id:'decision',campaignId:'campaign',approvalId:'decision',status:'proposed',action:'stop',reason:'Fixed decision'}];
   data.changeProposals=[{id:'change',rootSessionId:'root',approvalId:'change',state:'prepared',title:'Fixed change',digest:'fixed',baseSnapshot:{digest:'base'},candidateSnapshot:{digest:'candidate'},changes:[]}];

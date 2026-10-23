@@ -10,10 +10,11 @@ const session={id:'root-a',role:'coordinator',state:'idle',model:{provider:'test
 const base=()=>({project:{id:'p',archived:false,settings:{enabled:true}},sessions:[session],campaigns:[],members:[],observations:[],decisions:[],experiments:[],runs:[],intents:[],developmentTasks:[],sandboxJobs:[],reviews:[],tasks:[],teams:[],changeProposals:[],approvals:[],workingGrants:[],researchCandidates:[],experimentPlans:[]});
 const proposal=(extra={})=>({id:'proposal',rootSessionId:'root-a',title:'Own fixed change',hypothesis:'Fixture, not a research result',state:'prepared',baseExperimentId:'e',baseRevision:1,baseSnapshot:{digest:'base'},candidateSnapshot:{digest:'candidate'},digest:'fixed',approvalId:'change-approval',changes:[{path:'main.py'}],testsStatus:'passed',...extra});
 const campaign=(extra={})=>({id:'campaign',goal:'Own conversation plan',rootSessionId:'root-a',state:'draft',version:1,baselineExperimentId:'e',focusExperimentId:'e',rootModel:session.model,primaryMetric:'loss',direction:'min',limits:{maxRounds:2},planDigest:'plan',contractDigest:'contract',approvalId:'campaign-approval',autoAnalyze:false,...extra});
-const runIntent=(extra={})=>({id:'run-intent',rootSessionId:'root-a',experimentId:'e',approvalId:'run-approval',status:'prepared',manifestDigest:'fixed-manifest',manifest:{snapshotDigest:'source',contractDigest:'contract',contract:{command:['python','main.py'],metrics:{loss:{unit:'mse'}}}},...extra});
+const runIntent=(extra={})=>({id:'run-intent',projectId:'p',version:1,rootSessionId:'root-a',experimentId:'e',approvalId:'run-approval',status:'prepared',manifestDigest:'fixed-manifest',manifest:{snapshotDigest:'source',sourceFiles:[],contractDigest:'contract',contract:{command:['python','main.py'],metrics:{loss:{unit:'mse'}}}},...extra});
+const runApproval=(fixed,extra={})=>({id:fixed.approvalId,projectId:'p',version:1,subjectKind:'run-intent',subjectId:fixed.id,scope:'run.submit',digest:fixed.manifestDigest,status:'pending',...extra});
 const view=(data,extra={})=>synchronousState(new ChatWorkflows({data,session,busy:false,perform:fn=>fn(),onSession(){},onExperiment(){},onRun(){},...extra}));
 test('native Run approval visibly states host authority and exact NVIDIA devices outside collapsed details',()=>{
- const data=base(),uuid='GPU-11111111-1111-1111-1111-111111111111';data.intents=[runIntent({manifest:{contract:{runner:'local',localRuntimeId:'python',gpu:{vendor:'nvidia',deviceIds:[uuid]}}}})];data.approvals=[{id:'run-approval',status:'pending',version:1}];const paragraphs=elements(view(data).render()).filter(n=>n.type==='p').map(text).join('\n');assert.match(paragraphs,/本地执行.*文件和网络不隔离.*python/);assert.ok(paragraphs.includes(uuid));
+ const data=base(),uuid='GPU-11111111-1111-1111-1111-111111111111';data.intents=[runIntent({manifest:{contract:{runner:'local',localRuntimeId:'python',gpu:{vendor:'nvidia',deviceIds:[uuid]}}}})];data.approvals=[runApproval(data.intents[0])];const paragraphs=elements(view(data).render()).filter(n=>n.type==='p').map(text).join('\n');assert.match(paragraphs,/本地执行.*文件和网络不隔离.*python/);assert.ok(paragraphs.includes(uuid));
 });
 
 test('dialogue task cards exclude other main sessions while retaining scoped and unbound history',()=>{
@@ -86,7 +87,7 @@ test('dialogue Run cards keep a bound RunGrant gate and never offer one-shot app
 
 test('root-owned RunIntent cards approve once and retry the same queued message key',async t=>{
   const previous=globalThis.fetch;t.after(()=>{globalThis.fetch=previous;});
-  const data=base(),i=runIntent(),approval={id:i.approvalId,status:'pending',version:1};data.intents=[i];data.approvals=[approval];
+  const data=base(),i=runIntent(),approval=runApproval(i);data.intents=[i];data.approvals=[approval];
   const requests=[];let failMessage=true;
   globalThis.fetch=async(url,init)=>{requests.push({url,init,body:JSON.parse(init.body)});if(url.endsWith('/messages')&&failMessage){failMessage=false;return{ok:false,status:503,json:async()=>({error:{message:'queue response lost'}})};}return{ok:true,json:async()=>({id:'queued'})};};
   const ui=view(data),confirm=button(ui,'确认并让智能体执行');assert.ok(confirm);
@@ -102,7 +103,7 @@ test('root-owned RunIntent cards approve once and retry the same queued message 
 
 test('legacy campaign intent continuation checks campaign membership and never owner-submits',async t=>{
   const previous=globalThis.fetch;t.after(()=>{globalThis.fetch=previous;});
-  const data=base(),c=campaign({state:'active'}),i=runIntent({rootSessionId:undefined});data.campaigns=[c];data.members=[{campaignId:c.id,intentId:i.id}];data.intents=[i];data.approvals=[{id:i.approvalId,status:'pending',version:1}];
+  const data=base(),c=campaign({state:'active'}),i=runIntent({rootSessionId:undefined});data.campaigns=[c];data.members=[{campaignId:c.id,intentId:i.id}];data.intents=[i];data.approvals=[runApproval(i)];
   const requests=[];globalThis.fetch=async(url,init)=>{requests.push({url,body:JSON.parse(init.body)});return{ok:true,json:async()=>({id:'queued'})};};
   const ui=view(data);await button(ui,'确认并让智能体执行').props.onClick();
   assert.deepEqual(requests.map(r=>r.url),['/api/approvals/run-approval/decide','/api/sessions/root-a/messages']);
@@ -111,7 +112,7 @@ test('legacy campaign intent continuation checks campaign membership and never o
 });
 
 test('root RunGrant cards require an active grant bound to the current main session and keep task grants read-only',()=>{
-  const data=base(),i=runIntent({runGrant:{id:'root-grant',digest:'grant-digest',approvalId:'grant-approval'}}),grant={id:'root-grant',sessionId:'root-a',validity:'current',effectiveState:'active',usage:{remaining:1},expiresAt:'2099-01-01T00:00:00.000Z'};data.intents=[i];data.approvals=[{id:i.approvalId,status:'approved',runGrant:i.runGrant}];data.runGrants=[grant];
+  const data=base(),i=runIntent({runGrant:{id:'root-grant',digest:'grant-digest',approvalId:'grant-approval'}}),grant={id:'root-grant',sessionId:'root-a',validity:'current',effectiveState:'active',usage:{remaining:1},expiresAt:'2099-01-01T00:00:00.000Z'};data.intents=[i];data.approvals=[runApproval(i,{status:'approved',runGrant:i.runGrant})];data.runGrants=[grant];
   assert.ok(button(view(data),'确认并让智能体执行'));
   const foreign={...grant,sessionId:'root-b'};assert.equal(button(view({...data,runGrants:[foreign]}),'确认并让智能体执行'),undefined);
   const task={...grant,taskBinding:{taskId:'task-a'}};const taskView=view({...data,runGrants:[task]});assert.equal(button(taskView,'确认并让智能体执行'),undefined);assert.match(text(taskView.render()),/对应的已授权任务提交/);
@@ -121,10 +122,10 @@ test('root RunGrant cards require an active grant bound to the current main sess
 test('campaign membership cannot borrow another root intent unless its active RunGrant is bound here',async t=>{
   const previous=globalThis.fetch;t.after(()=>{globalThis.fetch=previous;});
   const c=campaign({state:'active'}),baseData=base();baseData.campaigns=[c];baseData.members=[{campaignId:c.id,intentId:'foreign-intent'}];
-  const foreign=runIntent({id:'foreign-intent',rootSessionId:'root-b'}),foreignView=view({...baseData,intents:[foreign],approvals:[{id:foreign.approvalId,status:'approved'}]});
+  const foreign=runIntent({id:'foreign-intent',rootSessionId:'root-b'}),foreignView=view({...baseData,intents:[foreign],approvals:[runApproval(foreign,{status:'approved'})]});
   assert.equal(button(foreignView,'确认并让智能体执行'),undefined);assert.match(text(foreignView.render()),/未绑定当前对话/);
   const ref={id:'root-grant',digest:'grant-digest',approvalId:'grant-approval'},i={...foreign,runGrant:ref},grant={id:ref.id,digest:ref.digest,approvalId:ref.approvalId,sessionId:'root-a',validity:'current',effectiveState:'active',usage:{remaining:1},expiresAt:'2099-01-01T00:00:00.000Z'};
-  const data={...baseData,intents:[i],approvals:[{id:i.approvalId,status:'approved',runGrant:ref}],runGrants:[grant]},requests=[];
+  const data={...baseData,intents:[i],approvals:[runApproval(i,{status:'approved',runGrant:ref})],runGrants:[grant]},requests=[];
   globalThis.fetch=async(url,init)=>{requests.push({url,body:JSON.parse(init.body)});return{ok:true,json:async()=>({id:'queued'})};};
   await button(view(data),'确认并让智能体执行').props.onClick();
   assert.equal(requests.length,1);assert.equal(requests[0].url,'/api/sessions/root-a/messages');
@@ -133,7 +134,7 @@ test('campaign membership cannot borrow another root intent unless its active Ru
 
 test('switching root after owner approval prevents the old card from queueing a message',async t=>{
   const previous=globalThis.fetch;t.after(()=>{globalThis.fetch=previous;});
-  const data=base(),i=runIntent();data.intents=[i];data.approvals=[{id:i.approvalId,status:'pending',version:1}];let finishApproval;const requests=[];
+  const data=base(),i=runIntent();data.intents=[i];data.approvals=[runApproval(i)];let finishApproval;const requests=[];
   globalThis.fetch=(url,init)=>{requests.push(url);return new Promise(resolve=>{finishApproval=()=>resolve({ok:true,json:async()=>({})});});};
   const ui=view(data),pending=button(ui,'确认并让智能体执行').props.onClick();
   ui.props={...ui.props,session:{...session,id:'root-b'}};finishApproval();

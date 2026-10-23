@@ -69,7 +69,8 @@
 @container chat (max-width:760px){
  .chat-heading{flex-wrap:wrap;gap:10px}
  .chat-heading-actions{justify-content:flex-start}
- .chat-work-region.is-drawer-open{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(0,.8fr)}
+ .chat-work-region.is-drawer-open{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+ .chat-work-region.is-drawer-open>.conversation,.chat-work-region.is-drawer-open~.composer-wrap{display:none}
  .chat-task-drawer{margin:8px 16px;max-height:100%}
  .chat-task-drawer>header{padding:8px 12px}
  .chat-task-drawer-content{padding:10px 12px}

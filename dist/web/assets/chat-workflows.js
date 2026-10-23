@@ -177,6 +177,7 @@ class ChatWorkflows extends React.Component {
     this.messageKeys = /* @__PURE__ */ new Map();
     this.approvedRunIntents = /* @__PURE__ */ new Set();
     this.queuedRunIntents = /* @__PURE__ */ new Set();
+    this.runIntentPending = false;
   }
   componentWillUnmount() {
     this.mounted = false;
@@ -317,7 +318,7 @@ class ChatWorkflows extends React.Component {
     const { data } = this.props;
     if (!this.dialogueMatches(projectId, sessionId)) return false;
     const intent = data.intents.find((i) => i.id === intentId);
-    if (!intent || intent.manifestDigest !== manifestDigest || intent.status !== "prepared" || intent.runId) return false;
+    if (!intent || intent.projectId !== projectId || intent.manifestDigest !== manifestDigest || intent.status !== "prepared" || intent.runId) return false;
     if (!campaignId) return intent.rootSessionId === sessionId;
     const campaign = data.campaigns.find((c) => c.id === campaignId), member = data.members.some((m) => m.campaignId === campaignId && m.intentId === intentId) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intentId);
     if (campaign?.rootSessionId !== sessionId || !member) return false;
@@ -325,50 +326,99 @@ class ChatWorkflows extends React.Component {
     const approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id);
     return !!bound && !grant?.taskBinding && grant?.sessionId === sessionId && runGrantUsable(grant);
   }
-  async continueRunIntent(intent, campaignId) {
+  runApprovalMatches(intent, approval) {
+    return intent.projectId === this.props.data.project.id && !!approval && approval.id === intent.approvalId && approval.projectId === intent.projectId && approval.subjectKind === "run-intent" && approval.subjectId === intent.id && approval.scope === "run.submit" && approval.digest === intent.manifestDigest && !approval.workingGrant;
+  }
+  async rejectRunIntent(intent, expectedApproval, campaignId) {
+    const projectId = this.props.data.project.id, sessionId = this.props.session.id, intentId = intent.id, manifestDigest = intent.manifestDigest, approvalId = expectedApproval.id, expectedVersion = expectedApproval.version, keyId = `${intentId}:${manifestDigest}`;
+    const pendingApproval = () => {
+      if (!this.runIntentInScope(projectId, sessionId, intentId, manifestDigest, campaignId) || this.queuedRunIntents.has(keyId) || this.approvedRunIntents.has(keyId)) return;
+      const current = this.props.data.intents.find((row) => row.id === intentId), approval = this.props.data.approvals.find((row) => row.id === approvalId);
+      if (!current || !this.runApprovalMatches(current, approval) || !approval || approval.version !== expectedVersion || approval.status !== "pending" || approval.automaticApproval || approval.fullAccess || current.runGrant || approval.runGrant) return;
+      return approval;
+    };
+    if (this.props.busy || this.runIntentPending || !pendingApproval()) return;
+    this.runIntentPending = true;
+    try {
+      await this.props.perform(async () => {
+        const approval = pendingApproval();
+        if (approval) await this.decide(approval, false);
+      });
+    } finally {
+      this.runIntentPending = false;
+    }
+  }
+  async continueRunIntent(intent, expectedApproval, campaignId) {
     const { data, session } = this.props, projectId = data.project.id, sessionId = session.id, intentId = intent.id, digest = intent.manifestDigest, approvalId = intent.approvalId, keyId = `${intentId}:${digest}`;
+    const expectedVersion = expectedApproval.version, initiallyPending = expectedApproval.status === "pending", selectedApproval = data.approvals.find((row) => row.id === approvalId);
+    if (this.props.busy || this.runIntentPending || this.queuedRunIntents.has(keyId) || !this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId) || expectedApproval.id !== approvalId || !this.runApprovalMatches(intent, selectedApproval) || selectedApproval?.version !== expectedVersion || selectedApproval.automaticApproval) return;
     const messageKey = this.messageKeys.get(keyId) ?? crypto.randomUUID();
     this.messageKeys.set(keyId, messageKey);
-    const bound = intent.runGrant ?? data.approvals.find((a) => a.id === approvalId)?.runGrant, inspect = intent.rootSessionId === sessionId ? `\u5148\u8C03\u7528 project_inspect({runIntentId:"${intentId}"})\uFF0C\u6838\u5BF9\u552F\u4E00 RunIntent\u3002` : intent.rootSessionId == null && campaignId ? `\u8C03\u7528 campaign_inspect({campaignId:"${campaignId}"})\uFF0C\u6838\u5BF9\u5F53\u524D\u6D3B\u52A8\u6210\u5458\u6216\u5019\u9009\u4E2D\u5305\u542B\u8BE5\u56FA\u5B9A RunIntent\u3002` : `\u6B64\u9879\u4F9D\u8D56\u5F53\u524D\u4F1A\u8BDD\u5DF2\u6838\u9A8C\u7684 RunGrant ${bound?.id ?? ""}\uFF08${bound?.digest ?? ""}\uFF09\uFF1B\u6309\u8BE5\u7ED1\u5B9A\u6388\u6743\u8EAB\u4EFD\u63D0\u4EA4\u3002`, content = `\u7EE7\u7EED\u6267\u884C\u8FD9\u4EFD\u5DF2\u786E\u8BA4\u7684\u56FA\u5B9A\u6B63\u5F0F\u8FD0\u884C\u3002${inspect}\u786E\u8BA4 manifestDigest \u7B49\u4E8E "${digest}"\u3001\u5BA1\u6279\u6709\u6548\u4E14\u4ECD\u53EF\u63D0\u4EA4\uFF1B\u7136\u540E\u53EA\u8C03\u7528 run_submit({intentId:"${intentId}"})\u3002\u63D0\u4EA4\u540E\u7528\u8FD4\u56DE\u7684 Run id \u8C03\u7528 run_inspect \u56DE\u67E5\u72B6\u6001\u3001\u771F\u5B9E\u6307\u6807\u548C\u4EA7\u7269\uFF0C\u5FC5\u8981\u65F6\u8BFB\u53D6 run_logs\u3002\u82E5\u610F\u5411\u5931\u6548\u3001\u88AB\u62D2\u7EDD\u6216\u56FA\u5B9A\u6388\u6743\u4E0D\u53EF\u7528\uFF0C\u8BF4\u660E\u539F\u56E0\uFF0C\u4E0D\u521B\u5EFA\u66FF\u4EE3\u610F\u5411\u6216\u8865\u8DD1\u3002\u82E5 Run \u5C1A\u672A\u7ED3\u675F\uFF0C\u62A5\u544A\u5F53\u524D\u72B6\u6001\u5E76\u7ED3\u675F\u672C\u8F6E\uFF0C\u4E0D\u5FD9\u8F6E\u8BE2\u3002`;
-    if (!this.dialogueMatches(projectId, sessionId)) return;
-    await this.props.perform(async () => {
-      if (!this.dialogueMatches(projectId, sessionId)) return;
-      if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u56FA\u5B9A RunIntent \u5DF2\u5931\u6548\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8BDD\uFF1B\u672A\u6279\u51C6\u3001\u672A\u53D1\u9001\u6D88\u606F\uFF0C\u4E5F\u672A\u521B\u5EFA\u66FF\u4EE3\u610F\u5411\u3002");
-      const current = this.props.data.intents.find((i) => i.id === intentId), approval = this.props.data.approvals.find((a) => a.id === approvalId), grantRef = current?.runGrant ?? approval?.runGrant, expectedRef = intent.runGrant ?? data.approvals.find((a) => a.id === approvalId)?.runGrant;
-      const sameGrant = !grantRef && !expectedRef || !!grantRef && !!expectedRef && grantRef.id === expectedRef.id && grantRef.digest === expectedRef.digest && grantRef.approvalId === expectedRef.approvalId;
-      if (!current || current.approvalId !== approvalId || !approval || !sameGrant) throw Error("\u56FA\u5B9A RunIntent \u7684\u5BA1\u6279\u6216\u6388\u6743\u5F15\u7528\u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
-      if (grantRef) {
-        const grant = (this.props.data.runGrants ?? []).find((g) => g.id === grantRef.id);
-        if (grant?.taskBinding) throw Error("\u6B64 RunIntent \u7ED1\u5B9A\u4EFB\u52A1\u7EA7\u6388\u6743\uFF0C\u53EA\u80FD\u7531\u5BF9\u5E94\u7684\u5DF2\u6388\u6743\u4EFB\u52A1\u63D0\u4EA4\u3002");
-        if (approval.status !== "approved" || grant?.sessionId !== sessionId || !runGrantUsable(grant)) throw Error("\u7ED1\u5B9A\u6388\u6743\u5C1A\u4E0D\u53EF\u7528\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8BDD\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
-      } else if (approval.status === "pending" && !this.approvedRunIntents.has(keyId)) {
-        await this.decide(approval, true);
+    const bound = intent.runGrant ?? expectedApproval.runGrant, inspect = intent.rootSessionId === sessionId ? `\u5148\u8C03\u7528 project_inspect({runIntentId:"${intentId}"})\uFF0C\u6838\u5BF9\u552F\u4E00 RunIntent\u3002` : intent.rootSessionId == null && campaignId ? `\u8C03\u7528 campaign_inspect({campaignId:"${campaignId}"})\uFF0C\u6838\u5BF9\u5F53\u524D\u6D3B\u52A8\u6210\u5458\u6216\u5019\u9009\u4E2D\u5305\u542B\u8BE5\u56FA\u5B9A RunIntent\u3002` : `\u6B64\u9879\u4F9D\u8D56\u5F53\u524D\u4F1A\u8BDD\u5DF2\u6838\u9A8C\u7684 RunGrant ${bound?.id ?? ""}\uFF08${bound?.digest ?? ""}\uFF09\uFF1B\u6309\u8BE5\u7ED1\u5B9A\u6388\u6743\u8EAB\u4EFD\u63D0\u4EA4\u3002`, content = `\u7EE7\u7EED\u6267\u884C\u8FD9\u4EFD\u5DF2\u786E\u8BA4\u7684\u56FA\u5B9A\u6B63\u5F0F\u8FD0\u884C\u3002${inspect}\u786E\u8BA4 manifestDigest \u7B49\u4E8E "${digest}"\u3001\u5BA1\u6279\u6709\u6548\u4E14\u4ECD\u53EF\u63D0\u4EA4\uFF1B\u7136\u540E\u53EA\u8C03\u7528 run_submit({intentId:"${intentId}"})\u3002\u63D0\u4EA4\u540E\u7528\u8FD4\u56DE\u7684 Run id \u8C03\u7528 run_inspect \u56DE\u67E5\u72B6\u6001\u3001\u771F\u5B9E\u6307\u6807\u548C\u4EA7\u7269\uFF0C\u5FC5\u8981\u65F6\u8BFB\u53D6 run_logs\u3002\u82E5\u610F\u5411\u5931\u6548\u3001\u88AB\u62D2\u7EDD\u6216\u56FA\u5B9A\u6388\u6743\u4E0D\u53EF\u7528\uFF0C\u8BF4\u660E\u539F\u56E0\uFF0C\u4E0D\u521B\u5EFA\u66FF\u4EE3\u610F\u5411\u6216\u8865\u8DD1\u3002\u82E5 Run \u5C1A\u672A\u7ED3\u675F\uFF0C\u62A5\u544A\u5F53\u524D\u72B6\u6001\u5E76\u7ED3\u675F\u672C\u8F6E\uFF0C\u4E0D\u5FD9\u8F6E\u8BE2\u3002`;
+    this.runIntentPending = true;
+    try {
+      await this.props.perform(async () => {
         if (!this.dialogueMatches(projectId, sessionId)) return;
-        if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u6279\u51C6\u5B8C\u6210\u540E\u56FA\u5B9A RunIntent \u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
-        this.approvedRunIntents.add(keyId);
-        this.setState((state) => ({ runIntentRevision: state.runIntentRevision + 1 }));
-      } else if (approval.status !== "approved" && !(approval.status === "pending" && this.approvedRunIntents.has(keyId))) throw Error("\u6B64\u56FA\u5B9A RunIntent \u672A\u83B7\u6709\u6548\u6279\u51C6\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
-      if (!this.dialogueMatches(projectId, sessionId)) return;
-      if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u5F53\u524D\u5BF9\u8BDD\u6216\u56FA\u5B9A RunIntent \u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
-      try {
-        await api(`/sessions/${sessionId}/messages`, { content }, "POST", void 0, messageKey);
-      } catch (error) {
+        const selected = this.props.data.approvals.find((row) => row.id === approvalId);
+        if (!selected || selected.version !== expectedVersion || selected.automaticApproval) return;
+        if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u56FA\u5B9A RunIntent \u5DF2\u5931\u6548\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8BDD\uFF1B\u672A\u6279\u51C6\u3001\u672A\u53D1\u9001\u6D88\u606F\uFF0C\u4E5F\u672A\u521B\u5EFA\u66FF\u4EE3\u610F\u5411\u3002");
+        const current = this.props.data.intents.find((i) => i.id === intentId), approval = this.props.data.approvals.find((a) => a.id === approvalId), grantRef = current?.runGrant ?? approval?.runGrant, expectedRef = bound;
+        const sameGrant = !grantRef && !expectedRef || !!grantRef && !!expectedRef && grantRef.id === expectedRef.id && grantRef.digest === expectedRef.digest && grantRef.approvalId === expectedRef.approvalId;
+        if (current && !this.runApprovalMatches(current, approval)) return;
+        if (!current || current.approvalId !== approvalId || !approval || !sameGrant) throw Error("\u56FA\u5B9A RunIntent \u7684\u5BA1\u6279\u6216\u6388\u6743\u5F15\u7528\u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+        if (grantRef) {
+          const grant = (this.props.data.runGrants ?? []).find((g) => g.id === grantRef.id);
+          if (grant?.taskBinding) throw Error("\u6B64 RunIntent \u7ED1\u5B9A\u4EFB\u52A1\u7EA7\u6388\u6743\uFF0C\u53EA\u80FD\u7531\u5BF9\u5E94\u7684\u5DF2\u6388\u6743\u4EFB\u52A1\u63D0\u4EA4\u3002");
+          if (approval.status !== "approved" || grant?.sessionId !== sessionId || !runGrantUsable(grant)) throw Error("\u7ED1\u5B9A\u6388\u6743\u5C1A\u4E0D\u53EF\u7528\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u5BF9\u8BDD\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+        } else if (approval.status === "pending" && !this.approvedRunIntents.has(keyId)) {
+          await this.decide(approval, true);
+          if (!this.dialogueMatches(projectId, sessionId)) return;
+          if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u6279\u51C6\u5B8C\u6210\u540E\u56FA\u5B9A RunIntent \u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+          this.approvedRunIntents.add(keyId);
+          this.setState((state) => ({ runIntentRevision: state.runIntentRevision + 1 }));
+        } else if (approval.status !== "approved" && !(approval.status === "pending" && this.approvedRunIntents.has(keyId))) throw Error("\u6B64\u56FA\u5B9A RunIntent \u672A\u83B7\u6709\u6548\u6279\u51C6\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
         if (!this.dialogueMatches(projectId, sessionId)) return;
-        throw error;
-      }
-      this.messageKeys.delete(keyId);
-      this.approvedRunIntents.delete(keyId);
-      this.queuedRunIntents.add(keyId);
-      if (this.dialogueMatches(projectId, sessionId)) this.setState((state) => ({ runIntentRevision: state.runIntentRevision + 1 }));
-    });
+        if (!this.runIntentInScope(projectId, sessionId, intentId, digest, campaignId)) throw Error("\u5F53\u524D\u5BF9\u8BDD\u6216\u56FA\u5B9A RunIntent \u5DF2\u53D8\u5316\uFF1B\u672A\u53D1\u9001\u6267\u884C\u6D88\u606F\u3002");
+        const latestIntent = this.props.data.intents.find((row) => row.id === intentId), latestApproval = this.props.data.approvals.find((row) => row.id === approvalId), latestGrant = latestIntent?.runGrant ?? latestApproval?.runGrant;
+        const sameGrantAfter = !bound && !latestGrant || !!bound && !!latestGrant && bound.id === latestGrant.id && bound.digest === latestGrant.digest && bound.approvalId === latestGrant.approvalId;
+        if (!latestIntent || !this.runApprovalMatches(latestIntent, latestApproval) || !latestApproval || latestApproval.automaticApproval || !sameGrantAfter || !(latestApproval.status === "pending" && latestApproval.version === expectedVersion && this.approvedRunIntents.has(keyId) || latestApproval.status === "approved" && latestApproval.version === expectedVersion + (initiallyPending ? 1 : 0))) return;
+        try {
+          await api(`/sessions/${sessionId}/messages`, { content }, "POST", void 0, messageKey);
+        } catch (error) {
+          if (!this.dialogueMatches(projectId, sessionId)) return;
+          throw error;
+        }
+        this.messageKeys.delete(keyId);
+        this.approvedRunIntents.delete(keyId);
+        this.queuedRunIntents.add(keyId);
+        if (this.dialogueMatches(projectId, sessionId)) this.setState((state) => ({ runIntentRevision: state.runIntentRevision + 1 }));
+      });
+    } finally {
+      this.runIntentPending = false;
+    }
   }
   runIntentCard(intent, disabled, campaignId) {
-    const { data, session } = this.props, approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id), run = data.runs.find((r) => r.id === intent.runId && r.experimentId === intent.experimentId), keyId = `${intent.id}:${intent.manifestDigest}`, taskBound = !!grant?.taskBinding, grantUsable = !!grant && grant.sessionId === session.id && runGrantUsable(grant), campaignOwned = !!campaignId && data.campaigns.some((c) => c.id === campaignId && c.rootSessionId === session.id) && (data.members.some((m) => m.campaignId === campaignId && m.intentId === intent.id) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intent.id)), owned = campaignId ? campaignOwned && (intent.rootSessionId === session.id || intent.rootSessionId == null || !!bound && !taskBound && grantUsable) : intent.rootSessionId === session.id, approved = approval?.status === "approved" || approval?.status === "pending" && this.approvedRunIntents.has(keyId), queued = this.queuedRunIntents.has(keyId), canContinue = !approval?.automaticApproval && owned && intent.status === "prepared" && !intent.runId && !run && !queued && !!approval && (!bound && ["pending", "approved"].includes(approval.status) || !!bound && !taskBound && grantUsable && approval.status === "approved");
+    const { data, session } = this.props, approval = data.approvals.find((a) => a.id === intent.approvalId), bound = intent.runGrant ?? approval?.runGrant, grant = (data.runGrants ?? []).find((g) => g.id === bound?.id), run = data.runs.find((r) => r.id === intent.runId && r.experimentId === intent.experimentId), keyId = `${intent.id}:${intent.manifestDigest}`, taskBound = !!grant?.taskBinding, grantUsable = !!grant && grant.sessionId === session.id && runGrantUsable(grant), campaignOwned = !!campaignId && data.campaigns.some((c) => c.id === campaignId && c.rootSessionId === session.id) && (data.members.some((m) => m.campaignId === campaignId && m.intentId === intent.id) || (data.researchCandidates ?? []).some((c) => c.campaignId === campaignId && c.intentId === intent.id)), owned = campaignId ? campaignOwned && (intent.rootSessionId === session.id || intent.rootSessionId == null || !!bound && !taskBound && grantUsable) : intent.rootSessionId === session.id, approved = approval?.status === "approved" || approval?.status === "pending" && this.approvedRunIntents.has(keyId), queued = this.queuedRunIntents.has(keyId), canContinue = !approval?.automaticApproval && this.runApprovalMatches(intent, approval) && owned && intent.status === "prepared" && !intent.runId && !run && !queued && !!approval && (!bound && ["pending", "approved"].includes(approval.status) || !!bound && !taskBound && grantUsable && approval.status === "approved"), canReject = canContinue && !bound && !approval?.fullAccess && !approved && approval?.status === "pending", selectedIntent = { ...intent }, selectedApproval = approval ? { ...approval } : void 0;
     return /* @__PURE__ */ jsxs("details", { className: "workflow-card", open: canContinue || queued, children: [
       /* @__PURE__ */ jsxs("summary", { children: [
         "\u6B63\u5F0F\u5B9E\u9A8C \xB7 ",
         data.experiments.find((e) => e.id === intent.experimentId)?.title ?? short(intent.experimentId),
+        " \xB7 ",
+        short(intent.id),
         /* @__PURE__ */ jsx(Badge, { value: run?.state ?? (approved ? "approved" : approval?.status ?? intent.status), caption: !run && approval?.automaticApproval ? "\u81EA\u52A8\u5BA1\u6279" : void 0 })
+      ] }),
+      /* @__PURE__ */ jsxs("p", { className: "small muted code-wrap", children: [
+        "\u6E90\u7801 ",
+        short(intent.manifest.snapshotDigest),
+        " \xB7 \u6E05\u5355 ",
+        short(intent.manifestDigest),
+        " \xB7 ",
+        intent.manifest.sourceFiles?.length ?? "\u672A\u77E5",
+        " \u4E2A\u56FA\u5B9A\u6587\u4EF6"
+      ] }),
+      /* @__PURE__ */ jsxs("p", { className: "small code-wrap", style: { whiteSpace: "pre-wrap" }, children: [
+        "\u56FA\u5B9A\u547D\u4EE4 ",
+        JSON.stringify(intent.manifest.contract?.command) ?? "\u672A\u8BB0\u5F55"
       ] }),
       approval?.automaticApproval ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: automaticApprovalLabel(approval) }) : null,
       intent.manifest.contract?.runner === "local" ? /* @__PURE__ */ jsxs("p", { className: "small", children: [
@@ -395,7 +445,8 @@ class ChatWorkflows extends React.Component {
         /* @__PURE__ */ jsx("summary", { children: "\u51BB\u7ED3\u53C2\u6570\u3001\u8BA1\u7B97\u5951\u7EA6\u4E0E\u6388\u6743" }),
         /* @__PURE__ */ jsx("pre", { className: "file-preview", children: JSON.stringify({ intentId: intent.id, manifestDigest: intent.manifestDigest, manifest: intent.manifest, runGrant: bound }, null, 2) })
       ] }),
-      canContinue ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => this.continueRunIntent(intent, campaignId), children: "\u786E\u8BA4\u5E76\u8BA9\u667A\u80FD\u4F53\u6267\u884C" }) : null,
+      canContinue ? /* @__PURE__ */ jsx("button", { className: "primary compact", disabled, onClick: () => this.continueRunIntent(selectedIntent, selectedApproval, campaignId), children: "\u786E\u8BA4\u5E76\u8BA9\u667A\u80FD\u4F53\u6267\u884C" }) : null,
+      canReject ? /* @__PURE__ */ jsx("button", { className: "text-button danger", disabled, onClick: () => this.rejectRunIntent(selectedIntent, selectedApproval, campaignId), children: "\u62D2\u7EDD\u6B64\u56FA\u5B9A\u8FD0\u884C" }) : null,
       queued && intent.status === "prepared" && !run ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6267\u884C\u6D88\u606F\u5DF2\u5165\u961F\uFF0C\u7B49\u5F85\u667A\u80FD\u4F53\u56DE\u67E5\u56FA\u5B9A\u8FD0\u884C\u3002" }) : taskBound ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u56FA\u5B9A\u8FD0\u884C\u7ED1\u5B9A\u4EFB\u52A1\u7EA7\u6388\u6743\uFF0C\u7531\u5BF9\u5E94\u7684\u5DF2\u6388\u6743\u4EFB\u52A1\u63D0\u4EA4\u3002" }) : bound && !grantUsable ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u7ED1\u5B9A\u6388\u6743\u4E0D\u53EF\u7528\u6216\u4E0D\u5C5E\u4E8E\u5F53\u524D\u4E3B\u4F1A\u8BDD\uFF1B\u4FDD\u7559\u56FA\u5B9A\u5386\u53F2\uFF0C\u4E0D\u63D0\u4F9B\u63D0\u4EA4\u5165\u53E3\u3002" }) : !owned ? /* @__PURE__ */ jsx("p", { className: "small muted", role: "status", children: "\u6B64\u56FA\u5B9A\u8FD0\u884C\u672A\u7ED1\u5B9A\u5F53\u524D\u5BF9\u8BDD\uFF0C\u53EA\u8BFB\u4FDD\u7559\u3002" }) : approval && ["rejected", "stale"].includes(approval.status) ? /* @__PURE__ */ jsxs("p", { className: "small muted", role: "status", children: [
         "\u56FA\u5B9A\u8FD0\u884C\u5BA1\u6279\u5DF2",
         approval.status === "rejected" ? "\u62D2\u7EDD" : "\u5931\u6548",
