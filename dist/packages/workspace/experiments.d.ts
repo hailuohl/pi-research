@@ -1,7 +1,8 @@
 import type { AppContext } from '../domain/context.js';
-import type { Actor, Experiment, Row, ChangeProposal } from '../domain/types.js';
+import type { Actor, Experiment, ResearchContract, Row, ChangeProposal } from '../domain/types.js';
 import type { ResearchBriefService } from '../research-workflows/briefs.js';
 import { ProjectService } from './projects.js';
+export declare function effectiveExperimentContract(input: unknown, parent?: Pick<Experiment, 'contract' | 'contractDigest'>): ResearchContract;
 export declare class ExperimentService {
     private c;
     private projects;
@@ -9,6 +10,7 @@ export declare class ExperimentService {
     automation?: import('../policy/research-automation.js').ResearchAutomationService;
     constructor(c: AppContext, projects: ProjectService, briefs?: ResearchBriefService | undefined);
     get(actor: Actor, id: string): Row<Experiment>;
+    preflightContract(actor: Actor, projectId: string, value: unknown): ResearchContract;
     /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
     createFromRevision(actor: Actor, projectId: string, snapshotId: string, spec: {
         title: string;

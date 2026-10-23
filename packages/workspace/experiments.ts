@@ -16,10 +16,24 @@ import { listFiles, safePath, readText, writeText, copySourceModes, setSourceMod
 import { verifySnapshot } from './files.js';
 import { readStableFile } from './stable-file.js';
 import { EXAMPLE_CONTRACT, validateContract } from '../runners/contracts.js';
+export function effectiveExperimentContract(input:unknown,parent?:Pick<Experiment,'contract'|'contractDigest'>):ResearchContract {
+    if(parent){
+        if(input)ensure(digest(input)===parent.contractDigest,'CONTRACT_CHANGED','子实验必须继承固定运行契约',400);
+        validateContract(parent.contract);
+        return parent.contract;
+    }
+    const contract=input?validateContract(input):structuredClone(EXAMPLE_CONTRACT);
+    if(contract.runner==='docker')contract.threadLimit??=contract.cpus;
+    return contract;
+}
 export class ExperimentService {
     automation?:import('../policy/research-automation.js').ResearchAutomationService;
     constructor(private c: AppContext, private projects: ProjectService, private briefs?: ResearchBriefService) { }
     get(actor: Actor, id: string) { const e = this.c.store.get<Experiment>('experiment', id); scope(actor, e.projectId!);assertProjectReadable(this.c.store,e.projectId!,actor); return e; }
+    preflightContract(actor:Actor,projectId:string,value:unknown) {
+        scope(actor,projectId);assertProjectReadable(this.c.store,projectId,actor);const input=object(value),parent=input.parentId?this.c.store.get<Experiment>('experiment',text(input.parentId,'parentId'),projectId):undefined;
+        return effectiveExperimentContract(input.contract,parent);
+    }
     /** Internal fixed-plan derivation; source is an immutable revision, never a caller filesystem path. */
     createFromRevision(actor:Actor,projectId:string,snapshotId:string,spec:{title:string;hypothesis:string;config?:Record<string,unknown>}) {
         userOnly(actor);scope(actor,projectId);assertProjectWritable(this.c.store,projectId);
@@ -50,10 +64,7 @@ export class ExperimentService {
             if(interactiveRoot&&parent?.researchBrief)ensure(researchBrief,'BRIEF_REQUIRED','从绑定研究计划派生需要当前主会话的已确认研究计划');
             if (parent) { ensure(parent.lifecycle !== 'archived', 'EXPERIMENT_ARCHIVED', '归档实验不能派生新源码'); assertExperimentSourceCurrent(this.c.store, parent); }
             if(x.expectedParentRevision!==undefined)ensure(parent!.revision===integer(x.expectedParentRevision,'expectedParentRevision',1),'EXPERIMENT_REVISION_CHANGED','父实验修订已变化，请重新读取配置再准备候选');
-            const contract = parent ? parent.contract : x.contract ? validateContract(x.contract) : structuredClone(EXAMPLE_CONTRACT);
-            if (!parent && contract.runner === 'docker') contract.threadLimit ??= contract.cpus;
-            if (parent && x.contract)
-                ensure(digest(x.contract) === parent.contractDigest, 'CONTRACT_CHANGED', '子实验必须继承固定运行契约', 400);
+            const contract = effectiveExperimentContract(x.contract,parent);
             const id = randomUUID(), workspace = join(this.c.dataDir, 'experiments', id, 'source');
             mkdirSync(workspace, { recursive: true, mode: 0o700 });
             const source = this.c.store.paths.physical(fixed?.snapshot.path??parent?.workspace ?? p.workspace);

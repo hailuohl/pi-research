@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, lstatS
 import { join, dirname } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
 import { LocalRuntimeService, localEnvironment } from './local-runtime.js';
+import { assertLocalEntry, LOCAL_ENTRY_HINT } from './local-entry.js';
 import { assertGpuDevices, nativeGpuInventory } from './gpu.js';
 import { verifySnapshot, safePath } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
@@ -27,8 +28,7 @@ export async function superviseLegacyLocalRun(initial, c, callbacks) {
         ensure(!run.execution.startRequested, 'LOCAL_STATE_UNKNOWN', '本地未知启动不得重复执行');
         callbacks.assertGrant(run);
         const runtime = new LocalRuntimeService(c).resolve(run.manifest.contract.localRuntimeId, run.manifest.localRuntime);
-        if (/^Python\s|^v\d/.test(runtime.runtimeVersion))
-            ensure(run.manifest.sourceFiles.some(f => f.path === run.manifest.contract.command[1]), 'LOCAL_ENTRY_INVALID', 'Python/Node 入口必须是已批准快照内的源码文件');
+        assertLocalEntry(run.manifest.contract, runtime, run.manifest.sourceFiles);
         if (run.manifest.contract.gpu)
             assertGpuDevices(run.manifest.contract.gpu, await nativeGpuInventory());
         verifySnapshot(c.store.paths.physical(run.manifest.snapshotPath), run.manifest.sourceFiles);
@@ -130,11 +130,11 @@ export async function superviseLegacyLocalRun(initial, c, callbacks) {
     catch (error) {
         if (!lost) {
             try {
-                const r = read();
+                const r = read(), code = error.code ?? 'LOCAL_PREPARATION_FAILED';
                 if (possible)
                     patch({ state: 'unknown', integrity: 'incomplete', error: 'LOCAL_STATE_UNKNOWN: 保留资源；不按旧 PID 重启或取消', execution: { ...r.execution, leaseUntil: 0 } });
                 else
-                    await finish(r.cancelRequested ? 'cancelled' : 'failed', null, error.code ?? 'LOCAL_PREPARATION_FAILED', true);
+                    await finish(r.cancelRequested ? 'cancelled' : 'failed', null, code === 'LOCAL_ENTRY_INVALID' ? code + ': ' + LOCAL_ENTRY_HINT : code, true);
             }
             catch { /* A newer authority owns state. */ }
         }

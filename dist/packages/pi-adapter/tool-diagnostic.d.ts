@@ -7,6 +7,7 @@ declare const recoveryHints: {
     readonly BRIEF_REFERENCE_MISMATCH: "重新读取当前已确认研究计划；文稿引用只能选用该计划列出的证据。";
     readonly VERSION_CONFLICT: "重新读取最新版本，比较修改后再提交新请求，不覆盖其他操作的修改。";
     readonly FILE_VERSION_CONFLICT: "重新读取文件及摘要，比较修改后再保存，不覆盖其他操作的修改。";
+    readonly LOCAL_ENTRY_INVALID: "入口必须准确对应已批准源码清单中的脚本。Python 仅支持独立前置 -I、-S；Node 使用直接脚本入口。修正固定契约或整合源码后重新准备运行，不改写旧审批或失败记录。";
     readonly TASK_SCOPE_DENIED: "资源不在任务批准范围内。只使用当前任务的固定输入与已授权上游成果。";
     readonly PERMISSION_DENIED: "当前身份没有此操作所需授权。只使用当前会话或宿主派发任务的可用工具，不伪造身份或重复尝试；需要额外授权时交回用户处理。";
     readonly SCOPE_DENIED: "当前身份不能访问该资源。使用本会话获准来源，不更换 ID 绕过限制。";

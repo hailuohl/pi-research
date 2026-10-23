@@ -1,4 +1,5 @@
 import {LocalRuntimeService} from './local-runtime.js';
+import {assertLocalEntry} from './local-entry.js';
 import {GpuService} from './gpu.js';
 import {BudgetService} from '../policy/budget.js';
 import {SshTargetService} from './ssh-targets.js';
@@ -21,7 +22,7 @@ import { scope, userOnly, toolAllowed } from '../policy/permissions.js';
 import { ApprovalService } from '../policy/approvals.js';
 import { EvidenceService } from '../evidence/service.js';
 import { digest, now } from '../storage/store.js';
-import { snapshotDirectory, verifySnapshot, listFiles, safePath } from '../workspace/files.js';
+import { snapshotDirectory, sourceManifest, verifySnapshot, listFiles, safePath } from '../workspace/files.js';
 import { verifyTrustedExample, validateContract } from './contracts.js';
 import { finiteMetrics } from '../contracts/validation.js';
 import {readStableFile} from '../workspace/stable-file.js';
@@ -65,6 +66,14 @@ export class RunService {
             };
         });
     }
+    preflight(actor:Actor,experimentId:string) {
+        const experiment=this.c.store.get<Experiment>('experiment',experimentId);scope(actor,experiment.projectId!);assertProjectReadable(this.c.store,experiment.projectId!,actor);
+        validateContract(experiment.contract);
+        if(experiment.contract.runner==='local') {
+            const runtime=new LocalRuntimeService(this.c).resolve(experiment.contract.localRuntimeId!);
+            assertLocalEntry(experiment.contract,runtime,sourceManifest(this.c.store.paths.physical(experiment.workspace)).files);
+        }
+    }
     prepare(actor: Actor, experimentId: string, selectedRootSessionId?:string, autoAnalyze=false) {
         if(actor.continuationId)this.automation!.assertActor(actor);
         ensure(typeof autoAnalyze==='boolean','INVALID_INPUT','autoAnalyze必须为布尔值');
@@ -83,7 +92,7 @@ export class RunService {
             ensure(!requiresBrief||researchBrief,'BRIEF_REQUIRED','绑定了研究计划的实验需要当前主会话的已确认研究计划');
             if(autoAnalyze){ensure(root,'RUN_SESSION_REQUIRED','自动结果分析需要指定交互主会话');ensure(root.model.provider&&root.model.model,'MODEL_NOT_CONFIGURED','自动结果分析需要固定供应商和模型');}
             const analysis=autoAnalyze?{rootSessionId:rootSessionId!,model:structuredClone(root!.model),maxAttempts:1 as const}:undefined;
-            validateContract(e.contract);
+            this.preflight(actor,experimentId);
             this.researchSourceGuard?.(experimentId,'prepare');
             const snap=snapshotDirectory(this.c.store.paths.physical(e.workspace),join(this.c.dataDir,'snapshots')),revision=this.c.store.maybe<SourceRevision>('source-revision',digest({projectId:e.projectId,experimentId:e.id,revision:e.revision}));
             const binding=revision?this.c.store.maybe<GitSourceBinding>('git-source-binding',revision.id):undefined;
@@ -94,7 +103,7 @@ export class RunService {
             if(closedPaired(methodContract)){const q=closedPaired(methodContract)!;ensure(manifest.contract.expectedArtifacts.length===3&&['metrics.json',q.witness.artifactPath,q.provenanceArtifact].every(p=>manifest.contract.expectedArtifacts.includes(p))&&Object.keys(manifest.contract.metrics).length===3&&Object.values(q.metrics).every(k=>Object.hasOwn(manifest.contract.metrics,k)),'METHOD_OUTPUT_PROFILE_INVALID','新profile正式Run仅声明三类原始证据及准确三个指标');}
             if(quantitative&&isPlan(quantitative))ensure(manifest.contract.expectedArtifacts.includes(quantitative.witness.artifactPath)&&manifest.contract.expectedArtifacts.includes(quantitative.provenanceArtifact),'METHOD_WITNESS_REQUIRED','完整计划正式Run需实际预测见证及fit provenance');
             if(manifest.contract.runner==='docker')manifest.threadLimit=manifest.contract.threadLimit??manifest.contract.cpus;
-            if(manifest.contract.runner==='local'){manifest.localRuntime=new LocalRuntimeService(this.c).frozen(manifest.contract.localRuntimeId!);manifest.localExecution={isolation:'none',resourceEnforcement:'advisory',networkIsolation:false};}
+            if(manifest.contract.runner==='local'){manifest.localRuntime=new LocalRuntimeService(this.c).frozen(manifest.contract.localRuntimeId!);assertLocalEntry(manifest.contract,manifest.localRuntime,manifest.sourceFiles);manifest.localExecution={isolation:'none',resourceEnforcement:'advisory',networkIsolation:false};}
             if(manifest.contract.gpu)manifest.gpuTarget=new GpuService(this.c).saved(manifest.contract);
             if(manifest.contract.runner==='ssh')manifest.sshTarget=new SshTargetService(this.c).frozen(manifest.contract.sshTargetId!,true);
             if(manifest.contract.gpu&&manifest.contract.runner==='ssh')ensure(manifest.sshTarget?.gpuProtocol===true,'GPU_UNAVAILABLE','SSH GPU 需要独立 GPU 协议目标');
@@ -139,7 +148,7 @@ export class RunService {
             verifySnapshot(this.c.store.paths.physical(intent.manifest.snapshotPath), intent.manifest.sourceFiles);
             verifyTrustedExample(intent.manifest, this.c.repoRoot,this.c.store.paths);
             if(intent.manifest.contract.runner==='ssh'){ensure(intent.manifest.sshTarget,'SSH_TARGET_REQUIRED','SSH 目标未冻结');new SshTargetService(this.c).assertFrozen(intent.manifest.sshTarget,true);}
-            if(intent.manifest.localRuntime)new LocalRuntimeService(this.c).resolve(intent.manifest.contract.localRuntimeId!,intent.manifest.localRuntime);
+            if(intent.manifest.localRuntime){const runtime=new LocalRuntimeService(this.c).resolve(intent.manifest.contract.localRuntimeId!,intent.manifest.localRuntime);assertLocalEntry(intent.manifest.contract,runtime,intent.manifest.sourceFiles);}
             this.compute.assertEnqueue('run',intent.projectId!,intent.manifest.contract.runner==='ssh'?'ssh:'+intent.manifest.contract.sshTargetId:intent.manifest.contract.runner==='docker'?intent.manifest.contract.dockerContext??'default':undefined,intent.manifest.localRuntime?.hostId);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
             this.automation?.consume(actor,this.c.store.get<Approval>('approval',intent.approvalId),runId);

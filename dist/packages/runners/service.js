@@ -1,4 +1,5 @@
 import { LocalRuntimeService } from './local-runtime.js';
+import { assertLocalEntry } from './local-entry.js';
 import { GpuService } from './gpu.js';
 import { BudgetService } from '../policy/budget.js';
 import { SshTargetService } from './ssh-targets.js';
@@ -14,7 +15,7 @@ import { fixedResearchBrief } from '../research-workflows/briefs.js';
 import { ensure, asError } from '../domain/errors.js';
 import { scope, userOnly, toolAllowed } from '../policy/permissions.js';
 import { digest, now } from '../storage/store.js';
-import { snapshotDirectory, verifySnapshot, safePath } from '../workspace/files.js';
+import { snapshotDirectory, sourceManifest, verifySnapshot, safePath } from '../workspace/files.js';
 import { verifyTrustedExample, validateContract } from './contracts.js';
 import { readStableFile } from '../workspace/stable-file.js';
 import { readLogPage } from '../execution/log-page.js';
@@ -73,6 +74,16 @@ export class RunService {
             };
         });
     }
+    preflight(actor, experimentId) {
+        const experiment = this.c.store.get('experiment', experimentId);
+        scope(actor, experiment.projectId);
+        assertProjectReadable(this.c.store, experiment.projectId, actor);
+        validateContract(experiment.contract);
+        if (experiment.contract.runner === 'local') {
+            const runtime = new LocalRuntimeService(this.c).resolve(experiment.contract.localRuntimeId);
+            assertLocalEntry(experiment.contract, runtime, sourceManifest(this.c.store.paths.physical(experiment.workspace)).files);
+        }
+    }
     prepare(actor, experimentId, selectedRootSessionId, autoAnalyze = false) {
         if (actor.continuationId)
             this.automation.assertActor(actor);
@@ -108,7 +119,7 @@ export class RunService {
                 ensure(root.model.provider && root.model.model, 'MODEL_NOT_CONFIGURED', '自动结果分析需要固定供应商和模型');
             }
             const analysis = autoAnalyze ? { rootSessionId: rootSessionId, model: structuredClone(root.model), maxAttempts: 1 } : undefined;
-            validateContract(e.contract);
+            this.preflight(actor, experimentId);
             this.researchSourceGuard?.(experimentId, 'prepare');
             const snap = snapshotDirectory(this.c.store.paths.physical(e.workspace), join(this.c.dataDir, 'snapshots')), revision = this.c.store.maybe('source-revision', digest({ projectId: e.projectId, experimentId: e.id, revision: e.revision }));
             const binding = revision ? this.c.store.maybe('git-source-binding', revision.id) : undefined;
@@ -134,6 +145,7 @@ export class RunService {
                 manifest.threadLimit = manifest.contract.threadLimit ?? manifest.contract.cpus;
             if (manifest.contract.runner === 'local') {
                 manifest.localRuntime = new LocalRuntimeService(this.c).frozen(manifest.contract.localRuntimeId);
+                assertLocalEntry(manifest.contract, manifest.localRuntime, manifest.sourceFiles);
                 manifest.localExecution = { isolation: 'none', resourceEnforcement: 'advisory', networkIsolation: false };
             }
             if (manifest.contract.gpu)
@@ -203,8 +215,10 @@ export class RunService {
                 ensure(intent.manifest.sshTarget, 'SSH_TARGET_REQUIRED', 'SSH 目标未冻结');
                 new SshTargetService(this.c).assertFrozen(intent.manifest.sshTarget, true);
             }
-            if (intent.manifest.localRuntime)
-                new LocalRuntimeService(this.c).resolve(intent.manifest.contract.localRuntimeId, intent.manifest.localRuntime);
+            if (intent.manifest.localRuntime) {
+                const runtime = new LocalRuntimeService(this.c).resolve(intent.manifest.contract.localRuntimeId, intent.manifest.localRuntime);
+                assertLocalEntry(intent.manifest.contract, runtime, intent.manifest.sourceFiles);
+            }
             this.compute.assertEnqueue('run', intent.projectId, intent.manifest.contract.runner === 'ssh' ? 'ssh:' + intent.manifest.contract.sshTargetId : intent.manifest.contract.runner === 'docker' ? intent.manifest.contract.dockerContext ?? 'default' : undefined, intent.manifest.localRuntime?.hostId);
             const runId = randomUUID(), outputDir = join(this.c.dataDir, 'jobs', runId, 'output');
             this.automation?.consume(actor, this.c.store.get('approval', intent.approvalId), runId);

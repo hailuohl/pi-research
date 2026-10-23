@@ -6,6 +6,7 @@ import {setTimeout as pause} from 'node:timers/promises';
 import type {AppContext} from '../domain/context.js';
 import type {DockerRun,DockerSupervisorCallbacks,DockerRunResult} from './adapter.js';
 import {LocalRuntimeService,localEnvironment} from './local-runtime.js';
+import {assertLocalEntry,LOCAL_ENTRY_HINT} from './local-entry.js';
 import {assertGpuDevices,nativeGpuInventory} from './gpu.js';
 import {verifySnapshot,safePath} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
@@ -29,7 +30,7 @@ export async function superviseLocalRun(initial:DockerRun,c:AppContext,callbacks
   const run=read();ensure(executionId,'LOCAL_STATE_UNKNOWN','旧本地作业没有可恢复执行身份；不按旧PID操作');
   if(!possible){
    callbacks.assertGrant(run);const runtime=new LocalRuntimeService(c).resolve(run.manifest.contract.localRuntimeId!,run.manifest.localRuntime);
-   if(/^Python\s|^v\d/.test(runtime.runtimeVersion))ensure(run.manifest.sourceFiles.some(f=>f.path===run.manifest.contract.command[1]),'LOCAL_ENTRY_INVALID','Python/Node入口必须是已批准源码文件');
+   assertLocalEntry(run.manifest.contract,runtime,run.manifest.sourceFiles);
    if(run.manifest.contract.gpu)assertGpuDevices(run.manifest.contract.gpu,await nativeGpuInventory());
    verifySnapshot(c.store.paths.physical(run.manifest.snapshotPath),run.manifest.sourceFiles);mkdirSync(work,{recursive:true,mode:0o700});mkdirSync(output,{recursive:true,mode:0o700});
    for(const f of run.manifest.sourceFiles){const bytes=readStableFile(c.store.paths.physical(run.manifest.snapshotPath),f.path,f.size);ensure(digest(bytes)===f.digest,'SNAPSHOT_CORRUPTED','固定源码已变化');const path=safePath(work,f.path);mkdirSync(dirname(path),{recursive:true});writeFileSync(path,bytes,{flag:'wx',mode:f.mode==='100755'?0o700:0o600});}
@@ -62,6 +63,6 @@ export async function superviseLocalRun(initial:DockerRun,c:AppContext,callbacks
   if(result.timedOut){stopping='failed';reason='LOCAL_TIMEOUT';}else if(result.cancelled){stopping??='cancelled';reason??='RUN_CANCELLED';}
   const completion:DockerRunResult['localCompletion']={version:2,executionId,manifestDigest:initial.manifestDigest,stopped:true,exitCode:result.exitCode,cancelled:!!stopping};
   await finish(stopping??(result.exitCode===0?'succeeded':'failed'),result.exitCode,reason??result.error,!!stopping||result.exitCode===null,completion);
- }catch(error){if(!lost){try{const r=read(),code=(error as {code?:string}).code??'LOCAL_PROTOCOL_FAILED';if(possible)patch({state:'unknown',integrity:'incomplete',error:'LOCAL_STATE_UNKNOWN: '+code+'；保留资源，不按旧 PID 重启或取消',execution:{...r.execution,leaseUntil:0}});else await finish(r.cancelRequested?'cancelled':'failed',null,code,true);}catch{/* A newer authority owns state. */}}}
+ }catch(error){if(!lost){try{const r=read(),code=(error as {code?:string}).code??'LOCAL_PROTOCOL_FAILED';if(possible)patch({state:'unknown',integrity:'incomplete',error:'LOCAL_STATE_UNKNOWN: '+code+'；保留资源，不按旧 PID 重启或取消',execution:{...r.execution,leaseUntil:0}});else await finish(r.cancelRequested?'cancelled':'failed',null,code==='LOCAL_ENTRY_INVALID'?code+': '+LOCAL_ENTRY_HINT:code,true);}catch{/* A newer authority owns state. */}}}
  finally{clearInterval(timer);}
 }

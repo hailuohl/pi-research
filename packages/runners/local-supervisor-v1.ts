@@ -5,6 +5,7 @@ import {setTimeout as pause} from 'node:timers/promises';
 import type {AppContext} from '../domain/context.js';
 import type {DockerRun,DockerSupervisorCallbacks} from './adapter.js';
 import {LocalRuntimeService,localEnvironment} from './local-runtime.js';
+import {assertLocalEntry,LOCAL_ENTRY_HINT} from './local-entry.js';
 import {assertGpuDevices,nativeGpuInventory} from './gpu.js';
 import {verifySnapshot,safePath} from '../workspace/files.js';
 import {readStableFile} from '../workspace/stable-file.js';
@@ -21,7 +22,7 @@ export async function superviseLegacyLocalRun(initial:DockerRun,c:AppContext,cal
  try {
   const run=read();ensure(!run.execution.startRequested,'LOCAL_STATE_UNKNOWN','本地未知启动不得重复执行');callbacks.assertGrant(run);
   const runtime=new LocalRuntimeService(c).resolve(run.manifest.contract.localRuntimeId!,run.manifest.localRuntime);
-  if(/^Python\s|^v\d/.test(runtime.runtimeVersion))ensure(run.manifest.sourceFiles.some(f=>f.path===run.manifest.contract.command[1]),'LOCAL_ENTRY_INVALID','Python/Node 入口必须是已批准快照内的源码文件');
+  assertLocalEntry(run.manifest.contract,runtime,run.manifest.sourceFiles);
   if(run.manifest.contract.gpu)assertGpuDevices(run.manifest.contract.gpu,await nativeGpuInventory());
   verifySnapshot(c.store.paths.physical(run.manifest.snapshotPath),run.manifest.sourceFiles);
   mkdirSync(work,{recursive:true,mode:0o700});mkdirSync(output,{recursive:true,mode:0o700});
@@ -49,6 +50,6 @@ export async function superviseLegacyLocalRun(initial:DockerRun,c:AppContext,cal
   if(windows)ensure(result.stopped===true,'LOCAL_STATE_UNKNOWN','尚未确认进程树终止');
   else {let stopped=false;for(let attempt=0;attempt<20;attempt++){const ps=spawnSync('/bin/ps',['-axo','pgid=,stat='],{encoding:'utf8',timeout:5000});ensure(ps.status===0,'LOCAL_STATE_UNKNOWN','无法核对进程组');stopped=!ps.stdout.split('\n').some(line=>{const [group,status]=line.trim().split(/\s+/);return Number(group)===child.pid&&!status?.startsWith('Z');});if(stopped)break;await pause(50);}ensure(stopped,'LOCAL_STATE_UNKNOWN','尚未确认进程组终止');}
   await finish(stopping??(result.exitCode===0?'succeeded':'failed'),result.exitCode,reason??result.error,!!stopping||result.exitCode!==0);
- }catch(error){if(!lost){try{const r=read();if(possible)patch({state:'unknown',integrity:'incomplete',error:'LOCAL_STATE_UNKNOWN: 保留资源；不按旧 PID 重启或取消',execution:{...r.execution,leaseUntil:0}});else await finish(r.cancelRequested?'cancelled':'failed',null,(error as {code?:string}).code??'LOCAL_PREPARATION_FAILED',true);}catch{/* A newer authority owns state. */}}}
+ }catch(error){if(!lost){try{const r=read(),code=(error as {code?:string}).code??'LOCAL_PREPARATION_FAILED';if(possible)patch({state:'unknown',integrity:'incomplete',error:'LOCAL_STATE_UNKNOWN: 保留资源；不按旧 PID 重启或取消',execution:{...r.execution,leaseUntil:0}});else await finish(r.cancelRequested?'cancelled':'failed',null,code==='LOCAL_ENTRY_INVALID'?code+': '+LOCAL_ENTRY_HINT:code,true);}catch{/* A newer authority owns state. */}}}
  finally{clearInterval(timer);}
 }

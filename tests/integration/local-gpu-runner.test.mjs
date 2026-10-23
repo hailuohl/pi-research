@@ -87,7 +87,7 @@ test('local failure diagnostics read only bounded approved control files',t=>{
  }finally{s.close();}
 });
 test('local configuration changes reject pending intent and active Run; historical public data survives configuration removal',()=>{
- const s=setup();try{s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:0});const e=s.app.experiments.create(USER,s.project.id,{title:'local stale',contract}),i=s.app.runs.prepare(USER,e.id);approve(s.app,i.approvalId);s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:1});assert.throws(()=>s.app.runs.submit(USER,i.id),{code:'LOCAL_RUNTIME_CHANGED'});
+ const s=setup();try{writeFileSync(join(s.app.store.paths.physical(s.project.workspace),'main.mjs'),'export {};');s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:0});const e=s.app.experiments.create(USER,s.project.id,{title:'local stale',contract}),i=s.app.runs.prepare(USER,e.id);approve(s.app,i.approvalId);s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:1});assert.throws(()=>s.app.runs.submit(USER,i.id),{code:'LOCAL_RUNTIME_CHANGED'});
  const run=prepared(s);assert.throws(()=>s.app.localRuntimes.configure(USER,{id:'node',executable:'node',expectedVersion:2}),{code:'LOCAL_RUNTIME_BUSY'});s.app.runs.cancel(USER,run.id);writeFileSync(join(s.dir,'local-runtimes.json'),'{}');assert.deepEqual(s.app.runs.get(USER,run.id).manifest,run.manifest);
  }finally{s.close();}
 });

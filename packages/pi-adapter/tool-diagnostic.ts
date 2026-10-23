@@ -1,4 +1,5 @@
 import type {JsonSchema} from '../contracts/operations/schema.js';
+import {LOCAL_ENTRY_HINT} from '../runners/local-entry.js';
 
 const recoveryHints = {
     NOT_FOUND:'未找到指定资源。先读取当前会话或任务的索引，使用实际返回的 ID，不猜测 ID。',
@@ -8,6 +9,7 @@ const recoveryHints = {
     BRIEF_REFERENCE_MISMATCH:'重新读取当前已确认研究计划；文稿引用只能选用该计划列出的证据。',
     VERSION_CONFLICT:'重新读取最新版本，比较修改后再提交新请求，不覆盖其他操作的修改。',
     FILE_VERSION_CONFLICT:'重新读取文件及摘要，比较修改后再保存，不覆盖其他操作的修改。',
+    LOCAL_ENTRY_INVALID:LOCAL_ENTRY_HINT,
     TASK_SCOPE_DENIED:'资源不在任务批准范围内。只使用当前任务的固定输入与已授权上游成果。',
     PERMISSION_DENIED:'当前身份没有此操作所需授权。只使用当前会话或宿主派发任务的可用工具，不伪造身份或重复尝试；需要额外授权时交回用户处理。',
     SCOPE_DENIED:'当前身份不能访问该资源。使用本会话获准来源，不更换 ID 绕过限制。',

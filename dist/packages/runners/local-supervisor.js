@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, writeFileSync, appendFileSync, renameSync, readd
 import { join, dirname } from 'node:path';
 import { setTimeout as pause } from 'node:timers/promises';
 import { LocalRuntimeService, localEnvironment } from './local-runtime.js';
+import { assertLocalEntry, LOCAL_ENTRY_HINT } from './local-entry.js';
 import { assertGpuDevices, nativeGpuInventory } from './gpu.js';
 import { verifySnapshot, safePath } from '../workspace/files.js';
 import { readStableFile } from '../workspace/stable-file.js';
@@ -37,8 +38,7 @@ export async function superviseLocalRun(initial, c, callbacks) {
         if (!possible) {
             callbacks.assertGrant(run);
             const runtime = new LocalRuntimeService(c).resolve(run.manifest.contract.localRuntimeId, run.manifest.localRuntime);
-            if (/^Python\s|^v\d/.test(runtime.runtimeVersion))
-                ensure(run.manifest.sourceFiles.some(f => f.path === run.manifest.contract.command[1]), 'LOCAL_ENTRY_INVALID', 'Python/Node入口必须是已批准源码文件');
+            assertLocalEntry(run.manifest.contract, runtime, run.manifest.sourceFiles);
             if (run.manifest.contract.gpu)
                 assertGpuDevices(run.manifest.contract.gpu, await nativeGpuInventory());
             verifySnapshot(c.store.paths.physical(run.manifest.snapshotPath), run.manifest.sourceFiles);
@@ -170,7 +170,7 @@ export async function superviseLocalRun(initial, c, callbacks) {
                 if (possible)
                     patch({ state: 'unknown', integrity: 'incomplete', error: 'LOCAL_STATE_UNKNOWN: ' + code + '；保留资源，不按旧 PID 重启或取消', execution: { ...r.execution, leaseUntil: 0 } });
                 else
-                    await finish(r.cancelRequested ? 'cancelled' : 'failed', null, code, true);
+                    await finish(r.cancelRequested ? 'cancelled' : 'failed', null, code === 'LOCAL_ENTRY_INVALID' ? code + ': ' + LOCAL_ENTRY_HINT : code, true);
             }
             catch { /* A newer authority owns state. */ }
         }

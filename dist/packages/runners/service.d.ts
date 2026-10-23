@@ -41,6 +41,7 @@ export declare class RunService {
         cursor: number;
         hasMore: boolean;
     };
+    preflight(actor: Actor, experimentId: string): void;
     prepare(actor: Actor, experimentId: string, selectedRootSessionId?: string, autoAnalyze?: boolean): {
         approval: Row<Approval>;
         id: string;
