@@ -249,7 +249,8 @@ export class WorkflowContinuationService {
                 code = code && reasons[code] ? code : 'WORKFLOW_SOURCE_STALE';
             }
         const message = receipt.initialMessageId ? this.app.store.maybe('message', receipt.initialMessageId) : undefined;
-        return { id: receipt.id, sourceKind: receipt.sourceKind, sourceId: receipt.sourceId, sourceDigest: receipt.sourceDigest, route: 'workflow', state: code ? 'superseded' : message?.status ?? 'blocked', ...(receipt.resultId ? { resultId: receipt.resultId } : {}), ...(code || receipt.blockReason ? { reasonCode: code ?? receipt.blockReason, reason: reasons[code ?? receipt.blockReason] } : {}) };
+        const reasonCode = code ?? (message?.status === 'queued' ? receipt.blockReason : undefined);
+        return { id: receipt.id, sourceKind: receipt.sourceKind, sourceId: receipt.sourceId, sourceDigest: receipt.sourceDigest, route: 'workflow', state: code ? 'superseded' : message?.status ?? 'blocked', ...(receipt.resultId ? { resultId: receipt.resultId } : {}), ...(reasonCode ? { reasonCode, reason: reasons[reasonCode] } : {}) };
     }
     list(actor, projectId, sessionId) { scope(actor, projectId); this.app.store.get('session', sessionId, projectId); const statuses = this.app.store.list('workflow-continuation', projectId).filter(row => row.rootSessionId === sessionId).map(row => this.status(row)); for (const kind of ['research-brief', 'change-proposal'])
         for (const row of this.app.store.list(kind, projectId).filter(row => row.rootSessionId === sessionId && this.bound(row) && (kind === 'research-brief' ? row.status === 'confirmed' : row.state === 'applied')))

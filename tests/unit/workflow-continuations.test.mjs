@@ -85,6 +85,42 @@ test('rejected and full-access approvals cannot mint a workflow continuation',()
  }finally{state.close();}}
 });
 
+test('workflow waiting reason is projected only while its notice remains queued',()=>{
+ for(const messageStatus of ['queued','running','completed','failed','cancelled']){const state=setup();try{
+  const row=source(state,'brief'),receipt=confirm(state,input(state,'brief',row)),message=state.app.store.get('message',state.app.store.get('workflow-continuation',receipt.id).initialMessageId);
+  state.app.workflowContinuations.waiting(message);
+  if(messageStatus!=='queued'){const current=state.app.store.get('message',message.id);state.app.store.update('message',current.id,current.version,{status:messageStatus});}
+  const status=state.app.workflowContinuations.list(USER,state.project.id,state.session.id)[0];
+  assert.equal(status.state,messageStatus);assert.equal(status.reasonCode,messageStatus==='queued'?'WORKFLOW_WAITING':undefined);assert.equal(status.reason,messageStatus==='queued'?'等待当前会话、人工输入或执行容量。':undefined);
+ }finally{state.close();}}
+});
+
+test('permission, source and invalidation reasons keep priority over stale waiting state',()=>{
+ for(const reason of ['permission','source','invalidated']){const state=setup();try{
+  if(reason==='permission')state.app.sessionPermissions.initialize(state.session.id,'confirm');
+  const row=source(state,'brief'),receipt=confirm(state,input(state,'brief',row)),binding=state.app.store.get('workflow-continuation',receipt.id),message=state.app.store.get('message',binding.initialMessageId);
+  state.app.workflowContinuations.waiting(message);
+  if(reason==='permission'){const current=state.app.sessionPermissions.status(USER,state.session.id);state.app.sessionPermissions.set(USER,state.session.id,{mode:'autoEdit',expectedVersion:current.version,expectedHostVersion:current.hostAccess.version});}
+  if(reason==='source')state.app.researchBriefs.save(USER,state.project.id,state.session.id,{question:'UNIT replacement',scope:'New scope',constraints:[],successCriteria:[],clarificationQuestions:['Clarify'],literatureSummary:'',hypotheses:[],evidenceIds:[],steps:[],status:'clarifying',expectedRevisionId:row.id});
+  if(reason==='invalidated')state.app.workflowContinuations.fail(message,'WORKFLOW_MODEL_UNAVAILABLE');
+  const status=state.app.workflowContinuations.list(USER,state.project.id,state.session.id)[0],expected=reason==='permission'?'WORKFLOW_PERMISSION_CHANGED':reason==='source'?'WORKFLOW_SOURCE_STALE':'WORKFLOW_MODEL_UNAVAILABLE';
+  assert.equal(status.state,'superseded');assert.equal(status.reasonCode,expected);
+ }finally{state.close();}}
+});
+
+test('historical waiting reason is hidden after reopen without read-side writes',()=>{
+ const state=setup();try{
+  const row=source(state,'campaign'),receipt=confirm(state,input(state,'campaign',row)),binding=state.app.store.get('workflow-continuation',receipt.id),message=state.app.store.get('message',binding.initialMessageId);
+  state.app.workflowContinuations.waiting(message);const queuedMessage=state.app.store.get('message',message.id);state.app.store.update('message',message.id,queuedMessage.version,{status:'completed'});
+  const snapshot=()=>({receipt:state.app.store.get('workflow-continuation',binding.id),message:state.app.store.get('message',message.id),source:state.app.store.get('campaign',row.id),approval:state.app.store.get('approval',row.approvalId),runs:state.app.store.list('run',state.project.id),messages:state.app.store.list('message',state.project.id),wakeups:state.app.store.list('wakeup',state.project.id)});
+  state.app.close();state.app=new ResearchApp(state.dir,process.cwd());const before=snapshot(),historical=state.app.store.get('workflow-continuation',binding.id);
+  assert.equal(historical.blockReason,'WORKFLOW_WAITING');
+  const direct=state.app.workflowContinuations.status(historical),listed=state.app.workflowContinuations.list(USER,state.project.id,state.session.id)[0];
+  for(const status of [direct,listed]){assert.equal(status.state,'completed');assert.equal(status.reasonCode,undefined);assert.equal(status.reason,undefined);}
+  assert.deepEqual(snapshot(),before);
+ }finally{state.close();}
+});
+
 for(const operation of ['interrupt','archive'])test(`queued workflow ${operation} preserves caller CAS, cancellation and reopened history`,()=>{
  for(const olderInvalidated of [false,true]){const state=setup();try{
   if(olderInvalidated){const older=source(state,'brief'),saved=confirm(state,input(state,'brief',older),'older'),binding=state.app.store.get('workflow-continuation',saved.id);state.app.workflowContinuations.fail(state.app.store.get('message',binding.initialMessageId),'WORKFLOW_MODEL_UNAVAILABLE');}
